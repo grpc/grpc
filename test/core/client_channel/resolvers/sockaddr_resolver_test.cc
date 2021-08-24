@@ -28,7 +28,7 @@
 
 #include "test/core/util/test_config.h"
 
-static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
+static std::shared_ptr<grpc_core::WorkSerializer> *g_work_serializer;
 
 class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
@@ -39,8 +39,8 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
   }
 };
 
-static void test_succeeds(grpc_core::ResolverFactory* factory,
-                          const char* string) {
+static void test_succeeds(grpc_core::ResolverFactory *factory,
+                          const char *string) {
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
           factory->scheme());
   grpc_core::ExecCtx exec_ctx;
@@ -62,8 +62,8 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   grpc_core::ExecCtx::Get()->Flush();
 }
 
-static void test_fails(grpc_core::ResolverFactory* factory,
-                       const char* string) {
+static void test_fails(grpc_core::ResolverFactory *factory,
+                       const char *string) {
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
           factory->scheme());
   grpc_core::ExecCtx exec_ctx;
@@ -81,16 +81,16 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   GPR_ASSERT(resolver == nullptr);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
   auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
   g_work_serializer = &work_serializer;
 
-  grpc_core::ResolverFactory* ipv4 =
+  grpc_core::ResolverFactory *ipv4 =
       grpc_core::ResolverRegistry::LookupResolverFactory("ipv4");
-  grpc_core::ResolverFactory* ipv6 =
+  grpc_core::ResolverFactory *ipv6 =
       grpc_core::ResolverRegistry::LookupResolverFactory("ipv6");
 
   test_fails(ipv4, "ipv4:10.2.1.1");
@@ -108,9 +108,9 @@ int main(int argc, char** argv) {
   test_fails(ipv6, "ipv6:www.google.com");
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
-  grpc_core::ResolverFactory* uds =
+  grpc_core::ResolverFactory *uds =
       grpc_core::ResolverRegistry::LookupResolverFactory("unix");
-  grpc_core::ResolverFactory* uds_abstract =
+  grpc_core::ResolverFactory *uds_abstract =
       grpc_core::ResolverRegistry::LookupResolverFactory("unix-abstract");
 
   test_succeeds(uds, "unix:///tmp/sockaddr_resolver_test");

@@ -51,11 +51,11 @@ namespace grpc {
 namespace testing {
 namespace {
 
-void* tag(int i) { return reinterpret_cast<void*>(i); }
+void *tag(int i) { return reinterpret_cast<void *>(i); }
 
-void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
+void verify_ok(CompletionQueue *cq, int i, bool expect_ok) {
   bool ok;
-  void* got_tag;
+  void *got_tag;
   EXPECT_TRUE(cq->Next(&got_tag, &ok));
   EXPECT_EQ(expect_ok, ok);
   EXPECT_EQ(tag(i), got_tag);
@@ -101,8 +101,8 @@ int GetCallCounterValue() {
 
 class ChannelDataImpl : public ChannelData {
  public:
-  grpc_error_handle Init(grpc_channel_element* /*elem*/,
-                         grpc_channel_element_args* /*args*/) override {
+  grpc_error_handle Init(grpc_channel_element * /*elem*/,
+                         grpc_channel_element_args * /*args*/) override {
     IncrementConnectionCounter();
     return GRPC_ERROR_NONE;
   }
@@ -110,8 +110,8 @@ class ChannelDataImpl : public ChannelData {
 
 class CallDataImpl : public CallData {
  public:
-  void StartTransportStreamOpBatch(grpc_call_element* elem,
-                                   TransportStreamOpBatch* op) override {
+  void StartTransportStreamOpBatch(grpc_call_element *elem,
+                                   TransportStreamOpBatch *op) override {
     // Incrementing the counter could be done from Init(), but we want
     // to test that the individual methods are actually called correctly.
     if (op->recv_initial_metadata() != nullptr) IncrementCallCounter();
@@ -148,7 +148,7 @@ class FilterEnd2endTest : public ::testing::Test {
 
   void TearDown() override {
     server_->Shutdown();
-    void* ignored_tag;
+    void *ignored_tag;
     bool ignored_ok;
     cli_cq_.Shutdown();
     srv_cq_->Shutdown();
@@ -340,7 +340,7 @@ TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

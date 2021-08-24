@@ -35,14 +35,14 @@ namespace grpc {
 
 namespace {
 
-static auto* g_channelz_service = new ChannelzService();
+static auto *g_channelz_service = new ChannelzService();
 #if !defined(GRPC_NO_XDS) && !defined(DISABLED_XDS_PROTO_IN_CC)
-static auto* g_csds = new xds::experimental::ClientStatusDiscoveryService();
+static auto *g_csds = new xds::experimental::ClientStatusDiscoveryService();
 #endif  // GRPC_NO_XDS or DISABLED_XDS_PROTO_IN_CC
 
 }  // namespace
 
-void AddAdminServices(ServerBuilder* builder) {
+void AddAdminServices(ServerBuilder *builder) {
   builder->RegisterService(g_channelz_service);
 #if !defined(GRPC_NO_XDS) && !defined(DISABLED_XDS_PROTO_IN_CC)
   builder->RegisterService(g_csds);

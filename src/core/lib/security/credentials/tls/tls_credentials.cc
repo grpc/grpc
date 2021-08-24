@@ -34,7 +34,7 @@
 
 namespace {
 
-bool CredentialOptionSanityCheck(const grpc_tls_credentials_options* options,
+bool CredentialOptionSanityCheck(const grpc_tls_credentials_options *options,
                                  bool is_client) {
   if (options == nullptr) {
     gpr_log(GPR_ERROR, "TLS credentials options is nullptr.");
@@ -67,12 +67,12 @@ TlsCredentials::~TlsCredentials() {}
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 TlsCredentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-    const char* target_name, const grpc_channel_args* args,
-    grpc_channel_args** new_args) {
-  const char* overridden_target_name = nullptr;
-  tsi_ssl_session_cache* ssl_session_cache = nullptr;
+    const char *target_name, const grpc_channel_args *args,
+    grpc_channel_args **new_args) {
+  const char *overridden_target_name = nullptr;
+  tsi_ssl_session_cache *ssl_session_cache = nullptr;
   for (size_t i = 0; args != nullptr && i < args->num_args; i++) {
-    grpc_arg* arg = &args->args[i];
+    grpc_arg *arg = &args->args[i];
     if (strcmp(arg->key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) == 0 &&
         arg->type == GRPC_ARG_STRING) {
       overridden_target_name = arg->value.string;
@@ -80,7 +80,7 @@ TlsCredentials::create_security_connector(
     if (strcmp(arg->key, GRPC_SSL_SESSION_CACHE_ARG) == 0 &&
         arg->type == GRPC_ARG_POINTER) {
       ssl_session_cache =
-          static_cast<tsi_ssl_session_cache*>(arg->value.pointer.p);
+          static_cast<tsi_ssl_session_cache *>(arg->value.pointer.p);
     }
   }
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
@@ -92,7 +92,7 @@ TlsCredentials::create_security_connector(
   }
   if (args != nullptr) {
     grpc_arg new_arg = grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_HTTP2_SCHEME), const_cast<char*>("https"));
+        const_cast<char *>(GRPC_ARG_HTTP2_SCHEME), const_cast<char *>("https"));
     *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
   }
   return sc;
@@ -107,15 +107,15 @@ TlsServerCredentials::~TlsServerCredentials() {}
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 TlsServerCredentials::create_security_connector(
-    const grpc_channel_args* /* args */) {
+    const grpc_channel_args * /* args */) {
   return grpc_core::TlsServerSecurityConnector::
       CreateTlsServerSecurityConnector(this->Ref(), options_);
 }
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 
-grpc_channel_credentials* grpc_tls_credentials_create(
-    grpc_tls_credentials_options* options) {
+grpc_channel_credentials *grpc_tls_credentials_create(
+    grpc_tls_credentials_options *options) {
   if (!CredentialOptionSanityCheck(options, true /* is_client */)) {
     return nullptr;
   }
@@ -123,8 +123,8 @@ grpc_channel_credentials* grpc_tls_credentials_create(
       grpc_core::RefCountedPtr<grpc_tls_credentials_options>(options));
 }
 
-grpc_server_credentials* grpc_tls_server_credentials_create(
-    grpc_tls_credentials_options* options) {
+grpc_server_credentials *grpc_tls_server_credentials_create(
+    grpc_tls_credentials_options *options) {
   if (!CredentialOptionSanityCheck(options, false /* is_client */)) {
     return nullptr;
   }

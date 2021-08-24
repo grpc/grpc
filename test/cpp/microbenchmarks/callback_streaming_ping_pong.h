@@ -37,9 +37,9 @@ namespace testing {
 
 class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
  public:
-  BidiClient(benchmark::State* state, EchoTestService::Stub* stub,
-             ClientContext* cli_ctx, EchoRequest* request,
-             EchoResponse* response)
+  BidiClient(benchmark::State *state, EchoTestService::Stub *stub,
+             ClientContext *cli_ctx, EchoRequest *request,
+             EchoResponse *response)
       : state_{state},
         stub_{stub},
         cli_ctx_{cli_ctx},
@@ -67,7 +67,7 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
     StartRead(response_);
   }
 
-  void OnDone(const Status& s) override {
+  void OnDone(const Status &s) override {
     GPR_ASSERT(s.ok());
     GPR_ASSERT(writes_complete_ == msgs_to_send_);
     if (state_->KeepRunning()) {
@@ -105,11 +105,11 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
     }
   }
 
-  benchmark::State* state_;
-  EchoTestService::Stub* stub_;
-  ClientContext* cli_ctx_;
-  EchoRequest* request_;
-  EchoResponse* response_;
+  benchmark::State *state_;
+  EchoTestService::Stub *stub_;
+  ClientContext *cli_ctx_;
+  EchoRequest *request_;
+  EchoResponse *response_;
   int writes_complete_{0};
   int msgs_to_send_;
   int msgs_size_;
@@ -119,7 +119,7 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
 };
 
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
-static void BM_CallbackBidiStreaming(benchmark::State& state) {
+static void BM_CallbackBidiStreaming(benchmark::State &state) {
   int message_size = state.range(0);
   int max_ping_pongs = state.range(1);
   CallbackStreamingTestService service;

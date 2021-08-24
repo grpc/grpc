@@ -28,7 +28,7 @@ namespace experimental {
 // A upb-generated grpc_gcp_AltsContext is passed in to construct an
 // AltsContext. Normal users should use GetAltsContextFromAuthContext to get
 // AltsContext, instead of constructing their own.
-AltsContext::AltsContext(const grpc_gcp_AltsContext* ctx) {
+AltsContext::AltsContext(const grpc_gcp_AltsContext *ctx) {
   upb_strview application_protocol =
       grpc_gcp_AltsContext_application_protocol(ctx);
   if (application_protocol.data != nullptr && application_protocol.size > 0) {
@@ -51,10 +51,10 @@ AltsContext::AltsContext(const grpc_gcp_AltsContext* ctx) {
     local_service_account_ =
         std::string(local_service_account.data, local_service_account.size);
   }
-  const grpc_gcp_RpcProtocolVersions* versions =
+  const grpc_gcp_RpcProtocolVersions *versions =
       grpc_gcp_AltsContext_peer_rpc_versions(ctx);
   if (versions != nullptr) {
-    const grpc_gcp_RpcProtocolVersions_Version* max_version =
+    const grpc_gcp_RpcProtocolVersions_Version *max_version =
         grpc_gcp_RpcProtocolVersions_max_rpc_version(versions);
     if (max_version != nullptr) {
       int max_version_major =
@@ -64,7 +64,7 @@ AltsContext::AltsContext(const grpc_gcp_AltsContext* ctx) {
       peer_rpc_versions_.max_rpc_version.major_version = max_version_major;
       peer_rpc_versions_.max_rpc_version.minor_version = max_version_minor;
     }
-    const grpc_gcp_RpcProtocolVersions_Version* min_version =
+    const grpc_gcp_RpcProtocolVersions_Version *min_version =
         grpc_gcp_RpcProtocolVersions_min_rpc_version(versions);
     if (min_version != nullptr) {
       int min_version_major =
@@ -82,7 +82,7 @@ AltsContext::AltsContext(const grpc_gcp_AltsContext* ctx) {
   }
   if (grpc_gcp_AltsContext_has_peer_attributes(ctx)) {
     size_t iter = UPB_MAP_BEGIN;
-    const grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry =
+    const grpc_gcp_AltsContext_PeerAttributesEntry *peer_attributes_entry =
         grpc_gcp_AltsContext_peer_attributes_next(ctx, &iter);
     while (peer_attributes_entry != nullptr) {
       upb_strview key =
@@ -119,7 +119,7 @@ AltsContext::RpcProtocolVersions AltsContext::peer_rpc_versions() const {
   return peer_rpc_versions_;
 }
 
-const std::map<std::string, std::string>& AltsContext::peer_attributes() const {
+const std::map<std::string, std::string> &AltsContext::peer_attributes() const {
   return peer_attributes_map_;
 }
 

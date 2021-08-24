@@ -33,7 +33,7 @@ class PhonyInterceptor : public experimental::Interceptor {
  public:
   PhonyInterceptor() {}
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(experimental::InterceptorBatchMethods *methods) override {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       num_times_run_++;
@@ -71,13 +71,13 @@ class PhonyInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface,
       public experimental::ServerInterceptorFactoryInterface {
  public:
-  experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* /*info*/) override {
+  experimental::Interceptor *CreateClientInterceptor(
+      experimental::ClientRpcInfo * /*info*/) override {
     return new PhonyInterceptor();
   }
 
-  experimental::Interceptor* CreateServerInterceptor(
-      experimental::ServerRpcInfo* /*info*/) override {
+  experimental::Interceptor *CreateServerInterceptor(
+      experimental::ServerRpcInfo * /*info*/) override {
     return new PhonyInterceptor();
   }
 };
@@ -85,8 +85,8 @@ class PhonyInterceptorFactory
 /* This interceptor can be used to test the interception mechanism. */
 class TestInterceptor : public experimental::Interceptor {
  public:
-  TestInterceptor(const std::string& method, const char* suffix_for_stats,
-                  experimental::ClientRpcInfo* info) {
+  TestInterceptor(const std::string &method, const char *suffix_for_stats,
+                  experimental::ClientRpcInfo *info) {
     EXPECT_EQ(info->method(), method);
 
     if (suffix_for_stats == nullptr || info->suffix_for_stats() == nullptr) {
@@ -96,7 +96,7 @@ class TestInterceptor : public experimental::Interceptor {
     }
   }
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(experimental::InterceptorBatchMethods *methods) override {
     methods->Proceed();
   }
 };
@@ -104,18 +104,18 @@ class TestInterceptor : public experimental::Interceptor {
 class TestInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
-  TestInterceptorFactory(const std::string& method,
-                         const char* suffix_for_stats)
+  TestInterceptorFactory(const std::string &method,
+                         const char *suffix_for_stats)
       : method_(method), suffix_for_stats_(suffix_for_stats) {}
 
-  experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
+  experimental::Interceptor *CreateClientInterceptor(
+      experimental::ClientRpcInfo *info) override {
     return new TestInterceptor(method_, suffix_for_stats_, info);
   }
 
  private:
   std::string method_;
-  const char* suffix_for_stats_;
+  const char *suffix_for_stats_;
 };
 
 /* This interceptor factory returns nullptr on interceptor creation */
@@ -123,13 +123,13 @@ class NullInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface,
       public experimental::ServerInterceptorFactoryInterface {
  public:
-  experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* /*info*/) override {
+  experimental::Interceptor *CreateClientInterceptor(
+      experimental::ClientRpcInfo * /*info*/) override {
     return nullptr;
   }
 
-  experimental::Interceptor* CreateServerInterceptor(
-      experimental::ServerRpcInfo* /*info*/) override {
+  experimental::Interceptor *CreateServerInterceptor(
+      experimental::ServerRpcInfo * /*info*/) override {
     return nullptr;
   }
 };
@@ -138,10 +138,10 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
  public:
   ~EchoTestServiceStreamingImpl() override {}
 
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
+  Status Echo(ServerContext *context, const EchoRequest *request,
+              EchoResponse *response) override {
     auto client_metadata = context->client_metadata();
-    for (const auto& pair : client_metadata) {
+    for (const auto &pair : client_metadata) {
       context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
     }
     response->set_message(request->message());
@@ -149,12 +149,12 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
   }
 
   Status BidiStream(
-      ServerContext* context,
-      grpc::ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+      ServerContext *context,
+      grpc::ServerReaderWriter<EchoResponse, EchoRequest> *stream) override {
     EchoRequest req;
     EchoResponse resp;
     auto client_metadata = context->client_metadata();
-    for (const auto& pair : client_metadata) {
+    for (const auto &pair : client_metadata) {
       context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
     }
 
@@ -165,11 +165,11 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
     return Status::OK;
   }
 
-  Status RequestStream(ServerContext* context,
-                       ServerReader<EchoRequest>* reader,
-                       EchoResponse* resp) override {
+  Status RequestStream(ServerContext *context,
+                       ServerReader<EchoRequest> *reader,
+                       EchoResponse *resp) override {
     auto client_metadata = context->client_metadata();
-    for (const auto& pair : client_metadata) {
+    for (const auto &pair : client_metadata) {
       context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
     }
 
@@ -182,10 +182,10 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
     return Status::OK;
   }
 
-  Status ResponseStream(ServerContext* context, const EchoRequest* req,
-                        ServerWriter<EchoResponse>* writer) override {
+  Status ResponseStream(ServerContext *context, const EchoRequest *req,
+                        ServerWriter<EchoResponse> *writer) override {
     auto client_metadata = context->client_metadata();
-    for (const auto& pair : client_metadata) {
+    for (const auto &pair : client_metadata) {
       context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
     }
 
@@ -200,36 +200,36 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
 
 constexpr int kNumStreamingMessages = 10;
 
-void MakeCall(const std::shared_ptr<Channel>& channel,
-              const StubOptions& options = StubOptions());
+void MakeCall(const std::shared_ptr<Channel> &channel,
+              const StubOptions &options = StubOptions());
 
-void MakeClientStreamingCall(const std::shared_ptr<Channel>& channel);
+void MakeClientStreamingCall(const std::shared_ptr<Channel> &channel);
 
-void MakeServerStreamingCall(const std::shared_ptr<Channel>& channel);
+void MakeServerStreamingCall(const std::shared_ptr<Channel> &channel);
 
-void MakeBidiStreamingCall(const std::shared_ptr<Channel>& channel);
+void MakeBidiStreamingCall(const std::shared_ptr<Channel> &channel);
 
-void MakeAsyncCQCall(const std::shared_ptr<Channel>& channel);
+void MakeAsyncCQCall(const std::shared_ptr<Channel> &channel);
 
-void MakeAsyncCQClientStreamingCall(const std::shared_ptr<Channel>& channel);
+void MakeAsyncCQClientStreamingCall(const std::shared_ptr<Channel> &channel);
 
-void MakeAsyncCQServerStreamingCall(const std::shared_ptr<Channel>& channel);
+void MakeAsyncCQServerStreamingCall(const std::shared_ptr<Channel> &channel);
 
-void MakeAsyncCQBidiStreamingCall(const std::shared_ptr<Channel>& channel);
+void MakeAsyncCQBidiStreamingCall(const std::shared_ptr<Channel> &channel);
 
-void MakeCallbackCall(const std::shared_ptr<Channel>& channel);
+void MakeCallbackCall(const std::shared_ptr<Channel> &channel);
 
-bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map,
-                   const string& key, const string& value);
+bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref> &map,
+                   const string &key, const string &value);
 
-bool CheckMetadata(const std::multimap<std::string, std::string>& map,
-                   const string& key, const string& value);
+bool CheckMetadata(const std::multimap<std::string, std::string> &map,
+                   const string &key, const string &value);
 
 std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
 CreatePhonyClientInterceptors();
 
-inline void* tag(int i) { return reinterpret_cast<void*>(i); }
-inline int detag(void* p) {
+inline void *tag(int i) { return reinterpret_cast<void *>(i); }
+inline int detag(void *p) {
   return static_cast<int>(reinterpret_cast<intptr_t>(p));
 }
 
@@ -237,12 +237,12 @@ class Verifier {
  public:
   Verifier() : lambda_run_(false) {}
   // Expect sets the expected ok value for a specific tag
-  Verifier& Expect(int i, bool expect_ok) {
+  Verifier &Expect(int i, bool expect_ok) {
     return ExpectUnless(i, expect_ok, false);
   }
   // ExpectUnless sets the expected ok value for a specific tag
   // unless the tag was already marked seen (as a result of ExpectMaybe)
-  Verifier& ExpectUnless(int i, bool expect_ok, bool seen) {
+  Verifier &ExpectUnless(int i, bool expect_ok, bool seen) {
     if (!seen) {
       expectations_[tag(i)] = expect_ok;
     }
@@ -251,7 +251,7 @@ class Verifier {
   // ExpectMaybe sets the expected ok value for a specific tag, but does not
   // require it to appear
   // If it does, sets *seen to true
-  Verifier& ExpectMaybe(int i, bool expect_ok, bool* seen) {
+  Verifier &ExpectMaybe(int i, bool expect_ok, bool *seen) {
     if (!*seen) {
       maybe_expectations_[tag(i)] = MaybeExpect{expect_ok, seen};
     }
@@ -260,9 +260,9 @@ class Verifier {
 
   // Next waits for 1 async tag to complete, checks its
   // expectations, and returns the tag
-  int Next(CompletionQueue* cq, bool ignore_ok) {
+  int Next(CompletionQueue *cq, bool ignore_ok) {
     bool ok;
-    void* got_tag;
+    void *got_tag;
     EXPECT_TRUE(cq->Next(&got_tag, &ok));
     GotTag(got_tag, ok, ignore_ok);
     return detag(got_tag);
@@ -270,7 +270,7 @@ class Verifier {
 
   template <typename T>
   CompletionQueue::NextStatus DoOnceThenAsyncNext(
-      CompletionQueue* cq, void** got_tag, bool* ok, T deadline,
+      CompletionQueue *cq, void **got_tag, bool *ok, T deadline,
       std::function<void(void)> lambda) {
     if (lambda_run_) {
       return cq->AsyncNext(got_tag, ok, deadline);
@@ -282,11 +282,11 @@ class Verifier {
 
   // Verify keeps calling Next until all currently set
   // expected tags are complete
-  void Verify(CompletionQueue* cq) { Verify(cq, false); }
+  void Verify(CompletionQueue *cq) { Verify(cq, false); }
 
   // This version of Verify allows optionally ignoring the
   // outcome of the expectation
-  void Verify(CompletionQueue* cq, bool ignore_ok) {
+  void Verify(CompletionQueue *cq, bool ignore_ok) {
     GPR_ASSERT(!expectations_.empty() || !maybe_expectations_.empty());
     while (!expectations_.empty()) {
       Next(cq, ignore_ok);
@@ -296,18 +296,18 @@ class Verifier {
   // This version of Verify stops after a certain deadline, and uses the
   // DoThenAsyncNext API
   // to call the lambda
-  void Verify(CompletionQueue* cq,
+  void Verify(CompletionQueue *cq,
               std::chrono::system_clock::time_point deadline,
-              const std::function<void(void)>& lambda) {
+              const std::function<void(void)> &lambda) {
     if (expectations_.empty()) {
       bool ok;
-      void* got_tag;
+      void *got_tag;
       EXPECT_EQ(DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda),
                 CompletionQueue::TIMEOUT);
     } else {
       while (!expectations_.empty()) {
         bool ok;
-        void* got_tag;
+        void *got_tag;
         EXPECT_EQ(DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda),
                   CompletionQueue::GOT_EVENT);
         GotTag(got_tag, ok, false);
@@ -316,7 +316,7 @@ class Verifier {
   }
 
  private:
-  void GotTag(void* got_tag, bool ok, bool ignore_ok) {
+  void GotTag(void *got_tag, bool ok, bool ignore_ok) {
     auto it = expectations_.find(got_tag);
     if (it != expectations_.end()) {
       if (!ignore_ok) {
@@ -342,11 +342,11 @@ class Verifier {
 
   struct MaybeExpect {
     bool ok;
-    bool* seen;
+    bool *seen;
   };
 
-  std::map<void*, bool> expectations_;
-  std::map<void*, MaybeExpect> maybe_expectations_;
+  std::map<void *, bool> expectations_;
+  std::map<void *, MaybeExpect> maybe_expectations_;
   bool lambda_run_;
 };
 

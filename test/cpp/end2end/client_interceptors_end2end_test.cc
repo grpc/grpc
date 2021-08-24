@@ -72,7 +72,7 @@ enum class ChannelType {
 /* Hijacks Echo RPC and fills in the expected values */
 class HijackingInterceptor : public experimental::Interceptor {
  public:
-  explicit HijackingInterceptor(experimental::ClientRpcInfo* info) {
+  explicit HijackingInterceptor(experimental::ClientRpcInfo *info) {
     info_ = info;
     // Make sure it is the right method
     EXPECT_EQ(strcmp("/grpc.testing.EchoTestService/Echo", info->method()), 0);
@@ -80,11 +80,11 @@ class HijackingInterceptor : public experimental::Interceptor {
     EXPECT_EQ(info->type(), experimental::ClientRpcInfo::Type::UNARY);
   }
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(experimental::InterceptorBatchMethods *methods) override {
     bool hijack = false;
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
-      auto* map = methods->GetSendInitialMetadata();
+      auto *map = methods->GetSendInitialMetadata();
       // Check that we can see the test metadata
       ASSERT_EQ(map->size(), static_cast<unsigned>(1));
       auto iterator = map->begin();
@@ -95,7 +95,7 @@ class HijackingInterceptor : public experimental::Interceptor {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
       EchoRequest req;
-      auto* buffer = methods->GetSerializedSendMessage();
+      auto *buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
       EXPECT_TRUE(
           SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
@@ -108,14 +108,14 @@ class HijackingInterceptor : public experimental::Interceptor {
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
-      auto* map = methods->GetRecvInitialMetadata();
+      auto *map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here for now
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
-      EchoResponse* resp =
-          static_cast<EchoResponse*>(methods->GetRecvMessage());
+      EchoResponse *resp =
+          static_cast<EchoResponse *>(methods->GetRecvMessage());
       // Check that we got the hijacked message, and re-insert the expected
       // message
       EXPECT_EQ(resp->message(), "Hello1");
@@ -123,38 +123,38 @@ class HijackingInterceptor : public experimental::Interceptor {
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_STATUS)) {
-      auto* map = methods->GetRecvTrailingMetadata();
+      auto *map = methods->GetRecvTrailingMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
+      for (const auto &pair : *map) {
         found = pair.first.starts_with("testkey") &&
                 pair.second.starts_with("testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
-      auto* status = methods->GetRecvStatus();
+      auto *status = methods->GetRecvStatus();
       EXPECT_EQ(status->ok(), true);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_INITIAL_METADATA)) {
-      auto* map = methods->GetRecvInitialMetadata();
+      auto *map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here at the moment
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_MESSAGE)) {
       // Insert a different message than expected
-      EchoResponse* resp =
-          static_cast<EchoResponse*>(methods->GetRecvMessage());
+      EchoResponse *resp =
+          static_cast<EchoResponse *>(methods->GetRecvMessage());
       resp->set_message("Hello1");
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
-      auto* map = methods->GetRecvTrailingMetadata();
+      auto *map = methods->GetRecvTrailingMetadata();
       // insert the metadata that we want
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
       map->insert(std::make_pair("testkey", "testvalue"));
-      auto* status = methods->GetRecvStatus();
+      auto *status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
     }
     if (hijack) {
@@ -165,14 +165,14 @@ class HijackingInterceptor : public experimental::Interceptor {
   }
 
  private:
-  experimental::ClientRpcInfo* info_;
+  experimental::ClientRpcInfo *info_;
 };
 
 class HijackingInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
-  experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
+  experimental::Interceptor *CreateClientInterceptor(
+      experimental::ClientRpcInfo *info) override {
     return new HijackingInterceptor(info);
   }
 };
@@ -180,17 +180,17 @@ class HijackingInterceptorFactory
 class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
  public:
   explicit HijackingInterceptorMakesAnotherCall(
-      experimental::ClientRpcInfo* info) {
+      experimental::ClientRpcInfo *info) {
     info_ = info;
     // Make sure it is the right method
     EXPECT_EQ(strcmp("/grpc.testing.EchoTestService/Echo", info->method()), 0);
     EXPECT_EQ(strcmp("TestSuffixForStats", info->suffix_for_stats()), 0);
   }
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(experimental::InterceptorBatchMethods *methods) override {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
-      auto* map = methods->GetSendInitialMetadata();
+      auto *map = methods->GetSendInitialMetadata();
       // Check that we can see the test metadata
       ASSERT_EQ(map->size(), static_cast<unsigned>(1));
       auto iterator = map->begin();
@@ -202,7 +202,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
       EchoRequest req;
-      auto* buffer = methods->GetSerializedSendMessage();
+      auto *buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
       EXPECT_TRUE(
           SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
@@ -230,52 +230,52 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
-      auto* map = methods->GetRecvInitialMetadata();
+      auto *map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here for now
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
-      EchoResponse* resp =
-          static_cast<EchoResponse*>(methods->GetRecvMessage());
+      EchoResponse *resp =
+          static_cast<EchoResponse *>(methods->GetRecvMessage());
       // Check that we got the hijacked message, and re-insert the expected
       // message
       EXPECT_EQ(resp->message(), "Hello");
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_STATUS)) {
-      auto* map = methods->GetRecvTrailingMetadata();
+      auto *map = methods->GetRecvTrailingMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
+      for (const auto &pair : *map) {
         found = pair.first.starts_with("testkey") &&
                 pair.second.starts_with("testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
-      auto* status = methods->GetRecvStatus();
+      auto *status = methods->GetRecvStatus();
       EXPECT_EQ(status->ok(), true);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_INITIAL_METADATA)) {
-      auto* map = methods->GetRecvInitialMetadata();
+      auto *map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here at the moment
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_MESSAGE)) {
       // Insert a different message than expected
-      EchoResponse* resp =
-          static_cast<EchoResponse*>(methods->GetRecvMessage());
+      EchoResponse *resp =
+          static_cast<EchoResponse *>(methods->GetRecvMessage());
       resp->set_message(resp_.message());
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
-      auto* map = methods->GetRecvTrailingMetadata();
+      auto *map = methods->GetRecvTrailingMetadata();
       // insert the metadata that we want
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
       map->insert(std::make_pair("testkey", "testvalue"));
-      auto* status = methods->GetRecvStatus();
+      auto *status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
     }
 
@@ -283,7 +283,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
   }
 
  private:
-  experimental::ClientRpcInfo* info_;
+  experimental::ClientRpcInfo *info_;
   std::multimap<std::string, std::string> metadata_map_;
   ClientContext ctx_;
   EchoRequest req_;
@@ -294,8 +294,8 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
 class HijackingInterceptorMakesAnotherCallFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
-  experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
+  experimental::Interceptor *CreateClientInterceptor(
+      experimental::ClientRpcInfo *info) override {
     return new HijackingInterceptorMakesAnotherCall(info);
   }
 };
@@ -303,12 +303,12 @@ class HijackingInterceptorMakesAnotherCallFactory
 class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
  public:
   explicit BidiStreamingRpcHijackingInterceptor(
-      experimental::ClientRpcInfo* info) {
+      experimental::ClientRpcInfo *info) {
     info_ = info;
     EXPECT_EQ(info->suffix_for_stats(), nullptr);
   }
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(experimental::InterceptorBatchMethods *methods) override {
     bool hijack = false;
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
@@ -318,7 +318,7 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
       EchoRequest req;
-      auto* buffer = methods->GetSerializedSendMessage();
+      auto *buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
       EXPECT_TRUE(
           SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
@@ -334,29 +334,29 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::POST_RECV_STATUS)) {
       CheckMetadata(*methods->GetRecvTrailingMetadata(), "testkey",
                     "testvalue");
-      auto* status = methods->GetRecvStatus();
+      auto *status = methods->GetRecvStatus();
       EXPECT_EQ(status->ok(), true);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_MESSAGE)) {
-      EchoResponse* resp =
-          static_cast<EchoResponse*>(methods->GetRecvMessage());
+      EchoResponse *resp =
+          static_cast<EchoResponse *>(methods->GetRecvMessage());
       resp->set_message(msg);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
-      EXPECT_EQ(static_cast<EchoResponse*>(methods->GetRecvMessage())
+      EXPECT_EQ(static_cast<EchoResponse *>(methods->GetRecvMessage())
                     ->message()
                     .find("Hello"),
                 0u);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
-      auto* map = methods->GetRecvTrailingMetadata();
+      auto *map = methods->GetRecvTrailingMetadata();
       // insert the metadata that we want
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
       map->insert(std::make_pair("testkey", "testvalue"));
-      auto* status = methods->GetRecvStatus();
+      auto *status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
     }
     if (hijack) {
@@ -367,7 +367,7 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
   }
 
  private:
-  experimental::ClientRpcInfo* info_;
+  experimental::ClientRpcInfo *info_;
   std::string msg;
 };
 
@@ -375,14 +375,14 @@ class ClientStreamingRpcHijackingInterceptor
     : public experimental::Interceptor {
  public:
   explicit ClientStreamingRpcHijackingInterceptor(
-      experimental::ClientRpcInfo* info) {
+      experimental::ClientRpcInfo *info) {
     info_ = info;
     EXPECT_EQ(
         strcmp("/grpc.testing.EchoTestService/RequestStream", info->method()),
         0);
     EXPECT_EQ(strcmp("TestSuffixForStats", info->suffix_for_stats()), 0);
   }
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(experimental::InterceptorBatchMethods *methods) override {
     bool hijack = false;
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
@@ -401,7 +401,7 @@ class ClientStreamingRpcHijackingInterceptor
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
-      auto* status = methods->GetRecvStatus();
+      auto *status = methods->GetRecvStatus();
       *status = Status(StatusCode::UNAVAILABLE, "Done sending 10 messages");
     }
     if (hijack) {
@@ -414,7 +414,7 @@ class ClientStreamingRpcHijackingInterceptor
   static bool GotFailedSend() { return got_failed_send_; }
 
  private:
-  experimental::ClientRpcInfo* info_;
+  experimental::ClientRpcInfo *info_;
   int count_ = 0;
   static bool got_failed_send_;
 };
@@ -424,8 +424,8 @@ bool ClientStreamingRpcHijackingInterceptor::got_failed_send_ = false;
 class ClientStreamingRpcHijackingInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
-  experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
+  experimental::Interceptor *CreateClientInterceptor(
+      experimental::ClientRpcInfo *info) override {
     return new ClientStreamingRpcHijackingInterceptor(info);
   }
 };
@@ -434,17 +434,17 @@ class ServerStreamingRpcHijackingInterceptor
     : public experimental::Interceptor {
  public:
   explicit ServerStreamingRpcHijackingInterceptor(
-      experimental::ClientRpcInfo* info) {
+      experimental::ClientRpcInfo *info) {
     info_ = info;
     got_failed_message_ = false;
     EXPECT_EQ(info->suffix_for_stats(), nullptr);
   }
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(experimental::InterceptorBatchMethods *methods) override {
     bool hijack = false;
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
-      auto* map = methods->GetSendInitialMetadata();
+      auto *map = methods->GetSendInitialMetadata();
       // Check that we can see the test metadata
       ASSERT_EQ(map->size(), static_cast<unsigned>(1));
       auto iterator = map->begin();
@@ -455,7 +455,7 @@ class ServerStreamingRpcHijackingInterceptor
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
       EchoRequest req;
-      auto* buffer = methods->GetSerializedSendMessage();
+      auto *buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
       EXPECT_TRUE(
           SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
@@ -468,16 +468,16 @@ class ServerStreamingRpcHijackingInterceptor
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_STATUS)) {
-      auto* map = methods->GetRecvTrailingMetadata();
+      auto *map = methods->GetRecvTrailingMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
+      for (const auto &pair : *map) {
         found = pair.first.starts_with("testkey") &&
                 pair.second.starts_with("testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
-      auto* status = methods->GetRecvStatus();
+      auto *status = methods->GetRecvStatus();
       EXPECT_EQ(status->ok(), true);
     }
     if (methods->QueryInterceptionHookPoint(
@@ -485,8 +485,8 @@ class ServerStreamingRpcHijackingInterceptor
       if (++count_ > 10) {
         methods->FailHijackedRecvMessage();
       }
-      EchoResponse* resp =
-          static_cast<EchoResponse*>(methods->GetRecvMessage());
+      EchoResponse *resp =
+          static_cast<EchoResponse *>(methods->GetRecvMessage());
       resp->set_message("Hello");
     }
     if (methods->QueryInterceptionHookPoint(
@@ -497,11 +497,11 @@ class ServerStreamingRpcHijackingInterceptor
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
-      auto* map = methods->GetRecvTrailingMetadata();
+      auto *map = methods->GetRecvTrailingMetadata();
       // insert the metadata that we want
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
       map->insert(std::make_pair("testkey", "testvalue"));
-      auto* status = methods->GetRecvStatus();
+      auto *status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
     }
     if (hijack) {
@@ -514,7 +514,7 @@ class ServerStreamingRpcHijackingInterceptor
   static bool GotFailedMessage() { return got_failed_message_; }
 
  private:
-  experimental::ClientRpcInfo* info_;
+  experimental::ClientRpcInfo *info_;
   static bool got_failed_message_;
   int count_ = 0;
 };
@@ -524,8 +524,8 @@ bool ServerStreamingRpcHijackingInterceptor::got_failed_message_ = false;
 class ServerStreamingRpcHijackingInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
-  experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
+  experimental::Interceptor *CreateClientInterceptor(
+      experimental::ClientRpcInfo *info) override {
     return new ServerStreamingRpcHijackingInterceptor(info);
   }
 };
@@ -533,8 +533,8 @@ class ServerStreamingRpcHijackingInterceptorFactory
 class BidiStreamingRpcHijackingInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
-  experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
+  experimental::Interceptor *CreateClientInterceptor(
+      experimental::ClientRpcInfo *info) override {
     return new BidiStreamingRpcHijackingInterceptor(info);
   }
 };
@@ -545,7 +545,7 @@ class BidiStreamingRpcHijackingInterceptorFactory
 // single RPC should be made on the channel before calling the Verify methods.
 class LoggingInterceptor : public experimental::Interceptor {
  public:
-  explicit LoggingInterceptor(experimental::ClientRpcInfo* /*info*/) {
+  explicit LoggingInterceptor(experimental::ClientRpcInfo * /*info*/) {
     pre_send_initial_metadata_ = false;
     pre_send_message_count_ = 0;
     pre_send_close_ = false;
@@ -554,10 +554,10 @@ class LoggingInterceptor : public experimental::Interceptor {
     post_recv_status_ = false;
   }
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(experimental::InterceptorBatchMethods *methods) override {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
-      auto* map = methods->GetSendInitialMetadata();
+      auto *map = methods->GetSendInitialMetadata();
       // Check that we can see the test metadata
       ASSERT_EQ(map->size(), static_cast<unsigned>(1));
       auto iterator = map->begin();
@@ -569,11 +569,11 @@ class LoggingInterceptor : public experimental::Interceptor {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
       EchoRequest req;
-      auto* send_msg = methods->GetSendMessage();
+      auto *send_msg = methods->GetSendMessage();
       if (send_msg == nullptr) {
         // We did not get the non-serialized form of the message. Get the
         // serialized form.
-        auto* buffer = methods->GetSerializedSendMessage();
+        auto *buffer = methods->GetSerializedSendMessage();
         auto copied_buffer = *buffer;
         EchoRequest req;
         EXPECT_TRUE(
@@ -582,10 +582,10 @@ class LoggingInterceptor : public experimental::Interceptor {
         EXPECT_EQ(req.message(), "Hello");
       } else {
         EXPECT_EQ(
-            static_cast<const EchoRequest*>(send_msg)->message().find("Hello"),
+            static_cast<const EchoRequest *>(send_msg)->message().find("Hello"),
             0u);
       }
-      auto* buffer = methods->GetSerializedSendMessage();
+      auto *buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
       EXPECT_TRUE(
           SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
@@ -600,15 +600,15 @@ class LoggingInterceptor : public experimental::Interceptor {
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
-      auto* map = methods->GetRecvInitialMetadata();
+      auto *map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here for now
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
       post_recv_initial_metadata_ = true;
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
-      EchoResponse* resp =
-          static_cast<EchoResponse*>(methods->GetRecvMessage());
+      EchoResponse *resp =
+          static_cast<EchoResponse *>(methods->GetRecvMessage());
       if (resp != nullptr) {
         EXPECT_TRUE(resp->message().find("Hello") == 0u);
         post_recv_message_count_++;
@@ -616,16 +616,16 @@ class LoggingInterceptor : public experimental::Interceptor {
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_STATUS)) {
-      auto* map = methods->GetRecvTrailingMetadata();
+      auto *map = methods->GetRecvTrailingMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
+      for (const auto &pair : *map) {
         found = pair.first.starts_with("testkey") &&
                 pair.second.starts_with("testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
-      auto* status = methods->GetRecvStatus();
+      auto *status = methods->GetRecvStatus();
       EXPECT_EQ(status->ok(), true);
       post_recv_status_ = true;
     }
@@ -703,16 +703,16 @@ bool LoggingInterceptor::post_recv_status_;
 class LoggingInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
-  experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
+  experimental::Interceptor *CreateClientInterceptor(
+      experimental::ClientRpcInfo *info) override {
     return new LoggingInterceptor(info);
   }
 };
 
 class TestScenario {
  public:
-  explicit TestScenario(const ChannelType& channel_type,
-                        const RPCType& rpc_type)
+  explicit TestScenario(const ChannelType &channel_type,
+                        const RPCType &rpc_type)
       : channel_type_(channel_type), rpc_type_(rpc_type) {}
 
   ChannelType channel_type() const { return channel_type_; }
@@ -733,7 +733,7 @@ std::vector<TestScenario> CreateTestScenarios() {
   rpc_types.emplace_back(RPCType::kSyncBidiStreaming);
   rpc_types.emplace_back(RPCType::kAsyncCQUnary);
   rpc_types.emplace_back(RPCType::kAsyncCQServerStreaming);
-  for (const auto& rpc_type : rpc_types) {
+  for (const auto &rpc_type : rpc_types) {
     scenarios.emplace_back(ChannelType::kHttpChannel, rpc_type);
 // TODO(yashykt): Maybe add support for non-posix sockets too
 #ifdef GRPC_POSIX_SOCKET
@@ -795,7 +795,7 @@ class ParameterizedClientInterceptorsEnd2endTest
     return nullptr;
   }
 
-  void SendRPC(const std::shared_ptr<Channel>& channel) {
+  void SendRPC(const std::shared_ptr<Channel> &channel) {
     switch (GetParam().rpc_type()) {
       case RPCType::kSyncUnary:
         MakeCall(channel);
@@ -1236,7 +1236,7 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, HijackingGlobalInterceptor) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

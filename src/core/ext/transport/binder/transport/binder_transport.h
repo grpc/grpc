@@ -67,9 +67,9 @@ struct grpc_binder_transport {
 
   // The callback and the data for the callback when the stream is connected
   // between client and server.
-  void (*accept_stream_fn)(void* user_data, grpc_transport* transport,
-                           const void* server_data) = nullptr;
-  void* accept_stream_user_data = nullptr;
+  void (*accept_stream_fn)(void *user_data, grpc_transport *transport,
+                           const void *server_data) = nullptr;
+  void *accept_stream_user_data = nullptr;
 
   grpc_core::ConnectivityStateTracker state_tracker;
 
@@ -78,9 +78,9 @@ struct grpc_binder_transport {
   grpc_core::RefCount refs;
 };
 
-grpc_transport* grpc_create_binder_transport_client(
+grpc_transport *grpc_create_binder_transport_client(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder);
-grpc_transport* grpc_create_binder_transport_server(
+grpc_transport *grpc_create_binder_transport_server(
     std::unique_ptr<grpc_binder::Binder> client_binder);
 
 #endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_TRANSPORT_H

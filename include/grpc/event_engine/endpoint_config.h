@@ -35,7 +35,8 @@ namespace experimental {
 class EndpointConfig {
  public:
   virtual ~EndpointConfig() = default;
-  using Setting = absl::variant<absl::monostate, int, absl::string_view, void*>;
+  using Setting =
+      absl::variant<absl::monostate, int, absl::string_view, void *>;
   /// Returns an EndpointConfig Setting. If there is no Setting associated with
   /// \a key in the EndpointConfig, an \a absl::monostate type will be
   /// returned. Caller does not take ownership of resulting value.

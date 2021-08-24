@@ -32,15 +32,15 @@
 namespace grpc {
 namespace testing {
 namespace {
-void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 }  // namespace
 
-Status CliCall::Call(const std::shared_ptr<grpc::Channel>& channel,
-                     const std::string& method, const std::string& request,
-                     std::string* response,
-                     const OutgoingMetadataContainer& metadata,
-                     IncomingMetadataContainer* server_initial_metadata,
-                     IncomingMetadataContainer* server_trailing_metadata) {
+Status CliCall::Call(const std::shared_ptr<grpc::Channel> &channel,
+                     const std::string &method, const std::string &request,
+                     std::string *response,
+                     const OutgoingMetadataContainer &metadata,
+                     IncomingMetadataContainer *server_initial_metadata,
+                     IncomingMetadataContainer *server_trailing_metadata) {
   CliCall call(channel, method, metadata);
   call.Write(request);
   call.WritesDone();
@@ -50,9 +50,9 @@ Status CliCall::Call(const std::shared_ptr<grpc::Channel>& channel,
   return call.Finish(server_trailing_metadata);
 }
 
-CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel,
-                 const std::string& method,
-                 const OutgoingMetadataContainer& metadata, CliArgs args)
+CliCall::CliCall(const std::shared_ptr<grpc::Channel> &channel,
+                 const std::string &method,
+                 const OutgoingMetadataContainer &metadata, CliArgs args)
     : stub_(new grpc::GenericStub(channel)) {
   gpr_mu_init(&write_mu_);
   gpr_cv_init(&write_cv_);
@@ -80,7 +80,7 @@ CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel,
 
   call_ = stub_->PrepareCall(&ctx_, method, &cq_);
   call_->StartCall(tag(1));
-  void* got_tag;
+  void *got_tag;
   bool ok;
   cq_.Next(&got_tag, &ok);
   GPR_ASSERT(ok);
@@ -91,8 +91,8 @@ CliCall::~CliCall() {
   gpr_mu_destroy(&write_mu_);
 }
 
-void CliCall::Write(const std::string& request) {
-  void* got_tag;
+void CliCall::Write(const std::string &request) {
+  void *got_tag;
   bool ok;
 
   gpr_slice s = gpr_slice_from_copied_buffer(request.data(), request.size());
@@ -103,9 +103,9 @@ void CliCall::Write(const std::string& request) {
   GPR_ASSERT(ok);
 }
 
-bool CliCall::Read(std::string* response,
-                   IncomingMetadataContainer* server_initial_metadata) {
-  void* got_tag;
+bool CliCall::Read(std::string *response,
+                   IncomingMetadataContainer *server_initial_metadata) {
+  void *got_tag;
   bool ok;
 
   grpc::ByteBuffer recv_buffer;
@@ -119,7 +119,7 @@ bool CliCall::Read(std::string* response,
 
   response->clear();
   for (size_t i = 0; i < slices.size(); i++) {
-    response->append(reinterpret_cast<const char*>(slices[i].begin()),
+    response->append(reinterpret_cast<const char *>(slices[i].begin()),
                      slices[i].size());
   }
   if (server_initial_metadata) {
@@ -129,7 +129,7 @@ bool CliCall::Read(std::string* response,
 }
 
 void CliCall::WritesDone() {
-  void* got_tag;
+  void *got_tag;
   bool ok;
 
   call_->WritesDone(tag(4));
@@ -137,7 +137,7 @@ void CliCall::WritesDone() {
   GPR_ASSERT(ok);
 }
 
-void CliCall::WriteAndWait(const std::string& request) {
+void CliCall::WriteAndWait(const std::string &request) {
   grpc::Slice req_slice(request);
   grpc::ByteBuffer send_buffer(&req_slice, 1);
 
@@ -161,8 +161,8 @@ void CliCall::WritesDoneAndWait() {
 }
 
 bool CliCall::ReadAndMaybeNotifyWrite(
-    std::string* response, IncomingMetadataContainer* server_initial_metadata) {
-  void* got_tag;
+    std::string *response, IncomingMetadataContainer *server_initial_metadata) {
+  void *got_tag;
   bool ok;
   grpc::ByteBuffer recv_buffer;
 
@@ -201,7 +201,7 @@ bool CliCall::ReadAndMaybeNotifyWrite(
   GPR_ASSERT(recv_buffer.Dump(&slices).ok());
   response->clear();
   for (size_t i = 0; i < slices.size(); i++) {
-    response->append(reinterpret_cast<const char*>(slices[i].begin()),
+    response->append(reinterpret_cast<const char *>(slices[i].begin()),
                      slices[i].size());
   }
   if (server_initial_metadata) {
@@ -210,8 +210,8 @@ bool CliCall::ReadAndMaybeNotifyWrite(
   return true;
 }
 
-Status CliCall::Finish(IncomingMetadataContainer* server_trailing_metadata) {
-  void* got_tag;
+Status CliCall::Finish(IncomingMetadataContainer *server_trailing_metadata) {
+  void *got_tag;
   bool ok;
   grpc::Status status;
 

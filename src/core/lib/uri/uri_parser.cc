@@ -158,23 +158,23 @@ URI::URI(std::string scheme, std::string authority, std::string path,
       path_(std::move(path)),
       query_parameter_pairs_(std::move(query_parameter_pairs)),
       fragment_(std::move(fragment)) {
-  for (const auto& kv : query_parameter_pairs_) {
+  for (const auto &kv : query_parameter_pairs_) {
     query_parameter_map_[kv.key] = kv.value;
   }
 }
 
-URI::URI(const URI& other)
+URI::URI(const URI &other)
     : scheme_(other.scheme_),
       authority_(other.authority_),
       path_(other.path_),
       query_parameter_pairs_(other.query_parameter_pairs_),
       fragment_(other.fragment_) {
-  for (const auto& kv : query_parameter_pairs_) {
+  for (const auto &kv : query_parameter_pairs_) {
     query_parameter_map_[kv.key] = kv.value;
   }
 }
 
-URI& URI::operator=(const URI& other) {
+URI &URI::operator=(const URI &other) {
   if (this == &other) {
     return *this;
   }
@@ -183,7 +183,7 @@ URI& URI::operator=(const URI& other) {
   path_ = other.path_;
   query_parameter_pairs_ = other.query_parameter_pairs_;
   fragment_ = other.fragment_;
-  for (const auto& kv : query_parameter_pairs_) {
+  for (const auto &kv : query_parameter_pairs_) {
     query_parameter_map_[kv.key] = kv.value;
   }
   return *this;

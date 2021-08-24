@@ -82,25 +82,25 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Factory function to get or create the global XdsClient instance.
   // If *error is not GRPC_ERROR_NONE upon return, then there was
   // an error initializing the client.
-  static RefCountedPtr<XdsClient> GetOrCreate(const grpc_channel_args* args,
-                                              grpc_error_handle* error);
+  static RefCountedPtr<XdsClient> GetOrCreate(const grpc_channel_args *args,
+                                              grpc_error_handle *error);
 
   // Most callers should not instantiate directly.  Use GetOrCreate() instead.
   XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
-            const grpc_channel_args* args);
+            const grpc_channel_args *args);
   ~XdsClient() override;
 
-  const XdsBootstrap& bootstrap() const {
+  const XdsBootstrap &bootstrap() const {
     // bootstrap_ is guaranteed to be non-null since XdsClient::GetOrCreate()
     // would return a null object if bootstrap_ was null.
     return *bootstrap_;
   }
 
-  CertificateProviderStore& certificate_provider_store() {
+  CertificateProviderStore &certificate_provider_store() {
     return *certificate_provider_store_;
   }
 
-  grpc_pollset_set* interested_parties() const { return interested_parties_; }
+  grpc_pollset_set *interested_parties() const { return interested_parties_; }
 
   // TODO(roth): When we add federation, there will be multiple channels
   // inside the XdsClient, and the set of channels may change over time,
@@ -111,8 +111,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // want to make this a bit more selective such that only those
   // channels on which a given parent channel is actually requesting
   // resources will actually be marked as its children.
-  void AddChannelzLinkage(channelz::ChannelNode* parent_channelz_node);
-  void RemoveChannelzLinkage(channelz::ChannelNode* parent_channelz_node);
+  void AddChannelzLinkage(channelz::ChannelNode *parent_channelz_node);
+  void RemoveChannelzLinkage(channelz::ChannelNode *parent_channelz_node);
 
   void Orphan() override;
 
@@ -126,7 +126,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   void WatchListenerData(absl::string_view listener_name,
                          std::unique_ptr<ListenerWatcherInterface> watcher);
   void CancelListenerDataWatch(absl::string_view listener_name,
-                               ListenerWatcherInterface* watcher,
+                               ListenerWatcherInterface *watcher,
                                bool delay_unsubscription = false);
 
   // Start and cancel route config data watch for a listener.
@@ -140,7 +140,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
       absl::string_view route_config_name,
       std::unique_ptr<RouteConfigWatcherInterface> watcher);
   void CancelRouteConfigDataWatch(absl::string_view route_config_name,
-                                  RouteConfigWatcherInterface* watcher,
+                                  RouteConfigWatcherInterface *watcher,
                                   bool delay_unsubscription = false);
 
   // Start and cancel cluster data watch for a cluster.
@@ -153,7 +153,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   void WatchClusterData(absl::string_view cluster_name,
                         std::unique_ptr<ClusterWatcherInterface> watcher);
   void CancelClusterDataWatch(absl::string_view cluster_name,
-                              ClusterWatcherInterface* watcher,
+                              ClusterWatcherInterface *watcher,
                               bool delay_unsubscription = false);
 
   // Start and cancel endpoint data watch for a cluster.
@@ -166,7 +166,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   void WatchEndpointData(absl::string_view eds_service_name,
                          std::unique_ptr<EndpointWatcherInterface> watcher);
   void CancelEndpointDataWatch(absl::string_view eds_service_name,
-                               EndpointWatcherInterface* watcher,
+                               EndpointWatcherInterface *watcher,
                                bool delay_unsubscription = false);
 
   // Adds and removes drop stats for cluster_name and eds_service_name.
@@ -176,7 +176,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   void RemoveClusterDropStats(absl::string_view /*lrs_server*/,
                               absl::string_view cluster_name,
                               absl::string_view eds_service_name,
-                              XdsClusterDropStats* cluster_drop_stats);
+                              XdsClusterDropStats *cluster_drop_stats);
 
   // Adds and removes locality stats for cluster_name and eds_service_name
   // for the specified locality.
@@ -187,8 +187,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
   void RemoveClusterLocalityStats(
       absl::string_view /*lrs_server*/, absl::string_view cluster_name,
       absl::string_view eds_service_name,
-      const RefCountedPtr<XdsLocalityName>& locality,
-      XdsClusterLocalityStats* cluster_locality_stats);
+      const RefCountedPtr<XdsLocalityName> &locality,
+      XdsClusterLocalityStats *cluster_locality_stats);
 
   // Resets connection backoff state.
   void ResetBackoff();
@@ -205,7 +205,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Helpers for encoding the XdsClient object in channel args.
   grpc_arg MakeChannelArg() const;
   static RefCountedPtr<XdsClient> GetFromChannelArgs(
-      const grpc_channel_args& args);
+      const grpc_channel_args &args);
 
  private:
   // Contains a channel to the xds server and all the data related to the
@@ -224,15 +224,15 @@ class XdsClient : public DualRefCounted<XdsClient> {
     class LrsCallState;
 
     ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
-                 const XdsBootstrap::XdsServer& server);
+                 const XdsBootstrap::XdsServer &server);
     ~ChannelState() override;
 
     void Orphan() override;
 
-    grpc_channel* channel() const { return channel_; }
-    XdsClient* xds_client() const { return xds_client_.get(); }
-    AdsCallState* ads_calld() const;
-    LrsCallState* lrs_calld() const;
+    grpc_channel *channel() const { return channel_; }
+    XdsClient *xds_client() const { return xds_client_.get(); }
+    AdsCallState *ads_calld() const;
+    LrsCallState *lrs_calld() const;
 
     void MaybeStartLrsCall();
     void StopLrsCall();
@@ -243,9 +243,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
     void StartConnectivityWatchLocked();
     void CancelConnectivityWatchLocked();
 
-    void SubscribeLocked(const std::string& type_url, const std::string& name)
+    void SubscribeLocked(const std::string &type_url, const std::string &name)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-    void UnsubscribeLocked(const std::string& type_url, const std::string& name,
+    void UnsubscribeLocked(const std::string &type_url, const std::string &name,
                            bool delay_unsubscription)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
@@ -255,12 +255,12 @@ class XdsClient : public DualRefCounted<XdsClient> {
     // The owning xds client.
     WeakRefCountedPtr<XdsClient> xds_client_;
 
-    const XdsBootstrap::XdsServer& server_;
+    const XdsBootstrap::XdsServer &server_;
 
     // The channel and its status.
-    grpc_channel* channel_;
+    grpc_channel *channel_;
     bool shutting_down_ = false;
-    StateWatcher* watcher_ = nullptr;
+    StateWatcher *watcher_ = nullptr;
 
     // The retryable XDS calls.
     OrphanablePtr<RetryableCall<AdsCallState>> ads_calld_;
@@ -268,7 +268,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   };
 
   struct ListenerState {
-    std::map<ListenerWatcherInterface*,
+    std::map<ListenerWatcherInterface *,
              std::unique_ptr<ListenerWatcherInterface>>
         watchers;
     // The latest data seen from LDS.
@@ -277,7 +277,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   };
 
   struct RouteConfigState {
-    std::map<RouteConfigWatcherInterface*,
+    std::map<RouteConfigWatcherInterface *,
              std::unique_ptr<RouteConfigWatcherInterface>>
         watchers;
     // The latest data seen from RDS.
@@ -286,7 +286,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
   };
 
   struct ClusterState {
-    std::map<ClusterWatcherInterface*, std::unique_ptr<ClusterWatcherInterface>>
+    std::map<ClusterWatcherInterface *,
+             std::unique_ptr<ClusterWatcherInterface>>
         watchers;
     // The latest data seen from CDS.
     absl::optional<XdsApi::CdsUpdate> update;
@@ -294,7 +295,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   };
 
   struct EndpointState {
-    std::map<EndpointWatcherInterface*,
+    std::map<EndpointWatcherInterface *,
              std::unique_ptr<EndpointWatcherInterface>>
         watchers;
     // The latest data seen from EDS.
@@ -304,11 +305,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   struct LoadReportState {
     struct LocalityState {
-      XdsClusterLocalityStats* locality_stats = nullptr;
+      XdsClusterLocalityStats *locality_stats = nullptr;
       XdsClusterLocalityStats::Snapshot deleted_locality_stats;
     };
 
-    XdsClusterDropStats* drop_stats = nullptr;
+    XdsClusterDropStats *drop_stats = nullptr;
     XdsClusterDropStats::Snapshot deleted_drop_stats;
     std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
              XdsLocalityName::Less>
@@ -321,13 +322,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(
-      bool send_all_clusters, const std::set<std::string>& clusters)
+      bool send_all_clusters, const std::set<std::string> &clusters)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
-  grpc_channel_args* args_;
+  grpc_channel_args *args_;
   const grpc_millis request_timeout_;
-  grpc_pollset_set* interested_parties_;
+  grpc_pollset_set *interested_parties_;
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
   XdsApi api_;
 
@@ -363,11 +364,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
 };
 
 namespace internal {
-void SetXdsChannelArgsForTest(grpc_channel_args* args);
+void SetXdsChannelArgsForTest(grpc_channel_args *args);
 void UnsetGlobalXdsClientForTest();
 // Sets bootstrap config to be used when no env var is set.
 // Does not take ownership of config.
-void SetXdsFallbackBootstrapConfig(const char* config);
+void SetXdsFallbackBootstrapConfig(const char *config);
 }  // namespace internal
 
 }  // namespace grpc_core

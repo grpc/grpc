@@ -33,17 +33,17 @@ namespace testing {
 class BenchmarkCallbackServiceImpl final
     : public BenchmarkService::CallbackService {
  public:
-  ::grpc::ServerUnaryReactor* UnaryCall(::grpc::CallbackServerContext* context,
-                                        const SimpleRequest* request,
-                                        SimpleResponse* response) override {
-    auto* reactor = context->DefaultReactor();
+  ::grpc::ServerUnaryReactor *UnaryCall(::grpc::CallbackServerContext *context,
+                                        const SimpleRequest *request,
+                                        SimpleResponse *response) override {
+    auto *reactor = context->DefaultReactor();
     reactor->Finish(SetResponse(request, response));
     return reactor;
   }
 
   ::grpc::ServerBidiReactor<::grpc::testing::SimpleRequest,
-                            ::grpc::testing::SimpleResponse>*
-  StreamingCall(::grpc::CallbackServerContext*) override {
+                            ::grpc::testing::SimpleResponse>
+      *StreamingCall(::grpc::CallbackServerContext *) override {
     class Reactor
         : public ::grpc::ServerBidiReactor<::grpc::testing::SimpleRequest,
                                            ::grpc::testing::SimpleResponse> {
@@ -81,8 +81,8 @@ class BenchmarkCallbackServiceImpl final
   }
 
  private:
-  static Status SetResponse(const SimpleRequest* request,
-                            SimpleResponse* response) {
+  static Status SetResponse(const SimpleRequest *request,
+                            SimpleResponse *response) {
     if (request->response_size() > 0) {
       if (!Server::SetPayload(request->response_type(),
                               request->response_size(),
@@ -96,7 +96,7 @@ class BenchmarkCallbackServiceImpl final
 
 class CallbackServer final : public grpc::testing::Server {
  public:
-  explicit CallbackServer(const ServerConfig& config) : Server(config) {
+  explicit CallbackServer(const ServerConfig &config) : Server(config) {
     std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
 
     auto port_num = port();
@@ -121,7 +121,7 @@ class CallbackServer final : public grpc::testing::Server {
   }
 
   std::shared_ptr<Channel> InProcessChannel(
-      const ChannelArguments& args) override {
+      const ChannelArguments &args) override {
     return impl_->InProcessChannel(args);
   }
 
@@ -131,7 +131,7 @@ class CallbackServer final : public grpc::testing::Server {
 };
 
 std::unique_ptr<grpc::testing::Server> CreateCallbackServer(
-    const ServerConfig& config) {
+    const ServerConfig &config) {
   return std::unique_ptr<Server>(new CallbackServer(config));
 }
 

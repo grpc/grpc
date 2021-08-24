@@ -31,25 +31,25 @@
 
 /* This method sets peer_rpc_versions for ALTS handshaker response. */
 bool grpc_gcp_handshaker_resp_set_peer_rpc_versions(
-    grpc_gcp_HandshakerResp* resp, upb_arena* arena, uint32_t max_major,
+    grpc_gcp_HandshakerResp *resp, upb_arena *arena, uint32_t max_major,
     uint32_t max_minor, uint32_t min_major, uint32_t min_minor);
 
 /* This method de-serializes ALTS handshaker request. */
-grpc_gcp_HandshakerReq* grpc_gcp_handshaker_req_decode(grpc_slice slice,
-                                                       upb_arena* arena);
+grpc_gcp_HandshakerReq *grpc_gcp_handshaker_req_decode(grpc_slice slice,
+                                                       upb_arena *arena);
 
 /* This method checks equality of two ALTS handshaker responses. */
-bool grpc_gcp_handshaker_resp_equals(const grpc_gcp_HandshakerResp* l_resp,
-                                     const grpc_gcp_HandshakerResp* r_resp);
+bool grpc_gcp_handshaker_resp_equals(const grpc_gcp_HandshakerResp *l_resp,
+                                     const grpc_gcp_HandshakerResp *r_resp);
 
 /* This method checks equality of two handshaker response results. */
 bool grpc_gcp_handshaker_resp_result_equals(
-    const grpc_gcp_HandshakerResult* l_result,
-    const grpc_gcp_HandshakerResult* r_result);
+    const grpc_gcp_HandshakerResult *l_result,
+    const grpc_gcp_HandshakerResult *r_result);
 
 /* This method checks equality of two handshaker response statuses. */
 bool grpc_gcp_handshaker_resp_status_equals(
-    const grpc_gcp_HandshakerStatus* l_status,
-    const grpc_gcp_HandshakerStatus* r_status);
+    const grpc_gcp_HandshakerStatus *l_status,
+    const grpc_gcp_HandshakerStatus *r_status);
 
 #endif  // GRPC_TEST_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_SERVICE_API_TEST_LIB_H

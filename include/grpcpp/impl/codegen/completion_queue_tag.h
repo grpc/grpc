@@ -45,7 +45,7 @@ class CompletionQueueTag {
   /// application (e.g., server shutdown, for server unimplemented method
   /// responses, or for cases where a server-side RPC doesn't have a completion
   /// notification registered using AsyncNotifyWhenDone)
-  virtual bool FinalizeResult(void** tag, bool* status) = 0;
+  virtual bool FinalizeResult(void **tag, bool *status) = 0;
 };
 }  // namespace internal
 

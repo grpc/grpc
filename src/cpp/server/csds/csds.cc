@@ -54,8 +54,8 @@ absl::StatusOr<ClientConfig> DumpClientConfig() {
 }  // namespace
 
 Status ClientStatusDiscoveryService::StreamClientStatus(
-    ServerContext* /*context*/,
-    ServerReaderWriter<ClientStatusResponse, ClientStatusRequest>* stream) {
+    ServerContext * /*context*/,
+    ServerReaderWriter<ClientStatusResponse, ClientStatusRequest> *stream) {
   ClientStatusRequest request;
   while (stream->Read(&request)) {
     ClientStatusResponse response;
@@ -75,8 +75,8 @@ Status ClientStatusDiscoveryService::StreamClientStatus(
 }
 
 Status ClientStatusDiscoveryService::FetchClientStatus(
-    ServerContext* /*context*/, const ClientStatusRequest* /*request*/,
-    ClientStatusResponse* response) {
+    ServerContext * /*context*/, const ClientStatusRequest * /*request*/,
+    ClientStatusResponse *response) {
   absl::StatusOr<ClientConfig> s = DumpClientConfig();
   if (!s.ok()) {
     if (s.status().code() == absl::StatusCode::kUnavailable) {

@@ -31,7 +31,7 @@ namespace grpc_core {
 class CertificateProviderRegistry {
  public:
   // Returns the factory for the plugin keyed by name.
-  static CertificateProviderFactory* LookupCertificateProviderFactory(
+  static CertificateProviderFactory *LookupCertificateProviderFactory(
       absl::string_view name);
 
   // The following methods are used to create and populate the

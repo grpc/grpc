@@ -41,15 +41,15 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static grpc_completion_queue* cq;
-static grpc_server* server;
-static grpc_call* call;
+static grpc_completion_queue *cq;
+static grpc_server *server;
+static grpc_call *call;
 static grpc_call_details call_details;
 static grpc_metadata_array request_metadata_recv;
 static grpc_metadata_array initial_metadata_send;
-static grpc_byte_buffer* payload_buffer = nullptr;
+static grpc_byte_buffer *payload_buffer = nullptr;
 /* Used to drain the terminal read in unary calls. */
-static grpc_byte_buffer* terminal_buffer = nullptr;
+static grpc_byte_buffer *terminal_buffer = nullptr;
 
 static grpc_op read_op;
 static grpc_op metadata_send_op;
@@ -59,7 +59,7 @@ static int was_cancelled = 2;
 static grpc_op unary_ops[6];
 static int got_sigint = 0;
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
 typedef enum {
   FLING_SERVER_NEW_REQUEST = 1,
@@ -85,7 +85,7 @@ static void request_call(void) {
 }
 
 static void handle_unary_method(void) {
-  grpc_op* op;
+  grpc_op *op;
   grpc_call_error error;
 
   grpc_metadata_array_init(&initial_metadata_send);
@@ -120,7 +120,7 @@ static void handle_unary_method(void) {
 
 static void send_initial_metadata(void) {
   grpc_call_error error;
-  void* tagarg = tag(FLING_SERVER_SEND_INIT_METADATA_FOR_STREAMING);
+  void *tagarg = tag(FLING_SERVER_SEND_INIT_METADATA_FOR_STREAMING);
   grpc_metadata_array_init(&initial_metadata_send);
   metadata_send_op.op = GRPC_OP_SEND_INITIAL_METADATA;
   metadata_send_op.data.send_initial_metadata.count = 0;
@@ -140,7 +140,7 @@ static void start_read_op(int t) {
 
 static void start_write_op(void) {
   grpc_call_error error;
-  void* tagarg = tag(FLING_SERVER_WRITE_FOR_STREAMING);
+  void *tagarg = tag(FLING_SERVER_WRITE_FOR_STREAMING);
   /* Starting write at server */
   write_op.op = GRPC_OP_SEND_MESSAGE;
   if (payload_buffer == nullptr) {
@@ -153,7 +153,7 @@ static void start_write_op(void) {
 
 static void start_send_status(void) {
   grpc_call_error error;
-  void* tagarg = tag(FLING_SERVER_SEND_STATUS_FOR_STREAMING);
+  void *tagarg = tag(FLING_SERVER_SEND_STATUS_FOR_STREAMING);
   status_op[0].op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   status_op[0].data.send_status_from_server.status = GRPC_STATUS_OK;
   status_op[0].data.send_status_from_server.trailing_metadata_count = 0;
@@ -169,19 +169,19 @@ static void start_send_status(void) {
    When that is resolved, please remove the #include <unistd.h> above. */
 static void sigint_handler(int /*x*/) { _exit(0); }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc_event ev;
-  call_state* s;
+  call_state *s;
   std::string addr_buf;
-  gpr_cmdline* cl;
-  grpc_completion_queue* shutdown_cq;
+  gpr_cmdline *cl;
+  grpc_completion_queue *shutdown_cq;
   int shutdown_started = 0;
   int shutdown_finished = 0;
 
   int secure = 0;
-  const char* addr = nullptr;
+  const char *addr = nullptr;
 
-  char* fake_argv[1];
+  char *fake_argv[1];
 
   gpr_timers_set_log_filename("latency_trace.fling_server.txt");
 
@@ -208,7 +208,7 @@ int main(int argc, char** argv) {
   if (secure) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
-    grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
+    grpc_server_credentials *ssl_creds = grpc_ssl_server_credentials_create(
         nullptr, &pem_key_cert_pair, 1, 0, nullptr);
     server = grpc_server_create(nullptr, nullptr);
     GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
@@ -250,7 +250,7 @@ int main(int argc, char** argv) {
         gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                      gpr_time_from_micros(1000000, GPR_TIMESPAN)),
         nullptr);
-    s = static_cast<call_state*>(ev.tag);
+    s = static_cast<call_state *>(ev.tag);
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
         switch (reinterpret_cast<intptr_t>(s)) {

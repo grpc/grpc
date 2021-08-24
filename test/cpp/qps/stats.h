@@ -27,7 +27,7 @@ namespace grpc {
 namespace testing {
 
 template <class T, class F>
-double sum(const T& container, F functor) {
+double sum(const T &container, F functor) {
   double r = 0;
   for (auto v = container.begin(); v != container.end(); v++) {
     r += functor(*v);
@@ -36,7 +36,7 @@ double sum(const T& container, F functor) {
 }
 
 template <class T, class F>
-double average(const T& container, F functor) {
+double average(const T &container, F functor) {
   return sum(container, functor) / container.size();
 }
 

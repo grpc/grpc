@@ -44,31 +44,31 @@ class PidController {
     double max_control_value() const { return max_control_value_; }
     double integral_range() const { return integral_range_; }
 
-    Args& set_gain_p(double gain_p) {
+    Args &set_gain_p(double gain_p) {
       gain_p_ = gain_p;
       return *this;
     }
-    Args& set_gain_i(double gain_i) {
+    Args &set_gain_i(double gain_i) {
       gain_i_ = gain_i;
       return *this;
     }
-    Args& set_gain_d(double gain_d) {
+    Args &set_gain_d(double gain_d) {
       gain_d_ = gain_d;
       return *this;
     }
-    Args& set_initial_control_value(double initial_control_value) {
+    Args &set_initial_control_value(double initial_control_value) {
       initial_control_value_ = initial_control_value;
       return *this;
     }
-    Args& set_min_control_value(double min_control_value) {
+    Args &set_min_control_value(double min_control_value) {
       min_control_value_ = min_control_value;
       return *this;
     }
-    Args& set_max_control_value(double max_control_value) {
+    Args &set_max_control_value(double max_control_value) {
       max_control_value_ = max_control_value;
       return *this;
     }
-    Args& set_integral_range(double integral_range) {
+    Args &set_integral_range(double integral_range) {
       integral_range_ = integral_range;
       return *this;
     }
@@ -83,7 +83,7 @@ class PidController {
     double integral_range_ = std::numeric_limits<double>::max();
   };
 
-  explicit PidController(const Args& args);
+  explicit PidController(const Args &args);
 
   /// Reset the controller internal state: useful when the environment has
   /// changed significantly

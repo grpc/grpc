@@ -29,7 +29,7 @@ namespace testing {
 namespace {
 
 TEST(GoogleMeshCaConfigTest, Basic) {
-  const char* json_str =
+  const char *json_str =
       "{"
       "  \"server\": {"
       "    \"api_type\": \"GRPC\","
@@ -98,7 +98,7 @@ TEST(GoogleMeshCaConfigTest, Basic) {
 }
 
 TEST(GoogleMeshCaConfigTest, Defaults) {
-  const char* json_str =
+  const char *json_str =
       "{"
       "  \"server\": {"
       "    \"api_type\": \"GRPC\","
@@ -149,7 +149,7 @@ TEST(GoogleMeshCaConfigTest, Defaults) {
 }
 
 TEST(GoogleMeshCaConfigTest, WrongExpectedValues) {
-  const char* json_str =
+  const char *json_str =
       "{"
       "  \"server\": {"
       "    \"api_type\": \"REST\","
@@ -185,7 +185,7 @@ TEST(GoogleMeshCaConfigTest, WrongExpectedValues) {
 }
 
 TEST(GoogleMeshCaConfigTest, WrongTypes) {
-  const char* json_str =
+  const char *json_str =
       "{"
       "  \"server\": {"
       "    \"api_type\": 123,"
@@ -249,7 +249,7 @@ TEST(GoogleMeshCaConfigTest, WrongTypes) {
 }
 
 TEST(GoogleMeshCaConfigTest, GrpcServicesNotAnArray) {
-  const char* json_str =
+  const char *json_str =
       "{"
       "  \"server\": {"
       "    \"api_type\": \"GRPC\","
@@ -272,7 +272,7 @@ TEST(GoogleMeshCaConfigTest, GrpcServicesNotAnArray) {
 }
 
 TEST(GoogleMeshCaConfigTest, GoogleGrpcNotAnObject) {
-  const char* json_str =
+  const char *json_str =
       "{"
       "  \"server\": {"
       "    \"api_type\": \"GRPC\","
@@ -297,7 +297,7 @@ TEST(GoogleMeshCaConfigTest, GoogleGrpcNotAnObject) {
 }
 
 TEST(GoogleMeshCaConfigTest, CallCredentialsNotAnArray) {
-  const char* json_str =
+  const char *json_str =
       "{"
       "  \"server\": {"
       "    \"api_type\": \"GRPC\","
@@ -324,7 +324,7 @@ TEST(GoogleMeshCaConfigTest, CallCredentialsNotAnArray) {
 }
 
 TEST(GoogleMeshCaConfigTest, StsServiceNotAnObject) {
-  const char* json_str =
+  const char *json_str =
       "{"
       "  \"server\": {"
       "    \"api_type\": \"GRPC\","
@@ -357,7 +357,7 @@ TEST(GoogleMeshCaConfigTest, StsServiceNotAnObject) {
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();

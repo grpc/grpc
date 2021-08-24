@@ -42,12 +42,12 @@ GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_stacktrace_minloglevel, "",
 static constexpr gpr_atm GPR_LOG_SEVERITY_UNSET = GPR_LOG_SEVERITY_ERROR + 10;
 static constexpr gpr_atm GPR_LOG_SEVERITY_NONE = GPR_LOG_SEVERITY_ERROR + 11;
 
-void gpr_default_log(gpr_log_func_args* args);
+void gpr_default_log(gpr_log_func_args *args);
 static gpr_atm g_log_func = reinterpret_cast<gpr_atm>(gpr_default_log);
 static gpr_atm g_min_severity_to_print = GPR_LOG_SEVERITY_UNSET;
 static gpr_atm g_min_severity_to_print_stacktrace = GPR_LOG_SEVERITY_UNSET;
 
-const char* gpr_log_severity_string(gpr_log_severity severity) {
+const char *gpr_log_severity_string(gpr_log_severity severity) {
   switch (severity) {
     case GPR_LOG_SEVERITY_DEBUG:
       return "D";
@@ -73,8 +73,8 @@ int gpr_should_log_stacktrace(gpr_log_severity severity) {
              : 0;
 }
 
-void gpr_log_message(const char* file, int line, gpr_log_severity severity,
-                     const char* message) {
+void gpr_log_message(const char *file, int line, gpr_log_severity severity,
+                     const char *message) {
   if (gpr_should_log(severity) == 0) {
     return;
   }
@@ -93,7 +93,7 @@ void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print) {
                            (gpr_atm)min_severity_to_print);
 }
 
-static gpr_atm parse_log_severity(const char* str, gpr_atm error_value) {
+static gpr_atm parse_log_severity(const char *str, gpr_atm error_value) {
   if (gpr_stricmp(str, "DEBUG") == 0) {
     return GPR_LOG_SEVERITY_DEBUG;
   } else if (gpr_stricmp(str, "INFO") == 0) {

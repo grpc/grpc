@@ -34,7 +34,7 @@ struct InterpreterOptions {
 };
 
 inline std::unique_ptr<CelExpressionBuilder> CreateCelExpressionBuilder(
-    const InterpreterOptions& options) {
+    const InterpreterOptions &options) {
   return absl::make_unique<FlatExprBuilder>();
 }
 

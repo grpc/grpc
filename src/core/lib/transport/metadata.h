@@ -101,7 +101,8 @@ struct grpc_mdelem {
   uintptr_t payload;
 };
 
-#define GRPC_MDELEM_DATA(md) ((grpc_mdelem_data*)((md).payload & ~(uintptr_t)3))
+#define GRPC_MDELEM_DATA(md) \
+  ((grpc_mdelem_data *)((md).payload & ~(uintptr_t)3))
 #define GRPC_MDELEM_STORAGE(md) \
   ((grpc_mdelem_data_storage)((md).payload & (uintptr_t)3))
 #ifdef __cplusplus
@@ -119,43 +120,43 @@ struct grpc_mdelem {
  * the input slices; we unref them. This method is always safe to call; however,
  * if we know data about the slices in question (e.g. if we knew our key was
  * static) we can call specializations that save on cycle count. */
-grpc_mdelem grpc_mdelem_from_slices(const grpc_slice& key,
-                                    const grpc_slice& value);
+grpc_mdelem grpc_mdelem_from_slices(const grpc_slice &key,
+                                    const grpc_slice &value);
 
 /* Like grpc_mdelem_from_slices, but we know that key is a static slice. This
    saves us a few branches and a no-op call to md_unref() for the key. */
-grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticMetadataSlice& key,
-                                    const grpc_slice& value);
+grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticMetadataSlice &key,
+                                    const grpc_slice &value);
 
 /* Like grpc_mdelem_from_slices, but key is static and val is static. */
 grpc_mdelem grpc_mdelem_from_slices(
-    const grpc_core::StaticMetadataSlice& key,
-    const grpc_core::StaticMetadataSlice& value);
+    const grpc_core::StaticMetadataSlice &key,
+    const grpc_core::StaticMetadataSlice &value);
 
 /* Like grpc_mdelem_from_slices, but key is static and val is interned. */
-grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticMetadataSlice& key,
-                                    const grpc_core::ManagedMemorySlice& value);
+grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticMetadataSlice &key,
+                                    const grpc_core::ManagedMemorySlice &value);
 
 /* Like grpc_mdelem_from_slices, but key and val are interned. */
-grpc_mdelem grpc_mdelem_from_slices(const grpc_core::ManagedMemorySlice& key,
-                                    const grpc_core::ManagedMemorySlice& value);
+grpc_mdelem grpc_mdelem_from_slices(const grpc_core::ManagedMemorySlice &key,
+                                    const grpc_core::ManagedMemorySlice &value);
 
 /* Cheaply convert a grpc_metadata to a grpc_mdelem; may use the grpc_metadata
    object as backing storage (so lifetimes should align) */
-grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata* metadata);
+grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata *metadata);
 
 /* Does not unref the slices; if a new non-interned mdelem is needed, allocates
    one if compatible_external_backing_store is NULL, or uses
    compatible_external_backing_store if it is non-NULL (in which case it's the
    users responsibility to ensure that it outlives usage) */
 grpc_mdelem grpc_mdelem_create(
-    const grpc_slice& key, const grpc_slice& value,
-    grpc_mdelem_data* compatible_external_backing_store);
+    const grpc_slice &key, const grpc_slice &value,
+    grpc_mdelem_data *compatible_external_backing_store);
 
 /* Like grpc_mdelem_create, but we know that key is static. */
 grpc_mdelem grpc_mdelem_create(
-    const grpc_core::StaticMetadataSlice& key, const grpc_slice& value,
-    grpc_mdelem_data* compatible_external_backing_store);
+    const grpc_core::StaticMetadataSlice &key, const grpc_slice &value,
+    grpc_mdelem_data *compatible_external_backing_store);
 
 #define GRPC_MDKEY(md) (GRPC_MDELEM_DATA(md)->key)
 #define GRPC_MDVALUE(md) (GRPC_MDELEM_DATA(md)->value)
@@ -182,37 +183,38 @@ inline bool grpc_mdelem_both_interned_eq(grpc_mdelem a_interned,
 
 /* Mutator and accessor for grpc_mdelem user data. The destructor function
    is used as a type tag and is checked during user_data fetch. */
-void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*if_destroy_func)(void*));
-void* grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void*),
-                                void* data);
+void *grpc_mdelem_get_user_data(grpc_mdelem md,
+                                void (*if_destroy_func)(void *));
+void *grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void *),
+                                void *data);
 
 // Defined in metadata.cc.
 struct mdtab_shard;
 
 #ifndef NDEBUG
-void grpc_mdelem_trace_ref(void* md, const grpc_slice& key,
-                           const grpc_slice& value, intptr_t refcnt,
-                           const char* file, int line);
-void grpc_mdelem_trace_unref(void* md, const grpc_slice& key,
-                             const grpc_slice& value, intptr_t refcnt,
-                             const char* file, int line);
+void grpc_mdelem_trace_ref(void *md, const grpc_slice &key,
+                           const grpc_slice &value, intptr_t refcnt,
+                           const char *file, int line);
+void grpc_mdelem_trace_unref(void *md, const grpc_slice &key,
+                             const grpc_slice &value, intptr_t refcnt,
+                             const char *file, int line);
 #endif
 namespace grpc_core {
 
-typedef void (*destroy_user_data_func)(void* data);
+typedef void (*destroy_user_data_func)(void *data);
 
 struct UserData {
   Mutex mu_user_data;
   std::atomic<destroy_user_data_func> destroy_user_data{nullptr};
-  std::atomic<void*> data{nullptr};
+  std::atomic<void *> data{nullptr};
 };
 
 class StaticMetadata {
  public:
-  StaticMetadata(const grpc_slice& key, const grpc_slice& value, uintptr_t idx)
+  StaticMetadata(const grpc_slice &key, const grpc_slice &value, uintptr_t idx)
       : kv_({key, value}), hash_(0), static_idx_(idx) {}
 
-  const grpc_mdelem_data& data() const { return kv_; }
+  const grpc_mdelem_data &data() const { return kv_; }
 
   void HashInit();
   uint32_t hash() { return hash_; }
@@ -228,23 +230,23 @@ class StaticMetadata {
 
 class RefcountedMdBase {
  public:
-  RefcountedMdBase(const grpc_slice& key, const grpc_slice& value)
+  RefcountedMdBase(const grpc_slice &key, const grpc_slice &value)
       : key_(key), value_(value), refcnt_(1) {}
-  RefcountedMdBase(const grpc_slice& key, const grpc_slice& value,
+  RefcountedMdBase(const grpc_slice &key, const grpc_slice &value,
                    uint32_t hash)
       : key_(key), value_(value), refcnt_(1), hash_(hash) {}
 
-  const grpc_slice& key() const { return key_; }
-  const grpc_slice& value() const { return value_; }
+  const grpc_slice &key() const { return key_; }
+  const grpc_slice &value() const { return value_; }
   uint32_t hash() { return hash_; }
 
 #ifndef NDEBUG
-  void Ref(const char* file, int line) {
+  void Ref(const char *file, int line) {
     grpc_mdelem_trace_ref(this, key_, value_, RefValue(), file, line);
     const intptr_t prior = refcnt_.fetch_add(1, std::memory_order_relaxed);
     GPR_ASSERT(prior > 0);
   }
-  bool Unref(const char* file, int line) {
+  bool Unref(const char *file, int line) {
     grpc_mdelem_trace_unref(this, key_, value_, RefValue(), file, line);
     return Unref();
   }
@@ -263,7 +265,7 @@ class RefcountedMdBase {
 
  protected:
 #ifndef NDEBUG
-  void TraceAtStart(const char* tag);
+  void TraceAtStart(const char *tag);
 #endif
 
   intptr_t RefValue() { return refcnt_.load(std::memory_order_relaxed); }
@@ -285,22 +287,22 @@ class InternedMetadata : public RefcountedMdBase {
   // TODO(arjunroy): Change to use strongly typed slices instead.
   struct NoRefKey {};
   struct BucketLink {
-    explicit BucketLink(InternedMetadata* md) : next(md) {}
+    explicit BucketLink(InternedMetadata *md) : next(md) {}
 
-    InternedMetadata* next = nullptr;
+    InternedMetadata *next = nullptr;
   };
-  InternedMetadata(const grpc_slice& key, const grpc_slice& value,
-                   uint32_t hash, InternedMetadata* next);
-  InternedMetadata(const grpc_slice& key, const grpc_slice& value,
-                   uint32_t hash, InternedMetadata* next, const NoRefKey*);
+  InternedMetadata(const grpc_slice &key, const grpc_slice &value,
+                   uint32_t hash, InternedMetadata *next);
+  InternedMetadata(const grpc_slice &key, const grpc_slice &value,
+                   uint32_t hash, InternedMetadata *next, const NoRefKey *);
 
   ~InternedMetadata();
-  void RefWithShardLocked(mdtab_shard* shard);
-  UserData* user_data() { return &user_data_; }
-  InternedMetadata* bucket_next() { return link_.next; }
-  void set_bucket_next(InternedMetadata* md) { link_.next = md; }
+  void RefWithShardLocked(mdtab_shard *shard);
+  UserData *user_data() { return &user_data_; }
+  InternedMetadata *bucket_next() { return link_.next; }
+  void set_bucket_next(InternedMetadata *md) { link_.next = md; }
 
-  static size_t CleanupLinkedMetadata(BucketLink* head);
+  static size_t CleanupLinkedMetadata(BucketLink *head);
 
  private:
   UserData user_data_;
@@ -312,16 +314,16 @@ class AllocatedMetadata : public RefcountedMdBase {
  public:
   // TODO(arjunroy): Change to use strongly typed slices instead.
   struct NoRefKey {};
-  AllocatedMetadata(const grpc_slice& key, const grpc_slice& value);
-  AllocatedMetadata(const grpc_core::ManagedMemorySlice& key,
-                    const grpc_core::UnmanagedMemorySlice& value);
-  AllocatedMetadata(const grpc_core::ExternallyManagedSlice& key,
-                    const grpc_core::UnmanagedMemorySlice& value);
-  AllocatedMetadata(const grpc_slice& key, const grpc_slice& value,
-                    const NoRefKey*);
+  AllocatedMetadata(const grpc_slice &key, const grpc_slice &value);
+  AllocatedMetadata(const grpc_core::ManagedMemorySlice &key,
+                    const grpc_core::UnmanagedMemorySlice &value);
+  AllocatedMetadata(const grpc_core::ExternallyManagedSlice &key,
+                    const grpc_core::UnmanagedMemorySlice &value);
+  AllocatedMetadata(const grpc_slice &key, const grpc_slice &value,
+                    const NoRefKey *);
   ~AllocatedMetadata();
 
-  UserData* user_data() { return &user_data_; }
+  UserData *user_data() { return &user_data_; }
 
  private:
   UserData user_data_;
@@ -331,7 +333,7 @@ class AllocatedMetadata : public RefcountedMdBase {
 
 #ifndef NDEBUG
 #define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s), __FILE__, __LINE__)
-inline grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd, const char* file,
+inline grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd, const char *file,
                                    int line) {
 #else  // ifndef NDEBUG
 #define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s))
@@ -342,8 +344,8 @@ inline grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd) {
     case GRPC_MDELEM_STORAGE_STATIC:
       break;
     case GRPC_MDELEM_STORAGE_INTERNED: {
-      auto* md =
-          reinterpret_cast<grpc_core::InternedMetadata*> GRPC_MDELEM_DATA(gmd);
+      auto *md =
+          reinterpret_cast<grpc_core::InternedMetadata *> GRPC_MDELEM_DATA(gmd);
       /* use C assert to have this removed in opt builds */
 #ifndef NDEBUG
       md->Ref(file, line);
@@ -353,8 +355,9 @@ inline grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd) {
       break;
     }
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
-      auto* md =
-          reinterpret_cast<grpc_core::AllocatedMetadata*> GRPC_MDELEM_DATA(gmd);
+      auto *md =
+          reinterpret_cast<grpc_core::AllocatedMetadata *> GRPC_MDELEM_DATA(
+              gmd);
 #ifndef NDEBUG
       md->Ref(file, line);
 #else
@@ -368,12 +371,12 @@ inline grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd) {
 
 #ifndef NDEBUG
 #define GRPC_MDELEM_UNREF(s) grpc_mdelem_unref((s), __FILE__, __LINE__)
-void grpc_mdelem_on_final_unref(grpc_mdelem_data_storage storage, void* ptr,
-                                uint32_t hash, const char* file, int line);
-inline void grpc_mdelem_unref(grpc_mdelem gmd, const char* file, int line) {
+void grpc_mdelem_on_final_unref(grpc_mdelem_data_storage storage, void *ptr,
+                                uint32_t hash, const char *file, int line);
+inline void grpc_mdelem_unref(grpc_mdelem gmd, const char *file, int line) {
 #else
 #define GRPC_MDELEM_UNREF(s) grpc_mdelem_unref((s))
-void grpc_mdelem_on_final_unref(grpc_mdelem_data_storage storage, void* ptr,
+void grpc_mdelem_on_final_unref(grpc_mdelem_data_storage storage, void *ptr,
                                 uint32_t hash);
 inline void grpc_mdelem_unref(grpc_mdelem gmd) {
 #endif
@@ -384,8 +387,8 @@ inline void grpc_mdelem_unref(grpc_mdelem gmd) {
       return;
     case GRPC_MDELEM_STORAGE_INTERNED:
     case GRPC_MDELEM_STORAGE_ALLOCATED:
-      auto* md =
-          reinterpret_cast<grpc_core::RefcountedMdBase*> GRPC_MDELEM_DATA(gmd);
+      auto *md =
+          reinterpret_cast<grpc_core::RefcountedMdBase *> GRPC_MDELEM_DATA(gmd);
       /* once the refcount hits zero, some other thread can come along and
          free an interned md at any time: it's unsafe from this point on to
          access it so we read the hash now. */
@@ -422,24 +425,24 @@ void grpc_mdctx_global_shutdown();
    2) We're guaranteed to create a new Allocated slice, thus meaning the
       ref can be considered 'transferred'.*/
 inline grpc_mdelem grpc_mdelem_from_slices(
-    const grpc_core::ManagedMemorySlice& key,
-    const grpc_core::UnmanagedMemorySlice& value) {
+    const grpc_core::ManagedMemorySlice &key,
+    const grpc_core::UnmanagedMemorySlice &value) {
   using grpc_core::AllocatedMetadata;
   return GRPC_MAKE_MDELEM(new AllocatedMetadata(key, value),
                           GRPC_MDELEM_STORAGE_ALLOCATED);
 }
 
 inline grpc_mdelem grpc_mdelem_from_slices(
-    const grpc_core::ExternallyManagedSlice& key,
-    const grpc_core::UnmanagedMemorySlice& value) {
+    const grpc_core::ExternallyManagedSlice &key,
+    const grpc_core::UnmanagedMemorySlice &value) {
   using grpc_core::AllocatedMetadata;
   return GRPC_MAKE_MDELEM(new AllocatedMetadata(key, value),
                           GRPC_MDELEM_STORAGE_ALLOCATED);
 }
 
 inline grpc_mdelem grpc_mdelem_from_slices(
-    const grpc_core::StaticMetadataSlice& key,
-    const grpc_core::UnmanagedMemorySlice& value) {
+    const grpc_core::StaticMetadataSlice &key,
+    const grpc_core::UnmanagedMemorySlice &value) {
   using grpc_core::AllocatedMetadata;
   return GRPC_MAKE_MDELEM(new AllocatedMetadata(key, value),
                           GRPC_MDELEM_STORAGE_ALLOCATED);

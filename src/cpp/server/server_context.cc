@@ -48,8 +48,8 @@ class ServerContextBase::CompletionOp final
  public:
   // initial refs: one in the server context, one in the cq
   // must ref the call before calling constructor and after deleting this
-  CompletionOp(internal::Call* call,
-               ::grpc::internal::ServerCallbackCall* callback_controller)
+  CompletionOp(internal::Call *call,
+               ::grpc::internal::ServerCallbackCall *callback_controller)
       : call_(*call),
         callback_controller_(callback_controller),
         has_tag_(false),
@@ -61,10 +61,10 @@ class ServerContextBase::CompletionOp final
         done_intercepting_(false) {}
 
   // CompletionOp isn't copyable or movable
-  CompletionOp(const CompletionOp&) = delete;
-  CompletionOp& operator=(const CompletionOp&) = delete;
-  CompletionOp(CompletionOp&&) = delete;
-  CompletionOp& operator=(CompletionOp&&) = delete;
+  CompletionOp(const CompletionOp &) = delete;
+  CompletionOp &operator=(const CompletionOp &) = delete;
+  CompletionOp(CompletionOp &&) = delete;
+  CompletionOp &operator=(CompletionOp &&) = delete;
 
   ~CompletionOp() override {
     if (call_.server_rpc_info()) {
@@ -72,12 +72,12 @@ class ServerContextBase::CompletionOp final
     }
   }
 
-  void FillOps(internal::Call* call) override;
+  void FillOps(internal::Call *call) override;
 
   // This should always be arena allocated in the call, so override delete.
   // But this class is not trivially destructible, so must actually call delete
   // before allowing the arena to be freed
-  static void operator delete(void* /*ptr*/, std::size_t size) {
+  static void operator delete(void * /*ptr*/, std::size_t size) {
     // Use size to avoid unused-parameter warning since assert seems to be
     // compiled out and treated as unused in some gcc optimized versions.
     (void)size;
@@ -89,24 +89,24 @@ class ServerContextBase::CompletionOp final
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { assert(0); }
+  static void operator delete(void *, void *) { assert(0); }
 
-  bool FinalizeResult(void** tag, bool* status) override;
+  bool FinalizeResult(void **tag, bool *status) override;
 
-  bool CheckCancelled(CompletionQueue* cq) {
+  bool CheckCancelled(CompletionQueue *cq) {
     cq->TryPluck(this);
     return CheckCancelledNoPluck();
   }
   bool CheckCancelledAsync() { return CheckCancelledNoPluck(); }
 
-  void set_tag(void* tag) {
+  void set_tag(void *tag) {
     has_tag_ = true;
     tag_ = tag;
   }
 
-  void set_core_cq_tag(void* core_cq_tag) { core_cq_tag_ = core_cq_tag; }
+  void set_core_cq_tag(void *core_cq_tag) { core_cq_tag_ = core_cq_tag; }
 
-  void* core_cq_tag() override { return core_cq_tag_; }
+  void *core_cq_tag() override { return core_cq_tag_; }
 
   void Unref();
 
@@ -142,10 +142,10 @@ class ServerContextBase::CompletionOp final
   }
 
   internal::Call call_;
-  ::grpc::internal::ServerCallbackCall* const callback_controller_;
+  ::grpc::internal::ServerCallbackCall *const callback_controller_;
   bool has_tag_;
-  void* tag_;
-  void* core_cq_tag_;
+  void *tag_;
+  void *core_cq_tag_;
   grpc_core::RefCount refs_;
   grpc_core::Mutex mu_;
   bool finalized_;
@@ -156,13 +156,13 @@ class ServerContextBase::CompletionOp final
 
 void ServerContextBase::CompletionOp::Unref() {
   if (refs_.Unref()) {
-    grpc_call* call = call_.call();
+    grpc_call *call = call_.call();
     delete this;
     grpc_call_unref(call);
   }
 }
 
-void ServerContextBase::CompletionOp::FillOps(internal::Call* call) {
+void ServerContextBase::CompletionOp::FillOps(internal::Call *call) {
   grpc_op ops;
   ops.op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   ops.data.recv_close_on_server.cancelled = &cancelled_;
@@ -178,7 +178,7 @@ void ServerContextBase::CompletionOp::FillOps(internal::Call* call) {
   /* No interceptors to run here */
 }
 
-bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
+bool ServerContextBase::CompletionOp::FinalizeResult(void **tag, bool *status) {
   // Decide whether to do the unref or call the cancel callback within the lock
   bool do_unref = false;
   bool has_tag = false;
@@ -242,13 +242,13 @@ ServerContextBase::ServerContextBase()
 }
 
 ServerContextBase::ServerContextBase(gpr_timespec deadline,
-                                     grpc_metadata_array* arr)
+                                     grpc_metadata_array *arr)
     : deadline_(deadline) {
   std::swap(*client_metadata_.arr(), *arr);
 }
 
 void ServerContextBase::BindDeadlineAndMetadata(gpr_timespec deadline,
-                                                grpc_metadata_array* arr) {
+                                                grpc_metadata_array *arr) {
   deadline_ = deadline;
   std::swap(*client_metadata_.arr(), *arr);
 }
@@ -262,7 +262,7 @@ ServerContextBase::~ServerContextBase() {
     rpc_info_->Unref();
   }
   if (default_reactor_used_.load(std::memory_order_relaxed)) {
-    reinterpret_cast<Reactor*>(&default_reactor_)->~Reactor();
+    reinterpret_cast<Reactor *>(&default_reactor_)->~Reactor();
   }
 }
 
@@ -275,8 +275,8 @@ ServerContextBase::CallWrapper::~CallWrapper() {
 }
 
 void ServerContextBase::BeginCompletionOp(
-    internal::Call* call, std::function<void(bool)> callback,
-    ::grpc::internal::ServerCallbackCall* callback_controller) {
+    internal::Call *call, std::function<void(bool)> callback,
+    ::grpc::internal::ServerCallbackCall *callback_controller) {
   GPR_ASSERT(!completion_op_);
   if (rpc_info_) {
     rpc_info_->Ref();
@@ -296,17 +296,17 @@ void ServerContextBase::BeginCompletionOp(
   call->PerformOps(completion_op_);
 }
 
-internal::CompletionQueueTag* ServerContextBase::GetCompletionOpTag() {
-  return static_cast<internal::CompletionQueueTag*>(completion_op_);
+internal::CompletionQueueTag *ServerContextBase::GetCompletionOpTag() {
+  return static_cast<internal::CompletionQueueTag *>(completion_op_);
 }
 
-void ServerContextBase::AddInitialMetadata(const std::string& key,
-                                           const std::string& value) {
+void ServerContextBase::AddInitialMetadata(const std::string &key,
+                                           const std::string &value) {
   initial_metadata_.insert(std::make_pair(key, value));
 }
 
-void ServerContextBase::AddTrailingMetadata(const std::string& key,
-                                            const std::string& value) {
+void ServerContextBase::AddTrailingMetadata(const std::string &key,
+                                            const std::string &value) {
   trailing_metadata_.insert(std::make_pair(key, value));
 }
 
@@ -349,7 +349,7 @@ bool ServerContextBase::IsCancelled() const {
 void ServerContextBase::set_compression_algorithm(
     grpc_compression_algorithm algorithm) {
   compression_algorithm_ = algorithm;
-  const char* algorithm_name = nullptr;
+  const char *algorithm_name = nullptr;
   if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
     gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",
             algorithm);
@@ -362,22 +362,22 @@ void ServerContextBase::set_compression_algorithm(
 std::string ServerContextBase::peer() const {
   std::string peer;
   if (call_.call) {
-    char* c_peer = grpc_call_get_peer(call_.call);
+    char *c_peer = grpc_call_get_peer(call_.call);
     peer = c_peer;
     gpr_free(c_peer);
   }
   return peer;
 }
 
-const struct census_context* ServerContextBase::census_context() const {
+const struct census_context *ServerContextBase::census_context() const {
   return call_.call == nullptr ? nullptr
                                : grpc_census_call_get_context(call_.call);
 }
 
 void ServerContextBase::SetLoadReportingCosts(
-    const std::vector<std::string>& cost_data) {
+    const std::vector<std::string> &cost_data) {
   if (call_.call == nullptr) return;
-  for (const auto& cost_datum : cost_data) {
+  for (const auto &cost_datum : cost_data) {
     AddTrailingMetadata(GRPC_LB_COST_MD_KEY, cost_datum);
   }
 }

@@ -38,24 +38,24 @@ class AuthPropertyIterator
     : public std::iterator<std::input_iterator_tag, const AuthProperty> {
  public:
   ~AuthPropertyIterator();
-  AuthPropertyIterator& operator++();
+  AuthPropertyIterator &operator++();
   AuthPropertyIterator operator++(int);
-  bool operator==(const AuthPropertyIterator& rhs) const;
-  bool operator!=(const AuthPropertyIterator& rhs) const;
+  bool operator==(const AuthPropertyIterator &rhs) const;
+  bool operator!=(const AuthPropertyIterator &rhs) const;
   AuthProperty operator*();
 
  protected:
   AuthPropertyIterator();
-  AuthPropertyIterator(const grpc_auth_property* property,
-                       const grpc_auth_property_iterator* iter);
+  AuthPropertyIterator(const grpc_auth_property *property,
+                       const grpc_auth_property_iterator *iter);
 
  private:
   friend class SecureAuthContext;
-  const grpc_auth_property* property_;
+  const grpc_auth_property *property_;
   // The following items form a grpc_auth_property_iterator.
-  const grpc_auth_context* ctx_;
+  const grpc_auth_context *ctx_;
   size_t index_;
-  const char* name_;
+  const char *name_;
 };
 
 /// Class encapsulating the Authentication Information.
@@ -78,15 +78,15 @@ class AuthContext {
 
   /// Returns all the property values with the given name.
   virtual std::vector<grpc::string_ref> FindPropertyValues(
-      const std::string& name) const = 0;
+      const std::string &name) const = 0;
 
   /// Iteration over all the properties.
   virtual AuthPropertyIterator begin() const = 0;
   virtual AuthPropertyIterator end() const = 0;
 
   /// Mutation functions: should only be used by an AuthMetadataProcessor.
-  virtual void AddProperty(const std::string& key, const string_ref& value) = 0;
-  virtual bool SetPeerIdentityPropertyName(const std::string& name) = 0;
+  virtual void AddProperty(const std::string &key, const string_ref &value) = 0;
+  virtual bool SetPeerIdentityPropertyName(const std::string &name) = 0;
 };
 
 }  // namespace grpc

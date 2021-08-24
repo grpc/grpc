@@ -26,14 +26,14 @@
 #include "src/core/lib/surface/completion_queue.h"
 
 grpc_connectivity_state grpc_channel_check_connectivity_state(
-    grpc_channel* channel, int try_to_connect) {
+    grpc_channel *channel, int try_to_connect) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE(
       "grpc_channel_check_connectivity_state(channel=%p, try_to_connect=%d)", 2,
       (channel, try_to_connect));
   // Forward through to the underlying client channel.
-  grpc_core::ClientChannel* client_channel =
+  grpc_core::ClientChannel *client_channel =
       grpc_core::ClientChannel::GetFromChannel(channel);
   if (GPR_UNLIKELY(client_channel == nullptr)) {
     gpr_log(GPR_ERROR,
@@ -44,8 +44,8 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
   return client_channel->CheckConnectivityState(try_to_connect);
 }
 
-int grpc_channel_num_external_connectivity_watchers(grpc_channel* channel) {
-  grpc_core::ClientChannel* client_channel =
+int grpc_channel_num_external_connectivity_watchers(grpc_channel *channel) {
+  grpc_core::ClientChannel *client_channel =
       grpc_core::ClientChannel::GetFromChannel(channel);
   if (client_channel == nullptr) {
     gpr_log(GPR_ERROR,
@@ -56,7 +56,7 @@ int grpc_channel_num_external_connectivity_watchers(grpc_channel* channel) {
   return client_channel->NumExternalConnectivityWatchers();
 }
 
-int grpc_channel_support_connectivity_watcher(grpc_channel* channel) {
+int grpc_channel_support_connectivity_watcher(grpc_channel *channel) {
   return grpc_core::ClientChannel::GetFromChannel(channel) != nullptr;
 }
 
@@ -65,7 +65,7 @@ namespace {
 
 class StateWatcher {
  public:
-  StateWatcher(grpc_channel* channel, grpc_completion_queue* cq, void* tag,
+  StateWatcher(grpc_channel *channel, grpc_completion_queue *cq, void *tag,
                grpc_connectivity_state last_observed_state,
                gpr_timespec deadline)
       : channel_(channel), cq_(cq), tag_(tag), state_(last_observed_state) {
@@ -73,9 +73,9 @@ class StateWatcher {
     GRPC_CHANNEL_INTERNAL_REF(channel, "watch_channel_connectivity");
     GRPC_CLOSURE_INIT(&on_complete_, WatchComplete, this, nullptr);
     GRPC_CLOSURE_INIT(&on_timeout_, TimeoutComplete, this, nullptr);
-    auto* watcher_timer_init_state = new WatcherTimerInitState(
+    auto *watcher_timer_init_state = new WatcherTimerInitState(
         this, grpc_timespec_to_millis_round_up(deadline));
-    ClientChannel* client_channel = ClientChannel::GetFromChannel(channel);
+    ClientChannel *client_channel = ClientChannel::GetFromChannel(channel);
     GPR_ASSERT(client_channel != nullptr);
     client_channel->AddExternalConnectivityWatcher(
         grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq)), &state_,
@@ -91,22 +91,22 @@ class StateWatcher {
   // ClientChannel actually starts the watch.
   class WatcherTimerInitState {
    public:
-    WatcherTimerInitState(StateWatcher* state_watcher, grpc_millis deadline)
+    WatcherTimerInitState(StateWatcher *state_watcher, grpc_millis deadline)
         : state_watcher_(state_watcher), deadline_(deadline) {
       GRPC_CLOSURE_INIT(&closure_, WatcherTimerInit, this, nullptr);
     }
 
-    grpc_closure* closure() { return &closure_; }
+    grpc_closure *closure() { return &closure_; }
 
    private:
-    static void WatcherTimerInit(void* arg, grpc_error_handle /*error*/) {
-      auto* self = static_cast<WatcherTimerInitState*>(arg);
+    static void WatcherTimerInit(void *arg, grpc_error_handle /*error*/) {
+      auto *self = static_cast<WatcherTimerInitState *>(arg);
       grpc_timer_init(&self->state_watcher_->timer_, self->deadline_,
                       &self->state_watcher_->on_timeout_);
       delete self;
     }
 
-    StateWatcher* state_watcher_;
+    StateWatcher *state_watcher_;
     grpc_millis deadline_;
     grpc_closure closure_;
   };
@@ -114,8 +114,8 @@ class StateWatcher {
   enum CallbackPhase { kWaiting, kReadyToCallBack, kCallingBackAndFinished };
 
   // Called when the completion is returned to the CQ.
-  static void FinishedCompletion(void* arg, grpc_cq_completion* /*ignored*/) {
-    auto* self = static_cast<StateWatcher*>(arg);
+  static void FinishedCompletion(void *arg, grpc_cq_completion * /*ignored*/) {
+    auto *self = static_cast<StateWatcher *>(arg);
     bool should_delete = false;
     {
       MutexLock lock(&self->mu_);
@@ -132,14 +132,14 @@ class StateWatcher {
 
   void PartlyDone(bool due_to_completion, grpc_error_handle error) {
     bool end_op = false;
-    void* end_op_tag = nullptr;
+    void *end_op_tag = nullptr;
     grpc_error_handle end_op_error = GRPC_ERROR_NONE;
-    grpc_completion_queue* end_op_cq = nullptr;
-    grpc_cq_completion* end_op_completion_storage = nullptr;
+    grpc_completion_queue *end_op_cq = nullptr;
+    grpc_cq_completion *end_op_completion_storage = nullptr;
     if (due_to_completion) {
       grpc_timer_cancel(&timer_);
     } else {
-      grpc_core::ClientChannel* client_channel =
+      grpc_core::ClientChannel *client_channel =
           grpc_core::ClientChannel::GetFromChannel(channel_);
       GPR_ASSERT(client_channel != nullptr);
       client_channel->CancelExternalConnectivityWatcher(&on_complete_);
@@ -191,19 +191,19 @@ class StateWatcher {
     GRPC_ERROR_UNREF(error);
   }
 
-  static void WatchComplete(void* arg, grpc_error_handle error) {
-    auto* self = static_cast<StateWatcher*>(arg);
+  static void WatchComplete(void *arg, grpc_error_handle error) {
+    auto *self = static_cast<StateWatcher *>(arg);
     self->PartlyDone(/*due_to_completion=*/true, GRPC_ERROR_REF(error));
   }
 
-  static void TimeoutComplete(void* arg, grpc_error_handle error) {
-    auto* self = static_cast<StateWatcher*>(arg);
+  static void TimeoutComplete(void *arg, grpc_error_handle error) {
+    auto *self = static_cast<StateWatcher *>(arg);
     self->PartlyDone(/*due_to_completion=*/false, GRPC_ERROR_REF(error));
   }
 
-  grpc_channel* channel_;
-  grpc_completion_queue* cq_;
-  void* tag_;
+  grpc_channel *channel_;
+  grpc_completion_queue *cq_;
+  void *tag_;
 
   grpc_connectivity_state state_;
 
@@ -222,8 +222,8 @@ class StateWatcher {
 }  // namespace grpc_core
 
 void grpc_channel_watch_connectivity_state(
-    grpc_channel* channel, grpc_connectivity_state last_observed_state,
-    gpr_timespec deadline, grpc_completion_queue* cq, void* tag) {
+    grpc_channel *channel, grpc_connectivity_state last_observed_state,
+    gpr_timespec deadline, grpc_completion_queue *cq, void *tag) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE(

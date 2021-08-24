@@ -32,7 +32,7 @@ class GrpcLibraryInterface {
 
 /// Initialized by \a grpc::GrpcLibraryInitializer from
 /// <grpcpp/impl/grpc_library.h>
-extern GrpcLibraryInterface* g_glip;
+extern GrpcLibraryInterface *g_glip;
 
 /// Classes that require gRPC to be initialized should inherit from this class.
 class GrpcLibraryCodegen {

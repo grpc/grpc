@@ -68,8 +68,8 @@ const char kEchoInitialMetadataKey[] = "x-grpc-test-echo-initial";
 const char kEchoTrailingBinMetadataKey[] = "x-grpc-test-echo-trailing-bin";
 const char kEchoUserAgentKey[] = "x-grpc-test-echo-useragent";
 
-void MaybeEchoMetadata(ServerContext* context) {
-  const auto& client_metadata = context->client_metadata();
+void MaybeEchoMetadata(ServerContext *context) {
+  const auto &client_metadata = context->client_metadata();
   GPR_ASSERT(client_metadata.count(kEchoInitialMetadataKey) <= 1);
   GPR_ASSERT(client_metadata.count(kEchoTrailingBinMetadataKey) <= 1);
 
@@ -98,13 +98,13 @@ void MaybeEchoMetadata(ServerContext* context) {
   }
 }
 
-bool SetPayload(int size, Payload* payload) {
+bool SetPayload(int size, Payload *payload) {
   std::unique_ptr<char[]> body(new char[size]());
   payload->set_body(body.get(), size);
   return true;
 }
 
-bool CheckExpectedCompression(const ServerContext& context,
+bool CheckExpectedCompression(const ServerContext &context,
                               const bool compression_expected) {
   const InteropServerContextInspector inspector(context);
   const grpc_compression_algorithm received_compression =
@@ -137,17 +137,17 @@ bool CheckExpectedCompression(const ServerContext& context,
 
 class TestServiceImpl : public TestService::Service {
  public:
-  Status EmptyCall(ServerContext* context,
-                   const grpc::testing::Empty* /*request*/,
-                   grpc::testing::Empty* /*response*/) override {
+  Status EmptyCall(ServerContext *context,
+                   const grpc::testing::Empty * /*request*/,
+                   grpc::testing::Empty * /*response*/) override {
     MaybeEchoMetadata(context);
     return Status::OK;
   }
 
   // Response contains current timestamp. We ignore everything in the request.
-  Status CacheableUnaryCall(ServerContext* context,
-                            const SimpleRequest* /*request*/,
-                            SimpleResponse* response) override {
+  Status CacheableUnaryCall(ServerContext *context,
+                            const SimpleRequest * /*request*/,
+                            SimpleResponse *response) override {
     gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
     std::string timestamp = std::to_string(ts.tv_nsec);
     response->mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
@@ -155,8 +155,8 @@ class TestServiceImpl : public TestService::Service {
     return Status::OK;
   }
 
-  Status UnaryCall(ServerContext* context, const SimpleRequest* request,
-                   SimpleResponse* response) override {
+  Status UnaryCall(ServerContext *context, const SimpleRequest *request,
+                   SimpleResponse *response) override {
     MaybeEchoMetadata(context);
     if (request->has_response_compressed()) {
       const bool compression_requested = request->response_compressed().value();
@@ -191,8 +191,8 @@ class TestServiceImpl : public TestService::Service {
   }
 
   Status StreamingOutputCall(
-      ServerContext* context, const StreamingOutputCallRequest* request,
-      ServerWriter<StreamingOutputCallResponse>* writer) override {
+      ServerContext *context, const StreamingOutputCallRequest *request,
+      ServerWriter<StreamingOutputCallResponse> *writer) override {
     StreamingOutputCallResponse response;
     bool write_success = true;
     for (int i = 0; write_success && i < request->response_parameters_size();
@@ -231,9 +231,9 @@ class TestServiceImpl : public TestService::Service {
     }
   }
 
-  Status StreamingInputCall(ServerContext* context,
-                            ServerReader<StreamingInputCallRequest>* reader,
-                            StreamingInputCallResponse* response) override {
+  Status StreamingInputCall(ServerContext *context,
+                            ServerReader<StreamingInputCallRequest> *reader,
+                            StreamingInputCallResponse *response) override {
     StreamingInputCallRequest request;
     int aggregated_payload_size = 0;
     while (reader->Read(&request)) {
@@ -251,9 +251,9 @@ class TestServiceImpl : public TestService::Service {
   }
 
   Status FullDuplexCall(
-      ServerContext* context,
+      ServerContext *context,
       ServerReaderWriter<StreamingOutputCallResponse,
-                         StreamingOutputCallRequest>* stream) override {
+                         StreamingOutputCallRequest> *stream) override {
     MaybeEchoMetadata(context);
     StreamingOutputCallRequest request;
     StreamingOutputCallResponse response;
@@ -287,9 +287,9 @@ class TestServiceImpl : public TestService::Service {
   }
 
   Status HalfDuplexCall(
-      ServerContext* /*context*/,
+      ServerContext * /*context*/,
       ServerReaderWriter<StreamingOutputCallResponse,
-                         StreamingOutputCallRequest>* stream) override {
+                         StreamingOutputCallRequest> *stream) override {
     std::vector<StreamingOutputCallRequest> requests;
     StreamingOutputCallRequest request;
     while (stream->Read(&request)) {
@@ -317,12 +317,12 @@ class TestServiceImpl : public TestService::Service {
 };
 
 void grpc::testing::interop::RunServer(
-    const std::shared_ptr<ServerCredentials>& creds) {
+    const std::shared_ptr<ServerCredentials> &creds) {
   RunServer(creds, absl::GetFlag(FLAGS_port), nullptr, nullptr);
 }
 
 void grpc::testing::interop::RunServer(
-    const std::shared_ptr<ServerCredentials>& creds,
+    const std::shared_ptr<ServerCredentials> &creds,
     std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
         server_options) {
   RunServer(creds, absl::GetFlag(FLAGS_port), nullptr,
@@ -330,14 +330,14 @@ void grpc::testing::interop::RunServer(
 }
 
 void grpc::testing::interop::RunServer(
-    const std::shared_ptr<ServerCredentials>& creds, const int port,
-    ServerStartedCondition* server_started_condition) {
+    const std::shared_ptr<ServerCredentials> &creds, const int port,
+    ServerStartedCondition *server_started_condition) {
   RunServer(creds, port, server_started_condition, nullptr);
 }
 
 void grpc::testing::interop::RunServer(
-    const std::shared_ptr<ServerCredentials>& creds, const int port,
-    ServerStartedCondition* server_started_condition,
+    const std::shared_ptr<ServerCredentials> &creds, const int port,
+    ServerStartedCondition *server_started_condition,
     std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
         server_options) {
   GPR_ASSERT(port != 0);

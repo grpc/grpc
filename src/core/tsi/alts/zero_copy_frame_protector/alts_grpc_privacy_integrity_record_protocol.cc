@@ -33,8 +33,8 @@
 /* --- alts_grpc_record_protocol methods implementation. --- */
 
 static tsi_result alts_grpc_privacy_integrity_protect(
-    alts_grpc_record_protocol* rp, grpc_slice_buffer* unprotected_slices,
-    grpc_slice_buffer* protected_slices) {
+    alts_grpc_record_protocol *rp, grpc_slice_buffer *unprotected_slices,
+    grpc_slice_buffer *protected_slices) {
   /* Input sanity check.  */
   if (rp == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
@@ -51,7 +51,7 @@ static tsi_result alts_grpc_privacy_integrity_protect(
   iovec_t protected_iovec = {GRPC_SLICE_START_PTR(protected_slice),
                              GRPC_SLICE_LENGTH(protected_slice)};
   /* Calls alts_iovec_record_protocol protect.  */
-  char* error_details = nullptr;
+  char *error_details = nullptr;
   alts_grpc_record_protocol_convert_slice_buffer_to_iovec(rp,
                                                           unprotected_slices);
   grpc_status_code status =
@@ -70,8 +70,8 @@ static tsi_result alts_grpc_privacy_integrity_protect(
 }
 
 static tsi_result alts_grpc_privacy_integrity_unprotect(
-    alts_grpc_record_protocol* rp, grpc_slice_buffer* protected_slices,
-    grpc_slice_buffer* unprotected_slices) {
+    alts_grpc_record_protocol *rp, grpc_slice_buffer *protected_slices,
+    grpc_slice_buffer *unprotected_slices) {
   /* Input sanity check.  */
   if (rp == nullptr || protected_slices == nullptr ||
       unprotected_slices == nullptr) {
@@ -97,7 +97,7 @@ static tsi_result alts_grpc_privacy_integrity_unprotect(
                                &rp->header_sb);
   iovec_t header_iovec = alts_grpc_record_protocol_get_header_iovec(rp);
   /* Calls alts_iovec_record_protocol unprotect.  */
-  char* error_details = nullptr;
+  char *error_details = nullptr;
   alts_grpc_record_protocol_convert_slice_buffer_to_iovec(rp, protected_slices);
   grpc_status_code status =
       alts_iovec_record_protocol_privacy_integrity_unprotect(
@@ -121,14 +121,14 @@ static const alts_grpc_record_protocol_vtable
         alts_grpc_privacy_integrity_unprotect, nullptr};
 
 tsi_result alts_grpc_privacy_integrity_record_protocol_create(
-    gsec_aead_crypter* crypter, size_t overflow_size, bool is_client,
-    bool is_protect, alts_grpc_record_protocol** rp) {
+    gsec_aead_crypter *crypter, size_t overflow_size, bool is_client,
+    bool is_protect, alts_grpc_record_protocol **rp) {
   if (crypter == nullptr || rp == nullptr) {
     gpr_log(GPR_ERROR,
             "Invalid nullptr arguments to alts_grpc_record_protocol create.");
     return TSI_INVALID_ARGUMENT;
   }
-  auto* impl = static_cast<alts_grpc_record_protocol*>(
+  auto *impl = static_cast<alts_grpc_record_protocol *>(
       gpr_zalloc(sizeof(alts_grpc_record_protocol)));
   /* Calls alts_grpc_record_protocol init.  */
   tsi_result result =

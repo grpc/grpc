@@ -57,7 +57,7 @@ CertificateProviderStore::CreateCertificateProviderLocked(
   if (plugin_config_it == plugin_config_map_.end()) {
     return nullptr;
   }
-  CertificateProviderFactory* factory =
+  CertificateProviderFactory *factory =
       CertificateProviderRegistry::LookupCertificateProviderFactory(
           plugin_config_it->second.plugin_name);
   if (factory == nullptr) {
@@ -74,7 +74,7 @@ CertificateProviderStore::CreateCertificateProviderLocked(
 }
 
 void CertificateProviderStore::ReleaseCertificateProvider(
-    absl::string_view key, CertificateProviderWrapper* wrapper) {
+    absl::string_view key, CertificateProviderWrapper *wrapper) {
   MutexLock lock(&mu_);
   auto it = certificate_providers_map_.find(key);
   if (it != certificate_providers_map_.end()) {

@@ -39,6 +39,6 @@
 
 #define GPR_GLOBAL_CONFIG_DECLARE_STRING(name)                      \
   extern grpc_core::UniquePtr<char> gpr_global_config_get_##name(); \
-  extern void gpr_global_config_set_##name(const char* value)
+  extern void gpr_global_config_set_##name(const char *value)
 
 #endif /* GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_GENERIC_H */

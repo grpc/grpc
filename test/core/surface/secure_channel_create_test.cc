@@ -30,11 +30,11 @@
 void test_unknown_scheme_target(void) {
   grpc_core::ResolverRegistry::Builder::ShutdownRegistry();
   grpc_core::ResolverRegistry::Builder::InitRegistry();
-  grpc_channel_credentials* creds =
+  grpc_channel_credentials *creds =
       grpc_fake_transport_security_credentials_create();
-  grpc_channel* chan =
+  grpc_channel *chan =
       grpc_secure_channel_create(creds, "blah://blah", nullptr, nullptr);
-  grpc_channel_element* elem =
+  grpc_channel_element *elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
   grpc_core::ExecCtx exec_ctx;
@@ -46,13 +46,13 @@ void test_security_connector_already_in_arg(void) {
   grpc_arg arg;
   arg.type = GRPC_ARG_POINTER;
   arg.value.pointer.p = nullptr;
-  arg.key = const_cast<char*>(GRPC_ARG_SECURITY_CONNECTOR);
+  arg.key = const_cast<char *>(GRPC_ARG_SECURITY_CONNECTOR);
   grpc_channel_args args;
   args.num_args = 1;
   args.args = &arg;
-  grpc_channel* chan =
+  grpc_channel *chan =
       grpc_secure_channel_create(nullptr, nullptr, &args, nullptr);
-  grpc_channel_element* elem =
+  grpc_channel_element *elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
   grpc_core::ExecCtx exec_ctx;
@@ -60,16 +60,16 @@ void test_security_connector_already_in_arg(void) {
 }
 
 void test_null_creds(void) {
-  grpc_channel* chan =
+  grpc_channel *chan =
       grpc_secure_channel_create(nullptr, nullptr, nullptr, nullptr);
-  grpc_channel_element* elem =
+  grpc_channel_element *elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
   grpc_core::ExecCtx exec_ctx;
   GRPC_CHANNEL_INTERNAL_UNREF(chan, "test");
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_security_connector_already_in_arg();

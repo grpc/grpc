@@ -128,42 +128,42 @@ class PropagationOptions {
  public:
   PropagationOptions() : propagate_(GRPC_PROPAGATE_DEFAULTS) {}
 
-  PropagationOptions& enable_deadline_propagation() {
+  PropagationOptions &enable_deadline_propagation() {
     propagate_ |= GRPC_PROPAGATE_DEADLINE;
     return *this;
   }
 
-  PropagationOptions& disable_deadline_propagation() {
+  PropagationOptions &disable_deadline_propagation() {
     propagate_ &= ~GRPC_PROPAGATE_DEADLINE;
     return *this;
   }
 
-  PropagationOptions& enable_census_stats_propagation() {
+  PropagationOptions &enable_census_stats_propagation() {
     propagate_ |= GRPC_PROPAGATE_CENSUS_STATS_CONTEXT;
     return *this;
   }
 
-  PropagationOptions& disable_census_stats_propagation() {
+  PropagationOptions &disable_census_stats_propagation() {
     propagate_ &= ~GRPC_PROPAGATE_CENSUS_STATS_CONTEXT;
     return *this;
   }
 
-  PropagationOptions& enable_census_tracing_propagation() {
+  PropagationOptions &enable_census_tracing_propagation() {
     propagate_ |= GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT;
     return *this;
   }
 
-  PropagationOptions& disable_census_tracing_propagation() {
+  PropagationOptions &disable_census_tracing_propagation() {
     propagate_ &= ~GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT;
     return *this;
   }
 
-  PropagationOptions& enable_cancellation_propagation() {
+  PropagationOptions &enable_cancellation_propagation() {
     propagate_ |= GRPC_PROPAGATE_CANCELLATION;
     return *this;
   }
 
-  PropagationOptions& disable_cancellation_propagation() {
+  PropagationOptions &disable_cancellation_propagation() {
     propagate_ &= ~GRPC_PROPAGATE_CANCELLATION;
     return *this;
   }
@@ -206,10 +206,10 @@ class ClientContext {
   /// \return A newly constructed \a ClientContext instance based on \a
   /// server_context, with traits propagated (copied) according to \a options.
   static std::unique_ptr<ClientContext> FromServerContext(
-      const grpc::ServerContextBase& server_context,
+      const grpc::ServerContextBase &server_context,
       PropagationOptions options = PropagationOptions());
   static std::unique_ptr<ClientContext> FromCallbackServerContext(
-      const grpc::CallbackServerContext& server_context,
+      const grpc::CallbackServerContext &server_context,
       PropagationOptions options = PropagationOptions());
 
   /// Add the (\a meta_key, \a meta_value) pair to the metadata associated with
@@ -234,7 +234,7 @@ class ClientContext {
   Custom-Metadata -> Binary-Header / ASCII-Header
   \endverbatim
   **/
-  void AddMetadata(const std::string& meta_key, const std::string& meta_value);
+  void AddMetadata(const std::string &meta_key, const std::string &meta_value);
 
   /// Return a collection of initial metadata key-value pairs. Note that keys
   /// may happen more than once (ie, a \a std::multimap is returned).
@@ -244,8 +244,8 @@ class ClientContext {
   /// ClientReaderInterface::WaitForInitialMetadata().
   ///
   /// \return A multimap of initial metadata key-value pairs from the server.
-  const std::multimap<grpc::string_ref, grpc::string_ref>&
-  GetServerInitialMetadata() const {
+  const std::multimap<grpc::string_ref, grpc::string_ref>
+      &GetServerInitialMetadata() const {
     GPR_CODEGEN_ASSERT(initial_metadata_received_);
     return *recv_initial_metadata_.map();
   }
@@ -256,8 +256,8 @@ class ClientContext {
   /// \warning This method is only callable once the stream has finished.
   ///
   /// \return A multimap of metadata trailing key-value pairs from the server.
-  const std::multimap<grpc::string_ref, grpc::string_ref>&
-  GetServerTrailingMetadata() const {
+  const std::multimap<grpc::string_ref, grpc::string_ref>
+      &GetServerTrailingMetadata() const {
     // TODO(yangg) check finished
     return *trailing_metadata_.map();
   }
@@ -269,7 +269,7 @@ class ClientContext {
   /// \param deadline the deadline for the client call. Units are determined by
   /// the type used. The deadline is an absolute (not relative) time.
   template <typename T>
-  void set_deadline(const T& deadline) {
+  void set_deadline(const T &deadline) {
     grpc::TimePoint<T> deadline_tp(deadline);
     deadline_ = deadline_tp.raw_time();
   }
@@ -310,7 +310,7 @@ class ClientContext {
 
   /// Set the per call authority header (see
   /// https://tools.ietf.org/html/rfc7540#section-8.1.2.3).
-  void set_authority(const std::string& authority) { authority_ = authority; }
+  void set_authority(const std::string &authority) { authority_ = authority; }
 
   /// Return the authentication context for the associated client call.
   /// It is only valid to call this during the lifetime of the client call.
@@ -333,7 +333,7 @@ class ClientContext {
   /// It is legal to call this only before initial metadata is sent.
   ///
   /// \see  https://grpc.io/docs/guides/auth.html
-  void set_credentials(const std::shared_ptr<grpc::CallCredentials>& creds);
+  void set_credentials(const std::shared_ptr<grpc::CallCredentials> &creds);
 
   /// EXPERIMENTAL debugging API
   ///
@@ -382,10 +382,10 @@ class ClientContext {
   /// It is only valid to call this before the client call is created. A common
   /// place of setting census context is from within the DefaultConstructor
   /// method of GlobalCallbacks.
-  void set_census_context(struct census_context* ccp) { census_context_ = ccp; }
+  void set_census_context(struct census_context *ccp) { census_context_ = ccp; }
 
   /// Returns the census context that has been set, or nullptr if not set.
-  struct census_context* census_context() const {
+  struct census_context *census_context() const {
     return census_context_;
   }
 
@@ -407,14 +407,14 @@ class ClientContext {
   class GlobalCallbacks {
    public:
     virtual ~GlobalCallbacks() {}
-    virtual void DefaultConstructor(ClientContext* context) = 0;
-    virtual void Destructor(ClientContext* context) = 0;
+    virtual void DefaultConstructor(ClientContext *context) = 0;
+    virtual void Destructor(ClientContext *context) = 0;
   };
-  static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
+  static void SetGlobalCallbacks(GlobalCallbacks *callbacks);
 
   /// Should be used for framework-level extensions only.
   /// Applications never need to call this method.
-  grpc_call* c_call() { return call_; }
+  grpc_call *c_call() { return call_; }
 
   /// EXPERIMENTAL debugging API
   ///
@@ -425,8 +425,8 @@ class ClientContext {
 
  private:
   // Disallow copy and assign.
-  ClientContext(const ClientContext&);
-  ClientContext& operator=(const ClientContext&);
+  ClientContext(const ClientContext &);
+  ClientContext &operator=(const ClientContext &);
 
   friend class ::grpc::testing::InteropClientContextInspector;
   friend class ::grpc::testing::ClientContextTestPeer;
@@ -462,19 +462,19 @@ class ClientContext {
   friend class ::grpc::internal::ClientContextAccessor;
 
   // Used by friend class CallOpClientRecvStatus
-  void set_debug_error_string(const std::string& debug_error_string) {
+  void set_debug_error_string(const std::string &debug_error_string) {
     debug_error_string_ = debug_error_string;
   }
 
-  grpc_call* call() const { return call_; }
-  void set_call(grpc_call* call,
-                const std::shared_ptr<::grpc::Channel>& channel);
+  grpc_call *call() const { return call_; }
+  void set_call(grpc_call *call,
+                const std::shared_ptr<::grpc::Channel> &channel);
 
-  grpc::experimental::ClientRpcInfo* set_client_rpc_info(
-      const char* method, const char* suffix_for_stats,
-      grpc::internal::RpcMethod::RpcType type, grpc::ChannelInterface* channel,
+  grpc::experimental::ClientRpcInfo *set_client_rpc_info(
+      const char *method, const char *suffix_for_stats,
+      grpc::internal::RpcMethod::RpcType type, grpc::ChannelInterface *channel,
       const std::vector<std::unique_ptr<
-          grpc::experimental::ClientInterceptorFactoryInterface>>& creators,
+          grpc::experimental::ClientInterceptorFactoryInterface>> &creators,
       size_t interceptor_pos) {
     rpc_info_ = grpc::experimental::ClientRpcInfo(this, type, method,
                                                   suffix_for_stats, channel);
@@ -497,7 +497,7 @@ class ClientContext {
   void SendCancelToInterceptors();
 
   static std::unique_ptr<ClientContext> FromInternalServerContext(
-      const grpc::ServerContextBase& server_context,
+      const grpc::ServerContextBase &server_context,
       PropagationOptions options);
 
   bool initial_metadata_received_;
@@ -507,18 +507,18 @@ class ClientContext {
   bool cacheable_;
   std::shared_ptr<::grpc::Channel> channel_;
   grpc::internal::Mutex mu_;
-  grpc_call* call_;
+  grpc_call *call_;
   bool call_canceled_;
   gpr_timespec deadline_;
   grpc::string authority_;
   std::shared_ptr<grpc::CallCredentials> creds_;
   mutable std::shared_ptr<const grpc::AuthContext> auth_context_;
-  struct census_context* census_context_;
+  struct census_context *census_context_;
   std::multimap<std::string, std::string> send_initial_metadata_;
   mutable grpc::internal::MetadataMap recv_initial_metadata_;
   mutable grpc::internal::MetadataMap trailing_metadata_;
 
-  grpc_call* propagate_from_call_;
+  grpc_call *propagate_from_call_;
   PropagationOptions propagation_options_;
 
   grpc_compression_algorithm compression_algorithm_;

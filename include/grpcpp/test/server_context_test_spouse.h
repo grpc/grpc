@@ -29,15 +29,15 @@ namespace testing {
 /// A test-only class to access private members and methods of ServerContext.
 class ServerContextTestSpouse {
  public:
-  explicit ServerContextTestSpouse(ServerContext* ctx) : ctx_(ctx) {}
+  explicit ServerContextTestSpouse(ServerContext *ctx) : ctx_(ctx) {}
 
   /// Inject client metadata to the ServerContext for the test. The test spouse
   /// must be alive when \a ServerContext::client_metadata is called.
-  void AddClientMetadata(const std::string& key, const std::string& value) {
+  void AddClientMetadata(const std::string &key, const std::string &value) {
     client_metadata_storage_.insert(
         std::pair<std::string, std::string>(key, value));
     ctx_->client_metadata_.map()->clear();
-    for (const auto& item : client_metadata_storage_) {
+    for (const auto &item : client_metadata_storage_) {
       ctx_->client_metadata_.map()->insert(
           std::pair<grpc::string_ref, grpc::string_ref>(
               item.first.c_str(),
@@ -54,7 +54,7 @@ class ServerContextTestSpouse {
   }
 
  private:
-  ServerContext* ctx_;  // not owned
+  ServerContext *ctx_;  // not owned
   std::multimap<std::string, std::string> client_metadata_storage_;
 };
 

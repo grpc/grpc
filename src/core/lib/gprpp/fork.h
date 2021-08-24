@@ -91,8 +91,8 @@ class Fork {
   static void DoIncExecCtxCount();
   static void DoDecExecCtxCount();
 
-  static internal::ExecCtxState* exec_ctx_state_;
-  static internal::ThreadState* thread_state_;
+  static internal::ExecCtxState *exec_ctx_state_;
+  static internal::ThreadState *thread_state_;
   static std::atomic<bool> support_enabled_;
   static bool override_enabled_;
   static child_postfork_func reset_child_polling_engine_;

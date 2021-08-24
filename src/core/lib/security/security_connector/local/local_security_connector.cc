@@ -49,7 +49,7 @@
 namespace {
 
 grpc_core::RefCountedPtr<grpc_auth_context> local_auth_context_create(
-    const tsi_peer* peer) {
+    const tsi_peer *peer) {
   /* Create auth context. */
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
@@ -59,7 +59,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> local_auth_context_create(
   GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
                  ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME) == 1);
   GPR_ASSERT(peer->property_count == 1);
-  const tsi_peer_property* prop = &peer->properties[0];
+  const tsi_peer_property *prop = &peer->properties[0];
   GPR_ASSERT(prop != nullptr);
   GPR_ASSERT(strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0);
   grpc_auth_context_add_property(ctx.get(),
@@ -68,9 +68,9 @@ grpc_core::RefCountedPtr<grpc_auth_context> local_auth_context_create(
   return ctx;
 }
 
-void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
-                      grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-                      grpc_closure* on_peer_checked,
+void local_check_peer(tsi_peer peer, grpc_endpoint *ep,
+                      grpc_core::RefCountedPtr<grpc_auth_context> *auth_context,
+                      grpc_closure *on_peer_checked,
                       grpc_local_connect_type type) {
   grpc_resolved_address resolved_addr;
   bool is_endpoint_local = false;
@@ -81,25 +81,25 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
             std::string(local_addr.data(), local_addr.size()).c_str());
   } else {
     grpc_resolved_address addr_normalized;
-    grpc_resolved_address* addr =
+    grpc_resolved_address *addr =
         grpc_sockaddr_is_v4mapped(&resolved_addr, &addr_normalized)
             ? &addr_normalized
             : &resolved_addr;
-    grpc_sockaddr* sock_addr = reinterpret_cast<grpc_sockaddr*>(&addr->addr);
+    grpc_sockaddr *sock_addr = reinterpret_cast<grpc_sockaddr *>(&addr->addr);
     // UDS
     if (type == UDS && grpc_is_unix_socket(addr)) {
       is_endpoint_local = true;
       // IPV4
     } else if (type == LOCAL_TCP && sock_addr->sa_family == GRPC_AF_INET) {
-      const grpc_sockaddr_in* addr4 =
-          reinterpret_cast<const grpc_sockaddr_in*>(sock_addr);
+      const grpc_sockaddr_in *addr4 =
+          reinterpret_cast<const grpc_sockaddr_in *>(sock_addr);
       if (grpc_htonl(addr4->sin_addr.s_addr) == INADDR_LOOPBACK) {
         is_endpoint_local = true;
       }
       // IPv6
     } else if (type == LOCAL_TCP && sock_addr->sa_family == GRPC_AF_INET6) {
-      const grpc_sockaddr_in6* addr6 =
-          reinterpret_cast<const grpc_sockaddr_in6*>(addr);
+      const grpc_sockaddr_in6 *addr6 =
+          reinterpret_cast<const grpc_sockaddr_in6 *>(addr);
       if (memcmp(&addr6->sin6_addr, &in6addr_loopback,
                  sizeof(in6addr_loopback)) == 0) {
         is_endpoint_local = true;
@@ -115,7 +115,7 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
   }
   // Add TSI_SECURITY_LEVEL_PEER_PROPERTY type peer property.
   size_t new_property_count = peer.property_count + 1;
-  tsi_peer_property* new_properties = static_cast<tsi_peer_property*>(
+  tsi_peer_property *new_properties = static_cast<tsi_peer_property *>(
       gpr_zalloc(sizeof(*new_properties) * new_property_count));
   for (size_t i = 0; i < peer.property_count; i++) {
     new_properties[i] = peer.properties[i];
@@ -123,7 +123,7 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
   if (peer.properties != nullptr) gpr_free(peer.properties);
   peer.properties = new_properties;
   // TODO(yihuazhang): Set security level of local TCP to TSI_SECURITY_NONE.
-  const char* security_level =
+  const char *security_level =
       tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY);
   tsi_result result = tsi_construct_string_peer_property_from_cstring(
       TSI_SECURITY_LEVEL_PEER_PROPERTY, security_level,
@@ -149,7 +149,7 @@ class grpc_local_channel_security_connector final
   grpc_local_channel_security_connector(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-      const char* target_name)
+      const char *target_name)
       : grpc_channel_security_connector(nullptr, std::move(channel_creds),
                                         std::move(request_metadata_creds)),
         target_name_(gpr_strdup(target_name)) {}
@@ -157,42 +157,42 @@ class grpc_local_channel_security_connector final
   ~grpc_local_channel_security_connector() override { gpr_free(target_name_); }
 
   void add_handshakers(
-      const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
-      grpc_core::HandshakeManager* handshake_manager) override {
-    tsi_handshaker* handshaker = nullptr;
+      const grpc_channel_args *args, grpc_pollset_set * /*interested_parties*/,
+      grpc_core::HandshakeManager *handshake_manager) override {
+    tsi_handshaker *handshaker = nullptr;
     GPR_ASSERT(tsi_local_handshaker_create(true /* is_client */, &handshaker) ==
                TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
 
-  int cmp(const grpc_security_connector* other_sc) const override {
-    auto* other =
-        reinterpret_cast<const grpc_local_channel_security_connector*>(
+  int cmp(const grpc_security_connector *other_sc) const override {
+    auto *other =
+        reinterpret_cast<const grpc_local_channel_security_connector *>(
             other_sc);
     int c = channel_security_connector_cmp(other);
     if (c != 0) return c;
     return strcmp(target_name_, other->target_name_);
   }
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
-                  grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-                  grpc_closure* on_peer_checked) override {
-    grpc_local_credentials* creds =
-        reinterpret_cast<grpc_local_credentials*>(mutable_channel_creds());
+  void check_peer(tsi_peer peer, grpc_endpoint *ep,
+                  grpc_core::RefCountedPtr<grpc_auth_context> *auth_context,
+                  grpc_closure *on_peer_checked) override {
+    grpc_local_credentials *creds =
+        reinterpret_cast<grpc_local_credentials *>(mutable_channel_creds());
     local_check_peer(peer, ep, auth_context, on_peer_checked,
                      creds->connect_type());
   }
 
-  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+  void cancel_check_peer(grpc_closure * /*on_peer_checked*/,
                          grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 
   bool check_call_host(absl::string_view host,
-                       grpc_auth_context* /*auth_context*/,
-                       grpc_closure* /*on_call_host_checked*/,
-                       grpc_error_handle* error) override {
+                       grpc_auth_context * /*auth_context*/,
+                       grpc_closure * /*on_call_host_checked*/,
+                       grpc_error_handle *error) override {
     if (host.empty() || host != target_name_) {
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "local call host does not match target name");
@@ -200,15 +200,15 @@ class grpc_local_channel_security_connector final
     return true;
   }
 
-  void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
+  void cancel_check_call_host(grpc_closure * /*on_call_host_checked*/,
                               grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 
-  const char* target_name() const { return target_name_; }
+  const char *target_name() const { return target_name_; }
 
  private:
-  char* target_name_;
+  char *target_name_;
 };
 
 class grpc_local_server_security_connector final
@@ -220,32 +220,32 @@ class grpc_local_server_security_connector final
   ~grpc_local_server_security_connector() override = default;
 
   void add_handshakers(
-      const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
-      grpc_core::HandshakeManager* handshake_manager) override {
-    tsi_handshaker* handshaker = nullptr;
+      const grpc_channel_args *args, grpc_pollset_set * /*interested_parties*/,
+      grpc_core::HandshakeManager *handshake_manager) override {
+    tsi_handshaker *handshaker = nullptr;
     GPR_ASSERT(tsi_local_handshaker_create(false /* is_client */,
                                            &handshaker) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
-                  grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-                  grpc_closure* on_peer_checked) override {
-    grpc_local_server_credentials* creds =
-        static_cast<grpc_local_server_credentials*>(mutable_server_creds());
+  void check_peer(tsi_peer peer, grpc_endpoint *ep,
+                  grpc_core::RefCountedPtr<grpc_auth_context> *auth_context,
+                  grpc_closure *on_peer_checked) override {
+    grpc_local_server_credentials *creds =
+        static_cast<grpc_local_server_credentials *>(mutable_server_creds());
     local_check_peer(peer, ep, auth_context, on_peer_checked,
                      creds->connect_type());
   }
 
-  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+  void cancel_check_peer(grpc_closure * /*on_peer_checked*/,
                          grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 
-  int cmp(const grpc_security_connector* other) const override {
+  int cmp(const grpc_security_connector *other) const override {
     return server_security_connector_cmp(
-        static_cast<const grpc_server_security_connector*>(other));
+        static_cast<const grpc_server_security_connector *>(other));
   }
 };
 }  // namespace
@@ -254,7 +254,7 @@ grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_local_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-    const grpc_channel_args* args, const char* target_name) {
+    const grpc_channel_args *args, const char *target_name) {
   if (channel_creds == nullptr || target_name == nullptr) {
     gpr_log(
         GPR_ERROR,
@@ -263,11 +263,11 @@ grpc_local_channel_security_connector_create(
   }
   // Perform sanity check on UDS address. For TCP local connection, the check
   // will be done during check_peer procedure.
-  grpc_local_credentials* creds =
-      static_cast<grpc_local_credentials*>(channel_creds.get());
-  const grpc_arg* server_uri_arg =
+  grpc_local_credentials *creds =
+      static_cast<grpc_local_credentials *>(channel_creds.get());
+  const grpc_arg *server_uri_arg =
       grpc_channel_args_find(args, GRPC_ARG_SERVER_URI);
-  const char* server_uri_str = grpc_channel_arg_get_string(server_uri_arg);
+  const char *server_uri_str = grpc_channel_arg_get_string(server_uri_arg);
   if (creds->connect_type() == UDS &&
       strncmp(GRPC_UDS_URI_PATTERN, server_uri_str,
               strlen(GRPC_UDS_URI_PATTERN)) != 0) {

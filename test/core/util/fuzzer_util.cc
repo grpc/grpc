@@ -25,22 +25,22 @@
 namespace grpc_core {
 namespace testing {
 
-uint8_t grpc_fuzzer_get_next_byte(input_stream* inp) {
+uint8_t grpc_fuzzer_get_next_byte(input_stream *inp) {
   if (inp->cur == inp->end) {
     return 0;
   }
   return *inp->cur++;
 }
 
-char* grpc_fuzzer_get_next_string(input_stream* inp, bool* special) {
-  char* str = nullptr;
+char *grpc_fuzzer_get_next_string(input_stream *inp, bool *special) {
+  char *str = nullptr;
   size_t cap = 0;
   size_t sz = 0;
   char c;
   do {
     if (cap == sz) {
       cap = GPR_MAX(3 * cap / 2, cap + 8);
-      str = static_cast<char*>(gpr_realloc(str, cap));
+      str = static_cast<char *>(gpr_realloc(str, cap));
     }
     c = static_cast<char>(grpc_fuzzer_get_next_byte(inp));
     str[sz++] = c;
@@ -54,7 +54,7 @@ char* grpc_fuzzer_get_next_string(input_stream* inp, bool* special) {
   return str;
 }
 
-uint32_t grpc_fuzzer_get_next_uint32(input_stream* inp) {
+uint32_t grpc_fuzzer_get_next_uint32(input_stream *inp) {
   uint8_t b = grpc_fuzzer_get_next_byte(inp);
   uint32_t x = b & 0x7f;
   if (b & 0x80) {

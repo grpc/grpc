@@ -35,7 +35,7 @@ using std::pair;
 using std::vector;
 
 WeightedRandomTestSelector::WeightedRandomTestSelector(
-    const vector<pair<TestCaseType, int>>& tests)
+    const vector<pair<TestCaseType, int>> &tests)
     : tests_(tests) {
   total_weight_ = 0;
   for (auto it = tests.begin(); it != tests.end(); it++) {
@@ -67,9 +67,9 @@ TestCaseType WeightedRandomTestSelector::GetNextTest() const {
 }
 
 StressTestInteropClient::StressTestInteropClient(
-    int test_id, const std::string& server_address,
+    int test_id, const std::string &server_address,
     ChannelCreationFunc channel_creation_func,
-    const WeightedRandomTestSelector& test_selector, long test_duration_secs,
+    const WeightedRandomTestSelector &test_selector, long test_duration_secs,
     long sleep_duration_ms, bool do_not_abort_on_transient_failures)
     : test_id_(test_id),
       server_address_(server_address),
@@ -81,7 +81,7 @@ StressTestInteropClient::StressTestInteropClient(
       sleep_duration_ms_(sleep_duration_ms) {}
 
 void StressTestInteropClient::MainLoop(
-    const std::shared_ptr<QpsGauge>& qps_gauge) {
+    const std::shared_ptr<QpsGauge> &qps_gauge) {
   gpr_log(GPR_INFO, "Running test %d. ServerAddr: %s", test_id_,
           server_address_.c_str());
 

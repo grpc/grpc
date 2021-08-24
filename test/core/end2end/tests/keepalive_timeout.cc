@@ -37,12 +37,12 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #endif  // GRPC_POSIX_SOCKET
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+                                            const char *test_name,
+                                            grpc_channel_args *client_args,
+                                            grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -59,14 +59,14 @@ static gpr_timespec five_seconds_from_now(void) {
   return n_seconds_from_now(5);
 }
 
-static void drain_cq(grpc_completion_queue* cq) {
+static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
 
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
@@ -77,13 +77,13 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(grpc_end2end_test_fixture *f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(grpc_end2end_test_fixture *f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -96,35 +96,36 @@ static void end_test(grpc_end2end_test_fixture* f) {
 /* Client sends a request, server replies with a payload, then waits for the
    keepalive watchdog timeouts before returning status. */
 static void test_keepalive_timeout(grpc_end2end_test_config config) {
-  grpc_call* c;
-  grpc_call* s;
+  grpc_call *c;
+  grpc_call *s;
   grpc_slice response_payload_slice =
       grpc_slice_from_copied_string("hello world");
-  grpc_byte_buffer* response_payload =
+  grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
 
   grpc_arg keepalive_arg_elems[3];
   keepalive_arg_elems[0].type = GRPC_ARG_INTEGER;
-  keepalive_arg_elems[0].key = const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS);
+  keepalive_arg_elems[0].key = const_cast<char *>(GRPC_ARG_KEEPALIVE_TIME_MS);
   keepalive_arg_elems[0].value.integer = 3500;
   keepalive_arg_elems[1].type = GRPC_ARG_INTEGER;
-  keepalive_arg_elems[1].key = const_cast<char*>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
+  keepalive_arg_elems[1].key =
+      const_cast<char *>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
   keepalive_arg_elems[1].value.integer = 0;
   keepalive_arg_elems[2].type = GRPC_ARG_INTEGER;
-  keepalive_arg_elems[2].key = const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE);
+  keepalive_arg_elems[2].key = const_cast<char *>(GRPC_ARG_HTTP2_BDP_PROBE);
   keepalive_arg_elems[2].value.integer = 0;
   grpc_channel_args keepalive_args = {GPR_ARRAY_SIZE(keepalive_arg_elems),
                                       keepalive_arg_elems};
 
   grpc_end2end_test_fixture f =
       begin_test(config, "keepalive_timeout", &keepalive_args, nullptr);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer* response_payload_recv = nullptr;
+  grpc_byte_buffer *response_payload_recv = nullptr;
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
@@ -197,8 +198,8 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
   cq_verify(cqv);
 
-  char* details_str = grpc_slice_to_c_string(details);
-  char* method_str = grpc_slice_to_c_string(call_details.method);
+  char *details_str = grpc_slice_to_c_string(details);
+  char *method_str = grpc_slice_to_c_string(call_details.method);
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "keepalive watchdog timeout"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
@@ -239,13 +240,14 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
   const int kPingIntervalMS = 100;
   grpc_arg keepalive_arg_elems[3];
   keepalive_arg_elems[0].type = GRPC_ARG_INTEGER;
-  keepalive_arg_elems[0].key = const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS);
+  keepalive_arg_elems[0].key = const_cast<char *>(GRPC_ARG_KEEPALIVE_TIME_MS);
   keepalive_arg_elems[0].value.integer = 20 * kPingIntervalMS;
   keepalive_arg_elems[1].type = GRPC_ARG_INTEGER;
-  keepalive_arg_elems[1].key = const_cast<char*>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
+  keepalive_arg_elems[1].key =
+      const_cast<char *>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
   keepalive_arg_elems[1].value.integer = 0;
   keepalive_arg_elems[2].type = GRPC_ARG_INTEGER;
-  keepalive_arg_elems[2].key = const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE);
+  keepalive_arg_elems[2].key = const_cast<char *>(GRPC_ARG_HTTP2_BDP_PROBE);
   keepalive_arg_elems[2].value.integer = 0;
   grpc_channel_args keepalive_args = {GPR_ARRAY_SIZE(keepalive_arg_elems),
                                       keepalive_arg_elems};
@@ -253,11 +255,11 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
                                            &keepalive_args, nullptr);
   /* Disable ping ack to trigger the keepalive timeout */
   grpc_set_disable_ping_ack(true);
-  grpc_call* c;
-  grpc_call* s;
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_call *c;
+  grpc_call *s;
+  cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -266,10 +268,10 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
   grpc_call_error error;
   grpc_slice details;
   int was_cancelled = 2;
-  grpc_byte_buffer* request_payload;
-  grpc_byte_buffer* request_payload_recv;
-  grpc_byte_buffer* response_payload;
-  grpc_byte_buffer* response_payload_recv;
+  grpc_byte_buffer *request_payload;
+  grpc_byte_buffer *request_payload_recv;
+  grpc_byte_buffer *response_payload;
+  grpc_byte_buffer *response_payload_recv;
   int i;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");

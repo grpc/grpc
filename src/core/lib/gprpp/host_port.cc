@@ -37,8 +37,8 @@ std::string JoinHostPort(absl::string_view host, int port) {
 }
 
 namespace {
-bool DoSplitHostPort(absl::string_view name, absl::string_view* host,
-                     absl::string_view* port, bool* has_port) {
+bool DoSplitHostPort(absl::string_view name, absl::string_view *host,
+                     absl::string_view *port, bool *has_port) {
   *has_port = false;
   if (!name.empty() && name[0] == '[') {
     /* Parse a bracketed host, typically an IPv6 literal. */
@@ -83,14 +83,14 @@ bool DoSplitHostPort(absl::string_view name, absl::string_view* host,
 }
 }  // namespace
 
-bool SplitHostPort(absl::string_view name, absl::string_view* host,
-                   absl::string_view* port) {
+bool SplitHostPort(absl::string_view name, absl::string_view *host,
+                   absl::string_view *port) {
   bool unused;
   return DoSplitHostPort(name, host, port, &unused);
 }
 
-bool SplitHostPort(absl::string_view name, std::string* host,
-                   std::string* port) {
+bool SplitHostPort(absl::string_view name, std::string *host,
+                   std::string *port) {
   GPR_DEBUG_ASSERT(host != nullptr && host->empty());
   GPR_DEBUG_ASSERT(port != nullptr && port->empty());
   absl::string_view host_view;

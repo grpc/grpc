@@ -29,7 +29,7 @@ grpc_core::TraceFlag grpc_bdp_estimator_trace(false, "bdp_estimator");
 
 namespace grpc_core {
 
-BdpEstimator::BdpEstimator(const char* name)
+BdpEstimator::BdpEstimator(const char *name)
     : ping_state_(PingState::UNSCHEDULED),
       accumulator_(0),
       estimate_(65536),

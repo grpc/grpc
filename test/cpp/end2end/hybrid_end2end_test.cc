@@ -43,23 +43,23 @@ namespace grpc {
 namespace testing {
 namespace {
 
-void* tag(int i) { return reinterpret_cast<void*>(i); }
+void *tag(int i) { return reinterpret_cast<void *>(i); }
 
-bool VerifyReturnSuccess(CompletionQueue* cq, int i) {
-  void* got_tag;
+bool VerifyReturnSuccess(CompletionQueue *cq, int i) {
+  void *got_tag;
   bool ok;
   EXPECT_TRUE(cq->Next(&got_tag, &ok));
   EXPECT_EQ(tag(i), got_tag);
   return ok;
 }
 
-void Verify(CompletionQueue* cq, int i, bool expect_ok) {
+void Verify(CompletionQueue *cq, int i, bool expect_ok) {
   EXPECT_EQ(expect_ok, VerifyReturnSuccess(cq, i));
 }
 
 // Handlers to handle async request at a server. To be run in a separate thread.
 template <class Service>
-void HandleEcho(Service* service, ServerCompletionQueue* cq, bool dup_service) {
+void HandleEcho(Service *service, ServerCompletionQueue *cq, bool dup_service) {
   ServerContext srv_ctx;
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
   EchoRequest recv_request;
@@ -79,7 +79,7 @@ void HandleEcho(Service* service, ServerCompletionQueue* cq, bool dup_service) {
 // separate thread. Note that this is the same as the async version, except
 // that the req/resp are ByteBuffers
 template <class Service>
-void HandleRawEcho(Service* service, ServerCompletionQueue* cq,
+void HandleRawEcho(Service *service, ServerCompletionQueue *cq,
                    bool /*dup_service*/) {
   ServerContext srv_ctx;
   GenericServerAsyncResponseWriter response_writer(&srv_ctx);
@@ -97,7 +97,7 @@ void HandleRawEcho(Service* service, ServerCompletionQueue* cq,
 }
 
 template <class Service>
-void HandleClientStreaming(Service* service, ServerCompletionQueue* cq) {
+void HandleClientStreaming(Service *service, ServerCompletionQueue *cq) {
   ServerContext srv_ctx;
   EchoRequest recv_request;
   EchoResponse send_response;
@@ -115,7 +115,7 @@ void HandleClientStreaming(Service* service, ServerCompletionQueue* cq) {
 }
 
 template <class Service>
-void HandleRawClientStreaming(Service* service, ServerCompletionQueue* cq) {
+void HandleRawClientStreaming(Service *service, ServerCompletionQueue *cq) {
   ServerContext srv_ctx;
   ByteBuffer recv_buffer;
   EchoRequest recv_request;
@@ -139,7 +139,7 @@ void HandleRawClientStreaming(Service* service, ServerCompletionQueue* cq) {
 }
 
 template <class Service>
-void HandleServerStreaming(Service* service, ServerCompletionQueue* cq) {
+void HandleServerStreaming(Service *service, ServerCompletionQueue *cq) {
   ServerContext srv_ctx;
   EchoRequest recv_request;
   EchoResponse send_response;
@@ -160,8 +160,8 @@ void HandleServerStreaming(Service* service, ServerCompletionQueue* cq) {
   Verify(cq, 5, true);
 }
 
-void HandleGenericEcho(GenericServerAsyncReaderWriter* stream,
-                       CompletionQueue* cq) {
+void HandleGenericEcho(GenericServerAsyncReaderWriter *stream,
+                       CompletionQueue *cq) {
   ByteBuffer recv_buffer;
   stream->Read(&recv_buffer, tag(2));
   Verify(cq, 2, true);
@@ -176,8 +176,8 @@ void HandleGenericEcho(GenericServerAsyncReaderWriter* stream,
   Verify(cq, 4, true);
 }
 
-void HandleGenericRequestStream(GenericServerAsyncReaderWriter* stream,
-                                CompletionQueue* cq) {
+void HandleGenericRequestStream(GenericServerAsyncReaderWriter *stream,
+                                CompletionQueue *cq) {
   ByteBuffer recv_buffer;
   EchoRequest recv_request;
   EchoResponse send_response;
@@ -199,8 +199,8 @@ void HandleGenericRequestStream(GenericServerAsyncReaderWriter* stream,
 }
 
 // Request and handle one generic call.
-void HandleGenericCall(AsyncGenericService* service,
-                       ServerCompletionQueue* cq) {
+void HandleGenericCall(AsyncGenericService *service,
+                       ServerCompletionQueue *cq) {
   GenericServerContext srv_ctx;
   GenericServerAsyncReaderWriter stream(&srv_ctx);
   service->RequestCall(&srv_ctx, &stream, cq, cq, tag(1));
@@ -219,8 +219,8 @@ void HandleGenericCall(AsyncGenericService* service,
 class TestServiceImplDupPkg
     : public ::grpc::testing::duplicate::EchoTestService::Service {
  public:
-  Status Echo(ServerContext* /*context*/, const EchoRequest* request,
-              EchoResponse* response) override {
+  Status Echo(ServerContext * /*context*/, const EchoRequest *request,
+              EchoResponse *response) override {
     response->set_message(request->message() + "_dup");
     return Status::OK;
   }
@@ -245,9 +245,9 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
                   : false;
   }
 
-  bool SetUpServer(::grpc::Service* service1, ::grpc::Service* service2,
-                   AsyncGenericService* generic_service,
-                   CallbackGenericService* callback_generic_service,
+  bool SetUpServer(::grpc::Service *service1, ::grpc::Service *service2,
+                   AsyncGenericService *generic_service,
+                   CallbackGenericService *callback_generic_service,
                    int max_message_size = 0) {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
@@ -290,7 +290,7 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
     if (server_) {
       server_->Shutdown();
     }
-    void* ignored_tag;
+    void *ignored_tag;
     bool ignored_ok;
     for (auto it = cqs_.begin(); it != cqs_.end(); ++it) {
       (*it)->Shutdown();
@@ -564,8 +564,8 @@ class StreamedUnaryDupPkg
           TestServiceImplDupPkg> {
  public:
   Status StreamedEcho(
-      ServerContext* /*context*/,
-      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream) override {
+      ServerContext * /*context*/,
+      ServerUnaryStreamer<EchoRequest, EchoResponse> *stream) override {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -602,8 +602,8 @@ class FullyStreamedUnaryDupPkg
     : public duplicate::EchoTestService::StreamedUnaryService {
  public:
   Status StreamedEcho(
-      ServerContext* /*context*/,
-      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream) override {
+      ServerContext * /*context*/,
+      ServerUnaryStreamer<EchoRequest, EchoResponse> *stream) override {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -641,8 +641,8 @@ class SplitResponseStreamDupPkg
           WithSplitStreamingMethod_ResponseStream<TestServiceImplDupPkg> {
  public:
   Status StreamedResponseStream(
-      ServerContext* /*context*/,
-      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) override {
+      ServerContext * /*context*/,
+      ServerSplitStreamer<EchoRequest, EchoResponse> *stream) override {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -681,8 +681,8 @@ class FullySplitStreamedDupPkg
     : public duplicate::EchoTestService::SplitStreamedService {
  public:
   Status StreamedResponseStream(
-      ServerContext* /*context*/,
-      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) override {
+      ServerContext * /*context*/,
+      ServerSplitStreamer<EchoRequest, EchoResponse> *stream) override {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -720,8 +720,8 @@ TEST_F(HybridEnd2endTest,
 class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
  public:
   Status StreamedEcho(
-      ServerContext* /*context*/,
-      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream) override {
+      ServerContext * /*context*/,
+      ServerUnaryStreamer<EchoRequest, EchoResponse> *stream) override {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -733,8 +733,8 @@ class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
     return Status::OK;
   }
   Status StreamedResponseStream(
-      ServerContext* /*context*/,
-      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) override {
+      ServerContext * /*context*/,
+      ServerSplitStreamer<EchoRequest, EchoResponse> *stream) override {
     EchoRequest req;
     EchoResponse resp;
     uint32_t next_msg_sz;
@@ -807,8 +807,8 @@ TEST_P(HybridEnd2endTest, CallbackGenericEcho) {
   EchoTestService::WithGenericMethod_Echo<TestServiceImpl> service;
   class GenericEchoService : public CallbackGenericService {
    private:
-    ServerGenericBidiReactor* CreateReactor(
-        GenericCallbackServerContext* context) override {
+    ServerGenericBidiReactor *CreateReactor(
+        GenericCallbackServerContext *context) override {
       EXPECT_EQ(context->method(), "/grpc.testing.EchoTestService/Echo");
       gpr_log(GPR_DEBUG, "Constructor of generic service %d",
               static_cast<int>(context->deadline().time_since_epoch().count()));
@@ -969,7 +969,7 @@ INSTANTIATE_TEST_SUITE_P(HybridEnd2endTest, HybridEnd2endTest,
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

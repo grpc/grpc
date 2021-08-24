@@ -33,7 +33,7 @@ namespace internal {
 class ServerRetryThrottleData : public RefCounted<ServerRetryThrottleData> {
  public:
   ServerRetryThrottleData(intptr_t max_milli_tokens, intptr_t milli_token_ratio,
-                          ServerRetryThrottleData* old_throttle_data);
+                          ServerRetryThrottleData *old_throttle_data);
   ~ServerRetryThrottleData() override;
 
   /// Records a failure.  Returns true if it's okay to send a retry.
@@ -47,7 +47,7 @@ class ServerRetryThrottleData : public RefCounted<ServerRetryThrottleData> {
 
  private:
   void GetReplacementThrottleDataIfNeeded(
-      ServerRetryThrottleData** throttle_data);
+      ServerRetryThrottleData **throttle_data);
 
   const intptr_t max_milli_tokens_;
   const intptr_t milli_token_ratio_;
@@ -69,7 +69,7 @@ class ServerRetryThrottleMap {
   /// Returns the failure data for \a server_name, creating a new entry if
   /// needed.
   static RefCountedPtr<ServerRetryThrottleData> GetDataForServer(
-      const std::string& server_name, intptr_t max_milli_tokens,
+      const std::string &server_name, intptr_t max_milli_tokens,
       intptr_t milli_token_ratio);
 };
 

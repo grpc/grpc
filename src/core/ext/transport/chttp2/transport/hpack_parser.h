@@ -56,8 +56,8 @@ class HPackParser {
   ~HPackParser();
 
   // Non-copyable/movable
-  HPackParser(const HPackParser&) = delete;
-  HPackParser& operator=(const HPackParser&) = delete;
+  HPackParser(const HPackParser &) = delete;
+  HPackParser &operator=(const HPackParser &) = delete;
 
   // Begin parsing a new frame
   // Sink receives each parsed header,
@@ -65,12 +65,12 @@ class HPackParser {
   // Change the header sink mid parse
   void ResetSink(Sink sink) { sink_ = std::move(sink); }
   // Parse one slice worth of data
-  grpc_error_handle Parse(const grpc_slice& slice, bool is_last);
+  grpc_error_handle Parse(const grpc_slice &slice, bool is_last);
   // Reset state ready for the next BeginFrame
   void FinishFrame();
 
   // Retrieve the associated hpack table (for tests, debugging)
-  HPackTable* hpack_table() { return &table_; }
+  HPackTable *hpack_table() { return &table_; }
   // Is the current frame a boundary of some sort
   bool is_boundary() const { return boundary_ != Boundary::None; }
   // Is the current frame the end of a stream
@@ -83,7 +83,7 @@ class HPackParser {
   class String;
 
   grpc_error_handle ParseInput(Input input, bool is_last);
-  bool ParseInputInner(Input* input);
+  bool ParseInputInner(Input *input);
 
   // Callback per header received
   Sink sink_;
@@ -108,10 +108,10 @@ class HPackParser {
 
 /* wraps grpc_chttp2_hpack_parser_parse to provide a frame level parser for
    the transport */
-grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
-                                                  grpc_chttp2_transport* t,
-                                                  grpc_chttp2_stream* s,
-                                                  const grpc_slice& slice,
+grpc_error_handle grpc_chttp2_header_parser_parse(void *hpack_parser,
+                                                  grpc_chttp2_transport *t,
+                                                  grpc_chttp2_stream *s,
+                                                  const grpc_slice &slice,
                                                   int is_last);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_H */

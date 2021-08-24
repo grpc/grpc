@@ -39,14 +39,14 @@ typedef struct mock_endpoint {
   gpr_mu mu;
   void (*on_write)(grpc_slice slice);
   grpc_slice_buffer read_buffer;
-  grpc_slice_buffer* on_read_out;
-  grpc_closure* on_read;
-  grpc_slice_allocator* slice_allocator;
+  grpc_slice_buffer *on_read_out;
+  grpc_closure *on_read;
+  grpc_slice_allocator *slice_allocator;
 } mock_endpoint;
 
-static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb, bool /*urgent*/) {
-  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
+static void me_read(grpc_endpoint *ep, grpc_slice_buffer *slices,
+                    grpc_closure *cb, bool /*urgent*/) {
+  mock_endpoint *m = reinterpret_cast<mock_endpoint *>(ep);
   gpr_mu_lock(&m->mu);
   if (m->read_buffer.count > 0) {
     grpc_slice_buffer_swap(&m->read_buffer, slices);
@@ -58,26 +58,26 @@ static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
   gpr_mu_unlock(&m->mu);
 }
 
-static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb, void* /*arg*/) {
-  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
+static void me_write(grpc_endpoint *ep, grpc_slice_buffer *slices,
+                     grpc_closure *cb, void * /*arg*/) {
+  mock_endpoint *m = reinterpret_cast<mock_endpoint *>(ep);
   for (size_t i = 0; i < slices->count; i++) {
     m->on_write(slices->slices[i]);
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
 }
 
-static void me_add_to_pollset(grpc_endpoint* /*ep*/,
-                              grpc_pollset* /*pollset*/) {}
+static void me_add_to_pollset(grpc_endpoint * /*ep*/,
+                              grpc_pollset * /*pollset*/) {}
 
-static void me_add_to_pollset_set(grpc_endpoint* /*ep*/,
-                                  grpc_pollset_set* /*pollset*/) {}
+static void me_add_to_pollset_set(grpc_endpoint * /*ep*/,
+                                  grpc_pollset_set * /*pollset*/) {}
 
-static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/,
-                                       grpc_pollset_set* /*pollset*/) {}
+static void me_delete_from_pollset_set(grpc_endpoint * /*ep*/,
+                                       grpc_pollset_set * /*pollset*/) {}
 
-static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
-  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
+static void me_shutdown(grpc_endpoint *ep, grpc_error_handle why) {
+  mock_endpoint *m = reinterpret_cast<mock_endpoint *>(ep);
   gpr_mu_lock(&m->mu);
   if (m->on_read) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read,
@@ -89,25 +89,25 @@ static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   GRPC_ERROR_UNREF(why);
 }
 
-static void me_destroy(grpc_endpoint* ep) {
-  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
+static void me_destroy(grpc_endpoint *ep) {
+  mock_endpoint *m = reinterpret_cast<mock_endpoint *>(ep);
   grpc_slice_buffer_destroy(&m->read_buffer);
   grpc_slice_allocator_destroy(m->slice_allocator);
   gpr_mu_destroy(&m->mu);
   gpr_free(m);
 }
 
-static absl::string_view me_get_peer(grpc_endpoint* /*ep*/) {
+static absl::string_view me_get_peer(grpc_endpoint * /*ep*/) {
   return "fake:mock_endpoint";
 }
 
-static absl::string_view me_get_local_address(grpc_endpoint* /*ep*/) {
+static absl::string_view me_get_local_address(grpc_endpoint * /*ep*/) {
   return "fake:mock_endpoint";
 }
 
-static int me_get_fd(grpc_endpoint* /*ep*/) { return -1; }
+static int me_get_fd(grpc_endpoint * /*ep*/) { return -1; }
 
-static bool me_can_track_err(grpc_endpoint* /*ep*/) { return false; }
+static bool me_can_track_err(grpc_endpoint * /*ep*/) { return false; }
 
 static const grpc_endpoint_vtable vtable = {me_read,
                                             me_write,
@@ -121,9 +121,9 @@ static const grpc_endpoint_vtable vtable = {me_read,
                                             me_get_fd,
                                             me_can_track_err};
 
-grpc_endpoint* grpc_mock_endpoint_create(
-    void (*on_write)(grpc_slice slice), grpc_slice_allocator* slice_allocator) {
-  mock_endpoint* m = static_cast<mock_endpoint*>(gpr_malloc(sizeof(*m)));
+grpc_endpoint *grpc_mock_endpoint_create(
+    void (*on_write)(grpc_slice slice), grpc_slice_allocator *slice_allocator) {
+  mock_endpoint *m = static_cast<mock_endpoint *>(gpr_malloc(sizeof(*m)));
   m->base.vtable = &vtable;
   m->slice_allocator = slice_allocator;
   grpc_slice_buffer_init(&m->read_buffer);
@@ -133,8 +133,8 @@ grpc_endpoint* grpc_mock_endpoint_create(
   return &m->base;
 }
 
-void grpc_mock_endpoint_put_read(grpc_endpoint* ep, grpc_slice slice) {
-  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
+void grpc_mock_endpoint_put_read(grpc_endpoint *ep, grpc_slice slice) {
+  mock_endpoint *m = reinterpret_cast<mock_endpoint *>(ep);
   gpr_mu_lock(&m->mu);
   if (m->on_read != nullptr) {
     grpc_slice_buffer_add(m->on_read_out, slice);

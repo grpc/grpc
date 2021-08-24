@@ -38,11 +38,11 @@
 
 namespace {
 
-constexpr const char* kRootCertName = "root_cert_name";
-constexpr const char* kRootCertContents = "root_cert_contents";
-constexpr const char* kIdentityCertName = "identity_cert_name";
-constexpr const char* kIdentityCertPrivateKey = "identity_private_key";
-constexpr const char* kIdentityCertContents = "identity_cert_contents";
+constexpr const char *kRootCertName = "root_cert_name";
+constexpr const char *kRootCertContents = "root_cert_contents";
+constexpr const char *kIdentityCertName = "identity_cert_name";
+constexpr const char *kIdentityCertPrivateKey = "identity_private_key";
+constexpr const char *kIdentityCertContents = "identity_cert_contents";
 
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::StaticDataCertificateProvider;
@@ -51,10 +51,10 @@ using ::grpc::experimental::TlsServerAuthorizationCheckConfig;
 using ::grpc::experimental::TlsServerAuthorizationCheckInterface;
 
 static void tls_server_authorization_check_callback(
-    grpc_tls_server_authorization_check_arg* arg) {
+    grpc_tls_server_authorization_check_arg *arg) {
   GPR_ASSERT(arg != nullptr);
   std::string cb_user_data = "cb_user_data";
-  arg->cb_user_data = static_cast<void*>(gpr_strdup(cb_user_data.c_str()));
+  arg->cb_user_data = static_cast<void *>(gpr_strdup(cb_user_data.c_str()));
   arg->success = 1;
   arg->target_name = gpr_strdup("callback_target_name");
   arg->peer_cert = gpr_strdup("callback_peer_cert");
@@ -64,10 +64,11 @@ static void tls_server_authorization_check_callback(
 
 class TestTlsServerAuthorizationCheck
     : public TlsServerAuthorizationCheckInterface {
-  int Schedule(TlsServerAuthorizationCheckArg* arg) override {
+  int Schedule(TlsServerAuthorizationCheckArg *arg) override {
     GPR_ASSERT(arg != nullptr);
     std::string cb_user_data = "cb_user_data";
-    arg->set_cb_user_data(static_cast<void*>(gpr_strdup(cb_user_data.c_str())));
+    arg->set_cb_user_data(
+        static_cast<void *>(gpr_strdup(cb_user_data.c_str())));
     arg->set_success(1);
     arg->set_target_name("sync_target_name");
     arg->set_peer_cert("sync_peer_cert");
@@ -76,7 +77,7 @@ class TestTlsServerAuthorizationCheck
     return 1;
   }
 
-  void Cancel(TlsServerAuthorizationCheckArg* arg) override {
+  void Cancel(TlsServerAuthorizationCheckArg *arg) override {
     GPR_ASSERT(arg != nullptr);
     arg->set_status(GRPC_STATUS_PERMISSION_DENIED);
     arg->set_error_details("cancelled");
@@ -90,7 +91,7 @@ namespace {
 
 TEST(CredentialsTest, InvalidGoogleRefreshToken) {
   std::shared_ptr<CallCredentials> bad1 = GoogleRefreshTokenCredentials("");
-  EXPECT_EQ(static_cast<CallCredentials*>(nullptr), bad1.get());
+  EXPECT_EQ(static_cast<CallCredentials *>(nullptr), bad1.get());
 }
 
 TEST(CredentialsTest, DefaultCredentials) {
@@ -271,8 +272,8 @@ TEST(CredentialsTest, StsCredentialsOptionsFromEnv) {
     "subject_token_path": "subject_token_path",
     "subject_token_type": "subject_token_type"
   })";
-  char* creds_file_name;
-  FILE* creds_file = gpr_tmpfile("sts_creds_options", &creds_file_name);
+  char *creds_file_name;
+  FILE *creds_file = gpr_tmpfile("sts_creds_options", &creds_file_name);
   ASSERT_NE(creds_file_name, nullptr);
   ASSERT_NE(creds_file, nullptr);
   ASSERT_EQ(sizeof(valid_json),
@@ -297,12 +298,12 @@ TEST(CredentialsTest, StsCredentialsOptionsFromEnv) {
 }
 
 TEST(CredentialsTest, TlsServerAuthorizationCheckArgCallback) {
-  grpc_tls_server_authorization_check_arg* c_arg =
+  grpc_tls_server_authorization_check_arg *c_arg =
       new grpc_tls_server_authorization_check_arg;
   c_arg->cb = tls_server_authorization_check_callback;
   c_arg->context = nullptr;
   c_arg->error_details = new grpc_tls_error_details();
-  TlsServerAuthorizationCheckArg* arg =
+  TlsServerAuthorizationCheckArg *arg =
       new TlsServerAuthorizationCheckArg(c_arg);
   arg->set_cb_user_data(nullptr);
   arg->set_success(0);
@@ -310,11 +311,11 @@ TEST(CredentialsTest, TlsServerAuthorizationCheckArgCallback) {
   arg->set_peer_cert("peer_cert");
   arg->set_status(GRPC_STATUS_UNAUTHENTICATED);
   arg->set_error_details("error_details");
-  const char* target_name_before_callback = c_arg->target_name;
-  const char* peer_cert_before_callback = c_arg->peer_cert;
+  const char *target_name_before_callback = c_arg->target_name;
+  const char *peer_cert_before_callback = c_arg->peer_cert;
 
   arg->OnServerAuthorizationCheckDoneCallback();
-  EXPECT_STREQ(static_cast<char*>(arg->cb_user_data()), "cb_user_data");
+  EXPECT_STREQ(static_cast<char *>(arg->cb_user_data()), "cb_user_data");
   gpr_free(arg->cb_user_data());
   EXPECT_EQ(arg->success(), 1);
   EXPECT_STREQ(arg->target_name().c_str(), "callback_target_name");
@@ -323,10 +324,10 @@ TEST(CredentialsTest, TlsServerAuthorizationCheckArgCallback) {
   EXPECT_STREQ(arg->error_details().c_str(), "callback_error_details");
 
   // Cleanup.
-  gpr_free(const_cast<char*>(target_name_before_callback));
-  gpr_free(const_cast<char*>(peer_cert_before_callback));
-  gpr_free(const_cast<char*>(c_arg->target_name));
-  gpr_free(const_cast<char*>(c_arg->peer_cert));
+  gpr_free(const_cast<char *>(target_name_before_callback));
+  gpr_free(const_cast<char *>(peer_cert_before_callback));
+  gpr_free(const_cast<char *>(c_arg->target_name));
+  gpr_free(const_cast<char *>(c_arg->peer_cert));
   delete c_arg->error_details;
   delete arg;
   delete c_arg;
@@ -336,11 +337,11 @@ TEST(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
   std::shared_ptr<TestTlsServerAuthorizationCheck>
       test_server_authorization_check(new TestTlsServerAuthorizationCheck());
   TlsServerAuthorizationCheckConfig config(test_server_authorization_check);
-  grpc_tls_server_authorization_check_arg* c_arg =
+  grpc_tls_server_authorization_check_arg *c_arg =
       new grpc_tls_server_authorization_check_arg();
   c_arg->error_details = new grpc_tls_error_details();
   c_arg->context = nullptr;
-  TlsServerAuthorizationCheckArg* arg =
+  TlsServerAuthorizationCheckArg *arg =
       new TlsServerAuthorizationCheckArg(c_arg);
   arg->set_cb_user_data(nullptr);
   arg->set_success(0);
@@ -348,12 +349,12 @@ TEST(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
   arg->set_peer_cert("peer_cert");
   arg->set_status(GRPC_STATUS_PERMISSION_DENIED);
   arg->set_error_details("error_details");
-  const char* target_name_before_schedule = c_arg->target_name;
-  const char* peer_cert_before_schedule = c_arg->peer_cert;
+  const char *target_name_before_schedule = c_arg->target_name;
+  const char *peer_cert_before_schedule = c_arg->peer_cert;
 
   int schedule_output = config.Schedule(arg);
   EXPECT_EQ(schedule_output, 1);
-  EXPECT_STREQ(static_cast<char*>(arg->cb_user_data()), "cb_user_data");
+  EXPECT_STREQ(static_cast<char *>(arg->cb_user_data()), "cb_user_data");
   EXPECT_EQ(arg->success(), 1);
   EXPECT_STREQ(arg->target_name().c_str(), "sync_target_name");
   EXPECT_STREQ(arg->peer_cert().c_str(), "sync_peer_cert");
@@ -362,10 +363,10 @@ TEST(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
 
   // Cleanup.
   gpr_free(arg->cb_user_data());
-  gpr_free(const_cast<char*>(target_name_before_schedule));
-  gpr_free(const_cast<char*>(peer_cert_before_schedule));
-  gpr_free(const_cast<char*>(c_arg->target_name));
-  gpr_free(const_cast<char*>(c_arg->peer_cert));
+  gpr_free(const_cast<char *>(target_name_before_schedule));
+  gpr_free(const_cast<char *>(peer_cert_before_schedule));
+  gpr_free(const_cast<char *>(c_arg->target_name));
+  gpr_free(const_cast<char *>(c_arg->peer_cert));
   delete c_arg->error_details;
   if (c_arg->destroy_context != nullptr) {
     c_arg->destroy_context(c_arg->context);
@@ -390,7 +391,7 @@ TEST(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
   c_arg.context = nullptr;
   int c_schedule_output = (c_arg.config)->Schedule(&c_arg);
   EXPECT_EQ(c_schedule_output, 1);
-  EXPECT_STREQ(static_cast<char*>(c_arg.cb_user_data), "cb_user_data");
+  EXPECT_STREQ(static_cast<char *>(c_arg.cb_user_data), "cb_user_data");
   EXPECT_EQ(c_arg.success, 1);
   EXPECT_STREQ(c_arg.target_name, "sync_target_name");
   EXPECT_STREQ(c_arg.peer_cert, "sync_peer_cert");
@@ -402,8 +403,8 @@ TEST(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
   gpr_free(c_arg.cb_user_data);
   c_arg.destroy_context(c_arg.context);
   delete c_arg.error_details;
-  gpr_free(const_cast<char*>(c_arg.target_name));
-  gpr_free(const_cast<char*>(c_arg.peer_cert));
+  gpr_free(const_cast<char *>(c_arg.target_name));
+  gpr_free(const_cast<char *>(c_arg.peer_cert));
 }
 
 TEST(CredentialsTest, TlsChannelCredentialsWithDefaultRoots) {
@@ -542,11 +543,11 @@ TEST(CredentialsTest,
 TEST(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
   std::shared_ptr<TlsServerAuthorizationCheckConfig> config(
       new TlsServerAuthorizationCheckConfig(nullptr));
-  grpc_tls_server_authorization_check_arg* c_arg =
+  grpc_tls_server_authorization_check_arg *c_arg =
       new grpc_tls_server_authorization_check_arg;
   c_arg->error_details = new grpc_tls_error_details();
   c_arg->context = nullptr;
-  TlsServerAuthorizationCheckArg* arg =
+  TlsServerAuthorizationCheckArg *arg =
       new TlsServerAuthorizationCheckArg(c_arg);
   int schedule_output = config->Schedule(arg);
 
@@ -575,7 +576,7 @@ TEST(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

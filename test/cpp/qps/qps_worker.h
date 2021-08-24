@@ -34,18 +34,18 @@ namespace testing {
 
 class WorkerServiceImpl;
 
-extern std::vector<grpc::testing::Server*>* g_inproc_servers;
+extern std::vector<grpc::testing::Server *> *g_inproc_servers;
 
 class QpsWorker {
  public:
   explicit QpsWorker(int driver_port, int server_port,
-                     const std::string& credential_type);
+                     const std::string &credential_type);
   ~QpsWorker();
 
   bool Done() const;
   void MarkDone();
 
-  std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args) {
+  std::shared_ptr<Channel> InProcessChannel(const ChannelArguments &args) {
     return server_->InProcessChannel(args);
   }
 

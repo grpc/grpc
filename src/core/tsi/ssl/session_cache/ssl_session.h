@@ -40,7 +40,7 @@ extern "C" {
 namespace tsi {
 
 struct SslSessionDeleter {
-  void operator()(SSL_SESSION* session) { SSL_SESSION_free(session); }
+  void operator()(SSL_SESSION *session) { SSL_SESSION_free(session); }
 };
 
 typedef std::unique_ptr<SSL_SESSION, SslSessionDeleter> SslSessionPtr;
@@ -51,8 +51,8 @@ typedef std::unique_ptr<SSL_SESSION, SslSessionDeleter> SslSessionPtr;
 class SslCachedSession {
  public:
   // Not copyable nor movable.
-  SslCachedSession(const SslCachedSession&) = delete;
-  SslCachedSession& operator=(const SslCachedSession&) = delete;
+  SslCachedSession(const SslCachedSession &) = delete;
+  SslCachedSession &operator=(const SslCachedSession &) = delete;
 
   /// Create single cached instance of \a session.
   static std::unique_ptr<SslCachedSession> Create(SslSessionPtr session);

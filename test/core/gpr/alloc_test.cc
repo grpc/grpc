@@ -25,7 +25,7 @@
 
 static void test_malloc_aligned() {
   for (size_t size = 1; size <= 256; ++size) {
-    void* ptr = gpr_malloc_aligned(size, 16);
+    void *ptr = gpr_malloc_aligned(size, 16);
     GPR_ASSERT(ptr != nullptr);
     GPR_ASSERT(((intptr_t)ptr & 0xf) == 0);
     memset(ptr, 0, size);
@@ -33,7 +33,7 @@ static void test_malloc_aligned() {
   }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   test_malloc_aligned();
   return 0;

@@ -38,7 +38,7 @@ namespace grpc_ruby_generator {
 namespace {
 
 // Prints out the method using the ruby gRPC DSL.
-void PrintMethod(const MethodDescriptor* method, Printer* out) {
+void PrintMethod(const MethodDescriptor *method, Printer *out) {
   std::string input_type = RubyTypeOf(method->input_type());
   if (method->client_streaming()) {
     input_type = "stream(" + input_type + ")";
@@ -61,7 +61,7 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
 }
 
 // Prints out the service using the ruby gRPC DSL.
-void PrintService(const ServiceDescriptor* service, Printer* out) {
+void PrintService(const ServiceDescriptor *service, Printer *out) {
   if (service->method_count() == 0) {
     return;
   }
@@ -120,7 +120,7 @@ char ToUpper(char ch) { return IsLower(ch) ? (ch - 'a' + 'A') : ch; }
 // names must be PascalCased.
 //
 //   foo_bar_baz -> FooBarBaz
-std::string PackageToModule(const std::string& name) {
+std::string PackageToModule(const std::string &name) {
   bool next_upper = true;
   std::string result;
   result.reserve(name.size());
@@ -142,7 +142,7 @@ std::string PackageToModule(const std::string& name) {
 }
 // end copying of protoc generator for ruby code
 
-std::string GetServices(const FileDescriptor* file) {
+std::string GetServices(const FileDescriptor *file) {
   std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.

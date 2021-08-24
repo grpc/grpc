@@ -51,9 +51,9 @@ static const auto TEST_TAG_KEY = TagKey::Register("my_key");
 static const auto TEST_TAG_VALUE = "my_value";
 
 class EchoServer final : public EchoTestService::Service {
-  ::grpc::Status Echo(::grpc::ServerContext* /*context*/,
-                      const EchoRequest* request,
-                      EchoResponse* response) override {
+  ::grpc::Status Echo(::grpc::ServerContext * /*context*/,
+                      const EchoRequest *request,
+                      EchoResponse *response) override {
     if (request->param().expected_error().code() == 0) {
       response->set_message(request->message());
       return ::grpc::Status::OK;
@@ -500,7 +500,7 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
         ::testing::UnorderedElementsAre(::testing::Pair(
             ::testing::ElementsAre(client_method_name_), ::testing::Eq(0))));
     auto data = client_retry_delay_per_call_view.GetData().distribution_data();
-    for (const auto& entry : data) {
+    for (const auto &entry : data) {
       gpr_log(GPR_ERROR, "Mean Retry Delay %s: %lf ms", entry.first[0].c_str(),
               entry.second.mean());
     }
@@ -519,7 +519,7 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

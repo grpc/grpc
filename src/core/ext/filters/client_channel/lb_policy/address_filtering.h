@@ -80,7 +80,7 @@
 namespace grpc_core {
 
 // The attribute key to be used for hierarchical paths in ServerAddress.
-extern const char* kHierarchicalPathAttributeKey;
+extern const char *kHierarchicalPathAttributeKey;
 
 // Constructs an address attribute containing the hierarchical path
 // to be associated with the address.
@@ -93,7 +93,7 @@ using HierarchicalAddressMap = std::map<std::string, ServerAddressList>;
 
 // Splits up the addresses into a separate list for each child.
 HierarchicalAddressMap MakeHierarchicalAddressMap(
-    const ServerAddressList& addresses);
+    const ServerAddressList &addresses);
 
 }  // namespace grpc_core
 

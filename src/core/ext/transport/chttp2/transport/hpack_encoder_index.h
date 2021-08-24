@@ -33,21 +33,21 @@ class HPackEncoderIndex {
   // If it does not and there is an empty slot, add it to the index.
   // Finally, if it does not and there is no empty slot, evict the oldest
   // conflicting member.
-  void Insert(const Key& key, Index new_index) {
-    auto* const cuckoo_first = first_slot(key);
+  void Insert(const Key &key, Index new_index) {
+    auto *const cuckoo_first = first_slot(key);
     if (cuckoo_first->UpdateOrAdd(key, new_index)) return;
-    auto* const cuckoo_second = second_slot(key);
+    auto *const cuckoo_second = second_slot(key);
     if (cuckoo_second->UpdateOrAdd(key, new_index)) return;
-    auto* const clobber = Older(cuckoo_first, cuckoo_second);
+    auto *const clobber = Older(cuckoo_first, cuckoo_second);
     clobber->key = key.stored();
     clobber->index = new_index;
   }
 
   // Lookup key and return its index, or return empty if it's not in this table.
-  absl::optional<Index> Lookup(const Key& key) {
-    auto* const cuckoo_first = first_slot(key);
+  absl::optional<Index> Lookup(const Key &key) {
+    auto *const cuckoo_first = first_slot(key);
     if (key == cuckoo_first->key) return cuckoo_first->index;
-    auto* const cuckoo_second = second_slot(key);
+    auto *const cuckoo_second = second_slot(key);
     if (key == cuckoo_second->key) return cuckoo_second->index;
     return {};
   }
@@ -64,7 +64,7 @@ class HPackEncoderIndex {
 
     // Update this entry if it matches key, otherwise if it's empty add it.
     // If neither happens, return false.
-    bool UpdateOrAdd(const Key& new_key, Index new_index) {
+    bool UpdateOrAdd(const Key &new_key, Index new_index) {
       if (new_key == key) {
         index = new_index;
         return true;
@@ -78,7 +78,7 @@ class HPackEncoderIndex {
     }
   };
 
-  static Entry* Older(Entry* a, Entry* b) {
+  static Entry *Older(Entry *a, Entry *b) {
     if (a->index < b->index) {
       return a;
     } else {
@@ -87,12 +87,12 @@ class HPackEncoderIndex {
   }
 
   // Return the first slot in which key could be stored.
-  Entry* first_slot(const Key& key) {
+  Entry *first_slot(const Key &key) {
     return &entries_[key.hash() % kNumEntries];
   }
 
   // Return the second slot in which key could be stored.
-  Entry* second_slot(const Key& key) {
+  Entry *second_slot(const Key &key) {
     return &entries_[(key.hash() / kNumEntries) % kNumEntries];
   }
 

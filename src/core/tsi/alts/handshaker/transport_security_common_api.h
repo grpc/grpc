@@ -51,7 +51,7 @@ typedef struct _grpc_gcp_RpcProtocolVersions {
  * The method returns true on success and false otherwise.
  */
 bool grpc_gcp_rpc_protocol_versions_set_max(
-    grpc_gcp_rpc_protocol_versions* versions, uint32_t max_major,
+    grpc_gcp_rpc_protocol_versions *versions, uint32_t max_major,
     uint32_t max_minor);
 
 /**
@@ -65,7 +65,7 @@ bool grpc_gcp_rpc_protocol_versions_set_max(
  * The method returns true on success and false otherwise.
  */
 bool grpc_gcp_rpc_protocol_versions_set_min(
-    grpc_gcp_rpc_protocol_versions* versions, uint32_t min_major,
+    grpc_gcp_rpc_protocol_versions *versions, uint32_t min_major,
     uint32_t min_minor);
 
 /**
@@ -78,7 +78,7 @@ bool grpc_gcp_rpc_protocol_versions_set_min(
  * The method returns true on success and false otherwise.
  */
 bool grpc_gcp_rpc_protocol_versions_encode(
-    const grpc_gcp_rpc_protocol_versions* versions, grpc_slice* slice);
+    const grpc_gcp_rpc_protocol_versions *versions, grpc_slice *slice);
 
 /**
  * This method serializes an rpc protocol version and returns serialized rpc
@@ -91,8 +91,8 @@ bool grpc_gcp_rpc_protocol_versions_encode(
  * The method returns true on success and false otherwise.
  */
 bool grpc_gcp_rpc_protocol_versions_encode(
-    const grpc_gcp_RpcProtocolVersions* versions, upb_arena* arena,
-    grpc_slice* slice);
+    const grpc_gcp_RpcProtocolVersions *versions, upb_arena *arena,
+    grpc_slice *slice);
 
 /**
  * This method de-serializes input in grpc slice form and stores the result
@@ -105,22 +105,22 @@ bool grpc_gcp_rpc_protocol_versions_encode(
  * The method returns true on success and false otherwise.
  */
 bool grpc_gcp_rpc_protocol_versions_decode(
-    const grpc_slice& slice, grpc_gcp_rpc_protocol_versions* versions);
+    const grpc_slice &slice, grpc_gcp_rpc_protocol_versions *versions);
 
 /**
  * Assigns value of upb RpcProtocolVersions to grpc_gcp_rpc_protocol_versions.
  */
 void grpc_gcp_rpc_protocol_versions_assign_from_upb(
-    grpc_gcp_rpc_protocol_versions* versions,
-    const grpc_gcp_RpcProtocolVersions* value);
+    grpc_gcp_rpc_protocol_versions *versions,
+    const grpc_gcp_RpcProtocolVersions *value);
 
 /**
  * Assigns value of struct grpc_gcp_rpc_protocol_versions to
  * RpcProtocolVersions.
  */
 void grpc_gcp_RpcProtocolVersions_assign_from_struct(
-    grpc_gcp_RpcProtocolVersions* versions, upb_arena* arena,
-    const grpc_gcp_rpc_protocol_versions* value);
+    grpc_gcp_RpcProtocolVersions *versions, upb_arena *arena,
+    const grpc_gcp_rpc_protocol_versions *value);
 
 /**
  * This method performs a deep copy operation on rpc protocol versions
@@ -132,8 +132,8 @@ void grpc_gcp_RpcProtocolVersions_assign_from_struct(
  * The method returns true on success and false otherwise.
  */
 bool grpc_gcp_rpc_protocol_versions_copy(
-    const grpc_gcp_rpc_protocol_versions* src,
-    grpc_gcp_rpc_protocol_versions* dst);
+    const grpc_gcp_rpc_protocol_versions *src,
+    grpc_gcp_rpc_protocol_versions *dst);
 
 /**
  * This method performs a version check between local and peer rpc protocol
@@ -148,9 +148,9 @@ bool grpc_gcp_rpc_protocol_versions_copy(
  * on a common rpc protocol to use, and false otherwise.
  */
 bool grpc_gcp_rpc_protocol_versions_check(
-    const grpc_gcp_rpc_protocol_versions* local_versions,
-    const grpc_gcp_rpc_protocol_versions* peer_versions,
-    grpc_gcp_rpc_protocol_versions_version* highest_common_version);
+    const grpc_gcp_rpc_protocol_versions *local_versions,
+    const grpc_gcp_rpc_protocol_versions *peer_versions,
+    grpc_gcp_rpc_protocol_versions_version *highest_common_version);
 
 namespace grpc_core {
 namespace internal {
@@ -162,8 +162,8 @@ namespace internal {
  *            returns -1 if v1 < v2.
  */
 int grpc_gcp_rpc_protocol_version_compare(
-    const grpc_gcp_rpc_protocol_versions_version* v1,
-    const grpc_gcp_rpc_protocol_versions_version* v2);
+    const grpc_gcp_rpc_protocol_versions_version *v1,
+    const grpc_gcp_rpc_protocol_versions_version *v2);
 
 }  // namespace internal
 }  // namespace grpc_core

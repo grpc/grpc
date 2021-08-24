@@ -25,13 +25,13 @@
 
 // TODO(mingcl): Put these functions in a proper namespace
 // TODO(mingcl): Use string_view
-void CallStaticJavaMethod(JNIEnv* env, const std::string& clazz,
-                          const std::string& method, const std::string& type,
+void CallStaticJavaMethod(JNIEnv *env, const std::string &clazz,
+                          const std::string &method, const std::string &type,
                           jobject application);
 
-jobject CallStaticJavaMethodForObject(JNIEnv* env, const std::string& clazz,
-                                      const std::string& method,
-                                      const std::string& type);
+jobject CallStaticJavaMethodForObject(JNIEnv *env, const std::string &clazz,
+                                      const std::string &method,
+                                      const std::string &type);
 
 #endif
 

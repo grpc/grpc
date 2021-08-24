@@ -35,7 +35,7 @@ namespace grpc {
 /// \a google::rpc::Status, which is defined at
 /// https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto
 template <typename T>
-grpc::Status ExtractErrorDetails(const grpc::Status& from, T* to) {
+grpc::Status ExtractErrorDetails(const grpc::Status &from, T *to) {
   if (to == nullptr) {
     return grpc::Status(grpc::StatusCode::FAILED_PRECONDITION, "");
   }
@@ -44,7 +44,7 @@ grpc::Status ExtractErrorDetails(const grpc::Status& from, T* to) {
   }
   return grpc::Status::OK;
 }
-inline grpc::Status ExtractErrorDetails(const grpc::Status&, std::nullptr_t) {
+inline grpc::Status ExtractErrorDetails(const grpc::Status &, std::nullptr_t) {
   return grpc::Status(grpc::StatusCode::FAILED_PRECONDITION, "");
 }
 
@@ -58,7 +58,7 @@ inline grpc::Status ExtractErrorDetails(const grpc::Status&, std::nullptr_t) {
 /// \a google::rpc::Status, which is defined at
 /// https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto
 template <typename T>
-grpc::Status SetErrorDetails(const T& from, grpc::Status* to) {
+grpc::Status SetErrorDetails(const T &from, grpc::Status *to) {
   if (to == nullptr) {
     return grpc::Status(grpc::StatusCode::FAILED_PRECONDITION, "");
   }

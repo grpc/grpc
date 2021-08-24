@@ -49,17 +49,17 @@ struct GetElem;
 
 template <typename T, typename... Ts>
 struct GetElem<0, T, Ts...> {
-  static T* f(Elements<T, Ts...>* e) { return &e->u.x; }
-  static const T* f(const Elements<T, Ts...>* e) { return &e->u.x; }
+  static T *f(Elements<T, Ts...> *e) { return &e->u.x; }
+  static const T *f(const Elements<T, Ts...> *e) { return &e->u.x; }
 };
 
 template <size_t I, typename T, typename... Ts>
 struct GetElem<I, T, Ts...> {
-  static auto f(Elements<T, Ts...>* e)
+  static auto f(Elements<T, Ts...> *e)
       -> decltype(GetElem<I - 1, Ts...>::f(e)) {
     return GetElem<I - 1, Ts...>::f(e);
   }
-  static auto f(const Elements<T, Ts...>* e)
+  static auto f(const Elements<T, Ts...> *e)
       -> decltype(GetElem<I - 1, Ts...>::f(e)) {
     return GetElem<I - 1, Ts...>::f(e);
   }
@@ -133,7 +133,7 @@ using TypeIndex = typename TypeIndexStruct<I, Ts...>::Type;
 
 // Helper to call the destructor of p if p is non-null.
 template <typename T>
-void DestructIfNotNull(T* p) {
+void DestructIfNotNull(T *p) {
   if (p) p->~T();
 }
 
@@ -169,13 +169,13 @@ class Table {
   ~Table() { Destruct(absl::make_index_sequence<sizeof...(Ts)>()); }
 
   // Copy another table
-  Table(const Table& rhs) {
+  Table(const Table &rhs) {
     // Since we know all fields are clear initially, pass false for or_clear.
     Copy<false>(absl::make_index_sequence<sizeof...(Ts)>(), rhs);
   }
 
   // Copy another table
-  Table& operator=(const Table& rhs) {
+  Table &operator=(const Table &rhs) {
     // Since we may not be all clear, pass true for or_clear to have Copy()
     // clear newly emptied fields.
     Copy<true>(absl::make_index_sequence<sizeof...(Ts)>(), rhs);
@@ -183,14 +183,14 @@ class Table {
   }
 
   // Move from another table
-  Table(Table&& rhs) noexcept {
+  Table(Table &&rhs) noexcept {
     // Since we know all fields are clear initially, pass false for or_clear.
     Move<false>(absl::make_index_sequence<sizeof...(Ts)>(),
                 std::forward<Table>(rhs));
   }
 
   // Move from another table
-  Table& operator=(Table&& rhs) noexcept {
+  Table &operator=(Table &&rhs) noexcept {
     // Since we may not be all clear, pass true for or_clear to have Move()
     // clear newly emptied fields.
     Move<true>(absl::make_index_sequence<sizeof...(Ts)>(),
@@ -214,41 +214,41 @@ class Table {
   // Return the value for type T, or nullptr if it is un-set.
   // Only available if there exists only one T in Ts.
   template <typename T>
-  T* get() {
+  T *get() {
     return get<index_of<T>()>();
   }
 
   // Return the value for type T, or nullptr if it is un-set.
   // Only available if there exists only one T in Ts.
   template <typename T>
-  const T* get() const {
+  const T *get() const {
     return get<index_of<T>()>();
   }
 
   // Return the value for index I, or nullptr if it is un-set.
   template <size_t I>
-  TypeIndex<I>* get() {
+  TypeIndex<I> *get() {
     if (has<I>()) return element_ptr<I>();
     return nullptr;
   }
 
   // Return the value for index I, or nullptr if it is un-set.
   template <size_t I>
-  const TypeIndex<I>* get() const {
+  const TypeIndex<I> *get() const {
     if (has<I>()) return element_ptr<I>();
     return nullptr;
   }
 
   // Return the value for type T, default constructing it if it is un-set.
   template <typename T>
-  T* get_or_create() {
+  T *get_or_create() {
     return get_or_create<index_of<T>()>();
   }
 
   // Return the value for index I, default constructing it if it is un-set.
   template <size_t I>
-  TypeIndex<I>* get_or_create() {
-    auto* p = element_ptr<I>();
+  TypeIndex<I> *get_or_create() {
+    auto *p = element_ptr<I>();
     if (!set_present<I>(true)) {
       new (p) TypeIndex<I>();
     }
@@ -257,14 +257,14 @@ class Table {
 
   // Set the value for type T - using Args as construction arguments.
   template <typename T, typename... Args>
-  T* set(Args&&... args) {
+  T *set(Args &&...args) {
     return set<index_of<T>()>(std::forward<Args>(args)...);
   }
 
   // Set the value for index I - using Args as construction arguments.
   template <size_t I, typename... Args>
-  TypeIndex<I>* set(Args&&... args) {
-    auto* p = element_ptr<I>();
+  TypeIndex<I> *set(Args &&...args) {
+    auto *p = element_ptr<I>();
     if (set_present<I>(true)) {
       *p = TypeIndex<I>(std::forward<Args>(args)...);
     } else {
@@ -307,14 +307,14 @@ class Table {
   // Given an index, return a point to the (maybe uninitialized!) data value at
   // index I.
   template <size_t I>
-  TypeIndex<I>* element_ptr() {
+  TypeIndex<I> *element_ptr() {
     return GetElem<I>::f(&elements_);
   }
 
   // Given an index, return a point to the (maybe uninitialized!) data value at
   // index I.
   template <size_t I>
-  const TypeIndex<I>* element_ptr() const {
+  const TypeIndex<I> *element_ptr() const {
     return GetElem<I>::f(&elements_);
   }
 
@@ -332,8 +332,8 @@ class Table {
   // If it is unset, if or_clear is true, then clear our value, otherwise do
   // nothing.
   template <bool or_clear, size_t I>
-  void CopyIf(const Table& rhs) {
-    if (auto* p = rhs.get<I>()) {
+  void CopyIf(const Table &rhs) {
+    if (auto *p = rhs.get<I>()) {
       set<I>(*p);
     } else if (or_clear) {
       clear<I>();
@@ -344,8 +344,8 @@ class Table {
   // If it is unset, if or_clear is true, then clear our value, otherwise do
   // nothing.
   template <bool or_clear, size_t I>
-  void MoveIf(Table&& rhs) {
-    if (auto* p = rhs.get<I>()) {
+  void MoveIf(Table &&rhs) {
+    if (auto *p = rhs.get<I>()) {
       set<I>(std::move(*p));
     } else if (or_clear) {
       clear<I>();
@@ -363,14 +363,14 @@ class Table {
   // For each field (element I=0, 1, ...) copy that field into this table -
   // or_clear as per CopyIf().
   template <bool or_clear, size_t... I>
-  void Copy(absl::index_sequence<I...>, const Table& rhs) {
+  void Copy(absl::index_sequence<I...>, const Table &rhs) {
     table_detail::do_these_things({(CopyIf<or_clear, I>(rhs), 1)...});
   }
 
   // For each field (element I=0, 1, ...) move that field into this table -
   // or_clear as per MoveIf().
   template <bool or_clear, size_t... I>
-  void Move(absl::index_sequence<I...>, Table&& rhs) {
+  void Move(absl::index_sequence<I...>, Table &&rhs) {
     table_detail::do_these_things(
         {(MoveIf<or_clear, I>(std::forward<Table>(rhs)), 1)...});
   }

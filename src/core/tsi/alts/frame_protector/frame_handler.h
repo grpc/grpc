@@ -41,7 +41,7 @@ const size_t kFrameHeaderSize =
  * writes the contents as raw bytes. It does not own the input buffer.
  */
 typedef struct alts_frame_writer {
-  const unsigned char* input_buffer;
+  const unsigned char *input_buffer;
   unsigned char header_buffer[kFrameHeaderSize];
   size_t input_bytes_written;
   size_t header_bytes_written;
@@ -53,7 +53,7 @@ typedef struct alts_frame_writer {
  * result into an output buffer. It does not own the output buffer.
  */
 typedef struct alts_frame_reader {
-  unsigned char* output_buffer;
+  unsigned char *output_buffer;
   unsigned char header_buffer[kFrameHeaderSize];
   size_t header_bytes_read;
   size_t output_bytes_read;
@@ -64,7 +64,7 @@ typedef struct alts_frame_reader {
  * This method creates a frame writer instance and initializes its internal
  * states.
  */
-alts_frame_writer* alts_create_frame_writer();
+alts_frame_writer *alts_create_frame_writer();
 
 /**
  * This method resets internal states of a frame writer and prepares to write
@@ -77,8 +77,8 @@ alts_frame_writer* alts_create_frame_writer();
  *
  * The method returns true on success and false otherwise.
  */
-bool alts_reset_frame_writer(alts_frame_writer* writer,
-                             const unsigned char* buffer, size_t length);
+bool alts_reset_frame_writer(alts_frame_writer *writer,
+                             const unsigned char *buffer, size_t length);
 
 /**
  * This method writes up to bytes_size bytes of a frame to output.
@@ -91,8 +91,8 @@ bool alts_reset_frame_writer(alts_frame_writer* writer,
  *
  * The method returns true on success and false otherwise.
  */
-bool alts_write_frame_bytes(alts_frame_writer* writer, unsigned char* output,
-                            size_t* bytes_size);
+bool alts_write_frame_bytes(alts_frame_writer *writer, unsigned char *output,
+                            size_t *bytes_size);
 
 /**
  * This method checks if a reset can be called to write a new frame. It returns
@@ -110,7 +110,7 @@ bool alts_write_frame_bytes(alts_frame_writer* writer, unsigned char* output,
  *
  * - writer: a frame writer instance.
  */
-bool alts_is_frame_writer_done(alts_frame_writer* writer);
+bool alts_is_frame_writer_done(alts_frame_writer *writer);
 
 /**
  * This method returns the number of bytes left to write before a complete frame
@@ -118,20 +118,20 @@ bool alts_is_frame_writer_done(alts_frame_writer* writer);
  *
  * - writer: a frame writer instance.
  */
-size_t alts_get_num_writer_bytes_remaining(alts_frame_writer* writer);
+size_t alts_get_num_writer_bytes_remaining(alts_frame_writer *writer);
 
 /**
  * This method destroys a frame writer instance.
  *
  * - writer: a frame writer instance.
  */
-void alts_destroy_frame_writer(alts_frame_writer* writer);
+void alts_destroy_frame_writer(alts_frame_writer *writer);
 
 /**
  * This method creates a frame reader instance and initializes its internal
  * states.
  */
-alts_frame_reader* alts_create_frame_reader();
+alts_frame_reader *alts_create_frame_reader();
 
 /**
  * This method resets internal states of a frame reader (including setting its
@@ -144,7 +144,7 @@ alts_frame_reader* alts_create_frame_reader();
  *
  * The method returns true on success and false otherwise.
  */
-bool alts_reset_frame_reader(alts_frame_reader* reader, unsigned char* buffer);
+bool alts_reset_frame_reader(alts_frame_reader *reader, unsigned char *buffer);
 
 /**
  * This method processes up to the number of bytes given in bytes_size. It may
@@ -158,8 +158,8 @@ bool alts_reset_frame_reader(alts_frame_reader* reader, unsigned char* buffer);
  *
  * The method returns true on success and false otherwise.
  */
-bool alts_read_frame_bytes(alts_frame_reader* reader,
-                           const unsigned char* bytes, size_t* bytes_size);
+bool alts_read_frame_bytes(alts_frame_reader *reader,
+                           const unsigned char *bytes, size_t *bytes_size);
 
 /**
  * This method checks if a frame length has been read.
@@ -168,7 +168,7 @@ bool alts_read_frame_bytes(alts_frame_reader* reader,
  *
  * The method returns true if a frame length has been read and false otherwise.
  */
-bool alts_has_read_frame_length(alts_frame_reader* reader);
+bool alts_has_read_frame_length(alts_frame_reader *reader);
 
 /**
  * This method returns the number of bytes the frame reader intends to write.
@@ -176,7 +176,7 @@ bool alts_has_read_frame_length(alts_frame_reader* reader);
  *
  * - reader: a frame reader instance.
  */
-size_t alts_get_reader_bytes_remaining(alts_frame_reader* reader);
+size_t alts_get_reader_bytes_remaining(alts_frame_reader *reader);
 
 /**
  * This method resets output_buffer but does not otherwise modify other internal
@@ -200,8 +200,8 @@ size_t alts_get_reader_bytes_remaining(alts_frame_reader* reader);
  * - reader: a frame reader instance.
  * - buffer: a buffer used to set reader's output_buffer.
  */
-void alts_reset_reader_output_buffer(alts_frame_reader* reader,
-                                     unsigned char* buffer);
+void alts_reset_reader_output_buffer(alts_frame_reader *reader,
+                                     unsigned char *buffer);
 
 /**
  * This method checks if reset can be called to start processing a new frame.
@@ -210,27 +210,27 @@ void alts_reset_reader_output_buffer(alts_frame_reader* reader,
 
  * - reader: a frame reader instance.
  */
-bool alts_is_frame_reader_done(alts_frame_reader* reader);
+bool alts_is_frame_reader_done(alts_frame_reader *reader);
 
 /**
  * This method returns output_bytes_read of a frame reader instance.
  *
  * - reader: a frame reader instance.
  */
-size_t alts_get_output_bytes_read(alts_frame_reader* reader);
+size_t alts_get_output_bytes_read(alts_frame_reader *reader);
 
 /**
  * This method returns output_buffer of a frame reader instance.
  *
  * - reader: a frame reader instance.
  */
-unsigned char* alts_get_output_buffer(alts_frame_reader* reader);
+unsigned char *alts_get_output_buffer(alts_frame_reader *reader);
 
 /**
  * This method destroys a frame reader instance.
  *
  * - reader: a frame reader instance.
  */
-void alts_destroy_frame_reader(alts_frame_reader* reader);
+void alts_destroy_frame_reader(alts_frame_reader *reader);
 
 #endif /* GRPC_CORE_TSI_ALTS_FRAME_PROTECTOR_FRAME_HANDLER_H */

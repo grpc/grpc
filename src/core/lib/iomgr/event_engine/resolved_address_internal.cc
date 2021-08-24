@@ -24,13 +24,13 @@ namespace grpc_event_engine {
 namespace experimental {
 
 EventEngine::ResolvedAddress CreateResolvedAddress(
-    const grpc_resolved_address& addr) {
+    const grpc_resolved_address &addr) {
   return EventEngine::ResolvedAddress(
-      reinterpret_cast<const sockaddr*>(addr.addr), addr.len);
+      reinterpret_cast<const sockaddr *>(addr.addr), addr.len);
 }
 
 grpc_resolved_address CreateGRPCResolvedAddress(
-    const EventEngine::ResolvedAddress& ra) {
+    const EventEngine::ResolvedAddress &ra) {
   grpc_resolved_address grpc_addr;
   memcpy(grpc_addr.addr, ra.address(), ra.size());
   grpc_addr.len = ra.size();

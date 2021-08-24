@@ -35,8 +35,8 @@ namespace grpc {
 /// hold an object or is invalid, a lame channel (one on which all operations
 /// fail) is returned.
 std::shared_ptr<Channel> CreateChannel(
-    const grpc::string& target,
-    const std::shared_ptr<ChannelCredentials>& creds);
+    const grpc::string &target,
+    const std::shared_ptr<ChannelCredentials> &creds);
 
 /// Create a new \em custom \a Channel pointing to \a target.
 ///
@@ -49,9 +49,9 @@ std::shared_ptr<Channel> CreateChannel(
 /// fail) is returned.
 /// \param args Options for channel creation.
 std::shared_ptr<Channel> CreateCustomChannel(
-    const grpc::string& target,
-    const std::shared_ptr<ChannelCredentials>& creds,
-    const ChannelArguments& args);
+    const grpc::string &target,
+    const std::shared_ptr<ChannelCredentials> &creds,
+    const ChannelArguments &args);
 
 namespace experimental {
 /// Create a new \em custom \a Channel pointing to \a target with \a
@@ -66,9 +66,9 @@ namespace experimental {
 /// fail) is returned.
 /// \param args Options for channel creation.
 std::shared_ptr<Channel> CreateCustomChannelWithInterceptors(
-    const grpc::string& target,
-    const std::shared_ptr<ChannelCredentials>& creds,
-    const ChannelArguments& args,
+    const grpc::string &target,
+    const std::shared_ptr<ChannelCredentials> &creds,
+    const ChannelArguments &args,
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);

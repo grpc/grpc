@@ -42,7 +42,7 @@ namespace {
 // Currently, we cannot easily reuse the functionality as
 // google/protobuf/compiler/csharp/csharp_doc_comment.h is not a public header.
 // TODO(jtattermusch): reuse the functionality from google/protobuf.
-bool GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer* printer,
+bool GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer *printer,
                                 grpc::protobuf::SourceLocation location) {
   std::string comments = location.leading_comments.empty()
                              ? location.trailing_comments
@@ -88,7 +88,7 @@ bool GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer* printer,
   return true;
 }
 
-void GenerateGeneratedCodeAttribute(grpc::protobuf::io::Printer* printer) {
+void GenerateGeneratedCodeAttribute(grpc::protobuf::io::Printer *printer) {
   // Mark the code as generated using the [GeneratedCode] attribute.
   // We don't provide plugin version info in attribute the because:
   // * the version information is not readily available from the plugin's code.
@@ -100,8 +100,8 @@ void GenerateGeneratedCodeAttribute(grpc::protobuf::io::Printer* printer) {
 }
 
 template <typename DescriptorType>
-bool GenerateDocCommentBody(grpc::protobuf::io::Printer* printer,
-                            const DescriptorType* descriptor) {
+bool GenerateDocCommentBody(grpc::protobuf::io::Printer *printer,
+                            const DescriptorType *descriptor) {
   grpc::protobuf::SourceLocation location;
   if (!descriptor->GetSourceLocation(&location)) {
     return false;
@@ -109,8 +109,8 @@ bool GenerateDocCommentBody(grpc::protobuf::io::Printer* printer,
   return GenerateDocCommentBodyImpl(printer, location);
 }
 
-void GenerateDocCommentServerMethod(grpc::protobuf::io::Printer* printer,
-                                    const MethodDescriptor* method) {
+void GenerateDocCommentServerMethod(grpc::protobuf::io::Printer *printer,
+                                    const MethodDescriptor *method) {
   if (GenerateDocCommentBody(printer, method)) {
     if (method->client_streaming()) {
       printer->Print(
@@ -141,8 +141,8 @@ void GenerateDocCommentServerMethod(grpc::protobuf::io::Printer* printer,
   }
 }
 
-void GenerateDocCommentClientMethod(grpc::protobuf::io::Printer* printer,
-                                    const MethodDescriptor* method,
+void GenerateDocCommentClientMethod(grpc::protobuf::io::Printer *printer,
+                                    const MethodDescriptor *method,
                                     bool is_sync, bool use_call_options) {
   if (GenerateDocCommentBody(printer, method)) {
     if (!method->client_streaming()) {
@@ -173,19 +173,19 @@ void GenerateDocCommentClientMethod(grpc::protobuf::io::Printer* printer,
   }
 }
 
-std::string GetServiceClassName(const ServiceDescriptor* service) {
+std::string GetServiceClassName(const ServiceDescriptor *service) {
   return service->name();
 }
 
-std::string GetClientClassName(const ServiceDescriptor* service) {
+std::string GetClientClassName(const ServiceDescriptor *service) {
   return service->name() + "Client";
 }
 
-std::string GetServerClassName(const ServiceDescriptor* service) {
+std::string GetServerClassName(const ServiceDescriptor *service) {
   return service->name() + "Base";
 }
 
-std::string GetCSharpMethodType(const MethodDescriptor* method) {
+std::string GetCSharpMethodType(const MethodDescriptor *method) {
   if (method->client_streaming()) {
     if (method->server_streaming()) {
       return "grpc::MethodType.DuplexStreaming";
@@ -201,7 +201,7 @@ std::string GetCSharpMethodType(const MethodDescriptor* method) {
   }
 }
 
-std::string GetCSharpServerMethodType(const MethodDescriptor* method) {
+std::string GetCSharpServerMethodType(const MethodDescriptor *method) {
   if (method->client_streaming()) {
     if (method->server_streaming()) {
       return "grpc::DuplexStreamingServerMethod";
@@ -219,16 +219,16 @@ std::string GetCSharpServerMethodType(const MethodDescriptor* method) {
 
 std::string GetServiceNameFieldName() { return "__ServiceName"; }
 
-std::string GetMarshallerFieldName(const Descriptor* message) {
+std::string GetMarshallerFieldName(const Descriptor *message) {
   return "__Marshaller_" +
          grpc_generator::StringReplace(message->full_name(), ".", "_", true);
 }
 
-std::string GetMethodFieldName(const MethodDescriptor* method) {
+std::string GetMethodFieldName(const MethodDescriptor *method) {
   return "__Method_" + method->name();
 }
 
-std::string GetMethodRequestParamMaybe(const MethodDescriptor* method,
+std::string GetMethodRequestParamMaybe(const MethodDescriptor *method,
                                        bool invocation_param = false) {
   if (method->client_streaming()) {
     return "";
@@ -243,7 +243,7 @@ std::string GetAccessLevel(bool internal_access) {
   return internal_access ? "internal" : "public";
 }
 
-std::string GetMethodReturnTypeClient(const MethodDescriptor* method) {
+std::string GetMethodReturnTypeClient(const MethodDescriptor *method) {
   if (method->client_streaming()) {
     if (method->server_streaming()) {
       return "grpc::AsyncDuplexStreamingCall<" +
@@ -265,7 +265,7 @@ std::string GetMethodReturnTypeClient(const MethodDescriptor* method) {
   }
 }
 
-std::string GetMethodRequestParamServer(const MethodDescriptor* method) {
+std::string GetMethodRequestParamServer(const MethodDescriptor *method) {
   if (method->client_streaming()) {
     return "grpc::IAsyncStreamReader<" +
            GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()) +
@@ -274,7 +274,7 @@ std::string GetMethodRequestParamServer(const MethodDescriptor* method) {
   return GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()) + " request";
 }
 
-std::string GetMethodReturnTypeServer(const MethodDescriptor* method) {
+std::string GetMethodReturnTypeServer(const MethodDescriptor *method) {
   if (method->server_streaming()) {
     return "global::System.Threading.Tasks.Task";
   }
@@ -282,7 +282,7 @@ std::string GetMethodReturnTypeServer(const MethodDescriptor* method) {
          GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
 }
 
-std::string GetMethodResponseStreamMaybe(const MethodDescriptor* method) {
+std::string GetMethodResponseStreamMaybe(const MethodDescriptor *method) {
   if (method->server_streaming()) {
     return ", grpc::IServerStreamWriter<" +
            GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) +
@@ -292,13 +292,13 @@ std::string GetMethodResponseStreamMaybe(const MethodDescriptor* method) {
 }
 
 // Gets vector of all messages used as input or output types.
-std::vector<const Descriptor*> GetUsedMessages(
-    const ServiceDescriptor* service) {
-  std::set<const Descriptor*> descriptor_set;
-  std::vector<const Descriptor*>
+std::vector<const Descriptor *> GetUsedMessages(
+    const ServiceDescriptor *service) {
+  std::set<const Descriptor *> descriptor_set;
+  std::vector<const Descriptor *>
       result;  // vector is to maintain stable ordering
   for (int i = 0; i < service->method_count(); i++) {
-    const MethodDescriptor* method = service->method(i);
+    const MethodDescriptor *method = service->method(i);
     if (descriptor_set.find(method->input_type()) == descriptor_set.end()) {
       descriptor_set.insert(method->input_type());
       result.push_back(method->input_type());
@@ -311,8 +311,8 @@ std::vector<const Descriptor*> GetUsedMessages(
   return result;
 }
 
-void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service) {
-  std::vector<const Descriptor*> used_messages = GetUsedMessages(service);
+void GenerateMarshallerFields(Printer *out, const ServiceDescriptor *service) {
+  std::vector<const Descriptor *> used_messages = GetUsedMessages(service);
   if (used_messages.size() != 0) {
     // Generate static helper methods for serialization/deserialization
     GenerateGeneratedCodeAttribute(out);
@@ -381,7 +381,7 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service) {
   }
 
   for (size_t i = 0; i < used_messages.size(); i++) {
-    const Descriptor* message = used_messages[i];
+    const Descriptor *message = used_messages[i];
     GenerateGeneratedCodeAttribute(out);
     out->Print(
         "static readonly grpc::Marshaller<$type$> $fieldname$ = "
@@ -393,7 +393,7 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service) {
   out->Print("\n");
 }
 
-void GenerateStaticMethodField(Printer* out, const MethodDescriptor* method) {
+void GenerateStaticMethodField(Printer *out, const MethodDescriptor *method) {
   GenerateGeneratedCodeAttribute(out);
   out->Print(
       "static readonly grpc::Method<$request$, $response$> $fieldname$ = new "
@@ -416,8 +416,8 @@ void GenerateStaticMethodField(Printer* out, const MethodDescriptor* method) {
   out->Outdent();
 }
 
-void GenerateServiceDescriptorProperty(Printer* out,
-                                       const ServiceDescriptor* service) {
+void GenerateServiceDescriptorProperty(Printer *out,
+                                       const ServiceDescriptor *service) {
   std::ostringstream index;
   index << service->index();
   out->Print("/// <summary>Service descriptor</summary>\n");
@@ -433,7 +433,7 @@ void GenerateServiceDescriptorProperty(Printer* out,
   out->Print("\n");
 }
 
-void GenerateServerClass(Printer* out, const ServiceDescriptor* service) {
+void GenerateServerClass(Printer *out, const ServiceDescriptor *service) {
   out->Print(
       "/// <summary>Base class for server-side implementations of "
       "$servicename$</summary>\n",
@@ -447,7 +447,7 @@ void GenerateServerClass(Printer* out, const ServiceDescriptor* service) {
   out->Print("{\n");
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
-    const MethodDescriptor* method = service->method(i);
+    const MethodDescriptor *method = service->method(i);
     GenerateDocCommentServerMethod(out, method);
     GenerateGeneratedCodeAttribute(out);
     out->Print(
@@ -471,7 +471,7 @@ void GenerateServerClass(Printer* out, const ServiceDescriptor* service) {
   out->Print("\n");
 }
 
-void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
+void GenerateClientStub(Printer *out, const ServiceDescriptor *service) {
   out->Print("/// <summary>Client for $servicename$</summary>\n", "servicename",
              GetServiceClassName(service));
   out->Print("public partial class $name$ : grpc::ClientBase<$name$>\n", "name",
@@ -523,7 +523,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
   out->Print("}\n\n");
 
   for (int i = 0; i < service->method_count(); i++) {
-    const MethodDescriptor* method = service->method(i);
+    const MethodDescriptor *method = service->method(i);
     if (!method->client_streaming() && !method->server_streaming()) {
       // unary calls have an extra synchronous stub method
       GenerateDocCommentClientMethod(out, method, true, false);
@@ -657,7 +657,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
   out->Print("\n");
 }
 
-void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service) {
+void GenerateBindServiceMethod(Printer *out, const ServiceDescriptor *service) {
   out->Print(
       "/// <summary>Creates service definition that can be registered with a "
       "server</summary>\n");
@@ -676,7 +676,7 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service) {
   out->Indent();
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
-    const MethodDescriptor* method = service->method(i);
+    const MethodDescriptor *method = service->method(i);
     out->Print("\n.AddMethod($methodfield$, serviceImpl.$methodname$)",
                "methodfield", GetMethodFieldName(method), "methodname",
                method->name());
@@ -690,8 +690,8 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service) {
   out->Print("\n");
 }
 
-void GenerateBindServiceWithBinderMethod(Printer* out,
-                                         const ServiceDescriptor* service) {
+void GenerateBindServiceWithBinderMethod(Printer *out,
+                                         const ServiceDescriptor *service) {
   out->Print(
       "/// <summary>Register service method with a service "
       "binder with or without implementation. Useful when customizing the  "
@@ -716,7 +716,7 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
   out->Indent();
 
   for (int i = 0; i < service->method_count(); i++) {
-    const MethodDescriptor* method = service->method(i);
+    const MethodDescriptor *method = service->method(i);
     out->Print(
         "serviceBinder.AddMethod($methodfield$, serviceImpl == null ? null : "
         "new $servermethodtype$<$inputtype$, $outputtype$>("
@@ -733,7 +733,7 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
   out->Print("\n");
 }
 
-void GenerateService(Printer* out, const ServiceDescriptor* service,
+void GenerateService(Printer *out, const ServiceDescriptor *service,
                      bool generate_client, bool generate_server,
                      bool internal_access) {
   GenerateDocCommentBody(out, service);
@@ -771,7 +771,7 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
 
 }  // anonymous namespace
 
-std::string GetServices(const FileDescriptor* file, bool generate_client,
+std::string GetServices(const FileDescriptor *file, bool generate_client,
                         bool generate_server, bool internal_access) {
   std::string output;
   {

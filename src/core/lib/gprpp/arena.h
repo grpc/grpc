@@ -44,24 +44,24 @@ namespace grpc_core {
 class Arena {
  public:
   // Create an arena, with \a initial_size bytes in the first allocated buffer.
-  static Arena* Create(size_t initial_size);
+  static Arena *Create(size_t initial_size);
 
   // Create an arena, with \a initial_size bytes in the first allocated buffer,
   // and return both a void pointer to the returned arena and a void* with the
   // first allocation.
-  static std::pair<Arena*, void*> CreateWithAlloc(size_t initial_size,
-                                                  size_t alloc_size);
+  static std::pair<Arena *, void *> CreateWithAlloc(size_t initial_size,
+                                                    size_t alloc_size);
 
   // Destroy an arena, returning the total number of bytes allocated.
   size_t Destroy();
   // Allocate \a size bytes from the arena.
-  void* Alloc(size_t size) {
+  void *Alloc(size_t size) {
     static constexpr size_t base_size =
         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
     size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(size);
     size_t begin = total_used_.fetch_add(size, std::memory_order_relaxed);
     if (begin + size <= initial_zone_size_) {
-      return reinterpret_cast<char*>(this) + base_size + begin;
+      return reinterpret_cast<char *>(this) + base_size + begin;
     } else {
       return AllocZone(size);
     }
@@ -72,15 +72,15 @@ class Arena {
   // change this to instead use the alignment of the type being allocated by
   // this method.
   template <typename T, typename... Args>
-  T* New(Args&&... args) {
-    T* t = static_cast<T*>(Alloc(sizeof(T)));
+  T *New(Args &&...args) {
+    T *t = static_cast<T *>(Alloc(sizeof(T)));
     new (t) T(std::forward<Args>(args)...);
     return t;
   }
 
  private:
   struct Zone {
-    Zone* prev;
+    Zone *prev;
   };
 
   // Initialize an arena.
@@ -101,7 +101,7 @@ class Arena {
 
   ~Arena();
 
-  void* AllocZone(size_t size);
+  void *AllocZone(size_t size);
 
   // Keep track of the total used size. We use this in our call sizing
   // hysteresis.
@@ -113,7 +113,7 @@ class Arena {
   // the zone added before this zone (null if this is the first additional zone)
   // and (2) the allocated memory. The arena itself maintains a pointer to the
   // last zone; the zone list is reverse-walked during arena destruction only.
-  Zone* last_zone_ = nullptr;
+  Zone *last_zone_ = nullptr;
 };
 
 }  // namespace grpc_core

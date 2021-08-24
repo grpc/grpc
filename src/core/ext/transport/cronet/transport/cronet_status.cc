@@ -20,7 +20,7 @@
 
 #include "src/core/ext/transport/cronet/transport/cronet_status.h"
 
-const char* cronet_net_error_as_string(cronet_net_error_code net_error) {
+const char *cronet_net_error_as_string(cronet_net_error_code net_error) {
   switch (net_error) {
     case OK:
       return "OK";

@@ -20,8 +20,8 @@
 
 #if defined(ANDROID) || defined(__ANDROID__)
 
-void CallStaticJavaMethod(JNIEnv* env, const std::string& clazz,
-                          const std::string& method, const std::string& type,
+void CallStaticJavaMethod(JNIEnv *env, const std::string &clazz,
+                          const std::string &method, const std::string &type,
                           jobject application) {
   jclass cl = env->FindClass(clazz.c_str());
   if (cl == nullptr) {
@@ -36,9 +36,9 @@ void CallStaticJavaMethod(JNIEnv* env, const std::string& clazz,
   env->CallStaticVoidMethod(cl, mid, application);
 }
 
-jobject CallStaticJavaMethodForObject(JNIEnv* env, const std::string& clazz,
-                                      const std::string& method,
-                                      const std::string& type) {
+jobject CallStaticJavaMethodForObject(JNIEnv *env, const std::string &clazz,
+                                      const std::string &method,
+                                      const std::string &type) {
   jclass cl = env->FindClass(clazz.c_str());
   if (cl == nullptr) {
     gpr_log(GPR_ERROR, "No class %s", clazz.c_str());

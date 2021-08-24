@@ -60,8 +60,8 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
 
 }  // namespace
 
-EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
-                                             grpc_endpoint* endpoint) {
+EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context *auth_context,
+                                             grpc_endpoint *endpoint) {
   if (auth_context != nullptr) {
     transport_security_type = GetAuthPropertyValue(
         auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
@@ -81,8 +81,8 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
 absl::string_view EvaluateArgs::GetPath() const {
   absl::string_view path;
   if (metadata_ != nullptr && metadata_->idx.named.path != nullptr) {
-    grpc_linked_mdelem* elem = metadata_->idx.named.path;
-    const grpc_slice& val = GRPC_MDVALUE(elem->md);
+    grpc_linked_mdelem *elem = metadata_->idx.named.path;
+    const grpc_slice &val = GRPC_MDVALUE(elem->md);
     path = StringViewFromSlice(val);
   }
   return path;
@@ -91,8 +91,8 @@ absl::string_view EvaluateArgs::GetPath() const {
 absl::string_view EvaluateArgs::GetHost() const {
   absl::string_view host;
   if (metadata_ != nullptr && metadata_->idx.named.host != nullptr) {
-    grpc_linked_mdelem* elem = metadata_->idx.named.host;
-    const grpc_slice& val = GRPC_MDVALUE(elem->md);
+    grpc_linked_mdelem *elem = metadata_->idx.named.host;
+    const grpc_slice &val = GRPC_MDVALUE(elem->md);
     host = StringViewFromSlice(val);
   }
   return host;
@@ -101,8 +101,8 @@ absl::string_view EvaluateArgs::GetHost() const {
 absl::string_view EvaluateArgs::GetMethod() const {
   absl::string_view method;
   if (metadata_ != nullptr && metadata_->idx.named.method != nullptr) {
-    grpc_linked_mdelem* elem = metadata_->idx.named.method;
-    const grpc_slice& val = GRPC_MDVALUE(elem->md);
+    grpc_linked_mdelem *elem = metadata_->idx.named.method;
+    const grpc_slice &val = GRPC_MDVALUE(elem->md);
     method = StringViewFromSlice(val);
   }
   return method;
@@ -114,17 +114,17 @@ std::multimap<absl::string_view, absl::string_view> EvaluateArgs::GetHeaders()
   if (metadata_ == nullptr) {
     return headers;
   }
-  for (grpc_linked_mdelem* elem = metadata_->list.head; elem != nullptr;
+  for (grpc_linked_mdelem *elem = metadata_->list.head; elem != nullptr;
        elem = elem->next) {
-    const grpc_slice& key = GRPC_MDKEY(elem->md);
-    const grpc_slice& val = GRPC_MDVALUE(elem->md);
+    const grpc_slice &key = GRPC_MDKEY(elem->md);
+    const grpc_slice &val = GRPC_MDVALUE(elem->md);
     headers.emplace(StringViewFromSlice(key), StringViewFromSlice(val));
   }
   return headers;
 }
 
 absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
-    absl::string_view key, std::string* concatenated_value) const {
+    absl::string_view key, std::string *concatenated_value) const {
   if (metadata_ == nullptr) {
     return absl::nullopt;
   }

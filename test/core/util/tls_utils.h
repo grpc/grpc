@@ -27,7 +27,7 @@ class TmpFile {
 
   ~TmpFile();
 
-  const std::string& name() { return name_; }
+  const std::string &name() { return name_; }
 
   // Rewrite |credential_data| to the temporary file, in an atomic way.
   void RewriteFile(absl::string_view credential_data);
@@ -41,7 +41,7 @@ class TmpFile {
 PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key,
                                     absl::string_view certs);
 
-std::string GetFileContents(const char* path);
+std::string GetFileContents(const char *path);
 
 }  // namespace testing
 

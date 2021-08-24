@@ -37,7 +37,7 @@ namespace grpc_core {
 
 class BdpEstimator {
  public:
-  explicit BdpEstimator(const char* name);
+  explicit BdpEstimator(const char *name);
   ~BdpEstimator() {}
 
   int64_t EstimateBdp() const { return estimate_; }
@@ -87,7 +87,7 @@ class BdpEstimator {
   int inter_ping_delay_;
   int stable_estimate_count_;
   double bw_est_;
-  const char* name_;
+  const char *name_;
 };
 
 }  // namespace grpc_core

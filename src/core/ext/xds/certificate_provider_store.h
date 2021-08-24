@@ -79,7 +79,7 @@ class CertificateProviderStore
       return certificate_provider_->distributor();
     }
 
-    grpc_pollset_set* interested_parties() const override {
+    grpc_pollset_set *interested_parties() const override {
       return certificate_provider_->interested_parties();
     }
 
@@ -97,13 +97,13 @@ class CertificateProviderStore
   // Releases a previously created certificate provider from the certificate
   // provider map if the value matches \a wrapper.
   void ReleaseCertificateProvider(absl::string_view key,
-                                  CertificateProviderWrapper* wrapper);
+                                  CertificateProviderWrapper *wrapper);
 
   Mutex mu_;
   // Map of plugin configurations
   const PluginDefinitionMap plugin_config_map_;
   // Underlying map for the providers.
-  std::map<absl::string_view, CertificateProviderWrapper*>
+  std::map<absl::string_view, CertificateProviderWrapper *>
       certificate_providers_map_ ABSL_GUARDED_BY(mu_);
 };
 

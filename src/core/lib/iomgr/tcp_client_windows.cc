@@ -42,21 +42,21 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 struct async_connect {
-  grpc_closure* on_done;
+  grpc_closure *on_done;
   gpr_mu mu;
-  grpc_winsocket* socket;
+  grpc_winsocket *socket;
   grpc_timer alarm;
   grpc_closure on_alarm;
   std::string addr_name;
   int refs;
   grpc_closure on_connect;
-  grpc_endpoint** endpoint;
-  grpc_channel_args* channel_args;
-  grpc_slice_allocator* slice_allocator;
+  grpc_endpoint **endpoint;
+  grpc_channel_args *channel_args;
+  grpc_slice_allocator *slice_allocator;
 };
 
-static void async_connect_unlock_and_cleanup(async_connect* ac,
-                                             grpc_winsocket* socket) {
+static void async_connect_unlock_and_cleanup(async_connect *ac,
+                                             grpc_winsocket *socket) {
   int done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (done) {
@@ -70,10 +70,10 @@ static void async_connect_unlock_and_cleanup(async_connect* ac,
   if (socket != NULL) grpc_winsocket_destroy(socket);
 }
 
-static void on_alarm(void* acp, grpc_error_handle error) {
-  async_connect* ac = (async_connect*)acp;
+static void on_alarm(void *acp, grpc_error_handle error) {
+  async_connect *ac = (async_connect *)acp;
   gpr_mu_lock(&ac->mu);
-  grpc_winsocket* socket = ac->socket;
+  grpc_winsocket *socket = ac->socket;
   ac->socket = NULL;
   if (socket != NULL) {
     grpc_winsocket_shutdown(socket);
@@ -81,16 +81,16 @@ static void on_alarm(void* acp, grpc_error_handle error) {
   async_connect_unlock_and_cleanup(ac, socket);
 }
 
-static void on_connect(void* acp, grpc_error_handle error) {
-  async_connect* ac = (async_connect*)acp;
-  grpc_endpoint** ep = ac->endpoint;
+static void on_connect(void *acp, grpc_error_handle error) {
+  async_connect *ac = (async_connect *)acp;
+  grpc_endpoint **ep = ac->endpoint;
   GPR_ASSERT(*ep == NULL);
-  grpc_closure* on_done = ac->on_done;
+  grpc_closure *on_done = ac->on_done;
 
   GRPC_ERROR_REF(error);
 
   gpr_mu_lock(&ac->mu);
-  grpc_winsocket* socket = ac->socket;
+  grpc_winsocket *socket = ac->socket;
   ac->socket = NULL;
   gpr_mu_unlock(&ac->mu);
 
@@ -128,24 +128,24 @@ static void on_connect(void* acp, grpc_error_handle error) {
 
 /* Tries to issue one async connection, then schedules both an IOCP
    notification request for the connection, and one timeout alert. */
-static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
-                        grpc_slice_allocator* slice_allocator,
-                        grpc_pollset_set* interested_parties,
-                        const grpc_channel_args* channel_args,
-                        const grpc_resolved_address* addr,
+static void tcp_connect(grpc_closure *on_done, grpc_endpoint **endpoint,
+                        grpc_slice_allocator *slice_allocator,
+                        grpc_pollset_set *interested_parties,
+                        const grpc_channel_args *channel_args,
+                        const grpc_resolved_address *addr,
                         grpc_millis deadline) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
   int status;
   grpc_resolved_address addr6_v4mapped;
   grpc_resolved_address local_address;
-  grpc_winsocket* socket = NULL;
+  grpc_winsocket *socket = NULL;
   LPFN_CONNECTEX ConnectEx;
   GUID guid = WSAID_CONNECTEX;
   DWORD ioctl_num_bytes;
-  grpc_winsocket_callback_info* info;
+  grpc_winsocket_callback_info *info;
   grpc_error_handle error = GRPC_ERROR_NONE;
-  async_connect* ac = NULL;
+  async_connect *ac = NULL;
 
   *endpoint = NULL;
 
@@ -181,7 +181,7 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   grpc_sockaddr_make_wildcard6(0, &local_address);
 
   status =
-      bind(sock, (grpc_sockaddr*)&local_address.addr, (int)local_address.len);
+      bind(sock, (grpc_sockaddr *)&local_address.addr, (int)local_address.len);
   if (status != 0) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "bind");
     goto failure;
@@ -189,7 +189,7 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
 
   socket = grpc_winsocket_create(sock, "client");
   info = &socket->write_info;
-  success = ConnectEx(sock, (grpc_sockaddr*)&addr->addr, (int)addr->len, NULL,
+  success = ConnectEx(sock, (grpc_sockaddr *)&addr->addr, (int)addr->len, NULL,
                       0, NULL, &info->overlapped);
 
   /* It wouldn't be unusual to get a success immediately. But we'll still get

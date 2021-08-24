@@ -38,17 +38,17 @@ struct TimerClosure {
   grpc_closure closure;
 };
 
-static void BM_InitCancelTimer(benchmark::State& state) {
+static void BM_InitCancelTimer(benchmark::State &state) {
   constexpr int kTimerCount = 1024;
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   std::vector<TimerClosure> timer_closures(kTimerCount);
   int i = 0;
   for (auto _ : state) {
-    TimerClosure* timer_closure = &timer_closures[i++ % kTimerCount];
+    TimerClosure *timer_closure = &timer_closures[i++ % kTimerCount];
     GRPC_CLOSURE_INIT(
         &timer_closure->closure,
-        [](void* /*args*/, grpc_error_handle /*err*/) {}, nullptr,
+        [](void * /*args*/, grpc_error_handle /*err*/) {}, nullptr,
         grpc_schedule_on_exec_ctx);
     grpc_timer_init(&timer_closure->timer, GRPC_MILLIS_INF_FUTURE,
                     &timer_closure->closure);
@@ -59,7 +59,7 @@ static void BM_InitCancelTimer(benchmark::State& state) {
 }
 BENCHMARK(BM_InitCancelTimer);
 
-static void BM_TimerBatch(benchmark::State& state) {
+static void BM_TimerBatch(benchmark::State &state) {
   constexpr int kTimerCount = 1024;
   const bool check = state.range(0);
   const bool reverse = state.range(1);
@@ -75,10 +75,10 @@ static void BM_TimerBatch(benchmark::State& state) {
   std::vector<TimerClosure> timer_closures(kTimerCount);
   for (auto _ : state) {
     for (grpc_millis deadline = start; deadline != end; deadline += increment) {
-      TimerClosure* timer_closure = &timer_closures[deadline % kTimerCount];
+      TimerClosure *timer_closure = &timer_closures[deadline % kTimerCount];
       GRPC_CLOSURE_INIT(
           &timer_closure->closure,
-          [](void* /*args*/, grpc_error_handle /*err*/) {}, nullptr,
+          [](void * /*args*/, grpc_error_handle /*err*/) {}, nullptr,
           grpc_schedule_on_exec_ctx);
 
       grpc_timer_init(&timer_closure->timer, deadline, &timer_closure->closure);
@@ -88,7 +88,7 @@ static void BM_TimerBatch(benchmark::State& state) {
       grpc_timer_check(&next);
     }
     for (grpc_millis deadline = start; deadline != end; deadline += increment) {
-      TimerClosure* timer_closure = &timer_closures[deadline % kTimerCount];
+      TimerClosure *timer_closure = &timer_closures[deadline % kTimerCount];
       grpc_timer_cancel(&timer_closure->timer);
     }
     exec_ctx.Flush();
@@ -111,7 +111,7 @@ namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);

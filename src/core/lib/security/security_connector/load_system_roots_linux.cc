@@ -51,11 +51,11 @@ GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_system_ssl_roots_dir, "",
 namespace grpc_core {
 namespace {
 
-const char* kLinuxCertFiles[] = {
+const char *kLinuxCertFiles[] = {
     "/etc/ssl/certs/ca-certificates.crt", "/etc/pki/tls/certs/ca-bundle.crt",
     "/etc/ssl/ca-bundle.pem", "/etc/pki/tls/cacert.pem",
     "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"};
-const char* kLinuxCertDirectories[] = {
+const char *kLinuxCertDirectories[] = {
     "/etc/ssl/certs", "/system/etc/security/cacerts", "/usr/local/share/certs",
     "/etc/pki/tls/certs", "/etc/openssl/certs"};
 
@@ -76,8 +76,8 @@ grpc_slice GetSystemRootCerts() {
 
 }  // namespace
 
-void GetAbsoluteFilePath(const char* valid_file_dir,
-                         const char* file_entry_name, char* path_buffer) {
+void GetAbsoluteFilePath(const char *valid_file_dir,
+                         const char *file_entry_name, char *path_buffer) {
   if (valid_file_dir != nullptr && file_entry_name != nullptr) {
     int path_len = snprintf(path_buffer, MAXPATHLEN, "%s/%s", valid_file_dir,
                             file_entry_name);
@@ -88,12 +88,12 @@ void GetAbsoluteFilePath(const char* valid_file_dir,
   }
 }
 
-grpc_slice CreateRootCertsBundle(const char* certs_directory) {
+grpc_slice CreateRootCertsBundle(const char *certs_directory) {
   grpc_slice bundle_slice = grpc_empty_slice();
   if (certs_directory == nullptr) {
     return bundle_slice;
   }
-  DIR* ca_directory = opendir(certs_directory);
+  DIR *ca_directory = opendir(certs_directory);
   if (ca_directory == nullptr) {
     return bundle_slice;
   }
@@ -103,10 +103,10 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
   };
   absl::InlinedVector<FileData, 2> roots_filenames;
   size_t total_bundle_size = 0;
-  struct dirent* directory_entry;
+  struct dirent *directory_entry;
   while ((directory_entry = readdir(ca_directory)) != nullptr) {
     struct stat dir_entry_stat;
-    const char* file_entry_name = directory_entry->d_name;
+    const char *file_entry_name = directory_entry->d_name;
     FileData file_data;
     GetAbsoluteFilePath(certs_directory, file_entry_name, file_data.path);
     int stat_return = stat(file_data.path, &dir_entry_stat);
@@ -122,7 +122,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
     roots_filenames.push_back(file_data);
   }
   closedir(ca_directory);
-  char* bundle_string = static_cast<char*>(gpr_zalloc(total_bundle_size + 1));
+  char *bundle_string = static_cast<char *>(gpr_zalloc(total_bundle_size + 1));
   size_t bytes_read = 0;
   for (size_t i = 0; i < roots_filenames.size(); i++) {
     int file_descriptor = open(roots_filenames[i].path, O_RDONLY);

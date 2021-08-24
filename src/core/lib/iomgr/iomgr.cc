@@ -59,7 +59,7 @@ void grpc_iomgr_init() {
   gpr_cv_init(&g_rcv);
   grpc_core::Executor::InitAll();
   g_root_object.next = g_root_object.prev = &g_root_object;
-  g_root_object.name = const_cast<char*>("root");
+  g_root_object.name = const_cast<char *>("root");
   grpc_iomgr_platform_init();
   grpc_timer_list_init();
   grpc_core::grpc_errqueue_init();
@@ -69,7 +69,7 @@ void grpc_iomgr_init() {
 void grpc_iomgr_start() { grpc_timer_manager_init(); }
 
 static size_t count_objects(void) {
-  grpc_iomgr_object* obj;
+  grpc_iomgr_object *obj;
   size_t n = 0;
   for (obj = g_root_object.next; obj != &g_root_object; obj = obj->next) {
     n++;
@@ -79,8 +79,8 @@ static size_t count_objects(void) {
 
 size_t grpc_iomgr_count_objects_for_testing(void) { return count_objects(); }
 
-static void dump_objects(const char* kind) {
-  grpc_iomgr_object* obj;
+static void dump_objects(const char *kind) {
+  grpc_iomgr_object *obj;
   for (obj = g_root_object.next; obj != &g_root_object; obj = obj->next) {
     gpr_log(GPR_DEBUG, "%s OBJECT: %s %p", kind, obj->name, obj);
   }
@@ -168,12 +168,12 @@ bool grpc_iomgr_is_any_background_poller_thread() {
   return grpc_iomgr_platform_is_any_background_poller_thread();
 }
 
-bool grpc_iomgr_add_closure_to_background_poller(grpc_closure* closure,
+bool grpc_iomgr_add_closure_to_background_poller(grpc_closure *closure,
                                                  grpc_error_handle error) {
   return grpc_iomgr_platform_add_closure_to_background_poller(closure, error);
 }
 
-void grpc_iomgr_register_object(grpc_iomgr_object* obj, const char* name) {
+void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name) {
   obj->name = gpr_strdup(name);
   gpr_mu_lock(&g_mu);
   obj->next = &g_root_object;
@@ -182,7 +182,7 @@ void grpc_iomgr_register_object(grpc_iomgr_object* obj, const char* name) {
   gpr_mu_unlock(&g_mu);
 }
 
-void grpc_iomgr_unregister_object(grpc_iomgr_object* obj) {
+void grpc_iomgr_unregister_object(grpc_iomgr_object *obj) {
   gpr_mu_lock(&g_mu);
   obj->next->prev = obj->prev;
   obj->prev->next = obj->next;

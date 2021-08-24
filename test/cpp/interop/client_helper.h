@@ -37,17 +37,17 @@ std::string GetServiceAccountJsonKey();
 std::string GetOauth2AccessToken();
 
 void UpdateActions(
-    std::unordered_map<std::string, std::function<bool()>>* actions);
+    std::unordered_map<std::string, std::function<bool()>> *actions);
 
 std::shared_ptr<Channel> CreateChannelForTestCase(
-    const std::string& test_case,
+    const std::string &test_case,
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators = {});
 
 class InteropClientContextInspector {
  public:
-  explicit InteropClientContextInspector(const ::grpc::ClientContext& context)
+  explicit InteropClientContextInspector(const ::grpc::ClientContext &context)
       : context_(context) {}
 
   // Inspector methods, able to peek inside ClientContext, follow.
@@ -63,7 +63,7 @@ class InteropClientContextInspector {
   }
 
  private:
-  const ::grpc::ClientContext& context_;
+  const ::grpc::ClientContext &context_;
 };
 
 class AdditionalMetadataInterceptor : public experimental::Interceptor {
@@ -72,12 +72,12 @@ class AdditionalMetadataInterceptor : public experimental::Interceptor {
       std::multimap<std::string, std::string> additional_metadata)
       : additional_metadata_(std::move(additional_metadata)) {}
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(experimental::InterceptorBatchMethods *methods) override {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
-      std::multimap<std::string, std::string>* metadata =
+      std::multimap<std::string, std::string> *metadata =
           methods->GetSendInitialMetadata();
-      for (const auto& entry : additional_metadata_) {
+      for (const auto &entry : additional_metadata_) {
         metadata->insert(entry);
       }
     }
@@ -95,8 +95,8 @@ class AdditionalMetadataInterceptorFactory
       std::multimap<std::string, std::string> additional_metadata)
       : additional_metadata_(std::move(additional_metadata)) {}
 
-  experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* /*info*/) override {
+  experimental::Interceptor *CreateClientInterceptor(
+      experimental::ClientRpcInfo * /*info*/) override {
     return new AdditionalMetadataInterceptor(additional_metadata_);
   }
 

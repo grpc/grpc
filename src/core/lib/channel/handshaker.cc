@@ -39,7 +39,7 @@ TraceFlag grpc_handshaker_trace(false, "handshaker");
 
 namespace {
 
-std::string HandshakerArgsString(HandshakerArgs* args) {
+std::string HandshakerArgsString(HandshakerArgs *args) {
   size_t num_args = args->args != nullptr ? args->args->num_args : 0;
   size_t read_buffer_length =
       args->read_buffer != nullptr ? args->read_buffer->length : 0;
@@ -142,9 +142,9 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
   return is_shutdown_;
 }
 
-void HandshakeManager::CallNextHandshakerFn(void* arg,
+void HandshakeManager::CallNextHandshakerFn(void *arg,
                                             grpc_error_handle error) {
-  auto* mgr = static_cast<HandshakeManager*>(arg);
+  auto *mgr = static_cast<HandshakeManager *>(arg);
   bool done;
   {
     MutexLock lock(&mgr->mu_);
@@ -158,20 +158,20 @@ void HandshakeManager::CallNextHandshakerFn(void* arg,
   }
 }
 
-void HandshakeManager::OnTimeoutFn(void* arg, grpc_error_handle error) {
-  auto* mgr = static_cast<HandshakeManager*>(arg);
+void HandshakeManager::OnTimeoutFn(void *arg, grpc_error_handle error) {
+  auto *mgr = static_cast<HandshakeManager *>(arg);
   if (error == GRPC_ERROR_NONE) {  // Timer fired, rather than being cancelled
     mgr->Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake timed out"));
   }
   mgr->Unref();
 }
 
-void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
-                                   const grpc_channel_args* channel_args,
+void HandshakeManager::DoHandshake(grpc_endpoint *endpoint,
+                                   const grpc_channel_args *channel_args,
                                    grpc_millis deadline,
-                                   grpc_tcp_server_acceptor* acceptor,
+                                   grpc_tcp_server_acceptor *acceptor,
                                    grpc_iomgr_cb_func on_handshake_done,
-                                   void* user_data) {
+                                   void *user_data) {
   bool done;
   {
     MutexLock lock(&mu_);
@@ -181,8 +181,8 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
     args_.endpoint = endpoint;
     args_.args = grpc_channel_args_copy(channel_args);
     args_.user_data = user_data;
-    args_.read_buffer =
-        static_cast<grpc_slice_buffer*>(gpr_malloc(sizeof(*args_.read_buffer)));
+    args_.read_buffer = static_cast<grpc_slice_buffer *>(
+        gpr_malloc(sizeof(*args_.read_buffer)));
     grpc_slice_buffer_init(args_.read_buffer);
     if (acceptor != nullptr && acceptor->external_connection &&
         acceptor->pending_data != nullptr) {
@@ -212,10 +212,10 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
 
 }  // namespace grpc_core
 
-void grpc_handshake_manager_add(grpc_handshake_manager* mgr,
-                                grpc_handshaker* handshaker) {
+void grpc_handshake_manager_add(grpc_handshake_manager *mgr,
+                                grpc_handshaker *handshaker) {
   // This is a transition method to aid the API change for handshakers.
   grpc_core::RefCountedPtr<grpc_core::Handshaker> refd_hs(
-      static_cast<grpc_core::Handshaker*>(handshaker));
+      static_cast<grpc_core::Handshaker *>(handshaker));
   mgr->Add(refd_hs);
 }

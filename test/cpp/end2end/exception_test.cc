@@ -34,18 +34,19 @@
 namespace grpc {
 namespace testing {
 
-const char* kErrorMessage = "This service caused an exception";
+const char *kErrorMessage = "This service caused an exception";
 
 #if GRPC_ALLOW_EXCEPTIONS
 class ExceptingServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
-  Status Echo(ServerContext* /*server_context*/, const EchoRequest* /*request*/,
-              EchoResponse* /*response*/) override {
+  Status Echo(ServerContext * /*server_context*/,
+              const EchoRequest * /*request*/,
+              EchoResponse * /*response*/) override {
     throw -1;
   }
-  Status RequestStream(ServerContext* /*context*/,
-                       ServerReader<EchoRequest>* /*reader*/,
-                       EchoResponse* /*response*/) override {
+  Status RequestStream(ServerContext * /*context*/,
+                       ServerReader<EchoRequest> * /*reader*/,
+                       EchoResponse * /*response*/) override {
     throw ServiceException();
   }
 
@@ -55,7 +56,7 @@ class ExceptingServiceImpl : public ::grpc::testing::EchoTestService::Service {
     ServiceException() {}
 
    private:
-    const char* what() const noexcept override { return kErrorMessage; }
+    const char *what() const noexcept override { return kErrorMessage; }
   };
 };
 
@@ -116,7 +117,7 @@ TEST_F(ExceptionTest, RequestStream) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

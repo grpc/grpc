@@ -38,7 +38,7 @@ TEST(WorkSerializerTest, ExecuteOne) {
   grpc_core::WorkSerializer lock;
   gpr_event done;
   gpr_event_init(&done);
-  lock.Run([&done]() { gpr_event_set(&done, reinterpret_cast<void*>(1)); },
+  lock.Run([&done]() { gpr_event_set(&done, reinterpret_cast<void *>(1)); },
            DEBUG_LOCATION);
   EXPECT_TRUE(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
               nullptr);
@@ -46,7 +46,7 @@ TEST(WorkSerializerTest, ExecuteOne) {
 
 class TestThread {
  public:
-  explicit TestThread(grpc_core::WorkSerializer* lock)
+  explicit TestThread(grpc_core::WorkSerializer *lock)
       : lock_(lock), thread_("grpc_execute_many", ExecuteManyLoop, this) {
     gpr_event_init(&done_);
     thread_.Start();
@@ -59,16 +59,16 @@ class TestThread {
   }
 
  private:
-  static void ExecuteManyLoop(void* arg) {
-    TestThread* self = static_cast<TestThread*>(arg);
+  static void ExecuteManyLoop(void *arg) {
+    TestThread *self = static_cast<TestThread *>(arg);
     size_t n = 1;
     for (size_t i = 0; i < 10; i++) {
       for (size_t j = 0; j < 10000; j++) {
         struct ExecutionArgs {
-          size_t* counter;
+          size_t *counter;
           size_t value;
         };
-        ExecutionArgs* c = new ExecutionArgs;
+        ExecutionArgs *c = new ExecutionArgs;
         c->counter = &self->counter_;
         c->value = n++;
         self->lock_->Run(
@@ -83,11 +83,11 @@ class TestThread {
       gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
     }
     self->lock_->Run(
-        [self]() { gpr_event_set(&self->done_, reinterpret_cast<void*>(1)); },
+        [self]() { gpr_event_set(&self->done_, reinterpret_cast<void *>(1)); },
         DEBUG_LOCATION);
   }
 
-  grpc_core::WorkSerializer* lock_ = nullptr;
+  grpc_core::WorkSerializer *lock_ = nullptr;
   grpc_core::Thread thread_;
   size_t counter_ = 0;
   gpr_event done_;
@@ -104,7 +104,7 @@ TEST(WorkSerializerTest, ExecuteMany) {
 }
 }  // namespace
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   ::testing::InitGoogleTest(&argc, argv);

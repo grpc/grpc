@@ -61,12 +61,12 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_metadata(false, "metadata");
 #define DEBUG_ARGS , const char *file, int line
 #define FWD_DEBUG_ARGS file, line
 
-void grpc_mdelem_trace_ref(void* md, const grpc_slice& key,
-                           const grpc_slice& value, intptr_t refcnt,
-                           const char* file, int line) {
+void grpc_mdelem_trace_ref(void *md, const grpc_slice &key,
+                           const grpc_slice &value, intptr_t refcnt,
+                           const char *file, int line) {
   if (grpc_trace_metadata.enabled()) {
-    char* key_str = grpc_slice_to_c_string(key);
-    char* value_str = grpc_slice_to_c_string(value);
+    char *key_str = grpc_slice_to_c_string(key);
+    char *value_str = grpc_slice_to_c_string(value);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "mdelem   REF:%p:%" PRIdPTR "->%" PRIdPTR ": '%s' = '%s'", md,
             refcnt, refcnt + 1, key_str, value_str);
@@ -75,12 +75,12 @@ void grpc_mdelem_trace_ref(void* md, const grpc_slice& key,
   }
 }
 
-void grpc_mdelem_trace_unref(void* md, const grpc_slice& key,
-                             const grpc_slice& value, intptr_t refcnt,
-                             const char* file, int line) {
+void grpc_mdelem_trace_unref(void *md, const grpc_slice &key,
+                             const grpc_slice &value, intptr_t refcnt,
+                             const char *file, int line) {
   if (grpc_trace_metadata.enabled()) {
-    char* key_str = grpc_slice_to_c_string(key);
-    char* value_str = grpc_slice_to_c_string(value);
+    char *key_str = grpc_slice_to_c_string(key);
+    char *value_str = grpc_slice_to_c_string(value);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "mdelem   UNREF:%p:%" PRIdPTR "->%" PRIdPTR ": '%s' = '%s'", md,
             refcnt, refcnt - 1, key_str, value_str);
@@ -107,8 +107,8 @@ void StaticMetadata::HashInit() {
   hash_ = GRPC_MDSTR_KV_HASH(k_hash, v_hash);
 }
 
-AllocatedMetadata::AllocatedMetadata(const grpc_slice& key,
-                                     const grpc_slice& value)
+AllocatedMetadata::AllocatedMetadata(const grpc_slice &key,
+                                     const grpc_slice &value)
     : RefcountedMdBase(grpc_slice_ref_internal(key),
                        grpc_slice_ref_internal(value)) {
 #ifndef NDEBUG
@@ -116,8 +116,8 @@ AllocatedMetadata::AllocatedMetadata(const grpc_slice& key,
 #endif
 }
 
-AllocatedMetadata::AllocatedMetadata(const grpc_slice& key,
-                                     const grpc_slice& value, const NoRefKey*)
+AllocatedMetadata::AllocatedMetadata(const grpc_slice &key,
+                                     const grpc_slice &value, const NoRefKey *)
     : RefcountedMdBase(key, grpc_slice_ref_internal(value)) {
 #ifndef NDEBUG
   TraceAtStart("ALLOC_MD_NOREF_KEY");
@@ -125,8 +125,8 @@ AllocatedMetadata::AllocatedMetadata(const grpc_slice& key,
 }
 
 AllocatedMetadata::AllocatedMetadata(
-    const grpc_core::ManagedMemorySlice& key,
-    const grpc_core::UnmanagedMemorySlice& value)
+    const grpc_core::ManagedMemorySlice &key,
+    const grpc_core::UnmanagedMemorySlice &value)
     : RefcountedMdBase(key, value) {
 #ifndef NDEBUG
   TraceAtStart("ALLOC_MD_NOREF_KEY_VAL");
@@ -134,8 +134,8 @@ AllocatedMetadata::AllocatedMetadata(
 }
 
 AllocatedMetadata::AllocatedMetadata(
-    const grpc_core::ExternallyManagedSlice& key,
-    const grpc_core::UnmanagedMemorySlice& value)
+    const grpc_core::ExternallyManagedSlice &key,
+    const grpc_core::UnmanagedMemorySlice &value)
     : RefcountedMdBase(key, value) {
 #ifndef NDEBUG
   TraceAtStart("ALLOC_MD_NOREF_KEY_VAL");
@@ -145,7 +145,7 @@ AllocatedMetadata::AllocatedMetadata(
 AllocatedMetadata::~AllocatedMetadata() {
   grpc_slice_unref_internal(key());
   grpc_slice_unref_internal(value());
-  void* user_data = user_data_.data.load(std::memory_order_relaxed);
+  void *user_data = user_data_.data.load(std::memory_order_relaxed);
   if (user_data) {
     destroy_user_data_func destroy_user_data =
         user_data_.destroy_user_data.load(std::memory_order_relaxed);
@@ -154,10 +154,10 @@ AllocatedMetadata::~AllocatedMetadata() {
 }
 
 #ifndef NDEBUG
-void grpc_core::RefcountedMdBase::TraceAtStart(const char* tag) {
+void grpc_core::RefcountedMdBase::TraceAtStart(const char *tag) {
   if (grpc_trace_metadata.enabled()) {
-    char* key_str = grpc_slice_to_c_string(key());
-    char* value_str = grpc_slice_to_c_string(value());
+    char *key_str = grpc_slice_to_c_string(key());
+    char *value_str = grpc_slice_to_c_string(value());
     gpr_log(GPR_DEBUG, "mdelem   %s:%p:%" PRIdPTR ": '%s' = '%s'", tag, this,
             RefValue(), key_str, value_str);
     gpr_free(key_str);
@@ -166,9 +166,9 @@ void grpc_core::RefcountedMdBase::TraceAtStart(const char* tag) {
 }
 #endif
 
-InternedMetadata::InternedMetadata(const grpc_slice& key,
-                                   const grpc_slice& value, uint32_t hash,
-                                   InternedMetadata* next)
+InternedMetadata::InternedMetadata(const grpc_slice &key,
+                                   const grpc_slice &value, uint32_t hash,
+                                   InternedMetadata *next)
     : RefcountedMdBase(grpc_slice_ref_internal(key),
                        grpc_slice_ref_internal(value), hash),
       link_(next) {
@@ -177,9 +177,9 @@ InternedMetadata::InternedMetadata(const grpc_slice& key,
 #endif
 }
 
-InternedMetadata::InternedMetadata(const grpc_slice& key,
-                                   const grpc_slice& value, uint32_t hash,
-                                   InternedMetadata* next, const NoRefKey*)
+InternedMetadata::InternedMetadata(const grpc_slice &key,
+                                   const grpc_slice &value, uint32_t hash,
+                                   InternedMetadata *next, const NoRefKey *)
     : RefcountedMdBase(key, grpc_slice_ref_internal(value), hash), link_(next) {
 #ifndef NDEBUG
   TraceAtStart("INTERNED_MD_NOREF_KEY");
@@ -189,7 +189,7 @@ InternedMetadata::InternedMetadata(const grpc_slice& key,
 InternedMetadata::~InternedMetadata() {
   grpc_slice_unref_internal(key());
   grpc_slice_unref_internal(value());
-  void* user_data = user_data_.data.load(std::memory_order_relaxed);
+  void *user_data = user_data_.data.load(std::memory_order_relaxed);
   if (user_data) {
     destroy_user_data_func destroy_user_data =
         user_data_.destroy_user_data.load(std::memory_order_relaxed);
@@ -198,9 +198,9 @@ InternedMetadata::~InternedMetadata() {
 }
 
 size_t InternedMetadata::CleanupLinkedMetadata(
-    InternedMetadata::BucketLink* head) {
+    InternedMetadata::BucketLink *head) {
   size_t num_freed = 0;
-  InternedMetadata::BucketLink* prev_next = head;
+  InternedMetadata::BucketLink *prev_next = head;
   InternedMetadata *md, *next;
 
   for (md = head->next; md; md = next) {
@@ -218,7 +218,7 @@ size_t InternedMetadata::CleanupLinkedMetadata(
 
 typedef struct mdtab_shard {
   gpr_mu mu;
-  InternedMetadata::BucketLink* elems;
+  InternedMetadata::BucketLink *elems;
   size_t count;
   size_t capacity;
   /** Estimate of the number of unreferenced mdelems in the hash table.
@@ -229,34 +229,34 @@ typedef struct mdtab_shard {
 
 static mdtab_shard g_shards[SHARD_COUNT];
 
-static void gc_mdtab(mdtab_shard* shard);
+static void gc_mdtab(mdtab_shard *shard);
 
 void grpc_mdctx_global_init(void) {
   /* initialize shards */
   for (size_t i = 0; i < SHARD_COUNT; i++) {
-    mdtab_shard* shard = &g_shards[i];
+    mdtab_shard *shard = &g_shards[i];
     gpr_mu_init(&shard->mu);
     shard->count = 0;
     gpr_atm_no_barrier_store(&shard->free_estimate, 0);
     shard->capacity = INITIAL_SHARD_CAPACITY;
-    shard->elems = static_cast<InternedMetadata::BucketLink*>(
+    shard->elems = static_cast<InternedMetadata::BucketLink *>(
         gpr_zalloc(sizeof(*shard->elems) * shard->capacity));
   }
 }
 
 void grpc_mdctx_global_shutdown() {
   for (size_t i = 0; i < SHARD_COUNT; i++) {
-    mdtab_shard* shard = &g_shards[i];
+    mdtab_shard *shard = &g_shards[i];
     gpr_mu_destroy(&shard->mu);
     gc_mdtab(shard);
     if (shard->count != 0) {
       gpr_log(GPR_ERROR, "WARNING: %" PRIuPTR " metadata elements were leaked",
               shard->count);
       for (size_t i = 0; i < shard->capacity; i++) {
-        for (InternedMetadata* md = shard->elems[i].next; md;
+        for (InternedMetadata *md = shard->elems[i].next; md;
              md = md->bucket_next()) {
-          char* key_str = grpc_slice_to_c_string(md->key());
-          char* value_str = grpc_slice_to_c_string(md->value());
+          char *key_str = grpc_slice_to_c_string(md->key());
+          char *value_str = grpc_slice_to_c_string(md->value());
           gpr_log(GPR_ERROR, "mdelem '%s' = '%s'", key_str, value_str);
           gpr_free(key_str);
           gpr_free(value_str);
@@ -278,18 +278,18 @@ void grpc_mdctx_global_shutdown() {
 
 #ifndef NDEBUG
 static int is_mdelem_static(grpc_mdelem e) {
-  return reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(e)) >=
+  return reinterpret_cast<grpc_core::StaticMetadata *>(GRPC_MDELEM_DATA(e)) >=
              &grpc_static_mdelem_table()[0] &&
-         reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(e)) <
+         reinterpret_cast<grpc_core::StaticMetadata *>(GRPC_MDELEM_DATA(e)) <
              &grpc_static_mdelem_table()[GRPC_STATIC_MDELEM_COUNT];
 }
 #endif
 
-void InternedMetadata::RefWithShardLocked(mdtab_shard* shard) {
+void InternedMetadata::RefWithShardLocked(mdtab_shard *shard) {
 #ifndef NDEBUG
   if (grpc_trace_metadata.enabled()) {
-    char* key_str = grpc_slice_to_c_string(key());
-    char* value_str = grpc_slice_to_c_string(value());
+    char *key_str = grpc_slice_to_c_string(key());
+    char *value_str = grpc_slice_to_c_string(value());
     intptr_t value = RefValue();
     gpr_log(__FILE__, __LINE__, GPR_LOG_SEVERITY_DEBUG,
             "mdelem   REF:%p:%" PRIdPTR "->%" PRIdPTR ": '%s' = '%s'", this,
@@ -303,7 +303,7 @@ void InternedMetadata::RefWithShardLocked(mdtab_shard* shard) {
   }
 }
 
-static void gc_mdtab(mdtab_shard* shard) {
+static void gc_mdtab(mdtab_shard *shard) {
   GPR_TIMER_SCOPE("gc_mdtab", 0);
   size_t num_freed = 0;
   for (size_t i = 0; i < shard->capacity; ++i) {
@@ -315,16 +315,16 @@ static void gc_mdtab(mdtab_shard* shard) {
                                -static_cast<intptr_t>(num_freed));
 }
 
-static void grow_mdtab(mdtab_shard* shard) {
+static void grow_mdtab(mdtab_shard *shard) {
   GPR_TIMER_SCOPE("grow_mdtab", 0);
 
   size_t capacity = shard->capacity * 2;
   size_t i;
-  InternedMetadata::BucketLink* mdtab;
+  InternedMetadata::BucketLink *mdtab;
   InternedMetadata *md, *next;
   uint32_t hash;
 
-  mdtab = static_cast<InternedMetadata::BucketLink*>(
+  mdtab = static_cast<InternedMetadata::BucketLink *>(
       gpr_zalloc(sizeof(InternedMetadata::BucketLink) * capacity));
 
   for (i = 0; i < shard->capacity; i++) {
@@ -342,7 +342,7 @@ static void grow_mdtab(mdtab_shard* shard) {
   shard->capacity = capacity;
 }
 
-static void rehash_mdtab(mdtab_shard* shard) {
+static void rehash_mdtab(mdtab_shard *shard) {
   if (gpr_atm_no_barrier_load(&shard->free_estimate) >
       static_cast<gpr_atm>(shard->capacity / 4)) {
     gc_mdtab(shard);
@@ -352,17 +352,17 @@ static void rehash_mdtab(mdtab_shard* shard) {
 }
 
 template <bool key_definitely_static, bool value_definitely_static = false>
-static grpc_mdelem md_create_maybe_static(const grpc_slice& key,
-                                          const grpc_slice& value);
+static grpc_mdelem md_create_maybe_static(const grpc_slice &key,
+                                          const grpc_slice &value);
 template <bool key_definitely_static>
-static grpc_mdelem md_create_must_intern(const grpc_slice& key,
-                                         const grpc_slice& value,
+static grpc_mdelem md_create_must_intern(const grpc_slice &key,
+                                         const grpc_slice &value,
                                          uint32_t hash);
 
 template <bool key_definitely_static, bool value_definitely_static = false>
 static grpc_mdelem md_create(
-    const grpc_slice& key, const grpc_slice& value,
-    grpc_mdelem_data* compatible_external_backing_store) {
+    const grpc_slice &key, const grpc_slice &value,
+    grpc_mdelem_data *compatible_external_backing_store) {
   // Ensure slices are, in fact, static if we claimed they were.
   GPR_DEBUG_ASSERT(!key_definitely_static ||
                    GRPC_IS_STATIC_METADATA_STRING(key));
@@ -385,7 +385,7 @@ static grpc_mdelem md_create(
                  ? GRPC_MAKE_MDELEM(
                        new AllocatedMetadata(
                            key, value,
-                           static_cast<const AllocatedMetadata::NoRefKey*>(
+                           static_cast<const AllocatedMetadata::NoRefKey *>(
                                nullptr)),
                        GRPC_MDELEM_STORAGE_ALLOCATED)
                  : GRPC_MAKE_MDELEM(new AllocatedMetadata(key, value),
@@ -397,8 +397,8 @@ static grpc_mdelem md_create(
 }
 
 template <bool key_definitely_static, bool value_definitely_static>
-static grpc_mdelem md_create_maybe_static(const grpc_slice& key,
-                                          const grpc_slice& value) {
+static grpc_mdelem md_create_maybe_static(const grpc_slice &key,
+                                          const grpc_slice &value) {
   // Ensure slices are, in fact, static if we claimed they were.
   GPR_DEBUG_ASSERT(!key_definitely_static ||
                    GRPC_IS_STATIC_METADATA_STRING(key));
@@ -434,8 +434,8 @@ static grpc_mdelem md_create_maybe_static(const grpc_slice& key,
 }
 
 template <bool key_definitely_static>
-static grpc_mdelem md_create_must_intern(const grpc_slice& key,
-                                         const grpc_slice& value,
+static grpc_mdelem md_create_must_intern(const grpc_slice &key,
+                                         const grpc_slice &value,
                                          uint32_t hash) {
   // Here, we know both key and value are both at least interned, and both
   // possibly static. We know that anything inside the shared interned table is
@@ -444,8 +444,8 @@ static grpc_mdelem md_create_must_intern(const grpc_slice& key,
   // The same applies to a pair of interned slices, or a pair of static slices.
   // Rather than run the full equality check, we can therefore just do a pointer
   // comparison of the refcounts.
-  InternedMetadata* md;
-  mdtab_shard* shard = &g_shards[SHARD_IDX(hash)];
+  InternedMetadata *md;
+  mdtab_shard *shard = &g_shards[SHARD_IDX(hash)];
   size_t idx;
 
   GPR_TIMER_SCOPE("grpc_mdelem_from_metadata_strings", 0);
@@ -467,7 +467,7 @@ static grpc_mdelem md_create_must_intern(const grpc_slice& key,
   md = key_definitely_static
            ? new InternedMetadata(
                  key, value, hash, shard->elems[idx].next,
-                 static_cast<const InternedMetadata::NoRefKey*>(nullptr))
+                 static_cast<const InternedMetadata::NoRefKey *>(nullptr))
            : new InternedMetadata(key, value, hash, shard->elems[idx].next);
   shard->elems[idx].next = md;
   shard->count++;
@@ -482,14 +482,14 @@ static grpc_mdelem md_create_must_intern(const grpc_slice& key,
 }
 
 grpc_mdelem grpc_mdelem_create(
-    const grpc_slice& key, const grpc_slice& value,
-    grpc_mdelem_data* compatible_external_backing_store) {
+    const grpc_slice &key, const grpc_slice &value,
+    grpc_mdelem_data *compatible_external_backing_store) {
   return md_create<false>(key, value, compatible_external_backing_store);
 }
 
 grpc_mdelem grpc_mdelem_create(
-    const grpc_core::StaticMetadataSlice& key, const grpc_slice& value,
-    grpc_mdelem_data* compatible_external_backing_store) {
+    const grpc_core::StaticMetadataSlice &key, const grpc_slice &value,
+    grpc_mdelem_data *compatible_external_backing_store) {
   return md_create<true>(key, value, compatible_external_backing_store);
 }
 
@@ -497,8 +497,8 @@ grpc_mdelem grpc_mdelem_create(
    whether we know that the input key is static or not. If it is, we short
    circuit various comparisons and a no-op unref. */
 template <bool key_definitely_static>
-static grpc_mdelem md_from_slices(const grpc_slice& key,
-                                  const grpc_slice& value) {
+static grpc_mdelem md_from_slices(const grpc_slice &key,
+                                  const grpc_slice &value) {
   // Ensure key is, in fact, static if we claimed it was.
   GPR_DEBUG_ASSERT(!key_definitely_static ||
                    GRPC_IS_STATIC_METADATA_STRING(key));
@@ -510,26 +510,26 @@ static grpc_mdelem md_from_slices(const grpc_slice& key,
   return out;
 }
 
-grpc_mdelem grpc_mdelem_from_slices(const grpc_slice& key,
-                                    const grpc_slice& value) {
+grpc_mdelem grpc_mdelem_from_slices(const grpc_slice &key,
+                                    const grpc_slice &value) {
   return md_from_slices</*key_definitely_static=*/false>(key, value);
 }
 
-grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticMetadataSlice& key,
-                                    const grpc_slice& value) {
+grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticMetadataSlice &key,
+                                    const grpc_slice &value) {
   return md_from_slices</*key_definitely_static=*/true>(key, value);
 }
 
 grpc_mdelem grpc_mdelem_from_slices(
-    const grpc_core::StaticMetadataSlice& key,
-    const grpc_core::StaticMetadataSlice& value) {
+    const grpc_core::StaticMetadataSlice &key,
+    const grpc_core::StaticMetadataSlice &value) {
   grpc_mdelem out = md_create_maybe_static<true, true>(key, value);
   return out;
 }
 
 grpc_mdelem grpc_mdelem_from_slices(
-    const grpc_core::StaticMetadataSlice& key,
-    const grpc_core::ManagedMemorySlice& value) {
+    const grpc_core::StaticMetadataSlice &key,
+    const grpc_core::ManagedMemorySlice &value) {
   // TODO(arjunroy): We can save the unref if md_create_maybe_static ended up
   // creating a new interned metadata. But otherwise - we need this here.
   grpc_mdelem out = md_create_maybe_static<true>(key, value);
@@ -538,8 +538,8 @@ grpc_mdelem grpc_mdelem_from_slices(
 }
 
 grpc_mdelem grpc_mdelem_from_slices(
-    const grpc_core::ManagedMemorySlice& key,
-    const grpc_core::ManagedMemorySlice& value) {
+    const grpc_core::ManagedMemorySlice &key,
+    const grpc_core::ManagedMemorySlice &value) {
   grpc_mdelem out = md_create_maybe_static<false>(key, value);
   // TODO(arjunroy): We can save the unref if md_create_maybe_static ended up
   // creating a new interned metadata. But otherwise - we need this here.
@@ -548,7 +548,7 @@ grpc_mdelem grpc_mdelem_from_slices(
   return out;
 }
 
-grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata* metadata) {
+grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata *metadata) {
   bool changed = false;
   grpc_slice key_slice =
       grpc_slice_maybe_static_intern(metadata->key, &changed);
@@ -556,10 +556,10 @@ grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata* metadata) {
       grpc_slice_maybe_static_intern(metadata->value, &changed);
   return grpc_mdelem_create(
       key_slice, value_slice,
-      changed ? nullptr : reinterpret_cast<grpc_mdelem_data*>(metadata));
+      changed ? nullptr : reinterpret_cast<grpc_mdelem_data *>(metadata));
 }
 
-static void* get_user_data(UserData* user_data, void (*destroy_func)(void*)) {
+static void *get_user_data(UserData *user_data, void (*destroy_func)(void *)) {
   if (user_data->destroy_user_data.load(std::memory_order_acquire) ==
       destroy_func) {
     return user_data->data.load(std::memory_order_relaxed);
@@ -568,30 +568,30 @@ static void* get_user_data(UserData* user_data, void (*destroy_func)(void*)) {
   }
 }
 
-void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*destroy_func)(void*)) {
+void *grpc_mdelem_get_user_data(grpc_mdelem md, void (*destroy_func)(void *)) {
   switch (GRPC_MDELEM_STORAGE(md)) {
     case GRPC_MDELEM_STORAGE_EXTERNAL:
       return nullptr;
     case GRPC_MDELEM_STORAGE_STATIC:
-      return reinterpret_cast<void*>(
+      return reinterpret_cast<void *>(
           grpc_static_mdelem_user_data
-              [reinterpret_cast<grpc_core::StaticMetadata*>(
+              [reinterpret_cast<grpc_core::StaticMetadata *>(
                    GRPC_MDELEM_DATA(md)) -
                grpc_static_mdelem_table()]);
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
-      auto* am = reinterpret_cast<AllocatedMetadata*>(GRPC_MDELEM_DATA(md));
+      auto *am = reinterpret_cast<AllocatedMetadata *>(GRPC_MDELEM_DATA(md));
       return get_user_data(am->user_data(), destroy_func);
     }
     case GRPC_MDELEM_STORAGE_INTERNED: {
-      auto* im = reinterpret_cast<InternedMetadata*> GRPC_MDELEM_DATA(md);
+      auto *im = reinterpret_cast<InternedMetadata *> GRPC_MDELEM_DATA(md);
       return get_user_data(im->user_data(), destroy_func);
     }
   }
   GPR_UNREACHABLE_CODE(return nullptr);
 }
 
-static void* set_user_data(UserData* ud, void (*destroy_func)(void*),
-                           void* data) {
+static void *set_user_data(UserData *ud, void (*destroy_func)(void *),
+                           void *data) {
   GPR_ASSERT((data == nullptr) == (destroy_func == nullptr));
   grpc_core::ReleasableMutexLock lock(&ud->mu_user_data);
   if (ud->destroy_user_data.load(std::memory_order_relaxed)) {
@@ -607,25 +607,25 @@ static void* set_user_data(UserData* ud, void (*destroy_func)(void*),
   return data;
 }
 
-void* grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void*),
-                                void* data) {
+void *grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void *),
+                                void *data) {
   switch (GRPC_MDELEM_STORAGE(md)) {
     case GRPC_MDELEM_STORAGE_EXTERNAL:
       destroy_func(data);
       return nullptr;
     case GRPC_MDELEM_STORAGE_STATIC:
       destroy_func(data);
-      return reinterpret_cast<void*>(
+      return reinterpret_cast<void *>(
           grpc_static_mdelem_user_data
-              [reinterpret_cast<grpc_core::StaticMetadata*>(
+              [reinterpret_cast<grpc_core::StaticMetadata *>(
                    GRPC_MDELEM_DATA(md)) -
                grpc_static_mdelem_table()]);
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
-      auto* am = reinterpret_cast<AllocatedMetadata*>(GRPC_MDELEM_DATA(md));
+      auto *am = reinterpret_cast<AllocatedMetadata *>(GRPC_MDELEM_DATA(md));
       return set_user_data(am->user_data(), destroy_func, data);
     }
     case GRPC_MDELEM_STORAGE_INTERNED: {
-      auto* im = reinterpret_cast<InternedMetadata*> GRPC_MDELEM_DATA(md);
+      auto *im = reinterpret_cast<InternedMetadata *> GRPC_MDELEM_DATA(md);
       GPR_DEBUG_ASSERT(!is_mdelem_static(md));
       return set_user_data(im->user_data(), destroy_func, data);
     }
@@ -642,7 +642,7 @@ bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b) {
 }
 
 static void note_disposed_interned_metadata(uint32_t hash) {
-  mdtab_shard* shard = &g_shards[SHARD_IDX(hash)];
+  mdtab_shard *shard = &g_shards[SHARD_IDX(hash)];
   gpr_atm_no_barrier_fetch_add(&shard->free_estimate, 1);
 }
 
@@ -652,7 +652,7 @@ void grpc_mdelem_do_unref(grpc_mdelem gmd DEBUG_ARGS) {
     case GRPC_MDELEM_STORAGE_STATIC:
       return;
     case GRPC_MDELEM_STORAGE_INTERNED: {
-      auto* md = reinterpret_cast<InternedMetadata*> GRPC_MDELEM_DATA(gmd);
+      auto *md = reinterpret_cast<InternedMetadata *> GRPC_MDELEM_DATA(gmd);
       uint32_t hash = md->hash();
       if (GPR_UNLIKELY(md->Unref(FWD_DEBUG_ARGS))) {
         /* once the refcount hits zero, some other thread can come along and
@@ -662,7 +662,7 @@ void grpc_mdelem_do_unref(grpc_mdelem gmd DEBUG_ARGS) {
       break;
     }
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
-      auto* md = reinterpret_cast<AllocatedMetadata*> GRPC_MDELEM_DATA(gmd);
+      auto *md = reinterpret_cast<AllocatedMetadata *> GRPC_MDELEM_DATA(gmd);
       if (GPR_UNLIKELY(md->Unref(FWD_DEBUG_ARGS))) {
         delete md;
       }
@@ -671,7 +671,7 @@ void grpc_mdelem_do_unref(grpc_mdelem gmd DEBUG_ARGS) {
   }
 }
 
-void grpc_mdelem_on_final_unref(grpc_mdelem_data_storage storage, void* ptr,
+void grpc_mdelem_on_final_unref(grpc_mdelem_data_storage storage, void *ptr,
                                 uint32_t hash DEBUG_ARGS) {
 #ifndef NDEBUG
   (void)file;
@@ -686,7 +686,7 @@ void grpc_mdelem_on_final_unref(grpc_mdelem_data_storage storage, void* ptr,
       break;
     }
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
-      delete reinterpret_cast<AllocatedMetadata*>(ptr);
+      delete reinterpret_cast<AllocatedMetadata *>(ptr);
       break;
     }
   }

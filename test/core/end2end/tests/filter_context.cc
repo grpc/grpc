@@ -36,12 +36,12 @@ enum { TIMEOUT = 200000 };
 
 static bool g_enable_filter = false;
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+                                            const char *test_name,
+                                            grpc_channel_args *client_args,
+                                            grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -58,14 +58,14 @@ static gpr_timespec five_seconds_from_now(void) {
   return n_seconds_from_now(5);
 }
 
-static void drain_cq(grpc_completion_queue* cq) {
+static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
@@ -76,13 +76,13 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(grpc_end2end_test_fixture *f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(grpc_end2end_test_fixture *f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -95,21 +95,21 @@ static void end_test(grpc_end2end_test_fixture* f) {
 // Simple request to test that filters see a consistent view of the
 // call context.
 static void test_request(grpc_end2end_test_config config) {
-  grpc_call* c;
-  grpc_call* s;
+  grpc_call *c;
+  grpc_call *s;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
-  grpc_byte_buffer* request_payload =
+  grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_end2end_test_fixture f =
       begin_test(config, "filter_context", nullptr, nullptr);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer* request_payload_recv = nullptr;
+  grpc_byte_buffer *request_payload_recv = nullptr;
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
@@ -222,20 +222,20 @@ static void test_request(grpc_end2end_test_config config) {
  */
 
 struct call_data {
-  grpc_call_context_element* context;
+  grpc_call_context_element *context;
 };
 
-static grpc_error_handle init_call_elem(grpc_call_element* elem,
-                                        const grpc_call_element_args* args) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
+static grpc_error_handle init_call_elem(grpc_call_element *elem,
+                                        const grpc_call_element_args *args) {
+  call_data *calld = static_cast<call_data *>(elem->call_data);
   calld->context = args->context;
   gpr_log(GPR_INFO, "init_call_elem(): context=%p", args->context);
   return GRPC_ERROR_NONE;
 }
 
 static void start_transport_stream_op_batch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
+    grpc_call_element *elem, grpc_transport_stream_op_batch *batch) {
+  call_data *calld = static_cast<call_data *>(elem->call_data);
   // If batch payload context is not null (which will happen in some
   // cancellation cases), make sure we get the same context here that we
   // saw in init_call_elem().
@@ -247,16 +247,16 @@ static void start_transport_stream_op_batch(
   grpc_call_next_op(elem, batch);
 }
 
-static void destroy_call_elem(grpc_call_element* /*elem*/,
-                              const grpc_call_final_info* /*final_info*/,
-                              grpc_closure* /*ignored*/) {}
+static void destroy_call_elem(grpc_call_element * /*elem*/,
+                              const grpc_call_final_info * /*final_info*/,
+                              grpc_closure * /*ignored*/) {}
 
 static grpc_error_handle init_channel_elem(
-    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
+    grpc_channel_element * /*elem*/, grpc_channel_element_args * /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
-static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
+static void destroy_channel_elem(grpc_channel_element * /*elem*/) {}
 
 static const grpc_channel_filter test_filter = {
     start_transport_stream_op_batch,
@@ -275,14 +275,14 @@ static const grpc_channel_filter test_filter = {
  * Registration
  */
 
-static bool maybe_add_filter(grpc_channel_stack_builder* builder, void* arg) {
-  grpc_channel_filter* filter = static_cast<grpc_channel_filter*>(arg);
+static bool maybe_add_filter(grpc_channel_stack_builder *builder, void *arg) {
+  grpc_channel_filter *filter = static_cast<grpc_channel_filter *>(arg);
   if (g_enable_filter) {
     // Want to add the filter as close to the end as possible, to make
     // sure that all of the filters work well together.  However, we
     // can't add it at the very end, because the connected channel filter
     // must be the last one.  So we add it right before the last one.
-    grpc_channel_stack_builder_iterator* it =
+    grpc_channel_stack_builder_iterator *it =
         grpc_channel_stack_builder_create_iterator_at_last(builder);
     GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
     const bool retval = grpc_channel_stack_builder_add_filter_before(
@@ -297,16 +297,16 @@ static bool maybe_add_filter(grpc_channel_stack_builder* builder, void* arg) {
 static void init_plugin(void) {
   grpc_channel_init_register_stage(
       GRPC_CLIENT_CHANNEL, INT_MAX, maybe_add_filter,
-      const_cast<grpc_channel_filter*>(&test_filter));
+      const_cast<grpc_channel_filter *>(&test_filter));
   grpc_channel_init_register_stage(
       GRPC_CLIENT_SUBCHANNEL, INT_MAX, maybe_add_filter,
-      const_cast<grpc_channel_filter*>(&test_filter));
+      const_cast<grpc_channel_filter *>(&test_filter));
   grpc_channel_init_register_stage(
       GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX, maybe_add_filter,
-      const_cast<grpc_channel_filter*>(&test_filter));
+      const_cast<grpc_channel_filter *>(&test_filter));
   grpc_channel_init_register_stage(
       GRPC_SERVER_CHANNEL, INT_MAX, maybe_add_filter,
-      const_cast<grpc_channel_filter*>(&test_filter));
+      const_cast<grpc_channel_filter *>(&test_filter));
 }
 
 static void destroy_plugin(void) {}

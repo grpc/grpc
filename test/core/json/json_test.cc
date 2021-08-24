@@ -33,26 +33,26 @@
 
 namespace grpc_core {
 
-void ValidateValue(const Json& actual, const Json& expected);
+void ValidateValue(const Json &actual, const Json &expected);
 
-void ValidateObject(const Json::Object& actual, const Json::Object& expected) {
+void ValidateObject(const Json::Object &actual, const Json::Object &expected) {
   ASSERT_EQ(actual.size(), expected.size());
   auto actual_it = actual.begin();
-  for (const auto& p : expected) {
+  for (const auto &p : expected) {
     EXPECT_EQ(actual_it->first, p.first);
     ValidateValue(actual_it->second, p.second);
     ++actual_it;
   }
 }
 
-void ValidateArray(const Json::Array& actual, const Json::Array& expected) {
+void ValidateArray(const Json::Array &actual, const Json::Array &expected) {
   ASSERT_EQ(actual.size(), expected.size());
   for (size_t i = 0; i < expected.size(); ++i) {
     ValidateValue(actual[i], expected[i]);
   }
 }
 
-void ValidateValue(const Json& actual, const Json& expected) {
+void ValidateValue(const Json &actual, const Json &expected) {
   ASSERT_EQ(actual.type(), expected.type());
   switch (expected.type()) {
     case Json::Type::JSON_NULL:
@@ -72,8 +72,8 @@ void ValidateValue(const Json& actual, const Json& expected) {
   }
 }
 
-void RunSuccessTest(const char* input, const Json& expected,
-                    const char* expected_output) {
+void RunSuccessTest(const char *input, const Json &expected,
+                    const char *expected_output) {
   gpr_log(GPR_INFO, "parsing string \"%s\" - should succeed", input);
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(input, &error);
@@ -163,7 +163,7 @@ TEST(Json, Keywords) {
                  "[true,false,null]");
 }
 
-void RunParseFailureTest(const char* input) {
+void RunParseFailureTest(const char *input) {
   gpr_log(GPR_INFO, "parsing string \"%s\" - should fail", input);
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(input, &error);
@@ -288,7 +288,7 @@ TEST(Json, Equality) {
 
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

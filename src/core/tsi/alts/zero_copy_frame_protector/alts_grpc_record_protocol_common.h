@@ -32,26 +32,26 @@
 
 /* V-table for alts_grpc_record_protocol implementations.  */
 struct alts_grpc_record_protocol_vtable {
-  tsi_result (*protect)(alts_grpc_record_protocol* self,
-                        grpc_slice_buffer* unprotected_slices,
-                        grpc_slice_buffer* protected_slices);
-  tsi_result (*unprotect)(alts_grpc_record_protocol* self,
-                          grpc_slice_buffer* protected_slices,
-                          grpc_slice_buffer* unprotected_slices);
-  void (*destruct)(alts_grpc_record_protocol* self);
+  tsi_result (*protect)(alts_grpc_record_protocol *self,
+                        grpc_slice_buffer *unprotected_slices,
+                        grpc_slice_buffer *protected_slices);
+  tsi_result (*unprotect)(alts_grpc_record_protocol *self,
+                          grpc_slice_buffer *protected_slices,
+                          grpc_slice_buffer *unprotected_slices);
+  void (*destruct)(alts_grpc_record_protocol *self);
 };
 /* Main struct for alts_grpc_record_protocol implementation, shared by both
  * integrity-only record protocol and privacy-integrity record protocol.
  * Integrity-only record protocol has additional data elements.
  * Privacy-integrity record protocol uses this struct directly.  */
 struct alts_grpc_record_protocol {
-  const alts_grpc_record_protocol_vtable* vtable;
-  alts_iovec_record_protocol* iovec_rp;
+  const alts_grpc_record_protocol_vtable *vtable;
+  alts_iovec_record_protocol *iovec_rp;
   grpc_slice_buffer header_sb;
-  unsigned char* header_buf;
+  unsigned char *header_buf;
   size_t header_length;
   size_t tag_length;
-  iovec_t* iovec_buf;
+  iovec_t *iovec_buf;
   size_t iovec_buf_length;
 };
 
@@ -61,15 +61,15 @@ struct alts_grpc_record_protocol {
  * pointers and lengths are copied.
  */
 void alts_grpc_record_protocol_convert_slice_buffer_to_iovec(
-    alts_grpc_record_protocol* rp, const grpc_slice_buffer* sb);
+    alts_grpc_record_protocol *rp, const grpc_slice_buffer *sb);
 
 /**
  * Copies bytes from slice buffer to destination buffer. Caller is responsible
  * for allocating enough memory of destination buffer. This method is used for
  * copying frame header and tag in case they are stored in multiple slices.
  */
-void alts_grpc_record_protocol_copy_slice_buffer(const grpc_slice_buffer* src,
-                                                 unsigned char* dst);
+void alts_grpc_record_protocol_copy_slice_buffer(const grpc_slice_buffer *src,
+                                                 unsigned char *dst);
 
 /**
  * This method returns an iovec object pointing to the frame header stored in
@@ -79,7 +79,7 @@ void alts_grpc_record_protocol_copy_slice_buffer(const grpc_slice_buffer* src,
  * rp->header_buf.
  */
 iovec_t alts_grpc_record_protocol_get_header_iovec(
-    alts_grpc_record_protocol* rp);
+    alts_grpc_record_protocol *rp);
 
 /**
  * Initializes an alts_grpc_record_protocol object, given a gsec_aead_crypter
@@ -89,8 +89,8 @@ iovec_t alts_grpc_record_protocol_get_header_iovec(
  * protect or unprotect. The ownership of gsec_aead_crypter object is
  * transferred to the alts_grpc_record_protocol object.
  */
-tsi_result alts_grpc_record_protocol_init(alts_grpc_record_protocol* rp,
-                                          gsec_aead_crypter* crypter,
+tsi_result alts_grpc_record_protocol_init(alts_grpc_record_protocol *rp,
+                                          gsec_aead_crypter *crypter,
                                           size_t overflow_size, bool is_client,
                                           bool is_integrity_only,
                                           bool is_protect);

@@ -33,9 +33,9 @@
 
 #include "src/core/lib/gpr/string.h"
 
-FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {
-  FILE* result = nullptr;
-  char* filename_template;
+FILE *gpr_tmpfile(const char *prefix, char **tmp_filename) {
+  FILE *result = nullptr;
+  char *filename_template;
   int fd;
 
   if (tmp_filename != nullptr) *tmp_filename = nullptr;

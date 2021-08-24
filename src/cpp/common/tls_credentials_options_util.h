@@ -31,12 +31,12 @@ namespace experimental {
  *  functions into C style schedule or cancel functions. These are internal
  *  functions, not meant to be accessed by the user. **/
 int TlsServerAuthorizationCheckConfigCSchedule(
-    void* config_user_data, grpc_tls_server_authorization_check_arg* arg);
+    void *config_user_data, grpc_tls_server_authorization_check_arg *arg);
 
 void TlsServerAuthorizationCheckConfigCCancel(
-    void* config_user_data, grpc_tls_server_authorization_check_arg* arg);
+    void *config_user_data, grpc_tls_server_authorization_check_arg *arg);
 
-void TlsServerAuthorizationCheckArgDestroyContext(void* context);
+void TlsServerAuthorizationCheckArgDestroyContext(void *context);
 
 }  //  namespace experimental
 }  // namespace grpc

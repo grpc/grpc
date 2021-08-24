@@ -26,7 +26,7 @@ namespace promise_detail {
 
 // Extract the T from a StatusOr<T>
 template <typename T>
-T IntoResult(absl::StatusOr<T>* status) {
+T IntoResult(absl::StatusOr<T> *status) {
   return std::move(**status);
 }
 
@@ -34,13 +34,13 @@ T IntoResult(absl::StatusOr<T>* status) {
 // g()->Poll<StatusOr<B>>, h()->Poll<StatusOr<C>>. If one of those should be a
 // Status instead, we need a placeholder type to return, and this is it.
 struct Empty {};
-inline Empty IntoResult(absl::Status*) { return Empty{}; }
+inline Empty IntoResult(absl::Status *) { return Empty{}; }
 
 // Traits object to pass to BasicJoin
 struct TryJoinTraits {
   template <typename T>
   using ResultType =
-      decltype(IntoResult(std::declval<absl::remove_reference_t<T>*>()));
+      decltype(IntoResult(std::declval<absl::remove_reference_t<T> *>()));
   template <typename T, typename F>
   static auto OnResult(T result, F kontinue)
       -> decltype(kontinue(IntoResult(&result))) {

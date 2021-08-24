@@ -35,7 +35,7 @@ ProtoReflectionDescriptorDatabase::ProtoReflectionDescriptorDatabase(
     : stub_(std::move(stub)) {}
 
 ProtoReflectionDescriptorDatabase::ProtoReflectionDescriptorDatabase(
-    const std::shared_ptr<grpc::Channel>& channel)
+    const std::shared_ptr<grpc::Channel> &channel)
     : stub_(ServerReflection::NewStub(channel)) {}
 
 ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {
@@ -60,7 +60,7 @@ ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {
 }
 
 bool ProtoReflectionDescriptorDatabase::FindFileByName(
-    const string& filename, protobuf::FileDescriptorProto* output) {
+    const string &filename, protobuf::FileDescriptorProto *output) {
   if (cached_db_.FindFileByName(filename, output)) {
     return true;
   }
@@ -82,7 +82,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileByName(
     AddFileFromResponse(response.file_descriptor_response());
   } else if (response.message_response_case() ==
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
-    const ErrorResponse& error = response.error_response();
+    const ErrorResponse &error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
       gpr_log(GPR_INFO, "NOT_FOUND from server for FindFileByName(%s)",
               filename.c_str());
@@ -107,7 +107,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileByName(
 }
 
 bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
-    const string& symbol_name, protobuf::FileDescriptorProto* output) {
+    const string &symbol_name, protobuf::FileDescriptorProto *output) {
   if (cached_db_.FindFileContainingSymbol(symbol_name, output)) {
     return true;
   }
@@ -129,7 +129,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
     AddFileFromResponse(response.file_descriptor_response());
   } else if (response.message_response_case() ==
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
-    const ErrorResponse& error = response.error_response();
+    const ErrorResponse &error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
       missing_symbols_.insert(symbol_name);
       gpr_log(GPR_INFO,
@@ -155,8 +155,8 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
 }
 
 bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
-    const string& containing_type, int field_number,
-    protobuf::FileDescriptorProto* output) {
+    const string &containing_type, int field_number,
+    protobuf::FileDescriptorProto *output) {
   if (cached_db_.FindFileContainingExtension(containing_type, field_number,
                                              output)) {
     return true;
@@ -185,7 +185,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
     AddFileFromResponse(response.file_descriptor_response());
   } else if (response.message_response_case() ==
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
-    const ErrorResponse& error = response.error_response();
+    const ErrorResponse &error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
       if (missing_extensions_.find(containing_type) ==
           missing_extensions_.end()) {
@@ -217,7 +217,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
 }
 
 bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
-    const string& extendee_type, std::vector<int>* output) {
+    const string &extendee_type, std::vector<int> *output) {
   if (cached_extension_numbers_.find(extendee_type) !=
       cached_extension_numbers_.end()) {
     *output = cached_extension_numbers_[extendee_type];
@@ -241,7 +241,7 @@ bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
     return true;
   } else if (response.message_response_case() ==
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
-    const ErrorResponse& error = response.error_response();
+    const ErrorResponse &error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
       gpr_log(GPR_INFO, "NOT_FOUND from server for FindAllExtensionNumbers(%s)",
               extendee_type.c_str());
@@ -257,7 +257,7 @@ bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
 }
 
 bool ProtoReflectionDescriptorDatabase::GetServices(
-    std::vector<std::string>* output) {
+    std::vector<std::string> *output) {
   ServerReflectionRequest request;
   request.set_list_services("");
   ServerReflectionResponse response;
@@ -268,14 +268,14 @@ bool ProtoReflectionDescriptorDatabase::GetServices(
 
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::kListServicesResponse) {
-    const ListServiceResponse& ls_response = response.list_services_response();
+    const ListServiceResponse &ls_response = response.list_services_response();
     for (int i = 0; i < ls_response.service_size(); ++i) {
       (*output).push_back(ls_response.service(i).name());
     }
     return true;
   } else if (response.message_response_case() ==
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
-    const ErrorResponse& error = response.error_response();
+    const ErrorResponse &error = response.error_response();
     gpr_log(GPR_INFO,
             "Error on GetServices()\n\tError code: %d\n"
             "\tError Message: %s",
@@ -292,14 +292,14 @@ bool ProtoReflectionDescriptorDatabase::GetServices(
 
 protobuf::FileDescriptorProto
 ProtoReflectionDescriptorDatabase::ParseFileDescriptorProtoResponse(
-    const std::string& byte_fd_proto) {
+    const std::string &byte_fd_proto) {
   protobuf::FileDescriptorProto file_desc_proto;
   file_desc_proto.ParseFromString(byte_fd_proto);
   return file_desc_proto;
 }
 
 void ProtoReflectionDescriptorDatabase::AddFileFromResponse(
-    const grpc::reflection::v1alpha::FileDescriptorResponse& response) {
+    const grpc::reflection::v1alpha::FileDescriptorResponse &response) {
   for (int i = 0; i < response.file_descriptor_proto_size(); ++i) {
     const protobuf::FileDescriptorProto file_proto =
         ParseFileDescriptorProtoResponse(response.file_descriptor_proto(i));
@@ -319,8 +319,8 @@ ProtoReflectionDescriptorDatabase::GetStream() {
 }
 
 bool ProtoReflectionDescriptorDatabase::DoOneRequest(
-    const ServerReflectionRequest& request,
-    ServerReflectionResponse& response) {
+    const ServerReflectionRequest &request,
+    ServerReflectionResponse &response) {
   bool success = false;
   stream_mutex_.lock();
   if (GetStream()->Write(request) && GetStream()->Read(&response)) {

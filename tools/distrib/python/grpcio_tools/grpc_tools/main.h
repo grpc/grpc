@@ -19,7 +19,7 @@
 namespace grpc_tools {
 // We declare `protoc_main` here since we want access to it from Cython as an
 // extern but *without* triggering a dllimport declspec when on Windows.
-int protoc_main(int argc, char* argv[]);
+int protoc_main(int argc, char *argv[]);
 
 struct ProtocError {
   std::string filename;
@@ -35,12 +35,12 @@ struct ProtocError {
 typedef ProtocError ProtocWarning;
 
 int protoc_get_protos(
-    char* protobuf_path, const std::vector<std::string>* include_paths,
-    std::vector<std::pair<std::string, std::string>>* files_out,
-    std::vector<ProtocError>* errors, std::vector<ProtocWarning>* warnings);
+    char *protobuf_path, const std::vector<std::string> *include_paths,
+    std::vector<std::pair<std::string, std::string>> *files_out,
+    std::vector<ProtocError> *errors, std::vector<ProtocWarning> *warnings);
 
 int protoc_get_services(
-    char* protobuf_path, const std::vector<std::string>* include_paths,
-    std::vector<std::pair<std::string, std::string>>* files_out,
-    std::vector<ProtocError>* errors, std::vector<ProtocWarning>* warnings);
+    char *protobuf_path, const std::vector<std::string> *include_paths,
+    std::vector<std::pair<std::string, std::string>> *files_out,
+    std::vector<ProtocError> *errors, std::vector<ProtocWarning> *warnings);
 }  // end namespace grpc_tools

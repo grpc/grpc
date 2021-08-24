@@ -38,7 +38,7 @@
 #include "test/core/util/test_config.h"
 
 static void test_grpc_parse_ipv6_parity_with_getaddrinfo(
-    const char* target, const struct sockaddr_in6 result_from_getaddrinfo) {
+    const char *target, const struct sockaddr_in6 result_from_getaddrinfo) {
   // Get the sockaddr that gRPC's ipv6 resolver resolves this too.
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(target);
@@ -48,8 +48,8 @@ static void test_grpc_parse_ipv6_parity_with_getaddrinfo(
   }
   grpc_resolved_address addr;
   GPR_ASSERT(1 == grpc_parse_ipv6(*uri, &addr));
-  grpc_sockaddr_in6* result_from_grpc_parser =
-      reinterpret_cast<grpc_sockaddr_in6*>(addr.addr);
+  grpc_sockaddr_in6 *result_from_grpc_parser =
+      reinterpret_cast<grpc_sockaddr_in6 *>(addr.addr);
   // Compare the sockaddr returned from gRPC's ipv6 resolver with that returned
   // from getaddrinfo.
   GPR_ASSERT(result_from_grpc_parser->sin6_family == AF_INET6);
@@ -63,7 +63,7 @@ static void test_grpc_parse_ipv6_parity_with_getaddrinfo(
   // as is. Cleanup
 }
 
-struct sockaddr_in6 resolve_with_gettaddrinfo(const char* uri_text) {
+struct sockaddr_in6 resolve_with_gettaddrinfo(const char *uri_text) {
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   if (!uri.ok()) {
     gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
@@ -77,7 +77,7 @@ struct sockaddr_in6 resolve_with_gettaddrinfo(const char* uri_text) {
   hints.ai_family = AF_INET6;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_NUMERICHOST;
-  struct addrinfo* result;
+  struct addrinfo *result;
   int res = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
   if (res != 0) {
     gpr_log(GPR_ERROR,
@@ -86,22 +86,22 @@ struct sockaddr_in6 resolve_with_gettaddrinfo(const char* uri_text) {
     abort();
   }
   size_t num_addrs_from_getaddrinfo = 0;
-  for (struct addrinfo* resp = result; resp != nullptr; resp = resp->ai_next) {
+  for (struct addrinfo *resp = result; resp != nullptr; resp = resp->ai_next) {
     num_addrs_from_getaddrinfo++;
   }
   GPR_ASSERT(num_addrs_from_getaddrinfo == 1);
   GPR_ASSERT(result->ai_family == AF_INET6);
   struct sockaddr_in6 out =
-      *reinterpret_cast<struct sockaddr_in6*>(result->ai_addr);
+      *reinterpret_cast<struct sockaddr_in6 *>(result->ai_addr);
   // Cleanup
   freeaddrinfo(result);
   return out;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  char* arbitrary_interface_name = static_cast<char*>(gpr_zalloc(IF_NAMESIZE));
+  char *arbitrary_interface_name = static_cast<char *>(gpr_zalloc(IF_NAMESIZE));
   // Per RFC 3493, an interface index is a "small positive integer starts at 1".
   // Probe candidate interface index numbers until we find one that the
   // system recognizes, and then use that for the test.

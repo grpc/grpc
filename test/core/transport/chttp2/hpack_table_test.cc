@@ -38,13 +38,13 @@
 
 using grpc_core::HPackTable;
 
-static void assert_str(const HPackTable* /*tbl*/, grpc_slice mdstr,
-                       const char* str) {
+static void assert_str(const HPackTable * /*tbl*/, grpc_slice mdstr,
+                       const char *str) {
   GPR_ASSERT(grpc_slice_str_cmp(mdstr, str) == 0);
 }
 
-static void assert_index(const HPackTable* tbl, uint32_t idx, const char* key,
-                         const char* value) {
+static void assert_index(const HPackTable *tbl, uint32_t idx, const char *key,
+                         const char *value) {
   grpc_mdelem md = tbl->Peek(idx);
   assert_str(tbl, GRPC_MDKEY(md), key);
   assert_str(tbl, GRPC_MDVALUE(md), value);
@@ -145,7 +145,7 @@ static void test_many_additions(void) {
   }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_static_lookup();

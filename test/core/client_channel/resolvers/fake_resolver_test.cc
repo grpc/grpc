@@ -39,7 +39,7 @@
 class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
   void SetExpectedAndEvent(grpc_core::Resolver::Result expected,
-                           gpr_event* ev) {
+                           gpr_event *ev) {
     GPR_ASSERT(ev_ == nullptr);
     expected_ = std::move(expected);
     ev_ = ev;
@@ -54,7 +54,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     for (size_t i = 0; i < expected_.addresses.size(); ++i) {
       GPR_ASSERT(actual.addresses[i] == expected_.addresses[i]);
     }
-    gpr_event_set(ev_, reinterpret_cast<void*>(1));
+    gpr_event_set(ev_, reinterpret_cast<void *>(1));
     ev_ = nullptr;
   }
 
@@ -62,14 +62,14 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
 
  private:
   grpc_core::Resolver::Result expected_;
-  gpr_event* ev_ = nullptr;
+  gpr_event *ev_ = nullptr;
 };
 
 static grpc_core::OrphanablePtr<grpc_core::Resolver> build_fake_resolver(
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer,
-    grpc_core::FakeResolverResponseGenerator* response_generator,
+    grpc_core::FakeResolverResponseGenerator *response_generator,
     std::unique_ptr<grpc_core::Resolver::ResultHandler> result_handler) {
-  grpc_core::ResolverFactory* factory =
+  grpc_core::ResolverFactory *factory =
       grpc_core::ResolverRegistry::LookupResolverFactory("fake");
   grpc_arg generator_arg =
       grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
@@ -111,7 +111,7 @@ static void test_fake_resolver() {
   std::shared_ptr<grpc_core::WorkSerializer> work_serializer =
       std::make_shared<grpc_core::WorkSerializer>();
   // Create resolver.
-  ResultHandler* result_handler = new ResultHandler();
+  ResultHandler *result_handler = new ResultHandler();
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       response_generator =
           grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
@@ -199,7 +199,7 @@ static void test_fake_resolver() {
   resolver.reset();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 

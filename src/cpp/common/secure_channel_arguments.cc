@@ -23,7 +23,7 @@
 
 namespace grpc {
 
-void ChannelArguments::SetSslTargetNameOverride(const std::string& name) {
+void ChannelArguments::SetSslTargetNameOverride(const std::string &name) {
   SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, name);
 }
 

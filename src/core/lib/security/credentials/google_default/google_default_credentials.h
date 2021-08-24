@@ -55,15 +55,15 @@ class grpc_google_default_channel_credentials
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* target, const grpc_channel_args* args,
-      grpc_channel_args** new_args) override;
+      const char *target, const grpc_channel_args *args,
+      grpc_channel_args **new_args) override;
 
-  grpc_channel_args* update_arguments(grpc_channel_args* args) override;
+  grpc_channel_args *update_arguments(grpc_channel_args *args) override;
 
-  const grpc_channel_credentials* alts_creds() const {
+  const grpc_channel_credentials *alts_creds() const {
     return alts_creds_.get();
   }
-  const grpc_channel_credentials* ssl_creds() const { return ssl_creds_.get(); }
+  const grpc_channel_credentials *ssl_creds() const { return ssl_creds_.get(); }
 
  private:
   grpc_core::RefCountedPtr<grpc_channel_credentials> alts_creds_;

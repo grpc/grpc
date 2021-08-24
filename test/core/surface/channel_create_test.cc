@@ -27,7 +27,7 @@
 #include "test/core/util/test_config.h"
 
 void test_unknown_scheme_target(void) {
-  grpc_channel* chan;
+  grpc_channel *chan;
   /* avoid default prefix */
   grpc_core::ResolverRegistry::Builder::ShutdownRegistry();
   grpc_core::ResolverRegistry::Builder::InitRegistry();
@@ -36,14 +36,14 @@ void test_unknown_scheme_target(void) {
   GPR_ASSERT(chan != nullptr);
 
   grpc_core::ExecCtx exec_ctx;
-  grpc_channel_element* elem =
+  grpc_channel_element *elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
 
   grpc_channel_destroy(chan);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_unknown_scheme_target();

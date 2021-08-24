@@ -31,62 +31,62 @@ namespace grpc_core {
 
 TraceFlag grpc_subchannel_pool_trace(false, "subchannel_pool");
 
-SubchannelKey::SubchannelKey(const grpc_channel_args* args) {
+SubchannelKey::SubchannelKey(const grpc_channel_args *args) {
   Init(args, grpc_channel_args_normalize);
 }
 
 SubchannelKey::~SubchannelKey() {
-  grpc_channel_args_destroy(const_cast<grpc_channel_args*>(args_));
+  grpc_channel_args_destroy(const_cast<grpc_channel_args *>(args_));
 }
 
-SubchannelKey::SubchannelKey(const SubchannelKey& other) {
+SubchannelKey::SubchannelKey(const SubchannelKey &other) {
   Init(other.args_, grpc_channel_args_copy);
 }
 
-SubchannelKey& SubchannelKey::operator=(const SubchannelKey& other) {
+SubchannelKey &SubchannelKey::operator=(const SubchannelKey &other) {
   if (&other == this) {
     return *this;
   }
-  grpc_channel_args_destroy(const_cast<grpc_channel_args*>(args_));
+  grpc_channel_args_destroy(const_cast<grpc_channel_args *>(args_));
   Init(other.args_, grpc_channel_args_copy);
   return *this;
 }
 
-SubchannelKey::SubchannelKey(SubchannelKey&& other) noexcept {
+SubchannelKey::SubchannelKey(SubchannelKey &&other) noexcept {
   args_ = other.args_;
   other.args_ = nullptr;
 }
 
-SubchannelKey& SubchannelKey::operator=(SubchannelKey&& other) noexcept {
+SubchannelKey &SubchannelKey::operator=(SubchannelKey &&other) noexcept {
   args_ = other.args_;
   other.args_ = nullptr;
   return *this;
 }
 
-bool SubchannelKey::operator<(const SubchannelKey& other) const {
+bool SubchannelKey::operator<(const SubchannelKey &other) const {
   return grpc_channel_args_compare(args_, other.args_) < 0;
 }
 
 void SubchannelKey::Init(
-    const grpc_channel_args* args,
-    grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args)) {
+    const grpc_channel_args *args,
+    grpc_channel_args *(*copy_channel_args)(const grpc_channel_args *args)) {
   args_ = copy_channel_args(args);
 }
 
 namespace {
 
-void* arg_copy(void* p) {
-  auto* subchannel_pool = static_cast<SubchannelPoolInterface*>(p);
+void *arg_copy(void *p) {
+  auto *subchannel_pool = static_cast<SubchannelPoolInterface *>(p);
   subchannel_pool->Ref().release();
   return p;
 }
 
-void arg_destroy(void* p) {
-  auto* subchannel_pool = static_cast<SubchannelPoolInterface*>(p);
+void arg_destroy(void *p) {
+  auto *subchannel_pool = static_cast<SubchannelPoolInterface *>(p);
   subchannel_pool->Unref();
 }
 
-int arg_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+int arg_cmp(void *a, void *b) { return GPR_ICMP(a, b); }
 
 const grpc_arg_pointer_vtable subchannel_pool_arg_vtable = {
     arg_copy, arg_destroy, arg_cmp};
@@ -94,18 +94,18 @@ const grpc_arg_pointer_vtable subchannel_pool_arg_vtable = {
 }  // namespace
 
 grpc_arg SubchannelPoolInterface::CreateChannelArg(
-    SubchannelPoolInterface* subchannel_pool) {
+    SubchannelPoolInterface *subchannel_pool) {
   return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_SUBCHANNEL_POOL), subchannel_pool,
+      const_cast<char *>(GRPC_ARG_SUBCHANNEL_POOL), subchannel_pool,
       &subchannel_pool_arg_vtable);
 }
 
-SubchannelPoolInterface*
+SubchannelPoolInterface *
 SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(
-    const grpc_channel_args* args) {
-  const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_SUBCHANNEL_POOL);
+    const grpc_channel_args *args) {
+  const grpc_arg *arg = grpc_channel_args_find(args, GRPC_ARG_SUBCHANNEL_POOL);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return nullptr;
-  return static_cast<SubchannelPoolInterface*>(arg->value.pointer.p);
+  return static_cast<SubchannelPoolInterface *>(arg->value.pointer.p);
 }
 
 }  // namespace grpc_core

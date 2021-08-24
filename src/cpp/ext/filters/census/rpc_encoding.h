@@ -48,7 +48,7 @@ class RpcServerStatsEncoding {
   // at least kRpcServerStatsSize bytes) or the encoding version or field ID are
   // unrecognized, *time will be set to 0 and it will return
   // kEncodeDecodeFailure. Inlined for performance reasons.
-  static size_t Decode(absl::string_view buf, uint64_t* time) {
+  static size_t Decode(absl::string_view buf, uint64_t *time) {
     if (buf.size() < kRpcServerStatsSize) {
       *time = 0;
       return kEncodeDecodeFailure;
@@ -69,7 +69,7 @@ class RpcServerStatsEncoding {
   // number of bytes written to the buffer. If the buffer is smaller than
   // kRpcServerStatsSize bytes it will return kEncodeDecodeFailure. Inlined for
   // performance reasons.
-  static size_t Encode(uint64_t time, char* buf, size_t buf_size) {
+  static size_t Encode(uint64_t time, char *buf, size_t buf_size) {
     if (buf_size < kRpcServerStatsSize) {
       return kEncodeDecodeFailure;
     }
@@ -104,10 +104,10 @@ class RpcServerStatsEncoding {
   };
 
   RpcServerStatsEncoding() = delete;
-  RpcServerStatsEncoding(const RpcServerStatsEncoding&) = delete;
-  RpcServerStatsEncoding(RpcServerStatsEncoding&&) = delete;
-  RpcServerStatsEncoding operator=(const RpcServerStatsEncoding&) = delete;
-  RpcServerStatsEncoding operator=(RpcServerStatsEncoding&&) = delete;
+  RpcServerStatsEncoding(const RpcServerStatsEncoding &) = delete;
+  RpcServerStatsEncoding(RpcServerStatsEncoding &&) = delete;
+  RpcServerStatsEncoding operator=(const RpcServerStatsEncoding &) = delete;
+  RpcServerStatsEncoding operator=(RpcServerStatsEncoding &&) = delete;
 };
 
 }  // namespace grpc

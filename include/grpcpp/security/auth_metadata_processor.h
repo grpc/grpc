@@ -50,10 +50,10 @@ class AuthMetadataProcessor {
   /// response.
   /// If the return value is not Status::OK, the rpc call will be aborted with
   /// the error code and error message sent back to the client.
-  virtual grpc::Status Process(const InputMetadata& auth_metadata,
-                               grpc::AuthContext* context,
-                               OutputMetadata* consumed_auth_metadata,
-                               OutputMetadata* response_metadata) = 0;
+  virtual grpc::Status Process(const InputMetadata &auth_metadata,
+                               grpc::AuthContext *context,
+                               OutputMetadata *consumed_auth_metadata,
+                               OutputMetadata *response_metadata) = 0;
 };
 
 }  // namespace grpc

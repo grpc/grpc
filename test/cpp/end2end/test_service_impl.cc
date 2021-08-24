@@ -38,8 +38,8 @@ namespace internal {
 
 // When echo_deadline is requested, deadline seen in the ServerContext is set in
 // the response in seconds.
-void MaybeEchoDeadline(ServerContextBase* context, const EchoRequest* request,
-                       EchoResponse* response) {
+void MaybeEchoDeadline(ServerContextBase *context, const EchoRequest *request,
+                       EchoResponse *response) {
   if (request->has_param() && request->param().echo_deadline()) {
     gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
     if (context->deadline() != system_clock::time_point::max()) {
@@ -49,9 +49,9 @@ void MaybeEchoDeadline(ServerContextBase* context, const EchoRequest* request,
   }
 }
 
-void CheckServerAuthContext(const ServerContextBase* context,
-                            const std::string& expected_transport_security_type,
-                            const std::string& expected_client_identity) {
+void CheckServerAuthContext(const ServerContextBase *context,
+                            const std::string &expected_transport_security_type,
+                            const std::string &expected_client_identity) {
   std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
   std::vector<grpc::string_ref> tst =
       auth_ctx->FindPropertyValues("transport_security_type");
@@ -72,10 +72,10 @@ void CheckServerAuthContext(const ServerContextBase* context,
 // Returns the number of pairs in metadata that exactly match the given
 // key-value pair. Returns -1 if the pair wasn't found.
 int MetadataMatchCount(
-    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    const std::string& key, const std::string& value) {
+    const std::multimap<grpc::string_ref, grpc::string_ref> &metadata,
+    const std::string &key, const std::string &value) {
   int count = 0;
-  for (const auto& metadatum : metadata) {
+  for (const auto &metadatum : metadata) {
     if (ToString(metadatum.first) == key &&
         ToString(metadatum.second) == value) {
       count++;
@@ -85,8 +85,8 @@ int MetadataMatchCount(
 }
 
 int GetIntValueFromMetadataHelper(
-    const char* key,
-    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+    const char *key,
+    const std::multimap<grpc::string_ref, grpc::string_ref> &metadata,
     int default_value) {
   if (metadata.find(key) != metadata.end()) {
     std::istringstream iss(ToString(metadata.find(key)->second));
@@ -98,13 +98,13 @@ int GetIntValueFromMetadataHelper(
 }
 
 int GetIntValueFromMetadata(
-    const char* key,
-    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+    const char *key,
+    const std::multimap<grpc::string_ref, grpc::string_ref> &metadata,
     int default_value) {
   return GetIntValueFromMetadataHelper(key, metadata, default_value);
 }
 
-void ServerTryCancel(ServerContext* context) {
+void ServerTryCancel(ServerContext *context) {
   EXPECT_FALSE(context->IsCancelled());
   context->TryCancel();
   gpr_log(GPR_INFO, "Server called TryCancel() to cancel the request");
@@ -115,7 +115,7 @@ void ServerTryCancel(ServerContext* context) {
   }
 }
 
-void ServerTryCancelNonblocking(CallbackServerContext* context) {
+void ServerTryCancelNonblocking(CallbackServerContext *context) {
   EXPECT_FALSE(context->IsCancelled());
   context->TryCancel();
   gpr_log(GPR_INFO,
@@ -124,13 +124,13 @@ void ServerTryCancelNonblocking(CallbackServerContext* context) {
 
 }  // namespace internal
 
-ServerUnaryReactor* CallbackTestServiceImpl::Echo(
-    CallbackServerContext* context, const EchoRequest* request,
-    EchoResponse* response) {
+ServerUnaryReactor *CallbackTestServiceImpl::Echo(
+    CallbackServerContext *context, const EchoRequest *request,
+    EchoResponse *response) {
   class Reactor : public ::grpc::ServerUnaryReactor {
    public:
-    Reactor(CallbackTestServiceImpl* service, CallbackServerContext* ctx,
-            const EchoRequest* request, EchoResponse* response)
+    Reactor(CallbackTestServiceImpl *service, CallbackServerContext *ctx,
+            const EchoRequest *request, EchoResponse *response)
         : service_(service), ctx_(ctx), req_(request), resp_(response) {
       // It should be safe to call IsCancelled here, even though we don't know
       // the result. Call it asynchronously to see if we trigger any data races.
@@ -209,7 +209,7 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         GPR_ASSERT(0);
       }
       if (req_->has_param() && req_->param().has_expected_error()) {
-        const auto& error = req_->param().expected_error();
+        const auto &error = req_->param().expected_error();
         Finish(Status(static_cast<StatusCode>(error.code()),
                       error.error_message(), error.binary_error_details()));
         return;
@@ -251,9 +251,9 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       }
 
       if (req_->has_param() && req_->param().echo_metadata_initially()) {
-        const std::multimap<grpc::string_ref, grpc::string_ref>&
-            client_metadata = ctx_->client_metadata();
-        for (const auto& metadatum : client_metadata) {
+        const std::multimap<grpc::string_ref, grpc::string_ref>
+            &client_metadata = ctx_->client_metadata();
+        for (const auto &metadatum : client_metadata) {
           ctx_->AddInitialMetadata(ToString(metadatum.first),
                                    ToString(metadatum.second));
         }
@@ -261,9 +261,9 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       }
 
       if (req_->has_param() && req_->param().echo_metadata()) {
-        const std::multimap<grpc::string_ref, grpc::string_ref>&
-            client_metadata = ctx_->client_metadata();
-        for (const auto& metadatum : client_metadata) {
+        const std::multimap<grpc::string_ref, grpc::string_ref>
+            &client_metadata = ctx_->client_metadata();
+        for (const auto &metadatum : client_metadata) {
           ctx_->AddTrailingMetadata(ToString(metadatum.first),
                                     ToString(metadatum.second));
         }
@@ -302,10 +302,10 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       });
     }
 
-    CallbackTestServiceImpl* const service_;
-    CallbackServerContext* const ctx_;
-    const EchoRequest* const req_;
-    EchoResponse* const resp_;
+    CallbackTestServiceImpl *const service_;
+    CallbackServerContext *const ctx_;
+    const EchoRequest *const req_;
+    EchoResponse *const resp_;
     Alarm alarm_;
     std::mutex cancel_mu_;
     std::condition_variable cancel_cv_;
@@ -320,11 +320,11 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
   return new Reactor(this, context, request, response);
 }
 
-ServerUnaryReactor* CallbackTestServiceImpl::CheckClientInitialMetadata(
-    CallbackServerContext* context, const SimpleRequest*, SimpleResponse*) {
+ServerUnaryReactor *CallbackTestServiceImpl::CheckClientInitialMetadata(
+    CallbackServerContext *context, const SimpleRequest *, SimpleResponse *) {
   class Reactor : public ::grpc::ServerUnaryReactor {
    public:
-    explicit Reactor(CallbackServerContext* ctx) {
+    explicit Reactor(CallbackServerContext *ctx) {
       EXPECT_EQ(internal::MetadataMatchCount(ctx->client_metadata(),
                                              kCheckClientInitialMetadataKey,
                                              kCheckClientInitialMetadataVal),
@@ -339,8 +339,8 @@ ServerUnaryReactor* CallbackTestServiceImpl::CheckClientInitialMetadata(
   return new Reactor(context);
 }
 
-ServerReadReactor<EchoRequest>* CallbackTestServiceImpl::RequestStream(
-    CallbackServerContext* context, EchoResponse* response) {
+ServerReadReactor<EchoRequest> *CallbackTestServiceImpl::RequestStream(
+    CallbackServerContext *context, EchoResponse *response) {
   // If 'server_try_cancel' is set in the metadata, the RPC is cancelled by
   // the server by calling ServerContext::TryCancel() depending on the
   // value:
@@ -359,7 +359,7 @@ ServerReadReactor<EchoRequest>* CallbackTestServiceImpl::RequestStream(
 
   class Reactor : public ::grpc::ServerReadReactor<EchoRequest> {
    public:
-    Reactor(CallbackServerContext* ctx, EchoResponse* response,
+    Reactor(CallbackServerContext *ctx, EchoResponse *response,
             int server_try_cancel)
         : ctx_(ctx),
           response_(response),
@@ -401,7 +401,7 @@ ServerReadReactor<EchoRequest>* CallbackTestServiceImpl::RequestStream(
     }
 
    private:
-    void FinishOnce(const Status& s) {
+    void FinishOnce(const Status &s) {
       std::lock_guard<std::mutex> l(finish_mu_);
       if (!finished_) {
         Finish(s);
@@ -409,8 +409,8 @@ ServerReadReactor<EchoRequest>* CallbackTestServiceImpl::RequestStream(
       }
     }
 
-    CallbackServerContext* const ctx_;
-    EchoResponse* const response_;
+    CallbackServerContext *const ctx_;
+    EchoResponse *const response_;
     EchoRequest request_;
     int num_msgs_read_{0};
     int server_try_cancel_;
@@ -424,8 +424,8 @@ ServerReadReactor<EchoRequest>* CallbackTestServiceImpl::RequestStream(
 
 // Return 'kNumResponseStreamMsgs' messages.
 // TODO(yangg) make it generic by adding a parameter into EchoRequest
-ServerWriteReactor<EchoResponse>* CallbackTestServiceImpl::ResponseStream(
-    CallbackServerContext* context, const EchoRequest* request) {
+ServerWriteReactor<EchoResponse> *CallbackTestServiceImpl::ResponseStream(
+    CallbackServerContext *context, const EchoRequest *request) {
   // If 'server_try_cancel' is set in the metadata, the RPC is cancelled by
   // the server by calling ServerContext::TryCancel() depending on the
   // value:
@@ -442,7 +442,7 @@ ServerWriteReactor<EchoResponse>* CallbackTestServiceImpl::ResponseStream(
 
   class Reactor : public ::grpc::ServerWriteReactor<EchoResponse> {
    public:
-    Reactor(CallbackServerContext* ctx, const EchoRequest* request,
+    Reactor(CallbackServerContext *ctx, const EchoRequest *request,
             int server_try_cancel)
         : ctx_(ctx), request_(request), server_try_cancel_(server_try_cancel) {
       server_coalescing_api_ = internal::GetIntValueFromMetadata(
@@ -481,7 +481,7 @@ ServerWriteReactor<EchoResponse>* CallbackTestServiceImpl::ResponseStream(
     }
 
    private:
-    void FinishOnce(const Status& s) {
+    void FinishOnce(const Status &s) {
       std::lock_guard<std::mutex> l(finish_mu_);
       if (!finished_) {
         Finish(s);
@@ -511,8 +511,8 @@ ServerWriteReactor<EchoResponse>* CallbackTestServiceImpl::ResponseStream(
         }
       }
     }
-    CallbackServerContext* const ctx_;
-    const EchoRequest* const request_;
+    CallbackServerContext *const ctx_;
+    const EchoRequest *const request_;
     EchoResponse response_;
     int num_msgs_sent_{0};
     int server_try_cancel_;
@@ -525,11 +525,11 @@ ServerWriteReactor<EchoResponse>* CallbackTestServiceImpl::ResponseStream(
   return new Reactor(context, request, server_try_cancel);
 }
 
-ServerBidiReactor<EchoRequest, EchoResponse>*
-CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
+ServerBidiReactor<EchoRequest, EchoResponse>
+    *CallbackTestServiceImpl::BidiStream(CallbackServerContext *context) {
   class Reactor : public ::grpc::ServerBidiReactor<EchoRequest, EchoResponse> {
    public:
-    explicit Reactor(CallbackServerContext* ctx) : ctx_(ctx) {
+    explicit Reactor(CallbackServerContext *ctx) : ctx_(ctx) {
       // If 'server_try_cancel' is set in the metadata, the RPC is cancelled by
       // the server by calling ServerContext::TryCancel() depending on the
       // value:
@@ -602,7 +602,7 @@ CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
     }
 
    private:
-    void FinishOnce(const Status& s) {
+    void FinishOnce(const Status &s) {
       std::lock_guard<std::mutex> l(finish_mu_);
       if (!finished_) {
         finished_ = true;
@@ -614,7 +614,7 @@ CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
       }
     }
 
-    CallbackServerContext* const ctx_;
+    CallbackServerContext *const ctx_;
     EchoRequest request_;
     EchoResponse response_;
     int num_msgs_read_{0};

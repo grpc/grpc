@@ -45,8 +45,8 @@ namespace grpc {
 namespace {
 
 TEST(AbsoluteFilePathTest, ConcatenatesCorrectly) {
-  const char* directory = "nonexistent/test/directory";
-  const char* filename = "doesnotexist.txt";
+  const char *directory = "nonexistent/test/directory";
+  const char *filename = "doesnotexist.txt";
   char result_path[MAXPATHLEN];
   grpc_core::GetAbsoluteFilePath(directory, filename, result_path);
   EXPECT_STREQ(result_path, "nonexistent/test/directory/doesnotexist.txt");
@@ -72,8 +72,8 @@ TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
   // result_slice should have the same content as roots_bundle.
   grpc_slice result_slice =
       grpc_core::CreateRootCertsBundle("test/core/security/etc/test_roots");
-  char* result_str = grpc_slice_to_c_string(result_slice);
-  char* bundle_str = grpc_slice_to_c_string(roots_bundle);
+  char *result_str = grpc_slice_to_c_string(result_slice);
+  char *bundle_str = grpc_slice_to_c_string(roots_bundle);
   EXPECT_STREQ(result_str, bundle_str);
   // Clean up.
   gpr_free(result_str);
@@ -85,7 +85,7 @@ TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
 }  // namespace
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

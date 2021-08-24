@@ -61,8 +61,8 @@ void ClientChannelServiceConfigParser::Register() {
 
 namespace {
 
-absl::optional<std::string> ParseHealthCheckConfig(const Json& field,
-                                                   grpc_error_handle* error) {
+absl::optional<std::string> ParseHealthCheckConfig(const Json &field,
+                                                   grpc_error_handle *error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   if (field.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -89,8 +89,8 @@ absl::optional<std::string> ParseHealthCheckConfig(const Json& field,
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParseGlobalParams(
-    const grpc_channel_args* /*args*/, const Json& json,
-    grpc_error_handle* error) {
+    const grpc_channel_args * /*args*/, const Json &json,
+    grpc_error_handle *error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   std::vector<grpc_error_handle> error_list;
   // Parse LB config.
@@ -156,8 +156,8 @@ ClientChannelServiceConfigParser::ParseGlobalParams(
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParsePerMethodParams(
-    const grpc_channel_args* /*args*/, const Json& json,
-    grpc_error_handle* error) {
+    const grpc_channel_args * /*args*/, const Json &json,
+    grpc_error_handle *error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   std::vector<grpc_error_handle> error_list;
   // Parse waitForReady.

@@ -27,6 +27,6 @@
 void Init_grpc_server();
 
 /* Gets the wrapped server from the ruby wrapper */
-grpc_server* grpc_rb_get_wrapped_server(VALUE v);
+grpc_server *grpc_rb_get_wrapped_server(VALUE v);
 
 #endif /* GRPC_RB_SERVER_H_ */

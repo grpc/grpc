@@ -29,18 +29,18 @@
 #define GRPC_BAD_CLIENT_REGISTERED_HOST "localhost"
 
 /* The server side validator function to run */
-typedef void (*grpc_bad_client_server_side_validator)(grpc_server* server,
-                                                      grpc_completion_queue* cq,
-                                                      void* registered_method);
+typedef void (*grpc_bad_client_server_side_validator)(grpc_server *server,
+                                                      grpc_completion_queue *cq,
+                                                      void *registered_method);
 
 /* Returns false if we need to read more data. */
 typedef bool (*grpc_bad_client_client_stream_validator)(
-    grpc_slice_buffer* incoming, void* arg);
+    grpc_slice_buffer *incoming, void *arg);
 
 struct grpc_bad_client_arg {
   grpc_bad_client_client_stream_validator client_validator;
-  void* client_validator_arg;
-  const char* client_payload;
+  void *client_validator_arg;
+  const char *client_payload;
   size_t client_payload_length;
 };
 
@@ -76,13 +76,13 @@ void grpc_run_bad_client_test(
 
 /* Helper validator functions */
 /* Client side validator for connection preface from server. \a arg is unused */
-bool client_connection_preface_validator(grpc_slice_buffer* incoming,
-                                         void* arg);
+bool client_connection_preface_validator(grpc_slice_buffer *incoming,
+                                         void *arg);
 
 /* Client side validator for checking if reset stream is present at the end
  * of the buffer. \a arg is unused.
  */
-bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* arg);
+bool rst_stream_client_validator(grpc_slice_buffer *incoming, void *arg);
 
 /* Helper grpc_bad_client_arg arguments for direct use */
 /* Sends a connection preface from the client with an empty settings frame */
@@ -90,7 +90,7 @@ extern grpc_bad_client_arg connection_preface_arg;
 
 /* Server side verifier function that performs a
  *  single grpc_server_request_call */
-void server_verifier_request_call(grpc_server* server,
-                                  grpc_completion_queue* cq,
-                                  void* registered_method);
+void server_verifier_request_call(grpc_server *server,
+                                  grpc_completion_queue *cq,
+                                  void *registered_method);
 #endif /* GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H */

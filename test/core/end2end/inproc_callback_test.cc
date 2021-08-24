@@ -44,8 +44,8 @@ class CQDeletingCallback : public grpc_completion_queue_functor {
     inlineable = false;
   }
   ~CQDeletingCallback() {}
-  static void Run(grpc_completion_queue_functor* cb, int ok) {
-    auto* callback = static_cast<CQDeletingCallback*>(cb);
+  static void Run(grpc_completion_queue_functor *cb, int ok) {
+    auto *callback = static_cast<CQDeletingCallback *>(cb);
     callback->func_(static_cast<bool>(ok));
     delete callback;
   }
@@ -55,7 +55,7 @@ class CQDeletingCallback : public grpc_completion_queue_functor {
 };
 
 template <typename F>
-grpc_completion_queue_functor* NewDeletingCallback(F f) {
+grpc_completion_queue_functor *NewDeletingCallback(F f) {
   return new CQDeletingCallback<F>(f);
 }
 
@@ -71,8 +71,8 @@ class ShutdownCallback : public grpc_completion_queue_functor {
     gpr_mu_destroy(&mu_);
     gpr_cv_destroy(&cv_);
   }
-  static void StaticRun(grpc_completion_queue_functor* cb, int ok) {
-    auto* callback = static_cast<ShutdownCallback*>(cb);
+  static void StaticRun(grpc_completion_queue_functor *cb, int ok) {
+    auto *callback = static_cast<ShutdownCallback *>(cb);
     callback->Run(static_cast<bool>(ok));
   }
   void Run(bool /*ok*/) {
@@ -100,7 +100,7 @@ class ShutdownCallback : public grpc_completion_queue_functor {
   gpr_cv cv_;
 };
 
-ShutdownCallback* g_shutdown_callback;
+ShutdownCallback *g_shutdown_callback;
 }  // namespace
 
 // The following global structure is the tag collection. It holds
@@ -183,7 +183,7 @@ static void verify_tags(gpr_timespec deadline) {
 
 // This function creates a callback functor that emits the
 // desired tag into the global tag set
-static grpc_completion_queue_functor* tag(intptr_t t) {
+static grpc_completion_queue_functor *tag(intptr_t t) {
   auto func = [t](bool ok) {
     gpr_mu_lock(&tags_mu);
     gpr_log(GPR_DEBUG, "Completing operation %" PRIdPTR, t);
@@ -206,9 +206,9 @@ static grpc_completion_queue_functor* tag(intptr_t t) {
 }
 
 static grpc_end2end_test_fixture inproc_create_fixture(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    grpc_channel_args * /*client_args*/, grpc_channel_args * /*server_args*/) {
   grpc_end2end_test_fixture f;
-  inproc_fixture_data* ffd = static_cast<inproc_fixture_data*>(
+  inproc_fixture_data *ffd = static_cast<inproc_fixture_data *>(
       gpr_malloc(sizeof(inproc_fixture_data)));
   memset(&f, 0, sizeof(f));
 
@@ -221,14 +221,14 @@ static grpc_end2end_test_fixture inproc_create_fixture(
   return f;
 }
 
-void inproc_init_client(grpc_end2end_test_fixture* f,
-                        grpc_channel_args* client_args) {
+void inproc_init_client(grpc_end2end_test_fixture *f,
+                        grpc_channel_args *client_args) {
   f->client = grpc_inproc_channel_create(f->server, client_args, nullptr);
   GPR_ASSERT(f->client);
 }
 
-void inproc_init_server(grpc_end2end_test_fixture* f,
-                        grpc_channel_args* server_args) {
+void inproc_init_server(grpc_end2end_test_fixture *f,
+                        grpc_channel_args *server_args) {
   if (f->server) {
     grpc_server_destroy(f->server);
   }
@@ -237,15 +237,16 @@ void inproc_init_server(grpc_end2end_test_fixture* f,
   grpc_server_start(f->server);
 }
 
-void inproc_tear_down(grpc_end2end_test_fixture* f) {
-  inproc_fixture_data* ffd = static_cast<inproc_fixture_data*>(f->fixture_data);
+void inproc_tear_down(grpc_end2end_test_fixture *f) {
+  inproc_fixture_data *ffd =
+      static_cast<inproc_fixture_data *>(f->fixture_data);
   gpr_free(ffd);
 }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+                                            const char *test_name,
+                                            grpc_channel_args *client_args,
+                                            grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -260,33 +261,33 @@ static gpr_timespec n_seconds_from_now(int n) {
 
 static gpr_timespec five_seconds_from_now() { return n_seconds_from_now(5); }
 
-static void drain_cq(grpc_completion_queue* /*cq*/) {
+static void drain_cq(grpc_completion_queue * /*cq*/) {
   // Wait for the shutdown callback to arrive, or fail the test
   GPR_ASSERT(g_shutdown_callback->Wait(five_seconds_from_now()));
   gpr_log(GPR_DEBUG, "CQ shutdown wait complete");
   delete g_shutdown_callback;
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(
       f->server, f->shutdown_cq,
-      reinterpret_cast<void*>(static_cast<intptr_t>(1000)));
+      reinterpret_cast<void *>(static_cast<intptr_t>(1000)));
   GPR_ASSERT(
-      grpc_completion_queue_pluck(f->shutdown_cq, (void*)((intptr_t)1000),
+      grpc_completion_queue_pluck(f->shutdown_cq, (void *)((intptr_t)1000),
                                   grpc_timeout_seconds_to_deadline(5), nullptr)
           .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(grpc_end2end_test_fixture *f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(grpc_end2end_test_fixture *f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -298,20 +299,20 @@ static void end_test(grpc_end2end_test_fixture* f) {
 
 static void simple_request_body(grpc_end2end_test_config config,
                                 grpc_end2end_test_fixture f) {
-  grpc_call* c;
-  grpc_call* s;
+  grpc_call *c;
+  grpc_call *s;
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
   grpc_status_code status;
-  const char* error_string;
+  const char *error_string;
   grpc_call_error error;
   grpc_slice details;
   int was_cancelled = 2;
-  char* peer;
+  char *peer;
   gpr_timespec deadline = five_seconds_from_now();
 
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -424,7 +425,7 @@ static void simple_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
-  gpr_free(static_cast<void*>(const_cast<char*>(error_string)));
+  gpr_free(static_cast<void *>(const_cast<char *>(error_string)));
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
@@ -498,7 +499,7 @@ static grpc_end2end_test_config configs[] = {
      inproc_tear_down},
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 

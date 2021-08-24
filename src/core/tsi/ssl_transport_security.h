@@ -53,11 +53,11 @@ typedef struct tsi_ssl_root_certs_store tsi_ssl_root_certs_store;
 
 /* Given a NULL-terminated string containing the PEM encoding of the root
    certificates, creates a tsi_ssl_root_certs_store object. */
-tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
-    const char* pem_roots);
+tsi_ssl_root_certs_store *tsi_ssl_root_certs_store_create(
+    const char *pem_roots);
 
 /* Destroys the tsi_ssl_root_certs_store object. */
-void tsi_ssl_root_certs_store_destroy(tsi_ssl_root_certs_store* self);
+void tsi_ssl_root_certs_store_destroy(tsi_ssl_root_certs_store *self);
 
 /* --- tsi_ssl_session_cache object ---
 
@@ -66,13 +66,13 @@ void tsi_ssl_root_certs_store_destroy(tsi_ssl_root_certs_store* self);
 typedef struct tsi_ssl_session_cache tsi_ssl_session_cache;
 
 /* Create LRU cache for SSL sessions with \a capacity.  */
-tsi_ssl_session_cache* tsi_ssl_session_cache_create_lru(size_t capacity);
+tsi_ssl_session_cache *tsi_ssl_session_cache_create_lru(size_t capacity);
 
 /* Increment reference counter of \a cache.  */
-void tsi_ssl_session_cache_ref(tsi_ssl_session_cache* cache);
+void tsi_ssl_session_cache_ref(tsi_ssl_session_cache *cache);
 
 /* Decrement reference counter of \a cache.  */
-void tsi_ssl_session_cache_unref(tsi_ssl_session_cache* cache);
+void tsi_ssl_session_cache_unref(tsi_ssl_session_cache *cache);
 
 /* --- tsi_ssl_client_handshaker_factory object ---
 
@@ -86,11 +86,11 @@ typedef struct tsi_ssl_client_handshaker_factory
 struct tsi_ssl_pem_key_cert_pair {
   /* private_key is the NULL-terminated string containing the PEM encoding of
      the client's private key. */
-  const char* private_key;
+  const char *private_key;
 
   /* cert_chain is the NULL-terminated string containing the PEM encoding of
      the client's certificate chain. */
-  const char* cert_chain;
+  const char *cert_chain;
 };
 /* TO BE DEPRECATED.
    Creates a client handshaker factory.
@@ -114,40 +114,40 @@ struct tsi_ssl_pem_key_cert_pair {
    - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
      where a parameter is invalid.  */
 tsi_result tsi_create_ssl_client_handshaker_factory(
-    const tsi_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const char* pem_root_certs, const char* cipher_suites,
-    const char** alpn_protocols, uint16_t num_alpn_protocols,
-    tsi_ssl_client_handshaker_factory** factory);
+    const tsi_ssl_pem_key_cert_pair *pem_key_cert_pair,
+    const char *pem_root_certs, const char *cipher_suites,
+    const char **alpn_protocols, uint16_t num_alpn_protocols,
+    tsi_ssl_client_handshaker_factory **factory);
 
 struct tsi_ssl_client_handshaker_options {
   /* pem_key_cert_pair is a pointer to the object containing client's private
      key and certificate chain. This parameter can be NULL if the client does
      not have such a key/cert pair. */
-  const tsi_ssl_pem_key_cert_pair* pem_key_cert_pair;
+  const tsi_ssl_pem_key_cert_pair *pem_key_cert_pair;
   /* pem_roots_cert is the NULL-terminated string containing the PEM encoding of
      the client root certificates. */
-  const char* pem_root_certs;
+  const char *pem_root_certs;
   /* root_store is a pointer to the ssl_root_certs_store object. If root_store
     is not nullptr and SSL implementation permits, root_store will be used as
     root certificates. Otherwise, pem_roots_cert will be used to load server
     root certificates. */
-  const tsi_ssl_root_certs_store* root_store;
+  const tsi_ssl_root_certs_store *root_store;
   /* cipher_suites contains an optional list of the ciphers that the client
      supports. The format of this string is described in:
      https://www.openssl.org/docs/apps/ciphers.html.
      This parameter can be set to NULL to use the default set of ciphers.
      TODO(jboeuf): Revisit the format of this parameter. */
-  const char* cipher_suites;
+  const char *cipher_suites;
   /* alpn_protocols is an array containing the NULL terminated protocol names
      that the handshakers created with this factory support. This parameter can
      be NULL. */
-  const char** alpn_protocols;
+  const char **alpn_protocols;
   /* num_alpn_protocols is the number of alpn protocols and associated lengths
      specified. If this parameter is 0, the other alpn parameters must be
      NULL. */
   size_t num_alpn_protocols;
   /* ssl_session_cache is a cache for reusable client-side sessions. */
-  tsi_ssl_session_cache* session_cache;
+  tsi_ssl_session_cache *session_cache;
 
   /* skip server certificate verification. */
   bool skip_server_certificate_verification;
@@ -176,8 +176,8 @@ struct tsi_ssl_client_handshaker_options {
    - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
      where a parameter is invalid. */
 tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
-    const tsi_ssl_client_handshaker_options* options,
-    tsi_ssl_client_handshaker_factory** factory);
+    const tsi_ssl_client_handshaker_options *options,
+    tsi_ssl_client_handshaker_factory **factory);
 
 /* Creates a client handshaker.
   - factory is the factory from which the handshaker will be created.
@@ -189,13 +189,13 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
     where a parameter is invalid.  */
 tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
-    tsi_ssl_client_handshaker_factory* factory,
-    const char* server_name_indication, tsi_handshaker** handshaker);
+    tsi_ssl_client_handshaker_factory *factory,
+    const char *server_name_indication, tsi_handshaker **handshaker);
 
 /* Decrements reference count of the handshaker factory. Handshaker factory will
  * be destroyed once no references exist. */
 void tsi_ssl_client_handshaker_factory_unref(
-    tsi_ssl_client_handshaker_factory* factory);
+    tsi_ssl_client_handshaker_factory *factory);
 
 /* --- tsi_ssl_server_handshaker_factory object ---
 
@@ -228,11 +228,11 @@ typedef struct tsi_ssl_server_handshaker_factory
    - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
      where a parameter is invalid.  */
 tsi_result tsi_create_ssl_server_handshaker_factory(
-    const tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs,
-    size_t num_key_cert_pairs, const char* pem_client_root_certs,
-    int force_client_auth, const char* cipher_suites,
-    const char** alpn_protocols, uint16_t num_alpn_protocols,
-    tsi_ssl_server_handshaker_factory** factory);
+    const tsi_ssl_pem_key_cert_pair *pem_key_cert_pairs,
+    size_t num_key_cert_pairs, const char *pem_client_root_certs,
+    int force_client_auth, const char *cipher_suites,
+    const char **alpn_protocols, uint16_t num_alpn_protocols,
+    tsi_ssl_server_handshaker_factory **factory);
 
 /* TO BE DEPRECATED.
    Same as tsi_create_ssl_server_handshaker_factory method except uses
@@ -242,23 +242,23 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
      authenticate with an SSL cert. Note that this option is ignored if
      pem_client_root_certs is NULL or pem_client_roots_certs_size is 0 */
 tsi_result tsi_create_ssl_server_handshaker_factory_ex(
-    const tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs,
-    size_t num_key_cert_pairs, const char* pem_client_root_certs,
+    const tsi_ssl_pem_key_cert_pair *pem_key_cert_pairs,
+    size_t num_key_cert_pairs, const char *pem_client_root_certs,
     tsi_client_certificate_request_type client_certificate_request,
-    const char* cipher_suites, const char** alpn_protocols,
-    uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory);
+    const char *cipher_suites, const char **alpn_protocols,
+    uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory **factory);
 
 struct tsi_ssl_server_handshaker_options {
   /* pem_key_cert_pairs is an array private key / certificate chains of the
      server. */
-  const tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs;
+  const tsi_ssl_pem_key_cert_pair *pem_key_cert_pairs;
   /* num_key_cert_pairs is the number of items in the pem_key_cert_pairs
      array. */
   size_t num_key_cert_pairs;
   /* pem_root_certs is the NULL-terminated string containing the PEM encoding
      of the server root certificates. This parameter may be NULL if the server
      does not want the client to be authenticated with SSL. */
-  const char* pem_client_root_certs;
+  const char *pem_client_root_certs;
   /* client_certificate_request, if set to non-zero will force the client to
      authenticate with an SSL cert. Note that this option is ignored if
      pem_client_root_certs is NULL or pem_client_roots_certs_size is 0. */
@@ -268,18 +268,18 @@ struct tsi_ssl_server_handshaker_options {
      https://www.openssl.org/docs/apps/ciphers.html.
      This parameter can be set to NULL to use the default set of ciphers.
      TODO(jboeuf): Revisit the format of this parameter. */
-  const char* cipher_suites;
+  const char *cipher_suites;
   /* alpn_protocols is an array containing the NULL terminated protocol names
      that the handshakers created with this factory support. This parameter can
      be NULL. */
-  const char** alpn_protocols;
+  const char **alpn_protocols;
   /* num_alpn_protocols is the number of alpn protocols and associated lengths
      specified. If this parameter is 0, the other alpn parameters must be
      NULL. */
   uint16_t num_alpn_protocols;
   /* session_ticket_key is optional key for encrypting session keys. If
      parameter is not specified it must be NULL. */
-  const char* session_ticket_key;
+  const char *session_ticket_key;
   /* session_ticket_key_size is a size of session ticket encryption key. */
   size_t session_ticket_key_size;
   /* The min and max TLS versions that will be negotiated by the handshaker. */
@@ -307,8 +307,8 @@ struct tsi_ssl_server_handshaker_options {
    - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
      where a parameter is invalid. */
 tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
-    const tsi_ssl_server_handshaker_options* options,
-    tsi_ssl_server_handshaker_factory** factory);
+    const tsi_ssl_server_handshaker_options *options,
+    tsi_ssl_server_handshaker_factory **factory);
 
 /* Creates a server handshaker.
   - factory is the factory from which the handshaker will be created.
@@ -317,19 +317,19 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
     where a parameter is invalid.  */
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
-    tsi_ssl_server_handshaker_factory* factory, tsi_handshaker** handshaker);
+    tsi_ssl_server_handshaker_factory *factory, tsi_handshaker **handshaker);
 
 /* Decrements reference count of the handshaker factory. Handshaker factory will
  * be destroyed once no references exist. */
 void tsi_ssl_server_handshaker_factory_unref(
-    tsi_ssl_server_handshaker_factory* factory);
+    tsi_ssl_server_handshaker_factory *factory);
 
 /* Util that checks that an ssl peer matches a specific name.
    Still TODO(jboeuf):
    - handle mixed case.
    - handle %encoded chars.
    - handle public suffix wildchar more strictly (e.g. *.co.uk) */
-int tsi_ssl_peer_matches_name(const tsi_peer* peer, absl::string_view name);
+int tsi_ssl_peer_matches_name(const tsi_peer *peer, absl::string_view name);
 
 /* --- Testing support. ---
 
@@ -341,7 +341,7 @@ typedef struct tsi_ssl_handshaker_factory tsi_ssl_handshaker_factory;
 
 /* Function pointer to handshaker_factory destructor. */
 typedef void (*tsi_ssl_handshaker_factory_destructor)(
-    tsi_ssl_handshaker_factory* factory);
+    tsi_ssl_handshaker_factory *factory);
 
 /* Virtual table for tsi_ssl_handshaker_factory. */
 struct tsi_ssl_handshaker_factory_vtable {
@@ -349,16 +349,16 @@ struct tsi_ssl_handshaker_factory_vtable {
 };
 /* Set destructor of handshaker_factory to new_destructor, returns previous
    destructor. */
-const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(
-    tsi_ssl_handshaker_factory* factory,
-    tsi_ssl_handshaker_factory_vtable* new_vtable);
+const tsi_ssl_handshaker_factory_vtable *tsi_ssl_handshaker_factory_swap_vtable(
+    tsi_ssl_handshaker_factory *factory,
+    tsi_ssl_handshaker_factory_vtable *new_vtable);
 
 /* Exposed for testing only. */
 tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
-    const char* pem_cert, tsi_peer* peer);
+    const char *pem_cert, tsi_peer *peer);
 
 /* Exposed for testing only. */
 tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
-                                           tsi_peer_property* property);
+                                           tsi_peer_property *property);
 
 #endif /* GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H */

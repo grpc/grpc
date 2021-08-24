@@ -30,16 +30,16 @@
 
 #include "src/core/lib/gpr/tmpfile.h"
 
-static bool check_bios_data_linux_test(const char* data) {
+static bool check_bios_data_linux_test(const char *data) {
   /* Create a file with contents data. */
-  char* filename = nullptr;
-  FILE* fp = gpr_tmpfile("check_gcp_environment_test", &filename);
+  char *filename = nullptr;
+  FILE *fp = gpr_tmpfile("check_gcp_environment_test", &filename);
   GPR_ASSERT(filename != nullptr);
   GPR_ASSERT(fp != nullptr);
   GPR_ASSERT(fwrite(data, 1, strlen(data), fp) == strlen(data));
   fclose(fp);
   bool result = grpc_core::internal::check_bios_data(
-      reinterpret_cast<const char*>(filename));
+      reinterpret_cast<const char *>(filename));
   /* Cleanup. */
   remove(filename);
   gpr_free(filename);
@@ -72,7 +72,7 @@ static void test_gcp_environment_check_failure() {
   GPR_ASSERT(!check_bios_data_linux_test("\n"));
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+int main(int /*argc*/, char ** /*argv*/) {
   /* Tests. */
   test_gcp_environment_check_success();
   test_gcp_environment_check_failure();
@@ -81,6 +81,6 @@ int main(int /*argc*/, char** /*argv*/) {
 
 #else  // GPR_LINUX
 
-int main(int /*argc*/, char** /*argv*/) { return 0; }
+int main(int /*argc*/, char ** /*argv*/) { return 0; }
 
 #endif  // GPR_LINUX

@@ -30,7 +30,7 @@
 typedef struct alts_counter {
   size_t size;
   size_t overflow_size;
-  unsigned char* counter;
+  unsigned char *counter;
 } alts_counter;
 
 /**
@@ -52,8 +52,8 @@ typedef struct alts_counter {
  */
 grpc_status_code alts_counter_create(bool is_client, size_t counter_size,
                                      size_t overflow_size,
-                                     alts_counter** crypter_counter,
-                                     char** error_details);
+                                     alts_counter **crypter_counter,
+                                     char **error_details);
 
 /**
  * This method increments the internal counter.
@@ -71,28 +71,28 @@ grpc_status_code alts_counter_create(bool is_client, size_t counter_size,
  * it returns an error status code along with its details specified in
  * error_details (if error_details is not nullptr).
  */
-grpc_status_code alts_counter_increment(alts_counter* crypter_counter,
-                                        bool* is_overflow,
-                                        char** error_details);
+grpc_status_code alts_counter_increment(alts_counter *crypter_counter,
+                                        bool *is_overflow,
+                                        char **error_details);
 
 /**
  * This method returns the size of counter buffer.
  *
  * - crypter_counter: an alts_counter instance.
  */
-size_t alts_counter_get_size(alts_counter* crypter_counter);
+size_t alts_counter_get_size(alts_counter *crypter_counter);
 
 /**
  * This method returns the counter buffer.
  *
  * - crypter_counter: an alts_counter instance.
  */
-unsigned char* alts_counter_get_counter(alts_counter* crypter_counter);
+unsigned char *alts_counter_get_counter(alts_counter *crypter_counter);
 
 /**
  * This method de-allocates all memory allocated to an alts_coutner instance.
  * - crypter_counter: an alts_counter instance.
  */
-void alts_counter_destroy(alts_counter* crypter_counter);
+void alts_counter_destroy(alts_counter *crypter_counter);
 
 #endif /* GRPC_CORE_TSI_ALTS_FRAME_PROTECTOR_ALTS_COUNTER_H */

@@ -40,18 +40,18 @@ static void convert_to_tsi_result_test() {
 
 static void deserialize_response_test() {
   upb::Arena arena;
-  grpc_gcp_HandshakerResp* resp = grpc_gcp_HandshakerResp_new(arena.ptr());
+  grpc_gcp_HandshakerResp *resp = grpc_gcp_HandshakerResp_new(arena.ptr());
   grpc_gcp_HandshakerResp_set_out_frames(
       resp, upb_strview_makez(ALTS_TSI_UTILS_TEST_OUT_FRAME));
   size_t buf_len;
-  char* buf = grpc_gcp_HandshakerResp_serialize(resp, arena.ptr(), &buf_len);
+  char *buf = grpc_gcp_HandshakerResp_serialize(resp, arena.ptr(), &buf_len);
   grpc_slice slice = grpc_slice_from_copied_buffer(buf, buf_len);
 
   /* Valid serialization. */
   upb::Arena arena2;
-  grpc_byte_buffer* buffer =
+  grpc_byte_buffer *buffer =
       grpc_raw_byte_buffer_create(&slice, 1 /* number of slices */);
-  grpc_gcp_HandshakerResp* decoded_resp =
+  grpc_gcp_HandshakerResp *decoded_resp =
       alts_tsi_utils_deserialize_response(buffer, arena2.ptr());
   GPR_ASSERT(grpc_gcp_handshaker_resp_equals(resp, decoded_resp));
   grpc_byte_buffer_destroy(buffer);
@@ -69,7 +69,7 @@ static void deserialize_response_test() {
   grpc_byte_buffer_destroy(buffer);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   /* Tests. */
   grpc_init();

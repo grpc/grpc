@@ -33,7 +33,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-static uint8_t* fill_header(uint8_t* out, uint32_t length, uint8_t flags) {
+static uint8_t *fill_header(uint8_t *out, uint32_t length, uint8_t flags) {
   *out++ = static_cast<uint8_t>(length >> 16);
   *out++ = static_cast<uint8_t>(length >> 8);
   *out++ = static_cast<uint8_t>(length);
@@ -46,13 +46,13 @@ static uint8_t* fill_header(uint8_t* out, uint32_t length, uint8_t flags) {
   return out;
 }
 
-grpc_slice grpc_chttp2_settings_create(uint32_t* old_settings,
-                                       const uint32_t* new_settings,
+grpc_slice grpc_chttp2_settings_create(uint32_t *old_settings,
+                                       const uint32_t *new_settings,
                                        uint32_t force_mask, size_t count) {
   size_t i;
   uint32_t n = 0;
   grpc_slice output;
-  uint8_t* p;
+  uint8_t *p;
 
   for (i = 0; i < count; i++) {
     n += (new_settings[i] != old_settings[i] || (force_mask & (1u << i)) != 0);
@@ -85,8 +85,8 @@ grpc_slice grpc_chttp2_settings_ack_create(void) {
 }
 
 grpc_error_handle grpc_chttp2_settings_parser_begin_frame(
-    grpc_chttp2_settings_parser* parser, uint32_t length, uint8_t flags,
-    uint32_t* settings) {
+    grpc_chttp2_settings_parser *parser, uint32_t length, uint8_t flags,
+    uint32_t *settings) {
   parser->target_settings = settings;
   memcpy(parser->incoming_settings, settings,
          GRPC_CHTTP2_NUM_SETTINGS * sizeof(uint32_t));
@@ -112,10 +112,10 @@ grpc_error_handle grpc_chttp2_settings_parser_begin_frame(
 
 namespace {
 
-void StreamFlowControlWindowCheck(void* user_data, uint32_t /* key */,
-                                  void* stream) {
-  bool* error = static_cast<bool*>(user_data);
-  grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(stream);
+void StreamFlowControlWindowCheck(void *user_data, uint32_t /* key */,
+                                  void *stream) {
+  bool *error = static_cast<bool *>(user_data);
+  grpc_chttp2_stream *s = static_cast<grpc_chttp2_stream *>(stream);
   if ((s->t->settings[GRPC_PEER_SETTINGS]
                      [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] +
        s->t->initial_window_update + s->flow_control->remote_window_delta()) >
@@ -126,15 +126,15 @@ void StreamFlowControlWindowCheck(void* user_data, uint32_t /* key */,
 
 }  // namespace
 
-grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
-                                                    grpc_chttp2_transport* t,
-                                                    grpc_chttp2_stream* /*s*/,
-                                                    const grpc_slice& slice,
+grpc_error_handle grpc_chttp2_settings_parser_parse(void *p,
+                                                    grpc_chttp2_transport *t,
+                                                    grpc_chttp2_stream * /*s*/,
+                                                    const grpc_slice &slice,
                                                     int is_last) {
-  grpc_chttp2_settings_parser* parser =
-      static_cast<grpc_chttp2_settings_parser*>(p);
-  const uint8_t* cur = GRPC_SLICE_START_PTR(slice);
-  const uint8_t* end = GRPC_SLICE_END_PTR(slice);
+  grpc_chttp2_settings_parser *parser =
+      static_cast<grpc_chttp2_settings_parser *>(p);
+  const uint8_t *cur = GRPC_SLICE_START_PTR(slice);
+  const uint8_t *end = GRPC_SLICE_END_PTR(slice);
   grpc_chttp2_setting_id id;
 
   if (parser->is_ack) {
@@ -206,7 +206,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         cur++;
 
         if (grpc_wire_id_to_setting_id(parser->id, &id)) {
-          const grpc_chttp2_setting_parameters* sp =
+          const grpc_chttp2_setting_parameters *sp =
               &grpc_chttp2_settings_parameters[id];
           // If flow control is disabled we skip these.
           if (!t->flow_control->flow_control_enabled() &&

@@ -28,11 +28,11 @@ uint32_t grpc_htonl(uint32_t hostlong) { return htonl(hostlong); }
 
 uint32_t grpc_ntohl(uint32_t netlong) { return ntohl(netlong); }
 
-int grpc_inet_pton(int af, const char* src, void* dst) {
+int grpc_inet_pton(int af, const char *src, void *dst) {
   return inet_pton(af, src, dst);
 }
 
-const char* grpc_inet_ntop(int af, const void* src, char* dst, size_t size) {
+const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size) {
   inet_ntop(af, src, dst, size);
   return dst;
 }

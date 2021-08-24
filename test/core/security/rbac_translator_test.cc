@@ -45,7 +45,7 @@ MATCHER_P3(EqualsHeader, expected_name, expected_matcher_type,
 }  // namespace
 
 TEST(GenerateRbacPoliciesTest, InvalidPolicy) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz-policy\",,"
       "}";
@@ -57,14 +57,14 @@ TEST(GenerateRbacPoliciesTest, InvalidPolicy) {
 }
 
 TEST(GenerateRbacPoliciesTest, MissingAuthorizationPolicyName) {
-  const char* authz_policy = "{}";
+  const char *authz_policy = "{}";
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(rbac_policies.status().message(), "\"name\" field is not present.");
 }
 
 TEST(GenerateRbacPoliciesTest, IncorrectAuthorizationPolicyNameType) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": [\"authz_policy\"]"
       "}";
@@ -74,7 +74,7 @@ TEST(GenerateRbacPoliciesTest, IncorrectAuthorizationPolicyNameType) {
 }
 
 TEST(GenerateRbacPoliciesTest, MissingAllowRules) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz_policy\""
       "}";
@@ -85,7 +85,7 @@ TEST(GenerateRbacPoliciesTest, MissingAllowRules) {
 }
 
 TEST(GenerateRbacPoliciesTest, MissingDenyRules) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
@@ -101,7 +101,7 @@ TEST(GenerateRbacPoliciesTest, MissingDenyRules) {
 }
 
 TEST(GenerateRbacPoliciesTest, IncorrectAllowRulesType) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": {}"
@@ -113,7 +113,7 @@ TEST(GenerateRbacPoliciesTest, IncorrectAllowRulesType) {
 }
 
 TEST(GenerateRbacPoliciesTest, IncorrectDenyRulesType) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"deny_rules\": 123"
@@ -125,7 +125,7 @@ TEST(GenerateRbacPoliciesTest, IncorrectDenyRulesType) {
 }
 
 TEST(GenerateRbacPoliciesTest, IncorrectRuleType) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": [\"rule-a\"]"
@@ -137,7 +137,7 @@ TEST(GenerateRbacPoliciesTest, IncorrectRuleType) {
 }
 
 TEST(GenerateRbacPoliciesTest, MissingRuleNameField) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": [{}]"
@@ -149,7 +149,7 @@ TEST(GenerateRbacPoliciesTest, MissingRuleNameField) {
 }
 
 TEST(GenerateRbacPoliciesTest, IncorrectRuleNameType) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
@@ -165,7 +165,7 @@ TEST(GenerateRbacPoliciesTest, IncorrectRuleNameType) {
 }
 
 TEST(GenerateRbacPoliciesTest, MissingSourceAndRequest) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
@@ -193,7 +193,7 @@ TEST(GenerateRbacPoliciesTest, MissingSourceAndRequest) {
 }
 
 TEST(GenerateRbacPoliciesTest, EmptySourceAndRequest) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
@@ -223,7 +223,7 @@ TEST(GenerateRbacPoliciesTest, EmptySourceAndRequest) {
 }
 
 TEST(GenerateRbacPoliciesTest, IncorrectSourceType) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
@@ -240,7 +240,7 @@ TEST(GenerateRbacPoliciesTest, IncorrectSourceType) {
 }
 
 TEST(GenerateRbacPoliciesTest, IncorrectPrincipalsType) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
@@ -262,7 +262,7 @@ TEST(GenerateRbacPoliciesTest, IncorrectPrincipalsType) {
 }
 
 TEST(GenerateRbacPoliciesTest, ParseSourceSuccess) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
@@ -355,7 +355,7 @@ TEST(GenerateRbacPoliciesTest, ParseSourceSuccess) {
 }
 
 TEST(GenerateRbacPoliciesTest, IncorrectRequestType) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"deny_rules\": ["
@@ -372,7 +372,7 @@ TEST(GenerateRbacPoliciesTest, IncorrectRequestType) {
 }
 
 TEST(GenerateRbacPoliciesTest, IncorrectPathType) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"deny_rules\": ["
@@ -394,7 +394,7 @@ TEST(GenerateRbacPoliciesTest, IncorrectPathType) {
 }
 
 TEST(GenerateRbacPoliciesTest, ParseRequestPathsSuccess) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
@@ -481,7 +481,7 @@ TEST(GenerateRbacPoliciesTest, ParseRequestPathsSuccess) {
 }
 
 TEST(GenerateRbacPoliciesTest, IncorrectHeaderType) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"deny_rules\": ["
@@ -502,7 +502,7 @@ TEST(GenerateRbacPoliciesTest, IncorrectHeaderType) {
 }
 
 TEST(GenerateRbacPoliciesTest, UnsupportedGrpcHeaders) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"deny_rules\": ["
@@ -528,7 +528,7 @@ TEST(GenerateRbacPoliciesTest, UnsupportedGrpcHeaders) {
 }
 
 TEST(GenerateRbacPoliciesTest, UnsupportedPseudoHeaders) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
@@ -554,7 +554,7 @@ TEST(GenerateRbacPoliciesTest, UnsupportedPseudoHeaders) {
 }
 
 TEST(GenerateRbacPoliciesTest, UnsupportedhostHeader) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"deny_rules\": ["
@@ -580,7 +580,7 @@ TEST(GenerateRbacPoliciesTest, UnsupportedhostHeader) {
 }
 
 TEST(GenerateRbacPoliciesTest, UnsupportedHostHeader) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
@@ -606,7 +606,7 @@ TEST(GenerateRbacPoliciesTest, UnsupportedHostHeader) {
 }
 
 TEST(GenerateRbacPoliciesTest, EmptyHeaderValuesList) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
@@ -631,7 +631,7 @@ TEST(GenerateRbacPoliciesTest, EmptyHeaderValuesList) {
 }
 
 TEST(GenerateRbacPoliciesTest, ParseRequestHeadersSuccess) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
@@ -722,7 +722,7 @@ TEST(GenerateRbacPoliciesTest, ParseRequestHeadersSuccess) {
 }
 
 TEST(GenerateRbacPoliciesTest, ParseRulesArraySuccess) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
@@ -803,7 +803,7 @@ TEST(GenerateRbacPoliciesTest, ParseRulesArraySuccess) {
 
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

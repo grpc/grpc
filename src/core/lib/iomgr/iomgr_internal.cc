@@ -24,9 +24,9 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 
-static grpc_iomgr_platform_vtable* iomgr_platform_vtable = nullptr;
+static grpc_iomgr_platform_vtable *iomgr_platform_vtable = nullptr;
 
-void grpc_set_iomgr_platform_vtable(grpc_iomgr_platform_vtable* vtable) {
+void grpc_set_iomgr_platform_vtable(grpc_iomgr_platform_vtable *vtable) {
   iomgr_platform_vtable = vtable;
 }
 
@@ -51,7 +51,7 @@ bool grpc_iomgr_platform_is_any_background_poller_thread() {
 }
 
 bool grpc_iomgr_platform_add_closure_to_background_poller(
-    grpc_closure* closure, grpc_error_handle error) {
+    grpc_closure *closure, grpc_error_handle error) {
   return iomgr_platform_vtable->add_closure_to_background_poller(closure,
                                                                  error);
 }

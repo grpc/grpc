@@ -47,7 +47,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
  public:
   HealthCheckClient(std::string service_name,
                     RefCountedPtr<ConnectedSubchannel> connected_subchannel,
-                    grpc_pollset_set* interested_parties,
+                    grpc_pollset_set *interested_parties,
                     RefCountedPtr<channelz::SubchannelNode> channelz_node,
                     RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
 
@@ -60,7 +60,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
   class CallState : public Orphanable {
    public:
     CallState(RefCountedPtr<HealthCheckClient> health_check_client,
-              grpc_pollset_set* interested_parties_);
+              grpc_pollset_set *interested_parties_);
     ~CallState() override;
 
     void Orphan() override;
@@ -70,37 +70,37 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
    private:
     void Cancel();
 
-    void StartBatch(grpc_transport_stream_op_batch* batch);
-    static void StartBatchInCallCombiner(void* arg, grpc_error_handle error);
+    void StartBatch(grpc_transport_stream_op_batch *batch);
+    static void StartBatchInCallCombiner(void *arg, grpc_error_handle error);
 
     void CallEndedLocked(bool retry)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(health_check_client_->mu_);
 
-    static void OnComplete(void* arg, grpc_error_handle error);
-    static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
-    static void RecvMessageReady(void* arg, grpc_error_handle error);
-    static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
-    static void StartCancel(void* arg, grpc_error_handle error);
-    static void OnCancelComplete(void* arg, grpc_error_handle error);
+    static void OnComplete(void *arg, grpc_error_handle error);
+    static void RecvInitialMetadataReady(void *arg, grpc_error_handle error);
+    static void RecvMessageReady(void *arg, grpc_error_handle error);
+    static void RecvTrailingMetadataReady(void *arg, grpc_error_handle error);
+    static void StartCancel(void *arg, grpc_error_handle error);
+    static void OnCancelComplete(void *arg, grpc_error_handle error);
 
-    static void OnByteStreamNext(void* arg, grpc_error_handle error);
+    static void OnByteStreamNext(void *arg, grpc_error_handle error);
     void ContinueReadingRecvMessage();
     grpc_error_handle PullSliceFromRecvMessage();
     void DoneReadingRecvMessage(grpc_error_handle error);
 
-    static void AfterCallStackDestruction(void* arg, grpc_error_handle error);
+    static void AfterCallStackDestruction(void *arg, grpc_error_handle error);
 
     RefCountedPtr<HealthCheckClient> health_check_client_;
     grpc_polling_entity pollent_;
 
-    Arena* arena_;
+    Arena *arena_;
     grpc_core::CallCombiner call_combiner_;
     grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
     // The streaming call to the backend. Always non-null.
     // Refs are tracked manually; when the last ref is released, the
     // CallState object will be automatically destroyed.
-    SubchannelCall* call_;
+    SubchannelCall *call_;
 
     grpc_transport_stream_op_batch_payload payload_;
     grpc_transport_stream_op_batch batch_;
@@ -145,15 +145,15 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
   void StartCallLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void StartRetryTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  static void OnRetryTimer(void* arg, grpc_error_handle error);
+  static void OnRetryTimer(void *arg, grpc_error_handle error);
 
-  void SetHealthStatus(grpc_connectivity_state state, const char* reason);
-  void SetHealthStatusLocked(grpc_connectivity_state state, const char* reason)
+  void SetHealthStatus(grpc_connectivity_state state, const char *reason);
+  void SetHealthStatusLocked(grpc_connectivity_state state, const char *reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::string service_name_;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  grpc_pollset_set* interested_parties_;  // Do not own.
+  grpc_pollset_set *interested_parties_;  // Do not own.
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
 
   Mutex mu_;

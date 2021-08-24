@@ -49,7 +49,7 @@ static void assert_passthrough(grpc_slice value,
   grpc_slice_buffer output;
   grpc_slice final;
   int was_compressed;
-  const char* algorithm_name;
+  const char *algorithm_name;
 
   GPR_ASSERT(
       grpc_message_compression_algorithm_name(algorithm, &algorithm_name) != 0);
@@ -310,7 +310,7 @@ static void test_bad_decompression_algorithm(void) {
   grpc_slice_buffer_destroy(&output);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   unsigned i, j, k, m;
   grpc_slice_split_mode uncompressed_split_modes[] = {
       GRPC_SLICE_SPLIT_IDENTITY, GRPC_SLICE_SPLIT_ONE_BYTE};

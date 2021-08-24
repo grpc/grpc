@@ -26,7 +26,7 @@ AuthPropertyIterator::AuthPropertyIterator()
     : property_(nullptr), ctx_(nullptr), index_(0), name_(nullptr) {}
 
 AuthPropertyIterator::AuthPropertyIterator(
-    const grpc_auth_property* property, const grpc_auth_property_iterator* iter)
+    const grpc_auth_property *property, const grpc_auth_property_iterator *iter)
     : property_(property),
       ctx_(iter->ctx),
       index_(iter->index),
@@ -34,7 +34,7 @@ AuthPropertyIterator::AuthPropertyIterator(
 
 AuthPropertyIterator::~AuthPropertyIterator() {}
 
-AuthPropertyIterator& AuthPropertyIterator::operator++() {
+AuthPropertyIterator &AuthPropertyIterator::operator++() {
   grpc_auth_property_iterator iter = {ctx_, index_, name_};
   property_ = grpc_auth_property_iterator_next(&iter);
   ctx_ = iter.ctx;
@@ -49,7 +49,7 @@ AuthPropertyIterator AuthPropertyIterator::operator++(int) {
   return tmp;
 }
 
-bool AuthPropertyIterator::operator==(const AuthPropertyIterator& rhs) const {
+bool AuthPropertyIterator::operator==(const AuthPropertyIterator &rhs) const {
   if (property_ == nullptr || rhs.property_ == nullptr) {
     return property_ == rhs.property_;
   } else {
@@ -57,7 +57,7 @@ bool AuthPropertyIterator::operator==(const AuthPropertyIterator& rhs) const {
   }
 }
 
-bool AuthPropertyIterator::operator!=(const AuthPropertyIterator& rhs) const {
+bool AuthPropertyIterator::operator!=(const AuthPropertyIterator &rhs) const {
   return !operator==(rhs);
 }
 

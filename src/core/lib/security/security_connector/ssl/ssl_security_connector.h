@@ -30,8 +30,8 @@
 #include "src/core/tsi/transport_security_interface.h"
 
 struct grpc_ssl_config {
-  tsi_ssl_pem_key_cert_pair* pem_key_cert_pair;
-  char* pem_root_certs;
+  tsi_ssl_pem_key_cert_pair *pem_key_cert_pair;
+  char *pem_root_certs;
   verify_peer_options verify_options;
   grpc_tls_version min_tls_version = grpc_tls_version::TLS1_2;
   grpc_tls_version max_tls_version = grpc_tls_version::TLS1_3;
@@ -54,15 +54,15 @@ grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_ssl_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-    const grpc_ssl_config* config, const char* target_name,
-    const char* overridden_target_name,
-    tsi_ssl_session_cache* ssl_session_cache);
+    const grpc_ssl_config *config, const char *target_name,
+    const char *overridden_target_name,
+    tsi_ssl_session_cache *ssl_session_cache);
 
 /* Config for ssl servers. */
 struct grpc_ssl_server_config {
-  tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs = nullptr;
+  tsi_ssl_pem_key_cert_pair *pem_key_cert_pairs = nullptr;
   size_t num_key_cert_pairs = 0;
-  char* pem_root_certs = nullptr;
+  char *pem_root_certs = nullptr;
   grpc_ssl_client_certificate_request_type client_certificate_request =
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
   grpc_tls_version min_tls_version = grpc_tls_version::TLS1_2;

@@ -35,12 +35,12 @@ std::string SimpleCurrentStackTraceProvider() { return "stacktrace"; }
 std::string AbseilCurrentStackTraceProvider() {
   std::string result = "Stack trace:\n";
   constexpr int kNumStackFrames = 10;
-  void* stack[kNumStackFrames];
+  void *stack[kNumStackFrames];
   int frame_sizes[kNumStackFrames];
   int depth = absl::GetStackFrames(stack, frame_sizes, kNumStackFrames, 1);
   for (int i = 0; i < depth; i++) {
     char tmp[1024];
-    const char* symbol = "(unknown)";
+    const char *symbol = "(unknown)";
     if (absl::Symbolize(stack[i], tmp, sizeof(tmp))) {
       symbol = tmp;
     }
@@ -76,7 +76,7 @@ TEST(ExamineStackTest, AbseilStackProvider) {
 #endif
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   absl::InitializeSymbolizer(argv[0]);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();

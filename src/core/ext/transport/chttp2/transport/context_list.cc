@@ -21,29 +21,29 @@
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 
 namespace {
-void (*write_timestamps_callback_g)(void*, grpc_core::Timestamps*,
+void (*write_timestamps_callback_g)(void *, grpc_core::Timestamps *,
                                     grpc_error_handle error) = nullptr;
-void* (*get_copied_context_fn_g)(void*) = nullptr;
+void *(*get_copied_context_fn_g)(void *) = nullptr;
 }  // namespace
 
 namespace grpc_core {
-void ContextList::Append(ContextList** head, grpc_chttp2_stream* s) {
+void ContextList::Append(ContextList **head, grpc_chttp2_stream *s) {
   if (get_copied_context_fn_g == nullptr ||
       write_timestamps_callback_g == nullptr) {
     return;
   }
   /* Create a new element in the list and add it at the front */
-  ContextList* elem = new ContextList();
+  ContextList *elem = new ContextList();
   elem->trace_context_ = get_copied_context_fn_g(s->context);
   elem->byte_offset_ = s->byte_counter;
   elem->next_ = *head;
   *head = elem;
 }
 
-void ContextList::Execute(void* arg, grpc_core::Timestamps* ts,
+void ContextList::Execute(void *arg, grpc_core::Timestamps *ts,
                           grpc_error_handle error) {
-  ContextList* head = static_cast<ContextList*>(arg);
-  ContextList* to_be_freed;
+  ContextList *head = static_cast<ContextList *>(arg);
+  ContextList *to_be_freed;
   while (head != nullptr) {
     if (write_timestamps_callback_g) {
       if (ts) {
@@ -58,11 +58,11 @@ void ContextList::Execute(void* arg, grpc_core::Timestamps* ts,
 }
 
 void grpc_http2_set_write_timestamps_callback(
-    void (*fn)(void*, grpc_core::Timestamps*, grpc_error_handle error)) {
+    void (*fn)(void *, grpc_core::Timestamps *, grpc_error_handle error)) {
   write_timestamps_callback_g = fn;
 }
 
-void grpc_http2_set_fn_get_copied_context(void* (*fn)(void*)) {
+void grpc_http2_set_fn_get_copied_context(void *(*fn)(void *)) {
   get_copied_context_fn_g = fn;
 }
 } /* namespace grpc_core */

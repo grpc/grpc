@@ -51,7 +51,7 @@ using std::chrono::system_clock;
 float ConvertToRadians(float num) { return num * 3.1415926 / 180; }
 
 // The formula is based on http://mathforum.org/library/drmath/view/51879.html
-float GetDistance(const Point& start, const Point& end) {
+float GetDistance(const Point &start, const Point &end) {
   const float kCoordFactor = 10000000.0;
   float lat_1 = start.latitude() / kCoordFactor;
   float lat_2 = end.latitude() / kCoordFactor;
@@ -70,9 +70,9 @@ float GetDistance(const Point& start, const Point& end) {
   return R * c;
 }
 
-std::string GetFeatureName(const Point& point,
-                           const std::vector<Feature>& feature_list) {
-  for (const Feature& f : feature_list) {
+std::string GetFeatureName(const Point &point,
+                           const std::vector<Feature> &feature_list) {
+  for (const Feature &f : feature_list) {
     if (f.location().latitude() == point.latitude() &&
         f.location().longitude() == point.longitude()) {
       return f.name();
@@ -83,27 +83,27 @@ std::string GetFeatureName(const Point& point,
 
 class RouteGuideImpl final : public RouteGuide::CallbackService {
  public:
-  explicit RouteGuideImpl(const std::string& db) {
+  explicit RouteGuideImpl(const std::string &db) {
     routeguide::ParseDb(db, &feature_list_);
   }
 
-  grpc::ServerUnaryReactor* GetFeature(CallbackServerContext* context,
-                                       const Point* point,
-                                       Feature* feature) override {
+  grpc::ServerUnaryReactor *GetFeature(CallbackServerContext *context,
+                                       const Point *point,
+                                       Feature *feature) override {
     feature->set_name(GetFeatureName(*point, feature_list_));
     feature->mutable_location()->CopyFrom(*point);
-    auto* reactor = context->DefaultReactor();
+    auto *reactor = context->DefaultReactor();
     reactor->Finish(Status::OK);
     return reactor;
   }
 
-  grpc::ServerWriteReactor<Feature>* ListFeatures(
-      CallbackServerContext* context,
-      const routeguide::Rectangle* rectangle) override {
+  grpc::ServerWriteReactor<Feature> *ListFeatures(
+      CallbackServerContext *context,
+      const routeguide::Rectangle *rectangle) override {
     class Lister : public grpc::ServerWriteReactor<Feature> {
      public:
-      Lister(const routeguide::Rectangle* rectangle,
-             const std::vector<Feature>* feature_list)
+      Lister(const routeguide::Rectangle *rectangle,
+             const std::vector<Feature> *feature_list)
           : left_((std::min)(rectangle->lo().longitude(),
                              rectangle->hi().longitude())),
             right_((std::max)(rectangle->lo().longitude(),
@@ -122,7 +122,7 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
      private:
       void NextWrite() {
         while (next_feature_ != feature_list_->end()) {
-          const Feature& f = *next_feature_;
+          const Feature &f = *next_feature_;
           next_feature_++;
           if (f.location().longitude() >= left_ &&
               f.location().longitude() <= right_ &&
@@ -139,17 +139,17 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
       const long right_;
       const long top_;
       const long bottom_;
-      const std::vector<Feature>* feature_list_;
+      const std::vector<Feature> *feature_list_;
       std::vector<Feature>::const_iterator next_feature_;
     };
     return new Lister(rectangle, &feature_list_);
   }
 
-  grpc::ServerReadReactor<Point>* RecordRoute(CallbackServerContext* context,
-                                              RouteSummary* summary) override {
+  grpc::ServerReadReactor<Point> *RecordRoute(CallbackServerContext *context,
+                                              RouteSummary *summary) override {
     class Recorder : public grpc::ServerReadReactor<Point> {
      public:
-      Recorder(RouteSummary* summary, const std::vector<Feature>* feature_list)
+      Recorder(RouteSummary *summary, const std::vector<Feature> *feature_list)
           : start_time_(system_clock::now()),
             summary_(summary),
             feature_list_(feature_list) {
@@ -180,8 +180,8 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
 
      private:
       system_clock::time_point start_time_;
-      RouteSummary* summary_;
-      const std::vector<Feature>* feature_list_;
+      RouteSummary *summary_;
+      const std::vector<Feature> *feature_list_;
       Point point_;
       int point_count_ = 0;
       int feature_count_ = 0;
@@ -191,11 +191,11 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
     return new Recorder(summary, &feature_list_);
   }
 
-  grpc::ServerBidiReactor<RouteNote, RouteNote>* RouteChat(
-      CallbackServerContext* context) override {
+  grpc::ServerBidiReactor<RouteNote, RouteNote> *RouteChat(
+      CallbackServerContext *context) override {
     class Chatter : public grpc::ServerBidiReactor<RouteNote, RouteNote> {
      public:
-      Chatter(std::mutex* mu, std::vector<RouteNote>* received_notes)
+      Chatter(std::mutex *mu, std::vector<RouteNote> *received_notes)
           : mu_(mu), received_notes_(received_notes) {
         StartRead(&note_);
       }
@@ -228,7 +228,7 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
      private:
       void NextWrite() {
         while (notes_iterator_ != received_notes_->end()) {
-          const RouteNote& n = *notes_iterator_;
+          const RouteNote &n = *notes_iterator_;
           notes_iterator_++;
           if (n.location().latitude() == note_.location().latitude() &&
               n.location().longitude() == note_.location().longitude()) {
@@ -242,8 +242,8 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
         StartRead(&note_);
       }
       RouteNote note_;
-      std::mutex* mu_;
-      std::vector<RouteNote>* received_notes_;
+      std::mutex *mu_;
+      std::vector<RouteNote> *received_notes_;
       std::vector<RouteNote>::iterator notes_iterator_;
       std::thread read_starter_;
     };
@@ -256,7 +256,7 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
   std::vector<RouteNote> received_notes_;
 };
 
-void RunServer(const std::string& db_path) {
+void RunServer(const std::string &db_path) {
   std::string server_address("0.0.0.0:50051");
   RouteGuideImpl service(db_path);
 
@@ -268,7 +268,7 @@ void RunServer(const std::string& db_path) {
   server->Wait();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   // Expect only arg: --db_path=path/to/route_guide_db.json.
   std::string db = routeguide::GetDbFileContent(argc, argv);
   RunServer(db);

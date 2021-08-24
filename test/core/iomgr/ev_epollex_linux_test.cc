@@ -27,8 +27,8 @@
 
 #include "test/core/util/test_config.h"
 
-static void pollset_destroy(void* ps, grpc_error_handle /*error*/) {
-  grpc_pollset_destroy(static_cast<grpc_pollset*>(ps));
+static void pollset_destroy(void *ps, grpc_error_handle /*error*/) {
+  grpc_pollset_destroy(static_cast<grpc_pollset *>(ps));
   gpr_free(ps);
 }
 
@@ -38,10 +38,10 @@ static void test_pollable_owner_fd() {
   grpc_core::ExecCtx exec_ctx;
   int ev_fd1;
   int ev_fd2;
-  grpc_fd* grpc_fd1;
-  grpc_fd* grpc_fd2;
-  grpc_pollset* ps;
-  gpr_mu* mu;
+  grpc_fd *grpc_fd1;
+  grpc_fd *grpc_fd2;
+  grpc_pollset *ps;
+  gpr_mu *mu;
 
   // == Create two grpc_fds ==
   // All we need is two file descriptors. Doesn't matter what type. We use
@@ -57,7 +57,7 @@ static void test_pollable_owner_fd() {
   grpc_core::ExecCtx::Get()->Flush();
 
   // == Create a pollset ==
-  ps = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+  ps = static_cast<grpc_pollset *>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(ps, &mu);
   grpc_core::ExecCtx::Get()->Flush();
 
@@ -90,8 +90,8 @@ static void test_pollable_owner_fd() {
   grpc_core::ExecCtx::Get()->Flush();
 }
 
-int main(int argc, char** argv) {
-  const char* poll_strategy = nullptr;
+int main(int argc, char **argv) {
+  const char *poll_strategy = nullptr;
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   {
@@ -111,5 +111,5 @@ int main(int argc, char** argv) {
   return 0;
 }
 #else /* defined(GRPC_LINUX_EPOLL_CREATE1) && defined(GRPC_LINUX_EVENTFD) */
-int main(int /*argc*/, char** /*argv*/) { return 0; }
+int main(int /*argc*/, char ** /*argv*/) { return 0; }
 #endif

@@ -134,12 +134,12 @@ class InterceptorBatchMethods {
   /// Returns a modifable ByteBuffer holding the serialized form of the message
   /// that is going to be sent. Valid for PRE_SEND_MESSAGE interceptions.
   /// A return value of nullptr indicates that this ByteBuffer is not valid.
-  virtual ByteBuffer* GetSerializedSendMessage() = 0;
+  virtual ByteBuffer *GetSerializedSendMessage() = 0;
 
   /// Returns a non-modifiable pointer to the non-serialized form of the message
   /// to be sent. Valid for PRE_SEND_MESSAGE interceptions. A return value of
   /// nullptr indicates that this field is not valid.
-  virtual const void* GetSendMessage() = 0;
+  virtual const void *GetSendMessage() = 0;
 
   /// Overwrites the message to be sent with \a message. \a message should be in
   /// the non-serialized form expected by the method. Valid for PRE_SEND_MESSAGE
@@ -148,7 +148,7 @@ class InterceptorBatchMethods {
   /// POST_SEND_MESSAGE interception point, whichever happens earlier. The
   /// modifying interceptor may itself force early serialization by calling
   /// GetSerializedSendMessage.
-  virtual void ModifySendMessage(const void* message) = 0;
+  virtual void ModifySendMessage(const void *message) = 0;
 
   /// Checks whether the SEND MESSAGE op succeeded. Valid for POST_SEND_MESSAGE
   /// interceptions.
@@ -157,42 +157,42 @@ class InterceptorBatchMethods {
   /// Returns a modifiable multimap of the initial metadata to be sent. Valid
   /// for PRE_SEND_INITIAL_METADATA interceptions. A value of nullptr indicates
   /// that this field is not valid.
-  virtual std::multimap<std::string, std::string>* GetSendInitialMetadata() = 0;
+  virtual std::multimap<std::string, std::string> *GetSendInitialMetadata() = 0;
 
   /// Returns the status to be sent. Valid for PRE_SEND_STATUS interceptions.
   virtual Status GetSendStatus() = 0;
 
   /// Overwrites the status with \a status. Valid for PRE_SEND_STATUS
   /// interceptions.
-  virtual void ModifySendStatus(const Status& status) = 0;
+  virtual void ModifySendStatus(const Status &status) = 0;
 
   /// Returns a modifiable multimap of the trailing metadata to be sent. Valid
   /// for PRE_SEND_STATUS interceptions. A value of nullptr indicates
   /// that this field is not valid.
-  virtual std::multimap<std::string, std::string>*
-  GetSendTrailingMetadata() = 0;
+  virtual std::multimap<std::string, std::string>
+      *GetSendTrailingMetadata() = 0;
 
   /// Returns a pointer to the modifiable received message. Note that the
   /// message is already deserialized but the type is not set; the interceptor
   /// should static_cast to the appropriate type before using it. This is valid
   /// for PRE_RECV_MESSAGE and POST_RECV_MESSAGE interceptions; nullptr for not
   /// valid
-  virtual void* GetRecvMessage() = 0;
+  virtual void *GetRecvMessage() = 0;
 
   /// Returns a modifiable multimap of the received initial metadata.
   /// Valid for PRE_RECV_INITIAL_METADATA and POST_RECV_INITIAL_METADATA
   /// interceptions; nullptr if not valid
-  virtual std::multimap<grpc::string_ref, grpc::string_ref>*
-  GetRecvInitialMetadata() = 0;
+  virtual std::multimap<grpc::string_ref, grpc::string_ref>
+      *GetRecvInitialMetadata() = 0;
 
   /// Returns a modifiable view of the received status on PRE_RECV_STATUS and
   /// POST_RECV_STATUS interceptions; nullptr if not valid.
-  virtual Status* GetRecvStatus() = 0;
+  virtual Status *GetRecvStatus() = 0;
 
   /// Returns a modifiable multimap of the received trailing metadata on
   /// PRE_RECV_STATUS and POST_RECV_STATUS interceptions; nullptr if not valid
-  virtual std::multimap<grpc::string_ref, grpc::string_ref>*
-  GetRecvTrailingMetadata() = 0;
+  virtual std::multimap<grpc::string_ref, grpc::string_ref>
+      *GetRecvTrailingMetadata() = 0;
 
   /// Gets an intercepted channel. When a call is started on this interceptor,
   /// only interceptors after the current interceptor are created from the
@@ -219,7 +219,7 @@ class Interceptor {
 
   /// The one public method of an Interceptor interface. Override this to
   /// trigger the desired actions at the hook points described above.
-  virtual void Intercept(InterceptorBatchMethods* methods) = 0;
+  virtual void Intercept(InterceptorBatchMethods *methods) = 0;
 };
 
 }  // namespace experimental

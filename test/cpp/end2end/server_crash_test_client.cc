@@ -36,7 +36,7 @@ ABSL_FLAG(std::string, mode, "", "Test mode to use");
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   auto stub = grpc::testing::EchoTestService::NewStub(grpc::CreateChannel(
       absl::GetFlag(FLAGS_address), grpc::InsecureChannelCredentials()));

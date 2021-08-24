@@ -33,14 +33,14 @@
   (h) *= 0xc2b2ae35; \
   (h) ^= (h) >> 16;
 
-uint32_t gpr_murmur_hash3(const void* key, size_t len, uint32_t seed) {
+uint32_t gpr_murmur_hash3(const void *key, size_t len, uint32_t seed) {
   uint32_t h1 = seed;
   uint32_t k1;
 
   const uint32_t c1 = 0xcc9e2d51;
   const uint32_t c2 = 0x1b873593;
 
-  const uint8_t* keyptr = static_cast<const uint8_t*>(key);
+  const uint8_t *keyptr = static_cast<const uint8_t *>(key);
   const size_t bsize = sizeof(k1);
   const size_t nblocks = len / bsize;
 

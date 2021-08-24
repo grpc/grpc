@@ -57,7 +57,7 @@ namespace testing {
 namespace {
 
 struct TestScenario {
-  TestScenario(const std::string& creds_type, const std::string& content)
+  TestScenario(const std::string &creds_type, const std::string &content)
       : credentials_type(creds_type), message_content(content) {}
   const std::string credentials_type;
   const std::string message_content;
@@ -187,12 +187,12 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
   void StopServer() { server_->Shutdown(); }
 
   std::unique_ptr<grpc::testing::EchoTestService::Stub> BuildStub(
-      const std::shared_ptr<Channel>& channel) {
+      const std::shared_ptr<Channel> &channel) {
     return grpc::testing::EchoTestService::NewStub(channel);
   }
 
   std::shared_ptr<Channel> BuildChannel(
-      const std::string& lb_policy_name,
+      const std::string &lb_policy_name,
       ChannelArguments args = ChannelArguments()) {
     if (!lb_policy_name.empty()) {
       args.SetLoadBalancingPolicyName(lb_policy_name);
@@ -205,11 +205,11 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
   }
 
   bool SendRpc(
-      const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
+      const std::unique_ptr<grpc::testing::EchoTestService::Stub> &stub,
       int timeout_ms = 0, bool wait_for_ready = false) {
     auto response = absl::make_unique<EchoResponse>();
     EchoRequest request;
-    auto& msg = GetParam().message_content;
+    auto &msg = GetParam().message_content;
     request.set_message(msg);
     ClientContext context;
     if (timeout_ms > 0) {
@@ -241,10 +241,10 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     std::unique_ptr<std::thread> thread_;
     bool server_ready_ = false;
 
-    ServerData(int port, const std::string& creds)
+    ServerData(int port, const std::string &creds)
         : port_(port), creds_(creds) {}
 
-    void Start(const std::string& server_host) {
+    void Start(const std::string &server_host) {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       std::mutex mu;
       std::unique_lock<std::mutex> lock(mu);
@@ -256,8 +256,8 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
       gpr_log(GPR_INFO, "server startup complete");
     }
 
-    void Serve(const std::string& server_host, std::mutex* mu,
-               std::condition_variable* cond) {
+    void Serve(const std::string &server_host, std::mutex *mu,
+               std::condition_variable *cond) {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
@@ -277,7 +277,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     }
   };
 
-  bool WaitForChannelNotReady(Channel* channel, int timeout_seconds = 5) {
+  bool WaitForChannelNotReady(Channel *channel, int timeout_seconds = 5) {
     const gpr_timespec deadline =
         grpc_timeout_seconds_to_deadline(timeout_seconds);
     grpc_connectivity_state state;
@@ -288,7 +288,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     return true;
   }
 
-  bool WaitForChannelReady(Channel* channel, int timeout_seconds = 5) {
+  bool WaitForChannelReady(Channel *channel, int timeout_seconds = 5) {
     const gpr_timespec deadline =
         grpc_timeout_seconds_to_deadline(timeout_seconds);
     grpc_connectivity_state state;
@@ -542,7 +542,7 @@ TEST_P(FlakyNetworkTest, ServerRestartKeepaliveDisabled) {
 }  // namespace grpc
 #endif  // GPR_LINUX
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   auto result = RUN_ALL_TESTS();

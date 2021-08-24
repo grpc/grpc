@@ -57,31 +57,31 @@ class SslSessionLRUCache : public grpc_core::RefCounted<SslSessionLRUCache> {
   ~SslSessionLRUCache() override;
 
   // Not copyable nor movable.
-  SslSessionLRUCache(const SslSessionLRUCache&) = delete;
-  SslSessionLRUCache& operator=(const SslSessionLRUCache&) = delete;
+  SslSessionLRUCache(const SslSessionLRUCache &) = delete;
+  SslSessionLRUCache &operator=(const SslSessionLRUCache &) = delete;
 
   /// Returns current number of sessions in the cache.
   size_t Size();
   /// Add \a session in the cache using \a key. This operation may discard older
   /// sessions.
-  void Put(const char* key, SslSessionPtr session);
+  void Put(const char *key, SslSessionPtr session);
   /// Returns the session from the cache associated with \a key or null if not
   /// found.
-  SslSessionPtr Get(const char* key);
+  SslSessionPtr Get(const char *key);
 
  private:
   class Node;
 
-  Node* FindLocked(const grpc_slice& key);
-  void Remove(Node* node);
-  void PushFront(Node* node);
+  Node *FindLocked(const grpc_slice &key);
+  void Remove(Node *node);
+  void PushFront(Node *node);
   void AssertInvariants();
 
   grpc_core::Mutex lock_;
   size_t capacity_;
 
-  Node* use_order_list_head_ = nullptr;
-  Node* use_order_list_tail_ = nullptr;
+  Node *use_order_list_head_ = nullptr;
+  Node *use_order_list_tail_ = nullptr;
   size_t use_order_list_size_ = 0;
   grpc_avl entry_by_key_;
 };

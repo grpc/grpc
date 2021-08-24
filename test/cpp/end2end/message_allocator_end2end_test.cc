@@ -54,27 +54,27 @@ class CallbackTestServiceImpl : public EchoTestService::CallbackService {
   explicit CallbackTestServiceImpl() {}
 
   void SetAllocatorMutator(
-      std::function<void(RpcAllocatorState* allocator_state,
-                         const EchoRequest* req, EchoResponse* resp)>
+      std::function<void(RpcAllocatorState *allocator_state,
+                         const EchoRequest *req, EchoResponse *resp)>
           mutator) {
     allocator_mutator_ = std::move(mutator);
   }
 
-  ServerUnaryReactor* Echo(CallbackServerContext* context,
-                           const EchoRequest* request,
-                           EchoResponse* response) override {
+  ServerUnaryReactor *Echo(CallbackServerContext *context,
+                           const EchoRequest *request,
+                           EchoResponse *response) override {
     response->set_message(request->message());
     if (allocator_mutator_) {
       allocator_mutator_(context->GetRpcAllocatorState(), request, response);
     }
-    auto* reactor = context->DefaultReactor();
+    auto *reactor = context->DefaultReactor();
     reactor->Finish(Status::OK);
     return reactor;
   }
 
  private:
-  std::function<void(RpcAllocatorState* allocator_state, const EchoRequest* req,
-                     EchoResponse* resp)>
+  std::function<void(RpcAllocatorState *allocator_state, const EchoRequest *req,
+                     EchoResponse *resp)>
       allocator_mutator_;
 };
 
@@ -82,15 +82,15 @@ enum class Protocol { INPROC, TCP };
 
 class TestScenario {
  public:
-  TestScenario(Protocol protocol, const std::string& creds_type)
+  TestScenario(Protocol protocol, const std::string &creds_type)
       : protocol(protocol), credentials_type(creds_type) {}
   void Log() const;
   Protocol protocol;
   const std::string credentials_type;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
+static std::ostream &operator<<(std::ostream &out,
+                                const TestScenario &scenario) {
   return out << "TestScenario{protocol="
              << (scenario.protocol == Protocol::INPROC ? "INPROC" : "TCP")
              << "," << scenario.credentials_type << "}";
@@ -109,7 +109,7 @@ class MessageAllocatorEnd2endTestBase
 
   ~MessageAllocatorEnd2endTestBase() override = default;
 
-  void CreateServer(MessageAllocator<EchoRequest, EchoResponse>* allocator) {
+  void CreateServer(MessageAllocator<EchoRequest, EchoResponse> *allocator) {
     ServerBuilder builder;
 
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
@@ -211,8 +211,8 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
    public:
     class MessageHolderImpl : public MessageHolder<EchoRequest, EchoResponse> {
      public:
-      MessageHolderImpl(std::atomic_int* request_deallocation_count,
-                        std::atomic_int* messages_deallocation_count)
+      MessageHolderImpl(std::atomic_int *request_deallocation_count,
+                        std::atomic_int *messages_deallocation_count)
           : request_deallocation_count_(request_deallocation_count),
             messages_deallocation_count_(messages_deallocation_count) {
         set_request(new EchoRequest);
@@ -230,17 +230,17 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
         set_request(nullptr);
       }
 
-      EchoRequest* ReleaseRequest() {
-        auto* ret = request();
+      EchoRequest *ReleaseRequest() {
+        auto *ret = request();
         set_request(nullptr);
         return ret;
       }
 
      private:
-      std::atomic_int* const request_deallocation_count_;
-      std::atomic_int* const messages_deallocation_count_;
+      std::atomic_int *const request_deallocation_count_;
+      std::atomic_int *const messages_deallocation_count_;
     };
-    MessageHolder<EchoRequest, EchoResponse>* AllocateMessages() override {
+    MessageHolder<EchoRequest, EchoResponse> *AllocateMessages() override {
       allocation_count++;
       return new MessageHolderImpl(&request_deallocation_count,
                                    &messages_deallocation_count);
@@ -268,10 +268,10 @@ TEST_P(SimpleAllocatorTest, SimpleRpc) {
 TEST_P(SimpleAllocatorTest, RpcWithEarlyFreeRequest) {
   const int kRpcCount = 10;
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
-  auto mutator = [](RpcAllocatorState* allocator_state, const EchoRequest* req,
-                    EchoResponse* resp) {
-    auto* info =
-        static_cast<SimpleAllocator::MessageHolderImpl*>(allocator_state);
+  auto mutator = [](RpcAllocatorState *allocator_state, const EchoRequest *req,
+                    EchoResponse *resp) {
+    auto *info =
+        static_cast<SimpleAllocator::MessageHolderImpl *>(allocator_state);
     EXPECT_EQ(req, info->request());
     EXPECT_EQ(resp, info->response());
     allocator_state->FreeRequest();
@@ -292,12 +292,12 @@ TEST_P(SimpleAllocatorTest, RpcWithEarlyFreeRequest) {
 TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
   const int kRpcCount = 10;
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
-  std::vector<EchoRequest*> released_requests;
-  auto mutator = [&released_requests](RpcAllocatorState* allocator_state,
-                                      const EchoRequest* req,
-                                      EchoResponse* resp) {
-    auto* info =
-        static_cast<SimpleAllocator::MessageHolderImpl*>(allocator_state);
+  std::vector<EchoRequest *> released_requests;
+  auto mutator = [&released_requests](RpcAllocatorState *allocator_state,
+                                      const EchoRequest *req,
+                                      EchoResponse *resp) {
+    auto *info =
+        static_cast<SimpleAllocator::MessageHolderImpl *>(allocator_state);
     EXPECT_EQ(req, info->request());
     EXPECT_EQ(resp, info->response());
     released_requests.push_back(info->ReleaseRequest());
@@ -314,7 +314,7 @@ TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
   EXPECT_EQ(kRpcCount, allocator->messages_deallocation_count);
   EXPECT_EQ(0, allocator->request_deallocation_count);
   EXPECT_EQ(static_cast<unsigned>(kRpcCount), released_requests.size());
-  for (auto* req : released_requests) {
+  for (auto *req : released_requests) {
     delete req;
   }
 }
@@ -337,7 +337,7 @@ class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
      private:
       google::protobuf::Arena arena_;
     };
-    MessageHolder<EchoRequest, EchoResponse>* AllocateMessages() override {
+    MessageHolder<EchoRequest, EchoResponse> *AllocateMessages() override {
       allocation_count++;
       return new MessageHolderImpl;
     }
@@ -371,7 +371,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
 
   Protocol parr[]{Protocol::INPROC, Protocol::TCP};
   for (Protocol p : parr) {
-    for (const auto& cred : credentials_types) {
+    for (const auto &cred : credentials_types) {
       // TODO(vjpai): Test inproc with secure credentials when feasible
       if (p == Protocol::INPROC &&
           (cred != kInsecureCredentialsType || !insec_ok())) {
@@ -394,7 +394,7 @@ INSTANTIATE_TEST_SUITE_P(ArenaAllocatorTest, ArenaAllocatorTest,
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();

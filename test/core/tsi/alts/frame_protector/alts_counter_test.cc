@@ -27,15 +27,16 @@ const size_t kSmallOverflowSize = 1;
 const size_t kGcmCounterSize = 12;
 const size_t kGcmOverflowSize = 5;
 
-static bool do_bytes_represent_client(alts_counter* ctr,
-                                      unsigned char* /*counter*/, size_t size) {
+static bool do_bytes_represent_client(alts_counter *ctr,
+                                      unsigned char * /*counter*/,
+                                      size_t size) {
   return (ctr->counter[size - 1] & 0x80) == 0x80;
 }
 
 static void alts_counter_test_input_sanity_check(size_t counter_size,
                                                  size_t overflow_size) {
-  alts_counter* ctr = nullptr;
-  char* error_details = nullptr;
+  alts_counter *ctr = nullptr;
+  char *error_details = nullptr;
 
   /* Input sanity check on alts_counter_create(). */
   /* Invalid counter size. */
@@ -85,13 +86,13 @@ static void alts_counter_test_input_sanity_check(size_t counter_size,
 static void alts_counter_test_overflow_full_range(bool is_client,
                                                   size_t counter_size,
                                                   size_t overflow_size) {
-  alts_counter* ctr = nullptr;
-  char* error_details = nullptr;
+  alts_counter *ctr = nullptr;
+  char *error_details = nullptr;
   grpc_status_code status = alts_counter_create(
       is_client, counter_size, overflow_size, &ctr, &error_details);
   GPR_ASSERT(status == GRPC_STATUS_OK);
-  unsigned char* expected =
-      static_cast<unsigned char*>(gpr_zalloc(counter_size));
+  unsigned char *expected =
+      static_cast<unsigned char *>(gpr_zalloc(counter_size));
   if (is_client) {
     expected[counter_size - 1] = 0x80;
   }
@@ -131,13 +132,13 @@ static void alts_counter_test_overflow_full_range(bool is_client,
 static void alts_counter_test_overflow_single_increment(bool is_client,
                                                         size_t counter_size,
                                                         size_t overflow_size) {
-  alts_counter* ctr = nullptr;
-  char* error_details = nullptr;
+  alts_counter *ctr = nullptr;
+  char *error_details = nullptr;
   grpc_status_code status = alts_counter_create(
       is_client, counter_size, overflow_size, &ctr, &error_details);
   GPR_ASSERT(status == GRPC_STATUS_OK);
-  unsigned char* expected =
-      static_cast<unsigned char*>(gpr_zalloc(counter_size));
+  unsigned char *expected =
+      static_cast<unsigned char *>(gpr_zalloc(counter_size));
   memset(expected, 0xFF, overflow_size);
   expected[0] = 0xFE;
 
@@ -165,7 +166,7 @@ static void alts_counter_test_overflow_single_increment(bool is_client,
   alts_counter_destroy(ctr);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+int main(int /*argc*/, char ** /*argv*/) {
   alts_counter_test_input_sanity_check(kGcmCounterSize, kGcmOverflowSize);
   alts_counter_test_overflow_full_range(true, kSmallCounterSize,
                                         kSmallOverflowSize);

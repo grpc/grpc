@@ -47,17 +47,17 @@ class TestSocketMutator : public grpc_socket_mutator {
 // C API for TestSocketMutator
 //
 
-bool test_mutator_mutate_fd(int fd, grpc_socket_mutator* mutator) {
-  TestSocketMutator* tsm = reinterpret_cast<TestSocketMutator*>(mutator);
+bool test_mutator_mutate_fd(int fd, grpc_socket_mutator *mutator) {
+  TestSocketMutator *tsm = reinterpret_cast<TestSocketMutator *>(mutator);
   return tsm->MutateFd(fd);
 }
 
-int test_mutator_compare(grpc_socket_mutator* a, grpc_socket_mutator* b) {
+int test_mutator_compare(grpc_socket_mutator *a, grpc_socket_mutator *b) {
   return GPR_ICMP(a, b);
 }
 
-void test_mutator_destroy(grpc_socket_mutator* mutator) {
-  TestSocketMutator* tsm = reinterpret_cast<TestSocketMutator*>(mutator);
+void test_mutator_destroy(grpc_socket_mutator *mutator) {
+  TestSocketMutator *tsm = reinterpret_cast<TestSocketMutator *>(mutator);
   delete tsm;
 }
 
@@ -81,8 +81,8 @@ class ChannelArgumentsTest : public ::testing::Test {
                          &ChannelArguments::PointerVtableMembers::Destroy,
                          &ChannelArguments::PointerVtableMembers::Compare}) {}
 
-  void SetChannelArgs(const ChannelArguments& channel_args,
-                      grpc_channel_args* args) {
+  void SetChannelArgs(const ChannelArguments &channel_args,
+                      grpc_channel_args *args) {
     channel_args.SetChannelArgs(args);
   }
 
@@ -109,7 +109,7 @@ class ChannelArgumentsTest : public ::testing::Test {
     grpc_channel_args args;
     SetChannelArgs(channel_args_, &args);
     for (size_t i = 0; i < args.num_args; i++) {
-      const grpc_arg& arg = args.args[i];
+      const grpc_arg &arg = args.args[i];
       if (arg.type == expected_arg.type &&
           std::string(arg.key) == expected_arg.key) {
         if (arg.type == GRPC_ARG_INTEGER) {
@@ -136,12 +136,12 @@ TEST_F(ChannelArgumentsTest, SetInt) {
   std::string key0("key0");
   grpc_arg arg0;
   arg0.type = GRPC_ARG_INTEGER;
-  arg0.key = const_cast<char*>(key0.c_str());
+  arg0.key = const_cast<char *>(key0.c_str());
   arg0.value.integer = 0;
   std::string key1("key1");
   grpc_arg arg1;
   arg1.type = GRPC_ARG_INTEGER;
-  arg1.key = const_cast<char*>(key1.c_str());
+  arg1.key = const_cast<char *>(key1.c_str());
   arg1.value.integer = 1;
 
   std::string arg_key0(key0);
@@ -163,14 +163,14 @@ TEST_F(ChannelArgumentsTest, SetString) {
   std::string val0("val0");
   grpc_arg arg0;
   arg0.type = GRPC_ARG_STRING;
-  arg0.key = const_cast<char*>(key0.c_str());
-  arg0.value.string = const_cast<char*>(val0.c_str());
+  arg0.key = const_cast<char *>(key0.c_str());
+  arg0.value.string = const_cast<char *>(val0.c_str());
   std::string key1("key1");
   std::string val1("val1");
   grpc_arg arg1;
   arg1.type = GRPC_ARG_STRING;
-  arg1.key = const_cast<char*>(key1.c_str());
-  arg1.value.string = const_cast<char*>(val1.c_str());
+  arg1.key = const_cast<char *>(key1.c_str());
+  arg1.value.string = const_cast<char *>(val1.c_str());
 
   std::string key(key0);
   std::string val(val0);
@@ -195,7 +195,7 @@ TEST_F(ChannelArgumentsTest, SetPointer) {
   std::string key0("key0");
   grpc_arg arg0;
   arg0.type = GRPC_ARG_POINTER;
-  arg0.key = const_cast<char*>(key0.c_str());
+  arg0.key = const_cast<char *>(key0.c_str());
   arg0.value.pointer.p = &key0;
   arg0.value.pointer.vtable = &pointer_vtable_;
 
@@ -207,8 +207,8 @@ TEST_F(ChannelArgumentsTest, SetPointer) {
 TEST_F(ChannelArgumentsTest, SetSocketMutator) {
   VerifyDefaultChannelArgs();
   grpc_arg arg0, arg1;
-  TestSocketMutator* mutator0 = new TestSocketMutator();
-  TestSocketMutator* mutator1 = new TestSocketMutator();
+  TestSocketMutator *mutator0 = new TestSocketMutator();
+  TestSocketMutator *mutator1 = new TestSocketMutator();
   arg0 = grpc_socket_mutator_to_arg(mutator0);
   arg1 = grpc_socket_mutator_to_arg(mutator1);
 
@@ -230,8 +230,8 @@ TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {
   std::string whole_prefix = prefix + " " + GetDefaultUserAgentPrefix();
   grpc_arg arg0;
   arg0.type = GRPC_ARG_STRING;
-  arg0.key = const_cast<char*>(GRPC_ARG_PRIMARY_USER_AGENT_STRING);
-  arg0.value.string = const_cast<char*>(whole_prefix.c_str());
+  arg0.key = const_cast<char *>(GRPC_ARG_PRIMARY_USER_AGENT_STRING);
+  arg0.value.string = const_cast<char *>(whole_prefix.c_str());
 
   channel_args_.SetUserAgentPrefix(prefix);
   EXPECT_TRUE(HasArg(arg0));
@@ -242,7 +242,7 @@ TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {
   SetChannelArgs(new_channel_args, &args);
   bool found = false;
   for (size_t i = 0; i < args.num_args; i++) {
-    const grpc_arg& arg = args.args[i];
+    const grpc_arg &arg = args.args[i];
     if (arg.type == GRPC_ARG_STRING &&
         std::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
       EXPECT_FALSE(found);
@@ -256,7 +256,7 @@ TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();

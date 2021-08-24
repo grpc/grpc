@@ -42,19 +42,19 @@ const int kLargeRequestSize = 271828;
 const int kLargeResponseSize = 314159;
 }  // namespace
 
-Http2Client::ServiceStub::ServiceStub(const std::shared_ptr<Channel>& channel)
+Http2Client::ServiceStub::ServiceStub(const std::shared_ptr<Channel> &channel)
     : channel_(channel) {
   stub_ = TestService::NewStub(channel);
 }
 
-TestService::Stub* Http2Client::ServiceStub::Get() { return stub_.get(); }
+TestService::Stub *Http2Client::ServiceStub::Get() { return stub_.get(); }
 
-Http2Client::Http2Client(const std::shared_ptr<Channel>& channel)
+Http2Client::Http2Client(const std::shared_ptr<Channel> &channel)
     : serviceStub_(channel),
       channel_(channel),
       defaultRequest_(BuildDefaultRequest()) {}
 
-bool Http2Client::AssertStatusCode(const Status& s, StatusCode expected_code) {
+bool Http2Client::AssertStatusCode(const Status &s, StatusCode expected_code) {
   if (s.error_code() == expected_code) {
     return true;
   }
@@ -64,7 +64,7 @@ bool Http2Client::AssertStatusCode(const Status& s, StatusCode expected_code) {
   abort();
 }
 
-Status Http2Client::SendUnaryCall(SimpleResponse* response) {
+Status Http2Client::SendUnaryCall(SimpleResponse *response) {
   ClientContext context;
   return serviceStub_.Get()->UnaryCall(&context, defaultRequest_, response);
 }
@@ -141,7 +141,7 @@ bool Http2Client::DoPing() {
 }
 
 void Http2Client::MaxStreamsWorker(
-    const std::shared_ptr<grpc::Channel>& /*channel*/) {
+    const std::shared_ptr<grpc::Channel> & /*channel*/) {
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
   GPR_ASSERT(response.payload().body() ==
@@ -187,7 +187,7 @@ ABSL_FLAG(std::string, test_case, "rst_after_header",
           "rst_after_header\n"
           "rst_during_data\n");
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   GPR_ASSERT(absl::GetFlag(FLAGS_server_port));
   const int host_port_buf_size = 1024;
@@ -215,10 +215,10 @@ int main(int argc, char** argv) {
   } else if (absl::GetFlag(FLAGS_test_case) == "max_streams") {
     client.DoMaxStreams();
   } else {
-    const char* testcases[] = {
+    const char *testcases[] = {
         "goaway",         "max_streams",      "ping",
         "rst_after_data", "rst_after_header", "rst_during_data"};
-    char* joined_testcases =
+    char *joined_testcases =
         gpr_strjoin_sep(testcases, GPR_ARRAY_SIZE(testcases), "\n", nullptr);
 
     gpr_log(GPR_ERROR, "Unsupported test case %s. Valid options are\n%s",

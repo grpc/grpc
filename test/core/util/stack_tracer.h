@@ -40,7 +40,7 @@ std::string GetCurrentStackTrace();
 
 // Initializes a stack tracer so that GetCurrentStackTrace can work.
 // This inits debug symbols and sets this as a gRPC stack-trace provider.
-void InitializeStackTracer(const char* argv0);
+void InitializeStackTracer(const char *argv0);
 
 }  // namespace testing
 }  // namespace grpc_core

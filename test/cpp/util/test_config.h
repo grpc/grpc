@@ -27,7 +27,7 @@
 namespace grpc {
 namespace testing {
 
-void InitTest(int* argc, char*** argv, bool remove_flags);
+void InitTest(int *argc, char ***argv, bool remove_flags);
 
 }  // namespace testing
 }  // namespace grpc

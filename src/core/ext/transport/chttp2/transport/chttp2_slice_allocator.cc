@@ -26,7 +26,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-Chttp2SliceAllocator::Chttp2SliceAllocator(grpc_resource_user* user)
+Chttp2SliceAllocator::Chttp2SliceAllocator(grpc_resource_user *user)
     : resource_user_(user) {}
 
 Chttp2SliceAllocator::~Chttp2SliceAllocator() {
@@ -36,7 +36,7 @@ Chttp2SliceAllocator::~Chttp2SliceAllocator() {
 }
 
 absl::Status Chttp2SliceAllocator::Allocate(
-    size_t size, SliceBuffer* dest, SliceAllocator::AllocateCallback cb) {
+    size_t size, SliceBuffer *dest, SliceAllocator::AllocateCallback cb) {
   // TODO(hork): merge the implementation from the uv-ee branch.
   (void)size;
   (void)dest;
@@ -45,7 +45,7 @@ absl::Status Chttp2SliceAllocator::Allocate(
 }
 
 Chttp2SliceAllocatorFactory::Chttp2SliceAllocatorFactory(
-    grpc_resource_quota* quota)
+    grpc_resource_quota *quota)
     : resource_quota_(quota) {
   grpc_resource_quota_ref_internal(resource_quota_);
 }

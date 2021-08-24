@@ -41,9 +41,9 @@ extern gpr_thd_id g_init_thread;
 
 extern bool g_custom_iomgr_enabled;
 
-void grpc_custom_iomgr_init(grpc_socket_vtable* socket,
-                            grpc_custom_resolver_vtable* resolver,
-                            grpc_custom_timer_vtable* timer,
-                            grpc_custom_poller_vtable* poller);
+void grpc_custom_iomgr_init(grpc_socket_vtable *socket,
+                            grpc_custom_resolver_vtable *resolver,
+                            grpc_custom_timer_vtable *timer,
+                            grpc_custom_poller_vtable *poller);
 
 #endif /* GRPC_CORE_LIB_IOMGR_IOMGR_CUSTOM_H */

@@ -39,14 +39,14 @@ class DefaultGlobalClientCallbacks final
     : public ClientContext::GlobalCallbacks {
  public:
   ~DefaultGlobalClientCallbacks() override {}
-  void DefaultConstructor(ClientContext* /*context*/) override {}
-  void Destructor(ClientContext* /*context*/) override {}
+  void DefaultConstructor(ClientContext * /*context*/) override {}
+  void Destructor(ClientContext * /*context*/) override {}
 };
 
 static internal::GrpcLibraryInitializer g_gli_initializer;
-static DefaultGlobalClientCallbacks* g_default_client_callbacks =
+static DefaultGlobalClientCallbacks *g_default_client_callbacks =
     new DefaultGlobalClientCallbacks();
-static ClientContext::GlobalCallbacks* g_client_callbacks =
+static ClientContext::GlobalCallbacks *g_client_callbacks =
     g_default_client_callbacks;
 
 ClientContext::ClientContext()
@@ -74,7 +74,7 @@ ClientContext::~ClientContext() {
 }
 
 void ClientContext::set_credentials(
-    const std::shared_ptr<CallCredentials>& creds) {
+    const std::shared_ptr<CallCredentials> &creds) {
   creds_ = creds;
   // If call_ is set, we have already created the call, and set the call
   // credentials. This should only be done before we have started the batch
@@ -90,7 +90,7 @@ void ClientContext::set_credentials(
 }
 
 std::unique_ptr<ClientContext> ClientContext::FromInternalServerContext(
-    const grpc::ServerContextBase& context, PropagationOptions options) {
+    const grpc::ServerContextBase &context, PropagationOptions options) {
   std::unique_ptr<ClientContext> ctx(new ClientContext);
   ctx->propagate_from_call_ = context.call_.call;
   ctx->propagation_options_ = options;
@@ -98,23 +98,23 @@ std::unique_ptr<ClientContext> ClientContext::FromInternalServerContext(
 }
 
 std::unique_ptr<ClientContext> ClientContext::FromServerContext(
-    const grpc::ServerContextBase& server_context, PropagationOptions options) {
+    const grpc::ServerContextBase &server_context, PropagationOptions options) {
   return FromInternalServerContext(server_context, options);
 }
 
 std::unique_ptr<ClientContext> ClientContext::FromCallbackServerContext(
-    const grpc::CallbackServerContext& server_context,
+    const grpc::CallbackServerContext &server_context,
     PropagationOptions options) {
   return FromInternalServerContext(server_context, options);
 }
 
-void ClientContext::AddMetadata(const std::string& meta_key,
-                                const std::string& meta_value) {
+void ClientContext::AddMetadata(const std::string &meta_key,
+                                const std::string &meta_value) {
   send_initial_metadata_.insert(std::make_pair(meta_key, meta_value));
 }
 
-void ClientContext::set_call(grpc_call* call,
-                             const std::shared_ptr<Channel>& channel) {
+void ClientContext::set_call(grpc_call *call,
+                             const std::shared_ptr<Channel> &channel) {
   internal::MutexLock lock(&mu_);
   GPR_ASSERT(call_ == nullptr);
   call_ = call;
@@ -134,7 +134,7 @@ void ClientContext::set_call(grpc_call* call,
 void ClientContext::set_compression_algorithm(
     grpc_compression_algorithm algorithm) {
   compression_algorithm_ = algorithm;
-  const char* algorithm_name = nullptr;
+  const char *algorithm_name = nullptr;
   if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
     gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",
             algorithm);
@@ -164,14 +164,14 @@ void ClientContext::SendCancelToInterceptors() {
 std::string ClientContext::peer() const {
   std::string peer;
   if (call_) {
-    char* c_peer = grpc_call_get_peer(call_);
+    char *c_peer = grpc_call_get_peer(call_);
     peer = c_peer;
     gpr_free(c_peer);
   }
   return peer;
 }
 
-void ClientContext::SetGlobalCallbacks(GlobalCallbacks* client_callbacks) {
+void ClientContext::SetGlobalCallbacks(GlobalCallbacks *client_callbacks) {
   GPR_ASSERT(g_client_callbacks == g_default_client_callbacks);
   GPR_ASSERT(client_callbacks != nullptr);
   GPR_ASSERT(client_callbacks != g_default_client_callbacks);

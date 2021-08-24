@@ -76,53 +76,53 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
    public:
     virtual ~GlobalCallbacks() {}
     /// Called before server is created.
-    virtual void UpdateArguments(ChannelArguments* /*args*/) {}
+    virtual void UpdateArguments(ChannelArguments * /*args*/) {}
     /// Called before application callback for each synchronous server request
-    virtual void PreSynchronousRequest(ServerContext* context) = 0;
+    virtual void PreSynchronousRequest(ServerContext *context) = 0;
     /// Called after application callback for each synchronous server request
-    virtual void PostSynchronousRequest(ServerContext* context) = 0;
+    virtual void PostSynchronousRequest(ServerContext *context) = 0;
     /// Called before server is started.
-    virtual void PreServerStart(Server* /*server*/) {}
+    virtual void PreServerStart(Server * /*server*/) {}
     /// Called after a server port is added.
-    virtual void AddPort(Server* /*server*/, const std::string& /*addr*/,
-                         ServerCredentials* /*creds*/, int /*port*/) {}
+    virtual void AddPort(Server * /*server*/, const std::string & /*addr*/,
+                         ServerCredentials * /*creds*/, int /*port*/) {}
   };
   /// Set the global callback object. Can only be called once per application.
   /// Does not take ownership of callbacks, and expects the pointed to object
   /// to be alive until all server objects in the process have been destroyed.
   /// The same \a GlobalCallbacks object will be used throughout the
   /// application and is shared among all \a Server objects.
-  static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
+  static void SetGlobalCallbacks(GlobalCallbacks *callbacks);
 
   /// Returns a \em raw pointer to the underlying \a grpc_server instance.
   /// EXPERIMENTAL:  for internal/test use only
-  grpc_server* c_server();
+  grpc_server *c_server();
 
   /// Returns the health check service.
-  HealthCheckServiceInterface* GetHealthCheckService() const {
+  HealthCheckServiceInterface *GetHealthCheckService() const {
     return health_check_service_.get();
   }
 
   /// Establish a channel for in-process communication
-  std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args);
+  std::shared_ptr<Channel> InProcessChannel(const ChannelArguments &args);
 
   /// NOTE: class experimental_type is not part of the public API of this class.
   /// TODO(yashykt): Integrate into public API when this is no longer
   /// experimental.
   class experimental_type {
    public:
-    explicit experimental_type(Server* server) : server_(server) {}
+    explicit experimental_type(Server *server) : server_(server) {}
 
     /// Establish a channel for in-process communication with client
     /// interceptors
     std::shared_ptr<Channel> InProcessChannelWithInterceptors(
-        const ChannelArguments& args,
+        const ChannelArguments &args,
         std::vector<
             std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
             interceptor_creators);
 
    private:
-    Server* server_;
+    Server *server_;
   };
 
   /// NOTE: The function experimental() is not stable public API. It is a view
@@ -133,7 +133,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
  protected:
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
-  bool RegisterService(const std::string* addr, Service* service) override;
+  bool RegisterService(const std::string *addr, Service *service) override;
 
   /// Try binding the server to the given \a addr endpoint
   /// (port, and optionally including IP address to bind to).
@@ -148,8 +148,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// \return bound port number on success, 0 on failure.
   ///
   /// \warning It is an error to call this method on an already started server.
-  int AddListeningPort(const std::string& addr,
-                       ServerCredentials* creds) override;
+  int AddListeningPort(const std::string &addr,
+                       ServerCredentials *creds) override;
 
   /// NOTE: This is *NOT* a public API. The server constructors are supposed to
   /// be used by \a ServerBuilder class only. The constructor will be made
@@ -173,14 +173,14 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   ///
   /// \param sync_cq_timeout_msec The timeout to use when calling AsyncNext() on
   /// server completion queues passed via sync_server_cqs param.
-  Server(ChannelArguments* args,
+  Server(ChannelArguments *args,
          std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
              sync_server_cqs,
          int min_pollers, int max_pollers, int sync_cq_timeout_msec,
          std::vector<std::shared_ptr<internal::ExternalConnectionAcceptorImpl>>
              acceptors,
-         grpc_server_config_fetcher* server_config_fetcher = nullptr,
-         grpc_resource_quota* server_rq = nullptr,
+         grpc_server_config_fetcher *server_config_fetcher = nullptr,
+         grpc_resource_quota *server_rq = nullptr,
          std::vector<
              std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
              interceptor_creators = std::vector<std::unique_ptr<
@@ -192,9 +192,9 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// caller is required to keep all completion queues live until the server is
   /// destroyed.
   /// \param num_cqs How many completion queues does \a cqs hold.
-  void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
+  void Start(ServerCompletionQueue **cqs, size_t num_cqs) override;
 
-  grpc_server* server() override { return server_; }
+  grpc_server *server() override { return server_; }
 
  protected:
   /// NOTE: This method is not part of the public API for this class.
@@ -203,7 +203,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
     health_check_service_ = std::move(service);
   }
 
-  ContextAllocator* context_allocator() { return context_allocator_.get(); }
+  ContextAllocator *context_allocator() { return context_allocator_.get(); }
 
   /// NOTE: This method is not part of the public API for this class.
   bool health_check_service_disabled() const {
@@ -211,8 +211,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   }
 
  private:
-  std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>*
-  interceptor_creators() override {
+  std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+      *interceptor_creators() override {
     return &interceptor_creators_;
   }
 
@@ -235,20 +235,20 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   /// Register a generic service. This call does not take ownership of the
   /// service. The service must exist for the lifetime of the Server instance.
-  void RegisterAsyncGenericService(AsyncGenericService* service) override;
+  void RegisterAsyncGenericService(AsyncGenericService *service) override;
 
   /// Register a callback-based generic service. This call does not take
   /// ownership of theservice. The service must exist for the lifetime of the
   /// Server instance.
-  void RegisterCallbackGenericService(CallbackGenericService* service) override;
+  void RegisterCallbackGenericService(CallbackGenericService *service) override;
 
   void RegisterContextAllocator(
       std::unique_ptr<ContextAllocator> context_allocator) {
     context_allocator_ = std::move(context_allocator);
   }
 
-  void PerformOpsOnCall(internal::CallOpSetInterface* ops,
-                        internal::Call* call) override;
+  void PerformOpsOnCall(internal::CallOpSetInterface *ops,
+                        internal::Call *call) override;
 
   void ShutdownInternal(gpr_timespec deadline)
       ABSL_LOCKS_EXCLUDED(mu_) override;
@@ -257,9 +257,9 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
     return max_receive_message_size_;
   }
 
-  CompletionQueue* CallbackCQ() ABSL_LOCKS_EXCLUDED(mu_) override;
+  CompletionQueue *CallbackCQ() ABSL_LOCKS_EXCLUDED(mu_) override;
 
-  ServerInitializer* initializer();
+  ServerInitializer *initializer();
 
   // Functions to manage the server shutdown ref count. Things that increase
   // the ref count are the running state of the server (take a ref at start and
@@ -311,7 +311,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   bool has_callback_methods_ = false;
 
   // Pointer to the wrapped grpc_server.
-  grpc_server* server_;
+  grpc_server *server_;
 
   std::unique_ptr<ServerInitializer> server_initializer_;
 
@@ -334,12 +334,12 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   // with this server (if any). It is set on the first call to CallbackCQ().
   // It is _not owned_ by the server; ownership belongs with its internal
   // shutdown callback tag (invoked when the CQ is fully shutdown).
-  std::atomic<CompletionQueue*> callback_cq_{nullptr};
+  std::atomic<CompletionQueue *> callback_cq_{nullptr};
 
   // List of CQs passed in by user that must be Shutdown only after Server is
   // Shutdown.  Even though this is only used with NDEBUG, instantiate it in all
   // cases since otherwise the size will be inconsistent.
-  std::vector<CompletionQueue*> cq_list_;
+  std::vector<CompletionQueue *> cq_list_;
 };
 
 }  // namespace grpc

@@ -40,9 +40,9 @@ class RpcMethod;
 template <class InputMessage, class OutputMessage,
           class BaseInputMessage = InputMessage,
           class BaseOutputMessage = OutputMessage>
-Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
-                         grpc::ClientContext* context,
-                         const InputMessage& request, OutputMessage* result) {
+Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
+                         grpc::ClientContext *context,
+                         const InputMessage &request, OutputMessage *result) {
   static_assert(std::is_base_of<BaseInputMessage, InputMessage>::value,
                 "Invalid input message specification");
   static_assert(std::is_base_of<BaseOutputMessage, OutputMessage>::value,
@@ -55,9 +55,9 @@ Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
 template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl {
  public:
-  BlockingUnaryCallImpl(ChannelInterface* channel, const RpcMethod& method,
-                        grpc::ClientContext* context,
-                        const InputMessage& request, OutputMessage* result) {
+  BlockingUnaryCallImpl(ChannelInterface *channel, const RpcMethod &method,
+                        grpc::ClientContext *context,
+                        const InputMessage &request, OutputMessage *result) {
     ::grpc::CompletionQueue cq(grpc_completion_queue_attributes{
         GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
         nullptr});  // Pluckable completion queue

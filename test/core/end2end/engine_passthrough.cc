@@ -35,7 +35,7 @@ static const char engine_id[] = "libengine_passthrough";
 static const char engine_name[] = "A passthrough engine for private keys";
 static int e_passthrough_idx = -1;
 
-static int e_passthrough_init(ENGINE* e) {
+static int e_passthrough_init(ENGINE *e) {
   if (e_passthrough_idx < 0) {
     e_passthrough_idx = ENGINE_get_ex_new_index(0, NULL, NULL, NULL, 0);
     if (e_passthrough_idx < 0) return 0;
@@ -43,18 +43,18 @@ static int e_passthrough_init(ENGINE* e) {
   return 1;
 }
 
-EVP_PKEY* e_passthrough_load_privkey(ENGINE* eng, const char* key_id,
-                                     UI_METHOD* ui_method,
-                                     void* callback_data) {
-  EVP_PKEY* pkey = NULL;
-  BIO* pem = BIO_new_mem_buf((void*)key_id, (int)(strlen(key_id)));
+EVP_PKEY *e_passthrough_load_privkey(ENGINE *eng, const char *key_id,
+                                     UI_METHOD *ui_method,
+                                     void *callback_data) {
+  EVP_PKEY *pkey = NULL;
+  BIO *pem = BIO_new_mem_buf((void *)key_id, (int)(strlen(key_id)));
   if (pem == NULL) return NULL;
-  pkey = PEM_read_bio_PrivateKey(pem, NULL, NULL, (void*)"");
+  pkey = PEM_read_bio_PrivateKey(pem, NULL, NULL, (void *)"");
   BIO_free(pem);
   return pkey;
 }
 
-int passthrough_bind_helper(ENGINE* e, const char* id) {
+int passthrough_bind_helper(ENGINE *e, const char *id) {
   if (id && strcmp(id, engine_id)) {
     return 0;
   }

@@ -38,8 +38,8 @@ extern "C" {
 /** Create a client channel to 'target' using file descriptor 'fd'. The 'target'
     argument will be used to indicate the name for this channel. See the comment
     for grpc_insecure_channel_create for description of 'args' argument. */
-GRPCAPI grpc_channel* grpc_insecure_channel_create_from_fd(
-    const char* target, int fd, const grpc_channel_args* args);
+GRPCAPI grpc_channel *grpc_insecure_channel_create_from_fd(
+    const char *target, int fd, const grpc_channel_args *args);
 
 /** Add the connected communication channel based on file descriptor 'fd' to the
     'server'. The 'fd' must be an open file descriptor corresponding to a
@@ -52,8 +52,8 @@ GRPCAPI grpc_channel* grpc_insecure_channel_create_from_fd(
     TODO(hork): add channel_args to this API to allow endpoints and transports
     created in this function to participate in the resource quota feature.
     */
-GRPCAPI void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
-                                                      void* reserved, int fd);
+GRPCAPI void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
+                                                      void *reserved, int fd);
 
 #ifdef __cplusplus
 }

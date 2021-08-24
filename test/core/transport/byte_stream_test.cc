@@ -37,7 +37,7 @@ namespace {
 // SliceBufferByteStream tests
 //
 
-void NotCalledClosure(void* /*arg*/, grpc_error_handle /*error*/) {
+void NotCalledClosure(void * /*arg*/, grpc_error_handle /*error*/) {
   GPR_ASSERT(false);
 }
 
@@ -245,7 +245,7 @@ TEST(CachingByteStream, SharedCache) {
 }  // namespace
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();

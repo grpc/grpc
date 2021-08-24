@@ -26,22 +26,22 @@
 
 namespace grpc_cpp_generator {
 
-inline std::string DotsToColons(const std::string& name) {
+inline std::string DotsToColons(const std::string &name) {
   return grpc_generator::StringReplace(name, ".", "::");
 }
 
-inline std::string DotsToUnderscores(const std::string& name) {
+inline std::string DotsToUnderscores(const std::string &name) {
   return grpc_generator::StringReplace(name, ".", "_");
 }
 
-inline std::string ClassName(const grpc::protobuf::Descriptor* descriptor,
+inline std::string ClassName(const grpc::protobuf::Descriptor *descriptor,
                              bool qualified) {
   // Find "outer", the descriptor of the top-level message in which
   // "descriptor" is embedded.
-  const grpc::protobuf::Descriptor* outer = descriptor;
+  const grpc::protobuf::Descriptor *outer = descriptor;
   while (outer->containing_type() != NULL) outer = outer->containing_type();
 
-  const std::string& outer_name = outer->full_name();
+  const std::string &outer_name = outer->full_name();
   std::string inner_name = descriptor->full_name().substr(outer_name.size());
 
   if (qualified) {
@@ -54,7 +54,7 @@ inline std::string ClassName(const grpc::protobuf::Descriptor* descriptor,
 // Get leading or trailing comments in a string. Comment lines start with "// ".
 // Leading detached comments are put in front of leading comments.
 template <typename DescriptorType>
-inline std::string GetCppComments(const DescriptorType* desc, bool leading) {
+inline std::string GetCppComments(const DescriptorType *desc, bool leading) {
   return grpc_generator::GetPrefixedComments(desc, leading, "//");
 }
 

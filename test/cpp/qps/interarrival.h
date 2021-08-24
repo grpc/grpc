@@ -74,7 +74,7 @@ class ExpDist final : public RandomDistInterface {
 class InterarrivalTimer {
  public:
   InterarrivalTimer() {}
-  void init(const RandomDistInterface& r, int threads, int entries = 1000000) {
+  void init(const RandomDistInterface &r, int threads, int entries = 1000000) {
     std::random_device devrand;
     std::mt19937_64 generator(devrand());
     std::uniform_real_distribution<double> rando(0, 1);

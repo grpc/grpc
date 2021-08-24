@@ -48,9 +48,9 @@
 
 /* This test exercises IPv4, IPv6, and dualstack sockets in various ways. */
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
-static void drain_cq(grpc_completion_queue* cq) {
+static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(
@@ -58,8 +58,8 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void log_resolved_addrs(const char* label, const char* hostname) {
-  grpc_resolved_addresses* res = nullptr;
+static void log_resolved_addrs(const char *label, const char *hostname) {
+  grpc_resolved_addresses *res = nullptr;
   grpc_error_handle error = grpc_blocking_resolve_address(hostname, "80", &res);
   if (error != GRPC_ERROR_NONE || res == nullptr) {
     GRPC_LOG_IF_ERROR(hostname, error);
@@ -72,19 +72,19 @@ static void log_resolved_addrs(const char* label, const char* hostname) {
   grpc_resolved_addresses_destroy(res);
 }
 
-void test_connect(const char* server_host, const char* client_host, int port,
+void test_connect(const char *server_host, const char *client_host, int port,
                   int expect_ok) {
-  grpc_channel* client;
-  grpc_server* server;
-  grpc_completion_queue* cq;
-  grpc_completion_queue* shutdown_cq;
-  grpc_call* c;
-  grpc_call* s;
-  cq_verifier* cqv;
+  grpc_channel *client;
+  grpc_server *server;
+  grpc_completion_queue *cq;
+  grpc_completion_queue *shutdown_cq;
+  grpc_call *c;
+  grpc_call *s;
+  cq_verifier *cqv;
   gpr_timespec deadline;
   int got_port;
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -93,7 +93,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
   grpc_slice details;
   int was_cancelled = 2;
   grpc_call_details call_details;
-  char* peer;
+  char *peer;
   int picked_port = 0;
 
   if (port == 0) {
@@ -130,7 +130,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
         absl::StrSplit(client_host, ',', absl::SkipEmpty());
     std::vector<std::string> hosts_with_port;
     hosts_with_port.reserve(uri_parts.size());
-    for (const absl::string_view& uri_part : uri_parts) {
+    for (const absl::string_view &uri_part : uri_parts) {
       hosts_with_port.push_back(absl::StrFormat("%s:%d", uri_part, port));
     }
     client_hostport = absl::StrJoin(hosts_with_port, ",");
@@ -275,8 +275,8 @@ void test_connect(const char* server_host, const char* client_host, int port,
   }
 }
 
-int external_dns_works(const char* host) {
-  grpc_resolved_addresses* res = nullptr;
+int external_dns_works(const char *host) {
+  grpc_resolved_addresses *res = nullptr;
   grpc_error_handle error = grpc_blocking_resolve_address(host, "80", &res);
   GRPC_ERROR_UNREF(error);
   if (res != nullptr) {
@@ -286,7 +286,7 @@ int external_dns_works(const char* host) {
   return 0;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   int do_ipv6 = 1;
 
   grpc::testing::TestEnvironment env(argc, argv);
@@ -359,6 +359,6 @@ int main(int argc, char** argv) {
 
 #else /* GRPC_POSIX_SOCKET_EV */
 
-int main(int argc, char** argv) { return 1; }
+int main(int argc, char **argv) { return 1; }
 
 #endif /* GRPC_POSIX_SOCKET_EV */

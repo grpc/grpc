@@ -49,17 +49,17 @@
   "\x00\x00\x20\x00\x00\x00\x00\x00\x01" \
   "\x00\x00\x00\x00"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
-static void verifier(grpc_server* server, grpc_completion_queue* cq,
-                     void* /*registered_method*/) {
+static void verifier(grpc_server *server, grpc_completion_queue *cq,
+                     void * /*registered_method*/) {
   grpc_call_error error;
-  grpc_call* s;
+  grpc_call *s;
   grpc_call_details call_details;
-  grpc_byte_buffer* request_payload_recv = nullptr;
-  grpc_op* op;
+  grpc_byte_buffer *request_payload_recv = nullptr;
+  grpc_op *op;
   grpc_op ops[6];
-  cq_verifier* cqv = cq_verifier_create(cq);
+  cq_verifier *cqv = cq_verifier_create(cq);
   grpc_metadata_array request_metadata_recv;
   int was_cancelled = 2;
 
@@ -121,7 +121,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   cq_verifier_destroy(cqv);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 

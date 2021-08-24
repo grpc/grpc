@@ -36,8 +36,8 @@ namespace testing {
 
 class BenchmarkServiceImpl final : public BenchmarkService::Service {
  public:
-  Status UnaryCall(ServerContext* /*context*/, const SimpleRequest* request,
-                   SimpleResponse* response) override {
+  Status UnaryCall(ServerContext * /*context*/, const SimpleRequest *request,
+                   SimpleResponse *response) override {
     auto s = SetResponse(request, response);
     if (!s.ok()) {
       return s;
@@ -45,8 +45,8 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
     return Status::OK;
   }
   Status StreamingCall(
-      ServerContext* /*context*/,
-      ServerReaderWriter<SimpleResponse, SimpleRequest>* stream) override {
+      ServerContext * /*context*/,
+      ServerReaderWriter<SimpleResponse, SimpleRequest> *stream) override {
     SimpleRequest request;
     while (stream->Read(&request)) {
       SimpleResponse response;
@@ -60,18 +60,18 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
     }
     return Status::OK;
   }
-  Status StreamingFromClient(ServerContext* context,
-                             ServerReader<SimpleRequest>* stream,
-                             SimpleResponse* response) override {
+  Status StreamingFromClient(ServerContext *context,
+                             ServerReader<SimpleRequest> *stream,
+                             SimpleResponse *response) override {
     auto s = ClientPull(context, stream, response);
     if (!s.ok()) {
       return s;
     }
     return Status::OK;
   }
-  Status StreamingFromServer(ServerContext* context,
-                             const SimpleRequest* request,
-                             ServerWriter<SimpleResponse>* stream) override {
+  Status StreamingFromServer(ServerContext *context,
+                             const SimpleRequest *request,
+                             ServerWriter<SimpleResponse> *stream) override {
     SimpleResponse response;
     auto s = SetResponse(request, &response);
     if (!s.ok()) {
@@ -80,8 +80,8 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
     return ServerPush(context, stream, response, nullptr);
   }
   Status StreamingBothWays(
-      ServerContext* context,
-      ServerReaderWriter<SimpleResponse, SimpleRequest>* stream) override {
+      ServerContext *context,
+      ServerReaderWriter<SimpleResponse, SimpleRequest> *stream) override {
     // Read the first client message to setup server response
     SimpleRequest request;
     if (!stream->Read(&request)) {
@@ -114,8 +114,8 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
 
  private:
   template <class R>
-  static Status ClientPull(ServerContext* /*context*/, R* stream,
-                           SimpleResponse* response) {
+  static Status ClientPull(ServerContext * /*context*/, R *stream,
+                           SimpleResponse *response) {
     SimpleRequest request;
     while (stream->Read(&request)) {
     }
@@ -128,9 +128,9 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
     return Status::OK;
   }
   template <class W>
-  static Status ServerPush(ServerContext* /*context*/, W* stream,
-                           const SimpleResponse& response,
-                           const std::function<bool()>& done) {
+  static Status ServerPush(ServerContext * /*context*/, W *stream,
+                           const SimpleResponse &response,
+                           const std::function<bool()> &done) {
     while ((done == nullptr) || !done()) {
       // TODO(vjpai): Add potential for rate-pacing on this
       if (!stream->Write(response)) {
@@ -139,8 +139,8 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
     }
     return Status::OK;
   }
-  static Status SetResponse(const SimpleRequest* request,
-                            SimpleResponse* response) {
+  static Status SetResponse(const SimpleRequest *request,
+                            SimpleResponse *response) {
     if (request->response_size() > 0) {
       if (!Server::SetPayload(request->response_type(),
                               request->response_size(),
@@ -154,7 +154,7 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
 
 class SynchronousServer final : public grpc::testing::Server {
  public:
-  explicit SynchronousServer(const ServerConfig& config) : Server(config) {
+  explicit SynchronousServer(const ServerConfig &config) : Server(config) {
     std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
 
     auto port_num = port();
@@ -179,7 +179,7 @@ class SynchronousServer final : public grpc::testing::Server {
   }
 
   std::shared_ptr<Channel> InProcessChannel(
-      const ChannelArguments& args) override {
+      const ChannelArguments &args) override {
     return impl_->InProcessChannel(args);
   }
 
@@ -189,7 +189,7 @@ class SynchronousServer final : public grpc::testing::Server {
 };
 
 std::unique_ptr<grpc::testing::Server> CreateSynchronousServer(
-    const ServerConfig& config) {
+    const ServerConfig &config) {
   return std::unique_ptr<Server>(new SynchronousServer(config));
 }
 

@@ -49,7 +49,7 @@
  * a c-ares header that is not public.
  * See https://github.com/c-ares/c-ares/issues/206. */
 struct iovec {
-  void* iov_base;
+  void *iov_base;
   size_t iov_len;
 };
 
@@ -72,8 +72,8 @@ class WSAErrorContext {
   }
 
   /* Disallow copy and assignment operators */
-  WSAErrorContext(const WSAErrorContext&) = delete;
-  WSAErrorContext& operator=(const WSAErrorContext&) = delete;
+  WSAErrorContext(const WSAErrorContext &) = delete;
+  WSAErrorContext &operator=(const WSAErrorContext &) = delete;
 
   void SetWSAError(int error) { error_ = error; }
 
@@ -141,7 +141,7 @@ class GrpcPolledFdWindows {
     write_closure_ = nullptr;
   }
 
-  void RegisterForOnReadableLocked(grpc_closure* read_closure) {
+  void RegisterForOnReadableLocked(grpc_closure *read_closure) {
     GPR_ASSERT(read_closure_ == nullptr);
     read_closure_ = read_closure;
     GPR_ASSERT(GRPC_SLICE_LENGTH(read_buf_) == 0);
@@ -168,17 +168,17 @@ class GrpcPolledFdWindows {
       return;
     }
     WSABUF buffer;
-    buffer.buf = (char*)GRPC_SLICE_START_PTR(read_buf_);
+    buffer.buf = (char *)GRPC_SLICE_START_PTR(read_buf_);
     buffer.len = GRPC_SLICE_LENGTH(read_buf_);
     memset(&winsocket_->read_info.overlapped, 0, sizeof(OVERLAPPED));
     recv_from_source_addr_len_ = sizeof(recv_from_source_addr_);
     DWORD flags = 0;
     if (WSARecvFrom(grpc_winsocket_wrapped_socket(winsocket_), &buffer, 1,
-                    nullptr, &flags, (sockaddr*)recv_from_source_addr_,
+                    nullptr, &flags, (sockaddr *)recv_from_source_addr_,
                     &recv_from_source_addr_len_,
                     &winsocket_->read_info.overlapped, nullptr)) {
       int wsa_last_error = WSAGetLastError();
-      char* msg = gpr_format_message(wsa_last_error);
+      char *msg = gpr_format_message(wsa_last_error);
       GRPC_CARES_TRACE_LOG(
           "fd:|%s| RegisterForOnReadableLocked WSARecvFrom error code:|%d| "
           "msg:|%s|",
@@ -193,7 +193,7 @@ class GrpcPolledFdWindows {
     grpc_socket_notify_on_read(winsocket_, &outer_read_closure_);
   }
 
-  void RegisterForOnWriteableLocked(grpc_closure* write_closure) {
+  void RegisterForOnWriteableLocked(grpc_closure *write_closure) {
     if (socket_type_ == SOCK_DGRAM) {
       GRPC_CARES_TRACE_LOG("fd:|%s| RegisterForOnWriteableLocked called",
                            GetName());
@@ -261,11 +261,11 @@ class GrpcPolledFdWindows {
     return grpc_winsocket_wrapped_socket(winsocket_);
   }
 
-  const char* GetName() { return name_.c_str(); }
+  const char *GetName() { return name_.c_str(); }
 
-  ares_ssize_t RecvFrom(WSAErrorContext* wsa_error_ctx, void* data,
+  ares_ssize_t RecvFrom(WSAErrorContext *wsa_error_ctx, void *data,
                         ares_socket_t data_len, int flags,
-                        struct sockaddr* from, ares_socklen_t* from_len) {
+                        struct sockaddr *from, ares_socklen_t *from_len) {
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| RecvFrom called read_buf_has_data:%d Current read buf "
         "length:|%d|",
@@ -276,7 +276,7 @@ class GrpcPolledFdWindows {
     }
     ares_ssize_t bytes_read = 0;
     for (size_t i = 0; i < GRPC_SLICE_LENGTH(read_buf_) && i < data_len; i++) {
-      ((char*)data)[i] = GRPC_SLICE_START_PTR(read_buf_)[i];
+      ((char *)data)[i] = GRPC_SLICE_START_PTR(read_buf_)[i];
       bytes_read++;
     }
     read_buf_ = grpc_slice_sub_no_ref(read_buf_, bytes_read,
@@ -294,7 +294,7 @@ class GrpcPolledFdWindows {
     return bytes_read;
   }
 
-  grpc_slice FlattenIovec(const struct iovec* iov, int iov_count) {
+  grpc_slice FlattenIovec(const struct iovec *iov, int iov_count) {
     int total = 0;
     for (int i = 0; i < iov_count; i++) {
       total += iov[i].iov_len;
@@ -303,17 +303,17 @@ class GrpcPolledFdWindows {
     size_t cur = 0;
     for (int i = 0; i < iov_count; i++) {
       for (int k = 0; k < iov[i].iov_len; k++) {
-        GRPC_SLICE_START_PTR(out)[cur++] = ((char*)iov[i].iov_base)[k];
+        GRPC_SLICE_START_PTR(out)[cur++] = ((char *)iov[i].iov_base)[k];
       }
     }
     return out;
   }
 
   int SendWriteBuf(LPDWORD bytes_sent_ptr, LPWSAOVERLAPPED overlapped,
-                   int* wsa_error_code) {
+                   int *wsa_error_code) {
     WSABUF buf;
     buf.len = GRPC_SLICE_LENGTH(write_buf_);
-    buf.buf = (char*)GRPC_SLICE_START_PTR(write_buf_);
+    buf.buf = (char *)GRPC_SLICE_START_PTR(write_buf_);
     DWORD flags = 0;
     int out = WSASend(grpc_winsocket_wrapped_socket(winsocket_), &buf, 1,
                       bytes_sent_ptr, flags, overlapped, nullptr);
@@ -327,7 +327,7 @@ class GrpcPolledFdWindows {
     return out;
   }
 
-  ares_ssize_t SendV(WSAErrorContext* wsa_error_ctx, const struct iovec* iov,
+  ares_ssize_t SendV(WSAErrorContext *wsa_error_ctx, const struct iovec *iov,
                      int iov_count) {
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| SendV called connect_done_:%d wsa_connect_error_:%d",
@@ -350,7 +350,7 @@ class GrpcPolledFdWindows {
     }
   }
 
-  ares_ssize_t SendVUDP(WSAErrorContext* wsa_error_ctx, const struct iovec* iov,
+  ares_ssize_t SendVUDP(WSAErrorContext *wsa_error_ctx, const struct iovec *iov,
                         int iov_count) {
     // c-ares doesn't handle retryable errors on writes of UDP sockets.
     // Therefore, the sendv handler for UDP sockets must only attempt
@@ -365,7 +365,7 @@ class GrpcPolledFdWindows {
       grpc_slice_unref_internal(write_buf_);
       write_buf_ = grpc_empty_slice();
       wsa_error_ctx->SetWSAError(wsa_error_code);
-      char* msg = gpr_format_message(wsa_error_code);
+      char *msg = gpr_format_message(wsa_error_code);
       GRPC_CARES_TRACE_LOG(
           "fd:|%s| SendVUDP SendWriteBuf error code:%d msg:|%s|", GetName(),
           wsa_error_code, msg);
@@ -377,7 +377,7 @@ class GrpcPolledFdWindows {
     return bytes_sent;
   }
 
-  ares_ssize_t SendVTCP(WSAErrorContext* wsa_error_ctx, const struct iovec* iov,
+  ares_ssize_t SendVTCP(WSAErrorContext *wsa_error_ctx, const struct iovec *iov,
                         int iov_count) {
     // The "sendv" handler on TCP sockets buffers up write
     // requests and returns an artificial WSAEWOULDBLOCK. Writing that buffer
@@ -420,9 +420,9 @@ class GrpcPolledFdWindows {
     abort();
   }
 
-  static void OnTcpConnect(void* arg, grpc_error_handle error) {
-    GrpcPolledFdWindows* grpc_polled_fd =
-        static_cast<GrpcPolledFdWindows*>(arg);
+  static void OnTcpConnect(void *arg, grpc_error_handle error) {
+    GrpcPolledFdWindows *grpc_polled_fd =
+        static_cast<GrpcPolledFdWindows *>(arg);
     GRPC_ERROR_REF(error);  // ref owned by lambda
     grpc_polled_fd->work_serializer_->Run(
         [grpc_polled_fd, error]() {
@@ -452,7 +452,7 @@ class GrpcPolledFdWindows {
       GPR_ASSERT(transferred_bytes == 0);
       if (!wsa_success) {
         wsa_connect_error_ = WSAGetLastError();
-        char* msg = gpr_format_message(wsa_connect_error_);
+        char *msg = gpr_format_message(wsa_connect_error_);
         GRPC_CARES_TRACE_LOG(
             "fd:%s InnerOnTcpConnectLocked WSA overlapped result code:%d "
             "msg:|%s|",
@@ -475,7 +475,7 @@ class GrpcPolledFdWindows {
     GRPC_ERROR_UNREF(error);
   }
 
-  int Connect(WSAErrorContext* wsa_error_ctx, const struct sockaddr* target,
+  int Connect(WSAErrorContext *wsa_error_ctx, const struct sockaddr *target,
               ares_socklen_t target_len) {
     switch (socket_type_) {
       case SOCK_DGRAM:
@@ -487,7 +487,7 @@ class GrpcPolledFdWindows {
     }
   }
 
-  int ConnectUDP(WSAErrorContext* wsa_error_ctx, const struct sockaddr* target,
+  int ConnectUDP(WSAErrorContext *wsa_error_ctx, const struct sockaddr *target,
                  ares_socklen_t target_len) {
     GRPC_CARES_TRACE_LOG("fd:%s ConnectUDP", GetName());
     GPR_ASSERT(!connect_done_);
@@ -498,7 +498,7 @@ class GrpcPolledFdWindows {
     wsa_connect_error_ = WSAGetLastError();
     wsa_error_ctx->SetWSAError(wsa_connect_error_);
     connect_done_ = true;
-    char* msg = gpr_format_message(wsa_connect_error_);
+    char *msg = gpr_format_message(wsa_connect_error_);
     GRPC_CARES_TRACE_LOG("fd:%s WSAConnect error code:|%d| msg:|%s|", GetName(),
                          wsa_connect_error_, msg);
     gpr_free(msg);
@@ -506,7 +506,7 @@ class GrpcPolledFdWindows {
     return out == 0 ? 0 : -1;
   }
 
-  int ConnectTCP(WSAErrorContext* wsa_error_ctx, const struct sockaddr* target,
+  int ConnectTCP(WSAErrorContext *wsa_error_ctx, const struct sockaddr *target,
                  ares_socklen_t target_len) {
     GRPC_CARES_TRACE_LOG("fd:%s ConnectTCP", GetName());
     LPFN_CONNECTEX ConnectEx;
@@ -518,7 +518,7 @@ class GrpcPolledFdWindows {
                  nullptr) != 0) {
       int wsa_last_error = WSAGetLastError();
       wsa_error_ctx->SetWSAError(wsa_last_error);
-      char* msg = gpr_format_message(wsa_last_error);
+      char *msg = gpr_format_message(wsa_last_error);
       GRPC_CARES_TRACE_LOG(
           "fd:%s WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER) error code:%d "
           "msg:|%s|",
@@ -531,17 +531,17 @@ class GrpcPolledFdWindows {
     grpc_resolved_address wildcard4_addr;
     grpc_resolved_address wildcard6_addr;
     grpc_sockaddr_make_wildcards(0, &wildcard4_addr, &wildcard6_addr);
-    grpc_resolved_address* local_address = nullptr;
+    grpc_resolved_address *local_address = nullptr;
     if (address_family_ == AF_INET) {
       local_address = &wildcard4_addr;
     } else {
       local_address = &wildcard6_addr;
     }
-    if (bind(s, (struct sockaddr*)local_address->addr,
+    if (bind(s, (struct sockaddr *)local_address->addr,
              (int)local_address->len) != 0) {
       int wsa_last_error = WSAGetLastError();
       wsa_error_ctx->SetWSAError(wsa_last_error);
-      char* msg = gpr_format_message(wsa_last_error);
+      char *msg = gpr_format_message(wsa_last_error);
       GRPC_CARES_TRACE_LOG("fd:%s bind error code:%d msg:|%s|", GetName(),
                            wsa_last_error, msg);
       gpr_free(msg);
@@ -555,7 +555,7 @@ class GrpcPolledFdWindows {
       out = -1;
       int wsa_last_error = WSAGetLastError();
       wsa_error_ctx->SetWSAError(wsa_last_error);
-      char* msg = gpr_format_message(wsa_last_error);
+      char *msg = gpr_format_message(wsa_last_error);
       GRPC_CARES_TRACE_LOG("fd:%s ConnectEx error code:%d msg:|%s|", GetName(),
                            wsa_last_error, msg);
       gpr_free(msg);
@@ -576,8 +576,8 @@ class GrpcPolledFdWindows {
     return out;
   }
 
-  static void OnIocpReadable(void* arg, grpc_error_handle error) {
-    GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
+  static void OnIocpReadable(void *arg, grpc_error_handle error) {
+    GrpcPolledFdWindows *polled_fd = static_cast<GrpcPolledFdWindows *>(arg);
     GRPC_ERROR_REF(error);  // ref owned by lambda
     polled_fd->work_serializer_->Run(
         [polled_fd, error]() { polled_fd->OnIocpReadableLocked(error); },
@@ -621,8 +621,8 @@ class GrpcPolledFdWindows {
     ScheduleAndNullReadClosure(error);
   }
 
-  static void OnIocpWriteable(void* arg, grpc_error_handle error) {
-    GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
+  static void OnIocpWriteable(void *arg, grpc_error_handle error) {
+    GrpcPolledFdWindows *polled_fd = static_cast<GrpcPolledFdWindows *>(arg);
     GRPC_ERROR_REF(error);  // error owned by lambda
     polled_fd->work_serializer_->Run(
         [polled_fd, error]() { polled_fd->OnIocpWriteableLocked(error); },
@@ -667,11 +667,11 @@ class GrpcPolledFdWindows {
   grpc_slice read_buf_;
   bool read_buf_has_data_ = false;
   grpc_slice write_buf_;
-  grpc_closure* read_closure_ = nullptr;
-  grpc_closure* write_closure_ = nullptr;
+  grpc_closure *read_closure_ = nullptr;
+  grpc_closure *write_closure_ = nullptr;
   grpc_closure outer_read_closure_;
   grpc_closure outer_write_closure_;
-  grpc_winsocket* winsocket_;
+  grpc_winsocket *winsocket_;
   // tcp_write_state_ is only used on TCP GrpcPolledFds
   WriteState tcp_write_state_;
   std::string name_;
@@ -689,11 +689,11 @@ class GrpcPolledFdWindows {
 };
 
 struct SockToPolledFdEntry {
-  SockToPolledFdEntry(SOCKET s, GrpcPolledFdWindows* fd)
+  SockToPolledFdEntry(SOCKET s, GrpcPolledFdWindows *fd)
       : socket(s), polled_fd(fd) {}
   SOCKET socket;
-  GrpcPolledFdWindows* polled_fd;
-  SockToPolledFdEntry* next = nullptr;
+  GrpcPolledFdWindows *polled_fd;
+  SockToPolledFdEntry *next = nullptr;
 };
 
 /* A SockToPolledFdMap can make ares_socket_t types (SOCKET's on windows)
@@ -708,14 +708,14 @@ class SockToPolledFdMap {
 
   ~SockToPolledFdMap() { GPR_ASSERT(head_ == nullptr); }
 
-  void AddNewSocket(SOCKET s, GrpcPolledFdWindows* polled_fd) {
-    SockToPolledFdEntry* new_node = new SockToPolledFdEntry(s, polled_fd);
+  void AddNewSocket(SOCKET s, GrpcPolledFdWindows *polled_fd) {
+    SockToPolledFdEntry *new_node = new SockToPolledFdEntry(s, polled_fd);
     new_node->next = head_;
     head_ = new_node;
   }
 
-  GrpcPolledFdWindows* LookupPolledFd(SOCKET s) {
-    for (SockToPolledFdEntry* node = head_; node != nullptr;
+  GrpcPolledFdWindows *LookupPolledFd(SOCKET s) {
+    for (SockToPolledFdEntry *node = head_; node != nullptr;
          node = node->next) {
       if (node->socket == s) {
         GPR_ASSERT(node->polled_fd != nullptr);
@@ -727,8 +727,8 @@ class SockToPolledFdMap {
 
   void RemoveEntry(SOCKET s) {
     GPR_ASSERT(head_ != nullptr);
-    SockToPolledFdEntry** prev = &head_;
-    for (SockToPolledFdEntry* node = head_; node != nullptr;
+    SockToPolledFdEntry **prev = &head_;
+    for (SockToPolledFdEntry *node = head_; node != nullptr;
          node = node->next) {
       if (node->socket == s) {
         *prev = node->next;
@@ -746,12 +746,12 @@ class SockToPolledFdMap {
    * special and instead create/add and remove/destroy GrpcPolledFdWindows
    * objects.
    */
-  static ares_socket_t Socket(int af, int type, int protocol, void* user_data) {
+  static ares_socket_t Socket(int af, int type, int protocol, void *user_data) {
     if (type != SOCK_DGRAM && type != SOCK_STREAM) {
       GRPC_CARES_TRACE_LOG("Socket called with invalid socket type:%d", type);
       return INVALID_SOCKET;
     }
-    SockToPolledFdMap* map = static_cast<SockToPolledFdMap*>(user_data);
+    SockToPolledFdMap *map = static_cast<SockToPolledFdMap *>(user_data);
     SOCKET s = WSASocket(af, type, protocol, nullptr, 0,
                          grpc_get_default_wsa_socket_flags());
     if (s == INVALID_SOCKET) {
@@ -761,7 +761,7 @@ class SockToPolledFdMap {
       return s;
     }
     grpc_tcp_set_non_block(s);
-    GrpcPolledFdWindows* polled_fd =
+    GrpcPolledFdWindows *polled_fd =
         new GrpcPolledFdWindows(s, map->work_serializer_, af, type);
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| created with params af:%d type:%d protocol:%d",
@@ -770,35 +770,35 @@ class SockToPolledFdMap {
     return s;
   }
 
-  static int Connect(ares_socket_t as, const struct sockaddr* target,
-                     ares_socklen_t target_len, void* user_data) {
+  static int Connect(ares_socket_t as, const struct sockaddr *target,
+                     ares_socklen_t target_len, void *user_data) {
     WSAErrorContext wsa_error_ctx;
-    SockToPolledFdMap* map = static_cast<SockToPolledFdMap*>(user_data);
-    GrpcPolledFdWindows* polled_fd = map->LookupPolledFd(as);
+    SockToPolledFdMap *map = static_cast<SockToPolledFdMap *>(user_data);
+    GrpcPolledFdWindows *polled_fd = map->LookupPolledFd(as);
     return polled_fd->Connect(&wsa_error_ctx, target, target_len);
   }
 
-  static ares_ssize_t SendV(ares_socket_t as, const struct iovec* iov,
-                            int iovec_count, void* user_data) {
+  static ares_ssize_t SendV(ares_socket_t as, const struct iovec *iov,
+                            int iovec_count, void *user_data) {
     WSAErrorContext wsa_error_ctx;
-    SockToPolledFdMap* map = static_cast<SockToPolledFdMap*>(user_data);
-    GrpcPolledFdWindows* polled_fd = map->LookupPolledFd(as);
+    SockToPolledFdMap *map = static_cast<SockToPolledFdMap *>(user_data);
+    GrpcPolledFdWindows *polled_fd = map->LookupPolledFd(as);
     return polled_fd->SendV(&wsa_error_ctx, iov, iovec_count);
   }
 
-  static ares_ssize_t RecvFrom(ares_socket_t as, void* data, size_t data_len,
-                               int flags, struct sockaddr* from,
-                               ares_socklen_t* from_len, void* user_data) {
+  static ares_ssize_t RecvFrom(ares_socket_t as, void *data, size_t data_len,
+                               int flags, struct sockaddr *from,
+                               ares_socklen_t *from_len, void *user_data) {
     WSAErrorContext wsa_error_ctx;
-    SockToPolledFdMap* map = static_cast<SockToPolledFdMap*>(user_data);
-    GrpcPolledFdWindows* polled_fd = map->LookupPolledFd(as);
+    SockToPolledFdMap *map = static_cast<SockToPolledFdMap *>(user_data);
+    GrpcPolledFdWindows *polled_fd = map->LookupPolledFd(as);
     return polled_fd->RecvFrom(&wsa_error_ctx, data, data_len, flags, from,
                                from_len);
   }
 
-  static int CloseSocket(SOCKET s, void* user_data) {
-    SockToPolledFdMap* map = static_cast<SockToPolledFdMap*>(user_data);
-    GrpcPolledFdWindows* polled_fd = map->LookupPolledFd(s);
+  static int CloseSocket(SOCKET s, void *user_data) {
+    SockToPolledFdMap *map = static_cast<SockToPolledFdMap *>(user_data);
+    GrpcPolledFdWindows *polled_fd = map->LookupPolledFd(s);
     map->RemoveEntry(s);
     // See https://github.com/grpc/grpc/pull/20284, this trace log is
     // intentionally placed to attempt to trigger a crash in case of a
@@ -817,7 +817,7 @@ class SockToPolledFdMap {
   }
 
  private:
-  SockToPolledFdEntry* head_ = nullptr;
+  SockToPolledFdEntry *head_ = nullptr;
   std::shared_ptr<WorkSerializer> work_serializer_;
 };
 
@@ -834,16 +834,16 @@ const struct ares_socket_functions custom_ares_sock_funcs = {
    so that c-ares can close it via usual socket teardown. */
 class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
  public:
-  explicit GrpcPolledFdWindowsWrapper(GrpcPolledFdWindows* wrapped)
+  explicit GrpcPolledFdWindowsWrapper(GrpcPolledFdWindows *wrapped)
       : wrapped_(wrapped) {}
 
   ~GrpcPolledFdWindowsWrapper() {}
 
-  void RegisterForOnReadableLocked(grpc_closure* read_closure) override {
+  void RegisterForOnReadableLocked(grpc_closure *read_closure) override {
     wrapped_->RegisterForOnReadableLocked(read_closure);
   }
 
-  void RegisterForOnWriteableLocked(grpc_closure* write_closure) override {
+  void RegisterForOnWriteableLocked(grpc_closure *write_closure) override {
     wrapped_->RegisterForOnWriteableLocked(write_closure);
   }
 
@@ -859,10 +859,10 @@ class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
     return wrapped_->GetWrappedAresSocketLocked();
   }
 
-  const char* GetName() override { return wrapped_->GetName(); }
+  const char *GetName() override { return wrapped_->GetName(); }
 
  private:
-  GrpcPolledFdWindows* wrapped_;
+  GrpcPolledFdWindows *wrapped_;
 };
 
 class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
@@ -871,10 +871,10 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
       std::shared_ptr<WorkSerializer> work_serializer)
       : sock_to_polled_fd_map_(std::move(work_serializer)) {}
 
-  GrpcPolledFd* NewGrpcPolledFdLocked(
-      ares_socket_t as, grpc_pollset_set* driver_pollset_set,
+  GrpcPolledFd *NewGrpcPolledFdLocked(
+      ares_socket_t as, grpc_pollset_set *driver_pollset_set,
       std::shared_ptr<WorkSerializer> work_serializer) override {
-    GrpcPolledFdWindows* polled_fd = sock_to_polled_fd_map_.LookupPolledFd(as);
+    GrpcPolledFdWindows *polled_fd = sock_to_polled_fd_map_.LookupPolledFd(as);
     // Set a flag so that the virtual socket "close" method knows it
     // doesn't need to call ShutdownLocked, since now the driver will.
     polled_fd->set_gotten_into_driver_list();

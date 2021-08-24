@@ -34,10 +34,10 @@ const char key2[] = "metadata-key2";
 const char val1[] = "metadata-val1";
 const char val2[] = "metadata-val2";
 
-bool ServerInitialMetadataContains(const ClientContext& context,
-                                   const grpc::string_ref& key,
-                                   const grpc::string_ref& value) {
-  const auto& server_metadata = context.GetServerInitialMetadata();
+bool ServerInitialMetadataContains(const ClientContext &context,
+                                   const grpc::string_ref &key,
+                                   const grpc::string_ref &value) {
+  const auto &server_metadata = context.GetServerInitialMetadata();
   for (auto iter = server_metadata.begin(); iter != server_metadata.end();
        ++iter) {
     if (iter->first == key && iter->second == value) {
@@ -75,7 +75,7 @@ TEST(ClientContextTestPeerTest, GetSendInitialMetadata) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

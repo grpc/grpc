@@ -31,18 +31,18 @@
 #include "src/core/lib/security/credentials/credentials.h"
 
 typedef struct {
-  gpr_mu* mu;
+  gpr_mu *mu;
   grpc_polling_entity pops;
   bool is_done;
-  char* token;
+  char *token;
 
   grpc_credentials_mdelem_array md_array;
   grpc_closure closure;
 } oauth2_request;
 
-static void on_oauth2_response(void* arg, grpc_error_handle error) {
-  oauth2_request* request = static_cast<oauth2_request*>(arg);
-  char* token = nullptr;
+static void on_oauth2_response(void *arg, grpc_error_handle error) {
+  oauth2_request *request = static_cast<oauth2_request *>(arg);
+  char *token = nullptr;
   grpc_slice token_slice;
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Fetching token failed: %s",
@@ -50,7 +50,7 @@ static void on_oauth2_response(void* arg, grpc_error_handle error) {
   } else {
     GPR_ASSERT(request->md_array.size == 1);
     token_slice = GRPC_MDVALUE(request->md_array.md[0]);
-    token = static_cast<char*>(gpr_malloc(GRPC_SLICE_LENGTH(token_slice) + 1));
+    token = static_cast<char *>(gpr_malloc(GRPC_SLICE_LENGTH(token_slice) + 1));
     memcpy(token, GRPC_SLICE_START_PTR(token_slice),
            GRPC_SLICE_LENGTH(token_slice));
     token[GRPC_SLICE_LENGTH(token_slice)] = '\0';
@@ -65,18 +65,18 @@ static void on_oauth2_response(void* arg, grpc_error_handle error) {
   gpr_mu_unlock(request->mu);
 }
 
-static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
+static void do_nothing(void * /*arg*/, grpc_error_handle /*error*/) {}
 
-char* grpc_test_fetch_oauth2_token_with_credentials(
-    grpc_call_credentials* creds) {
+char *grpc_test_fetch_oauth2_token_with_credentials(
+    grpc_call_credentials *creds) {
   oauth2_request request;
   memset(&request, 0, sizeof(request));
   grpc_core::ExecCtx exec_ctx;
   grpc_closure do_nothing_closure;
   grpc_auth_metadata_context null_ctx = {"", "", nullptr, nullptr};
 
-  grpc_pollset* pollset =
-      static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+  grpc_pollset *pollset =
+      static_cast<grpc_pollset *>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &request.mu);
   request.pops = grpc_polling_entity_create_from_pollset(pollset);
   request.is_done = false;
@@ -98,7 +98,7 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
 
   gpr_mu_lock(request.mu);
   while (!request.is_done) {
-    grpc_pollset_worker* worker = nullptr;
+    grpc_pollset_worker *worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(grpc_polling_entity_pollset(&request.pops),

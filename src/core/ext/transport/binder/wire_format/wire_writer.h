@@ -31,13 +31,13 @@ namespace grpc_binder {
 class WireWriter {
  public:
   virtual ~WireWriter() = default;
-  virtual absl::Status RpcCall(const Transaction& call) = 0;
+  virtual absl::Status RpcCall(const Transaction &call) = 0;
 };
 
 class WireWriterImpl : public WireWriter {
  public:
   explicit WireWriterImpl(std::unique_ptr<Binder> binder);
-  absl::Status RpcCall(const Transaction& tx) override;
+  absl::Status RpcCall(const Transaction &tx) override;
 
  private:
   grpc_core::Mutex mu_;

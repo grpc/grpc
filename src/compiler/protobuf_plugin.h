@@ -29,14 +29,14 @@
 
 // Get leading or trailing comments in a string.
 template <typename DescriptorType>
-inline std::string GetCommentsHelper(const DescriptorType* desc, bool leading,
-                                     const std::string& prefix) {
+inline std::string GetCommentsHelper(const DescriptorType *desc, bool leading,
+                                     const std::string &prefix) {
   return grpc_generator::GetPrefixedComments(desc, leading, prefix);
 }
 
 class ProtoBufMethod : public grpc_generator::Method {
  public:
-  ProtoBufMethod(const grpc::protobuf::MethodDescriptor* method)
+  ProtoBufMethod(const grpc::protobuf::MethodDescriptor *method)
       : method_(method) {}
 
   std::string name() const { return method_->name(); }
@@ -57,18 +57,18 @@ class ProtoBufMethod : public grpc_generator::Method {
 
   // TODO(https://github.com/grpc/grpc/issues/18800): Clean this up.
   bool get_module_and_message_path_input(
-      std::string* str, std::string generator_file_name,
+      std::string *str, std::string generator_file_name,
       bool generate_in_pb2_grpc, std::string import_prefix,
-      const std::vector<std::string>& prefixes_to_filter) const final {
+      const std::vector<std::string> &prefixes_to_filter) const final {
     return grpc_python_generator::GetModuleAndMessagePath(
         method_->input_type(), str, generator_file_name, generate_in_pb2_grpc,
         import_prefix, prefixes_to_filter);
   }
 
   bool get_module_and_message_path_output(
-      std::string* str, std::string generator_file_name,
+      std::string *str, std::string generator_file_name,
       bool generate_in_pb2_grpc, std::string import_prefix,
-      const std::vector<std::string>& prefixes_to_filter) const final {
+      const std::vector<std::string> &prefixes_to_filter) const final {
     return grpc_python_generator::GetModuleAndMessagePath(
         method_->output_type(), str, generator_file_name, generate_in_pb2_grpc,
         import_prefix, prefixes_to_filter);
@@ -99,12 +99,12 @@ class ProtoBufMethod : public grpc_generator::Method {
   }
 
  private:
-  const grpc::protobuf::MethodDescriptor* method_;
+  const grpc::protobuf::MethodDescriptor *method_;
 };
 
 class ProtoBufService : public grpc_generator::Service {
  public:
-  ProtoBufService(const grpc::protobuf::ServiceDescriptor* service)
+  ProtoBufService(const grpc::protobuf::ServiceDescriptor *service)
       : service_(service) {}
 
   std::string name() const { return service_->name(); }
@@ -128,21 +128,21 @@ class ProtoBufService : public grpc_generator::Service {
   }
 
  private:
-  const grpc::protobuf::ServiceDescriptor* service_;
+  const grpc::protobuf::ServiceDescriptor *service_;
 };
 
 class ProtoBufPrinter : public grpc_generator::Printer {
  public:
-  ProtoBufPrinter(std::string* str)
+  ProtoBufPrinter(std::string *str)
       : output_stream_(str), printer_(&output_stream_, '$') {}
 
-  void Print(const std::map<std::string, std::string>& vars,
-             const char* string_template) {
+  void Print(const std::map<std::string, std::string> &vars,
+             const char *string_template) {
     printer_.Print(vars, string_template);
   }
 
-  void Print(const char* string) { printer_.Print(string); }
-  void PrintRaw(const char* string) { printer_.PrintRaw(string); }
+  void Print(const char *string) { printer_.Print(string); }
+  void PrintRaw(const char *string) { printer_.PrintRaw(string); }
   void Indent() { printer_.Indent(); }
   void Outdent() { printer_.Outdent(); }
 
@@ -153,7 +153,7 @@ class ProtoBufPrinter : public grpc_generator::Printer {
 
 class ProtoBufFile : public grpc_generator::File {
  public:
-  ProtoBufFile(const grpc::protobuf::FileDescriptor* file) : file_(file) {}
+  ProtoBufFile(const grpc::protobuf::FileDescriptor *file) : file_(file) {}
 
   std::string filename() const { return file_->name(); }
   std::string filename_without_ext() const {
@@ -174,7 +174,7 @@ class ProtoBufFile : public grpc_generator::File {
   }
 
   std::unique_ptr<grpc_generator::Printer> CreatePrinter(
-      std::string* str) const {
+      std::string *str) const {
     return std::unique_ptr<grpc_generator::Printer>(new ProtoBufPrinter(str));
   }
 
@@ -193,14 +193,14 @@ class ProtoBufFile : public grpc_generator::File {
   vector<std::string> GetImportNames() const {
     vector<std::string> proto_names;
     for (int i = 0; i < file_->dependency_count(); ++i) {
-      const auto& dep = *file_->dependency(i);
+      const auto &dep = *file_->dependency(i);
       proto_names.push_back(dep.name());
     }
     return proto_names;
   }
 
  private:
-  const grpc::protobuf::FileDescriptor* file_;
+  const grpc::protobuf::FileDescriptor *file_;
 };
 
 #endif  // GRPC_INTERNAL_COMPILER_PROTOBUF_PLUGIN_H

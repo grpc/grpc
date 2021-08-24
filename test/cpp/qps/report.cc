@@ -36,49 +36,49 @@ void CompositeReporter::add(std::unique_ptr<Reporter> reporter) {
   reporters_.emplace_back(std::move(reporter));
 }
 
-void CompositeReporter::ReportQPS(const ScenarioResult& result) {
+void CompositeReporter::ReportQPS(const ScenarioResult &result) {
   for (size_t i = 0; i < reporters_.size(); ++i) {
     reporters_[i]->ReportQPS(result);
   }
 }
 
-void CompositeReporter::ReportQPSPerCore(const ScenarioResult& result) {
+void CompositeReporter::ReportQPSPerCore(const ScenarioResult &result) {
   for (size_t i = 0; i < reporters_.size(); ++i) {
     reporters_[i]->ReportQPSPerCore(result);
   }
 }
 
-void CompositeReporter::ReportLatency(const ScenarioResult& result) {
+void CompositeReporter::ReportLatency(const ScenarioResult &result) {
   for (size_t i = 0; i < reporters_.size(); ++i) {
     reporters_[i]->ReportLatency(result);
   }
 }
 
-void CompositeReporter::ReportTimes(const ScenarioResult& result) {
+void CompositeReporter::ReportTimes(const ScenarioResult &result) {
   for (size_t i = 0; i < reporters_.size(); ++i) {
     reporters_[i]->ReportTimes(result);
   }
 }
 
-void CompositeReporter::ReportCpuUsage(const ScenarioResult& result) {
+void CompositeReporter::ReportCpuUsage(const ScenarioResult &result) {
   for (size_t i = 0; i < reporters_.size(); ++i) {
     reporters_[i]->ReportCpuUsage(result);
   }
 }
 
-void CompositeReporter::ReportPollCount(const ScenarioResult& result) {
+void CompositeReporter::ReportPollCount(const ScenarioResult &result) {
   for (size_t i = 0; i < reporters_.size(); ++i) {
     reporters_[i]->ReportPollCount(result);
   }
 }
 
-void CompositeReporter::ReportQueriesPerCpuSec(const ScenarioResult& result) {
+void CompositeReporter::ReportQueriesPerCpuSec(const ScenarioResult &result) {
   for (size_t i = 0; i < reporters_.size(); ++i) {
     reporters_[i]->ReportQueriesPerCpuSec(result);
   }
 }
 
-void GprLogReporter::ReportQPS(const ScenarioResult& result) {
+void GprLogReporter::ReportQPS(const ScenarioResult &result) {
   gpr_log(GPR_INFO, "QPS: %.1f", result.summary().qps());
   if (result.summary().failed_requests_per_second() > 0) {
     gpr_log(GPR_INFO, "failed requests/second: %.1f",
@@ -98,8 +98,8 @@ void GprLogReporter::ReportQPS(const ScenarioResult& result) {
   }
 }
 
-void GprLogReporter::ReportCoreStats(const char* name, int idx,
-                                     const grpc::core::Stats& stats) {
+void GprLogReporter::ReportCoreStats(const char *name, int idx,
+                                     const grpc::core::Stats &stats) {
   grpc_stats_data data;
   ProtoToCoreStats(stats, &data);
   for (int i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
@@ -118,12 +118,12 @@ void GprLogReporter::ReportCoreStats(const char* name, int idx,
   }
 }
 
-void GprLogReporter::ReportQPSPerCore(const ScenarioResult& result) {
+void GprLogReporter::ReportQPSPerCore(const ScenarioResult &result) {
   gpr_log(GPR_INFO, "QPS: %.1f (%.1f/server core)", result.summary().qps(),
           result.summary().qps_per_server_core());
 }
 
-void GprLogReporter::ReportLatency(const ScenarioResult& result) {
+void GprLogReporter::ReportLatency(const ScenarioResult &result) {
   gpr_log(GPR_INFO,
           "Latencies (50/90/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f/%.1f us",
           result.summary().latency_50() / 1000,
@@ -133,7 +133,7 @@ void GprLogReporter::ReportLatency(const ScenarioResult& result) {
           result.summary().latency_999() / 1000);
 }
 
-void GprLogReporter::ReportTimes(const ScenarioResult& result) {
+void GprLogReporter::ReportTimes(const ScenarioResult &result) {
   gpr_log(GPR_INFO, "Server system time: %.2f%%",
           result.summary().server_system_time());
   gpr_log(GPR_INFO, "Server user time:   %.2f%%",
@@ -144,26 +144,26 @@ void GprLogReporter::ReportTimes(const ScenarioResult& result) {
           result.summary().client_user_time());
 }
 
-void GprLogReporter::ReportCpuUsage(const ScenarioResult& result) {
+void GprLogReporter::ReportCpuUsage(const ScenarioResult &result) {
   gpr_log(GPR_INFO, "Server CPU usage: %.2f%%",
           result.summary().server_cpu_usage());
 }
 
-void GprLogReporter::ReportPollCount(const ScenarioResult& result) {
+void GprLogReporter::ReportPollCount(const ScenarioResult &result) {
   gpr_log(GPR_INFO, "Client Polls per Request: %.2f",
           result.summary().client_polls_per_request());
   gpr_log(GPR_INFO, "Server Polls per Request: %.2f",
           result.summary().server_polls_per_request());
 }
 
-void GprLogReporter::ReportQueriesPerCpuSec(const ScenarioResult& result) {
+void GprLogReporter::ReportQueriesPerCpuSec(const ScenarioResult &result) {
   gpr_log(GPR_INFO, "Server Queries/CPU-sec: %.2f",
           result.summary().server_queries_per_cpu_sec());
   gpr_log(GPR_INFO, "Client Queries/CPU-sec: %.2f",
           result.summary().client_queries_per_cpu_sec());
 }
 
-void JsonReporter::ReportQPS(const ScenarioResult& result) {
+void JsonReporter::ReportQPS(const ScenarioResult &result) {
   std::string json_string =
       SerializeJson(result, "type.googleapis.com/grpc.testing.ScenarioResult");
   std::ofstream output_file(report_file_);
@@ -171,31 +171,31 @@ void JsonReporter::ReportQPS(const ScenarioResult& result) {
   output_file.close();
 }
 
-void JsonReporter::ReportQPSPerCore(const ScenarioResult& /*result*/) {
+void JsonReporter::ReportQPSPerCore(const ScenarioResult & /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void JsonReporter::ReportLatency(const ScenarioResult& /*result*/) {
+void JsonReporter::ReportLatency(const ScenarioResult & /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void JsonReporter::ReportTimes(const ScenarioResult& /*result*/) {
+void JsonReporter::ReportTimes(const ScenarioResult & /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void JsonReporter::ReportCpuUsage(const ScenarioResult& /*result*/) {
+void JsonReporter::ReportCpuUsage(const ScenarioResult & /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void JsonReporter::ReportPollCount(const ScenarioResult& /*result*/) {
+void JsonReporter::ReportPollCount(const ScenarioResult & /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void JsonReporter::ReportQueriesPerCpuSec(const ScenarioResult& /*result*/) {
+void JsonReporter::ReportQueriesPerCpuSec(const ScenarioResult & /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void RpcReporter::ReportQPS(const ScenarioResult& result) {
+void RpcReporter::ReportQPS(const ScenarioResult &result) {
   grpc::ClientContext context;
   grpc::Status status;
   Void phony;
@@ -211,27 +211,27 @@ void RpcReporter::ReportQPS(const ScenarioResult& result) {
   }
 }
 
-void RpcReporter::ReportQPSPerCore(const ScenarioResult& /*result*/) {
+void RpcReporter::ReportQPSPerCore(const ScenarioResult & /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void RpcReporter::ReportLatency(const ScenarioResult& /*result*/) {
+void RpcReporter::ReportLatency(const ScenarioResult & /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void RpcReporter::ReportTimes(const ScenarioResult& /*result*/) {
+void RpcReporter::ReportTimes(const ScenarioResult & /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void RpcReporter::ReportCpuUsage(const ScenarioResult& /*result*/) {
+void RpcReporter::ReportCpuUsage(const ScenarioResult & /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void RpcReporter::ReportPollCount(const ScenarioResult& /*result*/) {
+void RpcReporter::ReportPollCount(const ScenarioResult & /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void RpcReporter::ReportQueriesPerCpuSec(const ScenarioResult& /*result*/) {
+void RpcReporter::ReportQueriesPerCpuSec(const ScenarioResult & /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 

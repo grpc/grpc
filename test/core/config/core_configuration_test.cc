@@ -22,11 +22,11 @@ namespace grpc_core {
 // Allow substitution of config builder - in real code this would iterate
 // through all plugins
 namespace testing {
-using ConfigBuilderFunction = std::function<void(CoreConfiguration::Builder*)>;
+using ConfigBuilderFunction = std::function<void(CoreConfiguration::Builder *)>;
 static ConfigBuilderFunction g_mock_builder;
 }  // namespace testing
 
-void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
+void BuildCoreConfiguration(CoreConfiguration::Builder *builder) {
   ::grpc_core::testing::g_mock_builder(builder);
 }
 
@@ -41,13 +41,13 @@ void InitConfigWithBuilder(ConfigBuilderFunction fn) {
 }
 
 TEST(ConfigTest, NoopConfig) {
-  InitConfigWithBuilder([](CoreConfiguration::Builder*) {});
+  InitConfigWithBuilder([](CoreConfiguration::Builder *) {});
   CoreConfiguration::Get();
 }
 
 TEST(ConfigTest, ThreadedInit) {
   CoreConfiguration::Reset();
-  g_mock_builder = [](CoreConfiguration::Builder*) {
+  g_mock_builder = [](CoreConfiguration::Builder *) {
     std::this_thread::sleep_for(std::chrono::seconds(1));
   };
   std::vector<std::thread> threads;
@@ -55,7 +55,7 @@ TEST(ConfigTest, ThreadedInit) {
   for (int i = 0; i < 64; i++) {
     threads.push_back(std::thread([]() { CoreConfiguration::Get(); }));
   }
-  for (auto& t : threads) {
+  for (auto &t : threads) {
     t.join();
   }
   g_mock_builder = nullptr;
@@ -65,7 +65,7 @@ TEST(ConfigTest, ThreadedInit) {
 
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

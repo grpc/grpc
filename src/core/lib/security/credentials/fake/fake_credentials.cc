@@ -44,8 +44,8 @@ class grpc_fake_channel_credentials final : public grpc_channel_credentials {
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* target, const grpc_channel_args* args,
-      grpc_channel_args** /*new_args*/) override {
+      const char *target, const grpc_channel_args *args,
+      grpc_channel_args ** /*new_args*/) override {
     return grpc_fake_channel_security_connector_create(
         this->Ref(), std::move(call_creds), target, args);
   }
@@ -59,30 +59,30 @@ class grpc_fake_server_credentials final : public grpc_server_credentials {
   ~grpc_fake_server_credentials() override = default;
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector(const grpc_channel_args* /*args*/) override {
+  create_security_connector(const grpc_channel_args * /*args*/) override {
     return grpc_fake_server_security_connector_create(this->Ref());
   }
 };
 }  // namespace
 
-grpc_channel_credentials* grpc_fake_transport_security_credentials_create() {
+grpc_channel_credentials *grpc_fake_transport_security_credentials_create() {
   return new grpc_fake_channel_credentials();
 }
 
-grpc_server_credentials*
+grpc_server_credentials *
 grpc_fake_transport_security_server_credentials_create() {
   return new grpc_fake_server_credentials();
 }
 
-grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets) {
+grpc_arg grpc_fake_transport_expected_targets_arg(char *expected_targets) {
   return grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
+      const_cast<char *>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
       expected_targets);
 }
 
-const char* grpc_fake_transport_get_expected_targets(
-    const grpc_channel_args* args) {
-  const grpc_arg* expected_target_arg =
+const char *grpc_fake_transport_get_expected_targets(
+    const grpc_channel_args *args) {
+  const grpc_arg *expected_target_arg =
       grpc_channel_args_find(args, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
   return grpc_channel_arg_get_string(expected_target_arg);
 }
@@ -90,9 +90,9 @@ const char* grpc_fake_transport_get_expected_targets(
 /* -- Metadata-only test credentials. -- */
 
 bool grpc_md_only_test_credentials::get_request_metadata(
-    grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context /*context*/,
-    grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
-    grpc_error_handle* /*error*/) {
+    grpc_polling_entity * /*pollent*/, grpc_auth_metadata_context /*context*/,
+    grpc_credentials_mdelem_array *md_array, grpc_closure *on_request_metadata,
+    grpc_error_handle * /*error*/) {
   grpc_credentials_mdelem_array_add(md_array, md_);
   if (is_async_) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_request_metadata,
@@ -103,11 +103,11 @@ bool grpc_md_only_test_credentials::get_request_metadata(
 }
 
 void grpc_md_only_test_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* /*md_array*/, grpc_error_handle error) {
+    grpc_credentials_mdelem_array * /*md_array*/, grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
-grpc_call_credentials* grpc_md_only_test_credentials_create(
-    const char* md_key, const char* md_value, bool is_async) {
+grpc_call_credentials *grpc_md_only_test_credentials_create(
+    const char *md_key, const char *md_value, bool is_async) {
   return new grpc_md_only_test_credentials(md_key, md_value, is_async);
 }

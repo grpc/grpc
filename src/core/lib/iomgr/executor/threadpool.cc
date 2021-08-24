@@ -24,7 +24,7 @@ namespace grpc_core {
 
 void ThreadPoolWorker::Run() {
   while (true) {
-    void* elem;
+    void *elem;
 
     if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
       // Updates stats and print
@@ -41,7 +41,7 @@ void ThreadPoolWorker::Run() {
       break;
     }
     // Runs closure
-    auto* closure = static_cast<grpc_completion_queue_functor*>(elem);
+    auto *closure = static_cast<grpc_completion_queue_functor *>(elem);
     closure->functor_run(closure, closure->internal_success);
   }
 }
@@ -54,8 +54,8 @@ void ThreadPool::SharedThreadPoolConstructor() {
   if (num_threads_ <= 0) num_threads_ = 1;
 
   queue_ = new InfLenFIFOQueue();
-  threads_ = static_cast<ThreadPoolWorker**>(
-      gpr_zalloc(num_threads_ * sizeof(ThreadPoolWorker*)));
+  threads_ = static_cast<ThreadPoolWorker **>(
+      gpr_zalloc(num_threads_ * sizeof(ThreadPoolWorker *)));
   for (int i = 0; i < num_threads_; ++i) {
     threads_[i] = new ThreadPoolWorker(thd_name_, queue_, thread_options_, i);
     threads_[i]->Start();
@@ -82,15 +82,15 @@ ThreadPool::ThreadPool(int num_threads) : num_threads_(num_threads) {
   SharedThreadPoolConstructor();
 }
 
-ThreadPool::ThreadPool(int num_threads, const char* thd_name)
+ThreadPool::ThreadPool(int num_threads, const char *thd_name)
     : num_threads_(num_threads), thd_name_(thd_name) {
   thread_options_ = Thread::Options();
   thread_options_.set_stack_size(DefaultStackSize());
   SharedThreadPoolConstructor();
 }
 
-ThreadPool::ThreadPool(int num_threads, const char* thd_name,
-                       const Thread::Options& thread_options)
+ThreadPool::ThreadPool(int num_threads, const char *thd_name,
+                       const Thread::Options &thread_options)
     : num_threads_(num_threads),
       thd_name_(thd_name),
       thread_options_(thread_options) {
@@ -119,18 +119,18 @@ ThreadPool::~ThreadPool() {
   delete queue_;
 }
 
-void ThreadPool::Add(grpc_completion_queue_functor* closure) {
+void ThreadPool::Add(grpc_completion_queue_functor *closure) {
   AssertHasNotBeenShutDown();
-  queue_->Put(static_cast<void*>(closure));
+  queue_->Put(static_cast<void *>(closure));
 }
 
 int ThreadPool::num_pending_closures() const { return queue_->count(); }
 
 int ThreadPool::pool_capacity() const { return num_threads_; }
 
-const Thread::Options& ThreadPool::thread_options() const {
+const Thread::Options &ThreadPool::thread_options() const {
   return thread_options_;
 }
 
-const char* ThreadPool::thread_name() const { return thd_name_; }
+const char *ThreadPool::thread_name() const { return thd_name_; }
 }  // namespace grpc_core

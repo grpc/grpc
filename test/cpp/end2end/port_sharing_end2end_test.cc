@@ -58,7 +58,7 @@ namespace {
 class TestScenario {
  public:
   TestScenario(bool server_port, bool pending_data,
-               const std::string& creds_type)
+               const std::string &creds_type)
       : server_has_port(server_port),
         queue_pending_data(pending_data),
         credentials_type(creds_type) {}
@@ -70,8 +70,8 @@ class TestScenario {
   const std::string credentials_type;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
+static std::ostream &operator<<(std::ostream &out,
+                                const TestScenario &scenario) {
   return out << "TestScenario{server_has_port="
              << (scenario.server_has_port ? "true" : "false")
              << ", queue_pending_data="
@@ -115,7 +115,7 @@ class TestTcpServer {
     gpr_log(GPR_INFO, "Test TCP server started at %s", address_.c_str());
   }
 
-  const std::string& address() { return address_; }
+  const std::string &address() { return address_; }
 
   void SetAcceptor(
       std::unique_ptr<experimental::ExternalConnectionAcceptor> acceptor) {
@@ -141,21 +141,21 @@ class TestTcpServer {
     shutdown_ = true;
   }
 
-  static void OnConnect(void* arg, grpc_endpoint* tcp,
-                        grpc_pollset* accepting_pollset,
-                        grpc_tcp_server_acceptor* acceptor) {
-    auto* self = static_cast<TestTcpServer*>(arg);
+  static void OnConnect(void *arg, grpc_endpoint *tcp,
+                        grpc_pollset *accepting_pollset,
+                        grpc_tcp_server_acceptor *acceptor) {
+    auto *self = static_cast<TestTcpServer *>(arg);
     self->OnConnect(tcp, accepting_pollset, acceptor);
   }
 
-  static void OnFdReleased(void* arg, grpc_error_handle err) {
-    auto* self = static_cast<TestTcpServer*>(arg);
+  static void OnFdReleased(void *arg, grpc_error_handle err) {
+    auto *self = static_cast<TestTcpServer *>(arg);
     self->OnFdReleased(err);
   }
 
  private:
-  void OnConnect(grpc_endpoint* tcp, grpc_pollset* /*accepting_pollset*/,
-                 grpc_tcp_server_acceptor* acceptor) {
+  void OnConnect(grpc_endpoint *tcp, grpc_pollset * /*accepting_pollset*/,
+                 grpc_tcp_server_acceptor *acceptor) {
     std::string peer(grpc_endpoint_get_peer(tcp));
     gpr_log(GPR_INFO, "Got incoming connection! from %s", peer.c_str());
     EXPECT_FALSE(acceptor->external_connection);
@@ -294,7 +294,7 @@ class PortSharingEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   int first_picked_port_;
 };
 
-static void SendRpc(EchoTestService::Stub* stub, int num_rpcs) {
+static void SendRpc(EchoTestService::Stub *stub, int num_rpcs) {
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello hello hello hello");
@@ -325,7 +325,7 @@ std::vector<TestScenario> CreateTestScenarios() {
   }
 
   GPR_ASSERT(!credentials_types.empty());
-  for (const auto& cred : credentials_types) {
+  for (const auto &cred : credentials_types) {
     for (auto server_has_port : {true, false}) {
       for (auto queue_pending_data : {true, false}) {
         scenarios.emplace_back(server_has_port, queue_pending_data, cred);
@@ -367,7 +367,7 @@ INSTANTIATE_TEST_SUITE_P(PortSharingEnd2end, PortSharingEnd2endTest,
 
 #endif  // GRPC_POSIX_SOCKET_TCP_SERVER
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

@@ -22,7 +22,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/util/test_config.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   int four[4];
   int five[5];
   uint32_t bitset = 0;

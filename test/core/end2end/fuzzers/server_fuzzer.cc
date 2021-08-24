@@ -29,38 +29,38 @@ bool leak_check = true;
 
 static void discard_write(grpc_slice /*slice*/) {}
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
-static void dont_log(gpr_log_func_args* /*args*/) {}
+static void dont_log(gpr_log_func_args * /*args*/) {}
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
-    grpc_resource_quota* resource_quota =
+    grpc_resource_quota *resource_quota =
         grpc_resource_quota_create("context_list_test");
-    grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(
+    grpc_endpoint *mock_endpoint = grpc_mock_endpoint_create(
         discard_write,
         grpc_slice_allocator_create(resource_quota, "mock_endpoint"));
     grpc_mock_endpoint_put_read(
-        mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
-    grpc_server* server = grpc_server_create(nullptr, nullptr);
-    grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+        mock_endpoint, grpc_slice_from_copied_buffer((const char *)data, size));
+    grpc_server *server = grpc_server_create(nullptr, nullptr);
+    grpc_completion_queue *cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
     // TODO(ctiller): add more registered methods (one for POST, one for PUT)
     grpc_server_register_method(server, "/reg", nullptr, {}, 0);
     grpc_server_start(server);
-    grpc_transport* transport = grpc_create_chttp2_transport(
+    grpc_transport *transport = grpc_create_chttp2_transport(
         nullptr, mock_endpoint, false,
         grpc_resource_user_create(resource_quota, "mock_transport"));
     grpc_resource_quota_unref(resource_quota);
     server->core_server->SetupTransport(transport, nullptr, nullptr, nullptr);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
-    grpc_call* call1 = nullptr;
+    grpc_call *call1 = nullptr;
     grpc_call_details call_details1;
     grpc_metadata_array request_metadata1;
     grpc_call_details_init(&call_details1);

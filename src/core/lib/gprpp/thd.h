@@ -49,14 +49,14 @@ class Thread {
    public:
     Options() : joinable_(true), tracked_(true), stack_size_(0) {}
     /// Set whether the thread is joinable or detached.
-    Options& set_joinable(bool joinable) {
+    Options &set_joinable(bool joinable) {
       joinable_ = joinable;
       return *this;
     }
     bool joinable() const { return joinable_; }
 
     /// Set whether the thread is tracked for fork support.
-    Options& set_tracked(bool tracked) {
+    Options &set_tracked(bool tracked) {
       tracked_ = tracked;
       return *this;
     }
@@ -64,7 +64,7 @@ class Thread {
 
     /// Sets thread stack size (in bytes). Sets to 0 will use the default stack
     /// size which is 64KB for Windows threads and 2MB for Posix(x86) threads.
-    Options& set_stack_size(size_t bytes) {
+    Options &set_stack_size(size_t bytes) {
       stack_size_ = bytes;
       return *this;
     }
@@ -86,12 +86,12 @@ class Thread {
   /// The optional \a success argument indicates whether the thread
   /// is successfully created.
   /// The optional \a options can be used to set the thread detachable.
-  Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
-         bool* success = nullptr, const Options& options = Options());
+  Thread(const char *thd_name, void (*thd_body)(void *arg), void *arg,
+         bool *success = nullptr, const Options &options = Options());
 
   /// Move constructor for thread. After this is called, the other thread
   /// no longer represents a living thread object
-  Thread(Thread&& other) noexcept
+  Thread(Thread &&other) noexcept
       : state_(other.state_), impl_(other.impl_), options_(other.options_) {
     other.state_ = MOVED;
     other.impl_ = nullptr;
@@ -101,7 +101,7 @@ class Thread {
   /// Move assignment operator for thread. After this is called, the other
   /// thread no longer represents a living thread object. Not allowed if this
   /// thread actually exists
-  Thread& operator=(Thread&& other) noexcept {
+  Thread &operator=(Thread &&other) noexcept {
     if (this != &other) {
       // TODO(vjpai): if we can be sure that all Thread's are actually
       // constructed, then we should assert GPR_ASSERT(impl_ == nullptr) here.
@@ -153,8 +153,8 @@ class Thread {
   }
 
  private:
-  Thread(const Thread&) = delete;
-  Thread& operator=(const Thread&) = delete;
+  Thread(const Thread &) = delete;
+  Thread &operator=(const Thread &) = delete;
 
   /// The thread states are as follows:
   /// FAKE -- just a phony placeholder Thread created by the default constructor
@@ -165,7 +165,7 @@ class Thread {
   /// MOVED -- contents were moved out and we're no longer tracking them
   enum ThreadState { FAKE, ALIVE, STARTED, DONE, FAILED, MOVED };
   ThreadState state_;
-  internal::ThreadInternalsInterface* impl_;
+  internal::ThreadInternalsInterface *impl_;
   Options options_;
 };
 

@@ -50,24 +50,24 @@ namespace testing {
 
 namespace {
 
-void* tag(int i) { return reinterpret_cast<void*>(i); }
-int detag(void* p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
+void *tag(int i) { return reinterpret_cast<void *>(i); }
+int detag(void *p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
 
 class Verifier {
  public:
   Verifier() {}
 
   // Expect sets the expected ok value for a specific tag
-  Verifier& Expect(int i, bool expect_ok) {
+  Verifier &Expect(int i, bool expect_ok) {
     expectations_[tag(i)] = expect_ok;
     return *this;
   }
 
   // Next waits for 1 async tag to complete, checks its
   // expectations, and returns the tag
-  int Next(CompletionQueue* cq, bool ignore_ok) {
+  int Next(CompletionQueue *cq, bool ignore_ok) {
     bool ok;
-    void* got_tag;
+    void *got_tag;
     EXPECT_TRUE(cq->Next(&got_tag, &ok));
     GotTag(got_tag, ok, ignore_ok);
     return detag(got_tag);
@@ -75,7 +75,7 @@ class Verifier {
 
   // Verify keeps calling Next until all currently set
   // expected tags are complete
-  void Verify(CompletionQueue* cq) {
+  void Verify(CompletionQueue *cq) {
     GPR_ASSERT(!expectations_.empty());
     while (!expectations_.empty()) {
       Next(cq, false);
@@ -83,7 +83,7 @@ class Verifier {
   }
 
  private:
-  void GotTag(void* got_tag, bool ok, bool ignore_ok) {
+  void GotTag(void *got_tag, bool ok, bool ignore_ok) {
     auto it = expectations_.find(got_tag);
     if (it != expectations_.end()) {
       if (!ignore_ok) {
@@ -93,7 +93,7 @@ class Verifier {
     }
   }
 
-  std::map<void*, bool> expectations_;
+  std::map<void *, bool> expectations_;
 };
 
 class RawEnd2EndTest : public ::testing::Test {
@@ -107,7 +107,7 @@ class RawEnd2EndTest : public ::testing::Test {
 
   void TearDown() override {
     server_->Shutdown();
-    void* ignored_tag;
+    void *ignored_tag;
     bool ignored_ok;
     cq_->Shutdown();
     while (cq_->Next(&ignored_tag, &ignored_ok)) {
@@ -360,7 +360,7 @@ TEST_F(RawEnd2EndTest, CompileTest) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   // Change the backup poll interval from 5s to 100ms to speed up the
   // ReconnectChannel test
   grpc::testing::TestEnvironment env(argc, argv);

@@ -75,45 +75,45 @@ using grpc::channelz::v1::GetTopChannelsResponse;
 class ChannelzSampler final {
  public:
   // Get server_id of a server
-  int64_t GetServerID(const grpc::channelz::v1::Server& server) {
+  int64_t GetServerID(const grpc::channelz::v1::Server &server) {
     return server.ref().server_id();
   }
 
   // Get channel_id of a channel
-  inline int64_t GetChannelID(const grpc::channelz::v1::Channel& channel) {
+  inline int64_t GetChannelID(const grpc::channelz::v1::Channel &channel) {
     return channel.ref().channel_id();
   }
 
   // Get subchannel_id of a subchannel
   inline int64_t GetSubchannelID(
-      const grpc::channelz::v1::Subchannel& subchannel) {
+      const grpc::channelz::v1::Subchannel &subchannel) {
     return subchannel.ref().subchannel_id();
   }
 
   // Get socket_id of a socket
-  inline int64_t GetSocketID(const grpc::channelz::v1::Socket& socket) {
+  inline int64_t GetSocketID(const grpc::channelz::v1::Socket &socket) {
     return socket.ref().socket_id();
   }
 
   // Get name of a server
-  inline std::string GetServerName(const grpc::channelz::v1::Server& server) {
+  inline std::string GetServerName(const grpc::channelz::v1::Server &server) {
     return server.ref().name();
   }
 
   // Get name of a channel
   inline std::string GetChannelName(
-      const grpc::channelz::v1::Channel& channel) {
+      const grpc::channelz::v1::Channel &channel) {
     return channel.ref().name();
   }
 
   // Get name of a subchannel
   inline std::string GetSubchannelName(
-      const grpc::channelz::v1::Subchannel& subchannel) {
+      const grpc::channelz::v1::Subchannel &subchannel) {
     return subchannel.ref().name();
   }
 
   // Get name of a socket
-  inline std::string GetSocketName(const grpc::channelz::v1::Socket& socket) {
+  inline std::string GetSocketName(const grpc::channelz::v1::Socket &socket) {
     return socket.ref().name();
   }
 
@@ -176,15 +176,15 @@ class ChannelzSampler final {
   // push descedent channels/subchannels to queue for layer traverse
   // store descedent channels/subchannels/sockets for dumping data
   void GetChannelDescedence(
-      const grpc::channelz::v1::Channel& channel,
-      std::queue<grpc::channelz::v1::Channel>& channel_queue,
-      std::queue<grpc::channelz::v1::Subchannel>& subchannel_queue) {
+      const grpc::channelz::v1::Channel &channel,
+      std::queue<grpc::channelz::v1::Channel> &channel_queue,
+      std::queue<grpc::channelz::v1::Subchannel> &subchannel_queue) {
     std::cout << "    Channel ID" << GetChannelID(channel) << "_"
               << GetChannelName(channel) << " descendence - ";
     if (channel.channel_ref_size() > 0 || channel.subchannel_ref_size() > 0) {
       if (channel.channel_ref_size() > 0) {
         std::cout << "channel: ";
-        for (const auto& _channelref : channel.channel_ref()) {
+        for (const auto &_channelref : channel.channel_ref()) {
           int64_t ch_id = _channelref.channel_id();
           std::cout << "ID" << ch_id << "_" << _channelref.name() << " ";
           grpc::channelz::v1::Channel ch = GetChannelRPC(ch_id);
@@ -200,7 +200,7 @@ class ChannelzSampler final {
       }
       if (channel.subchannel_ref_size() > 0) {
         std::cout << "subchannel: ";
-        for (const auto& _subchannelref : channel.subchannel_ref()) {
+        for (const auto &_subchannelref : channel.subchannel_ref()) {
           int64_t subch_id = _subchannelref.subchannel_id();
           std::cout << "ID" << subch_id << "_" << _subchannelref.name() << " ";
           grpc::channelz::v1::Subchannel subch = GetSubchannelRPC(subch_id);
@@ -213,7 +213,7 @@ class ChannelzSampler final {
       }
     } else if (channel.socket_ref_size() > 0) {
       std::cout << "socket: ";
-      for (const auto& _socketref : channel.socket_ref()) {
+      for (const auto &_socketref : channel.socket_ref()) {
         int64_t so_id = _socketref.socket_id();
         std::cout << "ID" << so_id << "_" << _socketref.name() << " ";
         grpc::channelz::v1::Socket so = GetSocketRPC(so_id);
@@ -230,16 +230,16 @@ class ChannelzSampler final {
   // push descedent channels/subchannels to queue for layer traverse
   // store descedent channels/subchannels/sockets for dumping data
   void GetSubchannelDescedence(
-      grpc::channelz::v1::Subchannel& subchannel,
-      std::queue<grpc::channelz::v1::Channel>& channel_queue,
-      std::queue<grpc::channelz::v1::Subchannel>& subchannel_queue) {
+      grpc::channelz::v1::Subchannel &subchannel,
+      std::queue<grpc::channelz::v1::Channel> &channel_queue,
+      std::queue<grpc::channelz::v1::Subchannel> &subchannel_queue) {
     std::cout << "    Subchannel ID" << GetSubchannelID(subchannel) << "_"
               << GetSubchannelName(subchannel) << " descendence - ";
     if (subchannel.channel_ref_size() > 0 ||
         subchannel.subchannel_ref_size() > 0) {
       if (subchannel.channel_ref_size() > 0) {
         std::cout << "channel: ";
-        for (const auto& _channelref : subchannel.channel_ref()) {
+        for (const auto &_channelref : subchannel.channel_ref()) {
           int64_t ch_id = _channelref.channel_id();
           std::cout << "ID" << ch_id << "_" << _channelref.name() << " ";
           grpc::channelz::v1::Channel ch = GetChannelRPC(ch_id);
@@ -255,7 +255,7 @@ class ChannelzSampler final {
       }
       if (subchannel.subchannel_ref_size() > 0) {
         std::cout << "subchannel: ";
-        for (const auto& _subchannelref : subchannel.subchannel_ref()) {
+        for (const auto &_subchannelref : subchannel.subchannel_ref()) {
           int64_t subch_id = _subchannelref.subchannel_id();
           std::cout << "ID" << subch_id << "_" << _subchannelref.name() << " ";
           grpc::channelz::v1::Subchannel subch = GetSubchannelRPC(subch_id);
@@ -268,7 +268,7 @@ class ChannelzSampler final {
       }
     } else if (subchannel.socket_ref_size() > 0) {
       std::cout << "socket: ";
-      for (const auto& _socketref : subchannel.socket_ref()) {
+      for (const auto &_socketref : subchannel.socket_ref()) {
         int64_t so_id = _socketref.socket_id();
         std::cout << "ID" << so_id << "_" << _socketref.name() << " ";
         grpc::channelz::v1::Socket so = GetSocketRPC(so_id);
@@ -283,8 +283,8 @@ class ChannelzSampler final {
 
   // Set up the channelz sampler client
   // Initialize json as an array
-  void Setup(const std::string& custom_credentials_type,
-             const std::string& server_address) {
+  void Setup(const std::string &custom_credentials_type,
+             const std::string &server_address) {
     json_ = grpc_core::Json::Array();
     rpc_timeout_seconds_ = 20;
     grpc::ChannelArguments channel_args;
@@ -331,7 +331,7 @@ class ChannelzSampler final {
         }
         GPR_ASSERT(0);
       }
-      for (const auto& _server : get_servers_response.server()) {
+      for (const auto &_server : get_servers_response.server()) {
         all_servers_.push_back(_server);
         StoreServerInJson(_server);
       }
@@ -347,10 +347,10 @@ class ChannelzSampler final {
   // Get sockets that belongs to servers
   // Store sockets for dumping data
   void GetSocketsOfServers() {
-    for (const auto& _server : all_servers_) {
+    for (const auto &_server : all_servers_) {
       std::cout << "Server ID" << GetServerID(_server) << "_"
                 << GetServerName(_server) << " listen_socket - ";
-      for (const auto& _socket : _server.listen_socket()) {
+      for (const auto &_socket : _server.listen_socket()) {
         int64_t so_id = _socket.socket_id();
         std::cout << "ID" << so_id << "_" << _socket.name() << " ";
         if (CheckID(so_id)) {
@@ -386,7 +386,7 @@ class ChannelzSampler final {
                 get_top_channels_context.debug_error_string().c_str());
         GPR_ASSERT(0);
       }
-      for (const auto& _topchannel : get_top_channels_response.channel()) {
+      for (const auto &_topchannel : get_top_channels_response.channel()) {
         top_channels_.push_back(_topchannel);
         all_channels_.push_back(_topchannel);
         StoreChannelInJson(_topchannel);
@@ -404,7 +404,7 @@ class ChannelzSampler final {
 
   // layer traverse for each top channel
   void TraverseTopChannels() {
-    for (const auto& _topchannel : top_channels_) {
+    for (const auto &_topchannel : top_channels_) {
       int tree_depth = 0;
       std::queue<grpc::channelz::v1::Channel> channel_queue;
       std::queue<grpc::channelz::v1::Subchannel> subchannel_queue;
@@ -433,7 +433,7 @@ class ChannelzSampler final {
   // dump data of all entities to stdout
   void DumpStdout() {
     std::string data_str;
-    for (const auto& _channel : all_channels_) {
+    for (const auto &_channel : all_channels_) {
       std::cout << "channel ID" << GetChannelID(_channel) << "_"
                 << GetChannelName(_channel) << " data:" << std::endl;
       // TODO(mohanli): TextFormat::PrintToString records time as seconds and
@@ -441,20 +441,20 @@ class ChannelzSampler final {
       ::google::protobuf::TextFormat::PrintToString(_channel.data(), &data_str);
       printf("%s\n", data_str.c_str());
     }
-    for (const auto& _subchannel : all_subchannels_) {
+    for (const auto &_subchannel : all_subchannels_) {
       std::cout << "subchannel ID" << GetSubchannelID(_subchannel) << "_"
                 << GetSubchannelName(_subchannel) << " data:" << std::endl;
       ::google::protobuf::TextFormat::PrintToString(_subchannel.data(),
                                                     &data_str);
       printf("%s\n", data_str.c_str());
     }
-    for (const auto& _server : all_servers_) {
+    for (const auto &_server : all_servers_) {
       std::cout << "server ID" << GetServerID(_server) << "_"
                 << GetServerName(_server) << " data:" << std::endl;
       ::google::protobuf::TextFormat::PrintToString(_server.data(), &data_str);
       printf("%s\n", data_str.c_str());
     }
-    for (const auto& _socket : all_sockets_) {
+    for (const auto &_socket : all_sockets_) {
       std::cout << "socket ID" << GetSocketID(_socket) << "_"
                 << GetSocketName(_socket) << " data:" << std::endl;
       ::google::protobuf::TextFormat::PrintToString(_socket.data(), &data_str);
@@ -463,7 +463,7 @@ class ChannelzSampler final {
   }
 
   // Store a channel in Json
-  void StoreChannelInJson(const grpc::channelz::v1::Channel& channel) {
+  void StoreChannelInJson(const grpc::channelz::v1::Channel &channel) {
     std::string id = grpc::to_string(GetChannelID(channel));
     std::string type = "Channel";
     std::string description;
@@ -473,7 +473,7 @@ class ChannelzSampler final {
   }
 
   // Store a subchannel in Json
-  void StoreSubchannelInJson(const grpc::channelz::v1::Subchannel& subchannel) {
+  void StoreSubchannelInJson(const grpc::channelz::v1::Subchannel &subchannel) {
     std::string id = grpc::to_string(GetSubchannelID(subchannel));
     std::string type = "Subchannel";
     std::string description;
@@ -484,7 +484,7 @@ class ChannelzSampler final {
   }
 
   // Store a server in Json
-  void StoreServerInJson(const grpc::channelz::v1::Server& server) {
+  void StoreServerInJson(const grpc::channelz::v1::Server &server) {
     std::string id = grpc::to_string(GetServerID(server));
     std::string type = "Server";
     std::string description;
@@ -494,7 +494,7 @@ class ChannelzSampler final {
   }
 
   // Store a socket in Json
-  void StoreSocketInJson(const grpc::channelz::v1::Socket& socket) {
+  void StoreSocketInJson(const grpc::channelz::v1::Socket &socket) {
     std::string id = grpc::to_string(GetSocketID(socket));
     std::string type = "Socket";
     std::string description;
@@ -504,8 +504,8 @@ class ChannelzSampler final {
   }
 
   // Store an entity in Json
-  void StoreEntityInJson(std::string& id, std::string& type,
-                         const grpc_core::Json& description) {
+  void StoreEntityInJson(std::string &id, std::string &type,
+                         const grpc_core::Json &description) {
     std::string start, finish;
     gpr_timespec ago = gpr_time_sub(
         now_,
@@ -558,7 +558,7 @@ class ChannelzSampler final {
   gpr_timespec now_;
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   std::ofstream output_file(absl::GetFlag(FLAGS_output_json));

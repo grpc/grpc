@@ -26,14 +26,14 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
   switch (permission.type) {
     case Rbac::Permission::RuleType::kAnd: {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
-      for (const auto& rule : permission.permissions) {
+      for (const auto &rule : permission.permissions) {
         matchers.push_back(AuthorizationMatcher::Create(std::move(*rule)));
       }
       return absl::make_unique<AndAuthorizationMatcher>(std::move(matchers));
     }
     case Rbac::Permission::RuleType::kOr: {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
-      for (const auto& rule : permission.permissions) {
+      for (const auto &rule : permission.permissions) {
         matchers.push_back(AuthorizationMatcher::Create(std::move(*rule)));
       }
       return absl::make_unique<OrAuthorizationMatcher>(std::move(matchers));
@@ -66,14 +66,14 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
   switch (principal.type) {
     case Rbac::Principal::RuleType::kAnd: {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
-      for (const auto& id : principal.principals) {
+      for (const auto &id : principal.principals) {
         matchers.push_back(AuthorizationMatcher::Create(std::move(*id)));
       }
       return absl::make_unique<AndAuthorizationMatcher>(std::move(matchers));
     }
     case Rbac::Principal::RuleType::kOr: {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
-      for (const auto& id : principal.principals) {
+      for (const auto &id : principal.principals) {
         matchers.push_back(AuthorizationMatcher::Create(std::move(*id)));
       }
       return absl::make_unique<OrAuthorizationMatcher>(std::move(matchers));
@@ -106,8 +106,8 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
   return nullptr;
 }
 
-bool AndAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
-  for (const auto& matcher : matchers_) {
+bool AndAuthorizationMatcher::Matches(const EvaluateArgs &args) const {
+  for (const auto &matcher : matchers_) {
     if (!matcher->Matches(args)) {
       return false;
     }
@@ -115,8 +115,8 @@ bool AndAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
   return true;
 }
 
-bool OrAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
-  for (const auto& matcher : matchers_) {
+bool OrAuthorizationMatcher::Matches(const EvaluateArgs &args) const {
+  for (const auto &matcher : matchers_) {
     if (matcher->Matches(args)) {
       return true;
     }
@@ -124,11 +124,11 @@ bool OrAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
   return false;
 }
 
-bool NotAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
+bool NotAuthorizationMatcher::Matches(const EvaluateArgs &args) const {
   return !matcher_->Matches(args);
 }
 
-bool HeaderAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
+bool HeaderAuthorizationMatcher::Matches(const EvaluateArgs &args) const {
   std::string concatenated_value;
   return matcher_.Match(
       args.GetHeaderValue(matcher_.name(), &concatenated_value));
@@ -148,7 +148,7 @@ IpAuthorizationMatcher::IpAuthorizationMatcher(Type type, Rbac::CidrRange range)
   GRPC_ERROR_UNREF(error);
 }
 
-bool IpAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
+bool IpAuthorizationMatcher::Matches(const EvaluateArgs &args) const {
   grpc_resolved_address address;
   switch (type_) {
     case Type::kDestIp: {
@@ -168,12 +168,12 @@ bool IpAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
   return grpc_sockaddr_match_subnet(&address, &subnet_address_, prefix_len_);
 }
 
-bool PortAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
+bool PortAuthorizationMatcher::Matches(const EvaluateArgs &args) const {
   return port_ == args.GetLocalPort();
 }
 
 bool AuthenticatedAuthorizationMatcher::Matches(
-    const EvaluateArgs& args) const {
+    const EvaluateArgs &args) const {
   if (args.GetTransportSecurityType() != GRPC_SSL_TRANSPORT_SECURITY_TYPE) {
     // Connection is not authenticated.
     return false;
@@ -184,7 +184,7 @@ bool AuthenticatedAuthorizationMatcher::Matches(
   }
   std::vector<absl::string_view> uri_sans = args.GetUriSans();
   if (!uri_sans.empty()) {
-    for (const auto& uri : uri_sans) {
+    for (const auto &uri : uri_sans) {
       if (matcher_.Match(uri)) {
         return true;
       }
@@ -192,7 +192,7 @@ bool AuthenticatedAuthorizationMatcher::Matches(
   }
   std::vector<absl::string_view> dns_sans = args.GetDnsSans();
   if (!dns_sans.empty()) {
-    for (const auto& dns : dns_sans) {
+    for (const auto &dns : dns_sans) {
       if (matcher_.Match(dns)) {
         return true;
       }
@@ -202,13 +202,13 @@ bool AuthenticatedAuthorizationMatcher::Matches(
   return false;
 }
 
-bool ReqServerNameAuthorizationMatcher::Matches(const EvaluateArgs&) const {
+bool ReqServerNameAuthorizationMatcher::Matches(const EvaluateArgs &) const {
   // Currently we do not support matching rules containing
   // "requested_server_name".
   return false;
 }
 
-bool PathAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
+bool PathAuthorizationMatcher::Matches(const EvaluateArgs &args) const {
   absl::string_view path = args.GetPath();
   if (!path.empty()) {
     return matcher_.Match(path);
@@ -216,7 +216,7 @@ bool PathAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
   return false;
 }
 
-bool PolicyAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
+bool PolicyAuthorizationMatcher::Matches(const EvaluateArgs &args) const {
   return permissions_->Matches(args) && principals_->Matches(args);
 }
 

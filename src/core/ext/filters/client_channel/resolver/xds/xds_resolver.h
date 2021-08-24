@@ -21,7 +21,7 @@
 
 namespace grpc_core {
 
-extern const char* kXdsClusterAttribute;
+extern const char *kXdsClusterAttribute;
 
 }  // namespace grpc_core
 

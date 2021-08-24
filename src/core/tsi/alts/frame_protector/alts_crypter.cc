@@ -24,16 +24,16 @@
 
 #include <grpc/support/alloc.h>
 
-static void maybe_copy_error_msg(const char* src, char** dst) {
+static void maybe_copy_error_msg(const char *src, char **dst) {
   if (dst != nullptr && src != nullptr) {
-    *dst = static_cast<char*>(gpr_malloc(strlen(src) + 1));
+    *dst = static_cast<char *>(gpr_malloc(strlen(src) + 1));
     memcpy(*dst, src, strlen(src) + 1);
   }
 }
 
 grpc_status_code alts_crypter_process_in_place(
-    alts_crypter* crypter, unsigned char* data, size_t data_allocated_size,
-    size_t data_size, size_t* output_size, char** error_details) {
+    alts_crypter *crypter, unsigned char *data, size_t data_allocated_size,
+    size_t data_size, size_t *output_size, char **error_details) {
   if (crypter != nullptr && crypter->vtable != nullptr &&
       crypter->vtable->process_in_place != nullptr) {
     return crypter->vtable->process_in_place(crypter, data, data_allocated_size,
@@ -47,7 +47,7 @@ grpc_status_code alts_crypter_process_in_place(
   return GRPC_STATUS_INVALID_ARGUMENT;
 }
 
-size_t alts_crypter_num_overhead_bytes(const alts_crypter* crypter) {
+size_t alts_crypter_num_overhead_bytes(const alts_crypter *crypter) {
   if (crypter != nullptr && crypter->vtable != nullptr &&
       crypter->vtable->num_overhead_bytes != nullptr) {
     return crypter->vtable->num_overhead_bytes(crypter);
@@ -56,7 +56,7 @@ size_t alts_crypter_num_overhead_bytes(const alts_crypter* crypter) {
   return 0;
 }
 
-void alts_crypter_destroy(alts_crypter* crypter) {
+void alts_crypter_destroy(alts_crypter *crypter) {
   if (crypter != nullptr) {
     if (crypter->vtable != nullptr && crypter->vtable->destruct != nullptr) {
       crypter->vtable->destruct(crypter);

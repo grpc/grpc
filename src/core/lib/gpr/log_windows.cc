@@ -35,14 +35,14 @@
 
 int gpr_should_log_stacktrace(gpr_log_severity severity);
 
-void gpr_log(const char* file, int line, gpr_log_severity severity,
-             const char* format, ...) {
+void gpr_log(const char *file, int line, gpr_log_severity severity,
+             const char *format, ...) {
   /* Avoid message construction if gpr_log_message won't log */
   if (gpr_should_log(severity) == 0) {
     return;
   }
 
-  char* message = NULL;
+  char *message = NULL;
   va_list args;
   int ret;
 
@@ -55,7 +55,7 @@ void gpr_log(const char* file, int line, gpr_log_severity severity,
   } else {
     /* Allocate a new buffer, with space for the NUL terminator. */
     size_t strp_buflen = (size_t)ret + 1;
-    message = (char*)gpr_malloc(strp_buflen);
+    message = (char *)gpr_malloc(strp_buflen);
 
     /* Print to the buffer. */
     va_start(args, format);
@@ -73,9 +73,9 @@ void gpr_log(const char* file, int line, gpr_log_severity severity,
 }
 
 /* Simple starter implementation */
-void gpr_default_log(gpr_log_func_args* args) {
-  const char* final_slash;
-  const char* display_file;
+void gpr_default_log(gpr_log_func_args *args) {
+  const char *final_slash;
+  const char *display_file;
   char time_buffer[64];
   time_t timer;
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);

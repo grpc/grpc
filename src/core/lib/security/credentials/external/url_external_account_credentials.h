@@ -27,18 +27,18 @@ class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
  public:
   static RefCountedPtr<UrlExternalAccountCredentials> Create(
       Options options, std::vector<std::string> scopes,
-      grpc_error_handle* error);
+      grpc_error_handle *error);
 
   UrlExternalAccountCredentials(Options options,
                                 std::vector<std::string> scopes,
-                                grpc_error_handle* error);
+                                grpc_error_handle *error);
 
  private:
   void RetrieveSubjectToken(
-      HTTPRequestContext* ctx, const Options& options,
+      HTTPRequestContext *ctx, const Options &options,
       std::function<void(std::string, grpc_error_handle)> cb) override;
 
-  static void OnRetrieveSubjectToken(void* arg, grpc_error_handle error);
+  static void OnRetrieveSubjectToken(void *arg, grpc_error_handle error);
   void OnRetrieveSubjectTokenInternal(grpc_error_handle error);
 
   void FinishRetrieveSubjectToken(std::string subject_token,
@@ -51,7 +51,7 @@ class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
   std::string format_type_;
   std::string format_subject_token_field_name_;
 
-  HTTPRequestContext* ctx_ = nullptr;
+  HTTPRequestContext *ctx_ = nullptr;
   std::function<void(std::string, grpc_error_handle)> cb_ = nullptr;
 };
 

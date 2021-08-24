@@ -39,8 +39,8 @@ struct test {
 };
 
 /* A Thread body.   Decrement t->n, and if is becomes zero, set t->done. */
-static void thd_body1(void* v) {
-  struct test* t = static_cast<struct test*>(v);
+static void thd_body1(void *v) {
+  struct test *t = static_cast<struct test *>(v);
   gpr_mu_lock(&t->mu);
   t->n--;
   if (t->n == 0) {
@@ -58,7 +58,7 @@ static void test1(void) {
   gpr_cv_init(&t.done_cv);
   t.n = NUM_THREADS;
   t.is_done = 0;
-  for (auto& th : thds) {
+  for (auto &th : thds) {
     th = grpc_core::Thread("grpc_thread_body1_test", &thd_body1, &t);
     th.Start();
   }
@@ -67,7 +67,7 @@ static void test1(void) {
     gpr_cv_wait(&t.done_cv, &t.mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&t.mu);
-  for (auto& th : thds) {
+  for (auto &th : thds) {
     th.Join();
   }
   GPR_ASSERT(t.n == 0);
@@ -75,25 +75,25 @@ static void test1(void) {
   gpr_cv_destroy(&t.done_cv);
 }
 
-static void thd_body2(void* /*v*/) {}
+static void thd_body2(void * /*v*/) {}
 
 /* Test that we can create a number of threads and join them. */
 static void test2(void) {
   grpc_core::Thread thds[NUM_THREADS];
-  for (auto& th : thds) {
+  for (auto &th : thds) {
     bool ok;
     th = grpc_core::Thread("grpc_thread_body2_test", &thd_body2, nullptr, &ok);
     GPR_ASSERT(ok);
     th.Start();
   }
-  for (auto& th : thds) {
+  for (auto &th : thds) {
     th.Join();
   }
 }
 
 /* ------------------------------------------------- */
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   grpc::testing::TestEnvironment env(argc, argv);
   test1();
   test2();

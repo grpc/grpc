@@ -46,18 +46,18 @@ namespace testing {
 // testing peer to access channel internals
 class ChannelNodePeer {
  public:
-  explicit ChannelNodePeer(ChannelNode* node) : node_(node) {}
-  ChannelTrace* trace() const { return &node_->trace_; }
+  explicit ChannelNodePeer(ChannelNode *node) : node_(node) {}
+  ChannelTrace *trace() const { return &node_->trace_; }
 
  private:
-  ChannelNode* node_;
+  ChannelNode *node_;
 };
 
 size_t GetSizeofTraceEvent() { return sizeof(ChannelTrace::TraceEvent); }
 
 namespace {
 
-void ValidateJsonArraySize(const Json& array, size_t expected) {
+void ValidateJsonArraySize(const Json &array, size_t expected) {
   if (expected == 0) {
     ASSERT_EQ(array.type(), Json::Type::JSON_NULL);
   } else {
@@ -66,28 +66,28 @@ void ValidateJsonArraySize(const Json& array, size_t expected) {
   }
 }
 
-void ValidateChannelTraceData(const Json& json,
+void ValidateChannelTraceData(const Json &json,
                               size_t num_events_logged_expected,
                               size_t actual_num_events_expected) {
   ASSERT_EQ(json.type(), Json::Type::OBJECT);
   Json::Object object = json.object_value();
-  Json& num_events_logged_json = object["numEventsLogged"];
+  Json &num_events_logged_json = object["numEventsLogged"];
   ASSERT_EQ(num_events_logged_json.type(), Json::Type::STRING);
   size_t num_events_logged = static_cast<size_t>(
       strtol(num_events_logged_json.string_value().c_str(), nullptr, 0));
   ASSERT_EQ(num_events_logged, num_events_logged_expected);
-  Json& start_time_json = object["creationTimestamp"];
+  Json &start_time_json = object["creationTimestamp"];
   ASSERT_EQ(start_time_json.type(), Json::Type::STRING);
   ValidateJsonArraySize(object["events"], actual_num_events_expected);
 }
 
-void AddSimpleTrace(ChannelTrace* tracer) {
+void AddSimpleTrace(ChannelTrace *tracer) {
   tracer->AddTraceEvent(ChannelTrace::Severity::Info,
                         grpc_slice_from_static_string("simple trace"));
 }
 
 // checks for the existence of all the required members of the tracer.
-void ValidateChannelTraceCustom(ChannelTrace* tracer, size_t num_events_logged,
+void ValidateChannelTraceCustom(ChannelTrace *tracer, size_t num_events_logged,
                                 size_t num_events_expected) {
   Json json = tracer->RenderJson();
   ASSERT_EQ(json.type(), Json::Type::OBJECT);
@@ -96,7 +96,7 @@ void ValidateChannelTraceCustom(ChannelTrace* tracer, size_t num_events_logged,
   ValidateChannelTraceData(json, num_events_logged, num_events_expected);
 }
 
-void ValidateChannelTrace(ChannelTrace* tracer, size_t num_events_logged) {
+void ValidateChannelTrace(ChannelTrace *tracer, size_t num_events_logged) {
   ValidateChannelTraceCustom(tracer, num_events_logged, num_events_logged);
 }
 
@@ -104,7 +104,7 @@ class ChannelFixture {
  public:
   explicit ChannelFixture(int max_tracer_event_memory) {
     grpc_arg client_a = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+        const_cast<char *>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
         max_tracer_event_memory);
     grpc_channel_args client_args = {1, &client_a};
     channel_ =
@@ -113,10 +113,10 @@ class ChannelFixture {
 
   ~ChannelFixture() { grpc_channel_destroy(channel_); }
 
-  grpc_channel* channel() { return channel_; }
+  grpc_channel *channel() { return channel_; }
 
  private:
-  grpc_channel* channel_;
+  grpc_channel *channel_;
 };
 
 }  // anonymous namespace
@@ -322,7 +322,7 @@ TEST(ChannelTracerTest, TestTotalEviction) {
 }  // namespace channelz
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   ::testing::InitGoogleTest(&argc, argv);

@@ -24,31 +24,31 @@
 #ifdef GRPC_TSAN_ENABLED
 
 #define TSAN_ANNOTATE_HAPPENS_BEFORE(addr) \
-  AnnotateHappensBefore(__FILE__, __LINE__, (void*)(addr))
+  AnnotateHappensBefore(__FILE__, __LINE__, (void *)(addr))
 #define TSAN_ANNOTATE_HAPPENS_AFTER(addr) \
-  AnnotateHappensAfter(__FILE__, __LINE__, (void*)(addr))
+  AnnotateHappensAfter(__FILE__, __LINE__, (void *)(addr))
 #define TSAN_ANNOTATE_RWLOCK_CREATE(addr) \
-  AnnotateRWLockCreate(__FILE__, __LINE__, (void*)(addr))
+  AnnotateRWLockCreate(__FILE__, __LINE__, (void *)(addr))
 #define TSAN_ANNOTATE_RWLOCK_DESTROY(addr) \
-  AnnotateRWLockDestroy(__FILE__, __LINE__, (void*)(addr))
+  AnnotateRWLockDestroy(__FILE__, __LINE__, (void *)(addr))
 #define TSAN_ANNOTATE_RWLOCK_ACQUIRED(addr, is_w) \
-  AnnotateRWLockAcquired(__FILE__, __LINE__, (void*)(addr), (is_w))
+  AnnotateRWLockAcquired(__FILE__, __LINE__, (void *)(addr), (is_w))
 #define TSAN_ANNOTATE_RWLOCK_RELEASED(addr, is_w) \
-  AnnotateRWLockReleased(__FILE__, __LINE__, (void*)(addr), (is_w))
+  AnnotateRWLockReleased(__FILE__, __LINE__, (void *)(addr), (is_w))
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-void AnnotateHappensBefore(const char* file, int line, const volatile void* cv);
-void AnnotateHappensAfter(const char* file, int line, const volatile void* cv);
-void AnnotateRWLockCreate(const char* file, int line,
-                          const volatile void* lock);
-void AnnotateRWLockDestroy(const char* file, int line,
-                           const volatile void* lock);
-void AnnotateRWLockAcquired(const char* file, int line,
-                            const volatile void* lock, long is_w);
-void AnnotateRWLockReleased(const char* file, int line,
-                            const volatile void* lock, long is_w);
+void AnnotateHappensBefore(const char *file, int line, const volatile void *cv);
+void AnnotateHappensAfter(const char *file, int line, const volatile void *cv);
+void AnnotateRWLockCreate(const char *file, int line,
+                          const volatile void *lock);
+void AnnotateRWLockDestroy(const char *file, int line,
+                           const volatile void *lock);
+void AnnotateRWLockAcquired(const char *file, int line,
+                            const volatile void *lock, long is_w);
+void AnnotateRWLockReleased(const char *file, int line,
+                            const volatile void *lock, long is_w);
 #ifdef __cplusplus
 }
 #endif

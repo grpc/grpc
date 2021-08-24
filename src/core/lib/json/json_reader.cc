@@ -38,7 +38,7 @@ namespace {
 
 class JsonReader {
  public:
-  static grpc_error_handle Parse(absl::string_view input, Json* output);
+  static grpc_error_handle Parse(absl::string_view input, Json *output);
 
  private:
   enum class Status {
@@ -85,7 +85,7 @@ class JsonReader {
   static constexpr uint32_t GRPC_JSON_READ_CHAR_EOF = 0x7ffffff0;
 
   explicit JsonReader(absl::string_view input)
-      : original_input_(reinterpret_cast<const uint8_t*>(input.data())),
+      : original_input_(reinterpret_cast<const uint8_t *>(input.data())),
         input_(original_input_),
         remaining_input_(input.size()) {}
 
@@ -98,7 +98,7 @@ class JsonReader {
   void StringAddChar(uint32_t c);
   void StringAddUtf32(uint32_t c);
 
-  Json* CreateAndLinkValue();
+  Json *CreateAndLinkValue();
   bool StartContainer(Json::Type type);
   void EndContainer();
   void SetKey();
@@ -108,8 +108,8 @@ class JsonReader {
   void SetFalse();
   void SetNull();
 
-  const uint8_t* original_input_;
-  const uint8_t* input_;
+  const uint8_t *original_input_;
+  const uint8_t *input_;
   size_t remaining_input_;
 
   State state_ = State::GRPC_JSON_STATE_VALUE_BEGIN;
@@ -121,7 +121,7 @@ class JsonReader {
   bool truncated_errors_ = false;
 
   Json root_value_;
-  std::vector<Json*> stack_;
+  std::vector<Json *> stack_;
 
   std::string key_;
   std::string string_;
@@ -169,12 +169,12 @@ uint32_t JsonReader::ReadChar() {
   return r;
 }
 
-Json* JsonReader::CreateAndLinkValue() {
-  Json* value;
+Json *JsonReader::CreateAndLinkValue() {
+  Json *value;
   if (stack_.empty()) {
     value = &root_value_;
   } else {
-    Json* parent = stack_.back();
+    Json *parent = stack_.back();
     if (parent->type() == Json::Type::OBJECT) {
       if (parent->object_value().find(key_) != parent->object_value().end()) {
         if (errors_.size() == GRPC_JSON_MAX_ERRORS) {
@@ -208,7 +208,7 @@ bool JsonReader::StartContainer(Json::Type type) {
     }
     return false;
   }
-  Json* value = CreateAndLinkValue();
+  Json *value = CreateAndLinkValue();
   if (type == Json::Type::OBJECT) {
     *value = Json::Object();
   } else {
@@ -230,26 +230,26 @@ void JsonReader::SetKey() {
 }
 
 void JsonReader::SetString() {
-  Json* value = CreateAndLinkValue();
+  Json *value = CreateAndLinkValue();
   *value = std::move(string_);
   string_.clear();
 }
 
 bool JsonReader::SetNumber() {
-  Json* value = CreateAndLinkValue();
+  Json *value = CreateAndLinkValue();
   *value = Json(string_, /*is_number=*/true);
   string_.clear();
   return true;
 }
 
 void JsonReader::SetTrue() {
-  Json* value = CreateAndLinkValue();
+  Json *value = CreateAndLinkValue();
   *value = true;
   string_.clear();
 }
 
 void JsonReader::SetFalse() {
-  Json* value = CreateAndLinkValue();
+  Json *value = CreateAndLinkValue();
   *value = false;
   string_.clear();
 }
@@ -817,7 +817,7 @@ JsonReader::Status JsonReader::Run() {
   GPR_UNREACHABLE_CODE(return Status::GRPC_JSON_INTERNAL_ERROR);
 }
 
-grpc_error_handle JsonReader::Parse(absl::string_view input, Json* output) {
+grpc_error_handle JsonReader::Parse(absl::string_view input, Json *output) {
   JsonReader reader(input);
   Status status = reader.Run();
   if (reader.truncated_errors_) {
@@ -845,7 +845,7 @@ grpc_error_handle JsonReader::Parse(absl::string_view input, Json* output) {
 
 }  // namespace
 
-Json Json::Parse(absl::string_view json_str, grpc_error_handle* error) {
+Json Json::Parse(absl::string_view json_str, grpc_error_handle *error) {
   Json value;
   *error = JsonReader::Parse(json_str, &value);
   return value;

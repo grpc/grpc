@@ -35,7 +35,7 @@
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
-static void assert_encodes_as(grpc_millis ts, const char* s) {
+static void assert_encodes_as(grpc_millis ts, const char *s) {
   char buffer[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
   grpc_http2_encode_timeout(ts, buffer);
   gpr_log(GPR_INFO, "check '%s' == '%s'", buffer, s);
@@ -70,7 +70,7 @@ void test_encoding(void) {
   assert_encodes_as(100000000000, "99999999S");
 }
 
-static void assert_decodes_as(const char* buffer, grpc_millis expected) {
+static void assert_decodes_as(const char *buffer, grpc_millis expected) {
   grpc_millis got;
   uint32_t hash = gpr_murmur_hash3(buffer, strlen(buffer), 0);
   gpr_log(GPR_INFO, "check decoding '%s' (hash=0x%x)", buffer, hash);
@@ -136,7 +136,7 @@ void test_decoding(void) {
   assert_decodes_as("9999999999S", GRPC_MILLIS_INF_FUTURE);
 }
 
-static void assert_decoding_fails(const char* s) {
+static void assert_decoding_fails(const char *s) {
   grpc_millis x;
   GPR_ASSERT(0 ==
              grpc_http2_decode_timeout(grpc_slice_from_static_string(s), &x));
@@ -155,7 +155,7 @@ void test_decoding_fails(void) {
   assert_decoding_fails("-1u");
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   test_encoding();
   test_decoding();

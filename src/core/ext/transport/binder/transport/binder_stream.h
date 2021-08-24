@@ -23,15 +23,15 @@
 struct grpc_binder_stream {
   // server_data will be null for client, and for server it will be whatever
   // passed in to the accept_stream_fn callback by client.
-  grpc_binder_stream(grpc_binder_transport* t, grpc_core::Arena* arena,
-                     const void* /*server_data*/, int tx_code, bool is_client)
+  grpc_binder_stream(grpc_binder_transport *t, grpc_core::Arena *arena,
+                     const void * /*server_data*/, int tx_code, bool is_client)
       : t(t), arena(arena), seq(0), tx_code(tx_code), is_client(is_client) {}
   ~grpc_binder_stream() = default;
   int GetTxCode() { return tx_code; }
   int GetThenIncSeq() { return seq++; }
 
-  grpc_binder_transport* t;
-  grpc_core::Arena* arena;
+  grpc_binder_transport *t;
+  grpc_core::Arena *arena;
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> sbs;
   int seq;
   int tx_code;
@@ -42,12 +42,12 @@ struct grpc_binder_stream {
 
   // We store these fields passed from op batch, in order to access them through
   // grpc_binder_stream
-  grpc_metadata_batch* recv_initial_metadata;
-  grpc_closure* recv_initial_metadata_ready = nullptr;
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
-  grpc_closure* recv_message_ready = nullptr;
-  grpc_metadata_batch* recv_trailing_metadata;
-  grpc_closure* recv_trailing_metadata_finished = nullptr;
+  grpc_metadata_batch *recv_initial_metadata;
+  grpc_closure *recv_initial_metadata_ready = nullptr;
+  grpc_core::OrphanablePtr<grpc_core::ByteStream> *recv_message;
+  grpc_closure *recv_message_ready = nullptr;
+  grpc_metadata_batch *recv_trailing_metadata;
+  grpc_closure *recv_trailing_metadata_finished = nullptr;
 };
 
 #endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_STREAM_H

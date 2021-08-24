@@ -85,7 +85,7 @@ CallCountingHelper::CallCountingHelper() {
 }
 
 void CallCountingHelper::RecordCallStarted() {
-  AtomicCounterData& data =
+  AtomicCounterData &data =
       per_cpu_counter_data_storage_[ExecCtx::Get()->starting_cpu()];
   data.calls_started.fetch_add(1, std::memory_order_relaxed);
   data.last_call_started_cycle.store(gpr_get_cycle_counter(),
@@ -102,9 +102,9 @@ void CallCountingHelper::RecordCallSucceeded() {
       .calls_succeeded.fetch_add(1, std::memory_order_relaxed);
 }
 
-void CallCountingHelper::CollectData(CounterData* out) {
+void CallCountingHelper::CollectData(CounterData *out) {
   for (size_t core = 0; core < num_cores_; ++core) {
-    AtomicCounterData& data = per_cpu_counter_data_storage_[core];
+    AtomicCounterData &data = per_cpu_counter_data_storage_[core];
 
     out->calls_started += data.calls_started.load(std::memory_order_relaxed);
     out->calls_succeeded +=
@@ -121,7 +121,7 @@ void CallCountingHelper::CollectData(CounterData* out) {
   }
 }
 
-void CallCountingHelper::PopulateCallCounts(Json::Object* json) {
+void CallCountingHelper::PopulateCallCounts(Json::Object *json) {
   CounterData data;
   CollectData(&data);
   if (data.calls_started != 0) {
@@ -151,7 +151,7 @@ ChannelNode::ChannelNode(std::string target, size_t channel_tracer_max_nodes,
       target_(std::move(target)),
       trace_(channel_tracer_max_nodes) {}
 
-const char* ChannelNode::GetChannelConnectivityStateChangeString(
+const char *ChannelNode::GetChannelConnectivityStateChangeString(
     grpc_connectivity_state state) {
   switch (state) {
     case GRPC_CHANNEL_IDLE:
@@ -203,7 +203,7 @@ Json ChannelNode::RenderJson() {
   return json;
 }
 
-void ChannelNode::PopulateChildRefs(Json::Object* json) {
+void ChannelNode::PopulateChildRefs(Json::Object *json) {
   MutexLock lock(&child_mu_);
   if (!child_subchannels_.empty()) {
     Json::Array array;
@@ -329,7 +329,7 @@ Json ServerNode::RenderJson() {
     MutexLock lock(&child_mu_);
     if (!child_listen_sockets_.empty()) {
       Json::Array array;
-      for (const auto& it : child_listen_sockets_) {
+      for (const auto &it : child_listen_sockets_) {
         array.emplace_back(Json::Object{
             {"socketId", std::to_string(it.first)},
             {"name", it.second->name()},
@@ -386,19 +386,19 @@ Json SocketNode::Security::RenderJson() {
 
 namespace {
 
-void* SecurityArgCopy(void* p) {
-  SocketNode::Security* xds_certificate_provider =
-      static_cast<SocketNode::Security*>(p);
+void *SecurityArgCopy(void *p) {
+  SocketNode::Security *xds_certificate_provider =
+      static_cast<SocketNode::Security *>(p);
   return xds_certificate_provider->Ref().release();
 }
 
-void SecurityArgDestroy(void* p) {
-  SocketNode::Security* xds_certificate_provider =
-      static_cast<SocketNode::Security*>(p);
+void SecurityArgDestroy(void *p) {
+  SocketNode::Security *xds_certificate_provider =
+      static_cast<SocketNode::Security *>(p);
   xds_certificate_provider->Unref();
 }
 
-int SecurityArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
+int SecurityArgCmp(void *p, void *q) { return GPR_ICMP(p, q); }
 
 const grpc_arg_pointer_vtable kChannelArgVtable = {
     SecurityArgCopy, SecurityArgDestroy, SecurityArgCmp};
@@ -407,13 +407,13 @@ const grpc_arg_pointer_vtable kChannelArgVtable = {
 
 grpc_arg SocketNode::Security::MakeChannelArg() const {
   return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_CHANNELZ_SECURITY),
-      const_cast<SocketNode::Security*>(this), &kChannelArgVtable);
+      const_cast<char *>(GRPC_ARG_CHANNELZ_SECURITY),
+      const_cast<SocketNode::Security *>(this), &kChannelArgVtable);
 }
 
 RefCountedPtr<SocketNode::Security> SocketNode::Security::GetFromChannelArgs(
-    const grpc_channel_args* args) {
-  Security* security = grpc_channel_args_find_pointer<Security>(
+    const grpc_channel_args *args) {
+  Security *security = grpc_channel_args_find_pointer<Security>(
       args, GRPC_ARG_CHANNELZ_SECURITY);
   return security != nullptr ? security->Ref() : nullptr;
 }
@@ -424,8 +424,8 @@ RefCountedPtr<SocketNode::Security> SocketNode::Security::GetFromChannelArgs(
 
 namespace {
 
-void PopulateSocketAddressJson(Json::Object* json, const char* name,
-                               const char* addr_str) {
+void PopulateSocketAddressJson(Json::Object *json, const char *name,
+                               const char *addr_str) {
   if (addr_str == nullptr) return;
   Json::Object data;
   absl::StatusOr<URI> uri = URI::Parse(addr_str);

@@ -29,11 +29,11 @@
 using grpc::testing::InterarrivalTimer;
 using grpc::testing::RandomDistInterface;
 
-static void RunTest(RandomDistInterface&& r, int threads,
-                    const std::string& title) {
+static void RunTest(RandomDistInterface &&r, int threads,
+                    const std::string &title) {
   InterarrivalTimer timer;
   timer.init(r, threads);
-  grpc_histogram* h(grpc_histogram_create(0.01, 60e9));
+  grpc_histogram *h(grpc_histogram_create(0.01, 60e9));
 
   for (int i = 0; i < 10000000; i++) {
     for (int j = 0; j < threads; j++) {
@@ -52,7 +52,7 @@ static void RunTest(RandomDistInterface&& r, int threads,
 
 using grpc::testing::ExpDist;
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
 

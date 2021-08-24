@@ -44,13 +44,13 @@ class GrpclbTest : public ::testing::Test {
   static void TearDownTestCase() { grpc_shutdown(); }
 };
 
-std::string Ip4ToPackedString(const char* ip_str) {
+std::string Ip4ToPackedString(const char *ip_str) {
   struct in_addr ip4;
   GPR_ASSERT(inet_pton(AF_INET, ip_str, &ip4) == 1);
-  return std::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
+  return std::string(reinterpret_cast<const char *>(&ip4), sizeof(ip4));
 }
 
-std::string PackedStringToIp(const grpc_core::GrpcLbServer& server) {
+std::string PackedStringToIp(const grpc_core::GrpcLbServer &server) {
   char ip_str[46] = {0};
   int af = -1;
   if (server.ip_size == 4) {
@@ -60,7 +60,7 @@ std::string PackedStringToIp(const grpc_core::GrpcLbServer& server) {
   } else {
     abort();
   }
-  GPR_ASSERT(inet_ntop(af, (void*)server.ip_addr, ip_str, 46) != nullptr);
+  GPR_ASSERT(inet_ntop(af, (void *)server.ip_addr, ip_str, 46) != nullptr);
   return ip_str;
 }
 
@@ -80,8 +80,8 @@ TEST_F(GrpclbTest, CreateRequest) {
 TEST_F(GrpclbTest, ParseInitialResponse) {
   // Construct response to parse.
   LoadBalanceResponse response;
-  auto* initial_response = response.mutable_initial_response();
-  auto* client_stats_report_interval =
+  auto *initial_response = response.mutable_initial_response();
+  auto *client_stats_report_interval =
       initial_response->mutable_client_stats_report_interval();
   client_stats_report_interval->set_seconds(123);
   client_stats_report_interval->set_nanos(456000000);
@@ -102,8 +102,8 @@ TEST_F(GrpclbTest, ParseInitialResponse) {
 TEST_F(GrpclbTest, ParseResponseServerList) {
   // Construct response to parse.
   LoadBalanceResponse response;
-  auto* serverlist = response.mutable_server_list();
-  auto* server = serverlist->add_servers();
+  auto *serverlist = response.mutable_server_list();
+  auto *server = serverlist->add_servers();
   server->set_ip_address(Ip4ToPackedString("127.0.0.1"));
   server->set_port(12345);
   server->set_load_balance_token("rate_limting");
@@ -137,7 +137,7 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
 }  // namespace
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();

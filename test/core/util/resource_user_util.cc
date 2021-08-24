@@ -16,14 +16,14 @@
 
 #include "absl/strings/str_format.h"
 
-grpc_resource_user* grpc_resource_user_create_unlimited(
-    grpc_resource_quota* resource_quota) {
+grpc_resource_user *grpc_resource_user_create_unlimited(
+    grpc_resource_quota *resource_quota) {
   if (resource_quota == nullptr) {
     resource_quota = grpc_resource_quota_create("anonymous mock quota");
   } else {
     grpc_resource_quota_ref_internal(resource_quota);
   }
-  grpc_resource_user* ru = nullptr;
+  grpc_resource_user *ru = nullptr;
   ru = grpc_resource_user_create(
       resource_quota, absl::StrFormat("mock_resource_user_%" PRIxPTR,
                                       reinterpret_cast<intptr_t>(&ru))
@@ -32,10 +32,10 @@ grpc_resource_user* grpc_resource_user_create_unlimited(
   return ru;
 }
 
-grpc_slice_allocator* grpc_slice_allocator_create_unlimited() {
-  grpc_resource_quota* resource_quota =
+grpc_slice_allocator *grpc_slice_allocator_create_unlimited() {
+  grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("anonymous mock quota");
-  grpc_slice_allocator* slice_allocator = grpc_slice_allocator_create(
+  grpc_slice_allocator *slice_allocator = grpc_slice_allocator_create(
       resource_quota,
       absl::StrFormat("mock_resource_user_from_quota:%p", resource_quota));
   grpc_resource_quota_unref(resource_quota);

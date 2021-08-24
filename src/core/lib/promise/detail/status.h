@@ -27,12 +27,12 @@ namespace promise_detail {
 
 // Convert with a move the input status to an absl::Status.
 template <typename T>
-absl::Status IntoStatus(absl::StatusOr<T>* status) {
+absl::Status IntoStatus(absl::StatusOr<T> *status) {
   return std::move(status->status());
 }
 
 // Convert with a move the input status to an absl::Status.
-inline absl::Status IntoStatus(absl::Status* status) {
+inline absl::Status IntoStatus(absl::Status *status) {
   return std::move(*status);
 }
 

@@ -50,11 +50,11 @@ class MetadataMap {
     // like code and message.
     else {
       for (size_t i = 0; i < arr_.count; i++) {
-        if (strncmp(reinterpret_cast<const char*>(
+        if (strncmp(reinterpret_cast<const char *>(
                         GRPC_SLICE_START_PTR(arr_.metadata[i].key)),
                     kBinaryErrorDetailsKey,
                     GRPC_SLICE_LENGTH(arr_.metadata[i].key)) == 0) {
-          return std::string(reinterpret_cast<const char*>(
+          return std::string(reinterpret_cast<const char *>(
                                  GRPC_SLICE_START_PTR(arr_.metadata[i].value)),
                              GRPC_SLICE_LENGTH(arr_.metadata[i].value));
         }
@@ -63,11 +63,11 @@ class MetadataMap {
     return std::string();
   }
 
-  std::multimap<grpc::string_ref, grpc::string_ref>* map() {
+  std::multimap<grpc::string_ref, grpc::string_ref> *map() {
     FillMap();
     return &map_;
   }
-  grpc_metadata_array* arr() { return &arr_; }
+  grpc_metadata_array *arr() { return &arr_; }
 
   void Reset() {
     filled_ = false;

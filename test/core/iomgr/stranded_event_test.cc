@@ -63,12 +63,12 @@ namespace {
 const int kNumMessagePingPongsPerCall = 4000;
 
 struct TestCall {
-  explicit TestCall(grpc_channel* channel, grpc_call* call,
-                    grpc_completion_queue* cq)
+  explicit TestCall(grpc_channel *channel, grpc_call *call,
+                    grpc_completion_queue *cq)
       : channel(channel), call(call), cq(cq) {}
 
-  TestCall(const TestCall& other) = delete;
-  TestCall& operator=(const TestCall& other) = delete;
+  TestCall(const TestCall &other) = delete;
+  TestCall &operator=(const TestCall &other) = delete;
 
   ~TestCall() {
     grpc_call_cancel(call, nullptr);
@@ -82,16 +82,16 @@ struct TestCall {
     grpc_completion_queue_destroy(cq);
   }
 
-  grpc_channel* channel;
-  grpc_call* call;
-  grpc_completion_queue* cq;
+  grpc_channel *channel;
+  grpc_call *call;
+  grpc_completion_queue *cq;
   absl::optional<grpc_status_code>
       status;  // filled in when the call is finished
 };
 
-void StartCall(TestCall* test_call) {
+void StartCall(TestCall *test_call) {
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -99,72 +99,72 @@ void StartCall(TestCall* test_call) {
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
-  void* tag = test_call;
+  void *tag = test_call;
   grpc_call_error error = grpc_call_start_batch(
       test_call->call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_verifier* cqv = cq_verifier_create(test_call->cq);
+  cq_verifier *cqv = cq_verifier_create(test_call->cq);
   CQ_EXPECT_COMPLETION(cqv, tag, 1);
   cq_verify(cqv);
   cq_verifier_destroy(cqv);
 }
 
-void SendMessage(grpc_call* call, grpc_completion_queue* cq) {
+void SendMessage(grpc_call *call, grpc_completion_queue *cq) {
   grpc_slice request_payload_slice = grpc_slice_from_copied_string("a");
-  grpc_byte_buffer* request_payload =
+  grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = request_payload;
   op->reserved = nullptr;
   op++;
-  void* tag = call;
+  void *tag = call;
   grpc_call_error error = grpc_call_start_batch(
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_verifier* cqv = cq_verifier_create(cq);
+  cq_verifier *cqv = cq_verifier_create(cq);
   CQ_EXPECT_COMPLETION(cqv, tag, 1);
   cq_verify(cqv);
   cq_verifier_destroy(cqv);
   grpc_byte_buffer_destroy(request_payload);
 }
 
-void ReceiveMessage(grpc_call* call, grpc_completion_queue* cq) {
-  grpc_byte_buffer* request_payload = nullptr;
+void ReceiveMessage(grpc_call *call, grpc_completion_queue *cq) {
+  grpc_byte_buffer *request_payload = nullptr;
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &request_payload;
   op->reserved = nullptr;
   op++;
-  void* tag = call;
+  void *tag = call;
   grpc_call_error error = grpc_call_start_batch(
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_verifier* cqv = cq_verifier_create(cq);
+  cq_verifier *cqv = cq_verifier_create(cq);
   CQ_EXPECT_COMPLETION(cqv, tag, 1);
   cq_verify(cqv);
   cq_verifier_destroy(cqv);
   grpc_byte_buffer_destroy(request_payload);
 }
 
-void ReceiveInitialMetadata(TestCall* test_call, gpr_timespec deadline) {
+void ReceiveInitialMetadata(TestCall *test_call, gpr_timespec deadline) {
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->reserved = nullptr;
   op++;
-  void* tag = test_call;
+  void *tag = test_call;
   grpc_call_error error = grpc_call_start_batch(
       test_call->call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
@@ -180,9 +180,9 @@ void ReceiveInitialMetadata(TestCall* test_call, gpr_timespec deadline) {
   grpc_metadata_array_destroy(&initial_metadata_recv);
 }
 
-void FinishCall(TestCall* test_call) {
+void FinishCall(TestCall *test_call) {
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array trailing_metadata_recv;
   grpc_status_code status;
   grpc_slice details;
@@ -196,7 +196,7 @@ void FinishCall(TestCall* test_call) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  void* tag = test_call;
+  void *tag = test_call;
   grpc_call_error error = grpc_call_start_batch(
       test_call->call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
@@ -225,7 +225,7 @@ class TestServer {
 
   ~TestServer() {
     thread_.join();
-    void* shutdown_and_notify_tag = this;
+    void *shutdown_and_notify_tag = this;
     grpc_server_shutdown_and_notify(server_, cq_, shutdown_and_notify_tag);
     grpc_event event = grpc_completion_queue_next(
         cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
@@ -249,8 +249,8 @@ class TestServer {
     grpc_call_details_init(&call_details);
     grpc_metadata_array request_metadata_recv;
     grpc_metadata_array_init(&request_metadata_recv);
-    void* tag = &call_details;
-    grpc_call* call;
+    void *tag = &call_details;
+    grpc_call *call;
     grpc_call_error error = grpc_server_request_call(
         server_, &call, &call_details, &request_metadata_recv, cq_, cq_, tag);
     GPR_ASSERT(error == GRPC_CALL_OK);
@@ -260,7 +260,7 @@ class TestServer {
     GPR_ASSERT(event.success);
     GPR_ASSERT(event.tag == tag);
     grpc_op ops[6];
-    grpc_op* op;
+    grpc_op *op;
     memset(ops, 0, sizeof(ops));
     op = ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -286,16 +286,16 @@ class TestServer {
     grpc_call_unref(call);
   }
 
-  grpc_server* server_;
-  grpc_completion_queue* cq_;
+  grpc_server *server_;
+  grpc_completion_queue *cq_;
   std::string address_;
   std::thread thread_;
 };
 
 grpc_core::Resolver::Result BuildResolverResponse(
-    const std::vector<std::string>& addresses) {
+    const std::vector<std::string> &addresses) {
   grpc_core::Resolver::Result result;
-  for (const auto& address_str : addresses) {
+  for (const auto &address_str : addresses) {
     absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
     if (!uri.ok()) {
       gpr_log(GPR_ERROR, "Failed to parse. Error: %s",
@@ -347,9 +347,9 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
       std::vector<grpc_arg> args;
       grpc_arg service_config_arg;
       service_config_arg.type = GRPC_ARG_STRING;
-      service_config_arg.key = const_cast<char*>(GRPC_ARG_SERVICE_CONFIG);
-      service_config_arg.value.string =
-          const_cast<char*>("{\"loadBalancingConfig\":[{\"round_robin\":{}}]}");
+      service_config_arg.key = const_cast<char *>(GRPC_ARG_SERVICE_CONFIG);
+      service_config_arg.value.string = const_cast<char *>(
+          "{\"loadBalancingConfig\":[{\"round_robin\":{}}]}");
       args.push_back(service_config_arg);
       auto fake_resolver_response_generator =
           grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
@@ -361,14 +361,14 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
       }
       args.push_back(grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
           fake_resolver_response_generator.get()));
-      grpc_channel_args* channel_args =
+      grpc_channel_args *channel_args =
           grpc_channel_args_copy_and_add(nullptr, args.data(), args.size());
-      grpc_channel* channel = grpc_insecure_channel_create(
+      grpc_channel *channel = grpc_insecure_channel_create(
           "fake:///test.server.com", channel_args, nullptr);
       grpc_channel_args_destroy(channel_args);
-      grpc_completion_queue* cq =
+      grpc_completion_queue *cq =
           grpc_completion_queue_create_for_next(nullptr);
-      grpc_call* call = grpc_channel_create_call(
+      grpc_call *call = grpc_channel_create_call(
           channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
           grpc_slice_from_static_string("/foo"), nullptr,
           gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
@@ -378,7 +378,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
       // Make sure the test is doing what it's meant to be doing
       grpc_channel_info channel_info;
       memset(&channel_info, 0, sizeof(channel_info));
-      char* lb_policy_name = nullptr;
+      char *lb_policy_name = nullptr;
       channel_info.lb_policy_name = &lb_policy_name;
       grpc_channel_get_info(channel, &channel_info);
       EXPECT_EQ(std::string(lb_policy_name), "round_robin")
@@ -429,7 +429,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
       gpr_log(GPR_DEBUG, "initiate ping pong round: %ld", ping_pong_round);
     }
   }
-  for (auto& thread : threads) {
+  for (auto &thread : threads) {
     thread.join();
   }
   gpr_log(GPR_DEBUG, "All RPCs completed!");
@@ -437,7 +437,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
 
 }  // namespace
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();

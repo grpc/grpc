@@ -85,14 +85,14 @@
   "\x10\x0cgrpc-timeout\x02"                                                \
   "5S"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
-static void verifier(grpc_server* server, grpc_completion_queue* cq,
-                     void* /*registered_method*/) {
+static void verifier(grpc_server *server, grpc_completion_queue *cq,
+                     void * /*registered_method*/) {
   grpc_call_error error;
-  grpc_call* s;
+  grpc_call *s;
   grpc_call_details call_details;
-  cq_verifier* cqv = cq_verifier_create(cq);
+  cq_verifier *cqv = cq_verifier_create(cq);
   grpc_metadata_array request_metadata_recv;
 
   grpc_call_details_init(&call_details);
@@ -113,8 +113,8 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   cq_verifier_destroy(cqv);
 }
 
-static void failure_verifier(grpc_server* server, grpc_completion_queue* cq,
-                             void* /*registered_method*/) {
+static void failure_verifier(grpc_server *server, grpc_completion_queue *cq,
+                             void * /*registered_method*/) {
   while (server->core_server->HasOpenConnections()) {
     GPR_ASSERT(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
@@ -122,7 +122,7 @@ static void failure_verifier(grpc_server* server, grpc_completion_queue* cq,
   }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 

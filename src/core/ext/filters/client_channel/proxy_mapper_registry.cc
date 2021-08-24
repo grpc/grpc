@@ -28,7 +28,7 @@ namespace grpc_core {
 namespace {
 
 using ProxyMapperList = std::vector<std::unique_ptr<ProxyMapperInterface>>;
-ProxyMapperList* g_proxy_mapper_list;
+ProxyMapperList *g_proxy_mapper_list;
 
 }  // namespace
 
@@ -60,12 +60,12 @@ void ProxyMapperRegistry::Register(
   }
 }
 
-bool ProxyMapperRegistry::MapName(const char* server_uri,
-                                  const grpc_channel_args* args,
-                                  char** name_to_resolve,
-                                  grpc_channel_args** new_args) {
+bool ProxyMapperRegistry::MapName(const char *server_uri,
+                                  const grpc_channel_args *args,
+                                  char **name_to_resolve,
+                                  grpc_channel_args **new_args) {
   Init();
-  for (const auto& mapper : *g_proxy_mapper_list) {
+  for (const auto &mapper : *g_proxy_mapper_list) {
     if (mapper->MapName(server_uri, args, name_to_resolve, new_args)) {
       return true;
     }
@@ -73,12 +73,12 @@ bool ProxyMapperRegistry::MapName(const char* server_uri,
   return false;
 }
 
-bool ProxyMapperRegistry::MapAddress(const grpc_resolved_address& address,
-                                     const grpc_channel_args* args,
-                                     grpc_resolved_address** new_address,
-                                     grpc_channel_args** new_args) {
+bool ProxyMapperRegistry::MapAddress(const grpc_resolved_address &address,
+                                     const grpc_channel_args *args,
+                                     grpc_resolved_address **new_address,
+                                     grpc_channel_args **new_args) {
   Init();
-  for (const auto& mapper : *g_proxy_mapper_list) {
+  for (const auto &mapper : *g_proxy_mapper_list) {
     if (mapper->MapAddress(address, args, new_address, new_args)) {
       return true;
     }

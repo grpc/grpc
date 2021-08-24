@@ -46,10 +46,10 @@ std::string JoinHostPort(absl::string_view host, int port);
 
    Return true on success, false on failure. Guarantees *host and *port are
    cleared on failure. */
-bool SplitHostPort(absl::string_view name, absl::string_view* host,
-                   absl::string_view* port);
-bool SplitHostPort(absl::string_view name, std::string* host,
-                   std::string* port);
+bool SplitHostPort(absl::string_view name, absl::string_view *host,
+                   absl::string_view *port);
+bool SplitHostPort(absl::string_view name, std::string *host,
+                   std::string *port);
 
 }  // namespace grpc_core
 

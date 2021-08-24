@@ -40,9 +40,9 @@
 /* These routines are here to facilitate debugging - they produce string
    representations of various transport data structures */
 
-static void put_metadata(grpc_mdelem md, std::vector<std::string>* out) {
+static void put_metadata(grpc_mdelem md, std::vector<std::string> *out) {
   out->push_back("key=");
-  char* dump = grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
+  char *dump = grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
   out->push_back(dump);
   gpr_free(dump);
   out->push_back(" value=");
@@ -52,8 +52,8 @@ static void put_metadata(grpc_mdelem md, std::vector<std::string>* out) {
 }
 
 static void put_metadata_list(grpc_metadata_batch md,
-                              std::vector<std::string>* out) {
-  grpc_linked_mdelem* m;
+                              std::vector<std::string> *out) {
+  grpc_linked_mdelem *m;
   for (m = md.list.head; m != nullptr; m = m->next) {
     if (m != md.list.head) out->push_back(", ");
     put_metadata(m->md, out);
@@ -64,7 +64,7 @@ static void put_metadata_list(grpc_metadata_batch md,
 }
 
 std::string grpc_transport_stream_op_batch_string(
-    grpc_transport_stream_op_batch* op) {
+    grpc_transport_stream_op_batch *op) {
   std::vector<std::string> out;
 
   if (op->send_initial_metadata) {
@@ -115,7 +115,7 @@ std::string grpc_transport_stream_op_batch_string(
   return absl::StrJoin(out, "");
 }
 
-std::string grpc_transport_op_string(grpc_transport_op* op) {
+std::string grpc_transport_op_string(grpc_transport_op *op) {
   std::vector<std::string> out;
 
   if (op->start_connectivity_watch != nullptr) {
@@ -161,9 +161,9 @@ std::string grpc_transport_op_string(grpc_transport_op* op) {
   return absl::StrJoin(out, "");
 }
 
-void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
-                      grpc_call_element* elem,
-                      grpc_transport_stream_op_batch* op) {
+void grpc_call_log_op(const char *file, int line, gpr_log_severity severity,
+                      grpc_call_element *elem,
+                      grpc_transport_stream_op_batch *op) {
   gpr_log(file, line, severity, "OP[%s:%p]: %s", elem->filter->name, elem,
           grpc_transport_stream_op_batch_string(op).c_str());
 }

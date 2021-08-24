@@ -40,8 +40,8 @@ grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
 namespace grpc_core {
 namespace chttp2 {
 
-TestOnlyTransportTargetWindowEstimatesMocker*
-    g_test_only_transport_target_window_estimates_mocker;
+TestOnlyTransportTargetWindowEstimatesMocker
+    *g_test_only_transport_target_window_estimates_mocker;
 
 bool g_test_only_transport_flow_control_window_check;
 
@@ -50,7 +50,7 @@ namespace {
 static constexpr const int kTracePadding = 30;
 static constexpr const uint32_t kMaxWindowUpdateSize = (1u << 31) - 1;
 
-static char* fmt_int64_diff_str(int64_t old_val, int64_t new_val) {
+static char *fmt_int64_diff_str(int64_t old_val, int64_t new_val) {
   std::string str;
   if (old_val != new_val) {
     str = absl::StrFormat("%" PRId64 " -> %" PRId64 "", old_val, new_val);
@@ -60,7 +60,7 @@ static char* fmt_int64_diff_str(int64_t old_val, int64_t new_val) {
   return gpr_leftpad(str.c_str(), ' ', kTracePadding);
 }
 
-static char* fmt_uint32_diff_str(uint32_t old_val, uint32_t new_val) {
+static char *fmt_uint32_diff_str(uint32_t old_val, uint32_t new_val) {
   std::string str;
   if (old_val != new_val) {
     str = absl::StrFormat("%" PRIu32 " -> %" PRIu32 "", old_val, new_val);
@@ -71,8 +71,8 @@ static char* fmt_uint32_diff_str(uint32_t old_val, uint32_t new_val) {
 }
 }  // namespace
 
-void FlowControlTrace::Init(const char* reason, TransportFlowControl* tfc,
-                            StreamFlowControl* sfc) {
+void FlowControlTrace::Init(const char *reason, TransportFlowControl *tfc,
+                            StreamFlowControl *sfc) {
   tfc_ = tfc;
   sfc_ = sfc;
   reason_ = reason;
@@ -93,13 +93,13 @@ void FlowControlTrace::Finish() {
   uint32_t remote_window =
       tfc_->transport()->settings[GRPC_PEER_SETTINGS]
                                  [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-  char* trw_str = fmt_int64_diff_str(remote_window_, tfc_->remote_window());
-  char* tlw_str = fmt_int64_diff_str(target_window_, tfc_->target_window());
-  char* taw_str =
+  char *trw_str = fmt_int64_diff_str(remote_window_, tfc_->remote_window());
+  char *tlw_str = fmt_int64_diff_str(target_window_, tfc_->target_window());
+  char *taw_str =
       fmt_int64_diff_str(announced_window_, tfc_->announced_window());
-  char* srw_str;
-  char* slw_str;
-  char* saw_str;
+  char *srw_str;
+  char *slw_str;
+  char *saw_str;
   if (sfc_ != nullptr) {
     srw_str = fmt_int64_diff_str(remote_window_delta_ + remote_window,
                                  sfc_->remote_window_delta() + remote_window);
@@ -127,7 +127,7 @@ void FlowControlTrace::Finish() {
   gpr_free(saw_str);
 }
 
-const char* FlowControlAction::UrgencyString(Urgency u) {
+const char *FlowControlAction::UrgencyString(Urgency u) {
   switch (u) {
     case Urgency::NO_ACTION_NEEDED:
       return "no action";
@@ -141,11 +141,11 @@ const char* FlowControlAction::UrgencyString(Urgency u) {
   GPR_UNREACHABLE_CODE(return "unknown");
 }
 
-void FlowControlAction::Trace(grpc_chttp2_transport* t) const {
-  char* iw_str = fmt_uint32_diff_str(
+void FlowControlAction::Trace(grpc_chttp2_transport *t) const {
+  char *iw_str = fmt_uint32_diff_str(
       t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
       initial_window_size_);
-  char* mf_str = fmt_uint32_diff_str(
+  char *mf_str = fmt_uint32_diff_str(
       t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
       max_frame_size_);
   gpr_log(GPR_DEBUG, "t[%s],  s[%s], iw:%s:%s mf:%s:%s",
@@ -158,7 +158,7 @@ void FlowControlAction::Trace(grpc_chttp2_transport* t) const {
 }
 
 TransportFlowControlDisabled::TransportFlowControlDisabled(
-    grpc_chttp2_transport* t) {
+    grpc_chttp2_transport *t) {
   remote_window_ = kMaxWindow;
   target_initial_window_size_ = kMaxWindow;
   announced_window_ = kMaxWindow;
@@ -176,7 +176,7 @@ TransportFlowControlDisabled::TransportFlowControlDisabled(
       kMaxWindow;
 }
 
-TransportFlowControl::TransportFlowControl(const grpc_chttp2_transport* t,
+TransportFlowControl::TransportFlowControl(const grpc_chttp2_transport *t,
                                            bool enable_bdp_probe)
     : t_(t),
       enable_bdp_probe_(enable_bdp_probe),
@@ -217,8 +217,8 @@ grpc_error_handle TransportFlowControl::ValidateRecvData(
   return GRPC_ERROR_NONE;
 }
 
-StreamFlowControl::StreamFlowControl(TransportFlowControl* tfc,
-                                     const grpc_chttp2_stream* s)
+StreamFlowControl::StreamFlowControl(TransportFlowControl *tfc,
+                                     const grpc_chttp2_stream *s)
     : tfc_(tfc), s_(s) {}
 
 grpc_error_handle StreamFlowControl::RecvData(int64_t incoming_frame_size) {
@@ -326,7 +326,7 @@ void StreamFlowControl::IncomingByteStreamUpdate(size_t max_size_hint,
 }
 
 // Take in a target and modifies it based on the memory pressure of the system
-static double AdjustForMemoryPressure(grpc_resource_quota* quota,
+static double AdjustForMemoryPressure(grpc_resource_quota *quota,
                                       double target) {
   // do not increase window under heavy memory pressure.
   double memory_pressure = grpc_resource_quota_get_memory_pressure(quota);

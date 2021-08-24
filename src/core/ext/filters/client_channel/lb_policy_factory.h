@@ -36,10 +36,10 @@ class LoadBalancingPolicyFactory {
 
   /// Returns the LB policy name that this factory provides.
   /// Caller does NOT take ownership of result.
-  virtual const char* name() const = 0;
+  virtual const char *name() const = 0;
 
   virtual RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error_handle* error) const = 0;
+      const Json &json, grpc_error_handle *error) const = 0;
 };
 
 }  // namespace grpc_core

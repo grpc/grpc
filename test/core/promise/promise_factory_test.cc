@@ -53,7 +53,7 @@ TEST(AdaptorTest, FactoryFromBindFrontPromise) {
 
 TEST(AdaptorTest, FactoryFromCapturePromise) {
   EXPECT_EQ(MakeFactory<void>(
-                grpc_core::Capture([](int* i) { return Poll<int>(*i); }, 42))
+                grpc_core::Capture([](int *i) { return Poll<int>(*i); }, 42))
                 .Once()(),
             Poll<int>(42));
 }
@@ -63,7 +63,7 @@ TEST(AdaptorTest, FactoryFromCapturePromise) {
 
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

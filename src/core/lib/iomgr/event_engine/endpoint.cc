@@ -42,17 +42,17 @@ using ::grpc_event_engine::experimental::ResolvedAddressToURI;
 using ::grpc_event_engine::experimental::SliceAllocator;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
-void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                   grpc_closure* cb, bool /* urgent */) {
-  auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
+void endpoint_read(grpc_endpoint *ep, grpc_slice_buffer *slices,
+                   grpc_closure *cb, bool /* urgent */) {
+  auto *eeep = reinterpret_cast<grpc_event_engine_endpoint *>(ep);
   if (eeep->endpoint == nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_CANCELLED);
     return;
   }
-  SliceBuffer* read_buffer = new (&eeep->read_buffer) SliceBuffer(slices);
+  SliceBuffer *read_buffer = new (&eeep->read_buffer) SliceBuffer(slices);
   eeep->endpoint->Read(
       [eeep, cb](absl::Status status) {
-        auto* read_buffer = reinterpret_cast<SliceBuffer*>(&eeep->read_buffer);
+        auto *read_buffer = reinterpret_cast<SliceBuffer *>(&eeep->read_buffer);
         read_buffer->~SliceBuffer();
         grpc_core::ExecCtx exec_ctx;
         grpc_core::Closure::Run(DEBUG_LOCATION, cb,
@@ -63,20 +63,20 @@ void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
       read_buffer);
 }
 
-void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb, void* arg) {
+void endpoint_write(grpc_endpoint *ep, grpc_slice_buffer *slices,
+                    grpc_closure *cb, void *arg) {
   // TODO(hork): adapt arg to some metrics collection mechanism.
   (void)arg;
-  auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
+  auto *eeep = reinterpret_cast<grpc_event_engine_endpoint *>(ep);
   if (eeep->endpoint == nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_CANCELLED);
     return;
   }
-  SliceBuffer* write_buffer = new (&eeep->write_buffer) SliceBuffer(slices);
+  SliceBuffer *write_buffer = new (&eeep->write_buffer) SliceBuffer(slices);
   eeep->endpoint->Write(
       [eeep, cb](absl::Status status) {
-        auto* write_buffer =
-            reinterpret_cast<SliceBuffer*>(&eeep->write_buffer);
+        auto *write_buffer =
+            reinterpret_cast<SliceBuffer *>(&eeep->write_buffer);
         write_buffer->~SliceBuffer();
         grpc_core::ExecCtx exec_ctx;
         grpc_core::Closure::Run(DEBUG_LOCATION, cb,
@@ -86,59 +86,59 @@ void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
       },
       write_buffer);
 }
-void endpoint_add_to_pollset(grpc_endpoint* /* ep */,
-                             grpc_pollset* /* pollset */) {}
-void endpoint_add_to_pollset_set(grpc_endpoint* /* ep */,
-                                 grpc_pollset_set* /* pollset */) {}
-void endpoint_delete_from_pollset_set(grpc_endpoint* /* ep */,
-                                      grpc_pollset_set* /* pollset */) {}
+void endpoint_add_to_pollset(grpc_endpoint * /* ep */,
+                             grpc_pollset * /* pollset */) {}
+void endpoint_add_to_pollset_set(grpc_endpoint * /* ep */,
+                                 grpc_pollset_set * /* pollset */) {}
+void endpoint_delete_from_pollset_set(grpc_endpoint * /* ep */,
+                                      grpc_pollset_set * /* pollset */) {}
 /// After shutdown, all endpoint operations except destroy are no-op,
 /// and will return some kind of sane default (empty strings, nullptrs, etc). It
 /// is the caller's responsibility to ensure that calls to endpoint_shutdown are
 /// synchronized.
-void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
-  auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
+void endpoint_shutdown(grpc_endpoint *ep, grpc_error *why) {
+  auto *eeep = reinterpret_cast<grpc_event_engine_endpoint *>(ep);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    const char* str = grpc_error_string(why);
+    const char *str = grpc_error_string(why);
     gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", eeep->endpoint.get(),
             str);
   }
   eeep->endpoint.reset();
 }
 
-void endpoint_destroy(grpc_endpoint* ep) {
-  auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
+void endpoint_destroy(grpc_endpoint *ep) {
+  auto *eeep = reinterpret_cast<grpc_event_engine_endpoint *>(ep);
   delete eeep;
 }
 
-absl::string_view endpoint_get_peer(grpc_endpoint* ep) {
-  auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
+absl::string_view endpoint_get_peer(grpc_endpoint *ep) {
+  auto *eeep = reinterpret_cast<grpc_event_engine_endpoint *>(ep);
   if (eeep->endpoint == nullptr) {
     return "";
   }
   if (eeep->peer_address.empty()) {
-    const EventEngine::ResolvedAddress& addr = eeep->endpoint->GetPeerAddress();
+    const EventEngine::ResolvedAddress &addr = eeep->endpoint->GetPeerAddress();
     eeep->peer_address = ResolvedAddressToURI(addr);
   }
   return eeep->peer_address;
 }
 
-absl::string_view endpoint_get_local_address(grpc_endpoint* ep) {
-  auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
+absl::string_view endpoint_get_local_address(grpc_endpoint *ep) {
+  auto *eeep = reinterpret_cast<grpc_event_engine_endpoint *>(ep);
   if (eeep->endpoint == nullptr) {
     return "";
   }
   if (eeep->local_address.empty()) {
-    const EventEngine::ResolvedAddress& addr =
+    const EventEngine::ResolvedAddress &addr =
         eeep->endpoint->GetLocalAddress();
     eeep->local_address = ResolvedAddressToURI(addr);
   }
   return eeep->local_address;
 }
 
-int endpoint_get_fd(grpc_endpoint* /* ep */) { return -1; }
+int endpoint_get_fd(grpc_endpoint * /* ep */) { return -1; }
 
-bool endpoint_can_track_err(grpc_endpoint* /* ep */) { return false; }
+bool endpoint_can_track_err(grpc_endpoint * /* ep */) { return false; }
 
 grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
     endpoint_read,
@@ -155,7 +155,7 @@ grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
 
 }  // namespace
 
-grpc_event_engine_endpoint* grpc_tcp_server_endpoint_create(
+grpc_event_engine_endpoint *grpc_tcp_server_endpoint_create(
     std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
   auto endpoint = new grpc_event_engine_endpoint;
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
@@ -163,7 +163,7 @@ grpc_event_engine_endpoint* grpc_tcp_server_endpoint_create(
   return endpoint;
 }
 
-grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
+grpc_endpoint *grpc_tcp_create(const grpc_channel_args *channel_args,
                                absl::string_view peer_address) {
   auto endpoint = new grpc_event_engine_endpoint;
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;

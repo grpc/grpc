@@ -58,9 +58,9 @@ class XdsClusterManagerLbConfig : public LoadBalancingPolicy::Config {
   explicit XdsClusterManagerLbConfig(ClusterMap cluster_map)
       : cluster_map_(std::move(cluster_map)) {}
 
-  const char* name() const override { return kXdsClusterManager; }
+  const char *name() const override { return kXdsClusterManager; }
 
-  const ClusterMap& cluster_map() const { return cluster_map_; }
+  const ClusterMap &cluster_map() const { return cluster_map_; }
 
  private:
   ClusterMap cluster_map_;
@@ -71,7 +71,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
  public:
   explicit XdsClusterManagerLb(Args args);
 
-  const char* name() const override { return kXdsClusterManager; }
+  const char *name() const override { return kXdsClusterManager; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
@@ -86,7 +86,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
         : name_(std::move(name)), picker_(std::move(picker)) {}
     PickResult Pick(PickArgs args) { return picker_->Pick(args); }
 
-    const std::string& name() const { return name_; }
+    const std::string &name() const { return name_; }
 
    private:
     std::string name_;
@@ -116,14 +116,14 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
   class ClusterChild : public InternallyRefCounted<ClusterChild> {
    public:
     ClusterChild(RefCountedPtr<XdsClusterManagerLb> xds_cluster_manager_policy,
-                 const std::string& name);
+                 const std::string &name);
     ~ClusterChild() override;
 
     void Orphan() override;
 
     void UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> config,
-                      const ServerAddressList& addresses,
-                      const grpc_channel_args* args);
+                      const ServerAddressList &addresses,
+                      const grpc_channel_args *args);
     void ExitIdleLocked();
     void ResetBackoffLocked();
     void DeactivateLocked();
@@ -146,9 +146,9 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
       }
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          ServerAddress address, const grpc_channel_args& args) override;
+          ServerAddress address, const grpc_channel_args &args) override;
       void UpdateState(grpc_connectivity_state state,
-                       const absl::Status& status,
+                       const absl::Status &status,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
       void AddTraceEvent(TraceSeverity severity,
@@ -160,9 +160,9 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
     // Methods for dealing with the child policy.
     OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
-        const grpc_channel_args* args);
+        const grpc_channel_args *args);
 
-    static void OnDelayedRemovalTimer(void* arg, grpc_error_handle error);
+    static void OnDelayedRemovalTimer(void *arg, grpc_error_handle error);
     void OnDelayedRemovalTimerLocked(grpc_error_handle error);
 
     // The owning LB policy.
@@ -241,11 +241,11 @@ void XdsClusterManagerLb::ShutdownLocked() {
 }
 
 void XdsClusterManagerLb::ExitIdleLocked() {
-  for (auto& p : children_) p.second->ExitIdleLocked();
+  for (auto &p : children_) p.second->ExitIdleLocked();
 }
 
 void XdsClusterManagerLb::ResetBackoffLocked() {
-  for (auto& p : children_) p.second->ResetBackoffLocked();
+  for (auto &p : children_) p.second->ResetBackoffLocked();
 }
 
 void XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
@@ -256,17 +256,17 @@ void XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   config_ = std::move(args.config);
   // Deactivate the children not in the new config.
-  for (const auto& p : children_) {
-    const std::string& name = p.first;
-    ClusterChild* child = p.second.get();
+  for (const auto &p : children_) {
+    const std::string &name = p.first;
+    ClusterChild *child = p.second.get();
     if (config_->cluster_map().find(name) == config_->cluster_map().end()) {
       child->DeactivateLocked();
     }
   }
   // Add or update the children in the new config.
-  for (const auto& p : config_->cluster_map()) {
-    const std::string& name = p.first;
-    const RefCountedPtr<LoadBalancingPolicy::Config>& config = p.second;
+  for (const auto &p : config_->cluster_map()) {
+    const std::string &name = p.first;
+    const RefCountedPtr<LoadBalancingPolicy::Config> &config = p.second;
     auto it = children_.find(name);
     if (it == children_.end()) {
       it = children_
@@ -286,9 +286,9 @@ void XdsClusterManagerLb::UpdateStateLocked() {
   size_t num_connecting = 0;
   size_t num_idle = 0;
   size_t num_transient_failures = 0;
-  for (const auto& p : children_) {
-    const auto& child_name = p.first;
-    const ClusterChild* child = p.second.get();
+  for (const auto &p : children_) {
+    const auto &child_name = p.first;
+    const ClusterChild *child = p.second.get();
     // Skip the children that are not in the latest update.
     if (config_->cluster_map().find(child_name) ==
         config_->cluster_map().end()) {
@@ -331,9 +331,9 @@ void XdsClusterManagerLb::UpdateStateLocked() {
             this, ConnectivityStateName(connectivity_state));
   }
   ClusterPicker::ClusterMap cluster_map;
-  for (const auto& p : config_->cluster_map()) {
-    const std::string& cluster_name = p.first;
-    RefCountedPtr<ChildPickerWrapper>& child_picker = cluster_map[cluster_name];
+  for (const auto &p : config_->cluster_map()) {
+    const std::string &cluster_name = p.first;
+    RefCountedPtr<ChildPickerWrapper> &child_picker = cluster_map[cluster_name];
     child_picker = children_[cluster_name]->picker_wrapper();
     if (child_picker == nullptr) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
@@ -364,7 +364,7 @@ void XdsClusterManagerLb::UpdateStateLocked() {
 
 XdsClusterManagerLb::ClusterChild::ClusterChild(
     RefCountedPtr<XdsClusterManagerLb> xds_cluster_manager_policy,
-    const std::string& name)
+    const std::string &name)
     : xds_cluster_manager_policy_(std::move(xds_cluster_manager_policy)),
       name_(name) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
@@ -411,7 +411,7 @@ void XdsClusterManagerLb::ClusterChild::Orphan() {
 
 OrphanablePtr<LoadBalancingPolicy>
 XdsClusterManagerLb::ClusterChild::CreateChildPolicyLocked(
-    const grpc_channel_args* args) {
+    const grpc_channel_args *args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer =
       xds_cluster_manager_policy_->work_serializer();
@@ -440,7 +440,7 @@ XdsClusterManagerLb::ClusterChild::CreateChildPolicyLocked(
 
 void XdsClusterManagerLb::ClusterChild::UpdateLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> config,
-    const ServerAddressList& addresses, const grpc_channel_args* args) {
+    const ServerAddressList &addresses, const grpc_channel_args *args) {
   if (xds_cluster_manager_policy_->shutting_down_) return;
   // Update child weight.
   // Reactivate if needed.
@@ -491,8 +491,8 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
 }
 
 void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimer(
-    void* arg, grpc_error_handle error) {
-  ClusterChild* self = static_cast<ClusterChild*>(arg);
+    void *arg, grpc_error_handle error) {
+  ClusterChild *self = static_cast<ClusterChild *>(arg);
   GRPC_ERROR_REF(error);  // Ref owned by the lambda
   self->xds_cluster_manager_policy_->work_serializer()->Run(
       [self, error]() { self->OnDelayedRemovalTimerLocked(error); },
@@ -515,7 +515,7 @@ void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimerLocked(
 
 RefCountedPtr<SubchannelInterface>
 XdsClusterManagerLb::ClusterChild::Helper::CreateSubchannel(
-    ServerAddress address, const grpc_channel_args& args) {
+    ServerAddress address, const grpc_channel_args &args) {
   if (xds_cluster_manager_child_->xds_cluster_manager_policy_->shutting_down_) {
     return nullptr;
   }
@@ -525,7 +525,7 @@ XdsClusterManagerLb::ClusterChild::Helper::CreateSubchannel(
 }
 
 void XdsClusterManagerLb::ClusterChild::Helper::UpdateState(
-    grpc_connectivity_state state, const absl::Status& status,
+    grpc_connectivity_state state, const absl::Status &status,
     std::unique_ptr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
     gpr_log(
@@ -591,10 +591,10 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<XdsClusterManagerLb>(std::move(args));
   }
 
-  const char* name() const override { return kXdsClusterManager; }
+  const char *name() const override { return kXdsClusterManager; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error_handle* error) const override {
+      const Json &json, grpc_error_handle *error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
     if (json.type() == Json::Type::JSON_NULL) {
       // xds_cluster_manager was mentioned as a policy in the deprecated
@@ -616,8 +616,8 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:children error:type should be object"));
     } else {
-      for (const auto& p : it->second.object_value()) {
-        const std::string& child_name = p.first;
+      for (const auto &p : it->second.object_value()) {
+        const std::string &child_name = p.first;
         if (child_name.empty()) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "field:children element error: name cannot be empty"));
@@ -655,8 +655,8 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
 
  private:
   static std::vector<grpc_error_handle> ParseChildConfig(
-      const Json& json,
-      RefCountedPtr<LoadBalancingPolicy::Config>* child_config) {
+      const Json &json,
+      RefCountedPtr<LoadBalancingPolicy::Config> *child_config) {
     std::vector<grpc_error_handle> error_list;
     if (json.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(

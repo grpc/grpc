@@ -31,7 +31,7 @@ namespace testing {
 
 // Generate Args for StreamingPingPong benchmarks. Currently generates args for
 // only "small streams" (i.e streams with 0, 1 or 2 messages)
-static void StreamingPingPongArgs(benchmark::internal::Benchmark* b) {
+static void StreamingPingPongArgs(benchmark::internal::Benchmark *b) {
   int msg_size = 0;
 
   b->Args({0, 0});  // spl case: 0 ping-pong msgs (msg_size doesn't matter here)
@@ -80,7 +80,7 @@ BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, MinInProcess, NoOpMutator,
 // Generate Args for StreamingPingPongWithCoalescingApi benchmarks. Currently
 // generates args for only "small streams" (i.e streams with 0, 1 or 2 messages)
 static void StreamingPingPongWithCoalescingApiArgs(
-    benchmark::internal::Benchmark* b) {
+    benchmark::internal::Benchmark *b) {
   int msg_size = 0;
 
   b->Args(
@@ -119,7 +119,7 @@ namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);

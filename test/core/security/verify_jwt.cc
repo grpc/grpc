@@ -30,13 +30,13 @@
 #include "test/core/util/cmdline.h"
 
 typedef struct {
-  grpc_pollset* pollset;
-  gpr_mu* mu;
+  grpc_pollset *pollset;
+  gpr_mu *mu;
   int is_done;
   int success;
 } synchronizer;
 
-static void print_usage_and_exit(gpr_cmdline* cl, const char* argv0) {
+static void print_usage_and_exit(gpr_cmdline *cl, const char *argv0) {
   std::string usage = gpr_cmdline_usage_string(cl, argv0);
   fprintf(stderr, "%s", usage.c_str());
   fflush(stderr);
@@ -44,10 +44,10 @@ static void print_usage_and_exit(gpr_cmdline* cl, const char* argv0) {
   exit(1);
 }
 
-static void on_jwt_verification_done(void* user_data,
+static void on_jwt_verification_done(void *user_data,
                                      grpc_jwt_verifier_status status,
-                                     grpc_jwt_claims* claims) {
-  synchronizer* sync = static_cast<synchronizer*>(user_data);
+                                     grpc_jwt_claims *claims) {
+  synchronizer *sync = static_cast<synchronizer *>(user_data);
 
   sync->success = (status == GRPC_JWT_VERIFIER_OK);
   if (sync->success) {
@@ -68,12 +68,12 @@ static void on_jwt_verification_done(void* user_data,
   gpr_mu_unlock(sync->mu);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   synchronizer sync;
-  grpc_jwt_verifier* verifier;
-  gpr_cmdline* cl;
-  const char* jwt = nullptr;
-  const char* aud = nullptr;
+  grpc_jwt_verifier *verifier;
+  gpr_cmdline *cl;
+  const char *jwt = nullptr;
+  const char *aud = nullptr;
   grpc_core::ExecCtx exec_ctx;
 
   grpc_init();
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
 
   grpc_init();
 
-  sync.pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+  sync.pollset = static_cast<grpc_pollset *>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(sync.pollset, &sync.mu);
   sync.is_done = 0;
 
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
 
   gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
-    grpc_pollset_worker* worker = nullptr;
+    grpc_pollset_worker *worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(sync.pollset, &worker, GRPC_MILLIS_INF_FUTURE))) {

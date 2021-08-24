@@ -32,40 +32,40 @@ class Chttp2SliceAllocator
  public:
   /// gRPC-internal constructor. Takes ownership of a resource_user ref from the
   /// caller.
-  explicit Chttp2SliceAllocator(grpc_resource_user* user);
+  explicit Chttp2SliceAllocator(grpc_resource_user *user);
   // Not copyable
-  Chttp2SliceAllocator(Chttp2SliceAllocator& other) = delete;
-  Chttp2SliceAllocator& operator=(const Chttp2SliceAllocator& other) = delete;
+  Chttp2SliceAllocator(Chttp2SliceAllocator &other) = delete;
+  Chttp2SliceAllocator &operator=(const Chttp2SliceAllocator &other) = delete;
   // Not Moveable
-  Chttp2SliceAllocator(Chttp2SliceAllocator&& other) = delete;
-  Chttp2SliceAllocator& operator=(Chttp2SliceAllocator&& other) = delete;
+  Chttp2SliceAllocator(Chttp2SliceAllocator &&other) = delete;
+  Chttp2SliceAllocator &operator=(Chttp2SliceAllocator &&other) = delete;
   ~Chttp2SliceAllocator() override;
-  absl::Status Allocate(size_t size, SliceBuffer* dest,
+  absl::Status Allocate(size_t size, SliceBuffer *dest,
                         SliceAllocator::AllocateCallback cb) override;
 
  private:
-  grpc_resource_user* resource_user_;
+  grpc_resource_user *resource_user_;
 };
 
 class Chttp2SliceAllocatorFactory
     : public grpc_event_engine::experimental::SliceAllocatorFactory {
  public:
   // gRPC-internal constructor
-  explicit Chttp2SliceAllocatorFactory(grpc_resource_quota* quota);
+  explicit Chttp2SliceAllocatorFactory(grpc_resource_quota *quota);
   // Not copyable
-  Chttp2SliceAllocatorFactory(Chttp2SliceAllocatorFactory& other) = delete;
-  Chttp2SliceAllocatorFactory& operator=(
-      const Chttp2SliceAllocatorFactory& other) = delete;
+  Chttp2SliceAllocatorFactory(Chttp2SliceAllocatorFactory &other) = delete;
+  Chttp2SliceAllocatorFactory &operator=(
+      const Chttp2SliceAllocatorFactory &other) = delete;
   // Not Moveable
-  Chttp2SliceAllocatorFactory(Chttp2SliceAllocatorFactory&& other) = delete;
-  Chttp2SliceAllocatorFactory& operator=(Chttp2SliceAllocatorFactory&& other) =
+  Chttp2SliceAllocatorFactory(Chttp2SliceAllocatorFactory &&other) = delete;
+  Chttp2SliceAllocatorFactory &operator=(Chttp2SliceAllocatorFactory &&other) =
       delete;
   ~Chttp2SliceAllocatorFactory() override;
   std::unique_ptr<SliceAllocator> CreateSliceAllocator(
       absl::string_view peer_name) override;
 
  private:
-  grpc_resource_quota* resource_quota_;
+  grpc_resource_quota *resource_quota_;
 };
 
 }  // namespace experimental

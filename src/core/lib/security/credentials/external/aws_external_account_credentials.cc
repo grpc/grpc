@@ -27,16 +27,16 @@ namespace grpc_core {
 
 namespace {
 
-const char* kExpectedEnvironmentId = "aws1";
+const char *kExpectedEnvironmentId = "aws1";
 
-const char* kRegionEnvVar = "AWS_REGION";
-const char* kDefaultRegionEnvVar = "AWS_DEFAULT_REGION";
-const char* kAccessKeyIdEnvVar = "AWS_ACCESS_KEY_ID";
-const char* kSecretAccessKeyEnvVar = "AWS_SECRET_ACCESS_KEY";
-const char* kSessionTokenEnvVar = "AWS_SESSION_TOKEN";
+const char *kRegionEnvVar = "AWS_REGION";
+const char *kDefaultRegionEnvVar = "AWS_DEFAULT_REGION";
+const char *kAccessKeyIdEnvVar = "AWS_ACCESS_KEY_ID";
+const char *kSecretAccessKeyEnvVar = "AWS_SECRET_ACCESS_KEY";
+const char *kSessionTokenEnvVar = "AWS_SESSION_TOKEN";
 
-std::string UrlEncode(const absl::string_view& s) {
-  const char* hex = "0123456789ABCDEF";
+std::string UrlEncode(const absl::string_view &s) {
+  const char *hex = "0123456789ABCDEF";
   std::string result;
   result.reserve(s.length());
   for (auto c : s) {
@@ -58,7 +58,7 @@ std::string UrlEncode(const absl::string_view& s) {
 RefCountedPtr<AwsExternalAccountCredentials>
 AwsExternalAccountCredentials::Create(Options options,
                                       std::vector<std::string> scopes,
-                                      grpc_error_handle* error) {
+                                      grpc_error_handle *error) {
   auto creds = MakeRefCounted<AwsExternalAccountCredentials>(
       std::move(options), std::move(scopes), error);
   if (*error == GRPC_ERROR_NONE) {
@@ -69,7 +69,7 @@ AwsExternalAccountCredentials::Create(Options options,
 }
 
 AwsExternalAccountCredentials::AwsExternalAccountCredentials(
-    Options options, std::vector<std::string> scopes, grpc_error_handle* error)
+    Options options, std::vector<std::string> scopes, grpc_error_handle *error)
     : ExternalAccountCredentials(options, std::move(scopes)) {
   audience_ = options.audience;
   auto it = options.credential_source.object_value().find("environment_id");
@@ -121,7 +121,7 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
 }
 
 void AwsExternalAccountCredentials::RetrieveSubjectToken(
-    HTTPRequestContext* ctx, const Options& /*options*/,
+    HTTPRequestContext *ctx, const Options & /*options*/,
     std::function<void(std::string, grpc_error_handle)> cb) {
   if (ctx == nullptr) {
     FinishRetrieveSubjectToken(
@@ -163,11 +163,11 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority().c_str());
+  request.host = const_cast<char *>(uri->authority().c_str());
   request.http.path = gpr_strdup(uri->path().c_str());
   request.handshaker =
       uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
-  grpc_resource_quota* resource_quota =
+  grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
@@ -177,10 +177,10 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
   grpc_http_request_destroy(&request.http);
 }
 
-void AwsExternalAccountCredentials::OnRetrieveRegion(void* arg,
+void AwsExternalAccountCredentials::OnRetrieveRegion(void *arg,
                                                      grpc_error_handle error) {
-  AwsExternalAccountCredentials* self =
-      static_cast<AwsExternalAccountCredentials*>(arg);
+  AwsExternalAccountCredentials *self =
+      static_cast<AwsExternalAccountCredentials *>(arg);
   self->OnRetrieveRegionInternal(GRPC_ERROR_REF(error));
 }
 
@@ -212,11 +212,11 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority().c_str());
+  request.host = const_cast<char *>(uri->authority().c_str());
   request.http.path = gpr_strdup(uri->path().c_str());
   request.handshaker =
       uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
-  grpc_resource_quota* resource_quota =
+  grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
@@ -227,9 +227,9 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
 }
 
 void AwsExternalAccountCredentials::OnRetrieveRoleName(
-    void* arg, grpc_error_handle error) {
-  AwsExternalAccountCredentials* self =
-      static_cast<AwsExternalAccountCredentials*>(arg);
+    void *arg, grpc_error_handle error) {
+  AwsExternalAccountCredentials *self =
+      static_cast<AwsExternalAccountCredentials *>(arg);
   self->OnRetrieveRoleNameInternal(GRPC_ERROR_REF(error));
 }
 
@@ -274,11 +274,11 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority().c_str());
+  request.host = const_cast<char *>(uri->authority().c_str());
   request.http.path = gpr_strdup(uri->path().c_str());
   request.handshaker =
       uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
-  grpc_resource_quota* resource_quota =
+  grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
@@ -289,9 +289,9 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
 }
 
 void AwsExternalAccountCredentials::OnRetrieveSigningKeys(
-    void* arg, grpc_error_handle error) {
-  AwsExternalAccountCredentials* self =
-      static_cast<AwsExternalAccountCredentials*>(arg);
+    void *arg, grpc_error_handle error) {
+  AwsExternalAccountCredentials *self =
+      static_cast<AwsExternalAccountCredentials *>(arg);
   self->OnRetrieveSigningKeysInternal(GRPC_ERROR_REF(error));
 }
 

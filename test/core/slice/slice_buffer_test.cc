@@ -119,7 +119,7 @@ void test_slice_buffer_first() {
     grpc_slice_buffer_add_indexed(&buf, slices[idx]);
   }
 
-  grpc_slice* first = grpc_slice_buffer_peek_first(&buf);
+  grpc_slice *first = grpc_slice_buffer_peek_first(&buf);
   GPR_ASSERT(GPR_SLICE_LENGTH(*first) == GPR_SLICE_LENGTH(slices[0]));
   GPR_ASSERT(buf.count == 3);
   GPR_ASSERT(buf.length == 12);
@@ -147,7 +147,7 @@ void test_slice_buffer_first() {
   GPR_ASSERT(buf.length == 0);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 

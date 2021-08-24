@@ -262,12 +262,12 @@ constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 constexpr char kBadClientCertPath[] = "src/core/tsi/test_creds/badclient.pem";
 constexpr char kBadClientKeyPath[] = "src/core/tsi/test_creds/badclient.key";
 
-char* g_bootstrap_file_v3;
-char* g_bootstrap_file_v2;
+char *g_bootstrap_file_v3;
+char *g_bootstrap_file_v2;
 
 void WriteBootstrapFiles() {
-  char* bootstrap_file;
-  FILE* out = gpr_tmpfile("xds_bootstrap_v3", &bootstrap_file);
+  char *bootstrap_file;
+  FILE *out = gpr_tmpfile("xds_bootstrap_v3", &bootstrap_file);
   fputs(kBootstrapFileV3, out);
   fclose(out);
   g_bootstrap_file_v3 = bootstrap_file;
@@ -317,8 +317,8 @@ class BackendServiceImpl
  public:
   BackendServiceImpl() {}
 
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
+  Status Echo(ServerContext *context, const EchoRequest *request,
+              EchoResponse *response) override {
     auto peer_identity = context->auth_context()->GetPeerIdentity();
     CountedService<TestMultipleServiceImpl<RpcService>>::IncreaseRequestCount();
     const auto status =
@@ -329,20 +329,20 @@ class BackendServiceImpl
       grpc_core::MutexLock lock(&mu_);
       clients_.insert(context->peer());
       last_peer_identity_.clear();
-      for (const auto& entry : peer_identity) {
+      for (const auto &entry : peer_identity) {
         last_peer_identity_.emplace_back(entry.data(), entry.size());
       }
     }
     return status;
   }
 
-  Status Echo1(ServerContext* context, const EchoRequest* request,
-               EchoResponse* response) override {
+  Status Echo1(ServerContext *context, const EchoRequest *request,
+               EchoResponse *response) override {
     return Echo(context, request, response);
   }
 
-  Status Echo2(ServerContext* context, const EchoRequest* request,
-               EchoResponse* response) override {
+  Status Echo2(ServerContext *context, const EchoRequest *request,
+               EchoResponse *response) override {
     return Echo(context, request, response);
   }
 
@@ -354,7 +354,7 @@ class BackendServiceImpl
     return clients_;
   }
 
-  const std::vector<std::string>& last_peer_identity() {
+  const std::vector<std::string> &last_peer_identity() {
     grpc_core::MutexLock lock(&mu_);
     return last_peer_identity_;
   }
@@ -372,7 +372,7 @@ class ClientStats {
 
     // Converts from proto message class.
     template <class UpstreamLocalityStats>
-    explicit LocalityStats(const UpstreamLocalityStats& upstream_locality_stats)
+    explicit LocalityStats(const UpstreamLocalityStats &upstream_locality_stats)
         : total_successful_requests(
               upstream_locality_stats.total_successful_requests()),
           total_requests_in_progress(
@@ -381,7 +381,7 @@ class ClientStats {
           total_issued_requests(
               upstream_locality_stats.total_issued_requests()) {}
 
-    LocalityStats& operator+=(const LocalityStats& other) {
+    LocalityStats &operator+=(const LocalityStats &other) {
       total_successful_requests += other.total_successful_requests;
       total_requests_in_progress += other.total_requests_in_progress;
       total_error_requests += other.total_error_requests;
@@ -399,50 +399,50 @@ class ClientStats {
 
   // Converts from proto message class.
   template <class ClusterStats>
-  explicit ClientStats(const ClusterStats& cluster_stats)
+  explicit ClientStats(const ClusterStats &cluster_stats)
       : cluster_name_(cluster_stats.cluster_name()),
         total_dropped_requests_(cluster_stats.total_dropped_requests()) {
-    for (const auto& input_locality_stats :
+    for (const auto &input_locality_stats :
          cluster_stats.upstream_locality_stats()) {
       locality_stats_.emplace(input_locality_stats.locality().sub_zone(),
                               LocalityStats(input_locality_stats));
     }
-    for (const auto& input_dropped_requests :
+    for (const auto &input_dropped_requests :
          cluster_stats.dropped_requests()) {
       dropped_requests_.emplace(input_dropped_requests.category(),
                                 input_dropped_requests.dropped_count());
     }
   }
 
-  const std::string& cluster_name() const { return cluster_name_; }
+  const std::string &cluster_name() const { return cluster_name_; }
 
-  const std::map<std::string, LocalityStats>& locality_stats() const {
+  const std::map<std::string, LocalityStats> &locality_stats() const {
     return locality_stats_;
   }
   uint64_t total_successful_requests() const {
     uint64_t sum = 0;
-    for (auto& p : locality_stats_) {
+    for (auto &p : locality_stats_) {
       sum += p.second.total_successful_requests;
     }
     return sum;
   }
   uint64_t total_requests_in_progress() const {
     uint64_t sum = 0;
-    for (auto& p : locality_stats_) {
+    for (auto &p : locality_stats_) {
       sum += p.second.total_requests_in_progress;
     }
     return sum;
   }
   uint64_t total_error_requests() const {
     uint64_t sum = 0;
-    for (auto& p : locality_stats_) {
+    for (auto &p : locality_stats_) {
       sum += p.second.total_error_requests;
     }
     return sum;
   }
   uint64_t total_issued_requests() const {
     uint64_t sum = 0;
-    for (auto& p : locality_stats_) {
+    for (auto &p : locality_stats_) {
       sum += p.second.total_issued_requests;
     }
     return sum;
@@ -450,18 +450,18 @@ class ClientStats {
 
   uint64_t total_dropped_requests() const { return total_dropped_requests_; }
 
-  uint64_t dropped_requests(const std::string& category) const {
+  uint64_t dropped_requests(const std::string &category) const {
     auto iter = dropped_requests_.find(category);
     GPR_ASSERT(iter != dropped_requests_.end());
     return iter->second;
   }
 
-  ClientStats& operator+=(const ClientStats& other) {
-    for (const auto& p : other.locality_stats_) {
+  ClientStats &operator+=(const ClientStats &other) {
+    for (const auto &p : other.locality_stats_) {
       locality_stats_[p.first] += p.second;
     }
     total_dropped_requests_ += other.total_dropped_requests_;
-    for (const auto& p : other.dropped_requests_) {
+    for (const auto &p : other.dropped_requests_) {
       dropped_requests_[p.first] += p.second;
     }
     return *this;
@@ -526,12 +526,12 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   bool seen_v2_client() const { return seen_v2_client_; }
   bool seen_v3_client() const { return seen_v3_client_; }
 
-  ::envoy::service::discovery::v2::AggregatedDiscoveryService::Service*
+  ::envoy::service::discovery::v2::AggregatedDiscoveryService::Service *
   v2_rpc_service() {
     return &v2_rpc_service_;
   }
 
-  ::envoy::service::discovery::v3::AggregatedDiscoveryService::Service*
+  ::envoy::service::discovery::v3::AggregatedDiscoveryService::Service *
   v3_rpc_service() {
     return &v3_rpc_service_;
   }
@@ -556,21 +556,21 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     return resource_type_response_state_[kEdsTypeUrl];
   }
 
-  void SetResourceIgnore(const std::string& type_url) {
+  void SetResourceIgnore(const std::string &type_url) {
     grpc_core::MutexLock lock(&ads_mu_);
     resource_types_to_ignore_.emplace(type_url);
   }
 
-  void SetResourceMinVersion(const std::string& type_url, int version) {
+  void SetResourceMinVersion(const std::string &type_url, int version) {
     grpc_core::MutexLock lock(&ads_mu_);
     resource_type_min_versions_[type_url] = version;
   }
 
-  void UnsetResource(const std::string& type_url, const std::string& name) {
+  void UnsetResource(const std::string &type_url, const std::string &name) {
     grpc_core::MutexLock lock(&ads_mu_);
-    ResourceTypeState& resource_type_state = resource_map_[type_url];
+    ResourceTypeState &resource_type_state = resource_map_[type_url];
     ++resource_type_state.resource_type_version;
-    ResourceState& resource_state = resource_type_state.resource_name_map[name];
+    ResourceState &resource_state = resource_type_state.resource_name_map[name];
     resource_state.resource_type_version =
         resource_type_state.resource_type_version;
     resource_state.resource.reset();
@@ -578,17 +578,17 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
             "ADS[%p]: Unsetting %s resource %s; resource_type_version now %u",
             this, type_url.c_str(), name.c_str(),
             resource_type_state.resource_type_version);
-    for (SubscriptionState* subscription : resource_state.subscriptions) {
+    for (SubscriptionState *subscription : resource_state.subscriptions) {
       subscription->update_queue->emplace_back(type_url, name);
     }
   }
 
-  void SetResource(google::protobuf::Any resource, const std::string& type_url,
-                   const std::string& name) {
+  void SetResource(google::protobuf::Any resource, const std::string &type_url,
+                   const std::string &name) {
     grpc_core::MutexLock lock(&ads_mu_);
-    ResourceTypeState& resource_type_state = resource_map_[type_url];
+    ResourceTypeState &resource_type_state = resource_map_[type_url];
     ++resource_type_state.resource_type_version;
-    ResourceState& resource_state = resource_type_state.resource_name_map[name];
+    ResourceState &resource_state = resource_type_state.resource_name_map[name];
     resource_state.resource_type_version =
         resource_type_state.resource_type_version;
     resource_state.resource = std::move(resource);
@@ -596,30 +596,30 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
             "ADS[%p]: Updating %s resource %s; resource_type_version now %u",
             this, type_url.c_str(), name.c_str(),
             resource_type_state.resource_type_version);
-    for (SubscriptionState* subscription : resource_state.subscriptions) {
+    for (SubscriptionState *subscription : resource_state.subscriptions) {
       subscription->update_queue->emplace_back(type_url, name);
     }
   }
 
-  void SetLdsResource(const Listener& listener) {
+  void SetLdsResource(const Listener &listener) {
     google::protobuf::Any resource;
     resource.PackFrom(listener);
     SetResource(std::move(resource), kLdsTypeUrl, listener.name());
   }
 
-  void SetRdsResource(const RouteConfiguration& route) {
+  void SetRdsResource(const RouteConfiguration &route) {
     google::protobuf::Any resource;
     resource.PackFrom(route);
     SetResource(std::move(resource), kRdsTypeUrl, route.name());
   }
 
-  void SetCdsResource(const Cluster& cluster) {
+  void SetCdsResource(const Cluster &cluster) {
     google::protobuf::Any resource;
     resource.PackFrom(cluster);
     SetResource(std::move(resource), kCdsTypeUrl, cluster.name());
   }
 
-  void SetEdsResource(const ClusterLoadAssignment& assignment) {
+  void SetEdsResource(const ClusterLoadAssignment &assignment) {
     google::protobuf::Any resource;
     resource.PackFrom(assignment);
     SetResource(std::move(resource), kEdsTypeUrl, assignment.cluster_name());
@@ -665,7 +665,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   // A struct representing a client's subscription to a particular resource.
   struct SubscriptionState {
     // The queue upon which to place updates when the resource is updated.
-    UpdateQueue* update_queue;
+    UpdateQueue *update_queue;
   };
 
   // A struct representing the a client's subscription to all the resources.
@@ -687,7 +687,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     // The resource type version that this resource was last updated in.
     int resource_type_version = 0;
     // A list of subscriptions to this resource.
-    std::set<SubscriptionState*> subscriptions;
+    std::set<SubscriptionState *> subscriptions;
   };
 
   // The current state for all individual resources of a given type.
@@ -706,11 +706,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
    public:
     using Stream = ServerReaderWriter<DiscoveryResponse, DiscoveryRequest>;
 
-    RpcService(AdsServiceImpl* parent, bool is_v2)
+    RpcService(AdsServiceImpl *parent, bool is_v2)
         : parent_(parent), is_v2_(is_v2) {}
 
-    Status StreamAggregatedResources(ServerContext* context,
-                                     Stream* stream) override {
+    Status StreamAggregatedResources(ServerContext *context,
+                                     Stream *stream) override {
       gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources starts", this);
       parent_->AddClient(context->peer());
       if (is_v2_) {
@@ -761,7 +761,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                     request.DebugString().c_str());
             const std::string v3_resource_type =
                 TypeUrlToV3(request.type_url());
-            SentState& sent_state = sent_state_map[v3_resource_type];
+            SentState &sent_state = sent_state_map[v3_resource_type];
             // Process request.
             ProcessRequest(request, v3_resource_type, &update_queue,
                            &subscription_map, &sent_state, &response);
@@ -783,7 +783,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                 std::move(update_queue.front().second);
             update_queue.pop_front();
             did_work = true;
-            SentState& sent_state = sent_state_map[resource_type];
+            SentState &sent_state = sent_state_map[resource_type];
             ProcessUpdate(resource_type, resource_name, &subscription_map,
                           &sent_state, &response);
           }
@@ -812,15 +812,15 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
       // finished.
       {
         grpc_core::MutexLock lock(&parent_->ads_mu_);
-        for (auto& p : subscription_map) {
-          const std::string& type_url = p.first;
-          SubscriptionNameMap& subscription_name_map = p.second;
-          for (auto& q : subscription_name_map) {
-            const std::string& resource_name = q.first;
-            SubscriptionState& subscription_state = q.second;
-            ResourceNameMap& resource_name_map =
+        for (auto &p : subscription_map) {
+          const std::string &type_url = p.first;
+          SubscriptionNameMap &subscription_name_map = p.second;
+          for (auto &q : subscription_name_map) {
+            const std::string &resource_name = q.first;
+            SubscriptionState &subscription_state = q.second;
+            ResourceNameMap &resource_name_map =
                 parent_->resource_map_[type_url].resource_name_map;
-            ResourceState& resource_state = resource_name_map[resource_name];
+            ResourceState &resource_state = resource_name_map[resource_name];
             resource_state.subscriptions.erase(&subscription_state);
           }
         }
@@ -849,18 +849,18 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     // time (years? decades?) this code can be deleted altogether.
     class ABSL_SCOPED_LOCKABLE NoopMutexLock {
      public:
-      explicit NoopMutexLock(grpc_core::Mutex& mu)
+      explicit NoopMutexLock(grpc_core::Mutex &mu)
           ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) {}
       ~NoopMutexLock() ABSL_UNLOCK_FUNCTION() {}
     };
     // Processes a response read from the client.
     // Populates response if needed.
-    void ProcessRequest(const DiscoveryRequest& request,
-                        const std::string& v3_resource_type,
-                        UpdateQueue* update_queue,
-                        SubscriptionMap* subscription_map,
-                        SentState* sent_state,
-                        absl::optional<DiscoveryResponse>* response)
+    void ProcessRequest(const DiscoveryRequest &request,
+                        const std::string &v3_resource_type,
+                        UpdateQueue *update_queue,
+                        SubscriptionMap *subscription_map,
+                        SentState *sent_state,
+                        absl::optional<DiscoveryResponse> *response)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->ads_mu_) {
       NoopMutexLock mu(parent_->ads_mu_);
       // Check the nonce sent by the client, if any.
@@ -907,15 +907,15 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
         return;
       }
       // Look at all the resource names in the request.
-      auto& subscription_name_map = (*subscription_map)[v3_resource_type];
-      auto& resource_type_state = parent_->resource_map_[v3_resource_type];
-      auto& resource_name_map = resource_type_state.resource_name_map;
+      auto &subscription_name_map = (*subscription_map)[v3_resource_type];
+      auto &resource_type_state = parent_->resource_map_[v3_resource_type];
+      auto &resource_name_map = resource_type_state.resource_name_map;
       std::set<std::string> resources_in_current_request;
       std::set<std::string> resources_added_to_response;
-      for (const std::string& resource_name : request.resource_names()) {
+      for (const std::string &resource_name : request.resource_names()) {
         resources_in_current_request.emplace(resource_name);
-        auto& subscription_state = subscription_name_map[resource_name];
-        auto& resource_state = resource_name_map[resource_name];
+        auto &subscription_state = subscription_name_map[resource_name];
+        auto &resource_state = resource_name_map[resource_name];
         // Subscribe if needed.
         // Send the resource in the response if either (a) this is
         // a new subscription or (b) there is an updated version of
@@ -930,7 +930,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
           resources_added_to_response.emplace(resource_name);
           if (!response->has_value()) response->emplace();
           if (resource_state.resource.has_value()) {
-            auto* resource = (*response)->add_resources();
+            auto *resource = (*response)->add_resources();
             resource->CopyFrom(resource_state.resource.value());
             if (is_v2_) {
               resource->set_type_url(request.type_url());
@@ -958,28 +958,28 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
 
     // Processes a resource update from the test.
     // Populates response if needed.
-    void ProcessUpdate(const std::string& resource_type,
-                       const std::string& resource_name,
-                       SubscriptionMap* subscription_map, SentState* sent_state,
-                       absl::optional<DiscoveryResponse>* response)
+    void ProcessUpdate(const std::string &resource_type,
+                       const std::string &resource_name,
+                       SubscriptionMap *subscription_map, SentState *sent_state,
+                       absl::optional<DiscoveryResponse> *response)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->ads_mu_) {
       NoopMutexLock mu(parent_->ads_mu_);
       const std::string v2_resource_type = TypeUrlToV2(resource_type);
       gpr_log(GPR_INFO, "ADS[%p]: Received update for type=%s name=%s", this,
               resource_type.c_str(), resource_name.c_str());
-      auto& subscription_name_map = (*subscription_map)[resource_type];
-      auto& resource_type_state = parent_->resource_map_[resource_type];
-      auto& resource_name_map = resource_type_state.resource_name_map;
+      auto &subscription_name_map = (*subscription_map)[resource_type];
+      auto &resource_type_state = parent_->resource_map_[resource_type];
+      auto &resource_name_map = resource_type_state.resource_name_map;
       auto it = subscription_name_map.find(resource_name);
       if (it != subscription_name_map.end()) {
-        ResourceState& resource_state = resource_name_map[resource_name];
+        ResourceState &resource_state = resource_name_map[resource_name];
         if (ClientNeedsResourceUpdate(resource_type_state, resource_state,
                                       sent_state->resource_type_version)) {
           gpr_log(GPR_INFO, "ADS[%p]: Sending update for type=%s name=%s", this,
                   resource_type.c_str(), resource_name.c_str());
           response->emplace();
           if (resource_state.resource.has_value()) {
-            auto* resource = (*response)->add_resources();
+            auto *resource = (*response)->add_resources();
             resource->CopyFrom(resource_state.resource.value());
             if (is_v2_) {
               resource->set_type_url(v2_resource_type);
@@ -994,8 +994,8 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     }
 
     // Starting a thread to do blocking read on the stream until cancel.
-    void BlockingRead(Stream* stream, std::deque<DiscoveryRequest>* requests,
-                      bool* stream_closed) {
+    void BlockingRead(Stream *stream, std::deque<DiscoveryRequest> *requests,
+                      bool *stream_closed) {
       DiscoveryRequest request;
       bool seen_first_request = false;
       while (stream->Read(&request)) {
@@ -1020,13 +1020,13 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     // Completing the building a DiscoveryResponse by adding common information
     // for all resources and by adding all subscribed resources for LDS and CDS.
     void CompleteBuildingDiscoveryResponse(
-        const std::string& resource_type, const std::string& v2_resource_type,
-        const int version, const SubscriptionNameMap& subscription_name_map,
-        const std::set<std::string>& resources_added_to_response,
-        SentState* sent_state, DiscoveryResponse* response)
+        const std::string &resource_type, const std::string &v2_resource_type,
+        const int version, const SubscriptionNameMap &subscription_name_map,
+        const std::set<std::string> &resources_added_to_response,
+        SentState *sent_state, DiscoveryResponse *response)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->ads_mu_) {
       NoopMutexLock mu(parent_->ads_mu_);
-      auto& response_state =
+      auto &response_state =
           parent_->resource_type_response_state_[resource_type];
       if (response_state.state == ResponseState::NOT_SENT) {
         response_state.state = ResponseState::SENT;
@@ -1037,16 +1037,16 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
       if (resource_type == kLdsTypeUrl || resource_type == kCdsTypeUrl) {
         // For LDS and CDS we must send back all subscribed resources
         // (even the unchanged ones)
-        for (const auto& p : subscription_name_map) {
-          const std::string& resource_name = p.first;
+        for (const auto &p : subscription_name_map) {
+          const std::string &resource_name = p.first;
           if (resources_added_to_response.find(resource_name) ==
               resources_added_to_response.end()) {
-            ResourceNameMap& resource_name_map =
+            ResourceNameMap &resource_name_map =
                 parent_->resource_map_[resource_type].resource_name_map;
-            const ResourceState& resource_state =
+            const ResourceState &resource_state =
                 resource_name_map[resource_name];
             if (resource_state.resource.has_value()) {
-              auto* resource = response->add_resources();
+              auto *resource = response->add_resources();
               resource->CopyFrom(resource_state.resource.value());
               if (is_v2_) {
                 resource->set_type_url(v2_resource_type);
@@ -1058,7 +1058,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
       sent_state->resource_type_version = version;
     }
 
-    static std::string TypeUrlToV2(const std::string& resource_type) {
+    static std::string TypeUrlToV2(const std::string &resource_type) {
       if (resource_type == kLdsTypeUrl) return kLdsV2TypeUrl;
       if (resource_type == kRdsTypeUrl) return kRdsV2TypeUrl;
       if (resource_type == kCdsTypeUrl) return kCdsV2TypeUrl;
@@ -1066,7 +1066,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
       return resource_type;
     }
 
-    static std::string TypeUrlToV3(const std::string& resource_type) {
+    static std::string TypeUrlToV3(const std::string &resource_type) {
       if (resource_type == kLdsV2TypeUrl) return kLdsTypeUrl;
       if (resource_type == kRdsV2TypeUrl) return kRdsTypeUrl;
       if (resource_type == kCdsV2TypeUrl) return kCdsTypeUrl;
@@ -1075,22 +1075,23 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     }
 
     static void CheckBuildVersion(
-        const ::envoy::api::v2::DiscoveryRequest& request) {
+        const ::envoy::api::v2::DiscoveryRequest &request) {
       EXPECT_FALSE(request.node().build_version().empty());
     }
 
     static void CheckBuildVersion(
-        const ::envoy::service::discovery::v3::DiscoveryRequest& /*request*/) {}
+        const ::envoy::service::discovery::v3::DiscoveryRequest & /*request*/) {
+    }
 
-    AdsServiceImpl* parent_;
+    AdsServiceImpl *parent_;
     const bool is_v2_;
   };
 
   // Checks whether the client needs to receive a newer version of
   // the resource.
   static bool ClientNeedsResourceUpdate(
-      const ResourceTypeState& resource_type_state,
-      const ResourceState& resource_state, int client_resource_type_version) {
+      const ResourceTypeState &resource_type_state,
+      const ResourceState &resource_state, int client_resource_type_version) {
     return client_resource_type_version <
                resource_type_state.resource_type_version &&
            resource_state.resource_type_version <=
@@ -1100,11 +1101,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   // Subscribes to a resource if not already subscribed:
   // 1. Sets the update_queue field in subscription_state.
   // 2. Adds subscription_state to resource_state->subscriptions.
-  bool MaybeSubscribe(const std::string& resource_type,
-                      const std::string& resource_name,
-                      SubscriptionState* subscription_state,
-                      ResourceState* resource_state,
-                      UpdateQueue* update_queue) {
+  bool MaybeSubscribe(const std::string &resource_type,
+                      const std::string &resource_name,
+                      SubscriptionState *subscription_state,
+                      ResourceState *resource_state,
+                      UpdateQueue *update_queue) {
     // The update_queue will be null if we were not previously subscribed.
     if (subscription_state->update_queue != nullptr) return false;
     subscription_state->update_queue = update_queue;
@@ -1118,14 +1119,14 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   // Removes subscriptions for resources no longer present in the
   // current request.
   void ProcessUnsubscriptions(
-      const std::string& resource_type,
-      const std::set<std::string>& resources_in_current_request,
-      SubscriptionNameMap* subscription_name_map,
-      ResourceNameMap* resource_name_map) {
+      const std::string &resource_type,
+      const std::set<std::string> &resources_in_current_request,
+      SubscriptionNameMap *subscription_name_map,
+      ResourceNameMap *resource_name_map) {
     for (auto it = subscription_name_map->begin();
          it != subscription_name_map->end();) {
-      const std::string& resource_name = it->first;
-      SubscriptionState& subscription_state = it->second;
+      const std::string &resource_name = it->first;
+      SubscriptionState &subscription_state = it->second;
       if (resources_in_current_request.find(resource_name) !=
           resources_in_current_request.end()) {
         ++it;
@@ -1136,7 +1137,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
               &subscription_state);
       auto resource_it = resource_name_map->find(resource_name);
       GPR_ASSERT(resource_it != resource_name_map->end());
-      auto& resource_state = resource_it->second;
+      auto &resource_state = resource_it->second;
       resource_state.subscriptions.erase(&subscription_state);
       if (resource_state.subscriptions.empty() &&
           !resource_state.resource.has_value()) {
@@ -1146,12 +1147,12 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     }
   }
 
-  void AddClient(const std::string& client) {
+  void AddClient(const std::string &client) {
     grpc_core::MutexLock lock(&clients_mu_);
     clients_.insert(client);
   }
 
-  void RemoveClient(const std::string& client) {
+  void RemoveClient(const std::string &client) {
     grpc_core::MutexLock lock(&clients_mu_);
     clients_.erase(client);
   }
@@ -1197,12 +1198,12 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
             client_load_reporting_interval_seconds),
         cluster_names_({kDefaultClusterName}) {}
 
-  ::envoy::service::load_stats::v2::LoadReportingService::Service*
+  ::envoy::service::load_stats::v2::LoadReportingService::Service *
   v2_rpc_service() {
     return &v2_rpc_service_;
   }
 
-  ::envoy::service::load_stats::v3::LoadReportingService::Service*
+  ::envoy::service::load_stats::v3::LoadReportingService::Service *
   v3_rpc_service() {
     return &v3_rpc_service_;
   }
@@ -1219,7 +1220,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
   void set_send_all_clusters(bool send_all_clusters) {
     send_all_clusters_ = send_all_clusters;
   }
-  void set_cluster_names(const std::set<std::string>& cluster_names) {
+  void set_cluster_names(const std::set<std::string> &cluster_names) {
     cluster_names_ = cluster_names;
   }
 
@@ -1268,10 +1269,10 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
    public:
     using Stream = ServerReaderWriter<LoadStatsResponse, LoadStatsRequest>;
 
-    explicit RpcService(LrsServiceImpl* parent) : parent_(parent) {}
+    explicit RpcService(LrsServiceImpl *parent) : parent_(parent) {}
 
-    Status StreamLoadStats(ServerContext* /*context*/,
-                           Stream* stream) override {
+    Status StreamLoadStats(ServerContext * /*context*/,
+                           Stream *stream) override {
       gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats starts", this);
       EXPECT_GT(parent_->client_load_reporting_interval_seconds_, 0);
       // Take a reference of the LrsServiceImpl object, reference will go
@@ -1291,7 +1292,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
         if (parent_->send_all_clusters_) {
           response.set_send_all_clusters(true);
         } else {
-          for (const std::string& cluster_name : parent_->cluster_names_) {
+          for (const std::string &cluster_name : parent_->cluster_names_) {
             response.add_clusters(cluster_name);
           }
         }
@@ -1305,7 +1306,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
           gpr_log(GPR_INFO, "LRS[%p]: received client load report message: %s",
                   this, request.DebugString().c_str());
           std::vector<ClientStats> stats;
-          for (const auto& cluster_stats : request.cluster_stats()) {
+          for (const auto &cluster_stats : request.cluster_stats()) {
             stats.emplace_back(cluster_stats);
           }
           grpc_core::MutexLock lock(&parent_->load_report_mu_);
@@ -1325,7 +1326,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
     }
 
    private:
-    LrsServiceImpl* parent_;
+    LrsServiceImpl *parent_;
   };
 
   void NotifyDoneWithLrsCallLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(lrs_mu_) {
@@ -1353,7 +1354,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
   bool lrs_done_ ABSL_GUARDED_BY(lrs_mu_) = false;
 
   grpc_core::Mutex load_report_mu_;
-  grpc_core::CondVar* load_report_cond_ ABSL_GUARDED_BY(load_report_mu_) =
+  grpc_core::CondVar *load_report_cond_ ABSL_GUARDED_BY(load_report_mu_) =
       nullptr;
   std::deque<std::vector<ClientStats>> result_queue_
       ABSL_GUARDED_BY(load_report_mu_);
@@ -1375,42 +1376,42 @@ class TestType {
     kBootstrapFromEnvVar,
   };
 
-  TestType& set_use_fake_resolver() {
+  TestType &set_use_fake_resolver() {
     use_fake_resolver_ = true;
     return *this;
   }
 
-  TestType& set_enable_load_reporting() {
+  TestType &set_enable_load_reporting() {
     enable_load_reporting_ = true;
     return *this;
   }
 
-  TestType& set_enable_rds_testing() {
+  TestType &set_enable_rds_testing() {
     enable_rds_testing_ = true;
     return *this;
   }
 
-  TestType& set_use_v2() {
+  TestType &set_use_v2() {
     use_v2_ = true;
     return *this;
   }
 
-  TestType& set_use_xds_credentials() {
+  TestType &set_use_xds_credentials() {
     use_xds_credentials_ = true;
     return *this;
   }
 
-  TestType& set_use_csds_streaming() {
+  TestType &set_use_csds_streaming() {
     use_csds_streaming_ = true;
     return *this;
   }
 
-  TestType& set_filter_config_setup(FilterConfigSetup setup) {
+  TestType &set_filter_config_setup(FilterConfigSetup setup) {
     filter_config_setup_ = setup;
     return *this;
   }
 
-  TestType& set_bootstrap_source(BootstrapSource bootstrap_source) {
+  TestType &set_bootstrap_source(BootstrapSource bootstrap_source) {
     bootstrap_source_ = bootstrap_source;
     return *this;
   }
@@ -1453,7 +1454,7 @@ class TestType {
   BootstrapSource bootstrap_source_ = kBootstrapFromChannelArg;
 };
 
-std::string ReadFile(const char* file_path) {
+std::string ReadFile(const char *file_path) {
   grpc_slice slice;
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("load_file", grpc_load_file(file_path, 0, &slice)));
@@ -1462,8 +1463,8 @@ std::string ReadFile(const char* file_path) {
   return file_contents;
 }
 
-grpc_core::PemKeyCertPairList ReadTlsIdentityPair(const char* key_path,
-                                                  const char* cert_path) {
+grpc_core::PemKeyCertPairList ReadTlsIdentityPair(const char *key_path,
+                                                  const char *cert_path) {
   return grpc_core::PemKeyCertPairList{
       grpc_core::PemKeyCertPair(ReadFile(key_path), ReadFile(cert_path))};
 }
@@ -1530,27 +1531,27 @@ class FakeCertificateProviderFactory
  public:
   class Config : public grpc_core::CertificateProviderFactory::Config {
    public:
-    explicit Config(const char* name) : name_(name) {}
+    explicit Config(const char *name) : name_(name) {}
 
-    const char* name() const override { return name_; }
+    const char *name() const override { return name_; }
 
     std::string ToString() const override { return "{}"; }
 
    private:
-    const char* name_;
+    const char *name_;
   };
 
   FakeCertificateProviderFactory(
-      const char* name, FakeCertificateProvider::CertDataMap** cert_data_map)
+      const char *name, FakeCertificateProvider::CertDataMap **cert_data_map)
       : name_(name), cert_data_map_(cert_data_map) {
     GPR_ASSERT(cert_data_map != nullptr);
   }
 
-  const char* name() const override { return name_; }
+  const char *name() const override { return name_; }
 
   grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const grpc_core::Json& /*config_json*/,
-                                  grpc_error_handle* /*error*/) override {
+  CreateCertificateProviderConfig(const grpc_core::Json & /*config_json*/,
+                                  grpc_error_handle * /*error*/) override {
     return grpc_core::MakeRefCounted<Config>(name_);
   }
 
@@ -1563,16 +1564,16 @@ class FakeCertificateProviderFactory
   }
 
  private:
-  const char* name_;
-  FakeCertificateProvider::CertDataMap** cert_data_map_;
+  const char *name_;
+  FakeCertificateProvider::CertDataMap **cert_data_map_;
 };
 
 // Global variables for each provider.
-FakeCertificateProvider::CertDataMap* g_fake1_cert_data_map = nullptr;
-FakeCertificateProvider::CertDataMap* g_fake2_cert_data_map = nullptr;
+FakeCertificateProvider::CertDataMap *g_fake1_cert_data_map = nullptr;
+FakeCertificateProvider::CertDataMap *g_fake2_cert_data_map = nullptr;
 
-int ServerAuthCheckSchedule(void* /* config_user_data */,
-                            grpc_tls_server_authorization_check_arg* arg) {
+int ServerAuthCheckSchedule(void * /* config_user_data */,
+                            grpc_tls_server_authorization_check_arg *arg) {
   arg->success = 1;
   arg->status = GRPC_STATUS_OK;
   return 0; /* synchronous check */
@@ -1580,7 +1581,7 @@ int ServerAuthCheckSchedule(void* /* config_user_data */,
 
 std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials() {
   // TODO(yashykt): Switch to using C++ API once b/173823806 is fixed.
-  grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
+  grpc_tls_credentials_options *options = grpc_tls_credentials_options_create();
   grpc_tls_credentials_options_set_server_verification_option(
       options, GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
   grpc_tls_credentials_options_set_certificate_provider(
@@ -1591,7 +1592,7 @@ std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials() {
           .get());
   grpc_tls_credentials_options_watch_root_certs(options);
   grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
-  grpc_tls_server_authorization_check_config* check_config =
+  grpc_tls_server_authorization_check_config *check_config =
       grpc_tls_server_authorization_check_config_create(
           nullptr, ServerAuthCheckSchedule, nullptr, nullptr);
   grpc_tls_credentials_options_set_server_authorization_check_config(
@@ -1611,26 +1612,26 @@ class NoOpHttpFilter : public grpc_core::XdsHttpFilterImpl {
         supported_on_clients_(supported_on_clients),
         supported_on_servers_(supported_on_servers) {}
 
-  void PopulateSymtab(upb_symtab* /* symtab */) const override {}
+  void PopulateSymtab(upb_symtab * /* symtab */) const override {}
 
   absl::StatusOr<grpc_core::XdsHttpFilterImpl::FilterConfig>
   GenerateFilterConfig(upb_strview /* serialized_filter_config */,
-                       upb_arena* /* arena */) const override {
+                       upb_arena * /* arena */) const override {
     return grpc_core::XdsHttpFilterImpl::FilterConfig{name_, grpc_core::Json()};
   }
 
   absl::StatusOr<grpc_core::XdsHttpFilterImpl::FilterConfig>
   GenerateFilterConfigOverride(upb_strview /*serialized_filter_config*/,
-                               upb_arena* /*arena*/) const override {
+                               upb_arena * /*arena*/) const override {
     return grpc_core::XdsHttpFilterImpl::FilterConfig{name_, grpc_core::Json()};
   }
 
-  const grpc_channel_filter* channel_filter() const override { return nullptr; }
+  const grpc_channel_filter *channel_filter() const override { return nullptr; }
 
   absl::StatusOr<grpc_core::XdsHttpFilterImpl::ServiceConfigJsonEntry>
   GenerateServiceConfig(
-      const FilterConfig& /*hcm_filter_config*/,
-      const FilterConfig* /*filter_config_override*/) const override {
+      const FilterConfig & /*hcm_filter_config*/,
+      const FilterConfig * /*filter_config_override*/) const override {
     return grpc_core::XdsHttpFilterImpl::ServiceConfigJsonEntry{name_, ""};
   }
 
@@ -1680,17 +1681,17 @@ size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
 
 // Channel arg pointer vtable for storing xDS channel args in the parent
 // channel's channel args.
-void* ChannelArgsArgCopy(void* p) {
-  auto* args = static_cast<grpc_channel_args*>(p);
+void *ChannelArgsArgCopy(void *p) {
+  auto *args = static_cast<grpc_channel_args *>(p);
   return grpc_channel_args_copy(args);
 }
-void ChannelArgsArgDestroy(void* p) {
-  auto* args = static_cast<grpc_channel_args*>(p);
+void ChannelArgsArgDestroy(void *p) {
+  auto *args = static_cast<grpc_channel_args *>(p);
   grpc_channel_args_destroy(args);
 }
-int ChannelArgsArgCmp(void* a, void* b) {
-  auto* args_a = static_cast<grpc_channel_args*>(a);
-  auto* args_b = static_cast<grpc_channel_args*>(b);
+int ChannelArgsArgCmp(void *a, void *b) {
+  auto *args_a = static_cast<grpc_channel_args *>(a);
+  auto *args_b = static_cast<grpc_channel_args *>(b);
   return grpc_channel_args_compare(args_a, args_b);
 }
 const grpc_arg_pointer_vtable kChannelArgsArgVtable = {
@@ -1727,7 +1728,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     default_listener_.set_name(kServerName);
     HttpConnectionManager http_connection_manager;
     if (!GetParam().use_v2()) {
-      auto* filter = http_connection_manager.add_http_filters();
+      auto *filter = http_connection_manager.add_http_filters();
       filter->set_name("router");
       filter->mutable_typed_config()->PackFrom(
           envoy::extensions::filters::http::router::v3::Router());
@@ -1736,15 +1737,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         http_connection_manager);
     // Construct RDS resource.
     default_route_config_.set_name(kDefaultRouteConfigurationName);
-    auto* virtual_host = default_route_config_.add_virtual_hosts();
+    auto *virtual_host = default_route_config_.add_virtual_hosts();
     virtual_host->add_domains("*");
-    auto* route = virtual_host->add_routes();
+    auto *route = virtual_host->add_routes();
     route->mutable_match()->set_prefix("");
     route->mutable_route()->set_cluster(kDefaultClusterName);
     // Construct CDS resource.
     default_cluster_.set_name(kDefaultClusterName);
     default_cluster_.set_type(Cluster::EDS);
-    auto* eds_config = default_cluster_.mutable_eds_cluster_config();
+    auto *eds_config = default_cluster_.mutable_eds_cluster_config();
     eds_config->mutable_eds_config()->mutable_ads();
     eds_config->set_service_name(kDefaultEdsServiceName);
     default_cluster_.set_lb_policy(Cluster::ROUND_ROBIN);
@@ -1778,7 +1779,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             lb_channel_response_generator_.get()));
     if (xds_resource_does_not_exist_timeout_ms_ > 0) {
       xds_channel_args_to_add_.emplace_back(grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
+          const_cast<char *>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
           xds_resource_does_not_exist_timeout_ms_));
     }
     xds_channel_args_.num_args = xds_channel_args_to_add_.size();
@@ -1819,14 +1820,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     ResetStub();
   }
 
-  const char* DefaultEdsServiceName() const {
+  const char *DefaultEdsServiceName() const {
     return GetParam().use_fake_resolver() ? kServerName
                                           : kDefaultEdsServiceName;
   }
 
   void TearDown() override {
     ShutdownAllBackends();
-    for (auto& balancer : balancers_) balancer->Shutdown();
+    for (auto &balancer : balancers_) balancer->Shutdown();
     // Clear global xDS channel args, since they will go out of scope
     // when this test object is destroyed.
     grpc_core::internal::SetXdsChannelArgsForTest(nullptr);
@@ -1835,13 +1836,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   void StartAllBackends() {
-    for (auto& backend : backends_) backend->Start();
+    for (auto &backend : backends_) backend->Start();
   }
 
   void StartBackend(size_t index) { backends_[index]->Start(); }
 
   void ShutdownAllBackends() {
-    for (auto& backend : backends_) backend->Shutdown();
+    for (auto &backend : backends_) backend->Shutdown();
   }
 
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
@@ -1854,9 +1855,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   std::shared_ptr<Channel> CreateChannel(
-      int failover_timeout = 0, const char* server_name = kServerName,
-      grpc_core::FakeResolverResponseGenerator* response_generator = nullptr,
-      grpc_channel_args* xds_channel_args = nullptr) {
+      int failover_timeout = 0, const char *server_name = kServerName,
+      grpc_core::FakeResolverResponseGenerator *response_generator = nullptr,
+      grpc_channel_args *xds_channel_args = nullptr) {
     ChannelArguments args;
     if (failover_timeout > 0) {
       args.SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout);
@@ -1922,60 +1923,60 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     RpcOptions() {}
 
-    RpcOptions& set_rpc_service(RpcService rpc_service) {
+    RpcOptions &set_rpc_service(RpcService rpc_service) {
       service = rpc_service;
       return *this;
     }
 
-    RpcOptions& set_rpc_method(RpcMethod rpc_method) {
+    RpcOptions &set_rpc_method(RpcMethod rpc_method) {
       method = rpc_method;
       return *this;
     }
 
-    RpcOptions& set_timeout_ms(int rpc_timeout_ms) {
+    RpcOptions &set_timeout_ms(int rpc_timeout_ms) {
       timeout_ms = rpc_timeout_ms;
       return *this;
     }
 
-    RpcOptions& set_wait_for_ready(bool rpc_wait_for_ready) {
+    RpcOptions &set_wait_for_ready(bool rpc_wait_for_ready) {
       wait_for_ready = rpc_wait_for_ready;
       return *this;
     }
 
-    RpcOptions& set_server_fail(bool rpc_server_fail) {
+    RpcOptions &set_server_fail(bool rpc_server_fail) {
       server_fail = rpc_server_fail;
       return *this;
     }
 
-    RpcOptions& set_skip_cancelled_check(bool rpc_skip_cancelled_check) {
+    RpcOptions &set_skip_cancelled_check(bool rpc_skip_cancelled_check) {
       skip_cancelled_check = rpc_skip_cancelled_check;
       return *this;
     }
 
-    RpcOptions& set_metadata(
+    RpcOptions &set_metadata(
         std::vector<std::pair<std::string, std::string>> rpc_metadata) {
       metadata = std::move(rpc_metadata);
       return *this;
     }
 
-    RpcOptions& set_server_sleep_us(int rpc_server_sleep_us) {
+    RpcOptions &set_server_sleep_us(int rpc_server_sleep_us) {
       server_sleep_us = rpc_server_sleep_us;
       return *this;
     }
 
-    RpcOptions& set_client_cancel_after_us(int rpc_client_cancel_after_us) {
+    RpcOptions &set_client_cancel_after_us(int rpc_client_cancel_after_us) {
       client_cancel_after_us = rpc_client_cancel_after_us;
       return *this;
     }
 
-    RpcOptions& set_server_expected_error(StatusCode code) {
+    RpcOptions &set_server_expected_error(StatusCode code) {
       server_expected_error = code;
       return *this;
     }
 
     // Populates context and request.
-    void SetupRpc(ClientContext* context, EchoRequest* request) const {
-      for (const auto& item : metadata) {
+    void SetupRpc(ClientContext *context, EchoRequest *request) const {
+      for (const auto &item : metadata) {
         context->AddMetadata(item.first, item.second);
       }
       if (timeout_ms != 0) {
@@ -2002,9 +2003,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   };
 
   template <typename Stub>
-  Status SendRpcMethod(Stub* stub, const RpcOptions& rpc_options,
-                       ClientContext* context, EchoRequest& request,
-                       EchoResponse* response) {
+  Status SendRpcMethod(Stub *stub, const RpcOptions &rpc_options,
+                       ClientContext *context, EchoRequest &request,
+                       EchoResponse *response) {
     switch (rpc_options.method) {
       case METHOD_ECHO:
         return (*stub)->Echo(context, request, response);
@@ -2059,9 +2060,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   void SendRpcAndCount(
-      int* num_total, int* num_ok, int* num_failure, int* num_drops,
-      const RpcOptions& rpc_options = RpcOptions(),
-      const char* drop_error_message_prefix = "EDS-configured drop: ") {
+      int *num_total, int *num_ok, int *num_failure, int *num_drops,
+      const RpcOptions &rpc_options = RpcOptions(),
+      const char *drop_error_message_prefix = "EDS-configured drop: ") {
     const Status status = SendRpc(rpc_options);
     if (status.ok()) {
       ++*num_ok;
@@ -2081,12 +2082,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     WaitForBackendOptions() {}
 
-    WaitForBackendOptions& set_reset_counters(bool enable) {
+    WaitForBackendOptions &set_reset_counters(bool enable) {
       reset_counters = enable;
       return *this;
     }
 
-    WaitForBackendOptions& set_allow_failures(bool enable) {
+    WaitForBackendOptions &set_allow_failures(bool enable) {
       allow_failures = enable;
       return *this;
     }
@@ -2094,8 +2095,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   std::tuple<int, int, int> WaitForAllBackends(
       size_t start_index = 0, size_t stop_index = 0,
-      const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
-      const RpcOptions& rpc_options = RpcOptions()) {
+      const WaitForBackendOptions &wait_options = WaitForBackendOptions(),
+      const RpcOptions &rpc_options = RpcOptions()) {
     int num_ok = 0;
     int num_failure = 0;
     int num_drops = 0;
@@ -2115,8 +2116,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   void WaitForBackend(
       size_t backend_idx,
-      const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
-      const RpcOptions& rpc_options = RpcOptions()) {
+      const WaitForBackendOptions &wait_options = WaitForBackendOptions(),
+      const RpcOptions &rpc_options = RpcOptions()) {
     gpr_log(GPR_INFO, "========= WAITING FOR BACKEND %lu ==========",
             static_cast<unsigned long>(backend_idx));
     do {
@@ -2132,7 +2133,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   grpc_core::ServerAddressList CreateAddressListFromPortList(
-      const std::vector<int>& ports) {
+      const std::vector<int> &ports) {
     grpc_core::ServerAddressList addresses;
     for (int port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(
@@ -2154,14 +2155,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   void SetNextResolution(
-      const std::vector<int>& ports,
-      grpc_core::FakeResolverResponseGenerator* response_generator = nullptr) {
+      const std::vector<int> &ports,
+      grpc_core::FakeResolverResponseGenerator *response_generator = nullptr) {
     if (!GetParam().use_fake_resolver()) return;  // Not used with xds resolver.
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(ports);
     grpc_error_handle error = GRPC_ERROR_NONE;
-    const char* service_config_json =
+    const char *service_config_json =
         GetParam().enable_load_reporting()
             ? kDefaultServiceConfig
             : kDefaultServiceConfigWithoutLoadReporting;
@@ -2176,9 +2177,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   void SetNextResolutionForLbChannelAllBalancers(
-      const char* service_config_json = nullptr,
-      const char* expected_targets = nullptr,
-      grpc_core::FakeResolverResponseGenerator* response_generator = nullptr) {
+      const char *service_config_json = nullptr,
+      const char *expected_targets = nullptr,
+      grpc_core::FakeResolverResponseGenerator *response_generator = nullptr) {
     std::vector<int> ports;
     for (size_t i = 0; i < balancers_.size(); ++i) {
       ports.emplace_back(balancers_[i]->port());
@@ -2188,9 +2189,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   void SetNextResolutionForLbChannel(
-      const std::vector<int>& ports, const char* service_config_json = nullptr,
-      const char* expected_targets = nullptr,
-      grpc_core::FakeResolverResponseGenerator* response_generator = nullptr) {
+      const std::vector<int> &ports, const char *service_config_json = nullptr,
+      const char *expected_targets = nullptr,
+      grpc_core::FakeResolverResponseGenerator *response_generator = nullptr) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(ports);
@@ -2203,8 +2204,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
     if (expected_targets != nullptr) {
       grpc_arg expected_targets_arg = grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
-          const_cast<char*>(expected_targets));
+          const_cast<char *>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
+          const_cast<char *>(expected_targets));
       result.args =
           grpc_channel_args_copy_and_add(nullptr, &expected_targets_arg, 1);
     }
@@ -2214,7 +2215,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     response_generator->SetResponse(std::move(result));
   }
 
-  void SetNextReresolutionResponse(const std::vector<int>& ports) {
+  void SetNextReresolutionResponse(const std::vector<int> &ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(ports);
@@ -2231,14 +2232,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return backend_ports;
   }
 
-  Status SendRpc(const RpcOptions& rpc_options = RpcOptions(),
-                 EchoResponse* response = nullptr) {
+  Status SendRpc(const RpcOptions &rpc_options = RpcOptions(),
+                 EchoResponse *response = nullptr) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     ClientContext context;
     EchoRequest request;
     if (rpc_options.server_expected_error != StatusCode::OK) {
-      auto* error = request.mutable_param()->mutable_expected_error();
+      auto *error = request.mutable_param()->mutable_expected_error();
       error->set_code(rpc_options.server_expected_error);
     }
     rpc_options.SetupRpc(&context, &request);
@@ -2262,7 +2263,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   void CheckRpcSendOk(const size_t times = 1,
-                      const RpcOptions& rpc_options = RpcOptions()) {
+                      const RpcOptions &rpc_options = RpcOptions()) {
     for (size_t i = 0; i < times; ++i) {
       EchoResponse response;
       const Status status = SendRpc(rpc_options, &response);
@@ -2281,29 +2282,29 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     CheckRpcSendFailureOptions() {}
 
-    CheckRpcSendFailureOptions& set_times(size_t times) {
+    CheckRpcSendFailureOptions &set_times(size_t times) {
       continue_predicate = [times](size_t i) { return i < times; };
       return *this;
     }
 
-    CheckRpcSendFailureOptions& set_continue_predicate(
+    CheckRpcSendFailureOptions &set_continue_predicate(
         std::function<bool(size_t)> pred) {
       continue_predicate = std::move(pred);
       return *this;
     }
 
-    CheckRpcSendFailureOptions& set_rpc_options(const RpcOptions& options) {
+    CheckRpcSendFailureOptions &set_rpc_options(const RpcOptions &options) {
       rpc_options = options;
       return *this;
     }
 
-    CheckRpcSendFailureOptions& set_expected_error_code(StatusCode code) {
+    CheckRpcSendFailureOptions &set_expected_error_code(StatusCode code) {
       expected_error_code = code;
       return *this;
     }
   };
 
-  void CheckRpcSendFailure(const CheckRpcSendFailureOptions& options =
+  void CheckRpcSendFailure(const CheckRpcSendFailureOptions &options =
                                CheckRpcSendFailureOptions()) {
     for (size_t i = 0; options.continue_predicate(i); ++i) {
       const Status status = SendRpc(options.rpc_options);
@@ -2357,10 +2358,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     });
   }
 
-  static Listener BuildListener(const RouteConfiguration& route_config) {
+  static Listener BuildListener(const RouteConfiguration &route_config) {
     HttpConnectionManager http_connection_manager;
     *(http_connection_manager.mutable_route_config()) = route_config;
-    auto* filter = http_connection_manager.add_http_filters();
+    auto *filter = http_connection_manager.add_http_filters();
     filter->set_name("router");
     filter->mutable_typed_config()->PackFrom(
         envoy::extensions::filters::http::router::v3::Router());
@@ -2396,20 +2397,20 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   ClusterLoadAssignment BuildEdsResource(
-      const AdsServiceImpl::EdsResourceArgs& args,
-      const char* eds_service_name = kDefaultEdsServiceName) {
+      const AdsServiceImpl::EdsResourceArgs &args,
+      const char *eds_service_name = kDefaultEdsServiceName) {
     ClusterLoadAssignment assignment;
     assignment.set_cluster_name(eds_service_name);
-    for (const auto& locality : args.locality_list) {
-      auto* endpoints = assignment.add_endpoints();
+    for (const auto &locality : args.locality_list) {
+      auto *endpoints = assignment.add_endpoints();
       endpoints->mutable_load_balancing_weight()->set_value(locality.lb_weight);
       endpoints->set_priority(locality.priority);
       endpoints->mutable_locality()->set_region(kDefaultLocalityRegion);
       endpoints->mutable_locality()->set_zone(kDefaultLocalityZone);
       endpoints->mutable_locality()->set_sub_zone(locality.sub_zone);
       for (size_t i = 0; i < locality.endpoints.size(); ++i) {
-        const int& port = locality.endpoints[i].port;
-        auto* lb_endpoints = endpoints->add_lb_endpoints();
+        const int &port = locality.endpoints[i].port;
+        auto *lb_endpoints = endpoints->add_lb_endpoints();
         if (locality.endpoints.size() > i &&
             locality.endpoints[i].health_status != HealthStatus::UNKNOWN) {
           lb_endpoints->set_health_status(locality.endpoints[i].health_status);
@@ -2419,21 +2420,21 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
           lb_endpoints->mutable_load_balancing_weight()->set_value(
               locality.endpoints[i].lb_weight);
         }
-        auto* endpoint = lb_endpoints->mutable_endpoint();
-        auto* address = endpoint->mutable_address();
-        auto* socket_address = address->mutable_socket_address();
+        auto *endpoint = lb_endpoints->mutable_endpoint();
+        auto *address = endpoint->mutable_address();
+        auto *socket_address = address->mutable_socket_address();
         socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
         socket_address->set_port_value(port);
       }
     }
     if (!args.drop_categories.empty()) {
-      auto* policy = assignment.mutable_policy();
-      for (const auto& p : args.drop_categories) {
-        const std::string& name = p.first;
+      auto *policy = assignment.mutable_policy();
+      for (const auto &p : args.drop_categories) {
+        const std::string &name = p.first;
         const uint32_t parts_per_million = p.second;
-        auto* drop_overload = policy->add_drop_overloads();
+        auto *drop_overload = policy->add_drop_overloads();
         drop_overload->set_category(name);
-        auto* drop_percentage = drop_overload->mutable_drop_percentage();
+        auto *drop_percentage = drop_overload->mutable_drop_percentage();
         drop_percentage->set_numerator(parts_per_million);
         drop_percentage->set_denominator(args.drop_denominator);
       }
@@ -2442,13 +2443,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   void SetListenerAndRouteConfiguration(
-      int idx, Listener listener, const RouteConfiguration& route_config) {
-    auto* api_listener =
+      int idx, Listener listener, const RouteConfiguration &route_config) {
+    auto *api_listener =
         listener.mutable_api_listener()->mutable_api_listener();
     HttpConnectionManager http_connection_manager;
     api_listener->UnpackTo(&http_connection_manager);
     if (GetParam().enable_rds_testing()) {
-      auto* rds = http_connection_manager.mutable_rds();
+      auto *rds = http_connection_manager.mutable_rds();
       rds->set_route_config_name(kDefaultRouteConfigurationName);
       rds->mutable_config_source()->mutable_ads();
       balancers_[idx]->ads_service()->SetRdsResource(route_config);
@@ -2459,7 +2460,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     balancers_[idx]->ads_service()->SetLdsResource(listener);
   }
 
-  void SetRouteConfiguration(int idx, const RouteConfiguration& route_config) {
+  void SetRouteConfiguration(int idx, const RouteConfiguration &route_config) {
     if (GetParam().enable_rds_testing()) {
       balancers_[idx]->ads_service()->SetRdsResource(route_config);
     } else {
@@ -2469,7 +2470,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   AdsServiceImpl::ResponseState RouteConfigurationResponseState(int idx) const {
-    AdsServiceImpl* ads_service = balancers_[idx]->ads_service();
+    AdsServiceImpl *ads_service = balancers_[idx]->ads_service();
     if (GetParam().enable_rds_testing()) {
       return ads_service->rds_response_state();
     }
@@ -2480,7 +2481,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   // This method could benefit test subclasses; to make it accessible
   // via bind with a qualified name, it needs to be public.
   void SetEdsResourceWithDelay(size_t i,
-                               const ClusterLoadAssignment& assignment,
+                               const ClusterLoadAssignment &assignment,
                                int delay_ms) {
     GPR_ASSERT(delay_ms > 0);
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
@@ -2515,7 +2516,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   class ServerThread {
    public:
-    explicit ServerThread(XdsEnd2endTest* test_obj,
+    explicit ServerThread(XdsEnd2endTest *test_obj,
                           bool use_xds_enabled_server = false)
         : test_obj_(test_obj),
           port_(grpc_pick_unused_port_or_die()),
@@ -2538,7 +2539,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       gpr_log(GPR_INFO, "%s server startup complete", Type());
     }
 
-    void Serve(grpc_core::Mutex* mu, grpc_core::CondVar* cond) {
+    void Serve(grpc_core::Mutex *mu, grpc_core::CondVar *cond) {
       // We need to acquire the lock here in order to prevent the notify_one
       // below from firing before its corresponding wait is executed.
       grpc_core::MutexLock lock(mu);
@@ -2583,16 +2584,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     bool use_xds_enabled_server() const { return use_xds_enabled_server_; }
 
-    XdsServingStatusNotifier* notifier() { return &notifier_; }
+    XdsServingStatusNotifier *notifier() { return &notifier_; }
 
    private:
     class XdsChannelArgsServerBuilderOption
         : public ::grpc::ServerBuilderOption {
      public:
-      explicit XdsChannelArgsServerBuilderOption(XdsEnd2endTest* test_obj)
+      explicit XdsChannelArgsServerBuilderOption(XdsEnd2endTest *test_obj)
           : test_obj_(test_obj) {}
 
-      void UpdateArguments(grpc::ChannelArguments* args) override {
+      void UpdateArguments(grpc::ChannelArguments *args) override {
         args->SetString(
             GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
             GetParam().use_v2() ? kBootstrapFileV2 : kBootstrapFileV3);
@@ -2601,21 +2602,20 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             &test_obj_->xds_channel_args_, &kChannelArgsArgVtable);
       }
 
-      void UpdatePlugins(
-          std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>>* /*plugins*/)
-          override {}
+      void UpdatePlugins(std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>>
+                             * /*plugins*/) override {}
 
      private:
-      XdsEnd2endTest* test_obj_;
+      XdsEnd2endTest *test_obj_;
     };
 
-    virtual void RegisterAllServices(ServerBuilder* builder) = 0;
+    virtual void RegisterAllServices(ServerBuilder *builder) = 0;
     virtual void StartAllServices() = 0;
     virtual void ShutdownAllServices() = 0;
 
-    virtual const char* Type() = 0;
+    virtual const char *Type() = 0;
 
-    XdsEnd2endTest* test_obj_;
+    XdsEnd2endTest *test_obj_;
     const int port_;
     std::unique_ptr<Server> server_;
     XdsServingStatusNotifier notifier_;
@@ -2626,20 +2626,20 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   class BackendServerThread : public ServerThread {
    public:
-    explicit BackendServerThread(XdsEnd2endTest* test_obj,
+    explicit BackendServerThread(XdsEnd2endTest *test_obj,
                                  bool use_xds_enabled_server)
         : ServerThread(test_obj, use_xds_enabled_server) {}
 
-    BackendServiceImpl<::grpc::testing::EchoTestService::Service>*
-    backend_service() {
+    BackendServiceImpl<::grpc::testing::EchoTestService::Service>
+        *backend_service() {
       return &backend_service_;
     }
-    BackendServiceImpl<::grpc::testing::EchoTest1Service::Service>*
-    backend_service1() {
+    BackendServiceImpl<::grpc::testing::EchoTest1Service::Service>
+        *backend_service1() {
       return &backend_service1_;
     }
-    BackendServiceImpl<::grpc::testing::EchoTest2Service::Service>*
-    backend_service2() {
+    BackendServiceImpl<::grpc::testing::EchoTest2Service::Service>
+        *backend_service2() {
       return &backend_service2_;
     }
 
@@ -2672,7 +2672,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
 
    private:
-    void RegisterAllServices(ServerBuilder* builder) override {
+    void RegisterAllServices(ServerBuilder *builder) override {
       builder->RegisterService(&backend_service_);
       builder->RegisterService(&backend_service1_);
       builder->RegisterService(&backend_service2_);
@@ -2690,7 +2690,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       backend_service2_.Shutdown();
     }
 
-    const char* Type() override { return "Backend"; }
+    const char *Type() override { return "Backend"; }
 
     BackendServiceImpl<::grpc::testing::EchoTestService::Service>
         backend_service_;
@@ -2702,17 +2702,17 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   class BalancerServerThread : public ServerThread {
    public:
-    explicit BalancerServerThread(XdsEnd2endTest* test_obj,
+    explicit BalancerServerThread(XdsEnd2endTest *test_obj,
                                   int client_load_reporting_interval = 0)
         : ServerThread(test_obj),
           ads_service_(new AdsServiceImpl()),
           lrs_service_(new LrsServiceImpl(client_load_reporting_interval)) {}
 
-    AdsServiceImpl* ads_service() { return ads_service_.get(); }
-    LrsServiceImpl* lrs_service() { return lrs_service_.get(); }
+    AdsServiceImpl *ads_service() { return ads_service_.get(); }
+    LrsServiceImpl *lrs_service() { return lrs_service_.get(); }
 
    private:
-    void RegisterAllServices(ServerBuilder* builder) override {
+    void RegisterAllServices(ServerBuilder *builder) override {
       builder->RegisterService(ads_service_->v2_rpc_service());
       builder->RegisterService(ads_service_->v3_rpc_service());
       builder->RegisterService(lrs_service_->v2_rpc_service());
@@ -2729,7 +2729,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       lrs_service_->Shutdown();
     }
 
-    const char* Type() override { return "Balancer"; }
+    const char *Type() override { return "Balancer"; }
 
     std::shared_ptr<AdsServiceImpl> ads_service_;
     std::shared_ptr<LrsServiceImpl> lrs_service_;
@@ -2738,17 +2738,17 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 #ifndef DISABLED_XDS_PROTO_IN_CC
   class AdminServerThread : public ServerThread {
    public:
-    explicit AdminServerThread(XdsEnd2endTest* test_obj)
+    explicit AdminServerThread(XdsEnd2endTest *test_obj)
         : ServerThread(test_obj) {}
 
    private:
-    void RegisterAllServices(ServerBuilder* builder) override {
+    void RegisterAllServices(ServerBuilder *builder) override {
       builder->RegisterService(&csds_service_);
     }
     void StartAllServices() override {}
     void ShutdownAllServices() override {}
 
-    const char* Type() override { return "Admin"; }
+    const char *Type() override { return "Admin"; }
 
     grpc::xds::experimental::ClientStatusDiscoveryService csds_service_;
   };
@@ -2756,8 +2756,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   class LongRunningRpc {
    public:
-    void StartRpc(grpc::testing::EchoTestService::Stub* stub,
-                  const RpcOptions& rpc_options =
+    void StartRpc(grpc::testing::EchoTestService::Stub *stub,
+                  const RpcOptions &rpc_options =
                       RpcOptions().set_timeout_ms(0).set_client_cancel_after_us(
                           1 * 1000 * 1000)) {
       sender_thread_ = std::thread([this, stub, rpc_options]() {
@@ -2792,8 +2792,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   };
 
   std::vector<ConcurrentRpc> SendConcurrentRpcs(
-      grpc::testing::EchoTestService::Stub* stub, size_t num_rpcs,
-      const RpcOptions& rpc_options) {
+      grpc::testing::EchoTestService::Stub *stub, size_t num_rpcs,
+      const RpcOptions &rpc_options) {
     // Variables for RPCs.
     std::vector<ConcurrentRpc> rpcs(num_rpcs);
     EchoRequest request;
@@ -2803,7 +2803,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     size_t completed = 0;
     // Set-off callback RPCs
     for (size_t i = 0; i < num_rpcs; i++) {
-      ConcurrentRpc* rpc = &rpcs[i];
+      ConcurrentRpc *rpc = &rpcs[i];
       rpc_options.SetupRpc(&rpc->context, &request);
       grpc_millis t0 = NowFromCycleCounter();
       stub->async()->Echo(&rpc->context, &request, &rpc->response,
@@ -3086,8 +3086,8 @@ TEST_P(XdsResolverOnlyTest, ResourceTypeVersionPersistsAcrossStreamRestarts) {
 
 // Tests switching over from one cluster to another.
 TEST_P(XdsResolverOnlyTest, ChangeClusters) {
-  const char* kNewClusterName = "new_cluster_name";
-  const char* kNewEdsServiceName = "new_eds_service_name";
+  const char *kNewClusterName = "new_cluster_name";
+  const char *kNewEdsServiceName = "new_eds_service_name";
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
@@ -3150,15 +3150,15 @@ TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* rds = http_connection_manager.mutable_rds();
+  auto *rds = http_connection_manager.mutable_rds();
   rds->set_route_config_name(kDefaultRouteConfigurationName);
   rds->mutable_config_source()->mutable_ads();
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
   balancers_[0]->ads_service()->SetRdsResource(default_route_config_);
-  const char* kNewClusterName = "new_cluster_name";
-  const char* kNewEdsServiceName = "new_eds_service_name";
+  const char *kNewClusterName = "new_cluster_name";
+  const char *kNewEdsServiceName = "new_eds_service_name";
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
@@ -3228,7 +3228,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
   // Update CDS resource to set max concurrent request.
   CircuitBreakers circuit_breaks;
   Cluster cluster = default_cluster_;
-  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  auto *threshold = cluster.mutable_circuit_breakers()->add_thresholds();
   threshold->set_priority(RoutingPriority::DEFAULT);
   threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -3270,7 +3270,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   // Update CDS resource to set max concurrent request.
   CircuitBreakers circuit_breaks;
   Cluster cluster = default_cluster_;
-  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  auto *threshold = cluster.mutable_circuit_breakers()->add_thresholds();
   threshold->set_priority(RoutingPriority::DEFAULT);
   threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -3322,7 +3322,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
 }
 
 TEST_P(XdsResolverOnlyTest, ClusterChangeAfterAdsCallFails) {
-  const char* kNewEdsResourceName = "new_eds_resource_name";
+  const char *kNewEdsResourceName = "new_eds_resource_name";
   // Populate EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
@@ -3366,7 +3366,7 @@ TEST_P(XdsResolverOnlyTest, ClusterChangeAfterAdsCallFails) {
 using GlobalXdsClientTest = BasicTest;
 
 TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
-  const char* kNewServerName = "new-server.example.com";
+  const char *kNewServerName = "new-server.example.com";
   Listener listener = default_listener_;
   listener.set_name(kNewServerName);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
@@ -3438,8 +3438,8 @@ class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {
 
 // Tests load reporting when switching over from one cluster to another.
 TEST_P(XdsResolverLoadReportingOnlyTest, ChangeClusters) {
-  const char* kNewClusterName = "new_cluster_name";
-  const char* kNewEdsServiceName = "new_eds_service_name";
+  const char *kNewClusterName = "new_cluster_name";
+  const char *kNewEdsServiceName = "new_eds_service_name";
   balancers_[0]->lrs_service()->set_cluster_names(
       {kDefaultClusterName, kNewClusterName});
   SetNextResolution({});
@@ -3553,7 +3553,7 @@ TEST_P(XdsResolverLoadReportingOnlyTest, ChangeClusters) {
                                   num_drops))));
   int total_ok = 0;
   int total_failure = 0;
-  for (const ClientStats& client_stats : load_report) {
+  for (const ClientStats &client_stats : load_report) {
     total_ok += client_stats.total_successful_requests();
     total_failure += client_stats.total_error_requests();
   }
@@ -3664,7 +3664,7 @@ TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* rds = http_connection_manager.mutable_rds();
+  auto *rds = http_connection_manager.mutable_rds();
   rds->set_route_config_name(kDefaultRouteConfigurationName);
   rds->mutable_config_source()->mutable_self();
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
@@ -3687,7 +3687,7 @@ TEST_P(LdsTest, NacksNonTerminalHttpFilterAtEndOfList) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
+  auto *filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("unknown");
   filter->mutable_typed_config()->set_type_url(
       "grpc.testing.client_only_http_filter");
@@ -3737,7 +3737,7 @@ TEST_P(LdsTest, RejectsEmptyHttpFilterName) {
       &http_connection_manager);
   *http_connection_manager.add_http_filters() =
       http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
+  auto *filter = http_connection_manager.mutable_http_filters(0);
   filter->Clear();
   filter->mutable_typed_config()->PackFrom(Listener());
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
@@ -3783,7 +3783,7 @@ TEST_P(LdsTest, RejectsUnknownHttpFilterType) {
       &http_connection_manager);
   *http_connection_manager.add_http_filters() =
       http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
+  auto *filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("unknown");
   filter->mutable_typed_config()->PackFrom(Listener());
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
@@ -3807,7 +3807,7 @@ TEST_P(LdsTest, IgnoresOptionalUnknownHttpFilterType) {
       &http_connection_manager);
   *http_connection_manager.add_http_filters() =
       http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
+  auto *filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("unknown");
   filter->mutable_typed_config()->PackFrom(Listener());
   filter->set_is_optional(true);
@@ -3833,7 +3833,7 @@ TEST_P(LdsTest, RejectsHttpFilterWithoutConfig) {
       &http_connection_manager);
   *http_connection_manager.add_http_filters() =
       http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
+  auto *filter = http_connection_manager.mutable_http_filters(0);
   filter->Clear();
   filter->set_name("unknown");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
@@ -3857,7 +3857,7 @@ TEST_P(LdsTest, IgnoresOptionalHttpFilterWithoutConfig) {
       &http_connection_manager);
   *http_connection_manager.add_http_filters() =
       http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
+  auto *filter = http_connection_manager.mutable_http_filters(0);
   filter->Clear();
   filter->set_name("unknown");
   filter->set_is_optional(true);
@@ -3883,7 +3883,7 @@ TEST_P(LdsTest, RejectsUnparseableHttpFilterType) {
       &http_connection_manager);
   *http_connection_manager.add_http_filters() =
       http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
+  auto *filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("unknown");
   filter->mutable_typed_config()->PackFrom(listener);
   filter->mutable_typed_config()->set_type_url(
@@ -3911,7 +3911,7 @@ TEST_P(LdsTest, RejectsHttpFiltersNotSupportedOnClients) {
       &http_connection_manager);
   *http_connection_manager.add_http_filters() =
       http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
+  auto *filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("grpc.testing.server_only_http_filter");
   filter->mutable_typed_config()->set_type_url(
       "grpc.testing.server_only_http_filter");
@@ -3937,7 +3937,7 @@ TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
       &http_connection_manager);
   *http_connection_manager.add_http_filters() =
       http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
+  auto *filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("grpc.testing.server_only_http_filter");
   filter->mutable_typed_config()->set_type_url(
       "grpc.testing.server_only_http_filter");
@@ -3967,7 +3967,7 @@ TEST_P(LdsV2Test, IgnoresHttpFilters) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
+  auto *filter = http_connection_manager.add_http_filters();
   filter->set_name("unknown");
   filter->mutable_typed_config()->PackFrom(Listener());
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
@@ -4073,7 +4073,7 @@ TEST_P(LdsRdsTest, ChooseLastRoute) {
 // Tests that LDS client should ignore route which has query_parameters.
 TEST_P(LdsRdsTest, RouteMatchHasQueryParameters) {
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
   route1->mutable_match()->add_query_parameters();
   SetRouteConfiguration(0, route_config);
@@ -4090,9 +4090,9 @@ TEST_P(LdsRdsTest, RouteMatchHasQueryParameters) {
 // that is either empty or a single slash
 TEST_P(LdsRdsTest, RouteMatchHasValidPrefixEmptyOrSingleSlash) {
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("");
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("/");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, route_config);
@@ -4107,7 +4107,7 @@ TEST_P(LdsRdsTest, RouteMatchHasValidPrefixEmptyOrSingleSlash) {
 // prefix string does not start with "/".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("grpc.testing.EchoTest1Service/");
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
@@ -4123,7 +4123,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
 // string with more than 2 slashes.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixExtraContent) {
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/Echo1/");
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
@@ -4139,7 +4139,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixExtraContent) {
 // string "//".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixDoubleSlash) {
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("//");
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
@@ -4155,7 +4155,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixDoubleSlash) {
 // but it's empty.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEmptyPath) {
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("");
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
@@ -4171,7 +4171,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEmptyPath) {
 // string does not start with "/".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("grpc.testing.EchoTest1Service/Echo1");
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
@@ -4187,7 +4187,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
 // string that has too many slashes; for example, ends with "/".
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathTooManySlashes) {
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1/");
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
@@ -4203,7 +4203,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathTooManySlashes) {
 // string that has only 1 slash: missing "/" between service and method.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathOnlyOneSlash) {
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service.Echo1");
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
@@ -4219,7 +4219,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathOnlyOneSlash) {
 // string that is missing service.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingService) {
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("//Echo1");
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
@@ -4235,7 +4235,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingService) {
 // string that is missing method.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMethod) {
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/");
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
@@ -4249,9 +4249,9 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMethod) {
 
 // Test that LDS client should reject route which has invalid path regex.
 TEST_P(LdsRdsTest, RouteMatchHasInvalidPathRegex) {
-  const char* kNewCluster1Name = "new_cluster_1";
+  const char *kNewCluster1Name = "new_cluster_1";
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->mutable_safe_regex()->set_regex("a[z-a]");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   SetRouteConfiguration(0, route_config);
@@ -4282,10 +4282,10 @@ TEST_P(LdsRdsTest, RouteHasNoRouteAction) {
 
 TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
   route1->mutable_route()->set_cluster("");
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, route_config);
@@ -4301,11 +4301,11 @@ TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
   const size_t kWeight75 = 75;
-  const char* kNewCluster1Name = "new_cluster_1";
+  const char *kNewCluster1Name = "new_cluster_1";
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* weighted_cluster1 =
+  auto *weighted_cluster1 =
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster1->set_name(kNewCluster1Name);
   weighted_cluster1->mutable_weight()->set_value(kWeight75);
@@ -4313,7 +4313,7 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
       ->mutable_weighted_clusters()
       ->mutable_total_weight()
       ->set_value(kWeight75 + 1);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, route_config);
@@ -4328,11 +4328,11 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedClusterHasZeroTotalWeight) {
-  const char* kNewCluster1Name = "new_cluster_1";
+  const char *kNewCluster1Name = "new_cluster_1";
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* weighted_cluster1 =
+  auto *weighted_cluster1 =
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster1->set_name(kNewCluster1Name);
   weighted_cluster1->mutable_weight()->set_value(0);
@@ -4340,7 +4340,7 @@ TEST_P(LdsRdsTest, RouteActionWeightedClusterHasZeroTotalWeight) {
       ->mutable_weighted_clusters()
       ->mutable_total_weight()
       ->set_value(0);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, route_config);
@@ -4358,9 +4358,9 @@ TEST_P(LdsRdsTest, RouteActionWeightedClusterHasZeroTotalWeight) {
 TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
   const size_t kWeight75 = 75;
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* weighted_cluster1 =
+  auto *weighted_cluster1 =
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster1->set_name("");
   weighted_cluster1->mutable_weight()->set_value(kWeight75);
@@ -4368,7 +4368,7 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
       ->mutable_weighted_clusters()
       ->mutable_total_weight()
       ->set_value(kWeight75);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, route_config);
@@ -4384,18 +4384,18 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
   const size_t kWeight75 = 75;
-  const char* kNewCluster1Name = "new_cluster_1";
+  const char *kNewCluster1Name = "new_cluster_1";
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* weighted_cluster1 =
+  auto *weighted_cluster1 =
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster1->set_name(kNewCluster1Name);
   route1->mutable_route()
       ->mutable_weighted_clusters()
       ->mutable_total_weight()
       ->set_value(kWeight75);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, route_config);
@@ -4410,11 +4410,11 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
 }
 
 TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
-  const char* kNewCluster1Name = "new_cluster_1";
+  const char *kNewCluster1Name = "new_cluster_1";
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* header_matcher1 = route1->mutable_match()->add_headers();
+  auto *header_matcher1 = route1->mutable_match()->add_headers();
   header_matcher1->set_name("header1");
   header_matcher1->mutable_safe_regex_match()->set_regex("a[z-a]");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
@@ -4431,11 +4431,11 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
 }
 
 TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
-  const char* kNewCluster1Name = "new_cluster_1";
+  const char *kNewCluster1Name = "new_cluster_1";
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* header_matcher1 = route1->mutable_match()->add_headers();
+  auto *header_matcher1 = route1->mutable_match()->add_headers();
   header_matcher1->set_name("header1");
   header_matcher1->mutable_range_match()->set_start(1001);
   header_matcher1->mutable_range_match()->set_end(1000);
@@ -4456,10 +4456,10 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
 // Tests that LDS client should choose the default route (with no matching
 // specified) after unable to find a match with previous routes.
 TEST_P(LdsRdsTest, XdsRoutingPathMatching) {
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char *kNewCluster1Name = "new_cluster_1";
+  const char *kNewEdsService1Name = "new_eds_service_name_1";
+  const char *kNewCluster2Name = "new_cluster_2";
+  const char *kNewEdsService2Name = "new_eds_service_name_2";
   const size_t kNumEcho1Rpcs = 10;
   const size_t kNumEcho2Rpcs = 20;
   const size_t kNumEchoRpcs = 30;
@@ -4493,16 +4493,16 @@ TEST_P(LdsRdsTest, XdsRoutingPathMatching) {
   balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
   // Populating Route Configurations for LDS.
   RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
-  auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   route2->mutable_match()->set_path("/grpc.testing.EchoTest2Service/Echo2");
   route2->mutable_route()->set_cluster(kNewCluster2Name);
-  auto* route3 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *route3 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   route3->mutable_match()->set_path("/grpc.testing.EchoTest3Service/Echo3");
   route3->mutable_route()->set_cluster(kDefaultClusterName);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, new_route_config);
@@ -4532,10 +4532,10 @@ TEST_P(LdsRdsTest, XdsRoutingPathMatching) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingPathMatchingCaseInsensitive) {
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char *kNewCluster1Name = "new_cluster_1";
+  const char *kNewEdsService1Name = "new_eds_service_name_1";
+  const char *kNewCluster2Name = "new_cluster_2";
+  const char *kNewEdsService2Name = "new_eds_service_name_2";
   const size_t kNumEcho1Rpcs = 10;
   const size_t kNumEchoRpcs = 30;
   SetNextResolution({});
@@ -4570,14 +4570,14 @@ TEST_P(LdsRdsTest, XdsRoutingPathMatchingCaseInsensitive) {
   RouteConfiguration new_route_config = default_route_config_;
   // First route will not match, since it's case-sensitive.
   // Second route will match with same path.
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("/GrPc.TeStInG.EcHoTeSt1SErViCe/EcHo1");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
-  auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   route2->mutable_match()->set_path("/GrPc.TeStInG.EcHoTeSt1SErViCe/EcHo1");
   route2->mutable_match()->mutable_case_sensitive()->set_value(false);
   route2->mutable_route()->set_cluster(kNewCluster2Name);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, new_route_config);
@@ -4596,10 +4596,10 @@ TEST_P(LdsRdsTest, XdsRoutingPathMatchingCaseInsensitive) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingPrefixMatching) {
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char *kNewCluster1Name = "new_cluster_1";
+  const char *kNewEdsService1Name = "new_eds_service_name_1";
+  const char *kNewCluster2Name = "new_cluster_2";
+  const char *kNewEdsService2Name = "new_eds_service_name_2";
   const size_t kNumEcho1Rpcs = 10;
   const size_t kNumEcho2Rpcs = 20;
   const size_t kNumEchoRpcs = 30;
@@ -4633,13 +4633,13 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatching) {
   balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
   // Populating Route Configurations for LDS.
   RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
-  auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   route2->mutable_match()->set_prefix("/grpc.testing.EchoTest2Service/");
   route2->mutable_route()->set_cluster(kNewCluster2Name);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, new_route_config);
@@ -4667,10 +4667,10 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatching) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingCaseInsensitive) {
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char *kNewCluster1Name = "new_cluster_1";
+  const char *kNewEdsService1Name = "new_eds_service_name_1";
+  const char *kNewCluster2Name = "new_cluster_2";
+  const char *kNewEdsService2Name = "new_eds_service_name_2";
   const size_t kNumEcho1Rpcs = 10;
   const size_t kNumEchoRpcs = 30;
   SetNextResolution({});
@@ -4705,14 +4705,14 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingCaseInsensitive) {
   RouteConfiguration new_route_config = default_route_config_;
   // First route will not match, since it's case-sensitive.
   // Second route will match with same path.
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/GrPc.TeStInG.EcHoTeSt1SErViCe");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
-  auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   route2->mutable_match()->set_prefix("/GrPc.TeStInG.EcHoTeSt1SErViCe");
   route2->mutable_match()->mutable_case_sensitive()->set_value(false);
   route2->mutable_route()->set_cluster(kNewCluster2Name);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, new_route_config);
@@ -4731,10 +4731,10 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingCaseInsensitive) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingPathRegexMatching) {
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char *kNewCluster1Name = "new_cluster_1";
+  const char *kNewEdsService1Name = "new_eds_service_name_1";
+  const char *kNewCluster2Name = "new_cluster_2";
+  const char *kNewEdsService2Name = "new_eds_service_name_2";
   const size_t kNumEcho1Rpcs = 10;
   const size_t kNumEcho2Rpcs = 20;
   const size_t kNumEchoRpcs = 30;
@@ -4768,15 +4768,15 @@ TEST_P(LdsRdsTest, XdsRoutingPathRegexMatching) {
   balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
   // Populating Route Configurations for LDS.
   RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   // Will match "/grpc.testing.EchoTest1Service/"
   route1->mutable_match()->mutable_safe_regex()->set_regex(".*1.*");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
-  auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   // Will match "/grpc.testing.EchoTest2Service/"
   route2->mutable_match()->mutable_safe_regex()->set_regex(".*2.*");
   route2->mutable_route()->set_cluster(kNewCluster2Name);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, new_route_config);
@@ -4804,11 +4804,11 @@ TEST_P(LdsRdsTest, XdsRoutingPathRegexMatching) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
-  const char* kNotUsedClusterName = "not_used_cluster";
+  const char *kNewCluster1Name = "new_cluster_1";
+  const char *kNewEdsService1Name = "new_eds_service_name_1";
+  const char *kNewCluster2Name = "new_cluster_2";
+  const char *kNewEdsService2Name = "new_eds_service_name_2";
+  const char *kNotUsedClusterName = "not_used_cluster";
   const size_t kNumEchoRpcs = 10;  // RPCs that will go to a fixed backend.
   const size_t kWeight75 = 75;
   const size_t kWeight25 = 25;
@@ -4847,18 +4847,18 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
   // Populating Route Configurations for LDS.
   RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* weighted_cluster1 =
+  auto *weighted_cluster1 =
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster1->set_name(kNewCluster1Name);
   weighted_cluster1->mutable_weight()->set_value(kWeight75);
-  auto* weighted_cluster2 =
+  auto *weighted_cluster2 =
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster2->set_name(kNewCluster2Name);
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
   // Cluster with weight 0 will not be used.
-  auto* weighted_cluster3 =
+  auto *weighted_cluster3 =
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster3->set_name(kNotUsedClusterName);
   weighted_cluster3->mutable_weight()->set_value(0);
@@ -4866,7 +4866,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
       ->mutable_weighted_clusters()
       ->mutable_total_weight()
       ->set_value(kWeight75 + kWeight25);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, new_route_config);
@@ -4893,10 +4893,10 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char *kNewCluster1Name = "new_cluster_1";
+  const char *kNewEdsService1Name = "new_eds_service_name_1";
+  const char *kNewCluster2Name = "new_cluster_2";
+  const char *kNewEdsService2Name = "new_eds_service_name_2";
   const size_t kWeight75 = 75;
   const size_t kWeight25 = 25;
   const double kErrorTolerance = 0.05;
@@ -4934,13 +4934,13 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
   balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
   // Populating Route Configurations for LDS.
   RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("");
-  auto* weighted_cluster1 =
+  auto *weighted_cluster1 =
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster1->set_name(kNewCluster1Name);
   weighted_cluster1->mutable_weight()->set_value(kWeight75);
-  auto* weighted_cluster2 =
+  auto *weighted_cluster2 =
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster2->set_name(kNewCluster2Name);
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
@@ -4966,12 +4966,12 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
-  const char* kNewCluster3Name = "new_cluster_3";
-  const char* kNewEdsService3Name = "new_eds_service_name_3";
+  const char *kNewCluster1Name = "new_cluster_1";
+  const char *kNewEdsService1Name = "new_eds_service_name_1";
+  const char *kNewCluster2Name = "new_cluster_2";
+  const char *kNewEdsService2Name = "new_eds_service_name_2";
+  const char *kNewCluster3Name = "new_cluster_3";
+  const char *kNewEdsService3Name = "new_eds_service_name_3";
   const size_t kNumEchoRpcs = 10;
   const size_t kWeight75 = 75;
   const size_t kWeight25 = 25;
@@ -5024,13 +5024,13 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   balancers_[0]->ads_service()->SetCdsResource(new_cluster3);
   // Populating Route Configurations.
   RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* weighted_cluster1 =
+  auto *weighted_cluster1 =
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster1->set_name(kNewCluster1Name);
   weighted_cluster1->mutable_weight()->set_value(kWeight75);
-  auto* weighted_cluster2 =
+  auto *weighted_cluster2 =
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster2->set_name(kNewCluster2Name);
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
@@ -5038,7 +5038,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
       ->mutable_weighted_clusters()
       ->mutable_total_weight()
       ->set_value(kWeight75 + kWeight25);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, new_route_config);
@@ -5098,12 +5098,12 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
-  const char* kNewCluster3Name = "new_cluster_3";
-  const char* kNewEdsService3Name = "new_eds_service_name_3";
+  const char *kNewCluster1Name = "new_cluster_1";
+  const char *kNewEdsService1Name = "new_eds_service_name_1";
+  const char *kNewCluster2Name = "new_cluster_2";
+  const char *kNewEdsService2Name = "new_eds_service_name_2";
+  const char *kNewCluster3Name = "new_cluster_3";
+  const char *kNewEdsService3Name = "new_eds_service_name_3";
   const size_t kNumEchoRpcs = 10;
   const size_t kWeight75 = 75;
   const size_t kWeight25 = 25;
@@ -5156,13 +5156,13 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   balancers_[0]->ads_service()->SetCdsResource(new_cluster3);
   // Populating Route Configurations.
   RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* weighted_cluster1 =
+  auto *weighted_cluster1 =
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster1->set_name(kNewCluster1Name);
   weighted_cluster1->mutable_weight()->set_value(kWeight75);
-  auto* weighted_cluster2 =
+  auto *weighted_cluster2 =
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster2->set_name(kDefaultClusterName);
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
@@ -5170,7 +5170,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
       ->mutable_weighted_clusters()
       ->mutable_total_weight()
       ->set_value(kWeight75 + kWeight25);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, new_route_config);
@@ -5254,8 +5254,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
-  const char* kNewClusterName = "new_cluster";
-  const char* kNewEdsServiceName = "new_eds_service_name";
+  const char *kNewClusterName = "new_cluster";
+  const char *kNewEdsServiceName = "new_eds_service_name";
   const size_t kNumEchoRpcs = 5;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -5283,7 +5283,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   // Change Route Configurations: new default cluster.
-  auto* default_route =
+  auto *default_route =
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   default_route->mutable_route()->set_cluster(kNewClusterName);
   SetRouteConfiguration(0, new_route_config);
@@ -5294,8 +5294,8 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
-  const char* kNewClusterName = "new_cluster";
-  const char* kNewEdsServiceName = "new_eds_service_name";
+  const char *kNewClusterName = "new_cluster";
+  const char *kNewEdsServiceName = "new_eds_service_name";
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -5331,7 +5331,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   const Status status = SendRpc(RpcOptions().set_timeout_ms(0));
   EXPECT_FALSE(status.ok());
   // Send a update RouteConfiguration to use backend 1.
-  auto* default_route =
+  auto *default_route =
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   default_route->mutable_route()->set_cluster(kNewClusterName);
   SetRouteConfiguration(0, new_route_config);
@@ -5356,12 +5356,12 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   const int64_t kTimeoutMaxStreamDurationSecond = 2;
   const int64_t kTimeoutHttpMaxStreamDurationSecond = 3;
   const int64_t kTimeoutApplicationSecond = 4;
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
-  const char* kNewCluster3Name = "new_cluster_3";
-  const char* kNewEdsService3Name = "new_eds_service_name_3";
+  const char *kNewCluster1Name = "new_cluster_1";
+  const char *kNewEdsService1Name = "new_eds_service_name_1";
+  const char *kNewCluster2Name = "new_cluster_2";
+  const char *kNewEdsService2Name = "new_eds_service_name_2";
+  const char *kNewCluster3Name = "new_cluster_3";
+  const char *kNewEdsService3Name = "new_eds_service_name_3";
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -5402,7 +5402,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
   // Set up HTTP max_stream_duration of 3.5 seconds
-  auto* duration =
+  auto *duration =
       http_connection_manager.mutable_common_http_protocol_options()
           ->mutable_max_stream_duration();
   duration->set_seconds(kTimeoutHttpMaxStreamDurationSecond);
@@ -5413,10 +5413,10 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   RouteConfiguration new_route_config = default_route_config_;
   // route 1: Set max_stream_duration of 2.5 seconds, Set
   // grpc_timeout_header_max of 1.5
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
-  auto* max_stream_duration =
+  auto *max_stream_duration =
       route1->mutable_route()->mutable_max_stream_duration();
   duration = max_stream_duration->mutable_max_stream_duration();
   duration->set_seconds(kTimeoutMaxStreamDurationSecond);
@@ -5425,7 +5425,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   duration->set_seconds(kTimeoutGrpcTimeoutHeaderMaxSecond);
   duration->set_nanos(kTimeoutNano);
   // route 2: Set max_stream_duration of 2.5 seconds
-  auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   route2->mutable_match()->set_path("/grpc.testing.EchoTest2Service/Echo2");
   route2->mutable_route()->set_cluster(kNewCluster2Name);
   max_stream_duration = route2->mutable_route()->mutable_max_stream_duration();
@@ -5433,7 +5433,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   duration->set_seconds(kTimeoutMaxStreamDurationSecond);
   duration->set_nanos(kTimeoutNano);
   // route 3: No timeout values in route configuration
-  auto* route3 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *route3 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   route3->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
   route3->mutable_route()->set_cluster(kNewCluster3Name);
   // Set listener and route config.
@@ -5490,10 +5490,10 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
   const int64_t kTimeoutMaxStreamDurationSecond = 2;
   const int64_t kTimeoutHttpMaxStreamDurationSecond = 3;
   const int64_t kTimeoutApplicationSecond = 4;
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char *kNewCluster1Name = "new_cluster_1";
+  const char *kNewEdsService1Name = "new_eds_service_name_1";
+  const char *kNewCluster2Name = "new_cluster_2";
+  const char *kNewEdsService2Name = "new_eds_service_name_2";
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -5525,7 +5525,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
   // Set up HTTP max_stream_duration of 3.5 seconds
-  auto* duration =
+  auto *duration =
       http_connection_manager.mutable_common_http_protocol_options()
           ->mutable_max_stream_duration();
   duration->set_seconds(kTimeoutHttpMaxStreamDurationSecond);
@@ -5536,10 +5536,10 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
   RouteConfiguration new_route_config = default_route_config_;
   // route 1: Set max_stream_duration of 2.5 seconds, Set
   // grpc_timeout_header_max of 0
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
-  auto* max_stream_duration =
+  auto *max_stream_duration =
       route1->mutable_route()->mutable_max_stream_duration();
   duration = max_stream_duration->mutable_max_stream_duration();
   duration->set_seconds(kTimeoutMaxStreamDurationSecond);
@@ -5548,7 +5548,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
   duration->set_seconds(0);
   duration->set_nanos(0);
   // route 2: Set max_stream_duration to 0
-  auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   route2->mutable_match()->set_path("/grpc.testing.EchoTest2Service/Echo2");
   route2->mutable_route()->set_cluster(kNewCluster2Name);
   max_stream_duration = route2->mutable_route()->mutable_max_stream_duration();
@@ -5603,7 +5603,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit0) {
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
   // Set up HTTP max_stream_duration to be explicit 0
-  auto* duration =
+  auto *duration =
       http_connection_manager.mutable_common_http_protocol_options()
           ->mutable_max_stream_duration();
   duration->set_seconds(0);
@@ -5661,8 +5661,8 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct route config to set retry policy.
   RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  auto *route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *retry_policy = route1->mutable_route()->mutable_retry_policy();
   retry_policy->set_retry_on(
       "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
       "unavailable");
@@ -5724,7 +5724,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct route config to set retry policy.
   RouteConfiguration new_route_config = default_route_config_;
-  auto* retry_policy =
+  auto *retry_policy =
       new_route_config.mutable_virtual_hosts(0)->mutable_retry_policy();
   retry_policy->set_retry_on(
       "cancelled,deadline-exceeded,internal,resource-exhausted,unavailable");
@@ -5752,8 +5752,8 @@ TEST_P(LdsRdsTest, XdsRetryPolicyLongBackOff) {
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct route config to set retry policy.
   RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  auto *route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *retry_policy = route1->mutable_route()->mutable_retry_policy();
   retry_policy->set_retry_on(
       "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
       "unavailable");
@@ -5788,8 +5788,8 @@ TEST_P(LdsRdsTest, XdsRetryPolicyMaxBackOff) {
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct route config to set retry policy.
   RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  auto *route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *retry_policy = route1->mutable_route()->mutable_retry_policy();
   retry_policy->set_retry_on(
       "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
       "unavailable");
@@ -5829,8 +5829,8 @@ TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct route config to set retry policy.
   RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  auto *route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *retry_policy = route1->mutable_route()->mutable_retry_policy();
   retry_policy->set_retry_on("5xx");
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
   SetRouteConfiguration(0, new_route_config);
@@ -5853,8 +5853,8 @@ TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct route config to set retry policy.
   RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  auto *route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *retry_policy = route1->mutable_route()->mutable_retry_policy();
   retry_policy->set_retry_on("deadline-exceeded");
   // Setting num_retries to zero is not valid.
   retry_policy->mutable_num_retries()->set_value(0);
@@ -5878,8 +5878,8 @@ TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct route config to set retry policy.
   RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  auto *route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *retry_policy = route1->mutable_route()->mutable_retry_policy();
   retry_policy->set_retry_on("deadline-exceeded");
   retry_policy->mutable_num_retries()->set_value(1);
   // RetryBackoff is there but base interval is missing.
@@ -5898,8 +5898,8 @@ TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
-  const char* kNewClusterName = "new_cluster";
-  const char* kNewEdsServiceName = "new_eds_service_name";
+  const char *kNewClusterName = "new_cluster";
+  const char *kNewEdsServiceName = "new_eds_service_name";
   const size_t kNumEcho1Rpcs = 100;
   const size_t kNumEchoRpcs = 5;
   SetNextResolution({});
@@ -5922,33 +5922,33 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   balancers_[0]->ads_service()->SetCdsResource(new_cluster);
   // Populating Route Configurations for LDS.
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* header_matcher1 = route1->mutable_match()->add_headers();
+  auto *header_matcher1 = route1->mutable_match()->add_headers();
   header_matcher1->set_name("header1");
   header_matcher1->set_exact_match("POST,PUT,GET");
-  auto* header_matcher2 = route1->mutable_match()->add_headers();
+  auto *header_matcher2 = route1->mutable_match()->add_headers();
   header_matcher2->set_name("header2");
   header_matcher2->mutable_safe_regex_match()->set_regex("[a-z]*");
-  auto* header_matcher3 = route1->mutable_match()->add_headers();
+  auto *header_matcher3 = route1->mutable_match()->add_headers();
   header_matcher3->set_name("header3");
   header_matcher3->mutable_range_match()->set_start(1);
   header_matcher3->mutable_range_match()->set_end(1000);
-  auto* header_matcher4 = route1->mutable_match()->add_headers();
+  auto *header_matcher4 = route1->mutable_match()->add_headers();
   header_matcher4->set_name("header4");
   header_matcher4->set_present_match(false);
-  auto* header_matcher5 = route1->mutable_match()->add_headers();
+  auto *header_matcher5 = route1->mutable_match()->add_headers();
   header_matcher5->set_name("header5");
   header_matcher5->set_present_match(true);
-  auto* header_matcher6 = route1->mutable_match()->add_headers();
+  auto *header_matcher6 = route1->mutable_match()->add_headers();
   header_matcher6->set_name("header6");
   header_matcher6->set_prefix_match("/grpc");
-  auto* header_matcher7 = route1->mutable_match()->add_headers();
+  auto *header_matcher7 = route1->mutable_match()->add_headers();
   header_matcher7->set_name("header7");
   header_matcher7->set_suffix_match(".cc");
   header_matcher7->set_invert_match(true);
   route1->mutable_route()->set_cluster(kNewClusterName);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, route_config);
@@ -5983,8 +5983,8 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
-  const char* kNewClusterName = "new_cluster";
-  const char* kNewEdsServiceName = "new_eds_service_name";
+  const char *kNewClusterName = "new_cluster";
+  const char *kNewEdsServiceName = "new_eds_service_name";
   const size_t kNumEchoRpcs = 100;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -6006,15 +6006,15 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
   balancers_[0]->ads_service()->SetCdsResource(new_cluster);
   // Populating Route Configurations for LDS.
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("");
-  auto* header_matcher1 = route1->mutable_match()->add_headers();
+  auto *header_matcher1 = route1->mutable_match()->add_headers();
   header_matcher1->set_name("content-type");
   header_matcher1->set_exact_match("notapplication/grpc");
   route1->mutable_route()->set_cluster(kNewClusterName);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
-  auto* header_matcher2 = default_route->mutable_match()->add_headers();
+  auto *header_matcher2 = default_route->mutable_match()->add_headers();
   header_matcher2->set_name("content-type");
   header_matcher2->set_exact_match("application/grpc");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
@@ -6030,8 +6030,8 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char *kNewCluster1Name = "new_cluster_1";
+  const char *kNewEdsService1Name = "new_eds_service_name_1";
   const size_t kNumEchoRpcs = 100;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -6053,13 +6053,13 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
   balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
   // Populating Route Configurations for LDS.
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("");
-  auto* header_matcher1 = route1->mutable_match()->add_headers();
+  auto *header_matcher1 = route1->mutable_match()->add_headers();
   header_matcher1->set_name("grpc-foo-bin");
   header_matcher1->set_present_match(true);
   route1->mutable_route()->set_cluster(kNewCluster1Name);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, route_config);
@@ -6078,8 +6078,8 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
-  const char* kNewClusterName = "new_cluster";
-  const char* kNewEdsServiceName = "new_eds_service_name";
+  const char *kNewClusterName = "new_cluster";
+  const char *kNewEdsServiceName = "new_eds_service_name";
   const double kErrorTolerance = 0.05;
   const size_t kRouteMatchNumerator = 25;
   const double kRouteMatchPercent =
@@ -6106,13 +6106,13 @@ TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
   balancers_[0]->ads_service()->SetCdsResource(new_cluster);
   // Populating Route Configurations for LDS.
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()
       ->mutable_runtime_fraction()
       ->mutable_default_value()
       ->set_numerator(kRouteMatchNumerator);
   route1->mutable_route()->set_cluster(kNewClusterName);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, route_config);
@@ -6131,12 +6131,12 @@ TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
-  const char* kNewCluster3Name = "new_cluster_3";
-  const char* kNewEdsService3Name = "new_eds_service_name_3";
+  const char *kNewCluster1Name = "new_cluster_1";
+  const char *kNewEdsService1Name = "new_eds_service_name_1";
+  const char *kNewCluster2Name = "new_cluster_2";
+  const char *kNewEdsService2Name = "new_eds_service_name_2";
+  const char *kNewCluster3Name = "new_cluster_3";
+  const char *kNewEdsService3Name = "new_eds_service_name_3";
   const size_t kNumEcho1Rpcs = 100;
   const size_t kNumEchoRpcs = 5;
   SetNextResolution({});
@@ -6179,26 +6179,26 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   balancers_[0]->ads_service()->SetCdsResource(new_cluster3);
   // Populating Route Configurations for LDS.
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* header_matcher1 = route1->mutable_match()->add_headers();
+  auto *header_matcher1 = route1->mutable_match()->add_headers();
   header_matcher1->set_name("header1");
   header_matcher1->set_exact_match("POST");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   auto route2 = route_config.mutable_virtual_hosts(0)->add_routes();
   route2->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* header_matcher2 = route2->mutable_match()->add_headers();
+  auto *header_matcher2 = route2->mutable_match()->add_headers();
   header_matcher2->set_name("header2");
   header_matcher2->mutable_range_match()->set_start(1);
   header_matcher2->mutable_range_match()->set_end(1000);
   route2->mutable_route()->set_cluster(kNewCluster2Name);
   auto route3 = route_config.mutable_virtual_hosts(0)->add_routes();
   route3->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* header_matcher3 = route3->mutable_match()->add_headers();
+  auto *header_matcher3 = route3->mutable_match()->add_headers();
   header_matcher3->set_name("header3");
   header_matcher3->mutable_safe_regex_match()->set_regex("[a-z]*");
   route3->mutable_route()->set_cluster(kNewCluster3Name);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, route_config);
@@ -6230,8 +6230,8 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
-  const char* kNewClusterName = "new_cluster";
-  const char* kNewEdsServiceName = "new_eds_service_name";
+  const char *kNewClusterName = "new_cluster";
+  const char *kNewEdsServiceName = "new_eds_service_name";
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -6252,10 +6252,10 @@ TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
   balancers_[0]->ads_service()->SetCdsResource(new_cluster);
   // Populating Route Configurations for LDS.
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
   route1->mutable_route()->set_cluster(kNewClusterName);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, route_config);
@@ -6301,7 +6301,7 @@ TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
 TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInVirtualHost) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config =
+  auto *per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
   (*per_filter_config)["unknown"].PackFrom(Listener());
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
@@ -6319,7 +6319,7 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInVirtualHost) {
 TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInVirtualHost) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config =
+  auto *per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
   ::envoy::config::route::v3::FilterConfig filter_config;
   filter_config.mutable_config()->PackFrom(Listener());
@@ -6342,7 +6342,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInVirtualHost) {
 TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInVirtualHost) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config =
+  auto *per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
   (*per_filter_config)["unknown"];
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
@@ -6360,7 +6360,7 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInVirtualHost) {
 TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInVirtualHost) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config =
+  auto *per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
   (*per_filter_config)["unknown"].PackFrom(
       ::envoy::config::route::v3::FilterConfig());
@@ -6379,7 +6379,7 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInVirtualHost) {
 TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInVirtualHost) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config =
+  auto *per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
   ::envoy::config::route::v3::FilterConfig filter_config;
   filter_config.set_is_optional(true);
@@ -6401,7 +6401,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInVirtualHost) {
 TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInVirtualHost) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config =
+  auto *per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
   (*per_filter_config)["unknown"].PackFrom(
       envoy::extensions::filters::http::router::v3::Router());
@@ -6420,7 +6420,7 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInVirtualHost) {
 TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInRoute) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config = route_config.mutable_virtual_hosts(0)
+  auto *per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
                                 ->mutable_typed_per_filter_config();
   (*per_filter_config)["unknown"].PackFrom(Listener());
@@ -6439,7 +6439,7 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInRoute) {
 TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInRoute) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config = route_config.mutable_virtual_hosts(0)
+  auto *per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
                                 ->mutable_typed_per_filter_config();
   ::envoy::config::route::v3::FilterConfig filter_config;
@@ -6463,7 +6463,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInRoute) {
 TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInRoute) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config = route_config.mutable_virtual_hosts(0)
+  auto *per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
                                 ->mutable_typed_per_filter_config();
   (*per_filter_config)["unknown"];
@@ -6482,7 +6482,7 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInRoute) {
 TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInRoute) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config = route_config.mutable_virtual_hosts(0)
+  auto *per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
                                 ->mutable_typed_per_filter_config();
   (*per_filter_config)["unknown"].PackFrom(
@@ -6502,7 +6502,7 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInRoute) {
 TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInRoute) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config = route_config.mutable_virtual_hosts(0)
+  auto *per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
                                 ->mutable_typed_per_filter_config();
   ::envoy::config::route::v3::FilterConfig filter_config;
@@ -6525,7 +6525,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInRoute) {
 TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInRoute) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config = route_config.mutable_virtual_hosts(0)
+  auto *per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
                                 ->mutable_typed_per_filter_config();
   (*per_filter_config)["unknown"].PackFrom(
@@ -6545,14 +6545,14 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInRoute) {
 TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInClusterWeight) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* cluster_weight = route_config.mutable_virtual_hosts(0)
+  auto *cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
                              ->mutable_route()
                              ->mutable_weighted_clusters()
                              ->add_clusters();
   cluster_weight->set_name(kDefaultClusterName);
   cluster_weight->mutable_weight()->set_value(100);
-  auto* per_filter_config = cluster_weight->mutable_typed_per_filter_config();
+  auto *per_filter_config = cluster_weight->mutable_typed_per_filter_config();
   (*per_filter_config)["unknown"].PackFrom(Listener());
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   SetNextResolution({});
@@ -6569,14 +6569,14 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInClusterWeight) {
 TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInClusterWeight) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* cluster_weight = route_config.mutable_virtual_hosts(0)
+  auto *cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
                              ->mutable_route()
                              ->mutable_weighted_clusters()
                              ->add_clusters();
   cluster_weight->set_name(kDefaultClusterName);
   cluster_weight->mutable_weight()->set_value(100);
-  auto* per_filter_config = cluster_weight->mutable_typed_per_filter_config();
+  auto *per_filter_config = cluster_weight->mutable_typed_per_filter_config();
   ::envoy::config::route::v3::FilterConfig filter_config;
   filter_config.mutable_config()->PackFrom(Listener());
   filter_config.set_is_optional(true);
@@ -6598,14 +6598,14 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInClusterWeight) {
 TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInClusterWeight) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* cluster_weight = route_config.mutable_virtual_hosts(0)
+  auto *cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
                              ->mutable_route()
                              ->mutable_weighted_clusters()
                              ->add_clusters();
   cluster_weight->set_name(kDefaultClusterName);
   cluster_weight->mutable_weight()->set_value(100);
-  auto* per_filter_config = cluster_weight->mutable_typed_per_filter_config();
+  auto *per_filter_config = cluster_weight->mutable_typed_per_filter_config();
   (*per_filter_config)["unknown"];
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   SetNextResolution({});
@@ -6623,14 +6623,14 @@ TEST_P(LdsRdsTest,
        RejectsHttpFilterWithoutConfigInFilterConfigInClusterWeight) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* cluster_weight = route_config.mutable_virtual_hosts(0)
+  auto *cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
                              ->mutable_route()
                              ->mutable_weighted_clusters()
                              ->add_clusters();
   cluster_weight->set_name(kDefaultClusterName);
   cluster_weight->mutable_weight()->set_value(100);
-  auto* per_filter_config = cluster_weight->mutable_typed_per_filter_config();
+  auto *per_filter_config = cluster_weight->mutable_typed_per_filter_config();
   (*per_filter_config)["unknown"].PackFrom(
       ::envoy::config::route::v3::FilterConfig());
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
@@ -6648,14 +6648,14 @@ TEST_P(LdsRdsTest,
 TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInClusterWeight) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* cluster_weight = route_config.mutable_virtual_hosts(0)
+  auto *cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
                              ->mutable_route()
                              ->mutable_weighted_clusters()
                              ->add_clusters();
   cluster_weight->set_name(kDefaultClusterName);
   cluster_weight->mutable_weight()->set_value(100);
-  auto* per_filter_config = cluster_weight->mutable_typed_per_filter_config();
+  auto *per_filter_config = cluster_weight->mutable_typed_per_filter_config();
   ::envoy::config::route::v3::FilterConfig filter_config;
   filter_config.set_is_optional(true);
   (*per_filter_config)["unknown"].PackFrom(filter_config);
@@ -6676,14 +6676,14 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInClusterWeight) {
 TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInClusterWeight) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
-  auto* cluster_weight = route_config.mutable_virtual_hosts(0)
+  auto *cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
                              ->mutable_route()
                              ->mutable_weighted_clusters()
                              ->add_clusters();
   cluster_weight->set_name(kDefaultClusterName);
   cluster_weight->mutable_weight()->set_value(100);
-  auto* per_filter_config = cluster_weight->mutable_typed_per_filter_config();
+  auto *per_filter_config = cluster_weight->mutable_typed_per_filter_config();
   (*per_filter_config)["unknown"].PackFrom(
       envoy::extensions::filters::http::router::v3::Router());
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
@@ -6716,7 +6716,7 @@ TEST_P(CdsTest, LogicalDNSClusterType) {
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
-  auto* address = cluster.mutable_load_assignment()
+  auto *address = cluster.mutable_load_assignment()
                       ->add_endpoints()
                       ->add_lb_endpoints()
                       ->mutable_endpoint()
@@ -6789,7 +6789,7 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMultipleLocalities) {
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
-  auto* load_assignment = cluster.mutable_load_assignment();
+  auto *load_assignment = cluster.mutable_load_assignment();
   load_assignment->add_endpoints();
   load_assignment->add_endpoints();
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -6835,7 +6835,7 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMultipleEndpoints) {
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
-  auto* locality = cluster.mutable_load_assignment()->add_endpoints();
+  auto *locality = cluster.mutable_load_assignment()->add_endpoints();
   locality->add_lb_endpoints();
   locality->add_lb_endpoints();
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -6999,10 +6999,10 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingPort) {
 TEST_P(CdsTest, AggregateClusterType) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char *kNewCluster1Name = "new_cluster_1";
+  const char *kNewEdsService1Name = "new_eds_service_name_1";
+  const char *kNewCluster2Name = "new_cluster_2";
+  const char *kNewEdsService2Name = "new_eds_service_name_2";
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -7029,7 +7029,7 @@ TEST_P(CdsTest, AggregateClusterType) {
   balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  CustomClusterType *custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -7055,9 +7055,9 @@ TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
              "true");
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kLogicalDNSClusterName = "logical_dns_cluster";
+  const char *kNewCluster1Name = "new_cluster_1";
+  const char *kNewEdsService1Name = "new_eds_service_name_1";
+  const char *kLogicalDNSClusterName = "logical_dns_cluster";
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args1({
       {"locality0", CreateEndpointsForBackends(1, 2)},
@@ -7074,7 +7074,7 @@ TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   auto logical_dns_cluster = default_cluster_;
   logical_dns_cluster.set_name(kLogicalDNSClusterName);
   logical_dns_cluster.set_type(Cluster::LOGICAL_DNS);
-  auto* address = logical_dns_cluster.mutable_load_assignment()
+  auto *address = logical_dns_cluster.mutable_load_assignment()
                       ->add_endpoints()
                       ->add_lb_endpoints()
                       ->mutable_endpoint()
@@ -7085,7 +7085,7 @@ TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   balancers_[0]->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  CustomClusterType *custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -7119,9 +7119,9 @@ TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
              "true");
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
-  const char* kLogicalDNSClusterName = "logical_dns_cluster";
+  const char *kNewCluster2Name = "new_cluster_2";
+  const char *kNewEdsService2Name = "new_eds_service_name_2";
+  const char *kLogicalDNSClusterName = "logical_dns_cluster";
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args2({
       {"locality0", CreateEndpointsForBackends(2, 3)},
@@ -7138,7 +7138,7 @@ TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
   auto logical_dns_cluster = default_cluster_;
   logical_dns_cluster.set_name(kLogicalDNSClusterName);
   logical_dns_cluster.set_type(Cluster::LOGICAL_DNS);
-  auto* address = logical_dns_cluster.mutable_load_assignment()
+  auto *address = logical_dns_cluster.mutable_load_assignment()
                       ->add_endpoints()
                       ->add_lb_endpoints()
                       ->mutable_endpoint()
@@ -7149,7 +7149,7 @@ TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
   balancers_[0]->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  CustomClusterType *custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kLogicalDNSClusterName);
@@ -7198,7 +7198,7 @@ TEST_P(CdsTest, LogicalDNSClusterTypeDisabled) {
 // the feature is not yet supported.
 TEST_P(CdsTest, AggregateClusterTypeDisabled) {
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  CustomClusterType *custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters("cluster1");
@@ -7244,7 +7244,7 @@ TEST_P(CdsTest, MultipleBadResources) {
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Change RouteConfig to point to both clusters.
   RouteConfiguration route_config = default_route_config_;
-  auto* route = route_config.mutable_virtual_hosts(0)->add_routes();
+  auto *route = route_config.mutable_virtual_hosts(0)->add_routes();
   route->mutable_match()->set_prefix("");
   route->mutable_route()->set_cluster(kClusterName2);
   SetRouteConfiguration(0, route_config);
@@ -7319,8 +7319,8 @@ TEST_P(CdsTest, RingHashChannelIdHashing) {
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  auto *route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args({
@@ -7351,8 +7351,8 @@ TEST_P(CdsTest, RingHashHeaderHashing) {
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  auto *route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args({
@@ -7398,8 +7398,8 @@ TEST_P(CdsTest, RingHashHeaderHashingWithRegexRewrite) {
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  auto *route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_header()->set_header_name("address_hash");
   hash_policy->mutable_header()
       ->mutable_regex_rewrite()
@@ -7484,11 +7484,11 @@ TEST_P(CdsTest, RingHashContinuesPastTerminalPolicyThatDoesNotProduceResult) {
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  auto *route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_header()->set_header_name("header_not_present");
   hash_policy->set_terminal(true);
-  auto* hash_policy2 = route->mutable_route()->add_hash_policy();
+  auto *hash_policy2 = route->mutable_route()->add_hash_policy();
   hash_policy2->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args(
@@ -7521,8 +7521,8 @@ TEST_P(CdsTest, RingHashOnHeaderThatIsNotPresent) {
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  auto *route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_header()->set_header_name("header_not_present");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args(
@@ -7564,13 +7564,13 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy_unsupported_1 = route->mutable_route()->add_hash_policy();
+  auto *route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *hash_policy_unsupported_1 = route->mutable_route()->add_hash_policy();
   hash_policy_unsupported_1->mutable_cookie()->set_name("cookie");
-  auto* hash_policy_unsupported_2 = route->mutable_route()->add_hash_policy();
+  auto *hash_policy_unsupported_2 = route->mutable_route()->add_hash_policy();
   hash_policy_unsupported_2->mutable_connection_properties()->set_source_ip(
       true);
-  auto* hash_policy_unsupported_3 = route->mutable_route()->add_hash_policy();
+  auto *hash_policy_unsupported_3 = route->mutable_route()->add_hash_policy();
   hash_policy_unsupported_3->mutable_query_parameter()->set_name(
       "query_parameter");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
@@ -7729,11 +7729,11 @@ TEST_P(CdsTest, RingHashFixedHashingTerminalPolicy) {
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  auto *route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_header()->set_header_name("fixed_string");
   hash_policy->set_terminal(true);
-  auto* hash_policy_to_be_ignored = route->mutable_route()->add_hash_policy();
+  auto *hash_policy_to_be_ignored = route->mutable_route()->add_hash_policy();
   hash_policy_to_be_ignored->mutable_header()->set_header_name("random_string");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args({
@@ -7770,8 +7770,8 @@ TEST_P(CdsTest, RingHashIdleToReady) {
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  auto *route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args({
@@ -7794,8 +7794,8 @@ TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  auto *route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
@@ -7828,8 +7828,8 @@ TEST_P(CdsTest, RingHashSwitchToLowerPrioirtyAndThenBack) {
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  auto *route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args({
@@ -7864,8 +7864,8 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  auto *route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
@@ -7899,8 +7899,8 @@ TEST_P(CdsTest, RingHashTransientFailureSkipToAvailableReady) {
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  auto *route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
@@ -7957,16 +7957,16 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyUntilChannelIdHashing) {
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy_unsupported_1 = route->mutable_route()->add_hash_policy();
+  auto *route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *hash_policy_unsupported_1 = route->mutable_route()->add_hash_policy();
   hash_policy_unsupported_1->mutable_cookie()->set_name("cookie");
-  auto* hash_policy_unsupported_2 = route->mutable_route()->add_hash_policy();
+  auto *hash_policy_unsupported_2 = route->mutable_route()->add_hash_policy();
   hash_policy_unsupported_2->mutable_connection_properties()->set_source_ip(
       true);
-  auto* hash_policy_unsupported_3 = route->mutable_route()->add_hash_policy();
+  auto *hash_policy_unsupported_3 = route->mutable_route()->add_hash_policy();
   hash_policy_unsupported_3->mutable_query_parameter()->set_name(
       "query_parameter");
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  auto *hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args({
@@ -7999,8 +7999,8 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidHashFunction) {
       Cluster::RingHashLbConfig::MURMUR_HASH_2);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  auto *route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args({
@@ -8028,8 +8028,8 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidMinimumRingSize) {
       0);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  auto *route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args({
@@ -8057,8 +8057,8 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidMaxmumRingSize) {
       8388609);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  auto *route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args({
@@ -8088,8 +8088,8 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidRingSizeMinGreaterThanMax) {
       5001);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  auto *route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto *hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args({
@@ -8167,12 +8167,12 @@ class XdsSecurityTest : public BasicTest {
       absl::string_view root_certificate_name,
       absl::string_view identity_instance_name,
       absl::string_view identity_certificate_name,
-      const std::vector<StringMatcher>& san_matchers,
-      const std::vector<std::string>& expected_authenticated_identity,
+      const std::vector<StringMatcher> &san_matchers,
+      const std::vector<std::string> &expected_authenticated_identity,
       bool test_expects_failure = false) {
     auto cluster = default_cluster_;
     if (!identity_instance_name.empty() || !root_instance_name.empty()) {
-      auto* transport_socket = cluster.mutable_transport_socket();
+      auto *transport_socket = cluster.mutable_transport_socket();
       transport_socket->set_name("envoy.transport_sockets.tls");
       UpstreamTlsContext upstream_tls_context;
       if (!identity_instance_name.empty()) {
@@ -8194,11 +8194,11 @@ class XdsSecurityTest : public BasicTest {
             ->set_certificate_name(std::string(root_certificate_name));
       }
       if (!san_matchers.empty()) {
-        auto* validation_context =
+        auto *validation_context =
             upstream_tls_context.mutable_common_tls_context()
                 ->mutable_combined_validation_context()
                 ->mutable_default_validation_context();
-        for (const auto& san_matcher : san_matchers) {
+        for (const auto &san_matcher : san_matchers) {
           *validation_context->add_match_subject_alt_names() = san_matcher;
         }
       }
@@ -8264,7 +8264,7 @@ class XdsSecurityTest : public BasicTest {
 
 TEST_P(XdsSecurityTest, UnknownTransportSocket) {
   auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
+  auto *transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("unknown_transport_socket");
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
@@ -8279,7 +8279,7 @@ TEST_P(XdsSecurityTest, UnknownTransportSocket) {
 TEST_P(XdsSecurityTest,
        TLSConfigurationWithoutValidationContextCertificateProviderInstance) {
   auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
+  auto *transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
@@ -8296,10 +8296,10 @@ TEST_P(
     XdsSecurityTest,
     MatchSubjectAltNamesProvidedWithoutValidationContextCertificateProviderInstance) {
   auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
+  auto *transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
-  auto* validation_context = upstream_tls_context.mutable_common_tls_context()
+  auto *validation_context = upstream_tls_context.mutable_common_tls_context()
                                  ->mutable_combined_validation_context()
                                  ->mutable_default_validation_context();
   *validation_context->add_match_subject_alt_names() = server_san_exact_;
@@ -8319,7 +8319,7 @@ TEST_P(
     XdsSecurityTest,
     TlsCertificateCertificateProviderInstanceWithoutValidationContextCertificateProviderInstance) {
   auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
+  auto *transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
@@ -8339,14 +8339,14 @@ TEST_P(
 
 TEST_P(XdsSecurityTest, RegexSanMatcherDoesNotAllowIgnoreCase) {
   auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
+  auto *transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
       ->mutable_combined_validation_context()
       ->mutable_validation_context_certificate_provider_instance()
       ->set_instance_name(std::string("fake_plugin1"));
-  auto* validation_context = upstream_tls_context.mutable_common_tls_context()
+  auto *validation_context = upstream_tls_context.mutable_common_tls_context()
                                  ->mutable_combined_validation_context()
                                  ->mutable_default_validation_context();
   StringMatcher matcher;
@@ -8368,7 +8368,7 @@ TEST_P(XdsSecurityTest, RegexSanMatcherDoesNotAllowIgnoreCase) {
 
 TEST_P(XdsSecurityTest, UnknownRootCertificateProvider) {
   auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
+  auto *transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
@@ -8391,7 +8391,7 @@ TEST_P(XdsSecurityTest, UnknownIdentityCertificateProvider) {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
+  auto *transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
@@ -8419,7 +8419,7 @@ TEST_P(XdsSecurityTest,
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
+  auto *transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
@@ -8448,7 +8448,7 @@ TEST_P(XdsSecurityTest,
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
+  auto *transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
@@ -8477,7 +8477,7 @@ TEST_P(XdsSecurityTest,
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
+  auto *transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
@@ -8506,7 +8506,7 @@ TEST_P(XdsSecurityTest, NacksCertificateValidationContextWithCrl) {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
+  auto *transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
@@ -8534,7 +8534,7 @@ TEST_P(XdsSecurityTest,
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
+  auto *transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
@@ -8957,7 +8957,7 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
       ipv6_only_ ? "::1" : "127.0.0.1");
   listener.mutable_address()->mutable_socket_address()->set_port_value(
       backends_[0]->port());
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   listener.mutable_api_listener();
@@ -9000,7 +9000,7 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
   listener.mutable_address()->mutable_socket_address()->set_port_value(
       backends_[0]->port());
   HttpConnectionManager http_connection_manager;
-  auto* http_filter = http_connection_manager.add_http_filters();
+  auto *http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("grpc.testing.unsupported_http_filter");
   http_filter->mutable_typed_config()->set_type_url(
       "grpc.testing.unsupported_http_filter");
@@ -9029,7 +9029,7 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
   listener.mutable_address()->mutable_socket_address()->set_port_value(
       backends_[0]->port());
   HttpConnectionManager http_connection_manager;
-  auto* http_filter = http_connection_manager.add_http_filters();
+  auto *http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("grpc.testing.client_only_http_filter");
   http_filter->mutable_typed_config()->set_type_url(
       "grpc.testing.client_only_http_filter");
@@ -9061,7 +9061,7 @@ TEST_P(XdsEnabledServerTest,
   listener.mutable_address()->mutable_socket_address()->set_port_value(
       backends_[0]->port());
   HttpConnectionManager http_connection_manager;
-  auto* http_filter = http_connection_manager.add_http_filters();
+  auto *http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("grpc.testing.client_only_http_filter");
   http_filter->mutable_typed_config()->set_type_url(
       "grpc.testing.client_only_http_filter");
@@ -9176,11 +9176,11 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
         ipv6_only_ ? "[::1]" : "127.0.0.1");
     listener.mutable_address()->mutable_socket_address()->set_port_value(
         backends_[0]->port());
-    auto* filter_chain = listener.add_filter_chains();
+    auto *filter_chain = listener.add_filter_chains();
     filter_chain->add_filters()->mutable_typed_config()->PackFrom(
         HttpConnectionManager());
     if (!identity_instance_name.empty()) {
-      auto* transport_socket = filter_chain->mutable_transport_socket();
+      auto *transport_socket = filter_chain->mutable_transport_socket();
       transport_socket->set_name("envoy.transport_sockets.tls");
       DownstreamTlsContext downstream_tls_context;
       downstream_tls_context.mutable_common_tls_context()
@@ -9216,7 +9216,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     std::string uri = absl::StrCat(
         ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
     // TODO(yashykt): Switch to using C++ API once b/173823806 is fixed.
-    grpc_tls_credentials_options* options =
+    grpc_tls_credentials_options *options =
         grpc_tls_credentials_options_create();
     grpc_tls_credentials_options_set_server_verification_option(
         options, GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
@@ -9228,7 +9228,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
             .get());
     grpc_tls_credentials_options_watch_root_certs(options);
     grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
-    grpc_tls_server_authorization_check_config* check_config =
+    grpc_tls_server_authorization_check_config *check_config =
         grpc_tls_server_authorization_check_config_create(
             nullptr, ServerAuthCheckSchedule, nullptr, nullptr);
     grpc_tls_credentials_options_set_server_authorization_check_config(
@@ -9248,7 +9248,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     std::string uri = absl::StrCat(
         ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
     // TODO(yashykt): Switch to using C++ API once b/173823806 is fixed.
-    grpc_tls_credentials_options* options =
+    grpc_tls_credentials_options *options =
         grpc_tls_credentials_options_create();
     grpc_tls_credentials_options_set_server_verification_option(
         options, GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
@@ -9259,7 +9259,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
             ReadTlsIdentityPair(kServerKeyPath, kServerCertPath))
             .get());
     grpc_tls_credentials_options_watch_root_certs(options);
-    grpc_tls_server_authorization_check_config* check_config =
+    grpc_tls_server_authorization_check_config *check_config =
         grpc_tls_server_authorization_check_config_create(
             nullptr, ServerAuthCheckSchedule, nullptr, nullptr);
     grpc_tls_credentials_options_set_server_authorization_check_config(
@@ -9311,7 +9311,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
         }
         EXPECT_EQ(response.message(), kRequestMessage);
         std::vector<std::string> peer_identity;
-        for (const auto& entry : context.auth_context()->GetPeerIdentity()) {
+        for (const auto &entry : context.auth_context()->GetPeerIdentity()) {
           peer_identity.emplace_back(
               std::string(entry.data(), entry.size()).c_str());
         }
@@ -9356,13 +9356,13 @@ TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
-  auto* transport_socket = filter_chain->mutable_transport_socket();
+  auto *transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("unknown_transport_socket");
   balancers_[0]->ads_service()->SetLdsResource(listener);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
@@ -9382,13 +9382,13 @@ TEST_P(
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
-  auto* transport_socket = filter_chain->mutable_transport_socket();
+  auto *transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
   downstream_tls_context.mutable_common_tls_context()
@@ -9414,13 +9414,13 @@ TEST_P(XdsServerSecurityTest,
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
-  auto* transport_socket = filter_chain->mutable_transport_socket();
+  auto *transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
@@ -9709,7 +9709,7 @@ class XdsEnabledServerStatusNotificationTest : public XdsServerSecurityTest {
     listener.set_name(absl::StrCat(
         "grpc/server?xds.resource.listening_address=",
         ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-    auto* socket_address = listener.mutable_address()->mutable_socket_address();
+    auto *socket_address = listener.mutable_address()->mutable_socket_address();
     socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
     socket_address->set_port_value(backends_[0]->port());
     balancers_[0]->ads_service()->SetLdsResource(listener);
@@ -9871,7 +9871,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   listener.mutable_default_filter_chain()
@@ -9888,11 +9888,11 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   // Add a filter chain that will never get matched
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()
@@ -9913,11 +9913,11 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   // Add filter chain with destination port that should never get matched
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()
@@ -9935,11 +9935,11 @@ TEST_P(XdsServerFilterChainMatchTest, FilterChainsWithServerNamesDontMatch) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   // Add filter chain with server name that should never get matched
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
@@ -9956,11 +9956,11 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   // Add filter chain with transport protocol "tls" that should never match
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_transport_protocol("tls");
@@ -9977,11 +9977,11 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   // Add filter chain with application protocol that should never get matched
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_application_protocols("h2");
@@ -9998,11 +9998,11 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   // Add filter chain with "raw_buffer" transport protocol
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_transport_protocol(
@@ -10025,15 +10025,15 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   // Add filter chain with prefix range (length 4 and 16) but with server name
   // mentioned. (Prefix range is matched first.)
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
-  auto* prefix_range =
+  auto *prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(4);
@@ -10082,11 +10082,11 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   // Add filter chain with the local source type (best match)
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_source_type(
@@ -10119,17 +10119,17 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   // Add filter chain with source prefix range (length 16) but with a bad
   // source port mentioned. (Prefix range is matched first.) Note that
   // backends_[0]->port() will never be a match for the source port because it
   // is already being used by a backend.
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
-  auto* source_prefix_range =
+  auto *source_prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   source_prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   source_prefix_range->mutable_prefix_len()->set_value(4);
@@ -10182,10 +10182,10 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   // Since we don't know which port will be used by the channel, just add all
@@ -10198,7 +10198,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
-  auto* transport_socket = filter_chain->mutable_transport_socket();
+  auto *transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
   downstream_tls_context.mutable_common_tls_context()
@@ -10216,11 +10216,11 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchNacked) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   // Add filter chain
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   // Add a duplicate filter chain
@@ -10241,14 +10241,14 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   // Add filter chain with prefix range
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
-  auto* prefix_range =
+  auto *prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(16);
@@ -10293,11 +10293,11 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   // Add filter chain with "raw_buffer" transport protocol
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_transport_protocol(
@@ -10323,11 +10323,11 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnLocalSourceTypeNacked) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   // Add filter chain with the local source type
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_source_type(
@@ -10353,11 +10353,11 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   // Add filter chain with the external source type
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_source_type(
@@ -10383,14 +10383,14 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   // Add filter chain with source prefix range
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
-  auto* prefix_range =
+  auto *prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(16);
@@ -10436,11 +10436,11 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  auto *socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   // Add filter chain with the external source type
-  auto* filter_chain = listener.add_filter_chains();
+  auto *filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_source_ports(8080);
@@ -11511,7 +11511,7 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   std::vector<ClientStats> load_report =
       balancers_[0]->lrs_service()->WaitForLoadReport();
   ASSERT_EQ(load_report.size(), 1UL);
-  ClientStats& client_stats = load_report.front();
+  ClientStats &client_stats = load_report.front();
   EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
             client_stats.total_successful_requests());
   EXPECT_EQ(0U, client_stats.total_requests_in_progress());
@@ -11559,7 +11559,7 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
   std::vector<ClientStats> load_report =
       balancers_[0]->lrs_service()->WaitForLoadReport();
   ASSERT_EQ(load_report.size(), 1UL);
-  ClientStats& client_stats = load_report.front();
+  ClientStats &client_stats = load_report.front();
   EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
             client_stats.total_successful_requests());
   EXPECT_EQ(0U, client_stats.total_requests_in_progress());
@@ -11736,7 +11736,7 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
   do {
     std::vector<ClientStats> load_reports =
         balancers_[0]->lrs_service()->WaitForLoadReport();
-    for (const auto& load_report : load_reports) {
+    for (const auto &load_report : load_reports) {
       client_stats += load_report;
     }
   } while (client_stats.total_issued_requests() +
@@ -11760,14 +11760,14 @@ class FaultInjectionTest : public XdsEnd2endTest {
   // is nullptr, then assign an empty filter config. This filter config is
   // required to enable the fault injection features.
   static Listener BuildListenerWithFaultInjection(
-      const HTTPFault& http_fault = HTTPFault()) {
+      const HTTPFault &http_fault = HTTPFault()) {
     HttpConnectionManager http_connection_manager;
     Listener listener;
     listener.set_name(kServerName);
-    HttpFilter* fault_filter = http_connection_manager.add_http_filters();
+    HttpFilter *fault_filter = http_connection_manager.add_http_filters();
     fault_filter->set_name("envoy.fault");
     fault_filter->mutable_typed_config()->PackFrom(http_fault);
-    HttpFilter* router_filter = http_connection_manager.add_http_filters();
+    HttpFilter *router_filter = http_connection_manager.add_http_filters();
     router_filter->set_name("router");
     router_filter->mutable_typed_config()->PackFrom(
         envoy::extensions::filters::http::router::v3::Router());
@@ -11777,20 +11777,20 @@ class FaultInjectionTest : public XdsEnd2endTest {
   }
 
   RouteConfiguration BuildRouteConfigurationWithFaultInjection(
-      const HTTPFault& http_fault) {
+      const HTTPFault &http_fault) {
     // Package as Any
     google::protobuf::Any filter_config;
     filter_config.PackFrom(http_fault);
     // Plug into the RouteConfiguration
     RouteConfiguration new_route_config = default_route_config_;
-    auto* config_map = new_route_config.mutable_virtual_hosts(0)
+    auto *config_map = new_route_config.mutable_virtual_hosts(0)
                            ->mutable_routes(0)
                            ->mutable_typed_per_filter_config();
     (*config_map)["envoy.fault"] = std::move(filter_config);
     return new_route_config;
   }
 
-  void SetFilterConfig(HTTPFault& http_fault) {
+  void SetFilterConfig(HTTPFault &http_fault) {
     switch (GetParam().filter_config_setup()) {
       case TestType::FilterConfigSetup::kRouteOverride: {
         Listener listener = BuildListenerWithFaultInjection();
@@ -11814,7 +11814,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysAbort) {
   SetNextResolutionForLbChannelAllBalancers();
   // Construct the fault injection filter config
   HTTPFault http_fault;
-  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  auto *abort_percentage = http_fault.mutable_abort()->mutable_percentage();
   abort_percentage->set_numerator(kAbortPercentagePerHundred);
   abort_percentage->set_denominator(FractionalPercent::HUNDRED);
   http_fault.mutable_abort()->set_grpc_status(
@@ -11842,7 +11842,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionWithoutListenerFilter) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   // Construct the fault injection filter config
   HTTPFault http_fault;
-  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  auto *abort_percentage = http_fault.mutable_abort()->mutable_percentage();
   abort_percentage->set_numerator(kAbortPercentagePerHundred);
   abort_percentage->set_denominator(FractionalPercent::HUNDRED);
   http_fault.mutable_abort()->set_grpc_status(
@@ -11870,7 +11870,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   // Construct the fault injection filter config
   HTTPFault http_fault;
-  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  auto *abort_percentage = http_fault.mutable_abort()->mutable_percentage();
   abort_percentage->set_numerator(kAbortPercentagePerHundred);
   abort_percentage->set_denominator(FractionalPercent::HUNDRED);
   http_fault.mutable_abort()->set_grpc_status(
@@ -11949,16 +11949,16 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   // Loosen the max concurrent request limit
   Cluster cluster = default_cluster_;
-  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  auto *threshold = cluster.mutable_circuit_breakers()->add_thresholds();
   threshold->set_priority(RoutingPriority::DEFAULT);
   threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Construct the fault injection filter config
   HTTPFault http_fault;
-  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
+  auto *delay_percentage = http_fault.mutable_delay()->mutable_percentage();
   delay_percentage->set_numerator(kDelayPercentagePerHundred);
   delay_percentage->set_denominator(FractionalPercent::HUNDRED);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
+  auto *fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
   fixed_delay->set_seconds(kFixedDelaySeconds);
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
@@ -11969,7 +11969,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   std::vector<ConcurrentRpc> rpcs =
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
   size_t num_delayed = 0;
-  for (auto& rpc : rpcs) {
+  for (auto &rpc : rpcs) {
     if (rpc.status.error_code() == StatusCode::OK) continue;
     EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
     ++num_delayed;
@@ -11999,7 +11999,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   // Loosen the max concurrent request limit
   Cluster cluster = default_cluster_;
-  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  auto *threshold = cluster.mutable_circuit_breakers()->add_thresholds();
   threshold->set_priority(RoutingPriority::DEFAULT);
   threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -12023,7 +12023,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   std::vector<ConcurrentRpc> rpcs =
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
   size_t num_delayed = 0;
-  for (auto& rpc : rpcs) {
+  for (auto &rpc : rpcs) {
     if (rpc.status.error_code() == StatusCode::OK) continue;
     EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
     ++num_delayed;
@@ -12054,21 +12054,21 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   // Loosen the max concurrent request limit
   Cluster cluster = default_cluster_;
-  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  auto *threshold = cluster.mutable_circuit_breakers()->add_thresholds();
   threshold->set_priority(RoutingPriority::DEFAULT);
   threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Construct the fault injection filter config
   HTTPFault http_fault;
-  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  auto *abort_percentage = http_fault.mutable_abort()->mutable_percentage();
   abort_percentage->set_numerator(kAbortPercentagePerHundred);
   abort_percentage->set_denominator(FractionalPercent::HUNDRED);
   http_fault.mutable_abort()->set_grpc_status(
       static_cast<uint32_t>(StatusCode::ABORTED));
-  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
+  auto *delay_percentage = http_fault.mutable_delay()->mutable_percentage();
   delay_percentage->set_numerator(1000000);  // Always inject DELAY!
   delay_percentage->set_denominator(FractionalPercent::MILLION);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
+  auto *fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
   fixed_delay->set_seconds(kFixedDelaySeconds);
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
@@ -12082,7 +12082,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds);
   std::vector<ConcurrentRpc> rpcs =
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
-  for (auto& rpc : rpcs) {
+  for (auto &rpc : rpcs) {
     EXPECT_GE(rpc.elapsed_time, kFixedDelaySeconds * 1000);
     if (rpc.status.error_code() == StatusCode::OK) continue;
     EXPECT_EQ("Fault injected", rpc.status.error_message());
@@ -12118,21 +12118,21 @@ TEST_P(FaultInjectionTest,
       BuildEdsResource(args, DefaultEdsServiceName()));
   // Loosen the max concurrent request limit
   Cluster cluster = default_cluster_;
-  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  auto *threshold = cluster.mutable_circuit_breakers()->add_thresholds();
   threshold->set_priority(RoutingPriority::DEFAULT);
   threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Construct the fault injection filter config
   HTTPFault http_fault;
-  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  auto *abort_percentage = http_fault.mutable_abort()->mutable_percentage();
   abort_percentage->set_numerator(kAbortPercentagePerMillion);
   abort_percentage->set_denominator(FractionalPercent::MILLION);
   http_fault.mutable_abort()->set_grpc_status(
       static_cast<uint32_t>(StatusCode::ABORTED));
-  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
+  auto *delay_percentage = http_fault.mutable_delay()->mutable_percentage();
   delay_percentage->set_numerator(100);  // Always inject DELAY!
   delay_percentage->set_denominator(FractionalPercent::HUNDRED);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
+  auto *fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
   fixed_delay->set_seconds(kFixedDelaySeconds);
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
@@ -12146,7 +12146,7 @@ TEST_P(FaultInjectionTest,
   RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds);
   std::vector<ConcurrentRpc> rpcs =
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
-  for (auto& rpc : rpcs) {
+  for (auto &rpc : rpcs) {
     EXPECT_GE(rpc.elapsed_time, kFixedDelaySeconds * 1000);
     if (rpc.status.error_code() == StatusCode::OK) continue;
     EXPECT_EQ("Fault injected", rpc.status.error_message());
@@ -12174,11 +12174,11 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   // Construct the fault injection filter config
   HTTPFault http_fault;
-  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
+  auto *delay_percentage = http_fault.mutable_delay()->mutable_percentage();
   delay_percentage->set_numerator(
       kAlwaysDelayPercentage);  // Always inject DELAY!
   delay_percentage->set_denominator(FractionalPercent::HUNDRED);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
+  auto *fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
   fixed_delay->set_seconds(kLongDelaySeconds);
   http_fault.mutable_max_active_faults()->set_value(kMaxFault);
   // Config fault injection via different setup
@@ -12189,7 +12189,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMs);
   std::vector<ConcurrentRpc> rpcs =
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
-  for (auto& rpc : rpcs) {
+  for (auto &rpc : rpcs) {
     if (rpc.status.error_code() == StatusCode::OK) continue;
     EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
     ++num_delayed;
@@ -12595,7 +12595,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
   auto csds_response = FetchCsdsResponse();
   gpr_log(GPR_INFO, "xDS config dump: %s", csds_response.DebugString().c_str());
   EXPECT_EQ(1, csds_response.config_size());
-  const auto& client_config = csds_response.config(0);
+  const auto &client_config = csds_response.config(0);
   // Validate the Node information
   EXPECT_THAT(client_config.node(),
               EqNode("xds_end2end_test", ::testing::HasSubstr("C-core"),
@@ -12807,9 +12807,9 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
   // Bad endpoint config will be rejected.
   ClusterLoadAssignment cluster_load_assignment;
   cluster_load_assignment.set_cluster_name(kDefaultEdsServiceName);
-  auto* endpoints = cluster_load_assignment.add_endpoints();
+  auto *endpoints = cluster_load_assignment.add_endpoints();
   endpoints->mutable_load_balancing_weight()->set_value(1);
-  auto* endpoint = endpoints->add_lb_endpoints()->mutable_endpoint();
+  auto *endpoint = endpoints->add_lb_endpoints()->mutable_endpoint();
   endpoint->mutable_address()->mutable_socket_address()->set_port_value(1 << 1);
   balancers_[0]->ads_service()->SetEdsResource(cluster_load_assignment);
   // The old xDS configs should still be effective.
@@ -12864,14 +12864,14 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterRequested) {
   // Create a route config requesting two non-existing clusters
   RouteConfiguration route_config;
   route_config.set_name(kDefaultRouteConfigurationName);
-  auto* vh = route_config.add_virtual_hosts();
+  auto *vh = route_config.add_virtual_hosts();
   // The VirtualHost must match the domain name, otherwise will cause resolver
   // transient failure.
   vh->add_domains("*");
-  auto* routes1 = vh->add_routes();
+  auto *routes1 = vh->add_routes();
   routes1->mutable_match()->set_prefix("");
   routes1->mutable_route()->set_cluster(kClusterName1);
-  auto* routes2 = vh->add_routes();
+  auto *routes2 = vh->add_routes();
   routes2->mutable_match()->set_prefix("");
   routes2->mutable_route()->set_cluster(kClusterName2);
   SetRouteConfiguration(0, route_config);
@@ -12985,7 +12985,7 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpEndpointDoesNotExist) {
 }
 #endif  // DISABLED_XDS_PROTO_IN_CC
 
-std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
+std::string TestTypeName(const ::testing::TestParamInfo<TestType> &info) {
   return info.param.AsString();
 }
 
@@ -13206,7 +13206,7 @@ INSTANTIATE_TEST_SUITE_P(
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::WriteBootstrapFiles();

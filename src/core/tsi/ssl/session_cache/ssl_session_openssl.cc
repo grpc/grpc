@@ -41,7 +41,7 @@ class OpenSslCachedSession : public SslCachedSession {
     int size = i2d_SSL_SESSION(session.get(), nullptr);
     GPR_ASSERT(size > 0);
     grpc_slice slice = grpc_slice_malloc(size_t(size));
-    unsigned char* start = GRPC_SLICE_START_PTR(slice);
+    unsigned char *start = GRPC_SLICE_START_PTR(slice);
     int second_size = i2d_SSL_SESSION(session.get(), &start);
     GPR_ASSERT(size == second_size);
     serialized_session_ = slice;
@@ -50,9 +50,9 @@ class OpenSslCachedSession : public SslCachedSession {
   virtual ~OpenSslCachedSession() { grpc_slice_unref(serialized_session_); }
 
   SslSessionPtr CopySession() const override {
-    const unsigned char* data = GRPC_SLICE_START_PTR(serialized_session_);
+    const unsigned char *data = GRPC_SLICE_START_PTR(serialized_session_);
     size_t length = GRPC_SLICE_LENGTH(serialized_session_);
-    SSL_SESSION* session = d2i_SSL_SESSION(nullptr, &data, length);
+    SSL_SESSION *session = d2i_SSL_SESSION(nullptr, &data, length);
     if (session == nullptr) {
       return SslSessionPtr();
     }

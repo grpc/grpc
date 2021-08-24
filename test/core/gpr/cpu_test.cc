@@ -60,12 +60,12 @@ struct cpu_test {
   uint32_t ncores;
   int is_done;
   gpr_cv done_cv;
-  int* used;  /* is this core used? */
+  int *used;  /* is this core used? */
   unsigned r; /* random number */
 };
 
-static void worker_thread(void* arg) {
-  struct cpu_test* ct = static_cast<struct cpu_test*>(arg);
+static void worker_thread(void *arg) {
+  struct cpu_test *ct = static_cast<struct cpu_test *>(arg);
   uint32_t cpu;
   unsigned r = 12345678;
   unsigned i, j;
@@ -106,15 +106,15 @@ static void cpu_test(void) {
   ct.ncores = gpr_cpu_num_cores();
   GPR_ASSERT(ct.ncores > 0);
   ct.nthreads = static_cast<int>(ct.ncores) * 3;
-  ct.used = static_cast<int*>(gpr_malloc(ct.ncores * sizeof(int)));
+  ct.used = static_cast<int *>(gpr_malloc(ct.ncores * sizeof(int)));
   memset(ct.used, 0, ct.ncores * sizeof(int));
   gpr_mu_init(&ct.mu);
   gpr_cv_init(&ct.done_cv);
   ct.is_done = 0;
 
   uint32_t nthreads = ct.ncores * 3;
-  grpc_core::Thread* thd =
-      static_cast<grpc_core::Thread*>(gpr_malloc(sizeof(*thd) * nthreads));
+  grpc_core::Thread *thd =
+      static_cast<grpc_core::Thread *>(gpr_malloc(sizeof(*thd) * nthreads));
 
   for (i = 0; i < nthreads; i++) {
     thd[i] = grpc_core::Thread("grpc_cpu_test", &worker_thread, &ct);
@@ -145,7 +145,7 @@ static void cpu_test(void) {
   gpr_free(ct.used);
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   grpc::testing::TestEnvironment env(argc, argv);
   cpu_test();
   return 0;

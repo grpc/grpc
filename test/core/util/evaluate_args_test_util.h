@@ -35,9 +35,9 @@ class EvaluateArgsTestUtil {
     delete channel_args_;
   }
 
-  void AddPairToMetadata(const char* key, const char* value) {
+  void AddPairToMetadata(const char *key, const char *value) {
     metadata_storage_.emplace_back();
-    auto& storage = metadata_storage_.back();
+    auto &storage = metadata_storage_.back();
     ASSERT_EQ(grpc_metadata_batch_add_tail(
                   &metadata_, &storage,
                   grpc_mdelem_from_slices(
@@ -54,7 +54,7 @@ class EvaluateArgsTestUtil {
     endpoint_.SetPeer(peer_uri);
   }
 
-  void AddPropertyToAuthContext(const char* name, const char* value) {
+  void AddPropertyToAuthContext(const char *name, const char *value) {
     auth_context_.add_cstring_property(name, value);
   }
 
@@ -69,7 +69,7 @@ class EvaluateArgsTestUtil {
   grpc_metadata_batch metadata_;
   MockAuthorizationEndpoint endpoint_{/*local_uri=*/"", /*peer_uri=*/""};
   grpc_auth_context auth_context_{nullptr};
-  EvaluateArgs::PerChannelArgs* channel_args_ = nullptr;
+  EvaluateArgs::PerChannelArgs *channel_args_ = nullptr;
 };
 
 }  // namespace grpc_core

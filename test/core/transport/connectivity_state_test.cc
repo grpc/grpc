@@ -42,8 +42,8 @@ TEST(ConnectivityStateName, Basic) {
 
 class Watcher : public ConnectivityStateWatcherInterface {
  public:
-  Watcher(int* count, grpc_connectivity_state* output, absl::Status* status,
-          bool* destroyed = nullptr)
+  Watcher(int *count, grpc_connectivity_state *output, absl::Status *status,
+          bool *destroyed = nullptr)
       : count_(count),
         output_(output),
         status_(status),
@@ -54,17 +54,17 @@ class Watcher : public ConnectivityStateWatcherInterface {
   }
 
   void Notify(grpc_connectivity_state new_state,
-              const absl::Status& status) override {
+              const absl::Status &status) override {
     ++*count_;
     *output_ = new_state;
     *status_ = status;
   }
 
  private:
-  int* count_;
-  grpc_connectivity_state* output_;
-  absl::Status* status_;
-  bool* destroyed_;
+  int *count_;
+  grpc_connectivity_state *output_;
+  absl::Status *status_;
+  bool *destroyed_;
 };
 
 TEST(StateTracker, SetAndGetState) {
@@ -135,7 +135,7 @@ TEST(StateTracker, SubscribeThenUnsubscribe) {
   absl::Status status;
   bool destroyed = false;
   ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_IDLE);
-  ConnectivityStateWatcherInterface* watcher =
+  ConnectivityStateWatcherInterface *watcher =
       new Watcher(&count, &state, &status, &destroyed);
   tracker.AddWatcher(GRPC_CHANNEL_IDLE,
                      OrphanablePtr<ConnectivityStateWatcherInterface>(watcher));
@@ -158,7 +158,7 @@ TEST(StateTracker, OrphanUponShutdown) {
   absl::Status status;
   bool destroyed = false;
   ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_IDLE);
-  ConnectivityStateWatcherInterface* watcher =
+  ConnectivityStateWatcherInterface *watcher =
       new Watcher(&count, &state, &status, &destroyed);
   tracker.AddWatcher(GRPC_CHANNEL_IDLE,
                      OrphanablePtr<ConnectivityStateWatcherInterface>(watcher));
@@ -182,7 +182,7 @@ TEST(StateTracker, AddWhenAlreadyShutdown) {
   bool destroyed = false;
   ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_SHUTDOWN,
                                    absl::Status());
-  ConnectivityStateWatcherInterface* watcher =
+  ConnectivityStateWatcherInterface *watcher =
       new Watcher(&count, &state, &status, &destroyed);
   tracker.AddWatcher(GRPC_CHANNEL_IDLE,
                      OrphanablePtr<ConnectivityStateWatcherInterface>(watcher));
@@ -232,7 +232,7 @@ TEST(StateTracker, DoNotNotifyShutdownAtDestructionIfAlreadyInShutdown) {
 }  // namespace
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();

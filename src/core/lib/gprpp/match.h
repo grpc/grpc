@@ -28,7 +28,7 @@ template <typename... Cases>
 struct MatchPointerExtractor {
   OverloadType<Cases...> cases;
   template <typename T>
-  auto operator()(T& value) -> decltype(cases(&value)) {
+  auto operator()(T &value) -> decltype(cases(&value)) {
     return cases(&value);
   }
 };
@@ -45,7 +45,7 @@ struct MatchPointerExtractor {
 ///         [](int i) { puts("hoorah"); },
 ///         [](string s) { puts("boo"); });
 template <typename... Fs, typename T0, typename... Ts>
-auto Match(const absl::variant<T0, Ts...>& value, Fs... fs)
+auto Match(const absl::variant<T0, Ts...> &value, Fs... fs)
     -> decltype(std::declval<OverloadType<Fs...>>()(std::declval<T0>())) {
   return absl::visit(Overload(std::move(fs)...), value);
 }
@@ -60,8 +60,8 @@ auto Match(const absl::variant<T0, Ts...>& value, Fs... fs)
 ///                [](string* s) { *s = "foo"; });
 ///   // v now contains 1.
 template <typename... Fs, typename T0, typename... Ts>
-auto MatchMutable(absl::variant<T0, Ts...>* value, Fs... fs)
-    -> decltype(std::declval<OverloadType<Fs...>>()(std::declval<T0*>())) {
+auto MatchMutable(absl::variant<T0, Ts...> *value, Fs... fs)
+    -> decltype(std::declval<OverloadType<Fs...>>()(std::declval<T0 *>())) {
   return absl::visit(detail::MatchPointerExtractor<Fs...>{OverloadType<Fs...>(
                          std::move(fs)...)},
                      *value);

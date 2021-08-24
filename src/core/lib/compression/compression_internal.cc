@@ -33,7 +33,7 @@
 /* Interfaces related to MD */
 
 grpc_message_compression_algorithm
-grpc_message_compression_algorithm_from_slice(const grpc_slice& str) {
+grpc_message_compression_algorithm_from_slice(const grpc_slice &str) {
   if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY)) {
     return GRPC_MESSAGE_COMPRESS_NONE;
   }
@@ -47,7 +47,7 @@ grpc_message_compression_algorithm_from_slice(const grpc_slice& str) {
 }
 
 grpc_stream_compression_algorithm grpc_stream_compression_algorithm_from_slice(
-    const grpc_slice& str) {
+    const grpc_slice &str) {
   if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY)) {
     return GRPC_STREAM_COMPRESS_NONE;
   }
@@ -132,7 +132,7 @@ uint32_t grpc_compression_bitset_from_message_stream_compression_bitset(
 }
 
 int grpc_compression_algorithm_from_message_stream_compression_algorithm(
-    grpc_compression_algorithm* algorithm,
+    grpc_compression_algorithm *algorithm,
     grpc_message_compression_algorithm message_algorithm,
     grpc_stream_compression_algorithm stream_algorithm) {
   if (message_algorithm != GRPC_MESSAGE_COMPRESS_NONE &&
@@ -173,7 +173,7 @@ int grpc_compression_algorithm_from_message_stream_compression_algorithm(
 /* Interfaces for message compression. */
 
 int grpc_message_compression_algorithm_name(
-    grpc_message_compression_algorithm algorithm, const char** name) {
+    grpc_message_compression_algorithm algorithm, const char **name) {
   GRPC_API_TRACE(
       "grpc_message_compression_algorithm_name(algorithm=%d, name=%p)", 2,
       ((int)algorithm, name));
@@ -251,7 +251,7 @@ grpc_message_compression_algorithm grpc_message_compression_algorithm_for_level(
 }
 
 int grpc_message_compression_algorithm_parse(
-    grpc_slice value, grpc_message_compression_algorithm* algorithm) {
+    grpc_slice value, grpc_message_compression_algorithm *algorithm) {
   if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_IDENTITY)) {
     *algorithm = GRPC_MESSAGE_COMPRESS_NONE;
     return 1;
@@ -269,7 +269,7 @@ int grpc_message_compression_algorithm_parse(
 /* Interfaces for stream compression. */
 
 int grpc_stream_compression_algorithm_parse(
-    grpc_slice value, grpc_stream_compression_algorithm* algorithm) {
+    grpc_slice value, grpc_stream_compression_algorithm *algorithm) {
   if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_IDENTITY)) {
     *algorithm = GRPC_STREAM_COMPRESS_NONE;
     return 1;

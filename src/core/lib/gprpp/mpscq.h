@@ -36,7 +36,7 @@ class MultiProducerSingleConsumerQueue {
  public:
   // List node.  Application node types can inherit from this.
   struct Node {
-    std::atomic<Node*> next{nullptr};
+    std::atomic<Node *> next{nullptr};
   };
 
   MultiProducerSingleConsumerQueue() : head_{&stub_}, tail_(&stub_) {}
@@ -49,22 +49,22 @@ class MultiProducerSingleConsumerQueue {
   // Thread safe - can be called from multiple threads concurrently
   // Returns true if this was possibly the first node (may return true
   // sporadically, will not return false sporadically)
-  bool Push(Node* node);
+  bool Push(Node *node);
   // Pop a node (returns NULL if no node is ready - which doesn't indicate that
   // the queue is empty!!)
   // Thread compatible - can only be called from one thread at a time
-  Node* Pop();
+  Node *Pop();
   // Pop a node; sets *empty to true if the queue is empty, or false if it is
   // not.
-  Node* PopAndCheckEnd(bool* empty);
+  Node *PopAndCheckEnd(bool *empty);
 
  private:
   // make sure head & tail don't share a cacheline
   union {
     char padding_[GPR_CACHELINE_SIZE];
-    std::atomic<Node*> head_{nullptr};
+    std::atomic<Node *> head_{nullptr};
   };
-  Node* tail_;
+  Node *tail_;
   Node stub_;
 };
 
@@ -78,16 +78,16 @@ class LockedMultiProducerSingleConsumerQueue {
   // Thread safe - can be called from multiple threads concurrently
   // Returns true if this was possibly the first node (may return true
   // sporadically, will not return false sporadically)
-  bool Push(Node* node);
+  bool Push(Node *node);
 
   // Pop a node (returns NULL if no node is ready - which doesn't indicate that
   // the queue is empty!!)
   // Thread safe - can be called from multiple threads concurrently
-  Node* TryPop();
+  Node *TryPop();
 
   // Pop a node.  Returns NULL only if the queue was empty at some point after
   // calling this function
-  Node* Pop();
+  Node *Pop();
 
  private:
   MultiProducerSingleConsumerQueue queue_;

@@ -29,7 +29,7 @@
 ABSL_FLAG(int32_t, handshaker_port, 55056,
           "TCP port on which the fake handshaker server listens to.");
 
-static void RunFakeHandshakerServer(const std::string& server_address) {
+static void RunFakeHandshakerServer(const std::string &server_address) {
   std::unique_ptr<grpc::Service> service =
       grpc::gcp::CreateFakeHandshakerService(
           0 /* expected max concurrent rpcs unset */);
@@ -42,7 +42,7 @@ static void RunFakeHandshakerServer(const std::string& server_address) {
   server->Wait();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
 

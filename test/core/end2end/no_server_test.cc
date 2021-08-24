@@ -27,15 +27,15 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
 void run_test(bool wait_for_ready) {
   gpr_log(GPR_INFO, "TEST: wait_for_ready=%d", wait_for_ready);
 
   grpc_init();
 
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(nullptr);
+  cq_verifier *cqv = cq_verifier_create(cq);
 
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       response_generator =
@@ -45,16 +45,16 @@ void run_test(bool wait_for_ready) {
   grpc_channel_args args = {1, &arg};
 
   /* create a call, channel to a non existant server */
-  grpc_channel* chan =
+  grpc_channel *chan =
       grpc_insecure_channel_create("fake:nonexistant", &args, nullptr);
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(2);
-  grpc_call* call = grpc_channel_create_call(
+  grpc_call *call = grpc_channel_create_call(
       chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
       grpc_slice_from_static_string("/Foo"), nullptr, deadline, nullptr);
 
   grpc_op ops[6];
   memset(ops, 0, sizeof(ops));
-  grpc_op* op = ops;
+  grpc_op *op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = wait_for_ready ? GRPC_INITIAL_METADATA_WAIT_FOR_READY : 0;
@@ -107,7 +107,7 @@ void run_test(bool wait_for_ready) {
   grpc_shutdown();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   run_test(true /* wait_for_ready */);
   run_test(false /* wait_for_ready */);

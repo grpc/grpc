@@ -66,12 +66,12 @@
 // it should never take longer that this to shutdown the server
 #define SERVER_SHUTDOWN_TIMEOUT 30000
 
-static void* tag(int n) { return reinterpret_cast<void*>(n); }
+static void *tag(int n) { return reinterpret_cast<void *>(n); }
 
-void create_loop_destroy(void* addr) {
+void create_loop_destroy(void *addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS; ++i) {
-    grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    grpc_channel* chan = grpc_insecure_channel_create(static_cast<char*>(addr),
+    grpc_completion_queue *cq = grpc_completion_queue_create_for_next(nullptr);
+    grpc_channel *chan = grpc_insecure_channel_create(static_cast<char *>(addr),
                                                       nullptr, nullptr);
 
     for (int j = 0; j < NUM_INNER_LOOPS; ++j) {
@@ -97,16 +97,16 @@ void create_loop_destroy(void* addr) {
 // this contains C++ objects.
 struct ServerThreadArgs {
   std::string addr;
-  grpc_server* server = nullptr;
-  grpc_completion_queue* cq = nullptr;
-  std::vector<grpc_pollset*> pollset;
-  gpr_mu* mu = nullptr;
+  grpc_server *server = nullptr;
+  grpc_completion_queue *cq = nullptr;
+  std::vector<grpc_pollset *> pollset;
+  gpr_mu *mu = nullptr;
   gpr_event ready;
   std::atomic_bool stop{false};
 };
 
-void server_thread(void* vargs) {
-  struct ServerThreadArgs* args = static_cast<struct ServerThreadArgs*>(vargs);
+void server_thread(void *vargs) {
+  struct ServerThreadArgs *args = static_cast<struct ServerThreadArgs *>(vargs);
   grpc_event ev;
   gpr_timespec deadline =
       grpc_timeout_milliseconds_to_deadline(SERVER_SHUTDOWN_TIMEOUT);
@@ -115,11 +115,11 @@ void server_thread(void* vargs) {
   GPR_ASSERT(ev.tag == tag(0xd1e));
 }
 
-static void on_connect(void* vargs, grpc_endpoint* tcp,
-                       grpc_pollset* /*accepting_pollset*/,
-                       grpc_tcp_server_acceptor* acceptor) {
+static void on_connect(void *vargs, grpc_endpoint *tcp,
+                       grpc_pollset * /*accepting_pollset*/,
+                       grpc_tcp_server_acceptor *acceptor) {
   gpr_free(acceptor);
-  struct ServerThreadArgs* args = static_cast<struct ServerThreadArgs*>(vargs);
+  struct ServerThreadArgs *args = static_cast<struct ServerThreadArgs *>(vargs);
   grpc_endpoint_shutdown(tcp,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
   grpc_endpoint_destroy(tcp);
@@ -129,14 +129,14 @@ static void on_connect(void* vargs, grpc_endpoint* tcp,
   gpr_mu_unlock(args->mu);
 }
 
-void bad_server_thread(void* vargs) {
-  struct ServerThreadArgs* args = static_cast<struct ServerThreadArgs*>(vargs);
+void bad_server_thread(void *vargs) {
+  struct ServerThreadArgs *args = static_cast<struct ServerThreadArgs *>(vargs);
 
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
-  grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(resolved_addr.addr);
+  grpc_sockaddr *addr = reinterpret_cast<grpc_sockaddr *>(resolved_addr.addr);
   int port;
-  grpc_tcp_server* s;
+  grpc_tcp_server *s;
   grpc_error_handle error = grpc_tcp_server_create(
       nullptr, nullptr,
       grpc_slice_allocator_factory_create(grpc_resource_quota_create(nullptr)),
@@ -150,13 +150,13 @@ void bad_server_thread(void* vargs) {
   args->addr = absl::StrCat("localhost:", port);
 
   grpc_tcp_server_start(s, &args->pollset, on_connect, args);
-  gpr_event_set(&args->ready, reinterpret_cast<void*>(1));
+  gpr_event_set(&args->ready, reinterpret_cast<void *>(1));
 
   gpr_mu_lock(args->mu);
   while (!args->stop.load(std::memory_order_acquire)) {
     grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 100;
 
-    grpc_pollset_worker* worker = nullptr;
+    grpc_pollset_worker *worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(args->pollset[0], &worker, deadline))) {
@@ -171,8 +171,8 @@ void bad_server_thread(void* vargs) {
   grpc_tcp_server_unref(s);
 }
 
-static void done_pollset_shutdown(void* pollset, grpc_error_handle /*error*/) {
-  grpc_pollset_destroy(static_cast<grpc_pollset*>(pollset));
+static void done_pollset_shutdown(void *pollset, grpc_error_handle /*error*/) {
+  grpc_pollset_destroy(static_cast<grpc_pollset *>(pollset));
   gpr_free(pollset);
 }
 
@@ -186,12 +186,12 @@ int run_concurrent_connectivity_test() {
     gpr_log(GPR_DEBUG, "Wave 1");
     grpc_core::Thread threads[NUM_THREADS];
     args.addr = "localhost:54321";
-    for (auto& th : threads) {
+    for (auto &th : threads) {
       th = grpc_core::Thread("grpc_wave_1", create_loop_destroy,
-                             const_cast<char*>(args.addr.c_str()));
+                             const_cast<char *>(args.addr.c_str()));
       th.Start();
     }
-    for (auto& th : threads) {
+    for (auto &th : threads) {
       th.Join();
     }
   }
@@ -210,12 +210,12 @@ int run_concurrent_connectivity_test() {
     server2.Start();
 
     grpc_core::Thread threads[NUM_THREADS];
-    for (auto& th : threads) {
+    for (auto &th : threads) {
       th = grpc_core::Thread("grpc_wave_2", create_loop_destroy,
-                             const_cast<char*>(args.addr.c_str()));
+                             const_cast<char *>(args.addr.c_str()));
       th.Start();
     }
-    for (auto& th : threads) {
+    for (auto &th : threads) {
       th.Join();
     }
     grpc_server_shutdown_and_notify(args.server, args.cq, tag(0xd1e));
@@ -228,7 +228,8 @@ int run_concurrent_connectivity_test() {
   {
     /* Third round, bogus tcp server */
     gpr_log(GPR_DEBUG, "Wave 3");
-    auto* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    auto *pollset =
+        static_cast<grpc_pollset *>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset, &args.mu);
     args.pollset.push_back(pollset);
     gpr_event_init(&args.ready);
@@ -237,12 +238,12 @@ int run_concurrent_connectivity_test() {
     gpr_event_wait(&args.ready, gpr_inf_future(GPR_CLOCK_MONOTONIC));
 
     grpc_core::Thread threads[NUM_THREADS];
-    for (auto& th : threads) {
+    for (auto &th : threads) {
       th = grpc_core::Thread("grpc_wave_3", create_loop_destroy,
-                             const_cast<char*>(args.addr.c_str()));
+                             const_cast<char *>(args.addr.c_str()));
       th.Start();
     }
-    for (auto& th : threads) {
+    for (auto &th : threads) {
       th.Join();
     }
 
@@ -261,10 +262,10 @@ int run_concurrent_connectivity_test() {
   return 0;
 }
 
-void watches_with_short_timeouts(void* addr) {
+void watches_with_short_timeouts(void *addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS_SHORT_TIMEOUTS; ++i) {
-    grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    grpc_channel* chan = grpc_insecure_channel_create(static_cast<char*>(addr),
+    grpc_completion_queue *cq = grpc_completion_queue_create_for_next(nullptr);
+    grpc_channel *chan = grpc_insecure_channel_create(static_cast<char *>(addr),
                                                       nullptr, nullptr);
 
     for (int j = 0; j < NUM_INNER_LOOPS_SHORT_TIMEOUTS; ++j) {
@@ -296,12 +297,12 @@ int run_concurrent_watches_with_short_timeouts_test() {
 
   grpc_core::Thread threads[NUM_THREADS];
 
-  for (auto& th : threads) {
+  for (auto &th : threads) {
     th = grpc_core::Thread("grpc_short_watches", watches_with_short_timeouts,
-                           const_cast<char*>("localhost:54321"));
+                           const_cast<char *>("localhost:54321"));
     th.Start();
   }
-  for (auto& th : threads) {
+  for (auto &th : threads) {
     th.Join();
   }
 
@@ -309,7 +310,7 @@ int run_concurrent_watches_with_short_timeouts_test() {
   return 0;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
 
   run_concurrent_connectivity_test();

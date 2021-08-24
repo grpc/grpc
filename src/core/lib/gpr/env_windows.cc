@@ -30,8 +30,8 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/string_windows.h"
 
-char* gpr_getenv(const char* name) {
-  char* result = NULL;
+char *gpr_getenv(const char *name) {
+  char *result = NULL;
   DWORD size;
   LPTSTR tresult = NULL;
   LPTSTR tname = gpr_char_to_tchar(name);
@@ -55,7 +55,7 @@ char* gpr_getenv(const char* name) {
   return result;
 }
 
-void gpr_setenv(const char* name, const char* value) {
+void gpr_setenv(const char *name, const char *value) {
   LPTSTR tname = gpr_char_to_tchar(name);
   LPTSTR tvalue = gpr_char_to_tchar(value);
   BOOL res = SetEnvironmentVariable(tname, tvalue);
@@ -64,7 +64,7 @@ void gpr_setenv(const char* name, const char* value) {
   GPR_ASSERT(res);
 }
 
-void gpr_unsetenv(const char* name) {
+void gpr_unsetenv(const char *name) {
   LPTSTR tname = gpr_char_to_tchar(name);
   BOOL res = SetEnvironmentVariable(tname, NULL);
   gpr_free(tname);

@@ -51,8 +51,8 @@ class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
   ServiceImpl() : bidi_stream_count_(0), response_stream_count_(0) {}
 
   Status BidiStream(
-      ServerContext* /*context*/,
-      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+      ServerContext * /*context*/,
+      ServerReaderWriter<EchoResponse, EchoRequest> *stream) override {
     bidi_stream_count_++;
     EchoRequest request;
     EchoResponse response;
@@ -66,9 +66,9 @@ class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
     return Status::OK;
   }
 
-  Status ResponseStream(ServerContext* /*context*/,
-                        const EchoRequest* /*request*/,
-                        ServerWriter<EchoResponse>* writer) override {
+  Status ResponseStream(ServerContext * /*context*/,
+                        const EchoRequest * /*request*/,
+                        ServerWriter<EchoResponse> *writer) override {
     EchoResponse response;
     response_stream_count_++;
     for (int i = 0;; i++) {
@@ -95,7 +95,7 @@ class CrashTest : public ::testing::Test {
  protected:
   CrashTest() {}
 
-  std::unique_ptr<Server> CreateServerAndClient(const std::string& mode) {
+  std::unique_ptr<Server> CreateServerAndClient(const std::string &mode) {
     auto port = grpc_pick_unused_port_or_die();
     std::ostringstream addr_stream;
     addr_stream << "localhost:" << port;
@@ -147,7 +147,7 @@ TEST_F(CrashTest, BidiStream) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   std::string me = argv[0];
   auto lslash = me.rfind('/');
   if (lslash != std::string::npos) {

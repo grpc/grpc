@@ -26,7 +26,7 @@ namespace grpc {
 class ChannelCredentials;
 
 /// Credentials for a channel using Cronet.
-std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void* engine);
+std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void *engine);
 
 }  // namespace grpc
 

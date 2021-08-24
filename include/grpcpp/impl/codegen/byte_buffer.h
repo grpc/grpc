@@ -41,7 +41,8 @@ class CallbackUnaryHandler;
 template <class RequestType, class ResponseType>
 class CallbackServerStreamingHandler;
 template <class RequestType>
-void* UnaryDeserializeHelper(grpc_byte_buffer*, ::grpc::Status*, RequestType*);
+void *UnaryDeserializeHelper(grpc_byte_buffer *, ::grpc::Status *,
+                             RequestType *);
 template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
 template <::grpc::StatusCode code>
@@ -63,7 +64,7 @@ class ByteBuffer final {
   ByteBuffer() : buffer_(nullptr) {}
 
   /// Construct buffer from \a slices, of which there are \a nslices.
-  ByteBuffer(const Slice* slices, size_t nslices) {
+  ByteBuffer(const Slice *slices, size_t nslices) {
     // The following assertions check that the representation of a grpc::Slice
     // is identical to that of a grpc_slice:  it has a grpc_slice field, and
     // nothing else.
@@ -74,10 +75,10 @@ class ByteBuffer final {
     // The following assertions check that the representation of a ByteBuffer is
     // identical to grpc_byte_buffer*:  it has a grpc_byte_buffer* field,
     // and nothing else.
-    static_assert(std::is_same<decltype(buffer_), grpc_byte_buffer*>::value,
+    static_assert(std::is_same<decltype(buffer_), grpc_byte_buffer *>::value,
                   "ByteBuffer must have same representation as "
                   "grpc_byte_buffer*");
-    static_assert(sizeof(ByteBuffer) == sizeof(grpc_byte_buffer*),
+    static_assert(sizeof(ByteBuffer) == sizeof(grpc_byte_buffer *),
                   "ByteBuffer must have same representation as "
                   "grpc_byte_buffer*");
     // The const_cast is legal if grpc_raw_byte_buffer_create() does no more
@@ -85,14 +86,14 @@ class ByteBuffer final {
     // slices it processes, and such an increase does not affect the semantics
     // seen by the caller of this constructor.
     buffer_ = g_core_codegen_interface->grpc_raw_byte_buffer_create(
-        reinterpret_cast<grpc_slice*>(const_cast<Slice*>(slices)), nslices);
+        reinterpret_cast<grpc_slice *>(const_cast<Slice *>(slices)), nslices);
   }
 
   /// Constuct a byte buffer by referencing elements of existing buffer
   /// \a buf. Wrapper of core function grpc_byte_buffer_copy . This is not
   /// a deep copy; it is just a referencing. As a result, its performance is
   /// size-independent.
-  ByteBuffer(const ByteBuffer& buf) : buffer_(nullptr) { operator=(buf); }
+  ByteBuffer(const ByteBuffer &buf) : buffer_(nullptr) { operator=(buf); }
 
   ~ByteBuffer() {
     if (buffer_) {
@@ -103,7 +104,7 @@ class ByteBuffer final {
   /// Wrapper of core function grpc_byte_buffer_copy . This is not
   /// a deep copy; it is just a referencing. As a result, its performance is
   /// size-independent.
-  ByteBuffer& operator=(const ByteBuffer& buf) {
+  ByteBuffer &operator=(const ByteBuffer &buf) {
     if (this != &buf) {
       Clear();  // first remove existing data
     }
@@ -116,13 +117,13 @@ class ByteBuffer final {
 
   // If this ByteBuffer's representation is a single flat slice, returns a
   // slice referencing that array.
-  Status TrySingleSlice(Slice* slice) const;
+  Status TrySingleSlice(Slice *slice) const;
 
   /// Dump (read) the buffer contents into \a slics.
-  Status DumpToSingleSlice(Slice* slice) const;
+  Status DumpToSingleSlice(Slice *slice) const;
 
   /// Dump (read) the buffer contents into \a slices.
-  Status Dump(std::vector<Slice>* slices) const;
+  Status Dump(std::vector<Slice> *slices) const;
 
   /// Remove all data.
   void Clear() {
@@ -153,8 +154,8 @@ class ByteBuffer final {
   }
 
   /// Swap the state of *this and *other.
-  void Swap(ByteBuffer* other) {
-    grpc_byte_buffer* tmp = other->buffer_;
+  void Swap(ByteBuffer *other) {
+    grpc_byte_buffer *tmp = other->buffer_;
     other->buffer_ = buffer_;
     buffer_ = tmp;
   }
@@ -170,8 +171,9 @@ class ByteBuffer final {
   friend class internal::CallOpRecvMessage;
   friend class internal::CallOpGenericRecvMessage;
   template <class RequestType>
-  friend void* internal::UnaryDeserializeHelper(grpc_byte_buffer*,
-                                                ::grpc::Status*, RequestType*);
+  friend void *internal::UnaryDeserializeHelper(grpc_byte_buffer *,
+                                                ::grpc::Status *,
+                                                RequestType *);
   template <class ServiceType, class RequestType, class ResponseType>
   friend class internal::ServerStreamingHandler;
   template <class RequestType, class ResponseType>
@@ -187,33 +189,33 @@ class ByteBuffer final {
   friend class internal::GrpcByteBufferPeer;
   friend class internal::ExternalConnectionAcceptorImpl;
 
-  grpc_byte_buffer* buffer_;
+  grpc_byte_buffer *buffer_;
 
   // takes ownership
-  void set_buffer(grpc_byte_buffer* buf) {
+  void set_buffer(grpc_byte_buffer *buf) {
     if (buffer_) {
       Clear();
     }
     buffer_ = buf;
   }
 
-  grpc_byte_buffer* c_buffer() { return buffer_; }
-  grpc_byte_buffer** c_buffer_ptr() { return &buffer_; }
+  grpc_byte_buffer *c_buffer() { return buffer_; }
+  grpc_byte_buffer **c_buffer_ptr() { return &buffer_; }
 
   class ByteBufferPointer {
    public:
     /* NOLINTNEXTLINE(google-explicit-constructor) */
-    ByteBufferPointer(const ByteBuffer* b)
-        : bbuf_(const_cast<ByteBuffer*>(b)) {}
+    ByteBufferPointer(const ByteBuffer *b)
+        : bbuf_(const_cast<ByteBuffer *>(b)) {}
     /* NOLINTNEXTLINE(google-explicit-constructor) */
-    operator ByteBuffer*() { return bbuf_; }
+    operator ByteBuffer *() { return bbuf_; }
     /* NOLINTNEXTLINE(google-explicit-constructor) */
-    operator grpc_byte_buffer*() { return bbuf_->buffer_; }
+    operator grpc_byte_buffer *() { return bbuf_->buffer_; }
     /* NOLINTNEXTLINE(google-explicit-constructor) */
-    operator grpc_byte_buffer**() { return &bbuf_->buffer_; }
+    operator grpc_byte_buffer **() { return &bbuf_->buffer_; }
 
    private:
-    ByteBuffer* bbuf_;
+    ByteBuffer *bbuf_;
   };
   ByteBufferPointer bbuf_ptr() const { return ByteBufferPointer(this); }
 };
@@ -221,12 +223,12 @@ class ByteBuffer final {
 template <>
 class SerializationTraits<ByteBuffer, void> {
  public:
-  static Status Deserialize(ByteBuffer* byte_buffer, ByteBuffer* dest) {
+  static Status Deserialize(ByteBuffer *byte_buffer, ByteBuffer *dest) {
     dest->set_buffer(byte_buffer->buffer_);
     return Status::OK;
   }
-  static Status Serialize(const ByteBuffer& source, ByteBuffer* buffer,
-                          bool* own_buffer) {
+  static Status Serialize(const ByteBuffer &source, ByteBuffer *buffer,
+                          bool *own_buffer) {
     *buffer = source;
     *own_buffer = true;
     return g_core_codegen_interface->ok();

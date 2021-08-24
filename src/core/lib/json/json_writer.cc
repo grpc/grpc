@@ -45,7 +45,7 @@ namespace {
  */
 class JsonWriter {
  public:
-  static std::string Dump(const Json& value, int indent);
+  static std::string Dump(const Json &value, int indent);
 
  private:
   explicit JsonWriter(int indent) : indent_(indent) {}
@@ -56,16 +56,16 @@ class JsonWriter {
   void OutputIndent();
   void ValueEnd();
   void EscapeUtf16(uint16_t utf16);
-  void EscapeString(const std::string& string);
+  void EscapeString(const std::string &string);
   void ContainerBegins(Json::Type type);
   void ContainerEnds(Json::Type type);
-  void ObjectKey(const std::string& string);
-  void ValueRaw(const std::string& string);
-  void ValueString(const std::string& string);
+  void ObjectKey(const std::string &string);
+  void ValueRaw(const std::string &string);
+  void ValueString(const std::string &string);
 
-  void DumpObject(const Json::Object& object);
-  void DumpArray(const Json::Array& array);
-  void DumpValue(const Json& value);
+  void DumpObject(const Json::Object &object);
+  void DumpArray(const Json::Array &array);
+  void DumpValue(const Json &value);
 
   int indent_;
   int depth_ = 0;
@@ -139,7 +139,7 @@ void JsonWriter::EscapeUtf16(uint16_t utf16) {
   OutputChar(hex[(utf16)&0x0f]);
 }
 
-void JsonWriter::EscapeString(const std::string& string) {
+void JsonWriter::EscapeString(const std::string &string) {
   OutputChar('"');
   for (size_t idx = 0; idx < string.size(); ++idx) {
     uint8_t c = static_cast<uint8_t>(string[idx]);
@@ -256,7 +256,7 @@ void JsonWriter::ContainerEnds(Json::Type type) {
   got_key_ = false;
 }
 
-void JsonWriter::ObjectKey(const std::string& string) {
+void JsonWriter::ObjectKey(const std::string &string) {
   ValueEnd();
   OutputIndent();
   EscapeString(string);
@@ -264,38 +264,38 @@ void JsonWriter::ObjectKey(const std::string& string) {
   got_key_ = true;
 }
 
-void JsonWriter::ValueRaw(const std::string& string) {
+void JsonWriter::ValueRaw(const std::string &string) {
   if (!got_key_) ValueEnd();
   OutputIndent();
   OutputString(string);
   got_key_ = false;
 }
 
-void JsonWriter::ValueString(const std::string& string) {
+void JsonWriter::ValueString(const std::string &string) {
   if (!got_key_) ValueEnd();
   OutputIndent();
   EscapeString(string);
   got_key_ = false;
 }
 
-void JsonWriter::DumpObject(const Json::Object& object) {
+void JsonWriter::DumpObject(const Json::Object &object) {
   ContainerBegins(Json::Type::OBJECT);
-  for (const auto& p : object) {
+  for (const auto &p : object) {
     ObjectKey(p.first.data());
     DumpValue(p.second);
   }
   ContainerEnds(Json::Type::OBJECT);
 }
 
-void JsonWriter::DumpArray(const Json::Array& array) {
+void JsonWriter::DumpArray(const Json::Array &array) {
   ContainerBegins(Json::Type::ARRAY);
-  for (const auto& v : array) {
+  for (const auto &v : array) {
     DumpValue(v);
   }
   ContainerEnds(Json::Type::ARRAY);
 }
 
-void JsonWriter::DumpValue(const Json& value) {
+void JsonWriter::DumpValue(const Json &value) {
   switch (value.type()) {
     case Json::Type::OBJECT:
       DumpObject(value.object_value());
@@ -323,7 +323,7 @@ void JsonWriter::DumpValue(const Json& value) {
   }
 }
 
-std::string JsonWriter::Dump(const Json& value, int indent) {
+std::string JsonWriter::Dump(const Json &value, int indent) {
   JsonWriter writer(indent);
   writer.DumpValue(value);
   return std::move(writer.output_);

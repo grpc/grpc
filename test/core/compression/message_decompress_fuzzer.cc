@@ -28,7 +28,7 @@
 bool squelch = true;
 bool leak_check = true;
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   if (size < 1) return 0;
 
   // Instead of rolling something complicated to convert a uint8_t to the enum,
@@ -41,9 +41,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_init();
   grpc_slice_buffer input_buffer;
   grpc_slice_buffer_init(&input_buffer);
-  grpc_slice_buffer_add(&input_buffer,
-                        grpc_slice_from_copied_buffer(
-                            reinterpret_cast<const char*>(data + 1), size - 1));
+  grpc_slice_buffer_add(
+      &input_buffer, grpc_slice_from_copied_buffer(
+                         reinterpret_cast<const char *>(data + 1), size - 1));
   grpc_slice_buffer output_buffer;
   grpc_slice_buffer_init(&output_buffer);
 

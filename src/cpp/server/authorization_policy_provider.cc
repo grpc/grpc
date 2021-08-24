@@ -20,16 +20,16 @@ namespace grpc {
 namespace experimental {
 
 std::shared_ptr<StaticDataAuthorizationPolicyProvider>
-StaticDataAuthorizationPolicyProvider::Create(const std::string& authz_policy,
-                                              grpc::Status* status) {
+StaticDataAuthorizationPolicyProvider::Create(const std::string &authz_policy,
+                                              grpc::Status *status) {
   grpc_status_code code;
-  const char* error_details;
-  grpc_authorization_policy_provider* provider =
+  const char *error_details;
+  grpc_authorization_policy_provider *provider =
       grpc_authorization_policy_provider_static_data_create(
           authz_policy.c_str(), &code, &error_details);
   if (code != GRPC_STATUS_OK) {
     *status = grpc::Status(static_cast<grpc::StatusCode>(code), error_details);
-    gpr_free(const_cast<char*>(error_details));
+    gpr_free(const_cast<char *>(error_details));
     return nullptr;
   }
   *status = grpc::Status();

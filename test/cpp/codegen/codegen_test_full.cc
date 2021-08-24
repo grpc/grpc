@@ -29,7 +29,7 @@ class CodegenTestFull : public ::testing::Test {};
 
 TEST_F(CodegenTestFull, Init) {
   grpc::CompletionQueue cq;
-  void* tag = nullptr;
+  void *tag = nullptr;
   bool ok = false;
   cq.AsyncNext(&tag, &ok, gpr_time_0(GPR_CLOCK_REALTIME));
   ASSERT_FALSE(ok);
@@ -38,7 +38,7 @@ TEST_F(CodegenTestFull, Init) {
 }  // namespace
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

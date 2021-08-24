@@ -26,7 +26,7 @@ TEST(RaceTest, Race2B) { EXPECT_EQ(Race(never, instant)(), Poll<int>(1)); }
 
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

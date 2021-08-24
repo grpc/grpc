@@ -72,11 +72,11 @@ class FakeResolverResponseGenerator
 
   // Returns a channel arg containing \a generator.
   // TODO(roth): When we have time, make this a non-static method.
-  static grpc_arg MakeChannelArg(FakeResolverResponseGenerator* generator);
+  static grpc_arg MakeChannelArg(FakeResolverResponseGenerator *generator);
 
   // Returns the response generator in \a args, or null if not found.
   static RefCountedPtr<FakeResolverResponseGenerator> GetFromArgs(
-      const grpc_channel_args* args);
+      const grpc_channel_args *args);
 
  private:
   friend class FakeResolver;

@@ -33,14 +33,14 @@ namespace grpc_core {
 // configured with a config fetcher. Not invoked if there is no config fetcher
 // added to the server. Takes ownership of the args.  Caller takes ownership of
 // returned args. On failure, the error parameter will be set.
-using Chttp2ServerArgsModifier =
-    std::function<grpc_channel_args*(grpc_channel_args*, grpc_error_handle*)>;
+using Chttp2ServerArgsModifier = std::function<grpc_channel_args *(
+    grpc_channel_args *, grpc_error_handle *)>;
 
 /// Adds a port to \a server.  Sets \a port_num to the port number.
 /// Takes ownership of \a args.
 grpc_error_handle Chttp2ServerAddPort(
-    Server* server, const char* addr, grpc_channel_args* args,
-    Chttp2ServerArgsModifier connection_args_modifier, int* port_num);
+    Server *server, const char *addr, grpc_channel_args *args,
+    Chttp2ServerArgsModifier connection_args_modifier, int *port_num);
 
 }  // namespace grpc_core
 

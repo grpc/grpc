@@ -79,11 +79,11 @@ class TransportTargetWindowSizeMocker
   double window_size_ = kLargeInitialWindowSize;
 };
 
-TransportTargetWindowSizeMocker* g_target_initial_window_size_mocker;
+TransportTargetWindowSizeMocker *g_target_initial_window_size_mocker;
 
-void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
-void VerifyChannelReady(grpc_channel* channel, grpc_completion_queue* cq) {
+void VerifyChannelReady(grpc_channel *channel, grpc_completion_queue *cq) {
   grpc_connectivity_state state =
       grpc_channel_check_connectivity_state(channel, 1 /* try_to_connect */);
   while (state != GRPC_CHANNEL_READY) {
@@ -95,26 +95,26 @@ void VerifyChannelReady(grpc_channel* channel, grpc_completion_queue* cq) {
   }
 }
 
-void VerifyChannelConnected(grpc_channel* channel, grpc_completion_queue* cq) {
+void VerifyChannelConnected(grpc_channel *channel, grpc_completion_queue *cq) {
   // Verify channel is connected. Use a ping to make sure that clients
   // tries sending/receiving bytes if the channel is connected.
-  grpc_channel_ping(channel, cq, reinterpret_cast<void*>(2000), nullptr);
+  grpc_channel_ping(channel, cq, reinterpret_cast<void *>(2000), nullptr);
   grpc_event ev = grpc_completion_queue_next(
       cq, grpc_timeout_seconds_to_deadline(5), nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(ev.tag == reinterpret_cast<void*>(2000));
+  GPR_ASSERT(ev.tag == reinterpret_cast<void *>(2000));
   GPR_ASSERT(ev.success == 1);
   GPR_ASSERT(grpc_channel_check_connectivity_state(channel, 0) ==
              GRPC_CHANNEL_READY);
 }
 
 // Shuts down and destroys the server.
-void ServerShutdownAndDestroy(grpc_server* server, grpc_completion_queue* cq) {
+void ServerShutdownAndDestroy(grpc_server *server, grpc_completion_queue *cq) {
   // Shutdown and destroy server
-  grpc_server_shutdown_and_notify(server, cq, reinterpret_cast<void*>(1000));
+  grpc_server_shutdown_and_notify(server, cq, reinterpret_cast<void *>(1000));
   while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
                                     nullptr)
-             .tag != reinterpret_cast<void*>(1000)) {
+             .tag != reinterpret_cast<void *>(1000)) {
   }
   grpc_server_destroy(server);
 }
@@ -125,24 +125,24 @@ grpc_slice LargeSlice(void) {
   return slice;
 }
 
-void PerformCallWithLargePayload(grpc_channel* channel, grpc_server* server,
-                                 grpc_completion_queue* cq) {
+void PerformCallWithLargePayload(grpc_channel *channel, grpc_server *server,
+                                 grpc_completion_queue *cq) {
   grpc_slice request_payload_slice = LargeSlice();
   grpc_slice response_payload_slice = LargeSlice();
-  grpc_call* c;
-  grpc_call* s;
-  grpc_byte_buffer* request_payload =
+  grpc_call *c;
+  grpc_call *s;
+  grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer* response_payload =
+  grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  cq_verifier* cqv = cq_verifier_create(cq);
+  cq_verifier *cqv = cq_verifier_create(cq);
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer* request_payload_recv = nullptr;
-  grpc_byte_buffer* response_payload_recv = nullptr;
+  grpc_byte_buffer *request_payload_recv = nullptr;
+  grpc_byte_buffer *response_payload_recv = nullptr;
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
@@ -283,11 +283,11 @@ class FlowControlTest : public ::testing::Test {
         grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
     grpc_arg server_args[] = {
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), 0),
+            const_cast<char *>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), 0),
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH), -1),
+            const_cast<char *>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH), -1),
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH), -1)};
+            const_cast<char *>(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH), -1)};
     grpc_channel_args server_channel_args = {GPR_ARRAY_SIZE(server_args),
                                              server_args};
     server_ = grpc_server_create(&server_channel_args, nullptr);
@@ -298,13 +298,13 @@ class FlowControlTest : public ::testing::Test {
     // create the channel (bdp pings are enabled by default)
     grpc_arg client_args[] = {
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
+            const_cast<char *>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1),
+            const_cast<char *>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1),
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH), -1),
+            const_cast<char *>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH), -1),
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH), -1)};
+            const_cast<char *>(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH), -1)};
     grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                              client_args};
     channel_ = grpc_insecure_channel_create(server_address.c_str(),
@@ -325,9 +325,9 @@ class FlowControlTest : public ::testing::Test {
     grpc_completion_queue_destroy(cq_);
   }
 
-  grpc_server* server_ = nullptr;
-  grpc_channel* channel_ = nullptr;
-  grpc_completion_queue* cq_ = nullptr;
+  grpc_server *server_ = nullptr;
+  grpc_channel *channel_ = nullptr;
+  grpc_completion_queue *cq_ = nullptr;
 };
 
 TEST_F(FlowControlTest,
@@ -348,7 +348,7 @@ TEST_F(FlowControlTest, TestWindowSizeUpdatesDoNotCauseStalledStreams) {
 
 }  // namespace
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   // Make sure that we will have an active poller on all client-side fd's that
   // are capable of sending and receiving even in the case that we don't have an

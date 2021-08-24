@@ -36,7 +36,7 @@ class AuthorizationEngine : public RefCounted<AuthorizationEngine> {
     std::string matching_policy_name;
   };
 
-  virtual Decision Evaluate(const EvaluateArgs& args) const = 0;
+  virtual Decision Evaluate(const EvaluateArgs &args) const = 0;
 };
 
 }  // namespace grpc_core

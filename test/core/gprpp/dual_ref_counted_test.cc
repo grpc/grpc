@@ -39,26 +39,26 @@ class Foo : public DualRefCounted<Foo> {
 };
 
 TEST(DualRefCounted, Basic) {
-  Foo* foo = new Foo();
+  Foo *foo = new Foo();
   foo->Unref();
 }
 
 TEST(DualRefCounted, ExtraRef) {
-  Foo* foo = new Foo();
+  Foo *foo = new Foo();
   foo->Ref().release();
   foo->Unref();
   foo->Unref();
 }
 
 TEST(DualRefCounted, ExtraWeakRef) {
-  Foo* foo = new Foo();
+  Foo *foo = new Foo();
   foo->WeakRef().release();
   foo->Unref();
   foo->WeakUnref();
 }
 
 TEST(DualRefCounted, RefIfNonZero) {
-  Foo* foo = new Foo();
+  Foo *foo = new Foo();
   foo->WeakRef().release();
   {
     RefCountedPtr<Foo> foop = foo->RefIfNonZero();
@@ -84,7 +84,7 @@ class FooWithTracing : public DualRefCounted<FooWithTracing> {
 };
 
 TEST(DualRefCountedWithTracing, Basic) {
-  FooWithTracing* foo = new FooWithTracing();
+  FooWithTracing *foo = new FooWithTracing();
   foo->Ref(DEBUG_LOCATION, "extra_ref").release();
   foo->Unref(DEBUG_LOCATION, "extra_ref");
   foo->WeakRef(DEBUG_LOCATION, "extra_ref").release();
@@ -101,7 +101,7 @@ TEST(DualRefCountedWithTracing, Basic) {
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

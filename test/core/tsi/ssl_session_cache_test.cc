@@ -33,7 +33,7 @@ namespace {
 class SessionTracker;
 
 struct SessionExDataId {
-  SessionTracker* tracker;
+  SessionTracker *tracker;
   long id;
 };
 
@@ -50,7 +50,7 @@ class SessionTracker {
     // OpenSSL and different version of BoringSSL don't agree on API
     // so try both.
     tsi::SslSessionPtr session = NewSessionInternal(SSL_SESSION_new);
-    SessionExDataId* data = new SessionExDataId{this, id};
+    SessionExDataId *data = new SessionExDataId{this, id};
     int result = SSL_SESSION_set_ex_data(session.get(), ex_data_id, data);
     EXPECT_EQ(result, 1);
     alive_sessions_.insert(id);
@@ -64,22 +64,23 @@ class SessionTracker {
   size_t AliveCount() const { return alive_sessions_.size(); }
 
  private:
-  tsi::SslSessionPtr NewSessionInternal(SSL_SESSION* (*cb)()) {
+  tsi::SslSessionPtr NewSessionInternal(SSL_SESSION *(*cb)()) {
     return tsi::SslSessionPtr(cb());
   }
 
-  tsi::SslSessionPtr NewSessionInternal(SSL_SESSION* (*cb)(const SSL_CTX*)) {
+  tsi::SslSessionPtr NewSessionInternal(SSL_SESSION *(*cb)(const SSL_CTX *)) {
     return tsi::SslSessionPtr(cb(ssl_context_));
   }
 
-  static void DestroyExData(void* /*parent*/, void* ptr, CRYPTO_EX_DATA* /*ad*/,
-                            int /*index*/, long /*argl*/, void* /*argp*/) {
-    SessionExDataId* data = static_cast<SessionExDataId*>(ptr);
+  static void DestroyExData(void * /*parent*/, void *ptr,
+                            CRYPTO_EX_DATA * /*ad*/, int /*index*/,
+                            long /*argl*/, void * /*argp*/) {
+    SessionExDataId *data = static_cast<SessionExDataId *>(ptr);
     data->tracker->alive_sessions_.erase(data->id);
     delete data;
   }
 
-  SSL_CTX* ssl_context_;
+  SSL_CTX *ssl_context_;
   std::unordered_set<long> alive_sessions_;
 };
 
@@ -101,14 +102,14 @@ TEST(SslSessionCacheTest, LruCache) {
     RefCountedPtr<tsi::SslSessionLRUCache> cache =
         tsi::SslSessionLRUCache::Create(3);
     tsi::SslSessionPtr sess2 = tracker.NewSession(2);
-    SSL_SESSION* sess2_ptr = sess2.get();
+    SSL_SESSION *sess2_ptr = sess2.get();
     cache->Put("first.dropbox.com", std::move(sess2));
     EXPECT_EQ(cache->Get("first.dropbox.com").get(), sess2_ptr);
     EXPECT_TRUE(tracker.IsAlive(2));
     EXPECT_EQ(tracker.AliveCount(), 1);
     // Putting element with the same key destroys old session.
     tsi::SslSessionPtr sess3 = tracker.NewSession(3);
-    SSL_SESSION* sess3_ptr = sess3.get();
+    SSL_SESSION *sess3_ptr = sess3.get();
     cache->Put("first.dropbox.com", std::move(sess3));
     EXPECT_FALSE(tracker.IsAlive(2));
     EXPECT_EQ(cache->Get("first.dropbox.com").get(), sess3_ptr);
@@ -143,7 +144,7 @@ TEST(SslSessionCacheTest, LruCache) {
 }  // namespace
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();

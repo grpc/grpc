@@ -23,7 +23,7 @@
 #include "src/core/lib/gpr/useful.h"
 
 struct status_string_entry {
-  const char* str;
+  const char *str;
   grpc_status_code status;
 };
 static const status_string_entry g_status_string_entries[] = {
@@ -46,8 +46,8 @@ static const status_string_entry g_status_string_entries[] = {
     {"DATA_LOSS", GRPC_STATUS_DATA_LOSS},
 };
 
-bool grpc_status_code_from_string(const char* status_str,
-                                  grpc_status_code* status) {
+bool grpc_status_code_from_string(const char *status_str,
+                                  grpc_status_code *status) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(g_status_string_entries); ++i) {
     if (strcmp(status_str, g_status_string_entries[i].str) == 0) {
       *status = g_status_string_entries[i].status;
@@ -57,7 +57,7 @@ bool grpc_status_code_from_string(const char* status_str,
   return false;
 }
 
-const char* grpc_status_code_to_string(grpc_status_code status) {
+const char *grpc_status_code_to_string(grpc_status_code status) {
   switch (status) {
     case GRPC_STATUS_OK:
       return "OK";
@@ -98,7 +98,7 @@ const char* grpc_status_code_to_string(grpc_status_code status) {
   }
 }
 
-bool grpc_status_code_from_int(int status_int, grpc_status_code* status) {
+bool grpc_status_code_from_int(int status_int, grpc_status_code *status) {
   // The range of status code enum is [0, 16], 0 is OK, 16 is UNAUTHENTICATED.
   if (status_int < GRPC_STATUS_OK || status_int > GRPC_STATUS_UNAUTHENTICATED) {
     *status = GRPC_STATUS_UNKNOWN;

@@ -36,26 +36,26 @@ typedef enum {
 
 struct grpc_chttp2_settings_parser {
   grpc_chttp2_settings_parse_state state;
-  uint32_t* target_settings;
+  uint32_t *target_settings;
   uint8_t is_ack;
   uint16_t id;
   uint32_t value;
   uint32_t incoming_settings[GRPC_CHTTP2_NUM_SETTINGS];
 };
 /* Create a settings frame by diffing old & new, and updating old to be new */
-grpc_slice grpc_chttp2_settings_create(uint32_t* old_settings,
-                                       const uint32_t* new_settings,
+grpc_slice grpc_chttp2_settings_create(uint32_t *old_settings,
+                                       const uint32_t *new_settings,
                                        uint32_t force_mask, size_t count);
 /* Create an ack settings frame */
 grpc_slice grpc_chttp2_settings_ack_create(void);
 
 grpc_error_handle grpc_chttp2_settings_parser_begin_frame(
-    grpc_chttp2_settings_parser* parser, uint32_t length, uint8_t flags,
-    uint32_t* settings);
-grpc_error_handle grpc_chttp2_settings_parser_parse(void* parser,
-                                                    grpc_chttp2_transport* t,
-                                                    grpc_chttp2_stream* s,
-                                                    const grpc_slice& slice,
+    grpc_chttp2_settings_parser *parser, uint32_t length, uint8_t flags,
+    uint32_t *settings);
+grpc_error_handle grpc_chttp2_settings_parser_parse(void *parser,
+                                                    grpc_chttp2_transport *t,
+                                                    grpc_chttp2_stream *s,
+                                                    const grpc_slice &slice,
                                                     int is_last);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_SETTINGS_H */

@@ -27,11 +27,11 @@
 
 typedef struct grpc_custom_poller_vtable {
   void (*init)();
-  grpc_error* (*poll)(size_t timeout_ms);
+  grpc_error *(*poll)(size_t timeout_ms);
   void (*kick)();
   void (*shutdown)();
 } grpc_custom_poller_vtable;
 
-void grpc_custom_pollset_init(grpc_custom_poller_vtable* vtable);
+void grpc_custom_pollset_init(grpc_custom_poller_vtable *vtable);
 
 #endif /* GRPC_CORE_LIB_IOMGR_POLLSET_CUSTOM_H */

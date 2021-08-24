@@ -32,10 +32,10 @@ namespace grpc_core {
 // use ExecCtx
 class Combiner {
  public:
-  void Run(grpc_closure* closure, grpc_error_handle error);
+  void Run(grpc_closure *closure, grpc_error_handle error);
   // TODO(yashkt) : Remove this method
-  void FinallyRun(grpc_closure* closure, grpc_error_handle error);
-  Combiner* next_combiner_on_this_exec_ctx = nullptr;
+  void FinallyRun(grpc_closure *closure, grpc_error_handle error);
+  Combiner *next_combiner_on_this_exec_ctx = nullptr;
   MultiProducerSingleConsumerQueue queue;
   // either:
   // a pointer to the initiating exec ctx if that is the only exec_ctx that has
@@ -60,7 +60,7 @@ class Combiner {
 
 // Initialize the lock, with an optional workqueue to shift load to when
 // necessary
-grpc_core::Combiner* grpc_combiner_create(void);
+grpc_core::Combiner *grpc_combiner_create(void);
 
 #ifndef NDEBUG
 #define GRPC_COMBINER_DEBUG_ARGS \
@@ -77,9 +77,9 @@ grpc_core::Combiner* grpc_combiner_create(void);
 
 // Ref/unref the lock, for when we're sharing the lock ownership
 // Prefer to use the macros above
-grpc_core::Combiner* grpc_combiner_ref(
-    grpc_core::Combiner* lock GRPC_COMBINER_DEBUG_ARGS);
-void grpc_combiner_unref(grpc_core::Combiner* lock GRPC_COMBINER_DEBUG_ARGS);
+grpc_core::Combiner *grpc_combiner_ref(
+    grpc_core::Combiner *lock GRPC_COMBINER_DEBUG_ARGS);
+void grpc_combiner_unref(grpc_core::Combiner *lock GRPC_COMBINER_DEBUG_ARGS);
 
 bool grpc_combiner_continue_exec_ctx();
 

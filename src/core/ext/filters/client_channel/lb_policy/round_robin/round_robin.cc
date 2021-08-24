@@ -59,7 +59,7 @@ class RoundRobin : public LoadBalancingPolicy {
  public:
   explicit RoundRobin(Args args);
 
-  const char* name() const override { return kRoundRobin; }
+  const char *name() const override { return kRoundRobin; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
@@ -79,9 +79,9 @@ class RoundRobin : public LoadBalancingPolicy {
                               RoundRobinSubchannelData> {
    public:
     RoundRobinSubchannelData(
-        SubchannelList<RoundRobinSubchannelList, RoundRobinSubchannelData>*
-            subchannel_list,
-        const ServerAddress& address,
+        SubchannelList<RoundRobinSubchannelList, RoundRobinSubchannelData>
+            *subchannel_list,
+        const ServerAddress &address,
         RefCountedPtr<SubchannelInterface> subchannel)
         : SubchannelData(subchannel_list, address, std::move(subchannel)) {}
 
@@ -111,9 +111,9 @@ class RoundRobin : public LoadBalancingPolicy {
       : public SubchannelList<RoundRobinSubchannelList,
                               RoundRobinSubchannelData> {
    public:
-    RoundRobinSubchannelList(RoundRobin* policy, TraceFlag* tracer,
+    RoundRobinSubchannelList(RoundRobin *policy, TraceFlag *tracer,
                              ServerAddressList addresses,
-                             const grpc_channel_args& args)
+                             const grpc_channel_args &args)
         : SubchannelList(policy, tracer, std::move(addresses),
                          policy->channel_control_helper(), args) {
       // Need to maintain a ref to the LB policy as long as we maintain
@@ -123,7 +123,7 @@ class RoundRobin : public LoadBalancingPolicy {
     }
 
     ~RoundRobinSubchannelList() override {
-      RoundRobin* p = static_cast<RoundRobin*>(policy());
+      RoundRobin *p = static_cast<RoundRobin *>(policy());
       p->Unref(DEBUG_LOCATION, "subchannel_list");
     }
 
@@ -152,13 +152,13 @@ class RoundRobin : public LoadBalancingPolicy {
 
   class Picker : public SubchannelPicker {
    public:
-    Picker(RoundRobin* parent, RoundRobinSubchannelList* subchannel_list);
+    Picker(RoundRobin *parent, RoundRobinSubchannelList *subchannel_list);
 
     PickResult Pick(PickArgs args) override;
 
    private:
     // Using pointer value only, no ref held -- do not dereference!
-    RoundRobin* parent_;
+    RoundRobin *parent_;
 
     size_t last_picked_index_;
     absl::InlinedVector<RefCountedPtr<SubchannelInterface>, 10> subchannels_;
@@ -182,11 +182,11 @@ class RoundRobin : public LoadBalancingPolicy {
 // RoundRobin::Picker
 //
 
-RoundRobin::Picker::Picker(RoundRobin* parent,
-                           RoundRobinSubchannelList* subchannel_list)
+RoundRobin::Picker::Picker(RoundRobin *parent,
+                           RoundRobinSubchannelList *subchannel_list)
     : parent_(parent) {
   for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
-    RoundRobinSubchannelData* sd = subchannel_list->subchannel(i);
+    RoundRobinSubchannelData *sd = subchannel_list->subchannel(i);
     if (sd->connectivity_state() == GRPC_CHANNEL_READY) {
       subchannels_.push_back(sd->subchannel()->Ref());
     }
@@ -300,7 +300,7 @@ void RoundRobin::RoundRobinSubchannelList::UpdateStateCountersLocked(
 // on the current subchannel list.
 void RoundRobin::RoundRobinSubchannelList::
     MaybeUpdateRoundRobinConnectivityStateLocked() {
-  RoundRobin* p = static_cast<RoundRobin*>(policy());
+  RoundRobin *p = static_cast<RoundRobin *>(policy());
   // Only set connectivity state if this is the current subchannel list.
   if (p->subchannel_list_.get() != this) return;
   /* In priority order. The first rule to match terminates the search (ie, if we
@@ -338,7 +338,7 @@ void RoundRobin::RoundRobinSubchannelList::
 
 void RoundRobin::RoundRobinSubchannelList::
     UpdateRoundRobinStateFromSubchannelStateCountsLocked() {
-  RoundRobin* p = static_cast<RoundRobin*>(policy());
+  RoundRobin *p = static_cast<RoundRobin *>(policy());
   if (num_ready_ > 0) {
     if (p->subchannel_list_.get() != this) {
       // Promote this list to p->subchannel_list_.
@@ -367,7 +367,7 @@ void RoundRobin::RoundRobinSubchannelList::
 
 void RoundRobin::RoundRobinSubchannelData::UpdateConnectivityStateLocked(
     grpc_connectivity_state connectivity_state) {
-  RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
+  RoundRobin *p = static_cast<RoundRobin *>(subchannel_list()->policy());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(
         GPR_INFO,
@@ -402,7 +402,7 @@ void RoundRobin::RoundRobinSubchannelData::UpdateConnectivityStateLocked(
 
 void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
     grpc_connectivity_state connectivity_state) {
-  RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
+  RoundRobin *p = static_cast<RoundRobin *>(subchannel_list()->policy());
   GPR_ASSERT(subchannel() != nullptr);
   // If the new state is TRANSIENT_FAILURE, re-resolve.
   // Only do this if we've started watching, not at startup time.
@@ -463,7 +463,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
 
 class RoundRobinConfig : public LoadBalancingPolicy::Config {
  public:
-  const char* name() const override { return kRoundRobin; }
+  const char *name() const override { return kRoundRobin; }
 };
 
 //
@@ -477,10 +477,10 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<RoundRobin>(std::move(args));
   }
 
-  const char* name() const override { return kRoundRobin; }
+  const char *name() const override { return kRoundRobin; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+      const Json & /*json*/, grpc_error_handle * /*error*/) const override {
     return MakeRefCounted<RoundRobinConfig>();
   }
 };

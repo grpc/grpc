@@ -27,14 +27,14 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-constexpr const char* kRootCert1 = "root_cert_1_contents";
-constexpr const char* kRootCert2 = "root_cert_2_contents";
-constexpr const char* kIdentityCert1PrivateKey = "identity_private_key_1";
-constexpr const char* kIdentityCert1 = "identity_cert_1_contents";
-constexpr const char* kIdentityCert2PrivateKey = "identity_private_key_2";
-constexpr const char* kIdentityCert2 = "identity_cert_2_contents";
-constexpr const char* kRootErrorMessage = "root_error_message";
-constexpr const char* kIdentityErrorMessage = "identity_error_message";
+constexpr const char *kRootCert1 = "root_cert_1_contents";
+constexpr const char *kRootCert2 = "root_cert_2_contents";
+constexpr const char *kIdentityCert1PrivateKey = "identity_private_key_1";
+constexpr const char *kIdentityCert1 = "identity_cert_1_contents";
+constexpr const char *kIdentityCert2PrivateKey = "identity_private_key_2";
+constexpr const char *kIdentityCert2 = "identity_cert_2_contents";
+constexpr const char *kRootErrorMessage = "root_error_message";
+constexpr const char *kIdentityErrorMessage = "identity_error_message";
 
 PemKeyCertPairList MakeKeyCertPairsType1() {
   return MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1);
@@ -81,9 +81,9 @@ class TestCertificatesWatcher
     identity_cert_error_ = identity_cert_error;
   }
 
-  const absl::optional<std::string>& root_certs() const { return root_certs_; }
+  const absl::optional<std::string> &root_certs() const { return root_certs_; }
 
-  const absl::optional<PemKeyCertPairList>& key_cert_pairs() const {
+  const absl::optional<PemKeyCertPairList> &key_cert_pairs() const {
     return key_cert_pairs_;
   }
 
@@ -109,7 +109,7 @@ TEST(
   provider.UpdateRootCertNameAndDistributor("", "root", root_cert_distributor);
   provider.UpdateIdentityCertNameAndDistributor("", "identity",
                                                 identity_cert_distributor);
-  auto* watcher = new TestCertificatesWatcher;
+  auto *watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
   EXPECT_EQ(watcher->root_certs(), absl::nullopt);
@@ -180,7 +180,7 @@ TEST(XdsCertificateProviderTest,
   provider.UpdateRootCertNameAndDistributor("", "test", root_cert_distributor);
   provider.UpdateIdentityCertNameAndDistributor("", "test",
                                                 identity_cert_distributor);
-  auto* watcher = new TestCertificatesWatcher;
+  auto *watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
   EXPECT_EQ(watcher->root_certs(), absl::nullopt);
@@ -249,7 +249,7 @@ TEST(XdsCertificateProviderTest,
   XdsCertificateProvider provider;
   provider.UpdateRootCertNameAndDistributor("", "root", distributor);
   provider.UpdateIdentityCertNameAndDistributor("", "identity", distributor);
-  auto* watcher = new TestCertificatesWatcher;
+  auto *watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
   EXPECT_EQ(watcher->root_certs(), absl::nullopt);
@@ -314,7 +314,7 @@ TEST(XdsCertificateProviderTest,
   XdsCertificateProvider provider;
   provider.UpdateRootCertNameAndDistributor("", "", distributor);
   provider.UpdateIdentityCertNameAndDistributor("", "", distributor);
-  auto* watcher = new TestCertificatesWatcher;
+  auto *watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
   EXPECT_EQ(watcher->root_certs(), absl::nullopt);
@@ -377,7 +377,7 @@ TEST(XdsCertificateProviderTest, SwapOutDistributorsMultipleTimes) {
   auto distributor = MakeRefCounted<grpc_tls_certificate_distributor>();
   distributor->SetKeyMaterials("", kRootCert1, MakeKeyCertPairsType1());
   XdsCertificateProvider provider;
-  auto* watcher = new TestCertificatesWatcher;
+  auto *watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
   // Initially there are no certificate providers.
@@ -504,7 +504,7 @@ TEST(XdsCertificateProviderTest, MultipleCertNames) {
   XdsCertificateProvider provider;
   // Start watch for "test1".  There are no underlying distributors for
   // that cert name, so it will return an error.
-  auto* watcher1 = new TestCertificatesWatcher;
+  auto *watcher1 = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher1), "test1", "test1");
   EXPECT_EQ(watcher1->root_certs(), absl::nullopt);
@@ -538,7 +538,7 @@ TEST(XdsCertificateProviderTest, MultipleCertNames) {
   provider.UpdateIdentityCertNameAndDistributor("test2", "identity2",
                                                 cert_distributor2);
   // Add watcher for "test2".  This one should return data immediately.
-  auto* watcher2 = new TestCertificatesWatcher;
+  auto *watcher2 = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher2), "test2", "test2");
   EXPECT_EQ(watcher2->root_certs(), kRootCert2);
@@ -554,7 +554,7 @@ TEST(XdsCertificateProviderTest, MultipleCertNames) {
 
 TEST(XdsCertificateProviderTest, UnknownCertName) {
   XdsCertificateProvider provider;
-  auto* watcher = new TestCertificatesWatcher;
+  auto *watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "test", "test");
   EXPECT_THAT(grpc_error_std_string(watcher->root_cert_error()),
@@ -570,7 +570,7 @@ TEST(XdsCertificateProviderTest, UnknownCertName) {
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();

@@ -36,8 +36,8 @@ namespace {
 size_t g_fault_injection_parser_index;
 
 std::vector<FaultInjectionMethodParsedConfig::FaultInjectionPolicy>
-ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
-                          std::vector<grpc_error_handle>* error_list) {
+ParseFaultInjectionPolicy(const Json::Array &policies_json_array,
+                          std::vector<grpc_error_handle> *error_list) {
   std::vector<FaultInjectionMethodParsedConfig::FaultInjectionPolicy> policies;
   for (size_t i = 0; i < policies_json_array.size(); i++) {
     FaultInjectionMethodParsedConfig::FaultInjectionPolicy
@@ -50,7 +50,7 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
               .c_str()));
       continue;
     }
-    const Json::Object& json_object = policies_json_array[i].object_value();
+    const Json::Object &json_object = policies_json_array[i].object_value();
     // Parse abort_code
     std::string abort_code_string;
     if (ParseJsonObjectField(json_object, "abortCode", &abort_code_string,
@@ -152,7 +152,7 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
 FaultInjectionServiceConfigParser::ParsePerMethodParams(
-    const grpc_channel_args* args, const Json& json, grpc_error_handle* error) {
+    const grpc_channel_args *args, const Json &json, grpc_error_handle *error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   // Only parse fault injection policy if the following channel arg is present.
   if (!grpc_channel_args_find_bool(
@@ -163,7 +163,7 @@ FaultInjectionServiceConfigParser::ParsePerMethodParams(
   std::vector<FaultInjectionMethodParsedConfig::FaultInjectionPolicy>
       fault_injection_policies;
   std::vector<grpc_error_handle> error_list;
-  const Json::Array* policies_json_array;
+  const Json::Array *policies_json_array;
   if (ParseJsonObjectField(json.object_value(), "faultInjectionPolicy",
                            &policies_json_array, &error_list)) {
     fault_injection_policies =

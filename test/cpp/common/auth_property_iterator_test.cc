@@ -32,8 +32,8 @@ namespace {
 class TestAuthPropertyIterator : public AuthPropertyIterator {
  public:
   TestAuthPropertyIterator() {}
-  TestAuthPropertyIterator(const grpc_auth_property* property,
-                           const grpc_auth_property_iterator* iter)
+  TestAuthPropertyIterator(const grpc_auth_property *property,
+                           const grpc_auth_property_iterator *iter)
       : AuthPropertyIterator(property, iter) {}
 };
 
@@ -59,7 +59,7 @@ TEST_F(AuthPropertyIteratorTest, DefaultCtor) {
 TEST_F(AuthPropertyIteratorTest, GeneralTest) {
   grpc_auth_property_iterator c_iter =
       grpc_auth_context_property_iterator(ctx_.get());
-  const grpc_auth_property* property =
+  const grpc_auth_property *property =
       grpc_auth_property_iterator_next(&c_iter);
   TestAuthPropertyIterator iter(property, &c_iter);
   TestAuthPropertyIterator empty_iter;
@@ -82,7 +82,7 @@ TEST_F(AuthPropertyIteratorTest, GeneralTest) {
 }  // namespace
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

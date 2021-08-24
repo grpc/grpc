@@ -98,7 +98,7 @@ class BaseNode : public RefCounted<BaseNode> {
 
   EntityType type() const { return type_; }
   intptr_t uuid() const { return uuid_; }
-  const std::string& name() const { return name_; }
+  const std::string &name() const { return name_; }
 
  private:
   // to allow the ChannelzRegistry to set uuid_ under its lock.
@@ -123,7 +123,7 @@ class CallCountingHelper {
   void RecordCallSucceeded();
 
   // Common rendering of the call count data and last_call_started_timestamp.
-  void PopulateCallCounts(Json::Object* json);
+  void PopulateCallCounts(Json::Object *json);
 
  private:
   // testing peer friend.
@@ -133,7 +133,7 @@ class CallCountingHelper {
   struct AtomicCounterData {
     // Define the ctors so that we can use this structure in InlinedVector.
     AtomicCounterData() = default;
-    AtomicCounterData(const AtomicCounterData& that)
+    AtomicCounterData(const AtomicCounterData &that)
         : calls_started(that.calls_started.load(std::memory_order_relaxed)),
           calls_succeeded(that.calls_succeeded.load(std::memory_order_relaxed)),
           calls_failed(that.calls_failed.load(std::memory_order_relaxed)),
@@ -163,7 +163,7 @@ class CallCountingHelper {
   };
 
   // collects the sharded data into one CounterData struct.
-  void CollectData(CounterData* out);
+  void CollectData(CounterData *out);
 
   // Really zero-sized, but 0-sized arrays are illegal on MSVC.
   absl::InlinedVector<AtomicCounterData, 1> per_cpu_counter_data_storage_;
@@ -177,17 +177,17 @@ class ChannelNode : public BaseNode {
               bool is_internal_channel);
 
   // Returns the string description of the given connectivity state.
-  static const char* GetChannelConnectivityStateChangeString(
+  static const char *GetChannelConnectivityStateChangeString(
       grpc_connectivity_state state);
 
   Json RenderJson() override;
 
   // proxy methods to composed classes.
-  void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
+  void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice &data) {
     trace_.AddTraceEvent(severity, data);
   }
   void AddTraceEventWithReference(ChannelTrace::Severity severity,
-                                  const grpc_slice& data,
+                                  const grpc_slice &data,
                                   RefCountedPtr<BaseNode> referenced_channel) {
     trace_.AddTraceEventWithReference(severity, data,
                                       std::move(referenced_channel));
@@ -212,7 +212,7 @@ class ChannelNode : public BaseNode {
   // Allows the channel trace test to access trace_.
   friend class testing::ChannelNodePeer;
 
-  void PopulateChildRefs(Json::Object* json);
+  void PopulateChildRefs(Json::Object *json);
 
   std::string target_;
   CallCountingHelper call_counter_;
@@ -248,11 +248,11 @@ class ServerNode : public BaseNode {
   void RemoveChildListenSocket(intptr_t child_uuid);
 
   // proxy methods to composed classes.
-  void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
+  void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice &data) {
     trace_.AddTraceEvent(severity, data);
   }
   void AddTraceEventWithReference(ChannelTrace::Severity severity,
-                                  const grpc_slice& data,
+                                  const grpc_slice &data,
                                   RefCountedPtr<BaseNode> referenced_channel) {
     trace_.AddTraceEventWithReference(severity, data,
                                       std::move(referenced_channel));
@@ -298,7 +298,7 @@ class SocketNode : public BaseNode {
     grpc_arg MakeChannelArg() const;
 
     static RefCountedPtr<Security> GetFromChannelArgs(
-        const grpc_channel_args* args);
+        const grpc_channel_args *args);
   };
 
   SocketNode(std::string local, std::string remote, std::string name,
@@ -321,7 +321,7 @@ class SocketNode : public BaseNode {
     keepalives_sent_.fetch_add(1, std::memory_order_relaxed);
   }
 
-  const std::string& remote() { return remote_; }
+  const std::string &remote() { return remote_; }
 
  private:
   std::atomic<int64_t> streams_started_{0};

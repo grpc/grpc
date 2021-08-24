@@ -37,8 +37,8 @@
  */
 typedef struct alts_record_protocol_crypter {
   alts_crypter base;
-  gsec_aead_crypter* crypter;
-  alts_counter* ctr;
+  gsec_aead_crypter *crypter;
+  alts_counter *ctr;
 } alts_record_protocol_crypter;
 
 /**
@@ -59,8 +59,8 @@ typedef struct alts_record_protocol_crypter {
  * error_details (if error_details is not nullptr).
  */
 grpc_status_code input_sanity_check(
-    const alts_record_protocol_crypter* rp_crypter, const unsigned char* data,
-    size_t* output_size, char** error_details);
+    const alts_record_protocol_crypter *rp_crypter, const unsigned char *data,
+    size_t *output_size, char **error_details);
 
 /**
  * This method increments the counter within an alts_record_protocol_crypter
@@ -76,8 +76,8 @@ grpc_status_code input_sanity_check(
  * it returns an error status code along with its details specified in
  * error_details (if error_details is not nullptr).
  */
-grpc_status_code increment_counter(alts_record_protocol_crypter* rp_crypter,
-                                   char** error_details);
+grpc_status_code increment_counter(alts_record_protocol_crypter *rp_crypter,
+                                   char **error_details);
 
 /**
  * This method creates an alts_crypter instance, and populates the fields
@@ -98,17 +98,17 @@ grpc_status_code increment_counter(alts_record_protocol_crypter* rp_crypter,
  * error_details (if error_details is not nullptr).
  *
  */
-alts_record_protocol_crypter* alts_crypter_create_common(
-    gsec_aead_crypter* crypter, bool is_client, size_t overflow_size,
-    char** error_details);
+alts_record_protocol_crypter *alts_crypter_create_common(
+    gsec_aead_crypter *crypter, bool is_client, size_t overflow_size,
+    char **error_details);
 
 /**
  * For the following two methods, please refer to the corresponding API in
  * alts_crypter.h for detailed specifications.
  */
-size_t alts_record_protocol_crypter_num_overhead_bytes(const alts_crypter* c);
+size_t alts_record_protocol_crypter_num_overhead_bytes(const alts_crypter *c);
 
-void alts_record_protocol_crypter_destruct(alts_crypter* c);
+void alts_record_protocol_crypter_destruct(alts_crypter *c);
 
 #endif /* GRPC_CORE_TSI_ALTS_FRAME_PROTECTOR_ALTS_RECORD_PROTOCOL_CRYPTER_COMMON_H \
         */

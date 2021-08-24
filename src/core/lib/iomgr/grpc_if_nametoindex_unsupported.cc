@@ -26,7 +26,7 @@
 
 #include <grpc/support/log.h>
 
-uint32_t grpc_if_nametoindex(char* name) {
+uint32_t grpc_if_nametoindex(char *name) {
   gpr_log(GPR_DEBUG,
           "Not attempting to convert interface name %s to index for current "
           "platform.",

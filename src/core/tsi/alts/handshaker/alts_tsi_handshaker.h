@@ -67,9 +67,9 @@ typedef struct alts_tsi_handshaker alts_tsi_handshaker;
  * used.
  */
 tsi_result alts_tsi_handshaker_create(
-    const grpc_alts_credentials_options* options, const char* target_name,
-    const char* handshaker_service_url, bool is_client,
-    grpc_pollset_set* interested_parties, tsi_handshaker** self,
+    const grpc_alts_credentials_options *options, const char *target_name,
+    const char *handshaker_service_url, bool is_client,
+    grpc_pollset_set *interested_parties, tsi_handshaker **self,
     size_t user_specified_max_frame_size);
 
 /**
@@ -80,9 +80,9 @@ tsi_result alts_tsi_handshaker_create(
  *   client or not.
  * - result: address of ALTS TSI handshaker result instance.
  */
-tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
+tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp *resp,
                                              bool is_client,
-                                             tsi_handshaker_result** result);
+                                             tsi_handshaker_result **result);
 
 /**
  * This method sets unused bytes of ALTS TSI handshaker result instance.
@@ -91,14 +91,14 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
  * - recv_bytes: data received from the handshaker service.
  * - bytes_consumed: size of data consumed by the handshaker service.
  */
-void alts_tsi_handshaker_result_set_unused_bytes(tsi_handshaker_result* result,
-                                                 grpc_slice* recv_bytes,
+void alts_tsi_handshaker_result_set_unused_bytes(tsi_handshaker_result *result,
+                                                 grpc_slice *recv_bytes,
                                                  size_t bytes_consumed);
 
 /**
  * This method returns a boolean value indicating if an ALTS TSI handshaker
  * has been shutdown or not.
  */
-bool alts_tsi_handshaker_has_shutdown(alts_tsi_handshaker* handshaker);
+bool alts_tsi_handshaker_has_shutdown(alts_tsi_handshaker *handshaker);
 
 #endif /* GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_HANDSHAKER_H */

@@ -40,8 +40,8 @@ typedef enum {
 } grpc_pollset_worker_link_type;
 
 typedef struct grpc_pollset_worker_link {
-  struct grpc_pollset_worker* next;
-  struct grpc_pollset_worker* prev;
+  struct grpc_pollset_worker *next;
+  struct grpc_pollset_worker *prev;
 } grpc_pollset_worker_link;
 
 struct grpc_pollset;
@@ -50,7 +50,7 @@ typedef struct grpc_pollset grpc_pollset;
 typedef struct grpc_pollset_worker {
   gpr_cv cv;
   int kicked;
-  struct grpc_pollset* pollset;
+  struct grpc_pollset *pollset;
   grpc_pollset_worker_link links[GRPC_POLLSET_WORKER_LINK_TYPES];
 } grpc_pollset_worker;
 
@@ -59,7 +59,7 @@ struct grpc_pollset {
   int kicked_without_pollers;
   int is_iocp_worker;
   grpc_pollset_worker root_worker;
-  grpc_closure* on_shutdown;
+  grpc_closure *on_shutdown;
 };
 
 void grpc_pollset_global_init(void);

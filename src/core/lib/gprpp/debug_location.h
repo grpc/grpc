@@ -30,19 +30,19 @@ namespace grpc_core {
 // callers don't need to explicitly pass DEBUG_LOCATION anywhere.
 class DebugLocation {
  public:
-  DebugLocation(const char* file, int line) : file_(file), line_(line) {}
-  const char* file() const { return file_; }
+  DebugLocation(const char *file, int line) : file_(file), line_(line) {}
+  const char *file() const { return file_; }
   int line() const { return line_; }
 
  private:
-  const char* file_;
+  const char *file_;
   const int line_;
 };
 #define DEBUG_LOCATION ::grpc_core::DebugLocation(__FILE__, __LINE__)
 #else
 class DebugLocation {
  public:
-  const char* file() const { return nullptr; }
+  const char *file() const { return nullptr; }
   int line() const { return -1; }
 };
 #define DEBUG_LOCATION ::grpc_core::DebugLocation()

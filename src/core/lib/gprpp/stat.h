@@ -31,7 +31,7 @@ namespace grpc_core {
 // On success, the correct timestamp will be filled with an StatusCode::kOk
 // returned. Otherwise, timestamp will be untouched and an
 // StatusCode::kInternal will be returned.
-absl::Status GetFileModificationTime(const char* filename, time_t* timestamp);
+absl::Status GetFileModificationTime(const char *filename, time_t *timestamp);
 
 }  // namespace grpc_core
 

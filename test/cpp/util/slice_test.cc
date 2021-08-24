@@ -31,7 +31,7 @@ static internal::GrpcLibraryInitializer g_gli_initializer;
 
 namespace {
 
-const char* kContent = "hello xxxxxxxxxxxxxxxxxxxx world";
+const char *kContent = "hello xxxxxxxxxxxxxxxxxxxx world";
 
 class SliceTest : public ::testing::Test {
  protected:
@@ -39,13 +39,13 @@ class SliceTest : public ::testing::Test {
 
   static void TearDownTestCase() { grpc_shutdown(); }
 
-  void CheckSliceSize(const Slice& s, const std::string& content) {
+  void CheckSliceSize(const Slice &s, const std::string &content) {
     EXPECT_EQ(content.size(), s.size());
   }
-  void CheckSlice(const Slice& s, const std::string& content) {
+  void CheckSlice(const Slice &s, const std::string &content) {
     EXPECT_EQ(content.size(), s.size());
     EXPECT_EQ(content,
-              std::string(reinterpret_cast<const char*>(s.begin()), s.size()));
+              std::string(reinterpret_cast<const char *>(s.begin()), s.size()));
   }
 };
 
@@ -75,29 +75,30 @@ TEST_F(SliceTest, StaticBuf) {
 }
 
 TEST_F(SliceTest, SliceNew) {
-  char* x = new char[strlen(kContent) + 1];
+  char *x = new char[strlen(kContent) + 1];
   strcpy(x, kContent);
-  Slice spp(x, strlen(x), [](void* p) { delete[] static_cast<char*>(p); });
+  Slice spp(x, strlen(x), [](void *p) { delete[] static_cast<char *>(p); });
   CheckSlice(spp, kContent);
 }
 
 TEST_F(SliceTest, SliceNewDoNothing) {
-  Slice spp(const_cast<char*>(kContent), strlen(kContent), [](void* /*p*/) {});
+  Slice spp(const_cast<char *>(kContent), strlen(kContent),
+            [](void * /*p*/) {});
   CheckSlice(spp, kContent);
 }
 
 TEST_F(SliceTest, SliceNewWithUserData) {
   struct stest {
-    char* x;
+    char *x;
     int y;
   };
-  auto* t = new stest;
+  auto *t = new stest;
   t->x = new char[strlen(kContent) + 1];
   strcpy(t->x, kContent);
   Slice spp(
       t->x, strlen(t->x),
-      [](void* p) {
-        auto* t = static_cast<stest*>(p);
+      [](void *p) {
+        auto *t = static_cast<stest *>(p);
         delete[] t->x;
         delete t;
       },
@@ -106,8 +107,8 @@ TEST_F(SliceTest, SliceNewWithUserData) {
 }
 
 TEST_F(SliceTest, SliceNewLen) {
-  Slice spp(const_cast<char*>(kContent), strlen(kContent),
-            [](void* /*p*/, size_t l) { EXPECT_EQ(l, strlen(kContent)); });
+  Slice spp(const_cast<char *>(kContent), strlen(kContent),
+            [](void * /*p*/, size_t l) { EXPECT_EQ(l, strlen(kContent)); });
   CheckSlice(spp, kContent);
 }
 
@@ -143,7 +144,7 @@ TEST_F(SliceTest, Cslice) {
 }  // namespace
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();

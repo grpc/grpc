@@ -32,7 +32,7 @@ class BackOff {
   class Options;
 
   /// Initialize backoff machinery - does not need to be destroyed
-  explicit BackOff(const Options& options);
+  explicit BackOff(const Options &options);
 
   /// Returns the time at which the next attempt should start.
   grpc_millis NextAttemptTime();
@@ -45,19 +45,19 @@ class BackOff {
 
   class Options {
    public:
-    Options& set_initial_backoff(grpc_millis initial_backoff) {
+    Options &set_initial_backoff(grpc_millis initial_backoff) {
       initial_backoff_ = initial_backoff;
       return *this;
     }
-    Options& set_multiplier(double multiplier) {
+    Options &set_multiplier(double multiplier) {
       multiplier_ = multiplier;
       return *this;
     }
-    Options& set_jitter(double jitter) {
+    Options &set_jitter(double jitter) {
       jitter_ = jitter;
       return *this;
     }
-    Options& set_max_backoff(grpc_millis max_backoff) {
+    Options &set_max_backoff(grpc_millis max_backoff) {
       max_backoff_ = max_backoff;
       return *this;
     }

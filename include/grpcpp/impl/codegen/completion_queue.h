@@ -62,8 +62,8 @@ class ServerReaderWriterBody;
 
 template <class ResponseType>
 void UnaryRunHandlerHelper(
-    const ::grpc::internal::MethodHandler::HandlerParameter&, ResponseType*,
-    ::grpc::Status&);
+    const ::grpc::internal::MethodHandler::HandlerParameter &, ResponseType *,
+    ::grpc::Status &);
 template <class ServiceType, class RequestType, class ResponseType,
           class BaseRequestType, class BaseResponseType>
 class RpcMethodHandler;
@@ -93,7 +93,7 @@ template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
 class CallOpSet;
 }  // namespace internal
 
-extern CoreCodegenInterface* g_core_codegen_interface;
+extern CoreCodegenInterface *g_core_codegen_interface;
 
 /// A thin wrapper around \ref grpc_completion_queue (see \ref
 /// src/core/lib/surface/completion_queue.h).
@@ -111,7 +111,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// Wrap \a take, taking ownership of the instance.
   ///
   /// \param take The completion queue instance to wrap. Ownership is taken.
-  explicit CompletionQueue(grpc_completion_queue* take);
+  explicit CompletionQueue(grpc_completion_queue *take);
 
   /// Destructor. Destroys the owned wrapped completion queue / instance.
   ~CompletionQueue() override {
@@ -174,7 +174,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   ///
   /// \return true if got an event, false if the queue is fully drained and
   ///         shut down.
-  bool Next(void** tag, bool* ok) {
+  bool Next(void **tag, bool *ok) {
     // Check return type == GOT_EVENT... cases:
     // SHUTDOWN  - queue has been shutdown, return false.
     // TIMEOUT   - we passed infinity time => queue has been shutdown, return
@@ -197,7 +197,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   ///
   /// \return The type of event read.
   template <typename T>
-  NextStatus AsyncNext(void** tag, bool* ok, const T& deadline) {
+  NextStatus AsyncNext(void **tag, bool *ok, const T &deadline) {
     ::grpc::TimePoint<T> deadline_tp(deadline);
     return AsyncNextInternal(tag, ok, deadline_tp.raw_time());
   }
@@ -217,7 +217,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   ///
   /// \return The type of event read.
   template <typename T, typename F>
-  NextStatus DoThenAsyncNext(F&& f, void** tag, bool* ok, const T& deadline) {
+  NextStatus DoThenAsyncNext(F &&f, void **tag, bool *ok, const T &deadline) {
     CompletionQueueTLSCache cache = CompletionQueueTLSCache(this);
     f();
     if (cache.Flush(tag, ok)) {
@@ -244,11 +244,11 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   ///
   /// \warning Remember that the returned instance is owned. No transfer of
   /// owership is performed.
-  grpc_completion_queue* cq() { return cq_; }
+  grpc_completion_queue *cq() { return cq_; }
 
  protected:
   /// Private constructor of CompletionQueue only visible to friend classes
-  explicit CompletionQueue(const grpc_completion_queue_attributes& attributes) {
+  explicit CompletionQueue(const grpc_completion_queue_attributes &attributes) {
     cq_ = ::grpc::g_core_codegen_interface->grpc_completion_queue_create(
         ::grpc::g_core_codegen_interface->grpc_completion_queue_factory_lookup(
             &attributes),
@@ -278,8 +278,8 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   friend class ::grpc::internal::ServerReaderWriterBody;
   template <class ResponseType>
   friend void ::grpc::internal::UnaryRunHandlerHelper(
-      const ::grpc::internal::MethodHandler::HandlerParameter&, ResponseType*,
-      ::grpc::Status&);
+      const ::grpc::internal::MethodHandler::HandlerParameter &, ResponseType *,
+      ::grpc::Status &);
   template <class ServiceType, class RequestType, class ResponseType>
   friend class ::grpc::internal::ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
@@ -306,27 +306,27 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// initialized, it must be flushed on the same thread.
   class CompletionQueueTLSCache {
    public:
-    explicit CompletionQueueTLSCache(CompletionQueue* cq);
+    explicit CompletionQueueTLSCache(CompletionQueue *cq);
     ~CompletionQueueTLSCache();
-    bool Flush(void** tag, bool* ok);
+    bool Flush(void **tag, bool *ok);
 
    private:
-    CompletionQueue* cq_;
+    CompletionQueue *cq_;
     bool flushed_;
   };
 
-  NextStatus AsyncNextInternal(void** tag, bool* ok, gpr_timespec deadline);
+  NextStatus AsyncNextInternal(void **tag, bool *ok, gpr_timespec deadline);
 
   /// Wraps \a grpc_completion_queue_pluck.
   /// \warning Must not be mixed with calls to \a Next.
-  bool Pluck(::grpc::internal::CompletionQueueTag* tag) {
+  bool Pluck(::grpc::internal::CompletionQueueTag *tag) {
     auto deadline =
         ::grpc::g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
     while (true) {
       auto ev = ::grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
           cq_, tag, deadline, nullptr);
       bool ok = ev.success != 0;
-      void* ignored = tag;
+      void *ignored = tag;
       if (tag->FinalizeResult(&ignored, &ok)) {
         GPR_CODEGEN_ASSERT(ignored == tag);
         return ok;
@@ -342,14 +342,14 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// implementation to simple call the other TryPluck function with a zero
   /// timeout. i.e:
   ///      TryPluck(tag, gpr_time_0(GPR_CLOCK_REALTIME))
-  void TryPluck(::grpc::internal::CompletionQueueTag* tag) {
+  void TryPluck(::grpc::internal::CompletionQueueTag *tag) {
     auto deadline =
         ::grpc::g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
     auto ev = ::grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) return;
     bool ok = ev.success != 0;
-    void* ignored = tag;
+    void *ignored = tag;
     // the tag must be swallowed if using TryPluck
     GPR_CODEGEN_ASSERT(!tag->FinalizeResult(&ignored, &ok));
   }
@@ -359,7 +359,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   ///
   /// This exects tag->FinalizeResult (if called) to return 'false' i.e expects
   /// that the tag is internal not something that is returned to the user.
-  void TryPluck(::grpc::internal::CompletionQueueTag* tag,
+  void TryPluck(::grpc::internal::CompletionQueueTag *tag,
                 gpr_timespec deadline) {
     auto ev = ::grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
@@ -368,7 +368,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
     }
 
     bool ok = ev.success != 0;
-    void* ignored = tag;
+    void *ignored = tag;
     GPR_CODEGEN_ASSERT(!tag->FinalizeResult(&ignored, &ok));
   }
 
@@ -392,14 +392,14 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
     }
   }
 
-  void RegisterServer(const ::grpc::Server* server) {
+  void RegisterServer(const ::grpc::Server *server) {
     (void)server;
 #ifndef NDEBUG
     grpc::internal::MutexLock l(&server_list_mutex_);
     server_list_.push_back(server);
 #endif
   }
-  void UnregisterServer(const ::grpc::Server* server) {
+  void UnregisterServer(const ::grpc::Server *server) {
     (void)server;
 #ifndef NDEBUG
     grpc::internal::MutexLock l(&server_list_mutex_);
@@ -414,10 +414,10 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
     return true;
   }
 
-  static CompletionQueue* CallbackAlternativeCQ();
-  static void ReleaseCallbackAlternativeCQ(CompletionQueue* cq);
+  static CompletionQueue *CallbackAlternativeCQ();
+  static void ReleaseCallbackAlternativeCQ(CompletionQueue *cq);
 
-  grpc_completion_queue* cq_;  // owned
+  grpc_completion_queue *cq_;  // owned
 
   gpr_atm avalanches_in_flight_;
 
@@ -425,7 +425,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   // NDEBUG, instantiate it in all cases since otherwise the size will be
   // inconsistent.
   mutable grpc::internal::Mutex server_list_mutex_;
-  std::list<const ::grpc::Server*>
+  std::list<const ::grpc::Server *>
       server_list_ /* GUARDED_BY(server_list_mutex_) */;
 };
 
@@ -448,7 +448,7 @@ class ServerCompletionQueue : public CompletionQueue {
   /// \param shutdown_cb is the shutdown callback used for CALLBACK api queues
   ServerCompletionQueue(grpc_cq_completion_type completion_type,
                         grpc_cq_polling_type polling_type,
-                        grpc_completion_queue_functor* shutdown_cb)
+                        grpc_completion_queue_functor *shutdown_cb)
       : CompletionQueue(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, completion_type, polling_type,
             shutdown_cb}),

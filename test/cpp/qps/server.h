@@ -40,7 +40,7 @@ namespace testing {
 
 class Server {
  public:
-  explicit Server(const ServerConfig& config)
+  explicit Server(const ServerConfig &config)
       : timer_(new UsageTimer), last_reset_poll_count_(0) {
     cores_ = gpr_cpu_num_cores();
     if (config.port()) {  // positive for a fixed port, negative for inproc
@@ -78,7 +78,7 @@ class Server {
     return stats;
   }
 
-  static bool SetPayload(PayloadType type, int size, Payload* payload) {
+  static bool SetPayload(PayloadType type, int size, Payload *payload) {
     // TODO(yangg): Support UNCOMPRESSABLE payload.
     if (type != PayloadType::COMPRESSABLE) {
       return false;
@@ -95,7 +95,7 @@ class Server {
   int port() const { return port_; }
   int cores() const { return cores_; }
   static std::shared_ptr<ServerCredentials> CreateServerCredentials(
-      const ServerConfig& config) {
+      const ServerConfig &config) {
     if (config.has_security_params()) {
       std::string type;
       if (config.security_params().cred_type().empty()) {
@@ -116,16 +116,16 @@ class Server {
   }
 
   virtual std::shared_ptr<Channel> InProcessChannel(
-      const ChannelArguments& args) = 0;
+      const ChannelArguments &args) = 0;
 
  protected:
-  static void ApplyConfigToBuilder(const ServerConfig& config,
-                                   ServerBuilder* builder) {
+  static void ApplyConfigToBuilder(const ServerConfig &config,
+                                   ServerBuilder *builder) {
     if (config.resource_quota_size() > 0) {
       builder->SetResourceQuota(ResourceQuota("AsyncQpsServerTest")
                                     .Resize(config.resource_quota_size()));
     }
-    for (const auto& channel_arg : config.channel_args()) {
+    for (const auto &channel_arg : config.channel_args()) {
       switch (channel_arg.value_case()) {
         case ChannelArg::kStrValue:
           builder->AddChannelArgument(channel_arg.name(),
@@ -150,10 +150,10 @@ class Server {
   int last_reset_poll_count_;
 };
 
-std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig& config);
-std::unique_ptr<Server> CreateAsyncServer(const ServerConfig& config);
-std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig& config);
-std::unique_ptr<Server> CreateCallbackServer(const ServerConfig& config);
+std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig &config);
+std::unique_ptr<Server> CreateAsyncServer(const ServerConfig &config);
+std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig &config);
+std::unique_ptr<Server> CreateCallbackServer(const ServerConfig &config);
 
 }  // namespace testing
 }  // namespace grpc

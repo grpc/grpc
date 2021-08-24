@@ -66,19 +66,19 @@ class NativeDnsResolver : public Resolver {
   void MaybeStartResolvingLocked();
   void StartResolvingLocked();
 
-  static void OnNextResolution(void* arg, grpc_error_handle error);
+  static void OnNextResolution(void *arg, grpc_error_handle error);
   void OnNextResolutionLocked(grpc_error_handle error);
-  static void OnResolved(void* arg, grpc_error_handle error);
+  static void OnResolved(void *arg, grpc_error_handle error);
   void OnResolvedLocked(grpc_error_handle error);
 
   /// name to resolve
   std::string name_to_resolve_;
   /// channel args
-  grpc_channel_args* channel_args_ = nullptr;
+  grpc_channel_args *channel_args_ = nullptr;
   std::shared_ptr<WorkSerializer> work_serializer_;
   std::unique_ptr<ResultHandler> result_handler_;
   /// pollset_set to drive the name resolution process
-  grpc_pollset_set* interested_parties_ = nullptr;
+  grpc_pollset_set *interested_parties_ = nullptr;
   /// are we shutting down?
   bool shutdown_ = false;
   /// are we currently resolving?
@@ -95,7 +95,7 @@ class NativeDnsResolver : public Resolver {
   /// retry backoff state
   BackOff backoff_;
   /// currently resolving addresses
-  grpc_resolved_addresses* addresses_ = nullptr;
+  grpc_resolved_addresses *addresses_ = nullptr;
 };
 
 NativeDnsResolver::NativeDnsResolver(ResolverArgs args)
@@ -146,8 +146,8 @@ void NativeDnsResolver::ShutdownLocked() {
   }
 }
 
-void NativeDnsResolver::OnNextResolution(void* arg, grpc_error_handle error) {
-  NativeDnsResolver* r = static_cast<NativeDnsResolver*>(arg);
+void NativeDnsResolver::OnNextResolution(void *arg, grpc_error_handle error) {
+  NativeDnsResolver *r = static_cast<NativeDnsResolver *>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnNextResolutionLocked(error); },
                            DEBUG_LOCATION);
@@ -162,8 +162,8 @@ void NativeDnsResolver::OnNextResolutionLocked(grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
-void NativeDnsResolver::OnResolved(void* arg, grpc_error_handle error) {
-  NativeDnsResolver* r = static_cast<NativeDnsResolver*>(arg);
+void NativeDnsResolver::OnResolved(void *arg, grpc_error_handle error) {
+  NativeDnsResolver *r = static_cast<NativeDnsResolver *>(arg);
   GRPC_ERROR_REF(error);  // owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnResolvedLocked(error); },
                            DEBUG_LOCATION);
@@ -285,7 +285,7 @@ void NativeDnsResolver::StartResolvingLocked() {
 
 class NativeDnsResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const URI& uri) const override {
+  bool IsValidUri(const URI &uri) const override {
     if (GPR_UNLIKELY(!uri.authority().empty())) {
       gpr_log(GPR_ERROR, "authority based dns uri's not supported");
       return false;
@@ -298,7 +298,7 @@ class NativeDnsResolverFactory : public ResolverFactory {
     return MakeOrphanable<NativeDnsResolver>(std::move(args));
   }
 
-  const char* scheme() const override { return "dns"; }
+  const char *scheme() const override { return "dns"; }
 };
 
 }  // namespace
@@ -314,7 +314,7 @@ void grpc_resolver_dns_native_init() {
         absl::make_unique<grpc_core::NativeDnsResolverFactory>());
   } else {
     grpc_core::ResolverRegistry::Builder::InitRegistry();
-    grpc_core::ResolverFactory* existing_factory =
+    grpc_core::ResolverFactory *existing_factory =
         grpc_core::ResolverRegistry::LookupResolverFactory("dns");
     if (existing_factory == nullptr) {
       gpr_log(GPR_DEBUG, "Using native dns resolver");

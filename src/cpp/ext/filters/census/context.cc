@@ -30,7 +30,7 @@ using ::opencensus::trace::Span;
 using ::opencensus::trace::SpanContext;
 
 void GenerateServerContext(absl::string_view tracing, absl::string_view method,
-                           CensusContext* context) {
+                           CensusContext *context) {
   // Destruct the current CensusContext to free the Span memory before
   // overwriting it below.
   context->~CensusContext();
@@ -43,8 +43,8 @@ void GenerateServerContext(absl::string_view tracing, absl::string_view method,
   new (context) CensusContext(method, TagMap{});
 }
 
-void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
-                           CensusContext* parent_ctxt) {
+void GenerateClientContext(absl::string_view method, CensusContext *ctxt,
+                           CensusContext *parent_ctxt) {
   // Destruct the current CensusContext to free the Span memory before
   // overwriting it below.
   ctxt->~CensusContext();
@@ -56,8 +56,8 @@ void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
       return;
     }
   }
-  const Span& span = opencensus::trace::GetCurrentSpan();
-  const TagMap& tags = opencensus::tags::GetCurrentTagMap();
+  const Span &span = opencensus::trace::GetCurrentSpan();
+  const TagMap &tags = opencensus::tags::GetCurrentTagMap();
   if (span.context().IsValid()) {
     // Create span with parent.
     new (ctxt) CensusContext(method, &span, tags);
@@ -67,47 +67,47 @@ void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
   new (ctxt) CensusContext(method, tags);
 }
 
-size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,
-                             char* tracing_buf, size_t tracing_buf_size) {
+size_t TraceContextSerialize(const ::opencensus::trace::SpanContext &context,
+                             char *tracing_buf, size_t tracing_buf_size) {
   if (tracing_buf_size <
       opencensus::trace::propagation::kGrpcTraceBinHeaderLen) {
     return 0;
   }
   opencensus::trace::propagation::ToGrpcTraceBinHeader(
-      context, reinterpret_cast<uint8_t*>(tracing_buf));
+      context, reinterpret_cast<uint8_t *>(tracing_buf));
   return opencensus::trace::propagation::kGrpcTraceBinHeaderLen;
 }
 
-size_t StatsContextSerialize(size_t /*max_tags_len*/, grpc_slice* /*tags*/) {
+size_t StatsContextSerialize(size_t /*max_tags_len*/, grpc_slice * /*tags*/) {
   // TODO(unknown): Add implementation. Waiting on stats tagging to be added.
   return 0;
 }
 
-size_t ServerStatsSerialize(uint64_t server_elapsed_time, char* buf,
+size_t ServerStatsSerialize(uint64_t server_elapsed_time, char *buf,
                             size_t buf_size) {
   return RpcServerStatsEncoding::Encode(server_elapsed_time, buf, buf_size);
 }
 
-size_t ServerStatsDeserialize(const char* buf, size_t buf_size,
-                              uint64_t* server_elapsed_time) {
+size_t ServerStatsDeserialize(const char *buf, size_t buf_size,
+                              uint64_t *server_elapsed_time) {
   return RpcServerStatsEncoding::Decode(absl::string_view(buf, buf_size),
                                         server_elapsed_time);
 }
 
-uint64_t GetIncomingDataSize(const grpc_call_final_info* final_info) {
+uint64_t GetIncomingDataSize(const grpc_call_final_info *final_info) {
   return final_info->stats.transport_stream_stats.incoming.data_bytes;
 }
 
-uint64_t GetOutgoingDataSize(const grpc_call_final_info* final_info) {
+uint64_t GetOutgoingDataSize(const grpc_call_final_info *final_info) {
   return final_info->stats.transport_stream_stats.outgoing.data_bytes;
 }
 
-SpanContext SpanContextFromCensusContext(const census_context* ctxt) {
-  return reinterpret_cast<const CensusContext*>(ctxt)->Context();
+SpanContext SpanContextFromCensusContext(const census_context *ctxt) {
+  return reinterpret_cast<const CensusContext *>(ctxt)->Context();
 }
 
-Span SpanFromCensusContext(const census_context* ctxt) {
-  return reinterpret_cast<const CensusContext*>(ctxt)->Span();
+Span SpanFromCensusContext(const census_context *ctxt) {
+  return reinterpret_cast<const CensusContext *>(ctxt)->Span();
 }
 
 absl::string_view StatusCodeToString(grpc_status_code code) {

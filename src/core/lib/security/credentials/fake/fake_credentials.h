@@ -31,10 +31,10 @@
 /* -- Fake transport security credentials. -- */
 
 /* Creates a fake transport security credentials object for testing. */
-grpc_channel_credentials* grpc_fake_transport_security_credentials_create(void);
+grpc_channel_credentials *grpc_fake_transport_security_credentials_create(void);
 
 /* Creates a fake server transport security credentials object for testing. */
-grpc_server_credentials* grpc_fake_transport_security_server_credentials_create(
+grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
     void);
 
 /* Used to verify the target names given to the fake transport security
@@ -49,17 +49,17 @@ grpc_server_credentials* grpc_fake_transport_security_server_credentials_create(
  * That is to say, LB channels have a heading list of LB targets separated from
  * the list of backend targets by a semicolon. For non-LB channels, only the
  * latter is present. */
-grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets);
+grpc_arg grpc_fake_transport_expected_targets_arg(char *expected_targets);
 
 /* Return the value associated with the expected targets channel arg or NULL */
-const char* grpc_fake_transport_get_expected_targets(
-    const grpc_channel_args* args);
+const char *grpc_fake_transport_get_expected_targets(
+    const grpc_channel_args *args);
 
 /* --  Metadata-only Test credentials. -- */
 
 class grpc_md_only_test_credentials : public grpc_call_credentials {
  public:
-  grpc_md_only_test_credentials(const char* md_key, const char* md_value,
+  grpc_md_only_test_credentials(const char *md_key, const char *md_value,
                                 bool is_async)
       : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2,
                               GRPC_SECURITY_NONE),
@@ -68,13 +68,13 @@ class grpc_md_only_test_credentials : public grpc_call_credentials {
         is_async_(is_async) {}
   ~grpc_md_only_test_credentials() override { GRPC_MDELEM_UNREF(md_); }
 
-  bool get_request_metadata(grpc_polling_entity* pollent,
+  bool get_request_metadata(grpc_polling_entity *pollent,
                             grpc_auth_metadata_context context,
-                            grpc_credentials_mdelem_array* md_array,
-                            grpc_closure* on_request_metadata,
-                            grpc_error_handle* error) override;
+                            grpc_credentials_mdelem_array *md_array,
+                            grpc_closure *on_request_metadata,
+                            grpc_error_handle *error) override;
 
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
+  void cancel_get_request_metadata(grpc_credentials_mdelem_array *md_array,
                                    grpc_error_handle error) override;
 
   std::string debug_string() override { return "MD only Test Credentials"; };

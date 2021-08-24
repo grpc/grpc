@@ -24,13 +24,13 @@
 typedef struct gpr_subprocess gpr_subprocess;
 
 /** .exe on windows, empty on unices */
-const char* gpr_subprocess_binary_extension();
+const char *gpr_subprocess_binary_extension();
 
-gpr_subprocess* gpr_subprocess_create(int argc, const char** argv);
+gpr_subprocess *gpr_subprocess_create(int argc, const char **argv);
 /** if subprocess has not been joined, kill it */
-void gpr_subprocess_destroy(gpr_subprocess* p);
+void gpr_subprocess_destroy(gpr_subprocess *p);
 /** returns exit status; can be called at most once */
-int gpr_subprocess_join(gpr_subprocess* p);
-void gpr_subprocess_interrupt(gpr_subprocess* p);
+int gpr_subprocess_join(gpr_subprocess *p);
+void gpr_subprocess_interrupt(gpr_subprocess *p);
 
 #endif /* GRPC_TEST_CORE_UTIL_SUBPROCESS_H */

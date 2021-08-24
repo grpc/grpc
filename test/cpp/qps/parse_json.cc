@@ -25,8 +25,8 @@
 namespace grpc {
 namespace testing {
 
-void ParseJson(const std::string& json, const std::string& type,
-               GRPC_CUSTOM_MESSAGE* msg) {
+void ParseJson(const std::string &json, const std::string &type,
+               GRPC_CUSTOM_MESSAGE *msg) {
   std::unique_ptr<protobuf::json::TypeResolver> type_resolver(
       protobuf::json::NewTypeResolverForDescriptorPool(
           "type.googleapis.com", protobuf::DescriptorPool::generated_pool()));
@@ -43,8 +43,8 @@ void ParseJson(const std::string& json, const std::string& type,
   GPR_ASSERT(msg->ParseFromString(binary));
 }
 
-std::string SerializeJson(const GRPC_CUSTOM_MESSAGE& msg,
-                          const std::string& type) {
+std::string SerializeJson(const GRPC_CUSTOM_MESSAGE &msg,
+                          const std::string &type) {
   std::unique_ptr<protobuf::json::TypeResolver> type_resolver(
       protobuf::json::NewTypeResolverForDescriptorPool(
           "type.googleapis.com", protobuf::DescriptorPool::generated_pool()));

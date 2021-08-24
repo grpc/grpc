@@ -51,8 +51,8 @@ long QpsGauge::Get() {
 }
 
 grpc::Status MetricsServiceImpl::GetAllGauges(
-    ServerContext* /*context*/, const EmptyMessage* /*request*/,
-    ServerWriter<GaugeResponse>* writer) {
+    ServerContext * /*context*/, const EmptyMessage * /*request*/,
+    ServerWriter<GaugeResponse> *writer) {
   gpr_log(GPR_DEBUG, "GetAllGauges called");
 
   std::lock_guard<std::mutex> lock(mu_);
@@ -66,9 +66,9 @@ grpc::Status MetricsServiceImpl::GetAllGauges(
   return Status::OK;
 }
 
-grpc::Status MetricsServiceImpl::GetGauge(ServerContext* /*context*/,
-                                          const GaugeRequest* request,
-                                          GaugeResponse* response) {
+grpc::Status MetricsServiceImpl::GetGauge(ServerContext * /*context*/,
+                                          const GaugeRequest *request,
+                                          GaugeResponse *response) {
   std::lock_guard<std::mutex> lock(mu_);
 
   const auto it = qps_gauges_.find(request->name());
@@ -81,7 +81,7 @@ grpc::Status MetricsServiceImpl::GetGauge(ServerContext* /*context*/,
 }
 
 std::shared_ptr<QpsGauge> MetricsServiceImpl::CreateQpsGauge(
-    const std::string& name, bool* already_present) {
+    const std::string &name, bool *already_present) {
   std::lock_guard<std::mutex> lock(mu_);
 
   std::shared_ptr<QpsGauge> qps_gauge(new QpsGauge());

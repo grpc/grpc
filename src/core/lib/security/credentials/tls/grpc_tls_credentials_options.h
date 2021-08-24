@@ -34,10 +34,10 @@ struct grpc_tls_error_details
     : public grpc_core::RefCounted<grpc_tls_error_details> {
  public:
   grpc_tls_error_details() : error_details_("") {}
-  void set_error_details(const char* err_details) {
+  void set_error_details(const char *err_details) {
     error_details_ = err_details;
   }
-  const std::string& error_details() { return error_details_; }
+  const std::string &error_details() { return error_details_; }
 
  private:
   std::string error_details_;
@@ -48,31 +48,31 @@ struct grpc_tls_server_authorization_check_config
     : public grpc_core::RefCounted<grpc_tls_server_authorization_check_config> {
  public:
   grpc_tls_server_authorization_check_config(
-      const void* config_user_data,
-      int (*schedule)(void* config_user_data,
-                      grpc_tls_server_authorization_check_arg* arg),
-      void (*cancel)(void* config_user_data,
-                     grpc_tls_server_authorization_check_arg* arg),
-      void (*destruct)(void* config_user_data));
+      const void *config_user_data,
+      int (*schedule)(void *config_user_data,
+                      grpc_tls_server_authorization_check_arg *arg),
+      void (*cancel)(void *config_user_data,
+                     grpc_tls_server_authorization_check_arg *arg),
+      void (*destruct)(void *config_user_data));
   ~grpc_tls_server_authorization_check_config() override;
 
-  void* context() const { return context_; }
+  void *context() const { return context_; }
 
-  void set_context(void* context) { context_ = context; }
+  void set_context(void *context) { context_ = context; }
 
-  int Schedule(grpc_tls_server_authorization_check_arg* arg) const;
+  int Schedule(grpc_tls_server_authorization_check_arg *arg) const;
 
-  void Cancel(grpc_tls_server_authorization_check_arg* arg) const;
+  void Cancel(grpc_tls_server_authorization_check_arg *arg) const;
 
  private:
   /** This is a pointer to the wrapped language implementation of
    * grpc_tls_server_authorization_check_config. It is necessary to implement
    * the C schedule and cancel functions, given the schedule or cancel function
    * in a wrapped language. **/
-  void* context_ = nullptr;
+  void *context_ = nullptr;
   /** config-specific, read-only user data that works for all channels created
      with a Credential using the config. */
-  void* config_user_data_;
+  void *config_user_data_;
 
   /** callback function for invoking server authorization check. The
      implementation of this method has to be non-blocking, but can be performed
@@ -83,16 +83,16 @@ struct grpc_tls_server_authorization_check_config
      Application then invokes \a arg->cb when processing is completed. Note that
      \a arg->cb cannot be invoked before \a schedule() returns.
   */
-  int (*schedule_)(void* config_user_data,
-                   grpc_tls_server_authorization_check_arg* arg);
+  int (*schedule_)(void *config_user_data,
+                   grpc_tls_server_authorization_check_arg *arg);
 
   /** callback function for canceling a server authorization check request. */
-  void (*cancel_)(void* config_user_data,
-                  grpc_tls_server_authorization_check_arg* arg);
+  void (*cancel_)(void *config_user_data,
+                  grpc_tls_server_authorization_check_arg *arg);
 
   /** callback function for cleaning up any data associated with server
      authorization check config. */
-  void (*destruct_)(void* config_user_data);
+  void (*destruct_)(void *config_user_data);
 };
 
 // Contains configurable options specified by callers to configure their certain
@@ -112,19 +112,19 @@ struct grpc_tls_credentials_options
   }
   grpc_tls_version min_tls_version() const { return min_tls_version_; }
   grpc_tls_version max_tls_version() const { return max_tls_version_; }
-  grpc_tls_server_authorization_check_config*
+  grpc_tls_server_authorization_check_config *
   server_authorization_check_config() const {
     return server_authorization_check_config_.get();
   }
   // Returns the distributor from provider_ if it is set, nullptr otherwise.
-  grpc_tls_certificate_distributor* certificate_distributor() {
+  grpc_tls_certificate_distributor *certificate_distributor() {
     if (provider_ != nullptr) return provider_->distributor().get();
     return nullptr;
   }
   bool watch_root_cert() { return watch_root_cert_; }
-  const std::string& root_cert_name() { return root_cert_name_; }
+  const std::string &root_cert_name() { return root_cert_name_; }
   bool watch_identity_pair() { return watch_identity_pair_; }
-  const std::string& identity_cert_name() { return identity_cert_name_; }
+  const std::string &identity_cert_name() { return identity_cert_name_; }
 
   // Setters for member fields.
   void set_cert_request_type(

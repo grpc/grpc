@@ -61,7 +61,7 @@ static void test_slice_malloc_returns_something_sensible(void) {
   }
 }
 
-static void do_nothing(void* /*ignored*/) {}
+static void do_nothing(void * /*ignored*/) {}
 
 static void test_slice_new_returns_something_sensible(void) {
   uint8_t x;
@@ -74,7 +74,7 @@ static void test_slice_new_returns_something_sensible(void) {
 }
 
 /* destroy function that sets a mark to indicate it was called. */
-static void set_mark(void* p) { *(static_cast<int*>(p)) = 1; }
+static void set_mark(void *p) { *(static_cast<int *>(p)) = 1; }
 
 static void test_slice_new_with_user_data(void) {
   int marker = 0;
@@ -96,7 +96,7 @@ static void test_slice_new_with_user_data(void) {
 
 static int do_nothing_with_len_1_calls = 0;
 
-static void do_nothing_with_len_1(void* /*ignored*/, size_t len) {
+static void do_nothing_with_len_1(void * /*ignored*/, size_t len) {
   GPR_ASSERT(len == 1);
   do_nothing_with_len_1_calls++;
 }
@@ -225,7 +225,7 @@ static void test_slice_split_tail_works(size_t length) {
 }
 
 static void test_slice_from_copied_string_works(void) {
-  static const char* text = "HELLO WORLD!";
+  static const char *text = "HELLO WORLD!";
   grpc_slice slice;
 
   LOG_TEST_NAME("test_slice_from_copied_string_works");
@@ -299,22 +299,22 @@ static void test_moved_string_slice(void) {
 
   // Small string should be inlined.
   constexpr char kSmallStr[] = "hello12345";
-  char* small_ptr = strdup(kSmallStr);
+  char *small_ptr = strdup(kSmallStr);
   grpc_slice small =
       grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(small_ptr));
   GPR_ASSERT(GRPC_SLICE_LENGTH(small) == strlen(kSmallStr));
   GPR_ASSERT(GRPC_SLICE_START_PTR(small) !=
-             reinterpret_cast<uint8_t*>(small_ptr));
+             reinterpret_cast<uint8_t *>(small_ptr));
   grpc_slice_unref(small);
 
   // Large string should be move the reference.
   constexpr char kSLargeStr[] = "hello123456789123456789123456789";
-  char* large_ptr = strdup(kSLargeStr);
+  char *large_ptr = strdup(kSLargeStr);
   grpc_slice large =
       grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(large_ptr));
   GPR_ASSERT(GRPC_SLICE_LENGTH(large) == strlen(kSLargeStr));
   GPR_ASSERT(GRPC_SLICE_START_PTR(large) ==
-             reinterpret_cast<uint8_t*>(large_ptr));
+             reinterpret_cast<uint8_t *>(large_ptr));
   grpc_slice_unref(large);
 
   // Moved buffer must respect the provided length not the actual length of the
@@ -324,7 +324,7 @@ static void test_moved_string_slice(void) {
                                        strlen(kSmallStr));
   GPR_ASSERT(GRPC_SLICE_LENGTH(small) == strlen(kSmallStr));
   GPR_ASSERT(GRPC_SLICE_START_PTR(small) !=
-             reinterpret_cast<uint8_t*>(large_ptr));
+             reinterpret_cast<uint8_t *>(large_ptr));
   grpc_slice_unref(small);
 
   grpc_shutdown();
@@ -337,7 +337,7 @@ void test_string_view_from_slice() {
   GPR_ASSERT(std::string(sv) == kStr);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   unsigned length;
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();

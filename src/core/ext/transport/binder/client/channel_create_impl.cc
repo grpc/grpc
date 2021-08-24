@@ -28,14 +28,14 @@
 namespace grpc {
 namespace internal {
 
-grpc_channel* CreateChannelFromBinderImpl(
+grpc_channel *CreateChannelFromBinderImpl(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder,
-    const grpc_channel_args* args) {
+    const grpc_channel_args *args) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_channel_create_from_binder(target=%p, args=%p)", 2,
-                 ((void*)1234, args));
+                 ((void *)1234, args));
 
-  grpc_transport* transport =
+  grpc_transport *transport =
       grpc_create_binder_transport_client(std::move(endpoint_binder));
   GPR_ASSERT(transport);
 
@@ -43,12 +43,12 @@ grpc_channel* CreateChannelFromBinderImpl(
 
   // TODO(b/192207758): Figure out if we are required to set authority here
   grpc_arg default_authority_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>("test.authority"));
-  grpc_channel_args* final_args =
+      const_cast<char *>(GRPC_ARG_DEFAULT_AUTHORITY),
+      const_cast<char *>("test.authority"));
+  grpc_channel_args *final_args =
       grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_channel* channel = grpc_channel_create(
+  grpc_channel *channel = grpc_channel_create(
       "binder_target_placeholder", final_args, GRPC_CLIENT_DIRECT_CHANNEL,
       transport, nullptr, 0, &error);
   // TODO(mingcl): Handle error properly

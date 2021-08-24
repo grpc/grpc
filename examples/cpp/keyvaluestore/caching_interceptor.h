@@ -32,10 +32,10 @@
 // Only if the key is not found in the cache do we make a request.
 class CachingInterceptor : public grpc::experimental::Interceptor {
  public:
-  CachingInterceptor(grpc::experimental::ClientRpcInfo* info) {}
+  CachingInterceptor(grpc::experimental::ClientRpcInfo *info) {}
 
   void Intercept(
-      ::grpc::experimental::InterceptorBatchMethods* methods) override {
+      ::grpc::experimental::InterceptorBatchMethods *methods) override {
     bool hijack = false;
     if (methods->QueryInterceptionHookPoint(
             grpc::experimental::InterceptionHookPoints::
@@ -52,15 +52,16 @@ class CachingInterceptor : public grpc::experimental::Interceptor {
       // We know that clients perform a Read and a Write in a loop, so we don't
       // need to maintain a list of the responses.
       std::string requested_key;
-      const keyvaluestore::Request* req_msg =
-          static_cast<const keyvaluestore::Request*>(methods->GetSendMessage());
+      const keyvaluestore::Request *req_msg =
+          static_cast<const keyvaluestore::Request *>(
+              methods->GetSendMessage());
       if (req_msg != nullptr) {
         requested_key = req_msg->key();
       } else {
         // The non-serialized form would not be available in certain scenarios,
         // so add a fallback
         keyvaluestore::Request req_msg;
-        auto* buffer = methods->GetSerializedSendMessage();
+        auto *buffer = methods->GetSerializedSendMessage();
         auto copied_buffer = *buffer;
         GPR_ASSERT(
             grpc::SerializationTraits<keyvaluestore::Request>::Deserialize(
@@ -93,13 +94,13 @@ class CachingInterceptor : public grpc::experimental::Interceptor {
     }
     if (methods->QueryInterceptionHookPoint(
             grpc::experimental::InterceptionHookPoints::PRE_RECV_MESSAGE)) {
-      keyvaluestore::Response* resp =
-          static_cast<keyvaluestore::Response*>(methods->GetRecvMessage());
+      keyvaluestore::Response *resp =
+          static_cast<keyvaluestore::Response *>(methods->GetRecvMessage());
       resp->set_value(response_);
     }
     if (methods->QueryInterceptionHookPoint(
             grpc::experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
-      auto* status = methods->GetRecvStatus();
+      auto *status = methods->GetRecvStatus();
       *status = grpc::Status::OK;
     }
     // One of Hijack or Proceed always needs to be called to make progress.
@@ -127,8 +128,8 @@ class CachingInterceptor : public grpc::experimental::Interceptor {
 class CachingInterceptorFactory
     : public grpc::experimental::ClientInterceptorFactoryInterface {
  public:
-  grpc::experimental::Interceptor* CreateClientInterceptor(
-      grpc::experimental::ClientRpcInfo* info) override {
+  grpc::experimental::Interceptor *CreateClientInterceptor(
+      grpc::experimental::ClientRpcInfo *info) override {
     return new CachingInterceptor(info);
   }
 };

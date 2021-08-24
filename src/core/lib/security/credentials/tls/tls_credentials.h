@@ -35,10 +35,10 @@ class TlsCredentials final : public grpc_channel_credentials {
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* target_name, const grpc_channel_args* args,
-      grpc_channel_args** new_args) override;
+      const char *target_name, const grpc_channel_args *args,
+      grpc_channel_args **new_args) override;
 
-  grpc_tls_credentials_options* options() const { return options_.get(); }
+  grpc_tls_credentials_options *options() const { return options_.get(); }
 
  private:
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
@@ -51,9 +51,9 @@ class TlsServerCredentials final : public grpc_server_credentials {
   ~TlsServerCredentials() override;
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector(const grpc_channel_args* /* args */) override;
+  create_security_connector(const grpc_channel_args * /* args */) override;
 
-  grpc_tls_credentials_options* options() const { return options_.get(); }
+  grpc_tls_credentials_options *options() const { return options_.get(); }
 
  private:
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;

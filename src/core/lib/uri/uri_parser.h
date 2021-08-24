@@ -37,7 +37,7 @@ class URI {
   struct QueryParam {
     std::string key;
     std::string value;
-    bool operator==(const QueryParam& other) const {
+    bool operator==(const QueryParam &other) const {
       return key == other.key && value == other.value;
     }
   };
@@ -50,29 +50,29 @@ class URI {
       std::vector<QueryParam> query_parameter_pairs, std::string fragment_);
   URI() = default;
   // Copy construction and assignment
-  URI(const URI& other);
-  URI& operator=(const URI& other);
+  URI(const URI &other);
+  URI &operator=(const URI &other);
   // Move construction and assignment
-  URI(URI&&) = default;
-  URI& operator=(URI&&) = default;
+  URI(URI &&) = default;
+  URI &operator=(URI &&) = default;
 
-  const std::string& scheme() const { return scheme_; }
-  const std::string& authority() const { return authority_; }
-  const std::string& path() const { return path_; }
+  const std::string &scheme() const { return scheme_; }
+  const std::string &authority() const { return authority_; }
+  const std::string &path() const { return path_; }
   // Stores the *last* value appearing for each repeated key in the query
   // string. If you need to capture repeated query parameters, use
   // `query_parameter_pairs`.
-  const std::map<absl::string_view, absl::string_view>& query_parameter_map()
+  const std::map<absl::string_view, absl::string_view> &query_parameter_map()
       const {
     return query_parameter_map_;
   }
   // A vector of key:value query parameter pairs, kept in order of appearance
   // within the URI search string. Repeated keys are represented as separate
   // key:value elements.
-  const std::vector<QueryParam>& query_parameter_pairs() const {
+  const std::vector<QueryParam> &query_parameter_pairs() const {
     return query_parameter_pairs_;
   }
-  const std::string& fragment() const { return fragment_; }
+  const std::string &fragment() const { return fragment_; }
 
  private:
   std::string scheme_;

@@ -28,8 +28,8 @@ const size_t kMinRpcVersionMajor = 2;
 const size_t kMinRpcVersionMinor = 1;
 
 static bool grpc_gcp_rpc_protocol_versions_equal(
-    grpc_gcp_rpc_protocol_versions* l_versions,
-    grpc_gcp_rpc_protocol_versions* r_versions) {
+    grpc_gcp_rpc_protocol_versions *l_versions,
+    grpc_gcp_rpc_protocol_versions *r_versions) {
   GPR_ASSERT(l_versions != nullptr && r_versions != nullptr);
   if ((l_versions->max_rpc_version.major !=
        r_versions->max_rpc_version.major) ||
@@ -113,8 +113,8 @@ static void test_check_success() {
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(&v2, kMaxRpcVersionMajor,
                                                     kMaxRpcVersionMinor));
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_check(
-                 (const grpc_gcp_rpc_protocol_versions*)&v1,
-                 (const grpc_gcp_rpc_protocol_versions*)&v2,
+                 (const grpc_gcp_rpc_protocol_versions *)&v1,
+                 (const grpc_gcp_rpc_protocol_versions *)&v2,
                  &highest_common_version) == 1);
   GPR_ASSERT(grpc_core::internal::grpc_gcp_rpc_protocol_version_compare(
                  &highest_common_version, &v1.max_rpc_version) == 0);
@@ -129,8 +129,8 @@ static void test_check_success() {
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(&v2, kMinRpcVersionMajor,
                                                     kMaxRpcVersionMinor));
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_check(
-                 (const grpc_gcp_rpc_protocol_versions*)&v1,
-                 (const grpc_gcp_rpc_protocol_versions*)&v2,
+                 (const grpc_gcp_rpc_protocol_versions *)&v1,
+                 (const grpc_gcp_rpc_protocol_versions *)&v2,
                  &highest_common_version) == 1);
   GPR_ASSERT(grpc_core::internal::grpc_gcp_rpc_protocol_version_compare(
                  &highest_common_version, &v2.max_rpc_version) == 0);
@@ -150,12 +150,12 @@ static void test_check_failure() {
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(&v2, kMaxRpcVersionMajor,
                                                     kMaxRpcVersionMinor));
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_check(
-                 (const grpc_gcp_rpc_protocol_versions*)&v1,
-                 (const grpc_gcp_rpc_protocol_versions*)&v2,
+                 (const grpc_gcp_rpc_protocol_versions *)&v1,
+                 (const grpc_gcp_rpc_protocol_versions *)&v2,
                  &highest_common_version) == 0);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+int main(int /*argc*/, char ** /*argv*/) {
   /* Run tests. */
   test_success();
   test_failure();

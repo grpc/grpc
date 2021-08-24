@@ -25,7 +25,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-const char* grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
+const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "client_calls_created",
     "server_calls_created",
     "cqs_created",
@@ -125,7 +125,7 @@ const char* grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "cq_ev_queue_trylock_successes",
     "cq_ev_queue_transient_pop_failures",
 };
-const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
+const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of client side calls created by this process",
     "Number of server side calls created by this process",
     "Number of completion queues created",
@@ -252,7 +252,7 @@ const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of times NULL was popped out of completion queue's event queue "
     "even though the event queue was not empty",
 };
-const char* grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
+const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
     "call_initial_size",
     "poll_events_returned",
     "tcp_write_size",
@@ -267,7 +267,7 @@ const char* grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
     "http2_send_flowctl_per_write",
     "server_cqs_checked",
 };
-const char* grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
+const char *grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
     "Initial size of the grpc_call arena created at call start",
     "How many events are called for each syscall_poll",
     "Number of bytes offered to each syscall_write",
@@ -666,7 +666,7 @@ const int grpc_stats_histo_buckets[13] = {64, 128, 64, 64, 64, 64, 64,
                                           64, 64,  64, 64, 64, 8};
 const int grpc_stats_histo_start[13] = {0,   64,  192, 256, 320, 384, 448,
                                         512, 576, 640, 704, 768, 832};
-const int* const grpc_stats_histo_bucket_boundaries[13] = {
+const int *const grpc_stats_histo_bucket_boundaries[13] = {
     grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_4,
     grpc_stats_table_6, grpc_stats_table_4, grpc_stats_table_4,
     grpc_stats_table_6, grpc_stats_table_4, grpc_stats_table_6,

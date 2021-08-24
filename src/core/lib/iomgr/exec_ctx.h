@@ -131,8 +131,8 @@ class ExecCtx {
   }
 
   /** Disallow copy and assignment operators */
-  ExecCtx(const ExecCtx&) = delete;
-  ExecCtx& operator=(const ExecCtx&) = delete;
+  ExecCtx(const ExecCtx &) = delete;
+  ExecCtx &operator=(const ExecCtx &) = delete;
 
   unsigned starting_cpu() {
     if (starting_cpu_ == std::numeric_limits<unsigned>::max()) {
@@ -143,16 +143,16 @@ class ExecCtx {
 
   struct CombinerData {
     /* currently active combiner: updated only via combiner.c */
-    Combiner* active_combiner;
+    Combiner *active_combiner;
     /* last active combiner in the active combiner list */
-    Combiner* last_combiner;
+    Combiner *last_combiner;
   };
 
   /** Only to be used by grpc-combiner code */
-  CombinerData* combiner_data() { return &combiner_data_; }
+  CombinerData *combiner_data() { return &combiner_data_; }
 
   /** Return pointer to grpc_closure_list */
-  grpc_closure_list* closure_list() { return &closure_list_; }
+  grpc_closure_list *closure_list() { return &closure_list_; }
 
   /** Return flags */
   uintptr_t flags() { return flags_; }
@@ -219,21 +219,21 @@ class ExecCtx {
   static void GlobalShutdown(void) {}
 
   /** Gets pointer to current exec_ctx. */
-  static ExecCtx* Get() { return exec_ctx_; }
+  static ExecCtx *Get() { return exec_ctx_; }
 
-  static void Set(ExecCtx* exec_ctx) { exec_ctx_ = exec_ctx; }
+  static void Set(ExecCtx *exec_ctx) { exec_ctx_ = exec_ctx; }
 
-  static void Run(const DebugLocation& location, grpc_closure* closure,
+  static void Run(const DebugLocation &location, grpc_closure *closure,
                   grpc_error_handle error);
 
-  static void RunList(const DebugLocation& location, grpc_closure_list* list);
+  static void RunList(const DebugLocation &location, grpc_closure_list *list);
 
  protected:
   /** Check if ready to finish. */
   virtual bool CheckReadyToFinish() { return false; }
 
   /** Disallow delete on ExecCtx. */
-  static void operator delete(void* /* p */) { abort(); }
+  static void operator delete(void * /* p */) { abort(); }
 
  private:
   /** Set exec_ctx_ to exec_ctx. */
@@ -247,8 +247,8 @@ class ExecCtx {
   bool now_is_valid_ = false;
   grpc_millis now_ = 0;
 
-  static GPR_THREAD_LOCAL(ExecCtx*) exec_ctx_;
-  ExecCtx* last_exec_ctx_ = Get();
+  static GPR_THREAD_LOCAL(ExecCtx *) exec_ctx_;
+  ExecCtx *last_exec_ctx_ = Get();
 };
 
 /** Application-callback execution context.
@@ -311,7 +311,7 @@ class ApplicationCallbackExecCtx {
   ~ApplicationCallbackExecCtx() {
     if (Get() == this) {
       while (head_ != nullptr) {
-        auto* f = head_;
+        auto *f = head_;
         head_ = f->internal_next;
         if (f->internal_next == nullptr) {
           tail_ = nullptr;
@@ -330,9 +330,9 @@ class ApplicationCallbackExecCtx {
 
   uintptr_t Flags() { return flags_; }
 
-  static ApplicationCallbackExecCtx* Get() { return callback_exec_ctx_; }
+  static ApplicationCallbackExecCtx *Get() { return callback_exec_ctx_; }
 
-  static void Set(ApplicationCallbackExecCtx* exec_ctx, uintptr_t flags) {
+  static void Set(ApplicationCallbackExecCtx *exec_ctx, uintptr_t flags) {
     if (Get() == nullptr) {
       if (!(GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags)) {
         grpc_core::Fork::IncExecCtxCount();
@@ -341,11 +341,11 @@ class ApplicationCallbackExecCtx {
     }
   }
 
-  static void Enqueue(grpc_completion_queue_functor* functor, int is_success) {
+  static void Enqueue(grpc_completion_queue_functor *functor, int is_success) {
     functor->internal_success = is_success;
     functor->internal_next = nullptr;
 
-    ApplicationCallbackExecCtx* ctx = Get();
+    ApplicationCallbackExecCtx *ctx = Get();
 
     if (ctx->head_ == nullptr) {
       ctx->head_ = functor;
@@ -366,9 +366,9 @@ class ApplicationCallbackExecCtx {
 
  private:
   uintptr_t flags_{0u};
-  grpc_completion_queue_functor* head_{nullptr};
-  grpc_completion_queue_functor* tail_{nullptr};
-  static GPR_THREAD_LOCAL(ApplicationCallbackExecCtx*) callback_exec_ctx_;
+  grpc_completion_queue_functor *head_{nullptr};
+  grpc_completion_queue_functor *tail_{nullptr};
+  static GPR_THREAD_LOCAL(ApplicationCallbackExecCtx *) callback_exec_ctx_;
 };
 }  // namespace grpc_core
 

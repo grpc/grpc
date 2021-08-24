@@ -29,7 +29,7 @@ namespace testing {
 
 // Replace "benchmark::internal::Benchmark" with "::testing::Benchmark" to use
 // internal microbenchmarking tooling
-static void StreamingPingPongMsgSizeArgs(benchmark::internal::Benchmark* b) {
+static void StreamingPingPongMsgSizeArgs(benchmark::internal::Benchmark *b) {
   // base case: 0 byte ping-pong msgs
   b->Args({0, 1});
   b->Args({0, 2});
@@ -42,7 +42,7 @@ static void StreamingPingPongMsgSizeArgs(benchmark::internal::Benchmark* b) {
 
 // Replace "benchmark::internal::Benchmark" with "::testing::Benchmark" to use
 // internal microbenchmarking tooling
-static void StreamingPingPongMsgsNumberArgs(benchmark::internal::Benchmark* b) {
+static void StreamingPingPongMsgsNumberArgs(benchmark::internal::Benchmark *b) {
   for (int msg_number = 1; msg_number <= 256 * 1024; msg_number *= 8) {
     b->Args({0, msg_number});
     b->Args({1024, msg_number});
@@ -128,7 +128,7 @@ namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);

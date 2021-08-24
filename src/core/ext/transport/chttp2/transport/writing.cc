@@ -32,22 +32,22 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-static void add_to_write_list(grpc_chttp2_write_cb** list,
-                              grpc_chttp2_write_cb* cb) {
+static void add_to_write_list(grpc_chttp2_write_cb **list,
+                              grpc_chttp2_write_cb *cb) {
   cb->next = *list;
   *list = cb;
 }
 
-static void finish_write_cb(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                            grpc_chttp2_write_cb* cb, grpc_error_handle error) {
+static void finish_write_cb(grpc_chttp2_transport *t, grpc_chttp2_stream *s,
+                            grpc_chttp2_write_cb *cb, grpc_error_handle error) {
   grpc_chttp2_complete_closure_step(t, s, &cb->closure, error,
                                     "finish_write_cb");
   cb->next = t->write_cb_pool;
   t->write_cb_pool = cb;
 }
 
-static void maybe_initiate_ping(grpc_chttp2_transport* t) {
-  grpc_chttp2_ping_queue* pq = &t->ping_queue;
+static void maybe_initiate_ping(grpc_chttp2_transport *t) {
+  grpc_chttp2_ping_queue *pq = &t->ping_queue;
   if (grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_NEXT])) {
     /* no ping needed: wait */
     return;
@@ -136,15 +136,15 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
       (t->ping_state.pings_before_data_required != 0);
 }
 
-static bool update_list(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                        int64_t send_bytes, grpc_chttp2_write_cb** list,
-                        int64_t* ctr, grpc_error_handle error) {
+static bool update_list(grpc_chttp2_transport *t, grpc_chttp2_stream *s,
+                        int64_t send_bytes, grpc_chttp2_write_cb **list,
+                        int64_t *ctr, grpc_error_handle error) {
   bool sched_any = false;
-  grpc_chttp2_write_cb* cb = *list;
+  grpc_chttp2_write_cb *cb = *list;
   *list = nullptr;
   *ctr += send_bytes;
   while (cb) {
-    grpc_chttp2_write_cb* next = cb->next;
+    grpc_chttp2_write_cb *next = cb->next;
     if (cb->call_at_byte <= *ctr) {
       sched_any = true;
       finish_write_cb(t, s, cb, GRPC_ERROR_REF(error));
@@ -157,8 +157,8 @@ static bool update_list(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   return sched_any;
 }
 
-static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                         const char* staller) {
+static void report_stall(grpc_chttp2_transport *t, grpc_chttp2_stream *s,
+                         const char *staller) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_flowctl_trace)) {
     gpr_log(
         GPR_DEBUG,
@@ -188,12 +188,12 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 }
 
 /* How many bytes would we like to put on the wire during a single syscall */
-static uint32_t target_write_size(grpc_chttp2_transport* /*t*/) {
+static uint32_t target_write_size(grpc_chttp2_transport * /*t*/) {
   return 1024 * 1024;
 }
 
 // Returns true if initial_metadata contains only default headers.
-static bool is_default_initial_metadata(grpc_metadata_batch* initial_metadata) {
+static bool is_default_initial_metadata(grpc_metadata_batch *initial_metadata) {
   return initial_metadata->list.default_count == initial_metadata->list.count;
 }
 
@@ -202,7 +202,7 @@ class StreamWriteContext;
 
 class WriteContext {
  public:
-  explicit WriteContext(grpc_chttp2_transport* t) : t_(t) {
+  explicit WriteContext(grpc_chttp2_transport *t) : t_(t) {
     GRPC_STATS_INC_HTTP2_WRITES_BEGUN();
     GPR_TIMER_SCOPE("grpc_chttp2_begin_write", 0);
   }
@@ -266,7 +266,7 @@ class WriteContext {
   }
 
   void UpdateStreamsNoLongerStalled() {
-    grpc_chttp2_stream* s;
+    grpc_chttp2_stream *s;
     while (grpc_chttp2_list_pop_stalled_by_transport(t_, &s)) {
       if (t_->closed_with_error == GRPC_ERROR_NONE &&
           grpc_chttp2_list_add_writable_stream(t_, s)) {
@@ -277,13 +277,13 @@ class WriteContext {
     }
   }
 
-  grpc_chttp2_stream* NextStream() {
+  grpc_chttp2_stream *NextStream() {
     if (t_->outbuf.length > target_write_size(t_)) {
       result_.partial = true;
       return nullptr;
     }
 
-    grpc_chttp2_stream* s;
+    grpc_chttp2_stream *s;
     if (!grpc_chttp2_list_pop_writable_stream(t_, &s)) {
       return nullptr;
     }
@@ -298,7 +298,7 @@ class WriteContext {
 
   void NoteScheduledResults() { result_.early_results_scheduled = true; }
 
-  grpc_chttp2_transport* transport() const { return t_; }
+  grpc_chttp2_transport *transport() const { return t_; }
 
   grpc_chttp2_begin_write_result Result() {
     result_.writing = t_->outbuf.count > 0;
@@ -306,7 +306,7 @@ class WriteContext {
   }
 
  private:
-  grpc_chttp2_transport* const t_;
+  grpc_chttp2_transport *const t_;
 
   /* stats histogram counters: we increment these throughout this function,
      and at the end publish to the central stats histograms */
@@ -319,8 +319,8 @@ class WriteContext {
 
 class DataSendContext {
  public:
-  DataSendContext(WriteContext* write_context, grpc_chttp2_transport* t,
-                  grpc_chttp2_stream* s)
+  DataSendContext(WriteContext *write_context, grpc_chttp2_transport *t,
+                  grpc_chttp2_stream *s)
       : write_context_(write_context),
         t_(t),
         s_(s),
@@ -421,16 +421,16 @@ class DataSendContext {
   }
 
  private:
-  WriteContext* write_context_;
-  grpc_chttp2_transport* t_;
-  grpc_chttp2_stream* s_;
+  WriteContext *write_context_;
+  grpc_chttp2_transport *t_;
+  grpc_chttp2_stream *s_;
   const size_t sending_bytes_before_;
   bool is_last_frame_ = false;
 };
 
 class StreamWriteContext {
  public:
-  StreamWriteContext(WriteContext* write_context, grpc_chttp2_stream* s)
+  StreamWriteContext(WriteContext *write_context, grpc_chttp2_stream *s)
       : write_context_(write_context), t_(write_context->transport()), s_(s) {
     GRPC_CHTTP2_IF_TRACING(
         gpr_log(GPR_INFO, "W:%p %s[%d] im-(sent,send)=(%d,%d) announce=%d", t_,
@@ -626,17 +626,17 @@ class StreamWriteContext {
                                    GRPC_ERROR_NONE);
   }
 
-  WriteContext* const write_context_;
-  grpc_chttp2_transport* const t_;
-  grpc_chttp2_stream* const s_;
+  WriteContext *const write_context_;
+  grpc_chttp2_transport *const t_;
+  grpc_chttp2_stream *const s_;
   bool stream_became_writable_ = false;
-  grpc_mdelem* extra_headers_for_trailing_metadata_[2];
+  grpc_mdelem *extra_headers_for_trailing_metadata_[2];
   size_t num_extra_headers_for_trailing_metadata_ = 0;
 };
 }  // namespace
 
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
-    grpc_chttp2_transport* t) {
+    grpc_chttp2_transport *t) {
   WriteContext ctx(t);
   ctx.FlushSettings();
   ctx.FlushPingAcks();
@@ -649,7 +649,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
 
   /* for each grpc_chttp2_stream that's become writable, frame it's data
      (according to available window sizes) and add to the output buffer */
-  while (grpc_chttp2_stream* s = ctx.NextStream()) {
+  while (grpc_chttp2_stream *s = ctx.NextStream()) {
     StreamWriteContext stream_ctx(&ctx, s);
     size_t orig_len = t->outbuf.length;
     stream_ctx.FlushInitialMetadata();
@@ -682,9 +682,9 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
   return ctx.Result();
 }
 
-void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
+void grpc_chttp2_end_write(grpc_chttp2_transport *t, grpc_error_handle error) {
   GPR_TIMER_SCOPE("grpc_chttp2_end_write", 0);
-  grpc_chttp2_stream* s;
+  grpc_chttp2_stream *s;
 
   if (t->channelz_socket != nullptr) {
     t->channelz_socket->RecordMessagesSent(t->num_messages_in_next_write);

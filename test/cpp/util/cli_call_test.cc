@@ -40,8 +40,8 @@ namespace testing {
 
 class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
+  Status Echo(ServerContext *context, const EchoRequest *request,
+              EchoResponse *response) override {
     if (!context->client_metadata().empty()) {
       for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
                iter = context->client_metadata().begin();
@@ -121,7 +121,7 @@ TEST_F(CliCallTest, SimpleRpc) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

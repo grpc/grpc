@@ -29,11 +29,11 @@
 
 const size_t kBiosDataBufferSize = 256;
 
-static char* trim(const char* src) {
+static char *trim(const char *src) {
   if (src == nullptr || *src == '\0') {
     return nullptr;
   }
-  char* des = nullptr;
+  char *des = nullptr;
   size_t start = 0, end = strlen(src) - 1;
   /* find the last character that is not a whitespace. */
   while (end != 0 && isspace(src[end])) {
@@ -44,7 +44,7 @@ static char* trim(const char* src) {
     start++;
   }
   if (start <= end) {
-    des = static_cast<char*>(
+    des = static_cast<char *>(
         gpr_zalloc(sizeof(char) * (end - start + 2 /* '\0' */)));
     memcpy(des, src + start, end - start + 1);
   }
@@ -54,8 +54,8 @@ static char* trim(const char* src) {
 namespace grpc_core {
 namespace internal {
 
-char* read_bios_file(const char* bios_file) {
-  FILE* fp = fopen(bios_file, "r");
+char *read_bios_file(const char *bios_file) {
+  FILE *fp = fopen(bios_file, "r");
   if (!fp) {
     gpr_log(GPR_INFO, "BIOS data file does not exist or cannot be opened.");
     return nullptr;
@@ -63,7 +63,7 @@ char* read_bios_file(const char* bios_file) {
   char buf[kBiosDataBufferSize + 1];
   size_t ret = fread(buf, sizeof(char), kBiosDataBufferSize, fp);
   buf[ret] = '\0';
-  char* trimmed_buf = trim(buf);
+  char *trimmed_buf = trim(buf);
   fclose(fp);
   return trimmed_buf;
 }

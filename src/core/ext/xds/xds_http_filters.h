@@ -36,7 +36,7 @@
 
 namespace grpc_core {
 
-extern const char* kXdsHttpRouterFilterConfigName;
+extern const char *kXdsHttpRouterFilterConfigName;
 
 class XdsHttpFilterImpl {
  public:
@@ -44,7 +44,7 @@ class XdsHttpFilterImpl {
     absl::string_view config_proto_type_name;
     Json config;
 
-    bool operator==(const FilterConfig& other) const {
+    bool operator==(const FilterConfig &other) const {
       return config_proto_type_name == other.config_proto_type_name &&
              config == other.config;
     }
@@ -70,25 +70,25 @@ class XdsHttpFilterImpl {
   virtual ~XdsHttpFilterImpl() = default;
 
   // Loads the proto message into the upb symtab.
-  virtual void PopulateSymtab(upb_symtab* symtab) const = 0;
+  virtual void PopulateSymtab(upb_symtab *symtab) const = 0;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the top-level config in the HCM HTTP filter list.
   virtual absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_strview serialized_filter_config, upb_arena* arena) const = 0;
+      upb_strview serialized_filter_config, upb_arena *arena) const = 0;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the typed_per_filter_config override in VirtualHost and Route.
   virtual absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      upb_strview serialized_filter_config, upb_arena* arena) const = 0;
+      upb_strview serialized_filter_config, upb_arena *arena) const = 0;
 
   // C-core channel filter implementation.
-  virtual const grpc_channel_filter* channel_filter() const = 0;
+  virtual const grpc_channel_filter *channel_filter() const = 0;
 
   // Modifies channel args that may affect service config parsing (not
   // visible to the channel as a whole).
   // Takes ownership of args.  Caller takes ownership of return value.
-  virtual grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) const {
+  virtual grpc_channel_args *ModifyChannelArgs(grpc_channel_args *args) const {
     return args;
   }
 
@@ -99,8 +99,8 @@ class XdsHttpFilterImpl {
   // Route, or VirtualHost entries that it is found in, or null if
   // there is no override in any of those locations.
   virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const FilterConfig& hcm_filter_config,
-      const FilterConfig* filter_config_override) const = 0;
+      const FilterConfig &hcm_filter_config,
+      const FilterConfig *filter_config_override) const = 0;
 
   // Returns true if the filter is supported on clients; false otherwise
   virtual bool IsSupportedOnClients() const = 0;
@@ -116,12 +116,12 @@ class XdsHttpFilterRegistry {
  public:
   static void RegisterFilter(
       std::unique_ptr<XdsHttpFilterImpl> filter,
-      const std::set<absl::string_view>& config_proto_type_names);
+      const std::set<absl::string_view> &config_proto_type_names);
 
-  static const XdsHttpFilterImpl* GetFilterForType(
+  static const XdsHttpFilterImpl *GetFilterForType(
       absl::string_view proto_type_name);
 
-  static void PopulateSymtab(upb_symtab* symtab);
+  static void PopulateSymtab(upb_symtab *symtab);
 
   // Global init and shutdown.
   static void Init();

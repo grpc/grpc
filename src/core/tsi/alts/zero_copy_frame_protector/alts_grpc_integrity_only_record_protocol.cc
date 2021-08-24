@@ -34,27 +34,27 @@ typedef struct alts_grpc_integrity_only_record_protocol {
   alts_grpc_record_protocol base;
   bool enable_extra_copy;
   grpc_slice_buffer data_sb;
-  unsigned char* tag_buf;
+  unsigned char *tag_buf;
 } alts_grpc_integrity_only_record_protocol;
 
 /* --- alts_grpc_record_protocol methods implementation. --- */
 
 static tsi_result alts_grpc_integrity_only_extra_copy_protect(
-    alts_grpc_record_protocol* rp, grpc_slice_buffer* unprotected_slices,
-    grpc_slice_buffer* protected_slices) {
+    alts_grpc_record_protocol *rp, grpc_slice_buffer *unprotected_slices,
+    grpc_slice_buffer *protected_slices) {
   /* Allocates memory for protected frame and copies data.  */
   size_t data_length = unprotected_slices->length;
   size_t protected_frame_size =
       unprotected_slices->length + rp->header_length + rp->tag_length;
   grpc_slice protected_slice = GRPC_SLICE_MALLOC(protected_frame_size);
-  uint8_t* data = GRPC_SLICE_START_PTR(protected_slice) + rp->header_length;
+  uint8_t *data = GRPC_SLICE_START_PTR(protected_slice) + rp->header_length;
   for (size_t i = 0; i < unprotected_slices->count; i++) {
     memcpy(data, GRPC_SLICE_START_PTR(unprotected_slices->slices[i]),
            GRPC_SLICE_LENGTH(unprotected_slices->slices[i]));
     data += GRPC_SLICE_LENGTH(unprotected_slices->slices[i]);
   }
   /* Calls alts_iovec_record_protocol protect.  */
-  char* error_details = nullptr;
+  char *error_details = nullptr;
   iovec_t header_iovec = {GRPC_SLICE_START_PTR(protected_slice),
                           rp->header_length};
   iovec_t tag_iovec = {
@@ -76,8 +76,8 @@ static tsi_result alts_grpc_integrity_only_extra_copy_protect(
 }
 
 static tsi_result alts_grpc_integrity_only_protect(
-    alts_grpc_record_protocol* rp, grpc_slice_buffer* unprotected_slices,
-    grpc_slice_buffer* protected_slices) {
+    alts_grpc_record_protocol *rp, grpc_slice_buffer *unprotected_slices,
+    grpc_slice_buffer *protected_slices) {
   /* Input sanity check.  */
   if (rp == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
@@ -85,8 +85,8 @@ static tsi_result alts_grpc_integrity_only_protect(
             "Invalid nullptr arguments to alts_grpc_record_protocol protect.");
     return TSI_INVALID_ARGUMENT;
   }
-  alts_grpc_integrity_only_record_protocol* integrity_only_record_protocol =
-      reinterpret_cast<alts_grpc_integrity_only_record_protocol*>(rp);
+  alts_grpc_integrity_only_record_protocol *integrity_only_record_protocol =
+      reinterpret_cast<alts_grpc_integrity_only_record_protocol *>(rp);
   if (integrity_only_record_protocol->enable_extra_copy) {
     return alts_grpc_integrity_only_extra_copy_protect(rp, unprotected_slices,
                                                        protected_slices);
@@ -95,7 +95,7 @@ static tsi_result alts_grpc_integrity_only_protect(
   grpc_slice header_slice = GRPC_SLICE_MALLOC(rp->header_length);
   grpc_slice tag_slice = GRPC_SLICE_MALLOC(rp->tag_length);
   /* Calls alts_iovec_record_protocol protect.  */
-  char* error_details = nullptr;
+  char *error_details = nullptr;
   iovec_t header_iovec = {GRPC_SLICE_START_PTR(header_slice),
                           GRPC_SLICE_LENGTH(header_slice)};
   iovec_t tag_iovec = {GRPC_SLICE_START_PTR(tag_slice),
@@ -118,8 +118,8 @@ static tsi_result alts_grpc_integrity_only_protect(
 }
 
 static tsi_result alts_grpc_integrity_only_unprotect(
-    alts_grpc_record_protocol* rp, grpc_slice_buffer* protected_slices,
-    grpc_slice_buffer* unprotected_slices) {
+    alts_grpc_record_protocol *rp, grpc_slice_buffer *protected_slices,
+    grpc_slice_buffer *unprotected_slices) {
   /* Input sanity check.  */
   if (rp == nullptr || protected_slices == nullptr ||
       unprotected_slices == nullptr) {
@@ -135,8 +135,8 @@ static tsi_result alts_grpc_integrity_only_unprotect(
   /* In this method, rp points to alts_grpc_record_protocol struct
    * and integrity_only_record_protocol points to
    * alts_grpc_integrity_only_record_protocol struct.  */
-  alts_grpc_integrity_only_record_protocol* integrity_only_record_protocol =
-      reinterpret_cast<alts_grpc_integrity_only_record_protocol*>(rp);
+  alts_grpc_integrity_only_record_protocol *integrity_only_record_protocol =
+      reinterpret_cast<alts_grpc_integrity_only_record_protocol *>(rp);
   /* Strips frame header from protected slices.  */
   grpc_slice_buffer_reset_and_unref_internal(&rp->header_sb);
   grpc_slice_buffer_move_first(protected_slices, rp->header_length,
@@ -161,7 +161,7 @@ static tsi_result alts_grpc_integrity_only_unprotect(
     tag_iovec.iov_base = integrity_only_record_protocol->tag_buf;
   }
   /* Calls alts_iovec_record_protocol unprotect.  */
-  char* error_details = nullptr;
+  char *error_details = nullptr;
   alts_grpc_record_protocol_convert_slice_buffer_to_iovec(
       rp, &integrity_only_record_protocol->data_sb);
   grpc_status_code status = alts_iovec_record_protocol_integrity_only_unprotect(
@@ -180,12 +180,12 @@ static tsi_result alts_grpc_integrity_only_unprotect(
   return TSI_OK;
 }
 
-static void alts_grpc_integrity_only_destruct(alts_grpc_record_protocol* rp) {
+static void alts_grpc_integrity_only_destruct(alts_grpc_record_protocol *rp) {
   if (rp == nullptr) {
     return;
   }
-  alts_grpc_integrity_only_record_protocol* integrity_only_rp =
-      reinterpret_cast<alts_grpc_integrity_only_record_protocol*>(rp);
+  alts_grpc_integrity_only_record_protocol *integrity_only_rp =
+      reinterpret_cast<alts_grpc_integrity_only_record_protocol *>(rp);
   grpc_slice_buffer_destroy_internal(&integrity_only_rp->data_sb);
   gpr_free(integrity_only_rp->tag_buf);
 }
@@ -196,15 +196,15 @@ static const alts_grpc_record_protocol_vtable
         alts_grpc_integrity_only_destruct};
 
 tsi_result alts_grpc_integrity_only_record_protocol_create(
-    gsec_aead_crypter* crypter, size_t overflow_size, bool is_client,
-    bool is_protect, bool enable_extra_copy, alts_grpc_record_protocol** rp) {
+    gsec_aead_crypter *crypter, size_t overflow_size, bool is_client,
+    bool is_protect, bool enable_extra_copy, alts_grpc_record_protocol **rp) {
   if (crypter == nullptr || rp == nullptr) {
     gpr_log(GPR_ERROR,
             "Invalid nullptr arguments to alts_grpc_record_protocol create.");
     return TSI_INVALID_ARGUMENT;
   }
-  alts_grpc_integrity_only_record_protocol* impl =
-      static_cast<alts_grpc_integrity_only_record_protocol*>(
+  alts_grpc_integrity_only_record_protocol *impl =
+      static_cast<alts_grpc_integrity_only_record_protocol *>(
           gpr_zalloc(sizeof(alts_grpc_integrity_only_record_protocol)));
   /* Calls alts_grpc_record_protocol init.  */
   tsi_result result = alts_grpc_record_protocol_init(
@@ -219,7 +219,7 @@ tsi_result alts_grpc_integrity_only_record_protocol_create(
   grpc_slice_buffer_init(&impl->data_sb);
   /* Allocates tag buffer.  */
   impl->tag_buf =
-      static_cast<unsigned char*>(gpr_malloc(impl->base.tag_length));
+      static_cast<unsigned char *>(gpr_malloc(impl->base.tag_length));
   impl->base.vtable = &alts_grpc_integrity_only_record_protocol_vtable;
   *rp = &impl->base;
   return TSI_OK;

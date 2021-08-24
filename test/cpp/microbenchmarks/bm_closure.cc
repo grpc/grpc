@@ -31,7 +31,7 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-static void BM_NoOpExecCtx(benchmark::State& state) {
+static void BM_NoOpExecCtx(benchmark::State &state) {
   TrackCounters track_counters;
   for (auto _ : state) {
     grpc_core::ExecCtx exec_ctx;
@@ -40,7 +40,7 @@ static void BM_NoOpExecCtx(benchmark::State& state) {
 }
 BENCHMARK(BM_NoOpExecCtx);
 
-static void BM_WellFlushed(benchmark::State& state) {
+static void BM_WellFlushed(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
@@ -51,9 +51,9 @@ static void BM_WellFlushed(benchmark::State& state) {
 }
 BENCHMARK(BM_WellFlushed);
 
-static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
+static void DoNothing(void * /*arg*/, grpc_error_handle /*error*/) {}
 
-static void BM_ClosureInitAgainstExecCtx(benchmark::State& state) {
+static void BM_ClosureInitAgainstExecCtx(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_closure c;
   for (auto _ : state) {
@@ -64,9 +64,9 @@ static void BM_ClosureInitAgainstExecCtx(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureInitAgainstExecCtx);
 
-static void BM_ClosureInitAgainstCombiner(benchmark::State& state) {
+static void BM_ClosureInitAgainstCombiner(benchmark::State &state) {
   TrackCounters track_counters;
-  grpc_core::Combiner* combiner = grpc_combiner_create();
+  grpc_core::Combiner *combiner = grpc_combiner_create();
   grpc_closure c;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
@@ -79,7 +79,7 @@ static void BM_ClosureInitAgainstCombiner(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureInitAgainstCombiner);
 
-static void BM_ClosureRun(benchmark::State& state) {
+static void BM_ClosureRun(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_closure c;
   GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
@@ -92,7 +92,7 @@ static void BM_ClosureRun(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureRun);
 
-static void BM_ClosureCreateAndRun(benchmark::State& state) {
+static void BM_ClosureCreateAndRun(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
@@ -106,7 +106,7 @@ static void BM_ClosureCreateAndRun(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureCreateAndRun);
 
-static void BM_ClosureInitAndRun(benchmark::State& state) {
+static void BM_ClosureInitAndRun(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   grpc_closure c;
@@ -121,7 +121,7 @@ static void BM_ClosureInitAndRun(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureInitAndRun);
 
-static void BM_ClosureSchedOnExecCtx(benchmark::State& state) {
+static void BM_ClosureSchedOnExecCtx(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_closure c;
   GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
@@ -135,7 +135,7 @@ static void BM_ClosureSchedOnExecCtx(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureSchedOnExecCtx);
 
-static void BM_ClosureSched2OnExecCtx(benchmark::State& state) {
+static void BM_ClosureSched2OnExecCtx(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_closure c1;
   grpc_closure c2;
@@ -152,7 +152,7 @@ static void BM_ClosureSched2OnExecCtx(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureSched2OnExecCtx);
 
-static void BM_ClosureSched3OnExecCtx(benchmark::State& state) {
+static void BM_ClosureSched3OnExecCtx(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_closure c1;
   grpc_closure c2;
@@ -172,7 +172,7 @@ static void BM_ClosureSched3OnExecCtx(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureSched3OnExecCtx);
 
-static void BM_AcquireMutex(benchmark::State& state) {
+static void BM_AcquireMutex(benchmark::State &state) {
   TrackCounters track_counters;
   // for comparison with the combiner stuff below
   gpr_mu mu;
@@ -189,7 +189,7 @@ static void BM_AcquireMutex(benchmark::State& state) {
 }
 BENCHMARK(BM_AcquireMutex);
 
-static void BM_TryAcquireMutex(benchmark::State& state) {
+static void BM_TryAcquireMutex(benchmark::State &state) {
   TrackCounters track_counters;
   // for comparison with the combiner stuff below
   gpr_mu mu;
@@ -209,7 +209,7 @@ static void BM_TryAcquireMutex(benchmark::State& state) {
 }
 BENCHMARK(BM_TryAcquireMutex);
 
-static void BM_AcquireSpinlock(benchmark::State& state) {
+static void BM_AcquireSpinlock(benchmark::State &state) {
   TrackCounters track_counters;
   // for comparison with the combiner stuff below
   gpr_spinlock mu = GPR_SPINLOCK_INITIALIZER;
@@ -224,7 +224,7 @@ static void BM_AcquireSpinlock(benchmark::State& state) {
 }
 BENCHMARK(BM_AcquireSpinlock);
 
-static void BM_TryAcquireSpinlock(benchmark::State& state) {
+static void BM_TryAcquireSpinlock(benchmark::State &state) {
   TrackCounters track_counters;
   // for comparison with the combiner stuff below
   gpr_spinlock mu = GPR_SPINLOCK_INITIALIZER;
@@ -242,9 +242,9 @@ static void BM_TryAcquireSpinlock(benchmark::State& state) {
 }
 BENCHMARK(BM_TryAcquireSpinlock);
 
-static void BM_ClosureSchedOnCombiner(benchmark::State& state) {
+static void BM_ClosureSchedOnCombiner(benchmark::State &state) {
   TrackCounters track_counters;
-  grpc_core::Combiner* combiner = grpc_combiner_create();
+  grpc_core::Combiner *combiner = grpc_combiner_create();
   grpc_closure c;
   GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, nullptr);
   grpc_core::ExecCtx exec_ctx;
@@ -258,9 +258,9 @@ static void BM_ClosureSchedOnCombiner(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureSchedOnCombiner);
 
-static void BM_ClosureSched2OnCombiner(benchmark::State& state) {
+static void BM_ClosureSched2OnCombiner(benchmark::State &state) {
   TrackCounters track_counters;
-  grpc_core::Combiner* combiner = grpc_combiner_create();
+  grpc_core::Combiner *combiner = grpc_combiner_create();
   grpc_closure c1;
   grpc_closure c2;
   GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr, nullptr);
@@ -277,9 +277,9 @@ static void BM_ClosureSched2OnCombiner(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureSched2OnCombiner);
 
-static void BM_ClosureSched3OnCombiner(benchmark::State& state) {
+static void BM_ClosureSched3OnCombiner(benchmark::State &state) {
   TrackCounters track_counters;
-  grpc_core::Combiner* combiner = grpc_combiner_create();
+  grpc_core::Combiner *combiner = grpc_combiner_create();
   grpc_closure c1;
   grpc_closure c2;
   grpc_closure c3;
@@ -299,10 +299,10 @@ static void BM_ClosureSched3OnCombiner(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureSched3OnCombiner);
 
-static void BM_ClosureSched2OnTwoCombiners(benchmark::State& state) {
+static void BM_ClosureSched2OnTwoCombiners(benchmark::State &state) {
   TrackCounters track_counters;
-  grpc_core::Combiner* combiner1 = grpc_combiner_create();
-  grpc_core::Combiner* combiner2 = grpc_combiner_create();
+  grpc_core::Combiner *combiner1 = grpc_combiner_create();
+  grpc_core::Combiner *combiner2 = grpc_combiner_create();
   grpc_closure c1;
   grpc_closure c2;
   GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr, nullptr);
@@ -320,10 +320,10 @@ static void BM_ClosureSched2OnTwoCombiners(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureSched2OnTwoCombiners);
 
-static void BM_ClosureSched4OnTwoCombiners(benchmark::State& state) {
+static void BM_ClosureSched4OnTwoCombiners(benchmark::State &state) {
   TrackCounters track_counters;
-  grpc_core::Combiner* combiner1 = grpc_combiner_create();
-  grpc_core::Combiner* combiner2 = grpc_combiner_create();
+  grpc_core::Combiner *combiner1 = grpc_combiner_create();
+  grpc_core::Combiner *combiner2 = grpc_combiner_create();
   grpc_closure c1;
   grpc_closure c2;
   grpc_closure c3;
@@ -351,7 +351,7 @@ BENCHMARK(BM_ClosureSched4OnTwoCombiners);
 // the benchmark is complete
 class Rescheduler {
  public:
-  explicit Rescheduler(benchmark::State& state) : state_(state) {
+  explicit Rescheduler(benchmark::State &state) : state_(state) {
     GRPC_CLOSURE_INIT(&closure_, Step, this, nullptr);
   }
 
@@ -366,18 +366,18 @@ class Rescheduler {
   }
 
  private:
-  benchmark::State& state_;
+  benchmark::State &state_;
   grpc_closure closure_;
 
-  static void Step(void* arg, grpc_error_handle /*error*/) {
-    Rescheduler* self = static_cast<Rescheduler*>(arg);
+  static void Step(void *arg, grpc_error_handle /*error*/) {
+    Rescheduler *self = static_cast<Rescheduler *>(arg);
     if (self->state_.KeepRunning()) {
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, &self->closure_, GRPC_ERROR_NONE);
     }
   }
 };
 
-static void BM_ClosureReschedOnExecCtx(benchmark::State& state) {
+static void BM_ClosureReschedOnExecCtx(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   Rescheduler r(state);
@@ -393,7 +393,7 @@ namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);

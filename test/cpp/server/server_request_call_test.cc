@@ -65,17 +65,17 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
         std::lock_guard<std::mutex> lock(mu);
         if (!shutting_down) {
           service.RequestEcho(&ctx, &req, &responder, cq.get(), cq.get(),
-                              reinterpret_cast<void*>(1));
+                              reinterpret_cast<void *>(1));
         }
       }
 
       bool ok;
-      void* tag;
+      void *tag;
       if (!cq->Next(&tag, &ok)) {
         break;
       }
 
-      EXPECT_EQ((void*)1, tag);
+      EXPECT_EQ((void *)1, tag);
       // If not shutting down, ok must be true for new requests.
       {
         std::lock_guard<std::mutex> lock(mu);
@@ -107,11 +107,11 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
         }
         gpr_log(GPR_INFO, "Finishing request %d", n);
         responder.Finish(response, grpc::Status::OK,
-                         reinterpret_cast<void*>(2));
+                         reinterpret_cast<void *>(2));
         if (!cq->Next(&tag, &ok)) {
           break;
         }
-        EXPECT_EQ((void*)2, tag);
+        EXPECT_EQ((void *)2, tag);
       }
     }
   });
@@ -159,7 +159,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
 }  // namespace
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

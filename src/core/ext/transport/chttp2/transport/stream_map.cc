@@ -25,24 +25,24 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-void grpc_chttp2_stream_map_init(grpc_chttp2_stream_map* map,
+void grpc_chttp2_stream_map_init(grpc_chttp2_stream_map *map,
                                  size_t initial_capacity) {
   GPR_DEBUG_ASSERT(initial_capacity > 1);
   map->keys =
-      static_cast<uint32_t*>(gpr_malloc(sizeof(uint32_t) * initial_capacity));
+      static_cast<uint32_t *>(gpr_malloc(sizeof(uint32_t) * initial_capacity));
   map->values =
-      static_cast<void**>(gpr_malloc(sizeof(void*) * initial_capacity));
+      static_cast<void **>(gpr_malloc(sizeof(void *) * initial_capacity));
   map->count = 0;
   map->free = 0;
   map->capacity = initial_capacity;
 }
 
-void grpc_chttp2_stream_map_destroy(grpc_chttp2_stream_map* map) {
+void grpc_chttp2_stream_map_destroy(grpc_chttp2_stream_map *map) {
   gpr_free(map->keys);
   gpr_free(map->values);
 }
 
-static size_t compact(uint32_t* keys, void** values, size_t count) {
+static size_t compact(uint32_t *keys, void **values, size_t count) {
   size_t i, out;
 
   for (i = 0, out = 0; i < count; i++) {
@@ -56,12 +56,12 @@ static size_t compact(uint32_t* keys, void** values, size_t count) {
   return out;
 }
 
-void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map* map, uint32_t key,
-                                void* value) {
+void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map *map, uint32_t key,
+                                void *value) {
   size_t count = map->count;
   size_t capacity = map->capacity;
-  uint32_t* keys = map->keys;
-  void** values = map->values;
+  uint32_t *keys = map->keys;
+  void **values = map->values;
 
   // The first assertion ensures that the table is monotonically increasing.
   GPR_ASSERT(count == 0 || keys[count - 1] < key);
@@ -83,10 +83,10 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map* map, uint32_t key,
       /* resize when less than 25% of the table is free, because compaction
          won't help much */
       map->capacity = capacity = 2 * capacity;
-      map->keys = keys = static_cast<uint32_t*>(
+      map->keys = keys = static_cast<uint32_t *>(
           gpr_realloc(keys, capacity * sizeof(uint32_t)));
       map->values = values =
-          static_cast<void**>(gpr_realloc(values, capacity * sizeof(void*)));
+          static_cast<void **>(gpr_realloc(values, capacity * sizeof(void *)));
     }
   }
 
@@ -96,12 +96,12 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map* map, uint32_t key,
 }
 
 template <bool strict_find>
-static void** find(grpc_chttp2_stream_map* map, uint32_t key) {
+static void **find(grpc_chttp2_stream_map *map, uint32_t key) {
   size_t min_idx = 0;
   size_t max_idx = map->count;
   size_t mid_idx;
-  uint32_t* keys = map->keys;
-  void** values = map->values;
+  uint32_t *keys = map->keys;
+  void **values = map->values;
   uint32_t mid_key;
 
   GPR_DEBUG_ASSERT(!strict_find || max_idx > 0);
@@ -126,10 +126,10 @@ static void** find(grpc_chttp2_stream_map* map, uint32_t key) {
   return nullptr;
 }
 
-void* grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map* map, uint32_t key) {
-  void** pvalue = find<true>(map, key);
+void *grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map *map, uint32_t key) {
+  void **pvalue = find<true>(map, key);
   GPR_DEBUG_ASSERT(pvalue != nullptr);
-  void* out = *pvalue;
+  void *out = *pvalue;
   GPR_DEBUG_ASSERT(out != nullptr);
   *pvalue = nullptr;
   map->free++;
@@ -142,16 +142,16 @@ void* grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map* map, uint32_t key) {
   return out;
 }
 
-void* grpc_chttp2_stream_map_find(grpc_chttp2_stream_map* map, uint32_t key) {
-  void** pvalue = find<false>(map, key);
+void *grpc_chttp2_stream_map_find(grpc_chttp2_stream_map *map, uint32_t key) {
+  void **pvalue = find<false>(map, key);
   return pvalue != nullptr ? *pvalue : nullptr;
 }
 
-size_t grpc_chttp2_stream_map_size(grpc_chttp2_stream_map* map) {
+size_t grpc_chttp2_stream_map_size(grpc_chttp2_stream_map *map) {
   return map->count - map->free;
 }
 
-void* grpc_chttp2_stream_map_rand(grpc_chttp2_stream_map* map) {
+void *grpc_chttp2_stream_map_rand(grpc_chttp2_stream_map *map) {
   if (map->count == map->free) {
     return nullptr;
   }
@@ -163,10 +163,10 @@ void* grpc_chttp2_stream_map_rand(grpc_chttp2_stream_map* map) {
   return map->values[(static_cast<size_t>(rand())) % map->count];
 }
 
-void grpc_chttp2_stream_map_for_each(grpc_chttp2_stream_map* map,
-                                     void (*f)(void* user_data, uint32_t key,
-                                               void* value),
-                                     void* user_data) {
+void grpc_chttp2_stream_map_for_each(grpc_chttp2_stream_map *map,
+                                     void (*f)(void *user_data, uint32_t key,
+                                               void *value),
+                                     void *user_data) {
   size_t i;
 
   for (i = 0; i < map->count; i++) {

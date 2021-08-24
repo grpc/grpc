@@ -34,28 +34,28 @@ void grpc_create_socketpair_if_unix(int /* sv */[2]) {
 }
 
 grpc_error_handle grpc_resolve_unix_domain_address(
-    const char* /* name */, grpc_resolved_addresses** addresses) {
+    const char * /* name */, grpc_resolved_addresses **addresses) {
   *addresses = NULL;
   return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Unix domain sockets are not supported on Windows");
 }
 
 grpc_error_handle grpc_resolve_unix_abstract_domain_address(
-    absl::string_view, grpc_resolved_addresses** addresses) {
+    absl::string_view, grpc_resolved_addresses **addresses) {
   *addresses = NULL;
   return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Unix domain sockets are not supported on Windows");
 }
 
-int grpc_is_unix_socket(const grpc_resolved_address* /* addr */) {
+int grpc_is_unix_socket(const grpc_resolved_address * /* addr */) {
   return false;
 }
 
 void grpc_unlink_if_unix_domain_socket(
-    const grpc_resolved_address* /* addr */) {}
+    const grpc_resolved_address * /* addr */) {}
 
 std::string grpc_sockaddr_to_uri_unix_if_possible(
-    const grpc_resolved_address* /* addr */) {
+    const grpc_resolved_address * /* addr */) {
   return "";
 }
 

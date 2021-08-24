@@ -43,21 +43,21 @@ using ::grpc_event_engine::experimental::SliceBuffer;
 
 class WrappedInternalSliceAllocator : public SliceAllocator {
  public:
-  explicit WrappedInternalSliceAllocator(grpc_slice_allocator* slice_allocator)
+  explicit WrappedInternalSliceAllocator(grpc_slice_allocator *slice_allocator)
       : slice_allocator_(slice_allocator) {}
 
   ~WrappedInternalSliceAllocator() {
     grpc_slice_allocator_destroy(slice_allocator_);
   }
 
-  absl::Status Allocate(size_t size, SliceBuffer* dest,
+  absl::Status Allocate(size_t size, SliceBuffer *dest,
                         SliceAllocator::AllocateCallback cb) override {
     // TODO(nnoble): requires the SliceBuffer definition.
     grpc_slice_allocator_allocate(
         slice_allocator_, size, 1, grpc_slice_allocator_intent::kReadBuffer,
         dest->RawSliceBuffer(),
-        [](void* arg, grpc_error_handle error) {
-          auto cb = static_cast<SliceAllocator::AllocateCallback*>(arg);
+        [](void *arg, grpc_error_handle error) {
+          auto cb = static_cast<SliceAllocator::AllocateCallback *>(arg);
           (*cb)(grpc_error_to_absl_status(error));
           delete cb;
         },
@@ -66,13 +66,13 @@ class WrappedInternalSliceAllocator : public SliceAllocator {
   }
 
  private:
-  grpc_slice_allocator* slice_allocator_;
+  grpc_slice_allocator *slice_allocator_;
 };
 
 class WrappedInternalSliceAllocatorFactory : public SliceAllocatorFactory {
  public:
   explicit WrappedInternalSliceAllocatorFactory(
-      grpc_slice_allocator_factory* slice_allocator_factory)
+      grpc_slice_allocator_factory *slice_allocator_factory)
       : slice_allocator_factory_(slice_allocator_factory) {}
 
   ~WrappedInternalSliceAllocatorFactory() {
@@ -87,7 +87,7 @@ class WrappedInternalSliceAllocatorFactory : public SliceAllocatorFactory {
   };
 
  private:
-  grpc_slice_allocator_factory* slice_allocator_factory_;
+  grpc_slice_allocator_factory *slice_allocator_factory_;
 };
 
 struct grpc_tcp_server {
@@ -106,7 +106,7 @@ struct grpc_tcp_server {
   std::unique_ptr<EventEngine::Listener> listener;
   grpc_closure_list shutdown_starting ABSL_GUARDED_BY(mu);
   grpc_tcp_server_cb on_accept_internal;
-  void* on_accept_internal_arg;
+  void *on_accept_internal_arg;
 };
 
 namespace {
@@ -114,13 +114,13 @@ namespace {
 /// Converts a grpc_closure to an EventEngine Callback. The closure is expected
 /// to already be initialized.
 EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
-    grpc_closure* closure, grpc_endpoint** endpoint_ptr) {
+    grpc_closure *closure, grpc_endpoint **endpoint_ptr) {
   return [closure, endpoint_ptr](
              absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
     grpc_core::ExecCtx exec_ctx;
     if (endpoint.ok()) {
-      auto* grpc_endpoint_out =
-          reinterpret_cast<grpc_event_engine_endpoint*>(*endpoint_ptr);
+      auto *grpc_endpoint_out =
+          reinterpret_cast<grpc_event_engine_endpoint *>(*endpoint_ptr);
       grpc_endpoint_out->endpoint = std::move(*endpoint);
     } else {
       grpc_endpoint_destroy(*endpoint_ptr);
@@ -134,21 +134,21 @@ EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
 }
 
 /// Usage note: this method does not take ownership of any pointer arguments.
-void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
-                 grpc_slice_allocator* slice_allocator,
-                 grpc_pollset_set* /* interested_parties */,
-                 const grpc_channel_args* channel_args,
-                 const grpc_resolved_address* addr, grpc_millis deadline) {
-  grpc_event_engine_endpoint* ee_endpoint =
-      reinterpret_cast<grpc_event_engine_endpoint*>(
+void tcp_connect(grpc_closure *on_connect, grpc_endpoint **endpoint,
+                 grpc_slice_allocator *slice_allocator,
+                 grpc_pollset_set * /* interested_parties */,
+                 const grpc_channel_args *channel_args,
+                 const grpc_resolved_address *addr, grpc_millis deadline) {
+  grpc_event_engine_endpoint *ee_endpoint =
+      reinterpret_cast<grpc_event_engine_endpoint *>(
           grpc_tcp_create(channel_args, grpc_sockaddr_to_uri(addr)));
   *endpoint = &ee_endpoint->base;
   EventEngine::OnConnectCallback ee_on_connect =
       GrpcClosureToOnConnectCallback(on_connect, endpoint);
   auto ee_slice_allocator =
       absl::make_unique<WrappedInternalSliceAllocator>(slice_allocator);
-  EventEngine::ResolvedAddress ra(reinterpret_cast<const sockaddr*>(addr->addr),
-                                  addr->len);
+  EventEngine::ResolvedAddress ra(
+      reinterpret_cast<const sockaddr *>(addr->addr), addr->len);
   absl::Time ee_deadline = grpc_core::ToAbslTime(
       grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
   ChannelArgsEndpointConfig endpoint_config(channel_args);
@@ -164,24 +164,24 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
   }
 }
 
-grpc_error* tcp_server_create(
-    grpc_closure* shutdown_complete, const grpc_channel_args* args,
-    grpc_slice_allocator_factory* slice_allocator_factory,
-    grpc_tcp_server** server) {
+grpc_error *tcp_server_create(
+    grpc_closure *shutdown_complete, const grpc_channel_args *args,
+    grpc_slice_allocator_factory *slice_allocator_factory,
+    grpc_tcp_server **server) {
   ChannelArgsEndpointConfig endpoint_config(args);
   auto ee_slice_allocator_factory =
       absl::make_unique<WrappedInternalSliceAllocatorFactory>(
           slice_allocator_factory);
-  EventEngine* event_engine = grpc_iomgr_event_engine();
+  EventEngine *event_engine = grpc_iomgr_event_engine();
   absl::StatusOr<std::unique_ptr<EventEngine::Listener>> listener =
       event_engine->CreateListener(
           [server](std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
             grpc_core::ExecCtx exec_ctx;
             GPR_ASSERT((*server)->on_accept_internal != nullptr);
-            grpc_event_engine_endpoint* iomgr_endpoint =
+            grpc_event_engine_endpoint *iomgr_endpoint =
                 grpc_tcp_server_endpoint_create(std::move(ee_endpoint));
-            grpc_tcp_server_acceptor* acceptor =
-                static_cast<grpc_tcp_server_acceptor*>(
+            grpc_tcp_server_acceptor *acceptor =
+                static_cast<grpc_tcp_server_acceptor *>(
                     gpr_zalloc(sizeof(*acceptor)));
             acceptor->from_server = *server;
             acceptor->external_connection = false;
@@ -200,9 +200,9 @@ grpc_error* tcp_server_create(
   return GRPC_ERROR_NONE;
 }
 
-void tcp_server_start(grpc_tcp_server* server,
-                      const std::vector<grpc_pollset*>* /* pollsets */,
-                      grpc_tcp_server_cb on_accept_cb, void* cb_arg) {
+void tcp_server_start(grpc_tcp_server *server,
+                      const std::vector<grpc_pollset *> * /* pollsets */,
+                      grpc_tcp_server_cb on_accept_cb, void *cb_arg) {
   server->on_accept_internal = on_accept_cb;
   server->on_accept_internal_arg = cb_arg;
   // The iomgr API does not handle situations where the server cannot start, so
@@ -210,11 +210,11 @@ void tcp_server_start(grpc_tcp_server* server,
   GPR_ASSERT(server->listener->Start().ok());
 }
 
-grpc_error* tcp_server_add_port(grpc_tcp_server* s,
-                                const grpc_resolved_address* addr,
-                                int* out_port) {
-  EventEngine::ResolvedAddress ra(reinterpret_cast<const sockaddr*>(addr->addr),
-                                  addr->len);
+grpc_error *tcp_server_add_port(grpc_tcp_server *s,
+                                const grpc_resolved_address *addr,
+                                int *out_port) {
+  EventEngine::ResolvedAddress ra(
+      reinterpret_cast<const sockaddr *>(addr->addr), addr->len);
   auto port = s->listener->Bind(ra);
   if (!port.ok()) {
     return absl_status_to_grpc_error(port.status());
@@ -223,43 +223,43 @@ grpc_error* tcp_server_add_port(grpc_tcp_server* s,
   return GRPC_ERROR_NONE;
 }
 
-grpc_core::TcpServerFdHandler* tcp_server_create_fd_handler(
-    grpc_tcp_server* /* s */) {
+grpc_core::TcpServerFdHandler *tcp_server_create_fd_handler(
+    grpc_tcp_server * /* s */) {
   // EventEngine-iomgr does not support fds.
   return nullptr;
 }
 
-unsigned tcp_server_port_fd_count(grpc_tcp_server* /* s */,
+unsigned tcp_server_port_fd_count(grpc_tcp_server * /* s */,
                                   unsigned /* port_index */) {
   return 0;
 }
 
-int tcp_server_port_fd(grpc_tcp_server* /* s */, unsigned /* port_index */,
+int tcp_server_port_fd(grpc_tcp_server * /* s */, unsigned /* port_index */,
                        unsigned /* fd_index */) {
   // Note: only used internally
   return -1;
 }
 
-grpc_tcp_server* tcp_server_ref(grpc_tcp_server* s) {
+grpc_tcp_server *tcp_server_ref(grpc_tcp_server *s) {
   s->refcount.Ref(DEBUG_LOCATION, "server ref");
   return s;
 }
 
-void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
-                                      grpc_closure* shutdown_starting) {
+void tcp_server_shutdown_starting_add(grpc_tcp_server *s,
+                                      grpc_closure *shutdown_starting) {
   grpc_core::MutexLock lock(&s->mu);
   grpc_closure_list_append(&s->shutdown_starting, shutdown_starting,
                            GRPC_ERROR_NONE);
 }
 
-void tcp_server_unref(grpc_tcp_server* s) {
+void tcp_server_unref(grpc_tcp_server *s) {
   if (GPR_UNLIKELY(s->refcount.Unref(DEBUG_LOCATION, "server unref"))) {
     delete s;
   }
 }
 
 // No-op, all are handled on listener unref
-void tcp_server_shutdown_listeners(grpc_tcp_server* /* s */) {}
+void tcp_server_shutdown_listeners(grpc_tcp_server * /* s */) {}
 
 }  // namespace
 
@@ -277,14 +277,14 @@ struct grpc_fd {
   int fd;
 };
 
-grpc_fd* grpc_fd_create(int /* fd */, const char* /* name */,
+grpc_fd *grpc_fd_create(int /* fd */, const char * /* name */,
                         bool /* track_err */) {
   return nullptr;
 }
 
-grpc_endpoint* grpc_tcp_client_create_from_fd(
-    grpc_fd* /* fd */, const grpc_channel_args* /* channel_args */,
-    const char* /* addr_str */, grpc_slice_allocator* slice_allocator) {
+grpc_endpoint *grpc_tcp_client_create_from_fd(
+    grpc_fd * /* fd */, const grpc_channel_args * /* channel_args */,
+    const char * /* addr_str */, grpc_slice_allocator *slice_allocator) {
   grpc_slice_allocator_destroy(slice_allocator);
   return nullptr;
 }

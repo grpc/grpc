@@ -44,12 +44,12 @@
 
 namespace grpc_core {
 
-const char* kXdsHttpFaultFilterConfigName =
+const char *kXdsHttpFaultFilterConfigName =
     "envoy.extensions.filters.http.fault.v3.HTTPFault";
 
 namespace {
 
-uint32_t GetDenominator(const envoy_type_v3_FractionalPercent* fraction) {
+uint32_t GetDenominator(const envoy_type_v3_FractionalPercent *fraction) {
   if (fraction != nullptr) {
     const auto denominator =
         static_cast<envoy_type_v3_FractionalPercent_DenominatorType>(
@@ -69,8 +69,8 @@ uint32_t GetDenominator(const envoy_type_v3_FractionalPercent* fraction) {
 }
 
 absl::StatusOr<Json> ParseHttpFaultIntoJson(upb_strview serialized_http_fault,
-                                            upb_arena* arena) {
-  auto* http_fault = envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
+                                            upb_arena *arena) {
+  auto *http_fault = envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
       serialized_http_fault.data, serialized_http_fault.size, arena);
   if (http_fault == nullptr) {
     return absl::InvalidArgumentError(
@@ -86,7 +86,7 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(upb_strview serialized_http_fault,
   // src/core/ext/filters/fault_injection/service_config_parser.h
   Json::Object fault_injection_policy_json;
   // Section 1: Parse the abort injection config
-  const auto* fault_abort =
+  const auto *fault_abort =
       envoy_extensions_filters_http_fault_v3_HTTPFault_abort(http_fault);
   if (fault_abort != nullptr) {
     grpc_status_code abort_grpc_status_code = GRPC_STATUS_OK;
@@ -122,7 +122,7 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(upb_strview serialized_http_fault,
           "x-envoy-fault-abort-percentage";
     }
     // Set the fraction percent
-    auto* percent =
+    auto *percent =
         envoy_extensions_filters_http_fault_v3_FaultAbort_percentage(
             fault_abort);
     fault_injection_policy_json["abortPercentageNumerator"] =
@@ -131,11 +131,11 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(upb_strview serialized_http_fault,
         Json(GetDenominator(percent));
   }
   // Section 2: Parse the delay injection config
-  const auto* fault_delay =
+  const auto *fault_delay =
       envoy_extensions_filters_http_fault_v3_HTTPFault_delay(http_fault);
   if (fault_delay != nullptr) {
     // Parse the delay duration
-    const auto* delay_duration =
+    const auto *delay_duration =
         envoy_extensions_filters_common_fault_v3_FaultDelay_fixed_delay(
             fault_delay);
     if (delay_duration != nullptr) {
@@ -152,7 +152,7 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(upb_strview serialized_http_fault,
           "x-envoy-fault-delay-request-percentage";
     }
     // Set the fraction percent
-    auto* percent =
+    auto *percent =
         envoy_extensions_filters_common_fault_v3_FaultDelay_percentage(
             fault_delay);
     fault_injection_policy_json["delayPercentageNumerator"] =
@@ -161,7 +161,7 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(upb_strview serialized_http_fault,
         Json(GetDenominator(percent));
   }
   // Section 3: Parse the maximum active faults
-  const auto* max_fault_wrapper =
+  const auto *max_fault_wrapper =
       envoy_extensions_filters_http_fault_v3_HTTPFault_max_active_faults(
           http_fault);
   if (max_fault_wrapper != nullptr) {
@@ -173,13 +173,13 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(upb_strview serialized_http_fault,
 
 }  // namespace
 
-void XdsHttpFaultFilter::PopulateSymtab(upb_symtab* symtab) const {
+void XdsHttpFaultFilter::PopulateSymtab(upb_symtab *symtab) const {
   envoy_extensions_filters_http_fault_v3_HTTPFault_getmsgdef(symtab);
 }
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
 XdsHttpFaultFilter::GenerateFilterConfig(upb_strview serialized_filter_config,
-                                         upb_arena* arena) const {
+                                         upb_arena *arena) const {
   absl::StatusOr<Json> parse_result =
       ParseHttpFaultIntoJson(serialized_filter_config, arena);
   if (!parse_result.ok()) {
@@ -190,21 +190,21 @@ XdsHttpFaultFilter::GenerateFilterConfig(upb_strview serialized_filter_config,
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
 XdsHttpFaultFilter::GenerateFilterConfigOverride(
-    upb_strview serialized_filter_config, upb_arena* arena) const {
+    upb_strview serialized_filter_config, upb_arena *arena) const {
   // HTTPFault filter has the same message type in HTTP connection manager's
   // filter config and in overriding filter config field.
   return GenerateFilterConfig(serialized_filter_config, arena);
 }
 
-const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
+const grpc_channel_filter *XdsHttpFaultFilter::channel_filter() const {
   return &FaultInjectionFilterVtable;
 }
 
-grpc_channel_args* XdsHttpFaultFilter::ModifyChannelArgs(
-    grpc_channel_args* args) const {
+grpc_channel_args *XdsHttpFaultFilter::ModifyChannelArgs(
+    grpc_channel_args *args) const {
   grpc_arg args_to_add = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG), 1);
-  grpc_channel_args* new_args =
+      const_cast<char *>(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG), 1);
+  grpc_channel_args *new_args =
       grpc_channel_args_copy_and_add(args, &args_to_add, 1);
   // Since this function takes the ownership of the channel args, it needs to
   // deallocate the old ones to prevent leak.
@@ -214,8 +214,8 @@ grpc_channel_args* XdsHttpFaultFilter::ModifyChannelArgs(
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpFaultFilter::GenerateServiceConfig(
-    const FilterConfig& hcm_filter_config,
-    const FilterConfig* filter_config_override) const {
+    const FilterConfig &hcm_filter_config,
+    const FilterConfig *filter_config_override) const {
   Json policy_json = filter_config_override != nullptr
                          ? filter_config_override->config
                          : hcm_filter_config.config;

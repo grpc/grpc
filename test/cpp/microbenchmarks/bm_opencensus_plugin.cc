@@ -34,9 +34,9 @@ absl::once_flag once;
 void RegisterOnce() { absl::call_once(once, grpc::RegisterOpenCensusPlugin); }
 
 class EchoServer final : public grpc::testing::EchoTestService::Service {
-  grpc::Status Echo(grpc::ServerContext* /*context*/,
-                    const grpc::testing::EchoRequest* request,
-                    grpc::testing::EchoResponse* response) override {
+  grpc::Status Echo(grpc::ServerContext * /*context*/,
+                    const grpc::testing::EchoRequest *request,
+                    grpc::testing::EchoResponse *response) override {
     if (request->param().expected_error().code() == 0) {
       response->set_message(request->message());
       return grpc::Status::OK;
@@ -71,7 +71,7 @@ class EchoServerThread final {
     server_thread_.join();
   }
 
-  const std::string& address() { return server_address_; }
+  const std::string &address() { return server_address_; }
 
  private:
   void RunServerLoop() { server_->Wait(); }
@@ -82,7 +82,7 @@ class EchoServerThread final {
   std::thread server_thread_;
 };
 
-static void BM_E2eLatencyCensusDisabled(benchmark::State& state) {
+static void BM_E2eLatencyCensusDisabled(benchmark::State &state) {
   grpc::testing::TestGrpcScope grpc_scope;
   EchoServerThread server;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =
@@ -98,7 +98,7 @@ static void BM_E2eLatencyCensusDisabled(benchmark::State& state) {
 }
 BENCHMARK(BM_E2eLatencyCensusDisabled);
 
-static void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
+static void BM_E2eLatencyCensusEnabled(benchmark::State &state) {
   // Now start the test by registering the plugin (once in the execution)
   RegisterOnce();
   // This we can safely repeat, and doing so clears accumulated data to avoid
@@ -120,7 +120,7 @@ static void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
 }
 BENCHMARK(BM_E2eLatencyCensusEnabled);
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::benchmark::Initialize(&argc, argv);
   if (::benchmark::ReportUnrecognizedArguments(argc, argv)) return 1;

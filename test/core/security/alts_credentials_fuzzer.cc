@@ -38,14 +38,14 @@ using grpc_core::testing::input_stream;
 bool squelch = true;
 bool leak_check = true;
 
-static void dont_log(gpr_log_func_args* /*args*/) {}
+static void dont_log(gpr_log_func_args * /*args*/) {}
 
 // Add a random number of target service accounts to client options.
 static void read_target_service_accounts(
-    input_stream* inp, grpc_alts_credentials_options* options) {
+    input_stream *inp, grpc_alts_credentials_options *options) {
   size_t n = grpc_fuzzer_get_next_byte(inp);
   for (size_t i = 0; i < n; i++) {
-    char* service_account = grpc_fuzzer_get_next_string(inp, nullptr);
+    char *service_account = grpc_fuzzer_get_next_string(inp, nullptr);
     if (service_account != nullptr) {
       grpc_alts_credentials_client_options_add_target_service_account(
           options, service_account);
@@ -59,8 +59,8 @@ static void read_target_service_accounts(
       nullptr, "this is service account");
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  char* grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+  char *grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
   if (squelch && grpc_trace_fuzzer == nullptr) {
     gpr_set_log_function(dont_log);
   }
@@ -70,16 +70,16 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   bool is_on_gcp = grpc_alts_is_running_on_gcp();
   while (inp.cur != inp.end) {
     bool enable_untrusted_alts = grpc_fuzzer_get_next_byte(&inp) & 0x01;
-    char* handshaker_service_url =
+    char *handshaker_service_url =
         grpc_fuzzer_get_next_byte(&inp) & 0x01
             ? grpc_fuzzer_get_next_string(&inp, nullptr)
             : nullptr;
     if (grpc_fuzzer_get_next_byte(&inp) & 0x01) {
       // Test ALTS channel credentials.
-      grpc_alts_credentials_options* options =
+      grpc_alts_credentials_options *options =
           grpc_alts_credentials_client_options_create();
       read_target_service_accounts(&inp, options);
-      grpc_channel_credentials* cred = grpc_alts_credentials_create_customized(
+      grpc_channel_credentials *cred = grpc_alts_credentials_create_customized(
           options, handshaker_service_url, enable_untrusted_alts);
       if (!enable_untrusted_alts && !is_on_gcp) {
         GPR_ASSERT(cred == nullptr);
@@ -90,9 +90,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       grpc_alts_credentials_options_destroy(options);
     } else {
       // Test ALTS server credentials.
-      grpc_alts_credentials_options* options =
+      grpc_alts_credentials_options *options =
           grpc_alts_credentials_server_options_create();
-      grpc_server_credentials* cred =
+      grpc_server_credentials *cred =
           grpc_alts_server_credentials_create_customized(
               options, handshaker_service_url, enable_untrusted_alts);
       if (!enable_untrusted_alts && !is_on_gcp) {

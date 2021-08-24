@@ -83,29 +83,29 @@ class FlowControlAction {
   uint32_t initial_window_size() const { return initial_window_size_; }
   uint32_t max_frame_size() const { return max_frame_size_; }
 
-  FlowControlAction& set_send_stream_update(Urgency u) {
+  FlowControlAction &set_send_stream_update(Urgency u) {
     send_stream_update_ = u;
     return *this;
   }
-  FlowControlAction& set_send_transport_update(Urgency u) {
+  FlowControlAction &set_send_transport_update(Urgency u) {
     send_transport_update_ = u;
     return *this;
   }
-  FlowControlAction& set_send_initial_window_update(Urgency u,
+  FlowControlAction &set_send_initial_window_update(Urgency u,
                                                     uint32_t update) {
     send_initial_window_update_ = u;
     initial_window_size_ = update;
     return *this;
   }
-  FlowControlAction& set_send_max_frame_size_update(Urgency u,
+  FlowControlAction &set_send_max_frame_size_update(Urgency u,
                                                     uint32_t update) {
     send_max_frame_size_update_ = u;
     max_frame_size_ = update;
     return *this;
   }
 
-  static const char* UrgencyString(Urgency u);
-  void Trace(grpc_chttp2_transport* t) const;
+  static const char *UrgencyString(Urgency u);
+  void Trace(grpc_chttp2_transport *t) const;
 
  private:
   Urgency send_stream_update_ = Urgency::NO_ACTION_NEEDED;
@@ -118,8 +118,8 @@ class FlowControlAction {
 
 class FlowControlTrace {
  public:
-  FlowControlTrace(const char* reason, TransportFlowControl* tfc,
-                   StreamFlowControl* sfc) {
+  FlowControlTrace(const char *reason, TransportFlowControl *tfc,
+                   StreamFlowControl *sfc) {
     if (enabled_) Init(reason, tfc, sfc);
   }
 
@@ -128,15 +128,15 @@ class FlowControlTrace {
   }
 
  private:
-  void Init(const char* reason, TransportFlowControl* tfc,
-            StreamFlowControl* sfc);
+  void Init(const char *reason, TransportFlowControl *tfc,
+            StreamFlowControl *sfc);
   void Finish();
 
   const bool enabled_ = GRPC_TRACE_FLAG_ENABLED(grpc_flowctl_trace);
 
-  TransportFlowControl* tfc_;
-  StreamFlowControl* sfc_;
-  const char* reason_;
+  TransportFlowControl *tfc_;
+  StreamFlowControl *sfc_;
+  const char *reason_;
   int64_t remote_window_;
   int64_t target_window_;
   int64_t announced_window_;
@@ -182,7 +182,7 @@ class TransportFlowControlBase {
   // Returns the BdpEstimator held by this object. Caller is responsible for
   // checking for nullptr. TODO(ncteisen): consider fully encapsulating all
   // bdp estimator actions inside TransportFlowControl
-  virtual BdpEstimator* bdp_estimator() { return nullptr; }
+  virtual BdpEstimator *bdp_estimator() { return nullptr; }
 
   // Getters
   int64_t remote_window() const { return remote_window_; }
@@ -207,7 +207,7 @@ class TransportFlowControlBase {
 class TransportFlowControlDisabled final : public TransportFlowControlBase {
  public:
   // Maxes out all values
-  explicit TransportFlowControlDisabled(grpc_chttp2_transport* t);
+  explicit TransportFlowControlDisabled(grpc_chttp2_transport *t);
 
   bool flow_control_enabled() const override { return false; }
 
@@ -226,7 +226,7 @@ class TransportFlowControlDisabled final : public TransportFlowControlBase {
 // to be as performant as possible.
 class TransportFlowControl final : public TransportFlowControlBase {
  public:
-  TransportFlowControl(const grpc_chttp2_transport* t, bool enable_bdp_probe);
+  TransportFlowControl(const grpc_chttp2_transport *t, bool enable_bdp_probe);
   ~TransportFlowControl() override {}
 
   bool flow_control_enabled() const override { return true; }
@@ -280,7 +280,7 @@ class TransportFlowControl final : public TransportFlowControlBase {
             target_initial_window_size_);
   }
 
-  const grpc_chttp2_transport* transport() const { return t_; }
+  const grpc_chttp2_transport *transport() const { return t_; }
 
   void PreUpdateAnnouncedWindowOverIncomingWindow(int64_t delta) {
     if (delta > 0) {
@@ -294,7 +294,7 @@ class TransportFlowControl final : public TransportFlowControlBase {
     }
   }
 
-  BdpEstimator* bdp_estimator() override { return &bdp_estimator_; }
+  BdpEstimator *bdp_estimator() override { return &bdp_estimator_; }
 
   void TestOnlyForceHugeWindow() override {
     announced_window_ = 1024 * 1024 * 1024;
@@ -315,7 +315,7 @@ class TransportFlowControl final : public TransportFlowControlBase {
     return action;
   }
 
-  const grpc_chttp2_transport* const t_;
+  const grpc_chttp2_transport *const t_;
 
   /** calculating what we should give for local window:
       we track the total amount of flow control over initial window size
@@ -414,7 +414,7 @@ class StreamFlowControlDisabled : public StreamFlowControlBase {
 // to be as performant as possible.
 class StreamFlowControl final : public StreamFlowControlBase {
  public:
-  StreamFlowControl(TransportFlowControl* tfc, const grpc_chttp2_stream* s);
+  StreamFlowControl(TransportFlowControl *tfc, const grpc_chttp2_stream *s);
   ~StreamFlowControl() override {
     tfc_->PreUpdateAnnouncedWindowOverIncomingWindow(announced_window_delta_);
   }
@@ -453,7 +453,7 @@ class StreamFlowControl final : public StreamFlowControlBase {
   int64_t local_window_delta() const { return local_window_delta_; }
   int64_t announced_window_delta() const { return announced_window_delta_; }
 
-  const grpc_chttp2_stream* stream() const { return s_; }
+  const grpc_chttp2_stream *stream() const { return s_; }
 
   void TestOnlyForceHugeWindow() override {
     announced_window_delta_ = 1024 * 1024 * 1024;
@@ -462,10 +462,10 @@ class StreamFlowControl final : public StreamFlowControlBase {
   }
 
  private:
-  TransportFlowControl* const tfc_;
-  const grpc_chttp2_stream* const s_;
+  TransportFlowControl *const tfc_;
+  const grpc_chttp2_stream *const s_;
 
-  void UpdateAnnouncedWindowDelta(TransportFlowControl* tfc, int64_t change) {
+  void UpdateAnnouncedWindowDelta(TransportFlowControl *tfc, int64_t change) {
     tfc->PreUpdateAnnouncedWindowOverIncomingWindow(announced_window_delta_);
     announced_window_delta_ += change;
     tfc->PostUpdateAnnouncedWindowOverIncomingWindow(announced_window_delta_);
@@ -479,8 +479,8 @@ class TestOnlyTransportTargetWindowEstimatesMocker {
       double current_target) = 0;
 };
 
-extern TestOnlyTransportTargetWindowEstimatesMocker*
-    g_test_only_transport_target_window_estimates_mocker;
+extern TestOnlyTransportTargetWindowEstimatesMocker
+    *g_test_only_transport_target_window_estimates_mocker;
 
 }  // namespace chttp2
 }  // namespace grpc_core

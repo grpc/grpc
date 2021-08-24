@@ -28,19 +28,19 @@ namespace grpc_core {
 
 namespace {
 
-void* BalancerAddressesArgCopy(void* p) {
-  ServerAddressList* address_list = static_cast<ServerAddressList*>(p);
+void *BalancerAddressesArgCopy(void *p) {
+  ServerAddressList *address_list = static_cast<ServerAddressList *>(p);
   return new ServerAddressList(*address_list);
 }
 
-void BalancerAddressesArgDestroy(void* p) {
-  ServerAddressList* address_list = static_cast<ServerAddressList*>(p);
+void BalancerAddressesArgDestroy(void *p) {
+  ServerAddressList *address_list = static_cast<ServerAddressList *>(p);
   delete address_list;
 }
 
-int BalancerAddressesArgCmp(void* p, void* q) {
-  ServerAddressList* address_list1 = static_cast<ServerAddressList*>(p);
-  ServerAddressList* address_list2 = static_cast<ServerAddressList*>(q);
+int BalancerAddressesArgCmp(void *p, void *q) {
+  ServerAddressList *address_list1 = static_cast<ServerAddressList *>(p);
+  ServerAddressList *address_list2 = static_cast<ServerAddressList *>(q);
   if (address_list1 == nullptr || address_list2 == nullptr) {
     return GPR_ICMP(address_list1, address_list2);
   }
@@ -60,17 +60,17 @@ const grpc_arg_pointer_vtable kBalancerAddressesArgVtable = {
 }  // namespace
 
 grpc_arg CreateGrpclbBalancerAddressesArg(
-    const ServerAddressList* address_list) {
+    const ServerAddressList *address_list) {
   return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_GRPCLB_BALANCER_ADDRESSES),
-      const_cast<ServerAddressList*>(address_list),
+      const_cast<char *>(GRPC_ARG_GRPCLB_BALANCER_ADDRESSES),
+      const_cast<ServerAddressList *>(address_list),
       &kBalancerAddressesArgVtable);
 }
 
-const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(
-    const grpc_channel_args& args) {
+const ServerAddressList *FindGrpclbBalancerAddressesInChannelArgs(
+    const grpc_channel_args &args) {
   return grpc_channel_args_find_pointer<const ServerAddressList>(
-      &args, const_cast<char*>(GRPC_ARG_GRPCLB_BALANCER_ADDRESSES));
+      &args, const_cast<char *>(GRPC_ARG_GRPCLB_BALANCER_ADDRESSES));
 }
 
 }  // namespace grpc_core

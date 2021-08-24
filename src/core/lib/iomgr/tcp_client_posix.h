@@ -33,9 +33,9 @@
    slice_allocator: ownership is taken by client.
    Returns: a new endpoint
 */
-grpc_endpoint* grpc_tcp_client_create_from_fd(
-    grpc_fd* fd, const grpc_channel_args* channel_args, const char* addr_str,
-    grpc_slice_allocator* slice_allocator);
+grpc_endpoint *grpc_tcp_client_create_from_fd(
+    grpc_fd *fd, const grpc_channel_args *channel_args, const char *addr_str,
+    grpc_slice_allocator *slice_allocator);
 
 /* Return a configured, unbound, unconnected TCP client fd.
 
@@ -48,8 +48,8 @@ grpc_endpoint* grpc_tcp_client_create_from_fd(
    Returns: error, if any. Out parameters are not set on error
 */
 grpc_error_handle grpc_tcp_client_prepare_fd(
-    const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
-    grpc_resolved_address* mapped_addr, int* fd);
+    const grpc_channel_args *channel_args, const grpc_resolved_address *addr,
+    grpc_resolved_address *mapped_addr, int *fd);
 
 /* Connect a configured TCP client fd.
 
@@ -62,9 +62,9 @@ grpc_error_handle grpc_tcp_client_prepare_fd(
    ep: out parameter. Set before closure is called if successful
 */
 void grpc_tcp_client_create_from_prepared_fd(
-    grpc_pollset_set* interested_parties, grpc_closure* closure, const int fd,
-    const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
-    grpc_millis deadline, grpc_endpoint** ep,
-    grpc_slice_allocator* slice_allocator);
+    grpc_pollset_set *interested_parties, grpc_closure *closure, const int fd,
+    const grpc_channel_args *channel_args, const grpc_resolved_address *addr,
+    grpc_millis deadline, grpc_endpoint **ep,
+    grpc_slice_allocator *slice_allocator);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_CLIENT_POSIX_H */

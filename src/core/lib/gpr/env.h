@@ -29,12 +29,12 @@
    Returns a newly allocated string. It is the responsibility of the caller to
    gpr_free the return value if not NULL (which means that the environment
    variable exists). */
-char* gpr_getenv(const char* name);
+char *gpr_getenv(const char *name);
 
 /* Sets the environment with the specified name to the specified value. */
-void gpr_setenv(const char* name, const char* value);
+void gpr_setenv(const char *name, const char *value);
 
 /* Deletes the variable name from the environment. */
-void gpr_unsetenv(const char* name);
+void gpr_unsetenv(const char *name);
 
 #endif /* GRPC_CORE_LIB_GPR_ENV_H */

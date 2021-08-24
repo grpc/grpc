@@ -33,11 +33,11 @@
 
 namespace {
 
-constexpr const char* kRootCertName = "root_cert_name";
-constexpr const char* kRootCertContents = "root_cert_contents";
-constexpr const char* kIdentityCertName = "identity_cert_name";
-constexpr const char* kIdentityCertPrivateKey = "identity_private_key";
-constexpr const char* kIdentityCertContents = "identity_cert_contents";
+constexpr const char *kRootCertName = "root_cert_name";
+constexpr const char *kRootCertContents = "root_cert_contents";
+constexpr const char *kIdentityCertName = "identity_cert_name";
+constexpr const char *kIdentityCertPrivateKey = "identity_private_key";
+constexpr const char *kIdentityCertContents = "identity_cert_contents";
 
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::StaticDataCertificateProvider;
@@ -127,7 +127,7 @@ TEST(
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   int ret = RUN_ALL_TESTS();

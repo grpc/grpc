@@ -34,7 +34,7 @@
 
 namespace grpc {
 
-extern CoreCodegenInterface* g_core_codegen_interface;
+extern CoreCodegenInterface *g_core_codegen_interface;
 
 // Forward declaration for testing use only
 namespace internal {
@@ -57,14 +57,14 @@ class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
   /// \param[out] byte_buffer A pointer to the grpc::ByteBuffer created
   /// \param block_size How big are the chunks to allocate at a time
   /// \param total_size How many total bytes are required for this proto
-  ProtoBufferWriter(ByteBuffer* byte_buffer, int block_size, int total_size)
+  ProtoBufferWriter(ByteBuffer *byte_buffer, int block_size, int total_size)
       : block_size_(block_size),
         total_size_(total_size),
         byte_count_(0),
         have_backup_(false) {
     GPR_CODEGEN_ASSERT(!byte_buffer->Valid());
     /// Create an empty raw byte buffer and look at its underlying slice buffer
-    grpc_byte_buffer* bp =
+    grpc_byte_buffer *bp =
         g_core_codegen_interface->grpc_raw_byte_buffer_create(nullptr, 0);
     byte_buffer->set_buffer(bp);
     slice_buffer_ = &bp->data.raw.slice_buffer;
@@ -78,7 +78,7 @@ class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
 
   /// Give the proto library the next buffer of bytes and its size. It is
   /// safe for the caller to write from data[0, size - 1].
-  bool Next(void** data, int* size) override {
+  bool Next(void **data, int *size) override {
     // Protobuf should not ask for more memory than total_size_.
     GPR_CODEGEN_ASSERT(byte_count_ < total_size_);
     // 1. Use the remaining backup slice if we have one
@@ -107,7 +107,7 @@ class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
     *data = GRPC_SLICE_START_PTR(slice_);
     // On win x64, int is only 32bit
     GPR_CODEGEN_ASSERT(GRPC_SLICE_LENGTH(slice_) <= INT_MAX);
-    byte_count_ += * size = static_cast<int>(GRPC_SLICE_LENGTH(slice_));
+    byte_count_ += *size = static_cast<int>(GRPC_SLICE_LENGTH(slice_));
     g_core_codegen_interface->grpc_slice_buffer_add(slice_buffer_, slice_);
     return true;
   }
@@ -145,7 +145,7 @@ class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
   // a use case needs to use one of these functions, please send an email to
   // https://groups.google.com/forum/#!forum/grpc-io.
  protected:
-  grpc_slice_buffer* slice_buffer() { return slice_buffer_; }
+  grpc_slice_buffer *slice_buffer() { return slice_buffer_; }
   void set_byte_count(int64_t byte_count) { byte_count_ = byte_count; }
 
  private:
@@ -154,7 +154,7 @@ class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
   const int block_size_;  ///< size to alloc for each new \a grpc_slice needed
   const int total_size_;  ///< byte size of proto being serialized
   int64_t byte_count_;    ///< bytes written since this object was created
-  grpc_slice_buffer*
+  grpc_slice_buffer *
       slice_buffer_;  ///< internal buffer of slices holding the serialized data
   bool have_backup_;  ///< if we are holding a backup slice or not
   grpc_slice backup_slice_;  ///< holds space we can still write to, if the

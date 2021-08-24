@@ -33,7 +33,7 @@ namespace testing {
 namespace {
 
 // Match the user input method string to the full_name from method descriptor.
-bool MethodNameMatch(const std::string& full_name, const std::string& input) {
+bool MethodNameMatch(const std::string &full_name, const std::string &input) {
   std::string clean_input = input;
   std::replace(clean_input.begin(), clean_input.end(), '/', '.');
   if (clean_input.size() > full_name.size()) {
@@ -46,29 +46,29 @@ bool MethodNameMatch(const std::string& full_name, const std::string& input) {
 
 class ErrorPrinter : public protobuf::compiler::MultiFileErrorCollector {
  public:
-  explicit ErrorPrinter(ProtoFileParser* parser) : parser_(parser) {}
+  explicit ErrorPrinter(ProtoFileParser *parser) : parser_(parser) {}
 
-  void AddError(const std::string& filename, int line, int column,
-                const std::string& message) override {
+  void AddError(const std::string &filename, int line, int column,
+                const std::string &message) override {
     std::ostringstream oss;
     oss << "error " << filename << " " << line << " " << column << " "
         << message << "\n";
     parser_->LogError(oss.str());
   }
 
-  void AddWarning(const std::string& filename, int line, int column,
-                  const std::string& message) override {
+  void AddWarning(const std::string &filename, int line, int column,
+                  const std::string &message) override {
     std::cerr << "warning " << filename << " " << line << " " << column << " "
               << message << std::endl;
   }
 
  private:
-  ProtoFileParser* parser_;  // not owned
+  ProtoFileParser *parser_;  // not owned
 };
 
-ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
-                                 const std::string& proto_path,
-                                 const std::string& protofiles)
+ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel> &channel,
+                                 const std::string &proto_path,
+                                 const std::string &protofiles)
     : has_error_(false),
       dynamic_factory_(new protobuf::DynamicMessageFactory()) {
   std::vector<std::string> service_list;
@@ -91,7 +91,7 @@ ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
     std::string file_name;
     std::stringstream ss(protofiles);
     while (std::getline(ss, file_name, ',')) {
-      const auto* file_desc = importer_->Import(file_name);
+      const auto *file_desc = importer_->Import(file_name);
       if (file_desc) {
         for (int i = 0; i < file_desc->service_count(); i++) {
           service_desc_list_.push_back(file_desc->service(i));
@@ -124,7 +124,7 @@ ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
 
   for (auto it = service_list.begin(); it != service_list.end(); it++) {
     if (known_services.find(*it) == known_services.end()) {
-      if (const protobuf::ServiceDescriptor* service_desc =
+      if (const protobuf::ServiceDescriptor *service_desc =
               desc_pool_->FindServiceByName(*it)) {
         service_desc_list_.push_back(service_desc);
         known_services.insert(*it);
@@ -135,19 +135,19 @@ ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
 
 ProtoFileParser::~ProtoFileParser() {}
 
-std::string ProtoFileParser::GetFullMethodName(const std::string& method) {
+std::string ProtoFileParser::GetFullMethodName(const std::string &method) {
   has_error_ = false;
 
   if (known_methods_.find(method) != known_methods_.end()) {
     return known_methods_[method];
   }
 
-  const protobuf::MethodDescriptor* method_descriptor = nullptr;
+  const protobuf::MethodDescriptor *method_descriptor = nullptr;
   for (auto it = service_desc_list_.begin(); it != service_desc_list_.end();
        it++) {
-    const auto* service_desc = *it;
+    const auto *service_desc = *it;
     for (int j = 0; j < service_desc->method_count(); j++) {
-      const auto* method_desc = service_desc->method(j);
+      const auto *method_desc = service_desc->method(j);
       if (MethodNameMatch(method_desc->full_name(), method)) {
         if (method_descriptor) {
           std::ostringstream error_stream;
@@ -172,7 +172,7 @@ std::string ProtoFileParser::GetFullMethodName(const std::string& method) {
   return method_descriptor->full_name();
 }
 
-std::string ProtoFileParser::GetFormattedMethodName(const std::string& method) {
+std::string ProtoFileParser::GetFormattedMethodName(const std::string &method) {
   has_error_ = false;
   std::string formatted_method_name = GetFullMethodName(method);
   if (has_error_) {
@@ -186,14 +186,14 @@ std::string ProtoFileParser::GetFormattedMethodName(const std::string& method) {
   return formatted_method_name;
 }
 
-std::string ProtoFileParser::GetMessageTypeFromMethod(const std::string& method,
+std::string ProtoFileParser::GetMessageTypeFromMethod(const std::string &method,
                                                       bool is_request) {
   has_error_ = false;
   std::string full_method_name = GetFullMethodName(method);
   if (has_error_) {
     return "";
   }
-  const protobuf::MethodDescriptor* method_desc =
+  const protobuf::MethodDescriptor *method_desc =
       desc_pool_->FindMethodByName(full_method_name);
   if (!method_desc) {
     LogError("Method not found");
@@ -204,7 +204,7 @@ std::string ProtoFileParser::GetMessageTypeFromMethod(const std::string& method,
                     : method_desc->output_type()->full_name();
 }
 
-bool ProtoFileParser::IsStreaming(const std::string& method, bool is_request) {
+bool ProtoFileParser::IsStreaming(const std::string &method, bool is_request) {
   has_error_ = false;
 
   std::string full_method_name = GetFullMethodName(method);
@@ -212,7 +212,7 @@ bool ProtoFileParser::IsStreaming(const std::string& method, bool is_request) {
     return false;
   }
 
-  const protobuf::MethodDescriptor* method_desc =
+  const protobuf::MethodDescriptor *method_desc =
       desc_pool_->FindMethodByName(full_method_name);
   if (!method_desc) {
     LogError("Method not found");
@@ -224,7 +224,7 @@ bool ProtoFileParser::IsStreaming(const std::string& method, bool is_request) {
 }
 
 std::string ProtoFileParser::GetSerializedProtoFromMethod(
-    const std::string& method, const std::string& formatted_proto,
+    const std::string &method, const std::string &formatted_proto,
     bool is_request, bool is_json_format) {
   has_error_ = false;
   std::string message_type_name = GetMessageTypeFromMethod(method, is_request);
@@ -236,7 +236,7 @@ std::string ProtoFileParser::GetSerializedProtoFromMethod(
 }
 
 std::string ProtoFileParser::GetFormattedStringFromMethod(
-    const std::string& method, const std::string& serialized_proto,
+    const std::string &method, const std::string &serialized_proto,
     bool is_request, bool is_json_format) {
   has_error_ = false;
   std::string message_type_name = GetMessageTypeFromMethod(method, is_request);
@@ -248,11 +248,11 @@ std::string ProtoFileParser::GetFormattedStringFromMethod(
 }
 
 std::string ProtoFileParser::GetSerializedProtoFromMessageType(
-    const std::string& message_type_name, const std::string& formatted_proto,
+    const std::string &message_type_name, const std::string &formatted_proto,
     bool is_json_format) {
   has_error_ = false;
   std::string serialized;
-  const protobuf::Descriptor* desc =
+  const protobuf::Descriptor *desc =
       desc_pool_->FindMessageTypeByName(message_type_name);
   if (!desc) {
     LogError("Message type not found");
@@ -286,10 +286,10 @@ std::string ProtoFileParser::GetSerializedProtoFromMessageType(
 }
 
 std::string ProtoFileParser::GetFormattedStringFromMessageType(
-    const std::string& message_type_name, const std::string& serialized_proto,
+    const std::string &message_type_name, const std::string &serialized_proto,
     bool is_json_format) {
   has_error_ = false;
-  const protobuf::Descriptor* desc =
+  const protobuf::Descriptor *desc =
       desc_pool_->FindMessageTypeByName(message_type_name);
   if (!desc) {
     LogError("Message type not found");
@@ -321,7 +321,7 @@ std::string ProtoFileParser::GetFormattedStringFromMessageType(
   return formatted_string;
 }
 
-void ProtoFileParser::LogError(const std::string& error_msg) {
+void ProtoFileParser::LogError(const std::string &error_msg) {
   if (!error_msg.empty()) {
     std::cerr << error_msg << std::endl;
   }

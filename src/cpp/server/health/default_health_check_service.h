@@ -53,7 +53,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
                               ServingStatus status) = 0;
     };
 
-    HealthCheckServiceImpl(DefaultHealthCheckService* database,
+    HealthCheckServiceImpl(DefaultHealthCheckService *database,
                            std::unique_ptr<ServerCompletionQueue> cq);
 
     ~HealthCheckServiceImpl() override;
@@ -108,15 +108,15 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       // Instantiates a CheckCallHandler and requests the next health check
       // call. The handler object will manage its own lifetime, so no action is
       // needed from the caller any more regarding that object.
-      static void CreateAndStart(ServerCompletionQueue* cq,
-                                 DefaultHealthCheckService* database,
-                                 HealthCheckServiceImpl* service);
+      static void CreateAndStart(ServerCompletionQueue *cq,
+                                 DefaultHealthCheckService *database,
+                                 HealthCheckServiceImpl *service);
 
       // This ctor is public because we want to use std::make_shared<> in
       // CreateAndStart(). This ctor shouldn't be used elsewhere.
-      CheckCallHandler(ServerCompletionQueue* cq,
-                       DefaultHealthCheckService* database,
-                       HealthCheckServiceImpl* service);
+      CheckCallHandler(ServerCompletionQueue *cq,
+                       DefaultHealthCheckService *database,
+                       HealthCheckServiceImpl *service);
 
       // Not used for Check.
       void SendHealth(std::shared_ptr<CallHandler> /*self*/,
@@ -131,9 +131,9 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       void OnFinishDone(std::shared_ptr<CallHandler> self, bool ok);
 
       // The members passed down from HealthCheckServiceImpl.
-      ServerCompletionQueue* cq_;
-      DefaultHealthCheckService* database_;
-      HealthCheckServiceImpl* service_;
+      ServerCompletionQueue *cq_;
+      DefaultHealthCheckService *database_;
+      HealthCheckServiceImpl *service_;
 
       ByteBuffer request_;
       GenericServerAsyncResponseWriter writer_;
@@ -151,15 +151,15 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       // Instantiates a WatchCallHandler and requests the next health check
       // call. The handler object will manage its own lifetime, so no action is
       // needed from the caller any more regarding that object.
-      static void CreateAndStart(ServerCompletionQueue* cq,
-                                 DefaultHealthCheckService* database,
-                                 HealthCheckServiceImpl* service);
+      static void CreateAndStart(ServerCompletionQueue *cq,
+                                 DefaultHealthCheckService *database,
+                                 HealthCheckServiceImpl *service);
 
       // This ctor is public because we want to use std::make_shared<> in
       // CreateAndStart(). This ctor shouldn't be used elsewhere.
-      WatchCallHandler(ServerCompletionQueue* cq,
-                       DefaultHealthCheckService* database,
-                       HealthCheckServiceImpl* service);
+      WatchCallHandler(ServerCompletionQueue *cq,
+                       DefaultHealthCheckService *database,
+                       HealthCheckServiceImpl *service);
 
       void SendHealth(std::shared_ptr<CallHandler> self,
                       ServingStatus status) override;
@@ -176,11 +176,11 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       // When sending a health result finishes.
       void OnSendHealthDone(std::shared_ptr<CallHandler> self, bool ok);
 
-      void SendFinish(std::shared_ptr<CallHandler> self, const Status& status);
+      void SendFinish(std::shared_ptr<CallHandler> self, const Status &status);
 
       // Requires holding service_->cq_shutdown_mu_.
       void SendFinishLocked(std::shared_ptr<CallHandler> self,
-                            const Status& status);
+                            const Status &status);
 
       // Called when Finish() is done.
       void OnFinishDone(std::shared_ptr<CallHandler> self, bool ok);
@@ -189,9 +189,9 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       void OnDoneNotified(std::shared_ptr<CallHandler> self, bool ok);
 
       // The members passed down from HealthCheckServiceImpl.
-      ServerCompletionQueue* cq_;
-      DefaultHealthCheckService* database_;
-      HealthCheckServiceImpl* service_;
+      ServerCompletionQueue *cq_;
+      DefaultHealthCheckService *database_;
+      HealthCheckServiceImpl *service_;
 
       ByteBuffer request_;
       std::string service_name_;
@@ -209,12 +209,12 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
     };
 
     // Handles the incoming requests and drives the completion queue in a loop.
-    static void Serve(void* arg);
+    static void Serve(void *arg);
 
     // Returns true on success.
-    static bool DecodeRequest(const ByteBuffer& request,
-                              std::string* service_name);
-    static bool EncodeResponse(ServingStatus status, ByteBuffer* response);
+    static bool DecodeRequest(const ByteBuffer &request,
+                              std::string *service_name);
+    static bool EncodeResponse(ServingStatus status, ByteBuffer *response);
 
     // Needed to appease Windows compilers, which don't seem to allow
     // nested classes to access protected members in the parent's
@@ -222,7 +222,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
     using Service::RequestAsyncServerStreaming;
     using Service::RequestAsyncUnary;
 
-    DefaultHealthCheckService* database_;
+    DefaultHealthCheckService *database_;
     std::unique_ptr<ServerCompletionQueue> cq_;
 
     // To synchronize the operations related to shutdown state of cq_, so that
@@ -234,14 +234,14 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
 
   DefaultHealthCheckService();
 
-  void SetServingStatus(const std::string& service_name, bool serving) override;
+  void SetServingStatus(const std::string &service_name, bool serving) override;
   void SetServingStatus(bool serving) override;
 
   void Shutdown() override;
 
-  ServingStatus GetServingStatus(const std::string& service_name) const;
+  ServingStatus GetServingStatus(const std::string &service_name) const;
 
-  HealthCheckServiceImpl* GetHealthCheckService(
+  HealthCheckServiceImpl *GetHealthCheckService(
       std::unique_ptr<ServerCompletionQueue> cq);
 
  private:
@@ -254,7 +254,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
     void AddCallHandler(
         std::shared_ptr<HealthCheckServiceImpl::CallHandler> handler);
     void RemoveCallHandler(
-        const std::shared_ptr<HealthCheckServiceImpl::CallHandler>& handler);
+        const std::shared_ptr<HealthCheckServiceImpl::CallHandler> &handler);
     bool Unused() const {
       return call_handlers_.empty() && status_ == NOT_FOUND;
     }
@@ -266,12 +266,12 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
   };
 
   void RegisterCallHandler(
-      const std::string& service_name,
+      const std::string &service_name,
       std::shared_ptr<HealthCheckServiceImpl::CallHandler> handler);
 
   void UnregisterCallHandler(
-      const std::string& service_name,
-      const std::shared_ptr<HealthCheckServiceImpl::CallHandler>& handler);
+      const std::string &service_name,
+      const std::shared_ptr<HealthCheckServiceImpl::CallHandler> &handler);
 
   mutable grpc_core::Mutex mu_;
   bool shutdown_ = false;                            // Guarded by mu_.

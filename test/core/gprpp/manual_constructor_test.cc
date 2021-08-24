@@ -32,15 +32,15 @@ class A {
  public:
   A() {}
   virtual ~A() {}
-  virtual const char* foo() { return "A_foo"; }
-  virtual const char* bar() { return "A_bar"; }
+  virtual const char *foo() { return "A_foo"; }
+  virtual const char *bar() { return "A_bar"; }
 };
 
 class B : public A {
  public:
   B() {}
   ~B() override {}
-  const char* foo() override { return "B_foo"; }
+  const char *foo() override { return "B_foo"; }
   char get_junk() { return junk[0]; }
 
  private:
@@ -51,7 +51,7 @@ class C : public B {
  public:
   C() {}
   ~C() override {}
-  const char* bar() override { return "C_bar"; }
+  const char *bar() override { return "C_bar"; }
   char get_more_junk() { return more_junk[0]; }
 
  private:
@@ -60,7 +60,7 @@ class C : public B {
 
 class D : public A {
  public:
-  const char* bar() override { return "D_bar"; }
+  const char *bar() override { return "D_bar"; }
 };
 
 static void basic_test() {
@@ -89,7 +89,7 @@ static void complex_test() {
 
 /* ------------------------------------------------- */
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   grpc::testing::TestEnvironment env(argc, argv);
   basic_test();
   complex_test();

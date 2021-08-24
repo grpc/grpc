@@ -42,7 +42,7 @@ int grpc_compression_algorithm_is_stream(grpc_compression_algorithm algorithm) {
 }
 
 int grpc_compression_algorithm_parse(grpc_slice name,
-                                     grpc_compression_algorithm* algorithm) {
+                                     grpc_compression_algorithm *algorithm) {
   if (grpc_slice_eq_static_interned(name, GRPC_MDSTR_IDENTITY)) {
     *algorithm = GRPC_COMPRESS_NONE;
     return 1;
@@ -62,7 +62,7 @@ int grpc_compression_algorithm_parse(grpc_slice name,
 }
 
 int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
-                                    const char** name) {
+                                    const char **name) {
   GRPC_API_TRACE("grpc_compression_algorithm_name(algorithm=%d, name=%p)", 2,
                  ((int)algorithm, name));
   switch (algorithm) {
@@ -108,24 +108,24 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
   }
 }
 
-void grpc_compression_options_init(grpc_compression_options* opts) {
+void grpc_compression_options_init(grpc_compression_options *opts) {
   memset(opts, 0, sizeof(*opts));
   /* all enabled by default */
   opts->enabled_algorithms_bitset = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
 }
 
 void grpc_compression_options_enable_algorithm(
-    grpc_compression_options* opts, grpc_compression_algorithm algorithm) {
+    grpc_compression_options *opts, grpc_compression_algorithm algorithm) {
   GPR_BITSET(&opts->enabled_algorithms_bitset, algorithm);
 }
 
 void grpc_compression_options_disable_algorithm(
-    grpc_compression_options* opts, grpc_compression_algorithm algorithm) {
+    grpc_compression_options *opts, grpc_compression_algorithm algorithm) {
   GPR_BITCLEAR(&opts->enabled_algorithms_bitset, algorithm);
 }
 
 int grpc_compression_options_is_algorithm_enabled(
-    const grpc_compression_options* opts,
+    const grpc_compression_options *opts,
     grpc_compression_algorithm algorithm) {
   return grpc_compression_options_is_algorithm_enabled_internal(opts,
                                                                 algorithm);
@@ -149,7 +149,7 @@ grpc_slice grpc_compression_algorithm_slice(
 }
 
 grpc_compression_algorithm grpc_compression_algorithm_from_slice(
-    const grpc_slice& str) {
+    const grpc_slice &str) {
   if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY)) {
     return GRPC_COMPRESS_NONE;
   }

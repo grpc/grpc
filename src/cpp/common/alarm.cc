@@ -42,12 +42,12 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
     grpc_timer_init_unset(&timer_);
   }
   ~AlarmImpl() override {}
-  bool FinalizeResult(void** tag, bool* /*status*/) override {
+  bool FinalizeResult(void **tag, bool * /*status*/) override {
     *tag = tag_;
     Unref();
     return true;
   }
-  void Set(::grpc::CompletionQueue* cq, gpr_timespec deadline, void* tag) {
+  void Set(::grpc::CompletionQueue *cq, gpr_timespec deadline, void *tag) {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     GRPC_CQ_INTERNAL_REF(cq->cq(), "alarm");
@@ -56,17 +56,17 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
     GPR_ASSERT(grpc_cq_begin_op(cq_, this));
     GRPC_CLOSURE_INIT(
         &on_alarm_,
-        [](void* arg, grpc_error_handle error) {
+        [](void *arg, grpc_error_handle error) {
           // queue the op on the completion queue
-          AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
+          AlarmImpl *alarm = static_cast<AlarmImpl *>(arg);
           alarm->Ref();
           // Preserve the cq and reset the cq_ so that the alarm
           // can be reset when the alarm tag is delivered.
-          grpc_completion_queue* cq = alarm->cq_;
+          grpc_completion_queue *cq = alarm->cq_;
           alarm->cq_ = nullptr;
           grpc_cq_end_op(
               cq, alarm, error,
-              [](void* /*arg*/, grpc_cq_completion* /*completion*/) {}, arg,
+              [](void * /*arg*/, grpc_cq_completion * /*completion*/) {}, arg,
               &alarm->completion_);
           GRPC_CQ_INTERNAL_UNREF(cq, "alarm");
         },
@@ -82,11 +82,11 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
     Ref();
     GRPC_CLOSURE_INIT(
         &on_alarm_,
-        [](void* arg, grpc_error_handle error) {
+        [](void *arg, grpc_error_handle error) {
           grpc_core::Executor::Run(
               GRPC_CLOSURE_CREATE(
-                  [](void* arg, grpc_error_handle error) {
-                    AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
+                  [](void *arg, grpc_error_handle error) {
+                    AlarmImpl *alarm = static_cast<AlarmImpl *>(arg);
                     alarm->callback_(error == GRPC_ERROR_NONE);
                     alarm->Unref();
                   },
@@ -120,8 +120,8 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
   grpc_closure on_alarm_;
   grpc_cq_completion completion_;
   // completion queue where events about this alarm will be posted
-  grpc_completion_queue* cq_;
-  void* tag_;
+  grpc_completion_queue *cq_;
+  void *tag_;
   std::function<void(bool)> callback_;
 };
 }  // namespace internal
@@ -132,14 +132,14 @@ Alarm::Alarm() : alarm_(new internal::AlarmImpl()) {
   g_gli_initializer.summon();
 }
 
-void Alarm::SetInternal(::grpc::CompletionQueue* cq, gpr_timespec deadline,
-                        void* tag) {
+void Alarm::SetInternal(::grpc::CompletionQueue *cq, gpr_timespec deadline,
+                        void *tag) {
   // Note that we know that alarm_ is actually an internal::AlarmImpl
   // but we declared it as the base pointer to avoid a forward declaration
   // or exposing core data structures in the C++ public headers.
   // Thus it is safe to use a static_cast to the subclass here, and the
   // C++ style guide allows us to do so in this case
-  static_cast<internal::AlarmImpl*>(alarm_)->Set(cq, deadline, tag);
+  static_cast<internal::AlarmImpl *>(alarm_)->Set(cq, deadline, tag);
 }
 
 void Alarm::SetInternal(gpr_timespec deadline, std::function<void(bool)> f) {
@@ -148,14 +148,14 @@ void Alarm::SetInternal(gpr_timespec deadline, std::function<void(bool)> f) {
   // or exposing core data structures in the C++ public headers.
   // Thus it is safe to use a static_cast to the subclass here, and the
   // C++ style guide allows us to do so in this case
-  static_cast<internal::AlarmImpl*>(alarm_)->Set(deadline, std::move(f));
+  static_cast<internal::AlarmImpl *>(alarm_)->Set(deadline, std::move(f));
 }
 
 Alarm::~Alarm() {
   if (alarm_ != nullptr) {
-    static_cast<internal::AlarmImpl*>(alarm_)->Destroy();
+    static_cast<internal::AlarmImpl *>(alarm_)->Destroy();
   }
 }
 
-void Alarm::Cancel() { static_cast<internal::AlarmImpl*>(alarm_)->Cancel(); }
+void Alarm::Cancel() { static_cast<internal::AlarmImpl *>(alarm_)->Cancel(); }
 }  // namespace grpc

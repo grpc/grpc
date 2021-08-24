@@ -38,12 +38,12 @@
 
 namespace grpc {
 
-extern CoreCodegenInterface* g_core_codegen_interface;
+extern CoreCodegenInterface *g_core_codegen_interface;
 
 // ProtoBufferWriter must be a subclass of ::protobuf::io::ZeroCopyOutputStream.
 template <class ProtoBufferWriter, class T>
-Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
-                        bool* own_buffer) {
+Status GenericSerialize(const grpc::protobuf::MessageLite &msg, ByteBuffer *bb,
+                        bool *own_buffer) {
   static_assert(std::is_base_of<protobuf::io::ZeroCopyOutputStream,
                                 ProtoBufferWriter>::value,
                 "ProtoBufferWriter must be a subclass of "
@@ -53,8 +53,9 @@ Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
   if (static_cast<size_t>(byte_size) <= GRPC_SLICE_INLINED_SIZE) {
     Slice slice(byte_size);
     // We serialize directly into the allocated slices memory
-    GPR_CODEGEN_ASSERT(slice.end() == msg.SerializeWithCachedSizesToArray(
-                                          const_cast<uint8_t*>(slice.begin())));
+    GPR_CODEGEN_ASSERT(slice.end() ==
+                       msg.SerializeWithCachedSizesToArray(
+                           const_cast<uint8_t *>(slice.begin())));
     ByteBuffer tmp(&slice, 1);
     bb->Swap(&tmp);
 
@@ -68,8 +69,8 @@ Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
 
 // BufferReader must be a subclass of ::protobuf::io::ZeroCopyInputStream.
 template <class ProtoBufferReader, class T>
-Status GenericDeserialize(ByteBuffer* buffer,
-                          grpc::protobuf::MessageLite* msg) {
+Status GenericDeserialize(ByteBuffer *buffer,
+                          grpc::protobuf::MessageLite *msg) {
   static_assert(std::is_base_of<protobuf::io::ZeroCopyInputStream,
                                 ProtoBufferReader>::value,
                 "ProtoBufferReader must be a subclass of "
@@ -102,13 +103,13 @@ class SerializationTraits<
     T, typename std::enable_if<
            std::is_base_of<grpc::protobuf::MessageLite, T>::value>::type> {
  public:
-  static Status Serialize(const grpc::protobuf::MessageLite& msg,
-                          ByteBuffer* bb, bool* own_buffer) {
+  static Status Serialize(const grpc::protobuf::MessageLite &msg,
+                          ByteBuffer *bb, bool *own_buffer) {
     return GenericSerialize<ProtoBufferWriter, T>(msg, bb, own_buffer);
   }
 
-  static Status Deserialize(ByteBuffer* buffer,
-                            grpc::protobuf::MessageLite* msg) {
+  static Status Deserialize(ByteBuffer *buffer,
+                            grpc::protobuf::MessageLite *msg) {
     return GenericDeserialize<ProtoBufferReader, T>(buffer, msg);
   }
 };

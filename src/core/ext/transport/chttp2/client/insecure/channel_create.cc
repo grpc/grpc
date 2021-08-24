@@ -38,8 +38,8 @@ namespace grpc_core {
 class Chttp2InsecureClientChannelFactory : public ClientChannelFactory {
  public:
   RefCountedPtr<Subchannel> CreateSubchannel(
-      const grpc_channel_args* args) override {
-    grpc_channel_args* new_args =
+      const grpc_channel_args *args) override {
+    grpc_channel_args *new_args =
         grpc_default_authority_add_if_not_present(args);
     RefCountedPtr<Subchannel> s =
         Subchannel::Create(MakeOrphanable<Chttp2Connector>(), new_args);
@@ -50,8 +50,8 @@ class Chttp2InsecureClientChannelFactory : public ClientChannelFactory {
 
 namespace {
 
-grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
-                            grpc_error_handle* error) {
+grpc_channel *CreateChannel(const char *target, const grpc_channel_args *args,
+                            grpc_error_handle *error) {
   if (target == nullptr) {
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
     if (error != nullptr) {
@@ -63,11 +63,11 @@ grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
   grpc_core::UniquePtr<char> canonical_target =
       ResolverRegistry::AddDefaultPrefixIfNeeded(target);
   grpc_arg arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_SERVER_URI), canonical_target.get());
-  const char* to_remove[] = {GRPC_ARG_SERVER_URI};
-  grpc_channel_args* new_args =
+      const_cast<char *>(GRPC_ARG_SERVER_URI), canonical_target.get());
+  const char *to_remove[] = {GRPC_ARG_SERVER_URI};
+  grpc_channel_args *new_args =
       grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
-  grpc_channel* channel = grpc_channel_create(
+  grpc_channel *channel = grpc_channel_create(
       target, new_args, GRPC_CLIENT_CHANNEL, nullptr, nullptr, 0, error);
   grpc_channel_args_destroy(new_args);
   return channel;
@@ -79,7 +79,7 @@ grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
 
 namespace {
 
-grpc_core::Chttp2InsecureClientChannelFactory* g_factory;
+grpc_core::Chttp2InsecureClientChannelFactory *g_factory;
 gpr_once g_factory_once = GPR_ONCE_INIT;
 
 void FactoryInit() {
@@ -92,9 +92,9 @@ void FactoryInit() {
    Asynchronously: - resolve target
                    - connect to it (trying alternatives as presented)
                    - perform handshakes */
-grpc_channel* grpc_insecure_channel_create(const char* target,
-                                           const grpc_channel_args* args,
-                                           void* reserved) {
+grpc_channel *grpc_insecure_channel_create(const char *target,
+                                           const grpc_channel_args *args,
+                                           void *reserved) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE(
       "grpc_insecure_channel_create(target=%s, args=%p, reserved=%p)", 3,
@@ -103,12 +103,12 @@ grpc_channel* grpc_insecure_channel_create(const char* target,
   // Add channel arg containing the client channel factory.
   gpr_once_init(&g_factory_once, FactoryInit);
   grpc_arg arg = grpc_core::ClientChannelFactory::CreateChannelArg(g_factory);
-  const char* arg_to_remove = arg.key;
-  grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
+  const char *arg_to_remove = arg.key;
+  grpc_channel_args *new_args = grpc_channel_args_copy_and_add_and_remove(
       args, &arg_to_remove, 1, &arg, 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
   // Create channel.
-  grpc_channel* channel = grpc_core::CreateChannel(target, new_args, &error);
+  grpc_channel *channel = grpc_core::CreateChannel(target, new_args, &error);
   // Clean up.
   grpc_channel_args_destroy(new_args);
   if (channel == nullptr) {

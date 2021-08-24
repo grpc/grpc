@@ -36,12 +36,12 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
 /* Property names are always NULL terminated. */
 
 struct grpc_auth_property_array {
-  grpc_auth_property* array = nullptr;
+  grpc_auth_property *array = nullptr;
   size_t count = 0;
   size_t capacity = 0;
 };
 
-void grpc_auth_property_reset(grpc_auth_property* property);
+void grpc_auth_property_reset(grpc_auth_property *property);
 
 // This type is forward declared as a C struct and we cannot define it as a
 // class. Otherwise, compiler will complain about type mismatch due to
@@ -73,27 +73,27 @@ struct grpc_auth_context
     }
   }
 
-  const grpc_auth_context* chained() const { return chained_.get(); }
-  const grpc_auth_property_array& properties() const { return properties_; }
+  const grpc_auth_context *chained() const { return chained_.get(); }
+  const grpc_auth_property_array &properties() const { return properties_; }
 
   bool is_authenticated() const {
     return peer_identity_property_name_ != nullptr;
   }
-  const char* peer_identity_property_name() const {
+  const char *peer_identity_property_name() const {
     return peer_identity_property_name_;
   }
-  void set_peer_identity_property_name(const char* name) {
+  void set_peer_identity_property_name(const char *name) {
     peer_identity_property_name_ = name;
   }
 
   void ensure_capacity();
-  void add_property(const char* name, const char* value, size_t value_length);
-  void add_cstring_property(const char* name, const char* value);
+  void add_property(const char *name, const char *value, size_t value_length);
+  void add_cstring_property(const char *name, const char *value);
 
  private:
   grpc_core::RefCountedPtr<grpc_auth_context> chained_;
   grpc_auth_property_array properties_;
-  const char* peer_identity_property_name_ = nullptr;
+  const char *peer_identity_property_name_ = nullptr;
 };
 
 /* --- grpc_security_context_extension ---
@@ -102,8 +102,8 @@ struct grpc_auth_context
    later by a higher level method on a grpc_call object. */
 
 struct grpc_security_context_extension {
-  void* instance = nullptr;
-  void (*destroy)(void*) = nullptr;
+  void *instance = nullptr;
+  void (*destroy)(void *) = nullptr;
 };
 
 /* --- grpc_client_security_context ---
@@ -121,9 +121,9 @@ struct grpc_client_security_context {
   grpc_security_context_extension extension;
 };
 
-grpc_client_security_context* grpc_client_security_context_create(
-    grpc_core::Arena* arena, grpc_call_credentials* creds);
-void grpc_client_security_context_destroy(void* ctx);
+grpc_client_security_context *grpc_client_security_context_create(
+    grpc_core::Arena *arena, grpc_call_credentials *creds);
+void grpc_client_security_context_destroy(void *ctx);
 
 /* --- grpc_server_security_context ---
 
@@ -137,16 +137,16 @@ struct grpc_server_security_context {
   grpc_security_context_extension extension;
 };
 
-grpc_server_security_context* grpc_server_security_context_create(
-    grpc_core::Arena* arena);
-void grpc_server_security_context_destroy(void* ctx);
+grpc_server_security_context *grpc_server_security_context_create(
+    grpc_core::Arena *arena);
+void grpc_server_security_context_destroy(void *ctx);
 
 /* --- Channel args for auth context --- */
 #define GRPC_AUTH_CONTEXT_ARG "grpc.auth_context"
 
-grpc_arg grpc_auth_context_to_arg(grpc_auth_context* c);
-grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg);
-grpc_auth_context* grpc_find_auth_context_in_args(
-    const grpc_channel_args* args);
+grpc_arg grpc_auth_context_to_arg(grpc_auth_context *c);
+grpc_auth_context *grpc_auth_context_from_arg(const grpc_arg *arg);
+grpc_auth_context *grpc_find_auth_context_in_args(
+    const grpc_channel_args *args);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H */

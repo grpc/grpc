@@ -44,11 +44,11 @@ class ServerAsyncStreamingInterface {
   /// concurrently with or after the \a Finish method.
   ///
   /// \param[in] tag Tag identifying this request.
-  virtual void SendInitialMetadata(void* tag) = 0;
+  virtual void SendInitialMetadata(void *tag) = 0;
 
  private:
   friend class ::grpc::ServerInterface;
-  virtual void BindCall(Call* call) = 0;
+  virtual void BindCall(Call *call) = 0;
 };
 }  // namespace internal
 
@@ -59,7 +59,7 @@ class Service {
   virtual ~Service() {}
 
   bool has_async_methods() const {
-    for (const auto& method : methods_) {
+    for (const auto &method : methods_) {
       if (method && method->handler() == nullptr) {
         return true;
       }
@@ -68,7 +68,7 @@ class Service {
   }
 
   bool has_synchronous_methods() const {
-    for (const auto& method : methods_) {
+    for (const auto &method : methods_) {
       if (method &&
           method->api_type() == internal::RpcServiceMethod::ApiType::SYNC) {
         return true;
@@ -78,7 +78,7 @@ class Service {
   }
 
   bool has_callback_methods() const {
-    for (const auto& method : methods_) {
+    for (const auto &method : methods_) {
       if (method && (method->api_type() ==
                          internal::RpcServiceMethod::ApiType::CALL_BACK ||
                      method->api_type() ==
@@ -90,7 +90,7 @@ class Service {
   }
 
   bool has_generic_methods() const {
-    for (const auto& method : methods_) {
+    for (const auto &method : methods_) {
       if (method == nullptr) {
         return true;
       }
@@ -100,12 +100,12 @@ class Service {
 
  protected:
   template <class Message>
-  void RequestAsyncUnary(int index, ::grpc::ServerContext* context,
-                         Message* request,
-                         internal::ServerAsyncStreamingInterface* stream,
-                         ::grpc::CompletionQueue* call_cq,
-                         ::grpc::ServerCompletionQueue* notification_cq,
-                         void* tag) {
+  void RequestAsyncUnary(int index, ::grpc::ServerContext *context,
+                         Message *request,
+                         internal::ServerAsyncStreamingInterface *stream,
+                         ::grpc::CompletionQueue *call_cq,
+                         ::grpc::ServerCompletionQueue *notification_cq,
+                         void *tag) {
     // Typecast the index to size_t for indexing into a vector
     // while preserving the API that existed before a compiler
     // warning was first seen (grpc/grpc#11664)
@@ -114,35 +114,35 @@ class Service {
                               notification_cq, tag, request);
   }
   void RequestAsyncClientStreaming(
-      int index, ::grpc::ServerContext* context,
-      internal::ServerAsyncStreamingInterface* stream,
-      ::grpc::CompletionQueue* call_cq,
-      ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
+      int index, ::grpc::ServerContext *context,
+      internal::ServerAsyncStreamingInterface *stream,
+      ::grpc::CompletionQueue *call_cq,
+      ::grpc::ServerCompletionQueue *notification_cq, void *tag) {
     size_t idx = static_cast<size_t>(index);
     server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq,
                               notification_cq, tag);
   }
   template <class Message>
   void RequestAsyncServerStreaming(
-      int index, ::grpc::ServerContext* context, Message* request,
-      internal::ServerAsyncStreamingInterface* stream,
-      ::grpc::CompletionQueue* call_cq,
-      ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
+      int index, ::grpc::ServerContext *context, Message *request,
+      internal::ServerAsyncStreamingInterface *stream,
+      ::grpc::CompletionQueue *call_cq,
+      ::grpc::ServerCompletionQueue *notification_cq, void *tag) {
     size_t idx = static_cast<size_t>(index);
     server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq,
                               notification_cq, tag, request);
   }
   void RequestAsyncBidiStreaming(
-      int index, ::grpc::ServerContext* context,
-      internal::ServerAsyncStreamingInterface* stream,
-      ::grpc::CompletionQueue* call_cq,
-      ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
+      int index, ::grpc::ServerContext *context,
+      internal::ServerAsyncStreamingInterface *stream,
+      ::grpc::CompletionQueue *call_cq,
+      ::grpc::ServerCompletionQueue *notification_cq, void *tag) {
     size_t idx = static_cast<size_t>(index);
     server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq,
                               notification_cq, tag);
   }
 
-  void AddMethod(internal::RpcServiceMethod* method) {
+  void AddMethod(internal::RpcServiceMethod *method) {
     methods_.emplace_back(method);
   }
 
@@ -178,7 +178,7 @@ class Service {
     methods_[idx].reset();
   }
 
-  void MarkMethodStreamed(int index, internal::MethodHandler* streamed_method) {
+  void MarkMethodStreamed(int index, internal::MethodHandler *streamed_method) {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
@@ -193,7 +193,7 @@ class Service {
     methods_[idx]->SetMethodType(internal::RpcMethod::BIDI_STREAMING);
   }
 
-  void MarkMethodCallback(int index, internal::MethodHandler* handler) {
+  void MarkMethodCallback(int index, internal::MethodHandler *handler) {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
@@ -206,7 +206,7 @@ class Service {
         internal::RpcServiceMethod::ApiType::CALL_BACK);
   }
 
-  void MarkMethodRawCallback(int index, internal::MethodHandler* handler) {
+  void MarkMethodRawCallback(int index, internal::MethodHandler *handler) {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
@@ -219,7 +219,7 @@ class Service {
         internal::RpcServiceMethod::ApiType::RAW_CALL_BACK);
   }
 
-  internal::MethodHandler* GetHandler(int index) {
+  internal::MethodHandler *GetHandler(int index) {
     size_t idx = static_cast<size_t>(index);
     return methods_[idx]->handler();
   }
@@ -227,7 +227,7 @@ class Service {
  private:
   friend class Server;
   friend class ServerInterface;
-  ServerInterface* server_;
+  ServerInterface *server_;
   std::vector<std::unique_ptr<internal::RpcServiceMethod>> methods_;
 };
 

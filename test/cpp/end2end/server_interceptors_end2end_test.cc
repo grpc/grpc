@@ -47,11 +47,11 @@ namespace {
 
 class LoggingInterceptor : public experimental::Interceptor {
  public:
-  explicit LoggingInterceptor(experimental::ServerRpcInfo* info) {
+  explicit LoggingInterceptor(experimental::ServerRpcInfo *info) {
     info_ = info;
 
     // Check the method name and compare to the type
-    const char* method = info->method();
+    const char *method = info->method();
     experimental::ServerRpcInfo::Type type = info->type();
 
     // Check that we use one of our standard methods with expected type.
@@ -76,17 +76,17 @@ class LoggingInterceptor : public experimental::Interceptor {
          type == experimental::ServerRpcInfo::Type::BIDI_STREAMING));
   }
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(experimental::InterceptorBatchMethods *methods) override {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
-      auto* map = methods->GetSendInitialMetadata();
+      auto *map = methods->GetSendInitialMetadata();
       // Got nothing better to do here for now
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
       EchoRequest req;
-      auto* buffer = methods->GetSerializedSendMessage();
+      auto *buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
       EXPECT_TRUE(
           SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
@@ -95,10 +95,10 @@ class LoggingInterceptor : public experimental::Interceptor {
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_STATUS)) {
-      auto* map = methods->GetSendTrailingMetadata();
+      auto *map = methods->GetSendTrailingMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
+      for (const auto &pair : *map) {
         found = absl::StartsWith(pair.first, "testkey") &&
                 absl::StartsWith(pair.second, "testvalue");
         if (found) break;
@@ -109,10 +109,10 @@ class LoggingInterceptor : public experimental::Interceptor {
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
-      auto* map = methods->GetRecvInitialMetadata();
+      auto *map = methods->GetRecvInitialMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
+      for (const auto &pair : *map) {
         found = pair.first.find("testkey") == 0 &&
                 pair.second.find("testvalue") == 0;
         if (found) break;
@@ -121,8 +121,8 @@ class LoggingInterceptor : public experimental::Interceptor {
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
-      EchoResponse* resp =
-          static_cast<EchoResponse*>(methods->GetRecvMessage());
+      EchoResponse *resp =
+          static_cast<EchoResponse *>(methods->GetRecvMessage());
       if (resp != nullptr) {
         EXPECT_TRUE(resp->message().find("Hello") == 0);
       }
@@ -135,14 +135,14 @@ class LoggingInterceptor : public experimental::Interceptor {
   }
 
  private:
-  experimental::ServerRpcInfo* info_;
+  experimental::ServerRpcInfo *info_;
 };
 
 class LoggingInterceptorFactory
     : public experimental::ServerInterceptorFactoryInterface {
  public:
-  experimental::Interceptor* CreateServerInterceptor(
-      experimental::ServerRpcInfo* info) override {
+  experimental::Interceptor *CreateServerInterceptor(
+      experimental::ServerRpcInfo *info) override {
     return new LoggingInterceptor(info);
   }
 };
@@ -150,13 +150,14 @@ class LoggingInterceptorFactory
 // Test if SendMessage function family works as expected for sync/callback apis
 class SyncSendMessageTester : public experimental::Interceptor {
  public:
-  explicit SyncSendMessageTester(experimental::ServerRpcInfo* /*info*/) {}
+  explicit SyncSendMessageTester(experimental::ServerRpcInfo * /*info*/) {}
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(experimental::InterceptorBatchMethods *methods) override {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
       string old_msg =
-          static_cast<const EchoRequest*>(methods->GetSendMessage())->message();
+          static_cast<const EchoRequest *>(methods->GetSendMessage())
+              ->message();
       EXPECT_EQ(old_msg.find("Hello"), 0u);
       new_msg_.set_message("World" + old_msg);
       methods->ModifySendMessage(&new_msg_);
@@ -171,8 +172,8 @@ class SyncSendMessageTester : public experimental::Interceptor {
 class SyncSendMessageTesterFactory
     : public experimental::ServerInterceptorFactoryInterface {
  public:
-  experimental::Interceptor* CreateServerInterceptor(
-      experimental::ServerRpcInfo* info) override {
+  experimental::Interceptor *CreateServerInterceptor(
+      experimental::ServerRpcInfo *info) override {
     return new SyncSendMessageTester(info);
   }
 };
@@ -180,14 +181,15 @@ class SyncSendMessageTesterFactory
 // Test if SendMessage function family works as expected for sync/callback apis
 class SyncSendMessageVerifier : public experimental::Interceptor {
  public:
-  explicit SyncSendMessageVerifier(experimental::ServerRpcInfo* /*info*/) {}
+  explicit SyncSendMessageVerifier(experimental::ServerRpcInfo * /*info*/) {}
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(experimental::InterceptorBatchMethods *methods) override {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
       // Make sure that the changes made in SyncSendMessageTester persisted
       string old_msg =
-          static_cast<const EchoRequest*>(methods->GetSendMessage())->message();
+          static_cast<const EchoRequest *>(methods->GetSendMessage())
+              ->message();
       EXPECT_EQ(old_msg.find("World"), 0u);
 
       // Remove the "World" part of the string that we added earlier
@@ -206,13 +208,13 @@ class SyncSendMessageVerifier : public experimental::Interceptor {
 class SyncSendMessageVerifierFactory
     : public experimental::ServerInterceptorFactoryInterface {
  public:
-  experimental::Interceptor* CreateServerInterceptor(
-      experimental::ServerRpcInfo* info) override {
+  experimental::Interceptor *CreateServerInterceptor(
+      experimental::ServerRpcInfo *info) override {
     return new SyncSendMessageVerifier(info);
   }
 };
 
-void MakeBidiStreamingCall(const std::shared_ptr<Channel>& channel) {
+void MakeBidiStreamingCall(const std::shared_ptr<Channel> &channel) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
   ClientContext ctx;
   EchoRequest req;
@@ -405,7 +407,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
 
   server->Shutdown();
   cq->Shutdown();
-  void* ignored_tag;
+  void *ignored_tag;
   bool ignored_ok;
   while (cq->Next(&ignored_tag, &ignored_ok)) {
   }
@@ -487,7 +489,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, BidiStreamingTest) {
 
   server->Shutdown();
   cq->Shutdown();
-  void* ignored_tag;
+  void *ignored_tag;
   bool ignored_ok;
   while (cq->Next(&ignored_tag, &ignored_ok)) {
   }
@@ -533,7 +535,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   send_request.set_message("Hello");
   cli_ctx.AddMetadata("testkey", "testvalue");
 
-  CompletionQueue* cq = srv_cq.get();
+  CompletionQueue *cq = srv_cq.get();
   std::thread request_call([cq]() { Verifier().Expect(4, true).Verify(cq); });
   std::unique_ptr<GenericClientAsyncReaderWriter> call =
       generic_stub.PrepareCall(&cli_ctx, kMethodName, &cli_cq);
@@ -592,7 +594,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 
   server->Shutdown();
-  void* ignored_tag;
+  void *ignored_tag;
   bool ignored_ok;
   while (cli_cq.Next(&ignored_tag, &ignored_ok)) {
   }
@@ -642,7 +644,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
 
   server->Shutdown();
   cq->Shutdown();
-  void* ignored_tag;
+  void *ignored_tag;
   bool ignored_ok;
   while (cq->Next(&ignored_tag, &ignored_ok)) {
   }
@@ -696,7 +698,7 @@ TEST_F(ServerInterceptorsSyncUnimplementedEnd2endTest, UnimplementedRpcTest) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

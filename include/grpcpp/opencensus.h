@@ -40,7 +40,7 @@ void RegisterOpenCensusPlugin();
 void RegisterOpenCensusViewsForExport();
 
 // Returns the tracing Span for the current RPC.
-::opencensus::trace::Span GetSpanFromServerContext(ServerContext* context);
+::opencensus::trace::Span GetSpanFromServerContext(ServerContext *context);
 
 }  // namespace grpc
 

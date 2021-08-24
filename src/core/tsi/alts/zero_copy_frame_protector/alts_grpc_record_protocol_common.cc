@@ -32,15 +32,15 @@
 const size_t kInitialIovecBufferSize = 8;
 
 /* Makes sure iovec_buf in alts_grpc_record_protocol is large enough.  */
-static void ensure_iovec_buf_size(alts_grpc_record_protocol* rp,
-                                  const grpc_slice_buffer* sb) {
+static void ensure_iovec_buf_size(alts_grpc_record_protocol *rp,
+                                  const grpc_slice_buffer *sb) {
   GPR_ASSERT(rp != nullptr && sb != nullptr);
   if (sb->count <= rp->iovec_buf_length) {
     return;
   }
   /* At least double the iovec buffer size.  */
   rp->iovec_buf_length = GPR_MAX(sb->count, 2 * rp->iovec_buf_length);
-  rp->iovec_buf = static_cast<iovec_t*>(
+  rp->iovec_buf = static_cast<iovec_t *>(
       gpr_realloc(rp->iovec_buf, rp->iovec_buf_length * sizeof(iovec_t)));
 }
 
@@ -48,7 +48,7 @@ static void ensure_iovec_buf_size(alts_grpc_record_protocol* rp,
  * --- */
 
 void alts_grpc_record_protocol_convert_slice_buffer_to_iovec(
-    alts_grpc_record_protocol* rp, const grpc_slice_buffer* sb) {
+    alts_grpc_record_protocol *rp, const grpc_slice_buffer *sb) {
   GPR_ASSERT(rp != nullptr && sb != nullptr);
   ensure_iovec_buf_size(rp, sb);
   for (size_t i = 0; i < sb->count; i++) {
@@ -57,8 +57,8 @@ void alts_grpc_record_protocol_convert_slice_buffer_to_iovec(
   }
 }
 
-void alts_grpc_record_protocol_copy_slice_buffer(const grpc_slice_buffer* src,
-                                                 unsigned char* dst) {
+void alts_grpc_record_protocol_copy_slice_buffer(const grpc_slice_buffer *src,
+                                                 unsigned char *dst) {
   GPR_ASSERT(src != nullptr && dst != nullptr);
   for (size_t i = 0; i < src->count; i++) {
     size_t slice_length = GRPC_SLICE_LENGTH(src->slices[i]);
@@ -68,7 +68,7 @@ void alts_grpc_record_protocol_copy_slice_buffer(const grpc_slice_buffer* src,
 }
 
 iovec_t alts_grpc_record_protocol_get_header_iovec(
-    alts_grpc_record_protocol* rp) {
+    alts_grpc_record_protocol *rp) {
   iovec_t header_iovec = {nullptr, 0};
   if (rp == nullptr) {
     return header_iovec;
@@ -85,8 +85,8 @@ iovec_t alts_grpc_record_protocol_get_header_iovec(
   return header_iovec;
 }
 
-tsi_result alts_grpc_record_protocol_init(alts_grpc_record_protocol* rp,
-                                          gsec_aead_crypter* crypter,
+tsi_result alts_grpc_record_protocol_init(alts_grpc_record_protocol *rp,
+                                          gsec_aead_crypter *crypter,
                                           size_t overflow_size, bool is_client,
                                           bool is_integrity_only,
                                           bool is_protect) {
@@ -96,7 +96,7 @@ tsi_result alts_grpc_record_protocol_init(alts_grpc_record_protocol* rp,
     return TSI_INVALID_ARGUMENT;
   }
   /* Creates alts_iovec_record_protocol.  */
-  char* error_details = nullptr;
+  char *error_details = nullptr;
   grpc_status_code status = alts_iovec_record_protocol_create(
       crypter, overflow_size, is_client, is_integrity_only, is_protect,
       &rp->iovec_rp, &error_details);
@@ -110,19 +110,19 @@ tsi_result alts_grpc_record_protocol_init(alts_grpc_record_protocol* rp,
   grpc_slice_buffer_init(&rp->header_sb);
   /* Allocates header buffer.  */
   rp->header_length = alts_iovec_record_protocol_get_header_length();
-  rp->header_buf = static_cast<unsigned char*>(gpr_malloc(rp->header_length));
+  rp->header_buf = static_cast<unsigned char *>(gpr_malloc(rp->header_length));
   rp->tag_length = alts_iovec_record_protocol_get_tag_length(rp->iovec_rp);
   /* Allocates iovec buffer.  */
   rp->iovec_buf_length = kInitialIovecBufferSize;
-  rp->iovec_buf =
-      static_cast<iovec_t*>(gpr_malloc(rp->iovec_buf_length * sizeof(iovec_t)));
+  rp->iovec_buf = static_cast<iovec_t *>(
+      gpr_malloc(rp->iovec_buf_length * sizeof(iovec_t)));
   return TSI_OK;
 }
 
 /* --- Implementation of methods defined in tsi_grpc_record_protocol.h. --- */
 tsi_result alts_grpc_record_protocol_protect(
-    alts_grpc_record_protocol* self, grpc_slice_buffer* unprotected_slices,
-    grpc_slice_buffer* protected_slices) {
+    alts_grpc_record_protocol *self, grpc_slice_buffer *unprotected_slices,
+    grpc_slice_buffer *protected_slices) {
   if (grpc_core::ExecCtx::Get() == nullptr || self == nullptr ||
       self->vtable == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
@@ -135,8 +135,8 @@ tsi_result alts_grpc_record_protocol_protect(
 }
 
 tsi_result alts_grpc_record_protocol_unprotect(
-    alts_grpc_record_protocol* self, grpc_slice_buffer* protected_slices,
-    grpc_slice_buffer* unprotected_slices) {
+    alts_grpc_record_protocol *self, grpc_slice_buffer *protected_slices,
+    grpc_slice_buffer *unprotected_slices) {
   if (grpc_core::ExecCtx::Get() == nullptr || self == nullptr ||
       self->vtable == nullptr || protected_slices == nullptr ||
       unprotected_slices == nullptr) {
@@ -148,7 +148,7 @@ tsi_result alts_grpc_record_protocol_unprotect(
   return self->vtable->unprotect(self, protected_slices, unprotected_slices);
 }
 
-void alts_grpc_record_protocol_destroy(alts_grpc_record_protocol* self) {
+void alts_grpc_record_protocol_destroy(alts_grpc_record_protocol *self) {
   if (self == nullptr) {
     return;
   }
@@ -165,7 +165,7 @@ void alts_grpc_record_protocol_destroy(alts_grpc_record_protocol* self) {
 /* Integrity-only and privacy-integrity share the same implementation. No need
  * to call vtable.  */
 size_t alts_grpc_record_protocol_max_unprotected_data_size(
-    const alts_grpc_record_protocol* self, size_t max_protected_frame_size) {
+    const alts_grpc_record_protocol *self, size_t max_protected_frame_size) {
   if (self == nullptr) {
     return 0;
   }

@@ -32,7 +32,7 @@ class AcceptorWrapper : public experimental::ExternalConnectionAcceptor {
  public:
   explicit AcceptorWrapper(std::shared_ptr<ExternalConnectionAcceptorImpl> impl)
       : impl_(std::move(impl)) {}
-  void HandleNewConnection(NewConnectionParameters* p) override {
+  void HandleNewConnection(NewConnectionParameters *p) override {
     impl_->HandleNewConnection(p);
   }
 
@@ -42,7 +42,7 @@ class AcceptorWrapper : public experimental::ExternalConnectionAcceptor {
 }  // namespace
 
 ExternalConnectionAcceptorImpl::ExternalConnectionAcceptorImpl(
-    const std::string& name,
+    const std::string &name,
     ServerBuilder::experimental_type::ExternalConnectionType type,
     std::shared_ptr<ServerCredentials> creds)
     : name_(name), creds_(std::move(creds)) {
@@ -60,7 +60,7 @@ ExternalConnectionAcceptorImpl::GetAcceptor() {
 }
 
 void ExternalConnectionAcceptorImpl::HandleNewConnection(
-    experimental::ExternalConnectionAcceptor::NewConnectionParameters* p) {
+    experimental::ExternalConnectionAcceptor::NewConnectionParameters *p) {
   grpc_core::MutexLock lock(&mu_);
   if (shutdown_ || !started_) {
     // TODO(yangg) clean up.
@@ -88,7 +88,7 @@ void ExternalConnectionAcceptorImpl::Start() {
   started_ = true;
 }
 
-void ExternalConnectionAcceptorImpl::SetToChannelArgs(ChannelArguments* args) {
+void ExternalConnectionAcceptorImpl::SetToChannelArgs(ChannelArguments *args) {
   args->SetPointer(name_.c_str(), &handler_);
 }
 

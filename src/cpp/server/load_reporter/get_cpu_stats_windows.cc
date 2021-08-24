@@ -30,7 +30,7 @@ namespace load_reporter {
 
 namespace {
 
-uint64_t FiletimeToInt(const FILETIME& ft) {
+uint64_t FiletimeToInt(const FILETIME &ft) {
   ULARGE_INTEGER i;
   i.LowPart = ft.dwLowDateTime;
   i.HighPart = ft.dwHighDateTime;

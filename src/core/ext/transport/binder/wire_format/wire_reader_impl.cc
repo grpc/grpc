@@ -39,7 +39,7 @@
 namespace grpc_binder {
 namespace {
 
-absl::StatusOr<Metadata> parse_metadata(const ReadableParcel* reader) {
+absl::StatusOr<Metadata> parse_metadata(const ReadableParcel *reader) {
   int num_header;
   RETURN_IF_ERROR(reader->ReadInt32(&num_header));
   gpr_log(GPR_INFO, "num_header = %d", num_header);
@@ -92,11 +92,11 @@ std::unique_ptr<WireWriter> WireReaderImpl::SetupTransport(
   }
 }
 
-void WireReaderImpl::SendSetupTransport(Binder* binder) {
+void WireReaderImpl::SendSetupTransport(Binder *binder) {
   binder->Initialize();
   gpr_log(GPR_INFO, "prepare transaction = %d",
           binder->PrepareTransaction().ok());
-  WritableParcel* writable_parcel = binder->GetWritableParcel();
+  WritableParcel *writable_parcel = binder->GetWritableParcel();
   gpr_log(GPR_INFO, "data position = %d", writable_parcel->GetDataPosition());
   // gpr_log(GPR_INFO, "set data position to 0 = %d",
   // writer->SetDataPosition(0));
@@ -113,7 +113,7 @@ void WireReaderImpl::SendSetupTransport(Binder* binder) {
   // callback owns a Ref() when it's being invoked.
   tx_receiver_ = binder->ConstructTxReceiver(
       /*wire_reader_ref=*/Ref(),
-      [this](transaction_code_t code, const ReadableParcel* readable_parcel) {
+      [this](transaction_code_t code, const ReadableParcel *readable_parcel) {
         return this->ProcessTransaction(code, readable_parcel);
       });
 
@@ -134,7 +134,7 @@ std::unique_ptr<Binder> WireReaderImpl::RecvSetupTransport() {
 }
 
 absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
-                                                const ReadableParcel* parcel) {
+                                                const ReadableParcel *parcel) {
   gpr_log(GPR_INFO, __func__);
   gpr_log(GPR_INFO, "tx code = %u", code);
   if (code >= static_cast<unsigned>(kFirstCallId)) {
@@ -208,7 +208,7 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
 }
 
 absl::Status WireReaderImpl::ProcessStreamingTransaction(
-    transaction_code_t code, const ReadableParcel* parcel) {
+    transaction_code_t code, const ReadableParcel *parcel) {
   // Indicate which callbacks should be cancelled. It will be initialized as the
   // flags the in-coming transaction carries, and when a particular callback is
   // completed, the corresponding bit in cancellation_flag will be set to 0 so
@@ -237,8 +237,8 @@ absl::Status WireReaderImpl::ProcessStreamingTransaction(
 }
 
 absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
-    transaction_code_t code, const ReadableParcel* parcel,
-    int* cancellation_flags) {
+    transaction_code_t code, const ReadableParcel *parcel,
+    int *cancellation_flags) {
   GPR_ASSERT(cancellation_flags);
 
   int flags;
@@ -267,7 +267,7 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
   // the same order they're issued. The following assertion detects
   // out-of-order or missing transactions. WireReaderImpl should be fixed if
   // we indeed found such behavior.
-  int32_t& expectation = expected_seq_num_[code];
+  int32_t &expectation = expected_seq_num_[code];
   if (seq_num < 0 || seq_num != expectation) {
     // Unexpected sequence number.
     return absl::InternalError("Unexpected sequence number");

@@ -25,7 +25,7 @@ namespace grpc {
 
 static internal::GrpcLibraryInitializer g_gli_initializer;
 
-Status ByteBuffer::TrySingleSlice(Slice* slice) const {
+Status ByteBuffer::TrySingleSlice(Slice *slice) const {
   if (!buffer_) {
     return Status(StatusCode::FAILED_PRECONDITION, "Buffer not initialized");
   }
@@ -41,7 +41,7 @@ Status ByteBuffer::TrySingleSlice(Slice* slice) const {
   }
 }
 
-Status ByteBuffer::DumpToSingleSlice(Slice* slice) const {
+Status ByteBuffer::DumpToSingleSlice(Slice *slice) const {
   if (!buffer_) {
     return Status(StatusCode::FAILED_PRECONDITION, "Buffer not initialized");
   }
@@ -56,7 +56,7 @@ Status ByteBuffer::DumpToSingleSlice(Slice* slice) const {
   return Status::OK;
 }
 
-Status ByteBuffer::Dump(std::vector<Slice>* slices) const {
+Status ByteBuffer::Dump(std::vector<Slice> *slices) const {
   slices->clear();
   if (!buffer_) {
     return Status(StatusCode::FAILED_PRECONDITION, "Buffer not initialized");

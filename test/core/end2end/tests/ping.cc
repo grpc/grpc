@@ -29,27 +29,27 @@
 
 #define PING_NUM 5
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
 static void test_ping(grpc_end2end_test_config config,
                       int min_time_between_pings_ms) {
   grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   int i;
 
   grpc_arg client_a[] = {
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
+          const_cast<char *>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
+          const_cast<char *>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
   grpc_arg server_a[] = {
       grpc_channel_arg_integer_create(
-          const_cast<char*>(
+          const_cast<char *>(
               GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
           0),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
+          const_cast<char *>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
 

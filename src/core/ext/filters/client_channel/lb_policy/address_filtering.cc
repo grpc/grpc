@@ -27,7 +27,7 @@
 
 namespace grpc_core {
 
-const char* kHierarchicalPathAttributeKey = "hierarchical_path";
+const char *kHierarchicalPathAttributeKey = "hierarchical_path";
 
 namespace {
 
@@ -40,9 +40,9 @@ class HierarchicalPathAttribute : public ServerAddress::AttributeInterface {
     return absl::make_unique<HierarchicalPathAttribute>(path_);
   }
 
-  int Cmp(const AttributeInterface* other) const override {
-    const std::vector<std::string>& other_path =
-        static_cast<const HierarchicalPathAttribute*>(other)->path_;
+  int Cmp(const AttributeInterface *other) const override {
+    const std::vector<std::string> &other_path =
+        static_cast<const HierarchicalPathAttribute *>(other)->path_;
     for (size_t i = 0; i < path_.size(); ++i) {
       if (other_path.size() == i) return 1;
       int r = path_[i].compare(other_path[i]);
@@ -56,7 +56,7 @@ class HierarchicalPathAttribute : public ServerAddress::AttributeInterface {
     return absl::StrCat("[", absl::StrJoin(path_, ", "), "]");
   }
 
-  const std::vector<std::string>& path() const { return path_; }
+  const std::vector<std::string> &path() const { return path_; }
 
  private:
   std::vector<std::string> path_;
@@ -70,16 +70,16 @@ MakeHierarchicalPathAttribute(std::vector<std::string> path) {
 }
 
 HierarchicalAddressMap MakeHierarchicalAddressMap(
-    const ServerAddressList& addresses) {
+    const ServerAddressList &addresses) {
   HierarchicalAddressMap result;
-  for (const ServerAddress& address : addresses) {
-    const HierarchicalPathAttribute* path_attribute =
-        static_cast<const HierarchicalPathAttribute*>(
+  for (const ServerAddress &address : addresses) {
+    const HierarchicalPathAttribute *path_attribute =
+        static_cast<const HierarchicalPathAttribute *>(
             address.GetAttribute(kHierarchicalPathAttributeKey));
     if (path_attribute == nullptr) continue;
-    const std::vector<std::string>& path = path_attribute->path();
+    const std::vector<std::string> &path = path_attribute->path();
     auto it = path.begin();
-    ServerAddressList& target_list = result[*it];
+    ServerAddressList &target_list = result[*it];
     std::unique_ptr<HierarchicalPathAttribute> new_attribute;
     ++it;
     if (it != path.end()) {

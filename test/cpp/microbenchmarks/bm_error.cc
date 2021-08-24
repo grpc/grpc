@@ -34,7 +34,7 @@ class ErrorDeleter {
 };
 typedef std::unique_ptr<grpc_error, ErrorDeleter> ErrorPtr;
 
-static void BM_ErrorCreateFromStatic(benchmark::State& state) {
+static void BM_ErrorCreateFromStatic(benchmark::State &state) {
   TrackCounters track_counters;
   for (auto _ : state) {
     GRPC_ERROR_UNREF(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"));
@@ -43,7 +43,7 @@ static void BM_ErrorCreateFromStatic(benchmark::State& state) {
 }
 BENCHMARK(BM_ErrorCreateFromStatic);
 
-static void BM_ErrorCreateFromCopied(benchmark::State& state) {
+static void BM_ErrorCreateFromCopied(benchmark::State &state) {
   TrackCounters track_counters;
   for (auto _ : state) {
     GRPC_ERROR_UNREF(GRPC_ERROR_CREATE_FROM_COPIED_STRING("Error not inline"));
@@ -52,7 +52,7 @@ static void BM_ErrorCreateFromCopied(benchmark::State& state) {
 }
 BENCHMARK(BM_ErrorCreateFromCopied);
 
-static void BM_ErrorCreateAndSetStatus(benchmark::State& state) {
+static void BM_ErrorCreateAndSetStatus(benchmark::State &state) {
   TrackCounters track_counters;
   for (auto _ : state) {
     GRPC_ERROR_UNREF(
@@ -63,7 +63,7 @@ static void BM_ErrorCreateAndSetStatus(benchmark::State& state) {
 }
 BENCHMARK(BM_ErrorCreateAndSetStatus);
 
-static void BM_ErrorCreateAndSetIntAndStr(benchmark::State& state) {
+static void BM_ErrorCreateAndSetIntAndStr(benchmark::State &state) {
   TrackCounters track_counters;
   for (auto _ : state) {
     GRPC_ERROR_UNREF(grpc_error_set_str(
@@ -76,7 +76,7 @@ static void BM_ErrorCreateAndSetIntAndStr(benchmark::State& state) {
 }
 BENCHMARK(BM_ErrorCreateAndSetIntAndStr);
 
-static void BM_ErrorCreateAndSetIntLoop(benchmark::State& state) {
+static void BM_ErrorCreateAndSetIntLoop(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error");
   int n = 0;
@@ -88,10 +88,10 @@ static void BM_ErrorCreateAndSetIntLoop(benchmark::State& state) {
 }
 BENCHMARK(BM_ErrorCreateAndSetIntLoop);
 
-static void BM_ErrorCreateAndSetStrLoop(benchmark::State& state) {
+static void BM_ErrorCreateAndSetStrLoop(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error");
-  const char* str = "hello";
+  const char *str = "hello";
   for (auto _ : state) {
     error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
                                grpc_slice_from_static_string(str));
@@ -101,7 +101,7 @@ static void BM_ErrorCreateAndSetStrLoop(benchmark::State& state) {
 }
 BENCHMARK(BM_ErrorCreateAndSetStrLoop);
 
-static void BM_ErrorRefUnref(benchmark::State& state) {
+static void BM_ErrorRefUnref(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error");
   for (auto _ : state) {
@@ -112,7 +112,7 @@ static void BM_ErrorRefUnref(benchmark::State& state) {
 }
 BENCHMARK(BM_ErrorRefUnref);
 
-static void BM_ErrorUnrefNone(benchmark::State& state) {
+static void BM_ErrorUnrefNone(benchmark::State &state) {
   TrackCounters track_counters;
   for (auto _ : state) {
     GRPC_ERROR_UNREF(GRPC_ERROR_NONE);
@@ -120,7 +120,7 @@ static void BM_ErrorUnrefNone(benchmark::State& state) {
 }
 BENCHMARK(BM_ErrorUnrefNone);
 
-static void BM_ErrorGetIntFromNoError(benchmark::State& state) {
+static void BM_ErrorGetIntFromNoError(benchmark::State &state) {
   TrackCounters track_counters;
   for (auto _ : state) {
     intptr_t value;
@@ -130,7 +130,7 @@ static void BM_ErrorGetIntFromNoError(benchmark::State& state) {
 }
 BENCHMARK(BM_ErrorGetIntFromNoError);
 
-static void BM_ErrorGetMissingInt(benchmark::State& state) {
+static void BM_ErrorGetMissingInt(benchmark::State &state) {
   TrackCounters track_counters;
   ErrorPtr error(grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_INDEX, 1));
@@ -142,7 +142,7 @@ static void BM_ErrorGetMissingInt(benchmark::State& state) {
 }
 BENCHMARK(BM_ErrorGetMissingInt);
 
-static void BM_ErrorGetPresentInt(benchmark::State& state) {
+static void BM_ErrorGetPresentInt(benchmark::State &state) {
   TrackCounters track_counters;
   ErrorPtr error(grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_OFFSET, 1));
@@ -223,7 +223,7 @@ class ErrorWithNestedGrpcStatus {
 };
 
 template <class Fixture>
-static void BM_ErrorStringOnNewError(benchmark::State& state) {
+static void BM_ErrorStringOnNewError(benchmark::State &state) {
   TrackCounters track_counters;
   for (auto _ : state) {
     Fixture fixture;
@@ -233,7 +233,7 @@ static void BM_ErrorStringOnNewError(benchmark::State& state) {
 }
 
 template <class Fixture>
-static void BM_ErrorStringRepeatedly(benchmark::State& state) {
+static void BM_ErrorStringRepeatedly(benchmark::State &state) {
   TrackCounters track_counters;
   Fixture fixture;
   for (auto _ : state) {
@@ -243,7 +243,7 @@ static void BM_ErrorStringRepeatedly(benchmark::State& state) {
 }
 
 template <class Fixture>
-static void BM_ErrorGetStatus(benchmark::State& state) {
+static void BM_ErrorGetStatus(benchmark::State &state) {
   TrackCounters track_counters;
   Fixture fixture;
   grpc_core::ExecCtx exec_ctx;
@@ -258,7 +258,7 @@ static void BM_ErrorGetStatus(benchmark::State& state) {
 }
 
 template <class Fixture>
-static void BM_ErrorGetStatusCode(benchmark::State& state) {
+static void BM_ErrorGetStatusCode(benchmark::State &state) {
   TrackCounters track_counters;
   Fixture fixture;
   grpc_core::ExecCtx exec_ctx;
@@ -272,7 +272,7 @@ static void BM_ErrorGetStatusCode(benchmark::State& state) {
 }
 
 template <class Fixture>
-static void BM_ErrorHttpError(benchmark::State& state) {
+static void BM_ErrorHttpError(benchmark::State &state) {
   TrackCounters track_counters;
   Fixture fixture;
   grpc_core::ExecCtx exec_ctx;
@@ -286,7 +286,7 @@ static void BM_ErrorHttpError(benchmark::State& state) {
 }
 
 template <class Fixture>
-static void BM_HasClearGrpcStatus(benchmark::State& state) {
+static void BM_HasClearGrpcStatus(benchmark::State &state) {
   TrackCounters track_counters;
   Fixture fixture;
   for (auto _ : state) {
@@ -316,7 +316,7 @@ namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);

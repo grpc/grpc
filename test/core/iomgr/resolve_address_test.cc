@@ -42,18 +42,18 @@ static gpr_timespec test_deadline(void) {
 
 typedef struct args_struct {
   gpr_event ev;
-  grpc_resolved_addresses* addrs;
-  gpr_mu* mu;
+  grpc_resolved_addresses *addrs;
+  gpr_mu *mu;
   bool done;              // guarded by mu
-  grpc_pollset* pollset;  // guarded by mu
-  grpc_pollset_set* pollset_set;
+  grpc_pollset *pollset;  // guarded by mu
+  grpc_pollset_set *pollset_set;
 } args_struct;
 
-static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
+static void do_nothing(void * /*arg*/, grpc_error_handle /*error*/) {}
 
-void args_init(args_struct* args) {
+void args_init(args_struct *args) {
   gpr_event_init(&args->ev);
-  args->pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+  args->pollset = static_cast<grpc_pollset *>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
@@ -61,7 +61,7 @@ void args_init(args_struct* args) {
   args->done = false;
 }
 
-void args_finish(args_struct* args) {
+void args_finish(args_struct *args) {
   GPR_ASSERT(gpr_event_wait(&args->ev, test_deadline()));
   grpc_resolved_addresses_destroy(args->addrs);
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
@@ -83,7 +83,7 @@ static grpc_millis n_sec_deadline(int seconds) {
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
-static void poll_pollset_until_request_done(args_struct* args) {
+static void poll_pollset_until_request_done(args_struct *args) {
   // Try to give enough time for c-ares to run through its retries
   // a few times if needed.
   grpc_millis deadline = n_sec_deadline(90);
@@ -97,17 +97,17 @@ static void poll_pollset_until_request_done(args_struct* args) {
       grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
       gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done, time_left);
       GPR_ASSERT(time_left >= 0);
-      grpc_pollset_worker* worker = nullptr;
+      grpc_pollset_worker *worker = nullptr;
       GRPC_LOG_IF_ERROR(
           "pollset_work",
           grpc_pollset_work(args->pollset, &worker, n_sec_deadline(1)));
     }
   }
-  gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
+  gpr_event_set(&args->ev, reinterpret_cast<void *>(1));
 }
 
-static void must_succeed(void* argsp, grpc_error_handle err) {
-  args_struct* args = static_cast<args_struct*>(argsp);
+static void must_succeed(void *argsp, grpc_error_handle err) {
+  args_struct *args = static_cast<args_struct *>(argsp);
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   GPR_ASSERT(args->addrs != nullptr);
   GPR_ASSERT(args->addrs->naddrs > 0);
@@ -116,8 +116,8 @@ static void must_succeed(void* argsp, grpc_error_handle err) {
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
 }
 
-static void must_fail(void* argsp, grpc_error_handle err) {
-  args_struct* args = static_cast<args_struct*>(argsp);
+static void must_fail(void *argsp, grpc_error_handle err) {
+  args_struct *args = static_cast<args_struct *>(argsp);
   GPR_ASSERT(err != GRPC_ERROR_NONE);
   grpc_core::MutexLockForGprMu lock(args->mu);
   args->done = true;
@@ -125,26 +125,26 @@ static void must_fail(void* argsp, grpc_error_handle err) {
 }
 
 // This test assumes the environment has an ipv6 loopback
-static void must_succeed_with_ipv6_first(void* argsp, grpc_error_handle err) {
-  args_struct* args = static_cast<args_struct*>(argsp);
+static void must_succeed_with_ipv6_first(void *argsp, grpc_error_handle err) {
+  args_struct *args = static_cast<args_struct *>(argsp);
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   GPR_ASSERT(args->addrs != nullptr);
   GPR_ASSERT(args->addrs->naddrs > 0);
-  const struct sockaddr* first_address =
-      reinterpret_cast<const struct sockaddr*>(args->addrs->addrs[0].addr);
+  const struct sockaddr *first_address =
+      reinterpret_cast<const struct sockaddr *>(args->addrs->addrs[0].addr);
   GPR_ASSERT(first_address->sa_family == AF_INET6);
   grpc_core::MutexLockForGprMu lock(args->mu);
   args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
 }
 
-static void must_succeed_with_ipv4_first(void* argsp, grpc_error_handle err) {
-  args_struct* args = static_cast<args_struct*>(argsp);
+static void must_succeed_with_ipv4_first(void *argsp, grpc_error_handle err) {
+  args_struct *args = static_cast<args_struct *>(argsp);
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   GPR_ASSERT(args->addrs != nullptr);
   GPR_ASSERT(args->addrs->naddrs > 0);
-  const struct sockaddr* first_address =
-      reinterpret_cast<const struct sockaddr*>(args->addrs->addrs[0].addr);
+  const struct sockaddr *first_address =
+      reinterpret_cast<const struct sockaddr *>(args->addrs->addrs[0].addr);
   GPR_ASSERT(first_address->sa_family == AF_INET);
   grpc_core::MutexLockForGprMu lock(args->mu);
   args->done = true;
@@ -244,7 +244,7 @@ static void test_ipv6_with_port(void) {
 }
 
 static void test_ipv6_without_port(void) {
-  const char* const kCases[] = {
+  const char *const kCases[] = {
       "2001:db8::1",
       "2001:db8::1.2.3.4",
       "[2001:db8::1]",
@@ -265,7 +265,7 @@ static void test_ipv6_without_port(void) {
 }
 
 static void test_invalid_ip_addresses(void) {
-  const char* const kCases[] = {
+  const char *const kCases[] = {
       "293.283.1238.3:1",
       "[2001:db8::11111]:1",
   };
@@ -285,7 +285,7 @@ static void test_invalid_ip_addresses(void) {
 }
 
 static void test_unparseable_hostports(void) {
-  const char* const kCases[] = {
+  const char *const kCases[] = {
       "[", "[::1", "[::1]bad", "[1.2.3.4]", "[localhost]", "[localhost]:1",
   };
   unsigned i;
@@ -308,9 +308,9 @@ typedef struct mock_ipv6_disabled_source_addr_factory {
 } mock_ipv6_disabled_source_addr_factory;
 
 static bool mock_ipv6_disabled_source_addr_factory_get_source_addr(
-    address_sorting_source_addr_factory* /*factory*/,
-    const address_sorting_address* dest_addr,
-    address_sorting_address* source_addr) {
+    address_sorting_source_addr_factory * /*factory*/,
+    const address_sorting_address *dest_addr,
+    address_sorting_address *source_addr) {
   // Mock lack of IPv6. For IPv4, set the source addr to be the same
   // as the destination; tests won't actually connect on the result anyways.
   if (address_sorting_abstract_get_family(dest_addr) ==
@@ -323,9 +323,9 @@ static bool mock_ipv6_disabled_source_addr_factory_get_source_addr(
 }
 
 void mock_ipv6_disabled_source_addr_factory_destroy(
-    address_sorting_source_addr_factory* factory) {
-  mock_ipv6_disabled_source_addr_factory* f =
-      reinterpret_cast<mock_ipv6_disabled_source_addr_factory*>(factory);
+    address_sorting_source_addr_factory *factory) {
+  mock_ipv6_disabled_source_addr_factory *f =
+      reinterpret_cast<mock_ipv6_disabled_source_addr_factory *>(factory);
   gpr_free(f);
 }
 
@@ -335,10 +335,10 @@ const address_sorting_source_addr_factory_vtable
         mock_ipv6_disabled_source_addr_factory_destroy,
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   // First set the resolver type based off of --resolver
-  const char* resolver_type = nullptr;
-  gpr_cmdline* cl = gpr_cmdline_create("resolve address test");
+  const char *resolver_type = nullptr;
+  gpr_cmdline *cl = gpr_cmdline_create("resolve address test");
   gpr_cmdline_add_string(cl, "resolver", "Resolver type (ares or native)",
                          &resolver_type);
   // In case that there are more than one argument on the command line,
@@ -391,8 +391,8 @@ int main(int argc, char** argv) {
     // Run a test case in which c-ares's address sorter
     // thinks that IPv4 is available and IPv6 isn't.
     grpc_init();
-    mock_ipv6_disabled_source_addr_factory* factory =
-        static_cast<mock_ipv6_disabled_source_addr_factory*>(
+    mock_ipv6_disabled_source_addr_factory *factory =
+        static_cast<mock_ipv6_disabled_source_addr_factory *>(
             gpr_malloc(sizeof(mock_ipv6_disabled_source_addr_factory)));
     factory->base.vtable = &kMockIpv6DisabledSourceAddrFactoryVtable;
     address_sorting_override_source_addr_factory_for_testing(&factory->base);

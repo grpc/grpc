@@ -32,23 +32,23 @@ namespace internal {
 // Provide access to ProtoBufferWriter internals.
 class ProtoBufferWriterPeer {
  public:
-  explicit ProtoBufferWriterPeer(ProtoBufferWriter* writer) : writer_(writer) {}
+  explicit ProtoBufferWriterPeer(ProtoBufferWriter *writer) : writer_(writer) {}
   bool have_backup() const { return writer_->have_backup_; }
-  const grpc_slice& backup_slice() const { return writer_->backup_slice_; }
-  const grpc_slice& slice() const { return writer_->slice_; }
+  const grpc_slice &backup_slice() const { return writer_->backup_slice_; }
+  const grpc_slice &slice() const { return writer_->slice_; }
 
  private:
-  ProtoBufferWriter* writer_;
+  ProtoBufferWriter *writer_;
 };
 
 // Provide access to ByteBuffer internals.
 class GrpcByteBufferPeer {
  public:
-  explicit GrpcByteBufferPeer(ByteBuffer* bb) : bb_(bb) {}
-  grpc_byte_buffer* c_buffer() { return bb_->c_buffer(); }
+  explicit GrpcByteBufferPeer(ByteBuffer *bb) : bb_(bb) {}
+  grpc_byte_buffer *c_buffer() { return bb_->c_buffer(); }
 
  private:
-  ByteBuffer* bb_;
+  ByteBuffer *bb_;
 };
 
 class ProtoUtilsTest : public ::testing::Test {
@@ -74,7 +74,7 @@ TEST_F(ProtoUtilsTest, TinyBackupThenNext) {
   ProtoBufferWriter writer(&bp, block_size, 8192);
   ProtoBufferWriterPeer peer(&writer);
 
-  void* data;
+  void *data;
   int size;
   // Allocate a slice.
   ASSERT_TRUE(writer.Next(&data, &size));
@@ -96,7 +96,7 @@ void BufferWriterTest(int block_size, int total_size, int backup_size) {
   ProtoBufferWriter writer(&bb, block_size, total_size);
 
   int written_size = 0;
-  void* data;
+  void *data;
   int size = 0;
   bool backed_up_entire_slice = false;
 
@@ -123,7 +123,7 @@ void BufferWriterTest(int block_size, int total_size, int backup_size) {
       ASSERT_GT(backup_size, 0);
     }
     for (int i = 0; i < write_size; i++) {
-      (static_cast<uint8_t*>(data))[i] = written_size % 128;
+      (static_cast<uint8_t *>(data))[i] = written_size % 128;
       written_size++;
     }
     if (should_backup) {
@@ -188,7 +188,7 @@ TEST_F(WriterTest, LargeBlockLargeBackup) {
 }  // namespace internal
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

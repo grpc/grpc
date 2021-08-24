@@ -22,13 +22,13 @@ namespace grpc {
 namespace testing {
 namespace {
 
-std::string ToString(const grpc::string_ref& r) {
+std::string ToString(const grpc::string_ref &r) {
   return std::string(r.data(), r.size());
 }
 
 int GetIntValueFromMetadataHelper(
-    const char* key,
-    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+    const char *key,
+    const std::multimap<grpc::string_ref, grpc::string_ref> &metadata,
     int default_value) {
   if (metadata.find(key) != metadata.end()) {
     std::istringstream iss(ToString(metadata.find(key)->second));
@@ -39,16 +39,16 @@ int GetIntValueFromMetadataHelper(
 }
 
 int GetIntValueFromMetadata(
-    const char* key,
-    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+    const char *key,
+    const std::multimap<grpc::string_ref, grpc::string_ref> &metadata,
     int default_value) {
   return GetIntValueFromMetadataHelper(key, metadata, default_value);
 }
 }  // namespace
 
-ServerUnaryReactor* CallbackStreamingTestService::Echo(
-    CallbackServerContext* context, const EchoRequest* /*request*/,
-    EchoResponse* response) {
+ServerUnaryReactor *CallbackStreamingTestService::Echo(
+    CallbackServerContext *context, const EchoRequest * /*request*/,
+    EchoResponse *response) {
   int response_msgs_size = GetIntValueFromMetadata(
       kServerMessageSize, context->client_metadata(), 0);
   if (response_msgs_size > 0) {
@@ -56,16 +56,16 @@ ServerUnaryReactor* CallbackStreamingTestService::Echo(
   } else {
     response->set_message("");
   }
-  auto* reactor = context->DefaultReactor();
+  auto *reactor = context->DefaultReactor();
   reactor->Finish(::grpc::Status::OK);
   return reactor;
 }
 
-ServerBidiReactor<EchoRequest, EchoResponse>*
-CallbackStreamingTestService::BidiStream(CallbackServerContext* context) {
+ServerBidiReactor<EchoRequest, EchoResponse>
+    *CallbackStreamingTestService::BidiStream(CallbackServerContext *context) {
   class Reactor : public ServerBidiReactor<EchoRequest, EchoResponse> {
    public:
-    explicit Reactor(CallbackServerContext* context) {
+    explicit Reactor(CallbackServerContext *context) {
       message_size_ = GetIntValueFromMetadata(kServerMessageSize,
                                               context->client_metadata(), 0);
       StartRead(&request_);

@@ -38,16 +38,16 @@
   "\x10\x02te\x08trailers"                                    \
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
-static void verifier_succeeds(grpc_server* server, grpc_completion_queue* cq,
-                              void* registered_method) {
+static void verifier_succeeds(grpc_server *server, grpc_completion_queue *cq,
+                              void *registered_method) {
   grpc_call_error error;
-  grpc_call* s;
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_call *s;
+  cq_verifier *cqv = cq_verifier_create(cq);
   grpc_metadata_array request_metadata_recv;
   gpr_timespec deadline;
-  grpc_byte_buffer* payload = nullptr;
+  grpc_byte_buffer *payload = nullptr;
 
   grpc_metadata_array_init(&request_metadata_recv);
 
@@ -66,8 +66,8 @@ static void verifier_succeeds(grpc_server* server, grpc_completion_queue* cq,
   cq_verifier_destroy(cqv);
 }
 
-static void verifier_fails(grpc_server* server, grpc_completion_queue* cq,
-                           void* /*registered_method*/) {
+static void verifier_fails(grpc_server *server, grpc_completion_queue *cq,
+                           void * /*registered_method*/) {
   while (server->core_server->HasOpenConnections()) {
     GPR_ASSERT(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
@@ -75,7 +75,7 @@ static void verifier_fails(grpc_server* server, grpc_completion_queue* cq,
   }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 

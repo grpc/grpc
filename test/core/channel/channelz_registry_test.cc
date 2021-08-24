@@ -145,7 +145,7 @@ TEST_F(ChannelzRegistryTest, TestUnregistration) {
 }  // namespace channelz
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();

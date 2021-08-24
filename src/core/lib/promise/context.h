@@ -34,26 +34,26 @@ namespace promise_detail {
 template <typename T>
 class Context : public ContextType<T> {
  public:
-  explicit Context(T* p) : old_(current_) { current_ = p; }
+  explicit Context(T *p) : old_(current_) { current_ = p; }
   ~Context() { current_ = old_; }
-  Context(const Context&) = delete;
-  Context& operator=(const Context&) = delete;
+  Context(const Context &) = delete;
+  Context &operator=(const Context &) = delete;
 
-  static T* get() { return current_; }
+  static T *get() { return current_; }
 
  private:
-  T* const old_;
-  static GPR_THREAD_LOCAL(T*) current_;
+  T *const old_;
+  static GPR_THREAD_LOCAL(T *) current_;
 };
 
 template <typename T>
-GPR_THREAD_LOCAL(T*)
+GPR_THREAD_LOCAL(T *)
 Context<T>::current_;
 
 template <typename T, typename F>
 class WithContext {
  public:
-  WithContext(F f, T* context) : context_(context), f_(std::move(f)) {}
+  WithContext(F f, T *context) : context_(context), f_(std::move(f)) {}
 
   decltype(std::declval<F>()()) operator()() {
     Context<T> ctx(context_);
@@ -61,7 +61,7 @@ class WithContext {
   }
 
  private:
-  T* context_;
+  T *context_;
   F f_;
 };
 
@@ -69,13 +69,13 @@ class WithContext {
 
 // Retrieve the current value of a context.
 template <typename T>
-T* GetContext() {
+T *GetContext() {
   return promise_detail::Context<T>::get();
 }
 
 // Given a promise and a context, return a promise that has that context set.
 template <typename T, typename F>
-promise_detail::WithContext<T, F> WithContext(F f, T* context) {
+promise_detail::WithContext<T, F> WithContext(F f, T *context) {
   return promise_detail::WithContext<T, F>(f, context);
 }
 

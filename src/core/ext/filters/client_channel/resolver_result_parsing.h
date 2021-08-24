@@ -49,11 +49,11 @@ class ClientChannelGlobalParsedConfig
     return parsed_lb_config_;
   }
 
-  const std::string& parsed_deprecated_lb_policy() const {
+  const std::string &parsed_deprecated_lb_policy() const {
     return parsed_deprecated_lb_policy_;
   }
 
-  const absl::optional<std::string>& health_check_service_name() const {
+  const absl::optional<std::string> &health_check_service_name() const {
     return health_check_service_name_;
   }
 
@@ -67,7 +67,7 @@ class ClientChannelMethodParsedConfig
     : public ServiceConfigParser::ParsedConfig {
  public:
   ClientChannelMethodParsedConfig(grpc_millis timeout,
-                                  const absl::optional<bool>& wait_for_ready)
+                                  const absl::optional<bool> &wait_for_ready)
       : timeout_(timeout), wait_for_ready_(wait_for_ready) {}
 
   grpc_millis timeout() const { return timeout_; }
@@ -82,12 +82,12 @@ class ClientChannelMethodParsedConfig
 class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {
  public:
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
-      const grpc_channel_args* /*args*/, const Json& json,
-      grpc_error_handle* error) override;
+      const grpc_channel_args * /*args*/, const Json &json,
+      grpc_error_handle *error) override;
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_channel_args* /*args*/, const Json& json,
-      grpc_error_handle* error) override;
+      const grpc_channel_args * /*args*/, const Json &json,
+      grpc_error_handle *error) override;
 
   static size_t ParserIndex();
   static void Register();

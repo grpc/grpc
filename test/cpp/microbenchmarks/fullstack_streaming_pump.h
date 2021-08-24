@@ -35,10 +35,10 @@ namespace testing {
  * BENCHMARKING KERNELS
  */
 
-static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
+static void *tag(intptr_t x) { return reinterpret_cast<void *>(x); }
 
 template <class Fixture>
-static void BM_PumpStreamClientToServer(benchmark::State& state) {
+static void BM_PumpStreamClientToServer(benchmark::State &state) {
   EchoTestService::AsyncService service;
   std::unique_ptr<Fixture> fixture(new Fixture(&service));
   {
@@ -57,7 +57,7 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     ClientContext cli_ctx;
     auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
     int need_tags = (1 << 0) | (1 << 1);
-    void* t;
+    void *t;
     bool ok;
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
@@ -107,7 +107,7 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
 }
 
 template <class Fixture>
-static void BM_PumpStreamServerToClient(benchmark::State& state) {
+static void BM_PumpStreamServerToClient(benchmark::State &state) {
   EchoTestService::AsyncService service;
   std::unique_ptr<Fixture> fixture(new Fixture(&service));
   {
@@ -126,7 +126,7 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
     ClientContext cli_ctx;
     auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
     int need_tags = (1 << 0) | (1 << 1);
-    void* t;
+    void *t;
     bool ok;
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));

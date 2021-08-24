@@ -20,26 +20,26 @@
 
 namespace {
 
-void* ProviderArgCopy(void* p) {
-  grpc_authorization_policy_provider* provider =
-      static_cast<grpc_authorization_policy_provider*>(p);
+void *ProviderArgCopy(void *p) {
+  grpc_authorization_policy_provider *provider =
+      static_cast<grpc_authorization_policy_provider *>(p);
   provider->Ref().release();
   return provider;
 }
 
-void ProviderArgDestroy(void* p) {
-  grpc_authorization_policy_provider* provider =
-      static_cast<grpc_authorization_policy_provider*>(p);
+void ProviderArgDestroy(void *p) {
+  grpc_authorization_policy_provider *provider =
+      static_cast<grpc_authorization_policy_provider *>(p);
   provider->Unref();
 }
 
-int ProviderArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
+int ProviderArgCmp(void *p, void *q) { return GPR_ICMP(p, q); }
 
 }  // namespace
 
 // Wrapper API declared in grpc.h
 
-const grpc_arg_pointer_vtable* grpc_authorization_policy_provider_arg_vtable() {
+const grpc_arg_pointer_vtable *grpc_authorization_policy_provider_arg_vtable() {
   static const grpc_arg_pointer_vtable vtable = {
       ProviderArgCopy, ProviderArgDestroy, ProviderArgCmp};
   return &vtable;

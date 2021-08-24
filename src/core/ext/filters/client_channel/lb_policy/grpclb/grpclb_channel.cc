@@ -24,12 +24,12 @@
 
 namespace grpc_core {
 
-grpc_channel_args* ModifyGrpclbBalancerChannelArgs(grpc_channel_args* args) {
+grpc_channel_args *ModifyGrpclbBalancerChannelArgs(grpc_channel_args *args) {
   return args;
 }
 
-grpc_channel* CreateGrpclbBalancerChannel(const char* target_uri,
-                                          const grpc_channel_args& args) {
+grpc_channel *CreateGrpclbBalancerChannel(const char *target_uri,
+                                          const grpc_channel_args &args) {
   return grpc_insecure_channel_create(target_uri, &args, nullptr);
 }
 

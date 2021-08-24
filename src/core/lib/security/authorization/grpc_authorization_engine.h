@@ -40,7 +40,7 @@ class GrpcAuthorizationEngine : public AuthorizationEngine {
 
   // Evaluates incoming request against RBAC policy and makes a decision to
   // whether allow/deny this request.
-  Decision Evaluate(const EvaluateArgs& args) const override;
+  Decision Evaluate(const EvaluateArgs &args) const override;
 
  private:
   struct Policy {

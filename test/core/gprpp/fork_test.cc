@@ -50,7 +50,7 @@ static void test_init() {
 #define THREAD_DELAY_EPSILON 1500
 #define CONCURRENT_TEST_THREADS 100
 
-static void sleeping_thd(void* arg) {
+static void sleeping_thd(void *arg) {
   int64_t sleep_ms = reinterpret_cast<int64_t>(arg);
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_millis(sleep_ms, GPR_TIMESPAN)));
@@ -75,20 +75,20 @@ static void test_thd_count() {
     intptr_t sleep_time_ms =
         (i * THREAD_DELAY_MS) / (CONCURRENT_TEST_THREADS - 1);
     thds[i] = grpc_core::Thread("grpc_fork_test", sleeping_thd,
-                                reinterpret_cast<void*>(sleep_time_ms));
+                                reinterpret_cast<void *>(sleep_time_ms));
     thds[i].Start();
   }
   grpc_core::Fork::AwaitThreads();
   gpr_timespec end_time = gpr_now(GPR_CLOCK_REALTIME);
-  for (auto& thd : thds) {
+  for (auto &thd : thds) {
     thd.Join();
   }
   GPR_ASSERT(gpr_time_similar(end_time, est_end_time, tolerance));
   grpc_core::Fork::GlobalShutdown();
 }
 
-static void exec_ctx_thread(void* arg) {
-  bool* exec_ctx_created = static_cast<bool*>(arg);
+static void exec_ctx_thread(void *arg) {
+  bool *exec_ctx_created = static_cast<bool *>(arg);
   grpc_core::Fork::IncExecCtxCount();
   *exec_ctx_created = true;
 }
@@ -129,7 +129,7 @@ static void test_exec_count() {
   grpc_core::Fork::GlobalShutdown();
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   grpc::testing::TestEnvironment env(argc, argv);
   test_init();
   test_thd_count();

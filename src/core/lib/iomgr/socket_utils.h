@@ -39,9 +39,9 @@ uint32_t grpc_htonl(uint32_t hostlong);
 uint32_t grpc_ntohl(uint32_t netlong);
 
 /* A wrapper for inet_pton on POSIX and WINDOWS */
-int grpc_inet_pton(int af, const char* src, void* dst);
+int grpc_inet_pton(int af, const char *src, void *dst);
 
 /* A wrapper for inet_ntop on POSIX systems and InetNtop on Windows systems */
-const char* grpc_inet_ntop(int af, const void* src, char* dst, size_t size);
+const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size);
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_H */

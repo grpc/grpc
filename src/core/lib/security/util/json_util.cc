@@ -28,9 +28,9 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/util/json_util.h"
 
-const char* grpc_json_get_string_property(const grpc_core::Json& json,
-                                          const char* prop_name,
-                                          grpc_error_handle* error) {
+const char *grpc_json_get_string_property(const grpc_core::Json &json,
+                                          const char *prop_name,
+                                          grpc_error_handle *error) {
   if (json.type() != grpc_core::Json::Type::OBJECT) {
     if (error != nullptr) {
       *error =
@@ -59,11 +59,11 @@ const char* grpc_json_get_string_property(const grpc_core::Json& json,
   return it->second.string_value().c_str();
 }
 
-bool grpc_copy_json_string_property(const grpc_core::Json& json,
-                                    const char* prop_name,
-                                    char** copied_value) {
+bool grpc_copy_json_string_property(const grpc_core::Json &json,
+                                    const char *prop_name,
+                                    char **copied_value) {
   grpc_error_handle error = GRPC_ERROR_NONE;
-  const char* prop_value =
+  const char *prop_value =
       grpc_json_get_string_property(json, prop_name, &error);
   GRPC_LOG_IF_ERROR("Could not copy JSON property", error);
   if (prop_value == nullptr) return false;

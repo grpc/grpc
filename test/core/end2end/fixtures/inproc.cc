@@ -38,9 +38,9 @@ typedef struct inproc_fixture_data {
 } inproc_fixture_data;
 
 static grpc_end2end_test_fixture inproc_create_fixture(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    grpc_channel_args * /*client_args*/, grpc_channel_args * /*server_args*/) {
   grpc_end2end_test_fixture f;
-  inproc_fixture_data* ffd = static_cast<inproc_fixture_data*>(
+  inproc_fixture_data *ffd = static_cast<inproc_fixture_data *>(
       gpr_malloc(sizeof(inproc_fixture_data)));
   memset(&f, 0, sizeof(f));
 
@@ -51,14 +51,14 @@ static grpc_end2end_test_fixture inproc_create_fixture(
   return f;
 }
 
-void inproc_init_client(grpc_end2end_test_fixture* f,
-                        grpc_channel_args* client_args) {
+void inproc_init_client(grpc_end2end_test_fixture *f,
+                        grpc_channel_args *client_args) {
   f->client = grpc_inproc_channel_create(f->server, client_args, nullptr);
   GPR_ASSERT(f->client);
 }
 
-void inproc_init_server(grpc_end2end_test_fixture* f,
-                        grpc_channel_args* server_args) {
+void inproc_init_server(grpc_end2end_test_fixture *f,
+                        grpc_channel_args *server_args) {
   if (f->server) {
     grpc_server_destroy(f->server);
   }
@@ -67,8 +67,9 @@ void inproc_init_server(grpc_end2end_test_fixture* f,
   grpc_server_start(f->server);
 }
 
-void inproc_tear_down(grpc_end2end_test_fixture* f) {
-  inproc_fixture_data* ffd = static_cast<inproc_fixture_data*>(f->fixture_data);
+void inproc_tear_down(grpc_end2end_test_fixture *f) {
+  inproc_fixture_data *ffd =
+      static_cast<inproc_fixture_data *>(f->fixture_data);
   gpr_free(ffd);
 }
 
@@ -79,7 +80,7 @@ static grpc_end2end_test_config configs[] = {
      inproc_tear_down},
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   size_t i;
 
   grpc::testing::TestEnvironment env(argc, argv);

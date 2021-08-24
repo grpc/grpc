@@ -53,42 +53,44 @@ static bool g_memory_counter_enabled;
 #if GPR_WRAP_MEMORY_COUNTER
 
 extern "C" {
-void* __real_malloc(size_t size);
-void* __real_calloc(size_t size);
-void* __real_realloc(void* ptr, size_t size);
-void __real_free(void* ptr);
+void *__real_malloc(size_t size);
+void *__real_calloc(size_t size);
+void *__real_realloc(void *ptr, size_t size);
+void __real_free(void *ptr);
 
-void* __wrap_malloc(size_t size);
-void* __wrap_calloc(size_t size);
-void* __wrap_realloc(void* ptr, size_t size);
-void __wrap_free(void* ptr);
+void *__wrap_malloc(size_t size);
+void *__wrap_calloc(size_t size);
+void *__wrap_realloc(void *ptr, size_t size);
+void __wrap_free(void *ptr);
 }
 
-void* __wrap_malloc(size_t size) {
+void *__wrap_malloc(size_t size) {
   if (!size) return nullptr;
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, (gpr_atm)1);
-  void* ptr =
+  void *ptr =
       __real_malloc(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
-  *static_cast<size_t*>(ptr) = size;
-  return static_cast<char*>(ptr) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
+  *static_cast<size_t *>(ptr) = size;
+  return static_cast<char *>(ptr) +
+         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
 }
 
-void* __wrap_calloc(size_t size) {
+void *__wrap_calloc(size_t size) {
   if (!size) return nullptr;
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, (gpr_atm)1);
-  void* ptr =
+  void *ptr =
       __real_calloc(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
-  *static_cast<size_t*>(ptr) = size;
-  return static_cast<char*>(ptr) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
+  *static_cast<size_t *>(ptr) = size;
+  return static_cast<char *>(ptr) +
+         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
 }
 
-void* __wrap_realloc(void* ptr, size_t size) {
+void *__wrap_realloc(void *ptr, size_t size) {
   if (ptr == nullptr) {
     return __wrap_malloc(size);
   }
@@ -96,26 +98,26 @@ void* __wrap_realloc(void* ptr, size_t size) {
     __wrap_free(ptr);
     return nullptr;
   }
-  void* rptr =
-      static_cast<char*>(ptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
+  void *rptr =
+      static_cast<char *>(ptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative,
-                       -*static_cast<gpr_atm*>(rptr));
+                       -*static_cast<gpr_atm *>(rptr));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
-  void* new_ptr =
+  void *new_ptr =
       __real_realloc(rptr, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
-  *static_cast<size_t*>(new_ptr) = size;
-  return static_cast<char*>(new_ptr) +
+  *static_cast<size_t *>(new_ptr) = size;
+  return static_cast<char *>(new_ptr) +
          GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
 }
 
-void __wrap_free(void* ptr) {
+void __wrap_free(void *ptr) {
   if (ptr == nullptr) return;
-  void* rptr =
-      static_cast<char*>(ptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size_t));
+  void *rptr =
+      static_cast<char *>(ptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size_t));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative,
-                       -*static_cast<gpr_atm*>(rptr));
+                       -*static_cast<gpr_atm *>(rptr));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, -(gpr_atm)1);
   __real_free(rptr);
 }

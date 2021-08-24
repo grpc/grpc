@@ -45,7 +45,7 @@ class GreeterClient {
 
   // Assembles the client's payload, sends it and presents the response back
   // from the server.
-  std::string SayHello(const std::string& user) {
+  std::string SayHello(const std::string &user) {
     // Data we are sending to the server.
     HelloRequest request;
     request.set_name(user);
@@ -77,8 +77,8 @@ class GreeterClient {
     // Request that, upon completion of the RPC, "reply" be updated with the
     // server's response; "status" with the indication of whether the operation
     // was successful. Tag the request with the integer 1.
-    rpc->Finish(&reply, &status, (void*)1);
-    void* got_tag;
+    rpc->Finish(&reply, &status, (void *)1);
+    void *got_tag;
     bool ok = false;
     // Block until the next result is available in the completion queue "cq".
     // The return value of Next should always be checked. This return value
@@ -87,7 +87,7 @@ class GreeterClient {
 
     // Verify that the result from "cq" corresponds, by its tag, our previous
     // request.
-    GPR_ASSERT(got_tag == (void*)1);
+    GPR_ASSERT(got_tag == (void *)1);
     // ... and that the request was completed successfully. Note that "ok"
     // corresponds solely to the request for updates introduced by Finish().
     GPR_ASSERT(ok);
@@ -106,7 +106,7 @@ class GreeterClient {
   std::unique_ptr<Greeter::Stub> stub_;
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   // Instantiate the client. It requires a channel, out of which the actual RPCs
   // are created. This channel models a connection to an endpoint (in this case,
   // localhost at port 50051). We indicate that the channel isn't authenticated

@@ -39,10 +39,10 @@ class ServiceConfigCallData {
  public:
   ServiceConfigCallData(
       RefCountedPtr<ServiceConfig> service_config,
-      const ServiceConfigParser::ParsedConfigVector* method_configs,
+      const ServiceConfigParser::ParsedConfigVector *method_configs,
       ConfigSelector::CallAttributes call_attributes,
-      ConfigSelector::CallDispatchController* call_dispatch_controller,
-      grpc_call_context_element* call_context)
+      ConfigSelector::CallDispatchController *call_dispatch_controller,
+      grpc_call_context_element *call_context)
       : service_config_(std::move(service_config)),
         method_configs_(method_configs),
         call_attributes_(std::move(call_attributes)),
@@ -53,27 +53,27 @@ class ServiceConfigCallData {
 
   ServiceConfigCallData(
       RefCountedPtr<ServiceConfig> service_config,
-      const ServiceConfigParser::ParsedConfigVector* method_configs,
-      grpc_call_context_element* call_context)
+      const ServiceConfigParser::ParsedConfigVector *method_configs,
+      grpc_call_context_element *call_context)
       : ServiceConfigCallData(std::move(service_config), method_configs, {},
                               nullptr, call_context) {}
 
-  ServiceConfig* service_config() { return service_config_.get(); }
+  ServiceConfig *service_config() { return service_config_.get(); }
 
-  ServiceConfigParser::ParsedConfig* GetMethodParsedConfig(size_t index) const {
+  ServiceConfigParser::ParsedConfig *GetMethodParsedConfig(size_t index) const {
     return method_configs_ != nullptr ? (*method_configs_)[index].get()
                                       : nullptr;
   }
 
-  ServiceConfigParser::ParsedConfig* GetGlobalParsedConfig(size_t index) const {
+  ServiceConfigParser::ParsedConfig *GetGlobalParsedConfig(size_t index) const {
     return service_config_->GetGlobalParsedConfig(index);
   }
 
-  const std::map<const char*, absl::string_view>& call_attributes() const {
+  const std::map<const char *, absl::string_view> &call_attributes() const {
     return call_attributes_;
   }
 
-  ConfigSelector::CallDispatchController* call_dispatch_controller() {
+  ConfigSelector::CallDispatchController *call_dispatch_controller() {
     return &call_dispatch_controller_;
   }
 
@@ -88,7 +88,7 @@ class ServiceConfigCallData {
       : public ConfigSelector::CallDispatchController {
    public:
     explicit SingleCommitCallDispatchController(
-        ConfigSelector::CallDispatchController* call_dispatch_controller)
+        ConfigSelector::CallDispatchController *call_dispatch_controller)
         : call_dispatch_controller_(call_dispatch_controller) {}
 
     bool ShouldRetry() override {
@@ -106,17 +106,17 @@ class ServiceConfigCallData {
     }
 
    private:
-    ConfigSelector::CallDispatchController* call_dispatch_controller_;
+    ConfigSelector::CallDispatchController *call_dispatch_controller_;
     bool commit_called_ = false;
   };
 
-  static void Destroy(void* ptr) {
-    ServiceConfigCallData* self = static_cast<ServiceConfigCallData*>(ptr);
+  static void Destroy(void *ptr) {
+    ServiceConfigCallData *self = static_cast<ServiceConfigCallData *>(ptr);
     self->~ServiceConfigCallData();
   }
 
   RefCountedPtr<ServiceConfig> service_config_;
-  const ServiceConfigParser::ParsedConfigVector* method_configs_;
+  const ServiceConfigParser::ParsedConfigVector *method_configs_;
   ConfigSelector::CallAttributes call_attributes_;
   SingleCommitCallDispatchController call_dispatch_controller_;
 };

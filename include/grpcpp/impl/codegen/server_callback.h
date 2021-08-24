@@ -104,7 +104,7 @@ class ServerCallbackCall {
 
   // Fast version called with known reactor passed in, used from derived
   // classes, typically in non-cancel case
-  void MaybeCallOnCancel(ServerReactor* reactor) {
+  void MaybeCallOnCancel(ServerReactor *reactor) {
     if (GPR_UNLIKELY(UnblockCancellation())) {
       CallOnCancel(reactor);
     }
@@ -125,7 +125,7 @@ class ServerCallbackCall {
   void Ref() { callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed); }
 
  private:
-  virtual ServerReactor* reactor() = 0;
+  virtual ServerReactor *reactor() = 0;
 
   // CallOnDone performs the work required at completion of the RPC: invoking
   // the OnDone function and doing all necessary cleanup. This function is only
@@ -138,7 +138,7 @@ class ServerCallbackCall {
 
   // If the OnCancel reaction is inlineable, execute it inline. Otherwise send
   // it to an executor.
-  void CallOnCancel(ServerReactor* reactor);
+  void CallOnCancel(ServerReactor *reactor);
 
   // Implement the cancellation constraint counter. Return true if OnCancel
   // should be called, false otherwise.
@@ -198,7 +198,7 @@ class ServerCallbackUnary : public internal::ServerCallbackCall {
   // Use a template rather than explicitly specifying ServerUnaryReactor to
   // delay binding and avoid a circular forward declaration issue
   template <class Reactor>
-  void BindReactor(Reactor* reactor) {
+  void BindReactor(Reactor *reactor) {
     reactor->InternalBindCall(this);
   }
 };
@@ -209,10 +209,10 @@ class ServerCallbackReader : public internal::ServerCallbackCall {
   ~ServerCallbackReader() override {}
   virtual void Finish(::grpc::Status s) = 0;
   virtual void SendInitialMetadata() = 0;
-  virtual void Read(Request* msg) = 0;
+  virtual void Read(Request *msg) = 0;
 
  protected:
-  void BindReactor(ServerReadReactor<Request>* reactor) {
+  void BindReactor(ServerReadReactor<Request> *reactor) {
     reactor->InternalBindReader(this);
   }
 };
@@ -224,12 +224,12 @@ class ServerCallbackWriter : public internal::ServerCallbackCall {
 
   virtual void Finish(::grpc::Status s) = 0;
   virtual void SendInitialMetadata() = 0;
-  virtual void Write(const Response* msg, ::grpc::WriteOptions options) = 0;
-  virtual void WriteAndFinish(const Response* msg, ::grpc::WriteOptions options,
+  virtual void Write(const Response *msg, ::grpc::WriteOptions options) = 0;
+  virtual void WriteAndFinish(const Response *msg, ::grpc::WriteOptions options,
                               ::grpc::Status s) = 0;
 
  protected:
-  void BindReactor(ServerWriteReactor<Response>* reactor) {
+  void BindReactor(ServerWriteReactor<Response> *reactor) {
     reactor->InternalBindWriter(this);
   }
 };
@@ -241,13 +241,13 @@ class ServerCallbackReaderWriter : public internal::ServerCallbackCall {
 
   virtual void Finish(::grpc::Status s) = 0;
   virtual void SendInitialMetadata() = 0;
-  virtual void Read(Request* msg) = 0;
-  virtual void Write(const Response* msg, ::grpc::WriteOptions options) = 0;
-  virtual void WriteAndFinish(const Response* msg, ::grpc::WriteOptions options,
+  virtual void Read(Request *msg) = 0;
+  virtual void Write(const Response *msg, ::grpc::WriteOptions options) = 0;
+  virtual void WriteAndFinish(const Response *msg, ::grpc::WriteOptions options,
                               ::grpc::Status s) = 0;
 
  protected:
-  void BindReactor(ServerBidiReactor<Request, Response>* reactor) {
+  void BindReactor(ServerBidiReactor<Request, Response> *reactor) {
     reactor->InternalBindStream(this);
   }
 };
@@ -279,7 +279,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// any initial metadata will be passed along with the first Write or the
   /// Finish (if there are no writes).
   void StartSendInitialMetadata() ABSL_LOCKS_EXCLUDED(stream_mu_) {
-    ServerCallbackReaderWriter<Request, Response>* stream =
+    ServerCallbackReaderWriter<Request, Response> *stream =
         stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
       grpc::internal::MutexLock l(&stream_mu_);
@@ -296,8 +296,8 @@ class ServerBidiReactor : public internal::ServerReactor {
   ///
   /// \param[out] req Where to eventually store the read message. Valid when
   ///                 the library calls OnReadDone
-  void StartRead(Request* req) ABSL_LOCKS_EXCLUDED(stream_mu_) {
-    ServerCallbackReaderWriter<Request, Response>* stream =
+  void StartRead(Request *req) ABSL_LOCKS_EXCLUDED(stream_mu_) {
+    ServerCallbackReaderWriter<Request, Response> *stream =
         stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
       grpc::internal::MutexLock l(&stream_mu_);
@@ -315,7 +315,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// \param[in] resp The message to be written. The library does not take
   ///                 ownership but the caller must ensure that the message is
   ///                 not deleted or modified until OnWriteDone is called.
-  void StartWrite(const Response* resp) {
+  void StartWrite(const Response *resp) {
     StartWrite(resp, ::grpc::WriteOptions());
   }
 
@@ -325,9 +325,9 @@ class ServerBidiReactor : public internal::ServerReactor {
   ///                 ownership but the caller must ensure that the message is
   ///                 not deleted or modified until OnWriteDone is called.
   /// \param[in] options The WriteOptions to use for writing this message
-  void StartWrite(const Response* resp, ::grpc::WriteOptions options)
+  void StartWrite(const Response *resp, ::grpc::WriteOptions options)
       ABSL_LOCKS_EXCLUDED(stream_mu_) {
-    ServerCallbackReaderWriter<Request, Response>* stream =
+    ServerCallbackReaderWriter<Request, Response> *stream =
         stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
       grpc::internal::MutexLock l(&stream_mu_);
@@ -354,9 +354,9 @@ class ServerBidiReactor : public internal::ServerReactor {
   ///                 not deleted or modified until OnDone is called.
   /// \param[in] options The WriteOptions to use for writing this message
   /// \param[in] s The status outcome of this RPC
-  void StartWriteAndFinish(const Response* resp, ::grpc::WriteOptions options,
+  void StartWriteAndFinish(const Response *resp, ::grpc::WriteOptions options,
                            ::grpc::Status s) ABSL_LOCKS_EXCLUDED(stream_mu_) {
-    ServerCallbackReaderWriter<Request, Response>* stream =
+    ServerCallbackReaderWriter<Request, Response> *stream =
         stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
       grpc::internal::MutexLock l(&stream_mu_);
@@ -380,7 +380,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   ///                 ownership but the caller must ensure that the message is
   ///                 not deleted or modified until OnWriteDone is called.
   /// \param[in] options The WriteOptions to use for writing this message
-  void StartWriteLast(const Response* resp, ::grpc::WriteOptions options) {
+  void StartWriteLast(const Response *resp, ::grpc::WriteOptions options) {
     StartWrite(resp, options.set_last_message());
   }
 
@@ -391,7 +391,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   ///
   /// \param[in] s The status outcome of this RPC
   void Finish(::grpc::Status s) ABSL_LOCKS_EXCLUDED(stream_mu_) {
-    ServerCallbackReaderWriter<Request, Response>* stream =
+    ServerCallbackReaderWriter<Request, Response> *stream =
         stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
       grpc::internal::MutexLock l(&stream_mu_);
@@ -441,7 +441,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   // May be overridden by internal implementation details. This is not a public
   // customization point.
   virtual void InternalBindStream(
-      ServerCallbackReaderWriter<Request, Response>* stream) {
+      ServerCallbackReaderWriter<Request, Response> *stream) {
     grpc::internal::MutexLock l(&stream_mu_);
 
     if (GPR_UNLIKELY(backlog_.send_initial_metadata_wanted)) {
@@ -472,13 +472,13 @@ class ServerBidiReactor : public internal::ServerReactor {
   //              once C++17 or ABSL is supported since stream and backlog are
   //              mutually exclusive in this class. Do likewise with the
   //              remaining reactor classes and their backlogs as well.
-  std::atomic<ServerCallbackReaderWriter<Request, Response>*> stream_{nullptr};
+  std::atomic<ServerCallbackReaderWriter<Request, Response> *> stream_{nullptr};
   struct PreBindBacklog {
     bool send_initial_metadata_wanted = false;
     bool write_and_finish_wanted = false;
     bool finish_wanted = false;
-    Request* read_wanted = nullptr;
-    const Response* write_wanted = nullptr;
+    Request *read_wanted = nullptr;
+    const Response *write_wanted = nullptr;
     ::grpc::WriteOptions write_options_wanted;
     ::grpc::Status status_wanted;
   };
@@ -494,7 +494,7 @@ class ServerReadReactor : public internal::ServerReactor {
 
   /// The following operation initiations are exactly like ServerBidiReactor.
   void StartSendInitialMetadata() ABSL_LOCKS_EXCLUDED(reader_mu_) {
-    ServerCallbackReader<Request>* reader =
+    ServerCallbackReader<Request> *reader =
         reader_.load(std::memory_order_acquire);
     if (reader == nullptr) {
       grpc::internal::MutexLock l(&reader_mu_);
@@ -506,8 +506,8 @@ class ServerReadReactor : public internal::ServerReactor {
     }
     reader->SendInitialMetadata();
   }
-  void StartRead(Request* req) ABSL_LOCKS_EXCLUDED(reader_mu_) {
-    ServerCallbackReader<Request>* reader =
+  void StartRead(Request *req) ABSL_LOCKS_EXCLUDED(reader_mu_) {
+    ServerCallbackReader<Request> *reader =
         reader_.load(std::memory_order_acquire);
     if (reader == nullptr) {
       grpc::internal::MutexLock l(&reader_mu_);
@@ -520,7 +520,7 @@ class ServerReadReactor : public internal::ServerReactor {
     reader->Read(req);
   }
   void Finish(::grpc::Status s) ABSL_LOCKS_EXCLUDED(reader_mu_) {
-    ServerCallbackReader<Request>* reader =
+    ServerCallbackReader<Request> *reader =
         reader_.load(std::memory_order_acquire);
     if (reader == nullptr) {
       grpc::internal::MutexLock l(&reader_mu_);
@@ -545,7 +545,7 @@ class ServerReadReactor : public internal::ServerReactor {
 
   // May be overridden by internal implementation details. This is not a public
   // customization point.
-  virtual void InternalBindReader(ServerCallbackReader<Request>* reader)
+  virtual void InternalBindReader(ServerCallbackReader<Request> *reader)
       ABSL_LOCKS_EXCLUDED(reader_mu_) {
     grpc::internal::MutexLock l(&reader_mu_);
 
@@ -563,11 +563,11 @@ class ServerReadReactor : public internal::ServerReactor {
   }
 
   grpc::internal::Mutex reader_mu_;
-  std::atomic<ServerCallbackReader<Request>*> reader_{nullptr};
+  std::atomic<ServerCallbackReader<Request> *> reader_{nullptr};
   struct PreBindBacklog {
     bool send_initial_metadata_wanted = false;
     bool finish_wanted = false;
-    Request* read_wanted = nullptr;
+    Request *read_wanted = nullptr;
     ::grpc::Status status_wanted;
   };
   PreBindBacklog backlog_ ABSL_GUARDED_BY(reader_mu_);
@@ -582,7 +582,7 @@ class ServerWriteReactor : public internal::ServerReactor {
 
   /// The following operation initiations are exactly like ServerBidiReactor.
   void StartSendInitialMetadata() ABSL_LOCKS_EXCLUDED(writer_mu_) {
-    ServerCallbackWriter<Response>* writer =
+    ServerCallbackWriter<Response> *writer =
         writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
       grpc::internal::MutexLock l(&writer_mu_);
@@ -594,12 +594,12 @@ class ServerWriteReactor : public internal::ServerReactor {
     }
     writer->SendInitialMetadata();
   }
-  void StartWrite(const Response* resp) {
+  void StartWrite(const Response *resp) {
     StartWrite(resp, ::grpc::WriteOptions());
   }
-  void StartWrite(const Response* resp, ::grpc::WriteOptions options)
+  void StartWrite(const Response *resp, ::grpc::WriteOptions options)
       ABSL_LOCKS_EXCLUDED(writer_mu_) {
-    ServerCallbackWriter<Response>* writer =
+    ServerCallbackWriter<Response> *writer =
         writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
       grpc::internal::MutexLock l(&writer_mu_);
@@ -612,9 +612,9 @@ class ServerWriteReactor : public internal::ServerReactor {
     }
     writer->Write(resp, options);
   }
-  void StartWriteAndFinish(const Response* resp, ::grpc::WriteOptions options,
+  void StartWriteAndFinish(const Response *resp, ::grpc::WriteOptions options,
                            ::grpc::Status s) ABSL_LOCKS_EXCLUDED(writer_mu_) {
-    ServerCallbackWriter<Response>* writer =
+    ServerCallbackWriter<Response> *writer =
         writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
       grpc::internal::MutexLock l(&writer_mu_);
@@ -629,11 +629,11 @@ class ServerWriteReactor : public internal::ServerReactor {
     }
     writer->WriteAndFinish(resp, options, std::move(s));
   }
-  void StartWriteLast(const Response* resp, ::grpc::WriteOptions options) {
+  void StartWriteLast(const Response *resp, ::grpc::WriteOptions options) {
     StartWrite(resp, options.set_last_message());
   }
   void Finish(::grpc::Status s) ABSL_LOCKS_EXCLUDED(writer_mu_) {
-    ServerCallbackWriter<Response>* writer =
+    ServerCallbackWriter<Response> *writer =
         writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
       grpc::internal::MutexLock l(&writer_mu_);
@@ -657,7 +657,7 @@ class ServerWriteReactor : public internal::ServerReactor {
   friend class ServerCallbackWriter<Response>;
   // May be overridden by internal implementation details. This is not a public
   // customization point.
-  virtual void InternalBindWriter(ServerCallbackWriter<Response>* writer)
+  virtual void InternalBindWriter(ServerCallbackWriter<Response> *writer)
       ABSL_LOCKS_EXCLUDED(writer_mu_) {
     grpc::internal::MutexLock l(&writer_mu_);
 
@@ -682,12 +682,12 @@ class ServerWriteReactor : public internal::ServerReactor {
   }
 
   grpc::internal::Mutex writer_mu_;
-  std::atomic<ServerCallbackWriter<Response>*> writer_{nullptr};
+  std::atomic<ServerCallbackWriter<Response> *> writer_{nullptr};
   struct PreBindBacklog {
     bool send_initial_metadata_wanted = false;
     bool write_and_finish_wanted = false;
     bool finish_wanted = false;
-    const Response* write_wanted = nullptr;
+    const Response *write_wanted = nullptr;
     ::grpc::WriteOptions write_options_wanted;
     ::grpc::Status status_wanted;
   };
@@ -701,7 +701,7 @@ class ServerUnaryReactor : public internal::ServerReactor {
 
   /// StartSendInitialMetadata is exactly like ServerBidiReactor.
   void StartSendInitialMetadata() ABSL_LOCKS_EXCLUDED(call_mu_) {
-    ServerCallbackUnary* call = call_.load(std::memory_order_acquire);
+    ServerCallbackUnary *call = call_.load(std::memory_order_acquire);
     if (call == nullptr) {
       grpc::internal::MutexLock l(&call_mu_);
       call = call_.load(std::memory_order_relaxed);
@@ -716,7 +716,7 @@ class ServerUnaryReactor : public internal::ServerReactor {
   /// If the status is non-OK, any message will not be sent. Instead,
   /// the client will only receive the status and any trailing metadata.
   void Finish(::grpc::Status s) ABSL_LOCKS_EXCLUDED(call_mu_) {
-    ServerCallbackUnary* call = call_.load(std::memory_order_acquire);
+    ServerCallbackUnary *call = call_.load(std::memory_order_acquire);
     if (call == nullptr) {
       grpc::internal::MutexLock l(&call_mu_);
       call = call_.load(std::memory_order_relaxed);
@@ -738,7 +738,7 @@ class ServerUnaryReactor : public internal::ServerReactor {
   friend class ServerCallbackUnary;
   // May be overridden by internal implementation details. This is not a public
   // customization point.
-  virtual void InternalBindCall(ServerCallbackUnary* call)
+  virtual void InternalBindCall(ServerCallbackUnary *call)
       ABSL_LOCKS_EXCLUDED(call_mu_) {
     grpc::internal::MutexLock l(&call_mu_);
 
@@ -753,7 +753,7 @@ class ServerUnaryReactor : public internal::ServerReactor {
   }
 
   grpc::internal::Mutex call_mu_;
-  std::atomic<ServerCallbackUnary*> call_{nullptr};
+  std::atomic<ServerCallbackUnary *> call_{nullptr};
   struct PreBindBacklog {
     bool send_initial_metadata_wanted = false;
     bool finish_wanted = false;

@@ -50,7 +50,7 @@ StringMatcher::StringMatcher(Type type, absl::string_view matcher,
 StringMatcher::StringMatcher(std::unique_ptr<RE2> regex_matcher)
     : type_(Type::kSafeRegex), regex_matcher_(std::move(regex_matcher)) {}
 
-StringMatcher::StringMatcher(const StringMatcher& other)
+StringMatcher::StringMatcher(const StringMatcher &other)
     : type_(other.type_), case_sensitive_(other.case_sensitive_) {
   if (type_ == Type::kSafeRegex) {
     regex_matcher_ = absl::make_unique<RE2>(other.regex_matcher_->pattern());
@@ -59,7 +59,7 @@ StringMatcher::StringMatcher(const StringMatcher& other)
   }
 }
 
-StringMatcher& StringMatcher::operator=(const StringMatcher& other) {
+StringMatcher &StringMatcher::operator=(const StringMatcher &other) {
   type_ = other.type_;
   if (type_ == Type::kSafeRegex) {
     regex_matcher_ = absl::make_unique<RE2>(other.regex_matcher_->pattern());
@@ -70,7 +70,7 @@ StringMatcher& StringMatcher::operator=(const StringMatcher& other) {
   return *this;
 }
 
-StringMatcher::StringMatcher(StringMatcher&& other) noexcept
+StringMatcher::StringMatcher(StringMatcher &&other) noexcept
     : type_(other.type_), case_sensitive_(other.case_sensitive_) {
   if (type_ == Type::kSafeRegex) {
     regex_matcher_ = std::move(other.regex_matcher_);
@@ -79,7 +79,7 @@ StringMatcher::StringMatcher(StringMatcher&& other) noexcept
   }
 }
 
-StringMatcher& StringMatcher::operator=(StringMatcher&& other) noexcept {
+StringMatcher &StringMatcher::operator=(StringMatcher &&other) noexcept {
   type_ = other.type_;
   if (type_ == Type::kSafeRegex) {
     regex_matcher_ = std::move(other.regex_matcher_);
@@ -90,7 +90,7 @@ StringMatcher& StringMatcher::operator=(StringMatcher&& other) noexcept {
   return *this;
 }
 
-bool StringMatcher::operator==(const StringMatcher& other) const {
+bool StringMatcher::operator==(const StringMatcher &other) const {
   if (type_ != other.type_ || case_sensitive_ != other.case_sensitive_) {
     return false;
   }
@@ -199,7 +199,7 @@ HeaderMatcher::HeaderMatcher(absl::string_view name, bool present_match,
       present_match_(present_match),
       invert_match_(invert_match) {}
 
-HeaderMatcher::HeaderMatcher(const HeaderMatcher& other)
+HeaderMatcher::HeaderMatcher(const HeaderMatcher &other)
     : name_(other.name_),
       type_(other.type_),
       invert_match_(other.invert_match_) {
@@ -216,7 +216,7 @@ HeaderMatcher::HeaderMatcher(const HeaderMatcher& other)
   }
 }
 
-HeaderMatcher& HeaderMatcher::operator=(const HeaderMatcher& other) {
+HeaderMatcher &HeaderMatcher::operator=(const HeaderMatcher &other) {
   name_ = other.name_;
   type_ = other.type_;
   invert_match_ = other.invert_match_;
@@ -234,7 +234,7 @@ HeaderMatcher& HeaderMatcher::operator=(const HeaderMatcher& other) {
   return *this;
 }
 
-HeaderMatcher::HeaderMatcher(HeaderMatcher&& other) noexcept
+HeaderMatcher::HeaderMatcher(HeaderMatcher &&other) noexcept
     : name_(std::move(other.name_)),
       type_(other.type_),
       invert_match_(other.invert_match_) {
@@ -251,7 +251,7 @@ HeaderMatcher::HeaderMatcher(HeaderMatcher&& other) noexcept
   }
 }
 
-HeaderMatcher& HeaderMatcher::operator=(HeaderMatcher&& other) noexcept {
+HeaderMatcher &HeaderMatcher::operator=(HeaderMatcher &&other) noexcept {
   name_ = std::move(other.name_);
   type_ = other.type_;
   invert_match_ = other.invert_match_;
@@ -269,7 +269,7 @@ HeaderMatcher& HeaderMatcher::operator=(HeaderMatcher&& other) noexcept {
   return *this;
 }
 
-bool HeaderMatcher::operator==(const HeaderMatcher& other) const {
+bool HeaderMatcher::operator==(const HeaderMatcher &other) const {
   if (name_ != other.name_) return false;
   if (type_ != other.type_) return false;
   if (invert_match_ != other.invert_match_) return false;
@@ -285,7 +285,7 @@ bool HeaderMatcher::operator==(const HeaderMatcher& other) const {
 }
 
 bool HeaderMatcher::Match(
-    const absl::optional<absl::string_view>& value) const {
+    const absl::optional<absl::string_view> &value) const {
   bool match;
   if (type_ == Type::kPresent) {
     match = value.has_value() == present_match_;

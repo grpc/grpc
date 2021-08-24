@@ -38,9 +38,9 @@ using ::grpc_objective_c_generator::SystemImport;
 namespace {
 
 inline ::std::string ImportProtoHeaders(
-    const grpc::protobuf::FileDescriptor* dep, const char* indent,
-    const ::std::string& framework,
-    const ::std::string& pb_runtime_import_prefix) {
+    const grpc::protobuf::FileDescriptor *dep, const char *indent,
+    const ::std::string &framework,
+    const ::std::string &pb_runtime_import_prefix) {
   ::std::string header = grpc_objective_c_generator::MessageHeaderName(dep);
 
   if (!IsProtobufLibraryBundledProtoFile(dep)) {
@@ -81,10 +81,10 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     return FEATURE_PROTO3_OPTIONAL;
   }
 
-  virtual bool Generate(const grpc::protobuf::FileDescriptor* file,
-                        const ::std::string& parameter,
-                        grpc::protobuf::compiler::GeneratorContext* context,
-                        ::std::string* error) const override {
+  virtual bool Generate(const grpc::protobuf::FileDescriptor *file,
+                        const ::std::string &parameter,
+                        grpc::protobuf::compiler::GeneratorContext *context,
+                        ::std::string *error) const override {
     if (file->service_count() == 0) {
       // No services.  Do nothing.
       return true;
@@ -217,20 +217,20 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
       ::std::string ng_protocols;
       for (int i = 0; i < file->service_count(); i++) {
-        const grpc::protobuf::ServiceDescriptor* service = file->service(i);
+        const grpc::protobuf::ServiceDescriptor *service = file->service(i);
         ng_protocols += grpc_objective_c_generator::GetV2Protocol(service);
       }
 
       ::std::string protocols;
       for (int i = 0; i < file->service_count(); i++) {
-        const grpc::protobuf::ServiceDescriptor* service = file->service(i);
+        const grpc::protobuf::ServiceDescriptor *service = file->service(i);
         protocols +=
             grpc_objective_c_generator::GetProtocol(service, generator_params);
       }
 
       ::std::string interfaces;
       for (int i = 0; i < file->service_count(); i++) {
-        const grpc::protobuf::ServiceDescriptor* service = file->service(i);
+        const grpc::protobuf::ServiceDescriptor *service = file->service(i);
         interfaces +=
             grpc_objective_c_generator::GetInterface(service, generator_params);
       }
@@ -286,7 +286,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
       ::std::string definitions;
       for (int i = 0; i < file->service_count(); i++) {
-        const grpc::protobuf::ServiceDescriptor* service = file->service(i);
+        const grpc::protobuf::ServiceDescriptor *service = file->service(i);
         definitions +=
             grpc_objective_c_generator::GetSource(service, generator_params);
       }
@@ -302,8 +302,8 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
  private:
   // Write the given code into the given file.
-  void Write(grpc::protobuf::compiler::GeneratorContext* context,
-             const ::std::string& filename, const ::std::string& code) const {
+  void Write(grpc::protobuf::compiler::GeneratorContext *context,
+             const ::std::string &filename, const ::std::string &code) const {
     std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
         context->Open(filename));
     grpc::protobuf::io::CodedOutputStream coded_out(output.get());
@@ -311,7 +311,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   }
 };
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   ObjectiveCGrpcGenerator generator;
   return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

@@ -28,15 +28,15 @@
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "test/core/util/test_config.h"
 
-static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
+static std::shared_ptr<grpc_core::WorkSerializer> *g_work_serializer;
 
 class TestResultHandler : public grpc_core::Resolver::ResultHandler {
   void ReturnResult(grpc_core::Resolver::Result /*result*/) override {}
   void ReturnError(grpc_error_handle /*error*/) override {}
 };
 
-static void test_succeeds(grpc_core::ResolverFactory* factory,
-                          const char* string) {
+static void test_succeeds(grpc_core::ResolverFactory *factory,
+                          const char *string) {
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
           factory->scheme());
   grpc_core::ExecCtx exec_ctx;
@@ -54,8 +54,8 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   GPR_ASSERT(resolver != nullptr);
 }
 
-static void test_fails(grpc_core::ResolverFactory* factory,
-                       const char* string) {
+static void test_fails(grpc_core::ResolverFactory *factory,
+                       const char *string) {
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
           factory->scheme());
   grpc_core::ExecCtx exec_ctx;
@@ -73,14 +73,14 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   GPR_ASSERT(resolver == nullptr);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
   auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
   g_work_serializer = &work_serializer;
 
-  grpc_core::ResolverFactory* dns =
+  grpc_core::ResolverFactory *dns =
       grpc_core::ResolverRegistry::LookupResolverFactory("dns");
 
   test_succeeds(dns, "dns:10.2.1.1");

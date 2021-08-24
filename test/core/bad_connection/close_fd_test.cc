@@ -45,25 +45,25 @@
 #include "src/core/lib/surface/server.h"
 #include "test/core/util/resource_user_util.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
 typedef struct test_ctx test_ctx;
 
 struct test_ctx {
   /* completion queue for call notifications on the server */
-  grpc_completion_queue* cq;
+  grpc_completion_queue *cq;
   /* completion queue registered to server for shutdown events */
-  grpc_completion_queue* shutdown_cq;
+  grpc_completion_queue *shutdown_cq;
   /* client's completion queue */
-  grpc_completion_queue* client_cq;
+  grpc_completion_queue *client_cq;
   /* completion queue bound to call on the server */
-  grpc_completion_queue* bound_cq;
+  grpc_completion_queue *bound_cq;
   /* Server responds to client calls */
-  grpc_server* server;
+  grpc_server *server;
   /* Client calls are sent over the channel */
-  grpc_channel* client;
+  grpc_channel *client;
   /* encapsulates client, server endpoints */
-  grpc_endpoint_pair* ep;
+  grpc_endpoint_pair *ep;
 };
 
 static test_ctx g_ctx;
@@ -71,21 +71,21 @@ static test_ctx g_ctx;
 /* chttp2 transport that is immediately available (used for testing
    connected_channel without a client_channel */
 
-static void server_setup_transport(grpc_transport* transport) {
+static void server_setup_transport(grpc_transport *transport) {
   grpc_core::ExecCtx exec_ctx;
   grpc_endpoint_add_to_pollset(g_ctx.ep->server, grpc_cq_pollset(g_ctx.cq));
   g_ctx.server->core_server->SetupTransport(
       transport, nullptr, g_ctx.server->core_server->channel_args(), nullptr);
 }
 
-static void client_setup_transport(grpc_transport* transport) {
+static void client_setup_transport(grpc_transport *transport) {
   grpc_core::ExecCtx exec_ctx;
   grpc_endpoint_add_to_pollset(g_ctx.ep->client,
                                grpc_cq_pollset(g_ctx.client_cq));
   grpc_arg authority_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>("test-authority"));
-  grpc_channel_args* args =
+      const_cast<char *>(GRPC_ARG_DEFAULT_AUTHORITY),
+      const_cast<char *>("test-authority"));
+  grpc_channel_args *args =
       grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   /* TODO (pjaikumar): use GRPC_CLIENT_CHANNEL instead of
    * GRPC_CLIENT_DIRECT_CHANNEL */
@@ -97,7 +97,7 @@ static void client_setup_transport(grpc_transport* transport) {
 
 static void init_client() {
   grpc_core::ExecCtx exec_ctx;
-  grpc_transport* transport;
+  grpc_transport *transport;
   transport = grpc_create_chttp2_transport(
       nullptr, g_ctx.ep->client, true, grpc_resource_user_create_unlimited());
   client_setup_transport(transport);
@@ -107,7 +107,7 @@ static void init_client() {
 
 static void init_server() {
   grpc_core::ExecCtx exec_ctx;
-  grpc_transport* transport;
+  grpc_transport *transport;
   GPR_ASSERT(!g_ctx.server);
   g_ctx.server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(g_ctx.server, g_ctx.cq, nullptr);
@@ -119,8 +119,8 @@ static void init_server() {
 }
 
 static void test_init() {
-  grpc_endpoint_pair* sfd =
-      static_cast<grpc_endpoint_pair*>(gpr_malloc(sizeof(grpc_endpoint_pair)));
+  grpc_endpoint_pair *sfd =
+      static_cast<grpc_endpoint_pair *>(gpr_malloc(sizeof(grpc_endpoint_pair)));
   memset(&g_ctx, 0, sizeof(g_ctx));
   g_ctx.ep = sfd;
   g_ctx.cq = grpc_completion_queue_create_for_next(nullptr);
@@ -135,7 +135,7 @@ static void test_init() {
   init_client();
 }
 
-static void drain_cq(grpc_completion_queue* cq) {
+static void drain_cq(grpc_completion_queue *cq) {
   grpc_event event;
   do {
     event = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(1),
@@ -143,7 +143,7 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (event.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void drain_and_destroy_cq(grpc_completion_queue* cq) {
+static void drain_and_destroy_cq(grpc_completion_queue *cq) {
   grpc_completion_queue_shutdown(cq);
   drain_cq(cq);
   grpc_completion_queue_destroy(cq);
@@ -179,7 +179,7 @@ static void end_test() {
 
 typedef enum fd_type { CLIENT_FD, SERVER_FD } fd_type;
 
-static const char* fd_type_str(fd_type fdtype) {
+static const char *fd_type_str(fd_type fdtype) {
   if (fdtype == CLIENT_FD) {
     return "client";
   } else if (fdtype == SERVER_FD) {
@@ -192,28 +192,28 @@ static const char* fd_type_str(fd_type fdtype) {
 
 static void _test_close_before_server_recv(fd_type fdtype) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_call* call;
-  grpc_call* server_call;
+  grpc_call *call;
+  grpc_call *server_call;
   grpc_event event;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
   grpc_slice response_payload_slice =
       grpc_slice_from_copied_string("hello you");
-  grpc_byte_buffer* request_payload =
+  grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer* response_payload =
+  grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_log(GPR_INFO, "Running test: test_close_%s_before_server_recv",
           fd_type_str(fdtype));
   test_init();
 
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer* request_payload_recv = nullptr;
-  grpc_byte_buffer* response_payload_recv = nullptr;
+  grpc_byte_buffer *request_payload_recv = nullptr;
+  grpc_byte_buffer *response_payload_recv = nullptr;
   grpc_call_details call_details;
   grpc_status_code status = GRPC_STATUS__DO_NOT_USE;
   grpc_call_error error;
@@ -290,7 +290,7 @@ static void _test_close_before_server_recv(fd_type fdtype) {
   op->reserved = nullptr;
   op++;
 
-  grpc_endpoint_pair* sfd = g_ctx.ep;
+  grpc_endpoint_pair *sfd = g_ctx.ep;
   int fd;
   if (fdtype == SERVER_FD) {
     fd = sfd->server->vtable->get_fd(sfd->server);
@@ -366,28 +366,28 @@ static void test_close_before_server_recv() {
 
 static void _test_close_before_server_send(fd_type fdtype) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_call* call;
-  grpc_call* server_call;
+  grpc_call *call;
+  grpc_call *server_call;
   grpc_event event;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
   grpc_slice response_payload_slice =
       grpc_slice_from_copied_string("hello you");
-  grpc_byte_buffer* request_payload =
+  grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer* response_payload =
+  grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_log(GPR_INFO, "Running test: test_close_%s_before_server_send",
           fd_type_str(fdtype));
   test_init();
 
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer* request_payload_recv = nullptr;
-  grpc_byte_buffer* response_payload_recv = nullptr;
+  grpc_byte_buffer *request_payload_recv = nullptr;
+  grpc_byte_buffer *response_payload_recv = nullptr;
   grpc_call_details call_details;
   grpc_status_code status = GRPC_STATUS__DO_NOT_USE;
   grpc_call_error error;
@@ -495,7 +495,7 @@ static void _test_close_before_server_send(fd_type fdtype) {
   op->reserved = nullptr;
   op++;
 
-  grpc_endpoint_pair* sfd = g_ctx.ep;
+  grpc_endpoint_pair *sfd = g_ctx.ep;
   int fd;
   if (fdtype == SERVER_FD) {
     fd = sfd->server->vtable->get_fd(sfd->server);
@@ -564,27 +564,27 @@ static void test_close_before_server_send() {
 
 static void _test_close_before_client_send(fd_type fdtype) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_call* call;
+  grpc_call *call;
   grpc_event event;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
   grpc_slice response_payload_slice =
       grpc_slice_from_copied_string("hello you");
-  grpc_byte_buffer* request_payload =
+  grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer* response_payload =
+  grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_log(GPR_INFO, "Running test: test_close_%s_before_client_send",
           fd_type_str(fdtype));
   test_init();
 
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer* request_payload_recv = nullptr;
-  grpc_byte_buffer* response_payload_recv = nullptr;
+  grpc_byte_buffer *request_payload_recv = nullptr;
+  grpc_byte_buffer *response_payload_recv = nullptr;
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
@@ -635,7 +635,7 @@ static void _test_close_before_client_send(fd_type fdtype) {
   op->reserved = nullptr;
   op++;
 
-  grpc_endpoint_pair* sfd = g_ctx.ep;
+  grpc_endpoint_pair *sfd = g_ctx.ep;
   int fd;
   if (fdtype == SERVER_FD) {
     fd = sfd->server->vtable->get_fd(sfd->server);
@@ -691,13 +691,13 @@ static void test_close_before_client_send() {
 
 static void _test_close_before_call_create(fd_type fdtype) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_call* call;
+  grpc_call *call;
   grpc_event event;
   test_init();
 
   gpr_timespec deadline = grpc_timeout_milliseconds_to_deadline(100);
 
-  grpc_endpoint_pair* sfd = g_ctx.ep;
+  grpc_endpoint_pair *sfd = g_ctx.ep;
   int fd;
   if (fdtype == SERVER_FD) {
     fd = sfd->server->vtable->get_fd(sfd->server);
@@ -736,7 +736,7 @@ static void test_close_before_call_create() {
   _test_close_before_call_create(SERVER_FD);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   /* Init grpc */
   grpc_init();
@@ -756,6 +756,6 @@ int main(int argc, char** argv) {
 
 #else /* GRPC_POSIX_SOCKET_TCP */
 
-int main(int argc, char** argv) { return 1; }
+int main(int argc, char **argv) { return 1; }
 
 #endif /* GRPC_POSIX_SOCKET_TCP */

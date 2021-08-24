@@ -348,7 +348,7 @@ TEST_F(TimeChangeTest, TimeJumpForwardAndBackDuringCall) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   std::string me = argv[0];
   // get index of last slash in path to test binary
   auto lslash = me.rfind('/');

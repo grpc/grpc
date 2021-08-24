@@ -32,12 +32,12 @@ class Capture {
       : f_(std::move(f)), captures_(std::move(captures)...) {}
 
   template <typename... Args>
-  decltype(std::declval<F>()(static_cast<Captures*>(nullptr)...,
+  decltype(std::declval<F>()(static_cast<Captures *>(nullptr)...,
                              std::declval<Args>()...))
   operator()(Args... args) {
     auto f = &f_;
     return absl::apply(
-        [f, &args...](Captures&... captures) {
+        [f, &args...](Captures &...captures) {
           return (*f)(&captures..., std::move(args)...);
         },
         captures_);

@@ -41,15 +41,15 @@ typedef struct grpc_rb_xds_channel_credentials {
   VALUE mark;
 
   /* The actual credentials */
-  grpc_channel_credentials* wrapped;
+  grpc_channel_credentials *wrapped;
 } grpc_rb_xds_channel_credentials;
 
-static void grpc_rb_xds_channel_credentials_free_internal(void* p) {
-  grpc_rb_xds_channel_credentials* wrapper = NULL;
+static void grpc_rb_xds_channel_credentials_free_internal(void *p) {
+  grpc_rb_xds_channel_credentials *wrapper = NULL;
   if (p == NULL) {
     return;
   };
-  wrapper = (grpc_rb_xds_channel_credentials*)p;
+  wrapper = (grpc_rb_xds_channel_credentials *)p;
   grpc_channel_credentials_release(wrapper->wrapped);
   wrapper->wrapped = NULL;
 
@@ -57,18 +57,18 @@ static void grpc_rb_xds_channel_credentials_free_internal(void* p) {
 }
 
 /* Destroys the credentials instances. */
-static void grpc_rb_xds_channel_credentials_free(void* p) {
+static void grpc_rb_xds_channel_credentials_free(void *p) {
   grpc_rb_xds_channel_credentials_free_internal(p);
   grpc_ruby_shutdown();
 }
 
 /* Protects the mark object from GC */
-static void grpc_rb_xds_channel_credentials_mark(void* p) {
-  grpc_rb_xds_channel_credentials* wrapper = NULL;
+static void grpc_rb_xds_channel_credentials_mark(void *p) {
+  grpc_rb_xds_channel_credentials *wrapper = NULL;
   if (p == NULL) {
     return;
   }
-  wrapper = (grpc_rb_xds_channel_credentials*)p;
+  wrapper = (grpc_rb_xds_channel_credentials *)p;
 
   if (wrapper->mark != Qnil) {
     rb_gc_mark(wrapper->mark);
@@ -90,7 +90,7 @@ static rb_data_type_t grpc_rb_xds_channel_credentials_data_type = {
    Provides safe initial defaults for the instance fields. */
 static VALUE grpc_rb_xds_channel_credentials_alloc(VALUE cls) {
   grpc_ruby_init();
-  grpc_rb_xds_channel_credentials* wrapper =
+  grpc_rb_xds_channel_credentials *wrapper =
       ALLOC(grpc_rb_xds_channel_credentials);
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
@@ -101,9 +101,9 @@ static VALUE grpc_rb_xds_channel_credentials_alloc(VALUE cls) {
 /* Creates a wrapping object for a given channel credentials. This should only
  * be called with grpc_channel_credentials objects that are not already
  * associated with any Ruby object. */
-VALUE grpc_rb_xds_wrap_channel_credentials(grpc_channel_credentials* c,
+VALUE grpc_rb_xds_wrap_channel_credentials(grpc_channel_credentials *c,
                                            VALUE mark) {
-  grpc_rb_xds_channel_credentials* wrapper;
+  grpc_rb_xds_channel_credentials *wrapper;
   if (c == NULL) {
     return Qnil;
   }
@@ -126,10 +126,10 @@ static ID id_fallback_creds;
     Initializes Credential instances. */
 static VALUE grpc_rb_xds_channel_credentials_init(VALUE self,
                                                   VALUE fallback_creds) {
-  grpc_rb_xds_channel_credentials* wrapper = NULL;
-  grpc_channel_credentials* grpc_fallback_creds =
+  grpc_rb_xds_channel_credentials *wrapper = NULL;
+  grpc_channel_credentials *grpc_fallback_creds =
       grpc_rb_get_wrapped_channel_credentials(fallback_creds);
-  grpc_channel_credentials* creds =
+  grpc_channel_credentials *creds =
       grpc_xds_credentials_create(grpc_fallback_creds);
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError,
@@ -153,11 +153,11 @@ static VALUE grpc_rb_xds_channel_credentials_init(VALUE self,
 // TODO: de-duplicate this code with the similar method in
 // rb_channel_credentials.c, after putting ChannelCredentials and
 // XdsChannelCredentials under a common parent class
-static VALUE grpc_rb_xds_channel_credentials_compose(int argc, VALUE* argv,
+static VALUE grpc_rb_xds_channel_credentials_compose(int argc, VALUE *argv,
                                                      VALUE self) {
-  grpc_channel_credentials* creds;
-  grpc_call_credentials* other;
-  grpc_channel_credentials* prev = NULL;
+  grpc_channel_credentials *creds;
+  grpc_call_credentials *other;
+  grpc_channel_credentials *prev = NULL;
   VALUE mark;
   if (argc == 0) {
     return self;
@@ -202,8 +202,8 @@ void Init_grpc_xds_channel_credentials() {
 }
 
 /* Gets the wrapped grpc_channel_credentials from the ruby wrapper */
-grpc_channel_credentials* grpc_rb_get_wrapped_xds_channel_credentials(VALUE v) {
-  grpc_rb_xds_channel_credentials* wrapper = NULL;
+grpc_channel_credentials *grpc_rb_get_wrapped_xds_channel_credentials(VALUE v) {
+  grpc_rb_xds_channel_credentials *wrapper = NULL;
   Check_TypedStruct(v, &grpc_rb_xds_channel_credentials_data_type);
   TypedData_Get_Struct(v, grpc_rb_xds_channel_credentials,
                        &grpc_rb_xds_channel_credentials_data_type, wrapper);

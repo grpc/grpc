@@ -29,33 +29,33 @@
 #include "src/core/tsi/alts/frame_protector/alts_counter.h"
 
 struct alts_iovec_record_protocol {
-  alts_counter* ctr;
-  gsec_aead_crypter* crypter;
+  alts_counter *ctr;
+  gsec_aead_crypter *crypter;
   size_t tag_length;
   bool is_integrity_only;
   bool is_protect;
 };
 
 /* Copies error message to destination.  */
-static void maybe_copy_error_msg(const char* src, char** dst) {
+static void maybe_copy_error_msg(const char *src, char **dst) {
   if (dst != nullptr && src != nullptr) {
-    *dst = static_cast<char*>(gpr_malloc(strlen(src) + 1));
+    *dst = static_cast<char *>(gpr_malloc(strlen(src) + 1));
     memcpy(*dst, src, strlen(src) + 1);
   }
 }
 
 /* Appends error message to destination.  */
-static void maybe_append_error_msg(const char* appendix, char** dst) {
+static void maybe_append_error_msg(const char *appendix, char **dst) {
   if (dst != nullptr && appendix != nullptr) {
     int dst_len = static_cast<int>(strlen(*dst));
-    *dst = static_cast<char*>(realloc(*dst, dst_len + strlen(appendix) + 1));
+    *dst = static_cast<char *>(realloc(*dst, dst_len + strlen(appendix) + 1));
     assert(*dst != nullptr);
     memcpy(*dst + dst_len, appendix, strlen(appendix) + 1);
   }
 }
 
 /* Use little endian to interpret a string of bytes as uint32_t.  */
-static uint32_t load_32_le(const unsigned char* buffer) {
+static uint32_t load_32_le(const unsigned char *buffer) {
   return (static_cast<uint32_t>(buffer[3]) << 24) |
          (static_cast<uint32_t>(buffer[2]) << 16) |
          (static_cast<uint32_t>(buffer[1]) << 8) |
@@ -63,7 +63,7 @@ static uint32_t load_32_le(const unsigned char* buffer) {
 }
 
 /* Store uint32_t as a string of little endian bytes.  */
-static void store_32_le(uint32_t value, unsigned char* buffer) {
+static void store_32_le(uint32_t value, unsigned char *buffer) {
   buffer[3] = static_cast<unsigned char>(value >> 24) & 0xFF;
   buffer[2] = static_cast<unsigned char>(value >> 16) & 0xFF;
   buffer[1] = static_cast<unsigned char>(value >> 8) & 0xFF;
@@ -72,8 +72,8 @@ static void store_32_le(uint32_t value, unsigned char* buffer) {
 
 /* Ensures header and tag iovec have sufficient length.  */
 static grpc_status_code ensure_header_and_tag_length(
-    const alts_iovec_record_protocol* rp, iovec_t header, iovec_t tag,
-    char** error_details) {
+    const alts_iovec_record_protocol *rp, iovec_t header, iovec_t tag,
+    char **error_details) {
   if (rp == nullptr) {
     return GRPC_STATUS_FAILED_PRECONDITION;
   }
@@ -97,8 +97,8 @@ static grpc_status_code ensure_header_and_tag_length(
 }
 
 /* Increments crypter counter and checks overflow.  */
-static grpc_status_code increment_counter(alts_counter* counter,
-                                          char** error_details) {
+static grpc_status_code increment_counter(alts_counter *counter,
+                                          char **error_details) {
   if (counter == nullptr) {
     return GRPC_STATUS_FAILED_PRECONDITION;
   }
@@ -116,7 +116,7 @@ static grpc_status_code increment_counter(alts_counter* counter,
 }
 
 /* Given an array of iovec, computes the total length of buffer.  */
-static size_t get_total_length(const iovec_t* vec, size_t vec_length) {
+static size_t get_total_length(const iovec_t *vec, size_t vec_length) {
   size_t total_length = 0;
   for (size_t i = 0; i < vec_length; ++i) {
     total_length += vec[i].iov_len;
@@ -126,8 +126,8 @@ static size_t get_total_length(const iovec_t* vec, size_t vec_length) {
 
 /* Writes frame header given data and tag length.  */
 static grpc_status_code write_frame_header(size_t data_length,
-                                           unsigned char* header,
-                                           char** error_details) {
+                                           unsigned char *header,
+                                           char **error_details) {
   if (header == nullptr) {
     maybe_copy_error_msg("Header is nullptr.", error_details);
     return GRPC_STATUS_FAILED_PRECONDITION;
@@ -141,8 +141,8 @@ static grpc_status_code write_frame_header(size_t data_length,
 
 /* Verifies frame header given protected data length.  */
 static grpc_status_code verify_frame_header(size_t data_length,
-                                            unsigned char* header,
-                                            char** error_details) {
+                                            unsigned char *header,
+                                            char **error_details) {
   if (header == nullptr) {
     maybe_copy_error_msg("Header is nullptr.", error_details);
     return GRPC_STATUS_FAILED_PRECONDITION;
@@ -167,7 +167,7 @@ size_t alts_iovec_record_protocol_get_header_length() {
 }
 
 size_t alts_iovec_record_protocol_get_tag_length(
-    const alts_iovec_record_protocol* rp) {
+    const alts_iovec_record_protocol *rp) {
   if (rp != nullptr) {
     return rp->tag_length;
   }
@@ -175,7 +175,7 @@ size_t alts_iovec_record_protocol_get_tag_length(
 }
 
 size_t alts_iovec_record_protocol_max_unprotected_data_size(
-    const alts_iovec_record_protocol* rp, size_t max_protected_frame_size) {
+    const alts_iovec_record_protocol *rp, size_t max_protected_frame_size) {
   if (rp == nullptr) {
     return 0;
   }
@@ -186,9 +186,9 @@ size_t alts_iovec_record_protocol_max_unprotected_data_size(
 }
 
 grpc_status_code alts_iovec_record_protocol_integrity_only_protect(
-    alts_iovec_record_protocol* rp, const iovec_t* unprotected_vec,
+    alts_iovec_record_protocol *rp, const iovec_t *unprotected_vec,
     size_t unprotected_vec_length, iovec_t header, iovec_t tag,
-    char** error_details) {
+    char **error_details) {
   /* Input sanity checks.  */
   if (rp == nullptr) {
     maybe_copy_error_msg("Input iovec_record_protocol is nullptr.",
@@ -216,7 +216,7 @@ grpc_status_code alts_iovec_record_protocol_integrity_only_protect(
       get_total_length(unprotected_vec, unprotected_vec_length);
   /* Sets frame header.  */
   status = write_frame_header(data_length + rp->tag_length,
-                              static_cast<unsigned char*>(header.iov_base),
+                              static_cast<unsigned char *>(header.iov_base),
                               error_details);
   if (status != GRPC_STATUS_OK) {
     return status;
@@ -241,9 +241,9 @@ grpc_status_code alts_iovec_record_protocol_integrity_only_protect(
 }
 
 grpc_status_code alts_iovec_record_protocol_integrity_only_unprotect(
-    alts_iovec_record_protocol* rp, const iovec_t* protected_vec,
+    alts_iovec_record_protocol *rp, const iovec_t *protected_vec,
     size_t protected_vec_length, iovec_t header, iovec_t tag,
-    char** error_details) {
+    char **error_details) {
   /* Input sanity checks.  */
   if (rp == nullptr) {
     maybe_copy_error_msg("Input iovec_record_protocol is nullptr.",
@@ -268,7 +268,7 @@ grpc_status_code alts_iovec_record_protocol_integrity_only_unprotect(
   size_t data_length = get_total_length(protected_vec, protected_vec_length);
   /* Verifies frame header.  */
   status = verify_frame_header(data_length + rp->tag_length,
-                               static_cast<unsigned char*>(header.iov_base),
+                               static_cast<unsigned char *>(header.iov_base),
                                error_details);
   if (status != GRPC_STATUS_OK) {
     return status;
@@ -289,9 +289,9 @@ grpc_status_code alts_iovec_record_protocol_integrity_only_unprotect(
 }
 
 grpc_status_code alts_iovec_record_protocol_privacy_integrity_protect(
-    alts_iovec_record_protocol* rp, const iovec_t* unprotected_vec,
+    alts_iovec_record_protocol *rp, const iovec_t *unprotected_vec,
     size_t unprotected_vec_length, iovec_t protected_frame,
-    char** error_details) {
+    char **error_details) {
   /* Input sanity checks.  */
   if (rp == nullptr) {
     maybe_copy_error_msg("Input iovec_record_protocol is nullptr.",
@@ -326,13 +326,13 @@ grpc_status_code alts_iovec_record_protocol_privacy_integrity_protect(
   /* Writer frame header.  */
   grpc_status_code status = write_frame_header(
       data_length + rp->tag_length,
-      static_cast<unsigned char*>(protected_frame.iov_base), error_details);
+      static_cast<unsigned char *>(protected_frame.iov_base), error_details);
   if (status != GRPC_STATUS_OK) {
     return status;
   }
   /* Encrypt unprotected data by calling AEAD crypter.  */
-  unsigned char* ciphertext_buffer =
-      static_cast<unsigned char*>(protected_frame.iov_base) +
+  unsigned char *ciphertext_buffer =
+      static_cast<unsigned char *>(protected_frame.iov_base) +
       alts_iovec_record_protocol_get_header_length();
   iovec_t ciphertext = {ciphertext_buffer, data_length + rp->tag_length};
   size_t bytes_written = 0;
@@ -355,9 +355,9 @@ grpc_status_code alts_iovec_record_protocol_privacy_integrity_protect(
 }
 
 grpc_status_code alts_iovec_record_protocol_privacy_integrity_unprotect(
-    alts_iovec_record_protocol* rp, iovec_t header,
-    const iovec_t* protected_vec, size_t protected_vec_length,
-    iovec_t unprotected_data, char** error_details) {
+    alts_iovec_record_protocol *rp, iovec_t header,
+    const iovec_t *protected_vec, size_t protected_vec_length,
+    iovec_t unprotected_data, char **error_details) {
   /* Input sanity checks.  */
   if (rp == nullptr) {
     maybe_copy_error_msg("Input iovec_record_protocol is nullptr.",
@@ -400,7 +400,7 @@ grpc_status_code alts_iovec_record_protocol_privacy_integrity_unprotect(
   }
   /* Verify frame header.  */
   grpc_status_code status = verify_frame_header(
-      protected_data_length, static_cast<unsigned char*>(header.iov_base),
+      protected_data_length, static_cast<unsigned char *>(header.iov_base),
       error_details);
   if (status != GRPC_STATUS_OK) {
     return status;
@@ -427,16 +427,16 @@ grpc_status_code alts_iovec_record_protocol_privacy_integrity_unprotect(
 }
 
 grpc_status_code alts_iovec_record_protocol_create(
-    gsec_aead_crypter* crypter, size_t overflow_size, bool is_client,
-    bool is_integrity_only, bool is_protect, alts_iovec_record_protocol** rp,
-    char** error_details) {
+    gsec_aead_crypter *crypter, size_t overflow_size, bool is_client,
+    bool is_integrity_only, bool is_protect, alts_iovec_record_protocol **rp,
+    char **error_details) {
   if (crypter == nullptr || rp == nullptr) {
     maybe_copy_error_msg(
         "Invalid nullptr arguments to alts_iovec_record_protocol create.",
         error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
-  alts_iovec_record_protocol* impl = static_cast<alts_iovec_record_protocol*>(
+  alts_iovec_record_protocol *impl = static_cast<alts_iovec_record_protocol *>(
       gpr_zalloc(sizeof(alts_iovec_record_protocol)));
   /* Gets counter length.  */
   size_t counter_length = 0;
@@ -469,7 +469,7 @@ cleanup:
   return GRPC_STATUS_FAILED_PRECONDITION;
 }
 
-void alts_iovec_record_protocol_destroy(alts_iovec_record_protocol* rp) {
+void alts_iovec_record_protocol_destroy(alts_iovec_record_protocol *rp) {
   if (rp != nullptr) {
     alts_counter_destroy(rp->ctr);
     gsec_aead_crypter_destroy(rp->crypter);

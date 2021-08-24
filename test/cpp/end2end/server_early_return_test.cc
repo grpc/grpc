@@ -48,9 +48,9 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   // Unused methods are not implemented.
 
-  Status RequestStream(ServerContext* context,
-                       ServerReader<EchoRequest>* reader,
-                       EchoResponse* response) override {
+  Status RequestStream(ServerContext *context,
+                       ServerReader<EchoRequest> *reader,
+                       EchoResponse *response) override {
     int server_return_status_code =
         GetIntValueFromMetadata(context, kServerReturnStatusCode, 0);
     int server_delay_before_return_us =
@@ -73,8 +73,8 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   }
 
   Status BidiStream(
-      ServerContext* context,
-      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+      ServerContext *context,
+      ServerReaderWriter<EchoResponse, EchoRequest> *stream) override {
     int server_return_status_code =
         GetIntValueFromMetadata(context, kServerReturnStatusCode, 0);
     int server_delay_before_return_us =
@@ -97,7 +97,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
     return Status(static_cast<StatusCode>(server_return_status_code), "");
   }
 
-  int GetIntValueFromMetadata(ServerContext* context, const char* key,
+  int GetIntValueFromMetadata(ServerContext *context, const char *key,
                               int default_value) {
     auto metadata = context->client_metadata();
     if (metadata.find(key) != metadata.end()) {
@@ -225,7 +225,7 @@ TEST_F(ServerEarlyReturnTest, RequestStreamEarlyCancel) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

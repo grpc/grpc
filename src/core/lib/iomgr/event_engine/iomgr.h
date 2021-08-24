@@ -19,7 +19,7 @@
 
 /// This can be called anywhere in the EventEngine-based iomgr impl where we
 /// need to access the global EventEngine instance.
-grpc_event_engine::experimental::EventEngine* grpc_iomgr_event_engine();
+grpc_event_engine::experimental::EventEngine *grpc_iomgr_event_engine();
 
 namespace grpc_core {
 

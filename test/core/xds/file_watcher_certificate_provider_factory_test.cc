@@ -31,9 +31,9 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-const char* kIdentityCertFile = "/path/to/identity_cert_file";
-const char* kPrivateKeyFile = "/path/to/private_key_file";
-const char* kRootCertFile = "/path/to/root_cert_file";
+const char *kIdentityCertFile = "/path/to/identity_cert_file";
+const char *kPrivateKeyFile = "/path/to/private_key_file";
+const char *kRootCertFile = "/path/to/root_cert_file";
 const int kRefreshInterval = 400;
 
 TEST(FileWatcherConfigTest, Basic) {
@@ -115,7 +115,7 @@ TEST(FileWatcherConfigTest, OnlyIdenityCertificatesAndPrivateKeyProvided) {
 }
 
 TEST(FileWatcherConfigTest, WrongTypes) {
-  const char* json_str =
+  const char *json_str =
       "{"
       "  \"certificate_file\": 123,"
       "  \"private_key_file\": 123,"
@@ -192,7 +192,7 @@ TEST(FileWatcherConfigTest, EmptyJsonObject) {
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();

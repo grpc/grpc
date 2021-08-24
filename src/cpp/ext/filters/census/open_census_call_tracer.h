@@ -30,37 +30,38 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
  public:
   class OpenCensusCallAttemptTracer : public CallAttemptTracer {
    public:
-    OpenCensusCallAttemptTracer(OpenCensusCallTracer* parent,
+    OpenCensusCallAttemptTracer(OpenCensusCallTracer *parent,
                                 uint64_t attempt_num, bool is_transparent_retry,
                                 bool arena_allocated);
     void RecordSendInitialMetadata(
-        grpc_metadata_batch* /* send_initial_metadata */,
+        grpc_metadata_batch * /* send_initial_metadata */,
         uint32_t /* flags */) override;
-    void RecordOnDoneSendInitialMetadata(gpr_atm* /* peer_string */) override {}
+    void RecordOnDoneSendInitialMetadata(gpr_atm * /* peer_string */) override {
+    }
     void RecordSendTrailingMetadata(
-        grpc_metadata_batch* /* send_trailing_metadata */) override {}
+        grpc_metadata_batch * /* send_trailing_metadata */) override {}
     void RecordSendMessage(
-        const grpc_core::ByteStream& /* send_message */) override;
+        const grpc_core::ByteStream & /* send_message */) override;
     void RecordReceivedInitialMetadata(
-        grpc_metadata_batch* /* recv_initial_metadata */,
+        grpc_metadata_batch * /* recv_initial_metadata */,
         uint32_t /* flags */) override {}
     void RecordReceivedMessage(
-        const grpc_core::ByteStream& /* recv_message */) override;
+        const grpc_core::ByteStream & /* recv_message */) override;
     void RecordReceivedTrailingMetadata(
-        absl::Status /* status */, grpc_metadata_batch* recv_trailing_metadata,
-        const grpc_transport_stream_stats& /* transport_stream_stats */)
+        absl::Status /* status */, grpc_metadata_batch *recv_trailing_metadata,
+        const grpc_transport_stream_stats & /* transport_stream_stats */)
         override;
     void RecordCancel(grpc_error_handle cancel_error) override;
-    void RecordEnd(const gpr_timespec& /* latency */) override;
+    void RecordEnd(const gpr_timespec & /* latency */) override;
 
-    CensusContext* context() { return &context_; }
+    CensusContext *context() { return &context_; }
 
    private:
     // Maximum size of trace context is sent on the wire.
     static constexpr uint32_t kMaxTraceContextLen = 64;
     // Maximum size of tags that are sent on the wire.
     static constexpr uint32_t kMaxTagsLen = 2048;
-    OpenCensusCallTracer* parent_;
+    OpenCensusCallTracer *parent_;
     const bool arena_allocated_;
     CensusContext context_;
     // Metadata elements for tracing and census stats data.
@@ -80,10 +81,10 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     char tracing_buf_[kMaxTraceContextLen];
   };
 
-  explicit OpenCensusCallTracer(const grpc_call_element_args* args);
+  explicit OpenCensusCallTracer(const grpc_call_element_args *args);
   ~OpenCensusCallTracer() override;
 
-  OpenCensusCallAttemptTracer* StartNewAttempt(
+  OpenCensusCallAttemptTracer *StartNewAttempt(
       bool is_transparent_retry) override;
 
  private:
@@ -91,7 +92,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   grpc_slice path_;
   absl::string_view method_;
   CensusContext context_;
-  grpc_core::Arena* arena_;
+  grpc_core::Arena *arena_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;

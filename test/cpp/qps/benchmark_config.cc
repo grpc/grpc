@@ -56,7 +56,7 @@ namespace grpc {
 namespace testing {
 
 static std::shared_ptr<Reporter> InitBenchmarkReporters() {
-  auto* composite_reporter = new CompositeReporter;
+  auto *composite_reporter = new CompositeReporter;
   if (absl::GetFlag(FLAGS_enable_log_reporter)) {
     composite_reporter->add(
         std::unique_ptr<Reporter>(new GprLogReporter("LogReporter")));

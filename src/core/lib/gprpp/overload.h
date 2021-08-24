@@ -28,7 +28,7 @@ struct OverloadType;
 template <typename Case, typename... Cases>
 struct OverloadType<Case, Cases...> : public Case,
                                       public OverloadType<Cases...> {
-  explicit OverloadType(Case&& c, Cases&&... cases)
+  explicit OverloadType(Case &&c, Cases &&...cases)
       : Case(std::forward<Case>(c)),
         OverloadType<Cases...>(std::forward<Cases>(cases)...) {}
   using Case::operator();
@@ -37,7 +37,7 @@ struct OverloadType<Case, Cases...> : public Case,
 // Overload of a single case is just that case itself
 template <typename Case>
 struct OverloadType<Case> : public Case {
-  explicit OverloadType(Case&& c) : Case(std::forward<Case>(c)) {}
+  explicit OverloadType(Case &&c) : Case(std::forward<Case>(c)) {}
   using Case::operator();
 };
 

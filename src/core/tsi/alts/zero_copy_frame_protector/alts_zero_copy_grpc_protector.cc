@@ -48,8 +48,8 @@ constexpr size_t kMaxFrameLength = 16 * 1024 * 1024;
  */
 typedef struct alts_zero_copy_grpc_protector {
   tsi_zero_copy_grpc_protector base;
-  alts_grpc_record_protocol* record_protocol;
-  alts_grpc_record_protocol* unrecord_protocol;
+  alts_grpc_record_protocol *record_protocol;
+  alts_grpc_record_protocol *unrecord_protocol;
   size_t max_protected_frame_size;
   size_t max_unprotected_data_size;
   grpc_slice_buffer unprotected_staging_sb;
@@ -64,13 +64,13 @@ typedef struct alts_zero_copy_grpc_protector {
  * needs to make sure the input slice buffer has at least 4 bytes. Returns true
  * on success and false on failure.
  */
-static bool read_frame_size(const grpc_slice_buffer* sb,
-                            uint32_t* total_frame_size) {
+static bool read_frame_size(const grpc_slice_buffer *sb,
+                            uint32_t *total_frame_size) {
   if (sb == nullptr || sb->length < kZeroCopyFrameLengthFieldSize) {
     return false;
   }
   uint8_t frame_size_buffer[kZeroCopyFrameLengthFieldSize];
-  uint8_t* buf = frame_size_buffer;
+  uint8_t *buf = frame_size_buffer;
   /* Copies the first 4 bytes to a temporary buffer.  */
   size_t remaining = kZeroCopyFrameLengthFieldSize;
   for (size_t i = 0; i < sb->count; i++) {
@@ -109,15 +109,15 @@ static bool read_frame_size(const grpc_slice_buffer* sb,
  * for protect or unprotect.
  */
 static tsi_result create_alts_grpc_record_protocol(
-    const uint8_t* key, size_t key_size, bool is_rekey, bool is_client,
+    const uint8_t *key, size_t key_size, bool is_rekey, bool is_client,
     bool is_integrity_only, bool is_protect, bool enable_extra_copy,
-    alts_grpc_record_protocol** record_protocol) {
+    alts_grpc_record_protocol **record_protocol) {
   if (key == nullptr || record_protocol == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   grpc_status_code status;
-  gsec_aead_crypter* crypter = nullptr;
-  char* error_details = nullptr;
+  gsec_aead_crypter *crypter = nullptr;
+  char *error_details = nullptr;
   status = gsec_aes_gcm_aead_crypter_create(key, key_size, kAesGcmNonceLength,
                                             kAesGcmTagLength, is_rekey,
                                             &crypter, &error_details);
@@ -147,15 +147,15 @@ static tsi_result create_alts_grpc_record_protocol(
 /* --- tsi_zero_copy_grpc_protector methods implementation. --- */
 
 static tsi_result alts_zero_copy_grpc_protector_protect(
-    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* unprotected_slices,
-    grpc_slice_buffer* protected_slices) {
+    tsi_zero_copy_grpc_protector *self, grpc_slice_buffer *unprotected_slices,
+    grpc_slice_buffer *protected_slices) {
   if (self == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
     gpr_log(GPR_ERROR, "Invalid nullptr arguments to zero-copy grpc protect.");
     return TSI_INVALID_ARGUMENT;
   }
-  alts_zero_copy_grpc_protector* protector =
-      reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
+  alts_zero_copy_grpc_protector *protector =
+      reinterpret_cast<alts_zero_copy_grpc_protector *>(self);
   /* Calls alts_grpc_record_protocol protect repeatly.  */
   while (unprotected_slices->length > protector->max_unprotected_data_size) {
     grpc_slice_buffer_move_first(unprotected_slices,
@@ -173,16 +173,16 @@ static tsi_result alts_zero_copy_grpc_protector_protect(
 }
 
 static tsi_result alts_zero_copy_grpc_protector_unprotect(
-    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
-    grpc_slice_buffer* unprotected_slices) {
+    tsi_zero_copy_grpc_protector *self, grpc_slice_buffer *protected_slices,
+    grpc_slice_buffer *unprotected_slices) {
   if (self == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
     gpr_log(GPR_ERROR,
             "Invalid nullptr arguments to zero-copy grpc unprotect.");
     return TSI_INVALID_ARGUMENT;
   }
-  alts_zero_copy_grpc_protector* protector =
-      reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
+  alts_zero_copy_grpc_protector *protector =
+      reinterpret_cast<alts_zero_copy_grpc_protector *>(self);
   grpc_slice_buffer_move_into(protected_slices, &protector->protected_sb);
   /* Keep unprotecting each frame if possible.  */
   while (protector->protected_sb.length >= kZeroCopyFrameLengthFieldSize) {
@@ -219,12 +219,12 @@ static tsi_result alts_zero_copy_grpc_protector_unprotect(
 }
 
 static void alts_zero_copy_grpc_protector_destroy(
-    tsi_zero_copy_grpc_protector* self) {
+    tsi_zero_copy_grpc_protector *self) {
   if (self == nullptr) {
     return;
   }
-  alts_zero_copy_grpc_protector* protector =
-      reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
+  alts_zero_copy_grpc_protector *protector =
+      reinterpret_cast<alts_zero_copy_grpc_protector *>(self);
   alts_grpc_record_protocol_destroy(protector->record_protocol);
   alts_grpc_record_protocol_destroy(protector->unrecord_protocol);
   grpc_slice_buffer_destroy_internal(&protector->unprotected_staging_sb);
@@ -234,10 +234,10 @@ static void alts_zero_copy_grpc_protector_destroy(
 }
 
 static tsi_result alts_zero_copy_grpc_protector_max_frame_size(
-    tsi_zero_copy_grpc_protector* self, size_t* max_frame_size) {
+    tsi_zero_copy_grpc_protector *self, size_t *max_frame_size) {
   if (self == nullptr || max_frame_size == nullptr) return TSI_INVALID_ARGUMENT;
-  alts_zero_copy_grpc_protector* protector =
-      reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
+  alts_zero_copy_grpc_protector *protector =
+      reinterpret_cast<alts_zero_copy_grpc_protector *>(self);
   *max_frame_size = protector->max_protected_frame_size;
   return TSI_OK;
 }
@@ -250,10 +250,10 @@ static const tsi_zero_copy_grpc_protector_vtable
         alts_zero_copy_grpc_protector_max_frame_size};
 
 tsi_result alts_zero_copy_grpc_protector_create(
-    const uint8_t* key, size_t key_size, bool is_rekey, bool is_client,
+    const uint8_t *key, size_t key_size, bool is_rekey, bool is_client,
     bool is_integrity_only, bool enable_extra_copy,
-    size_t* max_protected_frame_size,
-    tsi_zero_copy_grpc_protector** protector) {
+    size_t *max_protected_frame_size,
+    tsi_zero_copy_grpc_protector **protector) {
   if (grpc_core::ExecCtx::Get() == nullptr || key == nullptr ||
       protector == nullptr) {
     gpr_log(
@@ -262,8 +262,8 @@ tsi_result alts_zero_copy_grpc_protector_create(
     return TSI_INVALID_ARGUMENT;
   }
   /* Creates alts_zero_copy_protector.  */
-  alts_zero_copy_grpc_protector* impl =
-      static_cast<alts_zero_copy_grpc_protector*>(
+  alts_zero_copy_grpc_protector *impl =
+      static_cast<alts_zero_copy_grpc_protector *>(
           gpr_zalloc(sizeof(alts_zero_copy_grpc_protector)));
   /* Creates alts_grpc_record_protocol objects.  */
   tsi_result status = create_alts_grpc_record_protocol(

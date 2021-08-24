@@ -44,7 +44,7 @@ static void sigint_handler(int /*x*/) { got_sigint = true; }
 namespace grpc {
 namespace testing {
 
-std::vector<grpc::testing::Server*>* g_inproc_servers = nullptr;
+std::vector<grpc::testing::Server *> *g_inproc_servers = nullptr;
 
 static void RunServer() {
   QpsWorker worker(absl::GetFlag(FLAGS_driver_port),
@@ -60,7 +60,7 @@ static void RunServer() {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
 

@@ -41,9 +41,9 @@ class AltsContext {
     Version max_rpc_version;
     Version min_rpc_version;
   };
-  explicit AltsContext(const grpc_gcp_AltsContext* ctx);
-  AltsContext& operator=(const AltsContext&) = default;
-  AltsContext(const AltsContext&) = default;
+  explicit AltsContext(const grpc_gcp_AltsContext *ctx);
+  AltsContext &operator=(const AltsContext &) = default;
+  AltsContext(const AltsContext &) = default;
 
   std::string application_protocol() const;
   std::string record_protocol() const;
@@ -51,7 +51,7 @@ class AltsContext {
   std::string local_service_account() const;
   grpc_security_level security_level() const;
   RpcProtocolVersions peer_rpc_versions() const;
-  const std::map<std::string, std::string>& peer_attributes() const;
+  const std::map<std::string, std::string> &peer_attributes() const;
 
  private:
   std::string application_protocol_;

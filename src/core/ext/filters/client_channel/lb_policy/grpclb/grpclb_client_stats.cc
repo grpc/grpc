@@ -47,7 +47,7 @@ void GrpcLbClientStats::AddCallFinished(
   }
 }
 
-void GrpcLbClientStats::AddCallDropped(const char* token) {
+void GrpcLbClientStats::AddCallDropped(const char *token) {
   // Increment num_calls_started and num_calls_finished.
   gpr_atm_full_fetch_add(&num_calls_started_, (gpr_atm)1);
   gpr_atm_full_fetch_add(&num_calls_finished_, (gpr_atm)1);
@@ -69,17 +69,17 @@ void GrpcLbClientStats::AddCallDropped(const char* token) {
 
 namespace {
 
-void AtomicGetAndResetCounter(int64_t* value, gpr_atm* counter) {
+void AtomicGetAndResetCounter(int64_t *value, gpr_atm *counter) {
   *value = static_cast<int64_t>(gpr_atm_full_xchg(counter, (gpr_atm)0));
 }
 
 }  // namespace
 
 void GrpcLbClientStats::Get(
-    int64_t* num_calls_started, int64_t* num_calls_finished,
-    int64_t* num_calls_finished_with_client_failed_to_send,
-    int64_t* num_calls_finished_known_received,
-    std::unique_ptr<DroppedCallCounts>* drop_token_counts) {
+    int64_t *num_calls_started, int64_t *num_calls_finished,
+    int64_t *num_calls_finished_with_client_failed_to_send,
+    int64_t *num_calls_finished_known_received,
+    std::unique_ptr<DroppedCallCounts> *drop_token_counts) {
   AtomicGetAndResetCounter(num_calls_started, &num_calls_started_);
   AtomicGetAndResetCounter(num_calls_finished, &num_calls_finished_);
   AtomicGetAndResetCounter(num_calls_finished_with_client_failed_to_send,

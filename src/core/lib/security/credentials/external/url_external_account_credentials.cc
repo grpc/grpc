@@ -26,7 +26,7 @@ namespace grpc_core {
 RefCountedPtr<UrlExternalAccountCredentials>
 UrlExternalAccountCredentials::Create(Options options,
                                       std::vector<std::string> scopes,
-                                      grpc_error_handle* error) {
+                                      grpc_error_handle *error) {
   auto creds = MakeRefCounted<UrlExternalAccountCredentials>(
       std::move(options), std::move(scopes), error);
   if (*error == GRPC_ERROR_NONE) {
@@ -37,7 +37,7 @@ UrlExternalAccountCredentials::Create(Options options,
 }
 
 UrlExternalAccountCredentials::UrlExternalAccountCredentials(
-    Options options, std::vector<std::string> scopes, grpc_error_handle* error)
+    Options options, std::vector<std::string> scopes, grpc_error_handle *error)
     : ExternalAccountCredentials(options, std::move(scopes)) {
   auto it = options.credential_source.object_value().find("url");
   if (it == options.credential_source.object_value().end()) {
@@ -69,13 +69,13 @@ UrlExternalAccountCredentials::UrlExternalAccountCredentials(
           "The JSON value of credential source headers is not an object.");
       return;
     }
-    for (auto const& header : it->second.object_value()) {
+    for (auto const &header : it->second.object_value()) {
       headers_[header.first] = header.second.string_value();
     }
   }
   it = options.credential_source.object_value().find("format");
   if (it != options.credential_source.object_value().end()) {
-    const Json& format_json = it->second;
+    const Json &format_json = it->second;
     if (format_json.type() != Json::Type::OBJECT) {
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "The JSON value of credential source format is not an object.");
@@ -112,7 +112,7 @@ UrlExternalAccountCredentials::UrlExternalAccountCredentials(
 }
 
 void UrlExternalAccountCredentials::RetrieveSubjectToken(
-    HTTPRequestContext* ctx, const Options& /*options*/,
+    HTTPRequestContext *ctx, const Options & /*options*/,
     std::function<void(std::string, grpc_error_handle)> cb) {
   if (ctx == nullptr) {
     FinishRetrieveSubjectToken(
@@ -125,14 +125,14 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   cb_ = cb;
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(url_.authority().c_str());
+  request.host = const_cast<char *>(url_.authority().c_str());
   request.http.path = gpr_strdup(url_full_path_.c_str());
-  grpc_http_header* headers = nullptr;
+  grpc_http_header *headers = nullptr;
   request.http.hdr_count = headers_.size();
-  headers = static_cast<grpc_http_header*>(
+  headers = static_cast<grpc_http_header *>(
       gpr_malloc(sizeof(grpc_http_header) * request.http.hdr_count));
   int i = 0;
-  for (auto const& header : headers_) {
+  for (auto const &header : headers_) {
     headers[i].key = gpr_strdup(header.first.c_str());
     headers[i].value = gpr_strdup(header.second.c_str());
     ++i;
@@ -140,7 +140,7 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   request.http.hdrs = headers;
   request.handshaker =
       url_.scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
-  grpc_resource_quota* resource_quota =
+  grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
@@ -151,9 +151,9 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
 }
 
 void UrlExternalAccountCredentials::OnRetrieveSubjectToken(
-    void* arg, grpc_error_handle error) {
-  UrlExternalAccountCredentials* self =
-      static_cast<UrlExternalAccountCredentials*>(arg);
+    void *arg, grpc_error_handle error) {
+  UrlExternalAccountCredentials *self =
+      static_cast<UrlExternalAccountCredentials *>(arg);
   self->OnRetrieveSubjectTokenInternal(GRPC_ERROR_REF(error));
 }
 

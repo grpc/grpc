@@ -33,10 +33,10 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     return FEATURE_PROTO3_OPTIONAL;
   }
 
-  bool Generate(const grpc::protobuf::FileDescriptor* file,
-                const std::string& parameter,
-                grpc::protobuf::compiler::GeneratorContext* context,
-                std::string* error) const override {
+  bool Generate(const grpc::protobuf::FileDescriptor *file,
+                const std::string &parameter,
+                grpc::protobuf::compiler::GeneratorContext *context,
+                std::string *error) const override {
     std::vector<std::pair<std::string, std::string> > options;
     grpc::protobuf::compiler::ParseGeneratorParameter(parameter, &options);
 
@@ -81,7 +81,7 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   }
 };
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   CSharpGrpcGenerator generator;
   return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

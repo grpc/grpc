@@ -27,7 +27,7 @@ namespace experimental {
 
 EndpointConfig::Setting ChannelArgsEndpointConfig::Get(
     absl::string_view key) const {
-  const grpc_arg* arg = grpc_channel_args_find(args_, std::string(key).c_str());
+  const grpc_arg *arg = grpc_channel_args_find(args_, std::string(key).c_str());
   if (arg == nullptr) {
     return absl::monostate();
   }

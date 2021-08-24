@@ -28,27 +28,27 @@ struct PickArgsSeen {
   MetadataVector metadata;
 };
 
-using TestPickArgsCallback = std::function<void(const PickArgsSeen&)>;
+using TestPickArgsCallback = std::function<void(const PickArgsSeen &)>;
 
 // Registers an LB policy called "test_pick_args_lb" that passes the args
 // passed to SubchannelPicker::Pick() to cb.
 void RegisterTestPickArgsLoadBalancingPolicy(
-    TestPickArgsCallback cb, const char* delegate_policy_name = "pick_first");
+    TestPickArgsCallback cb, const char *delegate_policy_name = "pick_first");
 
 struct TrailingMetadataArgsSeen {
-  const LoadBalancingPolicy::BackendMetricData* backend_metric_data;
+  const LoadBalancingPolicy::BackendMetricData *backend_metric_data;
   MetadataVector metadata;
 };
 
 using InterceptRecvTrailingMetadataCallback =
-    std::function<void(const TrailingMetadataArgsSeen&)>;
+    std::function<void(const TrailingMetadataArgsSeen &)>;
 
 // Registers an LB policy called "intercept_trailing_metadata_lb" that
 // invokes cb when trailing metadata is received for each call.
 void RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
     InterceptRecvTrailingMetadataCallback cb);
 
-using AddressTestCallback = std::function<void(const ServerAddress&)>;
+using AddressTestCallback = std::function<void(const ServerAddress &)>;
 
 // Registers an LB policy called "address_test_lb" that invokes cb for each
 // address used to create a subchannel.

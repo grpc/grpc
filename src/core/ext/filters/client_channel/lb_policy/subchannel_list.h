@@ -78,18 +78,18 @@ template <typename SubchannelListType, typename SubchannelDataType>
 class SubchannelData {
  public:
   // Returns a pointer to the subchannel list containing this object.
-  SubchannelListType* subchannel_list() const {
-    return static_cast<SubchannelListType*>(subchannel_list_);
+  SubchannelListType *subchannel_list() const {
+    return static_cast<SubchannelListType *>(subchannel_list_);
   }
 
   // Returns the index into the subchannel list of this object.
   size_t Index() const {
-    return static_cast<size_t>(static_cast<const SubchannelDataType*>(this) -
+    return static_cast<size_t>(static_cast<const SubchannelDataType *>(this) -
                                subchannel_list_->subchannel(0));
   }
 
   // Returns a pointer to the subchannel.
-  SubchannelInterface* subchannel() const { return subchannel_.get(); }
+  SubchannelInterface *subchannel() const { return subchannel_.get(); }
 
   // Synchronously checks the subchannel's connectivity state.
   // Must not be called while there is a connectivity notification
@@ -112,15 +112,15 @@ class SubchannelData {
   void StartConnectivityWatchLocked();
 
   // Cancels watching the connectivity state of the subchannel.
-  void CancelConnectivityWatchLocked(const char* reason);
+  void CancelConnectivityWatchLocked(const char *reason);
 
   // Cancels any pending connectivity watch and unrefs the subchannel.
   void ShutdownLocked();
 
  protected:
   SubchannelData(
-      SubchannelList<SubchannelListType, SubchannelDataType>* subchannel_list,
-      const ServerAddress& address,
+      SubchannelList<SubchannelListType, SubchannelDataType> *subchannel_list,
+      const ServerAddress &address,
       RefCountedPtr<SubchannelInterface> subchannel);
 
   virtual ~SubchannelData();
@@ -137,7 +137,7 @@ class SubchannelData {
       : public SubchannelInterface::ConnectivityStateWatcherInterface {
    public:
     Watcher(
-        SubchannelData<SubchannelListType, SubchannelDataType>* subchannel_data,
+        SubchannelData<SubchannelListType, SubchannelDataType> *subchannel_data,
         RefCountedPtr<SubchannelListType> subchannel_list)
         : subchannel_data_(subchannel_data),
           subchannel_list_(std::move(subchannel_list)) {}
@@ -148,24 +148,24 @@ class SubchannelData {
 
     void OnConnectivityStateChange(grpc_connectivity_state new_state) override;
 
-    grpc_pollset_set* interested_parties() override {
+    grpc_pollset_set *interested_parties() override {
       return subchannel_list_->policy()->interested_parties();
     }
 
    private:
-    SubchannelData<SubchannelListType, SubchannelDataType>* subchannel_data_;
+    SubchannelData<SubchannelListType, SubchannelDataType> *subchannel_data_;
     RefCountedPtr<SubchannelListType> subchannel_list_;
   };
 
   // Unrefs the subchannel.
-  void UnrefSubchannelLocked(const char* reason);
+  void UnrefSubchannelLocked(const char *reason);
 
   // Backpointer to owning subchannel list.  Not owned.
-  SubchannelList<SubchannelListType, SubchannelDataType>* subchannel_list_;
+  SubchannelList<SubchannelListType, SubchannelDataType> *subchannel_list_;
   // The subchannel.
   RefCountedPtr<SubchannelInterface> subchannel_;
   // Will be non-null when the subchannel's state is being watched.
-  SubchannelInterface::ConnectivityStateWatcherInterface* pending_watcher_ =
+  SubchannelInterface::ConnectivityStateWatcherInterface *pending_watcher_ =
       nullptr;
   // Data updated by the watcher.
   grpc_connectivity_state connectivity_state_;
@@ -181,14 +181,14 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
   size_t num_subchannels() const { return subchannels_.size(); }
 
   // The data for the subchannel at a particular index.
-  SubchannelDataType* subchannel(size_t index) { return &subchannels_[index]; }
+  SubchannelDataType *subchannel(size_t index) { return &subchannels_[index]; }
 
   // Returns true if the subchannel list is shutting down.
   bool shutting_down() const { return shutting_down_; }
 
   // Accessors.
-  LoadBalancingPolicy* policy() const { return policy_; }
-  TraceFlag* tracer() const { return tracer_; }
+  LoadBalancingPolicy *policy() const { return policy_; }
+  TraceFlag *tracer() const { return tracer_; }
 
   // Resets connection backoff of all subchannels.
   // TODO(roth): We will probably need to rethink this as part of moving
@@ -201,10 +201,10 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
   }
 
  protected:
-  SubchannelList(LoadBalancingPolicy* policy, TraceFlag* tracer,
+  SubchannelList(LoadBalancingPolicy *policy, TraceFlag *tracer,
                  ServerAddressList addresses,
-                 LoadBalancingPolicy::ChannelControlHelper* helper,
-                 const grpc_channel_args& args);
+                 LoadBalancingPolicy::ChannelControlHelper *helper,
+                 const grpc_channel_args &args);
 
   virtual ~SubchannelList();
 
@@ -215,9 +215,9 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
   void ShutdownLocked();
 
   // Backpointer to owning policy.
-  LoadBalancingPolicy* policy_;
+  LoadBalancingPolicy *policy_;
 
-  TraceFlag* tracer_;
+  TraceFlag *tracer_;
 
   // The list of subchannels.
   SubchannelVector subchannels_;
@@ -265,8 +265,8 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::
 
 template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelData<SubchannelListType, SubchannelDataType>::SubchannelData(
-    SubchannelList<SubchannelListType, SubchannelDataType>* subchannel_list,
-    const ServerAddress& /*address*/,
+    SubchannelList<SubchannelListType, SubchannelDataType> *subchannel_list,
+    const ServerAddress & /*address*/,
     RefCountedPtr<SubchannelInterface> subchannel)
     : subchannel_list_(subchannel_list),
       subchannel_(std::move(subchannel)),
@@ -281,7 +281,7 @@ SubchannelData<SubchannelListType, SubchannelDataType>::~SubchannelData() {
 
 template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::
-    UnrefSubchannelLocked(const char* reason) {
+    UnrefSubchannelLocked(const char *reason) {
   if (subchannel_ != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(*subchannel_list_->tracer())) {
       gpr_log(GPR_INFO,
@@ -325,7 +325,7 @@ void SubchannelData<SubchannelListType,
 
 template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::
-    CancelConnectivityWatchLocked(const char* reason) {
+    CancelConnectivityWatchLocked(const char *reason) {
   if (GRPC_TRACE_FLAG_ENABLED(*subchannel_list_->tracer())) {
     gpr_log(GPR_INFO,
             "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
@@ -352,9 +352,9 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
 
 template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
-    LoadBalancingPolicy* policy, TraceFlag* tracer, ServerAddressList addresses,
-    LoadBalancingPolicy::ChannelControlHelper* helper,
-    const grpc_channel_args& args)
+    LoadBalancingPolicy *policy, TraceFlag *tracer, ServerAddressList addresses,
+    LoadBalancingPolicy::ChannelControlHelper *helper,
+    const grpc_channel_args &args)
     : InternallyRefCounted<SubchannelListType>(
           GRPC_TRACE_FLAG_ENABLED(*tracer) ? "SubchannelList" : nullptr),
       policy_(policy),
@@ -407,7 +407,7 @@ void SubchannelList<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
   GPR_ASSERT(!shutting_down_);
   shutting_down_ = true;
   for (size_t i = 0; i < subchannels_.size(); i++) {
-    SubchannelDataType* sd = &subchannels_[i];
+    SubchannelDataType *sd = &subchannels_[i];
     sd->ShutdownLocked();
   }
 }
@@ -416,7 +416,7 @@ template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelList<SubchannelListType,
                     SubchannelDataType>::ResetBackoffLocked() {
   for (size_t i = 0; i < subchannels_.size(); i++) {
-    SubchannelDataType* sd = &subchannels_[i];
+    SubchannelDataType *sd = &subchannels_[i];
     sd->ResetBackoffLocked();
   }
 }

@@ -26,11 +26,11 @@
 
 static alts_shared_resource_dedicated g_alts_resource_dedicated;
 
-alts_shared_resource_dedicated* grpc_alts_get_shared_resource_dedicated(void) {
+alts_shared_resource_dedicated *grpc_alts_get_shared_resource_dedicated(void) {
   return &g_alts_resource_dedicated;
 }
 
-static void thread_worker(void* /*arg*/) {
+static void thread_worker(void * /*arg*/) {
   while (true) {
     grpc_event event =
         grpc_completion_queue_next(g_alts_resource_dedicated.cq,
@@ -40,8 +40,8 @@ static void thread_worker(void* /*arg*/) {
       break;
     }
     GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
-    alts_handshaker_client* client =
-        static_cast<alts_handshaker_client*>(event.tag);
+    alts_handshaker_client *client =
+        static_cast<alts_handshaker_client *>(event.tag);
     alts_handshaker_client_handle_response(client, event.success);
   }
 }
@@ -52,7 +52,7 @@ void grpc_alts_shared_resource_dedicated_init() {
 }
 
 void grpc_alts_shared_resource_dedicated_start(
-    const char* handshaker_service_url) {
+    const char *handshaker_service_url) {
   gpr_mu_lock(&g_alts_resource_dedicated.mu);
   if (g_alts_resource_dedicated.cq == nullptr) {
     g_alts_resource_dedicated.channel =

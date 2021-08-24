@@ -440,7 +440,7 @@ struct Base64InverseTable {
     for (int i = 0; i < 256; i++) {
       table[i] = 255;
     }
-    for (const char* p = kBase64Alphabet; *p; p++) {
+    for (const char *p = kBase64Alphabet; *p; p++) {
       uint8_t idx = *p;
       uint8_t ofs = p - kBase64Alphabet;
       table[idx] = ofs;
@@ -455,8 +455,8 @@ static GRPC_HPACK_CONSTEXPR_VALUE Base64InverseTable kBase64InverseTable;
 // via a simple stream interface.
 class HPackParser::Input {
  public:
-  Input(grpc_slice_refcount* current_slice_refcount, const uint8_t* begin,
-        const uint8_t* end)
+  Input(grpc_slice_refcount *current_slice_refcount, const uint8_t *begin,
+        const uint8_t *end)
       : current_slice_refcount_(current_slice_refcount),
         begin_(begin),
         end_(end),
@@ -464,16 +464,16 @@ class HPackParser::Input {
 
   // If input is backed by a slice, retrieve its refcount. If not, return
   // nullptr.
-  grpc_slice_refcount* slice_refcount() { return current_slice_refcount_; }
+  grpc_slice_refcount *slice_refcount() { return current_slice_refcount_; }
 
   // Have we reached the end of input?
   bool end_of_stream() const { return begin_ == end_; }
   // How many bytes until end of input
   size_t remaining() const { return end_ - begin_; }
   // Current position, as a pointer
-  const uint8_t* cur_ptr() const { return begin_; }
+  const uint8_t *cur_ptr() const { return begin_; }
   // End position, as a pointer
-  const uint8_t* end_ptr() const { return end_; }
+  const uint8_t *end_ptr() const { return end_; }
   // Move read position forward by n, unchecked
   void Advance(size_t n) { begin_ += n; }
 
@@ -615,7 +615,7 @@ class HPackParser::Input {
   void UpdateFrontier() { frontier_ = begin_; }
 
   // Get the frontier - for buffering should we fail due to eof
-  const uint8_t* frontier() const { return frontier_; }
+  const uint8_t *frontier() const { return frontier_; }
 
  private:
   // Helper to set the error to out of range for ParseVarint
@@ -634,13 +634,13 @@ class HPackParser::Input {
   }
 
   // Refcount if we are backed by a slice
-  grpc_slice_refcount* current_slice_refcount_;
+  grpc_slice_refcount *current_slice_refcount_;
   // Current input point
-  const uint8_t* begin_;
+  const uint8_t *begin_;
   // End of stream point
-  const uint8_t* const end_;
+  const uint8_t *const end_;
   // Frontier denotes the first byte past successfully processed input
-  const uint8_t* frontier_;
+  const uint8_t *frontier_;
   // Current error
   grpc_error_handle error_ = GRPC_ERROR_NONE;
   // If the error was EOF, we flag it here..
@@ -664,7 +664,7 @@ class HPackParser::String {
  public:
   // If a String is a Slice then unref
   ~String() {
-    if (auto* p = absl::get_if<grpc_slice>(&value_)) {
+    if (auto *p = absl::get_if<grpc_slice>(&value_)) {
       grpc_slice_unref_internal(*p);
     }
   }
@@ -676,19 +676,19 @@ class HPackParser::String {
     return Take(T());
   }
 
-  String(const String&) = delete;
-  String& operator=(const String&) = delete;
-  String(String&& other) noexcept : value_(std::move(other.value_)) {
+  String(const String &) = delete;
+  String &operator=(const String &) = delete;
+  String(String &&other) noexcept : value_(std::move(other.value_)) {
     other.value_ = absl::Span<const uint8_t>();
   }
-  String& operator=(String&& other) noexcept {
+  String &operator=(String &&other) noexcept {
     value_ = std::move(other.value_);
     other.value_ = absl::Span<const uint8_t>();
     return *this;
   }
 
   // Parse a non-binary string
-  static absl::optional<String> Parse(Input* input) {
+  static absl::optional<String> Parse(Input *input) {
     auto pfx = input->ParseStringPrefix();
     if (!pfx.has_value()) return {};
     if (pfx->huff) {
@@ -703,7 +703,7 @@ class HPackParser::String {
   }
 
   // Parse a binary string
-  static absl::optional<String> ParseBinary(Input* input) {
+  static absl::optional<String> ParseBinary(Input *input) {
     auto pfx = input->ParseStringPrefix();
     if (!pfx.has_value()) return {};
     if (!pfx->huff) {
@@ -756,19 +756,19 @@ class HPackParser::String {
   }
 
  private:
-  void AppendBytes(const uint8_t* data, size_t length);
+  void AppendBytes(const uint8_t *data, size_t length);
   explicit String(std::vector<uint8_t> v) : value_(std::move(v)) {}
   explicit String(absl::Span<const uint8_t> v) : value_(v) {}
-  String(grpc_slice_refcount* r, const uint8_t* begin, const uint8_t* end)
+  String(grpc_slice_refcount *r, const uint8_t *begin, const uint8_t *end)
       : value_(MakeSlice(r, begin, end)) {}
 
   // Given a refcount and a byte range, make a slice
-  static grpc_slice MakeSlice(grpc_slice_refcount* r, const uint8_t* begin,
-                              const uint8_t* end) {
+  static grpc_slice MakeSlice(grpc_slice_refcount *r, const uint8_t *begin,
+                              const uint8_t *end) {
     grpc_slice out;
     out.refcount = r;
     r->Ref();
-    out.data.refcounted.bytes = const_cast<uint8_t*>(begin);
+    out.data.refcounted.bytes = const_cast<uint8_t *>(begin);
     out.data.refcounted.length = end - begin;
     return out;
   }
@@ -776,7 +776,7 @@ class HPackParser::String {
   // Parse some huffman encoded bytes, using output(uint8_t b) to emit each
   // decoded byte.
   template <typename Out>
-  static bool ParseHuff(Input* input, uint32_t length, Out output) {
+  static bool ParseHuff(Input *input, uint32_t length, Out output) {
     GRPC_STATS_INC_HPACK_RECV_HUFFMAN();
     int16_t state = 0;
     // Parse one half byte... we leverage some lookup tables to keep the logic
@@ -798,7 +798,7 @@ class HPackParser::String {
       return input->UnexpectedEOF(false);
     }
     // Grab the byte range, and iterate through it.
-    const uint8_t* p = input->cur_ptr();
+    const uint8_t *p = input->cur_ptr();
     input->Advance(length);
     for (uint32_t i = 0; i < length; i++) {
       nibble(p[i] >> 4);
@@ -808,15 +808,15 @@ class HPackParser::String {
   }
 
   // Parse some uncompressed string bytes.
-  static absl::optional<String> ParseUncompressed(Input* input,
+  static absl::optional<String> ParseUncompressed(Input *input,
                                                   uint32_t length) {
     GRPC_STATS_INC_HPACK_RECV_UNCOMPRESSED();
     // Check there's enough bytes
     if (input->remaining() < length) {
       return input->UnexpectedEOF(absl::optional<String>());
     }
-    auto* refcount = input->slice_refcount();
-    auto* p = input->cur_ptr();
+    auto *refcount = input->slice_refcount();
+    auto *p = input->cur_ptr();
     input->Advance(length);
     if (refcount != nullptr) {
       return String(refcount, p, p + length);
@@ -827,17 +827,17 @@ class HPackParser::String {
 
   // Turn base64 encoded bytes into not base64 encoded bytes.
   // Only takes input to set an error on failure.
-  static absl::optional<String> Unbase64(Input* input, String s) {
+  static absl::optional<String> Unbase64(Input *input, String s) {
     auto v = Match(
         s.value_,
-        [](const grpc_slice& slice) {
+        [](const grpc_slice &slice) {
           return Unbase64Loop(GRPC_SLICE_START_PTR(slice),
                               GRPC_SLICE_END_PTR(slice));
         },
         [](absl::Span<const uint8_t> span) {
           return Unbase64Loop(span.begin(), span.end());
         },
-        [](const std::vector<uint8_t>& vec) {
+        [](const std::vector<uint8_t> &vec) {
           return Unbase64Loop(vec.data(), vec.data() + vec.size());
         });
     if (!v.has_value()) {
@@ -852,8 +852,8 @@ class HPackParser::String {
   }
 
   // Main loop for Unbase64
-  static absl::optional<std::vector<uint8_t>> Unbase64Loop(const uint8_t* cur,
-                                                           const uint8_t* end) {
+  static absl::optional<std::vector<uint8_t>> Unbase64Loop(const uint8_t *cur,
+                                                           const uint8_t *end) {
     while (cur != end && end[-1] == '=') {
       --end;
     }
@@ -940,8 +940,8 @@ class HPackParser::String {
 // Parser parses one frame + continuations worth of headers.
 class HPackParser::Parser {
  public:
-  Parser(Input* input, HPackParser::Sink* sink, HPackTable* table,
-         uint8_t* dynamic_table_updates_allowed)
+  Parser(Input *input, HPackParser::Sink *sink, HPackTable *table,
+         uint8_t *dynamic_table_updates_allowed)
       : input_(input),
         sink_(sink),
         table_(table),
@@ -1059,8 +1059,8 @@ class HPackParser::Parser {
 
  private:
   void GPR_ATTRIBUTE_NOINLINE LogHeader(grpc_mdelem md) {
-    char* k = grpc_slice_to_c_string(GRPC_MDKEY(md));
-    char* v = nullptr;
+    char *k = grpc_slice_to_c_string(GRPC_MDKEY(md));
+    char *v = nullptr;
     if (grpc_is_binary_header_internal(GRPC_MDKEY(md))) {
       v = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX);
     } else {
@@ -1137,7 +1137,7 @@ class HPackParser::Parser {
     auto value = ParseValueString(GRPC_MDKEY(elem));
     if (GPR_UNLIKELY(!value.has_value())) return GRPC_MDNULL;
     return grpc_mdelem_from_slices(
-        static_cast<const ManagedMemorySlice&>(
+        static_cast<const ManagedMemorySlice &>(
             grpc_slice_ref_internal(GRPC_MDKEY(elem))),
         value->Take<TakeValueType>());
   }
@@ -1152,7 +1152,7 @@ class HPackParser::Parser {
 
   // Parse a string, figuring out if it's binary or not by the key name.
   template <typename SliceType>
-  absl::optional<String> ParseValueString(const SliceType& key) {
+  absl::optional<String> ParseValueString(const SliceType &key) {
     if (grpc_is_refcounted_slice_binary_header(key)) {
       return String::ParseBinary(input_);
     } else {
@@ -1212,26 +1212,26 @@ class HPackParser::Parser {
         result);
   }
 
-  Input* input_;
-  HPackParser::Sink* sink_;
-  HPackTable* const table_;
-  uint8_t* dynamic_table_updates_allowed_;
+  Input *input_;
+  HPackParser::Sink *sink_;
+  HPackTable *const table_;
+  uint8_t *dynamic_table_updates_allowed_;
 };
 
 UnmanagedMemorySlice HPackParser::String::Take(Extern) {
   auto s = Match(
       value_,
-      [](const grpc_slice& slice) {
+      [](const grpc_slice &slice) {
         GPR_DEBUG_ASSERT(!grpc_slice_is_interned(slice));
-        return static_cast<const UnmanagedMemorySlice&>(slice);
+        return static_cast<const UnmanagedMemorySlice &>(slice);
       },
       [](absl::Span<const uint8_t> span) {
         return UnmanagedMemorySlice(
-            reinterpret_cast<char*>(const_cast<uint8_t*>(span.begin())),
+            reinterpret_cast<char *>(const_cast<uint8_t *>(span.begin())),
             span.size());
       },
-      [](const std::vector<uint8_t>& v) {
-        return UnmanagedMemorySlice(reinterpret_cast<const char*>(v.data()),
+      [](const std::vector<uint8_t> &v) {
+        return UnmanagedMemorySlice(reinterpret_cast<const char *>(v.data()),
                                     v.size());
       });
   value_ = absl::Span<const uint8_t>();
@@ -1241,18 +1241,18 @@ UnmanagedMemorySlice HPackParser::String::Take(Extern) {
 ManagedMemorySlice HPackParser::String::Take(Intern) {
   auto s = Match(
       value_,
-      [](const grpc_slice& slice) {
+      [](const grpc_slice &slice) {
         ManagedMemorySlice s(&slice);
         grpc_slice_unref_internal(slice);
         return s;
       },
       [](absl::Span<const uint8_t> span) {
         return ManagedMemorySlice(
-            reinterpret_cast<char*>(const_cast<uint8_t*>(span.data())),
+            reinterpret_cast<char *>(const_cast<uint8_t *>(span.data())),
             span.size());
       },
-      [](const std::vector<uint8_t>& v) {
-        return ManagedMemorySlice(reinterpret_cast<const char*>(v.data()),
+      [](const std::vector<uint8_t> &v) {
+        return ManagedMemorySlice(reinterpret_cast<const char *>(v.data()),
                                   v.size());
       });
   value_ = absl::Span<const uint8_t>();
@@ -1272,7 +1272,7 @@ void HPackParser::BeginFrame(Sink sink, Boundary boundary, Priority priority) {
   dynamic_table_updates_allowed_ = 2;
 }
 
-grpc_error_handle HPackParser::Parse(const grpc_slice& slice, bool is_last) {
+grpc_error_handle HPackParser::Parse(const grpc_slice &slice, bool is_last) {
   if (GPR_UNLIKELY(!unparsed_bytes_.empty())) {
     std::vector<uint8_t> buffer = std::move(unparsed_bytes_);
     buffer.insert(buffer.end(), GRPC_SLICE_START_PTR(slice),
@@ -1300,7 +1300,7 @@ grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
   return input.TakeError();
 }
 
-bool HPackParser::ParseInputInner(Input* input) {
+bool HPackParser::ParseInputInner(Input *input) {
   switch (priority_) {
     case Priority::None:
       break;
@@ -1329,15 +1329,15 @@ void HPackParser::FinishFrame() { sink_ = Sink(); }
 // TODO(ctiller): this serves as an eviction notice for the remainder of this
 // file... it belongs elsewhere!
 
-typedef void (*maybe_complete_func_type)(grpc_chttp2_transport* t,
-                                         grpc_chttp2_stream* s);
+typedef void (*maybe_complete_func_type)(grpc_chttp2_transport *t,
+                                         grpc_chttp2_stream *s);
 static const maybe_complete_func_type maybe_complete_funcs[] = {
     grpc_chttp2_maybe_complete_recv_initial_metadata,
     grpc_chttp2_maybe_complete_recv_trailing_metadata};
 
-static void force_client_rst_stream(void* sp, grpc_error_handle /*error*/) {
-  grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(sp);
-  grpc_chttp2_transport* t = s->t;
+static void force_client_rst_stream(void *sp, grpc_error_handle /*error*/) {
+  grpc_chttp2_stream *s = static_cast<grpc_chttp2_stream *>(sp);
+  grpc_chttp2_transport *t = s->t;
   if (!s->write_closed) {
     grpc_chttp2_add_rst_stream_to_next_write(t, s->id, GRPC_HTTP2_NO_ERROR,
                                              &s->stats.outgoing);
@@ -1347,9 +1347,9 @@ static void force_client_rst_stream(void* sp, grpc_error_handle /*error*/) {
   GRPC_CHTTP2_STREAM_UNREF(s, "final_rst");
 }
 
-static void parse_stream_compression_md(grpc_chttp2_transport* /*t*/,
-                                        grpc_chttp2_stream* s,
-                                        grpc_metadata_batch* initial_metadata) {
+static void parse_stream_compression_md(grpc_chttp2_transport * /*t*/,
+                                        grpc_chttp2_stream *s,
+                                        grpc_metadata_batch *initial_metadata) {
   if (initial_metadata->idx.named.content_encoding == nullptr ||
       grpc_stream_compression_method_parse(
           GRPC_MDVALUE(initial_metadata->idx.named.content_encoding->md), false,
@@ -1365,13 +1365,13 @@ static void parse_stream_compression_md(grpc_chttp2_transport* /*t*/,
   }
 }
 
-grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
-                                                  grpc_chttp2_transport* t,
-                                                  grpc_chttp2_stream* s,
-                                                  const grpc_slice& slice,
+grpc_error_handle grpc_chttp2_header_parser_parse(void *hpack_parser,
+                                                  grpc_chttp2_transport *t,
+                                                  grpc_chttp2_stream *s,
+                                                  const grpc_slice &slice,
                                                   int is_last) {
   GPR_TIMER_SCOPE("grpc_chttp2_header_parser_parse", 0);
-  auto* parser = static_cast<grpc_core::HPackParser*>(hpack_parser);
+  auto *parser = static_cast<grpc_core::HPackParser *>(hpack_parser);
   if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
   }

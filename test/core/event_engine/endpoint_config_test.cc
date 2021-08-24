@@ -27,7 +27,7 @@
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 
 TEST(EndpointConfigTest, CanSRetrieveValuesFromChannelArgs) {
-  grpc_arg arg = grpc_channel_arg_integer_create(const_cast<char*>("arst"), 3);
+  grpc_arg arg = grpc_channel_arg_integer_create(const_cast<char *>("arst"), 3);
   const grpc_channel_args args = {1, &arg};
   ChannelArgsEndpointConfig config(&args);
   EXPECT_EQ(absl::get<int>(config.Get("arst")), 3);
@@ -39,7 +39,7 @@ TEST(EndpointConfigTest, ReturnsMonostateForMissingKeys) {
       absl::holds_alternative<absl::monostate>(config.Get("nonexistent")));
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
   auto result = RUN_ALL_TESTS();
   return result;

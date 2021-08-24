@@ -35,14 +35,14 @@ namespace experimental {
 // If ALTS is not the transport security protocol used to establish the
 // connection, this function will return nullptr.
 std::unique_ptr<AltsContext> GetAltsContextFromAuthContext(
-    const std::shared_ptr<const AuthContext>& auth_context);
+    const std::shared_ptr<const AuthContext> &auth_context);
 
 // This utility function performs ALTS client authorization check on server
 // side, i.e., checks if the client identity matches one of the expected service
 // accounts. It returns OK if client is authorized and an error otherwise.
 grpc::Status AltsClientAuthzCheck(
-    const std::shared_ptr<const AuthContext>& auth_context,
-    const std::vector<std::string>& expected_service_accounts);
+    const std::shared_ptr<const AuthContext> &auth_context,
+    const std::vector<std::string> &expected_service_accounts);
 
 }  // namespace experimental
 }  // namespace grpc

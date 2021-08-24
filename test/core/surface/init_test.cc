@@ -136,7 +136,7 @@ TEST(Init, repeatedly_blocking) {
   EXPECT_FALSE(grpc_is_initialized());
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_register_plugin(plugin_init, plugin_destroy);

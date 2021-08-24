@@ -41,10 +41,10 @@
 #define GPR_CALLTYPE
 #endif
 
-static grpc_byte_buffer* grpcsharp_create_byte_buffer_from_stolen_slices(
-    grpc_slice_buffer* slice_buffer) {
-  grpc_byte_buffer* bb =
-      (grpc_byte_buffer*)gpr_zalloc(sizeof(grpc_byte_buffer));
+static grpc_byte_buffer *grpcsharp_create_byte_buffer_from_stolen_slices(
+    grpc_slice_buffer *slice_buffer) {
+  grpc_byte_buffer *bb =
+      (grpc_byte_buffer *)gpr_zalloc(sizeof(grpc_byte_buffer));
   bb->type = GRPC_BB_RAW;
   bb->data.raw.compression = GRPC_COMPRESS_NONE;
   grpc_slice_buffer_init(&bb->data.raw.slice_buffer);
@@ -58,18 +58,18 @@ static grpc_byte_buffer* grpcsharp_create_byte_buffer_from_stolen_slices(
  */
 typedef struct grpcsharp_batch_context {
   grpc_metadata_array send_initial_metadata;
-  grpc_byte_buffer* send_message;
+  grpc_byte_buffer *send_message;
   struct {
     grpc_metadata_array trailing_metadata;
   } send_status_from_server;
   grpc_metadata_array recv_initial_metadata;
-  grpc_byte_buffer* recv_message;
-  grpc_byte_buffer_reader* recv_message_reader;
+  grpc_byte_buffer *recv_message;
+  grpc_byte_buffer_reader *recv_message_reader;
   struct {
     grpc_metadata_array trailing_metadata;
     grpc_status_code status;
     grpc_slice status_details;
-    const char* error_string;
+    const char *error_string;
   } recv_status_on_client;
   int recv_close_on_server_cancelled;
 
@@ -77,22 +77,22 @@ typedef struct grpcsharp_batch_context {
   grpc_byte_buffer_reader reserved_recv_message_reader;
 } grpcsharp_batch_context;
 
-GPR_EXPORT grpcsharp_batch_context* GPR_CALLTYPE
+GPR_EXPORT grpcsharp_batch_context *GPR_CALLTYPE
 grpcsharp_batch_context_create() {
-  grpcsharp_batch_context* ctx = gpr_malloc(sizeof(grpcsharp_batch_context));
+  grpcsharp_batch_context *ctx = gpr_malloc(sizeof(grpcsharp_batch_context));
   memset(ctx, 0, sizeof(grpcsharp_batch_context));
   return ctx;
 }
 
 typedef struct {
-  grpc_call* call;
+  grpc_call *call;
   grpc_call_details call_details;
   grpc_metadata_array request_metadata;
 } grpcsharp_request_call_context;
 
-GPR_EXPORT grpcsharp_request_call_context* GPR_CALLTYPE
+GPR_EXPORT grpcsharp_request_call_context *GPR_CALLTYPE
 grpcsharp_request_call_context_create() {
-  grpcsharp_request_call_context* ctx =
+  grpcsharp_request_call_context *ctx =
       gpr_malloc(sizeof(grpcsharp_request_call_context));
   memset(ctx, 0, sizeof(grpcsharp_request_call_context));
   return ctx;
@@ -103,7 +103,7 @@ grpcsharp_request_call_context_create() {
  * The array pointer itself is not freed.
  */
 void grpcsharp_metadata_array_destroy_metadata_only(
-    grpc_metadata_array* array) {
+    grpc_metadata_array *array) {
   gpr_free(array->metadata);
 }
 
@@ -112,7 +112,7 @@ void grpcsharp_metadata_array_destroy_metadata_only(
  * The array pointer itself is not freed.
  */
 void grpcsharp_metadata_array_destroy_metadata_including_entries(
-    grpc_metadata_array* array) {
+    grpc_metadata_array *array) {
   size_t i;
   if (array->metadata) {
     for (i = 0; i < array->count; i++) {
@@ -127,7 +127,7 @@ void grpcsharp_metadata_array_destroy_metadata_including_entries(
  * Fully destroys the metadata array.
  */
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_metadata_array_destroy_full(grpc_metadata_array* array) {
+grpcsharp_metadata_array_destroy_full(grpc_metadata_array *array) {
   if (!array) {
     return;
   }
@@ -139,16 +139,16 @@ grpcsharp_metadata_array_destroy_full(grpc_metadata_array* array) {
  * Creates an empty metadata array with given capacity.
  * Array can later be destroyed by grpc_metadata_array_destroy_full.
  */
-GPR_EXPORT grpc_metadata_array* GPR_CALLTYPE
+GPR_EXPORT grpc_metadata_array *GPR_CALLTYPE
 grpcsharp_metadata_array_create(size_t capacity) {
-  grpc_metadata_array* array =
-      (grpc_metadata_array*)gpr_malloc(sizeof(grpc_metadata_array));
+  grpc_metadata_array *array =
+      (grpc_metadata_array *)gpr_malloc(sizeof(grpc_metadata_array));
   grpc_metadata_array_init(array);
   array->capacity = capacity;
   array->count = 0;
   if (capacity > 0) {
     array->metadata =
-        (grpc_metadata*)gpr_malloc(sizeof(grpc_metadata) * capacity);
+        (grpc_metadata *)gpr_malloc(sizeof(grpc_metadata) * capacity);
     memset(array->metadata, 0, sizeof(grpc_metadata) * capacity);
   } else {
     array->metadata = NULL;
@@ -157,8 +157,8 @@ grpcsharp_metadata_array_create(size_t capacity) {
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_metadata_array_add(grpc_metadata_array* array, const char* key,
-                             const char* value, size_t value_length) {
+grpcsharp_metadata_array_add(grpc_metadata_array *array, const char *key,
+                             const char *value, size_t value_length) {
   size_t i = array->count;
   GPR_ASSERT(array->count < array->capacity);
   array->metadata[i].key = grpc_slice_from_copied_string(key);
@@ -167,27 +167,27 @@ grpcsharp_metadata_array_add(grpc_metadata_array* array, const char* key,
 }
 
 GPR_EXPORT intptr_t GPR_CALLTYPE
-grpcsharp_metadata_array_count(grpc_metadata_array* array) {
+grpcsharp_metadata_array_count(grpc_metadata_array *array) {
   return (intptr_t)array->count;
 }
 
-GPR_EXPORT const char* GPR_CALLTYPE grpcsharp_metadata_array_get_key(
-    grpc_metadata_array* array, size_t index, size_t* key_length) {
+GPR_EXPORT const char *GPR_CALLTYPE grpcsharp_metadata_array_get_key(
+    grpc_metadata_array *array, size_t index, size_t *key_length) {
   GPR_ASSERT(index < array->count);
   *key_length = GRPC_SLICE_LENGTH(array->metadata[index].key);
-  return (char*)GRPC_SLICE_START_PTR(array->metadata[index].key);
+  return (char *)GRPC_SLICE_START_PTR(array->metadata[index].key);
 }
 
-GPR_EXPORT const char* GPR_CALLTYPE grpcsharp_metadata_array_get_value(
-    grpc_metadata_array* array, size_t index, size_t* value_length) {
+GPR_EXPORT const char *GPR_CALLTYPE grpcsharp_metadata_array_get_value(
+    grpc_metadata_array *array, size_t index, size_t *value_length) {
   GPR_ASSERT(index < array->count);
   *value_length = GRPC_SLICE_LENGTH(array->metadata[index].value);
-  return (char*)GRPC_SLICE_START_PTR(array->metadata[index].value);
+  return (char *)GRPC_SLICE_START_PTR(array->metadata[index].value);
 }
 
 /* Move contents of metadata array */
-void grpcsharp_metadata_array_move(grpc_metadata_array* dest,
-                                   grpc_metadata_array* src) {
+void grpcsharp_metadata_array_move(grpc_metadata_array *dest,
+                                   grpc_metadata_array *src) {
   if (!src) {
     dest->capacity = 0;
     dest->count = 0;
@@ -205,7 +205,7 @@ void grpcsharp_metadata_array_move(grpc_metadata_array* dest,
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_batch_context_reset(grpcsharp_batch_context* ctx) {
+grpcsharp_batch_context_reset(grpcsharp_batch_context *ctx) {
   grpcsharp_metadata_array_destroy_metadata_including_entries(
       &(ctx->send_initial_metadata));
 
@@ -224,12 +224,12 @@ grpcsharp_batch_context_reset(grpcsharp_batch_context* ctx) {
   grpcsharp_metadata_array_destroy_metadata_only(
       &(ctx->recv_status_on_client.trailing_metadata));
   grpc_slice_unref(ctx->recv_status_on_client.status_details);
-  gpr_free((void*)ctx->recv_status_on_client.error_string);
+  gpr_free((void *)ctx->recv_status_on_client.error_string);
   memset(ctx, 0, sizeof(grpcsharp_batch_context));
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_batch_context_destroy(grpcsharp_batch_context* ctx) {
+grpcsharp_batch_context_destroy(grpcsharp_batch_context *ctx) {
   if (!ctx) {
     return;
   }
@@ -238,7 +238,7 @@ grpcsharp_batch_context_destroy(grpcsharp_batch_context* ctx) {
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_request_call_context_reset(grpcsharp_request_call_context* ctx) {
+grpcsharp_request_call_context_reset(grpcsharp_request_call_context *ctx) {
   /* NOTE: ctx->server_rpc_new.call is not destroyed because callback handler is
      supposed
      to take its ownership. */
@@ -249,7 +249,7 @@ grpcsharp_request_call_context_reset(grpcsharp_request_call_context* ctx) {
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_request_call_context_destroy(grpcsharp_request_call_context* ctx) {
+grpcsharp_request_call_context_destroy(grpcsharp_request_call_context *ctx) {
   if (!ctx) {
     return;
   }
@@ -257,14 +257,14 @@ grpcsharp_request_call_context_destroy(grpcsharp_request_call_context* ctx) {
   gpr_free(ctx);
 }
 
-GPR_EXPORT const grpc_metadata_array* GPR_CALLTYPE
+GPR_EXPORT const grpc_metadata_array *GPR_CALLTYPE
 grpcsharp_batch_context_recv_initial_metadata(
-    const grpcsharp_batch_context* ctx) {
+    const grpcsharp_batch_context *ctx) {
   return &(ctx->recv_initial_metadata);
 }
 
 GPR_EXPORT intptr_t GPR_CALLTYPE grpcsharp_batch_context_recv_message_length(
-    const grpcsharp_batch_context* ctx) {
+    const grpcsharp_batch_context *ctx) {
   grpc_byte_buffer_reader reader;
   if (!ctx->recv_message) {
     return -1;
@@ -291,7 +291,7 @@ GPR_EXPORT intptr_t GPR_CALLTYPE grpcsharp_batch_context_recv_message_length(
  */
 GPR_EXPORT int GPR_CALLTYPE
 grpcsharp_batch_context_recv_message_next_slice_peek(
-    grpcsharp_batch_context* ctx, size_t* slice_len, uint8_t** slice_data_ptr) {
+    grpcsharp_batch_context *ctx, size_t *slice_len, uint8_t **slice_data_ptr) {
   *slice_len = 0;
   *slice_data_ptr = NULL;
 
@@ -305,7 +305,7 @@ grpcsharp_batch_context_recv_message_next_slice_peek(
                                             ctx->recv_message));
   }
 
-  grpc_slice* slice_ptr;
+  grpc_slice *slice_ptr;
   if (!grpc_byte_buffer_reader_peek(ctx->recv_message_reader, &slice_ptr)) {
     return 0;
   }
@@ -318,61 +318,62 @@ grpcsharp_batch_context_recv_message_next_slice_peek(
 
 GPR_EXPORT grpc_status_code GPR_CALLTYPE
 grpcsharp_batch_context_recv_status_on_client_status(
-    const grpcsharp_batch_context* ctx) {
+    const grpcsharp_batch_context *ctx) {
   return ctx->recv_status_on_client.status;
 }
 
-GPR_EXPORT const char* GPR_CALLTYPE
+GPR_EXPORT const char *GPR_CALLTYPE
 grpcsharp_batch_context_recv_status_on_client_details(
-    const grpcsharp_batch_context* ctx, size_t* details_length) {
+    const grpcsharp_batch_context *ctx, size_t *details_length) {
   *details_length =
       GRPC_SLICE_LENGTH(ctx->recv_status_on_client.status_details);
-  return (char*)GRPC_SLICE_START_PTR(ctx->recv_status_on_client.status_details);
+  return (char *)GRPC_SLICE_START_PTR(
+      ctx->recv_status_on_client.status_details);
 }
 
-GPR_EXPORT const char* GPR_CALLTYPE
+GPR_EXPORT const char *GPR_CALLTYPE
 grpcsharp_batch_context_recv_status_on_client_error_string(
-    const grpcsharp_batch_context* ctx) {
+    const grpcsharp_batch_context *ctx) {
   return ctx->recv_status_on_client.error_string;
 }
 
-GPR_EXPORT const grpc_metadata_array* GPR_CALLTYPE
+GPR_EXPORT const grpc_metadata_array *GPR_CALLTYPE
 grpcsharp_batch_context_recv_status_on_client_trailing_metadata(
-    const grpcsharp_batch_context* ctx) {
+    const grpcsharp_batch_context *ctx) {
   return &(ctx->recv_status_on_client.trailing_metadata);
 }
 
-GPR_EXPORT grpc_call* GPR_CALLTYPE
-grpcsharp_request_call_context_call(const grpcsharp_request_call_context* ctx) {
+GPR_EXPORT grpc_call *GPR_CALLTYPE
+grpcsharp_request_call_context_call(const grpcsharp_request_call_context *ctx) {
   return ctx->call;
 }
 
-GPR_EXPORT const char* GPR_CALLTYPE grpcsharp_request_call_context_method(
-    const grpcsharp_request_call_context* ctx, size_t* method_length) {
+GPR_EXPORT const char *GPR_CALLTYPE grpcsharp_request_call_context_method(
+    const grpcsharp_request_call_context *ctx, size_t *method_length) {
   *method_length = GRPC_SLICE_LENGTH(ctx->call_details.method);
-  return (char*)GRPC_SLICE_START_PTR(ctx->call_details.method);
+  return (char *)GRPC_SLICE_START_PTR(ctx->call_details.method);
 }
 
-GPR_EXPORT const char* GPR_CALLTYPE grpcsharp_request_call_context_host(
-    const grpcsharp_request_call_context* ctx, size_t* host_length) {
+GPR_EXPORT const char *GPR_CALLTYPE grpcsharp_request_call_context_host(
+    const grpcsharp_request_call_context *ctx, size_t *host_length) {
   *host_length = GRPC_SLICE_LENGTH(ctx->call_details.host);
-  return (char*)GRPC_SLICE_START_PTR(ctx->call_details.host);
+  return (char *)GRPC_SLICE_START_PTR(ctx->call_details.host);
 }
 
 GPR_EXPORT gpr_timespec GPR_CALLTYPE grpcsharp_request_call_context_deadline(
-    const grpcsharp_request_call_context* ctx) {
+    const grpcsharp_request_call_context *ctx) {
   return ctx->call_details.deadline;
 }
 
-GPR_EXPORT const grpc_metadata_array* GPR_CALLTYPE
+GPR_EXPORT const grpc_metadata_array *GPR_CALLTYPE
 grpcsharp_request_call_context_request_metadata(
-    const grpcsharp_request_call_context* ctx) {
+    const grpcsharp_request_call_context *ctx) {
   return &(ctx->request_metadata);
 }
 
 GPR_EXPORT int32_t GPR_CALLTYPE
 grpcsharp_batch_context_recv_close_on_server_cancelled(
-    const grpcsharp_batch_context* ctx) {
+    const grpcsharp_batch_context *ctx) {
   return (int32_t)ctx->recv_close_on_server_cancelled;
 }
 
@@ -384,63 +385,63 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_shutdown(void) { grpc_shutdown(); }
 
 /* Completion queue */
 
-GPR_EXPORT grpc_completion_queue* GPR_CALLTYPE
+GPR_EXPORT grpc_completion_queue *GPR_CALLTYPE
 grpcsharp_completion_queue_create_async(void) {
   return grpc_completion_queue_create_for_next(NULL);
 }
 
-GPR_EXPORT grpc_completion_queue* GPR_CALLTYPE
+GPR_EXPORT grpc_completion_queue *GPR_CALLTYPE
 grpcsharp_completion_queue_create_sync(void) {
   return grpc_completion_queue_create_for_pluck(NULL);
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_completion_queue_shutdown(grpc_completion_queue* cq) {
+grpcsharp_completion_queue_shutdown(grpc_completion_queue *cq) {
   grpc_completion_queue_shutdown(cq);
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_completion_queue_destroy(grpc_completion_queue* cq) {
+grpcsharp_completion_queue_destroy(grpc_completion_queue *cq) {
   grpc_completion_queue_destroy(cq);
 }
 
 GPR_EXPORT grpc_event GPR_CALLTYPE
-grpcsharp_completion_queue_next(grpc_completion_queue* cq) {
+grpcsharp_completion_queue_next(grpc_completion_queue *cq) {
   return grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
                                     NULL);
 }
 
 GPR_EXPORT grpc_event GPR_CALLTYPE
-grpcsharp_completion_queue_pluck(grpc_completion_queue* cq, void* tag) {
+grpcsharp_completion_queue_pluck(grpc_completion_queue *cq, void *tag) {
   return grpc_completion_queue_pluck(cq, tag,
                                      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 }
 
 /* Channel */
 
-GPR_EXPORT grpc_channel* GPR_CALLTYPE
+GPR_EXPORT grpc_channel *GPR_CALLTYPE
 
-grpcsharp_insecure_channel_create(const char* target,
-                                  const grpc_channel_args* args) {
+grpcsharp_insecure_channel_create(const char *target,
+                                  const grpc_channel_args *args) {
   return grpc_insecure_channel_create(target, args, NULL);
 }
 
-GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_destroy(grpc_channel* channel) {
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_destroy(grpc_channel *channel) {
   grpc_channel_destroy(channel);
 }
 
-GPR_EXPORT grpc_call* GPR_CALLTYPE grpcsharp_channel_create_call(
-    grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_completion_queue* cq, const char* method, const char* host,
+GPR_EXPORT grpc_call *GPR_CALLTYPE grpcsharp_channel_create_call(
+    grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
+    grpc_completion_queue *cq, const char *method, const char *host,
     gpr_timespec deadline) {
   grpc_slice method_slice = grpc_slice_from_copied_string(method);
-  grpc_slice* host_slice_ptr = NULL;
+  grpc_slice *host_slice_ptr = NULL;
   grpc_slice host_slice;
   if (host != NULL) {
     host_slice = grpc_slice_from_copied_string(host);
     host_slice_ptr = &host_slice;
   }
-  grpc_call* ret =
+  grpc_call *ret =
       grpc_channel_create_call(channel, parent_call, propagation_mask, cq,
                                method_slice, host_slice_ptr, deadline, NULL);
   grpc_slice_unref(method_slice);
@@ -451,40 +452,40 @@ GPR_EXPORT grpc_call* GPR_CALLTYPE grpcsharp_channel_create_call(
 }
 
 GPR_EXPORT grpc_connectivity_state GPR_CALLTYPE
-grpcsharp_channel_check_connectivity_state(grpc_channel* channel,
+grpcsharp_channel_check_connectivity_state(grpc_channel *channel,
                                            int32_t try_to_connect) {
   return grpc_channel_check_connectivity_state(channel, try_to_connect);
 }
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_watch_connectivity_state(
-    grpc_channel* channel, grpc_connectivity_state last_observed_state,
-    gpr_timespec deadline, grpc_completion_queue* cq,
-    grpcsharp_batch_context* ctx) {
+    grpc_channel *channel, grpc_connectivity_state last_observed_state,
+    gpr_timespec deadline, grpc_completion_queue *cq,
+    grpcsharp_batch_context *ctx) {
   grpc_channel_watch_connectivity_state(channel, last_observed_state, deadline,
                                         cq, ctx);
 }
 
-GPR_EXPORT char* GPR_CALLTYPE
-grpcsharp_channel_get_target(grpc_channel* channel) {
+GPR_EXPORT char *GPR_CALLTYPE
+grpcsharp_channel_get_target(grpc_channel *channel) {
   return grpc_channel_get_target(channel);
 }
 
 /* Channel args */
 
-GPR_EXPORT grpc_channel_args* GPR_CALLTYPE
+GPR_EXPORT grpc_channel_args *GPR_CALLTYPE
 grpcsharp_channel_args_create(size_t num_args) {
-  grpc_channel_args* args =
-      (grpc_channel_args*)gpr_malloc(sizeof(grpc_channel_args));
+  grpc_channel_args *args =
+      (grpc_channel_args *)gpr_malloc(sizeof(grpc_channel_args));
   memset(args, 0, sizeof(grpc_channel_args));
 
   args->num_args = num_args;
-  args->args = (grpc_arg*)gpr_malloc(sizeof(grpc_arg) * num_args);
+  args->args = (grpc_arg *)gpr_malloc(sizeof(grpc_arg) * num_args);
   memset(args->args, 0, sizeof(grpc_arg) * num_args);
   return args;
 }
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_args_set_string(
-    grpc_channel_args* args, size_t index, const char* key, const char* value) {
+    grpc_channel_args *args, size_t index, const char *key, const char *value) {
   GPR_ASSERT(args);
   GPR_ASSERT(index < args->num_args);
   args->args[index].type = GRPC_ARG_STRING;
@@ -493,7 +494,7 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_args_set_string(
 }
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_args_set_integer(
-    grpc_channel_args* args, size_t index, const char* key, int value) {
+    grpc_channel_args *args, size_t index, const char *key, int value) {
   GPR_ASSERT(args);
   GPR_ASSERT(index < args->num_args);
   args->args[index].type = GRPC_ARG_INTEGER;
@@ -502,7 +503,7 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_args_set_integer(
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_channel_args_destroy(grpc_channel_args* args) {
+grpcsharp_channel_args_destroy(grpc_channel_args *args) {
   size_t i;
   if (args) {
     for (i = 0; i < args->num_args; i++) {
@@ -543,36 +544,36 @@ GPR_EXPORT int32_t GPR_CALLTYPE gprsharp_sizeof_timespec(void) {
 
 /* Call */
 
-GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_cancel(grpc_call* call) {
+GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_cancel(grpc_call *call) {
   return grpc_call_cancel(call, NULL);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_cancel_with_status(
-    grpc_call* call, grpc_status_code status, const char* description) {
+    grpc_call *call, grpc_status_code status, const char *description) {
   return grpc_call_cancel_with_status(call, status, description, NULL);
 }
 
-GPR_EXPORT char* GPR_CALLTYPE grpcsharp_call_get_peer(grpc_call* call) {
+GPR_EXPORT char *GPR_CALLTYPE grpcsharp_call_get_peer(grpc_call *call) {
   return grpc_call_get_peer(call);
 }
 
-GPR_EXPORT void GPR_CALLTYPE gprsharp_free(void* p) { gpr_free(p); }
+GPR_EXPORT void GPR_CALLTYPE gprsharp_free(void *p) { gpr_free(p); }
 
-GPR_EXPORT void GPR_CALLTYPE grpcsharp_call_destroy(grpc_call* call) {
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_call_destroy(grpc_call *call) {
   grpc_call_unref(call);
 }
 
-typedef grpc_call_error (*grpcsharp_call_start_batch_func)(grpc_call* call,
-                                                           const grpc_op* ops,
+typedef grpc_call_error (*grpcsharp_call_start_batch_func)(grpc_call *call,
+                                                           const grpc_op *ops,
                                                            size_t nops,
-                                                           void* tag,
-                                                           void* reserved);
+                                                           void *tag,
+                                                           void *reserved);
 
 /* Only for testing */
-static grpc_call_error grpcsharp_call_start_batch_nop(grpc_call* call,
-                                                      const grpc_op* ops,
-                                                      size_t nops, void* tag,
-                                                      void* reserved) {
+static grpc_call_error grpcsharp_call_start_batch_nop(grpc_call *call,
+                                                      const grpc_op *ops,
+                                                      size_t nops, void *tag,
+                                                      void *reserved) {
   (void)call;
   (void)ops;
   (void)nops;
@@ -581,28 +582,28 @@ static grpc_call_error grpcsharp_call_start_batch_nop(grpc_call* call,
   return GRPC_CALL_OK;
 }
 
-static grpc_call_error grpcsharp_call_start_batch_default(grpc_call* call,
-                                                          const grpc_op* ops,
+static grpc_call_error grpcsharp_call_start_batch_default(grpc_call *call,
+                                                          const grpc_op *ops,
                                                           size_t nops,
-                                                          void* tag,
-                                                          void* reserved) {
+                                                          void *tag,
+                                                          void *reserved) {
   return grpc_call_start_batch(call, ops, nops, tag, reserved);
 }
 
 static grpcsharp_call_start_batch_func g_call_start_batch_func =
     grpcsharp_call_start_batch_default;
 
-static grpc_call_error grpcsharp_call_start_batch(grpc_call* call,
-                                                  const grpc_op* ops,
-                                                  size_t nops, void* tag,
-                                                  void* reserved) {
+static grpc_call_error grpcsharp_call_start_batch(grpc_call *call,
+                                                  const grpc_op *ops,
+                                                  size_t nops, void *tag,
+                                                  void *reserved) {
   return g_call_start_batch_func(call, ops, nops, tag, reserved);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_unary(
-    grpc_call* call, grpcsharp_batch_context* ctx,
-    grpc_slice_buffer* send_buffer, uint32_t write_flags,
-    grpc_metadata_array* initial_metadata, uint32_t initial_metadata_flags) {
+    grpc_call *call, grpcsharp_batch_context *ctx,
+    grpc_slice_buffer *send_buffer, uint32_t write_flags,
+    grpc_metadata_array *initial_metadata, uint32_t initial_metadata_flags) {
   /* TODO: don't use magic number */
   grpc_op ops[6];
   memset(ops, 0, sizeof(ops));
@@ -656,14 +657,14 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_unary(
 /* Only for testing. Shortcircuits the unary call logic and only echoes the
    message as if it was received from the server */
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_test_call_start_unary_echo(
-    grpc_call* call, grpcsharp_batch_context* ctx,
-    grpc_slice_buffer* send_buffer, uint32_t write_flags,
-    grpc_metadata_array* initial_metadata, uint32_t initial_metadata_flags) {
+    grpc_call *call, grpcsharp_batch_context *ctx,
+    grpc_slice_buffer *send_buffer, uint32_t write_flags,
+    grpc_metadata_array *initial_metadata, uint32_t initial_metadata_flags) {
   (void)call;
   (void)write_flags;
   (void)initial_metadata_flags;
   // prepare as if we were performing a normal RPC.
-  grpc_byte_buffer* send_message =
+  grpc_byte_buffer *send_message =
       grpcsharp_create_byte_buffer_from_stolen_slices(send_buffer);
 
   ctx->recv_message = send_message;  // echo message sent by the client as if
@@ -678,8 +679,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_test_call_start_unary_echo(
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_client_streaming(
-    grpc_call* call, grpcsharp_batch_context* ctx,
-    grpc_metadata_array* initial_metadata, uint32_t initial_metadata_flags) {
+    grpc_call *call, grpcsharp_batch_context *ctx,
+    grpc_metadata_array *initial_metadata, uint32_t initial_metadata_flags) {
   /* TODO: don't use magic number */
   grpc_op ops[4];
   memset(ops, 0, sizeof(ops));
@@ -720,9 +721,9 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_client_streaming(
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_server_streaming(
-    grpc_call* call, grpcsharp_batch_context* ctx,
-    grpc_slice_buffer* send_buffer, uint32_t write_flags,
-    grpc_metadata_array* initial_metadata, uint32_t initial_metadata_flags) {
+    grpc_call *call, grpcsharp_batch_context *ctx,
+    grpc_slice_buffer *send_buffer, uint32_t write_flags,
+    grpc_metadata_array *initial_metadata, uint32_t initial_metadata_flags) {
   /* TODO: don't use magic number */
   grpc_op ops[4];
   memset(ops, 0, sizeof(ops));
@@ -763,8 +764,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_server_streaming(
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_duplex_streaming(
-    grpc_call* call, grpcsharp_batch_context* ctx,
-    grpc_metadata_array* initial_metadata, uint32_t initial_metadata_flags) {
+    grpc_call *call, grpcsharp_batch_context *ctx,
+    grpc_metadata_array *initial_metadata, uint32_t initial_metadata_flags) {
   /* TODO: don't use magic number */
   grpc_op ops[2];
   memset(ops, 0, sizeof(ops));
@@ -794,7 +795,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_duplex_streaming(
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_recv_initial_metadata(
-    grpc_call* call, grpcsharp_batch_context* ctx) {
+    grpc_call *call, grpcsharp_batch_context *ctx) {
   /* TODO: don't use magic number */
   grpc_op ops[1];
   ops[0].op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -808,8 +809,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_recv_initial_metadata(
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_message(
-    grpc_call* call, grpcsharp_batch_context* ctx,
-    grpc_slice_buffer* send_buffer, uint32_t write_flags,
+    grpc_call *call, grpcsharp_batch_context *ctx,
+    grpc_slice_buffer *send_buffer, uint32_t write_flags,
     int32_t send_empty_initial_metadata) {
   /* TODO: don't use magic number */
   grpc_op ops[2];
@@ -829,7 +830,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_message(
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_close_from_client(
-    grpc_call* call, grpcsharp_batch_context* ctx) {
+    grpc_call *call, grpcsharp_batch_context *ctx) {
   /* TODO: don't use magic number */
   grpc_op ops[1];
   ops[0].op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
@@ -841,10 +842,10 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_close_from_client(
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_status_from_server(
-    grpc_call* call, grpcsharp_batch_context* ctx, grpc_status_code status_code,
-    const char* status_details, size_t status_details_len,
-    grpc_metadata_array* trailing_metadata, int32_t send_empty_initial_metadata,
-    grpc_slice_buffer* optional_send_buffer, uint32_t write_flags) {
+    grpc_call *call, grpcsharp_batch_context *ctx, grpc_status_code status_code,
+    const char *status_details, size_t status_details_len,
+    grpc_metadata_array *trailing_metadata, int32_t send_empty_initial_metadata,
+    grpc_slice_buffer *optional_send_buffer, uint32_t write_flags) {
   /* TODO: don't use magic number */
   grpc_op ops[3];
   memset(ops, 0, sizeof(ops));
@@ -883,7 +884,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_status_from_server(
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE
-grpcsharp_call_recv_message(grpc_call* call, grpcsharp_batch_context* ctx) {
+grpcsharp_call_recv_message(grpc_call *call, grpcsharp_batch_context *ctx) {
   /* TODO: don't use magic number */
   grpc_op ops[1];
   ops[0].op = GRPC_OP_RECV_MESSAGE;
@@ -895,7 +896,7 @@ grpcsharp_call_recv_message(grpc_call* call, grpcsharp_batch_context* ctx) {
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE
-grpcsharp_call_start_serverside(grpc_call* call, grpcsharp_batch_context* ctx) {
+grpcsharp_call_start_serverside(grpc_call *call, grpcsharp_batch_context *ctx) {
   /* TODO: don't use magic number */
   grpc_op ops[1];
   ops[0].op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -909,8 +910,8 @@ grpcsharp_call_start_serverside(grpc_call* call, grpcsharp_batch_context* ctx) {
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_initial_metadata(
-    grpc_call* call, grpcsharp_batch_context* ctx,
-    grpc_metadata_array* initial_metadata) {
+    grpc_call *call, grpcsharp_batch_context *ctx,
+    grpc_metadata_array *initial_metadata) {
   /* TODO: don't use magic number */
   grpc_op ops[1];
   memset(ops, 0, sizeof(ops));
@@ -928,58 +929,58 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_initial_metadata(
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE
-grpcsharp_call_set_credentials(grpc_call* call, grpc_call_credentials* creds) {
+grpcsharp_call_set_credentials(grpc_call *call, grpc_call_credentials *creds) {
   return grpc_call_set_credentials(call, creds);
 }
 
 /* Server */
 
-GPR_EXPORT grpc_server* GPR_CALLTYPE
-grpcsharp_server_create(const grpc_channel_args* args) {
+GPR_EXPORT grpc_server *GPR_CALLTYPE
+grpcsharp_server_create(const grpc_channel_args *args) {
   return grpc_server_create(args, NULL);
 }
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_register_completion_queue(
-    grpc_server* server, grpc_completion_queue* cq) {
+    grpc_server *server, grpc_completion_queue *cq) {
   grpc_server_register_completion_queue(server, cq, NULL);
 }
 
 GPR_EXPORT int32_t GPR_CALLTYPE grpcsharp_server_add_insecure_http2_port(
-    grpc_server* server, const char* addr) {
+    grpc_server *server, const char *addr) {
   return grpc_server_add_insecure_http2_port(server, addr);
 }
 
-GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_start(grpc_server* server) {
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_start(grpc_server *server) {
   grpc_server_start(server);
 }
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_shutdown_and_notify_callback(
-    grpc_server* server, grpc_completion_queue* cq,
-    grpcsharp_batch_context* ctx) {
+    grpc_server *server, grpc_completion_queue *cq,
+    grpcsharp_batch_context *ctx) {
   grpc_server_shutdown_and_notify(server, cq, ctx);
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_server_cancel_all_calls(grpc_server* server) {
+grpcsharp_server_cancel_all_calls(grpc_server *server) {
   grpc_server_cancel_all_calls(server);
 }
 
-GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_destroy(grpc_server* server) {
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_destroy(grpc_server *server) {
   grpc_server_destroy(server);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE
-grpcsharp_server_request_call(grpc_server* server, grpc_completion_queue* cq,
-                              grpcsharp_request_call_context* ctx) {
+grpcsharp_server_request_call(grpc_server *server, grpc_completion_queue *cq,
+                              grpcsharp_request_call_context *ctx) {
   return grpc_server_request_call(server, &(ctx->call), &(ctx->call_details),
                                   &(ctx->request_metadata), cq, cq, ctx);
 }
 
 /* Native callback dispatcher */
 
-typedef int(GPR_CALLTYPE* grpcsharp_native_callback_dispatcher_func)(
-    void* tag, void* arg0, void* arg1, void* arg2, void* arg3, void* arg4,
-    void* arg5);
+typedef int(GPR_CALLTYPE *grpcsharp_native_callback_dispatcher_func)(
+    void *tag, void *arg0, void *arg1, void *arg2, void *arg3, void *arg4,
+    void *arg5);
 
 static grpcsharp_native_callback_dispatcher_func native_callback_dispatcher =
     NULL;
@@ -992,10 +993,10 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_native_callback_dispatcher_init(
 
 /* Security */
 
-static char* default_pem_root_certs = NULL;
+static char *default_pem_root_certs = NULL;
 
 static grpc_ssl_roots_override_result override_ssl_roots_handler(
-    char** pem_root_certs) {
+    char **pem_root_certs) {
   if (!default_pem_root_certs) {
     *pem_root_certs = NULL;
     return GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY;
@@ -1005,7 +1006,7 @@ static grpc_ssl_roots_override_result override_ssl_roots_handler(
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_override_default_ssl_roots(const char* pem_root_certs) {
+grpcsharp_override_default_ssl_roots(const char *pem_root_certs) {
   /*
    * This currently wastes ~300kB of memory by keeping a copy of roots
    * in a static variable, but for desktop/server use, the overhead
@@ -1016,26 +1017,26 @@ grpcsharp_override_default_ssl_roots(const char* pem_root_certs) {
   grpc_set_ssl_roots_override_callback(override_ssl_roots_handler);
 }
 
-static void grpcsharp_verify_peer_destroy_handler(void* userdata) {
-  native_callback_dispatcher(userdata, NULL, NULL, (void*)1, NULL, NULL, NULL);
+static void grpcsharp_verify_peer_destroy_handler(void *userdata) {
+  native_callback_dispatcher(userdata, NULL, NULL, (void *)1, NULL, NULL, NULL);
 }
 
-static int grpcsharp_verify_peer_handler(const char* target_name,
-                                         const char* peer_pem, void* userdata) {
-  return native_callback_dispatcher(userdata, (void*)target_name,
-                                    (void*)peer_pem, (void*)0, NULL, NULL,
+static int grpcsharp_verify_peer_handler(const char *target_name,
+                                         const char *peer_pem, void *userdata) {
+  return native_callback_dispatcher(userdata, (void *)target_name,
+                                    (void *)peer_pem, (void *)0, NULL, NULL,
                                     NULL);
 }
 
-GPR_EXPORT grpc_channel_credentials* GPR_CALLTYPE
-grpcsharp_ssl_credentials_create(const char* pem_root_certs,
-                                 const char* key_cert_pair_cert_chain,
-                                 const char* key_cert_pair_private_key,
-                                 void* verify_peer_callback_tag) {
+GPR_EXPORT grpc_channel_credentials *GPR_CALLTYPE
+grpcsharp_ssl_credentials_create(const char *pem_root_certs,
+                                 const char *key_cert_pair_cert_chain,
+                                 const char *key_cert_pair_private_key,
+                                 void *verify_peer_callback_tag) {
   grpc_ssl_pem_key_cert_pair key_cert_pair;
   verify_peer_options verify_options;
-  grpc_ssl_pem_key_cert_pair* key_cert_pair_ptr = NULL;
-  verify_peer_options* verify_options_ptr = NULL;
+  grpc_ssl_pem_key_cert_pair *key_cert_pair_ptr = NULL;
+  verify_peer_options *verify_options_ptr = NULL;
 
   if (key_cert_pair_cert_chain || key_cert_pair_private_key) {
     memset(&key_cert_pair, 0, sizeof(key_cert_pair));
@@ -1060,29 +1061,29 @@ grpcsharp_ssl_credentials_create(const char* pem_root_certs,
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_channel_credentials_release(grpc_channel_credentials* creds) {
+grpcsharp_channel_credentials_release(grpc_channel_credentials *creds) {
   grpc_channel_credentials_release(creds);
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_call_credentials_release(grpc_call_credentials* creds) {
+grpcsharp_call_credentials_release(grpc_call_credentials *creds) {
   grpc_call_credentials_release(creds);
 }
 
-GPR_EXPORT grpc_channel* GPR_CALLTYPE grpcsharp_secure_channel_create(
-    grpc_channel_credentials* creds, const char* target,
-    const grpc_channel_args* args) {
+GPR_EXPORT grpc_channel *GPR_CALLTYPE grpcsharp_secure_channel_create(
+    grpc_channel_credentials *creds, const char *target,
+    const grpc_channel_args *args) {
   return grpc_secure_channel_create(creds, target, args, NULL);
 }
 
-GPR_EXPORT grpc_server_credentials* GPR_CALLTYPE
+GPR_EXPORT grpc_server_credentials *GPR_CALLTYPE
 grpcsharp_ssl_server_credentials_create(
-    const char* pem_root_certs, const char** key_cert_pair_cert_chain_array,
-    const char** key_cert_pair_private_key_array, size_t num_key_cert_pairs,
+    const char *pem_root_certs, const char **key_cert_pair_cert_chain_array,
+    const char **key_cert_pair_private_key_array, size_t num_key_cert_pairs,
     grpc_ssl_client_certificate_request_type client_request_type) {
   size_t i;
-  grpc_server_credentials* creds;
-  grpc_ssl_pem_key_cert_pair* key_cert_pairs =
+  grpc_server_credentials *creds;
+  grpc_ssl_pem_key_cert_pair *key_cert_pairs =
       gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair) * num_key_cert_pairs);
   memset(key_cert_pairs, 0,
          sizeof(grpc_ssl_pem_key_cert_pair) * num_key_cert_pairs);
@@ -1102,35 +1103,35 @@ grpcsharp_ssl_server_credentials_create(
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_server_credentials_release(grpc_server_credentials* creds) {
+grpcsharp_server_credentials_release(grpc_server_credentials *creds) {
   grpc_server_credentials_release(creds);
 }
 
 GPR_EXPORT int32_t GPR_CALLTYPE grpcsharp_server_add_secure_http2_port(
-    grpc_server* server, const char* addr, grpc_server_credentials* creds) {
+    grpc_server *server, const char *addr, grpc_server_credentials *creds) {
   return grpc_server_add_secure_http2_port(server, addr, creds);
 }
 
-GPR_EXPORT grpc_channel_credentials* GPR_CALLTYPE
+GPR_EXPORT grpc_channel_credentials *GPR_CALLTYPE
 grpcsharp_composite_channel_credentials_create(
-    grpc_channel_credentials* channel_creds,
-    grpc_call_credentials* call_creds) {
+    grpc_channel_credentials *channel_creds,
+    grpc_call_credentials *call_creds) {
   return grpc_composite_channel_credentials_create(channel_creds, call_creds,
                                                    NULL);
 }
 
-GPR_EXPORT grpc_call_credentials* GPR_CALLTYPE
-grpcsharp_composite_call_credentials_create(grpc_call_credentials* creds1,
-                                            grpc_call_credentials* creds2) {
+GPR_EXPORT grpc_call_credentials *GPR_CALLTYPE
+grpcsharp_composite_call_credentials_create(grpc_call_credentials *creds1,
+                                            grpc_call_credentials *creds2) {
   return grpc_composite_call_credentials_create(creds1, creds2, NULL);
 }
 
 /* Metadata credentials plugin */
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_metadata_credentials_notify_from_plugin(
-    grpc_credentials_plugin_metadata_cb cb, void* user_data,
-    grpc_metadata_array* metadata, grpc_status_code status,
-    const char* error_details) {
+    grpc_credentials_plugin_metadata_cb cb, void *user_data,
+    grpc_metadata_array *metadata, grpc_status_code status,
+    const char *error_details) {
   if (metadata) {
     cb(user_data, metadata->metadata, metadata->count, status, error_details);
   } else {
@@ -1139,11 +1140,11 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_metadata_credentials_notify_from_plugin(
 }
 
 static int grpcsharp_get_metadata_handler(
-    void* state, grpc_auth_metadata_context context,
-    grpc_credentials_plugin_metadata_cb cb, void* user_data,
+    void *state, grpc_auth_metadata_context context,
+    grpc_credentials_plugin_metadata_cb cb, void *user_data,
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
-    size_t* num_creds_md, grpc_status_code* status,
-    const char** error_details) {
+    size_t *num_creds_md, grpc_status_code *status,
+    const char **error_details) {
   (void)creds_md;
   (void)num_creds_md;
   (void)status;
@@ -1153,18 +1154,18 @@ static int grpcsharp_get_metadata_handler(
   // handling of the callback), so the C# counterpart of this handler
   // must make a copy of the "service_url" and "method_name" strings before
   // it returns if it wants to uses these strings.
-  native_callback_dispatcher(state, (void*)context.service_url,
-                             (void*)context.method_name, cb, user_data,
-                             (void*)0, NULL);
+  native_callback_dispatcher(state, (void *)context.service_url,
+                             (void *)context.method_name, cb, user_data,
+                             (void *)0, NULL);
   return 0; /* Asynchronous return. */
 }
 
-static void grpcsharp_metadata_credentials_destroy_handler(void* state) {
-  native_callback_dispatcher(state, NULL, NULL, NULL, NULL, (void*)1, NULL);
+static void grpcsharp_metadata_credentials_destroy_handler(void *state) {
+  native_callback_dispatcher(state, NULL, NULL, NULL, NULL, (void *)1, NULL);
 }
 
-GPR_EXPORT grpc_call_credentials* GPR_CALLTYPE
-grpcsharp_metadata_credentials_create_from_plugin(void* callback_tag) {
+GPR_EXPORT grpc_call_credentials *GPR_CALLTYPE
+grpcsharp_metadata_credentials_create_from_plugin(void *callback_tag) {
   grpc_metadata_credentials_plugin plugin;
   plugin.get_metadata = grpcsharp_get_metadata_handler;
   plugin.destroy = grpcsharp_metadata_credentials_destroy_handler;
@@ -1179,42 +1180,42 @@ grpcsharp_metadata_credentials_create_from_plugin(void* callback_tag) {
 
 /* Auth context */
 
-GPR_EXPORT grpc_auth_context* GPR_CALLTYPE
-grpcsharp_call_auth_context(grpc_call* call) {
+GPR_EXPORT grpc_auth_context *GPR_CALLTYPE
+grpcsharp_call_auth_context(grpc_call *call) {
   return grpc_call_auth_context(call);
 }
 
-GPR_EXPORT const char* GPR_CALLTYPE
+GPR_EXPORT const char *GPR_CALLTYPE
 grpcsharp_auth_context_peer_identity_property_name(
-    const grpc_auth_context* ctx) {
+    const grpc_auth_context *ctx) {
   return grpc_auth_context_peer_identity_property_name(ctx);
 }
 
 GPR_EXPORT grpc_auth_property_iterator GPR_CALLTYPE
-grpcsharp_auth_context_property_iterator(const grpc_auth_context* ctx) {
+grpcsharp_auth_context_property_iterator(const grpc_auth_context *ctx) {
   return grpc_auth_context_property_iterator(ctx);
 }
 
-GPR_EXPORT const grpc_auth_property* GPR_CALLTYPE
-grpcsharp_auth_property_iterator_next(grpc_auth_property_iterator* it) {
+GPR_EXPORT const grpc_auth_property *GPR_CALLTYPE
+grpcsharp_auth_property_iterator_next(grpc_auth_property_iterator *it) {
   return grpc_auth_property_iterator_next(it);
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_auth_context_release(grpc_auth_context* ctx) {
+grpcsharp_auth_context_release(grpc_auth_context *ctx) {
   grpc_auth_context_release(ctx);
 }
 
 /* Logging */
 
-typedef void(GPR_CALLTYPE* grpcsharp_log_func)(const char* file, int32_t line,
+typedef void(GPR_CALLTYPE *grpcsharp_log_func)(const char *file, int32_t line,
                                                uint64_t thd_id,
-                                               const char* severity_string,
-                                               const char* msg);
+                                               const char *severity_string,
+                                               const char *msg);
 static grpcsharp_log_func log_func = NULL;
 
 /* Redirects gpr_log to log_func callback */
-static void grpcsharp_log_handler(gpr_log_func_args* args) {
+static void grpcsharp_log_handler(gpr_log_func_args *args) {
   log_func(args->file, args->line, gpr_thd_currentid(),
            gpr_log_severity_string(args->severity), args->message);
 }
@@ -1225,43 +1226,43 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_redirect_log(grpcsharp_log_func func) {
   gpr_set_log_function(grpcsharp_log_handler);
 }
 
-typedef void(GPR_CALLTYPE* test_callback_funcptr)(int32_t success);
+typedef void(GPR_CALLTYPE *test_callback_funcptr)(int32_t success);
 
 /* Slice buffer functionality */
-GPR_EXPORT grpc_slice_buffer* GPR_CALLTYPE grpcsharp_slice_buffer_create() {
-  grpc_slice_buffer* slice_buffer =
-      (grpc_slice_buffer*)gpr_malloc(sizeof(grpc_slice_buffer));
+GPR_EXPORT grpc_slice_buffer *GPR_CALLTYPE grpcsharp_slice_buffer_create() {
+  grpc_slice_buffer *slice_buffer =
+      (grpc_slice_buffer *)gpr_malloc(sizeof(grpc_slice_buffer));
   grpc_slice_buffer_init(slice_buffer);
   return slice_buffer;
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_slice_buffer_reset_and_unref(grpc_slice_buffer* buffer) {
+grpcsharp_slice_buffer_reset_and_unref(grpc_slice_buffer *buffer) {
   grpc_slice_buffer_reset_and_unref(buffer);
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_slice_buffer_destroy(grpc_slice_buffer* buffer) {
+grpcsharp_slice_buffer_destroy(grpc_slice_buffer *buffer) {
   grpc_slice_buffer_destroy(buffer);
   gpr_free(buffer);
 }
 
 GPR_EXPORT size_t GPR_CALLTYPE
-grpcsharp_slice_buffer_slice_count(grpc_slice_buffer* buffer) {
+grpcsharp_slice_buffer_slice_count(grpc_slice_buffer *buffer) {
   return buffer->count;
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_slice_buffer_slice_peek(grpc_slice_buffer* buffer, size_t index,
-                                  size_t* slice_len, uint8_t** slice_data_ptr) {
+grpcsharp_slice_buffer_slice_peek(grpc_slice_buffer *buffer, size_t index,
+                                  size_t *slice_len, uint8_t **slice_data_ptr) {
   GPR_ASSERT(buffer->count > index);
-  grpc_slice* slice_ptr = &buffer->slices[index];
+  grpc_slice *slice_ptr = &buffer->slices[index];
   *slice_len = GRPC_SLICE_LENGTH(*slice_ptr);
   *slice_data_ptr = GRPC_SLICE_START_PTR(*slice_ptr);
 }
 
-GPR_EXPORT void* GPR_CALLTYPE grpcsharp_slice_buffer_adjust_tail_space(
-    grpc_slice_buffer* buffer, size_t available_tail_space,
+GPR_EXPORT void *GPR_CALLTYPE grpcsharp_slice_buffer_adjust_tail_space(
+    grpc_slice_buffer *buffer, size_t available_tail_space,
     size_t requested_tail_space) {
   if (available_tail_space == requested_tail_space) {
     // nothing to do
@@ -1284,12 +1285,12 @@ GPR_EXPORT void* GPR_CALLTYPE grpcsharp_slice_buffer_adjust_tail_space(
   if (buffer->count == 0) {
     return NULL;
   }
-  grpc_slice* last_slice = &(buffer->slices[buffer->count - 1]);
+  grpc_slice *last_slice = &(buffer->slices[buffer->count - 1]);
   return GRPC_SLICE_END_PTR(*last_slice) - requested_tail_space;
 }
 
 /* Version info */
-GPR_EXPORT const char* GPR_CALLTYPE grpcsharp_version_string() {
+GPR_EXPORT const char *GPR_CALLTYPE grpcsharp_version_string() {
   return grpc_version_string();
 }
 
@@ -1300,7 +1301,7 @@ grpcsharp_test_callback(test_callback_funcptr callback) {
 }
 
 /* For testing */
-GPR_EXPORT void* GPR_CALLTYPE grpcsharp_test_nop(void* ptr) { return ptr; }
+GPR_EXPORT void *GPR_CALLTYPE grpcsharp_test_nop(void *ptr) { return ptr; }
 
 /* For testing */
 GPR_EXPORT int32_t GPR_CALLTYPE grpcsharp_sizeof_grpc_event(void) {
@@ -1309,7 +1310,7 @@ GPR_EXPORT int32_t GPR_CALLTYPE grpcsharp_sizeof_grpc_event(void) {
 
 /* Override a method for testing */
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_test_override_method(const char* method_name, const char* variant) {
+grpcsharp_test_override_method(const char *method_name, const char *variant) {
   if (strcmp("grpcsharp_call_start_batch", method_name) == 0) {
     if (strcmp("nop", variant) == 0) {
       g_call_start_batch_func = grpcsharp_call_start_batch_nop;

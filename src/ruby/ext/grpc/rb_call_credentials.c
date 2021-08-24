@@ -44,13 +44,13 @@ typedef struct grpc_rb_call_credentials {
   VALUE mark;
 
   /* The actual credentials */
-  grpc_call_credentials* wrapped;
+  grpc_call_credentials *wrapped;
 } grpc_rb_call_credentials;
 
 typedef struct callback_params {
   VALUE get_metadata;
   grpc_auth_metadata_context context;
-  void* user_data;
+  void *user_data;
   grpc_credentials_plugin_metadata_cb callback;
 } callback_params;
 
@@ -85,7 +85,7 @@ static VALUE grpc_rb_call_credentials_callback(VALUE args) {
   }
   VALUE metadata =
       rb_funcall(callback_func, rb_intern("call"), 1, callback_args);
-  grpc_metadata_array* md_ary = NULL;
+  grpc_metadata_array *md_ary = NULL;
   TypedData_Get_Struct(md_ary_obj, grpc_metadata_array,
                        &grpc_rb_md_ary_data_type, md_ary);
   grpc_rb_md_ary_convert(metadata, md_ary);
@@ -122,8 +122,8 @@ static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
   return result;
 }
 
-static void grpc_rb_call_credentials_callback_with_gil(void* param) {
-  callback_params* const params = (callback_params*)param;
+static void grpc_rb_call_credentials_callback_with_gil(void *param) {
+  callback_params *const params = (callback_params *)param;
   VALUE auth_uri = rb_str_new_cstr(params->context.service_url);
   /* Pass the arguments to the proc in a hash, which currently only has they key
      'auth_uri' */
@@ -133,7 +133,7 @@ static void grpc_rb_call_credentials_callback_with_gil(void* param) {
   grpc_metadata_array md_ary;
   grpc_status_code status;
   VALUE details;
-  char* error_details;
+  char *error_details;
   grpc_metadata_array_init(&md_ary);
   rb_hash_aset(args, ID2SYM(rb_intern("jwt_aud_uri")), auth_uri);
   rb_ary_push(callback_args, params->get_metadata);
@@ -158,51 +158,51 @@ static void grpc_rb_call_credentials_callback_with_gil(void* param) {
 }
 
 static int grpc_rb_call_credentials_plugin_get_metadata(
-    void* state, grpc_auth_metadata_context context,
-    grpc_credentials_plugin_metadata_cb cb, void* user_data,
+    void *state, grpc_auth_metadata_context context,
+    grpc_credentials_plugin_metadata_cb cb, void *user_data,
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
-    size_t* num_creds_md, grpc_status_code* status,
-    const char** error_details) {
-  callback_params* params = gpr_zalloc(sizeof(callback_params));
+    size_t *num_creds_md, grpc_status_code *status,
+    const char **error_details) {
+  callback_params *params = gpr_zalloc(sizeof(callback_params));
   params->get_metadata = (VALUE)state;
   grpc_auth_metadata_context_copy(&context, &params->context);
   params->user_data = user_data;
   params->callback = cb;
 
   grpc_rb_event_queue_enqueue(grpc_rb_call_credentials_callback_with_gil,
-                              (void*)(params));
+                              (void *)(params));
   return 0;  // Async return.
 }
 
-static void grpc_rb_call_credentials_plugin_destroy(void* state) {
+static void grpc_rb_call_credentials_plugin_destroy(void *state) {
   (void)state;
   // Not sure what needs to be done here
 }
 
-static void grpc_rb_call_credentials_free_internal(void* p) {
-  grpc_rb_call_credentials* wrapper;
+static void grpc_rb_call_credentials_free_internal(void *p) {
+  grpc_rb_call_credentials *wrapper;
   if (p == NULL) {
     return;
   }
-  wrapper = (grpc_rb_call_credentials*)p;
+  wrapper = (grpc_rb_call_credentials *)p;
   grpc_call_credentials_release(wrapper->wrapped);
   wrapper->wrapped = NULL;
   xfree(p);
 }
 
 /* Destroys the credentials instances. */
-static void grpc_rb_call_credentials_free(void* p) {
+static void grpc_rb_call_credentials_free(void *p) {
   grpc_rb_call_credentials_free_internal(p);
   grpc_ruby_shutdown();
 }
 
 /* Protects the mark object from GC */
-static void grpc_rb_call_credentials_mark(void* p) {
-  grpc_rb_call_credentials* wrapper = NULL;
+static void grpc_rb_call_credentials_mark(void *p) {
+  grpc_rb_call_credentials *wrapper = NULL;
   if (p == NULL) {
     return;
   }
-  wrapper = (grpc_rb_call_credentials*)p;
+  wrapper = (grpc_rb_call_credentials *)p;
   if (wrapper->mark != Qnil) {
     rb_gc_mark(wrapper->mark);
   }
@@ -225,7 +225,7 @@ static rb_data_type_t grpc_rb_call_credentials_data_type = {
    Provides safe initial defaults for the instance fields. */
 static VALUE grpc_rb_call_credentials_alloc(VALUE cls) {
   grpc_ruby_init();
-  grpc_rb_call_credentials* wrapper = ALLOC(grpc_rb_call_credentials);
+  grpc_rb_call_credentials *wrapper = ALLOC(grpc_rb_call_credentials);
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
   return TypedData_Wrap_Struct(cls, &grpc_rb_call_credentials_data_type,
@@ -235,9 +235,9 @@ static VALUE grpc_rb_call_credentials_alloc(VALUE cls) {
 /* Creates a wrapping object for a given call credentials. This should only be
  * called with grpc_call_credentials objects that are not already associated
  * with any Ruby object */
-VALUE grpc_rb_wrap_call_credentials(grpc_call_credentials* c, VALUE mark) {
+VALUE grpc_rb_wrap_call_credentials(grpc_call_credentials *c, VALUE mark) {
   VALUE rb_wrapper;
-  grpc_rb_call_credentials* wrapper;
+  grpc_rb_call_credentials *wrapper;
   if (c == NULL) {
     return Qnil;
   }
@@ -258,8 +258,8 @@ static ID id_callback;
   proc: (required) Proc that generates auth metadata
   Initializes CallCredential instances. */
 static VALUE grpc_rb_call_credentials_init(VALUE self, VALUE proc) {
-  grpc_rb_call_credentials* wrapper = NULL;
-  grpc_call_credentials* creds = NULL;
+  grpc_rb_call_credentials *wrapper = NULL;
+  grpc_call_credentials *creds = NULL;
   grpc_metadata_credentials_plugin plugin;
 
   TypedData_Get_Struct(self, grpc_rb_call_credentials,
@@ -271,7 +271,7 @@ static VALUE grpc_rb_call_credentials_init(VALUE self, VALUE proc) {
     rb_raise(rb_eTypeError, "Argument to CallCredentials#new must be a proc");
     return Qnil;
   }
-  plugin.state = (void*)proc;
+  plugin.state = (void *)proc;
   plugin.type = "";
 
   // TODO(yihuazhang): Expose min_security_level via the Ruby API so that
@@ -290,11 +290,11 @@ static VALUE grpc_rb_call_credentials_init(VALUE self, VALUE proc) {
   return self;
 }
 
-static VALUE grpc_rb_call_credentials_compose(int argc, VALUE* argv,
+static VALUE grpc_rb_call_credentials_compose(int argc, VALUE *argv,
                                               VALUE self) {
-  grpc_call_credentials* creds;
-  grpc_call_credentials* other;
-  grpc_call_credentials* prev = NULL;
+  grpc_call_credentials *creds;
+  grpc_call_credentials *other;
+  grpc_call_credentials *prev = NULL;
   VALUE mark;
   if (argc == 0) {
     return self;
@@ -333,8 +333,8 @@ void Init_grpc_call_credentials() {
 }
 
 /* Gets the wrapped grpc_call_credentials from the ruby wrapper */
-grpc_call_credentials* grpc_rb_get_wrapped_call_credentials(VALUE v) {
-  grpc_rb_call_credentials* wrapper = NULL;
+grpc_call_credentials *grpc_rb_get_wrapped_call_credentials(VALUE v) {
+  grpc_rb_call_credentials *wrapper = NULL;
   TypedData_Get_Struct(v, grpc_rb_call_credentials,
                        &grpc_rb_call_credentials_data_type, wrapper);
   return wrapper->wrapped;

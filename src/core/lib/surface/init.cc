@@ -63,9 +63,9 @@ extern void grpc_register_built_in_plugins(void);
 #define MAX_PLUGINS 128
 
 static gpr_once g_basic_init = GPR_ONCE_INIT;
-static grpc_core::Mutex* g_init_mu;
+static grpc_core::Mutex *g_init_mu;
 static int g_initializations ABSL_GUARDED_BY(g_init_mu) = 0;
-static grpc_core::CondVar* g_shutting_down_cv;
+static grpc_core::CondVar *g_shutting_down_cv;
 static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 
 static void do_basic_init(void) {
@@ -78,14 +78,14 @@ static void do_basic_init(void) {
   gpr_time_init();
 }
 
-static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
+static bool append_filter(grpc_channel_stack_builder *builder, void *arg) {
   return grpc_channel_stack_builder_append_filter(
-      builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
+      builder, static_cast<const grpc_channel_filter *>(arg), nullptr, nullptr);
 }
 
-static bool prepend_filter(grpc_channel_stack_builder* builder, void* arg) {
+static bool prepend_filter(grpc_channel_stack_builder *builder, void *arg) {
   return grpc_channel_stack_builder_prepend_filter(
-      builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
+      builder, static_cast<const grpc_channel_filter *>(arg), nullptr, nullptr);
 }
 
 static void register_builtin_channel_init() {
@@ -100,10 +100,10 @@ static void register_builtin_channel_init() {
                                    grpc_add_connected_filter, nullptr);
   grpc_channel_init_register_stage(
       GRPC_CLIENT_LAME_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      append_filter, const_cast<grpc_channel_filter*>(&grpc_lame_filter));
+      append_filter, const_cast<grpc_channel_filter *>(&grpc_lame_filter));
   grpc_channel_init_register_stage(
       GRPC_SERVER_CHANNEL, INT_MAX, prepend_filter,
-      const_cast<grpc_channel_filter*>(&grpc_core::Server::kServerTopFilter));
+      const_cast<grpc_channel_filter *>(&grpc_core::Server::kServerTopFilter));
 }
 
 typedef struct grpc_plugin {
@@ -116,7 +116,7 @@ static int g_number_of_plugins = 0;
 
 void grpc_register_plugin(void (*init)(void), void (*destroy)(void)) {
   GRPC_API_TRACE("grpc_register_plugin(init=%p, destroy=%p)", 2,
-                 ((void*)(intptr_t)init, (void*)(intptr_t)destroy));
+                 ((void *)(intptr_t)init, (void *)(intptr_t)destroy));
   GPR_ASSERT(g_number_of_plugins != MAX_PLUGINS);
   g_all_of_the_plugins[g_number_of_plugins].init = init;
   g_all_of_the_plugins[g_number_of_plugins].destroy = destroy;
@@ -197,7 +197,7 @@ void grpc_shutdown_internal_locked(void)
   grpc_destroy_static_metadata_ctx();
 }
 
-void grpc_shutdown_internal(void* /*ignored*/) {
+void grpc_shutdown_internal(void * /*ignored*/) {
   GRPC_API_TRACE("grpc_shutdown_internal", 0, ());
   grpc_core::MutexLock lock(g_init_mu);
   // We have released lock from the shutdown thread and it is possible that
@@ -213,7 +213,7 @@ void grpc_shutdown(void) {
   grpc_core::MutexLock lock(g_init_mu);
 
   if (--g_initializations == 0) {
-    grpc_core::ApplicationCallbackExecCtx* acec =
+    grpc_core::ApplicationCallbackExecCtx *acec =
         grpc_core::ApplicationCallbackExecCtx::Get();
     if (!grpc_iomgr_is_any_background_poller_thread() &&
         (acec == nullptr ||

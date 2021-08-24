@@ -34,9 +34,9 @@
 #include <grpc/support/string_util.h>
 #include "src/core/lib/gpr/string.h"
 
-static void fill_common_header(const grpc_httpcli_request* request,
+static void fill_common_header(const grpc_httpcli_request *request,
                                bool connection_close,
-                               std::vector<std::string>* buf) {
+                               std::vector<std::string> *buf) {
   buf->push_back(request->http.path);
   buf->push_back(" HTTP/1.0\r\n");
   /* just in case some crazy server really expects HTTP/1.1 */
@@ -55,7 +55,7 @@ static void fill_common_header(const grpc_httpcli_request* request,
 }
 
 grpc_slice grpc_httpcli_format_get_request(
-    const grpc_httpcli_request* request) {
+    const grpc_httpcli_request *request) {
   std::vector<std::string> out;
   out.push_back("GET ");
   fill_common_header(request, true, &out);
@@ -64,8 +64,8 @@ grpc_slice grpc_httpcli_format_get_request(
   return grpc_slice_from_copied_buffer(req.data(), req.size());
 }
 
-grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request* request,
-                                            const char* body_bytes,
+grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
+                                            const char *body_bytes,
                                             size_t body_size) {
   std::vector<std::string> out;
   out.push_back("POST ");
@@ -93,7 +93,7 @@ grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request* request,
 }
 
 grpc_slice grpc_httpcli_format_connect_request(
-    const grpc_httpcli_request* request) {
+    const grpc_httpcli_request *request) {
   std::vector<std::string> out;
   out.push_back("CONNECT ");
   fill_common_header(request, false, &out);

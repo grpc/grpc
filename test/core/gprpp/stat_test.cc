@@ -37,8 +37,8 @@ namespace {
 
 TEST(STAT, GetTimestampOnTmpFile) {
   // Create a temporary empty file.
-  FILE* tmp = nullptr;
-  char* tmp_name;
+  FILE *tmp = nullptr;
+  char *tmp_name;
   tmp = gpr_tmpfile("prefix", &tmp_name);
   ASSERT_NE(tmp_name, nullptr);
   ASSERT_NE(tmp, nullptr);
@@ -67,7 +67,7 @@ TEST(STAT, GetTimestampOnFailure) {
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

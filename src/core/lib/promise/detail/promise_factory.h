@@ -97,7 +97,7 @@ using ResultOf = typename ResultOfT<T>::T;
 template <typename F, typename Arg>
 class Curried {
  public:
-  Curried(F&& f, Arg&& arg)
+  Curried(F &&f, Arg &&arg)
       : f_(std::forward<F>(f)), arg_(std::forward<Arg>(arg)) {}
   using Result = decltype(std::declval<F>()(std::declval<Arg>()));
   Result operator()() { return f_(arg_); }
@@ -111,7 +111,7 @@ class Curried {
 // capturing A.
 template <typename A, typename F>
 absl::enable_if_t<!IsVoidCallable<ResultOf<F(A)>>(), PromiseLike<Curried<A, F>>>
-PromiseFactoryImpl(F&& f, A&& arg) {
+PromiseFactoryImpl(F &&f, A &&arg) {
   return Curried<A, F>(std::forward<F>(f), std::forward<A>(arg));
 }
 
@@ -119,7 +119,7 @@ PromiseFactoryImpl(F&& f, A&& arg) {
 // by dropping the argument passed to the factory.
 template <typename A, typename F>
 absl::enable_if_t<!IsVoidCallable<ResultOf<F()>>(), PromiseLike<RemoveCVRef<F>>>
-PromiseFactoryImpl(F f, A&&) {
+PromiseFactoryImpl(F f, A &&) {
   return PromiseLike<F>(std::move(f));
 }
 
@@ -134,7 +134,7 @@ PromiseFactoryImpl(F f) {
 template <typename A, typename F>
 absl::enable_if_t<IsVoidCallable<ResultOf<F(A)>>(),
                   PromiseLike<decltype(std::declval<F>()(std::declval<A>()))>>
-PromiseFactoryImpl(F&& f, A&& arg) {
+PromiseFactoryImpl(F &&f, A &&arg) {
   return f(std::forward<A>(arg));
 }
 
@@ -143,7 +143,7 @@ PromiseFactoryImpl(F&& f, A&& arg) {
 template <typename A, typename F>
 absl::enable_if_t<IsVoidCallable<ResultOf<F()>>(),
                   PromiseLike<decltype(std::declval<F>()())>>
-PromiseFactoryImpl(F&& f, A&&) {
+PromiseFactoryImpl(F &&f, A &&) {
   return f();
 }
 
@@ -151,7 +151,7 @@ PromiseFactoryImpl(F&& f, A&&) {
 template <typename F>
 absl::enable_if_t<IsVoidCallable<ResultOf<F()>>(),
                   PromiseLike<decltype(std::declval<F>()())>>
-PromiseFactoryImpl(F&& f) {
+PromiseFactoryImpl(F &&f) {
   return f();
 };
 
@@ -167,11 +167,11 @@ class PromiseFactory {
 
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
-  Promise Once(Arg&& a) {
+  Promise Once(Arg &&a) {
     return PromiseFactoryImpl(std::move(f_), std::forward<Arg>(a));
   }
 
-  Promise Repeated(Arg&& a) const {
+  Promise Repeated(Arg &&a) const {
     return PromiseFactoryImpl(f_, std::forward<Arg>(a));
   }
 };

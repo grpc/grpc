@@ -39,7 +39,7 @@ bool IsConfigErrorCalled() { return g_config_error_function_called; }
 // This function is for preventing the program from invoking
 // an error handler due to configuration error and
 // make test routines know whether there is error.
-void FakeConfigErrorFunction(const char* /*error_message*/) {
+void FakeConfigErrorFunction(const char * /*error_message*/) {
   g_config_error_function_called = true;
 }
 
@@ -56,7 +56,7 @@ GPR_GLOBAL_CONFIG_DEFINE_INT32(int32_var, 1234, "");
 GPR_GLOBAL_CONFIG_DEFINE_STRING(string_var, "Apple", "");
 
 TEST_F(GlobalConfigEnvTest, BoolWithEnvTest) {
-  const char* bool_var_name = "BOOL_VAR";
+  const char *bool_var_name = "BOOL_VAR";
 
   gpr_unsetenv(bool_var_name);
   EXPECT_TRUE(GPR_GLOBAL_CONFIG_GET(bool_var));
@@ -81,7 +81,7 @@ TEST_F(GlobalConfigEnvTest, BoolWithEnvTest) {
 }
 
 TEST_F(GlobalConfigEnvTest, Int32WithEnvTest) {
-  const char* int32_var_name = "INT32_VAR";
+  const char *int32_var_name = "INT32_VAR";
 
   gpr_unsetenv(int32_var_name);
   EXPECT_EQ(1234, GPR_GLOBAL_CONFIG_GET(int32_var));
@@ -104,7 +104,7 @@ TEST_F(GlobalConfigEnvTest, Int32WithEnvTest) {
 }
 
 TEST_F(GlobalConfigEnvTest, StringWithEnvTest) {
-  const char* string_var_name = "STRING_VAR";
+  const char *string_var_name = "STRING_VAR";
   grpc_core::UniquePtr<char> value;
 
   gpr_unsetenv(string_var_name);
@@ -120,7 +120,7 @@ TEST_F(GlobalConfigEnvTest, StringWithEnvTest) {
   EXPECT_EQ(0, strcmp(value.get(), ""));
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   // Not to abort the test when parsing error happens.
   grpc_core::SetGlobalConfigEnvErrorFunction(&FakeConfigErrorFunction);
 

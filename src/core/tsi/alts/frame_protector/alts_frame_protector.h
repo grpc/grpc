@@ -47,9 +47,9 @@ typedef struct alts_frame_protector alts_frame_protector;
  *
  * This method returns TSI_OK on success and TSI_INTERNAL_ERROR otherwise.
  */
-tsi_result alts_create_frame_protector(const uint8_t* key, size_t key_size,
+tsi_result alts_create_frame_protector(const uint8_t *key, size_t key_size,
                                        bool is_client, bool is_rekey,
-                                       size_t* max_protected_frame_size,
-                                       tsi_frame_protector** self);
+                                       size_t *max_protected_frame_size,
+                                       tsi_frame_protector **self);
 
 #endif /* GRPC_CORE_TSI_ALTS_FRAME_PROTECTOR_ALTS_FRAME_PROTECTOR_H */

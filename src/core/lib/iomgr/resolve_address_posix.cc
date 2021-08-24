@@ -43,8 +43,8 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
 static grpc_error_handle posix_blocking_resolve_address(
-    const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
+    const char *name, const char *default_port,
+    grpc_resolved_addresses **addresses) {
   grpc_core::ExecCtx exec_ctx;
   struct addrinfo hints;
   struct addrinfo *result = nullptr, *resp;
@@ -85,7 +85,7 @@ static grpc_error_handle posix_blocking_resolve_address(
 
   if (s != 0) {
     /* Retry if well-known service name is recognized */
-    const char* svc[][2] = {{"http", "80"}, {"https", "443"}};
+    const char *svc[][2] = {{"http", "80"}, {"https", "443"}};
     for (i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
       if (port == svc[i][0]) {
         GRPC_SCHEDULING_START_BLOCKING_REGION;
@@ -112,13 +112,13 @@ static grpc_error_handle posix_blocking_resolve_address(
   }
 
   /* Success path: set addrs non-NULL, fill it in */
-  *addresses = static_cast<grpc_resolved_addresses*>(
+  *addresses = static_cast<grpc_resolved_addresses *>(
       gpr_malloc(sizeof(grpc_resolved_addresses)));
   (*addresses)->naddrs = 0;
   for (resp = result; resp != nullptr; resp = resp->ai_next) {
     (*addresses)->naddrs++;
   }
-  (*addresses)->addrs = static_cast<grpc_resolved_address*>(
+  (*addresses)->addrs = static_cast<grpc_resolved_address *>(
       gpr_malloc(sizeof(grpc_resolved_address) * (*addresses)->naddrs));
   i = 0;
   for (resp = result; resp != nullptr; resp = resp->ai_next) {
@@ -136,17 +136,17 @@ done:
 }
 
 struct request {
-  char* name;
-  char* default_port;
-  grpc_closure* on_done;
-  grpc_resolved_addresses** addrs_out;
+  char *name;
+  char *default_port;
+  grpc_closure *on_done;
+  grpc_resolved_addresses **addrs_out;
   grpc_closure request_closure;
-  void* arg;
+  void *arg;
 };
 /* Callback to be passed to grpc Executor to asynch-ify
  * grpc_blocking_resolve_address */
-static void do_request_thread(void* rp, grpc_error_handle /*error*/) {
-  request* r = static_cast<request*>(rp);
+static void do_request_thread(void *rp, grpc_error_handle /*error*/) {
+  request *r = static_cast<request *>(rp);
   grpc_core::ExecCtx::Run(
       DEBUG_LOCATION, r->on_done,
       grpc_blocking_resolve_address(r->name, r->default_port, r->addrs_out));
@@ -155,11 +155,11 @@ static void do_request_thread(void* rp, grpc_error_handle /*error*/) {
   gpr_free(r);
 }
 
-static void posix_resolve_address(const char* name, const char* default_port,
-                                  grpc_pollset_set* /*interested_parties*/,
-                                  grpc_closure* on_done,
-                                  grpc_resolved_addresses** addrs) {
-  request* r = static_cast<request*>(gpr_malloc(sizeof(request)));
+static void posix_resolve_address(const char *name, const char *default_port,
+                                  grpc_pollset_set * /*interested_parties*/,
+                                  grpc_closure *on_done,
+                                  grpc_resolved_addresses **addrs) {
+  request *r = static_cast<request *>(gpr_malloc(sizeof(request)));
   GRPC_CLOSURE_INIT(&r->request_closure, do_request_thread, r, nullptr);
   r->name = gpr_strdup(name);
   r->default_port = gpr_strdup(default_port);

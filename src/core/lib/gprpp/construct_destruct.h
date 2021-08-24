@@ -23,14 +23,14 @@ namespace grpc_core {
 
 // Call the destructor of p without having to name the type of p.
 template <typename T>
-void Destruct(T* p) {
+void Destruct(T *p) {
   p->~T();
 }
 
 // Call the constructor of p without having to name the type of p and forward
 // any arguments
 template <typename T, typename... Args>
-void Construct(T* p, Args&&... args) {
+void Construct(T *p, Args &&...args) {
   new (p) T(std::forward<Args>(args)...);
 }
 

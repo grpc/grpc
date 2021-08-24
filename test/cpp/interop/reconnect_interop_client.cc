@@ -53,7 +53,7 @@ using grpc::testing::ReconnectParams;
 using grpc::testing::ReconnectService;
 using grpc::testing::TLS;
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   GPR_ASSERT(absl::GetFlag(FLAGS_server_control_port));
   GPR_ASSERT(absl::GetFlag(FLAGS_server_retry_port));

@@ -41,7 +41,7 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     grpc_core::MutexLock lock(&mu_);
     absl::optional<std::string> root_certificate;
     absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
-    StaticDataCertificateProvider::WatcherInfo& info = watcher_info_[cert_name];
+    StaticDataCertificateProvider::WatcherInfo &info = watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
         !root_certificate_.empty()) {
       root_certificate = root_certificate_;
@@ -108,12 +108,12 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
   GPR_ASSERT(!private_key_path_.empty() || !root_cert_path_.empty());
   gpr_event_init(&shutdown_event_);
   ForceUpdate();
-  auto thread_lambda = [](void* arg) {
-    FileWatcherCertificateProvider* provider =
-        static_cast<FileWatcherCertificateProvider*>(arg);
+  auto thread_lambda = [](void *arg) {
+    FileWatcherCertificateProvider *provider =
+        static_cast<FileWatcherCertificateProvider *>(arg);
     GPR_ASSERT(provider != nullptr);
     while (true) {
-      void* value = gpr_event_wait(
+      void *value = gpr_event_wait(
           &provider->shutdown_event_,
           TimeoutSecondsToDeadline(provider->refresh_interval_sec_));
       if (value != nullptr) {
@@ -131,7 +131,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     grpc_core::MutexLock lock(&mu_);
     absl::optional<std::string> root_certificate;
     absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
-    FileWatcherCertificateProvider::WatcherInfo& info =
+    FileWatcherCertificateProvider::WatcherInfo &info =
         watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
         !root_certificate_.empty()) {
@@ -173,7 +173,7 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   // Reset distributor's callback to make sure the callback won't be invoked
   // again after this object(provider) is destroyed.
   distributor_->SetWatchStatusCallback(nullptr);
-  gpr_event_set(&shutdown_event_, reinterpret_cast<void*>(1));
+  gpr_event_set(&shutdown_event_, reinterpret_cast<void *>(1));
   refresh_thread_.Join();
 }
 
@@ -216,9 +216,9 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     grpc_error_handle identity_cert_error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Unable to get latest identity certificates.");
-    for (const auto& p : watcher_info_) {
-      const std::string& cert_name = p.first;
-      const WatcherInfo& info = p.second;
+    for (const auto &p : watcher_info_) {
+      const std::string &cert_name = p.first;
+      const WatcherInfo &info = p.second;
       absl::optional<std::string> root_to_report;
       absl::optional<grpc_core::PemKeyCertPairList> identity_to_report;
       // Set key materials to the distributor if their contents changed.
@@ -255,7 +255,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
 
 absl::optional<std::string>
 FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
-    const std::string& root_cert_full_path) {
+    const std::string &root_cert_full_path) {
   // Read the root file.
   grpc_slice root_slice = grpc_empty_slice();
   grpc_error_handle root_error =
@@ -276,7 +276,7 @@ namespace {
 
 // This helper function gets the last-modified time of |filename|. When failed,
 // it logs the error and returns 0.
-time_t GetModificationTime(const char* filename) {
+time_t GetModificationTime(const char *filename) {
   time_t ts = 0;
   absl::Status status = grpc_core::GetFileModificationTime(filename, &ts);
   return ts;
@@ -286,8 +286,8 @@ time_t GetModificationTime(const char* filename) {
 
 absl::optional<PemKeyCertPairList>
 FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
-    const std::string& private_key_path,
-    const std::string& identity_certificate_path) {
+    const std::string &private_key_path,
+    const std::string &identity_certificate_path) {
   struct SliceWrapper {
     grpc_slice slice = grpc_empty_slice();
     ~SliceWrapper() { grpc_slice_unref_internal(slice); }
@@ -373,33 +373,33 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
   if (cert_chain.empty()) {
     return absl::InvalidArgumentError("Certificate string is empty.");
   }
-  BIO* cert_bio = BIO_new_mem_buf(cert_chain.data(), cert_chain.size());
+  BIO *cert_bio = BIO_new_mem_buf(cert_chain.data(), cert_chain.size());
   if (cert_bio == nullptr) {
     return absl::InvalidArgumentError(
         "Conversion from certificate string to BIO failed.");
   }
   // Reads the first cert from the cert_chain which is expected to be the leaf
   // cert
-  X509* x509 = PEM_read_bio_X509(cert_bio, nullptr, nullptr, nullptr);
+  X509 *x509 = PEM_read_bio_X509(cert_bio, nullptr, nullptr, nullptr);
   BIO_free(cert_bio);
   if (x509 == nullptr) {
     return absl::InvalidArgumentError(
         "Conversion from PEM string to X509 failed.");
   }
-  EVP_PKEY* public_evp_pkey = X509_get_pubkey(x509);
+  EVP_PKEY *public_evp_pkey = X509_get_pubkey(x509);
   X509_free(x509);
   if (public_evp_pkey == nullptr) {
     return absl::InvalidArgumentError(
         "Extraction of public key from x.509 certificate failed.");
   }
-  BIO* private_key_bio =
+  BIO *private_key_bio =
       BIO_new_mem_buf(private_key.data(), private_key.size());
   if (private_key_bio == nullptr) {
     EVP_PKEY_free(public_evp_pkey);
     return absl::InvalidArgumentError(
         "Conversion from private key string to BIO failed.");
   }
-  EVP_PKEY* private_evp_pkey =
+  EVP_PKEY *private_evp_pkey =
       PEM_read_bio_PrivateKey(private_key_bio, nullptr, nullptr, nullptr);
   BIO_free(private_key_bio);
   if (private_evp_pkey == nullptr) {
@@ -417,8 +417,8 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 
-grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
-    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
+grpc_tls_certificate_provider *grpc_tls_certificate_provider_static_data_create(
+    const char *root_certificate, grpc_tls_identity_pairs *pem_key_cert_pairs) {
   GPR_ASSERT(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
   grpc_core::ExecCtx exec_ctx;
   grpc_core::PemKeyCertPairList identity_pairs_core;
@@ -434,10 +434,10 @@ grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
       std::move(root_cert_core), std::move(identity_pairs_core));
 }
 
-grpc_tls_certificate_provider*
+grpc_tls_certificate_provider *
 grpc_tls_certificate_provider_file_watcher_create(
-    const char* private_key_path, const char* identity_certificate_path,
-    const char* root_cert_path, unsigned int refresh_interval_sec) {
+    const char *private_key_path, const char *identity_certificate_path,
+    const char *root_cert_path, unsigned int refresh_interval_sec) {
   grpc_core::ExecCtx exec_ctx;
   return new grpc_core::FileWatcherCertificateProvider(
       private_key_path == nullptr ? "" : private_key_path,
@@ -446,7 +446,7 @@ grpc_tls_certificate_provider_file_watcher_create(
 }
 
 void grpc_tls_certificate_provider_release(
-    grpc_tls_certificate_provider* provider) {
+    grpc_tls_certificate_provider *provider) {
   GRPC_API_TRACE("grpc_tls_certificate_provider_release(provider=%p)", 1,
                  (provider));
   grpc_core::ExecCtx exec_ctx;

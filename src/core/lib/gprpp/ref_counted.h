@@ -54,7 +54,7 @@ class RefCount {
   // trace logging will be done.  Tracing is a no-op in non-debug builds.
   explicit RefCount(
       Value init = 1,
-      const char*
+      const char *
 #ifndef NDEBUG
           // Leave unnamed if NDEBUG to avoid unused parameter warning
           trace
@@ -79,7 +79,7 @@ class RefCount {
     value_.fetch_add(n, std::memory_order_relaxed);
 #endif
   }
-  void Ref(const DebugLocation& location, const char* reason, Value n = 1) {
+  void Ref(const DebugLocation &location, const char *reason, Value n = 1) {
 #ifndef NDEBUG
     const Value prior = value_.fetch_add(n, std::memory_order_relaxed);
     if (trace_ != nullptr) {
@@ -108,7 +108,7 @@ class RefCount {
     value_.fetch_add(1, std::memory_order_relaxed);
 #endif
   }
-  void RefNonZero(const DebugLocation& location, const char* reason) {
+  void RefNonZero(const DebugLocation &location, const char *reason) {
 #ifndef NDEBUG
     const Value prior = value_.fetch_add(1, std::memory_order_relaxed);
     if (trace_ != nullptr) {
@@ -135,7 +135,7 @@ class RefCount {
 #endif
     return IncrementIfNonzero(&value_);
   }
-  bool RefIfNonZero(const DebugLocation& location, const char* reason) {
+  bool RefIfNonZero(const DebugLocation &location, const char *reason) {
 #ifndef NDEBUG
     if (trace_ != nullptr) {
       const Value prior = get();
@@ -157,7 +157,7 @@ class RefCount {
     // Grab a copy of the trace flag before the atomic change, since we
     // will no longer be holding a ref afterwards and therefore can't
     // safely access it, since another thread might free us in the interim.
-    auto* trace = trace_;
+    auto *trace = trace_;
 #endif
     const Value prior = value_.fetch_sub(1, std::memory_order_acq_rel);
 #ifndef NDEBUG
@@ -169,12 +169,12 @@ class RefCount {
 #endif
     return prior == 1;
   }
-  bool Unref(const DebugLocation& location, const char* reason) {
+  bool Unref(const DebugLocation &location, const char *reason) {
 #ifndef NDEBUG
     // Grab a copy of the trace flag before the atomic change, since we
     // will no longer be holding a ref afterwards and therefore can't
     // safely access it, since another thread might free us in the interim.
-    auto* trace = trace_;
+    auto *trace = trace_;
 #endif
     const Value prior = value_.fetch_sub(1, std::memory_order_acq_rel);
 #ifndef NDEBUG
@@ -196,7 +196,7 @@ class RefCount {
   Value get() const { return value_.load(std::memory_order_relaxed); }
 
 #ifndef NDEBUG
-  const char* trace_;
+  const char *trace_;
 #endif
   std::atomic<Value> value_{0};
 };
@@ -237,17 +237,17 @@ class Delete;
 template <typename T>
 class Delete<T, kUnrefDelete> {
  public:
-  explicit Delete(T* t) { delete t; }
+  explicit Delete(T *t) { delete t; }
 };
 template <typename T>
 class Delete<T, kUnrefNoDelete> {
  public:
-  explicit Delete(T* /*t*/) {}
+  explicit Delete(T * /*t*/) {}
 };
 template <typename T>
 class Delete<T, kUnrefCallDtor> {
  public:
-  explicit Delete(T* t) { t->~T(); }
+  explicit Delete(T *t) { t->~T(); }
 };
 }  // namespace internal
 
@@ -286,13 +286,13 @@ class RefCounted : public Impl {
 
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
-    return RefCountedPtr<Child>(static_cast<Child*>(this));
+    return RefCountedPtr<Child>(static_cast<Child *>(this));
   }
 
-  RefCountedPtr<Child> Ref(const DebugLocation& location,
-                           const char* reason) GRPC_MUST_USE_RESULT {
+  RefCountedPtr<Child> Ref(const DebugLocation &location,
+                           const char *reason) GRPC_MUST_USE_RESULT {
     IncrementRefCount(location, reason);
-    return RefCountedPtr<Child>(static_cast<Child*>(this));
+    return RefCountedPtr<Child>(static_cast<Child *>(this));
   }
 
   // TODO(roth): Once all of our code is converted to C++ and can use
@@ -301,33 +301,33 @@ class RefCounted : public Impl {
   // friend of this class.
   void Unref() {
     if (GPR_UNLIKELY(refs_.Unref())) {
-      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child*>(this));
+      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child *>(this));
     }
   }
-  void Unref(const DebugLocation& location, const char* reason) {
+  void Unref(const DebugLocation &location, const char *reason) {
     if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
-      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child*>(this));
+      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child *>(this));
     }
   }
 
   RefCountedPtr<Child> RefIfNonZero() GRPC_MUST_USE_RESULT {
-    return RefCountedPtr<Child>(refs_.RefIfNonZero() ? static_cast<Child*>(this)
-                                                     : nullptr);
+    return RefCountedPtr<Child>(
+        refs_.RefIfNonZero() ? static_cast<Child *>(this) : nullptr);
   }
-  RefCountedPtr<Child> RefIfNonZero(const DebugLocation& location,
-                                    const char* reason) GRPC_MUST_USE_RESULT {
+  RefCountedPtr<Child> RefIfNonZero(const DebugLocation &location,
+                                    const char *reason) GRPC_MUST_USE_RESULT {
     return RefCountedPtr<Child>(refs_.RefIfNonZero(location, reason)
-                                    ? static_cast<Child*>(this)
+                                    ? static_cast<Child *>(this)
                                     : nullptr);
   }
 
   // Not copyable nor movable.
-  RefCounted(const RefCounted&) = delete;
-  RefCounted& operator=(const RefCounted&) = delete;
+  RefCounted(const RefCounted &) = delete;
+  RefCounted &operator=(const RefCounted &) = delete;
 
  protected:
   // Note: Tracing is a no-op on non-debug builds.
-  explicit RefCounted(const char* trace = nullptr,
+  explicit RefCounted(const char *trace = nullptr,
                       intptr_t initial_refcount = 1)
       : refs_(initial_refcount, trace) {}
 
@@ -337,7 +337,7 @@ class RefCounted : public Impl {
   friend class RefCountedPtr;
 
   void IncrementRefCount() { refs_.Ref(); }
-  void IncrementRefCount(const DebugLocation& location, const char* reason) {
+  void IncrementRefCount(const DebugLocation &location, const char *reason) {
     refs_.Ref(location, reason);
   }
 

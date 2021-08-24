@@ -42,13 +42,13 @@ namespace grpc_core {
 // XdsChannelCredsRegistry
 //
 
-bool XdsChannelCredsRegistry::IsSupported(const std::string& creds_type) {
+bool XdsChannelCredsRegistry::IsSupported(const std::string &creds_type) {
   return creds_type == "google_default" || creds_type == "insecure" ||
          creds_type == "fake";
 }
 
-bool XdsChannelCredsRegistry::IsValidConfig(const std::string& /*creds_type*/,
-                                            const Json& /*config*/) {
+bool XdsChannelCredsRegistry::IsValidConfig(const std::string & /*creds_type*/,
+                                            const Json & /*config*/) {
   // Currently, none of the creds types actually take a config, but we
   // ignore whatever might be specified in the bootstrap file for
   // forward compatibility reasons.
@@ -56,8 +56,8 @@ bool XdsChannelCredsRegistry::IsValidConfig(const std::string& /*creds_type*/,
 }
 
 RefCountedPtr<grpc_channel_credentials>
-XdsChannelCredsRegistry::MakeChannelCreds(const std::string& creds_type,
-                                          const Json& /*config*/) {
+XdsChannelCredsRegistry::MakeChannelCreds(const std::string &creds_type,
+                                          const Json & /*config*/) {
   if (creds_type == "google_default") {
     return grpc_google_default_credentials_create(nullptr);
   } else if (creds_type == "insecure") {
@@ -81,7 +81,7 @@ bool XdsBootstrap::XdsServer::ShouldUseV3() const {
 //
 
 std::unique_ptr<XdsBootstrap> XdsBootstrap::Create(
-    absl::string_view json_string, grpc_error_handle* error) {
+    absl::string_view json_string, grpc_error_handle *error) {
   Json json = Json::Parse(json_string, error);
   if (*error != GRPC_ERROR_NONE) {
     grpc_error_handle error_out =
@@ -94,7 +94,7 @@ std::unique_ptr<XdsBootstrap> XdsBootstrap::Create(
   return absl::make_unique<XdsBootstrap>(std::move(json), error);
 }
 
-XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
+XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle *error) {
   if (json.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "malformed JSON in bootstrap file");
@@ -148,10 +148,10 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
                                          &error_list);
 }
 
-grpc_error_handle XdsBootstrap::ParseXdsServerList(Json* json) {
+grpc_error_handle XdsBootstrap::ParseXdsServerList(Json *json) {
   std::vector<grpc_error_handle> error_list;
   for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
-    Json& child = json->mutable_array()->at(i);
+    Json &child = json->mutable_array()->at(i);
     if (child.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("array element ", i, " is not an object").c_str()));
@@ -164,10 +164,10 @@ grpc_error_handle XdsBootstrap::ParseXdsServerList(Json* json) {
                                        &error_list);
 }
 
-grpc_error_handle XdsBootstrap::ParseXdsServer(Json* json, size_t idx) {
+grpc_error_handle XdsBootstrap::ParseXdsServer(Json *json, size_t idx) {
   std::vector<grpc_error_handle> error_list;
   servers_.emplace_back();
-  XdsServer& server = servers_[servers_.size() - 1];
+  XdsServer &server = servers_[servers_.size() - 1];
   auto it = json->mutable_object()->find("server_uri");
   if (it == json->mutable_object()->end()) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -212,11 +212,11 @@ grpc_error_handle XdsBootstrap::ParseXdsServer(Json* json, size_t idx) {
   return error;
 }
 
-grpc_error_handle XdsBootstrap::ParseChannelCredsArray(Json* json,
-                                                       XdsServer* server) {
+grpc_error_handle XdsBootstrap::ParseChannelCredsArray(Json *json,
+                                                       XdsServer *server) {
   std::vector<grpc_error_handle> error_list;
   for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
-    Json& child = json->mutable_array()->at(i);
+    Json &child = json->mutable_array()->at(i);
     if (child.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("array element ", i, " is not an object").c_str()));
@@ -233,8 +233,8 @@ grpc_error_handle XdsBootstrap::ParseChannelCredsArray(Json* json,
                                        &error_list);
 }
 
-grpc_error_handle XdsBootstrap::ParseChannelCreds(Json* json, size_t idx,
-                                                  XdsServer* server) {
+grpc_error_handle XdsBootstrap::ParseChannelCreds(Json *json, size_t idx,
+                                                  XdsServer *server) {
   std::vector<grpc_error_handle> error_list;
   std::string type;
   auto it = json->mutable_object()->find("type");
@@ -279,11 +279,11 @@ grpc_error_handle XdsBootstrap::ParseChannelCreds(Json* json, size_t idx,
   return error;
 }
 
-grpc_error_handle XdsBootstrap::ParseServerFeaturesArray(Json* json,
-                                                         XdsServer* server) {
+grpc_error_handle XdsBootstrap::ParseServerFeaturesArray(Json *json,
+                                                         XdsServer *server) {
   std::vector<grpc_error_handle> error_list;
   for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
-    Json& child = json->mutable_array()->at(i);
+    Json &child = json->mutable_array()->at(i);
     if (child.type() == Json::Type::STRING &&
         child.string_value() == "xds_v3") {
       server->server_features.insert(std::move(*child.mutable_string_value()));
@@ -293,7 +293,7 @@ grpc_error_handle XdsBootstrap::ParseServerFeaturesArray(Json* json,
       "errors parsing \"server_features\" array", &error_list);
 }
 
-grpc_error_handle XdsBootstrap::ParseNode(Json* json) {
+grpc_error_handle XdsBootstrap::ParseNode(Json *json) {
   std::vector<grpc_error_handle> error_list;
   node_ = absl::make_unique<Node>();
   auto it = json->mutable_object()->find("id");
@@ -337,7 +337,7 @@ grpc_error_handle XdsBootstrap::ParseNode(Json* json) {
                                        &error_list);
 }
 
-grpc_error_handle XdsBootstrap::ParseLocality(Json* json) {
+grpc_error_handle XdsBootstrap::ParseLocality(Json *json) {
   std::vector<grpc_error_handle> error_list;
   auto it = json->mutable_object()->find("region");
   if (it != json->mutable_object()->end()) {
@@ -370,9 +370,9 @@ grpc_error_handle XdsBootstrap::ParseLocality(Json* json) {
                                        &error_list);
 }
 
-grpc_error_handle XdsBootstrap::ParseCertificateProviders(Json* json) {
+grpc_error_handle XdsBootstrap::ParseCertificateProviders(Json *json) {
   std::vector<grpc_error_handle> error_list;
-  for (auto& certificate_provider : *(json->mutable_object())) {
+  for (auto &certificate_provider : *(json->mutable_object())) {
     if (certificate_provider.second.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("element \"", certificate_provider.first,
@@ -389,7 +389,7 @@ grpc_error_handle XdsBootstrap::ParseCertificateProviders(Json* json) {
 }
 
 grpc_error_handle XdsBootstrap::ParseCertificateProvider(
-    const std::string& instance_name, Json* certificate_provider_json) {
+    const std::string &instance_name, Json *certificate_provider_json) {
   std::vector<grpc_error_handle> error_list;
   auto it = certificate_provider_json->mutable_object()->find("plugin_name");
   if (it == certificate_provider_json->mutable_object()->end()) {
@@ -400,7 +400,7 @@ grpc_error_handle XdsBootstrap::ParseCertificateProvider(
         "\"plugin_name\" field is not a string"));
   } else {
     std::string plugin_name = std::move(*(it->second.mutable_string_value()));
-    CertificateProviderFactory* factory =
+    CertificateProviderFactory *factory =
         CertificateProviderRegistry::LookupCertificateProviderFactory(
             plugin_name);
     if (factory == nullptr) {
@@ -480,7 +480,7 @@ std::string XdsBootstrap::ToString() const {
                         server_listener_resource_name_template_));
   }
   parts.push_back("certificate_providers={\n");
-  for (const auto& entry : certificate_providers_) {
+  for (const auto &entry : certificate_providers_) {
     parts.push_back(
         absl::StrFormat("  %s={\n"
                         "    plugin_name=%s\n"

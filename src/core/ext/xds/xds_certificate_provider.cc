@@ -124,7 +124,7 @@ bool XdsCertificateProvider::ClusterCertificateState::IsSafeToRemove() const {
 
 void XdsCertificateProvider::ClusterCertificateState::
     UpdateRootCertNameAndDistributor(
-        const std::string& cert_name, absl::string_view root_cert_name,
+        const std::string &cert_name, absl::string_view root_cert_name,
         RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor) {
   if (root_cert_name_ == root_cert_name &&
       root_cert_distributor_ == root_cert_distributor) {
@@ -153,7 +153,7 @@ void XdsCertificateProvider::ClusterCertificateState::
 
 void XdsCertificateProvider::ClusterCertificateState::
     UpdateIdentityCertNameAndDistributor(
-        const std::string& cert_name, absl::string_view identity_cert_name,
+        const std::string &cert_name, absl::string_view identity_cert_name,
         RefCountedPtr<grpc_tls_certificate_distributor>
             identity_cert_distributor) {
   if (identity_cert_name_ == identity_cert_name &&
@@ -182,8 +182,8 @@ void XdsCertificateProvider::ClusterCertificateState::
 }
 
 void XdsCertificateProvider::ClusterCertificateState::UpdateRootCertWatcher(
-    const std::string& cert_name,
-    grpc_tls_certificate_distributor* root_cert_distributor) {
+    const std::string &cert_name,
+    grpc_tls_certificate_distributor *root_cert_distributor) {
   auto watcher = absl::make_unique<RootCertificatesWatcher>(
       xds_certificate_provider_->distributor_, cert_name);
   root_cert_watcher_ = watcher.get();
@@ -192,8 +192,8 @@ void XdsCertificateProvider::ClusterCertificateState::UpdateRootCertWatcher(
 }
 
 void XdsCertificateProvider::ClusterCertificateState::UpdateIdentityCertWatcher(
-    const std::string& cert_name,
-    grpc_tls_certificate_distributor* identity_cert_distributor) {
+    const std::string &cert_name,
+    grpc_tls_certificate_distributor *identity_cert_distributor) {
   auto watcher = absl::make_unique<IdentityCertificatesWatcher>(
       xds_certificate_provider_->distributor_, cert_name);
   identity_cert_watcher_ = watcher.get();
@@ -202,7 +202,7 @@ void XdsCertificateProvider::ClusterCertificateState::UpdateIdentityCertWatcher(
 }
 
 void XdsCertificateProvider::ClusterCertificateState::WatchStatusCallback(
-    const std::string& cert_name, bool root_being_watched,
+    const std::string &cert_name, bool root_being_watched,
     bool identity_being_watched) {
   // We aren't specially handling the case where root_cert_distributor is same
   // as identity_cert_distributor. Always using two separate watchers
@@ -265,7 +265,7 @@ XdsCertificateProvider::~XdsCertificateProvider() {
   distributor_->SetWatchStatusCallback(nullptr);
 }
 
-bool XdsCertificateProvider::ProvidesRootCerts(const std::string& cert_name) {
+bool XdsCertificateProvider::ProvidesRootCerts(const std::string &cert_name) {
   MutexLock lock(&mu_);
   auto it = certificate_state_map_.find(cert_name);
   if (it == certificate_state_map_.end()) return false;
@@ -273,7 +273,7 @@ bool XdsCertificateProvider::ProvidesRootCerts(const std::string& cert_name) {
 }
 
 void XdsCertificateProvider::UpdateRootCertNameAndDistributor(
-    const std::string& cert_name, absl::string_view root_cert_name,
+    const std::string &cert_name, absl::string_view root_cert_name,
     RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor) {
   MutexLock lock(&mu_);
   auto it = certificate_state_map_.find(cert_name);
@@ -290,7 +290,7 @@ void XdsCertificateProvider::UpdateRootCertNameAndDistributor(
 }
 
 bool XdsCertificateProvider::ProvidesIdentityCerts(
-    const std::string& cert_name) {
+    const std::string &cert_name) {
   MutexLock lock(&mu_);
   auto it = certificate_state_map_.find(cert_name);
   if (it == certificate_state_map_.end()) return false;
@@ -298,7 +298,7 @@ bool XdsCertificateProvider::ProvidesIdentityCerts(
 }
 
 void XdsCertificateProvider::UpdateIdentityCertNameAndDistributor(
-    const std::string& cert_name, absl::string_view identity_cert_name,
+    const std::string &cert_name, absl::string_view identity_cert_name,
     RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor) {
   MutexLock lock(&mu_);
   auto it = certificate_state_map_.find(cert_name);
@@ -315,7 +315,7 @@ void XdsCertificateProvider::UpdateIdentityCertNameAndDistributor(
 }
 
 bool XdsCertificateProvider::GetRequireClientCertificate(
-    const std::string& cert_name) {
+    const std::string &cert_name) {
   MutexLock lock(&mu_);
   auto it = certificate_state_map_.find(cert_name);
   if (it == certificate_state_map_.end()) return false;
@@ -323,7 +323,7 @@ bool XdsCertificateProvider::GetRequireClientCertificate(
 }
 
 void XdsCertificateProvider::UpdateRequireClientCertificate(
-    const std::string& cert_name, bool require_client_certificate) {
+    const std::string &cert_name, bool require_client_certificate) {
   MutexLock lock(&mu_);
   auto it = certificate_state_map_.find(cert_name);
   if (it == certificate_state_map_.end()) return;
@@ -331,7 +331,7 @@ void XdsCertificateProvider::UpdateRequireClientCertificate(
 }
 
 std::vector<StringMatcher> XdsCertificateProvider::GetSanMatchers(
-    const std::string& cluster) {
+    const std::string &cluster) {
   MutexLock lock(&san_matchers_mu_);
   auto it = san_matcher_map_.find(cluster);
   if (it == san_matcher_map_.end()) return {};
@@ -339,7 +339,7 @@ std::vector<StringMatcher> XdsCertificateProvider::GetSanMatchers(
 }
 
 void XdsCertificateProvider::UpdateSubjectAlternativeNameMatchers(
-    const std::string& cluster, std::vector<StringMatcher> matchers) {
+    const std::string &cluster, std::vector<StringMatcher> matchers) {
   MutexLock lock(&san_matchers_mu_);
   if (matchers.empty()) {
     san_matcher_map_.erase(cluster);
@@ -367,19 +367,19 @@ void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,
 
 namespace {
 
-void* XdsCertificateProviderArgCopy(void* p) {
-  XdsCertificateProvider* xds_certificate_provider =
-      static_cast<XdsCertificateProvider*>(p);
+void *XdsCertificateProviderArgCopy(void *p) {
+  XdsCertificateProvider *xds_certificate_provider =
+      static_cast<XdsCertificateProvider *>(p);
   return xds_certificate_provider->Ref().release();
 }
 
-void XdsCertificateProviderArgDestroy(void* p) {
-  XdsCertificateProvider* xds_certificate_provider =
-      static_cast<XdsCertificateProvider*>(p);
+void XdsCertificateProviderArgDestroy(void *p) {
+  XdsCertificateProvider *xds_certificate_provider =
+      static_cast<XdsCertificateProvider *>(p);
   xds_certificate_provider->Unref();
 }
 
-int XdsCertificateProviderArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
+int XdsCertificateProviderArgCmp(void *p, void *q) { return GPR_ICMP(p, q); }
 
 const grpc_arg_pointer_vtable kChannelArgVtable = {
     XdsCertificateProviderArgCopy, XdsCertificateProviderArgDestroy,
@@ -389,13 +389,13 @@ const grpc_arg_pointer_vtable kChannelArgVtable = {
 
 grpc_arg XdsCertificateProvider::MakeChannelArg() const {
   return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_XDS_CERTIFICATE_PROVIDER),
-      const_cast<XdsCertificateProvider*>(this), &kChannelArgVtable);
+      const_cast<char *>(GRPC_ARG_XDS_CERTIFICATE_PROVIDER),
+      const_cast<XdsCertificateProvider *>(this), &kChannelArgVtable);
 }
 
 RefCountedPtr<XdsCertificateProvider>
-XdsCertificateProvider::GetFromChannelArgs(const grpc_channel_args* args) {
-  XdsCertificateProvider* xds_certificate_provider =
+XdsCertificateProvider::GetFromChannelArgs(const grpc_channel_args *args) {
+  XdsCertificateProvider *xds_certificate_provider =
       grpc_channel_args_find_pointer<XdsCertificateProvider>(
           args, GRPC_ARG_XDS_CERTIFICATE_PROVIDER);
   return xds_certificate_provider != nullptr ? xds_certificate_provider->Ref()

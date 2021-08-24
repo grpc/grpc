@@ -67,7 +67,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-static bool ValidateAddress(const Address& address) {
+static bool ValidateAddress(const Address &address) {
   if (address.address_case() != Address::kTcpipAddress) {
     return true;
   }
@@ -81,12 +81,12 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
  public:
   Proxy() {}
 
-  void AddChannelToBackend(const std::shared_ptr<Channel>& channel) {
+  void AddChannelToBackend(const std::shared_ptr<Channel> &channel) {
     stubs_.push_back(grpc::testing::EchoTestService::NewStub(channel));
   }
 
-  Status Echo(ServerContext* server_context, const EchoRequest* request,
-              EchoResponse* response) override {
+  Status Echo(ServerContext *server_context, const EchoRequest *request,
+              EchoResponse *response) override {
     std::unique_ptr<ClientContext> client_context =
         ClientContext::FromServerContext(*server_context);
     size_t idx = request->param().backend_channel_idx();
@@ -94,9 +94,9 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
     return stubs_[idx]->Echo(client_context.get(), *request, response);
   }
 
-  Status BidiStream(ServerContext* server_context,
-                    ServerReaderWriter<EchoResponse, EchoRequest>*
-                        stream_from_client) override {
+  Status BidiStream(ServerContext *server_context,
+                    ServerReaderWriter<EchoResponse, EchoRequest>
+                        *stream_from_client) override {
     EchoRequest request;
     EchoResponse response;
     std::unique_ptr<ClientContext> client_context =
@@ -130,7 +130,7 @@ constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
 constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 
-std::string ReadFile(const char* file_path) {
+std::string ReadFile(const char *file_path) {
   grpc_slice slice;
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("load_file", grpc_load_file(file_path, 0, &slice)));
@@ -139,14 +139,14 @@ std::string ReadFile(const char* file_path) {
   return file_contents;
 }
 
-grpc_core::PemKeyCertPairList ReadTlsIdentityPair(const char* key_path,
-                                                  const char* cert_path) {
+grpc_core::PemKeyCertPairList ReadTlsIdentityPair(const char *key_path,
+                                                  const char *cert_path) {
   return grpc_core::PemKeyCertPairList{
       grpc_core::PemKeyCertPair(ReadFile(key_path), ReadFile(cert_path))};
 }
 
 std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials(
-    CredentialsType type, ChannelArguments* args) {
+    CredentialsType type, ChannelArguments *args) {
   if (type == CredentialsType::kInsecure) {
     return InsecureChannelCredentials();
   }
@@ -296,7 +296,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     EchoResponse response;
     request.set_message("Hello channelz");
     request.mutable_param()->set_backend_channel_idx(channel_idx);
-    auto* error = request.mutable_param()->mutable_expected_error();
+    auto *error = request.mutable_param()->mutable_expected_error();
     error->set_code(13);  // INTERNAL
     error->set_error_message("error");
     ClientContext context;
@@ -930,7 +930,7 @@ INSTANTIATE_TEST_SUITE_P(ChannelzServer, ChannelzServerTest,
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

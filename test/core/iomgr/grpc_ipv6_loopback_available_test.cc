@@ -31,7 +31,7 @@
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #endif
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   // This test assumes that the ipv6 loopback is available
@@ -43,6 +43,6 @@ int main(int argc, char** argv) {
 
 #else
 
-int main(int argc, char** argv) { return 0; }
+int main(int argc, char **argv) { return 0; }
 
 #endif /* GRPC_UV */

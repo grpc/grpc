@@ -31,11 +31,11 @@ const size_t kTestNumEncryptions = 100;
 
 /* Struct for pre-generated test vector */
 typedef struct gsec_aead_test_vector {
-  uint8_t* nonce;
-  uint8_t* aad;
-  uint8_t* key;
-  uint8_t* plaintext;
-  uint8_t* ciphertext_and_tag;
+  uint8_t *nonce;
+  uint8_t *aad;
+  uint8_t *key;
+  uint8_t *plaintext;
+  uint8_t *ciphertext_and_tag;
   size_t nonce_length;
   size_t aad_length;
   size_t key_length;
@@ -43,8 +43,8 @@ typedef struct gsec_aead_test_vector {
   size_t ciphertext_and_tag_length;
 } gsec_aead_test_vector;
 
-static void gsec_randomly_slice(uint8_t* input, size_t input_length,
-                                struct iovec** output, size_t* output_length) {
+static void gsec_randomly_slice(uint8_t *input, size_t input_length,
+                                struct iovec **output, size_t *output_length) {
   if (input_length == 0) {
     *output = nullptr;
     *output_length = 0;
@@ -52,7 +52,7 @@ static void gsec_randomly_slice(uint8_t* input, size_t input_length,
   }
   *output_length = gsec_test_bias_random_uint32(kTestMaxSlices) + 1;
   *output =
-      static_cast<struct iovec*>(malloc(*output_length * sizeof(**output)));
+      static_cast<struct iovec *>(malloc(*output_length * sizeof(**output)));
   size_t i;
   for (i = 0; i < *output_length - 1; i++) {
     size_t slice_length =
@@ -66,7 +66,7 @@ static void gsec_randomly_slice(uint8_t* input, size_t input_length,
   (*output)[*output_length - 1] = slice;
 }
 
-static void gsec_assert_ok(grpc_status_code status, const char* error_detail) {
+static void gsec_assert_ok(grpc_status_code status, const char *error_detail) {
   char empty_string[] = "";
   if (error_detail == nullptr) {
     error_detail = empty_string;
@@ -77,7 +77,7 @@ static void gsec_assert_ok(grpc_status_code status, const char* error_detail) {
   GPR_ASSERT(status == GRPC_STATUS_OK);
 }
 
-static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
+static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter *crypter,
                                              size_t aad_length,
                                              size_t message_length) {
   GPR_ASSERT(crypter != nullptr);
@@ -95,10 +95,10 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
   gsec_aead_crypter_max_ciphertext_and_tag_length(
       crypter, message_length, &ciphertext_and_tag_length, nullptr);
 
-  uint8_t* ciphertext_and_tag =
-      static_cast<uint8_t*>(gpr_malloc(ciphertext_and_tag_length));
+  uint8_t *ciphertext_and_tag =
+      static_cast<uint8_t *>(gpr_malloc(ciphertext_and_tag_length));
 
-  char* error_buffer = nullptr;
+  char *error_buffer = nullptr;
   gsec_assert_ok(
       gsec_aead_crypter_encrypt(crypter, nonce, nonce_length, aad, aad_length,
                                 message, message_length, ciphertext_and_tag,
@@ -112,7 +112,7 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
   size_t plaintext_length, plaintext_bytes_written = 0;
   gsec_aead_crypter_max_plaintext_length(crypter, ciphertext_bytes_written,
                                          &plaintext_length, nullptr);
-  uint8_t* plaintext = static_cast<uint8_t*>(gpr_malloc(plaintext_length));
+  uint8_t *plaintext = static_cast<uint8_t *>(gpr_malloc(plaintext_length));
   grpc_status_code status = gsec_aead_crypter_decrypt(
       crypter, nonce, nonce_length, aad, aad_length, ciphertext_and_tag,
       ciphertext_bytes_written, plaintext, plaintext_length,
@@ -125,13 +125,13 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
   /**
    * The returned plaintext will be zeroed if there was an authentication error.
    */
-  uint8_t* zero_message = static_cast<uint8_t*>(gpr_zalloc(plaintext_length));
+  uint8_t *zero_message = static_cast<uint8_t *>(gpr_zalloc(plaintext_length));
   if (tag_length >= kTestMinTagLengthForCorruption) {
-    char* error_message;
+    char *error_message;
     /* Corrupt nonce */
     if (nonce_length > 0) {
       plaintext_bytes_written = 0;
-      uint8_t* corrupt_nonce;
+      uint8_t *corrupt_nonce;
       gsec_test_copy_and_alter_random_byte(nonce, &corrupt_nonce, nonce_length);
       status = gsec_aead_crypter_decrypt(
           crypter, corrupt_nonce, nonce_length, aad, aad_length,
@@ -149,7 +149,7 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
 
     /* Corrupt ciphertext_and_tag */
     plaintext_bytes_written = 0;
-    uint8_t* corrupt_ciphertext_and_tag;
+    uint8_t *corrupt_ciphertext_and_tag;
     gsec_test_copy_and_alter_random_byte(ciphertext_and_tag,
                                          &corrupt_ciphertext_and_tag,
                                          ciphertext_and_tag_length);
@@ -211,7 +211,7 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
   gpr_free(ciphertext_and_tag);
 }
 
-static void gsec_test_encrypt_decrypt(gsec_aead_crypter* crypter) {
+static void gsec_test_encrypt_decrypt(gsec_aead_crypter *crypter) {
   GPR_ASSERT(crypter != nullptr);
   size_t aad_length, message_length;
   aad_length = gsec_test_bias_random_uint32(kTestMaxLength);
@@ -222,14 +222,14 @@ static void gsec_test_encrypt_decrypt(gsec_aead_crypter* crypter) {
 }
 
 static void gsec_test_multiple_random_encrypt_decrypt(
-    gsec_aead_crypter* crypter, size_t* aad_lengths, size_t* message_lengths,
+    gsec_aead_crypter *crypter, size_t *aad_lengths, size_t *message_lengths,
     size_t count) {
   GPR_ASSERT(crypter != nullptr);
   size_t nonce_length, tag_length;
   uint8_t **nonces, **aads, **messages;
-  nonces = static_cast<uint8_t**>(gpr_malloc(sizeof(uint8_t*) * count));
-  aads = static_cast<uint8_t**>(gpr_malloc(sizeof(uint8_t*) * count));
-  messages = static_cast<uint8_t**>(gpr_malloc(sizeof(uint8_t*) * count));
+  nonces = static_cast<uint8_t **>(gpr_malloc(sizeof(uint8_t *) * count));
+  aads = static_cast<uint8_t **>(gpr_malloc(sizeof(uint8_t *) * count));
+  messages = static_cast<uint8_t **>(gpr_malloc(sizeof(uint8_t *) * count));
 
   gsec_aead_crypter_nonce_length(crypter, &nonce_length, nullptr);
   gsec_aead_crypter_tag_length(crypter, &tag_length, nullptr);
@@ -244,18 +244,18 @@ static void gsec_test_multiple_random_encrypt_decrypt(
     gsec_test_random_array(&(messages[ind]), message_length);
   }
 
-  size_t* ciphertext_and_tag_lengths =
-      static_cast<size_t*>(gpr_malloc(sizeof(size_t) * count));
-  size_t* ciphertext_bytes_writtens =
-      static_cast<size_t*>(gpr_malloc(sizeof(size_t) * count));
-  size_t* plaintext_lengths =
-      static_cast<size_t*>(gpr_malloc(sizeof(size_t) * count));
-  size_t* plaintext_bytes_writtens =
-      static_cast<size_t*>(gpr_malloc(sizeof(size_t) * count));
-  uint8_t** ciphertext_and_tags =
-      static_cast<uint8_t**>(gpr_malloc(sizeof(uint8_t*) * count));
-  uint8_t** plaintexts =
-      static_cast<uint8_t**>(gpr_malloc(sizeof(uint8_t*) * count));
+  size_t *ciphertext_and_tag_lengths =
+      static_cast<size_t *>(gpr_malloc(sizeof(size_t) * count));
+  size_t *ciphertext_bytes_writtens =
+      static_cast<size_t *>(gpr_malloc(sizeof(size_t) * count));
+  size_t *plaintext_lengths =
+      static_cast<size_t *>(gpr_malloc(sizeof(size_t) * count));
+  size_t *plaintext_bytes_writtens =
+      static_cast<size_t *>(gpr_malloc(sizeof(size_t) * count));
+  uint8_t **ciphertext_and_tags =
+      static_cast<uint8_t **>(gpr_malloc(sizeof(uint8_t *) * count));
+  uint8_t **plaintexts =
+      static_cast<uint8_t **>(gpr_malloc(sizeof(uint8_t *) * count));
 
   /* Do encryption */
   for (ind = 0; ind < count; ind++) {
@@ -265,7 +265,7 @@ static void gsec_test_multiple_random_encrypt_decrypt(
     gsec_aead_crypter_max_ciphertext_and_tag_length(
         crypter, message_length, &(ciphertext_and_tag_lengths[ind]), nullptr);
     ciphertext_and_tags[ind] =
-        static_cast<uint8_t*>(gpr_malloc(ciphertext_and_tag_lengths[ind]));
+        static_cast<uint8_t *>(gpr_malloc(ciphertext_and_tag_lengths[ind]));
     grpc_status_code status = gsec_aead_crypter_encrypt(
         crypter, nonces[ind], nonce_length, aads[ind], aad_length,
         messages[ind], message_length, ciphertext_and_tags[ind],
@@ -284,7 +284,8 @@ static void gsec_test_multiple_random_encrypt_decrypt(
     gsec_aead_crypter_max_plaintext_length(crypter,
                                            ciphertext_bytes_writtens[ind],
                                            &(plaintext_lengths[ind]), nullptr);
-    plaintexts[ind] = static_cast<uint8_t*>(gpr_malloc(plaintext_lengths[ind]));
+    plaintexts[ind] =
+        static_cast<uint8_t *>(gpr_malloc(plaintext_lengths[ind]));
     grpc_status_code status = gsec_aead_crypter_decrypt(
         crypter, nonces[ind], nonce_length, aads[ind], aad_length,
         ciphertext_and_tags[ind], ciphertext_bytes_writtens[ind],
@@ -298,23 +299,23 @@ static void gsec_test_multiple_random_encrypt_decrypt(
   /* Slice the plaintext and encrypt with iovecs */
   for (ind = 0; ind < count; ind++) {
     size_t aad_length = (aad_lengths == nullptr) ? 0 : aad_lengths[ind];
-    struct iovec* aad_vecs = nullptr;
+    struct iovec *aad_vecs = nullptr;
     size_t aad_vecs_length = 0;
     gsec_randomly_slice(aads[ind], aad_length, &aad_vecs, &aad_vecs_length);
     size_t message_length =
         (message_lengths == nullptr) ? 0 : message_lengths[ind];
-    struct iovec* message_vecs = nullptr;
+    struct iovec *message_vecs = nullptr;
     size_t message_vecs_length = 0;
     gsec_randomly_slice(messages[ind], message_length, &message_vecs,
                         &message_vecs_length);
 
     size_t ciphertext_length = ciphertext_and_tag_lengths[ind];
-    uint8_t* another_ciphertext =
-        static_cast<uint8_t*>(malloc(ciphertext_length));
+    uint8_t *another_ciphertext =
+        static_cast<uint8_t *>(malloc(ciphertext_length));
     struct iovec another_ciphertext_vec = {another_ciphertext,
                                            ciphertext_length};
 
-    char* error_details = nullptr;
+    char *error_details = nullptr;
     size_t ciphertext_bytes_written = 0;
     gsec_assert_ok(
         gsec_aead_crypter_encrypt_iovec(
@@ -337,21 +338,21 @@ static void gsec_test_multiple_random_encrypt_decrypt(
 
     size_t aad_length = (aad_lengths == nullptr) ? 0 : aad_lengths[ind];
 
-    struct iovec* aad_vecs = nullptr;
+    struct iovec *aad_vecs = nullptr;
     size_t aad_vecs_length = 0;
     gsec_randomly_slice(aads[ind], aad_length, &aad_vecs, &aad_vecs_length);
 
-    struct iovec* ciphertext_vecs = nullptr;
+    struct iovec *ciphertext_vecs = nullptr;
     size_t ciphertext_vecs_length = 0;
     gsec_randomly_slice(ciphertext_and_tags[ind],
                         ciphertext_bytes_writtens[ind], &ciphertext_vecs,
                         &ciphertext_vecs_length);
 
     size_t decrypted_length = plaintext_lengths[ind];
-    uint8_t* decrypted = static_cast<uint8_t*>(malloc(decrypted_length));
+    uint8_t *decrypted = static_cast<uint8_t *>(malloc(decrypted_length));
     struct iovec decrypted_vec = {decrypted, decrypted_length};
 
-    char* error_details = nullptr;
+    char *error_details = nullptr;
     gsec_assert_ok(gsec_aead_crypter_decrypt_iovec(
                        crypter, nonces[ind], nonce_length, aad_vecs,
                        aad_vecs_length, ciphertext_vecs, ciphertext_vecs_length,
@@ -383,13 +384,13 @@ static void gsec_test_multiple_random_encrypt_decrypt(
   gpr_free(plaintexts);
 }
 
-static void gsec_test_multiple_encrypt_decrypt(gsec_aead_crypter* crypter) {
+static void gsec_test_multiple_encrypt_decrypt(gsec_aead_crypter *crypter) {
   GPR_ASSERT(crypter != nullptr);
   size_t count = kTestNumEncryptions;
-  size_t* aad_lengths =
-      static_cast<size_t*>(gpr_malloc(sizeof(size_t) * count));
-  size_t* message_lengths =
-      static_cast<size_t*>(gpr_malloc(sizeof(size_t) * count));
+  size_t *aad_lengths =
+      static_cast<size_t *>(gpr_malloc(sizeof(size_t) * count));
+  size_t *message_lengths =
+      static_cast<size_t *>(gpr_malloc(sizeof(size_t) * count));
   size_t ind;
   for (ind = 0; ind < count; ind++) {
     aad_lengths[ind] = gsec_test_bias_random_uint32(kTestMaxLength);
@@ -405,13 +406,13 @@ static void gsec_test_multiple_encrypt_decrypt(gsec_aead_crypter* crypter) {
   gpr_free(message_lengths);
 }
 
-static void gsec_test_encryption_failure(gsec_aead_crypter* crypter) {
+static void gsec_test_encryption_failure(gsec_aead_crypter *crypter) {
   GPR_ASSERT(crypter != nullptr);
   size_t aad_length = kTestMaxLength;
   size_t message_length = kTestMaxLength;
   size_t nonce_length;
 
-  char* error_message;
+  char *error_message;
   uint8_t *nonce, *aad, *message;
 
   gsec_aead_crypter_nonce_length(crypter, &nonce_length, nullptr);
@@ -422,8 +423,8 @@ static void gsec_test_encryption_failure(gsec_aead_crypter* crypter) {
   size_t ciphertext_and_tag_length, ciphertext_bytes_written = 0;
   gsec_aead_crypter_max_ciphertext_and_tag_length(
       crypter, message_length, &ciphertext_and_tag_length, nullptr);
-  uint8_t* ciphertext_and_tag =
-      static_cast<uint8_t*>(gpr_malloc(ciphertext_and_tag_length));
+  uint8_t *ciphertext_and_tag =
+      static_cast<uint8_t *>(gpr_malloc(ciphertext_and_tag_length));
 
   /* nullptr nonce */
   grpc_status_code status = gsec_aead_crypter_encrypt(
@@ -531,7 +532,7 @@ static void gsec_test_encryption_failure(gsec_aead_crypter* crypter) {
   gpr_free(ciphertext_and_tag);
 }
 
-static void gsec_test_decryption_failure(gsec_aead_crypter* crypter) {
+static void gsec_test_decryption_failure(gsec_aead_crypter *crypter) {
   GPR_ASSERT(crypter != nullptr);
   size_t aad_length = kTestMaxLength;
   size_t message_length = kTestMaxLength;
@@ -548,8 +549,8 @@ static void gsec_test_decryption_failure(gsec_aead_crypter* crypter) {
   size_t ciphertext_and_tag_length, ciphertext_bytes_written = 0;
   gsec_aead_crypter_max_ciphertext_and_tag_length(
       crypter, message_length, &ciphertext_and_tag_length, nullptr);
-  uint8_t* ciphertext_and_tag =
-      static_cast<uint8_t*>(gpr_malloc(ciphertext_and_tag_length));
+  uint8_t *ciphertext_and_tag =
+      static_cast<uint8_t *>(gpr_malloc(ciphertext_and_tag_length));
 
   grpc_status_code status = gsec_aead_crypter_encrypt(
       crypter, nonce, nonce_length, aad, aad_length, message, message_length,
@@ -561,9 +562,9 @@ static void gsec_test_decryption_failure(gsec_aead_crypter* crypter) {
   size_t plaintext_length, plaintext_bytes_written = 0;
   gsec_aead_crypter_max_plaintext_length(crypter, ciphertext_bytes_written,
                                          &plaintext_length, nullptr);
-  uint8_t* plaintext = static_cast<uint8_t*>(gpr_malloc(plaintext_length));
+  uint8_t *plaintext = static_cast<uint8_t *>(gpr_malloc(plaintext_length));
 
-  char* error_message;
+  char *error_message;
   /* nullptr nonce */
   status = gsec_aead_crypter_decrypt(
       crypter, nullptr, nonce_length, aad, aad_length, ciphertext_and_tag,
@@ -681,15 +682,15 @@ static void gsec_test_decryption_failure(gsec_aead_crypter* crypter) {
 }
 
 static void gsec_test_encrypt_decrypt_test_vector(
-    gsec_aead_crypter* crypter, gsec_aead_test_vector* test_vector) {
+    gsec_aead_crypter *crypter, gsec_aead_test_vector *test_vector) {
   GPR_ASSERT(crypter != nullptr);
   /* Test byte-based encryption interface. */
   size_t ciphertext_and_tag_length, ciphertext_bytes_written = 0;
   gsec_aead_crypter_max_ciphertext_and_tag_length(
       crypter, test_vector->plaintext_length, &ciphertext_and_tag_length,
       nullptr);
-  uint8_t* ciphertext_and_tag_bytes =
-      static_cast<uint8_t*>(gpr_malloc(ciphertext_and_tag_length));
+  uint8_t *ciphertext_and_tag_bytes =
+      static_cast<uint8_t *>(gpr_malloc(ciphertext_and_tag_length));
   grpc_status_code status = gsec_aead_crypter_encrypt(
       crypter, test_vector->nonce, test_vector->nonce_length, test_vector->aad,
       test_vector->aad_length, test_vector->plaintext,
@@ -705,8 +706,8 @@ static void gsec_test_encrypt_decrypt_test_vector(
   size_t plaintext_length, plaintext_bytes_written = 0;
   gsec_aead_crypter_max_plaintext_length(crypter, ciphertext_and_tag_length,
                                          &plaintext_length, nullptr);
-  uint8_t* plaintext_bytes =
-      static_cast<uint8_t*>(gpr_malloc(plaintext_length));
+  uint8_t *plaintext_bytes =
+      static_cast<uint8_t *>(gpr_malloc(plaintext_length));
   status = gsec_aead_crypter_decrypt(
       crypter, test_vector->nonce, test_vector->nonce_length, test_vector->aad,
       test_vector->aad_length, test_vector->ciphertext_and_tag,
@@ -721,7 +722,7 @@ static void gsec_test_encrypt_decrypt_test_vector(
 }
 
 static void gsec_test_get_crypter_from_test_vector(
-    gsec_aead_crypter** crypter, gsec_aead_test_vector* test_vector,
+    gsec_aead_crypter **crypter, gsec_aead_test_vector *test_vector,
     bool rekey = false) {
   size_t key_length = test_vector->key_length;
   GPR_ASSERT(key_length == kAes128GcmKeyLength ||
@@ -738,19 +739,19 @@ static void gsec_test_get_crypter_from_test_vector(
 }
 
 static void gsec_test_verify_crypter_on_test_vector(
-    gsec_aead_test_vector* test_vector, bool rekey = false) {
-  gsec_aead_crypter* crypter;
+    gsec_aead_test_vector *test_vector, bool rekey = false) {
+  gsec_aead_crypter *crypter;
   gsec_test_get_crypter_from_test_vector(&crypter, test_vector, rekey);
   gsec_test_encrypt_decrypt_test_vector(crypter, test_vector);
   gsec_aead_crypter_destroy(crypter);
 }
 
 static void gsec_aead_malloc_test_vector(
-    gsec_aead_test_vector** test_vector, const uint8_t* key, size_t key_length,
-    const uint8_t* nonce, size_t nonce_length, const uint8_t* aad,
-    size_t aad_length, const uint8_t* plaintext, size_t plaintext_length,
-    const uint8_t* ciphertext_and_tag, size_t ciphertext_and_tag_length) {
-  *test_vector = static_cast<gsec_aead_test_vector*>(
+    gsec_aead_test_vector **test_vector, const uint8_t *key, size_t key_length,
+    const uint8_t *nonce, size_t nonce_length, const uint8_t *aad,
+    size_t aad_length, const uint8_t *plaintext, size_t plaintext_length,
+    const uint8_t *ciphertext_and_tag, size_t ciphertext_and_tag_length) {
+  *test_vector = static_cast<gsec_aead_test_vector *>(
       gpr_malloc(sizeof(gsec_aead_test_vector)));
   (*test_vector)->key_length = key_length;
   (*test_vector)->nonce_length = nonce_length;
@@ -765,7 +766,7 @@ static void gsec_aead_malloc_test_vector(
                  ciphertext_and_tag_length);
 }
 
-static void gsec_aead_free_test_vector(gsec_aead_test_vector* test_vector) {
+static void gsec_aead_free_test_vector(gsec_aead_test_vector *test_vector) {
   gpr_free(test_vector->key);
   gpr_free(test_vector->nonce);
   gpr_free(test_vector->aad);
@@ -774,12 +775,12 @@ static void gsec_aead_free_test_vector(gsec_aead_test_vector* test_vector) {
   gpr_free(test_vector);
 }
 
-static void gsec_test_create_random_aes_gcm_crypter(gsec_aead_crypter** crypter,
+static void gsec_test_create_random_aes_gcm_crypter(gsec_aead_crypter **crypter,
                                                     size_t key_length,
                                                     size_t nonce_length,
                                                     size_t tag_length,
                                                     bool rekey) {
-  uint8_t* key;
+  uint8_t *key;
   gsec_test_random_array(&key, key_length);
   gsec_aes_gcm_aead_crypter_create(key, key_length, nonce_length, tag_length,
                                    rekey, crypter, nullptr);
@@ -787,9 +788,9 @@ static void gsec_test_create_random_aes_gcm_crypter(gsec_aead_crypter** crypter,
 }
 
 static void gsec_test_get_random_aes_gcm_crypters(
-    gsec_aead_crypter*** crypters) {
-  *crypters = static_cast<gsec_aead_crypter**>(
-      gpr_malloc(sizeof(gsec_aead_crypter*) * kTestNumCrypters));
+    gsec_aead_crypter ***crypters) {
+  *crypters = static_cast<gsec_aead_crypter **>(
+      gpr_malloc(sizeof(gsec_aead_crypter *) * kTestNumCrypters));
   gsec_test_create_random_aes_gcm_crypter(
       &((*crypters)[0]), kAes128GcmKeyLength, kAesGcmNonceLength,
       kAesGcmTagLength, /*rekey=*/false);
@@ -802,7 +803,7 @@ static void gsec_test_get_random_aes_gcm_crypters(
 }
 
 static void gsec_test_do_generic_crypter_tests() {
-  gsec_aead_crypter** crypters;
+  gsec_aead_crypter **crypters;
   gsec_test_get_random_aes_gcm_crypters(&crypters);
   size_t ind;
   for (ind = 0; ind < kTestNumCrypters; ind++) {
@@ -1456,7 +1457,7 @@ static void gsec_test_do_vector_tests_nist() {
    */
 
   /* Test vector 1 */
-  gsec_aead_test_vector* test_vector_1;
+  gsec_aead_test_vector *test_vector_1;
   const uint8_t test_vector_1_key[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                        0x00, 0x00, 0x00, 0x00};
@@ -1477,7 +1478,7 @@ static void gsec_test_do_vector_tests_nist() {
   gsec_aead_free_test_vector(test_vector_1);
 
   /* Test vector 2 */
-  gsec_aead_test_vector* test_vector_2;
+  gsec_aead_test_vector *test_vector_2;
   const uint8_t test_vector_2_key[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                        0x00, 0x00, 0x00, 0x00};
@@ -1503,7 +1504,7 @@ static void gsec_test_do_vector_tests_nist() {
   gsec_aead_free_test_vector(test_vector_2);
 
   /* Test vector 3 */
-  gsec_aead_test_vector* test_vector_3;
+  gsec_aead_test_vector *test_vector_3;
   const uint8_t test_vector_3_key[] = {0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65,
                                        0x73, 0x1c, 0x6d, 0x6a, 0x8f, 0x94,
                                        0x67, 0x30, 0x83, 0x08};
@@ -1537,7 +1538,7 @@ static void gsec_test_do_vector_tests_nist() {
   gsec_aead_free_test_vector(test_vector_3);
 
   /* Test vector 4 */
-  gsec_aead_test_vector* test_vector_4;
+  gsec_aead_test_vector *test_vector_4;
   const uint8_t test_vector_4_key[] = {0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65,
                                        0x73, 0x1c, 0x6d, 0x6a, 0x8f, 0x94,
                                        0x67, 0x30, 0x83, 0x08};
@@ -1580,7 +1581,7 @@ static void gsec_test_do_vector_tests_ieee() {
    */
 
   /* 2.1.1 54-byte auth */
-  gsec_aead_test_vector* test_vector_5;
+  gsec_aead_test_vector *test_vector_5;
   const uint8_t test_vector_5_key[] = {0xad, 0x7a, 0x2b, 0xd0, 0x3e, 0xac,
                                        0x83, 0x5a, 0x6f, 0x62, 0x0f, 0xdc,
                                        0xb5, 0x06, 0xb3, 0x45};
@@ -1608,7 +1609,7 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_5);
 
   /* 2.1.2 54-byte auth */
-  gsec_aead_test_vector* test_vector_6;
+  gsec_aead_test_vector *test_vector_6;
   const uint8_t test_vector_6_key[] = {
       0xe3, 0xc0, 0x8a, 0x8f, 0x06, 0xc6, 0xe3, 0xad, 0x95, 0xa7, 0x05,
       0x57, 0xb2, 0x3f, 0x75, 0x48, 0x3c, 0xe3, 0x30, 0x21, 0xa9, 0xc7,
@@ -1638,7 +1639,7 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_6);
 
   /* 2.2.1 60-byte crypt */
-  gsec_aead_test_vector* test_vector_7;
+  gsec_aead_test_vector *test_vector_7;
   const uint8_t test_vector_7_key[] = {0xad, 0x7a, 0x2b, 0xd0, 0x3e, 0xac,
                                        0x83, 0x5a, 0x6f, 0x62, 0x0f, 0xdc,
                                        0xb5, 0x06, 0xb3, 0x45};
@@ -1673,7 +1674,7 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_7);
 
   /* 2.2.2 60-byte crypt */
-  gsec_aead_test_vector* test_vector_8;
+  gsec_aead_test_vector *test_vector_8;
   const uint8_t test_vector_8_key[] = {
       0xe3, 0xc0, 0x8a, 0x8f, 0x06, 0xc6, 0xe3, 0xad, 0x95, 0xa7, 0x05,
       0x57, 0xb2, 0x3f, 0x75, 0x48, 0x3c, 0xe3, 0x30, 0x21, 0xa9, 0xc7,
@@ -1708,7 +1709,7 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_8);
 
   /* 2.3.1 60-byte auth */
-  gsec_aead_test_vector* test_vector_9;
+  gsec_aead_test_vector *test_vector_9;
   const uint8_t test_vector_9_key[] = {0x07, 0x1b, 0x11, 0x3b, 0x0c, 0xa7,
                                        0x43, 0xfe, 0xcc, 0xcf, 0x3d, 0x05,
                                        0x1f, 0x73, 0x73, 0x82};
@@ -1736,7 +1737,7 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_9);
 
   /* 2.3.2 60-byte auth */
-  gsec_aead_test_vector* test_vector_10;
+  gsec_aead_test_vector *test_vector_10;
   const uint8_t test_vector_10_key[] = {
       0x69, 0x1d, 0x3e, 0xe9, 0x09, 0xd7, 0xf5, 0x41, 0x67, 0xfd, 0x1c,
       0xa0, 0xb5, 0xd7, 0x69, 0x08, 0x1f, 0x2b, 0xde, 0x1a, 0xee, 0x65,
@@ -1765,7 +1766,7 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_10);
 
   /* 2.4.1 54-byte crypt */
-  gsec_aead_test_vector* test_vector_11;
+  gsec_aead_test_vector *test_vector_11;
   const uint8_t test_vector_11_key[] = {0x07, 0x1b, 0x11, 0x3b, 0x0c, 0xa7,
                                         0x43, 0xfe, 0xcc, 0xcf, 0x3d, 0x05,
                                         0x1f, 0x73, 0x73, 0x82};
@@ -1797,7 +1798,7 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_11);
 
   /* 2.4.2 54-byte crypt */
-  gsec_aead_test_vector* test_vector_12;
+  gsec_aead_test_vector *test_vector_12;
   const uint8_t test_vector_12_key[] = {
       0x69, 0x1d, 0x3e, 0xe9, 0x09, 0xd7, 0xf5, 0x41, 0x67, 0xfd, 0x1c,
       0xa0, 0xb5, 0xd7, 0x69, 0x08, 0x1f, 0x2b, 0xde, 0x1a, 0xee, 0x65,
@@ -1830,7 +1831,7 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_12);
 
   /* 2.5.1 65-byte auth */
-  gsec_aead_test_vector* test_vector_13;
+  gsec_aead_test_vector *test_vector_13;
   const uint8_t test_vector_13_key[] = {0x01, 0x3f, 0xe0, 0x0b, 0x5f, 0x11,
                                         0xbe, 0x7f, 0x86, 0x6d, 0x0c, 0xbb,
                                         0xc5, 0x5a, 0x7a, 0x90};
@@ -1859,7 +1860,7 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_13);
 
   /* 2.5.2 65-byte auth */
-  gsec_aead_test_vector* test_vector_14;
+  gsec_aead_test_vector *test_vector_14;
   const uint8_t test_vector_14_key[] = {
       0x83, 0xc0, 0x93, 0xb5, 0x8d, 0xe7, 0xff, 0xe1, 0xc0, 0xda, 0x92,
       0x6a, 0xc4, 0x3f, 0xb3, 0x60, 0x9a, 0xc1, 0xc8, 0x0f, 0xee, 0x1b,
@@ -1889,7 +1890,7 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_14);
 
   /* 2.6.1 61-byte crypt */
-  gsec_aead_test_vector* test_vector_15;
+  gsec_aead_test_vector *test_vector_15;
   const uint8_t test_vector_15_key[] = {0x01, 0x3f, 0xe0, 0x0b, 0x5f, 0x11,
                                         0xbe, 0x7f, 0x86, 0x6d, 0x0c, 0xbb,
                                         0xc5, 0x5a, 0x7a, 0x90};
@@ -1924,7 +1925,7 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_15);
 
   /* 2.6.2 61-byte crypt */
-  gsec_aead_test_vector* test_vector_16;
+  gsec_aead_test_vector *test_vector_16;
   const uint8_t test_vector_16_key[] = {
       0x83, 0xc0, 0x93, 0xb5, 0x8d, 0xe7, 0xff, 0xe1, 0xc0, 0xda, 0x92,
       0x6a, 0xc4, 0x3f, 0xb3, 0x60, 0x9a, 0xc1, 0xc8, 0x0f, 0xee, 0x1b,
@@ -1960,7 +1961,7 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_16);
 
   /* 2.7.1 79-byte crypt */
-  gsec_aead_test_vector* test_vector_17;
+  gsec_aead_test_vector *test_vector_17;
   const uint8_t test_vector_17_key[] = {0x88, 0xee, 0x08, 0x7f, 0xd9, 0x5d,
                                         0xa9, 0xfb, 0xf6, 0x72, 0x5a, 0xa9,
                                         0xd7, 0x57, 0xb0, 0xcd};
@@ -1990,7 +1991,7 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_17);
 
   /* 2.7.2 79-byte crypt */
-  gsec_aead_test_vector* test_vector_18;
+  gsec_aead_test_vector *test_vector_18;
   const uint8_t test_vector_18_key[] = {
       0x4c, 0x97, 0x3d, 0xbc, 0x73, 0x64, 0x62, 0x16, 0x74, 0xf8, 0xb5,
       0xb8, 0x9e, 0x5c, 0x15, 0x51, 0x1f, 0xce, 0xd9, 0x21, 0x64, 0x90,
@@ -2021,7 +2022,7 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_18);
 
   /* 2.8.1 61-byte crypt */
-  gsec_aead_test_vector* test_vector_19;
+  gsec_aead_test_vector *test_vector_19;
   const uint8_t test_vector_19_key[] = {0x88, 0xee, 0x08, 0x7f, 0xd9, 0x5d,
                                         0xa9, 0xfb, 0xf6, 0x72, 0x5a, 0xa9,
                                         0xd7, 0x57, 0xb0, 0xcd};
@@ -2057,7 +2058,7 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_19);
 
   /* 2.8.2 61-byte crypt */
-  gsec_aead_test_vector* test_vector_20;
+  gsec_aead_test_vector *test_vector_20;
   const uint8_t test_vector_20_key[] = {
       0x4c, 0x97, 0x3d, 0xbc, 0x73, 0x64, 0x62, 0x16, 0x74, 0xf8, 0xb5,
       0xb8, 0x9e, 0x5c, 0x15, 0x51, 0x1f, 0xce, 0xd9, 0x21, 0x64, 0x90,
@@ -2094,7 +2095,7 @@ static void gsec_test_do_vector_tests_ieee() {
   gsec_aead_free_test_vector(test_vector_20);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   gsec_test_do_generic_crypter_tests();

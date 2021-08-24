@@ -30,7 +30,7 @@
 
 /// Returns a copy of \a args with the default authority channel arg set if it
 /// wasn't already present.
-grpc_channel_args* grpc_default_authority_add_if_not_present(
-    const grpc_channel_args* args);
+grpc_channel_args *grpc_default_authority_add_if_not_present(
+    const grpc_channel_args *args);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_CLIENT_AUTHORITY_H */

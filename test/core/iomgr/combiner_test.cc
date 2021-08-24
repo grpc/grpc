@@ -32,14 +32,14 @@ static void test_no_op(void) {
   GRPC_COMBINER_UNREF(grpc_combiner_create(), "test_no_op");
 }
 
-static void set_event_to_true(void* value, grpc_error_handle /*error*/) {
-  gpr_event_set(static_cast<gpr_event*>(value), reinterpret_cast<void*>(1));
+static void set_event_to_true(void *value, grpc_error_handle /*error*/) {
+  gpr_event_set(static_cast<gpr_event *>(value), reinterpret_cast<void *>(1));
 }
 
 static void test_execute_one(void) {
   gpr_log(GPR_DEBUG, "test_execute_one");
 
-  grpc_core::Combiner* lock = grpc_combiner_create();
+  grpc_core::Combiner *lock = grpc_combiner_create();
   gpr_event done;
   gpr_event_init(&done);
   grpc_core::ExecCtx exec_ctx;
@@ -53,29 +53,29 @@ static void test_execute_one(void) {
 
 typedef struct {
   size_t ctr;
-  grpc_core::Combiner* lock;
+  grpc_core::Combiner *lock;
   gpr_event done;
 } thd_args;
 
 typedef struct {
-  size_t* ctr;
+  size_t *ctr;
   size_t value;
 } ex_args;
 
-static void check_one(void* a, grpc_error_handle /*error*/) {
-  ex_args* args = static_cast<ex_args*>(a);
+static void check_one(void *a, grpc_error_handle /*error*/) {
+  ex_args *args = static_cast<ex_args *>(a);
   GPR_ASSERT(*args->ctr == args->value - 1);
   *args->ctr = args->value;
   gpr_free(a);
 }
 
-static void execute_many_loop(void* a) {
-  thd_args* args = static_cast<thd_args*>(a);
+static void execute_many_loop(void *a) {
+  thd_args *args = static_cast<thd_args *>(a);
   grpc_core::ExecCtx exec_ctx;
   size_t n = 1;
   for (size_t i = 0; i < 10; i++) {
     for (size_t j = 0; j < 10000; j++) {
-      ex_args* c = static_cast<ex_args*>(gpr_malloc(sizeof(*c)));
+      ex_args *c = static_cast<ex_args *>(gpr_malloc(sizeof(*c)));
       c->ctr = &args->ctr;
       c->value = n++;
       args->lock->Run(GRPC_CLOSURE_CREATE(check_one, c, nullptr),
@@ -93,7 +93,7 @@ static void execute_many_loop(void* a) {
 static void test_execute_many(void) {
   gpr_log(GPR_DEBUG, "test_execute_many");
 
-  grpc_core::Combiner* lock = grpc_combiner_create();
+  grpc_core::Combiner *lock = grpc_combiner_create();
   grpc_core::Thread thds[100];
   thd_args ta[GPR_ARRAY_SIZE(thds)];
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
@@ -114,19 +114,19 @@ static void test_execute_many(void) {
 
 static gpr_event got_in_finally;
 
-static void in_finally(void* /*arg*/, grpc_error_handle /*error*/) {
-  gpr_event_set(&got_in_finally, reinterpret_cast<void*>(1));
+static void in_finally(void * /*arg*/, grpc_error_handle /*error*/) {
+  gpr_event_set(&got_in_finally, reinterpret_cast<void *>(1));
 }
 
-static void add_finally(void* arg, grpc_error_handle /*error*/) {
-  static_cast<grpc_core::Combiner*>(arg)->Run(
+static void add_finally(void *arg, grpc_error_handle /*error*/) {
+  static_cast<grpc_core::Combiner *>(arg)->Run(
       GRPC_CLOSURE_CREATE(in_finally, arg, nullptr), GRPC_ERROR_NONE);
 }
 
 static void test_execute_finally(void) {
   gpr_log(GPR_DEBUG, "test_execute_finally");
 
-  grpc_core::Combiner* lock = grpc_combiner_create();
+  grpc_core::Combiner *lock = grpc_combiner_create();
   grpc_core::ExecCtx exec_ctx;
   gpr_event_init(&got_in_finally);
   lock->Run(GRPC_CLOSURE_CREATE(add_finally, lock, nullptr), GRPC_ERROR_NONE);
@@ -136,7 +136,7 @@ static void test_execute_finally(void) {
   GRPC_COMBINER_UNREF(lock, "test_execute_finally");
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_no_op();

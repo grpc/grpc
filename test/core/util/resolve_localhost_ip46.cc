@@ -32,13 +32,13 @@ bool localhost_to_ipv6 = false;
 gpr_once g_resolve_localhost_ipv46 = GPR_ONCE_INIT;
 
 void InitResolveLocalhost() {
-  grpc_resolved_addresses* addresses;
+  grpc_resolved_addresses *addresses;
   grpc_error_handle err =
       grpc_blocking_resolve_address("localhost", "https", &addresses);
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   for (size_t i = 0; i < addresses->naddrs; i++) {
-    grpc_sockaddr* addr =
-        reinterpret_cast<grpc_sockaddr*>(addresses->addrs[i].addr);
+    grpc_sockaddr *addr =
+        reinterpret_cast<grpc_sockaddr *>(addresses->addrs[i].addr);
     if (addr->sa_family == GRPC_AF_INET) {
       localhost_to_ipv4 = true;
     } else if (addr->sa_family == GRPC_AF_INET6) {
@@ -49,7 +49,7 @@ void InitResolveLocalhost() {
 }
 }  // namespace
 
-void LocalhostResolves(bool* ipv4, bool* ipv6) {
+void LocalhostResolves(bool *ipv4, bool *ipv6) {
   gpr_once_init(&g_resolve_localhost_ipv46, InitResolveLocalhost);
   *ipv4 = localhost_to_ipv4;
   *ipv6 = localhost_to_ipv6;

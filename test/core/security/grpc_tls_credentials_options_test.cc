@@ -74,13 +74,13 @@ TEST_F(GrpcTlsCredentialsOptionsTest, ClientOptionsOnDefaultRootCerts) {
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_channel_args *new_args = nullptr;
   auto connector = credentials->create_security_connector(
       nullptr, "random targets", nullptr, &new_args);
   grpc_channel_args_destroy(new_args);
   ASSERT_NE(connector, nullptr);
-  TlsChannelSecurityConnector* tls_connector =
-      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  TlsChannelSecurityConnector *tls_connector =
+      static_cast<TlsChannelSecurityConnector *>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
 }
 
@@ -96,13 +96,13 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_channel_args *new_args = nullptr;
   auto connector = credentials->create_security_connector(
       nullptr, "random targets", nullptr, &new_args);
   grpc_channel_args_destroy(new_args);
   ASSERT_NE(connector, nullptr);
-  TlsChannelSecurityConnector* tls_connector =
-      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  TlsChannelSecurityConnector *tls_connector =
+      static_cast<TlsChannelSecurityConnector *>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
@@ -118,13 +118,13 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_channel_args *new_args = nullptr;
   auto connector = credentials->create_security_connector(
       nullptr, "random targets", nullptr, &new_args);
   grpc_channel_args_destroy(new_args);
   ASSERT_NE(connector, nullptr);
-  TlsChannelSecurityConnector* tls_connector =
-      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  TlsChannelSecurityConnector *tls_connector =
+      static_cast<TlsChannelSecurityConnector *>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
   EXPECT_FALSE(tls_connector->KeyCertPairListForTesting().has_value());
@@ -140,13 +140,13 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_channel_args *new_args = nullptr;
   auto connector = credentials->create_security_connector(
       nullptr, "random targets", nullptr, &new_args);
   grpc_channel_args_destroy(new_args);
   ASSERT_NE(connector, nullptr);
-  TlsChannelSecurityConnector* tls_connector =
-      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  TlsChannelSecurityConnector *tls_connector =
+      static_cast<TlsChannelSecurityConnector *>(connector.get());
   EXPECT_EQ(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
 }
 
@@ -160,13 +160,13 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_channel_args *new_args = nullptr;
   auto connector = credentials->create_security_connector(
       nullptr, "random targets", nullptr, &new_args);
   grpc_channel_args_destroy(new_args);
   ASSERT_NE(connector, nullptr);
-  TlsChannelSecurityConnector* tls_connector =
-      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  TlsChannelSecurityConnector *tls_connector =
+      static_cast<TlsChannelSecurityConnector *>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
 }
 
@@ -184,8 +184,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   ASSERT_NE(credentials, nullptr);
   auto connector = credentials->create_security_connector(nullptr);
   ASSERT_NE(connector, nullptr);
-  TlsServerSecurityConnector* tls_connector =
-      static_cast<TlsServerSecurityConnector*>(connector.get());
+  TlsServerSecurityConnector *tls_connector =
+      static_cast<TlsServerSecurityConnector *>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
@@ -203,8 +203,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   ASSERT_NE(credentials, nullptr);
   auto connector = credentials->create_security_connector(nullptr);
   ASSERT_NE(connector, nullptr);
-  TlsServerSecurityConnector* tls_connector =
-      static_cast<TlsServerSecurityConnector*>(connector.get());
+  TlsServerSecurityConnector *tls_connector =
+      static_cast<TlsServerSecurityConnector *>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_FALSE(tls_connector->RootCertsForTesting().has_value());
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
@@ -222,8 +222,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   ASSERT_NE(credentials, nullptr);
   auto connector = credentials->create_security_connector(nullptr);
   ASSERT_NE(connector, nullptr);
-  TlsServerSecurityConnector* tls_connector =
-      static_cast<TlsServerSecurityConnector*>(connector.get());
+  TlsServerSecurityConnector *tls_connector =
+      static_cast<TlsServerSecurityConnector *>(connector.get());
   EXPECT_EQ(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
 }
 
@@ -239,13 +239,13 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_channel_args *new_args = nullptr;
   auto connector = credentials->create_security_connector(
       nullptr, "random targets", nullptr, &new_args);
   grpc_channel_args_destroy(new_args);
   ASSERT_NE(connector, nullptr);
-  TlsChannelSecurityConnector* tls_connector =
-      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  TlsChannelSecurityConnector *tls_connector =
+      static_cast<TlsChannelSecurityConnector *>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
@@ -261,13 +261,13 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_channel_args *new_args = nullptr;
   auto connector = credentials->create_security_connector(
       nullptr, "random targets", nullptr, &new_args);
   grpc_channel_args_destroy(new_args);
   ASSERT_NE(connector, nullptr);
-  TlsChannelSecurityConnector* tls_connector =
-      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  TlsChannelSecurityConnector *tls_connector =
+      static_cast<TlsChannelSecurityConnector *>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
   EXPECT_FALSE(tls_connector->KeyCertPairListForTesting().has_value());
@@ -283,13 +283,13 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_channel_args *new_args = nullptr;
   auto connector = credentials->create_security_connector(
       nullptr, "random targets", nullptr, &new_args);
   grpc_channel_args_destroy(new_args);
   ASSERT_NE(connector, nullptr);
-  TlsChannelSecurityConnector* tls_connector =
-      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  TlsChannelSecurityConnector *tls_connector =
+      static_cast<TlsChannelSecurityConnector *>(connector.get());
   EXPECT_EQ(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
 }
 
@@ -303,13 +303,13 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_channel_args *new_args = nullptr;
   auto connector = credentials->create_security_connector(
       nullptr, "random targets", nullptr, &new_args);
   grpc_channel_args_destroy(new_args);
   ASSERT_NE(connector, nullptr);
-  TlsChannelSecurityConnector* tls_connector =
-      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  TlsChannelSecurityConnector *tls_connector =
+      static_cast<TlsChannelSecurityConnector *>(connector.get());
   EXPECT_EQ(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
 }
 
@@ -327,8 +327,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   ASSERT_NE(credentials, nullptr);
   auto connector = credentials->create_security_connector(nullptr);
   ASSERT_NE(connector, nullptr);
-  TlsServerSecurityConnector* tls_connector =
-      static_cast<TlsServerSecurityConnector*>(connector.get());
+  TlsServerSecurityConnector *tls_connector =
+      static_cast<TlsServerSecurityConnector *>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
@@ -346,8 +346,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   ASSERT_NE(credentials, nullptr);
   auto connector = credentials->create_security_connector(nullptr);
   ASSERT_NE(connector, nullptr);
-  TlsServerSecurityConnector* tls_connector =
-      static_cast<TlsServerSecurityConnector*>(connector.get());
+  TlsServerSecurityConnector *tls_connector =
+      static_cast<TlsServerSecurityConnector *>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_FALSE(tls_connector->RootCertsForTesting().has_value());
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
@@ -365,8 +365,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   ASSERT_NE(credentials, nullptr);
   auto connector = credentials->create_security_connector(nullptr);
   ASSERT_NE(connector, nullptr);
-  TlsServerSecurityConnector* tls_connector =
-      static_cast<TlsServerSecurityConnector*>(connector.get());
+  TlsServerSecurityConnector *tls_connector =
+      static_cast<TlsServerSecurityConnector *>(connector.get());
   EXPECT_EQ(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
 }
 
@@ -382,8 +382,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   ASSERT_NE(credentials, nullptr);
   auto connector = credentials->create_security_connector(nullptr);
   ASSERT_NE(connector, nullptr);
-  TlsServerSecurityConnector* tls_connector =
-      static_cast<TlsServerSecurityConnector*>(connector.get());
+  TlsServerSecurityConnector *tls_connector =
+      static_cast<TlsServerSecurityConnector *>(connector.get());
   EXPECT_EQ(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
 }
 
@@ -406,13 +406,13 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_channel_args *new_args = nullptr;
   auto connector = credentials->create_security_connector(
       nullptr, "random targets", nullptr, &new_args);
   grpc_channel_args_destroy(new_args);
   ASSERT_NE(connector, nullptr);
-  TlsChannelSecurityConnector* tls_connector =
-      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  TlsChannelSecurityConnector *tls_connector =
+      static_cast<TlsChannelSecurityConnector *>(connector.get());
   // Expect to see the credential data.
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   ASSERT_TRUE(tls_connector->RootCertsForTesting().has_value());
@@ -455,13 +455,13 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_channel_args *new_args = nullptr;
   auto connector = credentials->create_security_connector(
       nullptr, "random targets", nullptr, &new_args);
   grpc_channel_args_destroy(new_args);
   ASSERT_NE(connector, nullptr);
-  TlsChannelSecurityConnector* tls_connector =
-      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  TlsChannelSecurityConnector *tls_connector =
+      static_cast<TlsChannelSecurityConnector *>(connector.get());
   // The initial data is all good, so we expect to have successful credential
   // updates.
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
@@ -493,7 +493,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
   ::testing::InitGoogleTest(&argc, argv);

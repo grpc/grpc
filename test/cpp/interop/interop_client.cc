@@ -55,13 +55,13 @@ const int kReceiveDelayMilliSeconds = 20;
 const int kLargeRequestSize = 271828;
 const int kLargeResponseSize = 314159;
 
-void NoopChecks(const InteropClientContextInspector& /*inspector*/,
-                const SimpleRequest* /*request*/,
-                const SimpleResponse* /*response*/) {}
+void NoopChecks(const InteropClientContextInspector & /*inspector*/,
+                const SimpleRequest * /*request*/,
+                const SimpleResponse * /*response*/) {}
 
-void UnaryCompressionChecks(const InteropClientContextInspector& inspector,
-                            const SimpleRequest* request,
-                            const SimpleResponse* /*response*/) {
+void UnaryCompressionChecks(const InteropClientContextInspector &inspector,
+                            const SimpleRequest *request,
+                            const SimpleResponse * /*response*/) {
   const grpc_compression_algorithm received_compression =
       inspector.GetCallCompressionAlgorithm();
   if (request->response_compressed().value()) {
@@ -92,7 +92,7 @@ InteropClient::ServiceStub::ServiceStub(
   }
 }
 
-TestService::Stub* InteropClient::ServiceStub::Get() {
+TestService::Stub *InteropClient::ServiceStub::Get() {
   if (new_stub_every_call_) {
     stub_ = TestService::NewStub(channel_);
   }
@@ -100,7 +100,7 @@ TestService::Stub* InteropClient::ServiceStub::Get() {
   return stub_.get();
 }
 
-UnimplementedService::Stub*
+UnimplementedService::Stub *
 InteropClient::ServiceStub::GetUnimplementedServiceStub() {
   if (unimplemented_service_stub_ == nullptr) {
     unimplemented_service_stub_ = UnimplementedService::NewStub(channel_);
@@ -121,8 +121,8 @@ InteropClient::InteropClient(ChannelCreationFunc channel_creation_func,
     : serviceStub_(std::move(channel_creation_func), new_stub_every_test_case),
       do_not_abort_on_transient_failures_(do_not_abort_on_transient_failures) {}
 
-bool InteropClient::AssertStatusOk(const Status& s,
-                                   const std::string& optional_debug_string) {
+bool InteropClient::AssertStatusOk(const Status &s,
+                                   const std::string &optional_debug_string) {
   if (s.ok()) {
     return true;
   }
@@ -134,8 +134,8 @@ bool InteropClient::AssertStatusOk(const Status& s,
   return AssertStatusCode(s, StatusCode::OK, optional_debug_string);
 }
 
-bool InteropClient::AssertStatusCode(const Status& s, StatusCode expected_code,
-                                     const std::string& optional_debug_string) {
+bool InteropClient::AssertStatusCode(const Status &s, StatusCode expected_code,
+                                     const std::string &optional_debug_string) {
   if (s.error_code() == expected_code) {
     return true;
   }
@@ -172,14 +172,14 @@ bool InteropClient::DoEmpty() {
   return true;
 }
 
-bool InteropClient::PerformLargeUnary(SimpleRequest* request,
-                                      SimpleResponse* response) {
+bool InteropClient::PerformLargeUnary(SimpleRequest *request,
+                                      SimpleResponse *response) {
   return PerformLargeUnary(request, response, NoopChecks);
 }
 
-bool InteropClient::PerformLargeUnary(SimpleRequest* request,
-                                      SimpleResponse* response,
-                                      const CheckerFn& custom_checks_fn) {
+bool InteropClient::PerformLargeUnary(SimpleRequest *request,
+                                      SimpleResponse *response,
+                                      const CheckerFn &custom_checks_fn) {
   ClientContext context;
   InteropClientContextInspector inspector(context);
   request->set_response_size(kLargeResponseSize);
@@ -207,8 +207,8 @@ bool InteropClient::PerformLargeUnary(SimpleRequest* request,
 }
 
 bool InteropClient::DoComputeEngineCreds(
-    const std::string& default_service_account,
-    const std::string& oauth_scope) {
+    const std::string &default_service_account,
+    const std::string &oauth_scope) {
   gpr_log(GPR_DEBUG,
           "Sending a large unary rpc with compute engine credentials ...");
   SimpleRequest request;
@@ -225,14 +225,14 @@ bool InteropClient::DoComputeEngineCreds(
   GPR_ASSERT(!response.username().empty());
   GPR_ASSERT(response.username().c_str() == default_service_account);
   GPR_ASSERT(!response.oauth_scope().empty());
-  const char* oauth_scope_str = response.oauth_scope().c_str();
+  const char *oauth_scope_str = response.oauth_scope().c_str();
   GPR_ASSERT(absl::StrContains(oauth_scope, oauth_scope_str));
   gpr_log(GPR_DEBUG, "Large unary with compute engine creds done.");
   return true;
 }
 
-bool InteropClient::DoOauth2AuthToken(const std::string& username,
-                                      const std::string& oauth_scope) {
+bool InteropClient::DoOauth2AuthToken(const std::string &username,
+                                      const std::string &oauth_scope) {
   gpr_log(GPR_DEBUG,
           "Sending a unary rpc with raw oauth2 access token credentials ...");
   SimpleRequest request;
@@ -251,13 +251,13 @@ bool InteropClient::DoOauth2AuthToken(const std::string& username,
   GPR_ASSERT(!response.username().empty());
   GPR_ASSERT(!response.oauth_scope().empty());
   GPR_ASSERT(username == response.username());
-  const char* oauth_scope_str = response.oauth_scope().c_str();
+  const char *oauth_scope_str = response.oauth_scope().c_str();
   GPR_ASSERT(absl::StrContains(oauth_scope, oauth_scope_str));
   gpr_log(GPR_DEBUG, "Unary with oauth2 access token credentials done.");
   return true;
 }
 
-bool InteropClient::DoPerRpcCreds(const std::string& json_key) {
+bool InteropClient::DoPerRpcCreds(const std::string &json_key) {
   gpr_log(GPR_DEBUG, "Sending a unary rpc with per-rpc JWT access token ...");
   SimpleRequest request;
   SimpleResponse response;
@@ -282,7 +282,7 @@ bool InteropClient::DoPerRpcCreds(const std::string& json_key) {
   return true;
 }
 
-bool InteropClient::DoJwtTokenCreds(const std::string& username) {
+bool InteropClient::DoJwtTokenCreds(const std::string &username) {
   gpr_log(GPR_DEBUG,
           "Sending a large unary rpc with JWT token credentials ...");
   SimpleRequest request;
@@ -300,7 +300,7 @@ bool InteropClient::DoJwtTokenCreds(const std::string& username) {
 }
 
 bool InteropClient::DoGoogleDefaultCredentials(
-    const std::string& default_service_account) {
+    const std::string &default_service_account) {
   gpr_log(GPR_DEBUG,
           "Sending a large unary rpc with GoogleDefaultCredentials...");
   SimpleRequest request;
@@ -422,7 +422,7 @@ bool InteropClient::DoRequestStreaming() {
 
   int aggregated_payload_size = 0;
   for (size_t i = 0; i < request_stream_sizes.size(); ++i) {
-    Payload* payload = request.mutable_payload();
+    Payload *payload = request.mutable_payload();
     payload->set_body(std::string(request_stream_sizes[i], '\0'));
     if (!stream->Write(request)) {
       gpr_log(GPR_ERROR, "DoRequestStreaming(): stream->Write() failed");
@@ -447,7 +447,7 @@ bool InteropClient::DoResponseStreaming() {
   ClientContext context;
   StreamingOutputCallRequest request;
   for (unsigned int i = 0; i < response_stream_sizes.size(); ++i) {
-    ResponseParameters* response_parameter = request.add_response_parameters();
+    ResponseParameters *response_parameter = request.add_response_parameters();
     response_parameter->set_size(response_stream_sizes[i]);
   }
   StreamingOutputCallResponse response;
@@ -556,7 +556,7 @@ bool InteropClient::DoServerCompressedStreaming() {
 
     gpr_log(GPR_DEBUG, "Sending request streaming rpc %s.", log_suffix.c_str());
 
-    ResponseParameters* const response_parameter =
+    ResponseParameters *const response_parameter =
         request.add_response_parameters();
     response_parameter->mutable_compressed()->set_value(compressions[i]);
     response_parameter->set_size(sizes[i]);
@@ -604,7 +604,7 @@ bool InteropClient::DoResponseStreamingWithSlowConsumer() {
   StreamingOutputCallRequest request;
 
   for (int i = 0; i < kNumResponseMessages; ++i) {
-    ResponseParameters* response_parameter = request.add_response_parameters();
+    ResponseParameters *response_parameter = request.add_response_parameters();
     response_parameter->set_size(kResponseMessageSize);
   }
   StreamingOutputCallResponse response;
@@ -649,7 +649,7 @@ bool InteropClient::DoHalfDuplex() {
       stream(serviceStub_.Get()->HalfDuplexCall(&context));
 
   StreamingOutputCallRequest request;
-  ResponseParameters* response_parameter = request.add_response_parameters();
+  ResponseParameters *response_parameter = request.add_response_parameters();
   for (unsigned int i = 0; i < response_stream_sizes.size(); ++i) {
     response_parameter->set_size(response_stream_sizes[i]);
 
@@ -696,8 +696,8 @@ bool InteropClient::DoPingPong() {
       stream(serviceStub_.Get()->FullDuplexCall(&context));
 
   StreamingOutputCallRequest request;
-  ResponseParameters* response_parameter = request.add_response_parameters();
-  Payload* payload = request.mutable_payload();
+  ResponseParameters *response_parameter = request.add_response_parameters();
+  Payload *payload = request.mutable_payload();
   StreamingOutputCallResponse response;
 
   for (unsigned int i = 0; i < request_stream_sizes.size(); ++i) {
@@ -763,7 +763,7 @@ bool InteropClient::DoCancelAfterFirstResponse() {
       stream(serviceStub_.Get()->FullDuplexCall(&context));
 
   StreamingOutputCallRequest request;
-  ResponseParameters* response_parameter = request.add_response_parameters();
+  ResponseParameters *response_parameter = request.add_response_parameters();
   response_parameter->set_size(31415);
   request.mutable_payload()->set_body(std::string(27182, '\0'));
   StreamingOutputCallResponse response;
@@ -844,7 +844,7 @@ bool InteropClient::DoStatusWithMessage() {
   ClientContext context;
   SimpleRequest request;
   SimpleResponse response;
-  EchoStatus* requested_status = request.mutable_response_status();
+  EchoStatus *requested_status = request.mutable_response_status();
   requested_status->set_code(test_code);
   requested_status->set_message(test_msg);
   Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
@@ -890,7 +890,7 @@ bool InteropClient::DoSpecialStatusMessage() {
   ClientContext context;
   SimpleRequest request;
   SimpleResponse response;
-  EchoStatus* requested_status = request.mutable_response_status();
+  EchoStatus *requested_status = request.mutable_response_status();
   requested_status->set_code(test_code);
   requested_status->set_message(test_msg);
   Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
@@ -1017,11 +1017,11 @@ bool InteropClient::DoCustomMetadata() {
       return false;
     }
 
-    const auto& server_initial_metadata = context.GetServerInitialMetadata();
+    const auto &server_initial_metadata = context.GetServerInitialMetadata();
     auto iter = server_initial_metadata.find(kEchoInitialMetadataKey);
     GPR_ASSERT(iter != server_initial_metadata.end());
     GPR_ASSERT(iter->second == kInitialMetadataValue);
-    const auto& server_trailing_metadata = context.GetServerTrailingMetadata();
+    const auto &server_trailing_metadata = context.GetServerTrailingMetadata();
     iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
     GPR_ASSERT(iter != server_trailing_metadata.end());
     GPR_ASSERT(std::string(iter->second.begin(), iter->second.end()) ==
@@ -1040,7 +1040,7 @@ bool InteropClient::DoCustomMetadata() {
         stream(serviceStub_.Get()->FullDuplexCall(&context));
 
     StreamingOutputCallRequest request;
-    ResponseParameters* response_parameter = request.add_response_parameters();
+    ResponseParameters *response_parameter = request.add_response_parameters();
     response_parameter->set_size(kLargeResponseSize);
     std::string payload(kLargeRequestSize, '\0');
     request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
@@ -1068,11 +1068,11 @@ bool InteropClient::DoCustomMetadata() {
       return false;
     }
 
-    const auto& server_initial_metadata = context.GetServerInitialMetadata();
+    const auto &server_initial_metadata = context.GetServerInitialMetadata();
     auto iter = server_initial_metadata.find(kEchoInitialMetadataKey);
     GPR_ASSERT(iter != server_initial_metadata.end());
     GPR_ASSERT(iter->second == kInitialMetadataValue);
-    const auto& server_trailing_metadata = context.GetServerTrailingMetadata();
+    const auto &server_trailing_metadata = context.GetServerTrailingMetadata();
     iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
     GPR_ASSERT(iter != server_trailing_metadata.end());
     GPR_ASSERT(std::string(iter->second.begin(), iter->second.end()) ==
@@ -1123,7 +1123,7 @@ void InteropClient::PerformSoakTest(
     const int32_t max_acceptable_per_iteration_latency_ms,
     const int32_t overall_timeout_seconds) {
   std::vector<std::tuple<bool, int32_t, std::string>> results;
-  grpc_histogram* latencies_ms_histogram = grpc_histogram_create(
+  grpc_histogram *latencies_ms_histogram = grpc_histogram_create(
       1 /* resolution */,
       500 * 1e3 /* largest bucket; 500 seconds is unlikely */);
   gpr_timespec overall_deadline = gpr_time_add(
@@ -1265,7 +1265,7 @@ bool InteropClient::DoUnimplementedService() {
   Empty response;
   ClientContext context;
 
-  UnimplementedService::Stub* stub = serviceStub_.GetUnimplementedServiceStub();
+  UnimplementedService::Stub *stub = serviceStub_.GetUnimplementedServiceStub();
 
   Status s = stub->UnimplementedCall(&context, request, &response);
 

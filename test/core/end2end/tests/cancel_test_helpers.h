@@ -22,13 +22,13 @@
 #include <grpc/grpc.h>
 
 typedef struct {
-  const char* name;
-  grpc_call_error (*initiate_cancel)(grpc_call* call, void* reserved);
+  const char *name;
+  grpc_call_error (*initiate_cancel)(grpc_call *call, void *reserved);
   grpc_status_code expect_status;
-  const char* expect_details;
+  const char *expect_details;
 } cancellation_mode;
 
-static grpc_call_error wait_for_deadline(grpc_call* /*call*/, void* reserved) {
+static grpc_call_error wait_for_deadline(grpc_call * /*call*/, void *reserved) {
   (void)reserved;
   return GRPC_CALL_OK;
 }

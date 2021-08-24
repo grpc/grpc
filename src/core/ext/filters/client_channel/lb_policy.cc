@@ -54,13 +54,13 @@ void LoadBalancingPolicy::Orphan() {
 // LoadBalancingPolicy::UpdateArgs
 //
 
-LoadBalancingPolicy::UpdateArgs::UpdateArgs(const UpdateArgs& other) {
+LoadBalancingPolicy::UpdateArgs::UpdateArgs(const UpdateArgs &other) {
   addresses = other.addresses;
   config = other.config;
   args = grpc_channel_args_copy(other.args);
 }
 
-LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) noexcept {
+LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs &&other) noexcept {
   addresses = std::move(other.addresses);
   config = std::move(other.config);
   // TODO(roth): Use std::move() once channel args is converted to C++.
@@ -68,8 +68,8 @@ LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) noexcept {
   other.args = nullptr;
 }
 
-LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
-    const UpdateArgs& other) {
+LoadBalancingPolicy::UpdateArgs &LoadBalancingPolicy::UpdateArgs::operator=(
+    const UpdateArgs &other) {
   if (&other == this) {
     return *this;
   }
@@ -80,8 +80,8 @@ LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
   return *this;
 }
 
-LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
-    UpdateArgs&& other) noexcept {
+LoadBalancingPolicy::UpdateArgs &LoadBalancingPolicy::UpdateArgs::operator=(
+    UpdateArgs &&other) noexcept {
   addresses = std::move(other.addresses);
   config = std::move(other.config);
   // TODO(roth): Use std::move() once channel args is converted to C++.
@@ -110,11 +110,11 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
   //    ExitIdleLocked().
   if (!exit_idle_called_ && parent_ != nullptr) {
     exit_idle_called_ = true;
-    auto* parent = parent_->Ref().release();  // ref held by lambda.
+    auto *parent = parent_->Ref().release();  // ref held by lambda.
     ExecCtx::Run(DEBUG_LOCATION,
                  GRPC_CLOSURE_CREATE(
-                     [](void* arg, grpc_error_handle /*error*/) {
-                       auto* parent = static_cast<LoadBalancingPolicy*>(arg);
+                     [](void *arg, grpc_error_handle /*error*/) {
+                       auto *parent = static_cast<LoadBalancingPolicy *>(arg);
                        parent->work_serializer()->Run(
                            [parent]() {
                              parent->ExitIdleLocked();

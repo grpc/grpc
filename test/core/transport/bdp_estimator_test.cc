@@ -57,7 +57,7 @@ TEST(BdpEstimatorTest, EstimateBdpNoSamples) {
 }
 
 namespace {
-void AddSamples(BdpEstimator* estimator, int64_t* samples, size_t n) {
+void AddSamples(BdpEstimator *estimator, int64_t *samples, size_t n) {
   estimator->AddIncomingBytes(1234567);
   inc_time();
   grpc_core::ExecCtx exec_ctx;
@@ -72,7 +72,7 @@ void AddSamples(BdpEstimator* estimator, int64_t* samples, size_t n) {
   estimator->CompletePing();
 }
 
-void AddSample(BdpEstimator* estimator, int64_t sample) {
+void AddSample(BdpEstimator *estimator, int64_t sample) {
   AddSamples(estimator, &sample, 1);
 }
 }  // namespace
@@ -138,7 +138,7 @@ INSTANTIATE_TEST_SUITE_P(TooManyNames, BdpEstimatorRandomTest,
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   gpr_now_impl = grpc_core::testing::fake_gpr_now;
   grpc_init();

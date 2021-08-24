@@ -37,12 +37,12 @@ namespace grpc_core {
 // developers to write correct code regardless of the platform they develop on.
 template <typename T, typename = typename std::enable_if<(
                           std::is_trivially_destructible<T>::value &&
-                          sizeof(T) <= sizeof(void*) &&
-                          alignof(void*) % alignof(T) == 0)>::type>
+                          sizeof(T) <= sizeof(void *) &&
+                          alignof(void *) % alignof(T) == 0)>::type>
 class TlsTypeConstrainer {
   static_assert(std::is_trivially_destructible<T>::value &&
-                    sizeof(T) <= sizeof(void*) &&
-                    alignof(void*) % alignof(T) == 0,
+                    sizeof(T) <= sizeof(void *) &&
+                    alignof(void *) % alignof(T) == 0,
                 "unsupported type for TLS");
 
  public:
@@ -61,8 +61,8 @@ namespace grpc_core {
 template <typename T>
 class PthreadTlsImpl : TlsTypeConstrainer<T> {
  public:
-  PthreadTlsImpl(const PthreadTlsImpl&) = delete;
-  PthreadTlsImpl& operator=(const PthreadTlsImpl&) = delete;
+  PthreadTlsImpl(const PthreadTlsImpl &) = delete;
+  PthreadTlsImpl &operator=(const PthreadTlsImpl &) = delete;
 
   // Achtung! This class emulates C++ `thread_local` using pthread keys. Each
   // instance of this class is a stand in for a C++ `thread_local`. Think of
@@ -110,28 +110,28 @@ class PthreadTlsImpl : TlsTypeConstrainer<T> {
   // TODO(C++17): Replace these helpers with constexpr if statements inline.
   template <typename V>
   static typename std::enable_if<std::is_pointer<V>::value, V>::type Cast(
-      void* object) {
+      void *object) {
     return static_cast<V>(object);
   }
 
   template <typename V>
   static typename std::enable_if<
       !std::is_pointer<V>::value && std::is_integral<V>::value, V>::type
-  Cast(void* object) {
+  Cast(void *object) {
     return reinterpret_cast<uintptr_t>(object);
   }
 
   template <typename V>
-  static void* Cast(
+  static void *Cast(
       typename std::enable_if<std::is_pointer<V>::value, V>::type t) {
     return t;
   }
 
   template <typename V>
-  static void* Cast(typename std::enable_if<!std::is_pointer<V>::value &&
+  static void *Cast(typename std::enable_if<!std::is_pointer<V>::value &&
                                                 std::is_integral<V>::value,
                                             V>::type t) {
-    return reinterpret_cast<void*>(uintptr_t(t));
+    return reinterpret_cast<void *>(uintptr_t(t));
   }
 
   const pthread_key_t key_;

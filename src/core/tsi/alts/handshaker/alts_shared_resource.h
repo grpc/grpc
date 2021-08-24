@@ -34,17 +34,17 @@
  */
 typedef struct alts_shared_resource_dedicated {
   grpc_core::Thread thread;
-  grpc_completion_queue* cq;
-  grpc_pollset_set* interested_parties;
+  grpc_completion_queue *cq;
+  grpc_pollset_set *interested_parties;
   grpc_cq_completion storage;
   gpr_mu mu;
-  grpc_channel* channel;
+  grpc_channel *channel;
 } alts_shared_resource_dedicated;
 
 /* This method returns the address of alts_shared_resource_dedicated
  * object shared by all TSI handshakes.
  */
-alts_shared_resource_dedicated* grpc_alts_get_shared_resource_dedicated(void);
+alts_shared_resource_dedicated *grpc_alts_get_shared_resource_dedicated(void);
 
 /**
  * This method destroys the alts_shared_resource_dedicated object
@@ -67,7 +67,7 @@ void grpc_alts_shared_resource_dedicated_init();
  * it will get invoked when ALTS TSI handshake occurs for the first time.
  */
 void grpc_alts_shared_resource_dedicated_start(
-    const char* handshaker_service_url);
+    const char *handshaker_service_url);
 
 #endif /* GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_SHARED_RESOURCE_H \
         */

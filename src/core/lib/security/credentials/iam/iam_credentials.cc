@@ -34,20 +34,20 @@ grpc_google_iam_credentials::~grpc_google_iam_credentials() {
 }
 
 bool grpc_google_iam_credentials::get_request_metadata(
-    grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context /*context*/,
-    grpc_credentials_mdelem_array* md_array,
-    grpc_closure* /*on_request_metadata*/, grpc_error_handle* /*error*/) {
+    grpc_polling_entity * /*pollent*/, grpc_auth_metadata_context /*context*/,
+    grpc_credentials_mdelem_array *md_array,
+    grpc_closure * /*on_request_metadata*/, grpc_error_handle * /*error*/) {
   grpc_credentials_mdelem_array_append(md_array, &md_array_);
   return true;
 }
 
 void grpc_google_iam_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* /*md_array*/, grpc_error_handle error) {
+    grpc_credentials_mdelem_array * /*md_array*/, grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
 grpc_google_iam_credentials::grpc_google_iam_credentials(
-    const char* token, const char* authority_selector)
+    const char *token, const char *authority_selector)
     : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_IAM),
       debug_string_(absl::StrFormat(
           "GoogleIAMCredentials{Token:%s,AuthoritySelector:%s}",
@@ -64,8 +64,8 @@ grpc_google_iam_credentials::grpc_google_iam_credentials(
   GRPC_MDELEM_UNREF(md);
 }
 
-grpc_call_credentials* grpc_google_iam_credentials_create(
-    const char* token, const char* authority_selector, void* reserved) {
+grpc_call_credentials *grpc_google_iam_credentials_create(
+    const char *token, const char *authority_selector, void *reserved) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE(
       "grpc_iam_credentials_create(token=%s, authority_selector=%s, "

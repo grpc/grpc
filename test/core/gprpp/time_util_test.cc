@@ -127,7 +127,7 @@ TEST(TimeUtilTest, ToAbslTimeWithInfinites) {
             grpc_core::ToAbslTime(gpr_time_0(GPR_CLOCK_REALTIME)));
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

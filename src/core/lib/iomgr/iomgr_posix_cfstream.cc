@@ -46,8 +46,8 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
 
-static const char* grpc_cfstream_env_var = "grpc_cfstream";
-static const char* grpc_cfstream_run_loop_env_var = "GRPC_CFSTREAM_RUN_LOOP";
+static const char *grpc_cfstream_env_var = "grpc_cfstream";
+static const char *grpc_cfstream_run_loop_env_var = "GRPC_CFSTREAM_RUN_LOOP";
 
 extern grpc_tcp_server_vtable grpc_posix_tcp_server_vtable;
 extern grpc_tcp_client_vtable grpc_posix_tcp_client_vtable;
@@ -72,7 +72,7 @@ static bool apple_iomgr_platform_is_any_background_poller_thread(void) {
 }
 
 static bool apple_iomgr_platform_add_closure_to_background_poller(
-    grpc_closure* closure, grpc_error_handle error) {
+    grpc_closure *closure, grpc_error_handle error) {
   return false;
 }
 
@@ -93,10 +93,10 @@ struct CFStreamEnv {
 // Parses environment variables for CFStream specific settings
 CFStreamEnv ParseEnvForCFStream() {
   CFStreamEnv env;
-  char* enable_cfstream_str = getenv(grpc_cfstream_env_var);
+  char *enable_cfstream_str = getenv(grpc_cfstream_env_var);
   env.enable_cfstream =
       enable_cfstream_str == nullptr || enable_cfstream_str[0] != '0';
-  char* enable_cfstream_run_loop_str = getenv(grpc_cfstream_run_loop_env_var);
+  char *enable_cfstream_run_loop_str = getenv(grpc_cfstream_run_loop_env_var);
   // CFStream run-loop is disabled by default. The user has to enable it
   // explicitly with environment variable.
   env.enable_cfstream_run_loop = enable_cfstream_run_loop_str != nullptr &&
@@ -142,7 +142,7 @@ static bool iomgr_platform_is_any_background_poller_thread(void) {
 }
 
 static bool iomgr_platform_add_closure_to_background_poller(
-    grpc_closure* closure, grpc_error_handle error) {
+    grpc_closure *closure, grpc_error_handle error) {
   return grpc_add_closure_to_background_poller(closure, error);
 }
 
@@ -182,10 +182,10 @@ void grpc_set_default_iomgr_platform() {
 }
 
 bool grpc_iomgr_run_in_background() {
-  char* enable_cfstream_str = getenv(grpc_cfstream_env_var);
+  char *enable_cfstream_str = getenv(grpc_cfstream_env_var);
   bool enable_cfstream =
       enable_cfstream_str == nullptr || enable_cfstream_str[0] != '0';
-  char* enable_cfstream_run_loop_str = getenv(grpc_cfstream_run_loop_env_var);
+  char *enable_cfstream_run_loop_str = getenv(grpc_cfstream_run_loop_env_var);
   // CFStream run-loop is disabled by default. The user has to enable it
   // explicitly with environment variable.
   bool enable_cfstream_run_loop = enable_cfstream_run_loop_str != nullptr &&

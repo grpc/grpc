@@ -41,50 +41,50 @@ class RefCountedPtr {
   // If value is non-null, we take ownership of a ref to it.
   template <typename Y>
   // NOLINTNEXTLINE(google-explicit-constructor)
-  RefCountedPtr(Y* value) : value_(value) {}
+  RefCountedPtr(Y *value) : value_(value) {}
 
   // Move ctors.
-  RefCountedPtr(RefCountedPtr&& other) noexcept {
+  RefCountedPtr(RefCountedPtr &&other) noexcept {
     value_ = other.value_;
     other.value_ = nullptr;
   }
   template <typename Y>
   // NOLINTNEXTLINE(google-explicit-constructor)
-  RefCountedPtr(RefCountedPtr<Y>&& other) noexcept {
-    value_ = static_cast<T*>(other.value_);
+  RefCountedPtr(RefCountedPtr<Y> &&other) noexcept {
+    value_ = static_cast<T *>(other.value_);
     other.value_ = nullptr;
   }
 
   // Move assignment.
-  RefCountedPtr& operator=(RefCountedPtr&& other) noexcept {
+  RefCountedPtr &operator=(RefCountedPtr &&other) noexcept {
     reset(other.value_);
     other.value_ = nullptr;
     return *this;
   }
   template <typename Y>
-  RefCountedPtr& operator=(RefCountedPtr<Y>&& other) noexcept {
+  RefCountedPtr &operator=(RefCountedPtr<Y> &&other) noexcept {
     reset(other.value_);
     other.value_ = nullptr;
     return *this;
   }
 
   // Copy ctors.
-  RefCountedPtr(const RefCountedPtr& other) {
+  RefCountedPtr(const RefCountedPtr &other) {
     if (other.value_ != nullptr) other.value_->IncrementRefCount();
     value_ = other.value_;
   }
   template <typename Y>
   // NOLINTNEXTLINE(google-explicit-constructor)
-  RefCountedPtr(const RefCountedPtr<Y>& other) {
+  RefCountedPtr(const RefCountedPtr<Y> &other) {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
     if (other.value_ != nullptr) other.value_->IncrementRefCount();
-    value_ = static_cast<T*>(other.value_);
+    value_ = static_cast<T *>(other.value_);
   }
 
   // Copy assignment.
   // NOLINTNEXTLINE(bugprone-unhandled-self-assignment)
-  RefCountedPtr& operator=(const RefCountedPtr& other) {
+  RefCountedPtr &operator=(const RefCountedPtr &other) {
     // Note: Order of reffing and unreffing is important here in case value_
     // and other.value_ are the same object.
     if (other.value_ != nullptr) other.value_->IncrementRefCount();
@@ -92,7 +92,7 @@ class RefCountedPtr {
     return *this;
   }
   template <typename Y>
-  RefCountedPtr& operator=(const RefCountedPtr<Y>& other) {
+  RefCountedPtr &operator=(const RefCountedPtr<Y> &other) {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
     // Note: Order of reffing and unreffing is important here in case value_
@@ -106,68 +106,68 @@ class RefCountedPtr {
     if (value_ != nullptr) value_->Unref();
   }
 
-  void swap(RefCountedPtr& other) { std::swap(value_, other.value_); }
+  void swap(RefCountedPtr &other) { std::swap(value_, other.value_); }
 
   // If value is non-null, we take ownership of a ref to it.
-  void reset(T* value = nullptr) {
+  void reset(T *value = nullptr) {
     if (value_ != nullptr) value_->Unref();
     value_ = value;
   }
-  void reset(const DebugLocation& location, const char* reason,
-             T* value = nullptr) {
+  void reset(const DebugLocation &location, const char *reason,
+             T *value = nullptr) {
     if (value_ != nullptr) value_->Unref(location, reason);
     value_ = value;
   }
   template <typename Y>
-  void reset(Y* value = nullptr) {
+  void reset(Y *value = nullptr) {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
     if (value_ != nullptr) value_->Unref();
-    value_ = static_cast<T*>(value);
+    value_ = static_cast<T *>(value);
   }
   template <typename Y>
-  void reset(const DebugLocation& location, const char* reason,
-             Y* value = nullptr) {
+  void reset(const DebugLocation &location, const char *reason,
+             Y *value = nullptr) {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
     if (value_ != nullptr) value_->Unref(location, reason);
-    value_ = static_cast<T*>(value);
+    value_ = static_cast<T *>(value);
   }
 
   // TODO(roth): This method exists solely as a transition mechanism to allow
   // us to pass a ref to idiomatic C code that does not use RefCountedPtr<>.
   // Once all of our code has been converted to idiomatic C++, this
   // method should go away.
-  T* release() {
-    T* value = value_;
+  T *release() {
+    T *value = value_;
     value_ = nullptr;
     return value;
   }
 
-  T* get() const { return value_; }
+  T *get() const { return value_; }
 
-  T& operator*() const { return *value_; }
-  T* operator->() const { return value_; }
+  T &operator*() const { return *value_; }
+  T *operator->() const { return value_; }
 
   template <typename Y>
-  bool operator==(const RefCountedPtr<Y>& other) const {
+  bool operator==(const RefCountedPtr<Y> &other) const {
     return value_ == other.value_;
   }
 
   template <typename Y>
-  bool operator==(const Y* other) const {
+  bool operator==(const Y *other) const {
     return value_ == other;
   }
 
   bool operator==(std::nullptr_t) const { return value_ == nullptr; }
 
   template <typename Y>
-  bool operator!=(const RefCountedPtr<Y>& other) const {
+  bool operator!=(const RefCountedPtr<Y> &other) const {
     return value_ != other.value_;
   }
 
   template <typename Y>
-  bool operator!=(const Y* other) const {
+  bool operator!=(const Y *other) const {
     return value_ != other;
   }
 
@@ -177,7 +177,7 @@ class RefCountedPtr {
   template <typename Y>
   friend class RefCountedPtr;
 
-  T* value_ = nullptr;
+  T *value_ = nullptr;
 };
 
 // A smart pointer class for objects that provide IncrementWeakRefCount() and
@@ -192,52 +192,52 @@ class WeakRefCountedPtr {
   // If value is non-null, we take ownership of a ref to it.
   template <typename Y>
   // NOLINTNEXTLINE(google-explicit-constructor)
-  WeakRefCountedPtr(Y* value) {
+  WeakRefCountedPtr(Y *value) {
     value_ = value;
   }
 
   // Move ctors.
-  WeakRefCountedPtr(WeakRefCountedPtr&& other) noexcept {
+  WeakRefCountedPtr(WeakRefCountedPtr &&other) noexcept {
     value_ = other.value_;
     other.value_ = nullptr;
   }
   template <typename Y>
   // NOLINTNEXTLINE(google-explicit-constructor)
-  WeakRefCountedPtr(WeakRefCountedPtr<Y>&& other) noexcept {
-    value_ = static_cast<T*>(other.value_);
+  WeakRefCountedPtr(WeakRefCountedPtr<Y> &&other) noexcept {
+    value_ = static_cast<T *>(other.value_);
     other.value_ = nullptr;
   }
 
   // Move assignment.
-  WeakRefCountedPtr& operator=(WeakRefCountedPtr&& other) noexcept {
+  WeakRefCountedPtr &operator=(WeakRefCountedPtr &&other) noexcept {
     reset(other.value_);
     other.value_ = nullptr;
     return *this;
   }
   template <typename Y>
-  WeakRefCountedPtr& operator=(WeakRefCountedPtr<Y>&& other) noexcept {
+  WeakRefCountedPtr &operator=(WeakRefCountedPtr<Y> &&other) noexcept {
     reset(other.value_);
     other.value_ = nullptr;
     return *this;
   }
 
   // Copy ctors.
-  WeakRefCountedPtr(const WeakRefCountedPtr& other) {
+  WeakRefCountedPtr(const WeakRefCountedPtr &other) {
     if (other.value_ != nullptr) other.value_->IncrementWeakRefCount();
     value_ = other.value_;
   }
   template <typename Y>
   // NOLINTNEXTLINE(google-explicit-constructor)
-  WeakRefCountedPtr(const WeakRefCountedPtr<Y>& other) {
+  WeakRefCountedPtr(const WeakRefCountedPtr<Y> &other) {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
     if (other.value_ != nullptr) other.value_->IncrementWeakRefCount();
-    value_ = static_cast<T*>(other.value_);
+    value_ = static_cast<T *>(other.value_);
   }
 
   // Copy assignment.
   // NOLINTNEXTLINE(bugprone-unhandled-self-assignment)
-  WeakRefCountedPtr& operator=(const WeakRefCountedPtr& other) {
+  WeakRefCountedPtr &operator=(const WeakRefCountedPtr &other) {
     // Note: Order of reffing and unreffing is important here in case value_
     // and other.value_ are the same object.
     if (other.value_ != nullptr) other.value_->IncrementWeakRefCount();
@@ -245,7 +245,7 @@ class WeakRefCountedPtr {
     return *this;
   }
   template <typename Y>
-  WeakRefCountedPtr& operator=(const WeakRefCountedPtr<Y>& other) {
+  WeakRefCountedPtr &operator=(const WeakRefCountedPtr<Y> &other) {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
     // Note: Order of reffing and unreffing is important here in case value_
@@ -259,68 +259,68 @@ class WeakRefCountedPtr {
     if (value_ != nullptr) value_->WeakUnref();
   }
 
-  void swap(WeakRefCountedPtr& other) { std::swap(value_, other.value_); }
+  void swap(WeakRefCountedPtr &other) { std::swap(value_, other.value_); }
 
   // If value is non-null, we take ownership of a ref to it.
-  void reset(T* value = nullptr) {
+  void reset(T *value = nullptr) {
     if (value_ != nullptr) value_->WeakUnref();
     value_ = value;
   }
-  void reset(const DebugLocation& location, const char* reason,
-             T* value = nullptr) {
+  void reset(const DebugLocation &location, const char *reason,
+             T *value = nullptr) {
     if (value_ != nullptr) value_->WeakUnref(location, reason);
     value_ = value;
   }
   template <typename Y>
-  void reset(Y* value = nullptr) {
+  void reset(Y *value = nullptr) {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
     if (value_ != nullptr) value_->WeakUnref();
-    value_ = static_cast<T*>(value);
+    value_ = static_cast<T *>(value);
   }
   template <typename Y>
-  void reset(const DebugLocation& location, const char* reason,
-             Y* value = nullptr) {
+  void reset(const DebugLocation &location, const char *reason,
+             Y *value = nullptr) {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
     if (value_ != nullptr) value_->WeakUnref(location, reason);
-    value_ = static_cast<T*>(value);
+    value_ = static_cast<T *>(value);
   }
 
   // TODO(roth): This method exists solely as a transition mechanism to allow
   // us to pass a ref to idiomatic C code that does not use WeakRefCountedPtr<>.
   // Once all of our code has been converted to idiomatic C++, this
   // method should go away.
-  T* release() {
-    T* value = value_;
+  T *release() {
+    T *value = value_;
     value_ = nullptr;
     return value;
   }
 
-  T* get() const { return value_; }
+  T *get() const { return value_; }
 
-  T& operator*() const { return *value_; }
-  T* operator->() const { return value_; }
+  T &operator*() const { return *value_; }
+  T *operator->() const { return value_; }
 
   template <typename Y>
-  bool operator==(const WeakRefCountedPtr<Y>& other) const {
+  bool operator==(const WeakRefCountedPtr<Y> &other) const {
     return value_ == other.value_;
   }
 
   template <typename Y>
-  bool operator==(const Y* other) const {
+  bool operator==(const Y *other) const {
     return value_ == other;
   }
 
   bool operator==(std::nullptr_t) const { return value_ == nullptr; }
 
   template <typename Y>
-  bool operator!=(const WeakRefCountedPtr<Y>& other) const {
+  bool operator!=(const WeakRefCountedPtr<Y> &other) const {
     return value_ != other.value_;
   }
 
   template <typename Y>
-  bool operator!=(const Y* other) const {
+  bool operator!=(const Y *other) const {
     return value_ != other;
   }
 
@@ -330,21 +330,21 @@ class WeakRefCountedPtr {
   template <typename Y>
   friend class WeakRefCountedPtr;
 
-  T* value_ = nullptr;
+  T *value_ = nullptr;
 };
 
 template <typename T, typename... Args>
-inline RefCountedPtr<T> MakeRefCounted(Args&&... args) {
+inline RefCountedPtr<T> MakeRefCounted(Args &&...args) {
   return RefCountedPtr<T>(new T(std::forward<Args>(args)...));
 }
 
 template <typename T>
-bool operator<(const RefCountedPtr<T>& p1, const RefCountedPtr<T>& p2) {
+bool operator<(const RefCountedPtr<T> &p1, const RefCountedPtr<T> &p2) {
   return p1.get() < p2.get();
 }
 
 template <typename T>
-bool operator<(const WeakRefCountedPtr<T>& p1, const WeakRefCountedPtr<T>& p2) {
+bool operator<(const WeakRefCountedPtr<T> &p1, const WeakRefCountedPtr<T> &p2) {
   return p1.get() < p2.get();
 }
 

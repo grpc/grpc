@@ -39,11 +39,11 @@
 #define GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE const
 #endif
 
-static grpc_error_handle conforms_to(const grpc_slice& slice,
-                                     const grpc_core::BitSet<256>& legal_bits,
-                                     const char* err_desc) {
-  const uint8_t* p = GRPC_SLICE_START_PTR(slice);
-  const uint8_t* e = GRPC_SLICE_END_PTR(slice);
+static grpc_error_handle conforms_to(const grpc_slice &slice,
+                                     const grpc_core::BitSet<256> &legal_bits,
+                                     const char *err_desc) {
+  const uint8_t *p = GRPC_SLICE_START_PTR(slice);
+  const uint8_t *e = GRPC_SLICE_END_PTR(slice);
   for (; p != e; p++) {
     if (!legal_bits.is_set(*p)) {
       grpc_error_handle error = grpc_error_set_str(
@@ -79,7 +79,7 @@ static GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE LegalHeaderKeyBits
     g_legal_header_key_bits;
 }  // namespace
 
-grpc_error_handle grpc_validate_header_key_is_legal(const grpc_slice& slice) {
+grpc_error_handle grpc_validate_header_key_is_legal(const grpc_slice &slice) {
   if (GRPC_SLICE_LENGTH(slice) == 0) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Metadata keys cannot be zero length");
@@ -113,7 +113,7 @@ static GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE LegalHeaderNonBinValueBits
 }  // namespace
 
 grpc_error_handle grpc_validate_header_nonbin_value_is_legal(
-    const grpc_slice& slice) {
+    const grpc_slice &slice) {
   return conforms_to(slice, g_legal_header_non_bin_value_bits,
                      "Illegal header value");
 }
@@ -122,7 +122,7 @@ int grpc_header_nonbin_value_is_legal(grpc_slice slice) {
   return error2int(grpc_validate_header_nonbin_value_is_legal(slice));
 }
 
-int grpc_is_binary_header_internal(const grpc_slice& slice) {
+int grpc_is_binary_header_internal(const grpc_slice &slice) {
   return grpc_key_is_binary_header(GRPC_SLICE_START_PTR(slice),
                                    GRPC_SLICE_LENGTH(slice));
 }

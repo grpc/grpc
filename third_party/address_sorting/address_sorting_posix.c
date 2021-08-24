@@ -51,20 +51,20 @@
 #include <unistd.h>
 
 static bool posix_source_addr_factory_get_source_addr(
-    address_sorting_source_addr_factory* factory,
-    const address_sorting_address* dest_addr,
-    address_sorting_address* source_addr) {
+    address_sorting_source_addr_factory *factory,
+    const address_sorting_address *dest_addr,
+    address_sorting_address *source_addr) {
   bool source_addr_exists = false;
   // Android sets SOCK_CLOEXEC. Don't set this here for portability.
-  int s = socket(((struct sockaddr*)dest_addr)->sa_family, SOCK_DGRAM, 0);
+  int s = socket(((struct sockaddr *)dest_addr)->sa_family, SOCK_DGRAM, 0);
   if (s != -1) {
-    if (connect(s, (const struct sockaddr*)&dest_addr->addr,
+    if (connect(s, (const struct sockaddr *)&dest_addr->addr,
                 (socklen_t)dest_addr->len) != -1) {
       address_sorting_address found_source_addr;
       memset(&found_source_addr, 0, sizeof(found_source_addr));
       found_source_addr.len = sizeof(found_source_addr.addr);
-      if (getsockname(s, (struct sockaddr*)&found_source_addr.addr,
-                      (socklen_t*)&found_source_addr.len) != -1) {
+      if (getsockname(s, (struct sockaddr *)&found_source_addr.addr,
+                      (socklen_t *)&found_source_addr.len) != -1) {
         source_addr_exists = true;
         *source_addr = found_source_addr;
       }
@@ -75,7 +75,7 @@ static bool posix_source_addr_factory_get_source_addr(
 }
 
 static void posix_source_addr_factory_destroy(
-    address_sorting_source_addr_factory* self) {
+    address_sorting_source_addr_factory *self) {
   free(self);
 }
 
@@ -85,9 +85,9 @@ static const address_sorting_source_addr_factory_vtable
         posix_source_addr_factory_destroy,
 };
 
-address_sorting_source_addr_factory*
+address_sorting_source_addr_factory *
 address_sorting_create_source_addr_factory_for_current_platform() {
-  address_sorting_source_addr_factory* factory =
+  address_sorting_source_addr_factory *factory =
       malloc(sizeof(address_sorting_source_addr_factory));
   memset(factory, 0, sizeof(address_sorting_source_addr_factory));
   factory->vtable = &posix_source_addr_factory_vtable;

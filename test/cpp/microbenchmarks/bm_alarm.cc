@@ -30,11 +30,11 @@
 namespace grpc {
 namespace testing {
 
-static void BM_Alarm_Tag_Immediate(benchmark::State& state) {
+static void BM_Alarm_Tag_Immediate(benchmark::State &state) {
   TrackCounters track_counters;
   CompletionQueue cq;
   Alarm alarm;
-  void* output_tag;
+  void *output_tag;
   bool ok;
   auto deadline = grpc_timeout_seconds_to_deadline(0);
   for (auto _ : state) {
@@ -54,7 +54,7 @@ namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);

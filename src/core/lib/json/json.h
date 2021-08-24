@@ -56,20 +56,20 @@ class Json {
   using Array = std::vector<Json>;
 
   // Parses JSON string from json_str.  On error, sets *error.
-  static Json Parse(absl::string_view json_str, grpc_error_handle* error);
+  static Json Parse(absl::string_view json_str, grpc_error_handle *error);
 
   Json() = default;
 
   // Copyable.
-  Json(const Json& other) { CopyFrom(other); }
-  Json& operator=(const Json& other) {
+  Json(const Json &other) { CopyFrom(other); }
+  Json &operator=(const Json &other) {
     CopyFrom(other);
     return *this;
   }
 
   // Moveable.
-  Json(Json&& other) noexcept { MoveFrom(std::move(other)); }
-  Json& operator=(Json&& other) noexcept {
+  Json(Json &&other) noexcept { MoveFrom(std::move(other)); }
+  Json &operator=(Json &&other) noexcept {
     MoveFrom(std::move(other));
     return *this;
   }
@@ -77,9 +77,9 @@ class Json {
   // Construct from copying a string.
   // If is_number is true, the type will be NUMBER instead of STRING.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(const std::string& string, bool is_number = false)
+  Json(const std::string &string, bool is_number = false)
       : type_(is_number ? Type::NUMBER : Type::STRING), string_value_(string) {}
-  Json& operator=(const std::string& string) {
+  Json &operator=(const std::string &string) {
     type_ = Type::STRING;
     string_value_ = string;
     return *this;
@@ -87,25 +87,25 @@ class Json {
 
   // Same thing for C-style strings, both const and mutable.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(const char* string, bool is_number = false)
+  Json(const char *string, bool is_number = false)
       : Json(std::string(string), is_number) {}
-  Json& operator=(const char* string) {
+  Json &operator=(const char *string) {
     *this = std::string(string);
     return *this;
   }
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(char* string, bool is_number = false)
+  Json(char *string, bool is_number = false)
       : Json(std::string(string), is_number) {}
-  Json& operator=(char* string) {
+  Json &operator=(char *string) {
     *this = std::string(string);
     return *this;
   }
 
   // Construct by moving a string.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(std::string&& string)
+  Json(std::string &&string)
       : type_(Type::STRING), string_value_(std::move(string)) {}
-  Json& operator=(std::string&& string) {
+  Json &operator=(std::string &&string) {
     type_ = Type::STRING;
     string_value_ = std::move(string);
     return *this;
@@ -114,7 +114,7 @@ class Json {
   // Construct from bool.
   // NOLINTNEXTLINE(google-explicit-constructor)
   Json(bool b) : type_(b ? Type::JSON_TRUE : Type::JSON_FALSE) {}
-  Json& operator=(bool b) {
+  Json &operator=(bool b) {
     type_ = b ? Type::JSON_TRUE : Type::JSON_FALSE;
     return *this;
   }
@@ -125,7 +125,7 @@ class Json {
   Json(NumericType number)
       : type_(Type::NUMBER), string_value_(std::to_string(number)) {}
   template <typename NumericType>
-  Json& operator=(NumericType number) {
+  Json &operator=(NumericType number) {
     type_ = Type::NUMBER;
     string_value_ = std::to_string(number);
     return *this;
@@ -133,8 +133,8 @@ class Json {
 
   // Construct by copying object.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(const Object& object) : type_(Type::OBJECT), object_value_(object) {}
-  Json& operator=(const Object& object) {
+  Json(const Object &object) : type_(Type::OBJECT), object_value_(object) {}
+  Json &operator=(const Object &object) {
     type_ = Type::OBJECT;
     object_value_ = object;
     return *this;
@@ -142,9 +142,9 @@ class Json {
 
   // Construct by moving object.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(Object&& object)
+  Json(Object &&object)
       : type_(Type::OBJECT), object_value_(std::move(object)) {}
-  Json& operator=(Object&& object) {
+  Json &operator=(Object &&object) {
     type_ = Type::OBJECT;
     object_value_ = std::move(object);
     return *this;
@@ -152,8 +152,8 @@ class Json {
 
   // Construct by copying array.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(const Array& array) : type_(Type::ARRAY), array_value_(array) {}
-  Json& operator=(const Array& array) {
+  Json(const Array &array) : type_(Type::ARRAY), array_value_(array) {}
+  Json &operator=(const Array &array) {
     type_ = Type::ARRAY;
     array_value_ = array;
     return *this;
@@ -161,8 +161,8 @@ class Json {
 
   // Construct by moving array.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(Array&& array) : type_(Type::ARRAY), array_value_(std::move(array)) {}
-  Json& operator=(Array&& array) {
+  Json(Array &&array) : type_(Type::ARRAY), array_value_(std::move(array)) {}
+  Json &operator=(Array &&array) {
     type_ = Type::ARRAY;
     array_value_ = std::move(array);
     return *this;
@@ -173,14 +173,14 @@ class Json {
 
   // Accessor methods.
   Type type() const { return type_; }
-  const std::string& string_value() const { return string_value_; }
-  std::string* mutable_string_value() { return &string_value_; }
-  const Object& object_value() const { return object_value_; }
-  Object* mutable_object() { return &object_value_; }
-  const Array& array_value() const { return array_value_; }
-  Array* mutable_array() { return &array_value_; }
+  const std::string &string_value() const { return string_value_; }
+  std::string *mutable_string_value() { return &string_value_; }
+  const Object &object_value() const { return object_value_; }
+  Object *mutable_object() { return &object_value_; }
+  const Array &array_value() const { return array_value_; }
+  Array *mutable_array() { return &array_value_; }
 
-  bool operator==(const Json& other) const {
+  bool operator==(const Json &other) const {
     if (type_ != other.type_) return false;
     switch (type_) {
       case Type::NUMBER:
@@ -199,10 +199,10 @@ class Json {
     return true;
   }
 
-  bool operator!=(const Json& other) const { return !(*this == other); }
+  bool operator!=(const Json &other) const { return !(*this == other); }
 
  private:
-  void CopyFrom(const Json& other) {
+  void CopyFrom(const Json &other) {
     type_ = other.type_;
     switch (type_) {
       case Type::NUMBER:
@@ -220,7 +220,7 @@ class Json {
     }
   }
 
-  void MoveFrom(Json&& other) {
+  void MoveFrom(Json &&other) {
     type_ = other.type_;
     other.type_ = Type::JSON_NULL;
     switch (type_) {

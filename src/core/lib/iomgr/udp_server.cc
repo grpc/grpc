@@ -74,21 +74,21 @@
  * I/O events*/
 class GrpcUdpListener {
  public:
-  GrpcUdpListener(grpc_udp_server* server, int fd,
-                  const grpc_resolved_address* addr);
+  GrpcUdpListener(grpc_udp_server *server, int fd,
+                  const grpc_resolved_address *addr);
   ~GrpcUdpListener();
 
   /* Called when grpc server starts to listening on the grpc_fd. */
-  void StartListening(const std::vector<grpc_pollset*>* pollsets,
-                      GrpcUdpHandlerFactory* handler_factory);
+  void StartListening(const std::vector<grpc_pollset *> *pollsets,
+                      GrpcUdpHandlerFactory *handler_factory);
 
   /* Called when data is available to read from the socket.
    * Return true if there is more data to read from fd. */
-  void OnRead(grpc_error_handle error, void* do_read_arg);
+  void OnRead(grpc_error_handle error, void *do_read_arg);
 
   /* Called when the socket is writeable. The given closure should be scheduled
    * when the socket becomes blocked next time. */
-  void OnCanWrite(grpc_error_handle error, void* do_write_arg);
+  void OnCanWrite(grpc_error_handle error, void *do_write_arg);
 
   /* Called when the grpc_fd is about to be orphaned (and the FD closed). */
   void OnFdAboutToOrphan();
@@ -102,26 +102,26 @@ class GrpcUdpListener {
   int fd() const { return fd_; }
 
  protected:
-  grpc_fd* emfd() const { return emfd_; }
+  grpc_fd *emfd() const { return emfd_; }
 
-  gpr_mu* mutex() { return &mutex_; }
+  gpr_mu *mutex() { return &mutex_; }
 
  private:
   /* event manager callback when reads are ready */
-  static void on_read(void* arg, grpc_error_handle error);
-  static void on_write(void* arg, grpc_error_handle error);
+  static void on_read(void *arg, grpc_error_handle error);
+  static void on_write(void *arg, grpc_error_handle error);
 
-  static void do_read(void* arg, grpc_error_handle error);
-  static void do_write(void* arg, grpc_error_handle error);
+  static void do_read(void *arg, grpc_error_handle error);
+  static void do_write(void *arg, grpc_error_handle error);
   // Wrapper of grpc_fd_notify_on_write() with a grpc_closure callback
   // interface.
-  static void fd_notify_on_write_wrapper(void* arg, grpc_error_handle error);
+  static void fd_notify_on_write_wrapper(void *arg, grpc_error_handle error);
 
-  static void shutdown_fd(void* args, grpc_error_handle error);
+  static void shutdown_fd(void *args, grpc_error_handle error);
 
   int fd_;
-  grpc_fd* emfd_;
-  grpc_udp_server* server_;
+  grpc_fd *emfd_;
+  grpc_udp_server *server_;
   grpc_resolved_address addr_;
   grpc_closure read_closure_;
   grpc_closure write_closure_;
@@ -140,15 +140,15 @@ class GrpcUdpListener {
   // True if fd has been shutdown.
   bool already_shutdown_;
   // Object actually handles I/O events. Assigned in StartListening().
-  GrpcUdpHandler* udp_handler_ = nullptr;
+  GrpcUdpHandler *udp_handler_ = nullptr;
   // To be notified on destruction.
-  GrpcUdpHandlerFactory* handler_factory_ = nullptr;
+  GrpcUdpHandlerFactory *handler_factory_ = nullptr;
   // Required to access above fields.
   gpr_mu mutex_;
 };
 
-GrpcUdpListener::GrpcUdpListener(grpc_udp_server* server, int fd,
-                                 const grpc_resolved_address* addr)
+GrpcUdpListener::GrpcUdpListener(grpc_udp_server *server, int fd,
+                                 const grpc_resolved_address *addr)
     : fd_(fd),
       server_(server),
       orphan_notified_(false),
@@ -168,7 +168,7 @@ struct grpc_udp_server {
   gpr_mu mu;
 
   /* factory to use for creating and binding sockets, or NULL */
-  grpc_socket_factory* socket_factory;
+  grpc_socket_factory *socket_factory;
 
   /* active port count: how many ports are actually still listening */
   size_t active_ports;
@@ -182,34 +182,34 @@ struct grpc_udp_server {
   absl::InlinedVector<GrpcUdpListener, 16> listeners;
 
   /* factory for use to create udp listeners */
-  GrpcUdpHandlerFactory* handler_factory;
+  GrpcUdpHandlerFactory *handler_factory;
 
   /* shutdown callback */
-  grpc_closure* shutdown_complete;
+  grpc_closure *shutdown_complete;
 
   /* all pollsets interested in new connections. The object pointed at is not
    * owned by this struct. */
-  const std::vector<grpc_pollset*>* pollsets;
+  const std::vector<grpc_pollset *> *pollsets;
   /* opaque object to pass to callbacks */
-  void* user_data;
+  void *user_data;
 
   /* latch has_so_reuseport during server creation */
   bool so_reuseport;
 };
 
-static grpc_socket_factory* get_socket_factory(const grpc_channel_args* args) {
+static grpc_socket_factory *get_socket_factory(const grpc_channel_args *args) {
   if (args) {
-    const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_SOCKET_FACTORY);
+    const grpc_arg *arg = grpc_channel_args_find(args, GRPC_ARG_SOCKET_FACTORY);
     if (arg) {
       GPR_ASSERT(arg->type == GRPC_ARG_POINTER);
-      return static_cast<grpc_socket_factory*>(arg->value.pointer.p);
+      return static_cast<grpc_socket_factory *>(arg->value.pointer.p);
     }
   }
   return nullptr;
 }
 
-grpc_udp_server* grpc_udp_server_create(const grpc_channel_args* args) {
-  grpc_udp_server* s = new grpc_udp_server();
+grpc_udp_server *grpc_udp_server_create(const grpc_channel_args *args) {
+  grpc_udp_server *s = new grpc_udp_server();
   gpr_mu_init(&s->mu);
   s->socket_factory = get_socket_factory(args);
   if (s->socket_factory) {
@@ -223,12 +223,12 @@ grpc_udp_server* grpc_udp_server_create(const grpc_channel_args* args) {
 }
 
 // static
-void GrpcUdpListener::shutdown_fd(void* args, grpc_error_handle error) {
+void GrpcUdpListener::shutdown_fd(void *args, grpc_error_handle error) {
   if (args == nullptr) {
     // No-op if shutdown args are null.
     return;
   }
-  auto sp = static_cast<GrpcUdpListener*>(args);
+  auto sp = static_cast<GrpcUdpListener *>(args);
   gpr_mu_lock(sp->mutex());
   gpr_log(GPR_DEBUG, "shutdown fd %d", sp->fd_);
   grpc_fd_shutdown(sp->emfd_, GRPC_ERROR_REF(error));
@@ -242,7 +242,7 @@ void GrpcUdpListener::shutdown_fd(void* args, grpc_error_handle error) {
   gpr_mu_unlock(sp->mutex());
 }
 
-static void finish_shutdown(grpc_udp_server* s) {
+static void finish_shutdown(grpc_udp_server *s) {
   if (s->shutdown_complete != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
                             GRPC_ERROR_NONE);
@@ -262,8 +262,8 @@ static void finish_shutdown(grpc_udp_server* s) {
   delete s;
 }
 
-static void destroyed_port(void* server, grpc_error_handle /*error*/) {
-  grpc_udp_server* s = static_cast<grpc_udp_server*>(server);
+static void destroyed_port(void *server, grpc_error_handle /*error*/) {
+  grpc_udp_server *s = static_cast<grpc_udp_server *>(server);
   gpr_mu_lock(&s->mu);
   s->destroyed_ports++;
   if (s->destroyed_ports == s->listeners.size()) {
@@ -277,7 +277,7 @@ static void destroyed_port(void* server, grpc_error_handle /*error*/) {
 /* called when all listening endpoints have been shutdown, so no further
    events will be received on them - at this point it's safe to destroy
    things */
-static void deactivated_all_ports(grpc_udp_server* s) {
+static void deactivated_all_ports(grpc_udp_server *s) {
   /* delete ALL the things */
   gpr_mu_lock(&s->mu);
 
@@ -305,7 +305,7 @@ void GrpcUdpListener::OrphanFd() {
   grpc_fd_orphan(emfd_, &destroyed_closure_, nullptr, "udp_listener_shutdown");
 }
 
-void grpc_udp_server_destroy(grpc_udp_server* s, grpc_closure* on_done) {
+void grpc_udp_server_destroy(grpc_udp_server *s, grpc_closure *on_done) {
   gpr_mu_lock(&s->mu);
 
   GPR_ASSERT(!s->shutdown);
@@ -317,7 +317,7 @@ void grpc_udp_server_destroy(grpc_udp_server* s, grpc_closure* on_done) {
   /* shutdown all fd's */
   if (s->active_ports) {
     for (size_t i = 0; i < s->listeners.size(); ++i) {
-      GrpcUdpListener* sp = &s->listeners[i];
+      GrpcUdpListener *sp = &s->listeners[i];
       sp->OnFdAboutToOrphan();
     }
     gpr_mu_unlock(&s->mu);
@@ -345,23 +345,23 @@ void GrpcUdpListener::OnFdAboutToOrphan() {
   gpr_mu_unlock(&mutex_);
 }
 
-static int bind_socket(grpc_socket_factory* socket_factory, int sockfd,
-                       const grpc_resolved_address* addr) {
+static int bind_socket(grpc_socket_factory *socket_factory, int sockfd,
+                       const grpc_resolved_address *addr) {
   return (socket_factory != nullptr)
              ? grpc_socket_factory_bind(socket_factory, sockfd, addr)
              : bind(sockfd,
-                    reinterpret_cast<grpc_sockaddr*>(
-                        const_cast<char*>(addr->addr)),
+                    reinterpret_cast<grpc_sockaddr *>(
+                        const_cast<char *>(addr->addr)),
                     addr->len);
 }
 
 /* Prepare a recently-created socket for listening. */
-static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
-                          const grpc_resolved_address* addr, int rcv_buf_size,
+static int prepare_socket(grpc_socket_factory *socket_factory, int fd,
+                          const grpc_resolved_address *addr, int rcv_buf_size,
                           int snd_buf_size, bool so_reuseport) {
   grpc_resolved_address sockname_temp;
-  grpc_sockaddr* addr_ptr =
-      reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr));
+  grpc_sockaddr *addr_ptr =
+      reinterpret_cast<grpc_sockaddr *>(const_cast<char *>(addr->addr));
 
   if (fd < 0) {
     goto error;
@@ -420,7 +420,7 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
 
   sockname_temp.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
 
-  if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(sockname_temp.addr),
+  if (getsockname(fd, reinterpret_cast<grpc_sockaddr *>(sockname_temp.addr),
                   &sockname_temp.len) < 0) {
     gpr_log(GPR_ERROR, "Unable to get the address socket %d is bound to: %s",
             fd, strerror(errno));
@@ -437,8 +437,8 @@ error:
 }
 
 // static
-void GrpcUdpListener::do_read(void* arg, grpc_error_handle error) {
-  GrpcUdpListener* sp = static_cast<GrpcUdpListener*>(arg);
+void GrpcUdpListener::do_read(void *arg, grpc_error_handle error) {
+  GrpcUdpListener *sp = static_cast<GrpcUdpListener *>(arg);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   /* TODO: the reason we hold server->mu here is merely to prevent fd
    * shutdown while we are reading. However, it blocks do_write(). Switch to
@@ -461,12 +461,12 @@ void GrpcUdpListener::do_read(void* arg, grpc_error_handle error) {
 }
 
 // static
-void GrpcUdpListener::on_read(void* arg, grpc_error_handle error) {
-  GrpcUdpListener* sp = static_cast<GrpcUdpListener*>(arg);
+void GrpcUdpListener::on_read(void *arg, grpc_error_handle error) {
+  GrpcUdpListener *sp = static_cast<GrpcUdpListener *>(arg);
   sp->OnRead(error, arg);
 }
 
-void GrpcUdpListener::OnRead(grpc_error_handle error, void* do_read_arg) {
+void GrpcUdpListener::OnRead(grpc_error_handle error, void *do_read_arg) {
   if (error != GRPC_ERROR_NONE) {
     gpr_mu_lock(&server_->mu);
     if (0 == --server_->active_ports && server_->shutdown) {
@@ -497,9 +497,9 @@ void GrpcUdpListener::OnRead(grpc_error_handle error, void* do_read_arg) {
 
 // static
 // Wrapper of grpc_fd_notify_on_write() with a grpc_closure callback interface.
-void GrpcUdpListener::fd_notify_on_write_wrapper(void* arg,
+void GrpcUdpListener::fd_notify_on_write_wrapper(void *arg,
                                                  grpc_error_handle /*error*/) {
-  GrpcUdpListener* sp = static_cast<GrpcUdpListener*>(arg);
+  GrpcUdpListener *sp = static_cast<GrpcUdpListener *>(arg);
   gpr_mu_lock(sp->mutex());
   if (!sp->notify_on_write_armed_) {
     grpc_fd_notify_on_write(sp->emfd_, &sp->write_closure_);
@@ -509,8 +509,8 @@ void GrpcUdpListener::fd_notify_on_write_wrapper(void* arg,
 }
 
 // static
-void GrpcUdpListener::do_write(void* arg, grpc_error_handle error) {
-  GrpcUdpListener* sp = static_cast<GrpcUdpListener*>(arg);
+void GrpcUdpListener::do_write(void *arg, grpc_error_handle error) {
+  GrpcUdpListener *sp = static_cast<GrpcUdpListener *>(arg);
   gpr_mu_lock(sp->mutex());
   if (sp->already_shutdown_) {
     // If fd has been shutdown, don't write any more and re-arm notification.
@@ -528,12 +528,12 @@ void GrpcUdpListener::do_write(void* arg, grpc_error_handle error) {
 }
 
 // static
-void GrpcUdpListener::on_write(void* arg, grpc_error_handle error) {
-  GrpcUdpListener* sp = static_cast<GrpcUdpListener*>(arg);
+void GrpcUdpListener::on_write(void *arg, grpc_error_handle error) {
+  GrpcUdpListener *sp = static_cast<GrpcUdpListener *>(arg);
   sp->OnCanWrite(error, arg);
 }
 
-void GrpcUdpListener::OnCanWrite(grpc_error_handle error, void* do_write_arg) {
+void GrpcUdpListener::OnCanWrite(grpc_error_handle error, void *do_write_arg) {
   if (error != GRPC_ERROR_NONE) {
     gpr_mu_lock(&server_->mu);
     if (0 == --server_->active_ports && server_->shutdown) {
@@ -553,8 +553,8 @@ void GrpcUdpListener::OnCanWrite(grpc_error_handle error, void* do_write_arg) {
                            grpc_core::ExecutorJobType::LONG);
 }
 
-static int add_socket_to_server(grpc_udp_server* s, int fd,
-                                const grpc_resolved_address* addr,
+static int add_socket_to_server(grpc_udp_server *s, int fd,
+                                const grpc_resolved_address *addr,
                                 int rcv_buf_size, int snd_buf_size) {
   gpr_log(GPR_DEBUG, "add socket %d to server", fd);
 
@@ -571,9 +571,9 @@ static int add_socket_to_server(grpc_udp_server* s, int fd,
   return port;
 }
 
-int grpc_udp_server_add_port(grpc_udp_server* s, grpc_resolved_address* addr,
+int grpc_udp_server_add_port(grpc_udp_server *s, grpc_resolved_address *addr,
                              int rcv_buf_size, int snd_buf_size,
-                             GrpcUdpHandlerFactory* handler_factory,
+                             GrpcUdpHandlerFactory *handler_factory,
                              size_t num_listeners) {
   if (num_listeners > 1 && !s->so_reuseport) {
     gpr_log(GPR_ERROR,
@@ -591,7 +591,7 @@ int grpc_udp_server_add_port(grpc_udp_server* s, grpc_resolved_address* addr,
   grpc_resolved_address wild4;
   grpc_resolved_address wild6;
   grpc_resolved_address addr4_copy;
-  grpc_resolved_address* allocated_addr = nullptr;
+  grpc_resolved_address *allocated_addr = nullptr;
   grpc_resolved_address sockname_temp;
   int port = 0;
 
@@ -602,13 +602,14 @@ int grpc_udp_server_add_port(grpc_udp_server* s, grpc_resolved_address* addr,
     for (size_t i = 0; i < s->listeners.size(); ++i) {
       sockname_temp.len =
           static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-      if (0 == getsockname(s->listeners[i].fd(),
-                           reinterpret_cast<grpc_sockaddr*>(sockname_temp.addr),
-                           &sockname_temp.len)) {
+      if (0 ==
+          getsockname(s->listeners[i].fd(),
+                      reinterpret_cast<grpc_sockaddr *>(sockname_temp.addr),
+                      &sockname_temp.len)) {
         port = grpc_sockaddr_get_port(&sockname_temp);
         if (port > 0) {
           /* Found such a port, update |addr| to reflects this port. */
-          allocated_addr = static_cast<grpc_resolved_address*>(
+          allocated_addr = static_cast<grpc_resolved_address *>(
               gpr_malloc(sizeof(grpc_resolved_address)));
           memcpy(allocated_addr, addr, sizeof(grpc_resolved_address));
           grpc_sockaddr_set_port(allocated_addr, port);
@@ -693,7 +694,7 @@ int grpc_udp_server_add_port(grpc_udp_server* s, grpc_resolved_address* addr,
   return port;
 }
 
-int grpc_udp_server_get_fd(grpc_udp_server* s, unsigned port_index) {
+int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned port_index) {
   if (port_index >= s->listeners.size()) {
     return -1;
   }
@@ -701,28 +702,29 @@ int grpc_udp_server_get_fd(grpc_udp_server* s, unsigned port_index) {
   return s->listeners[port_index].fd();
 }
 
-void grpc_udp_server_start(grpc_udp_server* udp_server,
-                           const std::vector<grpc_pollset*>* pollsets,
-                           void* user_data) {
+void grpc_udp_server_start(grpc_udp_server *udp_server,
+                           const std::vector<grpc_pollset *> *pollsets,
+                           void *user_data) {
   gpr_log(GPR_DEBUG, "grpc_udp_server_start");
   gpr_mu_lock(&udp_server->mu);
   GPR_ASSERT(udp_server->active_ports == 0);
   udp_server->pollsets = pollsets;
   udp_server->user_data = user_data;
 
-  for (auto& listener : udp_server->listeners) {
+  for (auto &listener : udp_server->listeners) {
     listener.StartListening(pollsets, udp_server->handler_factory);
   }
 
   gpr_mu_unlock(&udp_server->mu);
 }
 
-void GrpcUdpListener::StartListening(const std::vector<grpc_pollset*>* pollsets,
-                                     GrpcUdpHandlerFactory* handler_factory) {
+void GrpcUdpListener::StartListening(
+    const std::vector<grpc_pollset *> *pollsets,
+    GrpcUdpHandlerFactory *handler_factory) {
   gpr_mu_lock(&mutex_);
   handler_factory_ = handler_factory;
   udp_handler_ = handler_factory->CreateUdpHandler(emfd_, server_->user_data);
-  for (grpc_pollset* pollset : *pollsets) {
+  for (grpc_pollset *pollset : *pollsets) {
     grpc_pollset_add_fd(pollset, emfd_);
   }
   GRPC_CLOSURE_INIT(&read_closure_, on_read, this, grpc_schedule_on_exec_ctx);

@@ -40,7 +40,7 @@ class CelExpression {
   // Evaluates expression and returns value.
   // activation contains bindings from parameter names to values
   virtual absl::StatusOr<CelValue> Evaluate(
-      const BaseActivation& activation) const = 0;
+      const BaseActivation &activation) const = 0;
 };
 
 // Base class for Expression Builder implementations
@@ -54,13 +54,13 @@ class CelExpressionBuilder {
   // Creates CelExpression object from AST tree.
   // expr specifies root of AST tree
   virtual absl::StatusOr<std::unique_ptr<CelExpression>> CreateExpression(
-      const google_api_expr_v1alpha1_Expr* expr,
-      const google_api_expr_v1alpha1_SourceInfo* source_info) const = 0;
+      const google_api_expr_v1alpha1_Expr *expr,
+      const google_api_expr_v1alpha1_SourceInfo *source_info) const = 0;
 
   virtual absl::StatusOr<std::unique_ptr<CelExpression>> CreateExpression(
-      const google_api_expr_v1alpha1_Expr* expr,
-      const google_api_expr_v1alpha1_SourceInfo* source_info,
-      std::vector<absl::Status>* warnings) const = 0;
+      const google_api_expr_v1alpha1_Expr *expr,
+      const google_api_expr_v1alpha1_SourceInfo *source_info,
+      std::vector<absl::Status> *warnings) const = 0;
 };
 
 }  // namespace mock_cel

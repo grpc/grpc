@@ -25,19 +25,19 @@
 
 typedef struct grpc_custom_timer {
   // Implementation defined
-  void* timer;
+  void *timer;
   uint64_t timeout_ms;
 
-  grpc_timer* original;
+  grpc_timer *original;
 } grpc_custom_timer;
 
 typedef struct grpc_custom_timer_vtable {
-  void (*start)(grpc_custom_timer* t);
-  void (*stop)(grpc_custom_timer* t);
+  void (*start)(grpc_custom_timer *t);
+  void (*stop)(grpc_custom_timer *t);
 } grpc_custom_timer_vtable;
 
-void grpc_custom_timer_init(grpc_custom_timer_vtable* impl);
+void grpc_custom_timer_init(grpc_custom_timer_vtable *impl);
 
-void grpc_custom_timer_callback(grpc_custom_timer* t, grpc_error_handle error);
+void grpc_custom_timer_callback(grpc_custom_timer *t, grpc_error_handle error);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_CUSTOM_H */

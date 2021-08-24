@@ -137,13 +137,13 @@ class GrpcLbConfig : public LoadBalancingPolicy::Config {
                std::string service_name)
       : child_policy_(std::move(child_policy)),
         service_name_(std::move(service_name)) {}
-  const char* name() const override { return kGrpclb; }
+  const char *name() const override { return kGrpclb; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy() const {
     return child_policy_;
   }
 
-  const std::string& service_name() const { return service_name_; }
+  const std::string &service_name() const { return service_name_; }
 
  private:
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
@@ -154,7 +154,7 @@ class GrpcLb : public LoadBalancingPolicy {
  public:
   explicit GrpcLb(Args args);
 
-  const char* name() const override { return kGrpclb; }
+  const char *name() const override { return kGrpclb; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
@@ -173,24 +173,24 @@ class GrpcLb : public LoadBalancingPolicy {
 
     void StartQuery();
 
-    GrpcLbClientStats* client_stats() const { return client_stats_.get(); }
+    GrpcLbClientStats *client_stats() const { return client_stats_.get(); }
 
     bool seen_initial_response() const { return seen_initial_response_; }
     bool seen_serverlist() const { return seen_serverlist_; }
 
    private:
-    GrpcLb* grpclb_policy() const {
-      return static_cast<GrpcLb*>(grpclb_policy_.get());
+    GrpcLb *grpclb_policy() const {
+      return static_cast<GrpcLb *>(grpclb_policy_.get());
     }
 
     void ScheduleNextClientLoadReportLocked();
     void SendClientLoadReportLocked();
 
-    static void MaybeSendClientLoadReport(void* arg, grpc_error_handle error);
-    static void ClientLoadReportDone(void* arg, grpc_error_handle error);
-    static void OnInitialRequestSent(void* arg, grpc_error_handle error);
-    static void OnBalancerMessageReceived(void* arg, grpc_error_handle error);
-    static void OnBalancerStatusReceived(void* arg, grpc_error_handle error);
+    static void MaybeSendClientLoadReport(void *arg, grpc_error_handle error);
+    static void ClientLoadReportDone(void *arg, grpc_error_handle error);
+    static void OnInitialRequestSent(void *arg, grpc_error_handle error);
+    static void OnBalancerMessageReceived(void *arg, grpc_error_handle error);
+    static void OnBalancerStatusReceived(void *arg, grpc_error_handle error);
 
     void MaybeSendClientLoadReportLocked(grpc_error_handle error);
     void ClientLoadReportDoneLocked(grpc_error_handle error);
@@ -202,17 +202,17 @@ class GrpcLb : public LoadBalancingPolicy {
     RefCountedPtr<LoadBalancingPolicy> grpclb_policy_;
 
     // The streaming call to the LB server. Always non-NULL.
-    grpc_call* lb_call_ = nullptr;
+    grpc_call *lb_call_ = nullptr;
 
     // recv_initial_metadata
     grpc_metadata_array lb_initial_metadata_recv_;
 
     // send_message
-    grpc_byte_buffer* send_message_payload_ = nullptr;
+    grpc_byte_buffer *send_message_payload_ = nullptr;
     grpc_closure lb_on_initial_request_sent_;
 
     // recv_message
-    grpc_byte_buffer* recv_message_payload_ = nullptr;
+    grpc_byte_buffer *recv_message_payload_ = nullptr;
     grpc_closure lb_on_balancer_message_received_;
     bool seen_initial_response_ = false;
     bool seen_serverlist_ = false;
@@ -245,8 +245,8 @@ class GrpcLb : public LoadBalancingPolicy {
           lb_token_(std::move(lb_token)),
           client_stats_(std::move(client_stats)) {}
 
-    const std::string& lb_token() const { return lb_token_; }
-    GrpcLbClientStats* client_stats() const { return client_stats_.get(); }
+    const std::string &lb_token() const { return lb_token_; }
+    GrpcLbClientStats *client_stats() const { return client_stats_.get(); }
 
    private:
     std::string lb_token_;
@@ -266,9 +266,9 @@ class GrpcLb : public LoadBalancingPolicy {
                                                              client_stats_);
     }
 
-    int Cmp(const AttributeInterface* other_base) const override {
-      const TokenAndClientStatsAttribute* other =
-          static_cast<const TokenAndClientStatsAttribute*>(other_base);
+    int Cmp(const AttributeInterface *other_base) const override {
+      const TokenAndClientStatsAttribute *other =
+          static_cast<const TokenAndClientStatsAttribute *>(other_base);
       int r = lb_token_.compare(other->lb_token_);
       if (r != 0) return r;
       return GPR_ICMP(client_stats_.get(), other->client_stats_.get());
@@ -279,7 +279,7 @@ class GrpcLb : public LoadBalancingPolicy {
                              client_stats_.get());
     }
 
-    const std::string& lb_token() const { return lb_token_; }
+    const std::string &lb_token() const { return lb_token_; }
     RefCountedPtr<GrpcLbClientStats> client_stats() const {
       return client_stats_;
     }
@@ -295,16 +295,16 @@ class GrpcLb : public LoadBalancingPolicy {
     explicit Serverlist(std::vector<GrpcLbServer> serverlist)
         : serverlist_(std::move(serverlist)) {}
 
-    bool operator==(const Serverlist& other) const;
+    bool operator==(const Serverlist &other) const;
 
-    const std::vector<GrpcLbServer>& serverlist() const { return serverlist_; }
+    const std::vector<GrpcLbServer> &serverlist() const { return serverlist_; }
 
     // Returns a text representation suitable for logging.
     std::string AsText() const;
 
     // Extracts all non-drop entries into a ServerAddressList.
     ServerAddressList GetServerAddressList(
-        GrpcLbClientStats* client_stats) const;
+        GrpcLbClientStats *client_stats) const;
 
     // Returns true if the serverlist contains at least one drop entry and
     // no backend address entries.
@@ -317,7 +317,7 @@ class GrpcLb : public LoadBalancingPolicy {
     // the channel's data plane mutex, NOT the control plane
     // work_serializer.  It should not be accessed by any other part of the LB
     // policy.
-    const char* ShouldDrop();
+    const char *ShouldDrop();
 
    private:
     std::vector<GrpcLbServer> serverlist_;
@@ -353,8 +353,8 @@ class GrpcLb : public LoadBalancingPolicy {
         : parent_(std::move(parent)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const grpc_channel_args& args) override;
-    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
+        ServerAddress address, const grpc_channel_args &args) override;
+    void UpdateState(grpc_connectivity_state state, const absl::Status &status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     void AddTraceEvent(TraceSeverity severity,
@@ -374,7 +374,7 @@ class GrpcLb : public LoadBalancingPolicy {
 
    private:
     void OnConnectivityStateChange(grpc_connectivity_state new_state,
-                                   const absl::Status& status) override {
+                                   const absl::Status &status) override {
       if (parent_->fallback_at_startup_checks_pending_ &&
           new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
@@ -401,29 +401,29 @@ class GrpcLb : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   // Helper functions used in UpdateLocked().
-  void ProcessAddressesAndChannelArgsLocked(const ServerAddressList& addresses,
-                                            const grpc_channel_args& args);
+  void ProcessAddressesAndChannelArgsLocked(const ServerAddressList &addresses,
+                                            const grpc_channel_args &args);
   static ServerAddressList AddNullLbTokenToAddresses(
-      const ServerAddressList& addresses);
+      const ServerAddressList &addresses);
 
   void CancelBalancerChannelConnectivityWatchLocked();
 
   // Methods for dealing with fallback state.
   void MaybeEnterFallbackModeAfterStartup();
-  static void OnFallbackTimer(void* arg, grpc_error_handle error);
+  static void OnFallbackTimer(void *arg, grpc_error_handle error);
   void OnFallbackTimerLocked(grpc_error_handle error);
 
   // Methods for dealing with the balancer call.
   void StartBalancerCallLocked();
   void StartBalancerCallRetryTimerLocked();
-  static void OnBalancerCallRetryTimer(void* arg, grpc_error_handle error);
+  static void OnBalancerCallRetryTimer(void *arg, grpc_error_handle error);
   void OnBalancerCallRetryTimerLocked(grpc_error_handle error);
 
   // Methods for dealing with the child policy.
-  grpc_channel_args* CreateChildPolicyArgsLocked(
+  grpc_channel_args *CreateChildPolicyArgsLocked(
       bool is_backend_from_grpclb_load_balancer);
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
-      const grpc_channel_args* args);
+      const grpc_channel_args *args);
   void CreateOrUpdateChildPolicyLocked();
 
   // Who the client is trying to communicate with.
@@ -432,14 +432,14 @@ class GrpcLb : public LoadBalancingPolicy {
   RefCountedPtr<GrpcLbConfig> config_;
 
   // Current channel args from the resolver.
-  grpc_channel_args* args_ = nullptr;
+  grpc_channel_args *args_ = nullptr;
 
   // Internal state.
   bool shutting_down_ = false;
 
   // The channel for communicating with the LB server.
-  grpc_channel* lb_channel_ = nullptr;
-  StateWatcher* watcher_ = nullptr;
+  grpc_channel *lb_channel_ = nullptr;
+  StateWatcher *watcher_ = nullptr;
   // Response generator to inject address updates into lb_channel_.
   RefCountedPtr<FakeResolverResponseGenerator> response_generator_;
   // Parent channelz node.
@@ -485,11 +485,11 @@ class GrpcLb : public LoadBalancingPolicy {
 // GrpcLb::Serverlist
 //
 
-bool GrpcLb::Serverlist::operator==(const Serverlist& other) const {
+bool GrpcLb::Serverlist::operator==(const Serverlist &other) const {
   return serverlist_ == other.serverlist_;
 }
 
-void ParseServer(const GrpcLbServer& server, grpc_resolved_address* addr) {
+void ParseServer(const GrpcLbServer &server, grpc_resolved_address *addr) {
   memset(addr, 0, sizeof(*addr));
   if (server.drop) return;
   const uint16_t netorder_port = grpc_htons(static_cast<uint16_t>(server.port));
@@ -497,14 +497,14 @@ void ParseServer(const GrpcLbServer& server, grpc_resolved_address* addr) {
    * server->ip_address.bytes. */
   if (server.ip_size == 4) {
     addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
-    grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(&addr->addr);
+    grpc_sockaddr_in *addr4 = reinterpret_cast<grpc_sockaddr_in *>(&addr->addr);
     addr4->sin_family = GRPC_AF_INET;
     memcpy(&addr4->sin_addr, server.ip_addr, server.ip_size);
     addr4->sin_port = netorder_port;
   } else if (server.ip_size == 16) {
     addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
-    grpc_sockaddr_in6* addr6 =
-        reinterpret_cast<grpc_sockaddr_in6*>(&addr->addr);
+    grpc_sockaddr_in6 *addr6 =
+        reinterpret_cast<grpc_sockaddr_in6 *>(&addr->addr);
     addr6->sin6_family = GRPC_AF_INET6;
     memcpy(&addr6->sin6_addr, server.ip_addr, server.ip_size);
     addr6->sin6_port = netorder_port;
@@ -514,7 +514,7 @@ void ParseServer(const GrpcLbServer& server, grpc_resolved_address* addr) {
 std::string GrpcLb::Serverlist::AsText() const {
   std::vector<std::string> entries;
   for (size_t i = 0; i < serverlist_.size(); ++i) {
-    const GrpcLbServer& server = serverlist_[i];
+    const GrpcLbServer &server = serverlist_[i];
     std::string ipport;
     if (server.drop) {
       ipport = "(drop)";
@@ -529,7 +529,7 @@ std::string GrpcLb::Serverlist::AsText() const {
   return absl::StrJoin(entries, "");
 }
 
-bool IsServerValid(const GrpcLbServer& server, size_t idx, bool log) {
+bool IsServerValid(const GrpcLbServer &server, size_t idx, bool log) {
   if (server.drop) return false;
   if (GPR_UNLIKELY(server.port >> 16 != 0)) {
     if (log) {
@@ -554,12 +554,12 @@ bool IsServerValid(const GrpcLbServer& server, size_t idx, bool log) {
 
 // Returns addresses extracted from the serverlist.
 ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
-    GrpcLbClientStats* client_stats) const {
+    GrpcLbClientStats *client_stats) const {
   RefCountedPtr<GrpcLbClientStats> stats;
   if (client_stats != nullptr) stats = client_stats->Ref();
   ServerAddressList addresses;
   for (size_t i = 0; i < serverlist_.size(); ++i) {
-    const GrpcLbServer& server = serverlist_[i];
+    const GrpcLbServer &server = serverlist_[i];
     if (!IsServerValid(server, i, false)) continue;
     // Address processing.
     grpc_resolved_address addr;
@@ -575,7 +575,7 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
               grpc_sockaddr_to_uri(&addr).c_str());
     }
     // Attach attribute to address containing LB token and stats object.
-    std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
+    std::map<const char *, std::unique_ptr<ServerAddress::AttributeInterface>>
         attributes;
     attributes[kGrpcLbAddressAttributeKey] =
         absl::make_unique<TokenAndClientStatsAttribute>(std::move(lb_token),
@@ -588,15 +588,15 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
 
 bool GrpcLb::Serverlist::ContainsAllDropEntries() const {
   if (serverlist_.empty()) return false;
-  for (const GrpcLbServer& server : serverlist_) {
+  for (const GrpcLbServer &server : serverlist_) {
     if (!server.drop) return false;
   }
   return true;
 }
 
-const char* GrpcLb::Serverlist::ShouldDrop() {
+const char *GrpcLb::Serverlist::ShouldDrop() {
   if (serverlist_.empty()) return nullptr;
-  GrpcLbServer& server = serverlist_[drop_index_];
+  GrpcLbServer &server = serverlist_[drop_index_];
   drop_index_ = (drop_index_ + 1) % serverlist_.size();
   return server.drop ? server.load_balance_token : nullptr;
 }
@@ -607,7 +607,7 @@ const char* GrpcLb::Serverlist::ShouldDrop() {
 
 GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
   // Check if we should drop the call.
-  const char* drop_token =
+  const char *drop_token =
       serverlist_ == nullptr ? nullptr : serverlist_->ShouldDrop();
   if (drop_token != nullptr) {
     // Update client load reporting stats to indicate the number of
@@ -624,13 +624,13 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
   // Forward pick to child policy.
   PickResult result = child_picker_->Pick(args);
   // If pick succeeded, add LB token to initial metadata.
-  auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+  auto *complete_pick = absl::get_if<PickResult::Complete>(&result.result);
   if (complete_pick != nullptr) {
-    const SubchannelWrapper* subchannel_wrapper =
-        static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
+    const SubchannelWrapper *subchannel_wrapper =
+        static_cast<SubchannelWrapper *>(complete_pick->subchannel.get());
     // Encode client stats object into metadata for use by
     // client_load_reporting filter.
-    GrpcLbClientStats* client_stats = subchannel_wrapper->client_stats();
+    GrpcLbClientStats *client_stats = subchannel_wrapper->client_stats();
     if (client_stats != nullptr) {
       client_stats->Ref().release();  // Ref passed via metadata.
       // The metadata value is a hack: we pretend the pointer points to
@@ -638,7 +638,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       // how to interpret it.
       args.initial_metadata->Add(
           kGrpcLbClientStatsMetadataKey,
-          absl::string_view(reinterpret_cast<const char*>(client_stats), 0));
+          absl::string_view(reinterpret_cast<const char *>(client_stats), 0));
       // Update calls-started.
       client_stats->AddCallStarted();
     }
@@ -647,7 +647,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
     // may get refreshed between when we return this pick and when the
     // initial metadata goes out on the wire.
     if (!subchannel_wrapper->lb_token().empty()) {
-      char* lb_token = static_cast<char*>(
+      char *lb_token = static_cast<char *>(
           args.call_state->Alloc(subchannel_wrapper->lb_token().size() + 1));
       strcpy(lb_token, subchannel_wrapper->lb_token().c_str());
       args.initial_metadata->Add(kGrpcLbLbTokenMetadataKey, lb_token);
@@ -663,10 +663,10 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
 //
 
 RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
-    ServerAddress address, const grpc_channel_args& args) {
+    ServerAddress address, const grpc_channel_args &args) {
   if (parent_->shutting_down_) return nullptr;
-  const TokenAndClientStatsAttribute* attribute =
-      static_cast<const TokenAndClientStatsAttribute*>(
+  const TokenAndClientStatsAttribute *attribute =
+      static_cast<const TokenAndClientStatsAttribute *>(
           address.GetAttribute(kGrpcLbAddressAttributeKey));
   if (attribute == nullptr) {
     gpr_log(GPR_ERROR,
@@ -683,7 +683,7 @@ RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
 }
 
 void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
-                                 const absl::Status& status,
+                                 const absl::Status &status,
                                  std::unique_ptr<SubchannelPicker> picker) {
   if (parent_->shutting_down_) return;
   // Record whether child policy reports READY.
@@ -826,7 +826,7 @@ void GrpcLb::BalancerCallState::StartQuery() {
   grpc_op ops[3];
   memset(ops, 0, sizeof(ops));
   // Op: send initial metadata.
-  grpc_op* op = ops;
+  grpc_op *op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
@@ -906,8 +906,8 @@ void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
 }
 
 void GrpcLb::BalancerCallState::MaybeSendClientLoadReport(
-    void* arg, grpc_error_handle error) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
+    void *arg, grpc_error_handle error) {
+  BalancerCallState *lb_calld = static_cast<BalancerCallState *>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   lb_calld->grpclb_policy()->work_serializer()->Run(
       [lb_calld, error]() { lb_calld->MaybeSendClientLoadReportLocked(error); },
@@ -984,9 +984,9 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
   }
 }
 
-void GrpcLb::BalancerCallState::ClientLoadReportDone(void* arg,
+void GrpcLb::BalancerCallState::ClientLoadReportDone(void *arg,
                                                      grpc_error_handle error) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
+  BalancerCallState *lb_calld = static_cast<BalancerCallState *>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   lb_calld->grpclb_policy()->work_serializer()->Run(
       [lb_calld, error]() { lb_calld->ClientLoadReportDoneLocked(error); },
@@ -1006,8 +1006,8 @@ void GrpcLb::BalancerCallState::ClientLoadReportDoneLocked(
 }
 
 void GrpcLb::BalancerCallState::OnInitialRequestSent(
-    void* arg, grpc_error_handle /*error*/) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
+    void *arg, grpc_error_handle /*error*/) {
+  BalancerCallState *lb_calld = static_cast<BalancerCallState *>(arg);
   lb_calld->grpclb_policy()->work_serializer()->Run(
       [lb_calld]() { lb_calld->OnInitialRequestSentLocked(); }, DEBUG_LOCATION);
 }
@@ -1025,8 +1025,8 @@ void GrpcLb::BalancerCallState::OnInitialRequestSentLocked() {
 }
 
 void GrpcLb::BalancerCallState::OnBalancerMessageReceived(
-    void* arg, grpc_error_handle /*error*/) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
+    void *arg, grpc_error_handle /*error*/) {
+  BalancerCallState *lb_calld = static_cast<BalancerCallState *>(arg);
   lb_calld->grpclb_policy()->work_serializer()->Run(
       [lb_calld]() { lb_calld->OnBalancerMessageReceivedLocked(); },
       DEBUG_LOCATION);
@@ -1049,7 +1049,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
   upb::Arena arena;
   if (!GrpcLbResponseParse(response_slice, arena.ptr(), &response) ||
       (response.type == response.INITIAL && seen_initial_response_)) {
-    char* response_slice_str =
+    char *response_slice_str =
         grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
     gpr_log(GPR_ERROR,
             "[grpclb %p] lb_calld=%p: Invalid LB response received: '%s'. "
@@ -1188,8 +1188,8 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
 }
 
 void GrpcLb::BalancerCallState::OnBalancerStatusReceived(
-    void* arg, grpc_error_handle error) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
+    void *arg, grpc_error_handle error) {
+  BalancerCallState *lb_calld = static_cast<BalancerCallState *>(arg);
   GRPC_ERROR_REF(error);  // owned by lambda
   lb_calld->grpclb_policy()->work_serializer()->Run(
       [lb_calld, error]() { lb_calld->OnBalancerStatusReceivedLocked(error); },
@@ -1200,7 +1200,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
     grpc_error_handle error) {
   GPR_ASSERT(lb_call_ != nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
-    char* status_details = grpc_slice_to_c_string(lb_call_status_details_);
+    char *status_details = grpc_slice_to_c_string(lb_call_status_details_);
     gpr_log(GPR_INFO,
             "[grpclb %p] lb_calld=%p: Status from LB server received. "
             "Status = %d, details = '%s', (lb_call: %p), error '%s'",
@@ -1252,8 +1252,8 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
 // helper code for creating balancer channel
 //
 
-ServerAddressList ExtractBalancerAddresses(const grpc_channel_args& args) {
-  const ServerAddressList* addresses =
+ServerAddressList ExtractBalancerAddresses(const grpc_channel_args &args) {
+  const ServerAddressList *addresses =
       FindGrpclbBalancerAddressesInChannelArgs(args);
   if (addresses != nullptr) return *addresses;
   return ServerAddressList();
@@ -1266,11 +1266,11 @@ ServerAddressList ExtractBalancerAddresses(const grpc_channel_args& args) {
  *   - \a response_generator: in order to propagate updates from the resolver
  *   above the grpclb policy.
  *   - \a args: other args inherited from the grpclb policy. */
-grpc_channel_args* BuildBalancerChannelArgs(
-    FakeResolverResponseGenerator* response_generator,
-    const grpc_channel_args* args) {
+grpc_channel_args *BuildBalancerChannelArgs(
+    FakeResolverResponseGenerator *response_generator,
+    const grpc_channel_args *args) {
   // Channel args to remove.
-  static const char* args_to_remove[] = {
+  static const char *args_to_remove[] = {
       // LB policy name, since we want to use the default (pick_first) in
       // the LB channel.
       GRPC_ARG_LB_POLICY_NAME,
@@ -1305,13 +1305,13 @@ grpc_channel_args* BuildBalancerChannelArgs(
           response_generator),
       // A channel arg indicating the target is a grpclb load balancer.
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER), 1),
+          const_cast<char *>(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER), 1),
       // Tells channelz that this is an internal channel.
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
+          const_cast<char *>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
   };
   // Construct channel args.
-  grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
+  grpc_channel_args *new_args = grpc_channel_args_copy_and_add_and_remove(
       args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add.data(),
       args_to_add.size());
   // Make any necessary modifications for security.
@@ -1339,8 +1339,8 @@ GrpcLb::GrpcLb(Args args)
   GRPC_CLOSURE_INIT(&lb_on_call_retry_, &GrpcLb::OnBalancerCallRetryTimer, this,
                     grpc_schedule_on_exec_ctx);
   // Record server name.
-  const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
-  const char* server_uri = grpc_channel_arg_get_string(arg);
+  const grpc_arg *arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
+  const char *server_uri = grpc_channel_arg_get_string(arg);
   GPR_ASSERT(server_uri != nullptr);
   absl::StatusOr<URI> uri = URI::Parse(server_uri);
   GPR_ASSERT(uri.ok() && !uri->path().empty());
@@ -1383,7 +1383,7 @@ void GrpcLb::ShutdownLocked() {
   // alive when that callback is invoked.
   if (lb_channel_ != nullptr) {
     if (parent_channelz_node_ != nullptr) {
-      channelz::ChannelNode* child_channelz_node =
+      channelz::ChannelNode *child_channelz_node =
           grpc_channel_get_channelz_node(lb_channel_);
       GPR_ASSERT(child_channelz_node != nullptr);
       parent_channelz_node_->RemoveChildChannel(child_channelz_node->uuid());
@@ -1424,7 +1424,7 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
     // Start watching the channel's connectivity state.  If the channel
     // goes into state TRANSIENT_FAILURE before the timer fires, we go into
     // fallback mode even if the fallback timeout has not elapsed.
-    ClientChannel* client_channel = ClientChannel::GetFromChannel(lb_channel_);
+    ClientChannel *client_channel = ClientChannel::GetFromChannel(lb_channel_);
     GPR_ASSERT(client_channel != nullptr);
     // Ref held by callback.
     watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "StateWatcher"));
@@ -1441,9 +1441,9 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
 //
 
 ServerAddressList GrpcLb::AddNullLbTokenToAddresses(
-    const ServerAddressList& addresses) {
+    const ServerAddressList &addresses) {
   ServerAddressList addresses_out;
-  for (const ServerAddress& address : addresses) {
+  for (const ServerAddress &address : addresses) {
     addresses_out.emplace_back(address.WithAttribute(
         kGrpcLbAddressAttributeKey,
         absl::make_unique<TokenAndClientStatsAttribute>("", nullptr)));
@@ -1452,20 +1452,21 @@ ServerAddressList GrpcLb::AddNullLbTokenToAddresses(
 }
 
 void GrpcLb::ProcessAddressesAndChannelArgsLocked(
-    const ServerAddressList& addresses, const grpc_channel_args& args) {
+    const ServerAddressList &addresses, const grpc_channel_args &args) {
   // Update fallback address list.
   fallback_backend_addresses_ = AddNullLbTokenToAddresses(addresses);
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
   // since we use this to trigger the client_load_reporting filter.
-  static const char* args_to_remove[] = {GRPC_ARG_LB_POLICY_NAME};
+  static const char *args_to_remove[] = {GRPC_ARG_LB_POLICY_NAME};
   grpc_arg new_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_LB_POLICY_NAME), const_cast<char*>("grpclb"));
+      const_cast<char *>(GRPC_ARG_LB_POLICY_NAME),
+      const_cast<char *>("grpclb"));
   grpc_channel_args_destroy(args_);
   args_ = grpc_channel_args_copy_and_add_and_remove(
       &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &new_arg, 1);
   // Construct args for balancer channel.
   ServerAddressList balancer_addresses = ExtractBalancerAddresses(args);
-  grpc_channel_args* lb_channel_args =
+  grpc_channel_args *lb_channel_args =
       BuildBalancerChannelArgs(response_generator_.get(), &args);
   // Create balancer channel if needed.
   if (lb_channel_ == nullptr) {
@@ -1474,9 +1475,9 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
         CreateGrpclbBalancerChannel(uri_str.c_str(), *lb_channel_args);
     GPR_ASSERT(lb_channel_ != nullptr);
     // Set up channelz linkage.
-    channelz::ChannelNode* child_channelz_node =
+    channelz::ChannelNode *child_channelz_node =
         grpc_channel_get_channelz_node(lb_channel_);
-    channelz::ChannelNode* parent_channelz_node =
+    channelz::ChannelNode *parent_channelz_node =
         grpc_channel_args_find_pointer<channelz::ChannelNode>(
             &args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
     if (child_channelz_node != nullptr && parent_channelz_node != nullptr) {
@@ -1493,7 +1494,7 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
 }
 
 void GrpcLb::CancelBalancerChannelConnectivityWatchLocked() {
-  ClientChannel* client_channel = ClientChannel::GetFromChannel(lb_channel_);
+  ClientChannel *client_channel = ClientChannel::GetFromChannel(lb_channel_);
   GPR_ASSERT(client_channel != nullptr);
   client_channel->RemoveConnectivityWatcher(watcher_);
 }
@@ -1538,8 +1539,8 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
   grpc_timer_init(&lb_call_retry_timer_, next_try, &lb_on_call_retry_);
 }
 
-void GrpcLb::OnBalancerCallRetryTimer(void* arg, grpc_error_handle error) {
-  GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
+void GrpcLb::OnBalancerCallRetryTimer(void *arg, grpc_error_handle error) {
+  GrpcLb *grpclb_policy = static_cast<GrpcLb *>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   grpclb_policy->work_serializer()->Run(
       [grpclb_policy, error]() {
@@ -1582,8 +1583,8 @@ void GrpcLb::MaybeEnterFallbackModeAfterStartup() {
   }
 }
 
-void GrpcLb::OnFallbackTimer(void* arg, grpc_error_handle error) {
-  GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
+void GrpcLb::OnFallbackTimer(void *arg, grpc_error_handle error) {
+  GrpcLb *grpclb_policy = static_cast<GrpcLb *>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   grpclb_policy->work_serializer()->Run(
       [grpclb_policy, error]() { grpclb_policy->OnFallbackTimerLocked(error); },
@@ -1612,22 +1613,22 @@ void GrpcLb::OnFallbackTimerLocked(grpc_error_handle error) {
 // code for interacting with the child policy
 //
 
-grpc_channel_args* GrpcLb::CreateChildPolicyArgsLocked(
+grpc_channel_args *GrpcLb::CreateChildPolicyArgsLocked(
     bool is_backend_from_grpclb_load_balancer) {
   absl::InlinedVector<grpc_arg, 2> args_to_add;
   args_to_add.emplace_back(grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER),
+      const_cast<char *>(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER),
       is_backend_from_grpclb_load_balancer));
   if (is_backend_from_grpclb_load_balancer) {
     args_to_add.emplace_back(grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1));
+        const_cast<char *>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1));
   }
   return grpc_channel_args_copy_and_add(args_, args_to_add.data(),
                                         args_to_add.size());
 }
 
 OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
-    const grpc_channel_args* args) {
+    const grpc_channel_args *args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
@@ -1691,21 +1692,21 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<GrpcLb>(std::move(args));
   }
 
-  const char* name() const override { return kGrpclb; }
+  const char *name() const override { return kGrpclb; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error_handle* error) const override {
+      const Json &json, grpc_error_handle *error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
     if (json.type() == Json::Type::JSON_NULL) {
       return MakeRefCounted<GrpcLbConfig>(nullptr, "");
     }
     std::vector<grpc_error_handle> error_list;
     Json child_policy_config_json_tmp;
-    const Json* child_policy_config_json;
+    const Json *child_policy_config_json;
     std::string service_name;
     auto it = json.object_value().find("serviceName");
     if (it != json.object_value().end()) {
-      const Json& service_name_json = it->second;
+      const Json &service_name_json = it->second;
       if (service_name_json.type() != Json::Type::STRING) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:serviceName error:type should be string"));
@@ -1753,11 +1754,11 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 namespace {
 
 // Only add client_load_reporting filter if the grpclb LB policy is used.
-bool maybe_add_client_load_reporting_filter(grpc_channel_stack_builder* builder,
-                                            void* arg) {
-  const grpc_channel_args* args =
+bool maybe_add_client_load_reporting_filter(grpc_channel_stack_builder *builder,
+                                            void *arg) {
+  const grpc_channel_args *args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
-  const grpc_arg* channel_arg =
+  const grpc_arg *channel_arg =
       grpc_channel_args_find(args, GRPC_ARG_LB_POLICY_NAME);
   if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_STRING &&
       strcmp(channel_arg->value.string, "grpclb") == 0) {
@@ -1767,7 +1768,7 @@ bool maybe_add_client_load_reporting_filter(grpc_channel_stack_builder* builder,
     // will minimize the number of metadata elements that the filter
     // needs to iterate through to find the ClientStats object.
     return grpc_channel_stack_builder_prepend_filter(
-        builder, static_cast<const grpc_channel_filter*>(arg), nullptr,
+        builder, static_cast<const grpc_channel_filter *>(arg), nullptr,
         nullptr);
   }
   return true;
@@ -1782,7 +1783,7 @@ void grpc_lb_policy_grpclb_init() {
   grpc_channel_init_register_stage(
       GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       maybe_add_client_load_reporting_filter,
-      const_cast<grpc_channel_filter*>(&grpc_client_load_reporting_filter));
+      const_cast<grpc_channel_filter *>(&grpc_client_load_reporting_filter));
 }
 
 void grpc_lb_policy_grpclb_shutdown() {}

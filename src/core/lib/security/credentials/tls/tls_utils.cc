@@ -29,7 +29,7 @@ namespace grpc_core {
 // Based on
 // https://github.com/grpc/grpc-java/blob/ca12e7a339add0ef48202fb72434b9dc0df41756/xds/src/main/java/io/grpc/xds/internal/sds/trust/SdsX509TrustManager.java#L62
 bool VerifySubjectAlternativeName(absl::string_view subject_alternative_name,
-                                  const std::string& matcher) {
+                                  const std::string &matcher) {
   if (subject_alternative_name.empty() ||
       absl::StartsWith(subject_alternative_name, ".")) {
     // Illegal pattern/domain name
@@ -88,11 +88,11 @@ bool VerifySubjectAlternativeName(absl::string_view subject_alternative_name,
              std::string::npos;
 }
 
-absl::string_view GetAuthPropertyValue(grpc_auth_context* context,
-                                       const char* property_name) {
+absl::string_view GetAuthPropertyValue(grpc_auth_context *context,
+                                       const char *property_name) {
   grpc_auth_property_iterator it =
       grpc_auth_context_find_properties_by_name(context, property_name);
-  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  const grpc_auth_property *prop = grpc_auth_property_iterator_next(&it);
   if (prop == nullptr) {
     gpr_log(GPR_DEBUG, "No value found for %s property.", property_name);
     return "";
@@ -104,12 +104,12 @@ absl::string_view GetAuthPropertyValue(grpc_auth_context* context,
   return absl::string_view(prop->value, prop->value_length);
 }
 
-std::vector<absl::string_view> GetAuthPropertyArray(grpc_auth_context* context,
-                                                    const char* property_name) {
+std::vector<absl::string_view> GetAuthPropertyArray(grpc_auth_context *context,
+                                                    const char *property_name) {
   std::vector<absl::string_view> values;
   grpc_auth_property_iterator it =
       grpc_auth_context_find_properties_by_name(context, property_name);
-  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  const grpc_auth_property *prop = grpc_auth_property_iterator_next(&it);
   while (prop != nullptr) {
     values.emplace_back(prop->value, prop->value_length);
     prop = grpc_auth_property_iterator_next(&it);

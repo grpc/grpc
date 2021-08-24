@@ -27,17 +27,17 @@
 
 class grpc_google_iam_credentials : public grpc_call_credentials {
  public:
-  grpc_google_iam_credentials(const char* token,
-                              const char* authority_selector);
+  grpc_google_iam_credentials(const char *token,
+                              const char *authority_selector);
   ~grpc_google_iam_credentials() override;
 
-  bool get_request_metadata(grpc_polling_entity* pollent,
+  bool get_request_metadata(grpc_polling_entity *pollent,
                             grpc_auth_metadata_context context,
-                            grpc_credentials_mdelem_array* md_array,
-                            grpc_closure* on_request_metadata,
-                            grpc_error_handle* error) override;
+                            grpc_credentials_mdelem_array *md_array,
+                            grpc_closure *on_request_metadata,
+                            grpc_error_handle *error) override;
 
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
+  void cancel_get_request_metadata(grpc_credentials_mdelem_array *md_array,
                                    grpc_error_handle error) override;
   std::string debug_string() override { return debug_string_; }
 

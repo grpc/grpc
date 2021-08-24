@@ -26,10 +26,10 @@
 /** internal node of an AVL tree */
 typedef struct grpc_avl_node {
   gpr_refcount refs;
-  void* key;
-  void* value;
-  struct grpc_avl_node* left;
-  struct grpc_avl_node* right;
+  void *key;
+  void *value;
+  struct grpc_avl_node *left;
+  struct grpc_avl_node *right;
   long height;
 } grpc_avl_node;
 
@@ -40,54 +40,54 @@ typedef struct grpc_avl_node {
  */
 typedef struct grpc_avl_vtable {
   /** destroy a key */
-  void (*destroy_key)(void* key, void* user_data);
+  void (*destroy_key)(void *key, void *user_data);
   /** copy a key, returning new value */
-  void* (*copy_key)(void* key, void* user_data);
+  void *(*copy_key)(void *key, void *user_data);
   /** compare key1, key2; return <0 if key1 < key2,
       >0 if key1 > key2, 0 if key1 == key2 */
-  long (*compare_keys)(void* key1, void* key2, void* user_data);
+  long (*compare_keys)(void *key1, void *key2, void *user_data);
   /** destroy a value */
-  void (*destroy_value)(void* value, void* user_data);
+  void (*destroy_value)(void *value, void *user_data);
   /** copy a value */
-  void* (*copy_value)(void* value, void* user_data);
+  void *(*copy_value)(void *value, void *user_data);
 } grpc_avl_vtable;
 
 /** "pointer" to an AVL tree - this is a reference
     counted object - use grpc_avl_ref to add a reference,
     grpc_avl_unref when done with a reference */
 typedef struct grpc_avl {
-  const grpc_avl_vtable* vtable;
-  grpc_avl_node* root;
+  const grpc_avl_vtable *vtable;
+  grpc_avl_node *root;
 } grpc_avl;
 
 /** Create an immutable AVL tree. */
-grpc_avl grpc_avl_create(const grpc_avl_vtable* vtable);
+grpc_avl grpc_avl_create(const grpc_avl_vtable *vtable);
 /** Add a reference to an existing tree - returns
     the tree as a convenience. The optional user_data will be passed to vtable
     functions. */
-grpc_avl grpc_avl_ref(grpc_avl avl, void* user_data);
+grpc_avl grpc_avl_ref(grpc_avl avl, void *user_data);
 /** Remove a reference to a tree - destroying it if there
     are no references left. The optional user_data will be passed to vtable
     functions. */
-void grpc_avl_unref(grpc_avl avl, void* user_data);
+void grpc_avl_unref(grpc_avl avl, void *user_data);
 /** Return a new tree with (key, value) added to avl.
     implicitly unrefs avl to allow easy chaining.
     if key exists in avl, the new tree's key entry updated
     (i.e. a duplicate is not created). The optional user_data will be passed to
     vtable functions. */
-grpc_avl grpc_avl_add(grpc_avl avl, void* key, void* value, void* user_data);
+grpc_avl grpc_avl_add(grpc_avl avl, void *key, void *value, void *user_data);
 /** Return a new tree with key deleted
     implicitly unrefs avl to allow easy chaining. The optional user_data will be
     passed to vtable functions. */
-grpc_avl grpc_avl_remove(grpc_avl avl, void* key, void* user_data);
+grpc_avl grpc_avl_remove(grpc_avl avl, void *key, void *user_data);
 /** Lookup key, and return the associated value.
     Does not mutate avl.
     Returns NULL if key is not found. The optional user_data will be passed to
     vtable functions.*/
-void* grpc_avl_get(grpc_avl avl, void* key, void* user_data);
+void *grpc_avl_get(grpc_avl avl, void *key, void *user_data);
 /** Return 1 if avl contains key, 0 otherwise; if it has the key, sets *value to
     its value. The optional user_data will be passed to vtable functions. */
-int grpc_avl_maybe_get(grpc_avl avl, void* key, void** value, void* user_data);
+int grpc_avl_maybe_get(grpc_avl avl, void *key, void **value, void *user_data);
 /** Return 1 if avl is empty, 0 otherwise */
 int grpc_avl_is_empty(grpc_avl avl);
 

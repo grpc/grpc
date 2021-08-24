@@ -52,7 +52,7 @@ struct CFStreamConnect {
 
   CFReadStreamRef read_stream;
   CFWriteStreamRef write_stream;
-  CFStreamHandle* stream_handle;
+  CFStreamHandle *stream_handle;
 
   grpc_timer alarm;
   grpc_closure on_alarm;
@@ -62,14 +62,14 @@ struct CFStreamConnect {
   bool write_stream_open;
   bool failed;
 
-  grpc_closure* closure;
-  grpc_endpoint** endpoint;
+  grpc_closure *closure;
+  grpc_endpoint **endpoint;
   int refs;
   std::string addr_name;
-  grpc_slice_allocator* slice_allocator;
+  grpc_slice_allocator *slice_allocator;
 };
 
-static void CFStreamConnectCleanup(CFStreamConnect* connect) {
+static void CFStreamConnectCleanup(CFStreamConnect *connect) {
   CFSTREAM_HANDLE_UNREF(connect->stream_handle, "async connect clean up");
   CFRelease(connect->read_stream);
   CFRelease(connect->write_stream);
@@ -80,13 +80,13 @@ static void CFStreamConnectCleanup(CFStreamConnect* connect) {
   delete connect;
 }
 
-static void OnAlarm(void* arg, grpc_error_handle error) {
-  CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
+static void OnAlarm(void *arg, grpc_error_handle error) {
+  CFStreamConnect *connect = static_cast<CFStreamConnect *>(arg);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnAlarm, error:%p", connect, error);
   }
   gpr_mu_lock(&connect->mu);
-  grpc_closure* closure = connect->closure;
+  grpc_closure *closure = connect->closure;
   connect->closure = nil;
   const bool done = (--connect->refs == 0);
   gpr_mu_unlock(&connect->mu);
@@ -101,18 +101,18 @@ static void OnAlarm(void* arg, grpc_error_handle error) {
   }
 }
 
-static void OnOpen(void* arg, grpc_error_handle error) {
-  CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
+static void OnOpen(void *arg, grpc_error_handle error) {
+  CFStreamConnect *connect = static_cast<CFStreamConnect *>(arg);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnOpen, error:%p", connect, error);
   }
   gpr_mu_lock(&connect->mu);
   grpc_timer_cancel(&connect->alarm);
-  grpc_closure* closure = connect->closure;
+  grpc_closure *closure = connect->closure;
   connect->closure = nil;
 
   bool done = (--connect->refs == 0);
-  grpc_endpoint** endpoint = connect->endpoint;
+  grpc_endpoint **endpoint = connect->endpoint;
 
   // Only schedule a callback once, by either OnAlarm or OnOpen. The
   // first one issues callback while the second one does cleanup.
@@ -144,8 +144,8 @@ static void OnOpen(void* arg, grpc_error_handle error) {
   }
 }
 
-static void ParseResolvedAddress(const grpc_resolved_address* addr,
-                                 CFStringRef* host, int* port) {
+static void ParseResolvedAddress(const grpc_resolved_address *addr,
+                                 CFStringRef *host, int *port) {
   std::string host_port = grpc_sockaddr_to_string(addr, true);
   std::string host_string;
   std::string port_string;
@@ -155,13 +155,13 @@ static void ParseResolvedAddress(const grpc_resolved_address* addr,
   *port = grpc_sockaddr_get_port(addr);
 }
 
-static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
-                                  grpc_slice_allocator* slice_allocator,
-                                  grpc_pollset_set* interested_parties,
-                                  const grpc_channel_args* channel_args,
-                                  const grpc_resolved_address* resolved_addr,
+static void CFStreamClientConnect(grpc_closure *closure, grpc_endpoint **ep,
+                                  grpc_slice_allocator *slice_allocator,
+                                  grpc_pollset_set *interested_parties,
+                                  const grpc_channel_args *channel_args,
+                                  const grpc_resolved_address *resolved_addr,
                                   grpc_millis deadline) {
-  CFStreamConnect* connect = new CFStreamConnect();
+  CFStreamConnect *connect = new CFStreamConnect();
   connect->closure = closure;
   connect->endpoint = ep;
   connect->addr_name = grpc_sockaddr_to_uri(resolved_addr);
@@ -188,7 +188,7 @@ static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
   connect->write_stream = write_stream;
   connect->stream_handle =
       CFStreamHandle::CreateStreamHandle(read_stream, write_stream);
-  GRPC_CLOSURE_INIT(&connect->on_open, OnOpen, static_cast<void*>(connect),
+  GRPC_CLOSURE_INIT(&connect->on_open, OnOpen, static_cast<void *>(connect),
                     grpc_schedule_on_exec_ctx);
   connect->stream_handle->NotifyOnOpen(&connect->on_open);
   GRPC_CLOSURE_INIT(&connect->on_alarm, OnAlarm, connect,

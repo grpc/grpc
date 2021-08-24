@@ -45,11 +45,11 @@ class StringMatcher {
                                               bool case_sensitive = true);
 
   StringMatcher() = default;
-  StringMatcher(const StringMatcher& other);
-  StringMatcher& operator=(const StringMatcher& other);
-  StringMatcher(StringMatcher&& other) noexcept;
-  StringMatcher& operator=(StringMatcher&& other) noexcept;
-  bool operator==(const StringMatcher& other) const;
+  StringMatcher(const StringMatcher &other);
+  StringMatcher &operator=(const StringMatcher &other);
+  StringMatcher(StringMatcher &&other) noexcept;
+  StringMatcher &operator=(StringMatcher &&other) noexcept;
+  bool operator==(const StringMatcher &other) const;
 
   bool Match(absl::string_view value) const;
 
@@ -58,10 +58,10 @@ class StringMatcher {
   Type type() const { return type_; }
 
   // Valid for kExact, kPrefix, kSuffix and kContains.
-  const std::string& string_matcher() const { return string_matcher_; }
+  const std::string &string_matcher() const { return string_matcher_; }
 
   // Valid for kSafeRegex.
-  RE2* regex_matcher() const { return regex_matcher_.get(); }
+  RE2 *regex_matcher() const { return regex_matcher_.get(); }
 
   bool case_sensitive() const { return case_sensitive_; }
 
@@ -115,25 +115,25 @@ class HeaderMatcher {
                                               bool invert_match = false);
 
   HeaderMatcher() = default;
-  HeaderMatcher(const HeaderMatcher& other);
-  HeaderMatcher& operator=(const HeaderMatcher& other);
-  HeaderMatcher(HeaderMatcher&& other) noexcept;
-  HeaderMatcher& operator=(HeaderMatcher&& other) noexcept;
-  bool operator==(const HeaderMatcher& other) const;
+  HeaderMatcher(const HeaderMatcher &other);
+  HeaderMatcher &operator=(const HeaderMatcher &other);
+  HeaderMatcher(HeaderMatcher &&other) noexcept;
+  HeaderMatcher &operator=(HeaderMatcher &&other) noexcept;
+  bool operator==(const HeaderMatcher &other) const;
 
-  const std::string& name() const { return name_; }
+  const std::string &name() const { return name_; }
 
   Type type() const { return type_; }
 
   // Valid for kExact, kPrefix, kSuffix and kContains.
-  const std::string& string_matcher() const {
+  const std::string &string_matcher() const {
     return matcher_.string_matcher();
   }
 
   // Valid for kSafeRegex.
-  RE2* regex_matcher() const { return matcher_.regex_matcher(); }
+  RE2 *regex_matcher() const { return matcher_.regex_matcher(); }
 
-  bool Match(const absl::optional<absl::string_view>& value) const;
+  bool Match(const absl::optional<absl::string_view> &value) const;
 
   std::string ToString() const;
 

@@ -34,18 +34,18 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 
-grpc_stats_data* grpc_stats_per_cpu_storage = nullptr;
+grpc_stats_data *grpc_stats_per_cpu_storage = nullptr;
 static size_t g_num_cores;
 
 void grpc_stats_init(void) {
   g_num_cores = GPR_MAX(1, gpr_cpu_num_cores());
-  grpc_stats_per_cpu_storage = static_cast<grpc_stats_data*>(
+  grpc_stats_per_cpu_storage = static_cast<grpc_stats_data *>(
       gpr_zalloc(sizeof(grpc_stats_data) * g_num_cores));
 }
 
 void grpc_stats_shutdown(void) { gpr_free(grpc_stats_per_cpu_storage); }
 
-void grpc_stats_collect(grpc_stats_data* output) {
+void grpc_stats_collect(grpc_stats_data *output) {
   memset(output, 0, sizeof(*output));
   for (size_t core = 0; core < g_num_cores; core++) {
     for (size_t i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
@@ -59,8 +59,8 @@ void grpc_stats_collect(grpc_stats_data* output) {
   }
 }
 
-void grpc_stats_diff(const grpc_stats_data* b, const grpc_stats_data* a,
-                     grpc_stats_data* c) {
+void grpc_stats_diff(const grpc_stats_data *b, const grpc_stats_data *a,
+                     grpc_stats_data *c) {
   for (size_t i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
     c->counters[i] = b->counters[i] - a->counters[i];
   }
@@ -69,13 +69,13 @@ void grpc_stats_diff(const grpc_stats_data* b, const grpc_stats_data* a,
   }
 }
 
-int grpc_stats_histo_find_bucket_slow(int value, const int* table,
+int grpc_stats_histo_find_bucket_slow(int value, const int *table,
                                       int table_size) {
   GRPC_STATS_INC_HISTOGRAM_SLOW_LOOKUPS();
-  const int* const start = table;
+  const int *const start = table;
   while (table_size > 0) {
     int step = table_size / 2;
-    const int* it = table + step;
+    const int *it = table + step;
     if (value >= *it) {
       table = it + 1;
       table_size -= step + 1;
@@ -86,7 +86,7 @@ int grpc_stats_histo_find_bucket_slow(int value, const int* table,
   return static_cast<int>(table - start) - 1;
 }
 
-size_t grpc_stats_histo_count(const grpc_stats_data* stats,
+size_t grpc_stats_histo_count(const grpc_stats_data *stats,
                               grpc_stats_histograms histogram) {
   size_t sum = 0;
   for (int i = 0; i < grpc_stats_histo_buckets[histogram]; i++) {
@@ -96,8 +96,8 @@ size_t grpc_stats_histo_count(const grpc_stats_data* stats,
   return sum;
 }
 
-static double threshold_for_count_below(const gpr_atm* bucket_counts,
-                                        const int* bucket_boundaries,
+static double threshold_for_count_below(const gpr_atm *bucket_counts,
+                                        const int *bucket_boundaries,
                                         int num_buckets, double count_below) {
   double count_so_far;
   double lower_bound;
@@ -133,7 +133,7 @@ static double threshold_for_count_below(const gpr_atm* bucket_counts,
   }
 }
 
-double grpc_stats_histo_percentile(const grpc_stats_data* stats,
+double grpc_stats_histo_percentile(const grpc_stats_data *stats,
                                    grpc_stats_histograms histogram,
                                    double percentile) {
   size_t count = grpc_stats_histo_count(stats, histogram);
@@ -145,7 +145,7 @@ double grpc_stats_histo_percentile(const grpc_stats_data* stats,
       static_cast<double>(count) * percentile / 100.0);
 }
 
-std::string grpc_stats_data_as_json(const grpc_stats_data* data) {
+std::string grpc_stats_data_as_json(const grpc_stats_data *data) {
   std::vector<std::string> parts;
   parts.push_back("{");
   for (size_t i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {

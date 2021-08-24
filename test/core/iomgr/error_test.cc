@@ -56,19 +56,19 @@ static void test_set_get_str() {
   GPR_ASSERT(!grpc_error_get_str(error, GRPC_ERROR_STR_TSI_ERROR, &str));
 
   GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_FILE, &str));
-  GPR_ASSERT(strstr((char*)GRPC_SLICE_START_PTR(str),
+  GPR_ASSERT(strstr((char *)GRPC_SLICE_START_PTR(str),
                     "error_test.c"));  // __FILE__ expands differently on
                                        // Windows. All should at least
                                        // contain error_test.c
 
   GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &str));
-  GPR_ASSERT(!strncmp((char*)GRPC_SLICE_START_PTR(str), "Test",
+  GPR_ASSERT(!strncmp((char *)GRPC_SLICE_START_PTR(str), "Test",
                       GRPC_SLICE_LENGTH(str)));
 
   error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
                              grpc_slice_from_static_string("longer message"));
   GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, &str));
-  GPR_ASSERT(!strncmp((char*)GRPC_SLICE_START_PTR(str), "longer message",
+  GPR_ASSERT(!strncmp((char *)GRPC_SLICE_START_PTR(str), "longer message",
                       GRPC_SLICE_LENGTH(str)));
 
   GRPC_ERROR_UNREF(error);
@@ -81,7 +81,7 @@ static void test_copy_and_unref() {
       grpc_slice_from_static_string("message"));
   grpc_slice str;
   GPR_ASSERT(grpc_error_get_str(error1, GRPC_ERROR_STR_GRPC_MESSAGE, &str));
-  GPR_ASSERT(!strncmp((char*)GRPC_SLICE_START_PTR(str), "message",
+  GPR_ASSERT(!strncmp((char *)GRPC_SLICE_START_PTR(str), "message",
                       GRPC_SLICE_LENGTH(str)));
 
   // error 1 has two refs
@@ -91,13 +91,13 @@ static void test_copy_and_unref() {
       error1, GRPC_ERROR_STR_SYSCALL, grpc_slice_from_static_string("syscall"));
   GPR_ASSERT(error3 != error1);  // should not be the same because of extra ref
   GPR_ASSERT(grpc_error_get_str(error3, GRPC_ERROR_STR_GRPC_MESSAGE, &str));
-  GPR_ASSERT(!strncmp((char*)GRPC_SLICE_START_PTR(str), "message",
+  GPR_ASSERT(!strncmp((char *)GRPC_SLICE_START_PTR(str), "message",
                       GRPC_SLICE_LENGTH(str)));
 
   // error 1 should not have a syscall but 3 should
   GPR_ASSERT(!grpc_error_get_str(error1, GRPC_ERROR_STR_SYSCALL, &str));
   GPR_ASSERT(grpc_error_get_str(error3, GRPC_ERROR_STR_SYSCALL, &str));
-  GPR_ASSERT(!strncmp((char*)GRPC_SLICE_START_PTR(str), "syscall",
+  GPR_ASSERT(!strncmp((char *)GRPC_SLICE_START_PTR(str), "syscall",
                       GRPC_SLICE_LENGTH(str)));
 
   GRPC_ERROR_UNREF(error1);
@@ -173,7 +173,7 @@ static void print_error_string_reference() {
 
 static void test_os_error() {
   int fake_errno = 5;
-  const char* syscall = "syscall name";
+  const char *syscall = "syscall name";
   grpc_error_handle error = GRPC_OS_ERROR(fake_errno, syscall);
 
   intptr_t i = 0;
@@ -182,7 +182,7 @@ static void test_os_error() {
 
   grpc_slice str;
   GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_SYSCALL, &str));
-  GPR_ASSERT(!strncmp((char*)GRPC_SLICE_START_PTR(str), syscall,
+  GPR_ASSERT(!strncmp((char *)GRPC_SLICE_START_PTR(str), syscall,
                       GRPC_SLICE_LENGTH(str)));
   GRPC_ERROR_UNREF(error);
 }
@@ -214,7 +214,7 @@ static void test_overflow() {
   ;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_set_get_int();

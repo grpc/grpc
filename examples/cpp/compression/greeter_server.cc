@@ -38,8 +38,8 @@ using helloworld::HelloRequest;
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public Greeter::Service {
-  Status SayHello(ServerContext* context, const HelloRequest* request,
-                  HelloReply* reply) override {
+  Status SayHello(ServerContext *context, const HelloRequest *request,
+                  HelloReply *reply) override {
     // Overwrite the call's compression algorithm to DEFLATE.
     context->set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
     std::string prefix("Hello ");
@@ -69,7 +69,7 @@ void RunServer() {
   server->Wait();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   RunServer();
 
   return 0;

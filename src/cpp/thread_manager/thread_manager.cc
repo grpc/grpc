@@ -26,13 +26,13 @@
 
 namespace grpc {
 
-ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
+ThreadManager::WorkerThread::WorkerThread(ThreadManager *thd_mgr)
     : thd_mgr_(thd_mgr) {
   // Make thread creation exclusive with respect to its join happening in
   // ~WorkerThread().
   thd_ = grpc_core::Thread(
       "grpcpp_sync_server",
-      [](void* th) { static_cast<ThreadManager::WorkerThread*>(th)->Run(); },
+      [](void *th) { static_cast<ThreadManager::WorkerThread *>(th)->Run(); },
       this, &created_);
   if (!created_) {
     gpr_log(GPR_ERROR, "Could not create grpc_sync_server worker-thread");
@@ -49,8 +49,8 @@ ThreadManager::WorkerThread::~WorkerThread() {
   thd_.Join();
 }
 
-ThreadManager::ThreadManager(const char* name,
-                             grpc_resource_quota* resource_quota,
+ThreadManager::ThreadManager(const char *name,
+                             grpc_resource_quota *resource_quota,
                              int min_pollers, int max_pollers)
     : shutdown_(false),
       num_pollers_(0),
@@ -94,7 +94,7 @@ int ThreadManager::GetMaxActiveThreadsSoFar() {
   return max_active_threads_sofar_;
 }
 
-void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
+void ThreadManager::MarkAsCompleted(WorkerThread *thd) {
   {
     grpc_core::MutexLock list_lock(&list_mu_);
     completed_threads_.push_back(thd);
@@ -113,7 +113,7 @@ void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
 }
 
 void ThreadManager::CleanupCompletedThreads() {
-  std::list<WorkerThread*> completed_threads;
+  std::list<WorkerThread *> completed_threads;
   {
     // swap out the completed threads list: allows other threads to clean up
     // more quickly
@@ -140,7 +140,7 @@ void ThreadManager::Initialize() {
   }
 
   for (int i = 0; i < min_pollers_; i++) {
-    WorkerThread* worker = new WorkerThread(this);
+    WorkerThread *worker = new WorkerThread(this);
     GPR_ASSERT(worker->created());  // Must be able to create the minimum
     worker->Start();
   }
@@ -148,7 +148,7 @@ void ThreadManager::Initialize() {
 
 void ThreadManager::MainWorkLoop() {
   while (true) {
-    void* tag;
+    void *tag;
     bool ok;
     WorkStatus work_status = PollForWork(&tag, &ok);
 
@@ -180,7 +180,7 @@ void ThreadManager::MainWorkLoop() {
             }
             // Drop lock before spawning thread to avoid contention
             lock.Release();
-            WorkerThread* worker = new WorkerThread(this);
+            WorkerThread *worker = new WorkerThread(this);
             if (worker->created()) {
               worker->Start();
             } else {

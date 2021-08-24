@@ -25,9 +25,9 @@
 namespace routeguide {
 class Feature;
 
-std::string GetDbFileContent(int argc, char** argv);
+std::string GetDbFileContent(int argc, char **argv);
 
-void ParseDb(const std::string& db, std::vector<Feature>* feature_list);
+void ParseDb(const std::string &db, std::vector<Feature> *feature_list);
 
 }  // namespace routeguide
 

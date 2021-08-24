@@ -66,7 +66,7 @@ class InterceptorBatchMethodsImpl
                        call_->client_rpc_info() != nullptr);
     // It is illegal to call Hijack twice
     GPR_CODEGEN_ASSERT(!ran_hijacking_interceptor_);
-    auto* rpc_info = call_->client_rpc_info();
+    auto *rpc_info = call_->client_rpc_info();
     rpc_info->hijacked_ = true;
     rpc_info->hijacked_interceptor_ = current_interceptor_index_;
     ClearHookPoints();
@@ -79,7 +79,7 @@ class InterceptorBatchMethodsImpl
     hooks_[static_cast<size_t>(type)] = true;
   }
 
-  ByteBuffer* GetSerializedSendMessage() override {
+  ByteBuffer *GetSerializedSendMessage() override {
     GPR_CODEGEN_ASSERT(orig_send_message_ != nullptr);
     if (*orig_send_message_ != nullptr) {
       GPR_CODEGEN_ASSERT(serializer_(*orig_send_message_).ok());
@@ -88,19 +88,19 @@ class InterceptorBatchMethodsImpl
     return send_message_;
   }
 
-  const void* GetSendMessage() override {
+  const void *GetSendMessage() override {
     GPR_CODEGEN_ASSERT(orig_send_message_ != nullptr);
     return *orig_send_message_;
   }
 
-  void ModifySendMessage(const void* message) override {
+  void ModifySendMessage(const void *message) override {
     GPR_CODEGEN_ASSERT(orig_send_message_ != nullptr);
     *orig_send_message_ = message;
   }
 
   bool GetSendMessageStatus() override { return !*fail_send_message_; }
 
-  std::multimap<std::string, std::string>* GetSendInitialMetadata() override {
+  std::multimap<std::string, std::string> *GetSendInitialMetadata() override {
     return send_initial_metadata_;
   }
 
@@ -109,24 +109,24 @@ class InterceptorBatchMethodsImpl
                   *error_details_);
   }
 
-  void ModifySendStatus(const Status& status) override {
+  void ModifySendStatus(const Status &status) override {
     *code_ = static_cast<grpc_status_code>(status.error_code());
     *error_details_ = status.error_details();
     *error_message_ = status.error_message();
   }
 
-  std::multimap<std::string, std::string>* GetSendTrailingMetadata() override {
+  std::multimap<std::string, std::string> *GetSendTrailingMetadata() override {
     return send_trailing_metadata_;
   }
 
-  void* GetRecvMessage() override { return recv_message_; }
+  void *GetRecvMessage() override { return recv_message_; }
 
-  std::multimap<grpc::string_ref, grpc::string_ref>* GetRecvInitialMetadata()
+  std::multimap<grpc::string_ref, grpc::string_ref> *GetRecvInitialMetadata()
       override {
     return recv_initial_metadata_->map();
   }
 
-  Status* GetRecvStatus() override { return recv_status_; }
+  Status *GetRecvStatus() override { return recv_status_; }
 
   void FailHijackedSendMessage() override {
     GPR_CODEGEN_ASSERT(hooks_[static_cast<size_t>(
@@ -134,14 +134,14 @@ class InterceptorBatchMethodsImpl
     *fail_send_message_ = true;
   }
 
-  std::multimap<grpc::string_ref, grpc::string_ref>* GetRecvTrailingMetadata()
+  std::multimap<grpc::string_ref, grpc::string_ref> *GetRecvTrailingMetadata()
       override {
     return recv_trailing_metadata_->map();
   }
 
-  void SetSendMessage(ByteBuffer* buf, const void** msg,
-                      bool* fail_send_message,
-                      std::function<Status(const void*)> serializer) {
+  void SetSendMessage(ByteBuffer *buf, const void **msg,
+                      bool *fail_send_message,
+                      std::function<Status(const void *)> serializer) {
     send_message_ = buf;
     orig_send_message_ = msg;
     fail_send_message_ = fail_send_message;
@@ -149,39 +149,39 @@ class InterceptorBatchMethodsImpl
   }
 
   void SetSendInitialMetadata(
-      std::multimap<std::string, std::string>* metadata) {
+      std::multimap<std::string, std::string> *metadata) {
     send_initial_metadata_ = metadata;
   }
 
-  void SetSendStatus(grpc_status_code* code, std::string* error_details,
-                     std::string* error_message) {
+  void SetSendStatus(grpc_status_code *code, std::string *error_details,
+                     std::string *error_message) {
     code_ = code;
     error_details_ = error_details;
     error_message_ = error_message;
   }
 
   void SetSendTrailingMetadata(
-      std::multimap<std::string, std::string>* metadata) {
+      std::multimap<std::string, std::string> *metadata) {
     send_trailing_metadata_ = metadata;
   }
 
-  void SetRecvMessage(void* message, bool* hijacked_recv_message_failed) {
+  void SetRecvMessage(void *message, bool *hijacked_recv_message_failed) {
     recv_message_ = message;
     hijacked_recv_message_failed_ = hijacked_recv_message_failed;
   }
 
-  void SetRecvInitialMetadata(MetadataMap* map) {
+  void SetRecvInitialMetadata(MetadataMap *map) {
     recv_initial_metadata_ = map;
   }
 
-  void SetRecvStatus(Status* status) { recv_status_ = status; }
+  void SetRecvStatus(Status *status) { recv_status_ = status; }
 
-  void SetRecvTrailingMetadata(MetadataMap* map) {
+  void SetRecvTrailingMetadata(MetadataMap *map) {
     recv_trailing_metadata_ = map;
   }
 
   std::unique_ptr<ChannelInterface> GetInterceptedChannel() override {
-    auto* info = call_->client_rpc_info();
+    auto *info = call_->client_rpc_info();
     if (info == nullptr) {
       return std::unique_ptr<ChannelInterface>(nullptr);
     }
@@ -212,21 +212,21 @@ class InterceptorBatchMethodsImpl
   }
 
   // This needs to be set before interceptors are run
-  void SetCall(Call* call) { call_ = call; }
+  void SetCall(Call *call) { call_ = call; }
 
   // This needs to be set before interceptors are run using RunInterceptors().
   // Alternatively, RunInterceptors(std::function<void(void)> f) can be used.
-  void SetCallOpSetInterface(CallOpSetInterface* ops) { ops_ = ops; }
+  void SetCallOpSetInterface(CallOpSetInterface *ops) { ops_ = ops; }
 
   // SetCall should have been called before this.
   // Returns true if the interceptors list is empty
   bool InterceptorsListEmpty() {
-    auto* client_rpc_info = call_->client_rpc_info();
+    auto *client_rpc_info = call_->client_rpc_info();
     if (client_rpc_info != nullptr) {
       return client_rpc_info->interceptors_.empty();
     }
 
-    auto* server_rpc_info = call_->server_rpc_info();
+    auto *server_rpc_info = call_->server_rpc_info();
     return server_rpc_info == nullptr || server_rpc_info->interceptors_.empty();
   }
 
@@ -237,7 +237,7 @@ class InterceptorBatchMethodsImpl
   // them is invoked if there were no interceptors registered.
   bool RunInterceptors() {
     GPR_CODEGEN_ASSERT(ops_);
-    auto* client_rpc_info = call_->client_rpc_info();
+    auto *client_rpc_info = call_->client_rpc_info();
     if (client_rpc_info != nullptr) {
       if (client_rpc_info->interceptors_.empty()) {
         return true;
@@ -247,7 +247,7 @@ class InterceptorBatchMethodsImpl
       }
     }
 
-    auto* server_rpc_info = call_->server_rpc_info();
+    auto *server_rpc_info = call_->server_rpc_info();
     if (server_rpc_info == nullptr || server_rpc_info->interceptors_.empty()) {
       return true;
     }
@@ -263,7 +263,7 @@ class InterceptorBatchMethodsImpl
     // This is used only by the server for initial call request
     GPR_CODEGEN_ASSERT(reverse_ == true);
     GPR_CODEGEN_ASSERT(call_->client_rpc_info() == nullptr);
-    auto* server_rpc_info = call_->server_rpc_info();
+    auto *server_rpc_info = call_->server_rpc_info();
     if (server_rpc_info == nullptr || server_rpc_info->interceptors_.empty()) {
       return true;
     }
@@ -274,7 +274,7 @@ class InterceptorBatchMethodsImpl
 
  private:
   void RunClientInterceptors() {
-    auto* rpc_info = call_->client_rpc_info();
+    auto *rpc_info = call_->client_rpc_info();
     if (!reverse_) {
       current_interceptor_index_ = 0;
     } else {
@@ -288,7 +288,7 @@ class InterceptorBatchMethodsImpl
   }
 
   void RunServerInterceptors() {
-    auto* rpc_info = call_->server_rpc_info();
+    auto *rpc_info = call_->server_rpc_info();
     if (!reverse_) {
       current_interceptor_index_ = 0;
     } else {
@@ -298,7 +298,7 @@ class InterceptorBatchMethodsImpl
   }
 
   void ProceedClient() {
-    auto* rpc_info = call_->client_rpc_info();
+    auto *rpc_info = call_->client_rpc_info();
     if (rpc_info->hijacked_ && !reverse_ &&
         current_interceptor_index_ == rpc_info->hijacked_interceptor_ &&
         !ran_hijacking_interceptor_) {
@@ -338,7 +338,7 @@ class InterceptorBatchMethodsImpl
   }
 
   void ProceedServer() {
-    auto* rpc_info = call_->server_rpc_info();
+    auto *rpc_info = call_->server_rpc_info();
     if (!reverse_) {
       current_interceptor_index_++;
       if (current_interceptor_index_ < rpc_info->interceptors_.size()) {
@@ -377,32 +377,32 @@ class InterceptorBatchMethodsImpl
   size_t current_interceptor_index_ = 0;  // Current iterator
   bool reverse_ = false;
   bool ran_hijacking_interceptor_ = false;
-  Call* call_ = nullptr;  // The Call object is present along with CallOpSet
+  Call *call_ = nullptr;  // The Call object is present along with CallOpSet
                           // object/callback
-  CallOpSetInterface* ops_ = nullptr;
+  CallOpSetInterface *ops_ = nullptr;
   std::function<void(void)> callback_;
 
-  ByteBuffer* send_message_ = nullptr;
-  bool* fail_send_message_ = nullptr;
-  const void** orig_send_message_ = nullptr;
-  std::function<Status(const void*)> serializer_;
+  ByteBuffer *send_message_ = nullptr;
+  bool *fail_send_message_ = nullptr;
+  const void **orig_send_message_ = nullptr;
+  std::function<Status(const void *)> serializer_;
 
-  std::multimap<std::string, std::string>* send_initial_metadata_;
+  std::multimap<std::string, std::string> *send_initial_metadata_;
 
-  grpc_status_code* code_ = nullptr;
-  std::string* error_details_ = nullptr;
-  std::string* error_message_ = nullptr;
+  grpc_status_code *code_ = nullptr;
+  std::string *error_details_ = nullptr;
+  std::string *error_message_ = nullptr;
 
-  std::multimap<std::string, std::string>* send_trailing_metadata_ = nullptr;
+  std::multimap<std::string, std::string> *send_trailing_metadata_ = nullptr;
 
-  void* recv_message_ = nullptr;
-  bool* hijacked_recv_message_failed_ = nullptr;
+  void *recv_message_ = nullptr;
+  bool *hijacked_recv_message_failed_ = nullptr;
 
-  MetadataMap* recv_initial_metadata_ = nullptr;
+  MetadataMap *recv_initial_metadata_ = nullptr;
 
-  Status* recv_status_ = nullptr;
+  Status *recv_status_ = nullptr;
 
-  MetadataMap* recv_trailing_metadata_ = nullptr;
+  MetadataMap *recv_trailing_metadata_ = nullptr;
 };
 
 // A special implementation of InterceptorBatchMethods to send a Cancel
@@ -427,7 +427,7 @@ class CancelInterceptorBatchMethods
                        "Cancel notification");
   }
 
-  ByteBuffer* GetSerializedSendMessage() override {
+  ByteBuffer *GetSerializedSendMessage() override {
     GPR_CODEGEN_ASSERT(false &&
                        "It is illegal to call GetSendMessage on a method which "
                        "has a Cancel notification");
@@ -442,7 +442,7 @@ class CancelInterceptorBatchMethods
     return false;
   }
 
-  const void* GetSendMessage() override {
+  const void *GetSendMessage() override {
     GPR_CODEGEN_ASSERT(
         false &&
         "It is illegal to call GetOriginalSendMessage on a method which "
@@ -450,14 +450,14 @@ class CancelInterceptorBatchMethods
     return nullptr;
   }
 
-  void ModifySendMessage(const void* /*message*/) override {
+  void ModifySendMessage(const void * /*message*/) override {
     GPR_CODEGEN_ASSERT(
         false &&
         "It is illegal to call ModifySendMessage on a method which "
         "has a Cancel notification");
   }
 
-  std::multimap<std::string, std::string>* GetSendInitialMetadata() override {
+  std::multimap<std::string, std::string> *GetSendInitialMetadata() override {
     GPR_CODEGEN_ASSERT(false &&
                        "It is illegal to call GetSendInitialMetadata on a "
                        "method which has a Cancel notification");
@@ -471,27 +471,27 @@ class CancelInterceptorBatchMethods
     return Status();
   }
 
-  void ModifySendStatus(const Status& /*status*/) override {
+  void ModifySendStatus(const Status & /*status*/) override {
     GPR_CODEGEN_ASSERT(false &&
                        "It is illegal to call ModifySendStatus on a method "
                        "which has a Cancel notification");
   }
 
-  std::multimap<std::string, std::string>* GetSendTrailingMetadata() override {
+  std::multimap<std::string, std::string> *GetSendTrailingMetadata() override {
     GPR_CODEGEN_ASSERT(false &&
                        "It is illegal to call GetSendTrailingMetadata on a "
                        "method which has a Cancel notification");
     return nullptr;
   }
 
-  void* GetRecvMessage() override {
+  void *GetRecvMessage() override {
     GPR_CODEGEN_ASSERT(false &&
                        "It is illegal to call GetRecvMessage on a method which "
                        "has a Cancel notification");
     return nullptr;
   }
 
-  std::multimap<grpc::string_ref, grpc::string_ref>* GetRecvInitialMetadata()
+  std::multimap<grpc::string_ref, grpc::string_ref> *GetRecvInitialMetadata()
       override {
     GPR_CODEGEN_ASSERT(false &&
                        "It is illegal to call GetRecvInitialMetadata on a "
@@ -499,14 +499,14 @@ class CancelInterceptorBatchMethods
     return nullptr;
   }
 
-  Status* GetRecvStatus() override {
+  Status *GetRecvStatus() override {
     GPR_CODEGEN_ASSERT(false &&
                        "It is illegal to call GetRecvStatus on a method which "
                        "has a Cancel notification");
     return nullptr;
   }
 
-  std::multimap<grpc::string_ref, grpc::string_ref>* GetRecvTrailingMetadata()
+  std::multimap<grpc::string_ref, grpc::string_ref> *GetRecvTrailingMetadata()
       override {
     GPR_CODEGEN_ASSERT(false &&
                        "It is illegal to call GetRecvTrailingMetadata on a "

@@ -44,28 +44,28 @@ class CallTracer {
     // Please refer to `grpc_transport_stream_op_batch_payload` for details on
     // arguments.
     virtual void RecordSendInitialMetadata(
-        grpc_metadata_batch* send_initial_metadata, uint32_t flags) = 0;
+        grpc_metadata_batch *send_initial_metadata, uint32_t flags) = 0;
     // TODO(yashkt): We are using gpr_atm here instead of absl::string_view
     // since that's what the transport API uses, and performing an atomic load
     // is unnecessary if the census tracer does not need it at present. Fix this
     // when the transport API changes.
-    virtual void RecordOnDoneSendInitialMetadata(gpr_atm* peer_string) = 0;
+    virtual void RecordOnDoneSendInitialMetadata(gpr_atm *peer_string) = 0;
     virtual void RecordSendTrailingMetadata(
-        grpc_metadata_batch* send_trailing_metadata) = 0;
-    virtual void RecordSendMessage(const ByteStream& send_message) = 0;
+        grpc_metadata_batch *send_trailing_metadata) = 0;
+    virtual void RecordSendMessage(const ByteStream &send_message) = 0;
     // The `RecordReceivedInitialMetadata()` and `RecordReceivedMessage()`
     // methods should only be invoked when the metadata/message was
     // successfully received, i.e., without any error.
     virtual void RecordReceivedInitialMetadata(
-        grpc_metadata_batch* recv_initial_metadata, uint32_t flags) = 0;
-    virtual void RecordReceivedMessage(const ByteStream& recv_message) = 0;
+        grpc_metadata_batch *recv_initial_metadata, uint32_t flags) = 0;
+    virtual void RecordReceivedMessage(const ByteStream &recv_message) = 0;
     virtual void RecordReceivedTrailingMetadata(
-        absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
-        const grpc_transport_stream_stats& transport_stream_stats) = 0;
+        absl::Status status, grpc_metadata_batch *recv_trailing_metadata,
+        const grpc_transport_stream_stats &transport_stream_stats) = 0;
     virtual void RecordCancel(grpc_error_handle cancel_error) = 0;
     // Should be the last API call to the object. Once invoked, the tracer
     // library is free to destroy the object.
-    virtual void RecordEnd(const gpr_timespec& latency) = 0;
+    virtual void RecordEnd(const gpr_timespec &latency) = 0;
   };
 
   virtual ~CallTracer() {}
@@ -77,7 +77,7 @@ class CallTracer {
   // ownership to the newly created `CallAttemptTracer` object. RecordEnd()
   // serves as an indication that the call stack is done with all API calls, and
   // the tracer library is free to destroy it after that.
-  virtual CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) = 0;
+  virtual CallAttemptTracer *StartNewAttempt(bool is_transparent_retry) = 0;
 };
 
 }  // namespace grpc_core

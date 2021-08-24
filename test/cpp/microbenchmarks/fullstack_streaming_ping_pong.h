@@ -35,7 +35,7 @@ namespace testing {
  * BENCHMARKING KERNELS
  */
 
-static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
+static void *tag(intptr_t x) { return reinterpret_cast<void *>(x); }
 
 // Repeatedly makes Streaming Bidi calls (exchanging a configurable number of
 // messages in each call) in a loop on a single channel
@@ -45,7 +45,7 @@ static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 //      Note: One ping-pong means two messages (one from client to server and
 //      the other from server to client):
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
-static void BM_StreamingPingPong(benchmark::State& state) {
+static void BM_StreamingPingPong(benchmark::State &state) {
   const int msg_size = state.range(0);
   const int max_ping_pongs = state.range(1);
 
@@ -77,7 +77,7 @@ static void BM_StreamingPingPong(benchmark::State& state) {
       auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
 
       // Establish async stream between client side and server side
-      void* t;
+      void *t;
       bool ok;
       int need_tags = (1 << 0) | (1 << 1);
       while (need_tags) {
@@ -139,7 +139,7 @@ static void BM_StreamingPingPong(benchmark::State& state) {
 // Repeatedly sends ping pong messages in a single streaming Bidi call in a loop
 //     First parmeter (i.e state.range(0)):  Message size (in bytes) to use
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
-static void BM_StreamingPingPongMsgs(benchmark::State& state) {
+static void BM_StreamingPingPongMsgs(benchmark::State &state) {
   const int msg_size = state.range(0);
 
   EchoTestService::AsyncService service;
@@ -169,7 +169,7 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
     auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
 
     // Establish async stream between client side and server side
-    void* t;
+    void *t;
     bool ok;
     int need_tags = (1 << 0) | (1 << 1);
     while (need_tags) {
@@ -237,7 +237,7 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
 //  Third parameter (i.e state.range(2)): Switch between using WriteAndFinish
 //  API and WriteLast API for server.
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
-static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
+static void BM_StreamingPingPongWithCoalescingApi(benchmark::State &state) {
   const int msg_size = state.range(0);
   const int max_ping_pongs = state.range(1);
   // This options is used to test out server API: WriteLast and WriteAndFinish
@@ -276,7 +276,7 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
       // to initial metadata coalescing.
       auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
 
-      void* t;
+      void *t;
       bool ok;
       int expect_tags = 0;
 

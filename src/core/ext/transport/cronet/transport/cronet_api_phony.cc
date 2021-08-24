@@ -31,55 +31,55 @@ library, so we can build it in all environments */
 /* link with the real CRONET library in the build system */
 #else
 /* Phony implementation of cronet API just to test for build-ability */
-bidirectional_stream* bidirectional_stream_create(
-    stream_engine* /*engine*/, void* /*annotation*/,
-    bidirectional_stream_callback* /*callback*/) {
+bidirectional_stream *bidirectional_stream_create(
+    stream_engine * /*engine*/, void * /*annotation*/,
+    bidirectional_stream_callback * /*callback*/) {
   GPR_ASSERT(0);
   return nullptr;
 }
 
-int bidirectional_stream_destroy(bidirectional_stream* /*stream*/) {
+int bidirectional_stream_destroy(bidirectional_stream * /*stream*/) {
   GPR_ASSERT(0);
   return 0;
 }
 
 int bidirectional_stream_start(
-    bidirectional_stream* /*stream*/, const char* /*url*/, int /*priority*/,
-    const char* /*method*/,
-    const bidirectional_stream_header_array* /*headers*/,
+    bidirectional_stream * /*stream*/, const char * /*url*/, int /*priority*/,
+    const char * /*method*/,
+    const bidirectional_stream_header_array * /*headers*/,
     bool /*end_of_stream*/) {
   GPR_ASSERT(0);
   return 0;
 }
 
-int bidirectional_stream_read(bidirectional_stream* /*stream*/,
-                              char* /*buffer*/, int /*capacity*/) {
+int bidirectional_stream_read(bidirectional_stream * /*stream*/,
+                              char * /*buffer*/, int /*capacity*/) {
   GPR_ASSERT(0);
   return 0;
 }
 
-int bidirectional_stream_write(bidirectional_stream* /*stream*/,
-                               const char* /*buffer*/, int /*count*/,
+int bidirectional_stream_write(bidirectional_stream * /*stream*/,
+                               const char * /*buffer*/, int /*count*/,
                                bool /*end_of_stream*/) {
   GPR_ASSERT(0);
   return 0;
 }
 
-void bidirectional_stream_cancel(bidirectional_stream* /*stream*/) {
+void bidirectional_stream_cancel(bidirectional_stream * /*stream*/) {
   GPR_ASSERT(0);
 }
 
-void bidirectional_stream_disable_auto_flush(bidirectional_stream* /*stream*/,
+void bidirectional_stream_disable_auto_flush(bidirectional_stream * /*stream*/,
                                              bool /*disable_auto_flush*/) {
   GPR_ASSERT(0);
 }
 
 void bidirectional_stream_delay_request_headers_until_flush(
-    bidirectional_stream* /*stream*/, bool /*delay_headers_until_flush*/) {
+    bidirectional_stream * /*stream*/, bool /*delay_headers_until_flush*/) {
   GPR_ASSERT(0);
 }
 
-void bidirectional_stream_flush(bidirectional_stream* /*stream*/) {
+void bidirectional_stream_flush(bidirectional_stream * /*stream*/) {
   GPR_ASSERT(0);
 }
 

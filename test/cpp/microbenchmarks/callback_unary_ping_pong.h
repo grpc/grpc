@@ -38,9 +38,9 @@ namespace testing {
  */
 
 inline void SendCallbackUnaryPingPong(
-    benchmark::State* state, ClientContext* cli_ctx, EchoRequest* request,
-    EchoResponse* response, EchoTestService::Stub* stub_, bool* done,
-    std::mutex* mu, std::condition_variable* cv) {
+    benchmark::State *state, ClientContext *cli_ctx, EchoRequest *request,
+    EchoResponse *response, EchoTestService::Stub *stub_, bool *done,
+    std::mutex *mu, std::condition_variable *cv) {
   int response_msgs_size = state->range(1);
   cli_ctx->AddMetadata(kServerMessageSize, std::to_string(response_msgs_size));
   stub_->async()->Echo(
@@ -61,7 +61,7 @@ inline void SendCallbackUnaryPingPong(
 };
 
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
-static void BM_CallbackUnaryPingPong(benchmark::State& state) {
+static void BM_CallbackUnaryPingPong(benchmark::State &state) {
   int request_msgs_size = state.range(0);
   int response_msgs_size = state.range(1);
   CallbackStreamingTestService service;

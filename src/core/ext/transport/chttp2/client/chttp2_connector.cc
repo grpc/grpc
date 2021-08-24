@@ -54,11 +54,11 @@ Chttp2Connector::~Chttp2Connector() {
   }
 }
 
-void Chttp2Connector::Connect(const Args& args, Result* result,
-                              grpc_closure* notify) {
+void Chttp2Connector::Connect(const Args &args, Result *result,
+                              grpc_closure *notify) {
   grpc_resolved_address addr;
   Subchannel::GetAddressFromSubchannelAddressArg(args.channel_args, &addr);
-  grpc_endpoint** ep;
+  grpc_endpoint **ep;
   {
     MutexLock lock(&mu_);
     GPR_ASSERT(notify_ == nullptr);
@@ -104,8 +104,8 @@ void Chttp2Connector::Shutdown(grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
-void Chttp2Connector::Connected(void* arg, grpc_error_handle error) {
-  Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
+void Chttp2Connector::Connected(void *arg, grpc_error_handle error) {
+  Chttp2Connector *self = static_cast<Chttp2Connector *>(arg);
   bool unref = false;
   {
     MutexLock lock(&self->mu_);
@@ -121,7 +121,7 @@ void Chttp2Connector::Connected(void* arg, grpc_error_handle error) {
         grpc_endpoint_shutdown(self->endpoint_, GRPC_ERROR_REF(error));
       }
       self->result_->Reset();
-      grpc_closure* notify = self->notify_;
+      grpc_closure *notify = self->notify_;
       self->notify_ = nullptr;
       ExecCtx::Run(DEBUG_LOCATION, notify, error);
       unref = true;
@@ -145,17 +145,17 @@ void Chttp2Connector::StartHandshakeLocked() {
 }
 
 namespace {
-void NullThenSchedClosure(const DebugLocation& location, grpc_closure** closure,
+void NullThenSchedClosure(const DebugLocation &location, grpc_closure **closure,
                           grpc_error_handle error) {
-  grpc_closure* c = *closure;
+  grpc_closure *c = *closure;
   *closure = nullptr;
   ExecCtx::Run(location, c, error);
 }
 }  // namespace
 
-void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
-  auto* args = static_cast<HandshakerArgs*>(arg);
-  Chttp2Connector* self = static_cast<Chttp2Connector*>(args->user_data);
+void Chttp2Connector::OnHandshakeDone(void *arg, grpc_error_handle error) {
+  auto *args = static_cast<HandshakerArgs *>(arg);
+  Chttp2Connector *self = static_cast<Chttp2Connector *>(args->user_data);
   {
     MutexLock lock(&self->mu_);
     if (error != GRPC_ERROR_NONE || self->shutdown_) {
@@ -213,8 +213,8 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
   self->Unref();
 }
 
-void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
-  Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
+void Chttp2Connector::OnReceiveSettings(void *arg, grpc_error_handle error) {
+  Chttp2Connector *self = static_cast<Chttp2Connector *>(arg);
   {
     MutexLock lock(&self->mu_);
     if (!self->notify_error_.has_value()) {
@@ -239,8 +239,8 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
   self->Unref();
 }
 
-void Chttp2Connector::OnTimeout(void* arg, grpc_error_handle /*error*/) {
-  Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
+void Chttp2Connector::OnTimeout(void *arg, grpc_error_handle /*error*/) {
+  Chttp2Connector *self = static_cast<Chttp2Connector *>(arg);
   {
     MutexLock lock(&self->mu_);
     if (!self->notify_error_.has_value()) {

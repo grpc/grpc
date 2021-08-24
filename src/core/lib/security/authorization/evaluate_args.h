@@ -41,7 +41,7 @@ class EvaluateArgs {
       int port = 0;
     };
 
-    PerChannelArgs(grpc_auth_context* auth_context, grpc_endpoint* endpoint);
+    PerChannelArgs(grpc_auth_context *auth_context, grpc_endpoint *endpoint);
 
     absl::string_view transport_security_type;
     absl::string_view spiffe_id;
@@ -52,7 +52,7 @@ class EvaluateArgs {
     Address peer_address;
   };
 
-  EvaluateArgs(grpc_metadata_batch* metadata, PerChannelArgs* channel_args)
+  EvaluateArgs(grpc_metadata_batch *metadata, PerChannelArgs *channel_args)
       : metadata_(metadata), channel_args_(channel_args) {}
 
   absl::string_view GetPath() const;
@@ -67,7 +67,7 @@ class EvaluateArgs {
   // comma-concatenated string of all values in concatenated_value and returns a
   // string_view of that string.
   absl::optional<absl::string_view> GetHeaderValue(
-      absl::string_view key, std::string* concatenated_value) const;
+      absl::string_view key, std::string *concatenated_value) const;
 
   grpc_resolved_address GetLocalAddress() const;
   absl::string_view GetLocalAddressString() const;
@@ -82,8 +82,8 @@ class EvaluateArgs {
   absl::string_view GetCommonName() const;
 
  private:
-  grpc_metadata_batch* metadata_;
-  PerChannelArgs* channel_args_;
+  grpc_metadata_batch *metadata_;
+  PerChannelArgs *channel_args_;
 };
 
 }  // namespace grpc_core

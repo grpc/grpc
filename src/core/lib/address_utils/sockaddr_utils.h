@@ -32,61 +32,61 @@
 
    If addr4_out is non-NULL, the inner IPv4 address will be copied here when
    returning true. */
-int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* addr,
-                              grpc_resolved_address* addr4_out);
+int grpc_sockaddr_is_v4mapped(const grpc_resolved_address *addr,
+                              grpc_resolved_address *addr4_out);
 
 /* If addr is an AF_INET address, writes the corresponding ::ffff:0.0.0.0/96
    address to addr6_out and returns true.  Otherwise returns false. */
-int grpc_sockaddr_to_v4mapped(const grpc_resolved_address* addr,
-                              grpc_resolved_address* addr6_out);
+int grpc_sockaddr_to_v4mapped(const grpc_resolved_address *addr,
+                              grpc_resolved_address *addr6_out);
 
 /* If addr is ::, 0.0.0.0, or ::ffff:0.0.0.0, writes the port number to
  *port_out (if not NULL) and returns true, otherwise returns false. */
-int grpc_sockaddr_is_wildcard(const grpc_resolved_address* addr, int* port_out);
+int grpc_sockaddr_is_wildcard(const grpc_resolved_address *addr, int *port_out);
 
 /* Writes 0.0.0.0:port and [::]:port to separate sockaddrs. */
-void grpc_sockaddr_make_wildcards(int port, grpc_resolved_address* wild4_out,
-                                  grpc_resolved_address* wild6_out);
+void grpc_sockaddr_make_wildcards(int port, grpc_resolved_address *wild4_out,
+                                  grpc_resolved_address *wild6_out);
 
 /* Writes 0.0.0.0:port. */
-void grpc_sockaddr_make_wildcard4(int port, grpc_resolved_address* wild_out);
+void grpc_sockaddr_make_wildcard4(int port, grpc_resolved_address *wild_out);
 
 /* Writes [::]:port. */
-void grpc_sockaddr_make_wildcard6(int port, grpc_resolved_address* wild_out);
+void grpc_sockaddr_make_wildcard6(int port, grpc_resolved_address *wild_out);
 
 /* Return the IP port number of a sockaddr */
-int grpc_sockaddr_get_port(const grpc_resolved_address* addr);
+int grpc_sockaddr_get_port(const grpc_resolved_address *addr);
 
 /* Set IP port number of a sockaddr */
-int grpc_sockaddr_set_port(grpc_resolved_address* addr, int port);
+int grpc_sockaddr_set_port(grpc_resolved_address *addr, int port);
 
 // Converts a sockaddr into a newly-allocated human-readable string.
 //
 // Currently, only the AF_INET and AF_INET6 families are recognized.
 // If the normalize flag is enabled, ::ffff:0.0.0.0/96 IPv6 addresses are
 // displayed as plain IPv4.
-std::string grpc_sockaddr_to_string(const grpc_resolved_address* addr,
+std::string grpc_sockaddr_to_string(const grpc_resolved_address *addr,
                                     bool normalize) GRPC_MUST_USE_RESULT;
 
 // Newer form of grpc_string_to_sockaddr which returns an error instead of
 // crashing if \a addr is not IPv6/IPv6
-grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address* out,
-                                          const char* addr, int port);
+grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address *out,
+                                          const char *addr, int port);
 
 /* Returns the URI string corresponding to \a addr */
-std::string grpc_sockaddr_to_uri(const grpc_resolved_address* addr);
+std::string grpc_sockaddr_to_uri(const grpc_resolved_address *addr);
 
 /* Returns the URI scheme corresponding to \a addr */
-const char* grpc_sockaddr_get_uri_scheme(const grpc_resolved_address* addr);
+const char *grpc_sockaddr_get_uri_scheme(const grpc_resolved_address *addr);
 
-int grpc_sockaddr_get_family(const grpc_resolved_address* resolved_addr);
+int grpc_sockaddr_get_family(const grpc_resolved_address *resolved_addr);
 
 std::string grpc_sockaddr_get_packed_host(
-    const grpc_resolved_address* resolved_addr);
+    const grpc_resolved_address *resolved_addr);
 
 // Applies a mask of \a mask_bits to IPv4/IPv6 addresses. Has no effect if the
 // address type is not IPv4/IPv6.
-void grpc_sockaddr_mask_bits(grpc_resolved_address* address,
+void grpc_sockaddr_mask_bits(grpc_resolved_address *address,
                              uint32_t mask_bits);
 
 // If \a address is IPv4/IPv6, checks if the IP address falls in the CIDR
@@ -95,14 +95,14 @@ void grpc_sockaddr_mask_bits(grpc_resolved_address* address,
 // are ignored for matching purposes. Note that, \a subnet_address should be
 // normalized, i.e., `grpc_sockaddr_mask_bits` should have been called on it if
 // necessary.
-bool grpc_sockaddr_match_subnet(const grpc_resolved_address* address,
-                                const grpc_resolved_address* subnet_address,
+bool grpc_sockaddr_match_subnet(const grpc_resolved_address *address,
+                                const grpc_resolved_address *subnet_address,
                                 uint32_t mask_bits);
 
 namespace grpc_event_engine {
 namespace experimental {
 
-std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress& addr);
+std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress &addr);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

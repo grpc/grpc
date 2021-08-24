@@ -43,14 +43,14 @@
 struct fullstack_fixture_data {
   ~fullstack_fixture_data() { grpc_end2end_http_proxy_destroy(proxy); }
   std::string server_addr;
-  grpc_end2end_http_proxy* proxy = nullptr;
+  grpc_end2end_http_proxy *proxy = nullptr;
 };
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
-    grpc_channel_args* client_args, grpc_channel_args* /*server_args*/) {
+    grpc_channel_args *client_args, grpc_channel_args * /*server_args*/) {
   grpc_end2end_test_fixture f;
   memset(&f, 0, sizeof(f));
-  fullstack_fixture_data* ffd = new fullstack_fixture_data();
+  fullstack_fixture_data *ffd = new fullstack_fixture_data();
   const int server_port = grpc_pick_unused_port_or_die();
   ffd->server_addr = grpc_core::JoinHostPort("localhost", server_port);
 
@@ -65,12 +65,12 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   return f;
 }
 
-void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
-                                  grpc_channel_args* client_args) {
-  fullstack_fixture_data* ffd =
-      static_cast<fullstack_fixture_data*>(f->fixture_data);
+void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
+                                  grpc_channel_args *client_args) {
+  fullstack_fixture_data *ffd =
+      static_cast<fullstack_fixture_data *>(f->fixture_data);
   /* If testing for proxy auth, add credentials to proxy uri */
-  const char* proxy_auth_str = grpc_channel_args_find_string(
+  const char *proxy_auth_str = grpc_channel_args_find_string(
       client_args, GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
   std::string proxy_uri;
   if (proxy_auth_str == nullptr) {
@@ -87,10 +87,10 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
   GPR_ASSERT(f->client);
 }
 
-void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
-                                  grpc_channel_args* server_args) {
-  fullstack_fixture_data* ffd =
-      static_cast<fullstack_fixture_data*>(f->fixture_data);
+void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
+                                  grpc_channel_args *server_args) {
+  fullstack_fixture_data *ffd =
+      static_cast<fullstack_fixture_data *>(f->fixture_data);
   if (f->server) {
     grpc_server_destroy(f->server);
   }
@@ -101,9 +101,9 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
   grpc_server_start(f->server);
 }
 
-void chttp2_tear_down_fullstack(grpc_end2end_test_fixture* f) {
-  fullstack_fixture_data* ffd =
-      static_cast<fullstack_fixture_data*>(f->fixture_data);
+void chttp2_tear_down_fullstack(grpc_end2end_test_fixture *f) {
+  fullstack_fixture_data *ffd =
+      static_cast<fullstack_fixture_data *>(f->fixture_data);
   delete ffd;
 }
 
@@ -117,7 +117,7 @@ static grpc_end2end_test_config configs[] = {
      chttp2_init_server_fullstack, chttp2_tear_down_fullstack},
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   size_t i;
 
   grpc::testing::TestEnvironment env(argc, argv);

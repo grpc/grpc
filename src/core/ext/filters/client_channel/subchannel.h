@@ -49,26 +49,26 @@ class SubchannelCall;
 class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
   ConnectedSubchannel(
-      grpc_channel_stack* channel_stack, const grpc_channel_args* args,
+      grpc_channel_stack *channel_stack, const grpc_channel_args *args,
       RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
   ~ConnectedSubchannel() override;
 
-  void StartWatch(grpc_pollset_set* interested_parties,
+  void StartWatch(grpc_pollset_set *interested_parties,
                   OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
 
-  void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
+  void Ping(grpc_closure *on_initiate, grpc_closure *on_ack);
 
-  grpc_channel_stack* channel_stack() const { return channel_stack_; }
-  const grpc_channel_args* args() const { return args_; }
-  channelz::SubchannelNode* channelz_subchannel() const {
+  grpc_channel_stack *channel_stack() const { return channel_stack_; }
+  const grpc_channel_args *args() const { return args_; }
+  channelz::SubchannelNode *channelz_subchannel() const {
     return channelz_subchannel_.get();
   }
 
   size_t GetInitialCallSizeEstimate() const;
 
  private:
-  grpc_channel_stack* channel_stack_;
-  grpc_channel_args* args_;
+  grpc_channel_stack *channel_stack_;
+  grpc_channel_args *args_;
   // ref counted pointer to the channelz node in this connected subchannel's
   // owning subchannel.
   RefCountedPtr<channelz::SubchannelNode> channelz_subchannel_;
@@ -79,62 +79,62 @@ class SubchannelCall {
  public:
   struct Args {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
-    grpc_polling_entity* pollent;
+    grpc_polling_entity *pollent;
     grpc_slice path;
     gpr_cycle_counter start_time;
     grpc_millis deadline;
-    Arena* arena;
-    grpc_call_context_element* context;
-    CallCombiner* call_combiner;
+    Arena *arena;
+    grpc_call_context_element *context;
+    CallCombiner *call_combiner;
   };
   static RefCountedPtr<SubchannelCall> Create(Args args,
-                                              grpc_error_handle* error);
+                                              grpc_error_handle *error);
 
   // Continues processing a transport stream op batch.
-  void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
+  void StartTransportStreamOpBatch(grpc_transport_stream_op_batch *batch);
 
   // Returns the call stack of the subchannel call.
-  grpc_call_stack* GetCallStack();
+  grpc_call_stack *GetCallStack();
 
   // Sets the 'then_schedule_closure' argument for call stack destruction.
   // Must be called once per call.
-  void SetAfterCallStackDestroy(grpc_closure* closure);
+  void SetAfterCallStackDestroy(grpc_closure *closure);
 
   // Interface of RefCounted<>.
   RefCountedPtr<SubchannelCall> Ref() GRPC_MUST_USE_RESULT;
-  RefCountedPtr<SubchannelCall> Ref(const DebugLocation& location,
-                                    const char* reason) GRPC_MUST_USE_RESULT;
+  RefCountedPtr<SubchannelCall> Ref(const DebugLocation &location,
+                                    const char *reason) GRPC_MUST_USE_RESULT;
   // When refcount drops to 0, destroys itself and the associated call stack,
   // but does NOT free the memory because it's in the call arena.
   void Unref();
-  void Unref(const DebugLocation& location, const char* reason);
+  void Unref(const DebugLocation &location, const char *reason);
 
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().
   template <typename T>
   friend class RefCountedPtr;
 
-  SubchannelCall(Args args, grpc_error_handle* error);
+  SubchannelCall(Args args, grpc_error_handle *error);
 
   // If channelz is enabled, intercepts recv_trailing so that we may check the
   // status and associate it to a subchannel.
   void MaybeInterceptRecvTrailingMetadata(
-      grpc_transport_stream_op_batch* batch);
+      grpc_transport_stream_op_batch *batch);
 
-  static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
+  static void RecvTrailingMetadataReady(void *arg, grpc_error_handle error);
 
   // Interface of RefCounted<>.
   void IncrementRefCount();
-  void IncrementRefCount(const DebugLocation& location, const char* reason);
+  void IncrementRefCount(const DebugLocation &location, const char *reason);
 
-  static void Destroy(void* arg, grpc_error_handle error);
+  static void Destroy(void *arg, grpc_error_handle error);
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  grpc_closure* after_call_stack_destroy_ = nullptr;
+  grpc_closure *after_call_stack_destroy_ = nullptr;
   // State needed to support channelz interception of recv trailing metadata.
   grpc_closure recv_trailing_metadata_ready_;
-  grpc_closure* original_recv_trailing_metadata_ = nullptr;
-  grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
+  grpc_closure *original_recv_trailing_metadata_ = nullptr;
+  grpc_metadata_batch *recv_trailing_metadata_ = nullptr;
   grpc_millis deadline_;
 };
 
@@ -165,7 +165,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
     // connectivity state change.
     virtual void OnConnectivityStateChange() = 0;
 
-    virtual grpc_pollset_set* interested_parties() = 0;
+    virtual grpc_pollset_set *interested_parties() = 0;
 
     // Enqueues connectivity state change notifications.
     // When the state changes to READY, connected_subchannel will
@@ -193,11 +193,11 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // Creates a subchannel given \a connector and \a args.
   static RefCountedPtr<Subchannel> Create(
       OrphanablePtr<SubchannelConnector> connector,
-      const grpc_channel_args* args);
+      const grpc_channel_args *args);
 
   // The ctor and dtor are not intended to use directly.
   Subchannel(SubchannelKey key, OrphanablePtr<SubchannelConnector> connector,
-             const grpc_channel_args* args);
+             const grpc_channel_args *args);
   ~Subchannel() override;
 
   // Throttles keepalive time to \a new_keepalive_time iff \a new_keepalive_time
@@ -207,11 +207,11 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   // Gets the string representing the subchannel address.
   // Caller doesn't take ownership.
-  const char* GetTargetAddress();
+  const char *GetTargetAddress();
 
-  const grpc_channel_args* channel_args() const { return args_; }
+  const grpc_channel_args *channel_args() const { return args_; }
 
-  channelz::SubchannelNode* channelz_node();
+  channelz::SubchannelNode *channelz_node();
 
   // Returns the current connectivity state of the subchannel.
   // If health_check_service_name is non-null, the returned connectivity
@@ -219,8 +219,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // service name.
   // If the return value is GRPC_CHANNEL_READY, also sets *connected_subchannel.
   grpc_connectivity_state CheckConnectivityState(
-      const absl::optional<std::string>& health_check_service_name,
-      RefCountedPtr<ConnectedSubchannel>* connected_subchannel)
+      const absl::optional<std::string> &health_check_service_name,
+      RefCountedPtr<ConnectedSubchannel> *connected_subchannel)
       ABSL_LOCKS_EXCLUDED(mu_);
 
   // Starts watching the subchannel's connectivity state.
@@ -233,15 +233,15 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // destroyed or when CancelConnectivityStateWatch() is called.
   void WatchConnectivityState(
       grpc_connectivity_state initial_state,
-      const absl::optional<std::string>& health_check_service_name,
+      const absl::optional<std::string> &health_check_service_name,
       RefCountedPtr<ConnectivityStateWatcherInterface> watcher)
       ABSL_LOCKS_EXCLUDED(mu_);
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
   void CancelConnectivityStateWatch(
-      const absl::optional<std::string>& health_check_service_name,
-      ConnectivityStateWatcherInterface* watcher) ABSL_LOCKS_EXCLUDED(mu_);
+      const absl::optional<std::string> &health_check_service_name,
+      ConnectivityStateWatcherInterface *watcher) ABSL_LOCKS_EXCLUDED(mu_);
 
   // Attempt to connect to the backend.  Has no effect if already connected.
   void AttemptToConnect() ABSL_LOCKS_EXCLUDED(mu_);
@@ -258,15 +258,15 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   // Returns a new channel arg encoding the subchannel address as a URI
   // string. Caller is responsible for freeing the string.
-  static grpc_arg CreateSubchannelAddressArg(const grpc_resolved_address* addr);
+  static grpc_arg CreateSubchannelAddressArg(const grpc_resolved_address *addr);
 
   // Returns the URI string from the subchannel address arg in \a args.
-  static const char* GetUriFromSubchannelAddressArg(
-      const grpc_channel_args* args);
+  static const char *GetUriFromSubchannelAddressArg(
+      const grpc_channel_args *args);
 
   // Sets \a addr from the subchannel address arg in \a args.
-  static void GetAddressFromSubchannelAddressArg(const grpc_channel_args* args,
-                                                 grpc_resolved_address* addr);
+  static void GetAddressFromSubchannelAddressArg(const grpc_channel_args *args,
+                                                 grpc_resolved_address *addr);
 
  private:
   // A linked list of ConnectivityStateWatcherInterfaces that are monitoring
@@ -277,11 +277,11 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
     void AddWatcherLocked(
         RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
-    void RemoveWatcherLocked(ConnectivityStateWatcherInterface* watcher);
+    void RemoveWatcherLocked(ConnectivityStateWatcherInterface *watcher);
 
     // Notifies all watchers in the list about a change to state.
-    void NotifyLocked(Subchannel* subchannel, grpc_connectivity_state state,
-                      const absl::Status& status);
+    void NotifyLocked(Subchannel *subchannel, grpc_connectivity_state state,
+                      const absl::Status &status);
 
     void Clear() { watchers_.clear(); }
 
@@ -290,7 +290,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
    private:
     // TODO(roth): Once we can use C++-14 heterogeneous lookups, this can
     // be a set instead of a map.
-    std::map<ConnectivityStateWatcherInterface*,
+    std::map<ConnectivityStateWatcherInterface *,
              RefCountedPtr<ConnectivityStateWatcherInterface>>
         watchers_;
   };
@@ -309,17 +309,17 @@ class Subchannel : public DualRefCounted<Subchannel> {
     void AddWatcherLocked(
         WeakRefCountedPtr<Subchannel> subchannel,
         grpc_connectivity_state initial_state,
-        const std::string& health_check_service_name,
+        const std::string &health_check_service_name,
         RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
-    void RemoveWatcherLocked(const std::string& health_check_service_name,
-                             ConnectivityStateWatcherInterface* watcher);
+    void RemoveWatcherLocked(const std::string &health_check_service_name,
+                             ConnectivityStateWatcherInterface *watcher);
 
     // Notifies the watcher when the subchannel's state changes.
-    void NotifyLocked(grpc_connectivity_state state, const absl::Status& status)
+    void NotifyLocked(grpc_connectivity_state state, const absl::Status &status)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Subchannel::mu_);
 
     grpc_connectivity_state CheckConnectivityStateLocked(
-        Subchannel* subchannel, const std::string& health_check_service_name)
+        Subchannel *subchannel, const std::string &health_check_service_name)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Subchannel::mu_);
 
     void ShutdownLocked();
@@ -336,15 +336,15 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   // Sets the subchannel's connectivity state to \a state.
   void SetConnectivityStateLocked(grpc_connectivity_state state,
-                                  const absl::Status& status)
+                                  const absl::Status &status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Methods for connection.
   void MaybeStartConnectingLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  static void OnRetryAlarm(void* arg, grpc_error_handle error)
+  static void OnRetryAlarm(void *arg, grpc_error_handle error)
       ABSL_LOCKS_EXCLUDED(mu_);
   void ContinueConnectingLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  static void OnConnectingFinished(void* arg, grpc_error_handle error)
+  static void OnConnectingFinished(void *arg, grpc_error_handle error)
       ABSL_LOCKS_EXCLUDED(mu_);
   bool PublishTransportLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
@@ -354,9 +354,9 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // Subchannel key that identifies this subchannel in the subchannel pool.
   const SubchannelKey key_;
   // Channel args.
-  grpc_channel_args* args_;
+  grpc_channel_args *args_;
   // pollset_set tracking who's interested in a connection being setup.
-  grpc_pollset_set* pollset_set_;
+  grpc_pollset_set *pollset_set_;
   // Channelz tracking.
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
 

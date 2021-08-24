@@ -48,11 +48,11 @@ namespace grpc {
 namespace testing {
 namespace {
 
-void* tag(int i) { return reinterpret_cast<void*>(i); }
+void *tag(int i) { return reinterpret_cast<void *>(i); }
 
-void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
+void verify_ok(CompletionQueue *cq, int i, bool expect_ok) {
   bool ok;
-  void* got_tag;
+  void *got_tag;
   EXPECT_TRUE(cq->Next(&got_tag, &ok));
   EXPECT_EQ(expect_ok, ok);
   EXPECT_EQ(tag(i), got_tag);
@@ -82,7 +82,7 @@ class GenericEnd2endTest : public ::testing::Test {
   void ShutDownServerAndCQs() {
     if (!shut_down_) {
       server_->Shutdown();
-      void* ignored_tag;
+      void *ignored_tag;
       bool ignored_ok;
       cli_cq_.Shutdown();
       srv_cq_->Shutdown();
@@ -134,7 +134,7 @@ class GenericEnd2endTest : public ::testing::Test {
       // Rather than using the original kMethodName, make a short-lived
       // copy to also confirm that we don't refer to this object beyond
       // the initial call preparation
-      const std::string* method_name = new std::string(kMethodName);
+      const std::string *method_name = new std::string(kMethodName);
 
       std::unique_ptr<GenericClientAsyncReaderWriter> call =
           generic_stub_->PrepareCall(&cli_ctx, *method_name, &cli_cq_);
@@ -211,14 +211,14 @@ class GenericEnd2endTest : public ::testing::Test {
       if (!shutting_down_) {
         generic_service_.RequestCall(
             &server_context, &reader_writer, srv_cq_.get(), srv_cq_.get(),
-            reinterpret_cast<void*>(Event::kCallReceived));
+            reinterpret_cast<void *>(Event::kCallReceived));
       }
     }
     // Process events.
     {
       Event event;
       bool ok;
-      while (srv_cq_->Next(reinterpret_cast<void**>(&event), &ok)) {
+      while (srv_cq_->Next(reinterpret_cast<void **>(&event), &ok)) {
         std::lock_guard<std::mutex> lock(shutting_down_mu_);
         if (shutting_down_) {
           // The main thread has started shutting down. Simply continue to drain
@@ -230,7 +230,7 @@ class GenericEnd2endTest : public ::testing::Test {
           case Event::kCallReceived:
             reader_writer.Finish(
                 ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "go away"),
-                reinterpret_cast<void*>(Event::kResponseSent));
+                reinterpret_cast<void *>(Event::kResponseSent));
             break;
 
           case Event::kResponseSent:
@@ -424,7 +424,7 @@ TEST_F(GenericEnd2endTest, ShortDeadline) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

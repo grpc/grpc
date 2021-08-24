@@ -120,9 +120,9 @@ ConstructPerWorkerCredentialTypesMap() {
 }
 
 static std::unique_ptr<ScenarioResult> RunAndReport(
-    const Scenario& scenario,
-    const std::map<std::string, std::string>& per_worker_credential_types,
-    bool* success) {
+    const Scenario &scenario,
+    const std::map<std::string, std::string> &per_worker_credential_types,
+    bool *success) {
   std::cerr << "RUNNING SCENARIO: " << scenario.name() << "\n";
   auto result = RunScenario(
       scenario.client_config(), scenario.num_clients(),
@@ -165,9 +165,9 @@ static std::unique_ptr<ScenarioResult> RunAndReport(
 }
 
 static double GetCpuLoad(
-    Scenario* scenario, double offered_load,
-    const std::map<std::string, std::string>& per_worker_credential_types,
-    bool* success) {
+    Scenario *scenario, double offered_load,
+    const std::map<std::string, std::string> &per_worker_credential_types,
+    bool *success) {
   scenario->mutable_client_config()
       ->mutable_load_params()
       ->mutable_poisson()
@@ -177,9 +177,9 @@ static double GetCpuLoad(
 }
 
 static double BinarySearch(
-    Scenario* scenario, double targeted_cpu_load, double low, double high,
-    const std::map<std::string, std::string>& per_worker_credential_types,
-    bool* success) {
+    Scenario *scenario, double targeted_cpu_load, double low, double high,
+    const std::map<std::string, std::string> &per_worker_credential_types,
+    bool *success) {
   while (low <= high * (1 - absl::GetFlag(FLAGS_error_tolerance))) {
     double mid = low + (high - low) / 2;
     double current_cpu_load =
@@ -200,9 +200,9 @@ static double BinarySearch(
 }
 
 static double SearchOfferedLoad(
-    double initial_offered_load, double targeted_cpu_load, Scenario* scenario,
-    const std::map<std::string, std::string>& per_worker_credential_types,
-    bool* success) {
+    double initial_offered_load, double targeted_cpu_load, Scenario *scenario,
+    const std::map<std::string, std::string> &per_worker_credential_types,
+    bool *success) {
   std::cerr << "RUNNING SCENARIO: " << scenario->name() << "\n";
   double current_offered_load = initial_offered_load;
   double current_cpu_load = GetCpuLoad(scenario, current_offered_load,
@@ -244,11 +244,11 @@ static bool QpsDriver() {
   auto per_worker_credential_types = ConstructPerWorkerCredentialTypesMap();
   if (scfile) {
     // Read the json data from disk
-    FILE* json_file = fopen(absl::GetFlag(FLAGS_scenarios_file).c_str(), "r");
+    FILE *json_file = fopen(absl::GetFlag(FLAGS_scenarios_file).c_str(), "r");
     GPR_ASSERT(json_file != nullptr);
     fseek(json_file, 0, SEEK_END);
     long len = ftell(json_file);
-    char* data = new char[len];
+    char *data = new char[len];
     fseek(json_file, 0, SEEK_SET);
     GPR_ASSERT(len == (long)fread(data, 1, len, json_file));
     fclose(json_file);
@@ -271,11 +271,11 @@ static bool QpsDriver() {
 
   for (int i = 0; i < scenarios.scenarios_size(); i++) {
     if (absl::GetFlag(FLAGS_search_param).empty()) {
-      const Scenario& scenario = scenarios.scenarios(i);
+      const Scenario &scenario = scenarios.scenarios(i);
       RunAndReport(scenario, per_worker_credential_types, &success);
     } else {
       if (absl::GetFlag(FLAGS_search_param) == "offered_load") {
-        Scenario* scenario = scenarios.mutable_scenarios(i);
+        Scenario *scenario = scenarios.mutable_scenarios(i);
         double targeted_offered_load =
             SearchOfferedLoad(absl::GetFlag(FLAGS_initial_search_value),
                               absl::GetFlag(FLAGS_targeted_cpu_load), scenario,
@@ -294,7 +294,7 @@ static bool QpsDriver() {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
 

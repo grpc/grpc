@@ -30,7 +30,7 @@
 #include "src/core/lib/iomgr/event_engine/iomgr.h"
 #include "src/core/lib/profiling/timers.h"
 
-static void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
+static void exec_ctx_run(grpc_closure *closure, grpc_error_handle error) {
 #ifndef NDEBUG
   closure->scheduled = false;
   if (grpc_trace_closure.enabled()) {
@@ -49,7 +49,7 @@ static void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
-static void exec_ctx_sched(grpc_closure* closure, grpc_error_handle error) {
+static void exec_ctx_sched(grpc_closure *closure, grpc_error_handle error) {
 #if defined(GRPC_USE_EVENT_ENGINE) && \
     defined(GRPC_EVENT_ENGINE_REPLACE_EXEC_CTX)
   grpc_iomgr_event_engine()->Run(GrpcClosureToCallback(closure, error), {});
@@ -131,8 +131,8 @@ grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles) {
 }
 
 namespace grpc_core {
-GPR_THREAD_LOCAL(ExecCtx*) ExecCtx::exec_ctx_;
-GPR_THREAD_LOCAL(ApplicationCallbackExecCtx*)
+GPR_THREAD_LOCAL(ExecCtx *) ExecCtx::exec_ctx_;
+GPR_THREAD_LOCAL(ApplicationCallbackExecCtx *)
 ApplicationCallbackExecCtx::callback_exec_ctx_;
 
 // WARNING: for testing purposes only!
@@ -155,10 +155,10 @@ bool ExecCtx::Flush() {
   GPR_TIMER_SCOPE("grpc_exec_ctx_flush", 0);
   for (;;) {
     if (!grpc_closure_list_empty(closure_list_)) {
-      grpc_closure* c = closure_list_.head;
+      grpc_closure *c = closure_list_.head;
       closure_list_.head = closure_list_.tail = nullptr;
       while (c != nullptr) {
-        grpc_closure* next = c->next_data.next;
+        grpc_closure *next = c->next_data.next;
         grpc_error_handle error = c->error_data.error;
         did_something = true;
         exec_ctx_run(c, error);
@@ -180,7 +180,7 @@ grpc_millis ExecCtx::Now() {
   return now_;
 }
 
-void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
+void ExecCtx::Run(const DebugLocation &location, grpc_closure *closure,
                   grpc_error_handle error) {
   (void)location;
   if (closure == nullptr) {
@@ -206,11 +206,11 @@ void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
   exec_ctx_sched(closure, error);
 }
 
-void ExecCtx::RunList(const DebugLocation& location, grpc_closure_list* list) {
+void ExecCtx::RunList(const DebugLocation &location, grpc_closure_list *list) {
   (void)location;
-  grpc_closure* c = list->head;
+  grpc_closure *c = list->head;
   while (c != nullptr) {
-    grpc_closure* next = c->next_data.next;
+    grpc_closure *next = c->next_data.next;
 #ifndef NDEBUG
     if (c->scheduled) {
       gpr_log(GPR_ERROR,

@@ -446,7 +446,7 @@ TEST_F(AuthorizationMatchersTest, PolicyAuthorizationMatcherFailedMatch) {
 
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();

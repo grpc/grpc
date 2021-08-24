@@ -28,17 +28,17 @@
 
 static bool log_func_reached = false;
 
-static void test_callback(gpr_log_func_args* args) {
+static void test_callback(gpr_log_func_args *args) {
   GPR_ASSERT(0 == strcmp(__FILE__, args->file));
   GPR_ASSERT(args->severity == GPR_LOG_SEVERITY_INFO);
   GPR_ASSERT(0 == strcmp(args->message, "hello 1 2 3"));
 }
 
-static void test_should_log(gpr_log_func_args* /*args*/) {
+static void test_should_log(gpr_log_func_args * /*args*/) {
   log_func_reached = true;
 }
 
-static void test_should_not_log(gpr_log_func_args* /*args*/) {
+static void test_should_not_log(gpr_log_func_args * /*args*/) {
   GPR_ASSERT(false);
 }
 
@@ -88,7 +88,7 @@ TEST(LogTest, LogVerbosity) {
   test_log_function_unreached(GPR_DEBUG);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();

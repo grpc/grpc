@@ -24,10 +24,10 @@ namespace grpc_event_engine {
 namespace experimental {
 
 EventEngine::ResolvedAddress CreateResolvedAddress(
-    const grpc_resolved_address& addr);
+    const grpc_resolved_address &addr);
 
 grpc_resolved_address CreateGRPCResolvedAddress(
-    const EventEngine::ResolvedAddress& ra);
+    const EventEngine::ResolvedAddress &ra);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

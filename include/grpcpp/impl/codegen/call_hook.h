@@ -30,7 +30,7 @@ class Call;
 class CallHook {
  public:
   virtual ~CallHook() {}
-  virtual void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) = 0;
+  virtual void PerformOpsOnCall(CallOpSetInterface *ops, Call *call) = 0;
 };
 }  // namespace internal
 

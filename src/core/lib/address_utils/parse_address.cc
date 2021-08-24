@@ -45,8 +45,8 @@
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
-bool grpc_parse_unix(const grpc_core::URI& uri,
-                     grpc_resolved_address* resolved_addr) {
+bool grpc_parse_unix(const grpc_core::URI &uri,
+                     grpc_resolved_address *resolved_addr) {
   if (uri.scheme() != "unix") {
     gpr_log(GPR_ERROR, "Expected 'unix' scheme, got '%s'",
             uri.scheme().c_str());
@@ -62,8 +62,8 @@ bool grpc_parse_unix(const grpc_core::URI& uri,
   return true;
 }
 
-bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
-                              grpc_resolved_address* resolved_addr) {
+bool grpc_parse_unix_abstract(const grpc_core::URI &uri,
+                              grpc_resolved_address *resolved_addr) {
   if (uri.scheme() != "unix-abstract") {
     gpr_log(GPR_ERROR, "Expected 'unix-abstract' scheme, got '%s'",
             uri.scheme().c_str());
@@ -82,9 +82,9 @@ bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
 namespace grpc_core {
 
 grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
-                                       grpc_resolved_address* resolved_addr) {
-  struct sockaddr_un* un =
-      reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
+                                       grpc_resolved_address *resolved_addr) {
+  struct sockaddr_un *un =
+      reinterpret_cast<struct sockaddr_un *>(resolved_addr->addr);
   const size_t maxlen = sizeof(un->sun_path) - 1;
   if (path.size() > maxlen) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -100,9 +100,9 @@ grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
 }
 
 grpc_error_handle UnixAbstractSockaddrPopulate(
-    absl::string_view path, grpc_resolved_address* resolved_addr) {
-  struct sockaddr_un* un =
-      reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
+    absl::string_view path, grpc_resolved_address *resolved_addr) {
+  struct sockaddr_un *un =
+      reinterpret_cast<struct sockaddr_un *>(resolved_addr->addr);
   const size_t maxlen = sizeof(un->sun_path) - 1;
   if (path.size() > maxlen) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -122,25 +122,25 @@ grpc_error_handle UnixAbstractSockaddrPopulate(
 
 #else  /* GRPC_HAVE_UNIX_SOCKET */
 
-bool grpc_parse_unix(const grpc_core::URI& /* uri */,
-                     grpc_resolved_address* /* resolved_addr */) {
+bool grpc_parse_unix(const grpc_core::URI & /* uri */,
+                     grpc_resolved_address * /* resolved_addr */) {
   abort();
 }
 
-bool grpc_parse_unix_abstract(const grpc_core::URI& /* uri */,
-                              grpc_resolved_address* /* resolved_addr */) {
+bool grpc_parse_unix_abstract(const grpc_core::URI & /* uri */,
+                              grpc_resolved_address * /* resolved_addr */) {
   abort();
 }
 
 namespace grpc_core {
 
 grpc_error_handle UnixSockaddrPopulate(
-    absl::string_view /* path */, grpc_resolved_address* /* resolved_addr */) {
+    absl::string_view /* path */, grpc_resolved_address * /* resolved_addr */) {
   abort();
 }
 
 grpc_error_handle UnixAbstractSockaddrPopulate(
-    absl::string_view /* path */, grpc_resolved_address* /* resolved_addr */) {
+    absl::string_view /* path */, grpc_resolved_address * /* resolved_addr */) {
   abort();
 }
 
@@ -148,7 +148,7 @@ grpc_error_handle UnixAbstractSockaddrPopulate(
 #endif /* GRPC_HAVE_UNIX_SOCKET */
 
 bool grpc_parse_ipv4_hostport(absl::string_view hostport,
-                              grpc_resolved_address* addr, bool log_errors) {
+                              grpc_resolved_address *addr, bool log_errors) {
   bool success = false;
   // Split host and port.
   std::string host;
@@ -163,7 +163,7 @@ bool grpc_parse_ipv4_hostport(absl::string_view hostport,
   // Parse IP address.
   memset(addr, 0, sizeof(*addr));
   addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
-  grpc_sockaddr_in* in = reinterpret_cast<grpc_sockaddr_in*>(addr->addr);
+  grpc_sockaddr_in *in = reinterpret_cast<grpc_sockaddr_in *>(addr->addr);
   in->sin_family = GRPC_AF_INET;
   if (grpc_inet_pton(GRPC_AF_INET, host.c_str(), &in->sin_addr) == 0) {
     if (log_errors) {
@@ -188,8 +188,8 @@ done:
   return success;
 }
 
-bool grpc_parse_ipv4(const grpc_core::URI& uri,
-                     grpc_resolved_address* resolved_addr) {
+bool grpc_parse_ipv4(const grpc_core::URI &uri,
+                     grpc_resolved_address *resolved_addr) {
   if (uri.scheme() != "ipv4") {
     gpr_log(GPR_ERROR, "Expected 'ipv4' scheme, got '%s'",
             uri.scheme().c_str());
@@ -200,7 +200,7 @@ bool grpc_parse_ipv4(const grpc_core::URI& uri,
 }
 
 bool grpc_parse_ipv6_hostport(absl::string_view hostport,
-                              grpc_resolved_address* addr, bool log_errors) {
+                              grpc_resolved_address *addr, bool log_errors) {
   bool success = false;
   // Split host and port.
   std::string host;
@@ -215,11 +215,11 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
   // Parse IP address.
   memset(addr, 0, sizeof(*addr));
   addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
-  grpc_sockaddr_in6* in6 = reinterpret_cast<grpc_sockaddr_in6*>(addr->addr);
+  grpc_sockaddr_in6 *in6 = reinterpret_cast<grpc_sockaddr_in6 *>(addr->addr);
   in6->sin6_family = GRPC_AF_INET6;
   // Handle the RFC6874 syntax for IPv6 zone identifiers.
-  char* host_end =
-      static_cast<char*>(gpr_memrchr(host.c_str(), '%', host.size()));
+  char *host_end =
+      static_cast<char *>(gpr_memrchr(host.c_str(), '%', host.size()));
   if (host_end != nullptr) {
     GPR_ASSERT(host_end >= host.c_str());
     char host_without_scope[GRPC_INET6_ADDRSTRLEN + 1];
@@ -283,8 +283,8 @@ done:
   return success;
 }
 
-bool grpc_parse_ipv6(const grpc_core::URI& uri,
-                     grpc_resolved_address* resolved_addr) {
+bool grpc_parse_ipv6(const grpc_core::URI &uri,
+                     grpc_resolved_address *resolved_addr) {
   if (uri.scheme() != "ipv6") {
     gpr_log(GPR_ERROR, "Expected 'ipv6' scheme, got '%s'",
             uri.scheme().c_str());
@@ -294,8 +294,8 @@ bool grpc_parse_ipv6(const grpc_core::URI& uri,
                                   resolved_addr, true /* log_errors */);
 }
 
-bool grpc_parse_uri(const grpc_core::URI& uri,
-                    grpc_resolved_address* resolved_addr) {
+bool grpc_parse_uri(const grpc_core::URI &uri,
+                    grpc_resolved_address *resolved_addr) {
   if (uri.scheme() == "unix") {
     return grpc_parse_unix(uri, resolved_addr);
   }
@@ -312,7 +312,7 @@ bool grpc_parse_uri(const grpc_core::URI& uri,
   return false;
 }
 
-uint16_t grpc_strhtons(const char* port) {
+uint16_t grpc_strhtons(const char *port) {
   if (strcmp(port, "http") == 0) {
     return htons(80);
   } else if (strcmp(port, "https") == 0) {

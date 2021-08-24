@@ -54,19 +54,19 @@ class CensusServerCallData : public CallData {
     memset(&on_done_recv_message_, 0, sizeof(grpc_closure));
   }
 
-  grpc_error_handle Init(grpc_call_element* elem,
-                         const grpc_call_element_args* args) override;
+  grpc_error_handle Init(grpc_call_element *elem,
+                         const grpc_call_element_args *args) override;
 
-  void Destroy(grpc_call_element* elem, const grpc_call_final_info* final_info,
-               grpc_closure* then_call_closure) override;
+  void Destroy(grpc_call_element *elem, const grpc_call_final_info *final_info,
+               grpc_closure *then_call_closure) override;
 
-  void StartTransportStreamOpBatch(grpc_call_element* elem,
-                                   TransportStreamOpBatch* op) override;
+  void StartTransportStreamOpBatch(grpc_call_element *elem,
+                                   TransportStreamOpBatch *op) override;
 
-  static void OnDoneRecvInitialMetadataCb(void* user_data,
+  static void OnDoneRecvInitialMetadataCb(void *user_data,
                                           grpc_error_handle error);
 
-  static void OnDoneRecvMessageCb(void* user_data, grpc_error_handle error);
+  static void OnDoneRecvMessageCb(void *user_data, grpc_error_handle error);
 
  private:
   CensusContext context_;
@@ -75,21 +75,21 @@ class CensusServerCallData : public CallData {
   std::string qualified_method_;
   grpc_slice path_;
   // Pointer to the grpc_call element
-  grpc_call* gc_;
+  grpc_call *gc_;
   // Authorization context for the call.
-  grpc_auth_context* auth_context_;
+  grpc_auth_context *auth_context_;
   // Metadata element for census stats.
   grpc_linked_mdelem census_bin_;
   // recv callback
-  grpc_metadata_batch* recv_initial_metadata_;
-  grpc_closure* initial_on_done_recv_initial_metadata_;
+  grpc_metadata_batch *recv_initial_metadata_;
+  grpc_closure *initial_on_done_recv_initial_metadata_;
   grpc_closure on_done_recv_initial_metadata_;
   // recv message
-  grpc_closure* initial_on_done_recv_message_;
+  grpc_closure *initial_on_done_recv_message_;
   grpc_closure on_done_recv_message_;
   absl::Time start_time_;
   absl::Duration elapsed_time_;
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message_;
+  grpc_core::OrphanablePtr<grpc_core::ByteStream> *recv_message_;
   uint64_t recv_message_count_;
   uint64_t sent_message_count_;
   // Buffer needed for grpc_slice to reference it when adding metatdata to

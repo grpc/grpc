@@ -49,9 +49,9 @@
  * This method returns TSI_OK on success or a specific error code otherwise.
  */
 tsi_result alts_zero_copy_grpc_protector_create(
-    const uint8_t* key, size_t key_size, bool is_rekey, bool is_client,
+    const uint8_t *key, size_t key_size, bool is_rekey, bool is_client,
     bool is_integrity_only, bool enable_extra_copy,
-    size_t* max_protected_frame_size, tsi_zero_copy_grpc_protector** protector);
+    size_t *max_protected_frame_size, tsi_zero_copy_grpc_protector **protector);
 
 #endif /* GRPC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_ZERO_COPY_GRPC_PROTECTOR_H \
         */

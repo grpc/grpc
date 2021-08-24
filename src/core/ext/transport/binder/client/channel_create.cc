@@ -47,7 +47,7 @@ namespace experimental {
 // TODO(mingcl): Pass package_name and class_name down to connection helper
 // TODO(mingcl): Invoke a callback and pass binder object to caller after a
 // successful bind
-void BindToOnDeviceServerService(void* jni_env_void, jobject application,
+void BindToOnDeviceServerService(void *jni_env_void, jobject application,
                                  absl::string_view /*package_name*/,
                                  absl::string_view /*class_name*/
 ) {
@@ -55,7 +55,7 @@ void BindToOnDeviceServerService(void* jni_env_void, jobject application,
   grpc::internal::GrpcLibrary init_lib;
   init_lib.init();
 
-  JNIEnv* jni_env = static_cast<JNIEnv*>(jni_env_void);
+  JNIEnv *jni_env = static_cast<JNIEnv *>(jni_env_void);
 
   // clang-format off
   CallStaticJavaMethod(jni_env,
@@ -71,9 +71,9 @@ void BindToOnDeviceServerService(void* jni_env_void, jobject application,
 // https://stackoverflow.com/a/3055749)
 // TODO(mingcl): Support multiple endpoint binder objects
 std::shared_ptr<grpc::Channel> CreateBinderChannel(
-    void* jni_env_void, jobject /*application*/,
+    void *jni_env_void, jobject /*application*/,
     absl::string_view /*package_name*/, absl::string_view /*class_name*/) {
-  JNIEnv* jni_env = static_cast<JNIEnv*>(jni_env_void);
+  JNIEnv *jni_env = static_cast<JNIEnv *>(jni_env_void);
 
   // clang-format off
   jobject object = CallStaticJavaMethodForObject(

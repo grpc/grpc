@@ -36,8 +36,8 @@ static grpc_error_handle recursively_find_error_with_field(
   // Otherwise, search through its children.
   uint8_t slot = error->first_err;
   while (slot != UINT8_MAX) {
-    grpc_linked_error* lerr =
-        reinterpret_cast<grpc_linked_error*>(error->arena + slot);
+    grpc_linked_error *lerr =
+        reinterpret_cast<grpc_linked_error *>(error->arena + slot);
     grpc_error_handle result =
         recursively_find_error_with_field(lerr->err, which);
     if (result) return result;
@@ -47,9 +47,9 @@ static grpc_error_handle recursively_find_error_with_field(
 }
 
 void grpc_error_get_status(grpc_error_handle error, grpc_millis deadline,
-                           grpc_status_code* code, grpc_slice* slice,
-                           grpc_http2_error_code* http_error,
-                           const char** error_string) {
+                           grpc_status_code *code, grpc_slice *slice,
+                           grpc_http2_error_code *http_error,
+                           const char **error_string) {
   // Fast path: We expect no error.
   if (GPR_LIKELY(error == GRPC_ERROR_NONE)) {
     if (code != nullptr) *code = GRPC_STATUS_OK;
@@ -132,7 +132,7 @@ absl::Status grpc_error_to_absl_status(grpc_error_handle error) {
   grpc_error_get_status(error, GRPC_MILLIS_INF_FUTURE, &status, &message,
                         nullptr /* http_error */, nullptr /* error_string */);
   return absl::Status(static_cast<absl::StatusCode>(status),
-                      absl::string_view(reinterpret_cast<const char*>(
+                      absl::string_view(reinterpret_cast<const char *>(
                                             GRPC_SLICE_START_PTR(message)),
                                         GRPC_SLICE_LENGTH(message)));
 }
@@ -154,8 +154,8 @@ bool grpc_error_has_clear_grpc_status(grpc_error_handle error) {
   }
   uint8_t slot = error->first_err;
   while (slot != UINT8_MAX) {
-    grpc_linked_error* lerr =
-        reinterpret_cast<grpc_linked_error*>(error->arena + slot);
+    grpc_linked_error *lerr =
+        reinterpret_cast<grpc_linked_error *>(error->arena + slot);
     if (grpc_error_has_clear_grpc_status(lerr->err)) {
       return true;
     }

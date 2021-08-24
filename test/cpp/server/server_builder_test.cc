@@ -40,7 +40,7 @@ std::string MakePort() {
   return s.str();
 }
 
-const std::string& GetPort() {
+const std::string &GetPort() {
   static std::string g_port = MakePort();
   return g_port;
 }
@@ -87,7 +87,7 @@ TEST_F(ServerBuilderTest, CreateServerRepeatedPortWithDisallowedReusePort) {
 }  // namespace
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();

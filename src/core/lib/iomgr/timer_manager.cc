@@ -31,7 +31,7 @@
 
 struct completed_thread {
   grpc_core::Thread thd;
-  completed_thread* next;
+  completed_thread *next;
 };
 
 extern grpc_core::TraceFlag grpc_timer_check_trace;
@@ -49,7 +49,7 @@ static int g_thread_count;
 // number of threads sitting around waiting
 static int g_waiter_count;
 // linked list of threads that have completed (and need joining)
-static completed_thread* g_completed_threads;
+static completed_thread *g_completed_threads;
 // was the manager kicked by the timer system
 static bool g_kicked;
 // is there a thread waiting until the next timer should fire?
@@ -62,16 +62,16 @@ static uint64_t g_timed_waiter_generation;
 // number of timer wakeups
 static uint64_t g_wakeups;
 
-static void timer_thread(void* completed_thread_ptr);
+static void timer_thread(void *completed_thread_ptr);
 
 static void gc_completed_threads(void) {
   if (g_completed_threads != nullptr) {
-    completed_thread* to_gc = g_completed_threads;
+    completed_thread *to_gc = g_completed_threads;
     g_completed_threads = nullptr;
     gpr_mu_unlock(&g_mu);
     while (to_gc != nullptr) {
       to_gc->thd.Join();
-      completed_thread* next = to_gc->next;
+      completed_thread *next = to_gc->next;
       gpr_free(to_gc);
       to_gc = next;
     }
@@ -87,8 +87,8 @@ static void start_timer_thread_and_unlock(void) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
     gpr_log(GPR_INFO, "Spawn timer thread");
   }
-  completed_thread* ct =
-      static_cast<completed_thread*>(gpr_malloc(sizeof(*ct)));
+  completed_thread *ct =
+      static_cast<completed_thread *>(gpr_malloc(sizeof(*ct)));
   ct->thd = grpc_core::Thread("grpc_global_timer", timer_thread, ct);
   ct->thd.Start();
 }
@@ -260,7 +260,7 @@ static void timer_main_loop() {
   }
 }
 
-static void timer_thread_cleanup(completed_thread* ct) {
+static void timer_thread_cleanup(completed_thread *ct) {
   gpr_mu_lock(&g_mu);
   // terminate the thread: drop the waiter count, thread count, and let whomever
   // stopped the threading stuff know that we're done
@@ -277,13 +277,13 @@ static void timer_thread_cleanup(completed_thread* ct) {
   }
 }
 
-static void timer_thread(void* completed_thread_ptr) {
+static void timer_thread(void *completed_thread_ptr) {
   // this threads exec_ctx: we try to run things through to completion here
   // since it's easy to spin up new threads
   grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
   timer_main_loop();
 
-  timer_thread_cleanup(static_cast<completed_thread*>(completed_thread_ptr));
+  timer_thread_cleanup(static_cast<completed_thread *>(completed_thread_ptr));
 }
 
 static void start_threads(void) {

@@ -20,7 +20,7 @@
 
 namespace grpc {
 
-const Status& Status::OK = Status();
-const Status& Status::CANCELLED = Status(StatusCode::CANCELLED, "");
+const Status &Status::OK = Status();
+const Status &Status::CANCELLED = Status(StatusCode::CANCELLED, "");
 
 }  // namespace grpc

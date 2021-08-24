@@ -43,14 +43,14 @@ Resolver::Result::~Result() {
   grpc_channel_args_destroy(args);
 }
 
-Resolver::Result::Result(const Result& other) {
+Resolver::Result::Result(const Result &other) {
   addresses = other.addresses;
   service_config = other.service_config;
   service_config_error = GRPC_ERROR_REF(other.service_config_error);
   args = grpc_channel_args_copy(other.args);
 }
 
-Resolver::Result::Result(Result&& other) noexcept {
+Resolver::Result::Result(Result &&other) noexcept {
   addresses = std::move(other.addresses);
   service_config = std::move(other.service_config);
   service_config_error = other.service_config_error;
@@ -59,7 +59,7 @@ Resolver::Result::Result(Result&& other) noexcept {
   other.args = nullptr;
 }
 
-Resolver::Result& Resolver::Result::operator=(const Result& other) {
+Resolver::Result &Resolver::Result::operator=(const Result &other) {
   if (&other == this) {
     return *this;
   }
@@ -72,7 +72,7 @@ Resolver::Result& Resolver::Result::operator=(const Result& other) {
   return *this;
 }
 
-Resolver::Result& Resolver::Result::operator=(Result&& other) noexcept {
+Resolver::Result &Resolver::Result::operator=(Result &&other) noexcept {
   addresses = std::move(other.addresses);
   service_config = std::move(other.service_config);
   GRPC_ERROR_UNREF(service_config_error);

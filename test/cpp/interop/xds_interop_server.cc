@@ -65,18 +65,18 @@ using grpc::testing::XdsUpdateHealthService;
 
 class TestServiceImpl : public TestService::Service {
  public:
-  explicit TestServiceImpl(const std::string& hostname) : hostname_(hostname) {}
+  explicit TestServiceImpl(const std::string &hostname) : hostname_(hostname) {}
 
-  Status UnaryCall(ServerContext* context, const SimpleRequest* /*request*/,
-                   SimpleResponse* response) override {
+  Status UnaryCall(ServerContext *context, const SimpleRequest * /*request*/,
+                   SimpleResponse *response) override {
     response->set_server_id(absl::GetFlag(FLAGS_server_id));
     response->set_hostname(hostname_);
     context->AddInitialMetadata("hostname", hostname_);
     return Status::OK;
   }
 
-  Status EmptyCall(ServerContext* context, const Empty* /*request*/,
-                   Empty* /*response*/) override {
+  Status EmptyCall(ServerContext *context, const Empty * /*request*/,
+                   Empty * /*response*/) override {
     context->AddInitialMetadata("hostname", hostname_);
     return Status::OK;
   }
@@ -88,29 +88,30 @@ class TestServiceImpl : public TestService::Service {
 class XdsUpdateHealthServiceImpl : public XdsUpdateHealthService::Service {
  public:
   explicit XdsUpdateHealthServiceImpl(
-      HealthCheckServiceImpl* health_check_service)
+      HealthCheckServiceImpl *health_check_service)
       : health_check_service_(health_check_service) {}
 
-  Status SetServing(ServerContext* /* context */, const Empty* /* request */,
-                    Empty* /* response */) override {
+  Status SetServing(ServerContext * /* context */, const Empty * /* request */,
+                    Empty * /* response */) override {
     health_check_service_->SetAll(
         grpc::health::v1::HealthCheckResponse::SERVING);
     return Status::OK;
   }
 
-  Status SetNotServing(ServerContext* /* context */, const Empty* /* request */,
-                       Empty* /* response */) override {
+  Status SetNotServing(ServerContext * /* context */,
+                       const Empty * /* request */,
+                       Empty * /* response */) override {
     health_check_service_->SetAll(
         grpc::health::v1::HealthCheckResponse::NOT_SERVING);
     return Status::OK;
   }
 
  private:
-  HealthCheckServiceImpl* const health_check_service_;
+  HealthCheckServiceImpl *const health_check_service_;
 };
 
 void RunServer(bool secure_mode, const int port, const int maintenance_port,
-               const std::string& hostname) {
+               const std::string &hostname) {
   std::unique_ptr<Server> xds_enabled_server;
   std::unique_ptr<Server> server;
   TestServiceImpl service(hostname);
@@ -157,10 +158,10 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
   server->Wait();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-  char* hostname = grpc_gethostname();
+  char *hostname = grpc_gethostname();
   if (hostname == nullptr) {
     std::cout << "Failed to get hostname, terminating" << std::endl;
     return 1;

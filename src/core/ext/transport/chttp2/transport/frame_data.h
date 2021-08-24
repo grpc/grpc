@@ -53,30 +53,30 @@ struct grpc_chttp2_data_parser {
   grpc_error_handle error = GRPC_ERROR_NONE;
 
   bool is_frame_compressed = false;
-  grpc_core::Chttp2IncomingByteStream* parsing_frame = nullptr;
+  grpc_core::Chttp2IncomingByteStream *parsing_frame = nullptr;
 };
 
 /* start processing a new data frame */
 grpc_error_handle grpc_chttp2_data_parser_begin_frame(
-    grpc_chttp2_data_parser* parser, uint8_t flags, uint32_t stream_id,
-    grpc_chttp2_stream* s);
+    grpc_chttp2_data_parser *parser, uint8_t flags, uint32_t stream_id,
+    grpc_chttp2_stream *s);
 
 /* handle a slice of a data frame - is_last indicates the last slice of a
    frame */
-grpc_error_handle grpc_chttp2_data_parser_parse(void* parser,
-                                                grpc_chttp2_transport* t,
-                                                grpc_chttp2_stream* s,
-                                                const grpc_slice& slice,
+grpc_error_handle grpc_chttp2_data_parser_parse(void *parser,
+                                                grpc_chttp2_transport *t,
+                                                grpc_chttp2_stream *s,
+                                                const grpc_slice &slice,
                                                 int is_last);
 
-void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
+void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer *inbuf,
                              uint32_t write_bytes, int is_eof,
-                             grpc_transport_one_way_stats* stats,
-                             grpc_slice_buffer* outbuf);
+                             grpc_transport_one_way_stats *stats,
+                             grpc_slice_buffer *outbuf);
 
 grpc_error_handle grpc_deframe_unprocessed_incoming_frames(
-    grpc_chttp2_data_parser* p, grpc_chttp2_stream* s,
-    grpc_slice_buffer* slices, grpc_slice* slice_out,
-    grpc_core::OrphanablePtr<grpc_core::ByteStream>* stream_out);
+    grpc_chttp2_data_parser *p, grpc_chttp2_stream *s,
+    grpc_slice_buffer *slices, grpc_slice *slice_out,
+    grpc_core::OrphanablePtr<grpc_core::ByteStream> *stream_out);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_DATA_H */

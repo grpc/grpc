@@ -34,12 +34,12 @@ const char kCredentialsTypeXds[] = "Xds";
 namespace {
 
 bool XdsVerifySubjectAlternativeNames(
-    const char* const* subject_alternative_names,
+    const char *const *subject_alternative_names,
     size_t subject_alternative_names_size,
-    const std::vector<StringMatcher>& matchers) {
+    const std::vector<StringMatcher> &matchers) {
   if (matchers.empty()) return true;
   for (size_t i = 0; i < subject_alternative_names_size; ++i) {
-    for (const auto& matcher : matchers) {
+    for (const auto &matcher : matchers) {
       if (matcher.type() == StringMatcher::Type::kExact) {
         // For Exact match, use DNS rules for verifying SANs
         // TODO(zhenlian): Right now, the SSL layer does not save the type of
@@ -69,17 +69,17 @@ class ServerAuthCheck {
       : xds_certificate_provider_(std::move(xds_certificate_provider)),
         cluster_name_(std::move(cluster_name)) {}
 
-  static int Schedule(void* config_user_data,
-                      grpc_tls_server_authorization_check_arg* arg) {
-    return static_cast<ServerAuthCheck*>(config_user_data)->ScheduleImpl(arg);
+  static int Schedule(void *config_user_data,
+                      grpc_tls_server_authorization_check_arg *arg) {
+    return static_cast<ServerAuthCheck *>(config_user_data)->ScheduleImpl(arg);
   }
 
-  static void Destroy(void* config_user_data) {
-    delete static_cast<ServerAuthCheck*>(config_user_data);
+  static void Destroy(void *config_user_data) {
+    delete static_cast<ServerAuthCheck *>(config_user_data);
   }
 
  private:
-  int ScheduleImpl(grpc_tls_server_authorization_check_arg* arg) {
+  int ScheduleImpl(grpc_tls_server_authorization_check_arg *arg) {
     if (XdsVerifySubjectAlternativeNames(
             arg->subject_alternative_names, arg->subject_alternative_names_size,
             xds_certificate_provider_->GetSanMatchers(cluster_name_))) {
@@ -103,9 +103,9 @@ class ServerAuthCheck {
 }  // namespace
 
 bool TestOnlyXdsVerifySubjectAlternativeNames(
-    const char* const* subject_alternative_names,
+    const char *const *subject_alternative_names,
     size_t subject_alternative_names_size,
-    const std::vector<StringMatcher>& matchers) {
+    const std::vector<StringMatcher> &matchers) {
   return XdsVerifySubjectAlternativeNames(
       subject_alternative_names, subject_alternative_names_size, matchers);
 }
@@ -116,10 +116,10 @@ bool TestOnlyXdsVerifySubjectAlternativeNames(
 
 RefCountedPtr<grpc_channel_security_connector>
 XdsCredentials::create_security_connector(
-    RefCountedPtr<grpc_call_credentials> call_creds, const char* target_name,
-    const grpc_channel_args* args, grpc_channel_args** new_args) {
+    RefCountedPtr<grpc_call_credentials> call_creds, const char *target_name,
+    const grpc_channel_args *args, grpc_channel_args **new_args) {
   struct ChannelArgsDeleter {
-    const grpc_channel_args* args;
+    const grpc_channel_args *args;
     bool owned;
     ~ChannelArgsDeleter() {
       if (owned) grpc_channel_args_destroy(args);
@@ -129,9 +129,9 @@ XdsCredentials::create_security_connector(
   // TODO(yashykt): This arg will no longer need to be added after b/173119596
   // is fixed.
   grpc_arg override_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-      const_cast<char*>(target_name));
-  const char* override_arg_name = GRPC_SSL_TARGET_NAME_OVERRIDE_ARG;
+      const_cast<char *>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
+      const_cast<char *>(target_name));
+  const char *override_arg_name = GRPC_SSL_TARGET_NAME_OVERRIDE_ARG;
   if (grpc_channel_args_find(args, override_arg_name) == nullptr) {
     temp_args.args = grpc_channel_args_copy_and_add_and_remove(
         args, &override_arg_name, 1, &override_arg, 1);
@@ -163,7 +163,7 @@ XdsCredentials::create_security_connector(
       }
       tls_credentials_options->set_server_verification_option(
           GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
-      auto* server_auth_check = new ServerAuthCheck(xds_certificate_provider,
+      auto *server_auth_check = new ServerAuthCheck(xds_certificate_provider,
                                                     std::move(cluster_name));
       tls_credentials_options->set_server_authorization_check_config(
           MakeRefCounted<grpc_tls_server_authorization_check_config>(
@@ -198,7 +198,7 @@ XdsCredentials::create_security_connector(
 //
 
 RefCountedPtr<grpc_server_security_connector>
-XdsServerCredentials::create_security_connector(const grpc_channel_args* args) {
+XdsServerCredentials::create_security_connector(const grpc_channel_args *args) {
   auto xds_certificate_provider =
       XdsCertificateProvider::GetFromChannelArgs(args);
   // Identity certs are a must for TLS.
@@ -231,14 +231,14 @@ XdsServerCredentials::create_security_connector(const grpc_channel_args* args) {
 
 }  // namespace grpc_core
 
-grpc_channel_credentials* grpc_xds_credentials_create(
-    grpc_channel_credentials* fallback_credentials) {
+grpc_channel_credentials *grpc_xds_credentials_create(
+    grpc_channel_credentials *fallback_credentials) {
   GPR_ASSERT(fallback_credentials != nullptr);
   return new grpc_core::XdsCredentials(fallback_credentials->Ref());
 }
 
-grpc_server_credentials* grpc_xds_server_credentials_create(
-    grpc_server_credentials* fallback_credentials) {
+grpc_server_credentials *grpc_xds_server_credentials_create(
+    grpc_server_credentials *fallback_credentials) {
   GPR_ASSERT(fallback_credentials != nullptr);
   return new grpc_core::XdsServerCredentials(fallback_credentials->Ref());
 }

@@ -43,12 +43,12 @@ constexpr size_t kAltsRecordProtocolFrameLimit = 5;
 /* Main struct for alts_frame_protector. */
 struct alts_frame_protector {
   tsi_frame_protector base;
-  alts_crypter* seal_crypter;
-  alts_crypter* unseal_crypter;
-  alts_frame_writer* writer;
-  alts_frame_reader* reader;
-  unsigned char* in_place_protect_buffer;
-  unsigned char* in_place_unprotect_buffer;
+  alts_crypter *seal_crypter;
+  alts_crypter *unseal_crypter;
+  alts_frame_writer *writer;
+  alts_frame_reader *reader;
+  unsigned char *in_place_protect_buffer;
+  unsigned char *in_place_unprotect_buffer;
   size_t in_place_protect_bytes_buffered;
   size_t in_place_unprotect_bytes_processed;
   size_t max_protected_frame_size;
@@ -57,8 +57,8 @@ struct alts_frame_protector {
   size_t counter_overflow;
 };
 
-static tsi_result seal(alts_frame_protector* impl) {
-  char* error_details = nullptr;
+static tsi_result seal(alts_frame_protector *impl) {
+  char *error_details = nullptr;
   size_t output_size = 0;
   grpc_status_code status = alts_crypter_process_in_place(
       impl->seal_crypter, impl->in_place_protect_buffer,
@@ -73,21 +73,21 @@ static tsi_result seal(alts_frame_protector* impl) {
   return TSI_OK;
 }
 
-static size_t max_encrypted_payload_bytes(alts_frame_protector* impl) {
+static size_t max_encrypted_payload_bytes(alts_frame_protector *impl) {
   return impl->max_protected_frame_size - kFrameHeaderSize;
 }
 
-static tsi_result alts_protect_flush(tsi_frame_protector* self,
-                                     unsigned char* protected_output_frames,
-                                     size_t* protected_output_frames_size,
-                                     size_t* still_pending_size) {
+static tsi_result alts_protect_flush(tsi_frame_protector *self,
+                                     unsigned char *protected_output_frames,
+                                     size_t *protected_output_frames_size,
+                                     size_t *still_pending_size) {
   if (self == nullptr || protected_output_frames == nullptr ||
       protected_output_frames_size == nullptr ||
       still_pending_size == nullptr) {
     gpr_log(GPR_ERROR, "Invalid nullptr arguments to alts_protect_flush().");
     return TSI_INVALID_ARGUMENT;
   }
-  alts_frame_protector* impl = reinterpret_cast<alts_frame_protector*>(self);
+  alts_frame_protector *impl = reinterpret_cast<alts_frame_protector *>(self);
   /**
    * If there's nothing to flush (i.e., in_place_protect_buffer is empty),
    * we're done.
@@ -137,18 +137,18 @@ static tsi_result alts_protect_flush(tsi_frame_protector* self,
   return TSI_OK;
 }
 
-static tsi_result alts_protect(tsi_frame_protector* self,
-                               const unsigned char* unprotected_bytes,
-                               size_t* unprotected_bytes_size,
-                               unsigned char* protected_output_frames,
-                               size_t* protected_output_frames_size) {
+static tsi_result alts_protect(tsi_frame_protector *self,
+                               const unsigned char *unprotected_bytes,
+                               size_t *unprotected_bytes_size,
+                               unsigned char *protected_output_frames,
+                               size_t *protected_output_frames_size) {
   if (self == nullptr || unprotected_bytes == nullptr ||
       unprotected_bytes_size == nullptr || protected_output_frames == nullptr ||
       protected_output_frames_size == nullptr) {
     gpr_log(GPR_ERROR, "Invalid nullptr arguments to alts_protect().");
     return TSI_INVALID_ARGUMENT;
   }
-  alts_frame_protector* impl = reinterpret_cast<alts_frame_protector*>(self);
+  alts_frame_protector *impl = reinterpret_cast<alts_frame_protector *>(self);
 
   /**
    * If more payload can be buffered, we buffer it as much as possible to
@@ -190,8 +190,8 @@ static tsi_result alts_protect(tsi_frame_protector* self,
   }
 }
 
-static tsi_result unseal(alts_frame_protector* impl) {
-  char* error_details = nullptr;
+static tsi_result unseal(alts_frame_protector *impl) {
+  char *error_details = nullptr;
   size_t output_size = 0;
   grpc_status_code status = alts_crypter_process_in_place(
       impl->unseal_crypter, impl->in_place_unprotect_buffer,
@@ -205,7 +205,7 @@ static tsi_result unseal(alts_frame_protector* impl) {
   return TSI_OK;
 }
 
-static void ensure_buffer_size(alts_frame_protector* impl) {
+static void ensure_buffer_size(alts_frame_protector *impl) {
   if (!alts_has_read_frame_length(impl->reader)) {
     return;
   }
@@ -218,7 +218,8 @@ static void ensure_buffer_size(alts_frame_protector* impl) {
   if (buffer_space_remaining < alts_get_reader_bytes_remaining(impl->reader)) {
     size_t buffer_len = alts_get_output_bytes_read(impl->reader) +
                         alts_get_reader_bytes_remaining(impl->reader);
-    unsigned char* buffer = static_cast<unsigned char*>(gpr_malloc(buffer_len));
+    unsigned char *buffer =
+        static_cast<unsigned char *>(gpr_malloc(buffer_len));
     memcpy(buffer, impl->in_place_unprotect_buffer,
            alts_get_output_bytes_read(impl->reader));
     impl->max_unprotected_frame_size = buffer_len;
@@ -229,18 +230,18 @@ static void ensure_buffer_size(alts_frame_protector* impl) {
   }
 }
 
-static tsi_result alts_unprotect(tsi_frame_protector* self,
-                                 const unsigned char* protected_frames_bytes,
-                                 size_t* protected_frames_bytes_size,
-                                 unsigned char* unprotected_bytes,
-                                 size_t* unprotected_bytes_size) {
+static tsi_result alts_unprotect(tsi_frame_protector *self,
+                                 const unsigned char *protected_frames_bytes,
+                                 size_t *protected_frames_bytes_size,
+                                 unsigned char *unprotected_bytes,
+                                 size_t *unprotected_bytes_size) {
   if (self == nullptr || protected_frames_bytes == nullptr ||
       protected_frames_bytes_size == nullptr || unprotected_bytes == nullptr ||
       unprotected_bytes_size == nullptr) {
     gpr_log(GPR_ERROR, "Invalid nullptr arguments to alts_unprotect().");
     return TSI_INVALID_ARGUMENT;
   }
-  alts_frame_protector* impl = reinterpret_cast<alts_frame_protector*>(self);
+  alts_frame_protector *impl = reinterpret_cast<alts_frame_protector *>(self);
   /**
    * If a new frame can start being processed, we reset the frame reader to
    * point to in_place_unprotect_buffer that will be used to hold deframed
@@ -309,8 +310,8 @@ static tsi_result alts_unprotect(tsi_frame_protector* self,
   }
 }
 
-static void alts_destroy(tsi_frame_protector* self) {
-  alts_frame_protector* impl = reinterpret_cast<alts_frame_protector*>(self);
+static void alts_destroy(tsi_frame_protector *self) {
+  alts_frame_protector *impl = reinterpret_cast<alts_frame_protector *>(self);
   if (impl != nullptr) {
     alts_crypter_destroy(impl->seal_crypter);
     alts_crypter_destroy(impl->unseal_crypter);
@@ -325,14 +326,14 @@ static void alts_destroy(tsi_frame_protector* self) {
 static const tsi_frame_protector_vtable alts_frame_protector_vtable = {
     alts_protect, alts_protect_flush, alts_unprotect, alts_destroy};
 
-static grpc_status_code create_alts_crypters(const uint8_t* key,
+static grpc_status_code create_alts_crypters(const uint8_t *key,
                                              size_t key_size, bool is_client,
                                              bool is_rekey,
-                                             alts_frame_protector* impl,
-                                             char** error_details) {
+                                             alts_frame_protector *impl,
+                                             char **error_details) {
   grpc_status_code status;
-  gsec_aead_crypter* aead_crypter_seal = nullptr;
-  gsec_aead_crypter* aead_crypter_unseal = nullptr;
+  gsec_aead_crypter *aead_crypter_seal = nullptr;
+  gsec_aead_crypter *aead_crypter_unseal = nullptr;
   status = gsec_aes_gcm_aead_crypter_create(key, key_size, kAesGcmNonceLength,
                                             kAesGcmTagLength, is_rekey,
                                             &aead_crypter_seal, error_details);
@@ -358,18 +359,18 @@ static grpc_status_code create_alts_crypters(const uint8_t* key,
   return status;
 }
 
-tsi_result alts_create_frame_protector(const uint8_t* key, size_t key_size,
+tsi_result alts_create_frame_protector(const uint8_t *key, size_t key_size,
                                        bool is_client, bool is_rekey,
-                                       size_t* max_protected_frame_size,
-                                       tsi_frame_protector** self) {
+                                       size_t *max_protected_frame_size,
+                                       tsi_frame_protector **self) {
   if (key == nullptr || self == nullptr) {
     gpr_log(GPR_ERROR,
             "Invalid nullptr arguments to alts_create_frame_protector().");
     return TSI_INTERNAL_ERROR;
   }
-  char* error_details = nullptr;
-  alts_frame_protector* impl =
-      static_cast<alts_frame_protector*>(gpr_zalloc(sizeof(*impl)));
+  char *error_details = nullptr;
+  alts_frame_protector *impl =
+      static_cast<alts_frame_protector *>(gpr_zalloc(sizeof(*impl)));
   grpc_status_code status = create_alts_crypters(
       key, key_size, is_client, is_rekey, impl, &error_details);
   if (status != GRPC_STATUS_OK) {
@@ -394,9 +395,9 @@ tsi_result alts_create_frame_protector(const uint8_t* key, size_t key_size,
   impl->max_unprotected_frame_size = max_protected_frame_size_to_set;
   impl->in_place_protect_bytes_buffered = 0;
   impl->in_place_unprotect_bytes_processed = 0;
-  impl->in_place_protect_buffer = static_cast<unsigned char*>(
+  impl->in_place_protect_buffer = static_cast<unsigned char *>(
       gpr_malloc(sizeof(unsigned char) * max_protected_frame_size_to_set));
-  impl->in_place_unprotect_buffer = static_cast<unsigned char*>(
+  impl->in_place_unprotect_buffer = static_cast<unsigned char *>(
       gpr_malloc(sizeof(unsigned char) * max_protected_frame_size_to_set));
   impl->overhead_length = alts_crypter_num_overhead_bytes(impl->seal_crypter);
   impl->writer = alts_create_frame_writer();

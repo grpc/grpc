@@ -24,7 +24,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   int i;
   struct rlimit rlim;
   grpc_endpoint_pair p;

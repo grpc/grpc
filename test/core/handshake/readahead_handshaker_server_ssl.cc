@@ -54,11 +54,11 @@ namespace grpc_core {
 class ReadAheadHandshaker : public Handshaker {
  public:
   ~ReadAheadHandshaker() override {}
-  const char* name() const override { return "read_ahead"; }
+  const char *name() const override { return "read_ahead"; }
   void Shutdown(grpc_error_handle /*why*/) override {}
-  void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
-                   grpc_closure* on_handshake_done,
-                   HandshakerArgs* args) override {
+  void DoHandshake(grpc_tcp_server_acceptor * /*acceptor*/,
+                   grpc_closure *on_handshake_done,
+                   HandshakerArgs *args) override {
     grpc_endpoint_read(args->endpoint, args->read_buffer, on_handshake_done,
                        /*urgent=*/false);
   }
@@ -66,9 +66,9 @@ class ReadAheadHandshaker : public Handshaker {
 
 class ReadAheadHandshakerFactory : public HandshakerFactory {
  public:
-  void AddHandshakers(const grpc_channel_args* /*args*/,
-                      grpc_pollset_set* /*interested_parties*/,
-                      HandshakeManager* handshake_mgr) override {
+  void AddHandshakers(const grpc_channel_args * /*args*/,
+                      grpc_pollset_set * /*interested_parties*/,
+                      HandshakeManager *handshake_mgr) override {
     handshake_mgr->Add(MakeRefCounted<ReadAheadHandshaker>());
   }
   ~ReadAheadHandshakerFactory() override = default;
@@ -76,12 +76,12 @@ class ReadAheadHandshakerFactory : public HandshakerFactory {
 
 }  // namespace grpc_core
 
-int main(int /*argc*/, char* /*argv*/[]) {
+int main(int /*argc*/, char * /*argv*/[]) {
   grpc_init();
   grpc_core::HandshakerRegistry::RegisterHandshakerFactory(
       true /* at_start */, grpc_core::HANDSHAKER_SERVER,
       absl::make_unique<grpc_core::ReadAheadHandshakerFactory>());
-  const char* full_alpn_list[] = {"grpc-exp", "h2"};
+  const char *full_alpn_list[] = {"grpc-exp", "h2"};
   GPR_ASSERT(server_ssl_test(full_alpn_list, 2, "grpc-exp"));
   CleanupSslLibrary();
   grpc_shutdown();

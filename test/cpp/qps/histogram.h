@@ -39,20 +39,20 @@ class Histogram {
     impl_ = grpc_histogram_create(default_resolution(), default_max_possible());
   }
 
-  Histogram(Histogram&& other) noexcept : impl_(other.impl_) {
+  Histogram(Histogram &&other) noexcept : impl_(other.impl_) {
     other.impl_ = nullptr;
   }
 
-  void Merge(const Histogram& h) { grpc_histogram_merge(impl_, h.impl_); }
+  void Merge(const Histogram &h) { grpc_histogram_merge(impl_, h.impl_); }
   void Add(double value) { grpc_histogram_add(impl_, value); }
   double Percentile(double pctile) const {
     return grpc_histogram_percentile(impl_, pctile);
   }
   double Count() const { return grpc_histogram_count(impl_); }
-  void Swap(Histogram* other) { std::swap(impl_, other->impl_); }
-  void FillProto(HistogramData* p) {
+  void Swap(Histogram *other) { std::swap(impl_, other->impl_); }
+  void FillProto(HistogramData *p) {
     size_t n;
-    const auto* data = grpc_histogram_get_contents(impl_, &n);
+    const auto *data = grpc_histogram_get_contents(impl_, &n);
     for (size_t i = 0; i < n; i++) {
       p->add_bucket(data[i]);
     }
@@ -62,7 +62,7 @@ class Histogram {
     p->set_sum_of_squares(grpc_histogram_sum_of_squares(impl_));
     p->set_count(grpc_histogram_count(impl_));
   }
-  void MergeProto(const HistogramData& p) {
+  void MergeProto(const HistogramData &p) {
     grpc_histogram_merge_contents(impl_, &*p.bucket().begin(), p.bucket_size(),
                                   p.min_seen(), p.max_seen(), p.sum(),
                                   p.sum_of_squares(), p.count());
@@ -72,10 +72,10 @@ class Histogram {
   static double default_max_possible() { return 60e9; }
 
  private:
-  Histogram(const Histogram&);
-  Histogram& operator=(const Histogram&);
+  Histogram(const Histogram &);
+  Histogram &operator=(const Histogram &);
 
-  grpc_histogram* impl_;
+  grpc_histogram *impl_;
 };
 }  // namespace testing
 }  // namespace grpc

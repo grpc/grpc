@@ -59,7 +59,7 @@ namespace testing {
 namespace {
 
 struct TestScenario {
-  TestScenario(const std::string& creds_type, const std::string& content)
+  TestScenario(const std::string &creds_type, const std::string &content)
       : credentials_type(creds_type), message_content(content) {}
   const std::string credentials_type;
   const std::string message_content;
@@ -131,7 +131,7 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
   void StopServer() { server_->Shutdown(); }
 
   std::unique_ptr<grpc::testing::EchoTestService::Stub> BuildStub(
-      const std::shared_ptr<Channel>& channel) {
+      const std::shared_ptr<Channel> &channel) {
     return grpc::testing::EchoTestService::NewStub(channel);
   }
 
@@ -145,11 +145,11 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
   }
 
   void SendRpc(
-      const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
+      const std::unique_ptr<grpc::testing::EchoTestService::Stub> &stub,
       bool expect_success = false) {
     auto response = std::unique_ptr<EchoResponse>(new EchoResponse());
     EchoRequest request;
-    auto& msg = GetParam().message_content;
+    auto &msg = GetParam().message_content;
     request.set_message(msg);
     ClientContext context;
     Status status = stub->Echo(&context, request, response.get());
@@ -164,23 +164,23 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     }
   }
   void SendAsyncRpc(
-      const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
+      const std::unique_ptr<grpc::testing::EchoTestService::Stub> &stub,
       RequestParams param = RequestParams()) {
     EchoRequest request;
     request.set_message(GetParam().message_content);
     *request.mutable_param() = std::move(param);
-    AsyncClientCall* call = new AsyncClientCall;
+    AsyncClientCall *call = new AsyncClientCall;
 
     call->response_reader =
         stub->PrepareAsyncEcho(&call->context, request, &cq_);
 
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    call->response_reader->Finish(&call->reply, &call->status, (void *)call);
   }
 
   void ShutdownCQ() { cq_.Shutdown(); }
 
-  bool CQNext(void** tag, bool* ok) {
+  bool CQNext(void **tag, bool *ok) {
     auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(10);
     auto ret = cq_.AsyncNext(tag, ok, deadline);
     if (ret == grpc::CompletionQueue::GOT_EVENT) {
@@ -197,7 +197,7 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     }
   }
 
-  bool WaitForChannelNotReady(Channel* channel, int timeout_seconds = 5) {
+  bool WaitForChannelNotReady(Channel *channel, int timeout_seconds = 5) {
     const gpr_timespec deadline =
         grpc_timeout_seconds_to_deadline(timeout_seconds);
     grpc_connectivity_state state;
@@ -208,7 +208,7 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     return true;
   }
 
-  bool WaitForChannelReady(Channel* channel, int timeout_seconds = 10) {
+  bool WaitForChannelReady(Channel *channel, int timeout_seconds = 10) {
     const gpr_timespec deadline =
         grpc_timeout_seconds_to_deadline(timeout_seconds);
     grpc_connectivity_state state;
@@ -235,10 +235,10 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     std::unique_ptr<std::thread> thread_;
     bool server_ready_ = false;
 
-    ServerData(int port, const std::string& creds)
+    ServerData(int port, const std::string &creds)
         : port_(port), creds_(creds) {}
 
-    void Start(const std::string& server_host) {
+    void Start(const std::string &server_host) {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       std::mutex mu;
       std::unique_lock<std::mutex> lock(mu);
@@ -250,8 +250,8 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
       gpr_log(GPR_INFO, "server startup complete");
     }
 
-    void Serve(const std::string& server_host, std::mutex* mu,
-               std::condition_variable* cond) {
+    void Serve(const std::string &server_host, std::mutex *mu,
+               std::condition_variable *cond) {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
@@ -368,7 +368,7 @@ TEST_P(CFStreamTest, NetworkFlapRpcsInFlight) {
   NetworkDown();
 
   std::thread thd = std::thread([this, &rpcs_sent]() {
-    void* got_tag;
+    void *got_tag;
     bool ok = false;
     bool network_down = true;
     int total_completions = 0;
@@ -376,7 +376,7 @@ TEST_P(CFStreamTest, NetworkFlapRpcsInFlight) {
     while (CQNext(&got_tag, &ok)) {
       ++total_completions;
       GPR_ASSERT(ok);
-      AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
+      AsyncClientCall *call = static_cast<AsyncClientCall *>(got_tag);
       if (!call->status.ok()) {
         gpr_log(GPR_DEBUG, "RPC failed with error: %s",
                 call->status.error_message().c_str());
@@ -416,14 +416,14 @@ TEST_P(CFStreamTest, ConcurrentRpc) {
   auto stub = BuildStub(channel);
   std::atomic_int rpcs_sent{0};
   std::thread thd = std::thread([this, &rpcs_sent]() {
-    void* got_tag;
+    void *got_tag;
     bool ok = false;
     int total_completions = 0;
 
     while (CQNext(&got_tag, &ok)) {
       ++total_completions;
       GPR_ASSERT(ok);
-      AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
+      AsyncClientCall *call = static_cast<AsyncClientCall *>(got_tag);
       if (!call->status.ok()) {
         gpr_log(GPR_DEBUG, "RPC failed with error: %s",
                 call->status.error_message().c_str());
@@ -442,14 +442,14 @@ TEST_P(CFStreamTest, ConcurrentRpc) {
   for (int i = 0; i < 10; ++i) {
     if (i % 3 == 0) {
       RequestParams param;
-      ErrorStatus* error = param.mutable_expected_error();
+      ErrorStatus *error = param.mutable_expected_error();
       error->set_code(StatusCode::INTERNAL);
       error->set_error_message("internal error");
       SendAsyncRpc(stub, param);
     } else if (i % 5 == 0) {
       RequestParams param;
       param.set_echo_metadata(true);
-      DebugInfo* info = param.mutable_debug_info();
+      DebugInfo *info = param.mutable_debug_info();
       info->add_stack_entries("stack_entry1");
       info->add_stack_entries("stack_entry2");
       info->set_detail("detailed debug info");
@@ -470,7 +470,7 @@ TEST_P(CFStreamTest, ConcurrentRpc) {
 }  // namespace grpc
 #endif  // GRPC_CFSTREAM
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   gpr_setenv("grpc_cfstream", "1");

@@ -21,7 +21,7 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 
 static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
-static LibraryInitializer* g_libraryInitializer;
+static LibraryInitializer *g_libraryInitializer;
 
 LibraryInitializer::LibraryInitializer() {
   GPR_ASSERT(g_libraryInitializer == nullptr);
@@ -39,14 +39,14 @@ LibraryInitializer::~LibraryInitializer() {
   init_lib_.shutdown();
 }
 
-LibraryInitializer& LibraryInitializer::get() {
+LibraryInitializer &LibraryInitializer::get() {
   GPR_ASSERT(g_libraryInitializer != nullptr);
   return *g_libraryInitializer;
 }
 
-void TrackCounters::Finish(benchmark::State& state) {
+void TrackCounters::Finish(benchmark::State &state) {
   std::ostringstream out;
-  for (const auto& l : labels_) {
+  for (const auto &l : labels_) {
     out << l << ' ';
   }
   AddToLabel(out, state);
@@ -57,11 +57,11 @@ void TrackCounters::Finish(benchmark::State& state) {
   state.SetLabel(label.c_str());
 }
 
-void TrackCounters::AddLabel(const std::string& label) {
+void TrackCounters::AddLabel(const std::string &label) {
   labels_.push_back(label);
 }
 
-void TrackCounters::AddToLabel(std::ostream& out, benchmark::State& state) {
+void TrackCounters::AddToLabel(std::ostream &out, benchmark::State &state) {
   // Use the parameters to avoid unused-parameter warnings depending on the
   // #define's present
   (void)out;

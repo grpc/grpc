@@ -28,7 +28,7 @@ namespace grpc_core {
 // Atomically increment a counter only if the counter value is not zero.
 // Returns true if increment took place; false if counter is zero.
 template <typename T>
-inline bool IncrementIfNonzero(std::atomic<T>* p) {
+inline bool IncrementIfNonzero(std::atomic<T> *p) {
   T count = p->load(std::memory_order_acquire);
   do {
     // If zero, we are done (without an increment). If not, we must do a CAS

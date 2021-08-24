@@ -40,10 +40,10 @@ struct fullstack_fixture_data {
 };
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    grpc_channel_args * /*client_args*/, grpc_channel_args * /*server_args*/) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
-  fullstack_fixture_data* ffd = new fullstack_fixture_data();
+  fullstack_fixture_data *ffd = new fullstack_fixture_data();
   memset(&f, 0, sizeof(f));
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
 
@@ -57,15 +57,15 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
 static grpc_arg make_census_enable_arg(void) {
   grpc_arg arg;
   arg.type = GRPC_ARG_INTEGER;
-  arg.key = const_cast<char*>(GRPC_ARG_ENABLE_CENSUS);
+  arg.key = const_cast<char *>(GRPC_ARG_ENABLE_CENSUS);
   arg.value.integer = 1;
   return arg;
 }
 
-void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
-                                  grpc_channel_args* client_args) {
-  fullstack_fixture_data* ffd =
-      static_cast<fullstack_fixture_data*>(f->fixture_data);
+void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
+                                  grpc_channel_args *client_args) {
+  fullstack_fixture_data *ffd =
+      static_cast<fullstack_fixture_data *>(f->fixture_data);
   grpc_arg arg = make_census_enable_arg();
   client_args = grpc_channel_args_copy_and_add(client_args, &arg, 1);
   f->client = grpc_insecure_channel_create(ffd->localaddr.c_str(), client_args,
@@ -77,10 +77,10 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
   }
 }
 
-void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
-                                  grpc_channel_args* server_args) {
-  fullstack_fixture_data* ffd =
-      static_cast<fullstack_fixture_data*>(f->fixture_data);
+void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
+                                  grpc_channel_args *server_args) {
+  fullstack_fixture_data *ffd =
+      static_cast<fullstack_fixture_data *>(f->fixture_data);
   grpc_arg arg = make_census_enable_arg();
   if (f->server) {
     grpc_server_destroy(f->server);
@@ -97,9 +97,9 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
   grpc_server_start(f->server);
 }
 
-void chttp2_tear_down_fullstack(grpc_end2end_test_fixture* f) {
-  fullstack_fixture_data* ffd =
-      static_cast<fullstack_fixture_data*>(f->fixture_data);
+void chttp2_tear_down_fullstack(grpc_end2end_test_fixture *f) {
+  fullstack_fixture_data *ffd =
+      static_cast<fullstack_fixture_data *>(f->fixture_data);
   delete ffd;
 }
 
@@ -113,7 +113,7 @@ static grpc_end2end_test_config configs[] = {
      chttp2_init_server_fullstack, chttp2_tear_down_fullstack},
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   size_t i;
 
   grpc::testing::TestEnvironment env(argc, argv);

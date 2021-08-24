@@ -51,7 +51,7 @@ static uint8_t decode_table[] = {
 
 static const uint8_t tail_xtra[4] = {0, 0, 1, 2};
 
-static bool input_is_valid(const uint8_t* input_ptr, size_t length) {
+static bool input_is_valid(const uint8_t *input_ptr, size_t length) {
   size_t i;
 
   for (i = 0; i < length; ++i) {
@@ -80,9 +80,9 @@ static bool input_is_valid(const uint8_t* input_ptr, size_t length) {
 // By RFC 4648, if the length of the encoded string without padding is 4n+r,
 // the length of decoded string is: 1) 3n if r = 0, 2) 3n + 1 if r = 2, 3, or
 // 3) invalid if r = 1.
-size_t grpc_chttp2_base64_infer_length_after_decode(const grpc_slice& slice) {
+size_t grpc_chttp2_base64_infer_length_after_decode(const grpc_slice &slice) {
   size_t len = GRPC_SLICE_LENGTH(slice);
-  const uint8_t* bytes = GRPC_SLICE_START_PTR(slice);
+  const uint8_t *bytes = GRPC_SLICE_START_PTR(slice);
   while (len > 0 && bytes[len - 1] == '=') {
     len--;
   }
@@ -103,7 +103,7 @@ size_t grpc_chttp2_base64_infer_length_after_decode(const grpc_slice& slice) {
   return tuples * 3 + tail_xtra[tail_case];
 }
 
-bool grpc_base64_decode_partial(struct grpc_base64_decode_context* ctx) {
+bool grpc_base64_decode_partial(struct grpc_base64_decode_context *ctx) {
   size_t input_tail;
 
   if (ctx->input_cur > ctx->input_end || ctx->output_cur > ctx->output_end) {
@@ -158,7 +158,7 @@ bool grpc_base64_decode_partial(struct grpc_base64_decode_context* ctx) {
   return true;
 }
 
-grpc_slice grpc_chttp2_base64_decode(const grpc_slice& input) {
+grpc_slice grpc_chttp2_base64_decode(const grpc_slice &input) {
   size_t input_length = GRPC_SLICE_LENGTH(input);
   size_t output_length = input_length / 4 * 3;
   struct grpc_base64_decode_context ctx;
@@ -174,7 +174,7 @@ grpc_slice grpc_chttp2_base64_decode(const grpc_slice& input) {
   }
 
   if (input_length > 0) {
-    const uint8_t* input_end = GRPC_SLICE_END_PTR(input);
+    const uint8_t *input_end = GRPC_SLICE_END_PTR(input);
     if (*(--input_end) == '=') {
       output_length--;
       if (*(--input_end) == '=') {
@@ -191,7 +191,7 @@ grpc_slice grpc_chttp2_base64_decode(const grpc_slice& input) {
   ctx.contains_tail = false;
 
   if (GPR_UNLIKELY(!grpc_base64_decode_partial(&ctx))) {
-    char* s = grpc_slice_to_c_string(input);
+    char *s = grpc_slice_to_c_string(input);
     gpr_log(GPR_ERROR, "Base64 decoding failed, input string:\n%s\n", s);
     gpr_free(s);
     grpc_slice_unref_internal(output);
@@ -202,7 +202,7 @@ grpc_slice grpc_chttp2_base64_decode(const grpc_slice& input) {
   return output;
 }
 
-grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice& input,
+grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice &input,
                                                  size_t output_length) {
   size_t input_length = GRPC_SLICE_LENGTH(input);
   grpc_slice output = GRPC_SLICE_MALLOC(output_length);
@@ -238,7 +238,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice& input,
   ctx.contains_tail = true;
 
   if (GPR_UNLIKELY(!grpc_base64_decode_partial(&ctx))) {
-    char* s = grpc_slice_to_c_string(input);
+    char *s = grpc_slice_to_c_string(input);
     gpr_log(GPR_ERROR, "Base64 decoding failed, input string:\n%s\n", s);
     gpr_free(s);
     grpc_slice_unref_internal(output);

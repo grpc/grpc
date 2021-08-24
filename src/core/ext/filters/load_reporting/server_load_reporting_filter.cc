@@ -51,16 +51,16 @@ constexpr char kEmptyAddressLengthString[] = "00";
 constexpr size_t kLengthPrefixSize = 2;
 
 grpc_error_handle ServerLoadReportingChannelData::Init(
-    grpc_channel_element* /* elem */, grpc_channel_element_args* args) {
+    grpc_channel_element * /* elem */, grpc_channel_element_args *args) {
   GPR_ASSERT(!args->is_last);
   // Find and record the peer_identity.
-  const grpc_auth_context* auth_context =
+  const grpc_auth_context *auth_context =
       grpc_find_auth_context_in_args(args->channel_args);
   if (auth_context != nullptr &&
       grpc_auth_context_peer_is_authenticated(auth_context)) {
     grpc_auth_property_iterator auth_it =
         grpc_auth_context_peer_identity(auth_context);
-    const grpc_auth_property* auth_property =
+    const grpc_auth_property *auth_property =
         grpc_auth_property_iterator_next(&auth_it);
     if (auth_property != nullptr) {
       peer_identity_ = auth_property->value;
@@ -71,10 +71,10 @@ grpc_error_handle ServerLoadReportingChannelData::Init(
 }
 
 void ServerLoadReportingCallData::Destroy(
-    grpc_call_element* elem, const grpc_call_final_info* final_info,
-    grpc_closure* /*then_call_closure*/) {
-  ServerLoadReportingChannelData* chand =
-      reinterpret_cast<ServerLoadReportingChannelData*>(elem->channel_data);
+    grpc_call_element *elem, const grpc_call_final_info *final_info,
+    grpc_closure * /*then_call_closure*/) {
+  ServerLoadReportingChannelData *chand =
+      reinterpret_cast<ServerLoadReportingChannelData *>(elem->channel_data);
   // Only record an end if we've recorded its corresponding start, which is
   // indicated by a non-null client_ip_and_lr_token_. Note that it's possible
   // that we attempt to record the call end before we have recorded the call
@@ -104,7 +104,7 @@ void ServerLoadReportingCallData::Destroy(
 }
 
 void ServerLoadReportingCallData::StartTransportStreamOpBatch(
-    grpc_call_element* elem, TransportStreamOpBatch* op) {
+    grpc_call_element *elem, TransportStreamOpBatch *op) {
   GPR_TIMER_SCOPE("lr_start_transport_stream_op", 0);
   if (op->recv_initial_metadata() != nullptr) {
     // Save some fields to use when initial metadata is ready.
@@ -126,8 +126,8 @@ void ServerLoadReportingCallData::StartTransportStreamOpBatch(
 
 std::string ServerLoadReportingCallData::GetCensusSafeClientIpString() {
   // Find the client URI string.
-  const char* client_uri_str =
-      reinterpret_cast<const char*>(gpr_atm_acq_load(peer_string_));
+  const char *client_uri_str =
+      reinterpret_cast<const char *>(gpr_atm_acq_load(peer_string_));
   if (client_uri_str == nullptr) {
     gpr_log(GPR_ERROR,
             "Unable to extract client URI string (peer string) from gRPC "
@@ -153,15 +153,16 @@ std::string ServerLoadReportingCallData::GetCensusSafeClientIpString() {
   }
   // Convert the socket address in the grpc_resolved_address into a hex string
   // according to the address family.
-  grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(resolved_address.addr);
+  grpc_sockaddr *addr =
+      reinterpret_cast<grpc_sockaddr *>(resolved_address.addr);
   if (addr->sa_family == GRPC_AF_INET) {
-    grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(addr);
+    grpc_sockaddr_in *addr4 = reinterpret_cast<grpc_sockaddr_in *>(addr);
     return absl::StrFormat("%08x", grpc_ntohl(addr4->sin_addr.s_addr));
   } else if (addr->sa_family == GRPC_AF_INET6) {
-    grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(addr);
+    grpc_sockaddr_in6 *addr6 = reinterpret_cast<grpc_sockaddr_in6 *>(addr);
     std::string client_ip;
     client_ip.reserve(32);
-    uint32_t* addr6_next_long = reinterpret_cast<uint32_t*>(&addr6->sin6_addr);
+    uint32_t *addr6_next_long = reinterpret_cast<uint32_t *>(&addr6->sin6_addr);
     for (size_t i = 0; i < 4; ++i) {
       absl::StrAppendFormat(&client_ip, "%08x", grpc_ntohl(*addr6_next_long++));
     }
@@ -171,14 +172,14 @@ std::string ServerLoadReportingCallData::GetCensusSafeClientIpString() {
   }
 }
 
-void ServerLoadReportingCallData::StoreClientIpAndLrToken(const char* lr_token,
+void ServerLoadReportingCallData::StoreClientIpAndLrToken(const char *lr_token,
                                                           size_t lr_token_len) {
   std::string client_ip = GetCensusSafeClientIpString();
   client_ip_and_lr_token_len_ =
       kLengthPrefixSize + client_ip.size() + lr_token_len;
-  client_ip_and_lr_token_ = static_cast<char*>(
+  client_ip_and_lr_token_ = static_cast<char *>(
       gpr_zalloc(client_ip_and_lr_token_len_ * sizeof(char)));
-  char* cur_pos = client_ip_and_lr_token_;
+  char *cur_pos = client_ip_and_lr_token_;
   // Store the IP length prefix.
   if (client_ip.empty()) {
     strncpy(cur_pos, kEmptyAddressLengthString, kLengthPrefixSize);
@@ -204,10 +205,10 @@ void ServerLoadReportingCallData::StoreClientIpAndLrToken(const char* lr_token,
 }
 
 grpc_filtered_mdelem ServerLoadReportingCallData::RecvInitialMetadataFilter(
-    void* user_data, grpc_mdelem md) {
-  grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
-  ServerLoadReportingCallData* calld =
-      reinterpret_cast<ServerLoadReportingCallData*>(elem->call_data);
+    void *user_data, grpc_mdelem md) {
+  grpc_call_element *elem = reinterpret_cast<grpc_call_element *>(user_data);
+  ServerLoadReportingCallData *calld =
+      reinterpret_cast<ServerLoadReportingCallData *>(elem->call_data);
   if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_PATH)) {
     calld->service_method_ = grpc_slice_ref_internal(GRPC_MDVALUE(md));
   } else if (calld->target_host_ == nullptr &&
@@ -215,7 +216,7 @@ grpc_filtered_mdelem ServerLoadReportingCallData::RecvInitialMetadataFilter(
     grpc_slice target_host_slice = GRPC_MDVALUE(md);
     calld->target_host_len_ = GRPC_SLICE_LENGTH(target_host_slice);
     calld->target_host_ =
-        reinterpret_cast<char*>(gpr_zalloc(calld->target_host_len_));
+        reinterpret_cast<char *>(gpr_zalloc(calld->target_host_len_));
     for (size_t i = 0; i < calld->target_host_len_; ++i) {
       calld->target_host_[i] = static_cast<char>(
           tolower(GRPC_SLICE_START_PTR(target_host_slice)[i]));
@@ -224,7 +225,7 @@ grpc_filtered_mdelem ServerLoadReportingCallData::RecvInitialMetadataFilter(
                                 grpc_core::kGrpcLbLbTokenMetadataKey) == 0) {
     if (calld->client_ip_and_lr_token_ == nullptr) {
       calld->StoreClientIpAndLrToken(
-          reinterpret_cast<const char*> GRPC_SLICE_START_PTR(GRPC_MDVALUE(md)),
+          reinterpret_cast<const char *> GRPC_SLICE_START_PTR(GRPC_MDVALUE(md)),
           GRPC_SLICE_LENGTH(GRPC_MDVALUE(md)));
     }
     return GRPC_FILTERED_REMOVE();
@@ -233,12 +234,12 @@ grpc_filtered_mdelem ServerLoadReportingCallData::RecvInitialMetadataFilter(
 }
 
 void ServerLoadReportingCallData::RecvInitialMetadataReady(
-    void* arg, grpc_error_handle err) {
-  grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(arg);
-  ServerLoadReportingCallData* calld =
-      reinterpret_cast<ServerLoadReportingCallData*>(elem->call_data);
-  ServerLoadReportingChannelData* chand =
-      reinterpret_cast<ServerLoadReportingChannelData*>(elem->channel_data);
+    void *arg, grpc_error_handle err) {
+  grpc_call_element *elem = reinterpret_cast<grpc_call_element *>(arg);
+  ServerLoadReportingCallData *calld =
+      reinterpret_cast<ServerLoadReportingCallData *>(elem->call_data);
+  ServerLoadReportingChannelData *chand =
+      reinterpret_cast<ServerLoadReportingChannelData *>(elem->channel_data);
   if (err == GRPC_ERROR_NONE) {
     GRPC_LOG_IF_ERROR(
         "server_load_reporting_filter",
@@ -265,7 +266,7 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(
 }
 
 grpc_error_handle ServerLoadReportingCallData::Init(
-    grpc_call_element* elem, const grpc_call_element_args* /*args*/) {
+    grpc_call_element *elem, const grpc_call_element_args * /*args*/) {
   service_method_ = grpc_empty_slice();
   GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
                     elem, grpc_schedule_on_exec_ctx);
@@ -273,12 +274,12 @@ grpc_error_handle ServerLoadReportingCallData::Init(
 }
 
 grpc_filtered_mdelem ServerLoadReportingCallData::SendTrailingMetadataFilter(
-    void* user_data, grpc_mdelem md) {
-  grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
-  ServerLoadReportingCallData* calld =
-      reinterpret_cast<ServerLoadReportingCallData*>(elem->call_data);
-  ServerLoadReportingChannelData* chand =
-      reinterpret_cast<ServerLoadReportingChannelData*>(elem->channel_data);
+    void *user_data, grpc_mdelem md) {
+  grpc_call_element *elem = reinterpret_cast<grpc_call_element *>(user_data);
+  ServerLoadReportingCallData *calld =
+      reinterpret_cast<ServerLoadReportingCallData *>(elem->call_data);
+  ServerLoadReportingChannelData *chand =
+      reinterpret_cast<ServerLoadReportingChannelData *>(elem->channel_data);
   if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_LB_COST_BIN)) {
     const grpc_slice value = GRPC_MDVALUE(md);
     const size_t cost_entry_size = GRPC_SLICE_LENGTH(value);
@@ -289,10 +290,10 @@ grpc_filtered_mdelem ServerLoadReportingCallData::SendTrailingMetadataFilter(
               cost_entry_size);
       return GRPC_FILTERED_REMOVE();
     }
-    const double* cost_entry_ptr =
-        reinterpret_cast<const double*>(GRPC_SLICE_START_PTR(value));
+    const double *cost_entry_ptr =
+        reinterpret_cast<const double *>(GRPC_SLICE_START_PTR(value));
     double cost_value = *cost_entry_ptr++;
-    const char* cost_name = reinterpret_cast<const char*>(cost_entry_ptr);
+    const char *cost_name = reinterpret_cast<const char *>(cost_entry_ptr);
     const size_t cost_name_len = cost_entry_size - sizeof(double);
     opencensus::stats::Record(
         {{::grpc::load_reporter::MeasureOtherCallMetric(), cost_value}},
@@ -309,7 +310,7 @@ grpc_filtered_mdelem ServerLoadReportingCallData::SendTrailingMetadataFilter(
   return GRPC_FILTERED_MDELEM(md);
 }
 
-const char* ServerLoadReportingCallData::GetStatusTagForStatus(
+const char *ServerLoadReportingCallData::GetStatusTagForStatus(
     grpc_status_code status) {
   switch (status) {
     case GRPC_STATUS_OK:
@@ -327,7 +328,7 @@ const char* ServerLoadReportingCallData::GetStatusTagForStatus(
 }
 
 namespace {
-bool MaybeAddServerLoadReportingFilter(const grpc_channel_args& args) {
+bool MaybeAddServerLoadReportingFilter(const grpc_channel_args &args) {
   return grpc_channel_arg_get_bool(
       grpc_channel_args_find(&args, GRPC_ARG_ENABLE_LOAD_REPORTING), false);
 }

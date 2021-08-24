@@ -52,15 +52,15 @@ class XdsClient;
 
 class XdsApi {
  public:
-  static const char* kLdsTypeUrl;
-  static const char* kRdsTypeUrl;
-  static const char* kCdsTypeUrl;
-  static const char* kEdsTypeUrl;
+  static const char *kLdsTypeUrl;
+  static const char *kRdsTypeUrl;
+  static const char *kCdsTypeUrl;
+  static const char *kEdsTypeUrl;
 
   struct Duration {
     int64_t seconds = 0;
     int32_t nanos = 0;
-    bool operator==(const Duration& other) const {
+    bool operator==(const Duration &other) const {
       return seconds == other.seconds && nanos == other.nanos;
     }
     std::string ToString() const {
@@ -80,7 +80,7 @@ class XdsApi {
       std::vector<HeaderMatcher> header_matchers;
       absl::optional<uint32_t> fraction_per_million;
 
-      bool operator==(const Matchers& other) const {
+      bool operator==(const Matchers &other) const {
         return path_matcher == other.path_matcher &&
                header_matchers == other.header_matchers &&
                fraction_per_million == other.fraction_per_million;
@@ -100,14 +100,14 @@ class XdsApi {
       HashPolicy() {}
 
       // Copyable.
-      HashPolicy(const HashPolicy& other);
-      HashPolicy& operator=(const HashPolicy& other);
+      HashPolicy(const HashPolicy &other);
+      HashPolicy &operator=(const HashPolicy &other);
 
       // Moveable.
-      HashPolicy(HashPolicy&& other) noexcept;
-      HashPolicy& operator=(HashPolicy&& other) noexcept;
+      HashPolicy(HashPolicy &&other) noexcept;
+      HashPolicy &operator=(HashPolicy &&other) noexcept;
 
-      bool operator==(const HashPolicy& other) const;
+      bool operator==(const HashPolicy &other) const;
       std::string ToString() const;
     };
     Matchers matchers;
@@ -121,7 +121,7 @@ class XdsApi {
         Duration base_interval;
         Duration max_interval;
 
-        bool operator==(const RetryBackOff& other) const {
+        bool operator==(const RetryBackOff &other) const {
           return base_interval == other.base_interval &&
                  max_interval == other.max_interval;
         }
@@ -129,7 +129,7 @@ class XdsApi {
       };
       RetryBackOff retry_back_off;
 
-      bool operator==(const RetryPolicy& other) const {
+      bool operator==(const RetryPolicy &other) const {
         return (retry_on == other.retry_on &&
                 num_retries == other.num_retries &&
                 retry_back_off == other.retry_back_off);
@@ -147,7 +147,7 @@ class XdsApi {
       uint32_t weight;
       TypedPerFilterConfig typed_per_filter_config;
 
-      bool operator==(const ClusterWeight& other) const {
+      bool operator==(const ClusterWeight &other) const {
         return name == other.name && weight == other.weight &&
                typed_per_filter_config == other.typed_per_filter_config;
       }
@@ -162,7 +162,7 @@ class XdsApi {
 
     TypedPerFilterConfig typed_per_filter_config;
 
-    bool operator==(const Route& other) const {
+    bool operator==(const Route &other) const {
       return matchers == other.matchers && cluster_name == other.cluster_name &&
              retry_policy == other.retry_policy &&
              weighted_clusters == other.weighted_clusters &&
@@ -178,7 +178,7 @@ class XdsApi {
       std::vector<Route> routes;
       TypedPerFilterConfig typed_per_filter_config;
 
-      bool operator==(const VirtualHost& other) const {
+      bool operator==(const VirtualHost &other) const {
         return domains == other.domains && routes == other.routes &&
                typed_per_filter_config == other.typed_per_filter_config;
       }
@@ -186,18 +186,18 @@ class XdsApi {
 
     std::vector<VirtualHost> virtual_hosts;
 
-    bool operator==(const RdsUpdate& other) const {
+    bool operator==(const RdsUpdate &other) const {
       return virtual_hosts == other.virtual_hosts;
     }
     std::string ToString() const;
-    VirtualHost* FindVirtualHostForDomain(const std::string& domain);
+    VirtualHost *FindVirtualHostForDomain(const std::string &domain);
   };
 
   struct CommonTlsContext {
     struct CertificateValidationContext {
       std::vector<StringMatcher> match_subject_alt_names;
 
-      bool operator==(const CertificateValidationContext& other) const {
+      bool operator==(const CertificateValidationContext &other) const {
         return match_subject_alt_names == other.match_subject_alt_names;
       }
 
@@ -209,7 +209,7 @@ class XdsApi {
       std::string instance_name;
       std::string certificate_name;
 
-      bool operator==(const CertificateProviderInstance& other) const {
+      bool operator==(const CertificateProviderInstance &other) const {
         return instance_name == other.instance_name &&
                certificate_name == other.certificate_name;
       }
@@ -223,7 +223,7 @@ class XdsApi {
       CertificateProviderInstance
           validation_context_certificate_provider_instance;
 
-      bool operator==(const CombinedCertificateValidationContext& other) const {
+      bool operator==(const CombinedCertificateValidationContext &other) const {
         return default_validation_context == other.default_validation_context &&
                validation_context_certificate_provider_instance ==
                    other.validation_context_certificate_provider_instance;
@@ -236,7 +236,7 @@ class XdsApi {
     CertificateProviderInstance tls_certificate_certificate_provider_instance;
     CombinedCertificateValidationContext combined_validation_context;
 
-    bool operator==(const CommonTlsContext& other) const {
+    bool operator==(const CommonTlsContext &other) const {
       return tls_certificate_certificate_provider_instance ==
                  other.tls_certificate_certificate_provider_instance &&
              combined_validation_context == other.combined_validation_context;
@@ -250,7 +250,7 @@ class XdsApi {
     CommonTlsContext common_tls_context;
     bool require_client_certificate = false;
 
-    bool operator==(const DownstreamTlsContext& other) const {
+    bool operator==(const DownstreamTlsContext &other) const {
       return common_tls_context == other.common_tls_context &&
              require_client_certificate == other.require_client_certificate;
     }
@@ -281,7 +281,7 @@ class XdsApi {
         std::string name;
         XdsHttpFilterImpl::FilterConfig config;
 
-        bool operator==(const HttpFilter& other) const {
+        bool operator==(const HttpFilter &other) const {
           return name == other.name && config == other.config;
         }
 
@@ -289,7 +289,7 @@ class XdsApi {
       };
       std::vector<HttpFilter> http_filters;
 
-      bool operator==(const HttpConnectionManager& other) const {
+      bool operator==(const HttpConnectionManager &other) const {
         return route_config_name == other.route_config_name &&
                http_max_stream_duration == other.http_max_stream_duration &&
                rds_update == other.rds_update &&
@@ -312,7 +312,7 @@ class XdsApi {
       // We currently require exactly one filter, which is the HCM.
       HttpConnectionManager http_connection_manager;
 
-      bool operator==(const FilterChainData& other) const {
+      bool operator==(const FilterChainData &other) const {
         return downstream_tls_context == other.downstream_tls_context &&
                http_connection_manager == other.http_connection_manager;
       }
@@ -337,7 +337,7 @@ class XdsApi {
     struct FilterChainMap {
       struct FilterChainDataSharedPtr {
         std::shared_ptr<FilterChainData> data;
-        bool operator==(const FilterChainDataSharedPtr& other) const {
+        bool operator==(const FilterChainDataSharedPtr &other) const {
           return *data == *other.data;
         }
       };
@@ -345,7 +345,7 @@ class XdsApi {
         grpc_resolved_address address;
         uint32_t prefix_len;
 
-        bool operator==(const CidrRange& other) const {
+        bool operator==(const CidrRange &other) const {
           return memcmp(&address, &other.address, sizeof(address)) == 0 &&
                  prefix_len == other.prefix_len;
         }
@@ -357,7 +357,7 @@ class XdsApi {
         absl::optional<CidrRange> prefix_range;
         SourcePortsMap ports_map;
 
-        bool operator==(const SourceIp& other) const {
+        bool operator==(const SourceIp &other) const {
           return prefix_range == other.prefix_range &&
                  ports_map == other.ports_map;
         }
@@ -375,7 +375,7 @@ class XdsApi {
         // included here.
         ConnectionSourceTypesArray source_types_array;
 
-        bool operator==(const DestinationIp& other) const {
+        bool operator==(const DestinationIp &other) const {
           return prefix_range == other.prefix_range &&
                  source_types_array == other.source_types_array;
         }
@@ -384,7 +384,7 @@ class XdsApi {
       using DestinationIpVector = std::vector<DestinationIp>;
       DestinationIpVector destination_ip_vector;
 
-      bool operator==(const FilterChainMap& other) const {
+      bool operator==(const FilterChainMap &other) const {
         return destination_ip_vector == other.destination_ip_vector;
       }
 
@@ -393,7 +393,7 @@ class XdsApi {
 
     absl::optional<FilterChainData> default_filter_chain;
 
-    bool operator==(const LdsUpdate& other) const {
+    bool operator==(const LdsUpdate &other) const {
       return http_connection_manager == other.http_connection_manager &&
              address == other.address &&
              filter_chain_map == other.filter_chain_map &&
@@ -450,7 +450,7 @@ class XdsApi {
     // cluster.
     uint32_t max_concurrent_requests = 1024;
 
-    bool operator==(const CdsUpdate& other) const {
+    bool operator==(const CdsUpdate &other) const {
       return cluster_type == other.cluster_type &&
              eds_service_name == other.eds_service_name &&
              dns_hostname == other.dns_hostname &&
@@ -481,19 +481,19 @@ class XdsApi {
         uint32_t lb_weight;
         ServerAddressList endpoints;
 
-        bool operator==(const Locality& other) const {
+        bool operator==(const Locality &other) const {
           return *name == *other.name && lb_weight == other.lb_weight &&
                  endpoints == other.endpoints;
         }
-        bool operator!=(const Locality& other) const {
+        bool operator!=(const Locality &other) const {
           return !(*this == other);
         }
         std::string ToString() const;
       };
 
-      std::map<XdsLocalityName*, Locality, XdsLocalityName::Less> localities;
+      std::map<XdsLocalityName *, Locality, XdsLocalityName::Less> localities;
 
-      bool operator==(const Priority& other) const;
+      bool operator==(const Priority &other) const;
       std::string ToString() const;
     };
     using PriorityList = absl::InlinedVector<Priority, 2>;
@@ -505,7 +505,7 @@ class XdsApi {
     class DropConfig : public RefCounted<DropConfig> {
      public:
       struct DropCategory {
-        bool operator==(const DropCategory& other) const {
+        bool operator==(const DropCategory &other) const {
           return name == other.name &&
                  parts_per_million == other.parts_per_million;
         }
@@ -524,18 +524,18 @@ class XdsApi {
 
       // The only method invoked from outside the WorkSerializer (used in
       // the data plane).
-      bool ShouldDrop(const std::string** category_name) const;
+      bool ShouldDrop(const std::string **category_name) const;
 
-      const DropCategoryList& drop_category_list() const {
+      const DropCategoryList &drop_category_list() const {
         return drop_category_list_;
       }
 
       bool drop_all() const { return drop_all_; }
 
-      bool operator==(const DropConfig& other) const {
+      bool operator==(const DropConfig &other) const {
         return drop_category_list_ == other.drop_category_list_;
       }
-      bool operator!=(const DropConfig& other) const {
+      bool operator!=(const DropConfig &other) const {
         return !(*this == other);
       }
 
@@ -549,7 +549,7 @@ class XdsApi {
     PriorityList priorities;
     RefCountedPtr<DropConfig> drop_config;
 
-    bool operator==(const EdsUpdate& other) const {
+    bool operator==(const EdsUpdate &other) const {
       return priorities == other.priorities &&
              *drop_config == *other.drop_config;
     }
@@ -611,7 +611,7 @@ class XdsApi {
     grpc_millis failed_update_time = 0;
   };
   using ResourceMetadataMap =
-      std::map<absl::string_view /*resource_name*/, const ResourceMetadata*>;
+      std::map<absl::string_view /*resource_name*/, const ResourceMetadata *>;
   struct ResourceTypeMetadata {
     absl::string_view version;
     ResourceMetadataMap resource_metadata_map;
@@ -654,28 +654,28 @@ class XdsApi {
     std::set<std::string> resource_names_failed;
   };
 
-  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
-         const CertificateProviderStore::PluginDefinitionMap* map);
+  XdsApi(XdsClient *client, TraceFlag *tracer, const XdsBootstrap::Node *node,
+         const CertificateProviderStore::PluginDefinitionMap *map);
 
   // Creates an ADS request.
   // Takes ownership of \a error.
-  grpc_slice CreateAdsRequest(const XdsBootstrap::XdsServer& server,
-                              const std::string& type_url,
-                              const std::set<absl::string_view>& resource_names,
-                              const std::string& version,
-                              const std::string& nonce, grpc_error_handle error,
+  grpc_slice CreateAdsRequest(const XdsBootstrap::XdsServer &server,
+                              const std::string &type_url,
+                              const std::set<absl::string_view> &resource_names,
+                              const std::string &version,
+                              const std::string &nonce, grpc_error_handle error,
                               bool populate_node);
 
   // Parses an ADS response.
   AdsParseResult ParseAdsResponse(
-      const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
-      const std::set<absl::string_view>& expected_listener_names,
-      const std::set<absl::string_view>& expected_route_configuration_names,
-      const std::set<absl::string_view>& expected_cluster_names,
-      const std::set<absl::string_view>& expected_eds_service_names);
+      const XdsBootstrap::XdsServer &server, const grpc_slice &encoded_response,
+      const std::set<absl::string_view> &expected_listener_names,
+      const std::set<absl::string_view> &expected_route_configuration_names,
+      const std::set<absl::string_view> &expected_cluster_names,
+      const std::set<absl::string_view> &expected_eds_service_names);
 
   // Creates an initial LRS request.
-  grpc_slice CreateLrsInitialRequest(const XdsBootstrap::XdsServer& server);
+  grpc_slice CreateLrsInitialRequest(const XdsBootstrap::XdsServer &server);
 
   // Creates an LRS request sending a client-side load report.
   grpc_slice CreateLrsRequest(ClusterLoadReportMap cluster_load_report_map);
@@ -683,21 +683,21 @@ class XdsApi {
   // Parses the LRS response and returns \a
   // load_reporting_interval for client-side load reporting. If there is any
   // error, the output config is invalid.
-  grpc_error_handle ParseLrsResponse(const grpc_slice& encoded_response,
-                                     bool* send_all_clusters,
-                                     std::set<std::string>* cluster_names,
-                                     grpc_millis* load_reporting_interval);
+  grpc_error_handle ParseLrsResponse(const grpc_slice &encoded_response,
+                                     bool *send_all_clusters,
+                                     std::set<std::string> *cluster_names,
+                                     grpc_millis *load_reporting_interval);
 
   // Assemble the client config proto message and return the serialized result.
   std::string AssembleClientConfig(
-      const ResourceTypeMetadataMap& resource_type_metadata_map);
+      const ResourceTypeMetadataMap &resource_type_metadata_map);
 
  private:
-  XdsClient* client_;
-  TraceFlag* tracer_;
-  const XdsBootstrap::Node* node_;  // Do not own.
-  const CertificateProviderStore::PluginDefinitionMap*
-      certificate_provider_definition_map_;  // Do not own.
+  XdsClient *client_;
+  TraceFlag *tracer_;
+  const XdsBootstrap::Node *node_;  // Do not own.
+  const CertificateProviderStore::PluginDefinitionMap
+      *certificate_provider_definition_map_;  // Do not own.
   upb::SymbolTable symtab_;
   const std::string build_version_;
   const std::string user_agent_name_;

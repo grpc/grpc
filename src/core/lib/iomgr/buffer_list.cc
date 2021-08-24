@@ -33,35 +33,35 @@
 namespace grpc_core {
 namespace {
 /** Fills gpr_timespec gts based on values from timespec ts */
-void fill_gpr_from_timestamp(gpr_timespec* gts, const struct timespec* ts) {
+void fill_gpr_from_timestamp(gpr_timespec *gts, const struct timespec *ts) {
   gts->tv_sec = ts->tv_sec;
   gts->tv_nsec = static_cast<int32_t>(ts->tv_nsec);
   gts->clock_type = GPR_CLOCK_REALTIME;
 }
 
-void default_timestamps_callback(void* /*arg*/, grpc_core::Timestamps* /*ts*/,
+void default_timestamps_callback(void * /*arg*/, grpc_core::Timestamps * /*ts*/,
                                  grpc_error_handle /*shudown_err*/) {
   gpr_log(GPR_DEBUG, "Timestamps callback has not been registered");
 }
 
 /** The saved callback function that will be invoked when we get all the
  * timestamps that we are going to get for a TracedBuffer. */
-void (*timestamps_callback)(void*, grpc_core::Timestamps*,
+void (*timestamps_callback)(void *, grpc_core::Timestamps *,
                             grpc_error_handle shutdown_err) =
     default_timestamps_callback;
 
 /* Used to extract individual opt stats from cmsg, so as to avoid troubles with
  * unaligned reads */
 template <typename T>
-T read_unaligned(const void* ptr) {
+T read_unaligned(const void *ptr) {
   T val;
   memcpy(&val, ptr, sizeof(val));
   return val;
 }
 
 /* Extracts opt stats from the tcp_info struct \a info to \a metrics */
-void extract_opt_stats_from_tcp_info(ConnectionMetrics* metrics,
-                                     const grpc_core::tcp_info* info) {
+void extract_opt_stats_from_tcp_info(ConnectionMetrics *metrics,
+                                     const grpc_core::tcp_info *info) {
   if (info == nullptr) {
     return;
   }
@@ -92,19 +92,19 @@ void extract_opt_stats_from_tcp_info(ConnectionMetrics* metrics,
 
 /** Extracts opt stats from the given control message \a opt_stats to the
  * connection metrics \a metrics */
-void extract_opt_stats_from_cmsg(ConnectionMetrics* metrics,
-                                 const cmsghdr* opt_stats) {
+void extract_opt_stats_from_cmsg(ConnectionMetrics *metrics,
+                                 const cmsghdr *opt_stats) {
   if (opt_stats == nullptr) {
     return;
   }
-  const auto* data = CMSG_DATA(opt_stats);
+  const auto *data = CMSG_DATA(opt_stats);
   constexpr int64_t cmsg_hdr_len = CMSG_ALIGN(sizeof(struct cmsghdr));
   const int64_t len = opt_stats->cmsg_len - cmsg_hdr_len;
   int64_t offset = 0;
 
   while (offset < len) {
-    const auto* attr = reinterpret_cast<const nlattr*>(data + offset);
-    const void* val = data + offset + NLA_HDRLEN;
+    const auto *attr = reinterpret_cast<const nlattr *>(data + offset);
+    const void *val = data + offset + NLA_HDRLEN;
     switch (attr->nla_type) {
       case TCP_NLA_BUSY: {
         metrics->busy_usec.emplace(read_unaligned<uint64_t>(val));
@@ -188,17 +188,17 @@ void extract_opt_stats_from_cmsg(ConnectionMetrics* metrics,
   }
 }
 
-static int get_socket_tcp_info(grpc_core::tcp_info* info, int fd) {
+static int get_socket_tcp_info(grpc_core::tcp_info *info, int fd) {
   memset(info, 0, sizeof(*info));
   info->length = offsetof(grpc_core::tcp_info, length);
   return getsockopt(fd, IPPROTO_TCP, TCP_INFO, info, &(info->length));
 }
 } /* namespace */
 
-void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no, int fd,
-                               void* arg) {
+void TracedBuffer::AddNewEntry(TracedBuffer **head, uint32_t seq_no, int fd,
+                               void *arg) {
   GPR_DEBUG_ASSERT(head != nullptr);
-  TracedBuffer* new_elem = new TracedBuffer(seq_no, arg);
+  TracedBuffer *new_elem = new TracedBuffer(seq_no, arg);
   /* Store the current time as the sendmsg time. */
   new_elem->ts_.sendmsg_time.time = gpr_now(GPR_CLOCK_REALTIME);
   new_elem->ts_.scheduled_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
@@ -214,20 +214,20 @@ void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no, int fd,
     return;
   }
   /* Append at the end. */
-  TracedBuffer* ptr = *head;
+  TracedBuffer *ptr = *head;
   while (ptr->next_ != nullptr) {
     ptr = ptr->next_;
   }
   ptr->next_ = new_elem;
 }
 
-void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
-                                    struct sock_extended_err* serr,
-                                    struct cmsghdr* opt_stats,
-                                    struct scm_timestamping* tss) {
+void TracedBuffer::ProcessTimestamp(TracedBuffer **head,
+                                    struct sock_extended_err *serr,
+                                    struct cmsghdr *opt_stats,
+                                    struct scm_timestamping *tss) {
   GPR_DEBUG_ASSERT(head != nullptr);
-  TracedBuffer* elem = *head;
-  TracedBuffer* next = nullptr;
+  TracedBuffer *elem = *head;
+  TracedBuffer *next = nullptr;
   while (elem != nullptr) {
     /* The byte number refers to the sequence number of the last byte which this
      * timestamp relates to. */
@@ -255,7 +255,7 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
            * restriction on the lifetime. */
           timestamps_callback(elem->arg_, &(elem->ts_), GRPC_ERROR_NONE);
           next = elem->next_;
-          delete static_cast<TracedBuffer*>(elem);
+          delete static_cast<TracedBuffer *>(elem);
           *head = elem = next;
           break;
         default:
@@ -267,13 +267,13 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
   }
 }
 
-void TracedBuffer::Shutdown(TracedBuffer** head, void* remaining,
+void TracedBuffer::Shutdown(TracedBuffer **head, void *remaining,
                             grpc_error_handle shutdown_err) {
   GPR_DEBUG_ASSERT(head != nullptr);
-  TracedBuffer* elem = *head;
+  TracedBuffer *elem = *head;
   while (elem != nullptr) {
     timestamps_callback(elem->arg_, &(elem->ts_), shutdown_err);
-    auto* next = elem->next_;
+    auto *next = elem->next_;
     delete elem;
     elem = next;
   }
@@ -285,7 +285,7 @@ void TracedBuffer::Shutdown(TracedBuffer** head, void* remaining,
 }
 
 void grpc_tcp_set_write_timestamps_callback(
-    void (*fn)(void*, grpc_core::Timestamps*, grpc_error_handle error)) {
+    void (*fn)(void *, grpc_core::Timestamps *, grpc_error_handle error)) {
   timestamps_callback = fn;
 }
 } /* namespace grpc_core */
@@ -294,7 +294,7 @@ void grpc_tcp_set_write_timestamps_callback(
 
 namespace grpc_core {
 void grpc_tcp_set_write_timestamps_callback(
-    void (*fn)(void*, grpc_core::Timestamps*, grpc_error_handle error)) {
+    void (*fn)(void *, grpc_core::Timestamps *, grpc_error_handle error)) {
   // Cast value of fn to void to avoid unused parameter warning.
   // Can't comment out the name because some compilers and formatters don't
   // like the sequence */* , which would arise from */*fn*/.

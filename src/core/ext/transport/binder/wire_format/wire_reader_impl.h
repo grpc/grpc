@@ -66,7 +66,7 @@ class WireReaderImpl : public WireReader {
       std::unique_ptr<Binder> binder) override;
 
   absl::Status ProcessTransaction(transaction_code_t code,
-                                  const ReadableParcel* parcel);
+                                  const ReadableParcel *parcel);
 
   /// Send SETUP_TRANSPORT request through \p binder.
   ///
@@ -75,7 +75,7 @@ class WireReaderImpl : public WireReader {
   /// binder is created. We take its "receiving" part and construct the
   /// transaction receiver with it, and sends the "sending" part along with the
   /// SETUP_TRANSPORT message through \p binder.
-  void SendSetupTransport(Binder* binder);
+  void SendSetupTransport(Binder *binder);
 
   /// Recv SETUP_TRANSPORT request.
   ///
@@ -92,10 +92,10 @@ class WireReaderImpl : public WireReader {
 
  private:
   absl::Status ProcessStreamingTransaction(transaction_code_t code,
-                                           const ReadableParcel* parcel);
+                                           const ReadableParcel *parcel);
   absl::Status ProcessStreamingTransactionImpl(transaction_code_t code,
-                                               const ReadableParcel* parcel,
-                                               int* cancellation_flags);
+                                               const ReadableParcel *parcel,
+                                               int *cancellation_flags);
 
   std::shared_ptr<TransportStreamReceiver> transport_stream_receiver_;
   absl::Notification connection_noti_;

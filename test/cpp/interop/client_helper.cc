@@ -64,11 +64,11 @@ std::string GetServiceAccountJsonKey() {
 
 std::string GetOauth2AccessToken() {
   std::shared_ptr<CallCredentials> creds = GoogleComputeEngineCredentials();
-  SecureCallCredentials* secure_creds =
-      dynamic_cast<SecureCallCredentials*>(creds.get());
+  SecureCallCredentials *secure_creds =
+      dynamic_cast<SecureCallCredentials *>(creds.get());
   GPR_ASSERT(secure_creds != nullptr);
-  grpc_call_credentials* c_creds = secure_creds->GetRawCreds();
-  char* token = grpc_test_fetch_oauth2_token_with_credentials(c_creds);
+  grpc_call_credentials *c_creds = secure_creds->GetRawCreds();
+  char *token = grpc_test_fetch_oauth2_token_with_credentials(c_creds);
   GPR_ASSERT(token != nullptr);
   gpr_log(GPR_INFO, "Get raw oauth2 access token: %s", token);
   std::string access_token(token + sizeof("Bearer ") - 1);
@@ -77,10 +77,10 @@ std::string GetOauth2AccessToken() {
 }
 
 void UpdateActions(
-    std::unordered_map<std::string, std::function<bool()>>* /*actions*/) {}
+    std::unordered_map<std::string, std::function<bool()>> * /*actions*/) {}
 
 std::shared_ptr<Channel> CreateChannelForTestCase(
-    const std::string& test_case,
+    const std::string &test_case,
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {

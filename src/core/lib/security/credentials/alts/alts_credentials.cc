@@ -34,8 +34,8 @@
 #define GRPC_ALTS_HANDSHAKER_SERVICE_URL "metadata.google.internal.:8080"
 
 grpc_alts_credentials::grpc_alts_credentials(
-    const grpc_alts_credentials_options* options,
-    const char* handshaker_service_url)
+    const grpc_alts_credentials_options *options,
+    const char *handshaker_service_url)
     : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_ALTS),
       options_(grpc_alts_credentials_options_copy(options)),
       handshaker_service_url_(handshaker_service_url == nullptr
@@ -52,15 +52,15 @@ grpc_alts_credentials::~grpc_alts_credentials() {
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_alts_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-    const char* target_name, const grpc_channel_args* /*args*/,
-    grpc_channel_args** /*new_args*/) {
+    const char *target_name, const grpc_channel_args * /*args*/,
+    grpc_channel_args ** /*new_args*/) {
   return grpc_alts_channel_security_connector_create(
       this->Ref(), std::move(call_creds), target_name);
 }
 
 grpc_alts_server_credentials::grpc_alts_server_credentials(
-    const grpc_alts_credentials_options* options,
-    const char* handshaker_service_url)
+    const grpc_alts_credentials_options *options,
+    const char *handshaker_service_url)
     : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_ALTS),
       options_(grpc_alts_credentials_options_copy(options)),
       handshaker_service_url_(handshaker_service_url == nullptr
@@ -71,7 +71,7 @@ grpc_alts_server_credentials::grpc_alts_server_credentials(
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_alts_server_credentials::create_security_connector(
-    const grpc_channel_args* /* args */) {
+    const grpc_channel_args * /* args */) {
   return grpc_alts_server_security_connector_create(this->Ref());
 }
 
@@ -80,32 +80,32 @@ grpc_alts_server_credentials::~grpc_alts_server_credentials() {
   gpr_free(handshaker_service_url_);
 }
 
-grpc_channel_credentials* grpc_alts_credentials_create_customized(
-    const grpc_alts_credentials_options* options,
-    const char* handshaker_service_url, bool enable_untrusted_alts) {
+grpc_channel_credentials *grpc_alts_credentials_create_customized(
+    const grpc_alts_credentials_options *options,
+    const char *handshaker_service_url, bool enable_untrusted_alts) {
   if (!enable_untrusted_alts && !grpc_alts_is_running_on_gcp()) {
     return nullptr;
   }
   return new grpc_alts_credentials(options, handshaker_service_url);
 }
 
-grpc_server_credentials* grpc_alts_server_credentials_create_customized(
-    const grpc_alts_credentials_options* options,
-    const char* handshaker_service_url, bool enable_untrusted_alts) {
+grpc_server_credentials *grpc_alts_server_credentials_create_customized(
+    const grpc_alts_credentials_options *options,
+    const char *handshaker_service_url, bool enable_untrusted_alts) {
   if (!enable_untrusted_alts && !grpc_alts_is_running_on_gcp()) {
     return nullptr;
   }
   return new grpc_alts_server_credentials(options, handshaker_service_url);
 }
 
-grpc_channel_credentials* grpc_alts_credentials_create(
-    const grpc_alts_credentials_options* options) {
+grpc_channel_credentials *grpc_alts_credentials_create(
+    const grpc_alts_credentials_options *options) {
   return grpc_alts_credentials_create_customized(
       options, GRPC_ALTS_HANDSHAKER_SERVICE_URL, false);
 }
 
-grpc_server_credentials* grpc_alts_server_credentials_create(
-    const grpc_alts_credentials_options* options) {
+grpc_server_credentials *grpc_alts_server_credentials_create(
+    const grpc_alts_credentials_options *options) {
   return grpc_alts_server_credentials_create_customized(
       options, GRPC_ALTS_HANDSHAKER_SERVICE_URL, false);
 }

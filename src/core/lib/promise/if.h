@@ -28,7 +28,7 @@ namespace promise_detail {
 
 template <typename CallPoll, typename T, typename F>
 typename CallPoll::PollResult ChooseIf(CallPoll call_poll, bool result,
-                                       T* if_true, F* if_false) {
+                                       T *if_true, F *if_false) {
   if (result) {
     auto promise = if_true->Once();
     return call_poll(promise);
@@ -40,8 +40,8 @@ typename CallPoll::PollResult ChooseIf(CallPoll call_poll, bool result,
 
 template <typename CallPoll, typename T, typename F>
 typename CallPoll::PollResult ChooseIf(CallPoll call_poll,
-                                       absl::StatusOr<bool> result, T* if_true,
-                                       F* if_false) {
+                                       absl::StatusOr<bool> result, T *if_true,
+                                       F *if_false) {
   if (!result.ok()) {
     return typename CallPoll::PollResult(result.status());
   } else if (*result) {
@@ -87,14 +87,14 @@ class If {
   struct CallPoll {
     using PollResult = Poll<Result>;
 
-    If* const self;
+    If *const self;
 
-    PollResult operator()(Evaluating& evaluating) const {
+    PollResult operator()(Evaluating &evaluating) const {
       static_assert(
           !kSetState,
           "shouldn't need to set state coming through the initial branch");
       auto r = evaluating.condition();
-      if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+      if (auto *p = absl::get_if<kPollReadyIdx>(&r)) {
         return ChooseIf(CallPoll<true>{self}, std::move(*p),
                         &evaluating.if_true, &evaluating.if_false);
       }
@@ -102,7 +102,7 @@ class If {
     }
 
     template <class Promise>
-    PollResult operator()(Promise& promise) const {
+    PollResult operator()(Promise &promise) const {
       auto r = promise();
       if (kSetState && absl::holds_alternative<Pending>(r)) {
         self->state_.template emplace<Promise>(std::move(promise));

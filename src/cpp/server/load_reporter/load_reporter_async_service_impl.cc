@@ -88,9 +88,9 @@ void LoadReporterAsyncServiceImpl::FetchAndSample(bool ok) {
   ScheduleNextFetchAndSample();
 }
 
-void LoadReporterAsyncServiceImpl::Work(void* arg) {
-  LoadReporterAsyncServiceImpl* service =
-      static_cast<LoadReporterAsyncServiceImpl*>(arg);
+void LoadReporterAsyncServiceImpl::Work(void *arg) {
+  LoadReporterAsyncServiceImpl *service =
+      static_cast<LoadReporterAsyncServiceImpl *>(arg);
   service->FetchAndSample(true /* ok */);
   // TODO(juanlishen): This is a workaround to wait for the cq to be ready. Need
   // to figure out why cq is not ready after service starts.
@@ -98,7 +98,7 @@ void LoadReporterAsyncServiceImpl::Work(void* arg) {
                                gpr_time_from_seconds(1, GPR_TIMESPAN)));
   ReportLoadHandler::CreateAndStart(service->cq_.get(), service,
                                     service->load_reporter_.get());
-  void* tag;
+  void *tag;
   bool ok;
   while (true) {
     if (!service->cq_->Next(&tag, &ok)) {
@@ -109,7 +109,7 @@ void LoadReporterAsyncServiceImpl::Work(void* arg) {
     if (tag == service) {
       service->FetchAndSample(ok);
     } else {
-      auto* next_step = static_cast<CallableTag*>(tag);
+      auto *next_step = static_cast<CallableTag *>(tag);
       next_step->Run(ok);
     }
   }
@@ -118,11 +118,11 @@ void LoadReporterAsyncServiceImpl::Work(void* arg) {
 void LoadReporterAsyncServiceImpl::StartThread() { thread_->Start(); }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::CreateAndStart(
-    ServerCompletionQueue* cq, LoadReporterAsyncServiceImpl* service,
-    LoadReporter* load_reporter) {
+    ServerCompletionQueue *cq, LoadReporterAsyncServiceImpl *service,
+    LoadReporter *load_reporter) {
   std::shared_ptr<ReportLoadHandler> handler =
       std::make_shared<ReportLoadHandler>(cq, service, load_reporter);
-  ReportLoadHandler* p = handler.get();
+  ReportLoadHandler *p = handler.get();
   {
     grpc_core::MutexLock lock(&service->cq_shutdown_mu_);
     if (service->shutdown_) return;
@@ -141,8 +141,8 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::CreateAndStart(
 }
 
 LoadReporterAsyncServiceImpl::ReportLoadHandler::ReportLoadHandler(
-    ServerCompletionQueue* cq, LoadReporterAsyncServiceImpl* service,
-    LoadReporter* load_reporter)
+    ServerCompletionQueue *cq, LoadReporterAsyncServiceImpl *service,
+    LoadReporter *load_reporter)
     : cq_(cq),
       service_(service),
       load_reporter_(load_reporter),
@@ -209,12 +209,12 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
       Shutdown(std::move(self), "OnReadDone+initial_request_not_found");
     } else {
       call_status_ = INITIAL_REQUEST_RECEIVED;
-      const auto& initial_request = request_.initial_request();
+      const auto &initial_request = request_.initial_request();
       load_balanced_hostname_ = initial_request.load_balanced_hostname();
       load_key_ = initial_request.load_key();
       load_reporter_->ReportStreamCreated(load_balanced_hostname_, lb_id_,
                                           load_key_);
-      const auto& load_report_interval = initial_request.load_report_interval();
+      const auto &load_report_interval = initial_request.load_report_interval();
       load_report_interval_ms_ =
           static_cast<unsigned long>(load_report_interval.seconds() * 1000 +
                                      load_report_interval.nanos() / 1000);
@@ -332,7 +332,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnDoneNotified(
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::Shutdown(
-    std::shared_ptr<ReportLoadHandler> self, const char* reason) {
+    std::shared_ptr<ReportLoadHandler> self, const char *reason) {
   if (!shutdown_) {
     gpr_log(GPR_INFO,
             "[LRS %p] Shutting down the handler (lb_id_: %s, handler: %p, "

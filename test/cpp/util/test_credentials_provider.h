@@ -41,7 +41,7 @@ class CredentialTypeProvider {
   virtual ~CredentialTypeProvider() {}
 
   virtual std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-      ChannelArguments* args) = 0;
+      ChannelArguments *args) = 0;
   virtual std::shared_ptr<ServerCredentials> GetServerCredentials() = 0;
 };
 
@@ -53,18 +53,18 @@ class CredentialsProvider {
   // Add a secure type in addition to the defaults. The default provider has
   // (kInsecureCredentialsType, kTlsCredentialsType).
   virtual void AddSecureType(
-      const std::string& type,
+      const std::string &type,
       std::unique_ptr<CredentialTypeProvider> type_provider) = 0;
 
   // Provide channel credentials according to the given type. Alter the channel
   // arguments if needed. Return nullptr if type is not registered.
   virtual std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-      const std::string& type, ChannelArguments* args) = 0;
+      const std::string &type, ChannelArguments *args) = 0;
 
   // Provide server credentials according to the given type.
   // Return nullptr if type is not registered.
   virtual std::shared_ptr<ServerCredentials> GetServerCredentials(
-      const std::string& type) = 0;
+      const std::string &type) = 0;
 
   // Provide a list of secure credentials type.
   virtual std::vector<std::string> GetSecureCredentialsTypeList() = 0;
@@ -72,12 +72,12 @@ class CredentialsProvider {
 
 // Get the current provider. Create a default one if not set.
 // Not thread-safe.
-CredentialsProvider* GetCredentialsProvider();
+CredentialsProvider *GetCredentialsProvider();
 
 // Set the global provider. Takes ownership. The previous set provider will be
 // destroyed.
 // Not thread-safe.
-void SetCredentialsProvider(CredentialsProvider* provider);
+void SetCredentialsProvider(CredentialsProvider *provider);
 
 }  // namespace testing
 }  // namespace grpc

@@ -20,60 +20,60 @@
 
 #include "src/core/lib/iomgr/tcp_server.h"
 
-grpc_tcp_server_vtable* grpc_tcp_server_impl;
+grpc_tcp_server_vtable *grpc_tcp_server_impl;
 
 grpc_error_handle grpc_tcp_server_create(
-    grpc_closure* shutdown_complete, const grpc_channel_args* args,
-    grpc_slice_allocator_factory* slice_allocator_factory,
-    grpc_tcp_server** server) {
+    grpc_closure *shutdown_complete, const grpc_channel_args *args,
+    grpc_slice_allocator_factory *slice_allocator_factory,
+    grpc_tcp_server **server) {
   return grpc_tcp_server_impl->create(shutdown_complete, args,
                                       slice_allocator_factory, server);
 }
 
-void grpc_tcp_server_start(grpc_tcp_server* server,
-                           const std::vector<grpc_pollset*>* pollsets,
-                           grpc_tcp_server_cb on_accept_cb, void* cb_arg) {
+void grpc_tcp_server_start(grpc_tcp_server *server,
+                           const std::vector<grpc_pollset *> *pollsets,
+                           grpc_tcp_server_cb on_accept_cb, void *cb_arg) {
   grpc_tcp_server_impl->start(server, pollsets, on_accept_cb, cb_arg);
 }
 
-grpc_error_handle grpc_tcp_server_add_port(grpc_tcp_server* s,
-                                           const grpc_resolved_address* addr,
-                                           int* out_port) {
+grpc_error_handle grpc_tcp_server_add_port(grpc_tcp_server *s,
+                                           const grpc_resolved_address *addr,
+                                           int *out_port) {
   return grpc_tcp_server_impl->add_port(s, addr, out_port);
 }
 
-grpc_core::TcpServerFdHandler* grpc_tcp_server_create_fd_handler(
-    grpc_tcp_server* s) {
+grpc_core::TcpServerFdHandler *grpc_tcp_server_create_fd_handler(
+    grpc_tcp_server *s) {
   return grpc_tcp_server_impl->create_fd_handler(s);
 }
 
-unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server* s,
+unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server *s,
                                        unsigned port_index) {
   return grpc_tcp_server_impl->port_fd_count(s, port_index);
 }
 
-int grpc_tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
+int grpc_tcp_server_port_fd(grpc_tcp_server *s, unsigned port_index,
                             unsigned fd_index) {
   return grpc_tcp_server_impl->port_fd(s, port_index, fd_index);
 }
 
-grpc_tcp_server* grpc_tcp_server_ref(grpc_tcp_server* s) {
+grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s) {
   return grpc_tcp_server_impl->ref(s);
 }
 
-void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server* s,
-                                           grpc_closure* shutdown_starting) {
+void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server *s,
+                                           grpc_closure *shutdown_starting) {
   grpc_tcp_server_impl->shutdown_starting_add(s, shutdown_starting);
 }
 
-void grpc_tcp_server_unref(grpc_tcp_server* s) {
+void grpc_tcp_server_unref(grpc_tcp_server *s) {
   grpc_tcp_server_impl->unref(s);
 }
 
-void grpc_tcp_server_shutdown_listeners(grpc_tcp_server* s) {
+void grpc_tcp_server_shutdown_listeners(grpc_tcp_server *s) {
   grpc_tcp_server_impl->shutdown_listeners(s);
 }
 
-void grpc_set_tcp_server_impl(grpc_tcp_server_vtable* impl) {
+void grpc_set_tcp_server_impl(grpc_tcp_server_vtable *impl) {
   grpc_tcp_server_impl = impl;
 }

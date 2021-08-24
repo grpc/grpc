@@ -30,7 +30,7 @@
 #include "src/core/lib/gpr/useful.h"
 
 /* Use little endian to interpret a string of bytes as uint32_t. */
-static uint32_t load_32_le(const unsigned char* buffer) {
+static uint32_t load_32_le(const unsigned char *buffer) {
   return (static_cast<uint32_t>(buffer[3]) << 24) |
          (static_cast<uint32_t>(buffer[2]) << 16) |
          (static_cast<uint32_t>(buffer[1]) << 8) |
@@ -38,7 +38,7 @@ static uint32_t load_32_le(const unsigned char* buffer) {
 }
 
 /* Store uint32_t as a string of little endian bytes. */
-static void store_32_le(uint32_t value, unsigned char* buffer) {
+static void store_32_le(uint32_t value, unsigned char *buffer) {
   buffer[3] = static_cast<unsigned char>(value >> 24) & 0xFF;
   buffer[2] = static_cast<unsigned char>(value >> 16) & 0xFF;
   buffer[1] = static_cast<unsigned char>(value >> 8) & 0xFF;
@@ -46,14 +46,14 @@ static void store_32_le(uint32_t value, unsigned char* buffer) {
 }
 
 /* Frame writer implementation. */
-alts_frame_writer* alts_create_frame_writer() {
-  alts_frame_writer* writer =
-      static_cast<alts_frame_writer*>(gpr_zalloc(sizeof(*writer)));
+alts_frame_writer *alts_create_frame_writer() {
+  alts_frame_writer *writer =
+      static_cast<alts_frame_writer *>(gpr_zalloc(sizeof(*writer)));
   return writer;
 }
 
-bool alts_reset_frame_writer(alts_frame_writer* writer,
-                             const unsigned char* buffer, size_t length) {
+bool alts_reset_frame_writer(alts_frame_writer *writer,
+                             const unsigned char *buffer, size_t length) {
   if (buffer == nullptr) return false;
   size_t max_input_size = SIZE_MAX - kFrameLengthFieldSize;
   if (length > max_input_size) {
@@ -71,8 +71,8 @@ bool alts_reset_frame_writer(alts_frame_writer* writer,
   return true;
 }
 
-bool alts_write_frame_bytes(alts_frame_writer* writer, unsigned char* output,
-                            size_t* bytes_size) {
+bool alts_write_frame_bytes(alts_frame_writer *writer, unsigned char *output,
+                            size_t *bytes_size) {
   if (bytes_size == nullptr || output == nullptr) return false;
   if (alts_is_frame_writer_done(writer)) {
     *bytes_size = 0;
@@ -106,45 +106,45 @@ bool alts_write_frame_bytes(alts_frame_writer* writer, unsigned char* output,
   return true;
 }
 
-bool alts_is_frame_writer_done(alts_frame_writer* writer) {
+bool alts_is_frame_writer_done(alts_frame_writer *writer) {
   return writer->input_buffer == nullptr ||
          writer->input_size == writer->input_bytes_written;
 }
 
-size_t alts_get_num_writer_bytes_remaining(alts_frame_writer* writer) {
+size_t alts_get_num_writer_bytes_remaining(alts_frame_writer *writer) {
   return (sizeof(writer->header_buffer) - writer->header_bytes_written) +
          (writer->input_size - writer->input_bytes_written);
 }
 
-void alts_destroy_frame_writer(alts_frame_writer* writer) { gpr_free(writer); }
+void alts_destroy_frame_writer(alts_frame_writer *writer) { gpr_free(writer); }
 
 /* Frame reader implementation. */
-alts_frame_reader* alts_create_frame_reader() {
-  alts_frame_reader* reader =
-      static_cast<alts_frame_reader*>(gpr_zalloc(sizeof(*reader)));
+alts_frame_reader *alts_create_frame_reader() {
+  alts_frame_reader *reader =
+      static_cast<alts_frame_reader *>(gpr_zalloc(sizeof(*reader)));
   return reader;
 }
 
-bool alts_is_frame_reader_done(alts_frame_reader* reader) {
+bool alts_is_frame_reader_done(alts_frame_reader *reader) {
   return reader->output_buffer == nullptr ||
          (reader->header_bytes_read == sizeof(reader->header_buffer) &&
           reader->bytes_remaining == 0);
 }
 
-bool alts_has_read_frame_length(alts_frame_reader* reader) {
+bool alts_has_read_frame_length(alts_frame_reader *reader) {
   return sizeof(reader->header_buffer) == reader->header_bytes_read;
 }
 
-size_t alts_get_reader_bytes_remaining(alts_frame_reader* reader) {
+size_t alts_get_reader_bytes_remaining(alts_frame_reader *reader) {
   return alts_has_read_frame_length(reader) ? reader->bytes_remaining : 0;
 }
 
-void alts_reset_reader_output_buffer(alts_frame_reader* reader,
-                                     unsigned char* buffer) {
+void alts_reset_reader_output_buffer(alts_frame_reader *reader,
+                                     unsigned char *buffer) {
   reader->output_buffer = buffer;
 }
 
-bool alts_reset_frame_reader(alts_frame_reader* reader, unsigned char* buffer) {
+bool alts_reset_frame_reader(alts_frame_reader *reader, unsigned char *buffer) {
   if (buffer == nullptr) return false;
   reader->output_buffer = buffer;
   reader->bytes_remaining = 0;
@@ -153,8 +153,8 @@ bool alts_reset_frame_reader(alts_frame_reader* reader, unsigned char* buffer) {
   return true;
 }
 
-bool alts_read_frame_bytes(alts_frame_reader* reader,
-                           const unsigned char* bytes, size_t* bytes_size) {
+bool alts_read_frame_bytes(alts_frame_reader *reader,
+                           const unsigned char *bytes, size_t *bytes_size) {
   if (bytes_size == nullptr) return false;
   if (bytes == nullptr) {
     *bytes_size = 0;
@@ -209,12 +209,12 @@ bool alts_read_frame_bytes(alts_frame_reader* reader,
   return true;
 }
 
-size_t alts_get_output_bytes_read(alts_frame_reader* reader) {
+size_t alts_get_output_bytes_read(alts_frame_reader *reader) {
   return reader->output_bytes_read;
 }
 
-unsigned char* alts_get_output_buffer(alts_frame_reader* reader) {
+unsigned char *alts_get_output_buffer(alts_frame_reader *reader) {
   return reader->output_buffer;
 }
 
-void alts_destroy_frame_reader(alts_frame_reader* reader) { gpr_free(reader); }
+void alts_destroy_frame_reader(alts_frame_reader *reader) { gpr_free(reader); }

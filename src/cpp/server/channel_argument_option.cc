@@ -21,18 +21,17 @@
 namespace grpc {
 
 std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
-    const std::string& name, const std::string& value) {
+    const std::string &name, const std::string &value) {
   class StringOption final : public ServerBuilderOption {
    public:
-    StringOption(const std::string& name, const std::string& value)
+    StringOption(const std::string &name, const std::string &value)
         : name_(name), value_(value) {}
 
-    void UpdateArguments(ChannelArguments* args) override {
+    void UpdateArguments(ChannelArguments *args) override {
       args->SetString(name_, value_);
     }
-    void UpdatePlugins(
-        std::vector<std::unique_ptr<ServerBuilderPlugin>>* /*plugins*/)
-        override {}
+    void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>
+                           * /*plugins*/) override {}
 
    private:
     const std::string name_;
@@ -42,18 +41,17 @@ std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
 }
 
 std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
-    const std::string& name, int value) {
+    const std::string &name, int value) {
   class IntOption final : public ServerBuilderOption {
    public:
-    IntOption(const std::string& name, int value)
+    IntOption(const std::string &name, int value)
         : name_(name), value_(value) {}
 
-    void UpdateArguments(ChannelArguments* args) override {
+    void UpdateArguments(ChannelArguments *args) override {
       args->SetInt(name_, value_);
     }
-    void UpdatePlugins(
-        std::vector<std::unique_ptr<ServerBuilderPlugin>>* /*plugins*/)
-        override {}
+    void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>
+                           * /*plugins*/) override {}
 
    private:
     const std::string name_;

@@ -36,10 +36,10 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     return FEATURE_PROTO3_OPTIONAL;
   }
 
-  bool Generate(const grpc::protobuf::FileDescriptor* file,
-                const std::string& parameter,
-                grpc::protobuf::compiler::GeneratorContext* context,
-                std::string* error) const override {
+  bool Generate(const grpc::protobuf::FileDescriptor *file,
+                const std::string &parameter,
+                grpc::protobuf::compiler::GeneratorContext *context,
+                std::string *error) const override {
     grpc_node_generator::Parameters generator_parameters;
     generator_parameters.minimum_node_version = 4;
 
@@ -76,7 +76,7 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   }
 };
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   NodeGrpcGenerator generator;
   return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

@@ -46,21 +46,21 @@
 namespace grpc {
 namespace testing {
 
-static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
+static void *tag(intptr_t x) { return reinterpret_cast<void *>(x); }
 
-static void ApplyCommonServerBuilderConfig(ServerBuilder* b) {
+static void ApplyCommonServerBuilderConfig(ServerBuilder *b) {
   b->SetMaxReceiveMessageSize(INT_MAX);
   b->SetMaxSendMessageSize(INT_MAX);
 }
 
-static void ApplyCommonChannelArguments(ChannelArguments* c) {
+static void ApplyCommonChannelArguments(ChannelArguments *c) {
   c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
   c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
 }
 
 class EndpointPairFixture {
  public:
-  EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints) {
+  EndpointPairFixture(Service *service, grpc_endpoint_pair endpoints) {
     ServerBuilder b;
     cq_ = b.AddCompletionQueue(true);
     b.RegisterService(service);
@@ -71,12 +71,12 @@ class EndpointPairFixture {
 
     /* add server endpoint to server_ */
     {
-      const grpc_channel_args* server_args =
+      const grpc_channel_args *server_args =
           server_->c_server()->core_server->channel_args();
-      grpc_transport* transport = grpc_create_chttp2_transport(
+      grpc_transport *transport = grpc_create_chttp2_transport(
           server_args, endpoints.server, false /* is_client */,
           grpc_resource_user_create_unlimited());
-      for (grpc_pollset* pollset :
+      for (grpc_pollset *pollset :
            server_->c_server()->core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
@@ -93,11 +93,11 @@ class EndpointPairFixture {
       ApplyCommonChannelArguments(&args);
 
       grpc_channel_args c_args = args.c_channel_args();
-      grpc_transport* transport =
+      grpc_transport *transport =
           grpc_create_chttp2_transport(&c_args, endpoints.client, true,
                                        grpc_resource_user_create_unlimited());
       GPR_ASSERT(transport);
-      grpc_channel* channel =
+      grpc_channel *channel =
           grpc_channel_create("target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL,
                               transport, nullptr, 0, nullptr);
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
@@ -112,13 +112,13 @@ class EndpointPairFixture {
   virtual ~EndpointPairFixture() {
     server_->Shutdown();
     cq_->Shutdown();
-    void* tag;
+    void *tag;
     bool ok;
     while (cq_->Next(&tag, &ok)) {
     }
   }
 
-  ServerCompletionQueue* cq() { return cq_.get(); }
+  ServerCompletionQueue *cq() { return cq_.get(); }
   std::shared_ptr<Channel> channel() { return channel_; }
 
  private:
@@ -129,7 +129,7 @@ class EndpointPairFixture {
 
 class InProcessCHTTP2 : public EndpointPairFixture {
  public:
-  InProcessCHTTP2(Service* service, grpc_passthru_endpoint_stats* stats)
+  InProcessCHTTP2(Service *service, grpc_passthru_endpoint_stats *stats)
       : EndpointPairFixture(service, MakeEndpoints(stats)), stats_(stats) {}
 
   ~InProcessCHTTP2() override {
@@ -141,9 +141,9 @@ class InProcessCHTTP2 : public EndpointPairFixture {
   int writes_performed() const { return stats_->num_writes; }
 
  private:
-  grpc_passthru_endpoint_stats* stats_;
+  grpc_passthru_endpoint_stats *stats_;
 
-  static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
+  static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats *stats) {
     grpc_endpoint_pair p;
     grpc_passthru_endpoint_create(&p.client, &p.server, stats);
     return p;
@@ -173,9 +173,9 @@ static double UnaryPingPong(int request_size, int response_size) {
     ServerEnv() : response_writer(&ctx) {}
   };
   uint8_t server_env_buffer[2 * sizeof(ServerEnv)];
-  ServerEnv* server_env[2] = {
-      reinterpret_cast<ServerEnv*>(server_env_buffer),
-      reinterpret_cast<ServerEnv*>(server_env_buffer + sizeof(ServerEnv))};
+  ServerEnv *server_env[2] = {
+      reinterpret_cast<ServerEnv *>(server_env_buffer),
+      reinterpret_cast<ServerEnv *>(server_env_buffer + sizeof(ServerEnv))};
   new (server_env[0]) ServerEnv;
   new (server_env[1]) ServerEnv;
   service.RequestEcho(&server_env[0]->ctx, &server_env[0]->recv_request,
@@ -191,14 +191,14 @@ static double UnaryPingPong(int request_size, int response_size) {
     ClientContext cli_ctx;
     std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
         stub->AsyncEcho(&cli_ctx, send_request, fixture->cq()));
-    void* t;
+    void *t;
     bool ok;
     response_reader->Finish(&recv_response, &recv_status, tag(4));
     GPR_ASSERT(fixture->cq()->Next(&t, &ok));
     GPR_ASSERT(ok);
     GPR_ASSERT(t == tag(0) || t == tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
-    ServerEnv* senv = server_env[slot];
+    ServerEnv *senv = server_env[slot];
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
@@ -237,7 +237,7 @@ TEST(WritesPerRpcTest, UnaryPingPong) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();

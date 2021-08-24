@@ -28,8 +28,8 @@ namespace grpc {
 namespace load_reporter {
 namespace experimental {
 
-void AddLoadReportingCost(grpc::ServerContext* ctx,
-                          const std::string& cost_name, double cost_value) {
+void AddLoadReportingCost(grpc::ServerContext *ctx,
+                          const std::string &cost_name, double cost_value) {
   if (std::isnormal(cost_value)) {
     std::string buf;
     buf.resize(sizeof(cost_value) + cost_name.size());

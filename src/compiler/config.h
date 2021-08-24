@@ -40,12 +40,12 @@ namespace protobuf {
 namespace compiler {
 typedef GRPC_CUSTOM_CODEGENERATOR CodeGenerator;
 typedef GRPC_CUSTOM_GENERATORCONTEXT GeneratorContext;
-static inline int PluginMain(int argc, char* argv[],
-                             const CodeGenerator* generator) {
+static inline int PluginMain(int argc, char *argv[],
+                             const CodeGenerator *generator) {
   return GRPC_CUSTOM_PLUGINMAIN(argc, argv, generator);
 }
 static inline void ParseGeneratorParameter(
-    const string& parameter, std::vector<std::pair<string, string> >* options) {
+    const string &parameter, std::vector<std::pair<string, string> > *options) {
   GRPC_CUSTOM_PARSEGENERATORPARAMETER(parameter, options);
 }
 
@@ -60,8 +60,8 @@ typedef GRPC_CUSTOM_STRINGOUTPUTSTREAM StringOutputStream;
 
 namespace grpc_cpp_generator {
 
-static const char* const kCppGeneratorMessageHeaderExt = ".pb.h";
-static const char* const kCppGeneratorServiceHeaderExt = ".grpc.pb.h";
+static const char *const kCppGeneratorMessageHeaderExt = ".pb.h";
+static const char *const kCppGeneratorServiceHeaderExt = ".grpc.pb.h";
 
 }  // namespace grpc_cpp_generator
 

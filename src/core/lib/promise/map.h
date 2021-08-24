@@ -38,7 +38,7 @@ class Map {
 
   Poll<Result> operator()() {
     Poll<Result> r = promise_();
-    if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+    if (auto *p = absl::get_if<kPollReadyIdx>(&r)) {
       return fn_(std::move(*p));
     }
     return Pending();

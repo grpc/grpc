@@ -57,16 +57,16 @@ struct fullstack_secure_fixture_data {
   std::string localaddr;
   grpc_tls_version tls_version;
   ThreadList thd_list;
-  grpc_tls_certificate_provider* client_provider = nullptr;
-  grpc_tls_certificate_provider* server_provider = nullptr;
+  grpc_tls_certificate_provider *client_provider = nullptr;
+  grpc_tls_certificate_provider *server_provider = nullptr;
 };
 
 static grpc_end2end_test_fixture chttp2_create_fixture_static_data(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/,
+    grpc_channel_args * /*client_args*/, grpc_channel_args * /*server_args*/,
     grpc_tls_version tls_version) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
-  fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
+  fullstack_secure_fixture_data *ffd = new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
   ffd->tls_version = tls_version;
@@ -83,12 +83,12 @@ static grpc_end2end_test_fixture chttp2_create_fixture_static_data(
                                grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
   std::string private_key =
       std::string(grpc_core::StringViewFromSlice(key_slice));
-  grpc_tls_identity_pairs* client_pairs = grpc_tls_identity_pairs_create();
+  grpc_tls_identity_pairs *client_pairs = grpc_tls_identity_pairs_create();
   grpc_tls_identity_pairs_add_pair(client_pairs, private_key.c_str(),
                                    identity_cert.c_str());
   ffd->client_provider = grpc_tls_certificate_provider_static_data_create(
       root_cert.c_str(), client_pairs);
-  grpc_tls_identity_pairs* server_pairs = grpc_tls_identity_pairs_create();
+  grpc_tls_identity_pairs *server_pairs = grpc_tls_identity_pairs_create();
   grpc_tls_identity_pairs_add_pair(server_pairs, private_key.c_str(),
                                    identity_cert.c_str());
   ffd->server_provider = grpc_tls_certificate_provider_static_data_create(
@@ -103,11 +103,11 @@ static grpc_end2end_test_fixture chttp2_create_fixture_static_data(
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_cert_watcher(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/,
+    grpc_channel_args * /*client_args*/, grpc_channel_args * /*server_args*/,
     grpc_tls_version tls_version) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
-  fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
+  fullstack_secure_fixture_data *ffd = new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
   ffd->tls_version = tls_version;
@@ -122,43 +122,43 @@ static grpc_end2end_test_fixture chttp2_create_fixture_cert_watcher(
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_static_data_tls1_2(
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+    grpc_channel_args *client_args, grpc_channel_args *server_args) {
   return chttp2_create_fixture_static_data(client_args, server_args,
                                            grpc_tls_version::TLS1_2);
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_static_data_tls1_3(
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+    grpc_channel_args *client_args, grpc_channel_args *server_args) {
   return chttp2_create_fixture_static_data(client_args, server_args,
                                            grpc_tls_version::TLS1_3);
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_cert_watcher_tls1_2(
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+    grpc_channel_args *client_args, grpc_channel_args *server_args) {
   return chttp2_create_fixture_cert_watcher(client_args, server_args,
                                             grpc_tls_version::TLS1_2);
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_cert_watcher_tls1_3(
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+    grpc_channel_args *client_args, grpc_channel_args *server_args) {
   return chttp2_create_fixture_cert_watcher(client_args, server_args,
                                             grpc_tls_version::TLS1_3);
 }
 
-static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
-                                 const grpc_metadata* /*md*/,
+static void process_auth_failure(void *state, grpc_auth_context * /*ctx*/,
+                                 const grpc_metadata * /*md*/,
                                  size_t /*md_count*/,
                                  grpc_process_auth_metadata_done_cb cb,
-                                 void* user_data) {
+                                 void *user_data) {
   GPR_ASSERT(state == nullptr);
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
 static void chttp2_init_client_secure_fullstack(
-    grpc_end2end_test_fixture* f, grpc_channel_args* client_args,
-    grpc_channel_credentials* creds) {
-  fullstack_secure_fixture_data* ffd =
-      static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
+    grpc_end2end_test_fixture *f, grpc_channel_args *client_args,
+    grpc_channel_credentials *creds) {
+  fullstack_secure_fixture_data *ffd =
+      static_cast<fullstack_secure_fixture_data *>(f->fixture_data);
   f->client = grpc_secure_channel_create(creds, ffd->localaddr.c_str(),
                                          client_args, nullptr);
   GPR_ASSERT(f->client != nullptr);
@@ -166,10 +166,10 @@ static void chttp2_init_client_secure_fullstack(
 }
 
 static void chttp2_init_server_secure_fullstack(
-    grpc_end2end_test_fixture* f, grpc_channel_args* server_args,
-    grpc_server_credentials* server_creds) {
-  fullstack_secure_fixture_data* ffd =
-      static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
+    grpc_end2end_test_fixture *f, grpc_channel_args *server_args,
+    grpc_server_credentials *server_creds) {
+  fullstack_secure_fixture_data *ffd =
+      static_cast<fullstack_secure_fixture_data *>(f->fixture_data);
   if (f->server) {
     grpc_server_destroy(f->server);
   }
@@ -181,16 +181,16 @@ static void chttp2_init_server_secure_fullstack(
   grpc_server_start(f->server);
 }
 
-void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
-  fullstack_secure_fixture_data* ffd =
-      static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
+void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
+  fullstack_secure_fixture_data *ffd =
+      static_cast<fullstack_secure_fixture_data *>(f->fixture_data);
   delete ffd;
 }
 
 // Application-provided callback for server authorization check.
-static void server_authz_check_cb(void* user_data) {
-  grpc_tls_server_authorization_check_arg* check_arg =
-      static_cast<grpc_tls_server_authorization_check_arg*>(user_data);
+static void server_authz_check_cb(void *user_data) {
+  grpc_tls_server_authorization_check_arg *check_arg =
+      static_cast<grpc_tls_server_authorization_check_arg *>(user_data);
   GPR_ASSERT(check_arg != nullptr);
   // result = 1 indicates the server authorization check passes.
   // Normally, the application code should resort to mapping information
@@ -204,9 +204,9 @@ static void server_authz_check_cb(void* user_data) {
 // Asynchronous implementation of schedule field in
 // grpc_server_authorization_check_config.
 static int server_authz_check_async(
-    void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
-  fullstack_secure_fixture_data* ffd =
-      static_cast<fullstack_secure_fixture_data*>(config_user_data);
+    void *config_user_data, grpc_tls_server_authorization_check_arg *arg) {
+  fullstack_secure_fixture_data *ffd =
+      static_cast<fullstack_secure_fixture_data *>(config_user_data);
   ffd->thd_list.push_back(
       grpc_core::Thread("h2_tls_test", &server_authz_check_cb, arg));
   ffd->thd_list[ffd->thd_list.size() - 1].Start();
@@ -214,9 +214,9 @@ static int server_authz_check_async(
 }
 
 // Create a TLS channel credential.
-static grpc_channel_credentials* create_tls_channel_credentials(
-    fullstack_secure_fixture_data* ffd) {
-  grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
+static grpc_channel_credentials *create_tls_channel_credentials(
+    fullstack_secure_fixture_data *ffd) {
+  grpc_tls_credentials_options *options = grpc_tls_credentials_options_create();
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   options->set_min_tls_version(ffd->tls_version);
   options->set_max_tls_version(ffd->tls_version);
@@ -226,21 +226,21 @@ static grpc_channel_credentials* create_tls_channel_credentials(
   grpc_tls_credentials_options_watch_root_certs(options);
   grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
   /* Set server authorization check config. */
-  grpc_tls_server_authorization_check_config* check_config =
+  grpc_tls_server_authorization_check_config *check_config =
       grpc_tls_server_authorization_check_config_create(
           ffd, server_authz_check_async, nullptr, nullptr);
   grpc_tls_credentials_options_set_server_authorization_check_config(
       options, check_config);
   /* Create TLS channel credentials. */
-  grpc_channel_credentials* creds = grpc_tls_credentials_create(options);
+  grpc_channel_credentials *creds = grpc_tls_credentials_create(options);
   grpc_tls_server_authorization_check_config_release(check_config);
   return creds;
 }
 
 // Create a TLS server credential.
-static grpc_server_credentials* create_tls_server_credentials(
-    fullstack_secure_fixture_data* ffd) {
-  grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
+static grpc_server_credentials *create_tls_server_credentials(
+    fullstack_secure_fixture_data *ffd) {
+  grpc_tls_credentials_options *options = grpc_tls_credentials_options_create();
   options->set_min_tls_version(ffd->tls_version);
   options->set_max_tls_version(ffd->tls_version);
   // Set credential provider.
@@ -251,25 +251,25 @@ static grpc_server_credentials* create_tls_server_credentials(
   /* Set client certificate request type. */
   grpc_tls_credentials_options_set_cert_request_type(
       options, GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
-  grpc_server_credentials* creds = grpc_tls_server_credentials_create(options);
+  grpc_server_credentials *creds = grpc_tls_server_credentials_create(options);
   return creds;
 }
 
-static void chttp2_init_client(grpc_end2end_test_fixture* f,
-                               grpc_channel_args* client_args) {
-  grpc_channel_credentials* ssl_creds = create_tls_channel_credentials(
-      static_cast<fullstack_secure_fixture_data*>(f->fixture_data));
+static void chttp2_init_client(grpc_end2end_test_fixture *f,
+                               grpc_channel_args *client_args) {
+  grpc_channel_credentials *ssl_creds = create_tls_channel_credentials(
+      static_cast<fullstack_secure_fixture_data *>(f->fixture_data));
   grpc_arg ssl_name_override = {
       GRPC_ARG_STRING,
-      const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-      {const_cast<char*>("foo.test.google.fr")}};
-  grpc_channel_args* new_client_args =
+      const_cast<char *>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
+      {const_cast<char *>("foo.test.google.fr")}};
+  grpc_channel_args *new_client_args =
       grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);
   chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);
   grpc_channel_args_destroy(new_client_args);
 }
 
-static int fail_server_auth_check(grpc_channel_args* server_args) {
+static int fail_server_auth_check(grpc_channel_args *server_args) {
   size_t i;
   if (server_args == nullptr) return 0;
   for (i = 0; i < server_args->num_args; i++) {
@@ -281,10 +281,10 @@ static int fail_server_auth_check(grpc_channel_args* server_args) {
   return 0;
 }
 
-static void chttp2_init_server(grpc_end2end_test_fixture* f,
-                               grpc_channel_args* server_args) {
-  grpc_server_credentials* ssl_creds = create_tls_server_credentials(
-      static_cast<fullstack_secure_fixture_data*>(f->fixture_data));
+static void chttp2_init_server(grpc_end2end_test_fixture *f,
+                               grpc_channel_args *server_args) {
+  grpc_server_credentials *ssl_creds = create_tls_server_credentials(
+      static_cast<fullstack_secure_fixture_data *>(f->fixture_data));
   if (fail_server_auth_check(server_args)) {
     grpc_auth_metadata_processor processor = {process_auth_failure, nullptr,
                                               nullptr};
@@ -337,7 +337,7 @@ static grpc_end2end_test_config configs[] = {
 
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_end2end_tests_pre_init();
   GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);

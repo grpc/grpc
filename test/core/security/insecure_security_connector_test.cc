@@ -37,7 +37,7 @@ TEST(InsecureSecurityConnector, MakeAuthContextTest) {
   // Verify that GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME is set
   auto it = grpc_auth_context_find_properties_by_name(
       auth_context.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
-  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  const grpc_auth_property *prop = grpc_auth_property_iterator_next(&it);
   ASSERT_NE(prop, nullptr);
   EXPECT_STREQ(prop->name, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
   EXPECT_STREQ(prop->value, kInsecureTransportSecurityType);
@@ -54,7 +54,7 @@ TEST(InsecureSecurityConnector, MakeAuthContextTest) {
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   const auto result = RUN_ALL_TESTS();

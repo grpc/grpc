@@ -31,7 +31,7 @@ namespace internal {
  *
  * It returns a buffer containing the data read from the file.
  */
-char* read_bios_file(const char* bios_file);
+char *read_bios_file(const char *bios_file);
 
 /**
  * This method checks if system BIOS data contains Google-specific phrases.
@@ -42,7 +42,7 @@ char* read_bios_file(const char* bios_file);
  * It returns true if the BIOS data contains Google-specific phrases, and false
  * otherwise.
  */
-bool check_bios_data(const char* bios_data);
+bool check_bios_data(const char *bios_data);
 
 }  // namespace internal
 }  // namespace grpc_core

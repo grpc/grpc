@@ -58,7 +58,7 @@ TEST(GlobalConfigTest, StringTest) {
   EXPECT_EQ(0, strcmp(value.get(), "Test"));
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

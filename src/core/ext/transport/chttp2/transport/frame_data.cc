@@ -42,8 +42,8 @@ grpc_chttp2_data_parser::~grpc_chttp2_data_parser() {
 }
 
 grpc_error_handle grpc_chttp2_data_parser_begin_frame(
-    grpc_chttp2_data_parser* /*parser*/, uint8_t flags, uint32_t stream_id,
-    grpc_chttp2_stream* s) {
+    grpc_chttp2_data_parser * /*parser*/, uint8_t flags, uint32_t stream_id,
+    grpc_chttp2_stream *s) {
   if (flags & ~GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
     return grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -61,12 +61,12 @@ grpc_error_handle grpc_chttp2_data_parser_begin_frame(
   return GRPC_ERROR_NONE;
 }
 
-void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
+void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer *inbuf,
                              uint32_t write_bytes, int is_eof,
-                             grpc_transport_one_way_stats* stats,
-                             grpc_slice_buffer* outbuf) {
+                             grpc_transport_one_way_stats *stats,
+                             grpc_slice_buffer *outbuf) {
   grpc_slice hdr;
-  uint8_t* p;
+  uint8_t *p;
   static const size_t header_size = 9;
 
   hdr = GRPC_SLICE_MALLOC(header_size);
@@ -90,18 +90,18 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
 }
 
 grpc_error_handle grpc_deframe_unprocessed_incoming_frames(
-    grpc_chttp2_data_parser* p, grpc_chttp2_stream* s,
-    grpc_slice_buffer* slices, grpc_slice* slice_out,
-    grpc_core::OrphanablePtr<grpc_core::ByteStream>* stream_out) {
+    grpc_chttp2_data_parser *p, grpc_chttp2_stream *s,
+    grpc_slice_buffer *slices, grpc_slice *slice_out,
+    grpc_core::OrphanablePtr<grpc_core::ByteStream> *stream_out) {
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_chttp2_transport* t = s->t;
+  grpc_chttp2_transport *t = s->t;
 
   while (slices->count > 0) {
-    uint8_t* beg = nullptr;
-    uint8_t* end = nullptr;
-    uint8_t* cur = nullptr;
+    uint8_t *beg = nullptr;
+    uint8_t *end = nullptr;
+    uint8_t *cur = nullptr;
 
-    grpc_slice* slice = grpc_slice_buffer_peek_first(slices);
+    grpc_slice *slice = grpc_slice_buffer_peek_first(slices);
     beg = GRPC_SLICE_START_PTR(*slice);
     end = GRPC_SLICE_END_PTR(*slice);
     cur = beg;
@@ -275,10 +275,10 @@ grpc_error_handle grpc_deframe_unprocessed_incoming_frames(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
-                                                grpc_chttp2_transport* t,
-                                                grpc_chttp2_stream* s,
-                                                const grpc_slice& slice,
+grpc_error_handle grpc_chttp2_data_parser_parse(void * /*parser*/,
+                                                grpc_chttp2_transport *t,
+                                                grpc_chttp2_stream *s,
+                                                const grpc_slice &slice,
                                                 int is_last) {
   if (!s->pending_byte_stream) {
     grpc_slice_ref_internal(slice);

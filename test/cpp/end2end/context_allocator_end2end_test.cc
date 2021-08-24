@@ -51,15 +51,15 @@ enum class Protocol { INPROC, TCP };
 
 class TestScenario {
  public:
-  TestScenario(Protocol protocol, const std::string& creds_type)
+  TestScenario(Protocol protocol, const std::string &creds_type)
       : protocol(protocol), credentials_type(creds_type) {}
   void Log() const;
   Protocol protocol;
   const std::string credentials_type;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
+static std::ostream &operator<<(std::ostream &out,
+                                const TestScenario &scenario) {
   return out << "TestScenario{protocol="
              << (scenario.protocol == Protocol::INPROC ? "INPROC" : "TCP")
              << "," << scenario.credentials_type << "}";
@@ -183,33 +183,32 @@ class NullContextAllocatorTest : public ContextAllocatorEnd2endTestBase {
  public:
   class NullAllocator : public grpc::ContextAllocator {
    public:
-    NullAllocator(std::atomic<int>* allocation_count,
-                  std::atomic<int>* deallocation_count)
+    NullAllocator(std::atomic<int> *allocation_count,
+                  std::atomic<int> *deallocation_count)
         : allocation_count_(allocation_count),
           deallocation_count_(deallocation_count) {}
-    grpc::CallbackServerContext* NewCallbackServerContext() override {
+    grpc::CallbackServerContext *NewCallbackServerContext() override {
       allocation_count_->fetch_add(1, std::memory_order_relaxed);
       return nullptr;
     }
 
-    GenericCallbackServerContext* NewGenericCallbackServerContext() override {
+    GenericCallbackServerContext *NewGenericCallbackServerContext() override {
       allocation_count_->fetch_add(1, std::memory_order_relaxed);
       return nullptr;
     }
 
     void Release(
-        grpc::CallbackServerContext* /*callback_server_context*/) override {
+        grpc::CallbackServerContext * /*callback_server_context*/) override {
       deallocation_count_->fetch_add(1, std::memory_order_relaxed);
     }
 
-    void Release(
-        GenericCallbackServerContext* /*generic_callback_server_context*/)
-        override {
+    void Release(GenericCallbackServerContext
+                     * /*generic_callback_server_context*/) override {
       deallocation_count_->fetch_add(1, std::memory_order_relaxed);
     }
 
-    std::atomic<int>* allocation_count_;
-    std::atomic<int>* deallocation_count_;
+    std::atomic<int> *allocation_count_;
+    std::atomic<int> *deallocation_count_;
   };
 };
 
@@ -233,33 +232,33 @@ class SimpleContextAllocatorTest : public ContextAllocatorEnd2endTestBase {
  public:
   class SimpleAllocator : public grpc::ContextAllocator {
    public:
-    SimpleAllocator(std::atomic<int>* allocation_count,
-                    std::atomic<int>* deallocation_count)
+    SimpleAllocator(std::atomic<int> *allocation_count,
+                    std::atomic<int> *deallocation_count)
         : allocation_count_(allocation_count),
           deallocation_count_(deallocation_count) {}
-    grpc::CallbackServerContext* NewCallbackServerContext() override {
+    grpc::CallbackServerContext *NewCallbackServerContext() override {
       allocation_count_->fetch_add(1, std::memory_order_relaxed);
       return new grpc::CallbackServerContext();
     }
-    GenericCallbackServerContext* NewGenericCallbackServerContext() override {
+    GenericCallbackServerContext *NewGenericCallbackServerContext() override {
       allocation_count_->fetch_add(1, std::memory_order_relaxed);
       return new GenericCallbackServerContext();
     }
 
     void Release(
-        grpc::CallbackServerContext* callback_server_context) override {
+        grpc::CallbackServerContext *callback_server_context) override {
       deallocation_count_->fetch_add(1, std::memory_order_relaxed);
       delete callback_server_context;
     }
 
-    void Release(GenericCallbackServerContext* generic_callback_server_context)
+    void Release(GenericCallbackServerContext *generic_callback_server_context)
         override {
       deallocation_count_->fetch_add(1, std::memory_order_relaxed);
       delete generic_callback_server_context;
     }
 
-    std::atomic<int>* allocation_count_;
-    std::atomic<int>* deallocation_count_;
+    std::atomic<int> *allocation_count_;
+    std::atomic<int> *deallocation_count_;
   };
 };
 
@@ -296,7 +295,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
 
   Protocol parr[]{Protocol::INPROC, Protocol::TCP};
   for (Protocol p : parr) {
-    for (const auto& cred : credentials_types) {
+    for (const auto &cred : credentials_types) {
       if (p == Protocol::INPROC &&
           (cred != kInsecureCredentialsType || !insec_ok())) {
         continue;
@@ -322,7 +321,7 @@ INSTANTIATE_TEST_SUITE_P(SimpleContextAllocatorTest, SimpleContextAllocatorTest,
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();

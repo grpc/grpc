@@ -49,7 +49,7 @@ struct SimpleConvergenceTestArgs {
   double start;
 };
 
-std::ostream& operator<<(std::ostream& out, SimpleConvergenceTestArgs args) {
+std::ostream &operator<<(std::ostream &out, SimpleConvergenceTestArgs args) {
   return out << "gain_p:" << args.gain_p << " gain_i:" << args.gain_i
              << " gain_d:" << args.gain_d << " dt:" << args.dt
              << " set_point:" << args.set_point << " start:" << args.start;
@@ -84,7 +84,7 @@ INSTANTIATE_TEST_SUITE_P(
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

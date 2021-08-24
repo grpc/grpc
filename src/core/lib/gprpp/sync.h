@@ -49,8 +49,8 @@ using CondVar = absl::CondVar;
 // Returns the underlying gpr_mu from Mutex. This should be used only when
 // it has to like passing the C++ mutex to C-core API.
 // TODO(veblush): Remove this after C-core no longer uses gpr_mu.
-inline gpr_mu* GetUnderlyingGprMu(Mutex* mutex) {
-  return reinterpret_cast<gpr_mu*>(mutex);
+inline gpr_mu *GetUnderlyingGprMu(Mutex *mutex) {
+  return reinterpret_cast<gpr_mu *>(mutex);
 }
 
 #else
@@ -60,8 +60,8 @@ class ABSL_LOCKABLE Mutex {
   Mutex() { gpr_mu_init(&mu_); }
   ~Mutex() { gpr_mu_destroy(&mu_); }
 
-  Mutex(const Mutex&) = delete;
-  Mutex& operator=(const Mutex&) = delete;
+  Mutex(const Mutex &) = delete;
+  Mutex &operator=(const Mutex &) = delete;
 
   void Lock() ABSL_EXCLUSIVE_LOCK_FUNCTION() { gpr_mu_lock(&mu_); }
   void Unlock() ABSL_UNLOCK_FUNCTION() { gpr_mu_unlock(&mu_); }
@@ -74,31 +74,31 @@ class ABSL_LOCKABLE Mutex {
   gpr_mu mu_;
 
   friend class CondVar;
-  friend gpr_mu* GetUnderlyingGprMu(Mutex* mutex);
+  friend gpr_mu *GetUnderlyingGprMu(Mutex *mutex);
 };
 
 // Returns the underlying gpr_mu from Mutex. This should be used only when
 // it has to like passing the C++ mutex to C-core API.
 // TODO(veblush): Remove this after C-core no longer uses gpr_mu.
-inline gpr_mu* GetUnderlyingGprMu(Mutex* mutex) { return &mutex->mu_; }
+inline gpr_mu *GetUnderlyingGprMu(Mutex *mutex) { return &mutex->mu_; }
 
 class ABSL_SCOPED_LOCKABLE MutexLock {
  public:
-  explicit MutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
+  explicit MutexLock(Mutex *mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
     mu_->Lock();
   }
   ~MutexLock() ABSL_UNLOCK_FUNCTION() { mu_->Unlock(); }
 
-  MutexLock(const MutexLock&) = delete;
-  MutexLock& operator=(const MutexLock&) = delete;
+  MutexLock(const MutexLock &) = delete;
+  MutexLock &operator=(const MutexLock &) = delete;
 
  private:
-  Mutex* const mu_;
+  Mutex *const mu_;
 };
 
 class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
  public:
-  explicit ReleasableMutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
+  explicit ReleasableMutexLock(Mutex *mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
       : mu_(mu) {
     mu_->Lock();
   }
@@ -106,8 +106,8 @@ class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
     if (!released_) mu_->Unlock();
   }
 
-  ReleasableMutexLock(const ReleasableMutexLock&) = delete;
-  ReleasableMutexLock& operator=(const ReleasableMutexLock&) = delete;
+  ReleasableMutexLock(const ReleasableMutexLock &) = delete;
+  ReleasableMutexLock &operator=(const ReleasableMutexLock &) = delete;
 
   void Release() ABSL_UNLOCK_FUNCTION() {
     GPR_DEBUG_ASSERT(!released_);
@@ -116,7 +116,7 @@ class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
   }
 
  private:
-  Mutex* const mu_;
+  Mutex *const mu_;
   bool released_ = false;
 };
 
@@ -125,17 +125,17 @@ class CondVar {
   CondVar() { gpr_cv_init(&cv_); }
   ~CondVar() { gpr_cv_destroy(&cv_); }
 
-  CondVar(const CondVar&) = delete;
-  CondVar& operator=(const CondVar&) = delete;
+  CondVar(const CondVar &) = delete;
+  CondVar &operator=(const CondVar &) = delete;
 
   void Signal() { gpr_cv_signal(&cv_); }
   void SignalAll() { gpr_cv_broadcast(&cv_); }
 
-  void Wait(Mutex* mu) { WaitWithDeadline(mu, absl::InfiniteFuture()); }
-  bool WaitWithTimeout(Mutex* mu, absl::Duration timeout) {
+  void Wait(Mutex *mu) { WaitWithDeadline(mu, absl::InfiniteFuture()); }
+  bool WaitWithTimeout(Mutex *mu, absl::Duration timeout) {
     return gpr_cv_wait(&cv_, &mu->mu_, ToGprTimeSpec(timeout)) != 0;
   }
-  bool WaitWithDeadline(Mutex* mu, absl::Time deadline) {
+  bool WaitWithDeadline(Mutex *mu, absl::Time deadline) {
     return gpr_cv_wait(&cv_, &mu->mu_, ToGprTimeSpec(deadline)) != 0;
   }
 
@@ -148,20 +148,20 @@ class CondVar {
 // Deprecated. Prefer MutexLock
 class MutexLockForGprMu {
  public:
-  explicit MutexLockForGprMu(gpr_mu* mu) : mu_(mu) { gpr_mu_lock(mu_); }
+  explicit MutexLockForGprMu(gpr_mu *mu) : mu_(mu) { gpr_mu_lock(mu_); }
   ~MutexLockForGprMu() { gpr_mu_unlock(mu_); }
 
-  MutexLockForGprMu(const MutexLock&) = delete;
-  MutexLockForGprMu& operator=(const MutexLock&) = delete;
+  MutexLockForGprMu(const MutexLock &) = delete;
+  MutexLockForGprMu &operator=(const MutexLock &) = delete;
 
  private:
-  gpr_mu* const mu_;
+  gpr_mu *const mu_;
 };
 
 // Deprecated. Prefer MutexLock or ReleasableMutexLock
 class ABSL_SCOPED_LOCKABLE LockableAndReleasableMutexLock {
  public:
-  explicit LockableAndReleasableMutexLock(Mutex* mu)
+  explicit LockableAndReleasableMutexLock(Mutex *mu)
       ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
       : mu_(mu) {
     mu_->Lock();
@@ -170,10 +170,10 @@ class ABSL_SCOPED_LOCKABLE LockableAndReleasableMutexLock {
     if (!released_) mu_->Unlock();
   }
 
-  LockableAndReleasableMutexLock(const LockableAndReleasableMutexLock&) =
+  LockableAndReleasableMutexLock(const LockableAndReleasableMutexLock &) =
       delete;
-  LockableAndReleasableMutexLock& operator=(
-      const LockableAndReleasableMutexLock&) = delete;
+  LockableAndReleasableMutexLock &operator=(
+      const LockableAndReleasableMutexLock &) = delete;
 
   void Lock() ABSL_EXCLUSIVE_LOCK_FUNCTION() {
     GPR_DEBUG_ASSERT(released_);
@@ -188,7 +188,7 @@ class ABSL_SCOPED_LOCKABLE LockableAndReleasableMutexLock {
   }
 
  private:
-  Mutex* const mu_;
+  Mutex *const mu_;
   bool released_ = false;
 };
 

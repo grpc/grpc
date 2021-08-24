@@ -34,11 +34,11 @@
 namespace grpc_core {
 namespace internal {
 
-bool check_bios_data(const char*) { return false; }
+bool check_bios_data(const char *) { return false; }
 
 bool check_windows_registry_product_name(HKEY root_key,
-                                         const char* reg_key_path,
-                                         const char* reg_key_name) {
+                                         const char *reg_key_path,
+                                         const char *reg_key_name) {
   const size_t kProductNameBufferSize = 256;
   char const expected_substr[] = "Google";
 
@@ -63,8 +63,8 @@ bool check_windows_registry_product_name(HKEY root_key,
   buffer_size = kProductNameBufferSize;
   rc = ::RegGetValueA(
       root_key, reg_key_path, reg_key_name, RRF_RT_REG_SZ,
-      nullptr,                     // We know the type will be REG_SZ.
-      static_cast<void*>(buffer),  // Fetch the string value this time.
+      nullptr,                      // We know the type will be REG_SZ.
+      static_cast<void *>(buffer),  // Fetch the string value this time.
       &buffer_size);  // The string size in bytes, not including trailing NUL.
   if (rc != 0) {
     return false;

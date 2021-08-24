@@ -32,12 +32,12 @@ namespace experimental {
 class SliceBuffer {
  public:
   SliceBuffer() { abort(); }
-  explicit SliceBuffer(grpc_slice_buffer*) { abort(); }
+  explicit SliceBuffer(grpc_slice_buffer *) { abort(); }
 
-  grpc_slice_buffer* RawSliceBuffer() { return slice_buffer_; }
+  grpc_slice_buffer *RawSliceBuffer() { return slice_buffer_; }
 
  private:
-  grpc_slice_buffer* slice_buffer_;
+  grpc_slice_buffer *slice_buffer_;
 };
 
 class SliceAllocator {
@@ -52,7 +52,7 @@ class SliceAllocator {
   /// interrupted to attempt to reclaim memory from participating gRPC
   /// internals. When there is sufficient memory available, slice allocation
   /// proceeds as normal.
-  virtual absl::Status Allocate(size_t size, SliceBuffer* dest,
+  virtual absl::Status Allocate(size_t size, SliceBuffer *dest,
                                 SliceAllocator::AllocateCallback cb) = 0;
 };
 

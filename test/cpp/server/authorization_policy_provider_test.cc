@@ -20,7 +20,7 @@
 namespace grpc {
 
 TEST(AuthorizationPolicyProviderTest, StaticDataCreateReturnsProvider) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
@@ -39,7 +39,7 @@ TEST(AuthorizationPolicyProviderTest, StaticDataCreateReturnsProvider) {
 }
 
 TEST(AuthorizationPolicyProviderTest, StaticDataCreateReturnsErrorStatus) {
-  const char* authz_policy = "{}";
+  const char *authz_policy = "{}";
   grpc::Status status;
   auto provider = experimental::StaticDataAuthorizationPolicyProvider::Create(
       authz_policy, &status);
@@ -50,7 +50,7 @@ TEST(AuthorizationPolicyProviderTest, StaticDataCreateReturnsErrorStatus) {
 
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   return RUN_ALL_TESTS();

@@ -40,7 +40,7 @@ namespace channelz {
 namespace {
 
 // singleton instance of the registry.
-ChannelzRegistry* g_channelz_registry = nullptr;
+ChannelzRegistry *g_channelz_registry = nullptr;
 
 const int kPaginationLimit = 100;
 
@@ -50,12 +50,12 @@ void ChannelzRegistry::Init() { g_channelz_registry = new ChannelzRegistry(); }
 
 void ChannelzRegistry::Shutdown() { delete g_channelz_registry; }
 
-ChannelzRegistry* ChannelzRegistry::Default() {
+ChannelzRegistry *ChannelzRegistry::Default() {
   GPR_DEBUG_ASSERT(g_channelz_registry != nullptr);
   return g_channelz_registry;
 }
 
-void ChannelzRegistry::InternalRegister(BaseNode* node) {
+void ChannelzRegistry::InternalRegister(BaseNode *node) {
   MutexLock lock(&mu_);
   node->uuid_ = ++uuid_generator_;
   node_map_[node->uuid_] = node;
@@ -77,7 +77,7 @@ RefCountedPtr<BaseNode> ChannelzRegistry::InternalGet(intptr_t uuid) {
   if (it == node_map_.end()) return nullptr;
   // Found node.  Return only if its refcount is not zero (i.e., when we
   // know that there is no other thread about to destroy it).
-  BaseNode* node = it->second;
+  BaseNode *node = it->second;
   return node->RefIfNonZero();
 }
 
@@ -89,7 +89,7 @@ std::string ChannelzRegistry::InternalGetTopChannels(
     MutexLock lock(&mu_);
     for (auto it = node_map_.lower_bound(start_channel_id);
          it != node_map_.end(); ++it) {
-      BaseNode* node = it->second;
+      BaseNode *node = it->second;
       RefCountedPtr<BaseNode> node_ref;
       if (node->type() == BaseNode::EntityType::kTopLevelChannel &&
           (node_ref = node->RefIfNonZero()) != nullptr) {
@@ -128,7 +128,7 @@ std::string ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
     MutexLock lock(&mu_);
     for (auto it = node_map_.lower_bound(start_server_id);
          it != node_map_.end(); ++it) {
-      BaseNode* node = it->second;
+      BaseNode *node = it->second;
       RefCountedPtr<BaseNode> node_ref;
       if (node->type() == BaseNode::EntityType::kServer &&
           (node_ref = node->RefIfNonZero()) != nullptr) {
@@ -164,7 +164,7 @@ void ChannelzRegistry::InternalLogAllEntities() {
   absl::InlinedVector<RefCountedPtr<BaseNode>, 10> nodes;
   {
     MutexLock lock(&mu_);
-    for (auto& p : node_map_) {
+    for (auto &p : node_map_) {
       RefCountedPtr<BaseNode> node = p.second->RefIfNonZero();
       if (node != nullptr) {
         nodes.emplace_back(std::move(node));
@@ -180,7 +180,7 @@ void ChannelzRegistry::InternalLogAllEntities() {
 }  // namespace channelz
 }  // namespace grpc_core
 
-char* grpc_channelz_get_top_channels(intptr_t start_channel_id) {
+char *grpc_channelz_get_top_channels(intptr_t start_channel_id) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return gpr_strdup(
@@ -188,7 +188,7 @@ char* grpc_channelz_get_top_channels(intptr_t start_channel_id) {
           .c_str());
 }
 
-char* grpc_channelz_get_servers(intptr_t start_server_id) {
+char *grpc_channelz_get_servers(intptr_t start_server_id) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return gpr_strdup(
@@ -196,7 +196,7 @@ char* grpc_channelz_get_servers(intptr_t start_server_id) {
           .c_str());
 }
 
-char* grpc_channelz_get_server(intptr_t server_id) {
+char *grpc_channelz_get_server(intptr_t server_id) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> server_node =
@@ -212,7 +212,7 @@ char* grpc_channelz_get_server(intptr_t server_id) {
   return gpr_strdup(json.Dump().c_str());
 }
 
-char* grpc_channelz_get_server_sockets(intptr_t server_id,
+char *grpc_channelz_get_server_sockets(intptr_t server_id,
                                        intptr_t start_socket_id,
                                        intptr_t max_results) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
@@ -227,13 +227,13 @@ char* grpc_channelz_get_server_sockets(intptr_t server_id,
   }
   // This cast is ok since we have just checked to make sure base_node is
   // actually a server node.
-  grpc_core::channelz::ServerNode* server_node =
-      static_cast<grpc_core::channelz::ServerNode*>(base_node.get());
+  grpc_core::channelz::ServerNode *server_node =
+      static_cast<grpc_core::channelz::ServerNode *>(base_node.get());
   return gpr_strdup(
       server_node->RenderServerSockets(start_socket_id, max_results).c_str());
 }
 
-char* grpc_channelz_get_channel(intptr_t channel_id) {
+char *grpc_channelz_get_channel(intptr_t channel_id) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> channel_node =
@@ -251,7 +251,7 @@ char* grpc_channelz_get_channel(intptr_t channel_id) {
   return gpr_strdup(json.Dump().c_str());
 }
 
-char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
+char *grpc_channelz_get_subchannel(intptr_t subchannel_id) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> subchannel_node =
@@ -267,7 +267,7 @@ char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
   return gpr_strdup(json.Dump().c_str());
 }
 
-char* grpc_channelz_get_socket(intptr_t socket_id) {
+char *grpc_channelz_get_socket(intptr_t socket_id) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> socket_node =

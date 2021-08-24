@@ -37,18 +37,18 @@
 #include "src/core/lib/iomgr/port.h"
 
 struct grpc_custom_resolver {
-  grpc_closure* on_done = nullptr;
-  grpc_resolved_addresses** addresses = nullptr;
+  grpc_closure *on_done = nullptr;
+  grpc_resolved_addresses **addresses = nullptr;
   std::string host;
   std::string port;
 };
 
-static grpc_custom_resolver_vtable* resolve_address_vtable = nullptr;
+static grpc_custom_resolver_vtable *resolve_address_vtable = nullptr;
 
-static int retry_named_port_failure(grpc_custom_resolver* r,
-                                    grpc_resolved_addresses** res) {
+static int retry_named_port_failure(grpc_custom_resolver *r,
+                                    grpc_resolved_addresses **res) {
   // This loop is copied from resolve_address_posix.c
-  const char* svc[][2] = {{"http", "80"}, {"https", "443"}};
+  const char *svc[][2] = {{"http", "80"}, {"https", "443"}};
   for (size_t i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
     if (r->port == svc[i][0]) {
       r->port = svc[i][1];
@@ -69,8 +69,8 @@ static int retry_named_port_failure(grpc_custom_resolver* r,
   return 0;
 }
 
-void grpc_custom_resolve_callback(grpc_custom_resolver* r,
-                                  grpc_resolved_addresses* result,
+void grpc_custom_resolve_callback(grpc_custom_resolver *r,
+                                  grpc_resolved_addresses *result,
                                   grpc_error_handle error) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
@@ -86,10 +86,10 @@ void grpc_custom_resolve_callback(grpc_custom_resolver* r,
   delete r;
 }
 
-static grpc_error_handle try_split_host_port(const char* name,
-                                             const char* default_port,
-                                             std::string* host,
-                                             std::string* port) {
+static grpc_error_handle try_split_host_port(const char *name,
+                                             const char *default_port,
+                                             std::string *host,
+                                             std::string *port) {
   /* parse name, splitting it into host and port parts */
   grpc_core::SplitHostPort(name, host, port);
   if (host->empty()) {
@@ -108,8 +108,8 @@ static grpc_error_handle try_split_host_port(const char* name,
 }
 
 static grpc_error_handle blocking_resolve_address_impl(
-    const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
+    const char *name, const char *default_port,
+    grpc_resolved_addresses **addresses) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
 
   grpc_custom_resolver resolver;
@@ -120,8 +120,8 @@ static grpc_error_handle blocking_resolve_address_impl(
   }
 
   /* Call getaddrinfo */
-  grpc_resolved_addresses* addrs;
-  grpc_core::ExecCtx* curr = grpc_core::ExecCtx::Get();
+  grpc_resolved_addresses *addrs;
+  grpc_core::ExecCtx *curr = grpc_core::ExecCtx::Get();
   grpc_core::ExecCtx::Set(nullptr);
   err = resolve_address_vtable->resolve(resolver.host.c_str(),
                                         resolver.port.c_str(), &addrs);
@@ -138,10 +138,10 @@ static grpc_error_handle blocking_resolve_address_impl(
   return err;
 }
 
-static void resolve_address_impl(const char* name, const char* default_port,
-                                 grpc_pollset_set* /*interested_parties*/,
-                                 grpc_closure* on_done,
-                                 grpc_resolved_addresses** addrs) {
+static void resolve_address_impl(const char *name, const char *default_port,
+                                 grpc_pollset_set * /*interested_parties*/,
+                                 grpc_closure *on_done,
+                                 grpc_resolved_addresses **addrs) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   std::string host;
   std::string port;
@@ -150,7 +150,7 @@ static void resolve_address_impl(const char* name, const char* default_port,
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, err);
     return;
   }
-  grpc_custom_resolver* r = new grpc_custom_resolver();
+  grpc_custom_resolver *r = new grpc_custom_resolver();
   r->on_done = on_done;
   r->addresses = addrs;
   r->host = std::move(host);
@@ -163,7 +163,7 @@ static void resolve_address_impl(const char* name, const char* default_port,
 static grpc_address_resolver_vtable custom_resolver_vtable = {
     resolve_address_impl, blocking_resolve_address_impl};
 
-void grpc_custom_resolver_init(grpc_custom_resolver_vtable* impl) {
+void grpc_custom_resolver_init(grpc_custom_resolver_vtable *impl) {
   resolve_address_vtable = impl;
   grpc_set_resolver_impl(&custom_resolver_vtable);
 }

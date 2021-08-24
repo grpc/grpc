@@ -36,8 +36,8 @@
 
 #include "src/core/lib/gpr/useful.h"
 
-char* gpr_strdup(const char* src) {
-  char* dst;
+char *gpr_strdup(const char *src) {
+  char *dst;
   size_t len;
 
   if (!src) {
@@ -45,7 +45,7 @@ char* gpr_strdup(const char* src) {
   }
 
   len = strlen(src) + 1;
-  dst = static_cast<char*>(gpr_malloc(len));
+  dst = static_cast<char *>(gpr_malloc(len));
 
   memcpy(dst, src, len);
 
@@ -55,7 +55,7 @@ char* gpr_strdup(const char* src) {
 std::string gpr_format_timespec(gpr_timespec tm) {
   char time_buffer[35];
   char ns_buffer[11];  // '.' + 9 digits of precision
-  struct tm* tm_info = localtime(reinterpret_cast<time_t*>(&tm.tv_sec));
+  struct tm *tm_info = localtime(reinterpret_cast<time_t *>(&tm.tv_sec));
   strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%dT%H:%M:%S", tm_info);
   snprintf(ns_buffer, 11, ".%09d", tm.tv_nsec);
   // This loop trims off trailing zeros by inserting a null character that the
@@ -79,7 +79,7 @@ std::string gpr_format_timespec(gpr_timespec tm) {
 struct dump_out {
   size_t capacity;
   size_t length;
-  char* data;
+  char *data;
 };
 
 static dump_out dump_out_create(void) {
@@ -87,20 +87,20 @@ static dump_out dump_out_create(void) {
   return r;
 }
 
-static void dump_out_append(dump_out* out, char c) {
+static void dump_out_append(dump_out *out, char c) {
   if (out->length == out->capacity) {
     out->capacity = GPR_MAX(8, 2 * out->capacity);
-    out->data = static_cast<char*>(gpr_realloc(out->data, out->capacity));
+    out->data = static_cast<char *>(gpr_realloc(out->data, out->capacity));
   }
   out->data[out->length++] = c;
 }
 
-static void hexdump(dump_out* out, const char* buf, size_t len) {
-  static const char* hex = "0123456789abcdef";
+static void hexdump(dump_out *out, const char *buf, size_t len) {
+  static const char *hex = "0123456789abcdef";
 
-  const uint8_t* const beg = reinterpret_cast<const uint8_t*>(buf);
-  const uint8_t* const end = beg + len;
-  const uint8_t* cur;
+  const uint8_t *const beg = reinterpret_cast<const uint8_t *>(buf);
+  const uint8_t *const end = beg + len;
+  const uint8_t *cur;
 
   for (cur = beg; cur != end; ++cur) {
     if (cur != beg) dump_out_append(out, ' ');
@@ -109,10 +109,10 @@ static void hexdump(dump_out* out, const char* buf, size_t len) {
   }
 }
 
-static void asciidump(dump_out* out, const char* buf, size_t len) {
-  const uint8_t* const beg = reinterpret_cast<const uint8_t*>(buf);
-  const uint8_t* const end = beg + len;
-  const uint8_t* cur;
+static void asciidump(dump_out *out, const char *buf, size_t len) {
+  const uint8_t *const beg = reinterpret_cast<const uint8_t *>(buf);
+  const uint8_t *const end = beg + len;
+  const uint8_t *cur;
   int out_was_empty = (out->length == 0);
   if (!out_was_empty) {
     dump_out_append(out, ' ');
@@ -120,15 +120,15 @@ static void asciidump(dump_out* out, const char* buf, size_t len) {
   }
   for (cur = beg; cur != end; ++cur) {
     dump_out_append(
-        out, (isprint(*cur) ? *reinterpret_cast<const char*>(cur) : '.'));
+        out, (isprint(*cur) ? *reinterpret_cast<const char *>(cur) : '.'));
   }
   if (!out_was_empty) {
     dump_out_append(out, '\'');
   }
 }
 
-char* gpr_dump_return_len(const char* buf, size_t len, uint32_t flags,
-                          size_t* out_len) {
+char *gpr_dump_return_len(const char *buf, size_t len, uint32_t flags,
+                          size_t *out_len) {
   dump_out out = dump_out_create();
   if (flags & GPR_DUMP_HEX) {
     hexdump(&out, buf, len);
@@ -141,12 +141,12 @@ char* gpr_dump_return_len(const char* buf, size_t len, uint32_t flags,
   return out.data;
 }
 
-char* gpr_dump(const char* buf, size_t len, uint32_t flags) {
+char *gpr_dump(const char *buf, size_t len, uint32_t flags) {
   size_t unused;
   return gpr_dump_return_len(buf, len, flags, &unused);
 }
 
-int gpr_parse_bytes_to_uint32(const char* buf, size_t len, uint32_t* result) {
+int gpr_parse_bytes_to_uint32(const char *buf, size_t len, uint32_t *result) {
   uint32_t out = 0;
   uint32_t new_val;
   size_t i;
@@ -164,7 +164,7 @@ int gpr_parse_bytes_to_uint32(const char* buf, size_t len, uint32_t* result) {
   return 1;
 }
 
-void gpr_reverse_bytes(char* str, int len) {
+void gpr_reverse_bytes(char *str, int len) {
   char *p1, *p2;
   for (p1 = str, p2 = str + len - 1; p2 > p1; ++p1, --p2) {
     char temp = *p1;
@@ -173,7 +173,7 @@ void gpr_reverse_bytes(char* str, int len) {
   }
 }
 
-int gpr_ltoa(long value, char* output) {
+int gpr_ltoa(long value, char *output) {
   long sign;
   int i = 0;
 
@@ -194,7 +194,7 @@ int gpr_ltoa(long value, char* output) {
   return i;
 }
 
-int int64_ttoa(int64_t value, char* output) {
+int int64_ttoa(int64_t value, char *output) {
   int64_t sign;
   int i = 0;
 
@@ -215,33 +215,33 @@ int int64_ttoa(int64_t value, char* output) {
   return i;
 }
 
-int gpr_parse_nonnegative_int(const char* value) {
-  char* end;
+int gpr_parse_nonnegative_int(const char *value) {
+  char *end;
   long result = strtol(value, &end, 10);
   if (*end != '\0' || result < 0 || result > INT_MAX) return -1;
   return static_cast<int>(result);
 }
 
-char* gpr_leftpad(const char* str, char flag, size_t length) {
+char *gpr_leftpad(const char *str, char flag, size_t length) {
   const size_t str_length = strlen(str);
   const size_t out_length = str_length > length ? str_length : length;
-  char* out = static_cast<char*>(gpr_malloc(out_length + 1));
+  char *out = static_cast<char *>(gpr_malloc(out_length + 1));
   memset(out, flag, out_length - str_length);
   memcpy(out + out_length - str_length, str, str_length);
   out[out_length] = 0;
   return out;
 }
 
-char* gpr_strjoin(const char** strs, size_t nstrs, size_t* final_length) {
+char *gpr_strjoin(const char **strs, size_t nstrs, size_t *final_length) {
   return gpr_strjoin_sep(strs, nstrs, "", final_length);
 }
 
-char* gpr_strjoin_sep(const char** strs, size_t nstrs, const char* sep,
-                      size_t* final_length) {
+char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
+                      size_t *final_length) {
   const size_t sep_len = strlen(sep);
   size_t out_length = 0;
   size_t i;
-  char* out;
+  char *out;
   for (i = 0; i < nstrs; i++) {
     out_length += strlen(strs[i]);
   }
@@ -249,7 +249,7 @@ char* gpr_strjoin_sep(const char** strs, size_t nstrs, const char* sep,
   if (nstrs > 0) {
     out_length += sep_len * (nstrs - 1); /* separators */
   }
-  out = static_cast<char*>(gpr_malloc(out_length));
+  out = static_cast<char *>(gpr_malloc(out_length));
   out_length = 0;
   for (i = 0; i < nstrs; i++) {
     const size_t slen = strlen(strs[i]);
@@ -267,7 +267,7 @@ char* gpr_strjoin_sep(const char** strs, size_t nstrs, const char* sep,
   return out;
 }
 
-int gpr_strincmp(const char* a, const char* b, size_t n) {
+int gpr_strincmp(const char *a, const char *b, size_t n) {
   int ca, cb;
   do {
     ca = tolower(*a);
@@ -279,27 +279,27 @@ int gpr_strincmp(const char* a, const char* b, size_t n) {
   return ca - cb;
 }
 
-int gpr_stricmp(const char* a, const char* b) {
+int gpr_stricmp(const char *a, const char *b) {
   return gpr_strincmp(a, b, SIZE_MAX);
 }
 
-static void add_string_to_split(const char* beg, const char* end, char*** strs,
-                                size_t* nstrs, size_t* capstrs) {
-  char* out =
-      static_cast<char*>(gpr_malloc(static_cast<size_t>(end - beg) + 1));
+static void add_string_to_split(const char *beg, const char *end, char ***strs,
+                                size_t *nstrs, size_t *capstrs) {
+  char *out =
+      static_cast<char *>(gpr_malloc(static_cast<size_t>(end - beg) + 1));
   memcpy(out, beg, static_cast<size_t>(end - beg));
   out[end - beg] = 0;
   if (*nstrs == *capstrs) {
     *capstrs = GPR_MAX(8, 2 * *capstrs);
-    *strs = static_cast<char**>(gpr_realloc(*strs, sizeof(*strs) * *capstrs));
+    *strs = static_cast<char **>(gpr_realloc(*strs, sizeof(*strs) * *capstrs));
   }
   (*strs)[*nstrs] = out;
   ++*nstrs;
 }
 
-void gpr_string_split(const char* input, const char* sep, char*** strs,
-                      size_t* nstrs) {
-  const char* next;
+void gpr_string_split(const char *input, const char *sep, char ***strs,
+                      size_t *nstrs) {
+  const char *next;
   *strs = nullptr;
   *nstrs = 0;
   size_t capstrs = 0;
@@ -310,9 +310,9 @@ void gpr_string_split(const char* input, const char* sep, char*** strs,
   add_string_to_split(input, input + strlen(input), strs, nstrs, &capstrs);
 }
 
-void* gpr_memrchr(const void* s, int c, size_t n) {
+void *gpr_memrchr(const void *s, int c, size_t n) {
   if (s == nullptr) return nullptr;
-  char* b = const_cast<char*>(reinterpret_cast<const char*>(s));
+  char *b = const_cast<char *>(reinterpret_cast<const char *>(s));
   size_t i;
   for (i = 0; i < n; i++) {
     if (b[n - i - 1] == c) {
@@ -322,9 +322,9 @@ void* gpr_memrchr(const void* s, int c, size_t n) {
   return nullptr;
 }
 
-bool gpr_parse_bool_value(const char* value, bool* dst) {
-  const char* kTrue[] = {"1", "t", "true", "y", "yes"};
-  const char* kFalse[] = {"0", "f", "false", "n", "no"};
+bool gpr_parse_bool_value(const char *value, bool *dst) {
+  const char *kTrue[] = {"1", "t", "true", "y", "yes"};
+  const char *kFalse[] = {"0", "f", "false", "n", "no"};
   static_assert(sizeof(kTrue) == sizeof(kFalse), "true_false_equal");
 
   if (value == nullptr) {

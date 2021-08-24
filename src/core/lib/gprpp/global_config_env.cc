@@ -38,14 +38,14 @@ namespace grpc_core {
 
 namespace {
 
-void DefaultGlobalConfigEnvErrorFunction(const char* error_message) {
+void DefaultGlobalConfigEnvErrorFunction(const char *error_message) {
   gpr_log(GPR_ERROR, "%s", error_message);
 }
 
 GlobalConfigEnvErrorFunctionType g_global_config_env_error_func =
     DefaultGlobalConfigEnvErrorFunction;
 
-void LogParsingError(const char* name, const char* value) {
+void LogParsingError(const char *name, const char *value) {
   std::string error_message = absl::StrFormat(
       "Illegal value '%s' specified for environment variable '%s'", value,
       name);
@@ -62,16 +62,16 @@ grpc_core::UniquePtr<char> GlobalConfigEnv::GetValue() {
   return grpc_core::UniquePtr<char>(gpr_getenv(GetName()));
 }
 
-void GlobalConfigEnv::SetValue(const char* value) {
+void GlobalConfigEnv::SetValue(const char *value) {
   gpr_setenv(GetName(), value);
 }
 
 void GlobalConfigEnv::Unset() { gpr_unsetenv(GetName()); }
 
-char* GlobalConfigEnv::GetName() {
+char *GlobalConfigEnv::GetName() {
   // This makes sure that name_ is in a canonical form having uppercase
   // letters. This is okay to be called serveral times.
-  for (char* c = name_; *c != 0; ++c) {
+  for (char *c = name_; *c != 0; ++c) {
     *c = toupper(*c);
   }
   return name_;
@@ -106,7 +106,7 @@ int32_t GlobalConfigEnvInt32::Get() {
     return default_value_;
   }
   // parsing given value string.
-  char* end = str.get();
+  char *end = str.get();
   long result = strtol(str.get(), &end, 10);
   if (*end != 0) {
     LogParsingError(GetName(), str.get());
@@ -132,6 +132,6 @@ grpc_core::UniquePtr<char> GlobalConfigEnvString::Get() {
   return str;
 }
 
-void GlobalConfigEnvString::Set(const char* value) { SetValue(value); }
+void GlobalConfigEnvString::Set(const char *value) { SetValue(value); }
 
 }  // namespace grpc_core

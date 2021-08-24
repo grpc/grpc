@@ -38,8 +38,8 @@ typedef ServerAsyncWriter<ByteBuffer> GenericServerAsyncWriter;
 
 class GenericServerContext final : public ServerContext {
  public:
-  const std::string& method() const { return method_; }
-  const std::string& host() const { return host_; }
+  const std::string &method() const { return method_; }
+  const std::string &host() const { return host_; }
 
  private:
   friend class ServerInterface;
@@ -69,14 +69,14 @@ class AsyncGenericService final {
  public:
   AsyncGenericService() : server_(nullptr) {}
 
-  void RequestCall(GenericServerContext* ctx,
-                   GenericServerAsyncReaderWriter* reader_writer,
-                   ::grpc::CompletionQueue* call_cq,
-                   ::grpc::ServerCompletionQueue* notification_cq, void* tag);
+  void RequestCall(GenericServerContext *ctx,
+                   GenericServerAsyncReaderWriter *reader_writer,
+                   ::grpc::CompletionQueue *call_cq,
+                   ::grpc::ServerCompletionQueue *notification_cq, void *tag);
 
  private:
   friend class grpc::Server;
-  grpc::Server* server_;
+  grpc::Server *server_;
 };
 
 /// \a ServerGenericBidiReactor is the reactor class for bidi streaming RPCs
@@ -86,8 +86,8 @@ using ServerGenericBidiReactor = ServerBidiReactor<ByteBuffer, ByteBuffer>;
 
 class GenericCallbackServerContext final : public grpc::CallbackServerContext {
  public:
-  const std::string& method() const { return method_; }
-  const std::string& host() const { return host_; }
+  const std::string &method() const { return method_; }
+  const std::string &host() const { return host_; }
 
  private:
   friend class ::grpc::Server;
@@ -107,8 +107,8 @@ class CallbackGenericService {
   /// The "method handler" for the generic API. This function should be
   /// overridden to provide a ServerGenericBidiReactor that implements the
   /// application-level interface for this RPC. Unimplemented by default.
-  virtual ServerGenericBidiReactor* CreateReactor(
-      GenericCallbackServerContext* /*ctx*/) {
+  virtual ServerGenericBidiReactor *CreateReactor(
+      GenericCallbackServerContext * /*ctx*/) {
     class Reactor : public ServerGenericBidiReactor {
      public:
       Reactor() { this->Finish(Status(StatusCode::UNIMPLEMENTED, "")); }
@@ -120,14 +120,15 @@ class CallbackGenericService {
  private:
   friend class grpc::Server;
 
-  internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>* Handler() {
+  internal::CallbackBidiHandler<ByteBuffer, ByteBuffer> *Handler() {
     return new internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>(
-        [this](::grpc::CallbackServerContext* ctx) {
-          return CreateReactor(static_cast<GenericCallbackServerContext*>(ctx));
+        [this](::grpc::CallbackServerContext *ctx) {
+          return CreateReactor(
+              static_cast<GenericCallbackServerContext *>(ctx));
         });
   }
 
-  grpc::Server* server_{nullptr};
+  grpc::Server *server_{nullptr};
 };
 
 }  // namespace grpc

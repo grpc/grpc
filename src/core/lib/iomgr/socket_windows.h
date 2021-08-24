@@ -48,7 +48,7 @@ typedef struct grpc_winsocket_callback_info {
   OVERLAPPED overlapped;
   /* The callback information for the pending operation. May be empty if the
      caller hasn't registered a callback yet. */
-  grpc_closure* closure;
+  grpc_closure *closure;
   /* A boolean to describe if the IO Completion Port got a notification for
      that operation. This will happen if the operation completed before the
      called had time to register a callback. We could avoid that behavior
@@ -94,25 +94,25 @@ typedef struct grpc_winsocket {
 
 /* Create a wrapped windows handle. This takes ownership of it, meaning that
    it will be responsible for closing it. */
-grpc_winsocket* grpc_winsocket_create(SOCKET socket, const char* name);
+grpc_winsocket *grpc_winsocket_create(SOCKET socket, const char *name);
 
-SOCKET grpc_winsocket_wrapped_socket(grpc_winsocket* socket);
+SOCKET grpc_winsocket_wrapped_socket(grpc_winsocket *socket);
 
 /* Initiate an asynchronous shutdown of the socket. Will call off any pending
    operation to cancel them. */
-void grpc_winsocket_shutdown(grpc_winsocket* socket);
+void grpc_winsocket_shutdown(grpc_winsocket *socket);
 
 /* Destroy a socket. Should only be called if there's no pending operation. */
-void grpc_winsocket_destroy(grpc_winsocket* socket);
+void grpc_winsocket_destroy(grpc_winsocket *socket);
 
-void grpc_socket_notify_on_write(grpc_winsocket* winsocket,
-                                 grpc_closure* closure);
+void grpc_socket_notify_on_write(grpc_winsocket *winsocket,
+                                 grpc_closure *closure);
 
-void grpc_socket_notify_on_read(grpc_winsocket* winsocket,
-                                grpc_closure* closure);
+void grpc_socket_notify_on_read(grpc_winsocket *winsocket,
+                                grpc_closure *closure);
 
-void grpc_socket_become_ready(grpc_winsocket* winsocket,
-                              grpc_winsocket_callback_info* ci);
+void grpc_socket_become_ready(grpc_winsocket *winsocket,
+                              grpc_winsocket_callback_info *ci);
 
 /* Returns true if this system can create AF_INET6 sockets bound to ::1.
    The value is probed once, and cached for the life of the process. */

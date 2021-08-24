@@ -43,7 +43,7 @@ class ChannelzRegistry {
   // To be called in grpc_shutdown();
   static void Shutdown();
 
-  static void Register(BaseNode* node) {
+  static void Register(BaseNode *node) {
     return Default()->InternalRegister(node);
   }
   static void Unregister(intptr_t uuid) { Default()->InternalUnregister(uuid); }
@@ -69,10 +69,10 @@ class ChannelzRegistry {
 
  private:
   // Returned the singleton instance of ChannelzRegistry;
-  static ChannelzRegistry* Default();
+  static ChannelzRegistry *Default();
 
   // globally registers an Entry. Returns its unique uuid
-  void InternalRegister(BaseNode* node);
+  void InternalRegister(BaseNode *node);
 
   // globally unregisters the object that is associated to uuid. Also does
   // sanity check that an object doesn't try to unregister the wrong type.
@@ -89,7 +89,7 @@ class ChannelzRegistry {
 
   // protects members
   Mutex mu_;
-  std::map<intptr_t, BaseNode*> node_map_;
+  std::map<intptr_t, BaseNode *> node_map_;
   intptr_t uuid_generator_ = 0;
 };
 

@@ -35,8 +35,8 @@ static internal::GrpcLibraryInitializer g_gli_initializer;
 
 namespace {
 
-const char* kContent1 = "hello xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-const char* kContent2 = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy world";
+const char *kContent1 = "hello xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+const char *kContent2 = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy world";
 
 class ByteBufferTest : public ::testing::Test {
  protected:
@@ -48,7 +48,7 @@ class ByteBufferTest : public ::testing::Test {
 TEST_F(ByteBufferTest, CopyCtor) {
   ByteBuffer buffer1;
   EXPECT_FALSE(buffer1.Valid());
-  const ByteBuffer& buffer2 = buffer1;
+  const ByteBuffer &buffer2 = buffer1;
   EXPECT_FALSE(buffer2.Valid());
 }
 
@@ -81,7 +81,7 @@ TEST_F(ByteBufferTest, Length) {
   EXPECT_EQ(strlen(kContent1) + strlen(kContent2), buffer.Length());
 }
 
-bool SliceEqual(const Slice& a, grpc_slice b) {
+bool SliceEqual(const Slice &a, grpc_slice b) {
   if (a.size() != GRPC_SLICE_LENGTH(b)) {
     return false;
   }
@@ -155,7 +155,7 @@ TEST_F(ByteBufferTest, DumpToSingleSlice) {
 }  // namespace
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();

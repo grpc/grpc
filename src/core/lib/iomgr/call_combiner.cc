@@ -60,8 +60,8 @@ CallCombiner::~CallCombiner() {
 }
 
 #ifdef GRPC_TSAN_ENABLED
-void CallCombiner::TsanClosure(void* arg, grpc_error_handle error) {
-  CallCombiner* self = static_cast<CallCombiner*>(arg);
+void CallCombiner::TsanClosure(void *arg, grpc_error_handle error) {
+  CallCombiner *self = static_cast<CallCombiner *>(arg);
   // We ref-count the lock, and check if it's already taken.
   // If it was taken, we should do nothing. Otherwise, we will mark it as
   // locked. Note that if two different threads try to do this, only one of
@@ -91,7 +91,7 @@ void CallCombiner::TsanClosure(void* arg, grpc_error_handle error) {
 }
 #endif
 
-void CallCombiner::ScheduleClosure(grpc_closure* closure,
+void CallCombiner::ScheduleClosure(grpc_closure *closure,
                                    grpc_error_handle error) {
 #ifdef GRPC_TSAN_ENABLED
   original_closure_ = closure;
@@ -111,8 +111,8 @@ void CallCombiner::ScheduleClosure(grpc_closure* closure,
 #define DEBUG_FMT_ARGS
 #endif
 
-void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
-                         DEBUG_ARGS const char* reason) {
+void CallCombiner::Start(grpc_closure *closure, grpc_error_handle error,
+                         DEBUG_ARGS const char *reason) {
   GPR_TIMER_SCOPE("CallCombiner::Start", 0);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
     gpr_log(GPR_INFO,
@@ -143,11 +143,11 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
     // Queue was not empty, so add closure to queue.
     closure->error_data.error = error;
     queue_.Push(
-        reinterpret_cast<MultiProducerSingleConsumerQueue::Node*>(closure));
+        reinterpret_cast<MultiProducerSingleConsumerQueue::Node *>(closure));
   }
 }
 
-void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
+void CallCombiner::Stop(DEBUG_ARGS const char *reason) {
   GPR_TIMER_SCOPE("CallCombiner::Stop", 0);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
     gpr_log(GPR_INFO, "==> CallCombiner::Stop() [%p] [" DEBUG_FMT_STR "%s]",
@@ -166,8 +166,8 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
         gpr_log(GPR_INFO, "  checking queue");
       }
       bool empty;
-      grpc_closure* closure =
-          reinterpret_cast<grpc_closure*>(queue_.PopAndCheckEnd(&empty));
+      grpc_closure *closure =
+          reinterpret_cast<grpc_closure *>(queue_.PopAndCheckEnd(&empty));
       if (closure == nullptr) {
         // This can happen either due to a race condition within the mpscq
         // code or because of a race with Start().
@@ -189,7 +189,7 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
   }
 }
 
-void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
+void CallCombiner::SetNotifyOnCancel(grpc_closure *closure) {
   GRPC_STATS_INC_CALL_COMBINER_SET_NOTIFY_ON_CANCEL();
   while (true) {
     // Decode original state.
@@ -217,7 +217,7 @@ void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
         // closure with GRPC_ERROR_NONE.  This allows callers to clean
         // up any resources they may be holding for the callback.
         if (original_state != 0) {
-          closure = reinterpret_cast<grpc_closure*>(original_state);
+          closure = reinterpret_cast<grpc_closure *>(original_state);
           if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
             gpr_log(GPR_INFO,
                     "call_combiner=%p: scheduling old cancel callback=%p", this,
@@ -244,8 +244,8 @@ void CallCombiner::Cancel(grpc_error_handle error) {
     if (gpr_atm_full_cas(&cancel_state_, original_state,
                          EncodeCancelStateError(error))) {
       if (original_state != 0) {
-        grpc_closure* notify_on_cancel =
-            reinterpret_cast<grpc_closure*>(original_state);
+        grpc_closure *notify_on_cancel =
+            reinterpret_cast<grpc_closure *>(original_state);
         if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
           gpr_log(GPR_INFO,
                   "call_combiner=%p: scheduling notify_on_cancel callback=%p",

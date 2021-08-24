@@ -41,7 +41,7 @@ static int cb_called[MAX_CB][2];
 static const int64_t kMillisIn25Days = 2160000000;
 static const int64_t kHoursIn25Days = 600;
 
-static void cb(void* arg, grpc_error_handle error) {
+static void cb(void *arg, grpc_error_handle error) {
   cb_called[reinterpret_cast<intptr_t>(arg)][error == GRPC_ERROR_NONE]++;
 }
 
@@ -61,16 +61,16 @@ static void add_test(void) {
 
   /* 10 ms timers.  will expire in the current epoch */
   for (i = 0; i < 10; i++) {
-    grpc_timer_init(
-        &timers[i], start + 10,
-        GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)i, grpc_schedule_on_exec_ctx));
+    grpc_timer_init(&timers[i], start + 10,
+                    GRPC_CLOSURE_CREATE(cb, (void *)(intptr_t)i,
+                                        grpc_schedule_on_exec_ctx));
   }
 
   /* 1010 ms timers.  will expire in the next epoch */
   for (i = 10; i < 20; i++) {
-    grpc_timer_init(
-        &timers[i], start + 1010,
-        GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)i, grpc_schedule_on_exec_ctx));
+    grpc_timer_init(&timers[i], start + 1010,
+                    GRPC_CLOSURE_CREATE(cb, (void *)(intptr_t)i,
+                                        grpc_schedule_on_exec_ctx));
   }
 
   /* collect timers.  Only the first batch should be ready. */
@@ -124,19 +124,19 @@ void destruction_test(void) {
 
   grpc_timer_init(
       &timers[0], 100,
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)0, grpc_schedule_on_exec_ctx));
+      GRPC_CLOSURE_CREATE(cb, (void *)(intptr_t)0, grpc_schedule_on_exec_ctx));
   grpc_timer_init(
       &timers[1], 3,
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)1, grpc_schedule_on_exec_ctx));
+      GRPC_CLOSURE_CREATE(cb, (void *)(intptr_t)1, grpc_schedule_on_exec_ctx));
   grpc_timer_init(
       &timers[2], 100,
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)2, grpc_schedule_on_exec_ctx));
+      GRPC_CLOSURE_CREATE(cb, (void *)(intptr_t)2, grpc_schedule_on_exec_ctx));
   grpc_timer_init(
       &timers[3], 3,
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)3, grpc_schedule_on_exec_ctx));
+      GRPC_CLOSURE_CREATE(cb, (void *)(intptr_t)3, grpc_schedule_on_exec_ctx));
   grpc_timer_init(
       &timers[4], 1,
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)4, grpc_schedule_on_exec_ctx));
+      GRPC_CLOSURE_CREATE(cb, (void *)(intptr_t)4, grpc_schedule_on_exec_ctx));
   grpc_core::ExecCtx::Get()->TestOnlySetNow(2);
   GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED);
   grpc_core::ExecCtx::Get()->Flush();
@@ -180,13 +180,13 @@ void long_running_service_cleanup_test(void) {
 
   grpc_timer_init(
       &timers[0], now + kMillisIn25Days,
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)0, grpc_schedule_on_exec_ctx));
+      GRPC_CLOSURE_CREATE(cb, (void *)(intptr_t)0, grpc_schedule_on_exec_ctx));
   grpc_timer_init(
       &timers[1], now + 3,
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)1, grpc_schedule_on_exec_ctx));
+      GRPC_CLOSURE_CREATE(cb, (void *)(intptr_t)1, grpc_schedule_on_exec_ctx));
   grpc_timer_init(
       &timers[2], GRPC_MILLIS_INF_FUTURE - 1,
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)2, grpc_schedule_on_exec_ctx));
+      GRPC_CLOSURE_CREATE(cb, (void *)(intptr_t)2, grpc_schedule_on_exec_ctx));
 
   gpr_timespec deadline_spec = grpc_millis_to_timespec(
       now + kMillisIn25Days, gpr_clock_type::GPR_CLOCK_MONOTONIC);
@@ -195,7 +195,7 @@ void long_running_service_cleanup_test(void) {
     input value into grpc_timer_init, so we mimic that behavior here */
   grpc_timer_init(
       &timers[3], grpc_timespec_to_millis_round_up(deadline_spec),
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)3, grpc_schedule_on_exec_ctx));
+      GRPC_CLOSURE_CREATE(cb, (void *)(intptr_t)3, grpc_schedule_on_exec_ctx));
 
   grpc_core::ExecCtx::Get()->TestOnlySetNow(now + 4);
   GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED);
@@ -218,7 +218,7 @@ void long_running_service_cleanup_test(void) {
   GPR_ASSERT(1 == cb_called[3][0]);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   /* Tests with default g_start_time */
   {
     grpc::testing::TestEnvironment env(argc, argv);
@@ -260,6 +260,6 @@ int main(int argc, char** argv) {
 
 #else /* GRPC_CUSTOM_SOCKET */
 
-int main(int argc, char** argv) { return 1; }
+int main(int argc, char **argv) { return 1; }
 
 #endif /* GRPC_CUSTOM_SOCKET */

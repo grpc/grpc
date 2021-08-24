@@ -28,15 +28,15 @@
 
 #include "test/core/util/cmdline.h"
 
-void create_jwt(const char* json_key_file_path, const char* service_url,
-                const char* scope) {
+void create_jwt(const char *json_key_file_path, const char *service_url,
+                const char *scope) {
   grpc_auth_json_key key;
-  char* jwt;
+  char *jwt;
   grpc_slice json_key_data;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "load_file", grpc_load_file(json_key_file_path, 1, &json_key_data)));
   key = grpc_auth_json_key_create_from_string(
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(json_key_data));
+      reinterpret_cast<const char *> GRPC_SLICE_START_PTR(json_key_data));
   grpc_slice_unref(json_key_data);
   if (!grpc_auth_json_key_is_valid(&key)) {
     fprintf(stderr, "Could not parse json key.\n");
@@ -56,12 +56,12 @@ void create_jwt(const char* json_key_file_path, const char* service_url,
   gpr_free(jwt);
 }
 
-int main(int argc, char** argv) {
-  const char* scope = nullptr;
-  const char* json_key_file_path = nullptr;
-  const char* service_url = nullptr;
+int main(int argc, char **argv) {
+  const char *scope = nullptr;
+  const char *json_key_file_path = nullptr;
+  const char *service_url = nullptr;
   grpc_init();
-  gpr_cmdline* cl = gpr_cmdline_create("create_jwt");
+  gpr_cmdline *cl = gpr_cmdline_create("create_jwt");
   gpr_cmdline_add_string(cl, "json_key", "File path of the json key.",
                          &json_key_file_path);
   gpr_cmdline_add_string(cl, "scope",

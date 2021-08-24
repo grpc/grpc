@@ -23,9 +23,9 @@
 namespace grpc {
 namespace internal {
 
-grpc_channel* CreateChannelFromBinderImpl(
+grpc_channel *CreateChannelFromBinderImpl(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder,
-    const grpc_channel_args* args);
+    const grpc_channel_args *args);
 
 }  // namespace internal
 }  // namespace grpc

@@ -35,7 +35,7 @@
 
 static void test_read_one_slice(void) {
   grpc_slice slice;
-  grpc_byte_buffer* buffer;
+  grpc_byte_buffer *buffer;
   grpc_byte_buffer_reader reader;
   grpc_slice first_slice, second_slice;
   int first_code, second_code;
@@ -57,7 +57,7 @@ static void test_read_one_slice(void) {
 
 static void test_read_one_slice_malloc(void) {
   grpc_slice slice;
-  grpc_byte_buffer* buffer;
+  grpc_byte_buffer *buffer;
   grpc_byte_buffer_reader reader;
   grpc_slice first_slice, second_slice;
   int first_code, second_code;
@@ -80,7 +80,7 @@ static void test_read_one_slice_malloc(void) {
 
 static void test_read_none_compressed_slice(void) {
   grpc_slice slice;
-  grpc_byte_buffer* buffer;
+  grpc_byte_buffer *buffer;
   grpc_byte_buffer_reader reader;
   grpc_slice first_slice, second_slice;
   int first_code, second_code;
@@ -102,10 +102,10 @@ static void test_read_none_compressed_slice(void) {
 
 static void test_peek_one_slice(void) {
   grpc_slice slice;
-  grpc_byte_buffer* buffer;
+  grpc_byte_buffer *buffer;
   grpc_byte_buffer_reader reader;
-  grpc_slice* first_slice;
-  grpc_slice* second_slice;
+  grpc_slice *first_slice;
+  grpc_slice *second_slice;
   int first_code, second_code;
 
   LOG_TEST("test_peek_one_slice");
@@ -124,10 +124,10 @@ static void test_peek_one_slice(void) {
 
 static void test_peek_one_slice_malloc(void) {
   grpc_slice slice;
-  grpc_byte_buffer* buffer;
+  grpc_byte_buffer *buffer;
   grpc_byte_buffer_reader reader;
-  grpc_slice* first_slice;
-  grpc_slice* second_slice;
+  grpc_slice *first_slice;
+  grpc_slice *second_slice;
   int first_code, second_code;
 
   LOG_TEST("test_peek_one_slice_malloc");
@@ -147,10 +147,10 @@ static void test_peek_one_slice_malloc(void) {
 
 static void test_peek_none_compressed_slice(void) {
   grpc_slice slice;
-  grpc_byte_buffer* buffer;
+  grpc_byte_buffer *buffer;
   grpc_byte_buffer_reader reader;
-  grpc_slice* first_slice;
-  grpc_slice* second_slice;
+  grpc_slice *first_slice;
+  grpc_slice *second_slice;
   int first_code, second_code;
 
   LOG_TEST("test_peek_none_compressed_slice");
@@ -193,10 +193,10 @@ static void test_byte_buffer_from_reader(void) {
 }
 
 static void test_readall(void) {
-  char* lotsa_as[512];
-  char* lotsa_bs[1024];
+  char *lotsa_as[512];
+  char *lotsa_bs[1024];
   grpc_slice slices[2];
-  grpc_byte_buffer* buffer;
+  grpc_byte_buffer *buffer;
   grpc_byte_buffer_reader reader;
   grpc_slice slice_out;
 
@@ -227,11 +227,11 @@ static void test_readall(void) {
 }
 
 static void test_byte_buffer_copy(void) {
-  char* lotsa_as[512];
-  char* lotsa_bs[1024];
+  char *lotsa_as[512];
+  char *lotsa_bs[1024];
   grpc_slice slices[2];
-  grpc_byte_buffer* buffer;
-  grpc_byte_buffer* copied_buffer;
+  grpc_byte_buffer *buffer;
+  grpc_byte_buffer *copied_buffer;
   grpc_byte_buffer_reader reader;
   grpc_slice slice_out;
 
@@ -263,7 +263,7 @@ static void test_byte_buffer_copy(void) {
   grpc_byte_buffer_destroy(copied_buffer);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   test_read_one_slice();

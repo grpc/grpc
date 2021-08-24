@@ -25,8 +25,8 @@
 
 namespace grpc {
 
-void CoreStatsToProto(const grpc_stats_data& core, grpc::core::Stats* proto);
-void ProtoToCoreStats(const grpc::core::Stats& proto, grpc_stats_data* core);
+void CoreStatsToProto(const grpc_stats_data &core, grpc::core::Stats *proto);
+void ProtoToCoreStats(const grpc::core::Stats &proto, grpc_stats_data *core);
 
 }  // namespace grpc
 

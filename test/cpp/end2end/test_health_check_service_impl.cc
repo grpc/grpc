@@ -26,9 +26,9 @@ using grpc::health::v1::HealthCheckResponse;
 namespace grpc {
 namespace testing {
 
-Status HealthCheckServiceImpl::Check(ServerContext* /*context*/,
-                                     const HealthCheckRequest* request,
-                                     HealthCheckResponse* response) {
+Status HealthCheckServiceImpl::Check(ServerContext * /*context*/,
+                                     const HealthCheckRequest *request,
+                                     HealthCheckResponse *response) {
   std::lock_guard<std::mutex> lock(mu_);
   auto iter = status_map_.find(request->service());
   if (iter == status_map_.end()) {
@@ -39,8 +39,8 @@ Status HealthCheckServiceImpl::Check(ServerContext* /*context*/,
 }
 
 Status HealthCheckServiceImpl::Watch(
-    ServerContext* context, const HealthCheckRequest* request,
-    ::grpc::ServerWriter<HealthCheckResponse>* writer) {
+    ServerContext *context, const HealthCheckRequest *request,
+    ::grpc::ServerWriter<HealthCheckResponse> *writer) {
   auto last_state = HealthCheckResponse::UNKNOWN;
   while (!context->IsCancelled()) {
     {
@@ -64,7 +64,7 @@ Status HealthCheckServiceImpl::Watch(
 }
 
 void HealthCheckServiceImpl::SetStatus(
-    const std::string& service_name,
+    const std::string &service_name,
     HealthCheckResponse::ServingStatus status) {
   std::lock_guard<std::mutex> lock(mu_);
   if (shutdown_) {

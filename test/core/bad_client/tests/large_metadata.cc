@@ -69,7 +69,7 @@
   ((sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_REQUEST) - 1) + \
    (NUM_HEADERS * PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_SIZE) + 1)
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   int i;
   grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);

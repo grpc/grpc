@@ -35,7 +35,7 @@ namespace grpc_core {
 
 namespace {
 
-const char* kMeshCaPlugin = "meshCA";
+const char *kMeshCaPlugin = "meshCA";
 
 }  // namespace
 
@@ -43,7 +43,7 @@ const char* kMeshCaPlugin = "meshCA";
 // GoogleMeshCaCertificateProviderFactory::Config
 //
 
-const char* GoogleMeshCaCertificateProviderFactory::Config::name() const {
+const char *GoogleMeshCaCertificateProviderFactory::Config::name() const {
   return kMeshCaPlugin;
 }
 
@@ -54,7 +54,7 @@ std::string GoogleMeshCaCertificateProviderFactory::Config::ToString() const {
 
 std::vector<grpc_error_handle>
 GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectStsService(
-    const Json::Object& sts_service) {
+    const Json::Object &sts_service) {
   std::vector<grpc_error_handle> error_list_sts_service;
   if (!ParseJsonObjectField(sts_service, "token_exchange_service_uri",
                             &sts_config_.token_exchange_service_uri,
@@ -91,9 +91,9 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectStsService(
 
 std::vector<grpc_error_handle>
 GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectCallCredentials(
-    const Json::Object& call_credentials) {
+    const Json::Object &call_credentials) {
   std::vector<grpc_error_handle> error_list_call_credentials;
-  const Json::Object* sts_service = nullptr;
+  const Json::Object *sts_service = nullptr;
   if (ParseJsonObjectField(call_credentials, "sts_service", &sts_service,
                            &error_list_call_credentials)) {
     std::vector<grpc_error_handle> error_list_sts_service =
@@ -108,20 +108,20 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectCallCredentials(
 
 std::vector<grpc_error_handle>
 GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectGoogleGrpc(
-    const Json::Object& google_grpc) {
+    const Json::Object &google_grpc) {
   std::vector<grpc_error_handle> error_list_google_grpc;
   if (!ParseJsonObjectField(google_grpc, "target_uri", &endpoint_,
                             &error_list_google_grpc, false)) {
     endpoint_ = "meshca.googleapis.com";  // Default target
   }
-  const Json::Array* call_credentials_array = nullptr;
+  const Json::Array *call_credentials_array = nullptr;
   if (ParseJsonObjectField(google_grpc, "call_credentials",
                            &call_credentials_array, &error_list_google_grpc)) {
     if (call_credentials_array->size() != 1) {
       error_list_google_grpc.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:call_credentials error:Need exactly one entry."));
     } else {
-      const Json::Object* call_credentials = nullptr;
+      const Json::Object *call_credentials = nullptr;
       if (ExtractJsonType((*call_credentials_array)[0], "call_credentials[0]",
                           &call_credentials, &error_list_google_grpc)) {
         std::vector<grpc_error_handle> error_list_call_credentials =
@@ -139,9 +139,9 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectGoogleGrpc(
 
 std::vector<grpc_error_handle>
 GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectGrpcServices(
-    const Json::Object& grpc_service) {
+    const Json::Object &grpc_service) {
   std::vector<grpc_error_handle> error_list_grpc_services;
-  const Json::Object* google_grpc = nullptr;
+  const Json::Object *google_grpc = nullptr;
   if (ParseJsonObjectField(grpc_service, "google_grpc", &google_grpc,
                            &error_list_grpc_services)) {
     std::vector<grpc_error_handle> error_list_google_grpc =
@@ -160,7 +160,7 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectGrpcServices(
 
 std::vector<grpc_error_handle>
 GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectServer(
-    const Json::Object& server) {
+    const Json::Object &server) {
   std::vector<grpc_error_handle> error_list_server;
   std::string api_type;
   if (ParseJsonObjectField(server, "api_type", &api_type, &error_list_server,
@@ -170,14 +170,14 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectServer(
           "field:api_type error:Only GRPC is supported"));
     }
   }
-  const Json::Array* grpc_services = nullptr;
+  const Json::Array *grpc_services = nullptr;
   if (ParseJsonObjectField(server, "grpc_services", &grpc_services,
                            &error_list_server)) {
     if (grpc_services->size() != 1) {
       error_list_server.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:grpc_services error:Need exactly one entry"));
     } else {
-      const Json::Object* grpc_service = nullptr;
+      const Json::Object *grpc_service = nullptr;
       if (ExtractJsonType((*grpc_services)[0], "grpc_services[0]",
                           &grpc_service, &error_list_server)) {
         std::vector<grpc_error_handle> error_list_grpc_services =
@@ -194,7 +194,7 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectServer(
 
 RefCountedPtr<GoogleMeshCaCertificateProviderFactory::Config>
 GoogleMeshCaCertificateProviderFactory::Config::Parse(
-    const Json& config_json, grpc_error_handle* error) {
+    const Json &config_json, grpc_error_handle *error) {
   auto config =
       MakeRefCounted<GoogleMeshCaCertificateProviderFactory::Config>();
   if (config_json.type() != Json::Type::OBJECT) {
@@ -203,7 +203,7 @@ GoogleMeshCaCertificateProviderFactory::Config::Parse(
     return nullptr;
   }
   std::vector<grpc_error_handle> error_list;
-  const Json::Object* server = nullptr;
+  const Json::Object *server = nullptr;
   if (ParseJsonObjectField(config_json.object_value(), "server", &server,
                            &error_list)) {
     std::vector<grpc_error_handle> error_list_server =
@@ -251,13 +251,13 @@ GoogleMeshCaCertificateProviderFactory::Config::Parse(
 // GoogleMeshCaCertificateProviderFactory
 //
 
-const char* GoogleMeshCaCertificateProviderFactory::name() const {
+const char *GoogleMeshCaCertificateProviderFactory::name() const {
   return kMeshCaPlugin;
 }
 
 RefCountedPtr<CertificateProviderFactory::Config>
 GoogleMeshCaCertificateProviderFactory::CreateCertificateProviderConfig(
-    const Json& config_json, grpc_error_handle* error) {
+    const Json &config_json, grpc_error_handle *error) {
   return GoogleMeshCaCertificateProviderFactory::Config::Parse(config_json,
                                                                error);
 }

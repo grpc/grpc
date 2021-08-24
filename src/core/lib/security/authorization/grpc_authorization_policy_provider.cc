@@ -43,10 +43,10 @@ StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
 
 // Wrapper APIs declared in grpc_security.h
 
-grpc_authorization_policy_provider*
+grpc_authorization_policy_provider *
 grpc_authorization_policy_provider_static_data_create(
-    const char* authz_policy, grpc_status_code* code,
-    const char** error_details) {
+    const char *authz_policy, grpc_status_code *code,
+    const char **error_details) {
   GPR_ASSERT(authz_policy != nullptr);
   auto provider_or =
       grpc_core::StaticDataAuthorizationPolicyProvider::Create(authz_policy);
@@ -62,6 +62,6 @@ grpc_authorization_policy_provider_static_data_create(
 }
 
 void grpc_authorization_policy_provider_release(
-    grpc_authorization_policy_provider* provider) {
+    grpc_authorization_policy_provider *provider) {
   if (provider != nullptr) provider->Unref();
 }

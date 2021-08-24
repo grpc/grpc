@@ -39,8 +39,8 @@ static gpr_once g_once = GPR_ONCE_INIT;
 namespace grpc_core {
 namespace internal {
 
-bool check_bios_data(const char* bios_data_file) {
-  char* bios_data = read_bios_file(bios_data_file);
+bool check_bios_data(const char *bios_data_file) {
+  char *bios_data = read_bios_file(bios_data_file);
   bool result =
       bios_data && ((!strcmp(bios_data, GRPC_ALTS_EXPECT_NAME_GOOGLE)) ||
                     (!strcmp(bios_data, GRPC_ALTS_EXPECT_NAME_GCE)));

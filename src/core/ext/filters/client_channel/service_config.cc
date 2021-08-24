@@ -31,8 +31,8 @@
 namespace grpc_core {
 
 RefCountedPtr<ServiceConfig> ServiceConfig::Create(
-    const grpc_channel_args* args, absl::string_view json_string,
-    grpc_error_handle* error) {
+    const grpc_channel_args *args, absl::string_view json_string,
+    grpc_error_handle *error) {
   GPR_DEBUG_ASSERT(error != nullptr);
   Json json = Json::Parse(json_string, error);
   if (*error != GRPC_ERROR_NONE) return nullptr;
@@ -40,9 +40,9 @@ RefCountedPtr<ServiceConfig> ServiceConfig::Create(
                                        std::move(json), error);
 }
 
-ServiceConfig::ServiceConfig(const grpc_channel_args* args,
+ServiceConfig::ServiceConfig(const grpc_channel_args *args,
                              std::string json_string, Json json,
-                             grpc_error_handle* error)
+                             grpc_error_handle *error)
     : json_string_(std::move(json_string)), json_(std::move(json)) {
   GPR_DEBUG_ASSERT(error != nullptr);
   if (json_.type() != Json::Type::OBJECT) {
@@ -64,13 +64,13 @@ ServiceConfig::ServiceConfig(const grpc_channel_args* args,
 }
 
 ServiceConfig::~ServiceConfig() {
-  for (auto& p : parsed_method_configs_map_) {
+  for (auto &p : parsed_method_configs_map_) {
     grpc_slice_unref_internal(p.first);
   }
 }
 
 grpc_error_handle ServiceConfig::ParseJsonMethodConfig(
-    const grpc_channel_args* args, const Json& json) {
+    const grpc_channel_args *args, const Json &json) {
   std::vector<grpc_error_handle> error_list;
   // Parse method config with each registered parser.
   auto parsed_configs =
@@ -82,7 +82,7 @@ grpc_error_handle ServiceConfig::ParseJsonMethodConfig(
     error_list.push_back(parser_error);
   }
   parsed_method_config_vectors_storage_.push_back(std::move(parsed_configs));
-  const auto* vector_ptr = parsed_method_config_vectors_storage_.back().get();
+  const auto *vector_ptr = parsed_method_config_vectors_storage_.back().get();
   // Add an entry for each path.
   bool found_name = false;
   auto it = json.object_value().find("name");
@@ -92,8 +92,8 @@ grpc_error_handle ServiceConfig::ParseJsonMethodConfig(
           "field:name error:not of type Array"));
       return GRPC_ERROR_CREATE_FROM_VECTOR("methodConfig", &error_list);
     }
-    const Json::Array& name_array = it->second.array_value();
-    for (const Json& name : name_array) {
+    const Json::Array &name_array = it->second.array_value();
+    for (const Json &name : name_array) {
       grpc_error_handle parse_error = GRPC_ERROR_NONE;
       std::string path = ParseJsonMethodName(name, &parse_error);
       if (parse_error != GRPC_ERROR_NONE) {
@@ -110,7 +110,7 @@ grpc_error_handle ServiceConfig::ParseJsonMethodConfig(
           grpc_slice key = grpc_slice_from_copied_string(path.c_str());
           // If the key is not already present in the map, this will
           // store a ref to the key in the map.
-          auto& value = parsed_method_configs_map_[key];
+          auto &value = parsed_method_configs_map_[key];
           if (value != nullptr) {
             error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "field:name error:multiple method configs with same name"));
@@ -131,7 +131,7 @@ grpc_error_handle ServiceConfig::ParseJsonMethodConfig(
 }
 
 grpc_error_handle ServiceConfig::ParsePerMethodParams(
-    const grpc_channel_args* args) {
+    const grpc_channel_args *args) {
   std::vector<grpc_error_handle> error_list;
   auto it = json_.object_value().find("methodConfig");
   if (it != json_.object_value().end()) {
@@ -139,7 +139,7 @@ grpc_error_handle ServiceConfig::ParsePerMethodParams(
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:methodConfig error:not of type Array"));
     }
-    for (const Json& method_config : it->second.array_value()) {
+    for (const Json &method_config : it->second.array_value()) {
       if (method_config.type() != Json::Type::OBJECT) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:methodConfig error:not of type Object"));
@@ -154,15 +154,15 @@ grpc_error_handle ServiceConfig::ParsePerMethodParams(
   return GRPC_ERROR_CREATE_FROM_VECTOR("Method Params", &error_list);
 }
 
-std::string ServiceConfig::ParseJsonMethodName(const Json& json,
-                                               grpc_error_handle* error) {
+std::string ServiceConfig::ParseJsonMethodName(const Json &json,
+                                               grpc_error_handle *error) {
   if (json.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:name error:type is not object");
     return "";
   }
   // Find service name.
-  const std::string* service_name = nullptr;
+  const std::string *service_name = nullptr;
   auto it = json.object_value().find("service");
   if (it != json.object_value().end() &&
       it->second.type() != Json::Type::JSON_NULL) {
@@ -175,7 +175,7 @@ std::string ServiceConfig::ParseJsonMethodName(const Json& json,
       service_name = &it->second.string_value();
     }
   }
-  const std::string* method_name = nullptr;
+  const std::string *method_name = nullptr;
   // Find method name.
   it = json.object_value().find("method");
   if (it != json.object_value().end() &&
@@ -203,8 +203,8 @@ std::string ServiceConfig::ParseJsonMethodName(const Json& json,
                       method_name == nullptr ? "" : *method_name);
 }
 
-const ServiceConfigParser::ParsedConfigVector*
-ServiceConfig::GetMethodParsedConfigVector(const grpc_slice& path) const {
+const ServiceConfigParser::ParsedConfigVector *
+ServiceConfig::GetMethodParsedConfigVector(const grpc_slice &path) const {
   if (parsed_method_configs_map_.empty()) {
     return default_method_config_vector_;
   }
@@ -214,7 +214,7 @@ ServiceConfig::GetMethodParsedConfigVector(const grpc_slice& path) const {
   // If we didn't find a match for the path, try looking for a wildcard
   // entry (i.e., change "/service/method" to "/service/").
   UniquePtr<char> path_str(grpc_slice_to_c_string(path));
-  char* sep = strrchr(path_str.get(), '/');
+  char *sep = strrchr(path_str.get(), '/');
   if (sep == nullptr) return nullptr;  // Shouldn't ever happen.
   sep[1] = '\0';
   grpc_slice wildcard_path = grpc_slice_from_static_string(path_str.get());

@@ -170,7 +170,7 @@ static size_t get_base64_encoded_size(size_t raw_length) {
 
 size_t grpc_chttp2_get_size_in_hpack_table(grpc_mdelem elem,
                                            bool use_true_binary_metadata) {
-  const uint8_t* key_buf = GRPC_SLICE_START_PTR(GRPC_MDKEY(elem));
+  const uint8_t *key_buf = GRPC_SLICE_START_PTR(GRPC_MDKEY(elem));
   size_t key_len = GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
   size_t overhead_and_key = 32 + key_len;
   size_t value_len = GRPC_SLICE_LENGTH(GRPC_MDVALUE(elem));

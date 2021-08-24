@@ -86,13 +86,13 @@ class TransportCounter {
     return count_;
   }
 
-  static absl::Mutex& mu() {
-    static absl::Mutex* mu = new absl::Mutex();
+  static absl::Mutex &mu() {
+    static absl::Mutex *mu = new absl::Mutex();
     return *mu;
   }
 
-  static absl::CondVar& cv() {
-    static absl::CondVar* cv = new absl::CondVar();
+  static absl::CondVar &cv() {
+    static absl::CondVar *cv = new absl::CondVar();
     return *cv;
   }
 
@@ -102,17 +102,17 @@ class TransportCounter {
 
 int TransportCounter::count_ = 0;
 
-void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
 // Perform a simple RPC where the server cancels the request with
 // grpc_call_cancel_with_status
-grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
-                             grpc_completion_queue* cq) {
-  grpc_call* c;
-  grpc_call* s;
-  cq_verifier* cqv = cq_verifier_create(cq);
+grpc_status_code PerformCall(grpc_channel *channel, grpc_server *server,
+                             grpc_completion_queue *cq) {
+  grpc_call *c;
+  grpc_call *s;
+  cq_verifier *cqv = cq_verifier_create(cq);
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
@@ -169,9 +169,9 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
 // Test that sending a lot of RPCs that are cancelled by the server doesn't
 // result in too many pings due to the pings sent by BDP.
 TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(nullptr);
   // create the server
-  grpc_server* server = grpc_server_create(nullptr, nullptr);
+  grpc_server *server = grpc_server_create(nullptr, nullptr);
   std::string server_address =
       grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
   grpc_server_register_completion_queue(server, cq, nullptr);
@@ -179,7 +179,7 @@ TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
       grpc_server_add_insecure_http2_port(server, server_address.c_str()));
   grpc_server_start(server);
   // create the channel (bdp pings are enabled by default)
-  grpc_channel* channel = grpc_insecure_channel_create(
+  grpc_channel *channel = grpc_insecure_channel_create(
       server_address.c_str(), nullptr /* channel args */, nullptr);
   std::map<grpc_status_code, int> statuses_and_counts;
   const int kNumTotalRpcs = 1e5;
@@ -223,13 +223,13 @@ TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
 // Perform a simple RPC where the client makes a request, and both the client
 // and server continue reading so that gRPC can send and receive keepalive
 // pings.
-grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
-                                    grpc_completion_queue* cq) {
-  grpc_call* c;
-  grpc_call* s;
-  cq_verifier* cqv = cq_verifier_create(cq);
+grpc_status_code PerformWaitingCall(grpc_channel *channel, grpc_server *server,
+                                    grpc_completion_queue *cq) {
+  grpc_call *c;
+  grpc_call *s;
+  cq_verifier *cqv = cq_verifier_create(cq);
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
@@ -290,17 +290,17 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
 }
 
 // Shuts down and destroys the server.
-void ServerShutdownAndDestroy(grpc_server* server, grpc_completion_queue* cq) {
+void ServerShutdownAndDestroy(grpc_server *server, grpc_completion_queue *cq) {
   // Shutdown and destroy server
-  grpc_server_shutdown_and_notify(server, cq, reinterpret_cast<void*>(1000));
+  grpc_server_shutdown_and_notify(server, cq, reinterpret_cast<void *>(1000));
   while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
                                     nullptr)
-             .tag != reinterpret_cast<void*>(1000)) {
+             .tag != reinterpret_cast<void *>(1000)) {
   }
   grpc_server_destroy(server);
 }
 
-void VerifyChannelReady(grpc_channel* channel, grpc_completion_queue* cq) {
+void VerifyChannelReady(grpc_channel *channel, grpc_completion_queue *cq) {
   grpc_connectivity_state state =
       grpc_channel_check_connectivity_state(channel, 1 /* try_to_connect */);
   while (state != GRPC_CHANNEL_READY) {
@@ -312,15 +312,15 @@ void VerifyChannelReady(grpc_channel* channel, grpc_completion_queue* cq) {
   }
 }
 
-void VerifyChannelDisconnected(grpc_channel* channel,
-                               grpc_completion_queue* cq) {
+void VerifyChannelDisconnected(grpc_channel *channel,
+                               grpc_completion_queue *cq) {
   // Verify channel gets disconnected. Use a ping to make sure that clients
   // tries sending/receiving bytes if the channel is connected.
-  grpc_channel_ping(channel, cq, reinterpret_cast<void*>(2000), nullptr);
+  grpc_channel_ping(channel, cq, reinterpret_cast<void *>(2000), nullptr);
   grpc_event ev = grpc_completion_queue_next(
       cq, grpc_timeout_seconds_to_deadline(5), nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(ev.tag == reinterpret_cast<void*>(2000));
+  GPR_ASSERT(ev.tag == reinterpret_cast<void *>(2000));
   GPR_ASSERT(ev.success == 0);
   GPR_ASSERT(grpc_channel_check_connectivity_state(channel, 0) !=
              GRPC_CHANNEL_READY);
@@ -329,20 +329,20 @@ void VerifyChannelDisconnected(grpc_channel* channel,
 class KeepaliveThrottlingTest : public ::testing::Test {
  protected:
   // Starts the server and makes sure that the channel is able to get connected.
-  grpc_server* ServerStart(const char* addr, grpc_completion_queue* cq) {
+  grpc_server *ServerStart(const char *addr, grpc_completion_queue *cq) {
     // Set up server channel args to expect pings at an interval of 5 seconds
     // and use a single ping strike
     grpc_arg server_args[] = {
         grpc_channel_arg_integer_create(
-            const_cast<char*>(
+            const_cast<char *>(
                 GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
             5 * 1000),
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), 1)};
+            const_cast<char *>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), 1)};
     grpc_channel_args server_channel_args = {GPR_ARRAY_SIZE(server_args),
                                              server_args};
     // Create server
-    grpc_server* server = grpc_server_create(&server_channel_args, nullptr);
+    grpc_server *server = grpc_server_create(&server_channel_args, nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
     GPR_ASSERT(grpc_server_add_insecure_http2_port(server, addr));
     grpc_server_start(server);
@@ -351,23 +351,23 @@ class KeepaliveThrottlingTest : public ::testing::Test {
 };
 
 TEST_F(KeepaliveThrottlingTest, KeepaliveThrottlingMultipleChannels) {
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(nullptr);
   std::string server_address =
       grpc_core::JoinHostPort("127.0.0.1", grpc_pick_unused_port_or_die());
-  grpc_server* server = ServerStart(server_address.c_str(), cq);
+  grpc_server *server = ServerStart(server_address.c_str(), cq);
   // create two channel with a keepalive ping interval of 1 second.
   grpc_arg client_args[] = {
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
+          const_cast<char *>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 1 * 1000),
+          const_cast<char *>(GRPC_ARG_KEEPALIVE_TIME_MS), 1 * 1000),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
+          const_cast<char *>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
   grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                            client_args};
-  grpc_channel* channel = grpc_insecure_channel_create(
+  grpc_channel *channel = grpc_insecure_channel_create(
       server_address.c_str(), &client_channel_args, nullptr);
-  grpc_channel* channel_dup = grpc_insecure_channel_create(
+  grpc_channel *channel_dup = grpc_insecure_channel_create(
       server_address.c_str(), &client_channel_args, nullptr);
   int expected_keepalive_time_sec = 1;
   // We need 3 GOAWAY frames to throttle the keepalive time from 1 second to 8
@@ -402,9 +402,9 @@ TEST_F(KeepaliveThrottlingTest, KeepaliveThrottlingMultipleChannels) {
 }
 
 grpc_core::Resolver::Result BuildResolverResult(
-    const std::vector<std::string>& addresses) {
+    const std::vector<std::string> &addresses) {
   grpc_core::Resolver::Result result;
-  for (const auto& address_str : addresses) {
+  for (const auto &address_str : addresses) {
     absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
     if (!uri.ok()) {
       gpr_log(GPR_ERROR, "Failed to parse uri. Error: %s",
@@ -422,13 +422,13 @@ grpc_core::Resolver::Result BuildResolverResult(
 // addresses, the new subchannels use the updated keepalive time.
 TEST_F(KeepaliveThrottlingTest, NewSubchannelsUseUpdatedKeepaliveTime) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(nullptr);
   std::string server_address1 =
       grpc_core::JoinHostPort("127.0.0.1", grpc_pick_unused_port_or_die());
   std::string server_address2 =
       grpc_core::JoinHostPort("127.0.0.1", grpc_pick_unused_port_or_die());
-  grpc_server* server1 = ServerStart(server_address1.c_str(), cq);
-  grpc_server* server2 = ServerStart(server_address2.c_str(), cq);
+  grpc_server *server1 = ServerStart(server_address1.c_str(), cq);
+  grpc_server *server2 = ServerStart(server_address2.c_str(), cq);
   // create a single channel with multiple subchannels with a keepalive ping
   // interval of 1 second. To get finer control on subchannel connection times,
   // we are using pick_first instead of round_robin and using the fake resolver
@@ -437,18 +437,18 @@ TEST_F(KeepaliveThrottlingTest, NewSubchannelsUseUpdatedKeepaliveTime) {
       grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
   grpc_arg client_args[] = {
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
+          const_cast<char *>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 0),
+          const_cast<char *>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 0),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 1 * 1000),
+          const_cast<char *>(GRPC_ARG_KEEPALIVE_TIME_MS), 1 * 1000),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0),
+          const_cast<char *>(GRPC_ARG_HTTP2_BDP_PROBE), 0),
       grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
           response_generator.get())};
   grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                            client_args};
-  grpc_channel* channel =
+  grpc_channel *channel =
       grpc_insecure_channel_create("fake:///", &client_channel_args, nullptr);
   // For a single subchannel 3 GOAWAYs would be sufficient to increase the
   // keepalive time from 1 second to beyond 5 seconds. Even though we are
@@ -496,7 +496,7 @@ TEST_F(KeepaliveThrottlingTest, NewSubchannelsUseUpdatedKeepaliveTime) {
 // with an updated keepalive time.
 TEST_F(KeepaliveThrottlingTest,
        ExistingSubchannelsUseNewKeepaliveTimeWhenReconnecting) {
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(nullptr);
   std::string server_address1 =
       grpc_core::JoinHostPort("127.0.0.1", grpc_pick_unused_port_or_die());
   std::string server_address2 =
@@ -506,18 +506,18 @@ TEST_F(KeepaliveThrottlingTest,
       grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
   grpc_arg client_args[] = {
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
+          const_cast<char *>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 0),
+          const_cast<char *>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 0),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 1 * 1000),
+          const_cast<char *>(GRPC_ARG_KEEPALIVE_TIME_MS), 1 * 1000),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0),
+          const_cast<char *>(GRPC_ARG_HTTP2_BDP_PROBE), 0),
       grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
           response_generator.get())};
   grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                            client_args};
-  grpc_channel* channel =
+  grpc_channel *channel =
       grpc_insecure_channel_create("fake:///", &client_channel_args, nullptr);
   response_generator->SetResponse(
       BuildResolverResult({absl::StrCat("ipv4:", server_address1),
@@ -531,7 +531,7 @@ TEST_F(KeepaliveThrottlingTest,
   for (int i = 0; i < 3; i++) {
     gpr_log(GPR_ERROR, "Expected keepalive time : %d",
             expected_keepalive_time_sec);
-    grpc_server* server = ServerStart(
+    grpc_server *server = ServerStart(
         i % 2 == 0 ? server_address1.c_str() : server_address2.c_str(), cq);
     VerifyChannelReady(channel, cq);
     EXPECT_EQ(PerformWaitingCall(channel, server, cq), GRPC_STATUS_UNAVAILABLE);
@@ -543,7 +543,7 @@ TEST_F(KeepaliveThrottlingTest,
       GPR_INFO,
       "Client keepalive time %d should now be in sync with the server settings",
       expected_keepalive_time_sec);
-  grpc_server* server = ServerStart(server_address1.c_str(), cq);
+  grpc_server *server = ServerStart(server_address1.c_str(), cq);
   VerifyChannelReady(channel, cq);
   EXPECT_EQ(PerformWaitingCall(channel, server, cq),
             GRPC_STATUS_DEADLINE_EXCEEDED);
@@ -560,21 +560,21 @@ TEST_F(KeepaliveThrottlingTest,
 
 // Perform a simple RPC where the client makes a request expecting a response
 // with payload.
-void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
-                                    grpc_completion_queue* cq) {
+void PerformCallWithResponsePayload(grpc_channel *channel, grpc_server *server,
+                                    grpc_completion_queue *cq) {
   grpc_slice response_payload_slice = grpc_slice_from_static_string("hello");
 
-  grpc_call* c;
-  grpc_call* s;
-  grpc_byte_buffer* response_payload =
+  grpc_call *c;
+  grpc_call *s;
+  grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  cq_verifier* cqv = cq_verifier_create(cq);
+  cq_verifier *cqv = cq_verifier_create(cq);
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer* response_payload_recv = nullptr;
+  grpc_byte_buffer *response_payload_recv = nullptr;
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
@@ -695,20 +695,20 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
 }
 
 TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(nullptr);
   // create the server
   std::string server_address =
       grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
   grpc_arg server_args[] = {
       grpc_channel_arg_integer_create(
-          const_cast<char*>(
+          const_cast<char *>(
               GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
           60 * 1000),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), 1)};
+          const_cast<char *>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), 1)};
   grpc_channel_args server_channel_args = {GPR_ARRAY_SIZE(server_args),
                                            server_args};
-  grpc_server* server = grpc_server_create(&server_channel_args, nullptr);
+  grpc_server *server = grpc_server_create(&server_channel_args, nullptr);
   grpc_server_register_completion_queue(server, cq, nullptr);
   GPR_ASSERT(
       grpc_server_add_insecure_http2_port(server, server_address.c_str()));
@@ -716,16 +716,16 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
   // create the channel (bdp pings are enabled by default)
   grpc_arg client_args[] = {
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
+          const_cast<char *>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
+          const_cast<char *>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
   grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                            client_args};
-  grpc_channel* channel = grpc_insecure_channel_create(
+  grpc_channel *channel = grpc_insecure_channel_create(
       server_address.c_str(), &client_channel_args, nullptr);
   VerifyChannelReady(channel, cq);
   EXPECT_EQ(TransportCounter::count(), 2 /* one each for server and client */);
-  cq_verifier* cqv = cq_verifier_create(cq);
+  cq_verifier *cqv = cq_verifier_create(cq);
   // Channel should be able to send two pings without disconnect if there was no
   // BDP sent.
   grpc_channel_ping(channel, cq, tag(1), nullptr);
@@ -766,36 +766,36 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
 }
 
 TEST(TooManyPings, TransportsGetCleanedUpOnDisconnect) {
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(nullptr);
   // create the client and server
   std::string server_address =
       grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
   grpc_arg server_args[] = {
       grpc_channel_arg_integer_create(
-          const_cast<char*>(
+          const_cast<char *>(
               GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
           60 * 1000),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), 1)};
+          const_cast<char *>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), 1)};
   grpc_channel_args server_channel_args = {GPR_ARRAY_SIZE(server_args),
                                            server_args};
-  grpc_server* server = grpc_server_create(&server_channel_args, nullptr);
+  grpc_server *server = grpc_server_create(&server_channel_args, nullptr);
   grpc_server_register_completion_queue(server, cq, nullptr);
   GPR_ASSERT(
       grpc_server_add_insecure_http2_port(server, server_address.c_str()));
   grpc_server_start(server);
   grpc_arg client_args[] = {
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
+          const_cast<char *>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
+          const_cast<char *>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
   grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                            client_args};
-  grpc_channel* channel = grpc_insecure_channel_create(
+  grpc_channel *channel = grpc_insecure_channel_create(
       server_address.c_str(), &client_channel_args, nullptr);
   VerifyChannelReady(channel, cq);
   EXPECT_EQ(TransportCounter::count(), 2 /* one each for server and client */);
-  cq_verifier* cqv = cq_verifier_create(cq);
+  cq_verifier *cqv = cq_verifier_create(cq);
   // First ping
   grpc_channel_ping(channel, cq, tag(1), nullptr);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
@@ -825,7 +825,7 @@ TEST(TooManyPings, TransportsGetCleanedUpOnDisconnect) {
 
 }  // namespace
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_core::TestOnlySetGlobalHttp2TransportInitCallback(

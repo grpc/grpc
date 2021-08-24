@@ -23,7 +23,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure,
+EventEngine::Callback GrpcClosureToCallback(grpc_closure *closure,
                                             grpc_error_handle error) {
   return [closure, error](absl::Status status) {
     grpc_error_handle new_error =

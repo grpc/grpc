@@ -41,7 +41,7 @@ class ResolverRegistry {
 
     /// Sets the default URI prefix to \a default_prefix.
     /// Calls InitRegistry() if it has not already been called.
-    static void SetDefaultPrefix(const char* default_prefix);
+    static void SetDefaultPrefix(const char *default_prefix);
 
     /// Registers a resolver factory.  The factory will be used to create a
     /// resolver for any URI whose scheme matches that of the factory.
@@ -67,8 +67,8 @@ class ResolverRegistry {
   /// which all resolver calls will be run. \a result_handler is used to return
   /// results from the resolver.
   static OrphanablePtr<Resolver> CreateResolver(
-      const char* target, const grpc_channel_args* args,
-      grpc_pollset_set* pollset_set,
+      const char *target, const grpc_channel_args *args,
+      grpc_pollset_set *pollset_set,
       std::shared_ptr<WorkSerializer> work_serializer,
       std::unique_ptr<Resolver::ResultHandler> result_handler);
 
@@ -77,11 +77,11 @@ class ResolverRegistry {
 
   /// Returns \a target with the default prefix prepended, if needed.
   static grpc_core::UniquePtr<char> AddDefaultPrefixIfNeeded(
-      const char* target);
+      const char *target);
 
   /// Returns the resolver factory for \a scheme.
   /// Caller does NOT own the return value.
-  static ResolverFactory* LookupResolverFactory(const char* scheme);
+  static ResolverFactory *LookupResolverFactory(const char *scheme);
 };
 
 }  // namespace grpc_core

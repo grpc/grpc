@@ -298,7 +298,7 @@ void config_default_tcp_user_timeout(bool enable, int timeout, bool is_client) {
 
 /* Set TCP_USER_TIMEOUT */
 grpc_error_handle grpc_set_socket_tcp_user_timeout(
-    int fd, const grpc_channel_args* channel_args, bool is_client) {
+    int fd, const grpc_channel_args *channel_args, bool is_client) {
   // Use conditionally-important parameter to avoid warning
   (void)fd;
   (void)channel_args;
@@ -389,7 +389,7 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
 
 /* set a socket using a grpc_socket_mutator */
 grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
-                                               grpc_socket_mutator* mutator) {
+                                               grpc_socket_mutator *mutator) {
   GPR_ASSERT(mutator);
   if (!grpc_socket_mutator_mutate_fd(mutator, fd, usage)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("grpc_socket_mutator failed.");
@@ -398,15 +398,15 @@ grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
 }
 
 grpc_error_handle grpc_apply_socket_mutator_in_args(
-    int fd, grpc_fd_usage usage, const grpc_channel_args* args) {
-  const grpc_arg* socket_mutator_arg =
+    int fd, grpc_fd_usage usage, const grpc_channel_args *args) {
+  const grpc_arg *socket_mutator_arg =
       grpc_channel_args_find(args, GRPC_ARG_SOCKET_MUTATOR);
   if (socket_mutator_arg == nullptr) {
     return GRPC_ERROR_NONE;
   }
   GPR_DEBUG_ASSERT(socket_mutator_arg->type == GRPC_ARG_POINTER);
-  grpc_socket_mutator* mutator =
-      static_cast<grpc_socket_mutator*>(socket_mutator_arg->value.pointer.p);
+  grpc_socket_mutator *mutator =
+      static_cast<grpc_socket_mutator *>(socket_mutator_arg->value.pointer.p);
   return grpc_set_socket_with_mutator(fd, usage, mutator);
 }
 
@@ -423,7 +423,7 @@ static void probe_ipv6_once(void) {
     memset(&addr, 0, sizeof(addr));
     addr.sin6_family = AF_INET6;
     addr.sin6_addr.s6_addr[15] = 1; /* [::1]:0 */
-    if (bind(fd, reinterpret_cast<grpc_sockaddr*>(&addr), sizeof(addr)) == 0) {
+    if (bind(fd, reinterpret_cast<grpc_sockaddr *>(&addr), sizeof(addr)) == 0) {
       g_ipv6_loopback_available = 1;
     } else {
       gpr_log(GPR_INFO,
@@ -439,7 +439,7 @@ int grpc_ipv6_loopback_available(void) {
 }
 
 static grpc_error_handle error_for_fd(int fd,
-                                      const grpc_resolved_address* addr) {
+                                      const grpc_resolved_address *addr) {
   if (fd >= 0) return GRPC_ERROR_NONE;
   std::string addr_str = grpc_sockaddr_to_string(addr, false);
   grpc_error_handle err = grpc_error_set_str(
@@ -449,13 +449,13 @@ static grpc_error_handle error_for_fd(int fd,
 }
 
 grpc_error_handle grpc_create_dualstack_socket(
-    const grpc_resolved_address* resolved_addr, int type, int protocol,
-    grpc_dualstack_mode* dsmode, int* newfd) {
+    const grpc_resolved_address *resolved_addr, int type, int protocol,
+    grpc_dualstack_mode *dsmode, int *newfd) {
   return grpc_create_dualstack_socket_using_factory(
       nullptr, resolved_addr, type, protocol, dsmode, newfd);
 }
 
-static int create_socket(grpc_socket_factory* factory, int domain, int type,
+static int create_socket(grpc_socket_factory *factory, int domain, int type,
                          int protocol) {
   return (factory != nullptr)
              ? grpc_socket_factory_socket(factory, domain, type, protocol)
@@ -463,10 +463,10 @@ static int create_socket(grpc_socket_factory* factory, int domain, int type,
 }
 
 grpc_error_handle grpc_create_dualstack_socket_using_factory(
-    grpc_socket_factory* factory, const grpc_resolved_address* resolved_addr,
-    int type, int protocol, grpc_dualstack_mode* dsmode, int* newfd) {
-  const grpc_sockaddr* addr =
-      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
+    grpc_socket_factory *factory, const grpc_resolved_address *resolved_addr,
+    int type, int protocol, grpc_dualstack_mode *dsmode, int *newfd) {
+  const grpc_sockaddr *addr =
+      reinterpret_cast<const grpc_sockaddr *>(resolved_addr->addr);
   int family = addr->sa_family;
   if (family == AF_INET6) {
     if (grpc_ipv6_loopback_available()) {
@@ -504,11 +504,11 @@ uint32_t grpc_htonl(uint32_t hostlong) { return htonl(hostlong); }
 
 uint32_t grpc_ntohl(uint32_t netlong) { return ntohl(netlong); }
 
-int grpc_inet_pton(int af, const char* src, void* dst) {
+int grpc_inet_pton(int af, const char *src, void *dst) {
   return inet_pton(af, src, dst);
 }
 
-const char* grpc_inet_ntop(int af, const void* src, char* dst, size_t size) {
+const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size) {
   GPR_ASSERT(size <= (socklen_t)-1);
   return inet_ntop(af, src, dst, static_cast<socklen_t>(size));
 }

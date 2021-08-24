@@ -39,7 +39,7 @@ class Foo : public Orphanable {
 };
 
 TEST(Orphanable, Basic) {
-  Foo* foo = new Foo();
+  Foo *foo = new Foo();
   foo->Orphan();
 }
 
@@ -108,7 +108,7 @@ TEST(OrphanablePtr, InternallyRefCountedWithTracing) {
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

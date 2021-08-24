@@ -57,51 +57,51 @@ class ServerAddress {
     virtual std::unique_ptr<AttributeInterface> Copy() const = 0;
 
     // Compares this attribute with another.
-    virtual int Cmp(const AttributeInterface* other) const = 0;
+    virtual int Cmp(const AttributeInterface *other) const = 0;
 
     // Returns a human-readable representation of the attribute.
     virtual std::string ToString() const = 0;
   };
 
   // Takes ownership of args.
-  ServerAddress(const grpc_resolved_address& address, grpc_channel_args* args,
-                std::map<const char*, std::unique_ptr<AttributeInterface>>
+  ServerAddress(const grpc_resolved_address &address, grpc_channel_args *args,
+                std::map<const char *, std::unique_ptr<AttributeInterface>>
                     attributes = {});
-  ServerAddress(const void* address, size_t address_len,
-                grpc_channel_args* args,
-                std::map<const char*, std::unique_ptr<AttributeInterface>>
+  ServerAddress(const void *address, size_t address_len,
+                grpc_channel_args *args,
+                std::map<const char *, std::unique_ptr<AttributeInterface>>
                     attributes = {});
 
   ~ServerAddress() { grpc_channel_args_destroy(args_); }
 
   // Copyable.
-  ServerAddress(const ServerAddress& other);
-  ServerAddress& operator=(const ServerAddress& other);
+  ServerAddress(const ServerAddress &other);
+  ServerAddress &operator=(const ServerAddress &other);
 
   // Movable.
-  ServerAddress(ServerAddress&& other) noexcept;
-  ServerAddress& operator=(ServerAddress&& other) noexcept;
+  ServerAddress(ServerAddress &&other) noexcept;
+  ServerAddress &operator=(ServerAddress &&other) noexcept;
 
-  bool operator==(const ServerAddress& other) const { return Cmp(other) == 0; }
+  bool operator==(const ServerAddress &other) const { return Cmp(other) == 0; }
 
-  int Cmp(const ServerAddress& other) const;
+  int Cmp(const ServerAddress &other) const;
 
-  const grpc_resolved_address& address() const { return address_; }
-  const grpc_channel_args* args() const { return args_; }
+  const grpc_resolved_address &address() const { return address_; }
+  const grpc_channel_args *args() const { return args_; }
 
-  const AttributeInterface* GetAttribute(const char* key) const;
+  const AttributeInterface *GetAttribute(const char *key) const;
 
   // Returns a copy of the address with a modified attribute.
   // If the new value is null, the attribute is removed.
-  ServerAddress WithAttribute(const char* key,
+  ServerAddress WithAttribute(const char *key,
                               std::unique_ptr<AttributeInterface> value) const;
 
   std::string ToString() const;
 
  private:
   grpc_resolved_address address_;
-  grpc_channel_args* args_;
-  std::map<const char*, std::unique_ptr<AttributeInterface>> attributes_;
+  grpc_channel_args *args_;
+  std::map<const char *, std::unique_ptr<AttributeInterface>> attributes_;
 };
 
 //
@@ -115,7 +115,7 @@ typedef absl::InlinedVector<ServerAddress, 1> ServerAddressList;
 //
 class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
  public:
-  static const char* kServerAddressWeightAttributeKey;
+  static const char *kServerAddressWeightAttributeKey;
 
   explicit ServerAddressWeightAttribute(uint32_t weight) : weight_(weight) {}
 
@@ -125,9 +125,9 @@ class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
     return absl::make_unique<ServerAddressWeightAttribute>(weight_);
   }
 
-  int Cmp(const AttributeInterface* other) const override {
-    const auto* other_locality_attr =
-        static_cast<const ServerAddressWeightAttribute*>(other);
+  int Cmp(const AttributeInterface *other) const override {
+    const auto *other_locality_attr =
+        static_cast<const ServerAddressWeightAttribute *>(other);
     return GPR_ICMP(weight_, other_locality_attr->weight_);
   }
 

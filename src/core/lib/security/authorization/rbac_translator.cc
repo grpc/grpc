@@ -27,7 +27,7 @@ namespace grpc_core {
 namespace {
 
 absl::string_view GetMatcherType(absl::string_view value,
-                                 StringMatcher::Type* type) {
+                                 StringMatcher::Type *type) {
   if (value == "*") {
     *type = StringMatcher::Type::kPrefix;
     return "";
@@ -56,10 +56,10 @@ absl::StatusOr<HeaderMatcher> GetHeaderMatcher(absl::string_view name,
                                matcher);
 }
 
-absl::StatusOr<Rbac::Principal> ParsePrincipalsArray(const Json& json) {
+absl::StatusOr<Rbac::Principal> ParsePrincipalsArray(const Json &json) {
   std::vector<std::unique_ptr<Rbac::Principal>> principal_names;
   for (size_t i = 0; i < json.array_value().size(); ++i) {
-    const Json& child = json.array_value().at(i);
+    const Json &child = json.array_value().at(i);
     if (child.type() != Json::Type::STRING) {
       return absl::InvalidArgumentError(
           absl::StrCat("\"principals\" ", i, ": is not a string."));
@@ -78,7 +78,7 @@ absl::StatusOr<Rbac::Principal> ParsePrincipalsArray(const Json& json) {
                          std::move(principal_names));
 }
 
-absl::StatusOr<Rbac::Principal> ParsePeer(const Json& json) {
+absl::StatusOr<Rbac::Principal> ParsePeer(const Json &json) {
   std::vector<std::unique_ptr<Rbac::Principal>> peer;
   auto it = json.object_value().find("principals");
   if (it != json.object_value().end()) {
@@ -99,13 +99,13 @@ absl::StatusOr<Rbac::Principal> ParsePeer(const Json& json) {
 }
 
 absl::StatusOr<Rbac::Permission> ParseHeaderValues(
-    const Json& json, absl::string_view header_name) {
+    const Json &json, absl::string_view header_name) {
   if (json.array_value().empty()) {
     return absl::InvalidArgumentError("\"values\" list is empty.");
   }
   std::vector<std::unique_ptr<Rbac::Permission>> values;
   for (size_t i = 0; i < json.array_value().size(); ++i) {
-    const Json& child = json.array_value().at(i);
+    const Json &child = json.array_value().at(i);
     if (child.type() != Json::Type::STRING) {
       return absl::InvalidArgumentError(
           absl::StrCat("\"values\" ", i, ": is not a string."));
@@ -122,7 +122,7 @@ absl::StatusOr<Rbac::Permission> ParseHeaderValues(
   return Rbac::Permission(Rbac::Permission::RuleType::kOr, std::move(values));
 }
 
-absl::StatusOr<Rbac::Permission> ParseHeaders(const Json& json) {
+absl::StatusOr<Rbac::Permission> ParseHeaders(const Json &json) {
   auto it = json.object_value().find("key");
   if (it == json.object_value().end()) {
     return absl::InvalidArgumentError("\"key\" is not present.");
@@ -148,10 +148,10 @@ absl::StatusOr<Rbac::Permission> ParseHeaders(const Json& json) {
   return ParseHeaderValues(it->second, header_name);
 }
 
-absl::StatusOr<Rbac::Permission> ParseHeadersArray(const Json& json) {
+absl::StatusOr<Rbac::Permission> ParseHeadersArray(const Json &json) {
   std::vector<std::unique_ptr<Rbac::Permission>> headers;
   for (size_t i = 0; i < json.array_value().size(); ++i) {
-    const Json& child = json.array_value().at(i);
+    const Json &child = json.array_value().at(i);
     if (child.type() != Json::Type::OBJECT) {
       return absl::InvalidArgumentError(
           absl::StrCat("\"headers\" ", i, ": is not an object."));
@@ -168,10 +168,10 @@ absl::StatusOr<Rbac::Permission> ParseHeadersArray(const Json& json) {
   return Rbac::Permission(Rbac::Permission::RuleType::kAnd, std::move(headers));
 }
 
-absl::StatusOr<Rbac::Permission> ParsePathsArray(const Json& json) {
+absl::StatusOr<Rbac::Permission> ParsePathsArray(const Json &json) {
   std::vector<std::unique_ptr<Rbac::Permission>> paths;
   for (size_t i = 0; i < json.array_value().size(); ++i) {
-    const Json& child = json.array_value().at(i);
+    const Json &child = json.array_value().at(i);
     if (child.type() != Json::Type::STRING) {
       return absl::InvalidArgumentError(
           absl::StrCat("\"paths\" ", i, ": is not a string."));
@@ -188,7 +188,7 @@ absl::StatusOr<Rbac::Permission> ParsePathsArray(const Json& json) {
   return Rbac::Permission(Rbac::Permission::RuleType::kOr, std::move(paths));
 }
 
-absl::StatusOr<Rbac::Permission> ParseRequest(const Json& json) {
+absl::StatusOr<Rbac::Permission> ParseRequest(const Json &json) {
   std::vector<std::unique_ptr<Rbac::Permission>> request;
   auto it = json.object_value().find("paths");
   if (it != json.object_value().end()) {
@@ -220,7 +220,7 @@ absl::StatusOr<Rbac::Permission> ParseRequest(const Json& json) {
   return Rbac::Permission(Rbac::Permission::RuleType::kAnd, std::move(request));
 }
 
-absl::StatusOr<Rbac::Policy> ParseRules(const Json& json) {
+absl::StatusOr<Rbac::Policy> ParseRules(const Json &json) {
   Rbac::Principal principals;
   auto it = json.object_value().find("source");
   if (it != json.object_value().end()) {
@@ -249,10 +249,10 @@ absl::StatusOr<Rbac::Policy> ParseRules(const Json& json) {
 }
 
 absl::StatusOr<std::map<std::string, Rbac::Policy>> ParseRulesArray(
-    const Json& json, absl::string_view name) {
+    const Json &json, absl::string_view name) {
   std::map<std::string, Rbac::Policy> policies;
   for (size_t i = 0; i < json.array_value().size(); ++i) {
-    const Json& child = json.array_value().at(i);
+    const Json &child = json.array_value().at(i);
     if (child.type() != Json::Type::OBJECT) {
       return absl::InvalidArgumentError(
           absl::StrCat("rules ", i, ": is not an object."));
@@ -279,14 +279,14 @@ absl::StatusOr<std::map<std::string, Rbac::Policy>> ParseRulesArray(
   return std::move(policies);
 }
 
-absl::StatusOr<Rbac> ParseDenyRulesArray(const Json& json,
+absl::StatusOr<Rbac> ParseDenyRulesArray(const Json &json,
                                          absl::string_view name) {
   auto policies_or = ParseRulesArray(json, name);
   if (!policies_or.ok()) return policies_or.status();
   return Rbac(Rbac::Action::kDeny, std::move(policies_or.value()));
 }
 
-absl::StatusOr<Rbac> ParseAllowRulesArray(const Json& json,
+absl::StatusOr<Rbac> ParseAllowRulesArray(const Json &json,
                                           absl::string_view name) {
   auto policies_or = ParseRulesArray(json, name);
   if (!policies_or.ok()) return policies_or.status();

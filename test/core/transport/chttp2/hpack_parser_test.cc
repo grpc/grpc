@@ -30,12 +30,12 @@
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
 
-using MDVec = std::vector<std::pair<const char*, const char*>>;
+using MDVec = std::vector<std::pair<const char *, const char *>>;
 
 struct TestChecker {
-  MDVec* expect;
+  MDVec *expect;
 
-  explicit TestChecker(MDVec* expect) : expect(expect) {}
+  explicit TestChecker(MDVec *expect) : expect(expect) {}
 
   grpc_error_handle operator()(grpc_mdelem md) {
     GPR_ASSERT(!expect->empty());
@@ -48,11 +48,11 @@ struct TestChecker {
   }
 };
 
-static void test_vector(grpc_core::HPackParser* parser,
-                        grpc_slice_split_mode mode, const char* hexstring,
+static void test_vector(grpc_core::HPackParser *parser,
+                        grpc_slice_split_mode mode, const char *hexstring,
                         MDVec expect) {
   grpc_slice input = parse_hexstring(hexstring);
-  grpc_slice* slices;
+  grpc_slice *slices;
   size_t nslices;
   size_t i;
 
@@ -252,7 +252,7 @@ static void test_vectors(grpc_slice_split_mode mode) {
   }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_vectors(GRPC_SLICE_SPLIT_MERGE_ALL);

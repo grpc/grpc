@@ -34,21 +34,21 @@ namespace testing {
 /// test mode rather than letting it follow the normal paths.
 class DefaultReactorTestPeer {
  public:
-  explicit DefaultReactorTestPeer(CallbackServerContext* ctx)
+  explicit DefaultReactorTestPeer(CallbackServerContext *ctx)
       : DefaultReactorTestPeer(ctx, [](Status) {}) {}
-  DefaultReactorTestPeer(CallbackServerContext* ctx,
+  DefaultReactorTestPeer(CallbackServerContext *ctx,
                          std::function<void(Status)> finish_func)
       : ctx_(ctx) {
     ctx->SetupTestDefaultReactor(std::move(finish_func));
   }
-  ServerUnaryReactor* reactor() const {
-    return reinterpret_cast<ServerUnaryReactor*>(&ctx_->default_reactor_);
+  ServerUnaryReactor *reactor() const {
+    return reinterpret_cast<ServerUnaryReactor *>(&ctx_->default_reactor_);
   }
   bool test_status_set() const { return ctx_->test_status_set(); }
   Status test_status() const { return ctx_->test_status(); }
 
  private:
-  CallbackServerContext* const ctx_;  // not owned
+  CallbackServerContext *const ctx_;  // not owned
 };
 
 }  // namespace testing

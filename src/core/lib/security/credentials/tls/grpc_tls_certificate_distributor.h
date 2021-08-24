@@ -78,12 +78,12 @@ struct grpc_tls_certificate_distributor
   // @param pem_root_certs The content of root certificates.
   // @param pem_key_cert_pairs The content of identity key-cert pairs.
   void SetKeyMaterials(
-      const std::string& cert_name, absl::optional<std::string> pem_root_certs,
+      const std::string &cert_name, absl::optional<std::string> pem_root_certs,
       absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs);
 
-  bool HasRootCerts(const std::string& root_cert_name);
+  bool HasRootCerts(const std::string &root_cert_name);
 
-  bool HasKeyCertPairs(const std::string& identity_cert_name);
+  bool HasKeyCertPairs(const std::string &identity_cert_name);
 
   // Propagates the error that the caller (e.g. Producer) encounters to all the
   // watchers watching a particular certificate name.
@@ -94,7 +94,7 @@ struct grpc_tls_certificate_distributor
   // root certs.
   // @param identity_cert_error The error that the caller encounters when
   // reloading identity certs.
-  void SetErrorForCert(const std::string& cert_name,
+  void SetErrorForCert(const std::string &cert_name,
                        absl::optional<grpc_error_handle> root_cert_error,
                        absl::optional<grpc_error_handle> identity_cert_error);
 
@@ -148,7 +148,7 @@ struct grpc_tls_certificate_distributor
   // Cancels a watcher.
   //
   // @param watcher The watcher being cancelled.
-  void CancelTlsCertificatesWatch(TlsCertificatesWatcherInterface* watcher);
+  void CancelTlsCertificatesWatch(TlsCertificatesWatcherInterface *watcher);
 
  private:
   // Contains the information about each watcher.
@@ -175,11 +175,11 @@ struct grpc_tls_certificate_distributor
     // The set of watchers watching root certificates.
     // This is mainly used for quickly looking up the affected watchers while
     // performing a credential reloading.
-    std::set<TlsCertificatesWatcherInterface*> root_cert_watchers;
+    std::set<TlsCertificatesWatcherInterface *> root_cert_watchers;
     // The set of watchers watching identity certificates. This is mainly used
     // for quickly looking up the affected watchers while performing a
     // credential reloading.
-    std::set<TlsCertificatesWatcherInterface*> identity_cert_watchers;
+    std::set<TlsCertificatesWatcherInterface *> identity_cert_watchers;
 
     ~CertificateInfo() {
       GRPC_ERROR_UNREF(root_cert_error);
@@ -201,7 +201,7 @@ struct grpc_tls_certificate_distributor
   // functions.
   grpc_core::Mutex callback_mu_;
   // Stores information about each watcher.
-  std::map<TlsCertificatesWatcherInterface*, WatcherInfo> watchers_
+  std::map<TlsCertificatesWatcherInterface *, WatcherInfo> watchers_
       ABSL_GUARDED_BY(mu_);
   // The callback to notify the caller, e.g. the Producer, that the watch status
   // is changed.

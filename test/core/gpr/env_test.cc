@@ -29,9 +29,9 @@
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)
 
 static void test_setenv_getenv(void) {
-  const char* name = "FOO";
-  const char* value = "BAR";
-  char* retrieved_value;
+  const char *name = "FOO";
+  const char *value = "BAR";
+  char *retrieved_value;
 
   LOG_TEST_NAME("test_setenv_getenv");
 
@@ -43,9 +43,9 @@ static void test_setenv_getenv(void) {
 }
 
 static void test_unsetenv(void) {
-  const char* name = "FOO";
-  const char* value = "BAR";
-  char* retrieved_value;
+  const char *name = "FOO";
+  const char *value = "BAR";
+  char *retrieved_value;
 
   LOG_TEST_NAME("test_unsetenv");
 
@@ -55,7 +55,7 @@ static void test_unsetenv(void) {
   GPR_ASSERT(retrieved_value == nullptr);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   test_setenv_getenv();
   test_unsetenv();

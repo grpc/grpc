@@ -29,7 +29,7 @@
 
 #include <grpc/support/log.h>
 
-uint32_t grpc_if_nametoindex(char* name) {
+uint32_t grpc_if_nametoindex(char *name) {
   uint32_t out = if_nametoindex(name);
   if (out == 0) {
     gpr_log(GPR_DEBUG, "if_nametoindex failed for name %s. errno %d", name,

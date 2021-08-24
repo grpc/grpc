@@ -34,7 +34,7 @@ namespace grpc_core {
 
 class DefaultDeleteChar {
  public:
-  void operator()(char* p) {
+  void operator()(char *p) {
     if (p == nullptr) return;
     gpr_free(p);
   }

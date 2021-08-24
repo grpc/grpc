@@ -56,8 +56,8 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   TestServiceImpl() {}
 
-  Status Echo(ServerContext* /*context*/, const EchoRequest* request,
-              EchoResponse* response) override {
+  Status Echo(ServerContext * /*context*/, const EchoRequest *request,
+              EchoResponse *response) override {
     response->set_message(request->message());
     return Status::OK;
   }
@@ -77,19 +77,19 @@ class CommonStressTest {
   virtual void TearDown() = 0;
   virtual void ResetStub() = 0;
   virtual bool AllowExhaustion() = 0;
-  grpc::testing::EchoTestService::Stub* GetStub() { return stub_.get(); }
+  grpc::testing::EchoTestService::Stub *GetStub() { return stub_.get(); }
 
  protected:
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
 
-  virtual void SetUpStart(ServerBuilder* builder, Service* service) = 0;
-  void SetUpStartCommon(ServerBuilder* builder, Service* service) {
+  virtual void SetUpStart(ServerBuilder *builder, Service *service) = 0;
+  void SetUpStartCommon(ServerBuilder *builder, Service *service) {
     builder->RegisterService(service);
     builder->SetMaxMessageSize(
         kMaxMessageSize_);  // For testing max message size.
   }
-  void SetUpEnd(ServerBuilder* builder) { server_ = builder->BuildAndStart(); }
+  void SetUpEnd(ServerBuilder *builder) { server_ = builder->BuildAndStart(); }
   void TearDownStart() { server_->Shutdown(); }
   void TearDownEnd() {}
 
@@ -108,7 +108,7 @@ class CommonStressTestInsecure : public CommonStressTest<Service> {
   bool AllowExhaustion() override { return false; }
 
  protected:
-  void SetUpStart(ServerBuilder* builder, Service* service) override {
+  void SetUpStart(ServerBuilder *builder, Service *service) override {
     int port = grpc_pick_unused_port_or_die();
     this->server_address_ << "localhost:" << port;
     // Setup server
@@ -132,7 +132,7 @@ class CommonStressTestInproc : public CommonStressTest<Service> {
   bool AllowExhaustion() override { return allow_resource_exhaustion; }
 
  protected:
-  void SetUpStart(ServerBuilder* builder, Service* service) override {
+  void SetUpStart(ServerBuilder *builder, Service *service) override {
     this->SetUpStartCommon(builder, service);
   }
 };
@@ -204,7 +204,7 @@ class CommonStressTestAsyncServer : public BaseClass {
       server_threads_[i].join();
     }
 
-    void* ignored_tag;
+    void *ignored_tag;
     bool ignored_ok;
     while (cq_->Next(&ignored_tag, &ignored_ok)) {
     }
@@ -213,7 +213,7 @@ class CommonStressTestAsyncServer : public BaseClass {
 
  private:
   void ProcessRpcs() {
-    void* tag;
+    void *tag;
     bool ok;
     while (cq_->Next(&tag, &ok)) {
       if (ok) {
@@ -245,7 +245,7 @@ class CommonStressTestAsyncServer : public BaseClass {
       service_.RequestEcho(contexts_[i].srv_ctx.get(),
                            &contexts_[i].recv_request,
                            contexts_[i].response_writer.get(), cq_.get(),
-                           cq_.get(), reinterpret_cast<void*>(i));
+                           cq_.get(), reinterpret_cast<void *>(i));
     }
   }
   struct Context {
@@ -274,8 +274,8 @@ class End2endTest : public ::testing::Test {
   Common common_;
 };
 
-static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
-                    bool allow_exhaustion, gpr_atm* errors) {
+static void SendRpc(grpc::testing::EchoTestService::Stub *stub, int num_rpcs,
+                    bool allow_exhaustion, gpr_atm *errors) {
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
@@ -339,7 +339,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
 
   void SetUp() override { common_.SetUp(); }
   void TearDown() override {
-    void* ignored_tag;
+    void *ignored_tag;
     bool ignored_ok;
     while (cq_.Next(&ignored_tag, &ignored_ok)) {
     }
@@ -364,7 +364,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
 
   void AsyncSendRpc(int num_rpcs) {
     for (int i = 0; i < num_rpcs; ++i) {
-      AsyncClientCall* call = new AsyncClientCall;
+      AsyncClientCall *call = new AsyncClientCall;
       EchoRequest request;
       request.set_message("Hello: " + std::to_string(i));
       call->response_reader =
@@ -378,10 +378,10 @@ class AsyncClientEnd2endTest : public ::testing::Test {
 
   void AsyncCompleteRpc() {
     while (true) {
-      void* got_tag;
+      void *got_tag;
       bool ok = false;
       if (!cq_.Next(&got_tag, &ok)) break;
-      AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
+      AsyncClientCall *call = static_cast<AsyncClientCall *>(got_tag);
       if (!ok) {
         gpr_log(GPR_DEBUG, "Error: %d", call->status.error_code());
       }
@@ -433,7 +433,7 @@ TYPED_TEST(AsyncClientEnd2endTest, ThreadStress) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

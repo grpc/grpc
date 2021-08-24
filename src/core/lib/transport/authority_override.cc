@@ -25,14 +25,14 @@
 
 namespace grpc_core {
 
-grpc_arg CreateAuthorityOverrideChannelArg(const char* authority) {
+grpc_arg CreateAuthorityOverrideChannelArg(const char *authority) {
   return grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_AUTHORITY_OVERRIDE),
-      const_cast<char*>(authority));
+      const_cast<char *>(GRPC_ARG_AUTHORITY_OVERRIDE),
+      const_cast<char *>(authority));
 }
 
-absl::string_view FindAuthorityOverrideInArgs(const grpc_channel_args* args) {
-  const char* found =
+absl::string_view FindAuthorityOverrideInArgs(const grpc_channel_args *args) {
+  const char *found =
       grpc_channel_args_find_string(args, GRPC_ARG_AUTHORITY_OVERRIDE);
   return found == nullptr ? "" : found;
 }

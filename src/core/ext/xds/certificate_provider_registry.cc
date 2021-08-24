@@ -38,7 +38,7 @@ class RegistryState {
     factories_.push_back(std::move(factory));
   }
 
-  CertificateProviderFactory* LookupCertificateProviderFactory(
+  CertificateProviderFactory *LookupCertificateProviderFactory(
       absl::string_view name) const {
     for (size_t i = 0; i < factories_.size(); ++i) {
       if (name == factories_[i]->name()) {
@@ -58,7 +58,7 @@ class RegistryState {
       factories_;
 };
 
-static RegistryState* g_state = nullptr;
+static RegistryState *g_state = nullptr;
 
 }  // namespace
 
@@ -66,7 +66,7 @@ static RegistryState* g_state = nullptr;
 // CertificateProviderRegistry
 //
 
-CertificateProviderFactory*
+CertificateProviderFactory *
 CertificateProviderRegistry::LookupCertificateProviderFactory(
     absl::string_view name) {
   GPR_ASSERT(g_state != nullptr);

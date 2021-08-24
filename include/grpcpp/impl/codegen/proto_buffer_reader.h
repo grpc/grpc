@@ -35,7 +35,7 @@
 
 namespace grpc {
 
-extern CoreCodegenInterface* g_core_codegen_interface;
+extern CoreCodegenInterface *g_core_codegen_interface;
 
 /// This is a specialization of the protobuf class ZeroCopyInputStream
 /// The principle is to get one chunk of data at a time from the proto layer,
@@ -47,7 +47,7 @@ class ProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
  public:
   /// Constructs buffer reader from \a buffer. Will set \a status() to non ok
   /// if \a buffer is invalid (the internal buffer has not been initialized).
-  explicit ProtoBufferReader(ByteBuffer* buffer)
+  explicit ProtoBufferReader(ByteBuffer *buffer)
       : byte_count_(0), backup_count_(0), status_() {
     /// Implemented through a grpc_byte_buffer_reader which iterates
     /// over the slices that make up a byte buffer
@@ -67,7 +67,7 @@ class ProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
 
   /// Give the proto library a chunk of data from the stream. The caller
   /// may safely read from data[0, size - 1].
-  bool Next(const void** data, int* size) override {
+  bool Next(const void **data, int *size) override {
     if (!status_.ok()) {
       return false;
     }
@@ -88,7 +88,7 @@ class ProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
     *data = GRPC_SLICE_START_PTR(*slice_);
     // On win x64, int is only 32bit
     GPR_CODEGEN_ASSERT(GRPC_SLICE_LENGTH(*slice_) <= INT_MAX);
-    byte_count_ += * size = static_cast<int>(GRPC_SLICE_LENGTH(*slice_));
+    byte_count_ += *size = static_cast<int>(GRPC_SLICE_LENGTH(*slice_));
     return true;
   }
 
@@ -106,7 +106,7 @@ class ProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
   /// The proto library calls this to skip over \a count bytes. Implement this
   /// using Next and BackUp combined.
   bool Skip(int count) override {
-    const void* data;
+    const void *data;
     int size;
     while (Next(&data, &size)) {
       if (size >= count) {
@@ -131,16 +131,16 @@ class ProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
   void set_byte_count(int64_t byte_count) { byte_count_ = byte_count; }
   int64_t backup_count() { return backup_count_; }
   void set_backup_count(int64_t backup_count) { backup_count_ = backup_count; }
-  grpc_byte_buffer_reader* reader() { return &reader_; }
-  grpc_slice* slice() { return slice_; }
-  grpc_slice** mutable_slice_ptr() { return &slice_; }
+  grpc_byte_buffer_reader *reader() { return &reader_; }
+  grpc_slice *slice() { return slice_; }
+  grpc_slice **mutable_slice_ptr() { return &slice_; }
 
  private:
   int64_t byte_count_;              ///< total bytes read since object creation
   int64_t backup_count_;            ///< how far backed up in the stream we are
   grpc_byte_buffer_reader reader_;  ///< internal object to read \a grpc_slice
                                     ///< from the \a grpc_byte_buffer
-  grpc_slice* slice_;               ///< current slice passed back to the caller
+  grpc_slice *slice_;               ///< current slice passed back to the caller
   Status status_;                   ///< status of the entire object
 };
 

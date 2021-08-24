@@ -34,11 +34,11 @@ using grpc_core::MultiProducerSingleConsumerQueue;
 typedef struct test_node {
   MultiProducerSingleConsumerQueue::Node node;
   size_t i;
-  size_t* ctr;
+  size_t *ctr;
 } test_node;
 
-static test_node* new_node(size_t i, size_t* ctr) {
-  test_node* n = new test_node();
+static test_node *new_node(size_t i, size_t *ctr) {
+  test_node *n = new test_node();
   n->i = i;
   n->ctr = ctr;
   return n;
@@ -51,7 +51,7 @@ static void test_serial(void) {
     q.Push(&new_node(i, nullptr)->node);
   }
   for (size_t i = 0; i < 10000000; i++) {
-    test_node* n = reinterpret_cast<test_node*>(q.Pop());
+    test_node *n = reinterpret_cast<test_node *>(q.Pop());
     GPR_ASSERT(n);
     GPR_ASSERT(n->i == i);
     delete n;
@@ -60,14 +60,14 @@ static void test_serial(void) {
 
 typedef struct {
   size_t ctr;
-  MultiProducerSingleConsumerQueue* q;
-  gpr_event* start;
+  MultiProducerSingleConsumerQueue *q;
+  gpr_event *start;
 } thd_args;
 
 #define THREAD_ITERATIONS 10000
 
-static void test_thread(void* args) {
-  thd_args* a = static_cast<thd_args*>(args);
+static void test_thread(void *args) {
+  thd_args *a = static_cast<thd_args *>(args);
   gpr_event_wait(a->start, gpr_inf_future(GPR_CLOCK_REALTIME));
   for (size_t i = 1; i <= THREAD_ITERATIONS; i++) {
     a->q->Push(&new_node(i, &a->ctr)->node);
@@ -90,36 +90,36 @@ static void test_mt(void) {
   }
   size_t num_done = 0;
   size_t spins = 0;
-  gpr_event_set(&start, reinterpret_cast<void*>(1));
+  gpr_event_set(&start, reinterpret_cast<void *>(1));
   while (num_done != GPR_ARRAY_SIZE(thds)) {
-    MultiProducerSingleConsumerQueue::Node* n;
+    MultiProducerSingleConsumerQueue::Node *n;
     while ((n = q.Pop()) == nullptr) {
       spins++;
     }
-    test_node* tn = reinterpret_cast<test_node*>(n);
+    test_node *tn = reinterpret_cast<test_node *>(n);
     GPR_ASSERT(*tn->ctr == tn->i - 1);
     *tn->ctr = tn->i;
     if (tn->i == THREAD_ITERATIONS) num_done++;
     delete tn;
   }
   gpr_log(GPR_DEBUG, "spins: %" PRIdPTR, spins);
-  for (auto& th : thds) {
+  for (auto &th : thds) {
     th.Join();
   }
 }
 
 typedef struct {
-  thd_args* ta;
+  thd_args *ta;
   size_t num_thds;
   gpr_mu mu;
   size_t num_done;
   size_t spins;
-  MultiProducerSingleConsumerQueue* q;
-  gpr_event* start;
+  MultiProducerSingleConsumerQueue *q;
+  gpr_event *start;
 } pull_args;
 
-static void pull_thread(void* arg) {
-  pull_args* pa = static_cast<pull_args*>(arg);
+static void pull_thread(void *arg) {
+  pull_args *pa = static_cast<pull_args *>(arg);
   gpr_event_wait(pa->start, gpr_inf_future(GPR_CLOCK_REALTIME));
 
   for (;;) {
@@ -128,11 +128,11 @@ static void pull_thread(void* arg) {
       gpr_mu_unlock(&pa->mu);
       return;
     }
-    MultiProducerSingleConsumerQueue::Node* n;
+    MultiProducerSingleConsumerQueue::Node *n;
     while ((n = pa->q->Pop()) == nullptr) {
       pa->spins++;
     }
-    test_node* tn = reinterpret_cast<test_node*>(n);
+    test_node *tn = reinterpret_cast<test_node *>(n);
     GPR_ASSERT(*tn->ctr == tn->i - 1);
     *tn->ctr = tn->i;
     if (tn->i == THREAD_ITERATIONS) pa->num_done++;
@@ -168,18 +168,18 @@ static void test_mt_multipop(void) {
     pull_thds[i] = grpc_core::Thread("grpc_multipop_pull", pull_thread, &pa);
     pull_thds[i].Start();
   }
-  gpr_event_set(&start, reinterpret_cast<void*>(1));
-  for (auto& pth : pull_thds) {
+  gpr_event_set(&start, reinterpret_cast<void *>(1));
+  for (auto &pth : pull_thds) {
     pth.Join();
   }
   gpr_log(GPR_DEBUG, "spins: %" PRIdPTR, pa.spins);
-  for (auto& th : thds) {
+  for (auto &th : thds) {
     th.Join();
   }
   gpr_mu_destroy(&pa.mu);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   test_serial();
   test_mt();

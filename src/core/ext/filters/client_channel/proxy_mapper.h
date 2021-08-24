@@ -35,18 +35,18 @@ class ProxyMapperInterface {
   /// If no proxy is needed, returns false.
   /// Otherwise, sets \a name_to_resolve, optionally sets \a new_args,
   /// and returns true.
-  virtual bool MapName(const char* server_uri, const grpc_channel_args* args,
-                       char** name_to_resolve,
-                       grpc_channel_args** new_args) = 0;
+  virtual bool MapName(const char *server_uri, const grpc_channel_args *args,
+                       char **name_to_resolve,
+                       grpc_channel_args **new_args) = 0;
 
   /// Determines the proxy address to use to contact \a address.
   /// If no proxy is needed, returns false.
   /// Otherwise, sets \a new_address, optionally sets \a new_args, and
   /// returns true.
-  virtual bool MapAddress(const grpc_resolved_address& address,
-                          const grpc_channel_args* args,
-                          grpc_resolved_address** new_address,
-                          grpc_channel_args** new_args) = 0;
+  virtual bool MapAddress(const grpc_resolved_address &address,
+                          const grpc_channel_args *args,
+                          grpc_resolved_address **new_address,
+                          grpc_channel_args **new_args) = 0;
 };
 
 }  // namespace grpc_core

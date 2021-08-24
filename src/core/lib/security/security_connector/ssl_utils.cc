@@ -42,12 +42,12 @@
 /* -- Constants. -- */
 
 #if defined(GRPC_ROOT_PEM_PATH)
-static const char* installed_roots_path = GRPC_ROOT_PEM_PATH;
+static const char *installed_roots_path = GRPC_ROOT_PEM_PATH;
 #elif defined(INSTALL_PREFIX)
-static const char* installed_roots_path =
+static const char *installed_roots_path =
     INSTALL_PREFIX "/usr/share/grpc/roots.pem";
 #else
-static const char* installed_roots_path = "/usr/share/grpc/roots.pem";
+static const char *installed_roots_path = "/usr/share/grpc/roots.pem";
 #endif
 
 #ifndef TSI_OPENSSL_ALPN_SUPPORT
@@ -65,7 +65,7 @@ void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb) {
 /* -- Cipher suites. -- */
 
 static gpr_once cipher_suites_once = GPR_ONCE_INIT;
-static const char* cipher_suites = nullptr;
+static const char *cipher_suites = nullptr;
 
 // All cipher suites for default are compliant with HTTP2.
 GPR_GLOBAL_CONFIG_DEFINE_STRING(
@@ -87,13 +87,13 @@ static void init_cipher_suites(void) {
 
 /* --- Util --- */
 
-const char* grpc_get_ssl_cipher_suites(void) {
+const char *grpc_get_ssl_cipher_suites(void) {
   gpr_once_init(&cipher_suites_once, init_cipher_suites);
   return cipher_suites;
 }
 
 grpc_security_level grpc_tsi_security_level_string_to_enum(
-    const char* security_level) {
+    const char *security_level) {
   if (strcmp(security_level, "TSI_INTEGRITY_ONLY") == 0) {
     return GRPC_INTEGRITY_ONLY;
   } else if (strcmp(security_level, "TSI_PRIVACY_AND_INTEGRITY") == 0) {
@@ -102,7 +102,7 @@ grpc_security_level grpc_tsi_security_level_string_to_enum(
   return GRPC_SECURITY_NONE;
 }
 
-const char* grpc_security_level_to_string(grpc_security_level security_level) {
+const char *grpc_security_level_to_string(grpc_security_level security_level) {
   if (security_level == GRPC_PRIVACY_AND_INTEGRITY) {
     return "GRPC_PRIVACY_AND_INTEGRITY";
   } else if (security_level == GRPC_INTEGRITY_ONLY) {
@@ -152,10 +152,10 @@ tsi_tls_version grpc_get_tsi_tls_version(grpc_tls_version tls_version) {
   }
 }
 
-grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer) {
+grpc_error_handle grpc_ssl_check_alpn(const tsi_peer *peer) {
 #if TSI_OPENSSL_ALPN_SUPPORT
   /* Check the ALPN if ALPN is supported. */
-  const tsi_peer_property* p =
+  const tsi_peer_property *p =
       tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
   if (p == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -170,7 +170,7 @@ grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer) {
 }
 
 grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
-                                           const tsi_peer* peer) {
+                                           const tsi_peer *peer) {
   /* Check the peer name if specified. */
   if (!peer_name.empty() && !grpc_ssl_host_matches_name(peer, peer_name)) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -183,8 +183,8 @@ grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
 bool grpc_ssl_check_call_host(absl::string_view host,
                               absl::string_view target_name,
                               absl::string_view overridden_target_name,
-                              grpc_auth_context* auth_context,
-                              grpc_error_handle* error) {
+                              grpc_auth_context *auth_context,
+                              grpc_error_handle *error) {
   grpc_security_status status = GRPC_SECURITY_ERROR;
   tsi_peer peer = grpc_shallow_peer_from_ssl_auth_context(auth_context);
   if (grpc_ssl_host_matches_name(&peer, host)) status = GRPC_SECURITY_OK;
@@ -202,18 +202,18 @@ bool grpc_ssl_check_call_host(absl::string_view host,
   return true;
 }
 
-const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
+const char **grpc_fill_alpn_protocol_strings(size_t *num_alpn_protocols) {
   GPR_ASSERT(num_alpn_protocols != nullptr);
   *num_alpn_protocols = grpc_chttp2_num_alpn_versions();
-  const char** alpn_protocol_strings = static_cast<const char**>(
-      gpr_malloc(sizeof(const char*) * (*num_alpn_protocols)));
+  const char **alpn_protocol_strings = static_cast<const char **>(
+      gpr_malloc(sizeof(const char *) * (*num_alpn_protocols)));
   for (size_t i = 0; i < *num_alpn_protocols; i++) {
     alpn_protocol_strings[i] = grpc_chttp2_get_alpn_version_index(i);
   }
   return alpn_protocol_strings;
 }
 
-int grpc_ssl_host_matches_name(const tsi_peer* peer,
+int grpc_ssl_host_matches_name(const tsi_peer *peer,
                                absl::string_view peer_name) {
   absl::string_view allocated_name;
   absl::string_view ignored_port;
@@ -259,9 +259,9 @@ static bool IsSpiffeId(absl::string_view uri) {
 }
 
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
-    const tsi_peer* peer, const char* transport_security_type) {
+    const tsi_peer *peer, const char *transport_security_type) {
   size_t i;
-  const char* peer_identity_property_name = nullptr;
+  const char *peer_identity_property_name = nullptr;
 
   /* The caller has checked the certificate type property. */
   GPR_ASSERT(peer->property_count >= 1);
@@ -270,12 +270,12 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   grpc_auth_context_add_cstring_property(
       ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       transport_security_type);
-  const char* spiffe_data = nullptr;
+  const char *spiffe_data = nullptr;
   size_t spiffe_length = 0;
   int uri_count = 0;
   bool has_spiffe_id = false;
   for (i = 0; i < peer->property_count; i++) {
-    const tsi_peer_property* prop = &peer->properties[i];
+    const tsi_peer_property *prop = &peer->properties[i];
     if (prop->name == nullptr) continue;
     if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
       /* If there is no subject alt name, have the CN as the identity. */
@@ -345,20 +345,20 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   return ctx;
 }
 
-static void add_shallow_auth_property_to_peer(tsi_peer* peer,
-                                              const grpc_auth_property* prop,
-                                              const char* tsi_prop_name) {
-  tsi_peer_property* tsi_prop = &peer->properties[peer->property_count++];
-  tsi_prop->name = const_cast<char*>(tsi_prop_name);
+static void add_shallow_auth_property_to_peer(tsi_peer *peer,
+                                              const grpc_auth_property *prop,
+                                              const char *tsi_prop_name) {
+  tsi_peer_property *tsi_prop = &peer->properties[peer->property_count++];
+  tsi_prop->name = const_cast<char *>(tsi_prop_name);
   tsi_prop->value.data = prop->value;
   tsi_prop->value.length = prop->value_length;
 }
 
 tsi_peer grpc_shallow_peer_from_ssl_auth_context(
-    const grpc_auth_context* auth_context) {
+    const grpc_auth_context *auth_context) {
   size_t max_num_props = 0;
   grpc_auth_property_iterator it;
-  const grpc_auth_property* prop;
+  const grpc_auth_property *prop;
   tsi_peer peer;
   memset(&peer, 0, sizeof(peer));
 
@@ -366,7 +366,7 @@ tsi_peer grpc_shallow_peer_from_ssl_auth_context(
   while (grpc_auth_property_iterator_next(&it) != nullptr) max_num_props++;
 
   if (max_num_props > 0) {
-    peer.properties = static_cast<tsi_peer_property*>(
+    peer.properties = static_cast<tsi_peer_property *>(
         gpr_malloc(max_num_props * sizeof(tsi_peer_property)));
     it = grpc_auth_context_property_iterator(auth_context);
     while ((prop = grpc_auth_property_iterator_next(&it)) != nullptr) {
@@ -408,17 +408,17 @@ tsi_peer grpc_shallow_peer_from_ssl_auth_context(
   return peer;
 }
 
-void grpc_shallow_peer_destruct(tsi_peer* peer) {
+void grpc_shallow_peer_destruct(tsi_peer *peer) {
   if (peer->properties != nullptr) gpr_free(peer->properties);
 }
 
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
-    tsi_ssl_pem_key_cert_pair* pem_key_cert_pair, const char* pem_root_certs,
+    tsi_ssl_pem_key_cert_pair *pem_key_cert_pair, const char *pem_root_certs,
     bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
-    tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
-    tsi_ssl_client_handshaker_factory** handshaker_factory) {
-  const char* root_certs;
-  const tsi_ssl_root_certs_store* root_store;
+    tsi_tls_version max_tls_version, tsi_ssl_session_cache *ssl_session_cache,
+    tsi_ssl_client_handshaker_factory **handshaker_factory) {
+  const char *root_certs;
+  const tsi_ssl_root_certs_store *root_store;
   if (pem_root_certs == nullptr) {
     gpr_log(GPR_INFO,
             "No root certificates specified; use ones stored in system default "
@@ -465,13 +465,13 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
 }
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
-    tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
-    const char* pem_root_certs,
+    tsi_ssl_pem_key_cert_pair *pem_key_cert_pairs, size_t num_key_cert_pairs,
+    const char *pem_root_certs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
-    tsi_ssl_server_handshaker_factory** handshaker_factory) {
+    tsi_ssl_server_handshaker_factory **handshaker_factory) {
   size_t num_alpn_protocols = 0;
-  const char** alpn_protocol_strings =
+  const char **alpn_protocol_strings =
       grpc_fill_alpn_protocol_strings(&num_alpn_protocols);
   tsi_ssl_server_handshaker_options options;
   options.pem_key_cert_pairs = pem_key_cert_pairs;
@@ -498,63 +498,63 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
 
 /* --- Ssl cache implementation. --- */
 
-grpc_ssl_session_cache* grpc_ssl_session_cache_create_lru(size_t capacity) {
-  tsi_ssl_session_cache* cache = tsi_ssl_session_cache_create_lru(capacity);
-  return reinterpret_cast<grpc_ssl_session_cache*>(cache);
+grpc_ssl_session_cache *grpc_ssl_session_cache_create_lru(size_t capacity) {
+  tsi_ssl_session_cache *cache = tsi_ssl_session_cache_create_lru(capacity);
+  return reinterpret_cast<grpc_ssl_session_cache *>(cache);
 }
 
-void grpc_ssl_session_cache_destroy(grpc_ssl_session_cache* cache) {
-  tsi_ssl_session_cache* tsi_cache =
-      reinterpret_cast<tsi_ssl_session_cache*>(cache);
+void grpc_ssl_session_cache_destroy(grpc_ssl_session_cache *cache) {
+  tsi_ssl_session_cache *tsi_cache =
+      reinterpret_cast<tsi_ssl_session_cache *>(cache);
   tsi_ssl_session_cache_unref(tsi_cache);
 }
 
-static void* grpc_ssl_session_cache_arg_copy(void* p) {
-  tsi_ssl_session_cache* tsi_cache =
-      reinterpret_cast<tsi_ssl_session_cache*>(p);
+static void *grpc_ssl_session_cache_arg_copy(void *p) {
+  tsi_ssl_session_cache *tsi_cache =
+      reinterpret_cast<tsi_ssl_session_cache *>(p);
   // destroy call below will unref the pointer.
   tsi_ssl_session_cache_ref(tsi_cache);
   return p;
 }
 
-static void grpc_ssl_session_cache_arg_destroy(void* p) {
-  tsi_ssl_session_cache* tsi_cache =
-      reinterpret_cast<tsi_ssl_session_cache*>(p);
+static void grpc_ssl_session_cache_arg_destroy(void *p) {
+  tsi_ssl_session_cache *tsi_cache =
+      reinterpret_cast<tsi_ssl_session_cache *>(p);
   tsi_ssl_session_cache_unref(tsi_cache);
 }
 
-static int grpc_ssl_session_cache_arg_cmp(void* p, void* q) {
+static int grpc_ssl_session_cache_arg_cmp(void *p, void *q) {
   return GPR_ICMP(p, q);
 }
 
 grpc_arg grpc_ssl_session_cache_create_channel_arg(
-    grpc_ssl_session_cache* cache) {
+    grpc_ssl_session_cache *cache) {
   static const grpc_arg_pointer_vtable vtable = {
       grpc_ssl_session_cache_arg_copy,
       grpc_ssl_session_cache_arg_destroy,
       grpc_ssl_session_cache_arg_cmp,
   };
   return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_SSL_SESSION_CACHE_ARG), cache, &vtable);
+      const_cast<char *>(GRPC_SSL_SESSION_CACHE_ARG), cache, &vtable);
 }
 
 /* --- Default SSL root store implementation. --- */
 
 namespace grpc_core {
 
-tsi_ssl_root_certs_store* DefaultSslRootStore::default_root_store_;
+tsi_ssl_root_certs_store *DefaultSslRootStore::default_root_store_;
 grpc_slice DefaultSslRootStore::default_pem_root_certs_;
 
-const tsi_ssl_root_certs_store* DefaultSslRootStore::GetRootStore() {
+const tsi_ssl_root_certs_store *DefaultSslRootStore::GetRootStore() {
   InitRootStore();
   return default_root_store_;
 }
 
-const char* DefaultSslRootStore::GetPemRootCerts() {
+const char *DefaultSslRootStore::GetPemRootCerts() {
   InitRootStore();
   return GRPC_SLICE_IS_EMPTY(default_pem_root_certs_)
              ? nullptr
-             : reinterpret_cast<const char*>
+             : reinterpret_cast<const char *>
                    GRPC_SLICE_START_PTR(default_pem_root_certs_);
 }
 
@@ -572,7 +572,7 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   // Try overridden roots if needed.
   grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
   if (GRPC_SLICE_IS_EMPTY(result) && ssl_roots_override_cb != nullptr) {
-    char* pem_root_certs = nullptr;
+    char *pem_root_certs = nullptr;
     ovrd_res = ssl_roots_override_cb(&pem_root_certs);
     if (ovrd_res == GRPC_SSL_ROOTS_OVERRIDE_OK) {
       GPR_ASSERT(pem_root_certs != nullptr);
@@ -604,7 +604,7 @@ void DefaultSslRootStore::InitRootStoreOnce() {
   default_pem_root_certs_ = ComputePemRootCerts();
   if (!GRPC_SLICE_IS_EMPTY(default_pem_root_certs_)) {
     default_root_store_ =
-        tsi_ssl_root_certs_store_create(reinterpret_cast<const char*>(
+        tsi_ssl_root_certs_store_create(reinterpret_cast<const char *>(
             GRPC_SLICE_START_PTR(default_pem_root_certs_)));
   }
 }

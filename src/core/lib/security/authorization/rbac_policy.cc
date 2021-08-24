@@ -28,10 +28,10 @@ namespace grpc_core {
 Rbac::Rbac(Rbac::Action action, std::map<std::string, Policy> policies)
     : action(action), policies(std::move(policies)) {}
 
-Rbac::Rbac(Rbac&& other) noexcept
+Rbac::Rbac(Rbac &&other) noexcept
     : action(other.action), policies(std::move(other.policies)) {}
 
-Rbac& Rbac::operator=(Rbac&& other) noexcept {
+Rbac &Rbac::operator=(Rbac &&other) noexcept {
   action = other.action;
   policies = std::move(other.policies);
   return *this;
@@ -41,7 +41,7 @@ std::string Rbac::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(absl::StrFormat(
       "Rbac action=%s{", action == Rbac::Action::kAllow ? "Allow" : "Deny"));
-  for (const auto& p : policies) {
+  for (const auto &p : policies) {
     contents.push_back(absl::StrFormat("{\n  policy_name=%s\n%s\n}", p.first,
                                        p.second.ToString()));
   }
@@ -56,11 +56,11 @@ std::string Rbac::ToString() const {
 Rbac::CidrRange::CidrRange(std::string address_prefix, uint32_t prefix_len)
     : address_prefix(std::move(address_prefix)), prefix_len(prefix_len) {}
 
-Rbac::CidrRange::CidrRange(Rbac::CidrRange&& other) noexcept
+Rbac::CidrRange::CidrRange(Rbac::CidrRange &&other) noexcept
     : address_prefix(std::move(other.address_prefix)),
       prefix_len(other.prefix_len) {}
 
-Rbac::CidrRange& Rbac::CidrRange::operator=(Rbac::CidrRange&& other) noexcept {
+Rbac::CidrRange &Rbac::CidrRange::operator=(Rbac::CidrRange &&other) noexcept {
   address_prefix = std::move(other.address_prefix);
   prefix_len = other.prefix_len;
   return *this;
@@ -96,7 +96,7 @@ Rbac::Permission::Permission(Permission::RuleType type, CidrRange ip)
 Rbac::Permission::Permission(Permission::RuleType type, int port)
     : type(type), port(port) {}
 
-Rbac::Permission::Permission(Rbac::Permission&& other) noexcept
+Rbac::Permission::Permission(Rbac::Permission &&other) noexcept
     : type(other.type) {
   switch (type) {
     case RuleType::kAnd:
@@ -121,8 +121,8 @@ Rbac::Permission::Permission(Rbac::Permission&& other) noexcept
   }
 }
 
-Rbac::Permission& Rbac::Permission::operator=(
-    Rbac::Permission&& other) noexcept {
+Rbac::Permission &Rbac::Permission::operator=(
+    Rbac::Permission &&other) noexcept {
   type = other.type;
   switch (type) {
     case RuleType::kAnd:
@@ -153,7 +153,7 @@ std::string Rbac::Permission::ToString() const {
     case RuleType::kAnd: {
       std::vector<std::string> contents;
       contents.reserve(permissions.size());
-      for (const auto& permission : permissions) {
+      for (const auto &permission : permissions) {
         contents.push_back(permission->ToString());
       }
       return absl::StrFormat("and=[%s]", absl::StrJoin(contents, ","));
@@ -161,7 +161,7 @@ std::string Rbac::Permission::ToString() const {
     case RuleType::kOr: {
       std::vector<std::string> contents;
       contents.reserve(permissions.size());
-      for (const auto& permission : permissions) {
+      for (const auto &permission : permissions) {
         contents.push_back(permission->ToString());
       }
       return absl::StrFormat("or=[%s]", absl::StrJoin(contents, ","));
@@ -208,7 +208,7 @@ Rbac::Principal::Principal(Principal::RuleType type,
                            HeaderMatcher header_matcher)
     : type(type), header_matcher(std::move(header_matcher)) {}
 
-Rbac::Principal::Principal(Rbac::Principal&& other) noexcept
+Rbac::Principal::Principal(Rbac::Principal &&other) noexcept
     : type(other.type) {
   switch (type) {
     case RuleType::kAnd:
@@ -230,7 +230,7 @@ Rbac::Principal::Principal(Rbac::Principal&& other) noexcept
   }
 }
 
-Rbac::Principal& Rbac::Principal::operator=(Rbac::Principal&& other) noexcept {
+Rbac::Principal &Rbac::Principal::operator=(Rbac::Principal &&other) noexcept {
   type = other.type;
   switch (type) {
     case RuleType::kAnd:
@@ -258,7 +258,7 @@ std::string Rbac::Principal::ToString() const {
     case RuleType::kAnd: {
       std::vector<std::string> contents;
       contents.reserve(principals.size());
-      for (const auto& principal : principals) {
+      for (const auto &principal : principals) {
         contents.push_back(principal->ToString());
       }
       return absl::StrFormat("and=[%s]", absl::StrJoin(contents, ","));
@@ -266,7 +266,7 @@ std::string Rbac::Principal::ToString() const {
     case RuleType::kOr: {
       std::vector<std::string> contents;
       contents.reserve(principals.size());
-      for (const auto& principal : principals) {
+      for (const auto &principal : principals) {
         contents.push_back(principal->ToString());
       }
       return absl::StrFormat("or=[%s]", absl::StrJoin(contents, ","));
@@ -299,11 +299,11 @@ std::string Rbac::Principal::ToString() const {
 Rbac::Policy::Policy(Permission permissions, Principal principals)
     : permissions(std::move(permissions)), principals(std::move(principals)) {}
 
-Rbac::Policy::Policy(Rbac::Policy&& other) noexcept
+Rbac::Policy::Policy(Rbac::Policy &&other) noexcept
     : permissions(std::move(other.permissions)),
       principals(std::move(other.principals)) {}
 
-Rbac::Policy& Rbac::Policy::operator=(Rbac::Policy&& other) noexcept {
+Rbac::Policy &Rbac::Policy::operator=(Rbac::Policy &&other) noexcept {
   permissions = std::move(other.permissions);
   principals = std::move(other.principals);
   return *this;

@@ -44,7 +44,7 @@ namespace grpc_core {
 // MethodConfig and provide input to LB policies on a per-call basis.
 class ConfigSelector : public RefCounted<ConfigSelector> {
  public:
-  using CallAttributes = std::map<const char*, absl::string_view>;
+  using CallAttributes = std::map<const char *, absl::string_view>;
 
   // An interface to be used by the channel when dispatching calls.
   class CallDispatchController {
@@ -61,9 +61,9 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
   };
 
   struct GetCallConfigArgs {
-    grpc_slice* path;
-    grpc_metadata_batch* initial_metadata;
-    Arena* arena;
+    grpc_slice *path;
+    grpc_metadata_batch *initial_metadata;
+    Arena *arena;
   };
 
   struct CallConfig {
@@ -71,25 +71,25 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
     grpc_error_handle error = GRPC_ERROR_NONE;
     // The per-method parsed configs that will be passed to
     // ServiceConfigCallData.
-    const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
+    const ServiceConfigParser::ParsedConfigVector *method_configs = nullptr;
     // A ref to the service config that contains method_configs, held by
     // the call to ensure that method_configs lives long enough.
     RefCountedPtr<ServiceConfig> service_config;
     // Call attributes that will be accessible to LB policy implementations.
     CallAttributes call_attributes;
     // Call dispatch controller.
-    CallDispatchController* call_dispatch_controller = nullptr;
+    CallDispatchController *call_dispatch_controller = nullptr;
   };
 
   ~ConfigSelector() override = default;
 
-  virtual const char* name() const = 0;
+  virtual const char *name() const = 0;
 
   // Will be called only if the two objects have the same name, so
   // subclasses can be free to safely down-cast the argument.
-  virtual bool Equals(const ConfigSelector* other) const = 0;
+  virtual bool Equals(const ConfigSelector *other) const = 0;
 
-  static bool Equals(const ConfigSelector* cs1, const ConfigSelector* cs2) {
+  static bool Equals(const ConfigSelector *cs1, const ConfigSelector *cs2) {
     if (cs1 == nullptr) return cs2 == nullptr;
     if (cs2 == nullptr) return false;
     if (strcmp(cs1->name(), cs2->name()) != 0) return false;
@@ -98,10 +98,10 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 
   // The channel will call this when the resolver returns a new ConfigSelector
   // to determine what set of dynamic filters will be configured.
-  virtual std::vector<const grpc_channel_filter*> GetFilters() { return {}; }
+  virtual std::vector<const grpc_channel_filter *> GetFilters() { return {}; }
   // Modifies channel args to be passed to the dynamic filter stack.
   // Takes ownership of argument.  Caller takes ownership of result.
-  virtual grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) {
+  virtual grpc_channel_args *ModifyChannelArgs(grpc_channel_args *args) {
     return args;
   }
 
@@ -109,7 +109,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 
   grpc_arg MakeChannelArg() const;
   static RefCountedPtr<ConfigSelector> GetFromChannelArgs(
-      const grpc_channel_args& args);
+      const grpc_channel_args &args);
 };
 
 // Default ConfigSelector that gets the MethodConfig from the service config.
@@ -123,11 +123,11 @@ class DefaultConfigSelector : public ConfigSelector {
     GPR_DEBUG_ASSERT(service_config_ != nullptr);
   }
 
-  const char* name() const override { return "default"; }
+  const char *name() const override { return "default"; }
 
   // Only comparing the ConfigSelector itself, not the underlying
   // service config, so we always return true.
-  bool Equals(const ConfigSelector* /*other*/) const override { return true; }
+  bool Equals(const ConfigSelector * /*other*/) const override { return true; }
 
   CallConfig GetCallConfig(GetCallConfigArgs args) override {
     CallConfig call_config;

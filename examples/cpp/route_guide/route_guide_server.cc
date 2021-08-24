@@ -53,7 +53,7 @@ using std::chrono::system_clock;
 float ConvertToRadians(float num) { return num * 3.1415926 / 180; }
 
 // The formula is based on http://mathforum.org/library/drmath/view/51879.html
-float GetDistance(const Point& start, const Point& end) {
+float GetDistance(const Point &start, const Point &end) {
   const float kCoordFactor = 10000000.0;
   float lat_1 = start.latitude() / kCoordFactor;
   float lat_2 = end.latitude() / kCoordFactor;
@@ -72,9 +72,9 @@ float GetDistance(const Point& start, const Point& end) {
   return R * c;
 }
 
-std::string GetFeatureName(const Point& point,
-                           const std::vector<Feature>& feature_list) {
-  for (const Feature& f : feature_list) {
+std::string GetFeatureName(const Point &point,
+                           const std::vector<Feature> &feature_list) {
+  for (const Feature &f : feature_list) {
     if (f.location().latitude() == point.latitude() &&
         f.location().longitude() == point.longitude()) {
       return f.name();
@@ -85,27 +85,27 @@ std::string GetFeatureName(const Point& point,
 
 class RouteGuideImpl final : public RouteGuide::Service {
  public:
-  explicit RouteGuideImpl(const std::string& db) {
+  explicit RouteGuideImpl(const std::string &db) {
     routeguide::ParseDb(db, &feature_list_);
   }
 
-  Status GetFeature(ServerContext* context, const Point* point,
-                    Feature* feature) override {
+  Status GetFeature(ServerContext *context, const Point *point,
+                    Feature *feature) override {
     feature->set_name(GetFeatureName(*point, feature_list_));
     feature->mutable_location()->CopyFrom(*point);
     return Status::OK;
   }
 
-  Status ListFeatures(ServerContext* context,
-                      const routeguide::Rectangle* rectangle,
-                      ServerWriter<Feature>* writer) override {
+  Status ListFeatures(ServerContext *context,
+                      const routeguide::Rectangle *rectangle,
+                      ServerWriter<Feature> *writer) override {
     auto lo = rectangle->lo();
     auto hi = rectangle->hi();
     long left = (std::min)(lo.longitude(), hi.longitude());
     long right = (std::max)(lo.longitude(), hi.longitude());
     long top = (std::max)(lo.latitude(), hi.latitude());
     long bottom = (std::min)(lo.latitude(), hi.latitude());
-    for (const Feature& f : feature_list_) {
+    for (const Feature &f : feature_list_) {
       if (f.location().longitude() >= left &&
           f.location().longitude() <= right &&
           f.location().latitude() >= bottom && f.location().latitude() <= top) {
@@ -115,8 +115,8 @@ class RouteGuideImpl final : public RouteGuide::Service {
     return Status::OK;
   }
 
-  Status RecordRoute(ServerContext* context, ServerReader<Point>* reader,
-                     RouteSummary* summary) override {
+  Status RecordRoute(ServerContext *context, ServerReader<Point> *reader,
+                     RouteSummary *summary) override {
     Point point;
     int point_count = 0;
     int feature_count = 0;
@@ -145,12 +145,12 @@ class RouteGuideImpl final : public RouteGuide::Service {
     return Status::OK;
   }
 
-  Status RouteChat(ServerContext* context,
-                   ServerReaderWriter<RouteNote, RouteNote>* stream) override {
+  Status RouteChat(ServerContext *context,
+                   ServerReaderWriter<RouteNote, RouteNote> *stream) override {
     RouteNote note;
     while (stream->Read(&note)) {
       std::unique_lock<std::mutex> lock(mu_);
-      for (const RouteNote& n : received_notes_) {
+      for (const RouteNote &n : received_notes_) {
         if (n.location().latitude() == note.location().latitude() &&
             n.location().longitude() == note.location().longitude()) {
           stream->Write(n);
@@ -168,7 +168,7 @@ class RouteGuideImpl final : public RouteGuide::Service {
   std::vector<RouteNote> received_notes_;
 };
 
-void RunServer(const std::string& db_path) {
+void RunServer(const std::string &db_path) {
   std::string server_address("0.0.0.0:50051");
   RouteGuideImpl service(db_path);
 
@@ -180,7 +180,7 @@ void RunServer(const std::string& db_path) {
   server->Wait();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   // Expect only arg: --db_path=path/to/route_guide_db.json.
   std::string db = routeguide::GetDbFileContent(argc, argv);
   RunServer(db);

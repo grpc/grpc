@@ -42,13 +42,13 @@
 #include "src/core/lib/transport/status_metadata.h"
 #include "src/core/lib/transport/transport.h"
 
-static int init_stream(grpc_transport* gt, grpc_stream* gs,
-                       grpc_stream_refcount* refcount, const void* server_data,
-                       grpc_core::Arena* arena) {
+static int init_stream(grpc_transport *gt, grpc_stream *gs,
+                       grpc_stream_refcount *refcount, const void *server_data,
+                       grpc_core::Arena *arena) {
   GPR_TIMER_SCOPE("init_stream", 0);
   gpr_log(GPR_INFO, "%s = %p %p %p %p %p", __func__, gt, gs, refcount,
           server_data, arena);
-  grpc_binder_transport* t = reinterpret_cast<grpc_binder_transport*>(gt);
+  grpc_binder_transport *t = reinterpret_cast<grpc_binder_transport *>(gt);
   // TODO(mingcl): Figure out if we need to worry about concurrent invocation
   // here
   new (gs) grpc_binder_stream(t, arena, server_data, t->NewStreamTxCode(),
@@ -56,19 +56,20 @@ static int init_stream(grpc_transport* gt, grpc_stream* gs,
   return 0;
 }
 
-static void set_pollset(grpc_transport* gt, grpc_stream* gs, grpc_pollset* gp) {
+static void set_pollset(grpc_transport *gt, grpc_stream *gs, grpc_pollset *gp) {
   gpr_log(GPR_INFO, "%s = %p %p %p", __func__, gt, gs, gp);
 }
 
-static void set_pollset_set(grpc_transport*, grpc_stream*, grpc_pollset_set*) {
+static void set_pollset_set(grpc_transport *, grpc_stream *,
+                            grpc_pollset_set *) {
   gpr_log(GPR_INFO, __func__);
 }
 
-void AssignMetadata(grpc_metadata_batch* mb, grpc_core::Arena* arena,
-                    const grpc_binder::Metadata& md) {
+void AssignMetadata(grpc_metadata_batch *mb, grpc_core::Arena *arena,
+                    const grpc_binder::Metadata &md) {
   grpc_metadata_batch_init(mb);
-  for (auto& p : md) {
-    grpc_linked_mdelem* glm = static_cast<grpc_linked_mdelem*>(
+  for (auto &p : md) {
+    grpc_linked_mdelem *glm = static_cast<grpc_linked_mdelem *>(
         arena->Alloc(sizeof(grpc_linked_mdelem)));
     memset(glm, 0, sizeof(grpc_linked_mdelem));
     grpc_slice key = grpc_slice_from_cpp_string(p.first);
@@ -82,12 +83,12 @@ void AssignMetadata(grpc_metadata_batch* mb, grpc_core::Arena* arena,
   }
 }
 
-static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
-                              grpc_transport_stream_op_batch* op) {
+static void perform_stream_op(grpc_transport *gt, grpc_stream *gs,
+                              grpc_transport_stream_op_batch *op) {
   GPR_TIMER_SCOPE("perform_stream_op", 0);
   gpr_log(GPR_INFO, "%s = %p %p %p", __func__, gt, gs, op);
-  grpc_binder_transport* gbt = reinterpret_cast<grpc_binder_transport*>(gt);
-  grpc_binder_stream* gbs = reinterpret_cast<grpc_binder_stream*>(gs);
+  grpc_binder_transport *gbt = reinterpret_cast<grpc_binder_transport *>(gt);
+  grpc_binder_stream *gbs = reinterpret_cast<grpc_binder_stream *>(gs);
 
   if (op->cancel_stream) {
     // TODO(waynetu): Is this true?
@@ -132,7 +133,7 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
     auto batch = op->payload->send_initial_metadata.send_initial_metadata;
     GPR_ASSERT(tx);
 
-    for (grpc_linked_mdelem* md = batch->list.head; md != nullptr;
+    for (grpc_linked_mdelem *md = batch->list.head; md != nullptr;
          md = md->next) {
       absl::string_view key =
           grpc_core::StringViewFromSlice(GRPC_MDKEY(md->md));
@@ -162,9 +163,9 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
         op->payload->send_message.send_message->Next(SIZE_MAX, nullptr);
     gpr_log(GPR_INFO, "next_result = %d", static_cast<int>(next_result));
     op->payload->send_message.send_message->Pull(&s);
-    auto* p = GRPC_SLICE_START_PTR(s);
+    auto *p = GRPC_SLICE_START_PTR(s);
     int len = GRPC_SLICE_LENGTH(s);
-    std::string message_data(reinterpret_cast<char*>(p), len);
+    std::string message_data(reinterpret_cast<char *>(p), len);
     gpr_log(GPR_INFO, "message_data = %s", message_data.c_str());
     GPR_ASSERT(tx);
     tx->SetData(message_data);
@@ -179,7 +180,7 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
     grpc_binder::Metadata trailing_metadata;
     GPR_ASSERT(tx);
 
-    for (grpc_linked_mdelem* md = batch->list.head; md != nullptr;
+    for (grpc_linked_mdelem *md = batch->list.head; md != nullptr;
          md = md->next) {
       // Client will not send trailing metadata.
       GPR_ASSERT(!gbt->is_client);
@@ -323,7 +324,7 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
               // TODO(b/192208695): See if we can avoid to manually put status
               // code into the header
               gpr_log(GPR_INFO, "status = %d", status);
-              grpc_linked_mdelem* glm = static_cast<grpc_linked_mdelem*>(
+              grpc_linked_mdelem *glm = static_cast<grpc_linked_mdelem *>(
                   gbs->arena->Alloc(sizeof(grpc_linked_mdelem)));
               glm->md = grpc_get_reffed_status_elem(status);
               GPR_ASSERT(grpc_metadata_batch_link_tail(
@@ -353,9 +354,9 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
   }
 }
 
-static void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
+static void perform_transport_op(grpc_transport *gt, grpc_transport_op *op) {
   gpr_log(GPR_INFO, __func__);
-  grpc_binder_transport* gbt = reinterpret_cast<grpc_binder_transport*>(gt);
+  grpc_binder_transport *gbt = reinterpret_cast<grpc_binder_transport *>(gt);
   grpc_core::MutexLock lock(&gbt->mu);
   // TODO(waynetu): Should we lock here to avoid data race?
   if (op->start_connectivity_watch != nullptr) {
@@ -387,11 +388,11 @@ static void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
   }
 }
 
-static void destroy_stream(grpc_transport* gt, grpc_stream* gs,
-                           grpc_closure* then_schedule_closure) {
+static void destroy_stream(grpc_transport *gt, grpc_stream *gs,
+                           grpc_closure *then_schedule_closure) {
   gpr_log(GPR_INFO, __func__);
-  grpc_binder_transport* gbt = reinterpret_cast<grpc_binder_transport*>(gt);
-  grpc_binder_stream* gbs = reinterpret_cast<grpc_binder_stream*>(gs);
+  grpc_binder_transport *gbt = reinterpret_cast<grpc_binder_transport *>(gt);
+  grpc_binder_stream *gbs = reinterpret_cast<grpc_binder_stream *>(gs);
   gbt->transport_stream_receiver->Clear(gbs->tx_code);
   // TODO(waynetu): Currently, there's nothing to be cleaned up. If additional
   // fields are added to grpc_binder_stream in the future, we might need to use
@@ -401,9 +402,9 @@ static void destroy_stream(grpc_transport* gt, grpc_stream* gs,
                           GRPC_ERROR_NONE);
 }
 
-static void destroy_transport(grpc_transport* gt) {
+static void destroy_transport(grpc_transport *gt) {
   gpr_log(GPR_INFO, __func__);
-  grpc_binder_transport* gbt = reinterpret_cast<grpc_binder_transport*>(gt);
+  grpc_binder_transport *gbt = reinterpret_cast<grpc_binder_transport *>(gt);
   // Release the references held by the transport.
   gbt->wire_reader = nullptr;
   gbt->transport_stream_receiver = nullptr;
@@ -411,7 +412,7 @@ static void destroy_transport(grpc_transport* gt) {
   gbt->Unref();
 }
 
-static grpc_endpoint* get_endpoint(grpc_transport*) {
+static grpc_endpoint *get_endpoint(grpc_transport *) {
   gpr_log(GPR_INFO, __func__);
   return nullptr;
 }
@@ -428,7 +429,7 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_binder_stream),
                                              destroy_transport,
                                              get_endpoint};
 
-static const grpc_transport_vtable* get_vtable() { return &vtable; }
+static const grpc_transport_vtable *get_vtable() { return &vtable; }
 
 grpc_binder_transport::grpc_binder_transport(
     std::unique_ptr<grpc_binder::Binder> binder, bool is_client)
@@ -456,21 +457,21 @@ grpc_binder_transport::grpc_binder_transport(
   wire_writer = wire_reader->SetupTransport(std::move(binder));
 }
 
-grpc_transport* grpc_create_binder_transport_client(
+grpc_transport *grpc_create_binder_transport_client(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder) {
   gpr_log(GPR_INFO, __func__);
 
-  grpc_binder_transport* t =
+  grpc_binder_transport *t =
       new grpc_binder_transport(std::move(endpoint_binder), /*is_client=*/true);
 
   return &t->base;
 }
 
-grpc_transport* grpc_create_binder_transport_server(
+grpc_transport *grpc_create_binder_transport_server(
     std::unique_ptr<grpc_binder::Binder> client_binder) {
   gpr_log(GPR_INFO, __func__);
 
-  grpc_binder_transport* t =
+  grpc_binder_transport *t =
       new grpc_binder_transport(std::move(client_binder), /*is_client=*/false);
 
   return &t->base;

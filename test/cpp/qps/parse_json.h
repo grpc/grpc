@@ -25,11 +25,11 @@
 namespace grpc {
 namespace testing {
 
-void ParseJson(const std::string& json, const std::string& type,
-               GRPC_CUSTOM_MESSAGE* msg);
+void ParseJson(const std::string &json, const std::string &type,
+               GRPC_CUSTOM_MESSAGE *msg);
 
-std::string SerializeJson(const GRPC_CUSTOM_MESSAGE& msg,
-                          const std::string& type);
+std::string SerializeJson(const GRPC_CUSTOM_MESSAGE &msg,
+                          const std::string &type);
 
 }  // namespace testing
 }  // namespace grpc

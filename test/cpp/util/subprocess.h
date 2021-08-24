@@ -29,17 +29,17 @@ namespace grpc {
 
 class SubProcess {
  public:
-  explicit SubProcess(const std::vector<std::string>& args);
+  explicit SubProcess(const std::vector<std::string> &args);
   ~SubProcess();
 
   int Join();
   void Interrupt();
 
  private:
-  SubProcess(const SubProcess& other);
-  SubProcess& operator=(const SubProcess& other);
+  SubProcess(const SubProcess &other);
+  SubProcess &operator=(const SubProcess &other);
 
-  gpr_subprocess* const subprocess_;
+  gpr_subprocess *const subprocess_;
 };
 
 }  // namespace grpc

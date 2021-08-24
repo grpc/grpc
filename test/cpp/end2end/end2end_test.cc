@@ -68,7 +68,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-bool CheckIsLocalhost(const std::string& addr) {
+bool CheckIsLocalhost(const std::string &addr) {
   const std::string kIpv6("ipv6:[::1]:");
   const std::string kIpv4MappedIpv6("ipv6:[::ffff:127.0.0.1]:");
   const std::string kIpv4("ipv4:127.0.0.1:");
@@ -138,8 +138,8 @@ class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
   static const char kGoodMetadataKey[];
   static const char kBadMetadataKey[];
 
-  TestMetadataCredentialsPlugin(const grpc::string_ref& metadata_key,
-                                const grpc::string_ref& metadata_value,
+  TestMetadataCredentialsPlugin(const grpc::string_ref &metadata_key,
+                                const grpc::string_ref &metadata_value,
                                 bool is_blocking, bool is_successful,
                                 int delay_ms)
       : metadata_key_(metadata_key.data(), metadata_key.length()),
@@ -152,8 +152,8 @@ class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
 
   Status GetMetadata(
       grpc::string_ref service_url, grpc::string_ref method_name,
-      const grpc::AuthContext& channel_auth_context,
-      std::multimap<std::string, std::string>* metadata) override {
+      const grpc::AuthContext &channel_auth_context,
+      std::multimap<std::string, std::string> *metadata) override {
     if (delay_ms_ != 0) {
       gpr_sleep_until(
           gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
@@ -215,9 +215,9 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
   // Interface implementation
   bool IsBlocking() const override { return is_blocking_; }
 
-  Status Process(const InputMetadata& auth_metadata, AuthContext* context,
-                 OutputMetadata* consumed_auth_metadata,
-                 OutputMetadata* response_metadata) override {
+  Status Process(const InputMetadata &auth_metadata, AuthContext *context,
+                 OutputMetadata *consumed_auth_metadata,
+                 OutputMetadata *response_metadata) override {
     EXPECT_TRUE(consumed_auth_metadata != nullptr);
     EXPECT_TRUE(context != nullptr);
     EXPECT_TRUE(response_metadata != nullptr);
@@ -249,11 +249,11 @@ const char TestAuthMetadataProcessor::kIdentityPropName[] = "novel identity";
 
 class Proxy : public ::grpc::testing::EchoTestService::Service {
  public:
-  explicit Proxy(const std::shared_ptr<Channel>& channel)
+  explicit Proxy(const std::shared_ptr<Channel> &channel)
       : stub_(grpc::testing::EchoTestService::NewStub(channel)) {}
 
-  Status Echo(ServerContext* server_context, const EchoRequest* request,
-              EchoResponse* response) override {
+  Status Echo(ServerContext *server_context, const EchoRequest *request,
+              EchoResponse *response) override {
     std::unique_ptr<ClientContext> client_context =
         ClientContext::FromServerContext(*server_context);
     return stub_->Echo(client_context.get(), *request, response);
@@ -266,8 +266,8 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
 class TestServiceImplDupPkg
     : public ::grpc::testing::duplicate::EchoTestService::Service {
  public:
-  Status Echo(ServerContext* /*context*/, const EchoRequest* /*request*/,
-              EchoResponse* response) override {
+  Status Echo(ServerContext * /*context*/, const EchoRequest * /*request*/,
+              EchoResponse *response) override {
     response->set_message("no package");
     return Status::OK;
   }
@@ -276,7 +276,7 @@ class TestServiceImplDupPkg
 class TestScenario {
  public:
   TestScenario(bool interceptors, bool proxy, bool inproc_stub,
-               const std::string& creds_type, bool use_callback_server)
+               const std::string &creds_type, bool use_callback_server)
       : use_interceptors(interceptors),
         use_proxy(proxy),
         inproc(inproc_stub),
@@ -290,8 +290,8 @@ class TestScenario {
   bool callback_server;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
+static std::ostream &operator<<(std::ostream &out,
+                                const TestScenario &scenario) {
   return out << "TestScenario{use_interceptors="
              << (scenario.use_interceptors ? "true" : "false")
              << ", use_proxy=" << (scenario.use_proxy ? "true" : "false")
@@ -329,7 +329,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     }
   }
 
-  void StartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
+  void StartServer(const std::shared_ptr<AuthMetadataProcessor> &processor) {
     int port = grpc_pick_unused_port_or_die();
     first_picked_port_ = port;
     server_address_ << "localhost:" << port;
@@ -337,7 +337,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     BuildAndStartServer(processor);
   }
 
-  void RestartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
+  void RestartServer(const std::shared_ptr<AuthMetadataProcessor> &processor) {
     if (is_server_started_) {
       server_->Shutdown();
       BuildAndStartServer(processor);
@@ -345,7 +345,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   }
 
   void BuildAndStartServer(
-      const std::shared_ptr<AuthMetadataProcessor>& processor) {
+      const std::shared_ptr<AuthMetadataProcessor> &processor) {
     ServerBuilder builder;
     ConfigureServerBuilder(&builder);
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
@@ -381,7 +381,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     is_server_started_ = true;
   }
 
-  virtual void ConfigureServerBuilder(ServerBuilder* builder) {
+  virtual void ConfigureServerBuilder(ServerBuilder *builder) {
     builder->SetMaxMessageSize(
         kMaxMessageSize_);  // For testing max message size.
   }
@@ -468,7 +468,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   int first_picked_port_;
 };
 
-static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
+static void SendRpc(grpc::testing::EchoTestService::Stub *stub, int num_rpcs,
                     bool with_binary_metadata) {
   EchoRequest request;
   EchoResponse response;
@@ -818,7 +818,7 @@ TEST_P(End2endTest, SimpleRpcWithCustomUserAgentPrefix) {
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
-  const auto& trailing_metadata = context.GetServerTrailingMetadata();
+  const auto &trailing_metadata = context.GetServerTrailingMetadata();
   auto iter = trailing_metadata.find("user-agent");
   EXPECT_TRUE(iter != trailing_metadata.end());
   std::string expected_prefix = user_agent_prefix_ + " grpc-c++/";
@@ -1143,7 +1143,7 @@ TEST_P(End2endTest, DiffPackageServices) {
 }
 
 template <class ServiceType>
-void CancelRpc(ClientContext* context, int delay_us, ServiceType* service) {
+void CancelRpc(ClientContext *context, int delay_us, ServiceType *service) {
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_micros(delay_us, GPR_TIMESPAN)));
   while (!service->signal_client()) {
@@ -1310,10 +1310,10 @@ TEST_P(End2endTest, RpcMaxMessageSize) {
   EXPECT_FALSE(s.ok());
 }
 
-void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream,
-                      gpr_event* ev) {
+void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse> *stream,
+                      gpr_event *ev) {
   EchoResponse resp;
-  gpr_event_set(ev, reinterpret_cast<void*>(1));
+  gpr_event_set(ev, reinterpret_cast<void *>(1));
   while (stream->Read(&resp)) {
     gpr_log(GPR_INFO, "Read message");
   }
@@ -1348,7 +1348,7 @@ TEST_P(End2endTest, ChannelState) {
   std::chrono::system_clock::time_point deadline =
       std::chrono::system_clock::now() + std::chrono::milliseconds(10);
   channel_->NotifyOnStateChange(GRPC_CHANNEL_IDLE, deadline, &cq, nullptr);
-  void* tag;
+  void *tag;
   bool ok = true;
   cq.Next(&tag, &ok);
   EXPECT_FALSE(ok);
@@ -1408,7 +1408,7 @@ TEST_P(End2endTest, BinaryTrailerTest) {
   ClientContext context;
 
   request.mutable_param()->set_echo_metadata(true);
-  DebugInfo* info = request.mutable_param()->mutable_debug_info();
+  DebugInfo *info = request.mutable_param()->mutable_debug_info();
   info->add_stack_entries("stack_entry_1");
   info->add_stack_entries("stack_entry_2");
   info->add_stack_entries("stack_entry_3");
@@ -1452,7 +1452,7 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EchoResponse response;
     ClientContext context;
     request.set_message("Hello");
-    auto* error = request.mutable_param()->mutable_expected_error();
+    auto *error = request.mutable_param()->mutable_expected_error();
     error->set_code(iter->code());
     error->set_error_message(iter->error_message());
     error->set_binary_error_details(iter->binary_error_details());
@@ -1710,8 +1710,8 @@ TEST_P(SecureEnd2endTest, SimpleRpcWithHost) {
 }
 
 bool MetadataContains(
-    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    const std::string& key, const std::string& value) {
+    const std::multimap<grpc::string_ref, grpc::string_ref> &metadata,
+    const std::string &key, const std::string &value) {
   int count = 0;
 
   for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator iter =
@@ -1725,7 +1725,7 @@ bool MetadataContains(
 }
 
 TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorSuccess) {
-  auto* processor = new TestAuthMetadataProcessor(true);
+  auto *processor = new TestAuthMetadataProcessor(true);
   StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
   ResetStub();
   EchoRequest request;
@@ -1750,7 +1750,7 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorSuccess) {
 }
 
 TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorFailure) {
-  auto* processor = new TestAuthMetadataProcessor(true);
+  auto *processor = new TestAuthMetadataProcessor(true);
   StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
   ResetStub();
   EchoRequest request;
@@ -1790,10 +1790,10 @@ TEST_P(SecureEnd2endTest, SetPerCallCredentials) {
 
 class CredentialsInterceptor : public experimental::Interceptor {
  public:
-  explicit CredentialsInterceptor(experimental::ClientRpcInfo* info)
+  explicit CredentialsInterceptor(experimental::ClientRpcInfo *info)
       : info_(info) {}
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(experimental::InterceptorBatchMethods *methods) override {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       std::shared_ptr<CallCredentials> creds =
@@ -1804,13 +1804,13 @@ class CredentialsInterceptor : public experimental::Interceptor {
   }
 
  private:
-  experimental::ClientRpcInfo* info_ = nullptr;
+  experimental::ClientRpcInfo *info_ = nullptr;
 };
 
 class CredentialsInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
-  CredentialsInterceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
+  CredentialsInterceptor *CreateClientInterceptor(
+      experimental::ClientRpcInfo *info) override {
     return new CredentialsInterceptor(info);
   }
 };
@@ -2031,7 +2031,7 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
 }
 
 TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorSuccess) {
-  auto* processor = new TestAuthMetadataProcessor(false);
+  auto *processor = new TestAuthMetadataProcessor(false);
   StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
   ResetStub();
   EchoRequest request;
@@ -2059,7 +2059,7 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorSuccess) {
 }
 
 TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorFailure) {
-  auto* processor = new TestAuthMetadataProcessor(false);
+  auto *processor = new TestAuthMetadataProcessor(false);
   StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
   ResetStub();
   EchoRequest request;
@@ -2167,7 +2167,7 @@ class ResourceQuotaEnd2endTest : public End2endTest {
   ResourceQuotaEnd2endTest()
       : server_resource_quota_("server_resource_quota") {}
 
-  void ConfigureServerBuilder(ServerBuilder* builder) override {
+  void ConfigureServerBuilder(ServerBuilder *builder) override {
     builder->SetResourceQuota(server_resource_quota_);
   }
 
@@ -2220,7 +2220,7 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
 
   // Test callback with inproc or if the event-engine allows it
   GPR_ASSERT(!credentials_types.empty());
-  for (const auto& cred : credentials_types) {
+  for (const auto &cred : credentials_types) {
     scenarios.emplace_back(false, false, false, cred, false);
     scenarios.emplace_back(true, false, false, cred, false);
     if (test_callback_server) {
@@ -2270,7 +2270,7 @@ INSTANTIATE_TEST_SUITE_P(
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();

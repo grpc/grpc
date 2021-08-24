@@ -43,14 +43,14 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
   // Thread-unsafe. Intended to be invoked within the client_channel work
   // serializer.
   RefCountedPtr<Subchannel> RegisterSubchannel(
-      const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override;
-  void UnregisterSubchannel(const SubchannelKey& key,
-                            Subchannel* subchannel) override;
-  RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey& key) override;
+      const SubchannelKey &key, RefCountedPtr<Subchannel> constructed) override;
+  void UnregisterSubchannel(const SubchannelKey &key,
+                            Subchannel *subchannel) override;
+  RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey &key) override;
 
  private:
   // A map from subchannel key to subchannel.
-  std::map<SubchannelKey, Subchannel*> subchannel_map_;
+  std::map<SubchannelKey, Subchannel *> subchannel_map_;
 };
 
 }  // namespace grpc_core

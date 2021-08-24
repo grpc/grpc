@@ -38,7 +38,7 @@ class RegistryState {
  public:
   RegistryState() : default_prefix_(gpr_strdup("dns:///")) {}
 
-  void SetDefaultPrefix(const char* default_resolver_prefix) {
+  void SetDefaultPrefix(const char *default_resolver_prefix) {
     GPR_ASSERT(default_resolver_prefix != nullptr);
     GPR_ASSERT(*default_resolver_prefix != '\0');
     default_prefix_.reset(gpr_strdup(default_resolver_prefix));
@@ -51,7 +51,7 @@ class RegistryState {
     factories_.push_back(std::move(factory));
   }
 
-  ResolverFactory* LookupResolverFactory(absl::string_view scheme) const {
+  ResolverFactory *LookupResolverFactory(absl::string_view scheme) const {
     for (size_t i = 0; i < factories_.size(); ++i) {
       if (scheme == factories_[i]->scheme()) {
         return factories_[i].get();
@@ -66,11 +66,11 @@ class RegistryState {
   // point to the parsed URI.
   // If \a default_prefix_ needs to be prepended, sets \a canonical_target
   // to the canonical target string.
-  ResolverFactory* FindResolverFactory(absl::string_view target, URI* uri,
-                                       std::string* canonical_target) const {
+  ResolverFactory *FindResolverFactory(absl::string_view target, URI *uri,
+                                       std::string *canonical_target) const {
     GPR_ASSERT(uri != nullptr);
     absl::StatusOr<URI> tmp_uri = URI::Parse(target);
-    ResolverFactory* factory =
+    ResolverFactory *factory =
         tmp_uri.ok() ? LookupResolverFactory(tmp_uri->scheme()) : nullptr;
     if (factory != nullptr) {
       *uri = *tmp_uri;
@@ -107,7 +107,7 @@ class RegistryState {
   grpc_core::UniquePtr<char> default_prefix_;
 };
 
-static RegistryState* g_state = nullptr;
+static RegistryState *g_state = nullptr;
 
 }  // namespace
 
@@ -124,7 +124,7 @@ void ResolverRegistry::Builder::ShutdownRegistry() {
   g_state = nullptr;
 }
 
-void ResolverRegistry::Builder::SetDefaultPrefix(const char* default_prefix) {
+void ResolverRegistry::Builder::SetDefaultPrefix(const char *default_prefix) {
   InitRegistry();
   g_state->SetDefaultPrefix(default_prefix);
 }
@@ -139,7 +139,7 @@ void ResolverRegistry::Builder::RegisterResolverFactory(
 // ResolverRegistry
 //
 
-ResolverFactory* ResolverRegistry::LookupResolverFactory(const char* scheme) {
+ResolverFactory *ResolverRegistry::LookupResolverFactory(const char *scheme) {
   GPR_ASSERT(g_state != nullptr);
   return g_state->LookupResolverFactory(scheme);
 }
@@ -147,20 +147,20 @@ ResolverFactory* ResolverRegistry::LookupResolverFactory(const char* scheme) {
 bool ResolverRegistry::IsValidTarget(absl::string_view target) {
   URI uri;
   std::string canonical_target;
-  ResolverFactory* factory =
+  ResolverFactory *factory =
       g_state->FindResolverFactory(target, &uri, &canonical_target);
   return factory == nullptr ? false : factory->IsValidUri(uri);
 }
 
 OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
-    const char* target, const grpc_channel_args* args,
-    grpc_pollset_set* pollset_set,
+    const char *target, const grpc_channel_args *args,
+    grpc_pollset_set *pollset_set,
     std::shared_ptr<WorkSerializer> work_serializer,
     std::unique_ptr<Resolver::ResultHandler> result_handler) {
   GPR_ASSERT(g_state != nullptr);
   std::string canonical_target;
   ResolverArgs resolver_args;
-  ResolverFactory* factory = g_state->FindResolverFactory(
+  ResolverFactory *factory = g_state->FindResolverFactory(
       target, &resolver_args.uri, &canonical_target);
   resolver_args.args = args;
   resolver_args.pollset_set = pollset_set;
@@ -176,7 +176,7 @@ std::string ResolverRegistry::GetDefaultAuthority(absl::string_view target) {
   GPR_ASSERT(g_state != nullptr);
   URI uri;
   std::string canonical_target;
-  ResolverFactory* factory =
+  ResolverFactory *factory =
       g_state->FindResolverFactory(target, &uri, &canonical_target);
   std::string authority =
       factory == nullptr ? "" : factory->GetDefaultAuthority(uri);
@@ -184,7 +184,7 @@ std::string ResolverRegistry::GetDefaultAuthority(absl::string_view target) {
 }
 
 grpc_core::UniquePtr<char> ResolverRegistry::AddDefaultPrefixIfNeeded(
-    const char* target) {
+    const char *target) {
   GPR_ASSERT(g_state != nullptr);
   URI uri;
   std::string canonical_target;

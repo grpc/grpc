@@ -38,8 +38,8 @@ namespace {
 // empty, also erases the key-set pair. Returns true if the value is erased
 // successfully.
 template <typename K, typename V>
-bool UnorderedMapOfSetEraseKeyValue(std::unordered_map<K, std::set<V>>& map,
-                                    const K& key, const V& value) {
+bool UnorderedMapOfSetEraseKeyValue(std::unordered_map<K, std::set<V>> &map,
+                                    const K &key, const V &value) {
   auto it = map.find(key);
   if (it != map.end()) {
     size_t erased = it->second.erase(value);
@@ -55,8 +55,8 @@ bool UnorderedMapOfSetEraseKeyValue(std::unordered_map<K, std::set<V>>& map,
 // the associated set, and returns the set. Returns an empty set if the key is
 // not found.
 template <typename K, typename V>
-std::set<V> UnorderedMapOfSetExtract(std::unordered_map<K, std::set<V>>& map,
-                                     const K& key) {
+std::set<V> UnorderedMapOfSetExtract(std::unordered_map<K, std::set<V>> &map,
+                                     const K &key) {
   auto it = map.find(key);
   if (it != map.end()) {
     auto set = std::move(it->second);
@@ -68,7 +68,7 @@ std::set<V> UnorderedMapOfSetExtract(std::unordered_map<K, std::set<V>>& map,
 
 // From a non-empty container, returns a pointer to a random element.
 template <typename C>
-const typename C::value_type* RandomElement(const C& container) {
+const typename C::value_type *RandomElement(const C &container) {
   GPR_ASSERT(!container.empty());
   auto it = container.begin();
   std::advance(it, std::rand() % container.size());
@@ -77,7 +77,7 @@ const typename C::value_type* RandomElement(const C& container) {
 
 }  // namespace
 
-LoadRecordKey::LoadRecordKey(const std::string& client_ip_and_token,
+LoadRecordKey::LoadRecordKey(const std::string &client_ip_and_token,
                              std::string user_id)
     : user_id_(std::move(user_id)) {
   GPR_ASSERT(client_ip_and_token.size() >= 2);
@@ -110,7 +110,7 @@ std::string LoadRecordKey::GetClientIpBytes() const {
       return "";
     }
     ip_bytes = grpc_htonl(ip_bytes);
-    return std::string(reinterpret_cast<const char*>(&ip_bytes),
+    return std::string(reinterpret_cast<const char *>(&ip_bytes),
                        sizeof(ip_bytes));
   } else if (client_ip_hex_.size() == kIpv6AddressLength) {
     uint32_t ip_bytes[4];
@@ -125,7 +125,7 @@ std::string LoadRecordKey::GetClientIpBytes() const {
       }
       ip_bytes[i] = grpc_htonl(ip_bytes[i]);
     }
-    return std::string(reinterpret_cast<const char*>(ip_bytes),
+    return std::string(reinterpret_cast<const char *>(ip_bytes),
                        sizeof(ip_bytes));
   } else {
     GPR_UNREACHABLE_CODE(return "");
@@ -138,8 +138,8 @@ LoadRecordValue::LoadRecordValue(std::string metric_name, uint64_t num_calls,
                         CallMetricValue(num_calls, total_metric_value));
 }
 
-void PerBalancerStore::MergeRow(const LoadRecordKey& key,
-                                const LoadRecordValue& value) {
+void PerBalancerStore::MergeRow(const LoadRecordKey &key,
+                                const LoadRecordValue &value) {
   // During suspension, the load data received will be dropped.
   if (!suspended_) {
     load_record_map_[key].MergeFrom(value);
@@ -177,8 +177,8 @@ uint64_t PerBalancerStore::GetNumCallsInProgressForReport() {
   return num_calls_in_progress_;
 }
 
-void PerHostStore::ReportStreamCreated(const std::string& lb_id,
-                                       const std::string& load_key) {
+void PerHostStore::ReportStreamCreated(const std::string &lb_id,
+                                       const std::string &load_key) {
   GPR_ASSERT(lb_id != kInvalidLbId);
   SetUpForNewLbId(lb_id, load_key);
   // Prior to this one, there was no load balancer receiving report, so we may
@@ -187,9 +187,9 @@ void PerHostStore::ReportStreamCreated(const std::string& lb_id,
   // some previously adopted orphan store, we may want to take the orphan to
   // this stream. Need to discuss with LB team.
   if (assigned_stores_.size() == 1) {
-    for (const auto& p : per_balancer_stores_) {
-      const std::string& other_lb_id = p.first;
-      const std::unique_ptr<PerBalancerStore>& orphaned_store = p.second;
+    for (const auto &p : per_balancer_stores_) {
+      const std::string &other_lb_id = p.first;
+      const std::unique_ptr<PerBalancerStore> &orphaned_store = p.second;
       if (other_lb_id != lb_id) {
         orphaned_store->Resume();
         AssignOrphanedStore(orphaned_store.get(), lb_id);
@@ -203,19 +203,19 @@ void PerHostStore::ReportStreamCreated(const std::string& lb_id,
   }
 }
 
-void PerHostStore::ReportStreamClosed(const std::string& lb_id) {
+void PerHostStore::ReportStreamClosed(const std::string &lb_id) {
   auto it_store_for_gone_lb = per_balancer_stores_.find(lb_id);
   GPR_ASSERT(it_store_for_gone_lb != per_balancer_stores_.end());
   // Remove this closed stream from our records.
   GPR_ASSERT(UnorderedMapOfSetEraseKeyValue(
       load_key_to_receiving_lb_ids_, it_store_for_gone_lb->second->load_key(),
       lb_id));
-  std::set<PerBalancerStore*> orphaned_stores =
+  std::set<PerBalancerStore *> orphaned_stores =
       UnorderedMapOfSetExtract(assigned_stores_, lb_id);
   // The stores that were assigned to this balancer are orphaned now. They
   // should be re-assigned to other balancers which are still receiving reports.
-  for (PerBalancerStore* orphaned_store : orphaned_stores) {
-    const std::string* new_receiver = nullptr;
+  for (PerBalancerStore *orphaned_store : orphaned_stores) {
+    const std::string *new_receiver = nullptr;
     auto it = load_key_to_receiving_lb_ids_.find(orphaned_store->load_key());
     if (it != load_key_to_receiving_lb_ids_.end()) {
       // First, try to pick from the active balancers with the same load key.
@@ -234,22 +234,22 @@ void PerHostStore::ReportStreamClosed(const std::string& lb_id) {
   }
 }
 
-PerBalancerStore* PerHostStore::FindPerBalancerStore(
-    const std::string& lb_id) const {
+PerBalancerStore *PerHostStore::FindPerBalancerStore(
+    const std::string &lb_id) const {
   return per_balancer_stores_.find(lb_id) != per_balancer_stores_.end()
              ? per_balancer_stores_.find(lb_id)->second.get()
              : nullptr;
 }
 
-const std::set<PerBalancerStore*>* PerHostStore::GetAssignedStores(
-    const std::string& lb_id) const {
+const std::set<PerBalancerStore *> *PerHostStore::GetAssignedStores(
+    const std::string &lb_id) const {
   auto it = assigned_stores_.find(lb_id);
   if (it == assigned_stores_.end()) return nullptr;
   return &(it->second);
 }
 
-void PerHostStore::AssignOrphanedStore(PerBalancerStore* orphaned_store,
-                                       const std::string& new_receiver) {
+void PerHostStore::AssignOrphanedStore(PerBalancerStore *orphaned_store,
+                                       const std::string &new_receiver) {
   auto it = assigned_stores_.find(new_receiver);
   GPR_ASSERT(it != assigned_stores_.end());
   it->second.insert(orphaned_store);
@@ -260,8 +260,8 @@ void PerHostStore::AssignOrphanedStore(PerBalancerStore* orphaned_store,
           new_receiver.c_str());
 }
 
-void PerHostStore::SetUpForNewLbId(const std::string& lb_id,
-                                   const std::string& load_key) {
+void PerHostStore::SetUpForNewLbId(const std::string &lb_id,
+                                   const std::string &load_key) {
   // The top-level caller (i.e., LoadReportService) should guarantee the
   // lb_id is unique for each reporting stream.
   GPR_ASSERT(per_balancer_stores_.find(lb_id) == per_balancer_stores_.end());
@@ -273,21 +273,21 @@ void PerHostStore::SetUpForNewLbId(const std::string& lb_id,
   per_balancer_stores_[lb_id] = std::move(per_balancer_store);
 }
 
-PerBalancerStore* LoadDataStore::FindPerBalancerStore(
-    const string& hostname, const string& lb_id) const {
+PerBalancerStore *LoadDataStore::FindPerBalancerStore(
+    const string &hostname, const string &lb_id) const {
   auto it = per_host_stores_.find(hostname);
   if (it != per_host_stores_.end()) {
-    const PerHostStore& per_host_store = it->second;
+    const PerHostStore &per_host_store = it->second;
     return per_host_store.FindPerBalancerStore(lb_id);
   } else {
     return nullptr;
   }
 }
 
-void LoadDataStore::MergeRow(const std::string& hostname,
-                             const LoadRecordKey& key,
-                             const LoadRecordValue& value) {
-  PerBalancerStore* per_balancer_store =
+void LoadDataStore::MergeRow(const std::string &hostname,
+                             const LoadRecordKey &key,
+                             const LoadRecordValue &value) {
+  PerBalancerStore *per_balancer_store =
       FindPerBalancerStore(hostname, key.lb_id());
   if (per_balancer_store != nullptr) {
     per_balancer_store->MergeRow(key, value);
@@ -314,21 +314,21 @@ void LoadDataStore::MergeRow(const std::string& hostname,
   }
 }
 
-const std::set<PerBalancerStore*>* LoadDataStore::GetAssignedStores(
-    const std::string& hostname, const std::string& lb_id) {
+const std::set<PerBalancerStore *> *LoadDataStore::GetAssignedStores(
+    const std::string &hostname, const std::string &lb_id) {
   auto it = per_host_stores_.find(hostname);
   if (it == per_host_stores_.end()) return nullptr;
   return it->second.GetAssignedStores(lb_id);
 }
 
-void LoadDataStore::ReportStreamCreated(const std::string& hostname,
-                                        const std::string& lb_id,
-                                        const std::string& load_key) {
+void LoadDataStore::ReportStreamCreated(const std::string &hostname,
+                                        const std::string &lb_id,
+                                        const std::string &load_key) {
   per_host_stores_[hostname].ReportStreamCreated(lb_id, load_key);
 }
 
-void LoadDataStore::ReportStreamClosed(const std::string& hostname,
-                                       const std::string& lb_id) {
+void LoadDataStore::ReportStreamClosed(const std::string &hostname,
+                                       const std::string &lb_id) {
   auto it_per_host_store = per_host_stores_.find(hostname);
   GPR_ASSERT(it_per_host_store != per_host_stores_.end());
   it_per_host_store->second.ReportStreamClosed(lb_id);

@@ -34,7 +34,7 @@ namespace grpc {
 class ResourceQuota final : private ::grpc::GrpcLibraryCodegen {
  public:
   /// \param name - a unique name for this ResourceQuota.
-  explicit ResourceQuota(const std::string& name);
+  explicit ResourceQuota(const std::string &name);
   ResourceQuota();
   ~ResourceQuota() override;
 
@@ -42,7 +42,7 @@ class ResourceQuota final : private ::grpc::GrpcLibraryCodegen {
   /// than the current size of the pool, memory usage will be monotonically
   /// decreased until it falls under \a new_size.
   /// No time bound is given for this to occur however.
-  ResourceQuota& Resize(size_t new_size);
+  ResourceQuota &Resize(size_t new_size);
 
   /// Set the max number of threads that can be allocated from this
   /// ResourceQuota object.
@@ -52,15 +52,15 @@ class ResourceQuota final : private ::grpc::GrpcLibraryCodegen {
   /// new_max_threads. There is no time bound on when this may happen i.e none
   /// of the current threads are forcefully destroyed and all threads run their
   /// normal course.
-  ResourceQuota& SetMaxThreads(int new_max_threads);
+  ResourceQuota &SetMaxThreads(int new_max_threads);
 
-  grpc_resource_quota* c_resource_quota() const { return impl_; }
+  grpc_resource_quota *c_resource_quota() const { return impl_; }
 
  private:
-  ResourceQuota(const ResourceQuota& rhs);
-  ResourceQuota& operator=(const ResourceQuota& rhs);
+  ResourceQuota(const ResourceQuota &rhs);
+  ResourceQuota &operator=(const ResourceQuota &rhs);
 
-  grpc_resource_quota* const impl_;
+  grpc_resource_quota *const impl_;
 };
 
 }  // namespace grpc

@@ -55,7 +55,7 @@ enum class Protocol { INPROC, TCP };
 class TestScenario {
  public:
   TestScenario(bool serve_callback, Protocol protocol, bool intercept,
-               const std::string& creds_type)
+               const std::string &creds_type)
       : callback_server(serve_callback),
         protocol(protocol),
         use_interceptors(intercept),
@@ -67,8 +67,8 @@ class TestScenario {
   const std::string credentials_type;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
+static std::ostream &operator<<(std::ostream &out,
+                                const TestScenario &scenario) {
   return out << "TestScenario{callback_server="
              << (scenario.callback_server ? "true" : "false") << ",protocol="
              << (scenario.protocol == Protocol::INPROC ? "INPROC" : "TCP")
@@ -217,7 +217,7 @@ class ClientCallbackEnd2endTest
   }
 
   void SendRpcsGeneric(int num_rpcs, bool maybe_except,
-                       const char* suffix_for_stats) {
+                       const char *suffix_for_stats) {
     const std::string kMethodName("/grpc.testing.EchoTestService/Echo");
     std::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
@@ -261,15 +261,15 @@ class ClientCallbackEnd2endTest
   }
 
   void SendGenericEchoAsBidi(int num_rpcs, int reuses, bool do_writes_done,
-                             const char* suffix_for_stats) {
+                             const char *suffix_for_stats) {
     const std::string kMethodName("/grpc.testing.EchoTestService/Echo");
     std::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
       test_string += "Hello world. ";
       class Client : public grpc::ClientBidiReactor<ByteBuffer, ByteBuffer> {
        public:
-        Client(ClientCallbackEnd2endTest* test, const std::string& method_name,
-               const char* suffix_for_stats, const std::string& test_str,
+        Client(ClientCallbackEnd2endTest *test, const std::string &method_name,
+               const char *suffix_for_stats, const std::string &test_str,
                int reuses, bool do_writes_done)
             : reuses_remaining_(reuses), do_writes_done_(do_writes_done) {
           activate_ = [this, test, method_name, suffix_for_stats, test_str] {
@@ -302,7 +302,7 @@ class ClientCallbackEnd2endTest
           EXPECT_TRUE(ParseFromByteBuffer(&recv_buf_, &response));
           EXPECT_EQ(request_.message(), response.message());
         };
-        void OnDone(const Status& s) override {
+        void OnDone(const Status &s) override {
           EXPECT_TRUE(s.ok());
           activate_();
         }
@@ -431,7 +431,7 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLockNested) {
   nested_call(0);
 
   // Wait for completion notifications from all RPCs. Order doesn't matter.
-  for (RpcState& state : rpc_state) {
+  for (RpcState &state : rpc_state) {
     std::unique_lock<std::mutex> l(state.mu);
     while (!state.done) {
       state.cv.wait(l);
@@ -639,7 +639,7 @@ struct ClientCancelInfo {
 
 class WriteClient : public grpc::ClientWriteReactor<EchoRequest> {
  public:
-  WriteClient(grpc::testing::EchoTestService::Stub* stub,
+  WriteClient(grpc::testing::EchoTestService::Stub *stub,
               ServerTryCancelRequestPhase server_try_cancel,
               int num_msgs_to_send, ClientCancelInfo client_cancel = {})
       : server_try_cancel_(server_try_cancel),
@@ -666,7 +666,7 @@ class WriteClient : public grpc::ClientWriteReactor<EchoRequest> {
       MaybeWrite();
     }
   }
-  void OnDone(const Status& s) override {
+  void OnDone(const Status &s) override {
     gpr_log(GPR_INFO, "Sent %d messages", num_msgs_sent_);
     int num_to_send =
         (client_cancel_.cancel)
@@ -791,7 +791,7 @@ TEST_P(ClientCallbackEnd2endTest, UnaryReactor) {
   ResetStub();
   class UnaryClient : public grpc::ClientUnaryReactor {
    public:
-    explicit UnaryClient(grpc::testing::EchoTestService::Stub* stub) {
+    explicit UnaryClient(grpc::testing::EchoTestService::Stub *stub) {
       cli_ctx_.AddMetadata("key1", "val1");
       cli_ctx_.AddMetadata("key2", "val2");
       request_.mutable_param()->set_echo_metadata_initially(true);
@@ -811,7 +811,7 @@ TEST_P(ClientCallbackEnd2endTest, UnaryReactor) {
           ToString(cli_ctx_.GetServerInitialMetadata().find("key2")->second));
       initial_metadata_done_ = true;
     }
-    void OnDone(const Status& s) override {
+    void OnDone(const Status &s) override {
       EXPECT_TRUE(initial_metadata_done_);
       EXPECT_EQ(0u, cli_ctx_.GetServerTrailingMetadata().size());
       EXPECT_TRUE(s.ok());
@@ -852,8 +852,8 @@ TEST_P(ClientCallbackEnd2endTest, GenericUnaryReactor) {
       absl::make_unique<TestInterceptorFactory>(kMethodName, kSuffixForStats));
   class UnaryClient : public grpc::ClientUnaryReactor {
    public:
-    UnaryClient(grpc::GenericStub* stub, const std::string& method_name,
-                const char* suffix_for_stats) {
+    UnaryClient(grpc::GenericStub *stub, const std::string &method_name,
+                const char *suffix_for_stats) {
       cli_ctx_.AddMetadata("key1", "val1");
       cli_ctx_.AddMetadata("key2", "val2");
       request_.mutable_param()->set_echo_metadata_initially(true);
@@ -877,7 +877,7 @@ TEST_P(ClientCallbackEnd2endTest, GenericUnaryReactor) {
           ToString(cli_ctx_.GetServerInitialMetadata().find("key2")->second));
       initial_metadata_done_ = true;
     }
-    void OnDone(const Status& s) override {
+    void OnDone(const Status &s) override {
       EXPECT_TRUE(initial_metadata_done_);
       EXPECT_EQ(0u, cli_ctx_.GetServerTrailingMetadata().size());
       EXPECT_TRUE(s.ok());
@@ -916,7 +916,7 @@ TEST_P(ClientCallbackEnd2endTest, GenericUnaryReactor) {
 
 class ReadClient : public grpc::ClientReadReactor<EchoResponse> {
  public:
-  ReadClient(grpc::testing::EchoTestService::Stub* stub,
+  ReadClient(grpc::testing::EchoTestService::Stub *stub,
              ServerTryCancelRequestPhase server_try_cancel,
              ClientCancelInfo client_cancel = {})
       : server_try_cancel_(server_try_cancel), client_cancel_{client_cancel} {
@@ -955,7 +955,7 @@ class ReadClient : public grpc::ClientReadReactor<EchoResponse> {
       StartRead(&response_);
     }
   }
-  void OnDone(const Status& s) override {
+  void OnDone(const Status &s) override {
     gpr_log(GPR_INFO, "Read %d messages", reads_complete_);
     switch (server_try_cancel_) {
       case DO_NOT_CANCEL:
@@ -1068,7 +1068,7 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStreamServerCancelAfter) {
 
 class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
  public:
-  BidiClient(grpc::testing::EchoTestService::Stub* stub,
+  BidiClient(grpc::testing::EchoTestService::Stub *stub,
              ServerTryCancelRequestPhase server_try_cancel,
              int num_msgs_to_send, bool cork_metadata, bool first_write_async,
              ClientCancelInfo client_cancel = {})
@@ -1116,7 +1116,7 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
     writes_complete_++;
     MaybeWrite();
   }
-  void OnDone(const Status& s) override {
+  void OnDone(const Status &s) override {
     gpr_log(GPR_INFO, "Sent %d messages", writes_complete_);
     gpr_log(GPR_INFO, "Read %d messages", reads_complete_);
     switch (server_try_cancel_) {
@@ -1323,7 +1323,7 @@ TEST_P(ClientCallbackEnd2endTest, SimultaneousReadAndWritesDone) {
   ResetStub();
   class Client : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
    public:
-    explicit Client(grpc::testing::EchoTestService::Stub* stub) {
+    explicit Client(grpc::testing::EchoTestService::Stub *stub) {
       request_.set_message("Hello bidi ");
       stub->async()->BidiStream(&context_, this);
       StartWrite(&request_);
@@ -1339,7 +1339,7 @@ TEST_P(ClientCallbackEnd2endTest, SimultaneousReadAndWritesDone) {
       StartWritesDone();
       StartRead(&response_);
     }
-    void OnDone(const Status& s) override {
+    void OnDone(const Status &s) override {
       EXPECT_TRUE(s.ok());
       EXPECT_EQ(response_.message(), request_.message());
       std::unique_lock<std::mutex> l(mu_);
@@ -1367,7 +1367,7 @@ TEST_P(ClientCallbackEnd2endTest, SimultaneousReadAndWritesDone) {
 
 TEST_P(ClientCallbackEnd2endTest, UnimplementedRpc) {
   ChannelArguments args;
-  const auto& channel_creds = GetCredentialsProvider()->GetChannelCredentials(
+  const auto &channel_creds = GetCredentialsProvider()->GetChannelCredentials(
       GetParam().credentials_type, &args);
   std::shared_ptr<Channel> channel =
       (GetParam().protocol == Protocol::TCP)
@@ -1408,7 +1408,7 @@ TEST_P(ClientCallbackEnd2endTest, TestTrailersOnlyOnError) {
   ResetStub();
   class Reactor : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
    public:
-    explicit Reactor(grpc::testing::EchoTestService::Stub* stub) {
+    explicit Reactor(grpc::testing::EchoTestService::Stub *stub) {
       stub->async()->UnimplementedBidi(&context_, this);
       StartCall();
     }
@@ -1421,7 +1421,7 @@ TEST_P(ClientCallbackEnd2endTest, TestTrailersOnlyOnError) {
 
    private:
     void OnReadInitialMetadataDone(bool ok) override { EXPECT_FALSE(ok); }
-    void OnDone(const Status& s) override {
+    void OnDone(const Status &s) override {
       EXPECT_EQ(s.error_code(), grpc::StatusCode::UNIMPLEMENTED);
       EXPECT_EQ(s.error_message(), "");
       std::unique_lock<std::mutex> l(mu_);
@@ -1445,7 +1445,7 @@ TEST_P(ClientCallbackEnd2endTest,
       : public grpc::ClientReadReactor<EchoResponse> {
    public:
     explicit ReadAllIncomingDataClient(
-        grpc::testing::EchoTestService::Stub* stub) {
+        grpc::testing::EchoTestService::Stub *stub) {
       request_.set_message("Hello client ");
       stub->async()->ResponseStream(&context_, &request_, this);
     }
@@ -1469,7 +1469,7 @@ TEST_P(ClientCallbackEnd2endTest,
       std::unique_lock<std::mutex> l(mu_);
       RemoveHold();
     }
-    const Status& status() {
+    const Status &status() {
       std::unique_lock<std::mutex> l(mu_);
       return status_;
     }
@@ -1481,7 +1481,7 @@ TEST_P(ClientCallbackEnd2endTest,
       read_done_ = true;
       read_cv_.notify_one();
     }
-    void OnDone(const Status& s) override {
+    void OnDone(const Status &s) override {
       std::unique_lock<std::mutex> l(mu_);
       done_ = true;
       status_ = s;
@@ -1543,7 +1543,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   bool barr[]{false, true};
   Protocol parr[]{Protocol::INPROC, Protocol::TCP};
   for (Protocol p : parr) {
-    for (const auto& cred : credentials_types) {
+    for (const auto &cred : credentials_types) {
       // TODO(vjpai): Test inproc with secure credentials when feasible
       if (p == Protocol::INPROC &&
           (cred != kInsecureCredentialsType || !insec_ok())) {
@@ -1566,7 +1566,7 @@ INSTANTIATE_TEST_SUITE_P(ClientCallbackEnd2endTest, ClientCallbackEnd2endTest,
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();

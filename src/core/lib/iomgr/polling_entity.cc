@@ -24,7 +24,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 
 grpc_polling_entity grpc_polling_entity_create_from_pollset_set(
-    grpc_pollset_set* pollset_set) {
+    grpc_pollset_set *pollset_set) {
   grpc_polling_entity pollent;
   pollent.pollent.pollset_set = pollset_set;
   pollent.tag = GRPC_POLLS_POLLSET_SET;
@@ -32,34 +32,34 @@ grpc_polling_entity grpc_polling_entity_create_from_pollset_set(
 }
 
 grpc_polling_entity grpc_polling_entity_create_from_pollset(
-    grpc_pollset* pollset) {
+    grpc_pollset *pollset) {
   grpc_polling_entity pollent;
   pollent.pollent.pollset = pollset;
   pollent.tag = GRPC_POLLS_POLLSET;
   return pollent;
 }
 
-grpc_pollset* grpc_polling_entity_pollset(grpc_polling_entity* pollent) {
+grpc_pollset *grpc_polling_entity_pollset(grpc_polling_entity *pollent) {
   if (pollent->tag == GRPC_POLLS_POLLSET) {
     return pollent->pollent.pollset;
   }
   return nullptr;
 }
 
-grpc_pollset_set* grpc_polling_entity_pollset_set(
-    grpc_polling_entity* pollent) {
+grpc_pollset_set *grpc_polling_entity_pollset_set(
+    grpc_polling_entity *pollent) {
   if (pollent->tag == GRPC_POLLS_POLLSET_SET) {
     return pollent->pollent.pollset_set;
   }
   return nullptr;
 }
 
-bool grpc_polling_entity_is_empty(const grpc_polling_entity* pollent) {
+bool grpc_polling_entity_is_empty(const grpc_polling_entity *pollent) {
   return pollent->tag == GRPC_POLLS_NONE;
 }
 
-void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
-                                            grpc_pollset_set* pss_dst) {
+void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity *pollent,
+                                            grpc_pollset_set *pss_dst) {
   if (pollent->tag == GRPC_POLLS_POLLSET) {
     // CFStream does not use file destriptors. When CFStream is used, the fd
     // pollset is possible to be null.
@@ -75,8 +75,8 @@ void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
   }
 }
 
-void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
-                                              grpc_pollset_set* pss_dst) {
+void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity *pollent,
+                                              grpc_pollset_set *pss_dst) {
   if (pollent->tag == GRPC_POLLS_POLLSET) {
 #ifdef GRPC_CFSTREAM
     if (pollent->pollent.pollset != nullptr) {

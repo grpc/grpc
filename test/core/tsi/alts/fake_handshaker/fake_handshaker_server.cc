@@ -59,8 +59,8 @@ class FakeHandshakerService : public HandshakerService::Service {
       : expected_max_concurrent_rpcs_(expected_max_concurrent_rpcs) {}
 
   Status DoHandshake(
-      ServerContext* /*server_context*/,
-      ServerReaderWriter<HandshakerResp, HandshakerReq>* stream) override {
+      ServerContext * /*server_context*/,
+      ServerReaderWriter<HandshakerResp, HandshakerReq> *stream) override {
     ConcurrentRpcsCheck concurrent_rpcs_check(this);
     Status status;
     HandshakerContext context;
@@ -91,9 +91,9 @@ class FakeHandshakerService : public HandshakerService::Service {
     HandshakeState state = INITIAL;
   };
 
-  Status ProcessRequest(HandshakerContext* context,
-                        const HandshakerReq& request,
-                        HandshakerResp* response) {
+  Status ProcessRequest(HandshakerContext *context,
+                        const HandshakerReq &request,
+                        HandshakerResp *response) {
     GPR_ASSERT(context != nullptr && response != nullptr);
     response->Clear();
     if (request.has_client_start()) {
@@ -109,9 +109,9 @@ class FakeHandshakerService : public HandshakerService::Service {
     return Status(StatusCode::INVALID_ARGUMENT, "Request is empty.");
   }
 
-  Status ProcessClientStart(HandshakerContext* context,
-                            const StartClientHandshakeReq& request,
-                            HandshakerResp* response) {
+  Status ProcessClientStart(HandshakerContext *context,
+                            const StartClientHandshakeReq &request,
+                            HandshakerResp *response) {
     GPR_ASSERT(context != nullptr && response != nullptr);
     // Checks request.
     if (context->state != INITIAL) {
@@ -135,9 +135,9 @@ class FakeHandshakerService : public HandshakerService::Service {
     return Status::OK;
   }
 
-  Status ProcessServerStart(HandshakerContext* context,
-                            const StartServerHandshakeReq& request,
-                            HandshakerResp* response) {
+  Status ProcessServerStart(HandshakerContext *context,
+                            const StartServerHandshakeReq &request,
+                            HandshakerResp *response) {
     GPR_ASSERT(context != nullptr && response != nullptr);
     // Checks request.
     if (context->state != INITIAL) {
@@ -171,9 +171,9 @@ class FakeHandshakerService : public HandshakerService::Service {
     return Status::OK;
   }
 
-  Status ProcessNext(HandshakerContext* context,
-                     const NextHandshakeMessageReq& request,
-                     HandshakerResp* response) {
+  Status ProcessNext(HandshakerContext *context,
+                     const NextHandshakeMessageReq &request,
+                     HandshakerResp *response) {
     GPR_ASSERT(context != nullptr && response != nullptr);
     if (context->is_client) {
       // Processes next request on client side.
@@ -218,8 +218,8 @@ class FakeHandshakerService : public HandshakerService::Service {
   }
 
   Status WriteErrorResponse(
-      ServerReaderWriter<HandshakerResp, HandshakerReq>* stream,
-      const Status& status) {
+      ServerReaderWriter<HandshakerResp, HandshakerReq> *stream,
+      const Status &status) {
     GPR_ASSERT(!status.ok());
     HandshakerResp response;
     response.mutable_status()->set_code(status.error_code());
@@ -246,7 +246,7 @@ class FakeHandshakerService : public HandshakerService::Service {
 
   class ConcurrentRpcsCheck {
    public:
-    explicit ConcurrentRpcsCheck(FakeHandshakerService* parent)
+    explicit ConcurrentRpcsCheck(FakeHandshakerService *parent)
         : parent_(parent) {
       if (parent->expected_max_concurrent_rpcs_ > 0) {
         grpc::internal::MutexLock lock(
@@ -272,7 +272,7 @@ class FakeHandshakerService : public HandshakerService::Service {
     }
 
    private:
-    FakeHandshakerService* parent_;
+    FakeHandshakerService *parent_;
   };
 
   grpc::internal::Mutex expected_max_concurrent_rpcs_mu_;

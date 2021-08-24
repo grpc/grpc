@@ -29,14 +29,14 @@ class ThreadPoolInterface {
   virtual ~ThreadPoolInterface() {}
 
   // Schedule the given callback for execution.
-  virtual void Add(const std::function<void()>& callback) = 0;
+  virtual void Add(const std::function<void()> &callback) = 0;
 };
 
 // Allows different codebases to use their own thread pool impls
-typedef ThreadPoolInterface* (*CreateThreadPoolFunc)(void);
+typedef ThreadPoolInterface *(*CreateThreadPoolFunc)(void);
 void SetCreateThreadPool(CreateThreadPoolFunc func);
 
-ThreadPoolInterface* CreateDefaultThreadPool();
+ThreadPoolInterface *CreateDefaultThreadPool();
 
 }  // namespace grpc
 

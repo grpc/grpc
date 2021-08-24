@@ -52,14 +52,14 @@ static void create_sockets(int sv[2]) {
   GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == GRPC_ERROR_NONE);
 }
 
-grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
-                                                   grpc_channel_args* args) {
+grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char *name,
+                                                   grpc_channel_args *args) {
   int sv[2];
   grpc_endpoint_pair p;
   create_sockets(sv);
   grpc_core::ExecCtx exec_ctx;
   std::string final_name = absl::StrCat(name, ":client");
-  grpc_resource_quota* resource_quota =
+  grpc_resource_quota *resource_quota =
       grpc_resource_quota_from_channel_args(args, true);
   p.client = grpc_tcp_create(
       grpc_fd_create(sv[1], final_name.c_str(), false), args,

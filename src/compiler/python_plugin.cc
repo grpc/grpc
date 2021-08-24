@@ -22,7 +22,7 @@
 #include "src/compiler/protobuf_plugin.h"
 #include "src/compiler/python_generator.h"
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   grpc_python_generator::GeneratorConfiguration config;
   grpc_python_generator::PythonGrpcGenerator generator(config);
   return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);

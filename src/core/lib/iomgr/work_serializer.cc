@@ -25,7 +25,7 @@ namespace grpc_core {
 DebugOnlyTraceFlag grpc_work_serializer_trace(false, "work_serializer");
 
 struct CallbackWrapper {
-  CallbackWrapper(std::function<void()> cb, const grpc_core::DebugLocation& loc)
+  CallbackWrapper(std::function<void()> cb, const grpc_core::DebugLocation &loc)
       : callback(std::move(cb)), location(loc) {}
 
   MultiProducerSingleConsumerQueue::Node mpscq_node;
@@ -36,7 +36,7 @@ struct CallbackWrapper {
 class WorkSerializer::WorkSerializerImpl : public Orphanable {
  public:
   void Run(std::function<void()> callback,
-           const grpc_core::DebugLocation& location);
+           const grpc_core::DebugLocation &location);
 
   void Orphan() override;
 
@@ -50,7 +50,7 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
 };
 
 void WorkSerializer::WorkSerializerImpl::Run(
-    std::function<void()> callback, const grpc_core::DebugLocation& location) {
+    std::function<void()> callback, const grpc_core::DebugLocation &location) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
     gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]",
             this, location.file(), location.line());
@@ -68,7 +68,7 @@ void WorkSerializer::WorkSerializerImpl::Run(
     // Loan this thread to the work serializer thread and drain the queue.
     DrainQueue();
   } else {
-    CallbackWrapper* cb_wrapper =
+    CallbackWrapper *cb_wrapper =
         new CallbackWrapper(std::move(callback), location);
     // There already are closures executing on this work serializer. Simply add
     // this closure to the queue.
@@ -120,9 +120,9 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
     }
     // There is at least one callback on the queue. Pop the callback from the
     // queue and execute it.
-    CallbackWrapper* cb_wrapper = nullptr;
+    CallbackWrapper *cb_wrapper = nullptr;
     bool empty_unused;
-    while ((cb_wrapper = reinterpret_cast<CallbackWrapper*>(
+    while ((cb_wrapper = reinterpret_cast<CallbackWrapper *>(
                 queue_.PopAndCheckEnd(&empty_unused))) == nullptr) {
       // This can happen either due to a race condition within the mpscq
       // implementation or because of a race with Run()
@@ -148,7 +148,7 @@ WorkSerializer::WorkSerializer()
 WorkSerializer::~WorkSerializer() {}
 
 void WorkSerializer::Run(std::function<void()> callback,
-                         const grpc_core::DebugLocation& location) {
+                         const grpc_core::DebugLocation &location) {
   impl_->Run(std::move(callback), location);
 }
 

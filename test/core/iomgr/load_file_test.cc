@@ -34,11 +34,11 @@
 static const char prefix[] = "file_test";
 
 static void test_load_empty_file(void) {
-  FILE* tmp = nullptr;
+  FILE *tmp = nullptr;
   grpc_slice slice;
   grpc_slice slice_with_null_term;
   grpc_error_handle error;
-  char* tmp_name;
+  char *tmp_name;
 
   LOG_TEST_NAME("test_load_empty_file");
 
@@ -63,10 +63,10 @@ static void test_load_empty_file(void) {
 }
 
 static void test_load_failure(void) {
-  FILE* tmp = nullptr;
+  FILE *tmp = nullptr;
   grpc_slice slice;
   grpc_error_handle error;
-  char* tmp_name;
+  char *tmp_name;
 
   LOG_TEST_NAME("test_load_failure");
 
@@ -85,12 +85,12 @@ static void test_load_failure(void) {
 }
 
 static void test_load_small_file(void) {
-  FILE* tmp = nullptr;
+  FILE *tmp = nullptr;
   grpc_slice slice;
   grpc_slice slice_with_null_term;
   grpc_error_handle error;
-  char* tmp_name;
-  const char* blah = "blah";
+  char *tmp_name;
+  const char *blah = "blah";
 
   LOG_TEST_NAME("test_load_small_file");
 
@@ -108,7 +108,7 @@ static void test_load_small_file(void) {
   error = grpc_load_file(tmp_name, 1, &slice_with_null_term);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice_with_null_term) == (strlen(blah) + 1));
-  GPR_ASSERT(strcmp((const char*)GRPC_SLICE_START_PTR(slice_with_null_term),
+  GPR_ASSERT(strcmp((const char *)GRPC_SLICE_START_PTR(slice_with_null_term),
                     blah) == 0);
 
   remove(tmp_name);
@@ -118,13 +118,13 @@ static void test_load_small_file(void) {
 }
 
 static void test_load_big_file(void) {
-  FILE* tmp = nullptr;
+  FILE *tmp = nullptr;
   grpc_slice slice;
   grpc_error_handle error;
-  char* tmp_name;
+  char *tmp_name;
   static const size_t buffer_size = 124631;
-  unsigned char* buffer = static_cast<unsigned char*>(gpr_malloc(buffer_size));
-  unsigned char* current;
+  unsigned char *buffer = static_cast<unsigned char *>(gpr_malloc(buffer_size));
+  unsigned char *current;
   size_t i;
 
   LOG_TEST_NAME("test_load_big_file");
@@ -151,7 +151,7 @@ static void test_load_big_file(void) {
   gpr_free(buffer);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_load_empty_file();

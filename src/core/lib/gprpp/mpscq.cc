@@ -26,23 +26,23 @@ namespace grpc_core {
 // MultiProducerSingleConsumerQueue
 //
 
-bool MultiProducerSingleConsumerQueue::Push(Node* node) {
+bool MultiProducerSingleConsumerQueue::Push(Node *node) {
   node->next.store(nullptr, std::memory_order_relaxed);
-  Node* prev = head_.exchange(node, std::memory_order_acq_rel);
+  Node *prev = head_.exchange(node, std::memory_order_acq_rel);
   prev->next.store(node, std::memory_order_release);
   return prev == &stub_;
 }
 
-MultiProducerSingleConsumerQueue::Node*
+MultiProducerSingleConsumerQueue::Node *
 MultiProducerSingleConsumerQueue::Pop() {
   bool empty;
   return PopAndCheckEnd(&empty);
 }
 
-MultiProducerSingleConsumerQueue::Node*
-MultiProducerSingleConsumerQueue::PopAndCheckEnd(bool* empty) {
-  Node* tail = tail_;
-  Node* next = tail_->next.load(std::memory_order_acquire);
+MultiProducerSingleConsumerQueue::Node *
+MultiProducerSingleConsumerQueue::PopAndCheckEnd(bool *empty) {
+  Node *tail = tail_;
+  Node *next = tail_->next.load(std::memory_order_acquire);
   if (tail == &stub_) {
     // indicates the list is actually (ephemerally) empty
     if (next == nullptr) {
@@ -58,7 +58,7 @@ MultiProducerSingleConsumerQueue::PopAndCheckEnd(bool* empty) {
     tail_ = next;
     return tail;
   }
-  Node* head = head_.load(std::memory_order_acquire);
+  Node *head = head_.load(std::memory_order_acquire);
   if (tail != head) {
     *empty = false;
     // indicates a retry is in order: we're still adding
@@ -80,25 +80,25 @@ MultiProducerSingleConsumerQueue::PopAndCheckEnd(bool* empty) {
 // LockedMultiProducerSingleConsumerQueue
 //
 
-bool LockedMultiProducerSingleConsumerQueue::Push(Node* node) {
+bool LockedMultiProducerSingleConsumerQueue::Push(Node *node) {
   return queue_.Push(node);
 }
 
-LockedMultiProducerSingleConsumerQueue::Node*
+LockedMultiProducerSingleConsumerQueue::Node *
 LockedMultiProducerSingleConsumerQueue::TryPop() {
   if (mu_.TryLock()) {
-    Node* node = queue_.Pop();
+    Node *node = queue_.Pop();
     mu_.Unlock();
     return node;
   }
   return nullptr;
 }
 
-LockedMultiProducerSingleConsumerQueue::Node*
+LockedMultiProducerSingleConsumerQueue::Node *
 LockedMultiProducerSingleConsumerQueue::Pop() {
   MutexLock lock(&mu_);
   bool empty = false;
-  Node* node;
+  Node *node;
   do {
     node = queue_.PopAndCheckEnd(&empty);
   } while (node == nullptr && !empty);

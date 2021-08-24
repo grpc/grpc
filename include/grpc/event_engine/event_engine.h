@@ -93,10 +93,10 @@ class EventEngine {
    public:
     static constexpr socklen_t MAX_SIZE_BYTES = 128;
 
-    ResolvedAddress(const sockaddr* address, socklen_t size);
+    ResolvedAddress(const sockaddr *address, socklen_t size);
     ResolvedAddress() = default;
-    ResolvedAddress(const ResolvedAddress&) = default;
-    const struct sockaddr* address() const;
+    ResolvedAddress(const ResolvedAddress &) = default;
+    const struct sockaddr *address() const;
     socklen_t size() const;
 
    private:
@@ -128,7 +128,7 @@ class EventEngine {
     /// For failed read operations, implementations should pass the appropriate
     /// statuses to \a on_read. For example, callbacks might expect to receive
     /// CANCELLED on endpoint shutdown.
-    virtual void Read(Callback on_read, SliceBuffer* buffer) = 0;
+    virtual void Read(Callback on_read, SliceBuffer *buffer) = 0;
     /// Write data out on the connection.
     ///
     /// \a on_writable is called when the connection is ready for more data. The
@@ -139,12 +139,12 @@ class EventEngine {
     /// For failed write operations, implementations should pass the appropriate
     /// statuses to \a on_writable. For example, callbacks might expect to
     /// receive CANCELLED on endpoint shutdown.
-    virtual void Write(Callback on_writable, SliceBuffer* data) = 0;
+    virtual void Write(Callback on_writable, SliceBuffer *data) = 0;
     /// These methods return an address in the format described in DNSResolver.
     /// The returned values are owned by the Endpoint and are expected to remain
     /// valid for the life of the Endpoint.
-    virtual const ResolvedAddress& GetPeerAddress() const = 0;
-    virtual const ResolvedAddress& GetLocalAddress() const = 0;
+    virtual const ResolvedAddress &GetPeerAddress() const = 0;
+    virtual const ResolvedAddress &GetLocalAddress() const = 0;
   };
 
   /// Called when a new connection is established.
@@ -168,7 +168,7 @@ class EventEngine {
     /// It is expected that multiple addresses/ports can be bound to this
     /// Listener before Listener::Start has been called. Returns either the
     /// bound port or an appropriate error status.
-    virtual absl::StatusOr<int> Bind(const ResolvedAddress& addr) = 0;
+    virtual absl::StatusOr<int> Bind(const ResolvedAddress &addr) = 0;
     virtual absl::Status Start() = 0;
   };
 
@@ -192,7 +192,7 @@ class EventEngine {
   /// for Endpoint construction.
   virtual absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept, Callback on_shutdown,
-      const EndpointConfig& args,
+      const EndpointConfig &args,
       std::unique_ptr<SliceAllocatorFactory> slice_allocator_factory) = 0;
   /// Creates a client network connection to a remote network listener.
   ///
@@ -208,8 +208,8 @@ class EventEngine {
   /// usage with graceful degradation mechanisms. Please see the \a
   /// SliceAllocator API for more information.
   virtual absl::Status Connect(OnConnectCallback on_connect,
-                               const ResolvedAddress& addr,
-                               const EndpointConfig& args,
+                               const ResolvedAddress &addr,
+                               const EndpointConfig &args,
                                std::unique_ptr<SliceAllocator> slice_allocator,
                                absl::Time deadline) = 0;
 

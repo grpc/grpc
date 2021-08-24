@@ -29,11 +29,11 @@
 #include "src/core/lib/iomgr/resource_quota.h"
 
 typedef struct grpc_tcp_client_vtable {
-  void (*connect)(grpc_closure* on_connect, grpc_endpoint** endpoint,
-                  grpc_slice_allocator* slice_allocator,
-                  grpc_pollset_set* interested_parties,
-                  const grpc_channel_args* channel_args,
-                  const grpc_resolved_address* addr, grpc_millis deadline);
+  void (*connect)(grpc_closure *on_connect, grpc_endpoint **endpoint,
+                  grpc_slice_allocator *slice_allocator,
+                  grpc_pollset_set *interested_parties,
+                  const grpc_channel_args *channel_args,
+                  const grpc_resolved_address *addr, grpc_millis deadline);
 } grpc_tcp_client_vtable;
 
 /* Asynchronously connect to an address (specified as (addr, len)), and call
@@ -41,15 +41,15 @@ typedef struct grpc_tcp_client_vtable {
    NULL on failure).
    interested_parties points to a set of pollsets that would be interested
    in this connection being established (in order to continue their work) */
-void grpc_tcp_client_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
-                             grpc_slice_allocator* slice_allocator,
-                             grpc_pollset_set* interested_parties,
-                             const grpc_channel_args* channel_args,
-                             const grpc_resolved_address* addr,
+void grpc_tcp_client_connect(grpc_closure *on_connect, grpc_endpoint **endpoint,
+                             grpc_slice_allocator *slice_allocator,
+                             grpc_pollset_set *interested_parties,
+                             const grpc_channel_args *channel_args,
+                             const grpc_resolved_address *addr,
                              grpc_millis deadline);
 
 void grpc_tcp_client_global_init();
 
-void grpc_set_tcp_client_impl(grpc_tcp_client_vtable* impl);
+void grpc_set_tcp_client_impl(grpc_tcp_client_vtable *impl);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H */

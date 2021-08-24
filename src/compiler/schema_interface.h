@@ -60,13 +60,13 @@ struct Method : public CommentHolder {
   virtual std::string output_type_name() const = 0;
 
   virtual bool get_module_and_message_path_input(
-      std::string* str, std::string generator_file_name,
+      std::string *str, std::string generator_file_name,
       bool generate_in_pb2_grpc, std::string import_prefix,
-      const std::vector<std::string>& prefixes_to_filter) const = 0;
+      const std::vector<std::string> &prefixes_to_filter) const = 0;
   virtual bool get_module_and_message_path_output(
-      std::string* str, std::string generator_file_name,
+      std::string *str, std::string generator_file_name,
       bool generate_in_pb2_grpc, std::string import_prefix,
-      const std::vector<std::string>& prefixes_to_filter) const = 0;
+      const std::vector<std::string> &prefixes_to_filter) const = 0;
 
   virtual std::string get_input_type_name() const = 0;
   virtual std::string get_output_type_name() const = 0;
@@ -89,10 +89,10 @@ struct Service : public CommentHolder {
 struct Printer {
   virtual ~Printer() {}
 
-  virtual void Print(const std::map<std::string, std::string>& vars,
-                     const char* template_string) = 0;
-  virtual void Print(const char* string) = 0;
-  virtual void PrintRaw(const char* string) = 0;
+  virtual void Print(const std::map<std::string, std::string> &vars,
+                     const char *template_string) = 0;
+  virtual void Print(const char *string) = 0;
+  virtual void PrintRaw(const char *string) = 0;
   virtual void Indent() = 0;
   virtual void Outdent() = 0;
 };
@@ -112,7 +112,7 @@ struct File : public CommentHolder {
   virtual int service_count() const = 0;
   virtual std::unique_ptr<const Service> service(int i) const = 0;
 
-  virtual std::unique_ptr<Printer> CreatePrinter(std::string* str) const = 0;
+  virtual std::unique_ptr<Printer> CreatePrinter(std::string *str) const = 0;
 };
 }  // namespace grpc_generator
 

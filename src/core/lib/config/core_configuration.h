@@ -25,8 +25,8 @@ namespace grpc_core {
 // that plugins might choose to extend.
 class CoreConfiguration {
  public:
-  CoreConfiguration(const CoreConfiguration&) = delete;
-  CoreConfiguration& operator=(const CoreConfiguration&) = delete;
+  CoreConfiguration(const CoreConfiguration &) = delete;
+  CoreConfiguration &operator=(const CoreConfiguration &) = delete;
 
   // Builder is passed to plugins, etc... at initialization time to collect
   // their configuration and assemble the published CoreConfiguration.
@@ -36,14 +36,14 @@ class CoreConfiguration {
     friend class CoreConfiguration;
 
     Builder();
-    CoreConfiguration* Build();
+    CoreConfiguration *Build();
   };
 
   // Lifetime methods
 
   // Get the core configuration; if it does not exist, create it.
-  static const CoreConfiguration& Get() {
-    CoreConfiguration* p = config_.load(std::memory_order_acquire);
+  static const CoreConfiguration &Get() {
+    CoreConfiguration *p = config_.load(std::memory_order_acquire);
     if (p != nullptr) {
       return *p;
     }
@@ -61,13 +61,13 @@ class CoreConfiguration {
 
   // Create a new CoreConfiguration, and either set it or throw it away.
   // We allow multiple CoreConfiguration's to be created in parallel.
-  static const CoreConfiguration& BuildNewAndMaybeSet();
+  static const CoreConfiguration &BuildNewAndMaybeSet();
 
   // The configuration
-  static std::atomic<CoreConfiguration*> config_;
+  static std::atomic<CoreConfiguration *> config_;
 };
 
-extern void BuildCoreConfiguration(CoreConfiguration::Builder* builder);
+extern void BuildCoreConfiguration(CoreConfiguration::Builder *builder);
 
 }  // namespace grpc_core
 

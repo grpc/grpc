@@ -49,8 +49,8 @@ class ExternalAccountCredentials
   };
 
   static RefCountedPtr<ExternalAccountCredentials> Create(
-      const Json& json, std::vector<std::string> scopes,
-      grpc_error_handle* error);
+      const Json &json, std::vector<std::string> scopes,
+      grpc_error_handle *error);
 
   ExternalAccountCredentials(Options options, std::vector<std::string> scopes);
   ~ExternalAccountCredentials() override;
@@ -60,8 +60,8 @@ class ExternalAccountCredentials
   // This is a helper struct to pass information between multiple callback based
   // asynchronous calls.
   struct HTTPRequestContext {
-    HTTPRequestContext(grpc_httpcli_context* httpcli_context,
-                       grpc_polling_entity* pollent, grpc_millis deadline)
+    HTTPRequestContext(grpc_httpcli_context *httpcli_context,
+                       grpc_polling_entity *pollent, grpc_millis deadline)
         : httpcli_context(httpcli_context),
           pollent(pollent),
           deadline(deadline) {}
@@ -69,8 +69,8 @@ class ExternalAccountCredentials
 
     // Contextual parameters passed from
     // grpc_oauth2_token_fetcher_credentials::fetch_oauth2().
-    grpc_httpcli_context* httpcli_context;
-    grpc_polling_entity* pollent;
+    grpc_httpcli_context *httpcli_context;
+    grpc_polling_entity *pollent;
     grpc_millis deadline;
 
     // Reusable token fetch http response and closure.
@@ -84,26 +84,26 @@ class ExternalAccountCredentials
   // the callback function (cb) to pass the subject token (or error)
   // back.
   virtual void RetrieveSubjectToken(
-      HTTPRequestContext* ctx, const Options& options,
+      HTTPRequestContext *ctx, const Options &options,
       std::function<void(std::string, grpc_error_handle)> cb) = 0;
 
  private:
   // This method implements the common token fetch logic and it will be called
   // when grpc_oauth2_token_fetcher_credentials request a new access token.
-  void fetch_oauth2(grpc_credentials_metadata_request* req,
-                    grpc_httpcli_context* httpcli_context,
-                    grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
+  void fetch_oauth2(grpc_credentials_metadata_request *req,
+                    grpc_httpcli_context *httpcli_context,
+                    grpc_polling_entity *pollent, grpc_iomgr_cb_func cb,
                     grpc_millis deadline) override;
 
   void OnRetrieveSubjectTokenInternal(absl::string_view subject_token,
                                       grpc_error_handle error);
 
   void ExchangeToken(absl::string_view subject_token);
-  static void OnExchangeToken(void* arg, grpc_error_handle error);
+  static void OnExchangeToken(void *arg, grpc_error_handle error);
   void OnExchangeTokenInternal(grpc_error_handle error);
 
   void ImpersenateServiceAccount();
-  static void OnImpersenateServiceAccount(void* arg, grpc_error_handle error);
+  static void OnImpersenateServiceAccount(void *arg, grpc_error_handle error);
   void OnImpersenateServiceAccountInternal(grpc_error_handle error);
 
   void FinishTokenFetch(grpc_error_handle error);
@@ -111,8 +111,8 @@ class ExternalAccountCredentials
   Options options_;
   std::vector<std::string> scopes_;
 
-  HTTPRequestContext* ctx_ = nullptr;
-  grpc_credentials_metadata_request* metadata_req_ = nullptr;
+  HTTPRequestContext *ctx_ = nullptr;
+  grpc_credentials_metadata_request *metadata_req_ = nullptr;
   grpc_iomgr_cb_func response_cb_ = nullptr;
 };
 

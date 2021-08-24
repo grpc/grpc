@@ -31,7 +31,7 @@
 
 namespace routeguide {
 
-std::string GetDbFileContent(int argc, char** argv) {
+std::string GetDbFileContent(int argc, char **argv) {
   std::string db_path;
   std::string arg_str("--db_path");
   if (argc > 1) {
@@ -65,7 +65,7 @@ std::string GetDbFileContent(int argc, char** argv) {
 // "the name can be empty" }, { ... } ... The spaces will be stripped.
 class Parser {
  public:
-  explicit Parser(const std::string& db) : db_(db) {
+  explicit Parser(const std::string &db) : db_(db) {
     // Remove all spaces.
     db_.erase(std::remove_if(db_.begin(), db_.end(), isspace), db_.end());
     if (!Match("[")) {
@@ -75,7 +75,7 @@ class Parser {
 
   bool Finished() { return current_ >= db_.size(); }
 
-  bool TryParseOne(Feature* feature) {
+  bool TryParseOne(Feature *feature) {
     if (failed_ || Finished() || !Match("{")) {
       return SetFailedAndReturnFalse();
     }
@@ -115,13 +115,13 @@ class Parser {
     return false;
   }
 
-  bool Match(const std::string& prefix) {
+  bool Match(const std::string &prefix) {
     bool eq = db_.substr(current_, prefix.size()) == prefix;
     current_ += prefix.size();
     return eq;
   }
 
-  void ReadLong(long* l) {
+  void ReadLong(long *l) {
     size_t start = current_;
     while (current_ != db_.size() && db_[current_] != ',' &&
            db_[current_] != '}') {
@@ -140,7 +140,7 @@ class Parser {
   const std::string name_ = "\"name\":";
 };
 
-void ParseDb(const std::string& db, std::vector<Feature>* feature_list) {
+void ParseDb(const std::string &db, std::vector<Feature> *feature_list) {
   feature_list->clear();
   std::string db_content(db);
   db_content.erase(

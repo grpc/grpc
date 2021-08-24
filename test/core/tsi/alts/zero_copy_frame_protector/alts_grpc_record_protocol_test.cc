@@ -35,10 +35,10 @@ constexpr size_t kTagLength = 16;
 
 /* Test fixtures for each test cases.  */
 struct alts_grpc_record_protocol_test_fixture {
-  alts_grpc_record_protocol* client_protect;
-  alts_grpc_record_protocol* client_unprotect;
-  alts_grpc_record_protocol* server_protect;
-  alts_grpc_record_protocol* server_unprotect;
+  alts_grpc_record_protocol *client_protect;
+  alts_grpc_record_protocol *client_unprotect;
+  alts_grpc_record_protocol *server_protect;
+  alts_grpc_record_protocol *server_unprotect;
 };
 
 /* Test input variables for protect/unprotect operations.  */
@@ -53,7 +53,7 @@ struct alts_grpc_record_protocol_test_var {
 
 /* --- Test utility functions. --- */
 
-static void create_random_slice_buffer(grpc_slice_buffer* sb) {
+static void create_random_slice_buffer(grpc_slice_buffer *sb) {
   GPR_ASSERT(sb != nullptr);
   size_t slice_count = gsec_test_bias_random_uint32(kMaxSlices) + 1;
   for (size_t i = 0; i < slice_count; i++) {
@@ -64,7 +64,7 @@ static void create_random_slice_buffer(grpc_slice_buffer* sb) {
   }
 }
 
-static uint8_t* pointer_to_nth_byte(grpc_slice_buffer* sb, size_t index) {
+static uint8_t *pointer_to_nth_byte(grpc_slice_buffer *sb, size_t index) {
   GPR_ASSERT(sb != nullptr);
   GPR_ASSERT(index < sb->length);
   for (size_t i = 0; i < sb->count; i++) {
@@ -79,16 +79,16 @@ static uint8_t* pointer_to_nth_byte(grpc_slice_buffer* sb, size_t index) {
 
 /* Checks if two slice buffer contents are the same. It is not super efficient,
  * but OK for testing.  */
-static bool are_slice_buffers_equal(grpc_slice_buffer* first,
-                                    grpc_slice_buffer* second) {
+static bool are_slice_buffers_equal(grpc_slice_buffer *first,
+                                    grpc_slice_buffer *second) {
   GPR_ASSERT(first != nullptr);
   GPR_ASSERT(second != nullptr);
   if (first->length != second->length) {
     return false;
   }
   for (size_t i = 0; i < first->length; i++) {
-    uint8_t* first_ptr = pointer_to_nth_byte(first, i);
-    uint8_t* second_ptr = pointer_to_nth_byte(second, i);
+    uint8_t *first_ptr = pointer_to_nth_byte(first, i);
+    uint8_t *second_ptr = pointer_to_nth_byte(second, i);
     GPR_ASSERT(first_ptr != nullptr);
     GPR_ASSERT(second_ptr != nullptr);
     if ((*first_ptr) != (*second_ptr)) {
@@ -98,26 +98,26 @@ static bool are_slice_buffers_equal(grpc_slice_buffer* first,
   return true;
 }
 
-static void alter_random_byte(grpc_slice_buffer* sb) {
+static void alter_random_byte(grpc_slice_buffer *sb) {
   GPR_ASSERT(sb != nullptr);
   if (sb->length == 0) {
     return;
   }
   uint32_t offset =
       gsec_test_bias_random_uint32(static_cast<uint32_t>(sb->length));
-  uint8_t* ptr = pointer_to_nth_byte(sb, offset);
+  uint8_t *ptr = pointer_to_nth_byte(sb, offset);
   (*ptr)++;
 }
 
-static alts_grpc_record_protocol_test_fixture*
+static alts_grpc_record_protocol_test_fixture *
 test_fixture_integrity_only_create(bool rekey, bool extra_copy) {
-  alts_grpc_record_protocol_test_fixture* fixture =
-      static_cast<alts_grpc_record_protocol_test_fixture*>(
+  alts_grpc_record_protocol_test_fixture *fixture =
+      static_cast<alts_grpc_record_protocol_test_fixture *>(
           gpr_zalloc(sizeof(alts_grpc_record_protocol_test_fixture)));
   size_t key_length = rekey ? kAes128GcmRekeyKeyLength : kAes128GcmKeyLength;
-  uint8_t* key;
+  uint8_t *key;
   gsec_test_random_array(&key, key_length);
-  gsec_aead_crypter* crypter = nullptr;
+  gsec_aead_crypter *crypter = nullptr;
 
   /* Create client record protocol for protect. */
   GPR_ASSERT(gsec_aes_gcm_aead_crypter_create(
@@ -152,30 +152,30 @@ test_fixture_integrity_only_create(bool rekey, bool extra_copy) {
   return fixture;
 }
 
-static alts_grpc_record_protocol_test_fixture*
+static alts_grpc_record_protocol_test_fixture *
 test_fixture_integrity_only_no_rekey_no_extra_copy_create() {
   return test_fixture_integrity_only_create(false, false);
 }
 
-static alts_grpc_record_protocol_test_fixture*
+static alts_grpc_record_protocol_test_fixture *
 test_fixture_integrity_only_rekey_create() {
   return test_fixture_integrity_only_create(true, false);
 }
 
-static alts_grpc_record_protocol_test_fixture*
+static alts_grpc_record_protocol_test_fixture *
 test_fixture_integrity_only_extra_copy_create() {
   return test_fixture_integrity_only_create(false, true);
 }
 
-static alts_grpc_record_protocol_test_fixture*
+static alts_grpc_record_protocol_test_fixture *
 test_fixture_privacy_integrity_create(bool rekey) {
-  alts_grpc_record_protocol_test_fixture* fixture =
-      static_cast<alts_grpc_record_protocol_test_fixture*>(
+  alts_grpc_record_protocol_test_fixture *fixture =
+      static_cast<alts_grpc_record_protocol_test_fixture *>(
           gpr_zalloc(sizeof(alts_grpc_record_protocol_test_fixture)));
   size_t key_length = rekey ? kAes128GcmRekeyKeyLength : kAes128GcmKeyLength;
-  uint8_t* key;
+  uint8_t *key;
   gsec_test_random_array(&key, key_length);
-  gsec_aead_crypter* crypter = nullptr;
+  gsec_aead_crypter *crypter = nullptr;
 
   /* Create client record protocol for protect. */
   GPR_ASSERT(gsec_aes_gcm_aead_crypter_create(
@@ -210,18 +210,18 @@ test_fixture_privacy_integrity_create(bool rekey) {
   return fixture;
 }
 
-static alts_grpc_record_protocol_test_fixture*
+static alts_grpc_record_protocol_test_fixture *
 test_fixture_privacy_integrity_no_rekey_create() {
   return test_fixture_privacy_integrity_create(false);
 }
 
-static alts_grpc_record_protocol_test_fixture*
+static alts_grpc_record_protocol_test_fixture *
 test_fixture_privacy_integrity_rekey_create() {
   return test_fixture_privacy_integrity_create(true);
 }
 
 static void alts_grpc_record_protocol_test_fixture_destroy(
-    alts_grpc_record_protocol_test_fixture* fixture) {
+    alts_grpc_record_protocol_test_fixture *fixture) {
   if (fixture == nullptr) {
     return;
   }
@@ -234,10 +234,10 @@ static void alts_grpc_record_protocol_test_fixture_destroy(
   gpr_free(fixture);
 }
 
-static alts_grpc_record_protocol_test_var*
+static alts_grpc_record_protocol_test_var *
 alts_grpc_record_protocol_test_var_create() {
-  alts_grpc_record_protocol_test_var* var =
-      static_cast<alts_grpc_record_protocol_test_var*>(
+  alts_grpc_record_protocol_test_var *var =
+      static_cast<alts_grpc_record_protocol_test_var *>(
           gpr_zalloc(sizeof(alts_grpc_record_protocol_test_var)));
   var->header_length = alts_iovec_record_protocol_get_header_length();
   var->tag_length = kTagLength;
@@ -256,7 +256,7 @@ alts_grpc_record_protocol_test_var_create() {
 }
 
 static void alts_grpc_record_protocol_test_var_destroy(
-    alts_grpc_record_protocol_test_var* var) {
+    alts_grpc_record_protocol_test_var *var) {
   if (var == nullptr) {
     return;
   }
@@ -269,11 +269,11 @@ static void alts_grpc_record_protocol_test_var_destroy(
 
 /* --- alts grpc record protocol tests. --- */
 
-static void random_seal_unseal(alts_grpc_record_protocol* sender,
-                               alts_grpc_record_protocol* receiver) {
+static void random_seal_unseal(alts_grpc_record_protocol *sender,
+                               alts_grpc_record_protocol *receiver) {
   grpc_core::ExecCtx exec_ctx;
   for (size_t i = 0; i < kSealRepeatTimes; i++) {
-    alts_grpc_record_protocol_test_var* var =
+    alts_grpc_record_protocol_test_var *var =
         alts_grpc_record_protocol_test_var_create();
     /* Seals and then unseals.  */
     size_t data_length = var->original_sb.length;
@@ -292,11 +292,11 @@ static void random_seal_unseal(alts_grpc_record_protocol* sender,
   grpc_core::ExecCtx::Get()->Flush();
 }
 
-static void empty_seal_unseal(alts_grpc_record_protocol* sender,
-                              alts_grpc_record_protocol* receiver) {
+static void empty_seal_unseal(alts_grpc_record_protocol *sender,
+                              alts_grpc_record_protocol *receiver) {
   grpc_core::ExecCtx exec_ctx;
   for (size_t i = 0; i < kSealRepeatTimes; i++) {
-    alts_grpc_record_protocol_test_var* var =
+    alts_grpc_record_protocol_test_var *var =
         alts_grpc_record_protocol_test_var_create();
     /* Seals and then unseals empty payload.  */
     grpc_slice_buffer_reset_and_unref_internal(&var->original_sb);
@@ -316,11 +316,11 @@ static void empty_seal_unseal(alts_grpc_record_protocol* sender,
   grpc_core::ExecCtx::Get()->Flush();
 }
 
-static void unsync_seal_unseal(alts_grpc_record_protocol* sender,
-                               alts_grpc_record_protocol* receiver) {
+static void unsync_seal_unseal(alts_grpc_record_protocol *sender,
+                               alts_grpc_record_protocol *receiver) {
   grpc_core::ExecCtx exec_ctx;
   tsi_result status;
-  alts_grpc_record_protocol_test_var* var =
+  alts_grpc_record_protocol_test_var *var =
       alts_grpc_record_protocol_test_var_create();
   /* Seals once.  */
   status = alts_grpc_record_protocol_protect(sender, &var->original_sb,
@@ -339,11 +339,11 @@ static void unsync_seal_unseal(alts_grpc_record_protocol* sender,
   grpc_core::ExecCtx::Get()->Flush();
 }
 
-static void corrupted_data(alts_grpc_record_protocol* sender,
-                           alts_grpc_record_protocol* receiver) {
+static void corrupted_data(alts_grpc_record_protocol *sender,
+                           alts_grpc_record_protocol *receiver) {
   grpc_core::ExecCtx exec_ctx;
   tsi_result status;
-  alts_grpc_record_protocol_test_var* var =
+  alts_grpc_record_protocol_test_var *var =
       alts_grpc_record_protocol_test_var_create();
   /* Seals once.  */
   status = alts_grpc_record_protocol_protect(sender, &var->original_sb,
@@ -358,10 +358,10 @@ static void corrupted_data(alts_grpc_record_protocol* sender,
   grpc_core::ExecCtx::Get()->Flush();
 }
 
-static void input_check(alts_grpc_record_protocol* rp) {
+static void input_check(alts_grpc_record_protocol *rp) {
   grpc_core::ExecCtx exec_ctx;
   tsi_result status;
-  alts_grpc_record_protocol_test_var* var =
+  alts_grpc_record_protocol_test_var *var =
       alts_grpc_record_protocol_test_var_create();
   /* Protects with nullptr input.  */
   status = alts_grpc_record_protocol_protect(rp, nullptr, &var->protected_sb);
@@ -394,58 +394,58 @@ static void input_check(alts_grpc_record_protocol* rp) {
 /* --- Test cases. --- */
 
 static void alts_grpc_record_protocol_random_seal_unseal_tests(
-    alts_grpc_record_protocol_test_fixture* fixture) {
+    alts_grpc_record_protocol_test_fixture *fixture) {
   random_seal_unseal(fixture->client_protect, fixture->server_unprotect);
   random_seal_unseal(fixture->server_protect, fixture->client_unprotect);
 }
 
 static void alts_grpc_record_protocol_empty_seal_unseal_tests(
-    alts_grpc_record_protocol_test_fixture* fixture) {
+    alts_grpc_record_protocol_test_fixture *fixture) {
   empty_seal_unseal(fixture->client_protect, fixture->server_unprotect);
   empty_seal_unseal(fixture->server_protect, fixture->client_unprotect);
 }
 
 static void alts_grpc_record_protocol_unsync_seal_unseal_tests(
-    alts_grpc_record_protocol_test_fixture* fixture) {
+    alts_grpc_record_protocol_test_fixture *fixture) {
   unsync_seal_unseal(fixture->client_protect, fixture->server_unprotect);
   unsync_seal_unseal(fixture->server_protect, fixture->client_unprotect);
 }
 
 static void alts_grpc_record_protocol_corrupted_data_tests(
-    alts_grpc_record_protocol_test_fixture* fixture) {
+    alts_grpc_record_protocol_test_fixture *fixture) {
   corrupted_data(fixture->client_protect, fixture->server_unprotect);
   corrupted_data(fixture->server_protect, fixture->client_unprotect);
 }
 
 static void alts_grpc_record_protocol_input_check_tests(
-    alts_grpc_record_protocol_test_fixture* fixture) {
+    alts_grpc_record_protocol_test_fixture *fixture) {
   input_check(fixture->client_protect);
 }
 
 static void alts_grpc_record_protocol_tests(
-    alts_grpc_record_protocol_test_fixture* (*fixture_create)()) {
-  auto* fixture_1 = fixture_create();
+    alts_grpc_record_protocol_test_fixture *(*fixture_create)()) {
+  auto *fixture_1 = fixture_create();
   alts_grpc_record_protocol_random_seal_unseal_tests(fixture_1);
   alts_grpc_record_protocol_test_fixture_destroy(fixture_1);
 
-  auto* fixture_2 = fixture_create();
+  auto *fixture_2 = fixture_create();
   alts_grpc_record_protocol_empty_seal_unseal_tests(fixture_2);
   alts_grpc_record_protocol_test_fixture_destroy(fixture_2);
 
-  auto* fixture_3 = fixture_create();
+  auto *fixture_3 = fixture_create();
   alts_grpc_record_protocol_unsync_seal_unseal_tests(fixture_3);
   alts_grpc_record_protocol_test_fixture_destroy(fixture_3);
 
-  auto* fixture_4 = fixture_create();
+  auto *fixture_4 = fixture_create();
   alts_grpc_record_protocol_corrupted_data_tests(fixture_4);
   alts_grpc_record_protocol_test_fixture_destroy(fixture_4);
 
-  auto* fixture_5 = fixture_create();
+  auto *fixture_5 = fixture_create();
   alts_grpc_record_protocol_input_check_tests(fixture_5);
   alts_grpc_record_protocol_test_fixture_destroy(fixture_5);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   alts_grpc_record_protocol_tests(

@@ -28,7 +28,7 @@ static void sigint_handler(int /*x*/) {
   gpr_atm_no_barrier_store(&grpc::testing::interop::g_got_sigint, true);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   signal(SIGINT, sigint_handler);

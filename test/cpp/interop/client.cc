@@ -127,8 +127,8 @@ namespace {
 // in values. Convert keys to lowercase. On failure, log an error and return
 // false.
 bool ParseAdditionalMetadataFlag(
-    const std::string& flag,
-    std::multimap<std::string, std::string>* additional_metadata) {
+    const std::string &flag,
+    std::multimap<std::string, std::string> *additional_metadata) {
   size_t start_pos = 0;
   while (start_pos < flag.length()) {
     size_t colon_pos = flag.find(':', start_pos);
@@ -156,7 +156,7 @@ bool ParseAdditionalMetadataFlag(
     }
 
     // Convert to lowercase.
-    for (char& c : key) {
+    for (char &c : key) {
       if (c >= 'A' && c <= 'Z') {
         c += ('a' - 'A');
       }
@@ -178,7 +178,7 @@ bool ParseAdditionalMetadataFlag(
 
 }  // namespace
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   gpr_log(GPR_INFO, "Testing these cases: %s",
@@ -301,14 +301,14 @@ int main(int argc, char** argv) {
   UpdateActions(&actions);
 
   if (absl::GetFlag(FLAGS_test_case) == "all") {
-    for (const auto& action : actions) {
+    for (const auto &action : actions) {
       action.second();
     }
   } else if (actions.find(absl::GetFlag(FLAGS_test_case)) != actions.end()) {
     actions.find(absl::GetFlag(FLAGS_test_case))->second();
   } else {
     std::string test_cases;
-    for (const auto& action : actions) {
+    for (const auto &action : actions) {
       if (!test_cases.empty()) test_cases += "\n";
       test_cases += action.first;
     }

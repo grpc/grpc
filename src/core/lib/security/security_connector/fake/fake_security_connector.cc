@@ -49,7 +49,7 @@ class grpc_fake_channel_security_connector final
   grpc_fake_channel_security_connector(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-      const char* target, const grpc_channel_args* args)
+      const char *target, const grpc_channel_args *args)
       : grpc_channel_security_connector(GRPC_FAKE_SECURITY_URL_SCHEME,
                                         std::move(channel_creds),
                                         std::move(request_metadata_creds)),
@@ -59,7 +59,7 @@ class grpc_fake_channel_security_connector final
         is_lb_channel_(grpc_channel_args_find(
                            args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER) !=
                        nullptr) {
-    const grpc_arg* target_name_override_arg =
+    const grpc_arg *target_name_override_arg =
         grpc_channel_args_find(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
     if (target_name_override_arg != nullptr) {
       target_name_override_ =
@@ -75,18 +75,19 @@ class grpc_fake_channel_security_connector final
     if (target_name_override_ != nullptr) gpr_free(target_name_override_);
   }
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
-                  grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-                  grpc_closure* on_peer_checked) override;
+  void check_peer(tsi_peer peer, grpc_endpoint *ep,
+                  grpc_core::RefCountedPtr<grpc_auth_context> *auth_context,
+                  grpc_closure *on_peer_checked) override;
 
-  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+  void cancel_check_peer(grpc_closure * /*on_peer_checked*/,
                          grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 
-  int cmp(const grpc_security_connector* other_sc) const override {
-    auto* other =
-        reinterpret_cast<const grpc_fake_channel_security_connector*>(other_sc);
+  int cmp(const grpc_security_connector *other_sc) const override {
+    auto *other =
+        reinterpret_cast<const grpc_fake_channel_security_connector *>(
+            other_sc);
     int c = channel_security_connector_cmp(other);
     if (c != 0) return c;
     c = strcmp(target_, other->target_);
@@ -100,17 +101,17 @@ class grpc_fake_channel_security_connector final
     return GPR_ICMP(is_lb_channel_, other->is_lb_channel_);
   }
 
-  void add_handshakers(const grpc_channel_args* args,
-                       grpc_pollset_set* /*interested_parties*/,
-                       grpc_core::HandshakeManager* handshake_mgr) override {
+  void add_handshakers(const grpc_channel_args *args,
+                       grpc_pollset_set * /*interested_parties*/,
+                       grpc_core::HandshakeManager *handshake_mgr) override {
     handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(
         tsi_create_fake_handshaker(/*is_client=*/true), this, args));
   }
 
   bool check_call_host(absl::string_view host,
-                       grpc_auth_context* /*auth_context*/,
-                       grpc_closure* /*on_call_host_checked*/,
-                       grpc_error_handle* /*error*/) override {
+                       grpc_auth_context * /*auth_context*/,
+                       grpc_closure * /*on_call_host_checked*/,
+                       grpc_error_handle * /*error*/) override {
     absl::string_view authority_hostname;
     absl::string_view authority_ignored_port;
     absl::string_view target_hostname;
@@ -139,20 +140,20 @@ class grpc_fake_channel_security_connector final
     return true;
   }
 
-  void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
+  void cancel_check_call_host(grpc_closure * /*on_call_host_checked*/,
                               grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 
-  char* target() const { return target_; }
-  char* expected_targets() const { return expected_targets_; }
+  char *target() const { return target_; }
+  char *expected_targets() const { return expected_targets_; }
   bool is_lb_channel() const { return is_lb_channel_; }
-  char* target_name_override() const { return target_name_override_; }
+  char *target_name_override() const { return target_name_override_; }
 
  private:
-  bool fake_check_target(const char* target, const char* set_str) const {
+  bool fake_check_target(const char *target, const char *set_str) const {
     GPR_ASSERT(target != nullptr);
-    char** set = nullptr;
+    char **set = nullptr;
     size_t set_size = 0;
     gpr_string_split(set_str, ",", &set, &set_size);
     bool found = false;
@@ -168,7 +169,7 @@ class grpc_fake_channel_security_connector final
 
   void fake_secure_name_check() const {
     if (expected_targets_ == nullptr) return;
-    char** lbs_and_backends = nullptr;
+    char **lbs_and_backends = nullptr;
     size_t lbs_and_backends_size = 0;
     bool success = false;
     gpr_string_split(expected_targets_, ";", &lbs_and_backends,
@@ -208,17 +209,17 @@ class grpc_fake_channel_security_connector final
     if (!success) abort();
   }
 
-  char* target_;
-  char* expected_targets_;
+  char *target_;
+  char *expected_targets_;
   bool is_lb_channel_;
-  char* target_name_override_;
+  char *target_name_override_;
 };
 
 static void fake_check_peer(
-    grpc_security_connector* /*sc*/, tsi_peer peer,
-    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-    grpc_closure* on_peer_checked) {
-  const char* prop_name;
+    grpc_security_connector * /*sc*/, tsi_peer peer,
+    grpc_core::RefCountedPtr<grpc_auth_context> *auth_context,
+    grpc_closure *on_peer_checked) {
+  const char *prop_name;
   grpc_error_handle error = GRPC_ERROR_NONE;
   *auth_context = nullptr;
   if (peer.property_count != 2) {
@@ -270,9 +271,9 @@ end:
 }
 
 void grpc_fake_channel_security_connector::check_peer(
-    tsi_peer peer, grpc_endpoint* /*ep*/,
-    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-    grpc_closure* on_peer_checked) {
+    tsi_peer peer, grpc_endpoint * /*ep*/,
+    grpc_core::RefCountedPtr<grpc_auth_context> *auth_context,
+    grpc_closure *on_peer_checked) {
   fake_check_peer(this, peer, auth_context, on_peer_checked);
   fake_secure_name_check();
 }
@@ -286,27 +287,27 @@ class grpc_fake_server_security_connector
                                        std::move(server_creds)) {}
   ~grpc_fake_server_security_connector() override = default;
 
-  void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
-                  grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-                  grpc_closure* on_peer_checked) override {
+  void check_peer(tsi_peer peer, grpc_endpoint * /*ep*/,
+                  grpc_core::RefCountedPtr<grpc_auth_context> *auth_context,
+                  grpc_closure *on_peer_checked) override {
     fake_check_peer(this, peer, auth_context, on_peer_checked);
   }
 
-  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+  void cancel_check_peer(grpc_closure * /*on_peer_checked*/,
                          grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 
-  void add_handshakers(const grpc_channel_args* args,
-                       grpc_pollset_set* /*interested_parties*/,
-                       grpc_core::HandshakeManager* handshake_mgr) override {
+  void add_handshakers(const grpc_channel_args *args,
+                       grpc_pollset_set * /*interested_parties*/,
+                       grpc_core::HandshakeManager *handshake_mgr) override {
     handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(
         tsi_create_fake_handshaker(/*=is_client*/ false), this, args));
   }
 
-  int cmp(const grpc_security_connector* other) const override {
+  int cmp(const grpc_security_connector *other) const override {
     return server_security_connector_cmp(
-        static_cast<const grpc_server_security_connector*>(other));
+        static_cast<const grpc_server_security_connector *>(other));
   }
 };
 }  // namespace
@@ -315,7 +316,7 @@ grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_fake_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-    const char* target, const grpc_channel_args* args) {
+    const char *target, const grpc_channel_args *args) {
   return grpc_core::MakeRefCounted<grpc_fake_channel_security_connector>(
       std::move(channel_creds), std::move(request_metadata_creds), target,
       args);

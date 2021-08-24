@@ -32,7 +32,7 @@ namespace grpc {
 namespace experimental {
 
 std::unique_ptr<AltsContext> GetAltsContextFromAuthContext(
-    const std::shared_ptr<const AuthContext>& auth_context) {
+    const std::shared_ptr<const AuthContext> &auth_context) {
   if (auth_context == nullptr) {
     gpr_log(GPR_ERROR, "auth_context is nullptr.");
     return nullptr;
@@ -44,7 +44,7 @@ std::unique_ptr<AltsContext> GetAltsContextFromAuthContext(
     return nullptr;
   }
   upb::Arena context_arena;
-  grpc_gcp_AltsContext* ctx = grpc_gcp_AltsContext_parse(
+  grpc_gcp_AltsContext *ctx = grpc_gcp_AltsContext_parse(
       ctx_vector[0].data(), ctx_vector[0].size(), context_arena.ptr());
   if (ctx == nullptr) {
     gpr_log(GPR_ERROR, "fails to parse ALTS context.");
@@ -59,8 +59,8 @@ std::unique_ptr<AltsContext> GetAltsContextFromAuthContext(
 }
 
 grpc::Status AltsClientAuthzCheck(
-    const std::shared_ptr<const AuthContext>& auth_context,
-    const std::vector<std::string>& expected_service_accounts) {
+    const std::shared_ptr<const AuthContext> &auth_context,
+    const std::vector<std::string> &expected_service_accounts) {
   std::unique_ptr<AltsContext> alts_ctx =
       GetAltsContextFromAuthContext(auth_context);
   if (alts_ctx == nullptr) {

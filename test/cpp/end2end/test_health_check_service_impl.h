@@ -33,13 +33,13 @@ namespace testing {
 // same thing as the default one.
 class HealthCheckServiceImpl : public health::v1::Health::Service {
  public:
-  Status Check(ServerContext* context,
-               const health::v1::HealthCheckRequest* request,
-               health::v1::HealthCheckResponse* response) override;
-  Status Watch(ServerContext* context,
-               const health::v1::HealthCheckRequest* request,
-               ServerWriter<health::v1::HealthCheckResponse>* writer) override;
-  void SetStatus(const std::string& service_name,
+  Status Check(ServerContext *context,
+               const health::v1::HealthCheckRequest *request,
+               health::v1::HealthCheckResponse *response) override;
+  Status Watch(ServerContext *context,
+               const health::v1::HealthCheckRequest *request,
+               ServerWriter<health::v1::HealthCheckResponse> *writer) override;
+  void SetStatus(const std::string &service_name,
                  health::v1::HealthCheckResponse::ServingStatus status);
   void SetAll(health::v1::HealthCheckResponse::ServingStatus status);
 

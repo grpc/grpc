@@ -48,7 +48,7 @@ class Alarm : private ::grpc::GrpcLibraryCodegen {
   /// internal::GrpcLibraryInitializer instance would need to be introduced
   /// here. \endinternal.
   template <typename T>
-  Alarm(::grpc::CompletionQueue* cq, const T& deadline, void* tag) : Alarm() {
+  Alarm(::grpc::CompletionQueue *cq, const T &deadline, void *tag) : Alarm() {
     SetInternal(cq, ::grpc::TimePoint<T>(deadline).raw_time(), tag);
   }
 
@@ -61,17 +61,17 @@ class Alarm : private ::grpc::GrpcLibraryCodegen {
   // setting an immediate deadline. Such usage allows synchronizing an external
   // event with an application's \a grpc::CompletionQueue::Next loop.
   template <typename T>
-  void Set(::grpc::CompletionQueue* cq, const T& deadline, void* tag) {
+  void Set(::grpc::CompletionQueue *cq, const T &deadline, void *tag) {
     SetInternal(cq, ::grpc::TimePoint<T>(deadline).raw_time(), tag);
   }
 
   /// Alarms aren't copyable.
-  Alarm(const Alarm&) = delete;
-  Alarm& operator=(const Alarm&) = delete;
+  Alarm(const Alarm &) = delete;
+  Alarm &operator=(const Alarm &) = delete;
 
   /// Alarms are movable.
-  Alarm(Alarm&& rhs) noexcept : alarm_(rhs.alarm_) { rhs.alarm_ = nullptr; }
-  Alarm& operator=(Alarm&& rhs) noexcept {
+  Alarm(Alarm &&rhs) noexcept : alarm_(rhs.alarm_) { rhs.alarm_ = nullptr; }
+  Alarm &operator=(Alarm &&rhs) noexcept {
     alarm_ = rhs.alarm_;
     rhs.alarm_ = nullptr;
     return *this;
@@ -85,16 +85,16 @@ class Alarm : private ::grpc::GrpcLibraryCodegen {
   /// states whether the alarm expired at \a deadline (true) or was cancelled
   /// (false)
   template <typename T>
-  void Set(const T& deadline, std::function<void(bool)> f) {
+  void Set(const T &deadline, std::function<void(bool)> f) {
     SetInternal(::grpc::TimePoint<T>(deadline).raw_time(), std::move(f));
   }
 
  private:
-  void SetInternal(::grpc::CompletionQueue* cq, gpr_timespec deadline,
-                   void* tag);
+  void SetInternal(::grpc::CompletionQueue *cq, gpr_timespec deadline,
+                   void *tag);
   void SetInternal(gpr_timespec deadline, std::function<void(bool)> f);
 
-  ::grpc::internal::CompletionQueueTag* alarm_;
+  ::grpc::internal::CompletionQueueTag *alarm_;
 };
 
 }  // namespace grpc

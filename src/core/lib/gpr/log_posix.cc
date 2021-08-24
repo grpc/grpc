@@ -38,15 +38,15 @@ int gpr_should_log_stacktrace(gpr_log_severity severity);
 
 static intptr_t sys_gettid(void) { return (intptr_t)pthread_self(); }
 
-void gpr_log(const char* file, int line, gpr_log_severity severity,
-             const char* format, ...) {
+void gpr_log(const char *file, int line, gpr_log_severity severity,
+             const char *format, ...) {
   /* Avoid message construction if gpr_log_message won't log */
   if (gpr_should_log(severity) == 0) {
     return;
   }
   char buf[64];
-  char* allocated = nullptr;
-  char* message = nullptr;
+  char *allocated = nullptr;
+  char *message = nullptr;
   int ret;
   va_list args;
   va_start(args, format);
@@ -57,7 +57,7 @@ void gpr_log(const char* file, int line, gpr_log_severity severity,
   } else if ((size_t)ret <= sizeof(buf) - 1) {
     message = buf;
   } else {
-    message = allocated = (char*)gpr_malloc((size_t)ret + 1);
+    message = allocated = (char *)gpr_malloc((size_t)ret + 1);
     va_start(args, format);
     vsnprintf(message, (size_t)(ret + 1), format, args);
     va_end(args);
@@ -66,9 +66,9 @@ void gpr_log(const char* file, int line, gpr_log_severity severity,
   gpr_free(allocated);
 }
 
-void gpr_default_log(gpr_log_func_args* args) {
-  const char* final_slash;
-  const char* display_file;
+void gpr_default_log(gpr_log_func_args *args) {
+  const char *final_slash;
+  const char *display_file;
   char time_buffer[64];
   time_t timer;
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);

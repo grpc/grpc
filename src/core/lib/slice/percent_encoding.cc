@@ -66,7 +66,7 @@ class CompatibleTable : public BitSet<256> {
 static GRPC_PCTENCODE_CONSTEXPR_VALUE CompatibleTable g_compatible_table;
 
 // Map PercentEncodingType to a lookup table of legal symbols for that encoding.
-const BitSet<256>& LookupTableForPercentEncodingType(PercentEncodingType type) {
+const BitSet<256> &LookupTableForPercentEncodingType(PercentEncodingType type) {
   switch (type) {
     case PercentEncodingType::URL:
       return g_url_table;
@@ -78,17 +78,17 @@ const BitSet<256>& LookupTableForPercentEncodingType(PercentEncodingType type) {
 }
 }  // namespace
 
-grpc_slice PercentEncodeSlice(const grpc_slice& slice,
+grpc_slice PercentEncodeSlice(const grpc_slice &slice,
                               PercentEncodingType type) {
   static const uint8_t hex[] = "0123456789ABCDEF";
 
-  const BitSet<256>& lut = LookupTableForPercentEncodingType(type);
+  const BitSet<256> &lut = LookupTableForPercentEncodingType(type);
 
   // first pass: count the number of bytes needed to output this string
   size_t output_length = 0;
-  const uint8_t* slice_start = GRPC_SLICE_START_PTR(slice);
-  const uint8_t* slice_end = GRPC_SLICE_END_PTR(slice);
-  const uint8_t* p;
+  const uint8_t *slice_start = GRPC_SLICE_START_PTR(slice);
+  const uint8_t *slice_end = GRPC_SLICE_END_PTR(slice);
+  const uint8_t *p;
   bool any_reserved_bytes = false;
   for (p = slice_start; p < slice_end; p++) {
     bool unres = lut.is_set(*p);
@@ -101,7 +101,7 @@ grpc_slice PercentEncodeSlice(const grpc_slice& slice,
   }
   // second pass: actually encode
   grpc_slice out = GRPC_SLICE_MALLOC(output_length);
-  uint8_t* q = GRPC_SLICE_START_PTR(out);
+  uint8_t *q = GRPC_SLICE_START_PTR(out);
   for (p = slice_start; p < slice_end; p++) {
     if (lut.is_set(*p)) {
       *q++ = *p;
@@ -115,7 +115,7 @@ grpc_slice PercentEncodeSlice(const grpc_slice& slice,
   return out;
 }
 
-static bool valid_hex(const uint8_t* p, const uint8_t* end) {
+static bool valid_hex(const uint8_t *p, const uint8_t *end) {
   if (p >= end) return false;
   return (*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'f') ||
          (*p >= 'A' && *p <= 'F');
@@ -128,13 +128,13 @@ static uint8_t dehex(uint8_t c) {
   GPR_UNREACHABLE_CODE(return 255);
 }
 
-absl::optional<grpc_slice> PercentDecodeSlice(const grpc_slice& slice_in,
+absl::optional<grpc_slice> PercentDecodeSlice(const grpc_slice &slice_in,
                                               PercentEncodingType type) {
-  const uint8_t* p = GRPC_SLICE_START_PTR(slice_in);
-  const uint8_t* in_end = GRPC_SLICE_END_PTR(slice_in);
+  const uint8_t *p = GRPC_SLICE_START_PTR(slice_in);
+  const uint8_t *in_end = GRPC_SLICE_END_PTR(slice_in);
   size_t out_length = 0;
   bool any_percent_encoded_stuff = false;
-  const BitSet<256>& lut = LookupTableForPercentEncodingType(type);
+  const BitSet<256> &lut = LookupTableForPercentEncodingType(type);
   while (p != in_end) {
     if (*p == '%') {
       if (!valid_hex(++p, in_end)) return {};
@@ -154,7 +154,7 @@ absl::optional<grpc_slice> PercentDecodeSlice(const grpc_slice& slice_in,
   }
   p = GRPC_SLICE_START_PTR(slice_in);
   grpc_slice slice_out = GRPC_SLICE_MALLOC(out_length);
-  uint8_t* q = GRPC_SLICE_START_PTR(slice_out);
+  uint8_t *q = GRPC_SLICE_START_PTR(slice_out);
   while (p != in_end) {
     if (*p == '%') {
       *q++ = static_cast<uint8_t>(dehex(p[1]) << 4) | (dehex(p[2]));
@@ -167,9 +167,9 @@ absl::optional<grpc_slice> PercentDecodeSlice(const grpc_slice& slice_in,
   return slice_out;
 }
 
-grpc_slice PermissivePercentDecodeSlice(const grpc_slice& slice_in) {
-  const uint8_t* p = GRPC_SLICE_START_PTR(slice_in);
-  const uint8_t* in_end = GRPC_SLICE_END_PTR(slice_in);
+grpc_slice PermissivePercentDecodeSlice(const grpc_slice &slice_in) {
+  const uint8_t *p = GRPC_SLICE_START_PTR(slice_in);
+  const uint8_t *in_end = GRPC_SLICE_END_PTR(slice_in);
   size_t out_length = 0;
   bool any_percent_encoded_stuff = false;
   while (p != in_end) {
@@ -192,7 +192,7 @@ grpc_slice PermissivePercentDecodeSlice(const grpc_slice& slice_in) {
   }
   p = GRPC_SLICE_START_PTR(slice_in);
   grpc_slice out = GRPC_SLICE_MALLOC(out_length);
-  uint8_t* q = GRPC_SLICE_START_PTR(out);
+  uint8_t *q = GRPC_SLICE_START_PTR(out);
   while (p != in_end) {
     if (*p == '%') {
       if (!valid_hex(p + 1, in_end) || !valid_hex(p + 2, in_end)) {

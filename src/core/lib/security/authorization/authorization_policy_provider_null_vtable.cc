@@ -19,6 +19,6 @@
 // Wrapper API declared in grpc.h
 
 // Required only for insecure build targets.
-const grpc_arg_pointer_vtable* grpc_authorization_policy_provider_arg_vtable() {
+const grpc_arg_pointer_vtable *grpc_authorization_policy_provider_arg_vtable() {
   return nullptr;
 }

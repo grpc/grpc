@@ -80,8 +80,8 @@ class Transaction {
   int GetFlags() const { return flags_; }
 
   absl::string_view GetMethodRef() const { return method_ref_; }
-  const Metadata& GetPrefixMetadata() const { return prefix_metadata_; }
-  const Metadata& GetSuffixMetadata() const { return suffix_metadata_; }
+  const Metadata &GetPrefixMetadata() const { return prefix_metadata_; }
+  const Metadata &GetSuffixMetadata() const { return suffix_metadata_; }
   absl::string_view GetMessageData() const { return message_data_; }
   absl::string_view GetStatusDesc() const { return status_desc_; }
 

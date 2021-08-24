@@ -33,7 +33,7 @@ struct Scenario {
   bool expectation;
 };
 
-std::ostream& operator<<(std::ostream& out, Scenario s) {
+std::ostream &operator<<(std::ostream &out, Scenario s) {
   out << "init:";
   for (size_t i = 0; i < kTestSize; i++) {
     if (i != 0) {
@@ -67,7 +67,7 @@ INSTANTIATE_TEST_SUITE_P(InterestingTests, PopularityCountTest,
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -32,7 +32,7 @@ namespace grpc {
 
 class ThreadManager {
  public:
-  explicit ThreadManager(const char* name, grpc_resource_quota* resource_quota,
+  explicit ThreadManager(const char *name, grpc_resource_quota *resource_quota,
                          int min_pollers, int max_pollers);
   virtual ~ThreadManager();
 
@@ -62,7 +62,7 @@ class ThreadManager {
   //    of active poller threads and mix_pollers/max_pollers settings
   //  - Also, the value of timeout is specific to the derived class
   //    implementation
-  virtual WorkStatus PollForWork(void** tag, bool* ok) = 0;
+  virtual WorkStatus PollForWork(void **tag, bool *ok) = 0;
 
   // The implementation of DoWork() is supposed to perform the work found by
   // PollForWork(). The tag and ok parameters are the same as returned by
@@ -73,7 +73,7 @@ class ThreadManager {
   // The implementation of DoWork() should also do any setup needed to ensure
   // that the next call to PollForWork() (not necessarily by the current thread)
   // actually finds some work
-  virtual void DoWork(void* tag, bool ok, bool resources) = 0;
+  virtual void DoWork(void *tag, bool ok, bool resources) = 0;
 
   // Mark the ThreadManager as shutdown and begin draining the work. This is a
   // non-blocking call and the caller should call Wait(), a blocking call which
@@ -119,7 +119,7 @@ class ThreadManager {
   // not be called (and the need for this WorkerThread class is eliminated)
   class WorkerThread {
    public:
-    explicit WorkerThread(ThreadManager* thd_mgr);
+    explicit WorkerThread(ThreadManager *thd_mgr);
     ~WorkerThread();
 
     bool created() const { return created_; }
@@ -130,7 +130,7 @@ class ThreadManager {
     // thd_mgr_>MarkAsCompleted(this) to mark the thread as completed
     void Run();
 
-    ThreadManager* const thd_mgr_;
+    ThreadManager *const thd_mgr_;
     grpc_core::Thread thd_;
     bool created_;
   };
@@ -138,7 +138,7 @@ class ThreadManager {
   // The main function in ThreadManager
   void MainWorkLoop();
 
-  void MarkAsCompleted(WorkerThread* thd);
+  void MarkAsCompleted(WorkerThread *thd);
   void CleanupCompletedThreads();
 
   // Protects shutdown_, num_pollers_, num_threads_ and
@@ -154,7 +154,7 @@ class ThreadManager {
   // object (that contains the actual max thread quota) and a grpc_resource_user
   // object through which quota is requested whenever new threads need to be
   // created
-  grpc_resource_user* resource_user_;
+  grpc_resource_user *resource_user_;
 
   // Number of threads doing polling
   int num_pollers_;
@@ -173,7 +173,7 @@ class ThreadManager {
   int max_active_threads_sofar_;
 
   grpc_core::Mutex list_mu_;
-  std::list<WorkerThread*> completed_threads_;
+  std::list<WorkerThread *> completed_threads_;
 };
 
 }  // namespace grpc

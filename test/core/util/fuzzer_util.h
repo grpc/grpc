@@ -29,19 +29,19 @@ namespace testing {
 // bytes, and allows reading a little past the end(avoiding
 // needing to check everywhere).
 typedef struct {
-  const uint8_t* cur;
-  const uint8_t* end;
+  const uint8_t *cur;
+  const uint8_t *end;
 } input_stream;
 
 // get a byte from an input stream.
-uint8_t grpc_fuzzer_get_next_byte(input_stream* inp);
+uint8_t grpc_fuzzer_get_next_byte(input_stream *inp);
 
 // get a string and boolean values (if special is not null) from an input
 // stream.
-char* grpc_fuzzer_get_next_string(input_stream* inp, bool* special);
+char *grpc_fuzzer_get_next_string(input_stream *inp, bool *special);
 
 // get a uint32 value from an input stream.
-uint32_t grpc_fuzzer_get_next_uint32(input_stream* inp);
+uint32_t grpc_fuzzer_get_next_uint32(input_stream *inp);
 
 }  // namespace testing
 }  // namespace grpc_core

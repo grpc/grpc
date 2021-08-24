@@ -144,8 +144,8 @@ class BackendServiceImpl : public BackendService {
  public:
   BackendServiceImpl() {}
 
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
+  Status Echo(ServerContext *context, const EchoRequest *request,
+              EchoResponse *response) override {
     // Backend should receive the call credentials metadata.
     auto call_credentials_entry =
         context->client_metadata().find(g_kCallCredsMdKey);
@@ -170,7 +170,7 @@ class BackendServiceImpl : public BackendService {
   }
 
  private:
-  void AddClient(const std::string& client) {
+  void AddClient(const std::string &client) {
     grpc::internal::MutexLock lock(&clients_mu_);
     clients_.insert(client);
   }
@@ -180,16 +180,16 @@ class BackendServiceImpl : public BackendService {
   std::set<std::string> clients_;
 };
 
-std::string Ip4ToPackedString(const char* ip_str) {
+std::string Ip4ToPackedString(const char *ip_str) {
   struct in_addr ip4;
   GPR_ASSERT(inet_pton(AF_INET, ip_str, &ip4) == 1);
-  return std::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
+  return std::string(reinterpret_cast<const char *>(&ip4), sizeof(ip4));
 }
 
-std::string Ip6ToPackedString(const char* ip_str) {
+std::string Ip6ToPackedString(const char *ip_str) {
   struct in6_addr ip6;
   GPR_ASSERT(inet_pton(AF_INET6, ip_str, &ip6) == 1);
-  return std::string(reinterpret_cast<const char*>(&ip6), sizeof(ip6));
+  return std::string(reinterpret_cast<const char *>(&ip6), sizeof(ip6));
 }
 
 struct ClientStats {
@@ -199,14 +199,14 @@ struct ClientStats {
   size_t num_calls_finished_known_received = 0;
   std::map<std::string, size_t> drop_token_counts;
 
-  ClientStats& operator+=(const ClientStats& other) {
+  ClientStats &operator+=(const ClientStats &other) {
     num_calls_started += other.num_calls_started;
     num_calls_finished += other.num_calls_finished;
     num_calls_finished_with_client_failed_to_send +=
         other.num_calls_finished_with_client_failed_to_send;
     num_calls_finished_known_received +=
         other.num_calls_finished_known_received;
-    for (const auto& p : other.drop_token_counts) {
+    for (const auto &p : other.drop_token_counts) {
       drop_token_counts[p.first] += p.second;
     }
     return *this;
@@ -230,7 +230,7 @@ class BalancerServiceImpl : public BalancerService {
       : client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds) {}
 
-  Status BalanceLoad(ServerContext* context, Stream* stream) override {
+  Status BalanceLoad(ServerContext *context, Stream *stream) override {
     gpr_log(GPR_INFO, "LB[%p]: BalanceLoad", this);
     {
       grpc::internal::MutexLock lock(&mu_);
@@ -268,7 +268,7 @@ class BalancerServiceImpl : public BalancerService {
         grpc::internal::MutexLock lock(&mu_);
         responses_and_delays = responses_and_delays_;
       }
-      for (const auto& response_and_delay : responses_and_delays) {
+      for (const auto &response_and_delay : responses_and_delays) {
         SendResponse(stream, response_and_delay.first,
                      response_and_delay.second);
       }
@@ -295,7 +295,7 @@ class BalancerServiceImpl : public BalancerService {
                   .num_calls_finished_with_client_failed_to_send();
           load_report.num_calls_finished_known_received =
               request.client_stats().num_calls_finished_known_received();
-          for (const auto& drop_token_count :
+          for (const auto &drop_token_count :
                request.client_stats().calls_finished_with_drop()) {
             load_report
                 .drop_token_counts[drop_token_count.load_balance_token()] =
@@ -314,7 +314,7 @@ class BalancerServiceImpl : public BalancerService {
     return Status::OK;
   }
 
-  void add_response(const LoadBalanceResponse& response, int send_after_ms) {
+  void add_response(const LoadBalanceResponse &response, int send_after_ms) {
     grpc::internal::MutexLock lock(&mu_);
     responses_and_delays_.push_back(std::make_pair(response, send_after_ms));
   }
@@ -357,7 +357,7 @@ class BalancerServiceImpl : public BalancerService {
   }
 
  private:
-  void SendResponse(Stream* stream, const LoadBalanceResponse& response,
+  void SendResponse(Stream *stream, const LoadBalanceResponse &response,
                     int delay_ms) {
     gpr_log(GPR_INFO, "LB[%p]: sleeping for %d ms...", this, delay_ms);
     if (delay_ms > 0) {
@@ -427,23 +427,23 @@ class GrpclbEnd2endTest : public ::testing::Test {
 
   void TearDown() override {
     ShutdownAllBackends();
-    for (auto& balancer : balancers_) balancer->Shutdown();
+    for (auto &balancer : balancers_) balancer->Shutdown();
   }
 
   void StartAllBackends() {
-    for (auto& backend : backends_) backend->Start(server_host_);
+    for (auto &backend : backends_) backend->Start(server_host_);
   }
 
   void StartBackend(size_t index) { backends_[index]->Start(server_host_); }
 
   void ShutdownAllBackends() {
-    for (auto& backend : backends_) backend->Shutdown();
+    for (auto &backend : backends_) backend->Shutdown();
   }
 
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
   void ResetStub(int fallback_timeout = 0,
-                 const std::string& expected_targets = "") {
+                 const std::string &expected_targets = "") {
     ChannelArguments args;
     if (fallback_timeout > 0) args.SetGrpclbFallbackTimeout(fallback_timeout);
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
@@ -455,9 +455,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
     uri << "fake:///" << kApplicationTargetName_;
     // TODO(dgq): templatize tests to run everything using both secure and
     // insecure channel credentials.
-    grpc_channel_credentials* channel_creds =
+    grpc_channel_credentials *channel_creds =
         grpc_fake_transport_security_credentials_create();
-    grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
+    grpc_call_credentials *call_creds = grpc_md_only_test_credentials_create(
         g_kCallCredsMdKey, g_kCallCredsMdValue, false);
     std::shared_ptr<ChannelCredentials> creds(
         new SecureChannelCredentials(grpc_composite_channel_credentials_create(
@@ -469,12 +469,12 @@ class GrpclbEnd2endTest : public ::testing::Test {
   }
 
   void ResetBackendCounters() {
-    for (auto& backend : backends_) backend->service_.ResetCounters();
+    for (auto &backend : backends_) backend->service_.ResetCounters();
   }
 
   ClientStats WaitForLoadReports() {
     ClientStats client_stats;
-    for (auto& balancer : balancers_) {
+    for (auto &balancer : balancers_) {
       client_stats += balancer->service_.WaitForLoadReport();
     }
     return client_stats;
@@ -488,8 +488,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
     return true;
   }
 
-  void SendRpcAndCount(int* num_total, int* num_ok, int* num_failure,
-                       int* num_drops) {
+  void SendRpcAndCount(int *num_total, int *num_ok, int *num_failure,
+                       int *num_drops) {
     const Status status = SendRpc();
     if (status.ok()) {
       ++*num_ok;
@@ -538,9 +538,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
   };
 
   grpc_core::ServerAddressList CreateLbAddressesFromAddressDataList(
-      const std::vector<AddressData>& address_data) {
+      const std::vector<AddressData> &address_data) {
     grpc_core::ServerAddressList addresses;
-    for (const auto& addr : address_data) {
+    for (const auto &addr : address_data) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(absl::StrCat(
               ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", addr.port));
@@ -549,7 +549,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
       grpc_arg arg = grpc_core::CreateAuthorityOverrideChannelArg(
           addr.balancer_name.c_str());
-      grpc_channel_args* args =
+      grpc_channel_args *args =
           grpc_channel_args_copy_and_add(nullptr, &arg, 1);
       addresses.emplace_back(address.addr, address.len, args);
     }
@@ -557,9 +557,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
   }
 
   grpc_core::Resolver::Result MakeResolverResult(
-      const std::vector<AddressData>& balancer_address_data,
-      const std::vector<AddressData>& backend_address_data = {},
-      const char* service_config_json = kDefaultServiceConfig) {
+      const std::vector<AddressData> &balancer_address_data,
+      const std::vector<AddressData> &backend_address_data = {},
+      const char *service_config_json = kDefaultServiceConfig) {
     grpc_core::Resolver::Result result;
     result.addresses =
         CreateLbAddressesFromAddressDataList(backend_address_data);
@@ -575,7 +575,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
   }
 
   void SetNextResolutionAllBalancers(
-      const char* service_config_json = kDefaultServiceConfig) {
+      const char *service_config_json = kDefaultServiceConfig) {
     std::vector<AddressData> addresses;
     for (size_t i = 0; i < balancers_.size(); ++i) {
       addresses.emplace_back(AddressData{balancers_[i]->port_, ""});
@@ -584,9 +584,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
   }
 
   void SetNextResolution(
-      const std::vector<AddressData>& balancer_address_data,
-      const std::vector<AddressData>& backend_address_data = {},
-      const char* service_config_json = kDefaultServiceConfig) {
+      const std::vector<AddressData> &balancer_address_data,
+      const std::vector<AddressData> &backend_address_data = {},
+      const char *service_config_json = kDefaultServiceConfig) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = MakeResolverResult(
         balancer_address_data, backend_address_data, service_config_json);
@@ -594,9 +594,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
   }
 
   void SetNextReresolutionResponse(
-      const std::vector<AddressData>& balancer_address_data,
-      const std::vector<AddressData>& backend_address_data = {},
-      const char* service_config_json = kDefaultServiceConfig) {
+      const std::vector<AddressData> &balancer_address_data,
+      const std::vector<AddressData> &backend_address_data = {},
+      const char *service_config_json = kDefaultServiceConfig) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = MakeResolverResult(
         balancer_address_data, backend_address_data, service_config_json);
@@ -614,24 +614,24 @@ class GrpclbEnd2endTest : public ::testing::Test {
   }
 
   void ScheduleResponseForBalancer(size_t i,
-                                   const LoadBalanceResponse& response,
+                                   const LoadBalanceResponse &response,
                                    int delay_ms) {
     balancers_[i]->service_.add_response(response, delay_ms);
   }
 
   LoadBalanceResponse BuildResponseForBackends(
-      const std::vector<int>& backend_ports,
-      const std::map<std::string, size_t>& drop_token_counts) {
+      const std::vector<int> &backend_ports,
+      const std::map<std::string, size_t> &drop_token_counts) {
     LoadBalanceResponse response;
-    for (const auto& drop_token_count : drop_token_counts) {
+    for (const auto &drop_token_count : drop_token_counts) {
       for (size_t i = 0; i < drop_token_count.second; ++i) {
-        auto* server = response.mutable_server_list()->add_servers();
+        auto *server = response.mutable_server_list()->add_servers();
         server->set_drop(true);
         server->set_load_balance_token(drop_token_count.first);
       }
     }
-    for (const int& backend_port : backend_ports) {
-      auto* server = response.mutable_server_list()->add_servers();
+    for (const int &backend_port : backend_ports) {
+      auto *server = response.mutable_server_list()->add_servers();
       server->set_ip_address(ipv6_only_ ? Ip6ToPackedString("::1")
                                         : Ip4ToPackedString("127.0.0.1"));
       server->set_port(backend_port);
@@ -642,15 +642,15 @@ class GrpclbEnd2endTest : public ::testing::Test {
     return response;
   }
 
-  Status SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000,
+  Status SendRpc(EchoResponse *response = nullptr, int timeout_ms = 1000,
                  bool wait_for_ready = false,
-                 const Status& expected_status = Status::OK) {
+                 const Status &expected_status = Status::OK) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
     request.set_message(kRequestMessage_);
     if (!expected_status.ok()) {
-      auto* error = request.mutable_param()->mutable_expected_error();
+      auto *error = request.mutable_param()->mutable_expected_error();
       error->set_code(expected_status.error_code());
       error->set_error_message(expected_status.error_message());
     }
@@ -681,12 +681,12 @@ class GrpclbEnd2endTest : public ::testing::Test {
   template <typename T>
   struct ServerThread {
     template <typename... Args>
-    explicit ServerThread(const std::string& type, Args&&... args)
+    explicit ServerThread(const std::string &type, Args &&...args)
         : port_(grpc_pick_unused_port_or_die()),
           type_(type),
           service_(std::forward<Args>(args)...) {}
 
-    void Start(const std::string& server_host) {
+    void Start(const std::string &server_host) {
       gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
       GPR_ASSERT(!running_);
       running_ = true;
@@ -702,8 +702,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());
     }
 
-    void Serve(const std::string& server_host, grpc::internal::Mutex* mu,
-               grpc::internal::CondVar* cond) {
+    void Serve(const std::string &server_host, grpc::internal::Mutex *mu,
+               grpc::internal::CondVar *cond) {
       // We need to acquire the lock here in order to prevent the notify_one
       // below from firing before its corresponding wait is executed.
       grpc::internal::MutexLock lock(mu);
@@ -2017,7 +2017,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   const auto result = RUN_ALL_TESTS();

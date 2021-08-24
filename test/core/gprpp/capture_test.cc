@@ -18,21 +18,21 @@
 namespace grpc_core {
 
 TEST(CaptureTest, Capture) {
-  auto f = Capture([](int* p) { EXPECT_EQ(*p, 42); }, 42);
+  auto f = Capture([](int *p) { EXPECT_EQ(*p, 42); }, 42);
   f();
 }
 
 TEST(CaptureTest, WithArgsAndReturn) {
   int captured = 1;
   auto f =
-      Capture([captured](int* p, int arg) { return (captured + *p) * arg; }, 2);
+      Capture([captured](int *p, int arg) { return (captured + *p) * arg; }, 2);
   EXPECT_EQ(f(2), 6);
   EXPECT_EQ(f(3), 9);
 }
 
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

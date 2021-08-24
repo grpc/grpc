@@ -42,7 +42,7 @@ namespace grpc_core {
 
 class GrpcPolledFdPosix : public GrpcPolledFd {
  public:
-  GrpcPolledFdPosix(ares_socket_t as, grpc_pollset_set* driver_pollset_set)
+  GrpcPolledFdPosix(ares_socket_t as, grpc_pollset_set *driver_pollset_set)
       : name_(absl::StrCat("c-ares fd: ", static_cast<int>(as))), as_(as) {
     fd_ = grpc_fd_create(static_cast<int>(as), name_.c_str(), false);
     driver_pollset_set_ = driver_pollset_set;
@@ -58,11 +58,11 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
     grpc_fd_orphan(fd_, nullptr, &phony_release_fd, "c-ares query finished");
   }
 
-  void RegisterForOnReadableLocked(grpc_closure* read_closure) override {
+  void RegisterForOnReadableLocked(grpc_closure *read_closure) override {
     grpc_fd_notify_on_read(fd_, read_closure);
   }
 
-  void RegisterForOnWriteableLocked(grpc_closure* write_closure) override {
+  void RegisterForOnWriteableLocked(grpc_closure *write_closure) override {
     grpc_fd_notify_on_write(fd_, write_closure);
   }
 
@@ -78,19 +78,19 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
 
   ares_socket_t GetWrappedAresSocketLocked() override { return as_; }
 
-  const char* GetName() override { return name_.c_str(); }
+  const char *GetName() override { return name_.c_str(); }
 
  private:
   std::string name_;
   ares_socket_t as_;
-  grpc_fd* fd_;
-  grpc_pollset_set* driver_pollset_set_;
+  grpc_fd *fd_;
+  grpc_pollset_set *driver_pollset_set_;
 };
 
 class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
  public:
-  GrpcPolledFd* NewGrpcPolledFdLocked(
-      ares_socket_t as, grpc_pollset_set* driver_pollset_set,
+  GrpcPolledFd *NewGrpcPolledFdLocked(
+      ares_socket_t as, grpc_pollset_set *driver_pollset_set,
       std::shared_ptr<WorkSerializer> /*work_serializer*/) override {
     return new GrpcPolledFdPosix(as, driver_pollset_set);
   }

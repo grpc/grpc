@@ -1038,7 +1038,7 @@ enum cronet_net_error_code {
   CRONET_NET_ERROR_DNS_SECURE_RESOLVER_HOSTNAME_RESOLUTION_FAILED = -808,
 };
 
-const char* cronet_net_error_as_string(cronet_net_error_code net_error);
+const char *cronet_net_error_as_string(cronet_net_error_code net_error);
 grpc_status_code cronet_net_error_to_grpc_error(
     cronet_net_error_code net_error);
 

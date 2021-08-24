@@ -35,8 +35,8 @@ struct Rbac {
     CidrRange() = default;
     CidrRange(std::string address_prefix, uint32_t prefix_len);
 
-    CidrRange(CidrRange&& other) noexcept;
-    CidrRange& operator=(CidrRange&& other) noexcept;
+    CidrRange(CidrRange &&other) noexcept;
+    CidrRange &operator=(CidrRange &&other) noexcept;
 
     std::string ToString() const;
 
@@ -75,8 +75,8 @@ struct Rbac {
     // For kDestPort RuleType.
     Permission(Permission::RuleType type, int port);
 
-    Permission(Permission&& other) noexcept;
-    Permission& operator=(Permission&& other) noexcept;
+    Permission(Permission &&other) noexcept;
+    Permission &operator=(Permission &&other) noexcept;
 
     std::string ToString() const;
 
@@ -119,8 +119,8 @@ struct Rbac {
     // For kHeader RuleType.
     Principal(Principal::RuleType type, HeaderMatcher header_matcher);
 
-    Principal(Principal&& other) noexcept;
-    Principal& operator=(Principal&& other) noexcept;
+    Principal(Principal &&other) noexcept;
+    Principal &operator=(Principal &&other) noexcept;
 
     std::string ToString() const;
 
@@ -137,8 +137,8 @@ struct Rbac {
     Policy() = default;
     Policy(Permission permissions, Principal principals);
 
-    Policy(Policy&& other) noexcept;
-    Policy& operator=(Policy&& other) noexcept;
+    Policy(Policy &&other) noexcept;
+    Policy &operator=(Policy &&other) noexcept;
 
     std::string ToString() const;
 
@@ -149,8 +149,8 @@ struct Rbac {
   Rbac() = default;
   Rbac(Rbac::Action action, std::map<std::string, Policy> policies);
 
-  Rbac(Rbac&& other) noexcept;
-  Rbac& operator=(Rbac&& other) noexcept;
+  Rbac(Rbac &&other) noexcept;
+  Rbac &operator=(Rbac &&other) noexcept;
 
   std::string ToString() const;
 

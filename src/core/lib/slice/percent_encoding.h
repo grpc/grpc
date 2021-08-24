@@ -47,18 +47,18 @@ enum class PercentEncodingType {
 // Percent-encode a slice, returning the new slice (this cannot fail):
 // unreserved_bytes is a bitfield indicating which bytes are considered
 // unreserved and thus do not need percent encoding
-grpc_slice PercentEncodeSlice(const grpc_slice& slice,
+grpc_slice PercentEncodeSlice(const grpc_slice &slice,
                               PercentEncodingType type);
 // Percent-decode a slice, strictly.
 // If the input is legal (contains no unreserved bytes, and legal % encodings),
 // returns the decoded slice.
 // If the input is not legal, returns {}.
-absl::optional<grpc_slice> PercentDecodeSlice(const grpc_slice& slice_in,
+absl::optional<grpc_slice> PercentDecodeSlice(const grpc_slice &slice_in,
                                               PercentEncodingType type);
 // Percent-decode a slice, permissively.
 // If a % triplet can not be decoded, pass it through verbatim.
 // This cannot fail.
-grpc_slice PermissivePercentDecodeSlice(const grpc_slice& slice_in);
+grpc_slice PermissivePercentDecodeSlice(const grpc_slice &slice_in);
 
 }  // namespace grpc_core
 

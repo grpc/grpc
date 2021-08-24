@@ -32,7 +32,7 @@
  * - bytes: buffer to hold random bytes.
  * - length: length of buffer to be populated.
  */
-void gsec_test_random_bytes(uint8_t* bytes, size_t length);
+void gsec_test_random_bytes(uint8_t *bytes, size_t length);
 
 /**
  * This method returns an array of random bytes.
@@ -40,7 +40,7 @@ void gsec_test_random_bytes(uint8_t* bytes, size_t length);
  * - bytes: array to hold random bytes.
  * - length: length of array to be populated.
  */
-void gsec_test_random_array(uint8_t** bytes, size_t length);
+void gsec_test_random_array(uint8_t **bytes, size_t length);
 
 /**
  * This method returns a uint32 that's not quite uniformly random, but good
@@ -57,7 +57,7 @@ uint32_t gsec_test_bias_random_uint32(uint32_t max_length);
  * - des: a destination buffer.
  * - source_len: the length of source buffer to be copied from its beginning.
  */
-void gsec_test_copy(const uint8_t* src, uint8_t** des, size_t source_len);
+void gsec_test_copy(const uint8_t *src, uint8_t **des, size_t source_len);
 
 /**
  * This method copies data from a source to a destination buffer, and flips one
@@ -67,7 +67,7 @@ void gsec_test_copy(const uint8_t* src, uint8_t** des, size_t source_len);
  * - des: a destination buffer.
  * - length: the length of source buffer to be copied from its beginning.
  */
-void gsec_test_copy_and_alter_random_byte(const uint8_t* src, uint8_t** des,
+void gsec_test_copy_and_alter_random_byte(const uint8_t *src, uint8_t **des,
                                           size_t source_len);
 
 /**
@@ -83,7 +83,7 @@ void gsec_test_copy_and_alter_random_byte(const uint8_t* src, uint8_t** des,
  */
 int gsec_test_expect_compare_code_and_substr(grpc_status_code status1,
                                              grpc_status_code status2,
-                                             const char* msg1,
-                                             const char* msg2);
+                                             const char *msg1,
+                                             const char *msg2);
 
 #endif  // GRPC_TEST_CORE_TSI_ALTS_CRYPT_GSEC_TEST_UTIL_H_ */

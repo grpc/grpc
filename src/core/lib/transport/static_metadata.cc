@@ -1155,11 +1155,11 @@ struct StaticMetadataCtx {
 }  // namespace grpc_core
 
 namespace grpc_core {
-static StaticMetadataCtx* g_static_metadata_slice_ctx = nullptr;
-const StaticMetadataSlice* g_static_metadata_slice_table = nullptr;
-StaticSliceRefcount* g_static_metadata_slice_refcounts = nullptr;
-StaticMetadata* g_static_mdelem_table = nullptr;
-grpc_mdelem* g_static_mdelem_manifested = nullptr;
+static StaticMetadataCtx *g_static_metadata_slice_ctx = nullptr;
+const StaticMetadataSlice *g_static_metadata_slice_table = nullptr;
+StaticSliceRefcount *g_static_metadata_slice_refcounts = nullptr;
+StaticMetadata *g_static_mdelem_table = nullptr;
+grpc_mdelem *g_static_mdelem_manifested = nullptr;
 #ifndef NDEBUG
 uint64_t StaticMetadataInitCanary() {
   return g_static_metadata_slice_ctx->init_canary;

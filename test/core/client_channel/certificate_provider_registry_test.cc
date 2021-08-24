@@ -30,10 +30,10 @@ namespace {
 
 class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
  public:
-  const char* name() const override { return "fake1"; }
+  const char *name() const override { return "fake1"; }
 
   RefCountedPtr<Config> CreateCertificateProviderConfig(
-      const Json& /*config_json*/, grpc_error_handle* /*error*/) override {
+      const Json & /*config_json*/, grpc_error_handle * /*error*/) override {
     return nullptr;
   }
 
@@ -45,10 +45,10 @@ class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
 
 class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
  public:
-  const char* name() const override { return "fake2"; }
+  const char *name() const override { return "fake2"; }
 
   RefCountedPtr<Config> CreateCertificateProviderConfig(
-      const Json& /*config_json*/, grpc_error_handle* /*error*/) override {
+      const Json & /*config_json*/, grpc_error_handle * /*error*/) override {
     return nullptr;
   }
 
@@ -60,8 +60,8 @@ class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
 
 TEST(CertificateProviderRegistryTest, Basic) {
   CertificateProviderRegistry::InitRegistry();
-  auto* fake_factory_1 = new FakeCertificateProviderFactory1;
-  auto* fake_factory_2 = new FakeCertificateProviderFactory2;
+  auto *fake_factory_1 = new FakeCertificateProviderFactory1;
+  auto *fake_factory_2 = new FakeCertificateProviderFactory2;
   CertificateProviderRegistry::RegisterCertificateProviderFactory(
       std::unique_ptr<CertificateProviderFactory>(fake_factory_1));
   CertificateProviderRegistry::RegisterCertificateProviderFactory(
@@ -82,7 +82,7 @@ TEST(CertificateProviderRegistryTest, Basic) {
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   auto result = RUN_ALL_TESTS();

@@ -37,25 +37,25 @@
 /// freed from the resource_user upon channel destruction.
 ///
 /// Takes ownership of a \a resource_user ref.
-grpc_channel* grpc_channel_create(const char* target,
-                                  const grpc_channel_args* args,
+grpc_channel *grpc_channel_create(const char *target,
+                                  const grpc_channel_args *args,
                                   grpc_channel_stack_type channel_stack_type,
-                                  grpc_transport* optional_transport,
-                                  grpc_resource_user* resource_user,
+                                  grpc_transport *optional_transport,
+                                  grpc_resource_user *resource_user,
                                   size_t preallocated_bytes,
-                                  grpc_error_handle* error);
+                                  grpc_error_handle *error);
 
 /** The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
  * is safe to use from within core. */
-void grpc_channel_destroy_internal(grpc_channel* channel);
+void grpc_channel_destroy_internal(grpc_channel *channel);
 
 /// Creates a grpc_channel with a builder. See the description of
 /// \a grpc_channel_create for variable definitions.
-grpc_channel* grpc_channel_create_with_builder(
-    grpc_channel_stack_builder* builder,
+grpc_channel *grpc_channel_create_with_builder(
+    grpc_channel_stack_builder *builder,
     grpc_channel_stack_type channel_stack_type,
-    grpc_resource_user* resource_user, size_t preallocated_bytes,
-    grpc_error_handle* error = nullptr);
+    grpc_resource_user *resource_user, size_t preallocated_bytes,
+    grpc_error_handle *error = nullptr);
 
 /** Create a call given a grpc_channel, in order to call \a method.
     Progress is tied to activity on \a pollset_set. The returned call object is
@@ -65,19 +65,19 @@ grpc_channel* grpc_channel_create_with_builder(
     non-NULL, it must be a server-side call. It will be used to propagate
     properties from the server call to this new client call, depending on the
     value of \a propagation_mask (see propagation_bits.h for possible values) */
-grpc_call* grpc_channel_create_pollset_set_call(
-    grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_pollset_set* pollset_set, const grpc_slice& method,
-    const grpc_slice* host, grpc_millis deadline, void* reserved);
+grpc_call *grpc_channel_create_pollset_set_call(
+    grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
+    grpc_pollset_set *pollset_set, const grpc_slice &method,
+    const grpc_slice *host, grpc_millis deadline, void *reserved);
 
 /** Get a (borrowed) pointer to this channels underlying channel stack */
-grpc_channel_stack* grpc_channel_get_channel_stack(grpc_channel* channel);
+grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);
 
-grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
-    grpc_channel* channel);
+grpc_core::channelz::ChannelNode *grpc_channel_get_channelz_node(
+    grpc_channel *channel);
 
-size_t grpc_channel_get_call_size_estimate(grpc_channel* channel);
-void grpc_channel_update_call_size_estimate(grpc_channel* channel, size_t size);
+size_t grpc_channel_get_call_size_estimate(grpc_channel *channel);
+void grpc_channel_update_call_size_estimate(grpc_channel *channel, size_t size);
 
 namespace grpc_core {
 
@@ -90,13 +90,13 @@ struct RegisteredCall {
   grpc_mdelem path;
   grpc_mdelem authority;
 
-  explicit RegisteredCall(const char* method_arg, const char* host_arg);
+  explicit RegisteredCall(const char *method_arg, const char *host_arg);
   // TODO(vjpai): delete copy constructor once all supported compilers allow
   //              std::map value_type to be MoveConstructible.
-  RegisteredCall(const RegisteredCall& other);
-  RegisteredCall(RegisteredCall&& other) noexcept;
-  RegisteredCall& operator=(const RegisteredCall&) = delete;
-  RegisteredCall& operator=(RegisteredCall&&) = delete;
+  RegisteredCall(const RegisteredCall &other);
+  RegisteredCall(RegisteredCall &&other) noexcept;
+  RegisteredCall &operator=(const RegisteredCall &) = delete;
+  RegisteredCall &operator=(RegisteredCall &&) = delete;
 
   ~RegisteredCall();
 };
@@ -118,7 +118,7 @@ struct grpc_channel {
   grpc_compression_options compression_options;
 
   gpr_atm call_size_estimate;
-  grpc_resource_user* resource_user;
+  grpc_resource_user *resource_user;
   size_t preallocated_bytes;
 
   // TODO(vjpai): Once the grpc_channel is allocated via new rather than malloc,
@@ -130,32 +130,32 @@ struct grpc_channel {
       registration_table;
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node;
 
-  char* target;
+  char *target;
 };
-#define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack*)((c) + 1))
+#define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c) + 1))
 
 inline grpc_compression_options grpc_channel_compression_options(
-    const grpc_channel* channel) {
+    const grpc_channel *channel) {
   return channel->compression_options;
 }
 
-inline grpc_channel_stack* grpc_channel_get_channel_stack(
-    grpc_channel* channel) {
+inline grpc_channel_stack *grpc_channel_get_channel_stack(
+    grpc_channel *channel) {
   return CHANNEL_STACK_FROM_CHANNEL(channel);
 }
 
-inline grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
-    grpc_channel* channel) {
+inline grpc_core::channelz::ChannelNode *grpc_channel_get_channelz_node(
+    grpc_channel *channel) {
   return channel->channelz_node.get();
 }
 
 #ifndef NDEBUG
-inline void grpc_channel_internal_ref(grpc_channel* channel,
-                                      const char* reason) {
+inline void grpc_channel_internal_ref(grpc_channel *channel,
+                                      const char *reason) {
   GRPC_CHANNEL_STACK_REF(CHANNEL_STACK_FROM_CHANNEL(channel), reason);
 }
-inline void grpc_channel_internal_unref(grpc_channel* channel,
-                                        const char* reason) {
+inline void grpc_channel_internal_unref(grpc_channel *channel,
+                                        const char *reason) {
   GRPC_CHANNEL_STACK_UNREF(CHANNEL_STACK_FROM_CHANNEL(channel), reason);
 }
 #define GRPC_CHANNEL_INTERNAL_REF(channel, reason) \
@@ -163,10 +163,10 @@ inline void grpc_channel_internal_unref(grpc_channel* channel,
 #define GRPC_CHANNEL_INTERNAL_UNREF(channel, reason) \
   grpc_channel_internal_unref(channel, reason)
 #else
-inline void grpc_channel_internal_ref(grpc_channel* channel) {
+inline void grpc_channel_internal_ref(grpc_channel *channel) {
   GRPC_CHANNEL_STACK_REF(CHANNEL_STACK_FROM_CHANNEL(channel), "unused");
 }
-inline void grpc_channel_internal_unref(grpc_channel* channel) {
+inline void grpc_channel_internal_unref(grpc_channel *channel) {
   GRPC_CHANNEL_STACK_UNREF(CHANNEL_STACK_FROM_CHANNEL(channel), "unused");
 }
 #define GRPC_CHANNEL_INTERNAL_REF(channel, reason) \
@@ -177,11 +177,11 @@ inline void grpc_channel_internal_unref(grpc_channel* channel) {
 
 // Return the channel's compression options.
 grpc_compression_options grpc_channel_compression_options(
-    const grpc_channel* channel);
+    const grpc_channel *channel);
 
 // Ping the channels peer (load balanced channels will select one sub-channel to
 // ping); if the channel is not connected, posts a failed.
-void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
-                       void* tag, void* reserved);
+void grpc_channel_ping(grpc_channel *channel, grpc_completion_queue *cq,
+                       void *tag, void *reserved);
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_H */

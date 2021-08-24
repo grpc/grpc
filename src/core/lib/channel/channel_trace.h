@@ -62,7 +62,7 @@ class ChannelTrace {
   // TODO(ncteisen): as this call is used more and more throughout the gRPC
   // stack, determine if it makes more sense to accept a char* instead of a
   // slice.
-  void AddTraceEvent(Severity severity, const grpc_slice& data);
+  void AddTraceEvent(Severity severity, const grpc_slice &data);
 
   // Adds a new trace event to the tracing object. This trace event refers to a
   // an event that concerns a different channelz entity. For example, if this
@@ -72,7 +72,7 @@ class ChannelTrace {
   // NOTE: see the note in the method above.
   //
   // TODO(ncteisen): see the todo in the method above.
-  void AddTraceEventWithReference(Severity severity, const grpc_slice& data,
+  void AddTraceEventWithReference(Severity severity, const grpc_slice &data,
                                   RefCountedPtr<BaseNode> referenced_entity);
 
   // Creates and returns the raw Json object, so a parent channelz
@@ -87,12 +87,12 @@ class ChannelTrace {
   class TraceEvent {
    public:
     // Constructor for a TraceEvent that references a channel.
-    TraceEvent(Severity severity, const grpc_slice& data,
+    TraceEvent(Severity severity, const grpc_slice &data,
                RefCountedPtr<BaseNode> referenced_entity_);
 
     // Constructor for a TraceEvent that does not reverence a different
     // channel.
-    TraceEvent(Severity severity, const grpc_slice& data);
+    TraceEvent(Severity severity, const grpc_slice &data);
 
     ~TraceEvent();
 
@@ -101,8 +101,8 @@ class ChannelTrace {
     Json RenderTraceEvent() const;
 
     // set and get for the next_ pointer.
-    TraceEvent* next() const { return next_; }
-    void set_next(TraceEvent* next) { next_ = next; }
+    TraceEvent *next() const { return next_; }
+    void set_next(TraceEvent *next) { next_ = next; }
 
     size_t memory_usage() const { return memory_usage_; }
 
@@ -110,21 +110,21 @@ class ChannelTrace {
     Severity severity_;
     grpc_slice data_;
     gpr_timespec timestamp_;
-    TraceEvent* next_;
+    TraceEvent *next_;
     // the tracer object for the (sub)channel that this trace event refers to.
     RefCountedPtr<BaseNode> referenced_entity_;
     size_t memory_usage_;
   };  // TraceEvent
 
   // Internal helper to add and link in a trace event
-  void AddTraceEventHelper(TraceEvent* new_trace_event);
+  void AddTraceEventHelper(TraceEvent *new_trace_event);
 
   gpr_mu tracer_mu_;
   uint64_t num_events_logged_;
   size_t event_list_memory_usage_;
   size_t max_event_memory_;
-  TraceEvent* head_trace_;
-  TraceEvent* tail_trace_;
+  TraceEvent *head_trace_;
+  TraceEvent *tail_trace_;
   gpr_timespec time_created_;
 };
 

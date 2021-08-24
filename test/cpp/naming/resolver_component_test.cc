@@ -133,12 +133,12 @@ class GrpcLBAddress final {
   GrpcLBAddress(std::string address, bool is_balancer)
       : is_balancer(is_balancer), address(std::move(address)) {}
 
-  bool operator==(const GrpcLBAddress& other) const {
+  bool operator==(const GrpcLBAddress &other) const {
     return this->is_balancer == other.is_balancer &&
            this->address == other.address;
   }
 
-  bool operator!=(const GrpcLBAddress& other) const {
+  bool operator!=(const GrpcLBAddress &other) const {
     return !(*this == other);
   }
 
@@ -188,20 +188,20 @@ gpr_timespec TestDeadline(void) {
 struct ArgsStruct {
   gpr_event ev;
   gpr_atm done_atm;
-  gpr_mu* mu;
-  grpc_pollset* pollset;
-  grpc_pollset_set* pollset_set;
+  gpr_mu *mu;
+  grpc_pollset *pollset;
+  grpc_pollset_set *pollset_set;
   std::shared_ptr<grpc_core::WorkSerializer> lock;
-  grpc_channel_args* channel_args;
+  grpc_channel_args *channel_args;
   vector<GrpcLBAddress> expected_addrs;
   std::string expected_service_config_string;
   std::string expected_service_config_error;
   std::string expected_lb_policy;
 };
 
-void ArgsInit(ArgsStruct* args) {
+void ArgsInit(ArgsStruct *args) {
   gpr_event_init(&args->ev);
-  args->pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+  args->pollset = static_cast<grpc_pollset *>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
@@ -210,9 +210,9 @@ void ArgsInit(ArgsStruct* args) {
   args->channel_args = nullptr;
 }
 
-void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
+void DoNothing(void * /*arg*/, grpc_error_handle /*error*/) {}
 
-void ArgsFinish(ArgsStruct* args) {
+void ArgsFinish(ArgsStruct *args) {
   GPR_ASSERT(gpr_event_wait(&args->ev, TestDeadline()));
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(args->pollset_set);
@@ -232,7 +232,7 @@ gpr_timespec NSecondDeadline(int seconds) {
                       gpr_time_from_seconds(seconds, GPR_TIMESPAN));
 }
 
-void PollPollsetUntilRequestDone(ArgsStruct* args) {
+void PollPollsetUntilRequestDone(ArgsStruct *args) {
   // Use a 20-second timeout to give room for the tests that involve
   // a non-responsive name server (c-ares uses a ~5 second query timeout
   // for that server before succeeding with the healthy one).
@@ -247,7 +247,7 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64 ".%09d", done,
             time_left.tv_sec, time_left.tv_nsec);
     GPR_ASSERT(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) >= 0);
-    grpc_pollset_worker* worker = nullptr;
+    grpc_pollset_worker *worker = nullptr;
     grpc_core::ExecCtx exec_ctx;
     gpr_mu_lock(args->mu);
     GRPC_LOG_IF_ERROR("pollset_work",
@@ -256,12 +256,12 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
                                             NSecondDeadline(1))));
     gpr_mu_unlock(args->mu);
   }
-  gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
+  gpr_event_set(&args->ev, reinterpret_cast<void *>(1));
 }
 
-void CheckServiceConfigResultLocked(const char* service_config_json,
+void CheckServiceConfigResultLocked(const char *service_config_json,
                                     grpc_error_handle service_config_error,
-                                    ArgsStruct* args) {
+                                    ArgsStruct *args) {
   if (!args->expected_service_config_string.empty()) {
     GPR_ASSERT(service_config_json != nullptr);
     EXPECT_EQ(service_config_json, args->expected_service_config_string);
@@ -275,9 +275,9 @@ void CheckServiceConfigResultLocked(const char* service_config_json,
   GRPC_ERROR_UNREF(service_config_error);
 }
 
-void CheckLBPolicyResultLocked(const grpc_channel_args* channel_args,
-                               ArgsStruct* args) {
-  const grpc_arg* lb_policy_arg =
+void CheckLBPolicyResultLocked(const grpc_channel_args *channel_args,
+                               ArgsStruct *args) {
+  const grpc_arg *lb_policy_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_LB_POLICY_NAME);
   if (!args->expected_lb_policy.empty()) {
     GPR_ASSERT(lb_policy_arg != nullptr);
@@ -289,12 +289,12 @@ void CheckLBPolicyResultLocked(const grpc_channel_args* channel_args,
 }
 
 #ifdef GPR_WINDOWS
-void OpenAndCloseSocketsStressLoop(int phony_port, gpr_event* done_ev) {
+void OpenAndCloseSocketsStressLoop(int phony_port, gpr_event *done_ev) {
   sockaddr_in6 addr;
   memset(&addr, 0, sizeof(addr));
   addr.sin6_family = AF_INET6;
   addr.sin6_port = htons(phony_port);
-  ((char*)&addr.sin6_addr)[15] = 1;
+  ((char *)&addr.sin6_addr)[15] = 1;
   for (;;) {
     if (gpr_event_get(done_ev)) {
       return;
@@ -313,7 +313,8 @@ void OpenAndCloseSocketsStressLoop(int phony_port, gpr_event* done_ev) {
                  std::to_string(WSAGetLastError());
       ASSERT_TRUE(grpc_tcp_set_non_block(s) == GRPC_ERROR_NONE)
           << "Failed to set socket non-blocking";
-      ASSERT_TRUE(bind(s, (const sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR)
+      ASSERT_TRUE(bind(s, (const sockaddr *)&addr, sizeof(addr)) !=
+                  SOCKET_ERROR)
           << "Failed to bind socket " + std::to_string(s) +
                  " to [::1]:" + std::to_string(phony_port) +
                  ". WSA error: " + std::to_string(WSAGetLastError());
@@ -344,7 +345,7 @@ void OpenAndCloseSocketsStressLoop(int phony_port, gpr_event* done_ev) {
   return;
 }
 #else
-void OpenAndCloseSocketsStressLoop(int phony_port, gpr_event* done_ev) {
+void OpenAndCloseSocketsStressLoop(int phony_port, gpr_event *done_ev) {
   // The goal of this loop is to catch socket
   // "use after close" bugs within the c-ares resolver by acting
   // like some separate thread doing I/O.
@@ -360,7 +361,7 @@ void OpenAndCloseSocketsStressLoop(int phony_port, gpr_event* done_ev) {
   memset(&addr, 0, sizeof(addr));
   addr.sin6_family = AF_INET6;
   addr.sin6_port = htons(phony_port);
-  (reinterpret_cast<char*>(&addr.sin6_addr))[15] = 1;
+  (reinterpret_cast<char *>(&addr.sin6_addr))[15] = 1;
   for (;;) {
     if (gpr_event_get(done_ev)) {
       return;
@@ -383,7 +384,7 @@ void OpenAndCloseSocketsStressLoop(int phony_port, gpr_event* done_ev) {
       ASSERT_TRUE(s != BAD_SOCKET_RETURN_VAL)
           << "Failed to create TCP ipv6 socket";
       gpr_log(GPR_DEBUG, "Opened fd: %d", s);
-      ASSERT_TRUE(bind(s, (const sockaddr*)&addr, sizeof(addr)) == 0)
+      ASSERT_TRUE(bind(s, (const sockaddr *)&addr, sizeof(addr)) == 0)
           << "Failed to bind socket " + std::to_string(s) +
                  " to [::1]:" + std::to_string(phony_port) +
                  ". errno: " + std::to_string(errno);
@@ -419,12 +420,12 @@ void OpenAndCloseSocketsStressLoop(int phony_port, gpr_event* done_ev) {
 class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
   static std::unique_ptr<grpc_core::Resolver::ResultHandler> Create(
-      ArgsStruct* args) {
+      ArgsStruct *args) {
     return std::unique_ptr<grpc_core::Resolver::ResultHandler>(
         new ResultHandler(args));
   }
 
-  explicit ResultHandler(ArgsStruct* args) : args_(args) {}
+  explicit ResultHandler(ArgsStruct *args) : args_(args) {}
 
   void ReturnResult(grpc_core::Resolver::Result result) override {
     CheckResult(result);
@@ -441,31 +442,31 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     GPR_ASSERT(false);
   }
 
-  virtual void CheckResult(const grpc_core::Resolver::Result& /*result*/) {}
+  virtual void CheckResult(const grpc_core::Resolver::Result & /*result*/) {}
 
  protected:
-  ArgsStruct* args_struct() const { return args_; }
+  ArgsStruct *args_struct() const { return args_; }
 
  private:
-  ArgsStruct* args_;
+  ArgsStruct *args_;
 };
 
 class CheckingResultHandler : public ResultHandler {
  public:
   static std::unique_ptr<grpc_core::Resolver::ResultHandler> Create(
-      ArgsStruct* args) {
+      ArgsStruct *args) {
     return std::unique_ptr<grpc_core::Resolver::ResultHandler>(
         new CheckingResultHandler(args));
   }
 
-  explicit CheckingResultHandler(ArgsStruct* args) : ResultHandler(args) {}
+  explicit CheckingResultHandler(ArgsStruct *args) : ResultHandler(args) {}
 
-  void CheckResult(const grpc_core::Resolver::Result& result) override {
-    ArgsStruct* args = args_struct();
+  void CheckResult(const grpc_core::Resolver::Result &result) override {
+    ArgsStruct *args = args_struct();
     std::vector<GrpcLBAddress> found_lb_addrs;
     AddActualAddresses(result.addresses, /*is_balancer=*/false,
                        &found_lb_addrs);
-    const grpc_core::ServerAddressList* balancer_addresses =
+    const grpc_core::ServerAddressList *balancer_addresses =
         grpc_core::FindGrpclbBalancerAddressesInChannelArgs(*result.args);
     if (balancer_addresses != nullptr) {
       AddActualAddresses(*balancer_addresses, /*is_balancer=*/true,
@@ -495,7 +496,7 @@ class CheckingResultHandler : public ResultHandler {
               absl::GetFlag(FLAGS_do_ordered_address_comparison).c_str());
       GPR_ASSERT(0);
     }
-    const char* service_config_json =
+    const char *service_config_json =
         result.service_config == nullptr
             ? nullptr
             : result.service_config->json_string().c_str();
@@ -507,11 +508,11 @@ class CheckingResultHandler : public ResultHandler {
   }
 
  private:
-  static void AddActualAddresses(const grpc_core::ServerAddressList& addresses,
+  static void AddActualAddresses(const grpc_core::ServerAddressList &addresses,
                                  bool is_balancer,
-                                 std::vector<GrpcLBAddress>* out) {
+                                 std::vector<GrpcLBAddress> *out) {
     for (size_t i = 0; i < addresses.size(); i++) {
-      const grpc_core::ServerAddress& addr = addresses[i];
+      const grpc_core::ServerAddress &addr = addresses[i];
       std::string str =
           grpc_sockaddr_to_string(&addr.address(), true /* normalize */);
       gpr_log(GPR_INFO, "%s", str.c_str());
@@ -541,7 +542,7 @@ void InjectBrokenNameServerList(ares_channel channel) {
           absl::GetFlag(FLAGS_local_dns_server_address).c_str());
   // Put the non-responsive DNS server at the front of c-ares's nameserver list.
   dns_server_addrs[0].family = AF_INET6;
-  (reinterpret_cast<char*>(&dns_server_addrs[0].addr.addr6))[15] = 0x1;
+  (reinterpret_cast<char *>(&dns_server_addrs[0].addr.addr6))[15] = 0x1;
   dns_server_addrs[0].tcp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].udp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].next = &dns_server_addrs[1];
@@ -550,19 +551,19 @@ void InjectBrokenNameServerList(ares_channel channel) {
   // and will skip over to this healthy DNS server, without causing any DNS
   // resolution errors.
   dns_server_addrs[1].family = AF_INET;
-  (reinterpret_cast<char*>(&dns_server_addrs[1].addr.addr4))[0] = 0x7f;
-  (reinterpret_cast<char*>(&dns_server_addrs[1].addr.addr4))[3] = 0x1;
+  (reinterpret_cast<char *>(&dns_server_addrs[1].addr.addr4))[0] = 0x7f;
+  (reinterpret_cast<char *>(&dns_server_addrs[1].addr.addr4))[3] = 0x1;
   dns_server_addrs[1].tcp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].udp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].next = nullptr;
   GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
 }
 
-void StartResolvingLocked(grpc_core::Resolver* r) { r->StartLocked(); }
+void StartResolvingLocked(grpc_core::Resolver *r) { r->StartLocked(); }
 
 void RunResolvesRelevantRecordsTest(
     std::unique_ptr<grpc_core::Resolver::ResultHandler> (*CreateResultHandler)(
-        ArgsStruct* args)) {
+        ArgsStruct *args)) {
   grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
   ArgsInit(&args);
@@ -599,13 +600,13 @@ void RunResolvesRelevantRecordsTest(
   }
   gpr_log(GPR_DEBUG, "resolver_component_test: --enable_srv_queries: %s",
           absl::GetFlag(FLAGS_enable_srv_queries).c_str());
-  grpc_channel_args* resolver_args = nullptr;
+  grpc_channel_args *resolver_args = nullptr;
   // By default, SRV queries are disabled, so tests that expect no SRV query
   // should avoid setting any channel arg. Test cases that do rely on the SRV
   // query must explicitly enable SRV though.
   if (absl::GetFlag(FLAGS_enable_srv_queries) == "True") {
     grpc_arg srv_queries_arg = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_DNS_ENABLE_SRV_QUERIES), true);
+        const_cast<char *>(GRPC_ARG_DNS_ENABLE_SRV_QUERIES), true);
     resolver_args =
         grpc_channel_args_copy_and_add(nullptr, &srv_queries_arg, 1);
   } else if (absl::GetFlag(FLAGS_enable_srv_queries) != "False") {
@@ -623,8 +624,8 @@ void RunResolvesRelevantRecordsTest(
     // for which c-ares has its own specific default value, which isn't
     // necessarily shared by other resolvers.
     grpc_arg txt_queries_arg = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION), false);
-    grpc_channel_args* tmp_args =
+        const_cast<char *>(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION), false);
+    grpc_channel_args *tmp_args =
         grpc_channel_args_copy_and_add(resolver_args, &txt_queries_arg, 1);
     grpc_channel_args_destroy(resolver_args);
     resolver_args = tmp_args;
@@ -638,7 +639,7 @@ void RunResolvesRelevantRecordsTest(
           whole_uri.c_str(), resolver_args, args.pollset_set, args.lock,
           CreateResultHandler(&args));
   grpc_channel_args_destroy(resolver_args);
-  auto* resolver_ptr = resolver.get();
+  auto *resolver_ptr = resolver.get();
   args.lock->Run([resolver_ptr]() { StartResolvingLocked(resolver_ptr); },
                  DEBUG_LOCATION);
   grpc_core::ExecCtx::Get()->Flush();
@@ -660,13 +661,13 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
   // Run the resolver test
   RunResolvesRelevantRecordsTest(ResultHandler::Create);
   // Shutdown and join stress thread
-  gpr_event_set(&done_ev, reinterpret_cast<void*>(1));
+  gpr_event_set(&done_ev, reinterpret_cast<void *>(1));
   socket_stress_thread.join();
 }
 
 }  // namespace
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);

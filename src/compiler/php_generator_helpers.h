@@ -27,16 +27,16 @@
 namespace grpc_php_generator {
 
 inline std::string GetPHPServiceClassname(
-    const grpc::protobuf::ServiceDescriptor* service,
-    const std::string& class_suffix, bool is_server) {
+    const grpc::protobuf::ServiceDescriptor *service,
+    const std::string &class_suffix, bool is_server) {
   return service->name() +
          (class_suffix == "" ? (is_server ? "" : "Client") : class_suffix) +
          (is_server ? "Stub" : "");
 }
 
 // ReplaceAll replaces all instances of search with replace in s.
-inline std::string ReplaceAll(std::string s, const std::string& search,
-                              const std::string& replace) {
+inline std::string ReplaceAll(std::string s, const std::string &search,
+                              const std::string &replace) {
   size_t pos = 0;
   while ((pos = s.find(search, pos)) != std::string::npos) {
     s.replace(pos, search.length(), replace);
@@ -46,9 +46,9 @@ inline std::string ReplaceAll(std::string s, const std::string& search,
 }
 
 inline std::string GetPHPServiceFilename(
-    const grpc::protobuf::FileDescriptor* file,
-    const grpc::protobuf::ServiceDescriptor* service,
-    const std::string& class_suffix, bool is_server) {
+    const grpc::protobuf::FileDescriptor *file,
+    const grpc::protobuf::ServiceDescriptor *service,
+    const std::string &class_suffix, bool is_server) {
   std::ostringstream oss;
   if (file->options().has_php_namespace()) {
     oss << ReplaceAll(file->options().php_namespace(), "\\", "/");
@@ -67,7 +67,7 @@ inline std::string GetPHPServiceFilename(
 // Get leading or trailing comments in a string. Comment lines start with "// ".
 // Leading detached comments are put in front of leading comments.
 template <typename DescriptorType>
-inline std::string GetPHPComments(const DescriptorType* desc,
+inline std::string GetPHPComments(const DescriptorType *desc,
                                   std::string prefix) {
   return ReplaceAll(grpc_generator::GetPrefixedComments(desc, true, prefix),
                     "*/", "&#42;/");

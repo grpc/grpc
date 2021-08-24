@@ -41,7 +41,7 @@
 #endif /* ifdef GRPC_LINUX_ERRQUEUE */
 
 /* a wrapper for accept or accept4 */
-int grpc_accept4(int sockfd, grpc_resolved_address* resolved_addr, int nonblock,
+int grpc_accept4(int sockfd, grpc_resolved_address *resolved_addr, int nonblock,
                  int cloexec);
 
 /* set a socket to use zerocopy */
@@ -70,7 +70,7 @@ void config_default_tcp_user_timeout(bool enable, int timeout, bool is_client);
 
 /* Set TCP_USER_TIMEOUT */
 grpc_error_handle grpc_set_socket_tcp_user_timeout(
-    int fd, const grpc_channel_args* channel_args, bool is_client);
+    int fd, const grpc_channel_args *channel_args, bool is_client);
 
 /* Returns true if this system can create AF_INET6 sockets bound to ::1.
    The value is probed once, and cached for the life of the process.
@@ -102,11 +102,11 @@ grpc_error_handle grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes);
 
 /* Tries to set the socket using a grpc_socket_mutator */
 grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
-                                               grpc_socket_mutator* mutator);
+                                               grpc_socket_mutator *mutator);
 
 /* Extracts the first socket mutator from args if any and applies on the fd. */
 grpc_error_handle grpc_apply_socket_mutator_in_args(
-    int fd, grpc_fd_usage usage, const grpc_channel_args* args);
+    int fd, grpc_fd_usage usage, const grpc_channel_args *args);
 
 /* An enum to keep track of IPv4/IPv6 socket modes.
 
@@ -151,13 +151,13 @@ int grpc_set_socket_dualstack(int fd);
    Also, it's important to distinguish between DUALSTACK and IPV6 when
    listening on the [::] wildcard address. */
 grpc_error_handle grpc_create_dualstack_socket(
-    const grpc_resolved_address* addr, int type, int protocol,
-    grpc_dualstack_mode* dsmode, int* newfd);
+    const grpc_resolved_address *addr, int type, int protocol,
+    grpc_dualstack_mode *dsmode, int *newfd);
 
 /* Same as grpc_create_dualstack_socket(), but use the given socket factory (if
    non-null) to create the socket, rather than calling socket() directly. */
 grpc_error_handle grpc_create_dualstack_socket_using_factory(
-    grpc_socket_factory* factory, const grpc_resolved_address* addr, int type,
-    int protocol, grpc_dualstack_mode* dsmode, int* newfd);
+    grpc_socket_factory *factory, const grpc_resolved_address *addr, int type,
+    int protocol, grpc_dualstack_mode *dsmode, int *newfd);
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H */

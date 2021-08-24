@@ -71,8 +71,8 @@ class ReconnectServiceImpl : public ReconnectService::Service {
 
   void Poll(int seconds) { reconnect_server_poll(&tcp_server_, seconds); }
 
-  Status Start(ServerContext* /*context*/, const ReconnectParams* request,
-               Empty* /*response*/) override {
+  Status Start(ServerContext * /*context*/, const ReconnectParams *request,
+               Empty * /*response*/) override {
     bool start_server = true;
     std::unique_lock<std::mutex> lock(mu_);
     while (serving_ && !shutdown_) {
@@ -99,8 +99,8 @@ class ReconnectServiceImpl : public ReconnectService::Service {
     return Status::OK;
   }
 
-  Status Stop(ServerContext* /*context*/, const Empty* /*request*/,
-              ReconnectInfo* response) override {
+  Status Stop(ServerContext * /*context*/, const Empty * /*request*/,
+              ReconnectInfo *response) override {
     // extract timestamps and set response
     Verify(response);
     reconnect_server_clear_timestamps(&tcp_server_);
@@ -110,7 +110,7 @@ class ReconnectServiceImpl : public ReconnectService::Service {
     return Status::OK;
   }
 
-  void Verify(ReconnectInfo* response) {
+  void Verify(ReconnectInfo *response) {
     double expected_backoff = 1000.0;
     const double kTransmissionDelay = 100.0;
     const double kBackoffMultiplier = 1.6;
@@ -119,7 +119,7 @@ class ReconnectServiceImpl : public ReconnectService::Service {
                                   ? tcp_server_.max_reconnect_backoff_ms
                                   : 120 * 1000;
     bool passed = true;
-    for (timestamp_list* cur = tcp_server_.head; cur && cur->next;
+    for (timestamp_list *cur = tcp_server_.head; cur && cur->next;
          cur = cur->next) {
       double backoff = gpr_time_to_millis(
           gpr_time_sub(cur->next->timestamp, cur->timestamp));
@@ -172,7 +172,7 @@ void RunServer() {
 
 static void sigint_handler(int /*x*/) { got_sigint = true; }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   signal(SIGINT, sigint_handler);
 

@@ -35,10 +35,10 @@ namespace testing {
  * BENCHMARKING KERNELS
  */
 
-static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
+static void *tag(intptr_t x) { return reinterpret_cast<void *>(x); }
 
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
-static void BM_UnaryPingPong(benchmark::State& state) {
+static void BM_UnaryPingPong(benchmark::State &state) {
   EchoTestService::AsyncService service;
   std::unique_ptr<Fixture> fixture(new Fixture(&service));
   EchoRequest send_request;
@@ -58,9 +58,9 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     ServerEnv() : response_writer(&ctx) {}
   };
   uint8_t server_env_buffer[2 * sizeof(ServerEnv)];
-  ServerEnv* server_env[2] = {
-      reinterpret_cast<ServerEnv*>(server_env_buffer),
-      reinterpret_cast<ServerEnv*>(server_env_buffer + sizeof(ServerEnv))};
+  ServerEnv *server_env[2] = {
+      reinterpret_cast<ServerEnv *>(server_env_buffer),
+      reinterpret_cast<ServerEnv *>(server_env_buffer + sizeof(ServerEnv))};
   new (server_env[0]) ServerEnv;
   new (server_env[1]) ServerEnv;
   service.RequestEcho(&server_env[0]->ctx, &server_env[0]->recv_request,
@@ -79,13 +79,13 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
         stub->AsyncEcho(&cli_ctx, send_request, fixture->cq()));
     response_reader->Finish(&recv_response, &recv_status, tag(4));
-    void* t;
+    void *t;
     bool ok;
     GPR_ASSERT(fixture->cq()->Next(&t, &ok));
     GPR_ASSERT(ok);
     GPR_ASSERT(t == tag(0) || t == tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
-    ServerEnv* senv = server_env[slot];
+    ServerEnv *senv = server_env[slot];
     ServerContextMutator svr_ctx_mut(&senv->ctx);
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
     for (int i = (1 << 3) | (1 << 4); i != 0;) {

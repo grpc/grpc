@@ -78,8 +78,8 @@ class AresDnsResolver : public Resolver {
   void MaybeStartResolvingLocked();
   void StartResolvingLocked();
 
-  static void OnNextResolution(void* arg, grpc_error_handle error);
-  static void OnResolved(void* arg, grpc_error_handle error);
+  static void OnNextResolution(void *arg, grpc_error_handle error);
+  static void OnResolved(void *arg, grpc_error_handle error);
   void OnNextResolutionLocked(grpc_error_handle error);
   void OnResolvedLocked(grpc_error_handle error);
 
@@ -88,11 +88,11 @@ class AresDnsResolver : public Resolver {
   /// name to resolve (usually the same as target_name)
   std::string name_to_resolve_;
   /// channel args
-  grpc_channel_args* channel_args_;
+  grpc_channel_args *channel_args_;
   std::shared_ptr<WorkSerializer> work_serializer_;
   std::unique_ptr<ResultHandler> result_handler_;
   /// pollset_set to drive the name resolution process
-  grpc_pollset_set* interested_parties_;
+  grpc_pollset_set *interested_parties_;
 
   /// whether to request the service config
   bool request_service_config_;
@@ -109,7 +109,7 @@ class AresDnsResolver : public Resolver {
   /// are we currently resolving?
   bool resolving_ = false;
   /// the pending resolving request
-  grpc_ares_request* pending_request_ = nullptr;
+  grpc_ares_request *pending_request_ = nullptr;
   /// next resolution timer
   bool have_next_resolution_timer_ = false;
   grpc_timer next_resolution_timer_;
@@ -122,7 +122,7 @@ class AresDnsResolver : public Resolver {
   /// currently resolving balancer addresses
   std::unique_ptr<ServerAddressList> balancer_addresses_;
   /// currently resolving service config
-  char* service_config_json_ = nullptr;
+  char *service_config_json_ = nullptr;
   // has shutdown been initiated
   bool shutdown_initiated_ = false;
 };
@@ -191,8 +191,8 @@ void AresDnsResolver::ShutdownLocked() {
   }
 }
 
-void AresDnsResolver::OnNextResolution(void* arg, grpc_error_handle error) {
-  AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
+void AresDnsResolver::OnNextResolution(void *arg, grpc_error_handle error) {
+  AresDnsResolver *r = static_cast<AresDnsResolver *>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnNextResolutionLocked(error); },
                            DEBUG_LOCATION);
@@ -215,8 +215,8 @@ void AresDnsResolver::OnNextResolutionLocked(grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
-bool ValueInJsonArray(const Json::Array& array, const char* value) {
-  for (const Json& entry : array) {
+bool ValueInJsonArray(const Json::Array &array, const char *value) {
+  for (const Json &entry : array) {
     if (entry.type() == Json::Type::STRING && entry.string_value() == value) {
       return true;
     }
@@ -224,8 +224,8 @@ bool ValueInJsonArray(const Json::Array& array, const char* value) {
   return false;
 }
 
-std::string ChooseServiceConfig(char* service_config_choice_json,
-                                grpc_error_handle* error) {
+std::string ChooseServiceConfig(char *service_config_choice_json,
+                                grpc_error_handle *error) {
   Json json = Json::Parse(service_config_choice_json, error);
   if (*error != GRPC_ERROR_NONE) return "";
   if (json.type() != Json::Type::ARRAY) {
@@ -233,9 +233,9 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
         "Service Config Choices, error: should be of type array");
     return "";
   }
-  const Json* service_config = nullptr;
+  const Json *service_config = nullptr;
   absl::InlinedVector<grpc_error_handle, 4> error_list;
-  for (const Json& choice : json.array_value()) {
+  for (const Json &choice : json.array_value()) {
     if (choice.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Service Config Choice, error: should be of type object"));
@@ -258,7 +258,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:clientHostname error:should be of type array"));
       } else {
-        char* hostname = grpc_gethostname();
+        char *hostname = grpc_gethostname();
         if (hostname == nullptr ||
             !ValueInJsonArray(it->second.array_value(), hostname)) {
           continue;
@@ -303,8 +303,8 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
   return service_config->Dump();
 }
 
-void AresDnsResolver::OnResolved(void* arg, grpc_error_handle error) {
-  AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
+void AresDnsResolver::OnResolved(void *arg, grpc_error_handle error) {
+  AresDnsResolver *r = static_cast<AresDnsResolver *>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnResolvedLocked(error); },
                            DEBUG_LOCATION);
@@ -445,25 +445,25 @@ void AresDnsResolver::StartResolvingLocked() {
 
 class AresDnsResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const URI& /*uri*/) const override { return true; }
+  bool IsValidUri(const URI & /*uri*/) const override { return true; }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return MakeOrphanable<AresDnsResolver>(std::move(args));
   }
 
-  const char* scheme() const override { return "dns"; }
+  const char *scheme() const override { return "dns"; }
 };
 
 }  // namespace
 
 }  // namespace grpc_core
 
-extern grpc_address_resolver_vtable* grpc_resolve_address_impl;
-static grpc_address_resolver_vtable* default_resolver;
+extern grpc_address_resolver_vtable *grpc_resolve_address_impl;
+static grpc_address_resolver_vtable *default_resolver;
 
 static grpc_error_handle blocking_resolve_address_ares(
-    const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
+    const char *name, const char *default_port,
+    grpc_resolved_addresses **addresses) {
   return default_resolver->blocking_resolve_address(name, default_port,
                                                     addresses);
 }
@@ -474,11 +474,11 @@ static grpc_address_resolver_vtable ares_resolver = {
 #ifdef GRPC_UV
 /* TODO(murgatroid99): Remove this when we want the cares resolver to be the
  * default when using libuv */
-static bool should_use_ares(const char* resolver_env) {
+static bool should_use_ares(const char *resolver_env) {
   return resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0;
 }
 #else  /* GRPC_UV */
-static bool should_use_ares(const char* resolver_env) {
+static bool should_use_ares(const char *resolver_env) {
   // TODO(lidiz): Remove the "g_custom_iomgr_enabled" flag once c-ares support
   // custom IO managers (e.g. gevent).
   return !g_custom_iomgr_enabled &&

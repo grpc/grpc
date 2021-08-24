@@ -32,14 +32,14 @@ namespace experimental {
 // This need be called before calling CreateBinderChannel, and the thread need
 // to be free before invoking CreateBinderChannel.
 // TODO(mingcl): Add more explanation on this after we determine the interfaces.
-void BindToOnDeviceServerService(void* jni_env_void, jobject application,
+void BindToOnDeviceServerService(void *jni_env_void, jobject application,
                                  absl::string_view /*package_name*/,
                                  absl::string_view /*class_name*/);
 
 // Need to be invoked after BindToOnDeviceServerService
 // Create a new Channel from server package name and service class name
 std::shared_ptr<grpc::Channel> CreateBinderChannel(
-    void* jni_env_void, jobject application, absl::string_view package_name,
+    void *jni_env_void, jobject application, absl::string_view package_name,
     absl::string_view class_name);
 
 }  // namespace experimental

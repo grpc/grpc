@@ -39,12 +39,12 @@
 #include "src/core/lib/transport/static_metadata.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args,
+                                            const char *test_name,
+                                            grpc_channel_args *client_args,
+                                            grpc_channel_args *server_args,
                                             bool decompress_in_core) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s%s/%s", test_name,
@@ -64,14 +64,14 @@ static gpr_timespec five_seconds_from_now(void) {
   return n_seconds_from_now(5);
 }
 
-static void drain_cq(grpc_completion_queue* cq) {
+static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
@@ -82,13 +82,13 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(grpc_end2end_test_fixture *f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(grpc_end2end_test_fixture *f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -99,31 +99,31 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 static void request_for_disabled_algorithm(
-    grpc_end2end_test_config config, const char* test_name,
+    grpc_end2end_test_config config, const char *test_name,
     uint32_t send_flags_bitmask,
     grpc_compression_algorithm algorithm_to_disable,
     grpc_compression_algorithm requested_client_compression_algorithm,
-    grpc_status_code expected_error, grpc_metadata* client_metadata,
+    grpc_status_code expected_error, grpc_metadata *client_metadata,
     bool decompress_in_core) {
-  grpc_call* c;
-  grpc_call* s;
+  grpc_call *c;
+  grpc_call *s;
   grpc_slice request_payload_slice;
-  grpc_byte_buffer* request_payload;
-  grpc_channel_args* client_args;
-  grpc_channel_args* server_args;
+  grpc_byte_buffer *request_payload;
+  grpc_channel_args *client_args;
+  grpc_channel_args *server_args;
   grpc_end2end_test_fixture f;
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer* request_payload_recv = nullptr;
+  grpc_byte_buffer *request_payload_recv = nullptr;
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
   int was_cancelled = 2;
-  cq_verifier* cqv;
+  cq_verifier *cqv;
   char str[1024];
 
   memset(str, 'x', 1023);
@@ -140,9 +140,9 @@ static void request_for_disabled_algorithm(
   if (!decompress_in_core) {
     grpc_arg disable_decompression_in_core_arg =
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION), 0);
-    grpc_channel_args* old_client_args = client_args;
-    grpc_channel_args* old_server_args = server_args;
+            const_cast<char *>(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION), 0);
+    grpc_channel_args *old_client_args = client_args;
+    grpc_channel_args *old_server_args = server_args;
     client_args = grpc_channel_args_copy_and_add(
         client_args, &disable_decompression_in_core_arg, 1);
     server_args = grpc_channel_args_copy_and_add(
@@ -247,7 +247,7 @@ static void request_for_disabled_algorithm(
   /* with a certain error */
   GPR_ASSERT(status == expected_error);
 
-  const char* algo_name = nullptr;
+  const char *algo_name = nullptr;
   GPR_ASSERT(grpc_compression_algorithm_name(algorithm_to_disable, &algo_name));
   std::string expected_details =
       absl::StrFormat("Compression algorithm '%s' is disabled.", algo_name);
@@ -276,36 +276,36 @@ static void request_for_disabled_algorithm(
 }
 
 static void request_with_payload_template_inner(
-    grpc_end2end_test_config config, const char* test_name,
+    grpc_end2end_test_config config, const char *test_name,
     uint32_t client_send_flags_bitmask,
     grpc_compression_algorithm default_client_channel_compression_algorithm,
     grpc_compression_algorithm default_server_channel_compression_algorithm,
     grpc_compression_algorithm expected_algorithm_from_client,
     grpc_compression_algorithm expected_algorithm_from_server,
-    grpc_metadata* client_init_metadata, bool set_server_level,
+    grpc_metadata *client_init_metadata, bool set_server_level,
     grpc_compression_level server_compression_level,
     bool send_message_before_initial_metadata, bool decompress_in_core) {
-  grpc_call* c;
-  grpc_call* s;
+  grpc_call *c;
+  grpc_call *s;
   grpc_slice request_payload_slice;
-  grpc_byte_buffer* request_payload = nullptr;
-  grpc_channel_args* client_args;
-  grpc_channel_args* server_args;
+  grpc_byte_buffer *request_payload = nullptr;
+  grpc_channel_args *client_args;
+  grpc_channel_args *server_args;
   grpc_end2end_test_fixture f;
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer* request_payload_recv = nullptr;
-  grpc_byte_buffer* response_payload;
-  grpc_byte_buffer* response_payload_recv;
+  grpc_byte_buffer *request_payload_recv = nullptr;
+  grpc_byte_buffer *response_payload;
+  grpc_byte_buffer *response_payload_recv;
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
   int was_cancelled = 2;
-  cq_verifier* cqv;
+  cq_verifier *cqv;
   char request_str[1024];
   char response_str[1024];
 
@@ -326,9 +326,9 @@ static void request_with_payload_template_inner(
   if (!decompress_in_core) {
     grpc_arg disable_decompression_in_core_arg =
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION), 0);
-    grpc_channel_args* old_client_args = client_args;
-    grpc_channel_args* old_server_args = server_args;
+            const_cast<char *>(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION), 0);
+    grpc_channel_args *old_client_args = client_args;
+    grpc_channel_args *old_server_args = server_args;
     client_args = grpc_channel_args_copy_and_add(
         client_args, &disable_decompression_in_core_arg, 1);
     server_args = grpc_channel_args_copy_and_add(
@@ -566,13 +566,13 @@ static void request_with_payload_template_inner(
 }
 
 static void request_with_payload_template(
-    grpc_end2end_test_config config, const char* test_name,
+    grpc_end2end_test_config config, const char *test_name,
     uint32_t client_send_flags_bitmask,
     grpc_compression_algorithm default_client_channel_compression_algorithm,
     grpc_compression_algorithm default_server_channel_compression_algorithm,
     grpc_compression_algorithm expected_algorithm_from_client,
     grpc_compression_algorithm expected_algorithm_from_server,
-    grpc_metadata* client_init_metadata, bool set_server_level,
+    grpc_metadata *client_init_metadata, bool set_server_level,
     grpc_compression_level server_compression_level,
     bool send_message_before_initial_metadata) {
   request_with_payload_template_inner(

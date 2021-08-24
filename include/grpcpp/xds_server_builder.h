@@ -46,7 +46,7 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
   // outlasts the life of the server. Notifications will start being made
   // asynchronously once `BuildAndStart()` has been called. Note that it is
   // possible for notifications to be made before `BuildAndStart()` returns.
-  void set_status_notifier(XdsServerServingStatusNotifierInterface* notifier) {
+  void set_status_notifier(XdsServerServingStatusNotifierInterface *notifier) {
     notifier_ = notifier;
   }
 
@@ -55,23 +55,23 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
   ChannelArguments BuildChannelArgs() override {
     ChannelArguments args = ServerBuilder::BuildChannelArgs();
     grpc_channel_args c_channel_args = args.c_channel_args();
-    grpc_server_config_fetcher* fetcher = grpc_server_config_fetcher_xds_create(
+    grpc_server_config_fetcher *fetcher = grpc_server_config_fetcher_xds_create(
         {OnServingStatusUpdate, notifier_}, &c_channel_args);
     if (fetcher != nullptr) set_fetcher(fetcher);
     return args;
   }
 
-  static void OnServingStatusUpdate(void* user_data, const char* uri,
+  static void OnServingStatusUpdate(void *user_data, const char *uri,
                                     grpc_status_code code,
-                                    const char* error_message) {
+                                    const char *error_message) {
     if (user_data == nullptr) return;
-    XdsServerServingStatusNotifierInterface* notifier =
-        static_cast<XdsServerServingStatusNotifierInterface*>(user_data);
+    XdsServerServingStatusNotifierInterface *notifier =
+        static_cast<XdsServerServingStatusNotifierInterface *>(user_data);
     notifier->OnServingStatusUpdate(
         uri, grpc::Status(static_cast<StatusCode>(code), error_message));
   }
 
-  XdsServerServingStatusNotifierInterface* notifier_ = nullptr;
+  XdsServerServingStatusNotifierInterface *notifier_ = nullptr;
 };
 
 }  // namespace experimental

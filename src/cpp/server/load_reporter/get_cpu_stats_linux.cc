@@ -29,7 +29,7 @@ namespace load_reporter {
 
 std::pair<uint64_t, uint64_t> GetCpuStatsImpl() {
   uint64_t busy = 0, total = 0;
-  FILE* fp;
+  FILE *fp;
   fp = fopen("/proc/stat", "r");
   uint64_t user, nice, system, idle;
   if (fscanf(fp, "cpu %lu %lu %lu %lu", &user, &nice, &system, &idle) != 4) {

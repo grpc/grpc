@@ -28,12 +28,12 @@ namespace experimental {
 template <typename T>
 class Promise {
  public:
-  T& Get() {
+  T &Get() {
     absl::MutexLock lock(&mu_);
     cv_.Wait(&mu_);
     return val_;
   }
-  void Set(T&& val) {
+  void Set(T &&val) {
     absl::MutexLock lock(&mu_);
     val_ = std::move(val);
     cv_.Signal();

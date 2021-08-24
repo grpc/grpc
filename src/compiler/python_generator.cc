@@ -69,7 +69,7 @@ typedef set<StringPair> StringPairSet;
 // }
 class IndentScope {
  public:
-  explicit IndentScope(grpc_generator::Printer* printer) : printer_(printer) {
+  explicit IndentScope(grpc_generator::Printer *printer) : printer_(printer) {
     // NOTE(rbellevi): Two-space tabs are hard-coded in the protocol compiler.
     // Doubling our indents and outdents guarantees compliance with PEP8.
     printer_->Indent();
@@ -82,15 +82,15 @@ class IndentScope {
   }
 
  private:
-  grpc_generator::Printer* printer_;
+  grpc_generator::Printer *printer_;
 };
 
-PrivateGenerator::PrivateGenerator(const GeneratorConfiguration& config,
-                                   const grpc_generator::File* file)
+PrivateGenerator::PrivateGenerator(const GeneratorConfiguration &config,
+                                   const grpc_generator::File *file)
     : config(config), file(file) {}
 
 void PrivateGenerator::PrintAllComments(StringVector comments,
-                                        grpc_generator::Printer* out) {
+                                        grpc_generator::Printer *out) {
   if (comments.empty()) {
     // Python requires code structures like class and def to have
     // a body, even if it is just "pass" or a docstring.  We need
@@ -115,8 +115,8 @@ void PrivateGenerator::PrintAllComments(StringVector comments,
   out->Print("\"\"\"\n");
 }
 
-bool PrivateGenerator::PrintBetaServicer(const grpc_generator::Service* service,
-                                         grpc_generator::Printer* out) {
+bool PrivateGenerator::PrintBetaServicer(const grpc_generator::Service *service,
+                                         grpc_generator::Printer *out) {
   StringMap service_dict;
   service_dict["Service"] = service->name();
   out->Print("\n\n");
@@ -151,8 +151,8 @@ bool PrivateGenerator::PrintBetaServicer(const grpc_generator::Service* service,
   return true;
 }
 
-bool PrivateGenerator::PrintBetaStub(const grpc_generator::Service* service,
-                                     grpc_generator::Printer* out) {
+bool PrivateGenerator::PrintBetaStub(const grpc_generator::Service *service,
+                                     grpc_generator::Printer *out) {
   StringMap service_dict;
   service_dict["Service"] = service->name();
   out->Print("\n\n");
@@ -193,8 +193,8 @@ bool PrivateGenerator::PrintBetaStub(const grpc_generator::Service* service,
 }
 
 bool PrivateGenerator::PrintBetaServerFactory(
-    const std::string& package_qualified_service_name,
-    const grpc_generator::Service* service, grpc_generator::Printer* out) {
+    const std::string &package_qualified_service_name,
+    const grpc_generator::Service *service, grpc_generator::Printer *out) {
   StringMap service_dict;
   service_dict["Service"] = service->name();
   out->Print("\n\n");
@@ -302,8 +302,8 @@ bool PrivateGenerator::PrintBetaServerFactory(
 }
 
 bool PrivateGenerator::PrintBetaStubFactory(
-    const std::string& package_qualified_service_name,
-    const grpc_generator::Service* service, grpc_generator::Printer* out) {
+    const std::string &package_qualified_service_name,
+    const grpc_generator::Service *service, grpc_generator::Printer *out) {
   StringMap dict;
   dict["Service"] = service->name();
   out->Print("\n\n");
@@ -406,8 +406,8 @@ bool PrivateGenerator::PrintBetaStubFactory(
 }
 
 bool PrivateGenerator::PrintStub(
-    const std::string& package_qualified_service_name,
-    const grpc_generator::Service* service, grpc_generator::Printer* out) {
+    const std::string &package_qualified_service_name,
+    const grpc_generator::Service *service, grpc_generator::Printer *out) {
   StringMap dict;
   dict["Service"] = service->name();
   out->Print("\n\n");
@@ -474,8 +474,8 @@ bool PrivateGenerator::PrintStub(
   return true;
 }
 
-bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service,
-                                     grpc_generator::Printer* out) {
+bool PrivateGenerator::PrintServicer(const grpc_generator::Service *service,
+                                     grpc_generator::Printer *out) {
   StringMap service_dict;
   service_dict["Service"] = service->name();
   out->Print("\n\n");
@@ -507,8 +507,8 @@ bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service,
 }
 
 bool PrivateGenerator::PrintAddServicerToServer(
-    const std::string& package_qualified_service_name,
-    const grpc_generator::Service* service, grpc_generator::Printer* out) {
+    const std::string &package_qualified_service_name,
+    const grpc_generator::Service *service, grpc_generator::Printer *out) {
   StringMap service_dict;
   service_dict["Service"] = service->name();
   out->Print("\n\n");
@@ -583,8 +583,8 @@ bool PrivateGenerator::PrintAddServicerToServer(
  * should never be instantiated.
  */
 bool PrivateGenerator::PrintServiceClass(
-    const std::string& package_qualified_service_name,
-    const grpc_generator::Service* service, grpc_generator::Printer* out) {
+    const std::string &package_qualified_service_name,
+    const grpc_generator::Service *service, grpc_generator::Printer *out) {
   StringMap dict;
   dict["Service"] = service->name();
   out->Print("\n\n");
@@ -595,7 +595,7 @@ bool PrivateGenerator::PrintServiceClass(
     StringVector service_comments = service->GetAllComments();
     PrintAllComments(service_comments, out);
     for (int i = 0; i < service->method_count(); ++i) {
-      const auto& method = service->method(i);
+      const auto &method = service->method(i);
       std::string request_module_and_class;
       if (!method->get_module_and_message_path_input(
               &request_module_and_class, generator_file_name,
@@ -665,7 +665,7 @@ bool PrivateGenerator::PrintServiceClass(
   return true;
 }
 
-bool PrivateGenerator::PrintBetaPreamble(grpc_generator::Printer* out) {
+bool PrivateGenerator::PrintBetaPreamble(grpc_generator::Printer *out) {
   StringMap var;
   var["Package"] = config.beta_package_root;
   out->Print(var,
@@ -678,7 +678,7 @@ bool PrivateGenerator::PrintBetaPreamble(grpc_generator::Printer* out) {
   return true;
 }
 
-bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
+bool PrivateGenerator::PrintPreamble(grpc_generator::Printer *out) {
   StringMap var;
   var["Package"] = config.grpc_package_root;
   out->Print(var, "import $Package$\n");
@@ -730,7 +730,7 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
   return true;
 }
 
-bool PrivateGenerator::PrintGAServices(grpc_generator::Printer* out) {
+bool PrivateGenerator::PrintGAServices(grpc_generator::Printer *out) {
   std::string package = file->package();
   if (!package.empty()) {
     package = package.append(".");
@@ -750,7 +750,7 @@ bool PrivateGenerator::PrintGAServices(grpc_generator::Printer* out) {
   return true;
 }
 
-bool PrivateGenerator::PrintBetaServices(grpc_generator::Printer* out) {
+bool PrivateGenerator::PrintBetaServices(grpc_generator::Printer *out) {
   std::string package = file->package();
   if (!package.empty()) {
     package = package.append(".");
@@ -824,12 +824,12 @@ GeneratorConfiguration::GeneratorConfiguration()
       beta_package_root("grpc.beta"),
       import_prefix("") {}
 
-PythonGrpcGenerator::PythonGrpcGenerator(const GeneratorConfiguration& config)
+PythonGrpcGenerator::PythonGrpcGenerator(const GeneratorConfiguration &config)
     : config_(config) {}
 
 PythonGrpcGenerator::~PythonGrpcGenerator() {}
 
-static bool GenerateGrpc(GeneratorContext* context, PrivateGenerator& generator,
+static bool GenerateGrpc(GeneratorContext *context, PrivateGenerator &generator,
                          std::string file_name, bool generate_in_pb2_grpc) {
   bool success;
   std::unique_ptr<ZeroCopyOutputStream> output;
@@ -855,10 +855,10 @@ static bool GenerateGrpc(GeneratorContext* context, PrivateGenerator& generator,
   }
 }
 
-static bool ParseParameters(const std::string& parameter,
-                            std::string* grpc_version,
-                            std::vector<std::string>* strip_prefixes,
-                            std::string* error) {
+static bool ParseParameters(const std::string &parameter,
+                            std::string *grpc_version,
+                            std::vector<std::string> *strip_prefixes,
+                            std::string *error) {
   std::vector<std::string> comma_delimited_parameters;
   grpc_python_generator::Split(parameter, ',', &comma_delimited_parameters);
   if (comma_delimited_parameters.size() == 1 &&
@@ -882,10 +882,10 @@ uint64_t PythonGrpcGenerator::GetSupportedFeatures() const {
   return FEATURE_PROTO3_OPTIONAL;
 }
 
-bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
-                                   const std::string& parameter,
-                                   GeneratorContext* context,
-                                   std::string* error) const {
+bool PythonGrpcGenerator::Generate(const FileDescriptor *file,
+                                   const std::string &parameter,
+                                   GeneratorContext *context,
+                                   std::string *error) const {
   // Get output file name.
   std::string pb2_file_name;
   std::string pb2_grpc_file_name;

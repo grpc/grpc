@@ -36,7 +36,7 @@ template <typename Promise>
 auto NowOrNever(Promise promise)
     -> absl::optional<typename promise_detail::PromiseLike<Promise>::Result> {
   auto r = promise_detail::PromiseLike<Promise>(std::move(promise))();
-  if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+  if (auto *p = absl::get_if<kPollReadyIdx>(&r)) {
     return std::move(*p);
   }
   return {};

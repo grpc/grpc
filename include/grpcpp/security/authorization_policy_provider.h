@@ -34,7 +34,7 @@ namespace experimental {
 class AuthorizationPolicyProviderInterface {
  public:
   virtual ~AuthorizationPolicyProviderInterface() = default;
-  virtual grpc_authorization_policy_provider* c_provider() = 0;
+  virtual grpc_authorization_policy_provider *c_provider() = 0;
 };
 
 // Implementation obtains authorization policy from static string. This provider
@@ -43,22 +43,22 @@ class StaticDataAuthorizationPolicyProvider
     : public AuthorizationPolicyProviderInterface {
  public:
   static std::shared_ptr<StaticDataAuthorizationPolicyProvider> Create(
-      const std::string& authz_policy, grpc::Status* status);
+      const std::string &authz_policy, grpc::Status *status);
 
   // Use factory method "Create" to create an instance of
   // StaticDataAuthorizationPolicyProvider.
   explicit StaticDataAuthorizationPolicyProvider(
-      grpc_authorization_policy_provider* provider)
+      grpc_authorization_policy_provider *provider)
       : c_provider_(provider) {}
 
   ~StaticDataAuthorizationPolicyProvider() override;
 
-  grpc_authorization_policy_provider* c_provider() override {
+  grpc_authorization_policy_provider *c_provider() override {
     return c_provider_;
   }
 
  private:
-  grpc_authorization_policy_provider* c_provider_ = nullptr;
+  grpc_authorization_policy_provider *c_provider_ = nullptr;
 };
 
 }  // namespace experimental

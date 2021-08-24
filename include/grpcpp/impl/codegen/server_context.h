@@ -77,8 +77,8 @@ class CallbackBidiHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class ClientStreamingHandler;
 template <class ResponseType>
-void UnaryRunHandlerHelper(const MethodHandler::HandlerParameter&,
-                           ResponseType*, Status&);
+void UnaryRunHandlerHelper(const MethodHandler::HandlerParameter &,
+                           ResponseType *, Status &);
 template <class ServiceType, class RequestType, class ResponseType,
           class BaseRequestType, class BaseResponseType>
 class RpcMethodHandler;
@@ -149,7 +149,7 @@ class ServerContextBase {
   ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
   \endverbatim
   **/
-  void AddInitialMetadata(const std::string& key, const std::string& value);
+  void AddInitialMetadata(const std::string &key, const std::string &value);
 
   /// Add the (\a key, \a value) pair to the initial metadata
   /// associated with a server call. These are made available at the client
@@ -174,7 +174,7 @@ class ServerContextBase {
   ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
   \endverbatim
   **/
-  void AddTrailingMetadata(const std::string& key, const std::string& value);
+  void AddTrailingMetadata(const std::string &key, const std::string &value);
 
   /// Return whether this RPC failed before the server could provide its status
   /// back to the client. This could be because of explicit API cancellation
@@ -218,7 +218,7 @@ class ServerContextBase {
   /// safe to access as soon as the call has begun on the server side.
   ///
   /// \return A multimap of initial metadata key-value pairs from the server.
-  const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata()
+  const std::multimap<grpc::string_ref, grpc::string_ref> &client_metadata()
       const {
     return *client_metadata_.map();
   }
@@ -254,7 +254,7 @@ class ServerContextBase {
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
 
   /// Set the serialized load reporting costs in \a cost_data for the call.
-  void SetLoadReportingCosts(const std::vector<std::string>& cost_data);
+  void SetLoadReportingCosts(const std::vector<std::string> &cost_data);
 
   /// Return the authentication context for this server call.
   ///
@@ -273,11 +273,11 @@ class ServerContextBase {
   std::string peer() const;
 
   /// Get the census context associated with this server call.
-  const struct census_context* census_context() const;
+  const struct census_context *census_context() const;
 
   /// Should be used for framework-level extensions only.
   /// Applications never need to call this method.
-  grpc_call* c_call() { return call_.call; }
+  grpc_call *c_call() { return call_.call; }
 
  protected:
   /// Async only. Has to be called before the rpc starts.
@@ -285,7 +285,7 @@ class ServerContextBase {
   /// IsCancelled() can then be called to check whether the rpc was cancelled.
   /// TODO(vjpai): Fix this so that the tag is returned even if the call never
   /// starts (https://github.com/grpc/grpc/issues/10136).
-  void AsyncNotifyWhenDone(void* tag) {
+  void AsyncNotifyWhenDone(void *tag) {
     has_notify_when_done_tag_ = true;
     async_notify_when_done_tag_ = tag;
   }
@@ -293,7 +293,7 @@ class ServerContextBase {
   /// NOTE: This is an API for advanced users who need custom allocators.
   /// Get and maybe mutate the allocator state associated with the current RPC.
   /// Currently only applicable for callback unary RPC methods.
-  RpcAllocatorState* GetRpcAllocatorState() { return message_allocator_state_; }
+  RpcAllocatorState *GetRpcAllocatorState() { return message_allocator_state_; }
 
   /// Get a library-owned default unary reactor for use in minimal reaction
   /// cases. This supports typical unary RPC usage of providing a response and
@@ -309,11 +309,11 @@ class ServerContextBase {
   ///
   /// This method should not be called more than once or called after return
   /// from the method handler.
-  ::grpc::ServerUnaryReactor* DefaultReactor() {
+  ::grpc::ServerUnaryReactor *DefaultReactor() {
     // Short-circuit the case where a default reactor was already set up by
     // the TestPeer.
     if (test_unary_ != nullptr) {
-      return reinterpret_cast<Reactor*>(&default_reactor_);
+      return reinterpret_cast<Reactor *>(&default_reactor_);
     }
     new (&default_reactor_) Reactor;
 #ifndef NDEBUG
@@ -323,18 +323,18 @@ class ServerContextBase {
 #else
     default_reactor_used_.store(true, std::memory_order_relaxed);
 #endif
-    return reinterpret_cast<Reactor*>(&default_reactor_);
+    return reinterpret_cast<Reactor *>(&default_reactor_);
   }
 
   /// Constructors for use by derived classes
   ServerContextBase();
-  ServerContextBase(gpr_timespec deadline, grpc_metadata_array* arr);
+  ServerContextBase(gpr_timespec deadline, grpc_metadata_array *arr);
 
-  void set_context_allocator(ContextAllocator* context_allocator) {
+  void set_context_allocator(ContextAllocator *context_allocator) {
     context_allocator_ = context_allocator;
   }
 
-  ContextAllocator* context_allocator() const { return context_allocator_; }
+  ContextAllocator *context_allocator() const { return context_allocator_; }
 
  private:
   friend class ::grpc::testing::InteropServerContextInspector;
@@ -358,8 +358,8 @@ class ServerContextBase {
   friend class ::grpc::internal::ServerReaderWriterBody;
   template <class ResponseType>
   friend void ::grpc::internal::UnaryRunHandlerHelper(
-      const internal::MethodHandler::HandlerParameter& param, ResponseType* rsp,
-      Status& status);
+      const internal::MethodHandler::HandlerParameter &param, ResponseType *rsp,
+      Status &status);
   template <class ServiceType, class RequestType, class ResponseType,
             class BaseRequestType, class BaseResponseType>
   friend class ::grpc::internal::RpcMethodHandler;
@@ -386,27 +386,27 @@ class ServerContextBase {
   friend class ::grpc::GenericCallbackServerContext;
 
   /// Prevent copying.
-  ServerContextBase(const ServerContextBase&);
-  ServerContextBase& operator=(const ServerContextBase&);
+  ServerContextBase(const ServerContextBase &);
+  ServerContextBase &operator=(const ServerContextBase &);
 
   class CompletionOp;
 
   void BeginCompletionOp(
-      ::grpc::internal::Call* call, std::function<void(bool)> callback,
-      ::grpc::internal::ServerCallbackCall* callback_controller);
+      ::grpc::internal::Call *call, std::function<void(bool)> callback,
+      ::grpc::internal::ServerCallbackCall *callback_controller);
   /// Return the tag queued by BeginCompletionOp()
-  ::grpc::internal::CompletionQueueTag* GetCompletionOpTag();
+  ::grpc::internal::CompletionQueueTag *GetCompletionOpTag();
 
-  void set_call(grpc_call* call) { call_.call = call; }
+  void set_call(grpc_call *call) { call_.call = call; }
 
-  void BindDeadlineAndMetadata(gpr_timespec deadline, grpc_metadata_array* arr);
+  void BindDeadlineAndMetadata(gpr_timespec deadline, grpc_metadata_array *arr);
 
   uint32_t initial_metadata_flags() const { return 0; }
 
-  ::grpc::experimental::ServerRpcInfo* set_server_rpc_info(
-      const char* method, ::grpc::internal::RpcMethod::RpcType type,
+  ::grpc::experimental::ServerRpcInfo *set_server_rpc_info(
+      const char *method, ::grpc::internal::RpcMethod::RpcType type,
       const std::vector<std::unique_ptr<
-          ::grpc::experimental::ServerInterceptorFactoryInterface>>& creators) {
+          ::grpc::experimental::ServerInterceptorFactoryInterface>> &creators) {
     if (!creators.empty()) {
       rpc_info_ = new ::grpc::experimental::ServerRpcInfo(this, method, type);
       rpc_info_->RegisterInterceptors(creators);
@@ -414,7 +414,7 @@ class ServerContextBase {
     return rpc_info_;
   }
 
-  void set_message_allocator_state(RpcAllocatorState* allocator_state) {
+  void set_message_allocator_state(RpcAllocatorState *allocator_state) {
     message_allocator_state_ = allocator_state;
   }
 
@@ -423,7 +423,7 @@ class ServerContextBase {
   struct CallWrapper {
     ~CallWrapper();
 
-    grpc_call* call = nullptr;
+    grpc_call *call = nullptr;
   };
 
   // NOTE: call_ must be the first data member of this object so that its
@@ -432,13 +432,13 @@ class ServerContextBase {
   //       hold this object.
   CallWrapper call_;
 
-  CompletionOp* completion_op_ = nullptr;
+  CompletionOp *completion_op_ = nullptr;
   bool has_notify_when_done_tag_ = false;
-  void* async_notify_when_done_tag_ = nullptr;
+  void *async_notify_when_done_tag_ = nullptr;
   ::grpc::internal::CallbackWithSuccessTag completion_tag_;
 
   gpr_timespec deadline_;
-  ::grpc::CompletionQueue* cq_ = nullptr;
+  ::grpc::CompletionQueue *cq_ = nullptr;
   bool sent_initial_metadata_ = false;
   mutable std::shared_ptr<const ::grpc::AuthContext> auth_context_;
   mutable ::grpc::internal::MetadataMap client_metadata_;
@@ -454,9 +454,9 @@ class ServerContextBase {
       pending_ops_;
   bool has_pending_ops_ = false;
 
-  ::grpc::experimental::ServerRpcInfo* rpc_info_ = nullptr;
-  RpcAllocatorState* message_allocator_state_ = nullptr;
-  ContextAllocator* context_allocator_ = nullptr;
+  ::grpc::experimental::ServerRpcInfo *rpc_info_ = nullptr;
+  RpcAllocatorState *message_allocator_state_ = nullptr;
+  ContextAllocator *context_allocator_ = nullptr;
 
   class Reactor : public ::grpc::ServerUnaryReactor {
    public:
@@ -480,7 +480,7 @@ class ServerContextBase {
 
   class TestServerCallbackUnary : public ::grpc::ServerCallbackUnary {
    public:
-    TestServerCallbackUnary(ServerContextBase* ctx,
+    TestServerCallbackUnary(ServerContextBase *ctx,
                             std::function<void(::grpc::Status)> func)
         : reactor_(ctx->DefaultReactor()), func_(std::move(func)) {
       this->BindReactor(reactor_);
@@ -499,9 +499,9 @@ class ServerContextBase {
 
    private:
     void CallOnDone() override {}
-    ::grpc::internal::ServerReactor* reactor() override { return reactor_; }
+    ::grpc::internal::ServerReactor *reactor() override { return reactor_; }
 
-    ::grpc::ServerUnaryReactor* const reactor_;
+    ::grpc::ServerUnaryReactor *const reactor_;
     std::atomic_bool status_set_{false};
     ::grpc::Status status_;
     const std::function<void(::grpc::Status s)> func_;
@@ -560,7 +560,7 @@ class ServerContext : public ServerContextBase {
  private:
   // Constructor for internal use by server only
   friend class ::grpc::Server;
-  ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
+  ServerContext(gpr_timespec deadline, grpc_metadata_array *arr)
       : ServerContextBase(deadline, arr) {}
 
   // CallbackServerContext only
@@ -568,8 +568,8 @@ class ServerContext : public ServerContextBase {
   using ServerContextBase::GetRpcAllocatorState;
 
   /// Prevent copying.
-  ServerContext(const ServerContext&) = delete;
-  ServerContext& operator=(const ServerContext&) = delete;
+  ServerContext(const ServerContext &) = delete;
+  ServerContext &operator=(const ServerContext &) = delete;
 };
 
 class CallbackServerContext : public ServerContextBase {
@@ -607,8 +607,8 @@ class CallbackServerContext : public ServerContextBase {
   using ServerContextBase::AsyncNotifyWhenDone;
 
   /// Prevent copying.
-  CallbackServerContext(const CallbackServerContext&) = delete;
-  CallbackServerContext& operator=(const CallbackServerContext&) = delete;
+  CallbackServerContext(const CallbackServerContext &) = delete;
+  CallbackServerContext &operator=(const CallbackServerContext &) = delete;
 };
 
 /// A CallbackServerContext allows users to use the contents of the
@@ -620,15 +620,15 @@ class ContextAllocator {
  public:
   virtual ~ContextAllocator() {}
 
-  virtual CallbackServerContext* NewCallbackServerContext() { return nullptr; }
+  virtual CallbackServerContext *NewCallbackServerContext() { return nullptr; }
 
-  virtual GenericCallbackServerContext* NewGenericCallbackServerContext() {
+  virtual GenericCallbackServerContext *NewGenericCallbackServerContext() {
     return nullptr;
   }
 
-  virtual void Release(CallbackServerContext*) {}
+  virtual void Release(CallbackServerContext *) {}
 
-  virtual void Release(GenericCallbackServerContext*) {}
+  virtual void Release(GenericCallbackServerContext *) {}
 };
 
 }  // namespace grpc

@@ -34,14 +34,14 @@
 #ifndef GPR_CYCLE_COUNTER_CUSTOM
 #if GPR_CYCLE_COUNTER_RDTSC_32 || GPR_CYCLE_COUNTER_RDTSC_64
 #if GPR_LINUX
-static bool read_freq_from_kernel(double* freq) {
+static bool read_freq_from_kernel(double *freq) {
   // Google production kernel export the frequency for us in kHz.
   int fd = open("/sys/devices/system/cpu/cpu0/tsc_freq_khz", O_RDONLY);
   if (fd == -1) {
     return false;
   }
   char line[1024] = {};
-  char* err;
+  char *err;
   bool ret = false;
   int len = read(fd, line, sizeof(line) - 1);
   if (len > 0) {
@@ -134,7 +134,7 @@ gpr_timespec gpr_cycle_counter_sub(gpr_cycle_counter a, gpr_cycle_counter b) {
   return ts;
 }
 
-void gpr_precise_clock_now(gpr_timespec* clk) {
+void gpr_precise_clock_now(gpr_timespec *clk) {
   int64_t counter = gpr_get_cycle_counter();
   *clk = gpr_cycle_counter_to_time(counter);
 }
@@ -155,7 +155,7 @@ gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles) {
   return ts;
 }
 
-void gpr_precise_clock_now(gpr_timespec* clk) {
+void gpr_precise_clock_now(gpr_timespec *clk) {
   *clk = gpr_now(GPR_CLOCK_REALTIME);
   clk->clock_type = GPR_CLOCK_PRECISE;
 }

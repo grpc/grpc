@@ -27,27 +27,27 @@ using grpc::core::Stats;
 
 namespace grpc {
 
-void CoreStatsToProto(const grpc_stats_data& core, Stats* proto) {
+void CoreStatsToProto(const grpc_stats_data &core, Stats *proto) {
   for (int i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
-    Metric* m = proto->add_metrics();
+    Metric *m = proto->add_metrics();
     m->set_name(grpc_stats_counter_name[i]);
     m->set_count(core.counters[i]);
   }
   for (int i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
-    Metric* m = proto->add_metrics();
+    Metric *m = proto->add_metrics();
     m->set_name(grpc_stats_histogram_name[i]);
-    Histogram* h = m->mutable_histogram();
+    Histogram *h = m->mutable_histogram();
     for (int j = 0; j < grpc_stats_histo_buckets[i]; j++) {
-      Bucket* b = h->add_buckets();
+      Bucket *b = h->add_buckets();
       b->set_start(grpc_stats_histo_bucket_boundaries[i][j]);
       b->set_count(core.histograms[grpc_stats_histo_start[i] + j]);
     }
   }
 }
 
-void ProtoToCoreStats(const grpc::core::Stats& proto, grpc_stats_data* core) {
+void ProtoToCoreStats(const grpc::core::Stats &proto, grpc_stats_data *core) {
   memset(core, 0, sizeof(*core));
-  for (const auto& m : proto.metrics()) {
+  for (const auto &m : proto.metrics()) {
     switch (m.value_case()) {
       case Metric::VALUE_NOT_SET:
         break;
@@ -62,7 +62,7 @@ void ProtoToCoreStats(const grpc::core::Stats& proto, grpc_stats_data* core) {
       case Metric::kHistogram:
         for (int i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
           if (m.name() == grpc_stats_histogram_name[i]) {
-            const auto& h = m.histogram();
+            const auto &h = m.histogram();
             bool valid = true;
             if (grpc_stats_histo_buckets[i] != h.buckets_size()) valid = false;
             for (int j = 0; valid && j < h.buckets_size(); j++) {

@@ -72,18 +72,18 @@ class QpsGauge {
 
 class MetricsServiceImpl final : public MetricsService::Service {
  public:
-  grpc::Status GetAllGauges(ServerContext* context, const EmptyMessage* request,
-                            ServerWriter<GaugeResponse>* writer) override;
+  grpc::Status GetAllGauges(ServerContext *context, const EmptyMessage *request,
+                            ServerWriter<GaugeResponse> *writer) override;
 
-  grpc::Status GetGauge(ServerContext* context, const GaugeRequest* request,
-                        GaugeResponse* response) override;
+  grpc::Status GetGauge(ServerContext *context, const GaugeRequest *request,
+                        GaugeResponse *response) override;
 
   // Create a QpsGauge with name 'name'. is_present is set to true if the Gauge
   // is already present in the map.
   // NOTE: CreateQpsGauge can be called anytime (i.e before or after calling
   // StartServer).
-  std::shared_ptr<QpsGauge> CreateQpsGauge(const std::string& name,
-                                           bool* already_present);
+  std::shared_ptr<QpsGauge> CreateQpsGauge(const std::string &name,
+                                           bool *already_present);
 
   std::unique_ptr<grpc::Server> StartServer(int port);
 

@@ -36,9 +36,9 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "test/core/util/port_server_client.h"
 
-static int* chosen_ports = nullptr;
+static int *chosen_ports = nullptr;
 static size_t num_chosen_ports = 0;
-static grpc_core::Mutex* g_default_port_picker_mu;
+static grpc_core::Mutex *g_default_port_picker_mu;
 static gpr_once g_default_port_picker_init = GPR_ONCE_INIT;
 
 static void init_default_port_picker() {
@@ -82,7 +82,7 @@ static void chose_port_locked(int port) {
     atexit(free_chosen_ports);
   }
   num_chosen_ports++;
-  chosen_ports = static_cast<int*>(
+  chosen_ports = static_cast<int *>(
       gpr_realloc(chosen_ports, sizeof(int) * num_chosen_ports));
   chosen_ports[num_chosen_ports - 1] = port;
 }

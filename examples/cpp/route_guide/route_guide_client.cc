@@ -55,14 +55,14 @@ Point MakePoint(long latitude, long longitude) {
   return p;
 }
 
-Feature MakeFeature(const std::string& name, long latitude, long longitude) {
+Feature MakeFeature(const std::string &name, long latitude, long longitude) {
   Feature f;
   f.set_name(name);
   f.mutable_location()->CopyFrom(MakePoint(latitude, longitude));
   return f;
 }
 
-RouteNote MakeRouteNote(const std::string& message, long latitude,
+RouteNote MakeRouteNote(const std::string &message, long latitude,
                         long longitude) {
   RouteNote n;
   n.set_message(message);
@@ -72,7 +72,7 @@ RouteNote MakeRouteNote(const std::string& message, long latitude,
 
 class RouteGuideClient {
  public:
-  RouteGuideClient(std::shared_ptr<Channel> channel, const std::string& db)
+  RouteGuideClient(std::shared_ptr<Channel> channel, const std::string &db)
       : stub_(RouteGuide::NewStub(channel)) {
     routeguide::ParseDb(db, &feature_list_);
   }
@@ -128,7 +128,7 @@ class RouteGuideClient {
     std::unique_ptr<ClientWriter<Point> > writer(
         stub_->RecordRoute(&context, &stats));
     for (int i = 0; i < kPoints; i++) {
-      const Feature& f = feature_list_[feature_distribution(generator)];
+      const Feature &f = feature_list_[feature_distribution(generator)];
       std::cout << "Visiting point " << f.location().latitude() / kCoordFactor_
                 << ", " << f.location().longitude() / kCoordFactor_
                 << std::endl;
@@ -163,7 +163,7 @@ class RouteGuideClient {
                                    MakeRouteNote("Second message", 0, 1),
                                    MakeRouteNote("Third message", 1, 0),
                                    MakeRouteNote("Fourth message", 0, 0)};
-      for (const RouteNote& note : notes) {
+      for (const RouteNote &note : notes) {
         std::cout << "Sending message " << note.message() << " at "
                   << note.location().latitude() << ", "
                   << note.location().longitude() << std::endl;
@@ -186,7 +186,7 @@ class RouteGuideClient {
   }
 
  private:
-  bool GetOneFeature(const Point& point, Feature* feature) {
+  bool GetOneFeature(const Point &point, Feature *feature) {
     ClientContext context;
     Status status = stub_->GetFeature(&context, point, feature);
     if (!status.ok()) {
@@ -214,7 +214,7 @@ class RouteGuideClient {
   std::vector<Feature> feature_list_;
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   // Expect only arg: --db_path=path/to/route_guide_db.json.
   std::string db = routeguide::GetDbFileContent(argc, argv);
   RouteGuideClient guide(

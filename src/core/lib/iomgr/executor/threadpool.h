@@ -43,7 +43,7 @@ class ThreadPoolInterface {
   // current thread to be blocked (in case of unable to schedule).
   // Closure should contain a function pointer and arguments it will take, more
   // details for closure struct at /grpc/include/grpc/impl/codegen/grpc_types.h
-  virtual void Add(grpc_completion_queue_functor* closure) = 0;
+  virtual void Add(grpc_completion_queue_functor *closure) = 0;
 
   // Returns the current number of pending closures
   virtual int num_pending_closures() const = 0;
@@ -52,21 +52,21 @@ class ThreadPoolInterface {
   virtual int pool_capacity() const = 0;
 
   // Thread option accessor
-  virtual const Thread::Options& thread_options() const = 0;
+  virtual const Thread::Options &thread_options() const = 0;
 
   // Returns the thread name for threads in this ThreadPool.
-  virtual const char* thread_name() const = 0;
+  virtual const char *thread_name() const = 0;
 };
 
 // Worker thread for threadpool. Executes closures in the queue, until getting a
 // NULL closure.
 class ThreadPoolWorker {
  public:
-  ThreadPoolWorker(const char* thd_name, MPMCQueueInterface* queue,
-                   Thread::Options& options, int index)
+  ThreadPoolWorker(const char *thd_name, MPMCQueueInterface *queue,
+                   Thread::Options &options, int index)
       : queue_(queue), thd_name_(thd_name), index_(index) {
     thd_ = Thread(
-        thd_name, [](void* th) { static_cast<ThreadPoolWorker*>(th)->Run(); },
+        thd_name, [](void *th) { static_cast<ThreadPoolWorker *>(th)->Run(); },
         this, nullptr, options);
   }
 
@@ -84,10 +84,10 @@ class ThreadPoolWorker {
 
   void Run();  // Pulls closures from queue and executes them
 
-  MPMCQueueInterface* queue_;  // Queue in thread pool to pull closures from
+  MPMCQueueInterface *queue_;  // Queue in thread pool to pull closures from
   Thread thd_;                 // Thread wrapped in
   Stats stats_;                // Stats to be collected in run time
-  const char* thd_name_;       // Name of thread
+  const char *thd_name_;       // Name of thread
   int index_;                  // Index in thread pool
 };
 
@@ -103,7 +103,7 @@ class ThreadPool : public ThreadPoolInterface {
 
   // Same as ThreadPool(int num_threads) constructor, except
   // that it also sets "thd_name" as the name of all threads in the thread pool.
-  ThreadPool(int num_threads, const char* thd_name);
+  ThreadPool(int num_threads, const char *thd_name);
 
   // Same as ThreadPool(const char *thd_name, int num_threads) constructor,
   // except that is also set thread_options for threads.
@@ -112,27 +112,27 @@ class ThreadPool : public ThreadPoolInterface {
   // value 0, default ThreadPool stack size will be used. The current default
   // stack size of this implementation is 1952K for mobile platform and 64K for
   // all others.
-  ThreadPool(int num_threads, const char* thd_name,
-             const Thread::Options& thread_options);
+  ThreadPool(int num_threads, const char *thd_name,
+             const Thread::Options &thread_options);
 
   // Waits for all pending closures to complete, then shuts down thread pool.
   ~ThreadPool() override;
 
   // Adds given closure into pending queue immediately. Since closure queue has
   // infinite length, this routine will not block.
-  void Add(grpc_completion_queue_functor* closure) override;
+  void Add(grpc_completion_queue_functor *closure) override;
 
   int num_pending_closures() const override;
   int pool_capacity() const override;
-  const Thread::Options& thread_options() const override;
-  const char* thread_name() const override;
+  const Thread::Options &thread_options() const override;
+  const char *thread_name() const override;
 
  private:
   int num_threads_ = 0;
-  const char* thd_name_ = nullptr;
+  const char *thd_name_ = nullptr;
   Thread::Options thread_options_;
-  ThreadPoolWorker** threads_ = nullptr;  // Array of worker threads
-  MPMCQueueInterface* queue_ = nullptr;   // Closure queue
+  ThreadPoolWorker **threads_ = nullptr;  // Array of worker threads
+  MPMCQueueInterface *queue_ = nullptr;   // Closure queue
 
   std::atomic<bool> shut_down_{
       false};  // Destructor has been called if set to true

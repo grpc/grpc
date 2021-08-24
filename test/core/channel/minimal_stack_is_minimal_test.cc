@@ -46,8 +46,8 @@
 #include "test/core/util/test_config.h"
 
 // use CHECK_STACK instead
-static int check_stack(const char* file, int line, const char* transport_name,
-                       grpc_channel_args* init_args,
+static int check_stack(const char *file, int line, const char *transport_name,
+                       grpc_channel_args *init_args,
                        unsigned channel_stack_type, ...);
 
 // arguments: const char *transport_name   - the name of the transport type to
@@ -59,7 +59,7 @@ static int check_stack(const char* file, int line, const char* transport_name,
 //                                 filters to instantiate, terminated with NULL
 #define CHECK_STACK(...) check_stack(__FILE__, __LINE__, __VA_ARGS__)
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   int errors = 0;
@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
   // tests with a minimal stack
   grpc_arg minimal_stack_arg;
   minimal_stack_arg.type = GRPC_ARG_INTEGER;
-  minimal_stack_arg.key = const_cast<char*>(GRPC_ARG_MINIMAL_STACK);
+  minimal_stack_arg.key = const_cast<char *>(GRPC_ARG_MINIMAL_STACK);
   minimal_stack_arg.value.integer = 1;
   grpc_channel_args minimal_stack_args = {1, &minimal_stack_arg};
   errors +=
@@ -120,17 +120,17 @@ int main(int argc, char** argv) {
  * End of tests definitions, start of test infrastructure
  */
 
-static int check_stack(const char* file, int line, const char* transport_name,
-                       grpc_channel_args* init_args,
+static int check_stack(const char *file, int line, const char *transport_name,
+                       grpc_channel_args *init_args,
                        unsigned channel_stack_type, ...) {
   // create phony channel stack
-  grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
+  grpc_channel_stack_builder *builder = grpc_channel_stack_builder_create();
   grpc_transport_vtable fake_transport_vtable;
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
   fake_transport_vtable.name = transport_name;
   grpc_transport fake_transport = {&fake_transport_vtable};
   grpc_channel_stack_builder_set_target(builder, "foo.test.google.fr");
-  grpc_channel_args* channel_args = grpc_channel_args_copy(init_args);
+  grpc_channel_args *channel_args = grpc_channel_args_copy(init_args);
   if (transport_name != nullptr) {
     grpc_channel_stack_builder_set_transport(builder, &fake_transport);
   }
@@ -146,7 +146,7 @@ static int check_stack(const char* file, int line, const char* transport_name,
   va_list args;
   va_start(args, channel_stack_type);
   for (;;) {
-    char* a = va_arg(args, char*);
+    char *a = va_arg(args, char *);
     if (a == nullptr) break;
     parts.push_back(a);
   }
@@ -155,10 +155,10 @@ static int check_stack(const char* file, int line, const char* transport_name,
 
   // build up our "got" list
   parts.clear();
-  grpc_channel_stack_builder_iterator* it =
+  grpc_channel_stack_builder_iterator *it =
       grpc_channel_stack_builder_create_iterator_at_first(builder);
   while (grpc_channel_stack_builder_move_next(it)) {
-    const char* name = grpc_channel_stack_builder_iterator_filter_name(it);
+    const char *name = grpc_channel_stack_builder_iterator_filter_name(it);
     if (name == nullptr) continue;
     parts.push_back(name);
   }

@@ -41,30 +41,30 @@
 
 /* Args to provide to thread running server side validator */
 typedef struct {
-  grpc_server* server;
-  grpc_completion_queue* cq;
+  grpc_server *server;
+  grpc_completion_queue *cq;
   grpc_bad_client_server_side_validator validator;
-  void* registered_method;
+  void *registered_method;
   gpr_event done_thd;
 } thd_args;
 
 /* Run the server side validator and set done_thd once done */
-static void thd_func(void* arg) {
-  thd_args* a = static_cast<thd_args*>(arg);
+static void thd_func(void *arg) {
+  thd_args *a = static_cast<thd_args *>(arg);
   if (a->validator != nullptr) {
     a->validator(a->server, a->cq, a->registered_method);
   }
-  gpr_event_set(&a->done_thd, reinterpret_cast<void*>(1));
+  gpr_event_set(&a->done_thd, reinterpret_cast<void *>(1));
 }
 
 /* Sets the done_write event */
-static void set_done_write(void* arg, grpc_error_handle /*error*/) {
-  gpr_event* done_write = static_cast<gpr_event*>(arg);
-  gpr_event_set(done_write, reinterpret_cast<void*>(1));
+static void set_done_write(void *arg, grpc_error_handle /*error*/) {
+  gpr_event *done_write = static_cast<gpr_event *>(arg);
+  gpr_event_set(done_write, reinterpret_cast<void *>(1));
 }
 
-static void server_setup_transport(void* ts, grpc_transport* transport) {
-  thd_args* a = static_cast<thd_args*>(ts);
+static void server_setup_transport(void *ts, grpc_transport *transport) {
+  thd_args *a = static_cast<thd_args *>(ts);
   grpc_core::ExecCtx exec_ctx;
   a->server->core_server->SetupTransport(transport,
                                          /*accepting_pollset=*/nullptr,
@@ -73,13 +73,13 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
 }
 
 /* Sets the read_done event */
-static void set_read_done(void* arg, grpc_error_handle /*error*/) {
-  gpr_event* read_done = static_cast<gpr_event*>(arg);
-  gpr_event_set(read_done, reinterpret_cast<void*>(1));
+static void set_read_done(void *arg, grpc_error_handle /*error*/) {
+  gpr_event *read_done = static_cast<gpr_event *>(arg);
+  gpr_event_set(read_done, reinterpret_cast<void *>(1));
 }
 
 /* shutdown client */
-static void shutdown_client(grpc_endpoint** client_fd) {
+static void shutdown_client(grpc_endpoint **client_fd) {
   if (*client_fd != nullptr) {
     grpc_endpoint_shutdown(
         *client_fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Disconnect"));
@@ -90,10 +90,10 @@ static void shutdown_client(grpc_endpoint** client_fd) {
 }
 
 /* Runs client side validator */
-void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
-                                    grpc_endpoint_pair* sfd,
-                                    grpc_completion_queue* client_cq) {
-  char* hex;
+void grpc_run_client_side_validator(grpc_bad_client_arg *arg, uint32_t flags,
+                                    grpc_endpoint_pair *sfd,
+                                    grpc_completion_queue *client_cq) {
+  char *hex;
   gpr_event done_write;
   if (arg->client_payload_length < 4 * 1024) {
     hex = gpr_dump(arg->client_payload, arg->client_payload_length,
@@ -191,10 +191,10 @@ void grpc_run_bad_client_test(
     grpc_bad_client_arg args[], int num_args, uint32_t flags) {
   grpc_endpoint_pair sfd;
   thd_args a;
-  grpc_transport* transport;
+  grpc_transport *transport;
   grpc_core::ExecCtx exec_ctx;
-  grpc_completion_queue* shutdown_cq;
-  grpc_completion_queue* client_cq;
+  grpc_completion_queue *shutdown_cq;
+  grpc_completion_queue *client_cq;
 
   /* Init grpc */
   grpc_init();
@@ -251,8 +251,8 @@ void grpc_run_bad_client_test(
   grpc_shutdown();
 }
 
-bool client_connection_preface_validator(grpc_slice_buffer* incoming,
-                                         void* /*arg*/) {
+bool client_connection_preface_validator(grpc_slice_buffer *incoming,
+                                         void * /*arg*/) {
   if (incoming->count < 1) {
     return false;
   }
@@ -261,7 +261,7 @@ bool client_connection_preface_validator(grpc_slice_buffer* incoming,
   if (GRPC_SLICE_LENGTH(slice) < MIN_HTTP2_FRAME_SIZE) {
     return false;
   }
-  const uint8_t* p = GRPC_SLICE_START_PTR(slice);
+  const uint8_t *p = GRPC_SLICE_START_PTR(slice);
   /* Check the frame type (SETTINGS) */
   return *(p + 3) == 4;
 }
@@ -275,7 +275,7 @@ grpc_bad_client_arg connection_preface_arg = {
     client_connection_preface_validator, nullptr,
     CONNECTION_PREFACE_FROM_CLIENT, sizeof(CONNECTION_PREFACE_FROM_CLIENT) - 1};
 
-bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* /*arg*/) {
+bool rst_stream_client_validator(grpc_slice_buffer *incoming, void * /*arg*/) {
   // Get last frame from incoming slice buffer.
   grpc_slice_buffer last_frame_buffer;
   grpc_slice_buffer_init(&last_frame_buffer);
@@ -283,7 +283,7 @@ bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* /*arg*/) {
   GPR_ASSERT(last_frame_buffer.count == 1);
   grpc_slice last_frame = last_frame_buffer.slices[0];
 
-  const uint8_t* p = GRPC_SLICE_START_PTR(last_frame);
+  const uint8_t *p = GRPC_SLICE_START_PTR(last_frame);
   bool success =
       // Length == 4
       *p++ != 0 || *p++ != 0 || *p++ != 4 ||
@@ -304,15 +304,15 @@ bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* /*arg*/) {
   return success;
 }
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
-void server_verifier_request_call(grpc_server* server,
-                                  grpc_completion_queue* cq,
-                                  void* /*registered_method*/) {
+void server_verifier_request_call(grpc_server *server,
+                                  grpc_completion_queue *cq,
+                                  void * /*registered_method*/) {
   grpc_call_error error;
-  grpc_call* s;
+  grpc_call *s;
   grpc_call_details call_details;
-  cq_verifier* cqv = cq_verifier_create(cq);
+  cq_verifier *cqv = cq_verifier_create(cq);
   grpc_metadata_array request_metadata_recv;
 
   grpc_call_details_init(&call_details);

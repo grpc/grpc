@@ -33,12 +33,12 @@
 
 static gpr_mu g_mu;
 static bool g_fail_resolution = true;
-static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
+static std::shared_ptr<grpc_core::WorkSerializer> *g_work_serializer;
 
-static void my_resolve_address(const char* addr, const char* /*default_port*/,
-                               grpc_pollset_set* /*interested_parties*/,
-                               grpc_closure* on_done,
-                               grpc_resolved_addresses** addrs) {
+static void my_resolve_address(const char *addr, const char * /*default_port*/,
+                               grpc_pollset_set * /*interested_parties*/,
+                               grpc_closure *on_done,
+                               grpc_resolved_addresses **addrs) {
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(0 == strcmp("test", addr));
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -48,9 +48,10 @@ static void my_resolve_address(const char* addr, const char* /*default_port*/,
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Failure");
   } else {
     gpr_mu_unlock(&g_mu);
-    *addrs = static_cast<grpc_resolved_addresses*>(gpr_malloc(sizeof(**addrs)));
+    *addrs =
+        static_cast<grpc_resolved_addresses *>(gpr_malloc(sizeof(**addrs)));
     (*addrs)->naddrs = 1;
-    (*addrs)->addrs = static_cast<grpc_resolved_address*>(
+    (*addrs)->addrs = static_cast<grpc_resolved_address *>(
         gpr_malloc(sizeof(*(*addrs)->addrs)));
     (*addrs)->addrs[0].len = 123;
   }
@@ -60,12 +61,13 @@ static void my_resolve_address(const char* addr, const char* /*default_port*/,
 static grpc_address_resolver_vtable test_resolver = {my_resolve_address,
                                                      nullptr};
 
-static grpc_ares_request* my_dns_lookup_ares_locked(
-    const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
-    grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
-    std::unique_ptr<grpc_core::ServerAddressList>* /*balancer_addresses*/,
-    char** /*service_config_json*/, int /*query_timeout_ms*/,
+static grpc_ares_request *my_dns_lookup_ares_locked(
+    const char * /*dns_server*/, const char *addr,
+    const char * /*default_port*/, grpc_pollset_set * /*interested_parties*/,
+    grpc_closure *on_done,
+    std::unique_ptr<grpc_core::ServerAddressList> *addresses,
+    std::unique_ptr<grpc_core::ServerAddressList> * /*balancer_addresses*/,
+    char ** /*service_config_json*/, int /*query_timeout_ms*/,
     std::shared_ptr<grpc_core::WorkSerializer> /*combiner*/) {  // NOLINT
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(0 == strcmp("test", addr));
@@ -86,14 +88,14 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
   return nullptr;
 }
 
-static void my_cancel_ares_request_locked(grpc_ares_request* request) {
+static void my_cancel_ares_request_locked(grpc_ares_request *request) {
   GPR_ASSERT(request == nullptr);
 }
 
 static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
-    const char* name,
+    const char *name,
     std::unique_ptr<grpc_core::Resolver::ResultHandler> result_handler) {
-  grpc_core::ResolverFactory* factory =
+  grpc_core::ResolverFactory *factory =
       grpc_core::ResolverRegistry::LookupResolverFactory("dns");
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(name);
   if (!uri.ok()) {
@@ -120,25 +122,25 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     ~ResolverOutput() { GRPC_ERROR_UNREF(error); }
   };
 
-  void SetOutput(ResolverOutput* output) {
+  void SetOutput(ResolverOutput *output) {
     gpr_atm_rel_store(&output_, reinterpret_cast<gpr_atm>(output));
   }
 
   void ReturnResult(grpc_core::Resolver::Result result) override {
-    ResolverOutput* output =
-        reinterpret_cast<ResolverOutput*>(gpr_atm_acq_load(&output_));
+    ResolverOutput *output =
+        reinterpret_cast<ResolverOutput *>(gpr_atm_acq_load(&output_));
     GPR_ASSERT(output != nullptr);
     output->result = std::move(result);
     output->error = GRPC_ERROR_NONE;
-    gpr_event_set(&output->ev, reinterpret_cast<void*>(1));
+    gpr_event_set(&output->ev, reinterpret_cast<void *>(1));
   }
 
   void ReturnError(grpc_error_handle error) override {
-    ResolverOutput* output =
-        reinterpret_cast<ResolverOutput*>(gpr_atm_acq_load(&output_));
+    ResolverOutput *output =
+        reinterpret_cast<ResolverOutput *>(gpr_atm_acq_load(&output_));
     GPR_ASSERT(output != nullptr);
     output->error = error;
-    gpr_event_set(&output->ev, reinterpret_cast<void*>(1));
+    gpr_event_set(&output->ev, reinterpret_cast<void *>(1));
   }
 
  private:
@@ -146,7 +148,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
 };
 
 // interleave waiting for an event with a timer check
-static bool wait_loop(int deadline_seconds, gpr_event* ev) {
+static bool wait_loop(int deadline_seconds, gpr_event *ev) {
   while (deadline_seconds) {
     gpr_log(GPR_DEBUG, "Test: waiting for %d more seconds", deadline_seconds);
     if (gpr_event_wait(ev, grpc_timeout_seconds_to_deadline(1))) return true;
@@ -158,7 +160,7 @@ static bool wait_loop(int deadline_seconds, gpr_event* ev) {
   return false;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
 
   grpc_init();
@@ -171,7 +173,7 @@ int main(int argc, char** argv) {
 
   {
     grpc_core::ExecCtx exec_ctx;
-    ResultHandler* result_handler = new ResultHandler();
+    ResultHandler *result_handler = new ResultHandler();
     grpc_core::OrphanablePtr<grpc_core::Resolver> resolver = create_resolver(
         "dns:test",
         std::unique_ptr<grpc_core::Resolver::ResultHandler>(result_handler));

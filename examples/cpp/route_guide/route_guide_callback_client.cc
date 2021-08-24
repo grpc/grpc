@@ -55,14 +55,14 @@ Point MakePoint(long latitude, long longitude) {
   return p;
 }
 
-Feature MakeFeature(const std::string& name, long latitude, long longitude) {
+Feature MakeFeature(const std::string &name, long latitude, long longitude) {
   Feature f;
   f.set_name(name);
   f.mutable_location()->CopyFrom(MakePoint(latitude, longitude));
   return f;
 }
 
-RouteNote MakeRouteNote(const std::string& message, long latitude,
+RouteNote MakeRouteNote(const std::string &message, long latitude,
                         long longitude) {
   RouteNote n;
   n.set_message(message);
@@ -72,7 +72,7 @@ RouteNote MakeRouteNote(const std::string& message, long latitude,
 
 class RouteGuideClient {
  public:
-  RouteGuideClient(std::shared_ptr<Channel> channel, const std::string& db)
+  RouteGuideClient(std::shared_ptr<Channel> channel, const std::string &db)
       : stub_(RouteGuide::NewStub(channel)) {
     routeguide::ParseDb(db, &feature_list_);
   }
@@ -99,8 +99,8 @@ class RouteGuideClient {
 
     class Reader : public grpc::ClientReadReactor<Feature> {
      public:
-      Reader(RouteGuide::Stub* stub, float coord_factor,
-             const routeguide::Rectangle& rect)
+      Reader(RouteGuide::Stub *stub, float coord_factor,
+             const routeguide::Rectangle &rect)
           : coord_factor_(coord_factor) {
         stub->async()->ListFeatures(&context_, &rect, this);
         StartRead(&feature_);
@@ -115,7 +115,7 @@ class RouteGuideClient {
           StartRead(&feature_);
         }
       }
-      void OnDone(const Status& s) override {
+      void OnDone(const Status &s) override {
         std::unique_lock<std::mutex> l(mu_);
         status_ = s;
         done_ = true;
@@ -148,8 +148,8 @@ class RouteGuideClient {
   void RecordRoute() {
     class Recorder : public grpc::ClientWriteReactor<Point> {
      public:
-      Recorder(RouteGuide::Stub* stub, float coord_factor,
-               const std::vector<Feature>* feature_list)
+      Recorder(RouteGuide::Stub *stub, float coord_factor,
+               const std::vector<Feature> *feature_list)
           : coord_factor_(coord_factor),
             feature_list_(feature_list),
             generator_(
@@ -171,13 +171,13 @@ class RouteGuideClient {
                 std::chrono::milliseconds(delay_distribution_(generator_)),
             [this](bool /*ok*/) { NextWrite(); });
       }
-      void OnDone(const Status& s) override {
+      void OnDone(const Status &s) override {
         std::unique_lock<std::mutex> l(mu_);
         status_ = s;
         done_ = true;
         cv_.notify_one();
       }
-      Status Await(RouteSummary* stats) {
+      Status Await(RouteSummary *stats) {
         std::unique_lock<std::mutex> l(mu_);
         cv_.wait(l, [this] { return done_; });
         *stats = stats_;
@@ -187,7 +187,7 @@ class RouteGuideClient {
      private:
       void NextWrite() {
         if (points_remaining_ != 0) {
-          const Feature& f =
+          const Feature &f =
               (*feature_list_)[feature_distribution_(generator_)];
           std::cout << "Visiting point "
                     << f.location().latitude() / coord_factor_ << ", "
@@ -204,7 +204,7 @@ class RouteGuideClient {
       int points_remaining_ = 10;
       Point point_;
       RouteSummary stats_;
-      const std::vector<Feature>* feature_list_;
+      const std::vector<Feature> *feature_list_;
       std::default_random_engine generator_;
       std::uniform_int_distribution<int> feature_distribution_;
       std::uniform_int_distribution<int> delay_distribution_;
@@ -231,7 +231,7 @@ class RouteGuideClient {
   void RouteChat() {
     class Chatter : public grpc::ClientBidiReactor<RouteNote, RouteNote> {
      public:
-      explicit Chatter(RouteGuide::Stub* stub)
+      explicit Chatter(RouteGuide::Stub *stub)
           : notes_{MakeRouteNote("First message", 0, 0),
                    MakeRouteNote("Second message", 0, 1),
                    MakeRouteNote("Third message", 1, 0),
@@ -251,7 +251,7 @@ class RouteGuideClient {
           StartRead(&server_note_);
         }
       }
-      void OnDone(const Status& s) override {
+      void OnDone(const Status &s) override {
         std::unique_lock<std::mutex> l(mu_);
         status_ = s;
         done_ = true;
@@ -266,7 +266,7 @@ class RouteGuideClient {
      private:
       void NextWrite() {
         if (notes_iterator_ != notes_.end()) {
-          const auto& note = *notes_iterator_;
+          const auto &note = *notes_iterator_;
           std::cout << "Sending message " << note.message() << " at "
                     << note.location().latitude() << ", "
                     << note.location().longitude() << std::endl;
@@ -294,7 +294,7 @@ class RouteGuideClient {
   }
 
  private:
-  bool GetOneFeature(const Point& point, Feature* feature) {
+  bool GetOneFeature(const Point &point, Feature *feature) {
     ClientContext context;
     bool result;
     std::mutex mu;
@@ -338,7 +338,7 @@ class RouteGuideClient {
   std::vector<Feature> feature_list_;
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   // Expect only arg: --db_path=path/to/route_guide_db.json.
   std::string db = routeguide::GetDbFileContent(argc, argv);
   RouteGuideClient guide(

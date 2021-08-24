@@ -25,12 +25,12 @@
 
 namespace grpc {
 
-DynamicThreadPool::DynamicThread::DynamicThread(DynamicThreadPool* pool)
+DynamicThreadPool::DynamicThread::DynamicThread(DynamicThreadPool *pool)
     : pool_(pool),
       thd_(
           "grpcpp_dynamic_pool",
-          [](void* th) {
-            static_cast<DynamicThreadPool::DynamicThread*>(th)->ThreadFunc();
+          [](void *th) {
+            static_cast<DynamicThreadPool::DynamicThread *>(th)->ThreadFunc();
           },
           this) {
   thd_.Start();
@@ -88,7 +88,7 @@ DynamicThreadPool::DynamicThreadPool(int reserve_threads)
   }
 }
 
-void DynamicThreadPool::ReapThreads(std::list<DynamicThread*>* tlist) {
+void DynamicThreadPool::ReapThreads(std::list<DynamicThread *> *tlist) {
   for (auto t = tlist->begin(); t != tlist->end(); t = tlist->erase(t)) {
     delete *t;
   }
@@ -104,7 +104,7 @@ DynamicThreadPool::~DynamicThreadPool() {
   ReapThreads(&dead_threads_);
 }
 
-void DynamicThreadPool::Add(const std::function<void()>& callback) {
+void DynamicThreadPool::Add(const std::function<void()> &callback) {
   grpc_core::MutexLock lock(&mu_);
   // Add works to the callbacks list
   callbacks_.push(callback);

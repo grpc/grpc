@@ -28,7 +28,7 @@
 void Init_grpc_server_credentials();
 
 /* Gets the wrapped server_credentials from the ruby wrapper */
-grpc_server_credentials* grpc_rb_get_wrapped_server_credentials(VALUE v);
+grpc_server_credentials *grpc_rb_get_wrapped_server_credentials(VALUE v);
 
 /* Check if v is kind of ServerCredentials */
 bool grpc_rb_is_server_credentials(VALUE v);

@@ -47,9 +47,9 @@ class LoadReporterAsyncServiceImpl
   void StartThread();
 
   // Not copyable nor movable.
-  LoadReporterAsyncServiceImpl(const LoadReporterAsyncServiceImpl&) = delete;
-  LoadReporterAsyncServiceImpl& operator=(const LoadReporterAsyncServiceImpl&) =
-      delete;
+  LoadReporterAsyncServiceImpl(const LoadReporterAsyncServiceImpl &) = delete;
+  LoadReporterAsyncServiceImpl &operator=(
+      const LoadReporterAsyncServiceImpl &) = delete;
 
  private:
   class ReportLoadHandler;
@@ -97,15 +97,15 @@ class LoadReporterAsyncServiceImpl
     // Instantiates a ReportLoadHandler and requests the next load reporting
     // call. The handler object will manage its own lifetime, so no action is
     // needed from the caller any more regarding that object.
-    static void CreateAndStart(ServerCompletionQueue* cq,
-                               LoadReporterAsyncServiceImpl* service,
-                               LoadReporter* load_reporter);
+    static void CreateAndStart(ServerCompletionQueue *cq,
+                               LoadReporterAsyncServiceImpl *service,
+                               LoadReporter *load_reporter);
 
     // This ctor is public because we want to use std::make_shared<> in
     // CreateAndStart(). This ctor shouldn't be used elsewhere.
-    ReportLoadHandler(ServerCompletionQueue* cq,
-                      LoadReporterAsyncServiceImpl* service,
-                      LoadReporter* load_reporter);
+    ReportLoadHandler(ServerCompletionQueue *cq,
+                      LoadReporterAsyncServiceImpl *service,
+                      LoadReporter *load_reporter);
 
    private:
     // After the handler has a call request delivered, it starts reading the
@@ -132,7 +132,7 @@ class LoadReporterAsyncServiceImpl
     // Called when AsyncNotifyWhenDone() notifies us.
     void OnDoneNotified(std::shared_ptr<ReportLoadHandler> self, bool ok);
 
-    void Shutdown(std::shared_ptr<ReportLoadHandler> self, const char* reason);
+    void Shutdown(std::shared_ptr<ReportLoadHandler> self, const char *reason);
 
     // The key fields of the stream.
     std::string lb_id_;
@@ -145,9 +145,9 @@ class LoadReporterAsyncServiceImpl
     ::grpc::lb::v1::LoadReportRequest request_;
 
     // The members passed down from LoadReporterAsyncServiceImpl.
-    ServerCompletionQueue* cq_;
-    LoadReporterAsyncServiceImpl* service_;
-    LoadReporter* load_reporter_;
+    ServerCompletionQueue *cq_;
+    LoadReporterAsyncServiceImpl *service_;
+    LoadReporter *load_reporter_;
     ServerAsyncReaderWriter<::grpc::lb::v1::LoadReportResponse,
                             ::grpc::lb::v1::LoadReportRequest>
         stream_;
@@ -171,7 +171,7 @@ class LoadReporterAsyncServiceImpl
   };
 
   // Handles the incoming requests and drives the completion queue in a loop.
-  static void Work(void* arg);
+  static void Work(void *arg);
 
   // Schedules the next data fetching from Census and LB feedback sampling.
   void ScheduleNextFetchAndSample();

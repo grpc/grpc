@@ -35,26 +35,26 @@
 namespace {
 class ThreadInternalsWindows;
 struct thd_info {
-  ThreadInternalsWindows* thread;
-  void (*body)(void* arg); /* body of a thread */
-  void* arg;               /* argument to a thread */
+  ThreadInternalsWindows *thread;
+  void (*body)(void *arg); /* body of a thread */
+  void *arg;               /* argument to a thread */
   HANDLE join_event;       /* the join event */
   bool joinable;           /* whether it is joinable */
 };
 
-GPR_THREAD_LOCAL(struct thd_info*) g_thd_info;
+GPR_THREAD_LOCAL(struct thd_info *) g_thd_info;
 
 class ThreadInternalsWindows
     : public grpc_core::internal::ThreadInternalsInterface {
  public:
-  ThreadInternalsWindows(void (*thd_body)(void* arg), void* arg, bool* success,
-                         const grpc_core::Thread::Options& options)
+  ThreadInternalsWindows(void (*thd_body)(void *arg), void *arg, bool *success,
+                         const grpc_core::Thread::Options &options)
       : started_(false) {
     gpr_mu_init(&mu_);
     gpr_cv_init(&ready_);
 
     HANDLE handle;
-    info_ = (struct thd_info*)gpr_malloc(sizeof(*info_));
+    info_ = (struct thd_info *)gpr_malloc(sizeof(*info_));
     info_->thread = this;
     info_->body = thd_body;
     info_->arg = arg;
@@ -105,8 +105,8 @@ class ThreadInternalsWindows
   }
 
  private:
-  static DWORD WINAPI thread_body(void* v) {
-    g_thd_info = static_cast<thd_info*>(v);
+  static DWORD WINAPI thread_body(void *v) {
+    g_thd_info = static_cast<thd_info *>(v);
     gpr_mu_lock(&g_thd_info->thread->mu_);
     while (!g_thd_info->thread->started_) {
       gpr_cv_wait(&g_thd_info->thread->ready_, &g_thd_info->thread->mu_,
@@ -137,15 +137,15 @@ class ThreadInternalsWindows
   gpr_mu mu_;
   gpr_cv ready_;
   bool started_;
-  thd_info* info_;
+  thd_info *info_;
 };
 
 }  // namespace
 
 namespace grpc_core {
 
-Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
-               bool* success, const Options& options)
+Thread::Thread(const char *thd_name, void (*thd_body)(void *arg), void *arg,
+               bool *success, const Options &options)
     : options_(options) {
   bool outcome = false;
   impl_ = new ThreadInternalsWindows(thd_body, arg, &outcome, options);

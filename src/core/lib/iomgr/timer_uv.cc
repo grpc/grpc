@@ -32,33 +32,33 @@
 
 #include <uv.h>
 
-static void timer_close_callback(uv_handle_t* handle) { gpr_free(handle); }
+static void timer_close_callback(uv_handle_t *handle) { gpr_free(handle); }
 
-static void stop_uv_timer(uv_timer_t* handle) {
+static void stop_uv_timer(uv_timer_t *handle) {
   uv_timer_stop(handle);
-  uv_unref((uv_handle_t*)handle);
-  uv_close((uv_handle_t*)handle, timer_close_callback);
+  uv_unref((uv_handle_t *)handle);
+  uv_close((uv_handle_t *)handle, timer_close_callback);
 }
 
-void run_expired_timer(uv_timer_t* handle) {
-  grpc_custom_timer* timer_wrapper = (grpc_custom_timer*)handle->data;
+void run_expired_timer(uv_timer_t *handle) {
+  grpc_custom_timer *timer_wrapper = (grpc_custom_timer *)handle->data;
   grpc_custom_timer_callback(timer_wrapper, GRPC_ERROR_NONE);
 }
 
-static void timer_start(grpc_custom_timer* t) {
-  uv_timer_t* uv_timer;
-  uv_timer = (uv_timer_t*)gpr_malloc(sizeof(uv_timer_t));
+static void timer_start(grpc_custom_timer *t) {
+  uv_timer_t *uv_timer;
+  uv_timer = (uv_timer_t *)gpr_malloc(sizeof(uv_timer_t));
   uv_timer_init(uv_default_loop(), uv_timer);
   uv_timer->data = t;
-  t->timer = (void*)uv_timer;
+  t->timer = (void *)uv_timer;
   uv_timer_start(uv_timer, run_expired_timer, t->timeout_ms, 0);
   // Node uses a garbage collector to call destructors, so we don't
   // want to hold the uv loop open with active gRPC objects.
-  uv_unref((uv_handle_t*)uv_timer);
+  uv_unref((uv_handle_t *)uv_timer);
 }
 
-static void timer_stop(grpc_custom_timer* t) {
-  stop_uv_timer((uv_timer_t*)t->timer);
+static void timer_stop(grpc_custom_timer *t) {
+  stop_uv_timer((uv_timer_t *)t->timer);
 }
 
 grpc_custom_timer_vtable uv_timer_vtable = {timer_start, timer_stop};

@@ -33,20 +33,20 @@ namespace grpc_core {
 namespace internal {
 
 bool check_windows_registry_product_name(HKEY root_key,
-                                         const char* reg_key_path,
-                                         const char* reg_key_name);
+                                         const char *reg_key_path,
+                                         const char *reg_key_name);
 
 }  // namespace internal
 }  // namespace grpc_core
 
-static bool check_bios_data_windows_test(const char* data) {
+static bool check_bios_data_windows_test(const char *data) {
   char const reg_key_path[] = "SYSTEM\\HardwareConfig\\Current\\";
   char const reg_key_name[] = "grpcTestValueName";
   // Modify the registry for the current user to contain the
   // test value. We cannot use the system registry because the
   // user may not have privileges to change it.
   auto rc = RegSetKeyValueA(HKEY_CURRENT_USER, reg_key_path, reg_key_name,
-                            REG_SZ, reinterpret_cast<const BYTE*>(data),
+                            REG_SZ, reinterpret_cast<const BYTE *>(data),
                             static_cast<DWORD>(strlen(data)));
   if (rc != 0) {
     return false;
@@ -79,7 +79,7 @@ static void test_gcp_environment_check_failure() {
   GPR_ASSERT(!check_bios_data_windows_test("  Amazon\r\n"));
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   /* Tests. */
   test_gcp_environment_check_success();
   test_gcp_environment_check_failure();
@@ -87,6 +87,6 @@ int main(int argc, char** argv) {
 }
 #else  // GPR_WINDOWS
 
-int main(int /*argc*/, char** /*argv*/) { return 0; }
+int main(int /*argc*/, char ** /*argv*/) { return 0; }
 
 #endif  // GPR_WINDOWS

@@ -33,6 +33,6 @@
  * @param dst the grpc_channel_args that the hash entries will be added to.
  */
 void grpc_rb_hash_convert_to_channel_args(VALUE src_hash,
-                                          grpc_channel_args* dst);
+                                          grpc_channel_args *dst);
 
 #endif /* GRPC_RB_CHANNEL_ARGS_H_ */

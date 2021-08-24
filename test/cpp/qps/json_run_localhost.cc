@@ -38,11 +38,11 @@ using grpc::SubProcess;
 
 constexpr auto kNumWorkers = 2;
 
-static SubProcess* g_driver;
-static SubProcess* g_workers[kNumWorkers];
+static SubProcess *g_driver;
+static SubProcess *g_workers[kNumWorkers];
 
 template <class T>
-std::string as_string(const T& val) {
+std::string as_string(const T &val) {
   std::ostringstream out;
   out << val;
   return out.str();
@@ -66,7 +66,7 @@ static void register_sighandler() {
   sigaction(SIGTERM, &act, nullptr);
 }
 
-static void LogStatus(int status, const char* label) {
+static void LogStatus(int status, const char *label) {
   if (WIFEXITED(status)) {
     gpr_log(GPR_INFO, "%s: subprocess exited with status %d", label,
             WEXITSTATUS(status));
@@ -78,7 +78,7 @@ static void LogStatus(int status, const char* label) {
   }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   register_sighandler();
 
   std::string my_bin = argv[0];

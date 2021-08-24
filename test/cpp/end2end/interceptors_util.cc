@@ -27,8 +27,8 @@ std::atomic<int> PhonyInterceptor::num_times_run_;
 std::atomic<int> PhonyInterceptor::num_times_run_reverse_;
 std::atomic<int> PhonyInterceptor::num_times_cancel_;
 
-void MakeCall(const std::shared_ptr<Channel>& channel,
-              const StubOptions& options) {
+void MakeCall(const std::shared_ptr<Channel> &channel,
+              const StubOptions &options) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel, options);
   ClientContext ctx;
   EchoRequest req;
@@ -41,7 +41,7 @@ void MakeCall(const std::shared_ptr<Channel>& channel,
   EXPECT_EQ(resp.message(), "Hello");
 }
 
-void MakeClientStreamingCall(const std::shared_ptr<Channel>& channel) {
+void MakeClientStreamingCall(const std::shared_ptr<Channel> &channel) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
   ClientContext ctx;
   EchoRequest req;
@@ -61,7 +61,7 @@ void MakeClientStreamingCall(const std::shared_ptr<Channel>& channel) {
   EXPECT_EQ(resp.message(), expected_resp);
 }
 
-void MakeServerStreamingCall(const std::shared_ptr<Channel>& channel) {
+void MakeServerStreamingCall(const std::shared_ptr<Channel> &channel) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
   ClientContext ctx;
   EchoRequest req;
@@ -80,7 +80,7 @@ void MakeServerStreamingCall(const std::shared_ptr<Channel>& channel) {
   EXPECT_EQ(s.ok(), true);
 }
 
-void MakeBidiStreamingCall(const std::shared_ptr<Channel>& channel) {
+void MakeBidiStreamingCall(const std::shared_ptr<Channel> &channel) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
   ClientContext ctx;
   EchoRequest req;
@@ -99,7 +99,7 @@ void MakeBidiStreamingCall(const std::shared_ptr<Channel>& channel) {
   EXPECT_EQ(s.ok(), true);
 }
 
-void MakeAsyncCQCall(const std::shared_ptr<Channel>& channel) {
+void MakeAsyncCQCall(const std::shared_ptr<Channel> &channel) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
   CompletionQueue cq;
   EchoRequest send_request;
@@ -118,11 +118,11 @@ void MakeAsyncCQCall(const std::shared_ptr<Channel>& channel) {
 }
 
 void MakeAsyncCQClientStreamingCall(
-    const std::shared_ptr<Channel>& /*channel*/) {
+    const std::shared_ptr<Channel> & /*channel*/) {
   // TODO(yashykt) : Fill this out
 }
 
-void MakeAsyncCQServerStreamingCall(const std::shared_ptr<Channel>& channel) {
+void MakeAsyncCQServerStreamingCall(const std::shared_ptr<Channel> &channel) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
   CompletionQueue cq;
   EchoRequest send_request;
@@ -150,11 +150,12 @@ void MakeAsyncCQServerStreamingCall(const std::shared_ptr<Channel>& channel) {
   EXPECT_TRUE(recv_status.ok());
 }
 
-void MakeAsyncCQBidiStreamingCall(const std::shared_ptr<Channel>& /*channel*/) {
+void MakeAsyncCQBidiStreamingCall(
+    const std::shared_ptr<Channel> & /*channel*/) {
   // TODO(yashykt) : Fill this out
 }
 
-void MakeCallbackCall(const std::shared_ptr<Channel>& channel) {
+void MakeCallbackCall(const std::shared_ptr<Channel> &channel) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
   ClientContext ctx;
   EchoRequest req;
@@ -178,9 +179,9 @@ void MakeCallbackCall(const std::shared_ptr<Channel>& channel) {
   }
 }
 
-bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map,
-                   const string& key, const string& value) {
-  for (const auto& pair : map) {
+bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref> &map,
+                   const string &key, const string &value) {
+  for (const auto &pair : map) {
     if (pair.first.starts_with(key) && pair.second.starts_with(value)) {
       return true;
     }
@@ -188,9 +189,9 @@ bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map,
   return false;
 }
 
-bool CheckMetadata(const std::multimap<std::string, std::string>& map,
-                   const string& key, const string& value) {
-  for (const auto& pair : map) {
+bool CheckMetadata(const std::multimap<std::string, std::string> &map,
+                   const string &key, const string &value) {
+  for (const auto &pair : map) {
     if (pair.first == key && pair.second == value) {
       return true;
     }

@@ -36,18 +36,18 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
  public:
   struct Args {
     // Set of pollsets interested in this connection.
-    grpc_pollset_set* interested_parties;
+    grpc_pollset_set *interested_parties;
     // Deadline for connection.
     grpc_millis deadline;
     // Channel args to be passed to handshakers and transport.
-    const grpc_channel_args* channel_args;
+    const grpc_channel_args *channel_args;
   };
 
   struct Result {
     // The connected transport.
-    grpc_transport* transport = nullptr;
+    grpc_transport *transport = nullptr;
     // Channel args to be passed to filters.
-    const grpc_channel_args* channel_args = nullptr;
+    const grpc_channel_args *channel_args = nullptr;
     // Channelz socket node of the connected transport, if any.
     RefCountedPtr<channelz::SocketNode> socket_node;
 
@@ -61,8 +61,8 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
   // Attempts to connect.
   // When complete, populates *result and invokes notify.
   // Only one connection attempt may be in progress at any one time.
-  virtual void Connect(const Args& args, Result* result,
-                       grpc_closure* notify) = 0;
+  virtual void Connect(const Args &args, Result *result,
+                       grpc_closure *notify) = 0;
 
   // Cancels any in-flight connection attempt and shuts down the
   // connector.

@@ -33,24 +33,24 @@
 #include "src/core/lib/iomgr/timer.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
-extern grpc_socket_vtable* grpc_custom_socket_vtable;
+extern grpc_socket_vtable *grpc_custom_socket_vtable;
 
 struct grpc_custom_tcp_connect {
-  grpc_custom_socket* socket;
+  grpc_custom_socket *socket;
   grpc_timer alarm;
   grpc_closure on_alarm;
-  grpc_closure* closure;
-  grpc_endpoint** endpoint;
+  grpc_closure *closure;
+  grpc_endpoint **endpoint;
   int refs;
   std::string addr_name;
-  grpc_slice_allocator* slice_allocator;
+  grpc_slice_allocator *slice_allocator;
 };
 
-static void custom_tcp_connect_cleanup(grpc_custom_tcp_connect* connect) {
+static void custom_tcp_connect_cleanup(grpc_custom_tcp_connect *connect) {
   if (connect->slice_allocator != nullptr) {
     grpc_slice_allocator_destroy(connect->slice_allocator);
   }
-  grpc_custom_socket* socket = connect->socket;
+  grpc_custom_socket *socket = connect->socket;
   delete connect;
   socket->refs--;
   if (socket->refs == 0) {
@@ -59,12 +59,12 @@ static void custom_tcp_connect_cleanup(grpc_custom_tcp_connect* connect) {
   }
 }
 
-static void custom_close_callback(grpc_custom_socket* /*socket*/) {}
+static void custom_close_callback(grpc_custom_socket * /*socket*/) {}
 
-static void on_alarm(void* acp, grpc_error_handle error) {
+static void on_alarm(void *acp, grpc_error_handle error) {
   int done;
-  grpc_custom_socket* socket = static_cast<grpc_custom_socket*>(acp);
-  grpc_custom_tcp_connect* connect = socket->connector;
+  grpc_custom_socket *socket = static_cast<grpc_custom_socket *>(acp);
+  grpc_custom_tcp_connect *connect = socket->connector;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
             connect->addr_name.c_str(), grpc_error_std_string(error).c_str());
@@ -81,11 +81,11 @@ static void on_alarm(void* acp, grpc_error_handle error) {
   }
 }
 
-static void custom_connect_callback_internal(grpc_custom_socket* socket,
+static void custom_connect_callback_internal(grpc_custom_socket *socket,
                                              grpc_error_handle error) {
-  grpc_custom_tcp_connect* connect = socket->connector;
+  grpc_custom_tcp_connect *connect = socket->connector;
   int done;
-  grpc_closure* closure = connect->closure;
+  grpc_closure *closure = connect->closure;
   grpc_timer_cancel(&connect->alarm);
   if (error == GRPC_ERROR_NONE) {
     *connect->endpoint = custom_tcp_endpoint_create(
@@ -100,7 +100,7 @@ static void custom_connect_callback_internal(grpc_custom_socket* socket,
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
 }
 
-static void custom_connect_callback(grpc_custom_socket* socket,
+static void custom_connect_callback(grpc_custom_socket *socket,
                                     grpc_error_handle error) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   if (grpc_core::ExecCtx::Get() == nullptr) {
@@ -113,20 +113,20 @@ static void custom_connect_callback(grpc_custom_socket* socket,
   }
 }
 
-static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
-                        grpc_slice_allocator* slice_allocator,
-                        grpc_pollset_set* interested_parties,
-                        const grpc_channel_args* channel_args,
-                        const grpc_resolved_address* resolved_addr,
+static void tcp_connect(grpc_closure *closure, grpc_endpoint **ep,
+                        grpc_slice_allocator *slice_allocator,
+                        grpc_pollset_set *interested_parties,
+                        const grpc_channel_args *channel_args,
+                        const grpc_resolved_address *resolved_addr,
                         grpc_millis deadline) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   (void)channel_args;
   (void)interested_parties;
-  grpc_custom_socket* socket =
-      static_cast<grpc_custom_socket*>(gpr_malloc(sizeof(grpc_custom_socket)));
+  grpc_custom_socket *socket =
+      static_cast<grpc_custom_socket *>(gpr_malloc(sizeof(grpc_custom_socket)));
   socket->refs = 2;
   grpc_custom_socket_vtable->init(socket, GRPC_AF_UNSPEC);
-  grpc_custom_tcp_connect* connect = new grpc_custom_tcp_connect();
+  grpc_custom_tcp_connect *connect = new grpc_custom_tcp_connect();
   connect->closure = closure;
   connect->endpoint = ep;
   connect->addr_name = grpc_sockaddr_to_uri(resolved_addr);
@@ -146,7 +146,7 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(&connect->alarm, deadline, &connect->on_alarm);
   grpc_custom_socket_vtable->connect(
-      socket, reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr),
+      socket, reinterpret_cast<const grpc_sockaddr *>(resolved_addr->addr),
       resolved_addr->len, custom_connect_callback);
 }
 

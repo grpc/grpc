@@ -26,6 +26,6 @@
 #include <grpc/grpc.h>
 
 /* Returns a string describing an event. Must be later freed with gpr_free() */
-std::string grpc_event_string(grpc_event* ev);
+std::string grpc_event_string(grpc_event *ev);
 
 #endif /* GRPC_CORE_LIB_SURFACE_EVENT_STRING_H */

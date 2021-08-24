@@ -41,11 +41,11 @@ struct test_socket_mutator {
   int option_value;
 };
 
-static bool mutate_fd(int fd, grpc_socket_mutator* mutator) {
+static bool mutate_fd(int fd, grpc_socket_mutator *mutator) {
   int newval;
   socklen_t intlen = sizeof(newval);
-  struct test_socket_mutator* m =
-      reinterpret_cast<struct test_socket_mutator*>(mutator);
+  struct test_socket_mutator *m =
+      reinterpret_cast<struct test_socket_mutator *>(mutator);
 
   if (0 != setsockopt(fd, IPPROTO_IP, IP_TOS, &m->option_value,
                       sizeof(m->option_value))) {
@@ -60,12 +60,12 @@ static bool mutate_fd(int fd, grpc_socket_mutator* mutator) {
   return true;
 }
 
-static bool mutate_fd_2(const grpc_mutate_socket_info* info,
-                        grpc_socket_mutator* mutator) {
+static bool mutate_fd_2(const grpc_mutate_socket_info *info,
+                        grpc_socket_mutator *mutator) {
   int newval;
   socklen_t intlen = sizeof(newval);
-  struct test_socket_mutator* m =
-      reinterpret_cast<struct test_socket_mutator*>(mutator);
+  struct test_socket_mutator *m =
+      reinterpret_cast<struct test_socket_mutator *>(mutator);
 
   if (0 != setsockopt(info->fd, IPPROTO_IP, IP_TOS, &m->option_value,
                       sizeof(m->option_value))) {
@@ -80,18 +80,18 @@ static bool mutate_fd_2(const grpc_mutate_socket_info* info,
   return true;
 }
 
-static void destroy_test_mutator(grpc_socket_mutator* mutator) {
-  struct test_socket_mutator* m =
-      reinterpret_cast<struct test_socket_mutator*>(mutator);
+static void destroy_test_mutator(grpc_socket_mutator *mutator) {
+  struct test_socket_mutator *m =
+      reinterpret_cast<struct test_socket_mutator *>(mutator);
   gpr_free(m);
 }
 
-static int compare_test_mutator(grpc_socket_mutator* a,
-                                grpc_socket_mutator* b) {
-  struct test_socket_mutator* ma =
-      reinterpret_cast<struct test_socket_mutator*>(a);
-  struct test_socket_mutator* mb =
-      reinterpret_cast<struct test_socket_mutator*>(b);
+static int compare_test_mutator(grpc_socket_mutator *a,
+                                grpc_socket_mutator *b) {
+  struct test_socket_mutator *ma =
+      reinterpret_cast<struct test_socket_mutator *>(a);
+  struct test_socket_mutator *mb =
+      reinterpret_cast<struct test_socket_mutator *>(b);
   return GPR_ICMP(ma->option_value, mb->option_value);
 }
 
@@ -101,7 +101,7 @@ static const grpc_socket_mutator_vtable mutator_vtable = {
 static const grpc_socket_mutator_vtable mutator_vtable2 = {
     nullptr, compare_test_mutator, destroy_test_mutator, mutate_fd_2};
 
-static void test_with_vtable(const grpc_socket_mutator_vtable* vtable) {
+static void test_with_vtable(const grpc_socket_mutator_vtable *vtable) {
   int sock = socket(PF_INET, SOCK_STREAM, 0);
   GPR_ASSERT(sock > 0);
 
@@ -112,29 +112,29 @@ static void test_with_vtable(const grpc_socket_mutator_vtable* vtable) {
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "set_socket_with_mutator",
       grpc_set_socket_with_mutator(sock, GRPC_FD_CLIENT_CONNECTION_USAGE,
-                                   (grpc_socket_mutator*)&mutator)));
+                                   (grpc_socket_mutator *)&mutator)));
 
   mutator.option_value = IPTOS_THROUGHPUT;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "set_socket_with_mutator",
       grpc_set_socket_with_mutator(sock, GRPC_FD_CLIENT_CONNECTION_USAGE,
-                                   (grpc_socket_mutator*)&mutator)));
+                                   (grpc_socket_mutator *)&mutator)));
 
   mutator.option_value = IPTOS_RELIABILITY;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "set_socket_with_mutator",
       grpc_set_socket_with_mutator(sock, GRPC_FD_CLIENT_CONNECTION_USAGE,
-                                   (grpc_socket_mutator*)&mutator)));
+                                   (grpc_socket_mutator *)&mutator)));
 
   mutator.option_value = -1;
   auto err = grpc_set_socket_with_mutator(
       sock, GRPC_FD_CLIENT_CONNECTION_USAGE,
-      reinterpret_cast<grpc_socket_mutator*>(&mutator));
+      reinterpret_cast<grpc_socket_mutator *>(&mutator));
   GPR_ASSERT(err != GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(err);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   int sock;
   grpc::testing::TestEnvironment env(argc, argv);
 
@@ -168,6 +168,6 @@ int main(int argc, char** argv) {
 
 #else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
 
-int main(int argc, char** argv) { return 1; }
+int main(int argc, char **argv) { return 1; }
 
 #endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */

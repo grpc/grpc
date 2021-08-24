@@ -41,10 +41,10 @@ namespace grpc_core {
 namespace {
 class ThreadInternalsPosix;
 struct thd_arg {
-  ThreadInternalsPosix* thread;
-  void (*body)(void* arg); /* body of a thread */
-  void* arg;               /* argument to a thread */
-  const char* name;        /* name of thread. Can be nullptr. */
+  ThreadInternalsPosix *thread;
+  void (*body)(void *arg); /* body of a thread */
+  void *arg;               /* argument to a thread */
+  const char *name;        /* name of thread. Can be nullptr. */
   bool joinable;
   bool tracked;
 };
@@ -71,15 +71,15 @@ size_t MinValidStackSize(size_t request_size) {
 
 class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
  public:
-  ThreadInternalsPosix(const char* thd_name, void (*thd_body)(void* arg),
-                       void* arg, bool* success, const Thread::Options& options)
+  ThreadInternalsPosix(const char *thd_name, void (*thd_body)(void *arg),
+                       void *arg, bool *success, const Thread::Options &options)
       : started_(false) {
     gpr_mu_init(&mu_);
     gpr_cv_init(&ready_);
     pthread_attr_t attr;
     /* don't use gpr_malloc as we may cause an infinite recursion with
      * the profiling code */
-    thd_arg* info = static_cast<thd_arg*>(malloc(sizeof(*info)));
+    thd_arg *info = static_cast<thd_arg *>(malloc(sizeof(*info)));
     GPR_ASSERT(info != nullptr);
     info->thread = this;
     info->body = thd_body;
@@ -107,8 +107,8 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
 
     *success = (pthread_create(
                     &pthread_id_, &attr,
-                    [](void* v) -> void* {
-                      thd_arg arg = *static_cast<thd_arg*>(v);
+                    [](void *v) -> void * {
+                      thd_arg arg = *static_cast<thd_arg *>(v);
                       free(v);
                       if (arg.name != nullptr) {
 #if GPR_APPLE_PTHREAD_NAME
@@ -179,8 +179,8 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
 
 }  // namespace
 
-Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
-               bool* success, const Options& options)
+Thread::Thread(const char *thd_name, void (*thd_body)(void *arg), void *arg,
+               bool *success, const Options &options)
     : options_(options) {
   bool outcome = false;
   impl_ = new ThreadInternalsPosix(thd_name, thd_body, arg, &outcome, options);

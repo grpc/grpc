@@ -38,25 +38,25 @@
 
 namespace grpc_binder {
 
-ndk::SpAIBinder FromJavaBinder(JNIEnv* jni_env, jobject binder);
+ndk::SpAIBinder FromJavaBinder(JNIEnv *jni_env, jobject binder);
 
 class BinderAndroid;
 
 class WritableParcelAndroid final : public WritableParcel {
  public:
   WritableParcelAndroid() = default;
-  explicit WritableParcelAndroid(AParcel* parcel) : parcel_(parcel) {}
+  explicit WritableParcelAndroid(AParcel *parcel) : parcel_(parcel) {}
   ~WritableParcelAndroid() override = default;
 
   int32_t GetDataPosition() const override;
   absl::Status SetDataPosition(int32_t pos) override;
   absl::Status WriteInt32(int32_t data) override;
-  absl::Status WriteBinder(HasRawBinder* binder) override;
+  absl::Status WriteBinder(HasRawBinder *binder) override;
   absl::Status WriteString(absl::string_view s) override;
-  absl::Status WriteByteArray(const int8_t* buffer, int32_t length) override;
+  absl::Status WriteByteArray(const int8_t *buffer, int32_t length) override;
 
  private:
-  AParcel* parcel_ = nullptr;
+  AParcel *parcel_ = nullptr;
 
   friend class BinderAndroid;
 };
@@ -65,18 +65,18 @@ class ReadableParcelAndroid final : public ReadableParcel {
  public:
   ReadableParcelAndroid() = default;
   // TODO(waynetu): Get rid of the const_cast.
-  explicit ReadableParcelAndroid(const AParcel* parcel)
-      : parcel_(const_cast<AParcel*>(parcel)) {}
+  explicit ReadableParcelAndroid(const AParcel *parcel)
+      : parcel_(const_cast<AParcel *>(parcel)) {}
   ~ReadableParcelAndroid() override = default;
 
-  absl::Status ReadInt32(int32_t* data) const override;
-  absl::Status ReadBinder(std::unique_ptr<Binder>* data) const override;
-  absl::Status ReadByteArray(std::string* data) const override;
+  absl::Status ReadInt32(int32_t *data) const override;
+  absl::Status ReadBinder(std::unique_ptr<Binder> *data) const override;
+  absl::Status ReadByteArray(std::string *data) const override;
   // FIXME(waynetu): Fix the interface.
   absl::Status ReadString(char data[111]) const override;
 
  private:
-  AParcel* parcel_ = nullptr;
+  AParcel *parcel_ = nullptr;
 
   friend class BinderAndroid;
 };
@@ -89,16 +89,16 @@ class BinderAndroid final : public Binder {
         output_parcel_(absl::make_unique<ReadableParcelAndroid>()) {}
   ~BinderAndroid() override = default;
 
-  void* GetRawBinder() override { return binder_.get(); }
+  void *GetRawBinder() override { return binder_.get(); }
 
   void Initialize() override;
   absl::Status PrepareTransaction() override;
   absl::Status Transact(BinderTransportTxCode tx_code) override;
 
-  WritableParcel* GetWritableParcel() const override {
+  WritableParcel *GetWritableParcel() const override {
     return input_parcel_.get();
   }
-  ReadableParcel* GetReadableParcel() const override {
+  ReadableParcel *GetReadableParcel() const override {
     return output_parcel_.get();
   };
 
@@ -118,10 +118,10 @@ class TransactionReceiverAndroid final : public TransactionReceiver {
       grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
       OnTransactCb transaction_cb);
   ~TransactionReceiverAndroid() override;
-  void* GetRawBinder() override { return binder_; }
+  void *GetRawBinder() override { return binder_; }
 
  private:
-  AIBinder* binder_;
+  AIBinder *binder_;
   OnTransactCb transact_cb_;
 };
 

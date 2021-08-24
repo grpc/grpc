@@ -45,12 +45,12 @@ class KeyValueStoreClient {
 
   // Requests each key in the vector and displays the key and its corresponding
   // value as a pair
-  void GetValues(const std::vector<std::string>& keys) {
+  void GetValues(const std::vector<std::string> &keys) {
     // Context for the client. It could be used to convey extra information to
     // the server and/or tweak certain RPC behaviors.
     ClientContext context;
     auto stream = stub_->GetValues(&context);
-    for (const auto& key : keys) {
+    for (const auto &key : keys) {
       // Key we are sending to the server.
       Request request;
       request.set_key(key);
@@ -74,7 +74,7 @@ class KeyValueStoreClient {
   std::unique_ptr<KeyValueStore::Stub> stub_;
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   // Instantiate the client. It requires a channel, out of which the actual RPCs
   // are created. This channel models a connection to an endpoint (in this case,
   // localhost at port 50051). We indicate that the channel isn't authenticated

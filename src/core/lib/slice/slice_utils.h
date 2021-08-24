@@ -44,14 +44,14 @@ extern uint32_t g_hash_seed;
 // branching based on the output) then we're just performing the extra
 // operations to invert the result pointlessly. Concretely, we save 6 ops on
 // x86-64/clang with differs().
-int grpc_slice_differs_refcounted(const grpc_slice& a,
-                                  const grpc_slice& b_not_inline);
+int grpc_slice_differs_refcounted(const grpc_slice &a,
+                                  const grpc_slice &b_not_inline);
 
 // When we compare two slices, and we *know* that one of them is static or
 // interned, we can short circuit our slice equality function. The second slice
 // here must be static or interned; slice a can be any slice, inlined or not.
-inline bool grpc_slice_eq_static_interned(const grpc_slice& a,
-                                          const grpc_slice& b_static_interned) {
+inline bool grpc_slice_eq_static_interned(const grpc_slice &a,
+                                          const grpc_slice &b_static_interned) {
   if (a.refcount == b_static_interned.refcount) {
     return true;
   }
@@ -106,17 +106,17 @@ struct ManagedMemorySlice : public grpc_slice {
     data.refcounted.bytes = nullptr;
     data.refcounted.length = 0;
   }
-  explicit ManagedMemorySlice(const char* string);
-  ManagedMemorySlice(const char* buf, size_t len);
-  explicit ManagedMemorySlice(const grpc_slice* slice);
-  bool operator==(const grpc_slice& other) const {
+  explicit ManagedMemorySlice(const char *string);
+  ManagedMemorySlice(const char *buf, size_t len);
+  explicit ManagedMemorySlice(const grpc_slice *slice);
+  bool operator==(const grpc_slice &other) const {
     if (refcount == other.refcount) {
       return true;
     }
     return !grpc_slice_differs_refcounted(other, *this);
   }
-  bool operator!=(const grpc_slice& other) const { return !(*this == other); }
-  bool operator==(std::pair<const char*, size_t> buflen) const {
+  bool operator!=(const grpc_slice &other) const { return !(*this == other); }
+  bool operator==(std::pair<const char *, size_t> buflen) const {
     return data.refcounted.length == buflen.second && buflen.first != nullptr &&
            memcmp(buflen.first, data.refcounted.bytes, buflen.second) == 0;
   }
@@ -128,13 +128,13 @@ struct UnmanagedMemorySlice : public grpc_slice {
     refcount = nullptr;
     data.inlined.length = 0;
   }
-  explicit UnmanagedMemorySlice(const char* source);
-  UnmanagedMemorySlice(const char* source, size_t length);
+  explicit UnmanagedMemorySlice(const char *source);
+  UnmanagedMemorySlice(const char *source, size_t length);
   // The first constructor creates a slice that may be heap allocated, or
   // inlined in the slice structure if length is small enough
   // (< GRPC_SLICE_INLINED_SIZE). The second constructor forces heap alloc.
   explicit UnmanagedMemorySlice(size_t length);
-  explicit UnmanagedMemorySlice(size_t length, const ForceHeapAllocation&) {
+  explicit UnmanagedMemorySlice(size_t length, const ForceHeapAllocation &) {
     HeapInit(length);
   }
 
@@ -147,24 +147,24 @@ extern grpc_slice_refcount kNoopRefcount;
 struct ExternallyManagedSlice : public UnmanagedMemorySlice {
   ExternallyManagedSlice()
       : ExternallyManagedSlice(&kNoopRefcount, 0, nullptr) {}
-  explicit ExternallyManagedSlice(const char* s)
+  explicit ExternallyManagedSlice(const char *s)
       : ExternallyManagedSlice(s, strlen(s)) {}
-  ExternallyManagedSlice(const void* s, size_t len)
+  ExternallyManagedSlice(const void *s, size_t len)
       : ExternallyManagedSlice(
             &kNoopRefcount, len,
-            reinterpret_cast<uint8_t*>(const_cast<void*>(s))) {}
-  ExternallyManagedSlice(grpc_slice_refcount* ref, size_t length,
-                         uint8_t* bytes) {
+            reinterpret_cast<uint8_t *>(const_cast<void *>(s))) {}
+  ExternallyManagedSlice(grpc_slice_refcount *ref, size_t length,
+                         uint8_t *bytes) {
     refcount = ref;
     data.refcounted.length = length;
     data.refcounted.bytes = bytes;
   }
-  bool operator==(const grpc_slice& other) const {
+  bool operator==(const grpc_slice &other) const {
     return data.refcounted.length == GRPC_SLICE_LENGTH(other) &&
            memcmp(data.refcounted.bytes, GRPC_SLICE_START_PTR(other),
                   data.refcounted.length) == 0;
   }
-  bool operator!=(const grpc_slice& other) const { return !(*this == other); }
+  bool operator!=(const grpc_slice &other) const { return !(*this == other); }
   uint32_t Hash() {
     return gpr_murmur_hash3(data.refcounted.bytes, data.refcounted.length,
                             g_hash_seed);
@@ -172,26 +172,26 @@ struct ExternallyManagedSlice : public UnmanagedMemorySlice {
 };
 
 struct StaticMetadataSlice : public ManagedMemorySlice {
-  StaticMetadataSlice(grpc_slice_refcount* ref, size_t length,
-                      const uint8_t* bytes) {
+  StaticMetadataSlice(grpc_slice_refcount *ref, size_t length,
+                      const uint8_t *bytes) {
     refcount = ref;
     data.refcounted.length = length;
     // NB: grpc_slice may or may not point to a static slice, but we are
     // definitely pointing to static data here. Since we are not changing
     // the underlying C-type, we need a const_cast here.
-    data.refcounted.bytes = const_cast<uint8_t*>(bytes);
+    data.refcounted.bytes = const_cast<uint8_t *>(bytes);
   }
 };
 
 struct InternedSliceRefcount;
 struct InternedSlice : public ManagedMemorySlice {
-  explicit InternedSlice(InternedSliceRefcount* s);
+  explicit InternedSlice(InternedSliceRefcount *s);
 };
 
 // Converts grpc_slice to absl::string_view.
-inline absl::string_view StringViewFromSlice(const grpc_slice& slice) {
+inline absl::string_view StringViewFromSlice(const grpc_slice &slice) {
   return absl::string_view(
-      reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
+      reinterpret_cast<const char *>(GRPC_SLICE_START_PTR(slice)),
       GRPC_SLICE_LENGTH(slice));
 }
 

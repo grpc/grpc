@@ -30,20 +30,20 @@ class FileWatcherCertificateProviderFactory
  public:
   class Config : public CertificateProviderFactory::Config {
    public:
-    static RefCountedPtr<Config> Parse(const Json& config_json,
-                                       grpc_error_handle* error);
+    static RefCountedPtr<Config> Parse(const Json &config_json,
+                                       grpc_error_handle *error);
 
-    const char* name() const override;
+    const char *name() const override;
 
     std::string ToString() const override;
 
-    const std::string& identity_cert_file() const {
+    const std::string &identity_cert_file() const {
       return identity_cert_file_;
     }
 
-    const std::string& private_key_file() const { return private_key_file_; }
+    const std::string &private_key_file() const { return private_key_file_; }
 
-    const std::string& root_cert_file() const { return root_cert_file_; }
+    const std::string &root_cert_file() const { return root_cert_file_; }
 
     grpc_millis refresh_interval_ms() const { return refresh_interval_ms_; }
 
@@ -54,11 +54,11 @@ class FileWatcherCertificateProviderFactory
     grpc_millis refresh_interval_ms_;
   };
 
-  const char* name() const override;
+  const char *name() const override;
 
   RefCountedPtr<CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const Json& config_json,
-                                  grpc_error_handle* error) override;
+  CreateCertificateProviderConfig(const Json &config_json,
+                                  grpc_error_handle *error) override;
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
       RefCountedPtr<CertificateProviderFactory::Config> config) override;

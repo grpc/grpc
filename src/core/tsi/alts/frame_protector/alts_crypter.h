@@ -122,18 +122,18 @@ typedef struct alts_crypter alts_crypter;
 
 /* V-table for alts_crypter operations */
 typedef struct alts_crypter_vtable {
-  size_t (*num_overhead_bytes)(const alts_crypter* crypter);
-  grpc_status_code (*process_in_place)(alts_crypter* crypter,
-                                       unsigned char* data,
+  size_t (*num_overhead_bytes)(const alts_crypter *crypter);
+  grpc_status_code (*process_in_place)(alts_crypter *crypter,
+                                       unsigned char *data,
                                        size_t data_allocated_size,
-                                       size_t data_size, size_t* output_size,
-                                       char** error_details);
-  void (*destruct)(alts_crypter* crypter);
+                                       size_t data_size, size_t *output_size,
+                                       char **error_details);
+  void (*destruct)(alts_crypter *crypter);
 } alts_crypter_vtable;
 
 /* Main struct for alts_crypter interface */
 struct alts_crypter {
-  const alts_crypter_vtable* vtable;
+  const alts_crypter_vtable *vtable;
 };
 
 /**
@@ -149,7 +149,7 @@ struct alts_crypter {
  * returns zero.
  *
  */
-size_t alts_crypter_num_overhead_bytes(const alts_crypter* crypter);
+size_t alts_crypter_num_overhead_bytes(const alts_crypter *crypter);
 
 /**
  * This method performs either a seal or an unseal operation depending on the
@@ -189,8 +189,8 @@ size_t alts_crypter_num_overhead_bytes(const alts_crypter* crypter);
  * error_details (if error_details is not nullptr).
  */
 grpc_status_code alts_crypter_process_in_place(
-    alts_crypter* crypter, unsigned char* data, size_t data_allocated_size,
-    size_t data_size, size_t* output_size, char** error_details);
+    alts_crypter *crypter, unsigned char *data, size_t data_allocated_size,
+    size_t data_size, size_t *output_size, char **error_details);
 
 /**
  * This method creates an alts_crypter instance to be used to perform a seal
@@ -212,10 +212,10 @@ grpc_status_code alts_crypter_process_in_place(
  * Otherwise, it returns an error status code along with its details specified
  * in error_details (if error_details is not nullptr).
  */
-grpc_status_code alts_seal_crypter_create(gsec_aead_crypter* gc, bool is_client,
+grpc_status_code alts_seal_crypter_create(gsec_aead_crypter *gc, bool is_client,
                                           size_t overflow_size,
-                                          alts_crypter** crypter,
-                                          char** error_details);
+                                          alts_crypter **crypter,
+                                          char **error_details);
 
 /**
  * This method creates an alts_crypter instance used to perform an unseal
@@ -237,11 +237,11 @@ grpc_status_code alts_seal_crypter_create(gsec_aead_crypter* gc, bool is_client,
  * Otherwise, it returns an error status code along with its details specified
  * in error_details (if error_details is not nullptr).
  */
-grpc_status_code alts_unseal_crypter_create(gsec_aead_crypter* gc,
+grpc_status_code alts_unseal_crypter_create(gsec_aead_crypter *gc,
                                             bool is_client,
                                             size_t overflow_size,
-                                            alts_crypter** crypter,
-                                            char** error_details);
+                                            alts_crypter **crypter,
+                                            char **error_details);
 
 /**
  * This method destroys an alts_crypter instance by de-allocating all of its
@@ -250,6 +250,6 @@ grpc_status_code alts_unseal_crypter_create(gsec_aead_crypter* gc,
  *
  * - crypter: an alts_crypter instance.
  */
-void alts_crypter_destroy(alts_crypter* crypter);
+void alts_crypter_destroy(alts_crypter *crypter);
 
 #endif /* GRPC_CORE_TSI_ALTS_FRAME_PROTECTOR_ALTS_CRYPTER_H */

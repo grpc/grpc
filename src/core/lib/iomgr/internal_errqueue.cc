@@ -44,7 +44,7 @@ void grpc_errqueue_init() {
     gpr_log(GPR_ERROR, "uname: %s", strerror(errno));
     return;
   }
-  char* release = buffer.release;
+  char *release = buffer.release;
   if (release == nullptr) {
     return;
   }

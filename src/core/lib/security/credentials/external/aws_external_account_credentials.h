@@ -29,27 +29,27 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
  public:
   static RefCountedPtr<AwsExternalAccountCredentials> Create(
       Options options, std::vector<std::string> scopes,
-      grpc_error_handle* error);
+      grpc_error_handle *error);
 
   AwsExternalAccountCredentials(Options options,
                                 std::vector<std::string> scopes,
-                                grpc_error_handle* error);
+                                grpc_error_handle *error);
 
  private:
   void RetrieveSubjectToken(
-      HTTPRequestContext* ctx, const Options& options,
+      HTTPRequestContext *ctx, const Options &options,
       std::function<void(std::string, grpc_error_handle)> cb) override;
 
   void RetrieveRegion();
-  static void OnRetrieveRegion(void* arg, grpc_error_handle error);
+  static void OnRetrieveRegion(void *arg, grpc_error_handle error);
   void OnRetrieveRegionInternal(grpc_error_handle error);
 
   void RetrieveRoleName();
-  static void OnRetrieveRoleName(void* arg, grpc_error_handle error);
+  static void OnRetrieveRoleName(void *arg, grpc_error_handle error);
   void OnRetrieveRoleNameInternal(grpc_error_handle error);
 
   void RetrieveSigningKeys();
-  static void OnRetrieveSigningKeys(void* arg, grpc_error_handle error);
+  static void OnRetrieveSigningKeys(void *arg, grpc_error_handle error);
   void OnRetrieveSigningKeysInternal(grpc_error_handle error);
 
   void BuildSubjectToken();
@@ -73,7 +73,7 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
   std::unique_ptr<AwsRequestSigner> signer_;
   std::string cred_verification_url_;
 
-  HTTPRequestContext* ctx_ = nullptr;
+  HTTPRequestContext *ctx_ = nullptr;
   std::function<void(std::string, grpc_error_handle)> cb_ = nullptr;
 };
 

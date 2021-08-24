@@ -24,13 +24,14 @@
 #include "test/core/util/test_config.h"
 
 static void test_format_get_request(void) {
-  grpc_http_header hdr = {const_cast<char*>("x-yz"), const_cast<char*>("abc")};
+  grpc_http_header hdr = {const_cast<char *>("x-yz"),
+                          const_cast<char *>("abc")};
   grpc_httpcli_request req;
   grpc_slice slice;
 
   memset(&req, 0, sizeof(req));
-  req.host = const_cast<char*>("example.com");
-  req.http.path = const_cast<char*>("/index.html");
+  req.host = const_cast<char *>("example.com");
+  req.http.path = const_cast<char *>("/index.html");
   req.http.hdr_count = 1;
   req.http.hdrs = &hdr;
 
@@ -49,15 +50,16 @@ static void test_format_get_request(void) {
 }
 
 static void test_format_post_request(void) {
-  grpc_http_header hdr = {const_cast<char*>("x-yz"), const_cast<char*>("abc")};
+  grpc_http_header hdr = {const_cast<char *>("x-yz"),
+                          const_cast<char *>("abc")};
   grpc_httpcli_request req;
   grpc_slice slice;
   char body_bytes[] = "fake body";
   size_t body_len = 9;
 
   memset(&req, 0, sizeof(req));
-  req.host = const_cast<char*>("example.com");
-  req.http.path = const_cast<char*>("/index.html");
+  req.host = const_cast<char *>("example.com");
+  req.http.path = const_cast<char *>("/index.html");
   req.http.hdr_count = 1;
   req.http.hdrs = &hdr;
 
@@ -79,13 +81,14 @@ static void test_format_post_request(void) {
 }
 
 static void test_format_post_request_no_body(void) {
-  grpc_http_header hdr = {const_cast<char*>("x-yz"), const_cast<char*>("abc")};
+  grpc_http_header hdr = {const_cast<char *>("x-yz"),
+                          const_cast<char *>("abc")};
   grpc_httpcli_request req;
   grpc_slice slice;
 
   memset(&req, 0, sizeof(req));
-  req.host = const_cast<char*>("example.com");
-  req.http.path = const_cast<char*>("/index.html");
+  req.host = const_cast<char *>("example.com");
+  req.http.path = const_cast<char *>("/index.html");
   req.http.hdr_count = 1;
   req.http.hdrs = &hdr;
 
@@ -110,13 +113,13 @@ static void test_format_post_request_content_type_override(void) {
   char body_bytes[] = "fake%20body";
   size_t body_len = 11;
 
-  hdrs[0].key = const_cast<char*>("x-yz");
-  hdrs[0].value = const_cast<char*>("abc");
-  hdrs[1].key = const_cast<char*>("Content-Type");
-  hdrs[1].value = const_cast<char*>("application/x-www-form-urlencoded");
+  hdrs[0].key = const_cast<char *>("x-yz");
+  hdrs[0].value = const_cast<char *>("abc");
+  hdrs[1].key = const_cast<char *>("Content-Type");
+  hdrs[1].value = const_cast<char *>("application/x-www-form-urlencoded");
   memset(&req, 0, sizeof(req));
-  req.host = const_cast<char*>("example.com");
-  req.http.path = const_cast<char*>("/index.html");
+  req.host = const_cast<char *>("example.com");
+  req.http.path = const_cast<char *>("/index.html");
   req.http.hdr_count = 2;
   req.http.hdrs = hdrs;
 
@@ -137,7 +140,7 @@ static void test_format_post_request_content_type_override(void) {
   grpc_slice_unref(slice);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 

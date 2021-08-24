@@ -36,7 +36,7 @@ uint32_t grpc_chttp2_hpack_varint_length(uint32_t tail_value) {
   }
 }
 
-void grpc_chttp2_hpack_write_varint_tail(uint32_t tail_value, uint8_t* target,
+void grpc_chttp2_hpack_write_varint_tail(uint32_t tail_value, uint8_t *target,
                                          uint32_t tail_length) {
   switch (tail_length) {
     case 5:

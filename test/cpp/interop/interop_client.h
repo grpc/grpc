@@ -30,8 +30,8 @@ namespace grpc {
 namespace testing {
 
 // Function pointer for custom checks.
-typedef std::function<void(const InteropClientContextInspector&,
-                           const SimpleRequest*, const SimpleResponse*)>
+typedef std::function<void(const InteropClientContextInspector &,
+                           const SimpleRequest *, const SimpleResponse *)>
     CheckerFn;
 
 typedef std::function<std::shared_ptr<Channel>(void)> ChannelCreationFunc;
@@ -47,7 +47,7 @@ class InteropClient {
                          bool do_not_abort_on_transient_failures);
   ~InteropClient() {}
 
-  void Reset(const std::shared_ptr<Channel>& channel);
+  void Reset(const std::shared_ptr<Channel> &channel);
 
   bool DoEmpty();
   bool DoLargeUnary();
@@ -89,16 +89,16 @@ class InteropClient {
 
   // Auth tests.
   // username is a string containing the user email
-  bool DoJwtTokenCreds(const std::string& username);
-  bool DoComputeEngineCreds(const std::string& default_service_account,
-                            const std::string& oauth_scope);
+  bool DoJwtTokenCreds(const std::string &username);
+  bool DoComputeEngineCreds(const std::string &default_service_account,
+                            const std::string &oauth_scope);
   // username the GCE default service account email
-  bool DoOauth2AuthToken(const std::string& username,
-                         const std::string& oauth_scope);
+  bool DoOauth2AuthToken(const std::string &username,
+                         const std::string &oauth_scope);
   // username is a string containing the user email
-  bool DoPerRpcCreds(const std::string& json_key);
+  bool DoPerRpcCreds(const std::string &json_key);
   // default_service_account is the GCE default service account email
-  bool DoGoogleDefaultCredentials(const std::string& default_service_account);
+  bool DoGoogleDefaultCredentials(const std::string &default_service_account);
 
  private:
   class ServiceStub {
@@ -108,8 +108,8 @@ class InteropClient {
     ServiceStub(ChannelCreationFunc channel_creation_func,
                 bool new_stub_every_call);
 
-    TestService::Stub* Get();
-    UnimplementedService::Stub* GetUnimplementedServiceStub();
+    TestService::Stub *Get();
+    UnimplementedService::Stub *GetUnimplementedServiceStub();
 
     // forces channel to be recreated.
     void ResetChannel();
@@ -123,15 +123,15 @@ class InteropClient {
                                 // Get() call
   };
 
-  bool PerformLargeUnary(SimpleRequest* request, SimpleResponse* response);
+  bool PerformLargeUnary(SimpleRequest *request, SimpleResponse *response);
 
   /// Run \a custom_check_fn as an additional check.
-  bool PerformLargeUnary(SimpleRequest* request, SimpleResponse* response,
-                         const CheckerFn& custom_checks_fn);
-  bool AssertStatusOk(const Status& s,
-                      const std::string& optional_debug_string);
-  bool AssertStatusCode(const Status& s, StatusCode expected_code,
-                        const std::string& optional_debug_string);
+  bool PerformLargeUnary(SimpleRequest *request, SimpleResponse *response,
+                         const CheckerFn &custom_checks_fn);
+  bool AssertStatusOk(const Status &s,
+                      const std::string &optional_debug_string);
+  bool AssertStatusCode(const Status &s, StatusCode expected_code,
+                        const std::string &optional_debug_string);
   bool TransientFailureOrAbort();
 
   std::tuple<bool, int32_t, std::string> PerformOneSoakTestIteration(

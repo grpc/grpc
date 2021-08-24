@@ -29,14 +29,14 @@
 gpr_mu g_mu;
 gpr_cv g_cv;
 
-static void inc_int_cb(void* a, grpc_error_handle /*error*/) {
+static void inc_int_cb(void *a, grpc_error_handle /*error*/) {
   gpr_mu_lock(&g_mu);
-  ++*static_cast<int*>(a);
+  ++*static_cast<int *>(a);
   gpr_cv_signal(&g_cv);
   gpr_mu_unlock(&g_mu);
 }
 
-static void assert_counter_becomes(int* ctr, int value) {
+static void assert_counter_becomes(int *ctr, int value) {
   gpr_mu_lock(&g_mu);
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   while (*ctr != value) {
@@ -45,48 +45,48 @@ static void assert_counter_becomes(int* ctr, int value) {
   gpr_mu_unlock(&g_mu);
 }
 
-static void set_event_cb(void* a, grpc_error_handle /*error*/) {
-  gpr_event_set(static_cast<gpr_event*>(a), reinterpret_cast<void*>(1));
+static void set_event_cb(void *a, grpc_error_handle /*error*/) {
+  gpr_event_set(static_cast<gpr_event *>(a), reinterpret_cast<void *>(1));
 }
-grpc_closure* set_event(gpr_event* ev) {
+grpc_closure *set_event(gpr_event *ev) {
   return GRPC_CLOSURE_CREATE(set_event_cb, ev, grpc_schedule_on_exec_ctx);
 }
 
 typedef struct {
   size_t size;
-  grpc_resource_user* resource_user;
-  grpc_closure* then;
+  grpc_resource_user *resource_user;
+  grpc_closure *then;
 } reclaimer_args;
 
-static void reclaimer_cb(void* args, grpc_error_handle error) {
+static void reclaimer_cb(void *args, grpc_error_handle error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  reclaimer_args* a = static_cast<reclaimer_args*>(args);
+  reclaimer_args *a = static_cast<reclaimer_args *>(args);
   grpc_resource_user_free(a->resource_user, a->size);
   grpc_resource_user_finish_reclamation(a->resource_user);
   grpc_core::Closure::Run(DEBUG_LOCATION, a->then, GRPC_ERROR_NONE);
   gpr_free(a);
 }
 
-grpc_closure* make_reclaimer(grpc_resource_user* resource_user, size_t size,
-                             grpc_closure* then) {
-  reclaimer_args* a = static_cast<reclaimer_args*>(gpr_malloc(sizeof(*a)));
+grpc_closure *make_reclaimer(grpc_resource_user *resource_user, size_t size,
+                             grpc_closure *then) {
+  reclaimer_args *a = static_cast<reclaimer_args *>(gpr_malloc(sizeof(*a)));
   a->size = size;
   a->resource_user = resource_user;
   a->then = then;
   return GRPC_CLOSURE_CREATE(reclaimer_cb, a, grpc_schedule_on_exec_ctx);
 }
 
-static void unused_reclaimer_cb(void* arg, grpc_error_handle error) {
+static void unused_reclaimer_cb(void *arg, grpc_error_handle error) {
   GPR_ASSERT(error == GRPC_ERROR_CANCELLED);
-  grpc_core::Closure::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(arg),
+  grpc_core::Closure::Run(DEBUG_LOCATION, static_cast<grpc_closure *>(arg),
                           GRPC_ERROR_NONE);
 }
-grpc_closure* make_unused_reclaimer(grpc_closure* then) {
+grpc_closure *make_unused_reclaimer(grpc_closure *then) {
   return GRPC_CLOSURE_CREATE(unused_reclaimer_cb, then,
                              grpc_schedule_on_exec_ctx);
 }
 
-static void destroy_user(grpc_resource_user* usr) {
+static void destroy_user(grpc_resource_user *usr) {
   grpc_core::ExecCtx exec_ctx;
   grpc_resource_user_unref(usr);
 }
@@ -98,7 +98,7 @@ static void test_no_op(void) {
 
 static void test_resize_then_destroy(void) {
   gpr_log(GPR_INFO, "** test_resize_then_destroy **");
-  grpc_resource_quota* q =
+  grpc_resource_quota *q =
       grpc_resource_quota_create("test_resize_then_destroy");
   grpc_resource_quota_resize(q, 1024 * 1024);
   grpc_resource_quota_unref(q);
@@ -106,19 +106,19 @@ static void test_resize_then_destroy(void) {
 
 static void test_resource_user_no_op(void) {
   gpr_log(GPR_INFO, "** test_resource_user_no_op **");
-  grpc_resource_quota* q =
+  grpc_resource_quota *q =
       grpc_resource_quota_create("test_resource_user_no_op");
-  grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
+  grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
   grpc_resource_quota_unref(q);
   destroy_user(usr);
 }
 
 static void test_instant_alloc_then_free(void) {
   gpr_log(GPR_INFO, "** test_instant_alloc_then_free **");
-  grpc_resource_quota* q =
+  grpc_resource_quota *q =
       grpc_resource_quota_create("test_instant_alloc_then_free");
   grpc_resource_quota_resize(q, 1024 * 1024);
-  grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
+  grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
   {
     grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, nullptr));
@@ -133,10 +133,10 @@ static void test_instant_alloc_then_free(void) {
 
 static void test_instant_alloc_free_pair(void) {
   gpr_log(GPR_INFO, "** test_instant_alloc_free_pair **");
-  grpc_resource_quota* q =
+  grpc_resource_quota *q =
       grpc_resource_quota_create("test_instant_alloc_free_pair");
   grpc_resource_quota_resize(q, 1024 * 1024);
-  grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
+  grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
   {
     grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, nullptr));
@@ -148,10 +148,10 @@ static void test_instant_alloc_free_pair(void) {
 
 static void test_simple_async_alloc(void) {
   gpr_log(GPR_INFO, "** test_simple_async_alloc **");
-  grpc_resource_quota* q =
+  grpc_resource_quota *q =
       grpc_resource_quota_create("test_simple_async_alloc");
   grpc_resource_quota_resize(q, 1024 * 1024);
-  grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
+  grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
   {
     gpr_event ev;
     gpr_event_init(&ev);
@@ -177,10 +177,10 @@ static void test_simple_async_alloc(void) {
 
 static void test_async_alloc_blocked_by_size(void) {
   gpr_log(GPR_INFO, "** test_async_alloc_blocked_by_size **");
-  grpc_resource_quota* q =
+  grpc_resource_quota *q =
       grpc_resource_quota_create("test_async_alloc_blocked_by_size");
   grpc_resource_quota_resize(q, 1);
-  grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
+  grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
   gpr_event ev;
   gpr_event_init(&ev);
   {
@@ -203,10 +203,10 @@ static void test_async_alloc_blocked_by_size(void) {
 
 static void test_scavenge(void) {
   gpr_log(GPR_INFO, "** test_scavenge **");
-  grpc_resource_quota* q = grpc_resource_quota_create("test_scavenge");
+  grpc_resource_quota *q = grpc_resource_quota_create("test_scavenge");
   grpc_resource_quota_resize(q, 1024);
-  grpc_resource_user* usr1 = grpc_resource_user_create(q, "usr1");
-  grpc_resource_user* usr2 = grpc_resource_user_create(q, "usr2");
+  grpc_resource_user *usr1 = grpc_resource_user_create(q, "usr1");
+  grpc_resource_user *usr2 = grpc_resource_user_create(q, "usr2");
   {
     gpr_event ev;
     gpr_event_init(&ev);
@@ -240,10 +240,10 @@ static void test_scavenge(void) {
 
 static void test_scavenge_blocked(void) {
   gpr_log(GPR_INFO, "** test_scavenge_blocked **");
-  grpc_resource_quota* q = grpc_resource_quota_create("test_scavenge_blocked");
+  grpc_resource_quota *q = grpc_resource_quota_create("test_scavenge_blocked");
   grpc_resource_quota_resize(q, 1024);
-  grpc_resource_user* usr1 = grpc_resource_user_create(q, "usr1");
-  grpc_resource_user* usr2 = grpc_resource_user_create(q, "usr2");
+  grpc_resource_user *usr1 = grpc_resource_user_create(q, "usr1");
+  grpc_resource_user *usr2 = grpc_resource_user_create(q, "usr2");
   gpr_event ev;
   {
     gpr_event_init(&ev);
@@ -279,10 +279,10 @@ static void test_scavenge_blocked(void) {
 
 static void test_blocked_until_scheduled_reclaim(void) {
   gpr_log(GPR_INFO, "** test_blocked_until_scheduled_reclaim **");
-  grpc_resource_quota* q =
+  grpc_resource_quota *q =
       grpc_resource_quota_create("test_blocked_until_scheduled_reclaim");
   grpc_resource_quota_resize(q, 1024);
-  grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
+  grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
   {
     gpr_event ev;
     gpr_event_init(&ev);
@@ -321,11 +321,11 @@ static void test_blocked_until_scheduled_reclaim(void) {
 
 static void test_blocked_until_scheduled_reclaim_and_scavenge(void) {
   gpr_log(GPR_INFO, "** test_blocked_until_scheduled_reclaim_and_scavenge **");
-  grpc_resource_quota* q = grpc_resource_quota_create(
+  grpc_resource_quota *q = grpc_resource_quota_create(
       "test_blocked_until_scheduled_reclaim_and_scavenge");
   grpc_resource_quota_resize(q, 1024);
-  grpc_resource_user* usr1 = grpc_resource_user_create(q, "usr1");
-  grpc_resource_user* usr2 = grpc_resource_user_create(q, "usr2");
+  grpc_resource_user *usr1 = grpc_resource_user_create(q, "usr1");
+  grpc_resource_user *usr2 = grpc_resource_user_create(q, "usr2");
   {
     gpr_event ev;
     gpr_event_init(&ev);
@@ -366,10 +366,10 @@ static void test_blocked_until_scheduled_reclaim_and_scavenge(void) {
 
 static void test_blocked_until_scheduled_destructive_reclaim(void) {
   gpr_log(GPR_INFO, "** test_blocked_until_scheduled_destructive_reclaim **");
-  grpc_resource_quota* q = grpc_resource_quota_create(
+  grpc_resource_quota *q = grpc_resource_quota_create(
       "test_blocked_until_scheduled_destructive_reclaim");
   grpc_resource_quota_resize(q, 1024);
-  grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
+  grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
   {
     gpr_event ev;
     gpr_event_init(&ev);
@@ -409,10 +409,10 @@ static void test_blocked_until_scheduled_destructive_reclaim(void) {
 
 static void test_unused_reclaim_is_cancelled(void) {
   gpr_log(GPR_INFO, "** test_unused_reclaim_is_cancelled **");
-  grpc_resource_quota* q =
+  grpc_resource_quota *q =
       grpc_resource_quota_create("test_unused_reclaim_is_cancelled");
   grpc_resource_quota_resize(q, 1024);
-  grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
+  grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
   gpr_event benign_done;
   gpr_event_init(&benign_done);
   gpr_event destructive_done;
@@ -441,10 +441,10 @@ static void test_unused_reclaim_is_cancelled(void) {
 
 static void test_benign_reclaim_is_preferred(void) {
   gpr_log(GPR_INFO, "** test_benign_reclaim_is_preferred **");
-  grpc_resource_quota* q =
+  grpc_resource_quota *q =
       grpc_resource_quota_create("test_benign_reclaim_is_preferred");
   grpc_resource_quota_resize(q, 1024);
-  grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
+  grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
   gpr_event benign_done;
   gpr_event_init(&benign_done);
   gpr_event destructive_done;
@@ -501,10 +501,10 @@ static void test_benign_reclaim_is_preferred(void) {
 
 static void test_multiple_reclaims_can_be_triggered(void) {
   gpr_log(GPR_INFO, "** test_multiple_reclaims_can_be_triggered **");
-  grpc_resource_quota* q =
+  grpc_resource_quota *q =
       grpc_resource_quota_create("test_multiple_reclaims_can_be_triggered");
   grpc_resource_quota_resize(q, 1024);
-  grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
+  grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
   gpr_event benign_done;
   gpr_event_init(&benign_done);
   gpr_event destructive_done;
@@ -562,10 +562,10 @@ static void test_multiple_reclaims_can_be_triggered(void) {
 static void test_resource_user_stays_allocated_until_memory_released(void) {
   gpr_log(GPR_INFO,
           "** test_resource_user_stays_allocated_until_memory_released **");
-  grpc_resource_quota* q = grpc_resource_quota_create(
+  grpc_resource_quota *q = grpc_resource_quota_create(
       "test_resource_user_stays_allocated_until_memory_released");
   grpc_resource_quota_resize(q, 1024 * 1024);
-  grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
+  grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
   {
     grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, nullptr));
@@ -588,12 +588,12 @@ test_resource_user_stays_allocated_and_reclaimers_unrun_until_memory_released(
           "** "
           "test_resource_user_stays_allocated_and_reclaimers_unrun_until_"
           "memory_released **");
-  grpc_resource_quota* q = grpc_resource_quota_create(
+  grpc_resource_quota *q = grpc_resource_quota_create(
       "test_resource_user_stays_allocated_and_reclaimers_unrun_until_memory_"
       "released");
   grpc_resource_quota_resize(q, 1024);
   for (int i = 0; i < 10; i++) {
-    grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
+    grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
     gpr_event reclaimer_cancelled;
     gpr_event_init(&reclaimer_cancelled);
     {
@@ -639,10 +639,10 @@ test_resource_user_stays_allocated_and_reclaimers_unrun_until_memory_released(
 
 static void test_reclaimers_can_be_posted_repeatedly(void) {
   gpr_log(GPR_INFO, "** test_reclaimers_can_be_posted_repeatedly **");
-  grpc_resource_quota* q =
+  grpc_resource_quota *q =
       grpc_resource_quota_create("test_reclaimers_can_be_posted_repeatedly");
   grpc_resource_quota_resize(q, 1024);
-  grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
+  grpc_resource_user *usr = grpc_resource_user_create(q, "usr");
   {
     gpr_event allocated;
     gpr_event_init(&allocated);
@@ -687,9 +687,9 @@ static void test_reclaimers_can_be_posted_repeatedly(void) {
 
 static void test_one_slice(void) {
   gpr_log(GPR_INFO, "** test_one_slice **");
-  grpc_resource_quota* q = grpc_resource_quota_create("test_one_slice");
+  grpc_resource_quota *q = grpc_resource_quota_create("test_one_slice");
   grpc_resource_quota_resize(q, 1024);
-  grpc_slice_allocator* alloc = grpc_slice_allocator_create(q, "usr");
+  grpc_slice_allocator *alloc = grpc_slice_allocator_create(q, "usr");
   int num_allocs = 0;
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -712,13 +712,13 @@ static void test_one_slice(void) {
 
 static void test_one_slice_through_slice_allocator_factory(void) {
   gpr_log(GPR_INFO, "** test_one_slice_through_slice_allocator_factory **");
-  grpc_resource_quota* resource_quota = grpc_resource_quota_create(
+  grpc_resource_quota *resource_quota = grpc_resource_quota_create(
       "test_one_slice_through_slice_allocator_factory");
   int num_allocs = 0;
   grpc_resource_quota_resize(resource_quota, 1024);
-  grpc_slice_allocator_factory* slice_allocator_factory =
+  grpc_slice_allocator_factory *slice_allocator_factory =
       grpc_slice_allocator_factory_create(resource_quota);
-  grpc_slice_allocator* slice_allocator =
+  grpc_slice_allocator *slice_allocator =
       grpc_slice_allocator_factory_create_slice_allocator(
           slice_allocator_factory, "usr");
   grpc_slice_buffer buffer;
@@ -743,10 +743,10 @@ static void test_one_slice_through_slice_allocator_factory(void) {
 static void test_slice_allocator_pressure_adjusted_allocation() {
   gpr_log(GPR_INFO, "** test_slice_allocator_pressure_adjusted_allocation **");
   // Quota large enough to avoid the 1/16 maximum allocation limit.
-  grpc_resource_quota* resource_quota = grpc_resource_quota_create(
+  grpc_resource_quota *resource_quota = grpc_resource_quota_create(
       "test_one_slice_through_slice_allocator_factory");
   grpc_resource_quota_resize(resource_quota, 32 * 1024);
-  grpc_resource_user* black_hole_resource_user =
+  grpc_resource_user *black_hole_resource_user =
       grpc_resource_user_create(resource_quota, "black hole");
   {
     // Consume ~95% of the quota
@@ -756,7 +756,7 @@ static void test_slice_allocator_pressure_adjusted_allocation() {
   GPR_ASSERT(grpc_resource_quota_get_memory_pressure(resource_quota) > 0.95);
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
-  grpc_slice_allocator* constrained_allocator =
+  grpc_slice_allocator *constrained_allocator =
       grpc_slice_allocator_create(resource_quota, "constrained user");
   {
     // Attempt to get 512 bytes
@@ -764,7 +764,7 @@ static void test_slice_allocator_pressure_adjusted_allocation() {
     GPR_ASSERT(!grpc_slice_allocator_allocate(
         constrained_allocator, 2 * 1024, 1,
         grpc_slice_allocator_intent::kReadBuffer, &buffer,
-        [](void*, grpc_error_handle) {}, nullptr));
+        [](void *, grpc_error_handle) {}, nullptr));
   }
   grpc_slice slice = grpc_slice_buffer_take_first(&buffer);
   GPR_ASSERT(grpc_refcounted_slice_length(slice) < 2 * 1024);
@@ -782,17 +782,17 @@ static void test_slice_allocator_pressure_adjusted_allocation() {
 
 static void test_slice_allocator_capped_allocation() {
   gpr_log(GPR_INFO, "** test_slice_allocator_pressure_adjusted_allocation **");
-  grpc_resource_quota* resource_quota = grpc_resource_quota_create(
+  grpc_resource_quota *resource_quota = grpc_resource_quota_create(
       "test_one_slice_through_slice_allocator_factory");
   grpc_resource_quota_resize(resource_quota, 32 * 1024);
   grpc_arg to_add[2];
-  grpc_channel_args* ch_args;
+  grpc_channel_args *ch_args;
   to_add[0] = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE), 1024);
+      const_cast<char *>(GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE), 1024);
   to_add[1] = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE), 2048);
+      const_cast<char *>(GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE), 2048);
   ch_args = grpc_channel_args_copy_and_add(nullptr, to_add, 2);
-  grpc_slice_allocator* slice_allocator =
+  grpc_slice_allocator *slice_allocator =
       grpc_slice_allocator_create(resource_quota, "capped user", ch_args);
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -801,7 +801,7 @@ static void test_slice_allocator_capped_allocation() {
     grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(!grpc_slice_allocator_allocate(
         slice_allocator, 4 * 1024, 1, grpc_slice_allocator_intent::kReadBuffer,
-        &buffer, [](void*, grpc_error_handle) {}, nullptr));
+        &buffer, [](void *, grpc_error_handle) {}, nullptr));
   }
   grpc_slice max_slice = grpc_slice_buffer_take_first(&buffer);
   GPR_ASSERT(grpc_refcounted_slice_length(max_slice) == 2048);
@@ -810,7 +810,7 @@ static void test_slice_allocator_capped_allocation() {
     grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(!grpc_slice_allocator_allocate(
         slice_allocator, 512, 1, grpc_slice_allocator_intent::kReadBuffer,
-        &buffer, [](void*, grpc_error_handle) {}, nullptr));
+        &buffer, [](void *, grpc_error_handle) {}, nullptr));
   }
   grpc_slice min_slice = grpc_slice_buffer_take_first(&buffer);
   GPR_ASSERT(grpc_refcounted_slice_length(min_slice) == 1024);
@@ -827,10 +827,10 @@ static void test_slice_allocator_capped_allocation() {
 
 static void test_one_slice_deleted_late(void) {
   gpr_log(GPR_INFO, "** test_one_slice_deleted_late **");
-  grpc_resource_quota* q =
+  grpc_resource_quota *q =
       grpc_resource_quota_create("test_one_slice_deleted_late");
   grpc_resource_quota_resize(q, 1024);
-  grpc_slice_allocator* alloc = grpc_slice_allocator_create(q, "usr");
+  grpc_slice_allocator *alloc = grpc_slice_allocator_create(q, "usr");
   int num_allocs = 0;
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -854,17 +854,17 @@ static void test_one_slice_deleted_late(void) {
 
 static void test_resize_to_zero(void) {
   gpr_log(GPR_INFO, "** test_resize_to_zero **");
-  grpc_resource_quota* q = grpc_resource_quota_create("test_resize_to_zero");
+  grpc_resource_quota *q = grpc_resource_quota_create("test_resize_to_zero");
   grpc_resource_quota_resize(q, 0);
   grpc_resource_quota_unref(q);
 }
 
 static void test_negative_rq_free_pool(void) {
   gpr_log(GPR_INFO, "** test_negative_rq_free_pool **");
-  grpc_resource_quota* q =
+  grpc_resource_quota *q =
       grpc_resource_quota_create("test_negative_rq_free_pool");
   grpc_resource_quota_resize(q, 1024);
-  grpc_slice_allocator* alloc = grpc_slice_allocator_create(q, "usr");
+  grpc_slice_allocator *alloc = grpc_slice_allocator_create(q, "usr");
   int num_allocs = 0;
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -897,9 +897,9 @@ static void test_negative_rq_free_pool(void) {
 static void test_thread_limit() {
   grpc_core::ExecCtx exec_ctx;
 
-  grpc_resource_quota* rq = grpc_resource_quota_create("test_thread_limit");
-  grpc_resource_user* ru1 = grpc_resource_user_create(rq, "ru1");
-  grpc_resource_user* ru2 = grpc_resource_user_create(rq, "ru2");
+  grpc_resource_quota *rq = grpc_resource_quota_create("test_thread_limit");
+  grpc_resource_user *ru1 = grpc_resource_user_create(rq, "ru1");
+  grpc_resource_user *ru2 = grpc_resource_user_create(rq, "ru2");
 
   // Max threads = 100
   grpc_resource_quota_set_max_threads(rq, 100);
@@ -941,10 +941,10 @@ static void test_thread_limit() {
 static void test_thread_maxquota_change() {
   grpc_core::ExecCtx exec_ctx;
 
-  grpc_resource_quota* rq =
+  grpc_resource_quota *rq =
       grpc_resource_quota_create("test_thread_maxquota_change");
-  grpc_resource_user* ru1 = grpc_resource_user_create(rq, "ru1");
-  grpc_resource_user* ru2 = grpc_resource_user_create(rq, "ru2");
+  grpc_resource_user *ru1 = grpc_resource_user_create(rq, "ru1");
+  grpc_resource_user *ru2 = grpc_resource_user_create(rq, "ru2");
 
   // Max threads = 100
   grpc_resource_quota_set_max_threads(rq, 100);
@@ -985,7 +985,7 @@ static void test_thread_maxquota_change() {
   grpc_resource_quota_unref(rq);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   gpr_mu_init(&g_mu);

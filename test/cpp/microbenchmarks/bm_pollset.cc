@@ -41,15 +41,15 @@
 #include <unistd.h>
 #endif
 
-static void shutdown_ps(void* ps, grpc_error_handle /*error*/) {
-  grpc_pollset_destroy(static_cast<grpc_pollset*>(ps));
+static void shutdown_ps(void *ps, grpc_error_handle /*error*/) {
+  grpc_pollset_destroy(static_cast<grpc_pollset *>(ps));
 }
 
-static void BM_CreateDestroyPollset(benchmark::State& state) {
+static void BM_CreateDestroyPollset(benchmark::State &state) {
   TrackCounters track_counters;
   size_t ps_sz = grpc_pollset_size();
-  grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_malloc(ps_sz));
-  gpr_mu* mu;
+  grpc_pollset *ps = static_cast<grpc_pollset *>(gpr_malloc(ps_sz));
+  gpr_mu *mu;
   grpc_core::ExecCtx exec_ctx;
   grpc_closure shutdown_ps_closure;
   GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
@@ -69,7 +69,7 @@ static void BM_CreateDestroyPollset(benchmark::State& state) {
 BENCHMARK(BM_CreateDestroyPollset);
 
 #ifdef GRPC_LINUX_MULTIPOLL_WITH_EPOLL
-static void BM_PollEmptyPollset_SpeedOfLight(benchmark::State& state) {
+static void BM_PollEmptyPollset_SpeedOfLight(benchmark::State &state) {
   // equivalent to BM_PollEmptyPollset, but just use the OS primitives to guage
   // what the speed of light would be if we abstracted perfectly
   TrackCounters track_counters;
@@ -77,7 +77,7 @@ static void BM_PollEmptyPollset_SpeedOfLight(benchmark::State& state) {
   GPR_ASSERT(epfd != -1);
   size_t nev = state.range(0);
   size_t nfd = state.range(1);
-  epoll_event* ev = new epoll_event[nev];
+  epoll_event *ev = new epoll_event[nev];
   std::vector<int> fds;
   for (size_t i = 0; i < nfd; i++) {
     fds.push_back(eventfd(0, 0));
@@ -108,11 +108,11 @@ BENCHMARK(BM_PollEmptyPollset_SpeedOfLight)
     ->Args({1000, 1});
 #endif
 
-static void BM_PollEmptyPollset(benchmark::State& state) {
+static void BM_PollEmptyPollset(benchmark::State &state) {
   TrackCounters track_counters;
   size_t ps_sz = grpc_pollset_size();
-  grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_zalloc(ps_sz));
-  gpr_mu* mu;
+  grpc_pollset *ps = static_cast<grpc_pollset *>(gpr_zalloc(ps_sz));
+  gpr_mu *mu;
   grpc_pollset_init(ps, &mu);
   grpc_core::ExecCtx exec_ctx;
   gpr_mu_lock(mu);
@@ -130,17 +130,17 @@ static void BM_PollEmptyPollset(benchmark::State& state) {
 }
 BENCHMARK(BM_PollEmptyPollset);
 
-static void BM_PollAddFd(benchmark::State& state) {
+static void BM_PollAddFd(benchmark::State &state) {
   TrackCounters track_counters;
   size_t ps_sz = grpc_pollset_size();
-  grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_zalloc(ps_sz));
-  gpr_mu* mu;
+  grpc_pollset *ps = static_cast<grpc_pollset *>(gpr_zalloc(ps_sz));
+  gpr_mu *mu;
   grpc_pollset_init(ps, &mu);
   grpc_core::ExecCtx exec_ctx;
   grpc_wakeup_fd wakeup_fd;
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("wakeup_fd_init", grpc_wakeup_fd_init(&wakeup_fd)));
-  grpc_fd* fd = grpc_fd_create(wakeup_fd.read_fd, "xxx", false);
+  grpc_fd *fd = grpc_fd_create(wakeup_fd.read_fd, "xxx", false);
   for (auto _ : state) {
     grpc_pollset_add_fd(ps, fd);
     grpc_core::ExecCtx::Get()->Flush();
@@ -164,11 +164,11 @@ class TestClosure : public grpc_closure {
 };
 
 template <class F>
-TestClosure* MakeTestClosure(F f) {
+TestClosure *MakeTestClosure(F f) {
   struct C : public TestClosure {
     explicit C(F f) : f_(f) { GRPC_CLOSURE_INIT(this, C::cbfn, this, nullptr); }
-    static void cbfn(void* arg, grpc_error_handle /*error*/) {
-      C* p = static_cast<C*>(arg);
+    static void cbfn(void *arg, grpc_error_handle /*error*/) {
+      C *p = static_cast<C *>(arg);
       p->f_();
     }
     F f_;
@@ -177,7 +177,7 @@ TestClosure* MakeTestClosure(F f) {
 }
 
 #ifdef GRPC_LINUX_MULTIPOLL_WITH_EPOLL
-static void BM_SingleThreadPollOneFd_SpeedOfLight(benchmark::State& state) {
+static void BM_SingleThreadPollOneFd_SpeedOfLight(benchmark::State &state) {
   // equivalent to BM_PollEmptyPollset, but just use the OS primitives to guage
   // what the speed of light would be if we abstracted perfectly
   TrackCounters track_counters;
@@ -210,19 +210,19 @@ static void BM_SingleThreadPollOneFd_SpeedOfLight(benchmark::State& state) {
 BENCHMARK(BM_SingleThreadPollOneFd_SpeedOfLight);
 #endif
 
-static void BM_SingleThreadPollOneFd(benchmark::State& state) {
+static void BM_SingleThreadPollOneFd(benchmark::State &state) {
   TrackCounters track_counters;
   size_t ps_sz = grpc_pollset_size();
-  grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_zalloc(ps_sz));
-  gpr_mu* mu;
+  grpc_pollset *ps = static_cast<grpc_pollset *>(gpr_zalloc(ps_sz));
+  gpr_mu *mu;
   grpc_pollset_init(ps, &mu);
   grpc_core::ExecCtx exec_ctx;
   grpc_wakeup_fd wakeup_fd;
   GRPC_ERROR_UNREF(grpc_wakeup_fd_init(&wakeup_fd));
-  grpc_fd* wakeup = grpc_fd_create(wakeup_fd.read_fd, "wakeup_read", false);
+  grpc_fd *wakeup = grpc_fd_create(wakeup_fd.read_fd, "wakeup_read", false);
   grpc_pollset_add_fd(ps, wakeup);
   bool done = false;
-  TestClosure* continue_closure = MakeTestClosure([&]() {
+  TestClosure *continue_closure = MakeTestClosure([&]() {
     GRPC_ERROR_UNREF(grpc_wakeup_fd_consume_wakeup(&wakeup_fd));
     if (!state.KeepRunning()) {
       done = true;
@@ -258,7 +258,7 @@ namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);

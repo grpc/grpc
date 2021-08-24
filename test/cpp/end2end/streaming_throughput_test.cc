@@ -43,7 +43,7 @@
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 
-const char* kLargeString =
+const char *kLargeString =
     "("
     "To be, or not to be- that is the question:"
     "Whether 'tis nobler in the mind to suffer"
@@ -87,8 +87,8 @@ namespace testing {
 class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   static void BidiStream_Sender(
-      ServerReaderWriter<EchoResponse, EchoRequest>* stream,
-      gpr_atm* should_exit) {
+      ServerReaderWriter<EchoResponse, EchoRequest> *stream,
+      gpr_atm *should_exit) {
     EchoResponse response;
     response.set_message(kLargeString);
     while (gpr_atm_acq_load(should_exit) == static_cast<gpr_atm>(0)) {
@@ -105,8 +105,8 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
 
   // Only implement the one method we will be calling for brevity.
   Status BidiStream(
-      ServerContext* /*context*/,
-      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+      ServerContext * /*context*/,
+      ServerReaderWriter<EchoResponse, EchoRequest> *stream) override {
     EchoRequest request;
     gpr_atm should_exit;
     gpr_atm_rel_store(&should_exit, static_cast<gpr_atm>(0));
@@ -155,7 +155,7 @@ class End2endTest : public ::testing::Test {
   TestServiceImpl service_;
 };
 
-static void Drainer(ClientReaderWriter<EchoRequest, EchoResponse>* reader) {
+static void Drainer(ClientReaderWriter<EchoRequest, EchoResponse> *reader) {
   EchoResponse response;
   while (reader->Read(&response)) {
     // Just drain out the responses as fast as possible.
@@ -185,7 +185,7 @@ TEST_F(End2endTest, StreamingThroughput) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

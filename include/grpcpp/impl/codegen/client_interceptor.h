@@ -49,13 +49,13 @@ class ClientInterceptorFactoryInterface {
   // Returns a pointer to an Interceptor object on successful creation, nullptr
   // otherwise. If nullptr is returned, this server interceptor factory is
   // ignored for the purposes of that RPC.
-  virtual Interceptor* CreateClientInterceptor(ClientRpcInfo* info) = 0;
+  virtual Interceptor *CreateClientInterceptor(ClientRpcInfo *info) = 0;
 };
 }  // namespace experimental
 
 namespace internal {
-extern experimental::ClientInterceptorFactoryInterface*
-    g_global_client_interceptor_factory;
+extern experimental::ClientInterceptorFactoryInterface
+    *g_global_client_interceptor_factory;
 }
 
 /// ClientRpcInfo represents the state of a particular RPC as it
@@ -79,24 +79,24 @@ class ClientRpcInfo {
   ~ClientRpcInfo() {}
 
   // Delete copy constructor but allow default move constructor
-  ClientRpcInfo(const ClientRpcInfo&) = delete;
-  ClientRpcInfo(ClientRpcInfo&&) = default;
+  ClientRpcInfo(const ClientRpcInfo &) = delete;
+  ClientRpcInfo(ClientRpcInfo &&) = default;
 
   // Getter methods
 
   /// Return the fully-specified method name
-  const char* method() const { return method_; }
+  const char *method() const { return method_; }
 
   /// Return an identifying suffix for the client stub, or nullptr if one wasn't
   /// specified.
-  const char* suffix_for_stats() const { return suffix_for_stats_; }
+  const char *suffix_for_stats() const { return suffix_for_stats_; }
 
   /// Return a pointer to the channel on which the RPC is being sent
-  ChannelInterface* channel() { return channel_; }
+  ChannelInterface *channel() { return channel_; }
 
   /// Return a pointer to the underlying ClientContext structure associated
   /// with the RPC to support features that apply to it
-  grpc::ClientContext* client_context() { return ctx_; }
+  grpc::ClientContext *client_context() { return ctx_; }
 
   /// Return the type of the RPC (unary or a streaming flavor)
   Type type() const { return type_; }
@@ -119,9 +119,9 @@ class ClientRpcInfo {
   ClientRpcInfo() = default;
 
   // Constructor will only be called from ClientContext
-  ClientRpcInfo(grpc::ClientContext* ctx, internal::RpcMethod::RpcType type,
-                const char* method, const char* suffix_for_stats,
-                grpc::ChannelInterface* channel)
+  ClientRpcInfo(grpc::ClientContext *ctx, internal::RpcMethod::RpcType type,
+                const char *method, const char *suffix_for_stats,
+                grpc::ChannelInterface *channel)
       : ctx_(ctx),
         type_(static_cast<Type>(type)),
         method_(method),
@@ -130,18 +130,19 @@ class ClientRpcInfo {
 
   // Move assignment should only be used by ClientContext
   // TODO(yashykt): Delete move assignment
-  ClientRpcInfo& operator=(ClientRpcInfo&&) = default;
+  ClientRpcInfo &operator=(ClientRpcInfo &&) = default;
 
   // Runs interceptor at pos \a pos.
   void RunInterceptor(
-      experimental::InterceptorBatchMethods* interceptor_methods, size_t pos) {
+      experimental::InterceptorBatchMethods *interceptor_methods, size_t pos) {
     GPR_CODEGEN_ASSERT(pos < interceptors_.size());
     interceptors_[pos]->Intercept(interceptor_methods);
   }
 
   void RegisterInterceptors(
-      const std::vector<std::unique_ptr<
-          experimental::ClientInterceptorFactoryInterface>>& creators,
+      const std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+          &creators,
       size_t interceptor_pos) {
     if (interceptor_pos > creators.size()) {
       // No interceptors to register
@@ -151,7 +152,7 @@ class ClientRpcInfo {
     //       iterate over a portion of the creators vector.
     for (auto it = creators.begin() + interceptor_pos; it != creators.end();
          ++it) {
-      auto* interceptor = (*it)->CreateClientInterceptor(this);
+      auto *interceptor = (*it)->CreateClientInterceptor(this);
       if (interceptor != nullptr) {
         interceptors_.push_back(
             std::unique_ptr<experimental::Interceptor>(interceptor));
@@ -164,12 +165,12 @@ class ClientRpcInfo {
     }
   }
 
-  grpc::ClientContext* ctx_ = nullptr;
+  grpc::ClientContext *ctx_ = nullptr;
   // TODO(yashykt): make type_ const once move-assignment is deleted
   Type type_{Type::UNKNOWN};
-  const char* method_ = nullptr;
-  const char* suffix_for_stats_ = nullptr;
-  grpc::ChannelInterface* channel_ = nullptr;
+  const char *method_ = nullptr;
+  const char *suffix_for_stats_ = nullptr;
+  grpc::ChannelInterface *channel_ = nullptr;
   std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;
   bool hijacked_ = false;
   size_t hijacked_interceptor_ = 0;
@@ -186,7 +187,7 @@ class ClientRpcInfo {
 // interceptor factory should only be registered once at the start of the
 // process before any gRPC operations have begun.
 void RegisterGlobalClientInterceptorFactory(
-    ClientInterceptorFactoryInterface* factory);
+    ClientInterceptorFactoryInterface *factory);
 
 // For testing purposes only
 void TestOnlyResetGlobalClientInterceptorFactory();

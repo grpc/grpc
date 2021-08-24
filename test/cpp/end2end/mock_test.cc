@@ -64,7 +64,7 @@ namespace testing {
 namespace {
 class FakeClient {
  public:
-  explicit FakeClient(EchoTestService::StubInterface* stub) : stub_(stub) {}
+  explicit FakeClient(EchoTestService::StubInterface *stub) : stub_(stub) {}
 
   void DoEcho() {
     ClientContext context;
@@ -156,23 +156,23 @@ class FakeClient {
     EXPECT_TRUE(s.ok());
   }
 
-  void ResetStub(EchoTestService::StubInterface* stub) { stub_ = stub; }
+  void ResetStub(EchoTestService::StubInterface *stub) { stub_ = stub; }
 
  private:
-  EchoTestService::StubInterface* stub_;
+  EchoTestService::StubInterface *stub_;
 };
 
 class CallbackTestServiceImpl : public EchoTestService::CallbackService {
  public:
-  ServerUnaryReactor* Echo(CallbackServerContext* context,
-                           const EchoRequest* request,
-                           EchoResponse* response) override {
+  ServerUnaryReactor *Echo(CallbackServerContext *context,
+                           const EchoRequest *request,
+                           EchoResponse *response) override {
     // Make the mock service explicitly treat empty input messages as invalid
     // arguments so that we can test various results of status. In general, a
     // mocked service should just use the original service methods, but we are
     // adding this variance in Status return value just to improve coverage in
     // this test.
-    auto* reactor = context->DefaultReactor();
+    auto *reactor = context->DefaultReactor();
     if (request->message().length() > 0) {
       response->set_message(request->message());
       reactor->Finish(Status::OK);
@@ -205,7 +205,7 @@ TEST_F(MockCallbackTest, MockedCallSucceedsWithWait) {
   });
 
   req.set_message("mock 1");
-  auto* reactor = service_.Echo(&ctx, &req, &resp);
+  auto *reactor = service_.Echo(&ctx, &req, &resp);
 
   grpc::internal::MutexLock l(&status.mu);
   while (!status.status.has_value()) {
@@ -227,7 +227,7 @@ TEST_F(MockCallbackTest, MockedCallSucceeds) {
   DefaultReactorTestPeer peer(&ctx);
 
   req.set_message("ha ha, consider yourself mocked.");
-  auto* reactor = service_.Echo(&ctx, &req, &resp);
+  auto *reactor = service_.Echo(&ctx, &req, &resp);
   EXPECT_EQ(reactor, peer.reactor());
   EXPECT_TRUE(peer.test_status_set());
   EXPECT_TRUE(peer.test_status().ok());
@@ -239,7 +239,7 @@ TEST_F(MockCallbackTest, MockedCallFails) {
   EchoResponse resp;
   DefaultReactorTestPeer peer(&ctx);
 
-  auto* reactor = service_.Echo(&ctx, &req, &resp);
+  auto *reactor = service_.Echo(&ctx, &req, &resp);
   EXPECT_EQ(reactor, peer.reactor());
   EXPECT_TRUE(peer.test_status_set());
   EXPECT_EQ(peer.test_status().error_code(), StatusCode::INVALID_ARGUMENT);
@@ -247,15 +247,15 @@ TEST_F(MockCallbackTest, MockedCallFails) {
 
 class TestServiceImpl : public EchoTestService::Service {
  public:
-  Status Echo(ServerContext* /*context*/, const EchoRequest* request,
-              EchoResponse* response) override {
+  Status Echo(ServerContext * /*context*/, const EchoRequest *request,
+              EchoResponse *response) override {
     response->set_message(request->message());
     return Status::OK;
   }
 
-  Status RequestStream(ServerContext* /*context*/,
-                       ServerReader<EchoRequest>* reader,
-                       EchoResponse* response) override {
+  Status RequestStream(ServerContext * /*context*/,
+                       ServerReader<EchoRequest> *reader,
+                       EchoResponse *response) override {
     EchoRequest request;
     std::string resp("");
     while (reader->Read(&request)) {
@@ -266,11 +266,11 @@ class TestServiceImpl : public EchoTestService::Service {
     return Status::OK;
   }
 
-  Status ResponseStream(ServerContext* /*context*/, const EchoRequest* request,
-                        ServerWriter<EchoResponse>* writer) override {
+  Status ResponseStream(ServerContext * /*context*/, const EchoRequest *request,
+                        ServerWriter<EchoResponse> *writer) override {
     EchoResponse response;
     vector<std::string> tokens = split(request->message());
-    for (const std::string& token : tokens) {
+    for (const std::string &token : tokens) {
       response.set_message(token);
       writer->Write(response);
     }
@@ -278,8 +278,8 @@ class TestServiceImpl : public EchoTestService::Service {
   }
 
   Status BidiStream(
-      ServerContext* /*context*/,
-      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+      ServerContext * /*context*/,
+      ServerReaderWriter<EchoResponse, EchoRequest> *stream) override {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
@@ -291,7 +291,7 @@ class TestServiceImpl : public EchoTestService::Service {
   }
 
  private:
-  vector<std::string> split(const std::string& input) {
+  vector<std::string> split(const std::string &input) {
     std::string buff("");
     vector<std::string> result;
 
@@ -428,7 +428,7 @@ TEST_F(MockTest, BidiStream) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

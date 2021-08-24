@@ -27,15 +27,15 @@ namespace testing {
 /// A test-only class to access private members of Channel.
 class ChannelTestPeer {
  public:
-  explicit ChannelTestPeer(Channel* channel) : channel_(channel) {}
+  explicit ChannelTestPeer(Channel *channel) : channel_(channel) {}
 
   /// Provide the gRPC Core channel
-  grpc_channel* channel() const { return channel_->c_channel_; }
+  grpc_channel *channel() const { return channel_->c_channel_; }
   int registered_calls() const;
   int registration_attempts() const;
 
  private:
-  Channel* channel_;  // not owned
+  Channel *channel_;  // not owned
 };
 
 }  // namespace testing

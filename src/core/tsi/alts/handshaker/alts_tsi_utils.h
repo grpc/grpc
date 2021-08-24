@@ -47,7 +47,7 @@ tsi_result alts_tsi_utils_convert_to_tsi_result(grpc_status_code code);
  * It returns a deserialized handshaker response on success and nullptr on
  * failure.
  */
-grpc_gcp_HandshakerResp* alts_tsi_utils_deserialize_response(
-    grpc_byte_buffer* resp_buffer, upb_arena* arena);
+grpc_gcp_HandshakerResp *alts_tsi_utils_deserialize_response(
+    grpc_byte_buffer *resp_buffer, upb_arena *arena);
 
 #endif /* GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_UTILS_H */

@@ -46,18 +46,18 @@ class LoadBalancingPolicyRegistry {
 
   /// Creates an LB policy of the type specified by \a name.
   static OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      const char* name, LoadBalancingPolicy::Args args);
+      const char *name, LoadBalancingPolicy::Args args);
 
   /// Returns true if the LB policy factory specified by \a name exists in this
   /// registry. If the load balancing policy requires a config to be specified
   /// then sets \a requires_config to true.
-  static bool LoadBalancingPolicyExists(const char* name,
-                                        bool* requires_config);
+  static bool LoadBalancingPolicyExists(const char *name,
+                                        bool *requires_config);
 
   /// Returns a parsed object of the load balancing policy to be used from a
   /// LoadBalancingConfig array \a json.
   static RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error_handle* error);
+      const Json &json, grpc_error_handle *error);
 };
 
 }  // namespace grpc_core

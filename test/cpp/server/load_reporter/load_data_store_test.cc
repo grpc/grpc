@@ -48,10 +48,10 @@ class LoadDataStoreTest : public ::testing::Test {
   // Check whether per_balancer_stores contains a store which was originally
   // created for <hostname, lb_id, and load_key>.
   bool PerBalancerStoresContains(
-      const LoadDataStore& load_data_store,
-      const std::set<PerBalancerStore*>* per_balancer_stores,
-      const std::string& hostname, const std::string& lb_id,
-      const std::string& load_key) {
+      const LoadDataStore &load_data_store,
+      const std::set<PerBalancerStore *> *per_balancer_stores,
+      const std::string &hostname, const std::string &lb_id,
+      const std::string &load_key) {
     auto original_per_balancer_store =
         load_data_store.FindPerBalancerStore(hostname, lb_id);
     EXPECT_NE(original_per_balancer_store, nullptr);
@@ -155,7 +155,7 @@ TEST_F(LoadDataStoreTest, OrphanAssignmentIsSticky) {
   active_lb_ids.erase(orphaned_lb_id);
   // Find which LB is assigned the orphaned store.
   std::string assigned_lb_id = "";
-  for (const auto& lb_id : active_lb_ids) {
+  for (const auto &lb_id : active_lb_ids) {
     if (PerBalancerStoresContains(
             load_data_store,
             load_data_store.GetAssignedStores(kHostname1, lb_id), kHostname1,
@@ -169,7 +169,7 @@ TEST_F(LoadDataStoreTest, OrphanAssignmentIsSticky) {
   // orphaned_lb_id shouldn't change.
   for (size_t _ = 0; _ < 10; ++_) {
     std::string lb_id_to_close = "";
-    for (const auto& lb_id : active_lb_ids) {
+    for (const auto &lb_id : active_lb_ids) {
       if (lb_id != assigned_lb_id) {
         lb_id_to_close = lb_id;
         break;
@@ -187,7 +187,7 @@ TEST_F(LoadDataStoreTest, OrphanAssignmentIsSticky) {
   load_data_store.ReportStreamClosed(kHostname1, assigned_lb_id);
   active_lb_ids.erase(assigned_lb_id);
   size_t orphaned_lb_id_occurences = 0;
-  for (const auto& lb_id : active_lb_ids) {
+  for (const auto &lb_id : active_lb_ids) {
     if (PerBalancerStoresContains(
             load_data_store,
             load_data_store.GetAssignedStores(kHostname1, lb_id), kHostname1,
@@ -474,7 +474,7 @@ TEST_F(PerBalancerStoreTest, DataAggregation) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

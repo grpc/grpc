@@ -41,7 +41,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-std::string ReadFile(const std::string& src_path) {
+std::string ReadFile(const std::string &src_path) {
   std::ifstream src;
   src.open(src_path, std::ifstream::in | std::ifstream::binary);
 
@@ -67,7 +67,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   ~DefaultCredentialsProvider() override {}
 
   void AddSecureType(
-      const std::string& type,
+      const std::string &type,
       std::unique_ptr<CredentialTypeProvider> type_provider) override {
     // This clobbers any existing entry for type, except the defaults, which
     // can't be clobbered.
@@ -84,7 +84,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   }
 
   std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-      const std::string& type, ChannelArguments* args) override {
+      const std::string &type, ChannelArguments *args) override {
     if (type == grpc::testing::kInsecureCredentialsType) {
       return InsecureChannelCredentials();
     } else if (type == grpc::testing::kAltsCredentialsType) {
@@ -110,7 +110,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   }
 
   std::shared_ptr<ServerCredentials> GetServerCredentials(
-      const std::string& type) override {
+      const std::string &type) override {
     if (type == grpc::testing::kInsecureCredentialsType) {
       return InsecureServerCredentials();
     } else if (type == grpc::testing::kAltsCredentialsType) {
@@ -161,18 +161,18 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   std::string custom_server_cert_;
 };
 
-CredentialsProvider* g_provider = nullptr;
+CredentialsProvider *g_provider = nullptr;
 
 }  // namespace
 
-CredentialsProvider* GetCredentialsProvider() {
+CredentialsProvider *GetCredentialsProvider() {
   if (g_provider == nullptr) {
     g_provider = new DefaultCredentialsProvider;
   }
   return g_provider;
 }
 
-void SetCredentialsProvider(CredentialsProvider* provider) {
+void SetCredentialsProvider(CredentialsProvider *provider) {
   // For now, forbids overriding provider.
   GPR_ASSERT(g_provider == nullptr);
   g_provider = provider;

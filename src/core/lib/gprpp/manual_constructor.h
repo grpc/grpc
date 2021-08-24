@@ -110,16 +110,16 @@ class PolymorphicManualConstructor {
   // constructors or destructors till C++11.  And, anyway, the whole point of
   // this class is to bypass constructor and destructor.
 
-  BaseType* get() { return reinterpret_cast<BaseType*>(&space_); }
-  const BaseType* get() const {
-    return reinterpret_cast<const BaseType*>(&space_);
+  BaseType *get() { return reinterpret_cast<BaseType *>(&space_); }
+  const BaseType *get() const {
+    return reinterpret_cast<const BaseType *>(&space_);
   }
 
-  BaseType* operator->() { return get(); }
-  const BaseType* operator->() const { return get(); }
+  BaseType *operator->() { return get(); }
+  const BaseType *operator->() const { return get(); }
 
-  BaseType& operator*() { return *get(); }
-  const BaseType& operator*() const { return *get(); }
+  BaseType &operator*() { return *get(); }
+  const BaseType &operator*() const { return *get(); }
 
   template <class DerivedType>
   void Init() {
@@ -133,7 +133,7 @@ class PolymorphicManualConstructor {
   // not zero-initialization (i.e it behaves the same as "new Type;", not
   // "new Type();"), so it will leave non-class types uninitialized.
   template <class DerivedType, typename... Ts>
-  void Init(Ts&&... args) {
+  void Init(Ts &&...args) {
     FinishInit(new (&space_) DerivedType(std::forward<Ts>(args)...));
   }
 
@@ -142,11 +142,11 @@ class PolymorphicManualConstructor {
   //   ManualConstructor<std::vector<int>> v;
   //   v.Init({1, 2, 3});
   template <class DerivedType>
-  void Init(const DerivedType& x) {
+  void Init(const DerivedType &x) {
     FinishInit(new (&space_) DerivedType(x));
   }
   template <class DerivedType>
-  void Init(DerivedType&& x) {
+  void Init(DerivedType &&x) {
     FinishInit(new (&space_) DerivedType(std::forward<DerivedType>(x)));
   }
 
@@ -154,11 +154,11 @@ class PolymorphicManualConstructor {
 
  private:
   template <class DerivedType>
-  void FinishInit(DerivedType* p) {
+  void FinishInit(DerivedType *p) {
     static_assert(
         manual_ctor_impl::is_one_of<DerivedType, DerivedTypes...>::value,
         "DerivedType must be one of the predeclared DerivedTypes");
-    GPR_ASSERT(static_cast<BaseType*>(p) == p);
+    GPR_ASSERT(static_cast<BaseType *>(p) == p);
   }
 
   typename std::aligned_storage<
@@ -175,14 +175,14 @@ class ManualConstructor {
   // constructors or destructors till C++11.  And, anyway, the whole point of
   // this class is to bypass constructor and destructor.
 
-  Type* get() { return reinterpret_cast<Type*>(&space_); }
-  const Type* get() const { return reinterpret_cast<const Type*>(&space_); }
+  Type *get() { return reinterpret_cast<Type *>(&space_); }
+  const Type *get() const { return reinterpret_cast<const Type *>(&space_); }
 
-  Type* operator->() { return get(); }
-  const Type* operator->() const { return get(); }
+  Type *operator->() { return get(); }
+  const Type *operator->() const { return get(); }
 
-  Type& operator*() { return *get(); }
-  const Type& operator*() const { return *get(); }
+  Type &operator*() { return *get(); }
+  const Type &operator*() const { return *get(); }
 
   void Init() { Construct(get()); }
 
@@ -193,7 +193,7 @@ class ManualConstructor {
   // not zero-initialization (i.e it behaves the same as "new Type;", not
   // "new Type();"), so it will leave non-class types uninitialized.
   template <typename... Ts>
-  void Init(Ts&&... args) {
+  void Init(Ts &&...args) {
     Construct(get(), std::forward<Ts>(args)...);
   }
 
@@ -201,8 +201,8 @@ class ManualConstructor {
   // Enables usage like this:
   //   ManualConstructor<std::vector<int>> v;
   //   v.Init({1, 2, 3});
-  void Init(const Type& x) { Construct(get(), x); }
-  void Init(Type&& x) { Construct(get(), std::forward<Type>(x)); }
+  void Init(const Type &x) { Construct(get(), x); }
+  void Init(Type &&x) { Construct(get(), std::forward<Type>(x)); }
 
   void Destroy() { Destruct(get()); }
 

@@ -49,13 +49,13 @@ namespace {
 // A gRPC server, running in its own thread.
 class ServerThread {
  public:
-  explicit ServerThread(const char* address) : address_(address) {}
+  explicit ServerThread(const char *address) : address_(address) {}
 
   void Start() {
     // Start server with 1-second handshake timeout.
     grpc_arg arg;
     arg.type = GRPC_ARG_INTEGER;
-    arg.key = const_cast<char*>(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS);
+    arg.key = const_cast<char *>(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS);
     arg.value.integer = 1000;
     grpc_channel_args args = {1, &arg};
     server_ = grpc_server_create(&args, nullptr);
@@ -68,7 +68,7 @@ class ServerThread {
   }
 
   void Shutdown() {
-    grpc_completion_queue* shutdown_cq =
+    grpc_completion_queue *shutdown_cq =
         grpc_completion_queue_create_for_pluck(nullptr);
     grpc_server_shutdown_and_notify(server_, shutdown_cq, nullptr);
     GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, nullptr,
@@ -89,9 +89,9 @@ class ServerThread {
     ASSERT_EQ(GRPC_QUEUE_SHUTDOWN, ev.type);
   }
 
-  const char* address_;  // Do not own.
-  grpc_server* server_ = nullptr;
-  grpc_completion_queue* cq_ = nullptr;
+  const char *address_;  // Do not own.
+  grpc_server *server_ = nullptr;
+  grpc_completion_queue *cq_ = nullptr;
   std::unique_ptr<std::thread> thread_;
 };
 
@@ -99,19 +99,19 @@ class ServerThread {
 // closes, and then terminates.
 class Client {
  public:
-  explicit Client(const char* server_address)
+  explicit Client(const char *server_address)
       : server_address_(server_address) {}
 
   void Connect() {
     grpc_core::ExecCtx exec_ctx;
-    grpc_resolved_addresses* server_addresses = nullptr;
+    grpc_resolved_addresses *server_addresses = nullptr;
     grpc_error_handle error =
         grpc_blocking_resolve_address(server_address_, "80", &server_addresses);
     ASSERT_EQ(GRPC_ERROR_NONE, error) << grpc_error_std_string(error);
     ASSERT_GE(server_addresses->naddrs, 1UL);
-    pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    pollset_ = static_cast<grpc_pollset *>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset_, &mu_);
-    grpc_pollset_set* pollset_set = grpc_pollset_set_create();
+    grpc_pollset_set *pollset_set = grpc_pollset_set_create();
     grpc_pollset_set_add_pollset(pollset_set, pollset_);
     EventState state;
     grpc_tcp_client_connect(
@@ -174,7 +174,7 @@ class Client {
 
     ~EventState() { GRPC_ERROR_UNREF(error_); }
 
-    grpc_closure* closure() { return &closure_; }
+    grpc_closure *closure() { return &closure_; }
 
     bool done() const { return gpr_atm_acq_load(&done_atm_) != 0; }
 
@@ -182,10 +182,10 @@ class Client {
     grpc_error_handle error() const { return error_; }
 
    private:
-    static void OnEventDone(void* arg, grpc_error_handle error) {
+    static void OnEventDone(void *arg, grpc_error_handle error) {
       gpr_log(GPR_INFO, "OnEventDone(): %s",
               grpc_error_std_string(error).c_str());
-      EventState* state = static_cast<EventState*>(arg);
+      EventState *state = static_cast<EventState *>(arg);
       state->error_ = GRPC_ERROR_REF(error);
       gpr_atm_rel_store(&state->done_atm_, 1);
     }
@@ -196,9 +196,9 @@ class Client {
   };
 
   // Returns true if done, or false if deadline exceeded.
-  bool PollUntilDone(EventState* state, grpc_millis deadline) {
+  bool PollUntilDone(EventState *state, grpc_millis deadline) {
     while (true) {
-      grpc_pollset_worker* worker = nullptr;
+      grpc_pollset_worker *worker = nullptr;
       gpr_mu_lock(mu_);
       GRPC_LOG_IF_ERROR(
           "grpc_pollset_work",
@@ -212,16 +212,16 @@ class Client {
     }
   }
 
-  static void PollsetDestroy(void* arg, grpc_error_handle /*error*/) {
-    grpc_pollset* pollset = static_cast<grpc_pollset*>(arg);
+  static void PollsetDestroy(void *arg, grpc_error_handle /*error*/) {
+    grpc_pollset *pollset = static_cast<grpc_pollset *>(arg);
     grpc_pollset_destroy(pollset);
     gpr_free(pollset);
   }
 
-  const char* server_address_;  // Do not own.
-  grpc_endpoint* endpoint_;
-  gpr_mu* mu_;
-  grpc_pollset* pollset_;
+  const char *server_address_;  // Do not own.
+  grpc_endpoint *endpoint_;
+  gpr_mu *mu_;
+  grpc_pollset *pollset_;
 };
 
 TEST(SettingsTimeout, Basic) {
@@ -252,7 +252,7 @@ TEST(SettingsTimeout, Basic) {
 }  // namespace test
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();

@@ -29,7 +29,7 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-static void BM_SliceFromStatic(benchmark::State& state) {
+static void BM_SliceFromStatic(benchmark::State &state) {
   TrackCounters track_counters;
   for (auto _ : state) {
     benchmark::DoNotOptimize(grpc_core::ExternallyManagedSlice("abc"));
@@ -38,7 +38,7 @@ static void BM_SliceFromStatic(benchmark::State& state) {
 }
 BENCHMARK(BM_SliceFromStatic);
 
-static void BM_SliceFromCopied(benchmark::State& state) {
+static void BM_SliceFromCopied(benchmark::State &state) {
   TrackCounters track_counters;
   for (auto _ : state) {
     grpc_slice_unref(grpc_core::UnmanagedMemorySlice("abc"));
@@ -47,7 +47,7 @@ static void BM_SliceFromCopied(benchmark::State& state) {
 }
 BENCHMARK(BM_SliceFromCopied);
 
-static void BM_SliceIntern(benchmark::State& state) {
+static void BM_SliceIntern(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ExternallyManagedSlice slice("abc");
   for (auto _ : state) {
@@ -57,7 +57,7 @@ static void BM_SliceIntern(benchmark::State& state) {
 }
 BENCHMARK(BM_SliceIntern);
 
-static void BM_SliceReIntern(benchmark::State& state) {
+static void BM_SliceReIntern(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ExternallyManagedSlice static_slice("abc");
   grpc_core::ManagedMemorySlice slice(&static_slice);
@@ -69,7 +69,7 @@ static void BM_SliceReIntern(benchmark::State& state) {
 }
 BENCHMARK(BM_SliceReIntern);
 
-static void BM_SliceInternStaticMetadata(benchmark::State& state) {
+static void BM_SliceInternStaticMetadata(benchmark::State &state) {
   TrackCounters track_counters;
   for (auto _ : state) {
     benchmark::DoNotOptimize(grpc_core::ManagedMemorySlice(&GRPC_MDSTR_GZIP));
@@ -78,7 +78,7 @@ static void BM_SliceInternStaticMetadata(benchmark::State& state) {
 }
 BENCHMARK(BM_SliceInternStaticMetadata);
 
-static void BM_SliceInternEqualToStaticMetadata(benchmark::State& state) {
+static void BM_SliceInternEqualToStaticMetadata(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ExternallyManagedSlice slice("gzip");
   for (auto _ : state) {
@@ -88,7 +88,7 @@ static void BM_SliceInternEqualToStaticMetadata(benchmark::State& state) {
 }
 BENCHMARK(BM_SliceInternEqualToStaticMetadata);
 
-static void BM_MetadataFromNonInternedSlices(benchmark::State& state) {
+static void BM_MetadataFromNonInternedSlices(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ExternallyManagedSlice k("key");
   grpc_core::ExternallyManagedSlice v("value");
@@ -101,7 +101,7 @@ static void BM_MetadataFromNonInternedSlices(benchmark::State& state) {
 }
 BENCHMARK(BM_MetadataFromNonInternedSlices);
 
-static void BM_MetadataFromInternedSlices(benchmark::State& state) {
+static void BM_MetadataFromInternedSlices(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ManagedMemorySlice k("key");
   grpc_core::ManagedMemorySlice v("value");
@@ -117,7 +117,7 @@ static void BM_MetadataFromInternedSlices(benchmark::State& state) {
 BENCHMARK(BM_MetadataFromInternedSlices);
 
 static void BM_MetadataFromInternedSlicesAlreadyInIndex(
-    benchmark::State& state) {
+    benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ManagedMemorySlice k("key");
   grpc_core::ManagedMemorySlice v("value");
@@ -134,7 +134,7 @@ static void BM_MetadataFromInternedSlicesAlreadyInIndex(
 }
 BENCHMARK(BM_MetadataFromInternedSlicesAlreadyInIndex);
 
-static void BM_MetadataFromInternedKey(benchmark::State& state) {
+static void BM_MetadataFromInternedKey(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ManagedMemorySlice k("key");
   grpc_core::ExternallyManagedSlice v("value");
@@ -149,7 +149,7 @@ static void BM_MetadataFromInternedKey(benchmark::State& state) {
 BENCHMARK(BM_MetadataFromInternedKey);
 
 static void BM_MetadataFromNonInternedSlicesWithBackingStore(
-    benchmark::State& state) {
+    benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ExternallyManagedSlice k("key");
   grpc_core::ExternallyManagedSlice v("value");
@@ -157,7 +157,7 @@ static void BM_MetadataFromNonInternedSlicesWithBackingStore(
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     GRPC_MDELEM_UNREF(grpc_mdelem_create(
-        k, v, reinterpret_cast<grpc_mdelem_data*>(backing_store)));
+        k, v, reinterpret_cast<grpc_mdelem_data *>(backing_store)));
   }
 
   track_counters.Finish(state);
@@ -165,7 +165,7 @@ static void BM_MetadataFromNonInternedSlicesWithBackingStore(
 BENCHMARK(BM_MetadataFromNonInternedSlicesWithBackingStore);
 
 static void BM_MetadataFromInternedSlicesWithBackingStore(
-    benchmark::State& state) {
+    benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ManagedMemorySlice k("key");
   grpc_core::ManagedMemorySlice v("value");
@@ -173,7 +173,7 @@ static void BM_MetadataFromInternedSlicesWithBackingStore(
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     GRPC_MDELEM_UNREF(grpc_mdelem_create(
-        k, v, reinterpret_cast<grpc_mdelem_data*>(backing_store)));
+        k, v, reinterpret_cast<grpc_mdelem_data *>(backing_store)));
   }
 
   grpc_slice_unref(k);
@@ -183,7 +183,7 @@ static void BM_MetadataFromInternedSlicesWithBackingStore(
 BENCHMARK(BM_MetadataFromInternedSlicesWithBackingStore);
 
 static void BM_MetadataFromInternedKeyWithBackingStore(
-    benchmark::State& state) {
+    benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ManagedMemorySlice k("key");
   grpc_core::ExternallyManagedSlice v("value");
@@ -191,7 +191,7 @@ static void BM_MetadataFromInternedKeyWithBackingStore(
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     GRPC_MDELEM_UNREF(grpc_mdelem_create(
-        k, v, reinterpret_cast<grpc_mdelem_data*>(backing_store)));
+        k, v, reinterpret_cast<grpc_mdelem_data *>(backing_store)));
   }
 
   grpc_slice_unref(k);
@@ -199,7 +199,7 @@ static void BM_MetadataFromInternedKeyWithBackingStore(
 }
 BENCHMARK(BM_MetadataFromInternedKeyWithBackingStore);
 
-static void BM_MetadataFromStaticMetadataStrings(benchmark::State& state) {
+static void BM_MetadataFromStaticMetadataStrings(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
@@ -212,7 +212,7 @@ static void BM_MetadataFromStaticMetadataStrings(benchmark::State& state) {
 BENCHMARK(BM_MetadataFromStaticMetadataStrings);
 
 static void BM_MetadataFromStaticMetadataStringsNotIndexed(
-    benchmark::State& state) {
+    benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
@@ -224,14 +224,14 @@ static void BM_MetadataFromStaticMetadataStringsNotIndexed(
 }
 BENCHMARK(BM_MetadataFromStaticMetadataStringsNotIndexed);
 
-static void BM_MetadataRefUnrefExternal(benchmark::State& state) {
+static void BM_MetadataRefUnrefExternal(benchmark::State &state) {
   TrackCounters track_counters;
   char backing_store[sizeof(grpc_mdelem_data)];
   grpc_core::ExecCtx exec_ctx;
   grpc_mdelem el =
       grpc_mdelem_create(grpc_core::ExternallyManagedSlice("a"),
                          grpc_core::ExternallyManagedSlice("b"),
-                         reinterpret_cast<grpc_mdelem_data*>(backing_store));
+                         reinterpret_cast<grpc_mdelem_data *>(backing_store));
   for (auto _ : state) {
     GRPC_MDELEM_UNREF(GRPC_MDELEM_REF(el));
   }
@@ -241,14 +241,14 @@ static void BM_MetadataRefUnrefExternal(benchmark::State& state) {
 }
 BENCHMARK(BM_MetadataRefUnrefExternal);
 
-static void BM_MetadataRefUnrefInterned(benchmark::State& state) {
+static void BM_MetadataRefUnrefInterned(benchmark::State &state) {
   TrackCounters track_counters;
   char backing_store[sizeof(grpc_mdelem_data)];
   grpc_core::ExecCtx exec_ctx;
   grpc_core::ManagedMemorySlice k("key");
   grpc_core::ManagedMemorySlice v("value");
   grpc_mdelem el = grpc_mdelem_create(
-      k, v, reinterpret_cast<grpc_mdelem_data*>(backing_store));
+      k, v, reinterpret_cast<grpc_mdelem_data *>(backing_store));
   grpc_slice_unref(k);
   grpc_slice_unref(v);
   for (auto _ : state) {
@@ -260,7 +260,7 @@ static void BM_MetadataRefUnrefInterned(benchmark::State& state) {
 }
 BENCHMARK(BM_MetadataRefUnrefInterned);
 
-static void BM_MetadataRefUnrefAllocated(benchmark::State& state) {
+static void BM_MetadataRefUnrefAllocated(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   grpc_mdelem el =
@@ -275,7 +275,7 @@ static void BM_MetadataRefUnrefAllocated(benchmark::State& state) {
 }
 BENCHMARK(BM_MetadataRefUnrefAllocated);
 
-static void BM_MetadataRefUnrefStatic(benchmark::State& state) {
+static void BM_MetadataRefUnrefStatic(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   grpc_mdelem el =
@@ -295,7 +295,7 @@ namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);

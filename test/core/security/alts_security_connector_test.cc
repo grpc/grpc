@@ -96,7 +96,7 @@ static void test_missing_security_level_property_failure() {
 
   GPR_ASSERT(tsi_construct_string_peer_property(
                  TSI_ALTS_RPC_VERSIONS,
-                 reinterpret_cast<char*>(
+                 reinterpret_cast<char *>(
                      GRPC_SLICE_START_PTR(serialized_peer_versions)),
                  GRPC_SLICE_LENGTH(serialized_peer_versions),
                  &peer.properties[2]) == TSI_OK);
@@ -121,11 +121,11 @@ static void test_unknown_peer_property_failure() {
   tsi_peer_destruct(&peer);
 }
 
-static bool test_identity(const grpc_auth_context* ctx,
-                          const char* expected_property_name,
-                          const char* expected_identity) {
+static bool test_identity(const grpc_auth_context *ctx,
+                          const char *expected_property_name,
+                          const char *expected_identity) {
   grpc_auth_property_iterator it;
-  const grpc_auth_property* prop;
+  const grpc_auth_property *prop;
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx));
   it = grpc_auth_context_peer_identity(ctx);
   prop = grpc_auth_property_iterator_next(&it);
@@ -164,7 +164,7 @@ static void test_alts_peer_to_auth_context_success() {
                                                    &serialized_peer_versions));
   GPR_ASSERT(tsi_construct_string_peer_property(
                  TSI_ALTS_RPC_VERSIONS,
-                 reinterpret_cast<char*>(
+                 reinterpret_cast<char *>(
                      GRPC_SLICE_START_PTR(serialized_peer_versions)),
                  GRPC_SLICE_LENGTH(serialized_peer_versions),
                  &peer.properties[2]) == TSI_OK);
@@ -177,7 +177,7 @@ static void test_alts_peer_to_auth_context_success() {
   GPR_ASSERT(
       tsi_construct_string_peer_property(
           TSI_ALTS_CONTEXT,
-          reinterpret_cast<char*>(GRPC_SLICE_START_PTR(serialized_alts_ctx)),
+          reinterpret_cast<char *>(GRPC_SLICE_START_PTR(serialized_alts_ctx)),
           GRPC_SLICE_LENGTH(serialized_alts_ctx),
           &peer.properties[4]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
@@ -191,7 +191,7 @@ static void test_alts_peer_to_auth_context_success() {
   tsi_peer_destruct(&peer);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+int main(int /*argc*/, char ** /*argv*/) {
   /* Test. */
   test_invalid_input_failure();
   test_empty_certificate_type_failure();

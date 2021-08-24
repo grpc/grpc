@@ -31,7 +31,7 @@ namespace testing {
 
 class Http2Client {
  public:
-  explicit Http2Client(const std::shared_ptr<Channel>& channel);
+  explicit Http2Client(const std::shared_ptr<Channel> &channel);
   ~Http2Client() {}
 
   bool DoRstAfterHeader();
@@ -44,18 +44,18 @@ class Http2Client {
  private:
   class ServiceStub {
    public:
-    explicit ServiceStub(const std::shared_ptr<Channel>& channel);
+    explicit ServiceStub(const std::shared_ptr<Channel> &channel);
 
-    TestService::Stub* Get();
+    TestService::Stub *Get();
 
    private:
     std::unique_ptr<TestService::Stub> stub_;
     std::shared_ptr<Channel> channel_;
   };
 
-  void MaxStreamsWorker(const std::shared_ptr<grpc::Channel>& channel);
-  bool AssertStatusCode(const Status& s, StatusCode expected_code);
-  Status SendUnaryCall(SimpleResponse* response);
+  void MaxStreamsWorker(const std::shared_ptr<grpc::Channel> &channel);
+  bool AssertStatusCode(const Status &s, StatusCode expected_code);
+  Status SendUnaryCall(SimpleResponse *response);
   SimpleRequest BuildDefaultRequest();
   ServiceStub serviceStub_;
   std::shared_ptr<Channel> channel_;

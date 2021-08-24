@@ -39,12 +39,12 @@ class Foo : public RefCounted<Foo> {
 };
 
 TEST(RefCounted, Basic) {
-  Foo* foo = new Foo();
+  Foo *foo = new Foo();
   foo->Unref();
 }
 
 TEST(RefCounted, ExtraRef) {
-  Foo* foo = new Foo();
+  Foo *foo = new Foo();
   RefCountedPtr<Foo> foop = foo->Ref();
   foop.release();
   foo->Unref();
@@ -53,7 +53,7 @@ TEST(RefCounted, ExtraRef) {
 
 class Value : public RefCounted<Value, PolymorphicRefCount, kUnrefNoDelete> {
  public:
-  Value(int value, std::set<std::unique_ptr<Value>>* registry) : value_(value) {
+  Value(int value, std::set<std::unique_ptr<Value>> *registry) : value_(value) {
     registry->emplace(this);
   }
 
@@ -63,7 +63,7 @@ class Value : public RefCounted<Value, PolymorphicRefCount, kUnrefNoDelete> {
   int value_;
 };
 
-void GarbageCollectRegistry(std::set<std::unique_ptr<Value>>* registry) {
+void GarbageCollectRegistry(std::set<std::unique_ptr<Value>> *registry) {
   for (auto it = registry->begin(); it != registry->end();) {
     RefCountedPtr<Value> v = (*it)->RefIfNonZero();
     // Check if the object has any refs remaining.
@@ -134,12 +134,12 @@ class FooNonPolymorphic
 };
 
 TEST(RefCountedNonPolymorphic, Basic) {
-  FooNonPolymorphic* foo = new FooNonPolymorphic();
+  FooNonPolymorphic *foo = new FooNonPolymorphic();
   foo->Unref();
 }
 
 TEST(RefCountedNonPolymorphic, ExtraRef) {
-  FooNonPolymorphic* foo = new FooNonPolymorphic();
+  FooNonPolymorphic *foo = new FooNonPolymorphic();
   RefCountedPtr<FooNonPolymorphic> foop = foo->Ref();
   foop.release();
   foo->Unref();
@@ -152,7 +152,7 @@ class FooWithTracing : public RefCounted<FooWithTracing> {
 };
 
 TEST(RefCountedWithTracing, Basic) {
-  FooWithTracing* foo = new FooWithTracing();
+  FooWithTracing *foo = new FooWithTracing();
   RefCountedPtr<FooWithTracing> foop = foo->Ref(DEBUG_LOCATION, "extra_ref");
   foop.release();
   foo->Unref(DEBUG_LOCATION, "extra_ref");
@@ -170,7 +170,7 @@ class FooNonPolymorphicWithTracing
 };
 
 TEST(RefCountedNonPolymorphicWithTracing, Basic) {
-  FooNonPolymorphicWithTracing* foo = new FooNonPolymorphicWithTracing();
+  FooNonPolymorphicWithTracing *foo = new FooNonPolymorphicWithTracing();
   RefCountedPtr<FooNonPolymorphicWithTracing> foop =
       foo->Ref(DEBUG_LOCATION, "extra_ref");
   foop.release();
@@ -186,7 +186,7 @@ TEST(RefCountedNonPolymorphicWithTracing, Basic) {
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

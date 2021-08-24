@@ -49,12 +49,12 @@ namespace testing {
 class FixtureConfiguration {
  public:
   virtual ~FixtureConfiguration() {}
-  virtual void ApplyCommonChannelArguments(ChannelArguments* c) const {
+  virtual void ApplyCommonChannelArguments(ChannelArguments *c) const {
     c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
     c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
   }
 
-  virtual void ApplyCommonServerBuilderConfig(ServerBuilder* b) const {
+  virtual void ApplyCommonServerBuilderConfig(ServerBuilder *b) const {
     b->SetMaxReceiveMessageSize(INT_MAX);
     b->SetMaxSendMessageSize(INT_MAX);
   }
@@ -64,8 +64,8 @@ class BaseFixture : public TrackCounters {};
 
 class FullstackFixture : public BaseFixture {
  public:
-  FullstackFixture(Service* service, const FixtureConfiguration& config,
-                   const std::string& address) {
+  FullstackFixture(Service *service, const FixtureConfiguration &config,
+                   const std::string &address) {
     ServerBuilder b;
     if (address.length() > 0) {
       b.AddListeningPort(address, InsecureServerCredentials());
@@ -87,20 +87,20 @@ class FullstackFixture : public BaseFixture {
   ~FullstackFixture() override {
     server_->Shutdown();
     cq_->Shutdown();
-    void* tag;
+    void *tag;
     bool ok;
     while (cq_->Next(&tag, &ok)) {
     }
   }
 
-  void AddToLabel(std::ostream& out, benchmark::State& state) override {
+  void AddToLabel(std::ostream &out, benchmark::State &state) override {
     BaseFixture::AddToLabel(out, state);
     out << " polls/iter:"
         << static_cast<double>(grpc_get_cq_poll_num(this->cq()->cq())) /
                state.iterations();
   }
 
-  ServerCompletionQueue* cq() { return cq_.get(); }
+  ServerCompletionQueue *cq() { return cq_.get(); }
   std::shared_ptr<Channel> channel() { return channel_; }
 
  private:
@@ -111,8 +111,8 @@ class FullstackFixture : public BaseFixture {
 
 class TCP : public FullstackFixture {
  public:
-  explicit TCP(Service* service,
-               const FixtureConfiguration& fixture_configuration =
+  explicit TCP(Service *service,
+               const FixtureConfiguration &fixture_configuration =
                    FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
 
@@ -121,7 +121,7 @@ class TCP : public FullstackFixture {
  private:
   int port_;
 
-  static std::string MakeAddress(int* port) {
+  static std::string MakeAddress(int *port) {
     *port = grpc_pick_unused_port_or_die();
     std::stringstream addr;
     addr << "localhost:" << *port;
@@ -131,8 +131,8 @@ class TCP : public FullstackFixture {
 
 class UDS : public FullstackFixture {
  public:
-  explicit UDS(Service* service,
-               const FixtureConfiguration& fixture_configuration =
+  explicit UDS(Service *service,
+               const FixtureConfiguration &fixture_configuration =
                    FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
 
@@ -141,7 +141,7 @@ class UDS : public FullstackFixture {
  private:
   int port_;
 
-  static std::string MakeAddress(int* port) {
+  static std::string MakeAddress(int *port) {
     *port = grpc_pick_unused_port_or_die();  // just for a unique id - not a
                                              // real port
     std::stringstream addr;
@@ -152,8 +152,8 @@ class UDS : public FullstackFixture {
 
 class InProcess : public FullstackFixture {
  public:
-  explicit InProcess(Service* service,
-                     const FixtureConfiguration& fixture_configuration =
+  explicit InProcess(Service *service,
+                     const FixtureConfiguration &fixture_configuration =
                          FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, "") {}
   ~InProcess() override {}
@@ -161,8 +161,8 @@ class InProcess : public FullstackFixture {
 
 class EndpointPairFixture : public BaseFixture {
  public:
-  EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints,
-                      const FixtureConfiguration& fixture_configuration)
+  EndpointPairFixture(Service *service, grpc_endpoint_pair endpoints,
+                      const FixtureConfiguration &fixture_configuration)
       : endpoint_pair_(endpoints) {
     ServerBuilder b;
     cq_ = b.AddCompletionQueue(true);
@@ -173,15 +173,15 @@ class EndpointPairFixture : public BaseFixture {
     /* add server endpoint to server_
      * */
     {
-      const grpc_channel_args* server_args =
+      const grpc_channel_args *server_args =
           server_->c_server()->core_server->channel_args();
-      grpc_resource_quota* server_resource_quota =
+      grpc_resource_quota *server_resource_quota =
           grpc_resource_quota_from_channel_args(server_args, true);
       server_transport_ = grpc_create_chttp2_transport(
           server_args, endpoints.server, false /* is_client */,
           grpc_resource_user_create(server_resource_quota, "server_transport"));
       grpc_resource_quota_unref(server_resource_quota);
-      for (grpc_pollset* pollset :
+      for (grpc_pollset *pollset :
            server_->c_server()->core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
@@ -199,14 +199,14 @@ class EndpointPairFixture : public BaseFixture {
       fixture_configuration.ApplyCommonChannelArguments(&args);
 
       grpc_channel_args c_args = args.c_channel_args();
-      grpc_resource_quota* client_resource_quota =
+      grpc_resource_quota *client_resource_quota =
           grpc_resource_quota_from_channel_args(&c_args, true);
       client_transport_ = grpc_create_chttp2_transport(
           &c_args, endpoints.client, true,
           grpc_resource_user_create(client_resource_quota, "client_transport"));
       grpc_resource_quota_unref(client_resource_quota);
       GPR_ASSERT(client_transport_);
-      grpc_channel* channel =
+      grpc_channel *channel =
           grpc_channel_create("target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL,
                               client_transport_, nullptr, 0, nullptr);
       grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr,
@@ -222,26 +222,26 @@ class EndpointPairFixture : public BaseFixture {
   ~EndpointPairFixture() override {
     server_->Shutdown();
     cq_->Shutdown();
-    void* tag;
+    void *tag;
     bool ok;
     while (cq_->Next(&tag, &ok)) {
     }
   }
 
-  void AddToLabel(std::ostream& out, benchmark::State& state) override {
+  void AddToLabel(std::ostream &out, benchmark::State &state) override {
     BaseFixture::AddToLabel(out, state);
     out << " polls/iter:"
         << static_cast<double>(grpc_get_cq_poll_num(this->cq()->cq())) /
                state.iterations();
   }
 
-  ServerCompletionQueue* cq() { return cq_.get(); }
+  ServerCompletionQueue *cq() { return cq_.get(); }
   std::shared_ptr<Channel> channel() { return channel_; }
 
  protected:
   grpc_endpoint_pair endpoint_pair_;
-  grpc_transport* client_transport_;
-  grpc_transport* server_transport_;
+  grpc_transport *client_transport_;
+  grpc_transport *server_transport_;
 
  private:
   std::unique_ptr<Server> server_;
@@ -251,8 +251,8 @@ class EndpointPairFixture : public BaseFixture {
 
 class SockPair : public EndpointPairFixture {
  public:
-  explicit SockPair(Service* service,
-                    const FixtureConfiguration& fixture_configuration =
+  explicit SockPair(Service *service,
+                    const FixtureConfiguration &fixture_configuration =
                         FixtureConfiguration())
       : EndpointPairFixture(service,
                             grpc_iomgr_create_endpoint_pair("test", nullptr),
@@ -266,8 +266,8 @@ class SockPair : public EndpointPairFixture {
 class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
  public:
   InProcessCHTTP2WithExplicitStats(
-      Service* service, grpc_passthru_endpoint_stats* stats,
-      const FixtureConfiguration& fixture_configuration)
+      Service *service, grpc_passthru_endpoint_stats *stats,
+      const FixtureConfiguration &fixture_configuration)
       : EndpointPairFixture(service, MakeEndpoints(stats),
                             fixture_configuration),
         stats_(stats) {}
@@ -278,7 +278,7 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
     }
   }
 
-  void AddToLabel(std::ostream& out, benchmark::State& state) override {
+  void AddToLabel(std::ostream &out, benchmark::State &state) override {
     EndpointPairFixture::AddToLabel(out, state);
     out << " writes/iter:"
         << static_cast<double>(gpr_atm_no_barrier_load(&stats_->num_writes)) /
@@ -286,9 +286,9 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
   }
 
  private:
-  grpc_passthru_endpoint_stats* stats_;
+  grpc_passthru_endpoint_stats *stats_;
 
-  static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
+  static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats *stats) {
     grpc_endpoint_pair p;
     grpc_passthru_endpoint_create(&p.client, &p.server, stats);
     return p;
@@ -297,8 +297,8 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
 
 class InProcessCHTTP2 : public InProcessCHTTP2WithExplicitStats {
  public:
-  explicit InProcessCHTTP2(Service* service,
-                           const FixtureConfiguration& fixture_configuration =
+  explicit InProcessCHTTP2(Service *service,
+                           const FixtureConfiguration &fixture_configuration =
                                FixtureConfiguration())
       : InProcessCHTTP2WithExplicitStats(service,
                                          grpc_passthru_endpoint_stats_create(),
@@ -309,12 +309,12 @@ class InProcessCHTTP2 : public InProcessCHTTP2WithExplicitStats {
 // Minimal stack fixtures
 
 class MinStackConfiguration : public FixtureConfiguration {
-  void ApplyCommonChannelArguments(ChannelArguments* a) const override {
+  void ApplyCommonChannelArguments(ChannelArguments *a) const override {
     a->SetInt(GRPC_ARG_MINIMAL_STACK, 1);
     FixtureConfiguration::ApplyCommonChannelArguments(a);
   }
 
-  void ApplyCommonServerBuilderConfig(ServerBuilder* b) const override {
+  void ApplyCommonServerBuilderConfig(ServerBuilder *b) const override {
     b->AddChannelArgument(GRPC_ARG_MINIMAL_STACK, 1);
     FixtureConfiguration::ApplyCommonServerBuilderConfig(b);
   }
@@ -323,7 +323,7 @@ class MinStackConfiguration : public FixtureConfiguration {
 template <class Base>
 class MinStackize : public Base {
  public:
-  explicit MinStackize(Service* service)
+  explicit MinStackize(Service *service)
       : Base(service, MinStackConfiguration()) {}
 };
 

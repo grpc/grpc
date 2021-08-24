@@ -40,18 +40,18 @@ bool LoadReportingServiceServerBuilderPlugin::has_async_methods() const {
 }
 
 void LoadReportingServiceServerBuilderPlugin::UpdateServerBuilder(
-    grpc::ServerBuilder* builder) {
+    grpc::ServerBuilder *builder) {
   auto cq = builder->AddCompletionQueue();
   service_ = std::make_shared<LoadReporterAsyncServiceImpl>(std::move(cq));
 }
 
 void LoadReportingServiceServerBuilderPlugin::InitServer(
-    grpc::ServerInitializer* si) {
+    grpc::ServerInitializer *si) {
   si->RegisterService(service_);
 }
 
 void LoadReportingServiceServerBuilderPlugin::Finish(
-    grpc::ServerInitializer* /*si*/) {
+    grpc::ServerInitializer * /*si*/) {
   service_->StartThread();
   service_.reset();
 }

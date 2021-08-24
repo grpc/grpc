@@ -35,7 +35,7 @@
 
 grpc_end2end_test_fixture grpc_end2end_local_chttp2_create_fixture_fullstack() {
   grpc_end2end_test_fixture f;
-  grpc_end2end_local_fullstack_fixture_data* ffd =
+  grpc_end2end_local_fullstack_fixture_data *ffd =
       new grpc_end2end_local_fullstack_fixture_data();
   memset(&f, 0, sizeof(f));
   f.fixture_data = ffd;
@@ -45,11 +45,11 @@ grpc_end2end_test_fixture grpc_end2end_local_chttp2_create_fixture_fullstack() {
 }
 
 void grpc_end2end_local_chttp2_init_client_fullstack(
-    grpc_end2end_test_fixture* f, grpc_channel_args* client_args,
+    grpc_end2end_test_fixture *f, grpc_channel_args *client_args,
     grpc_local_connect_type type) {
-  grpc_channel_credentials* creds = grpc_local_credentials_create(type);
-  grpc_end2end_local_fullstack_fixture_data* ffd =
-      static_cast<grpc_end2end_local_fullstack_fixture_data*>(f->fixture_data);
+  grpc_channel_credentials *creds = grpc_local_credentials_create(type);
+  grpc_end2end_local_fullstack_fixture_data *ffd =
+      static_cast<grpc_end2end_local_fullstack_fixture_data *>(f->fixture_data);
   f->client = grpc_secure_channel_create(creds, ffd->localaddr.c_str(),
                                          client_args, nullptr);
   GPR_ASSERT(f->client != nullptr);
@@ -61,7 +61,7 @@ void grpc_end2end_local_chttp2_init_client_fullstack(
  * processor will be installed that always fails in processing client's
  * metadata.
  */
-static bool fail_server_auth_check(grpc_channel_args* server_args) {
+static bool fail_server_auth_check(grpc_channel_args *server_args) {
   size_t i;
   if (server_args == nullptr) return false;
   for (i = 0; i < server_args->num_args; i++) {
@@ -73,21 +73,21 @@ static bool fail_server_auth_check(grpc_channel_args* server_args) {
   return false;
 }
 
-static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
-                                 const grpc_metadata* /*md*/,
+static void process_auth_failure(void *state, grpc_auth_context * /*ctx*/,
+                                 const grpc_metadata * /*md*/,
                                  size_t /*md_count*/,
                                  grpc_process_auth_metadata_done_cb cb,
-                                 void* user_data) {
+                                 void *user_data) {
   GPR_ASSERT(state == nullptr);
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
 void grpc_end2end_local_chttp2_init_server_fullstack(
-    grpc_end2end_test_fixture* f, grpc_channel_args* server_args,
+    grpc_end2end_test_fixture *f, grpc_channel_args *server_args,
     grpc_local_connect_type type) {
-  grpc_server_credentials* creds = grpc_local_server_credentials_create(type);
-  grpc_end2end_local_fullstack_fixture_data* ffd =
-      static_cast<grpc_end2end_local_fullstack_fixture_data*>(f->fixture_data);
+  grpc_server_credentials *creds = grpc_local_server_credentials_create(type);
+  grpc_end2end_local_fullstack_fixture_data *ffd =
+      static_cast<grpc_end2end_local_fullstack_fixture_data *>(f->fixture_data);
   if (f->server) {
     grpc_server_destroy(f->server);
   }
@@ -105,8 +105,8 @@ void grpc_end2end_local_chttp2_init_server_fullstack(
 }
 
 void grpc_end2end_local_chttp2_tear_down_fullstack(
-    grpc_end2end_test_fixture* f) {
-  grpc_end2end_local_fullstack_fixture_data* ffd =
-      static_cast<grpc_end2end_local_fullstack_fixture_data*>(f->fixture_data);
+    grpc_end2end_test_fixture *f) {
+  grpc_end2end_local_fullstack_fixture_data *ffd =
+      static_cast<grpc_end2end_local_fullstack_fixture_data *>(f->fixture_data);
   delete ffd;
 }

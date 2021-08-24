@@ -30,12 +30,12 @@ namespace grpc_binder {
 WireWriterImpl::WireWriterImpl(std::unique_ptr<Binder> binder)
     : binder_(std::move(binder)) {}
 
-absl::Status WireWriterImpl::RpcCall(const Transaction& tx) {
+absl::Status WireWriterImpl::RpcCall(const Transaction &tx) {
   // TODO(mingcl): check tx_code <= last call id
   grpc_core::MutexLock lock(&mu_);
   GPR_ASSERT(tx.GetTxCode() >= kFirstCallId);
   RETURN_IF_ERROR(binder_->PrepareTransaction());
-  WritableParcel* parcel = binder_->GetWritableParcel();
+  WritableParcel *parcel = binder_->GetWritableParcel();
   {
     //  fill parcel
     RETURN_IF_ERROR(parcel->WriteInt32(tx.GetFlags()));
@@ -47,7 +47,7 @@ absl::Status WireWriterImpl::RpcCall(const Transaction& tx) {
         RETURN_IF_ERROR(parcel->WriteString(tx.GetMethodRef()));
       }
       RETURN_IF_ERROR(parcel->WriteInt32(tx.GetPrefixMetadata().size()));
-      for (const auto& md : tx.GetPrefixMetadata()) {
+      for (const auto &md : tx.GetPrefixMetadata()) {
         RETURN_IF_ERROR(parcel->WriteByteArrayWithLength(md.first));
         RETURN_IF_ERROR(parcel->WriteByteArrayWithLength(md.second));
       }
@@ -61,7 +61,7 @@ absl::Status WireWriterImpl::RpcCall(const Transaction& tx) {
           RETURN_IF_ERROR(parcel->WriteString(tx.GetStatusDesc()));
         }
         RETURN_IF_ERROR(parcel->WriteInt32(tx.GetSuffixMetadata().size()));
-        for (const auto& md : tx.GetSuffixMetadata()) {
+        for (const auto &md : tx.GetSuffixMetadata()) {
           RETURN_IF_ERROR(parcel->WriteByteArrayWithLength(md.first));
           RETURN_IF_ERROR(parcel->WriteByteArrayWithLength(md.second));
         }

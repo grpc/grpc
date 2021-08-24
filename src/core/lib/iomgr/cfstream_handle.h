@@ -41,30 +41,30 @@ class GrpcLibraryInitHolder {
 
 class CFStreamHandle : public GrpcLibraryInitHolder {
  public:
-  static CFStreamHandle* CreateStreamHandle(CFReadStreamRef read_stream,
+  static CFStreamHandle *CreateStreamHandle(CFReadStreamRef read_stream,
                                             CFWriteStreamRef write_stream);
   /** Use CreateStreamHandle function instead of using this directly. */
   CFStreamHandle(CFReadStreamRef read_stream, CFWriteStreamRef write_stream);
-  CFStreamHandle(const CFStreamHandle& ref) = delete;
-  CFStreamHandle(CFStreamHandle&& ref) = delete;
-  CFStreamHandle& operator=(const CFStreamHandle& rhs) = delete;
+  CFStreamHandle(const CFStreamHandle &ref) = delete;
+  CFStreamHandle(CFStreamHandle &&ref) = delete;
+  CFStreamHandle &operator=(const CFStreamHandle &rhs) = delete;
   ~CFStreamHandle() override;
 
-  void NotifyOnOpen(grpc_closure* closure);
-  void NotifyOnRead(grpc_closure* closure);
-  void NotifyOnWrite(grpc_closure* closure);
+  void NotifyOnOpen(grpc_closure *closure);
+  void NotifyOnRead(grpc_closure *closure);
+  void NotifyOnWrite(grpc_closure *closure);
   void Shutdown(grpc_error_handle error);
 
-  void Ref(const char* file = "", int line = 0, const char* reason = nullptr);
-  void Unref(const char* file = "", int line = 0, const char* reason = nullptr);
+  void Ref(const char *file = "", int line = 0, const char *reason = nullptr);
+  void Unref(const char *file = "", int line = 0, const char *reason = nullptr);
 
  private:
   static void ReadCallback(CFReadStreamRef stream, CFStreamEventType type,
-                           void* client_callback_info);
+                           void *client_callback_info);
   static void WriteCallback(CFWriteStreamRef stream, CFStreamEventType type,
-                            void* client_callback_info);
-  static void* Retain(void* info);
-  static void Release(void* info);
+                            void *client_callback_info);
+  static void *Retain(void *info);
+  static void Release(void *info);
 
   grpc_core::LockfreeEvent open_event_;
   grpc_core::LockfreeEvent read_event_;

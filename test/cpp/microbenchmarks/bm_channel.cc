@@ -35,7 +35,7 @@ class ChannelDestroyerFixture {
   virtual void Init() = 0;
 
  protected:
-  grpc_channel* channel_ = nullptr;
+  grpc_channel *channel_ = nullptr;
 };
 
 class InsecureChannelFixture : public ChannelDestroyerFixture {
@@ -56,7 +56,7 @@ class LameChannelFixture : public ChannelDestroyerFixture {
 };
 
 template <class Fixture>
-static void BM_InsecureChannelCreateDestroy(benchmark::State& state) {
+static void BM_InsecureChannelCreateDestroy(benchmark::State &state) {
   // In order to test if channel creation time is affected by the number of
   // already existing channels, we create some initial channels here.
   Fixture initial_channels[512];
@@ -81,7 +81,7 @@ namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);

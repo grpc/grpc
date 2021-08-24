@@ -24,8 +24,8 @@
 namespace grpc {
 namespace testing {
 
-void InitTest(int* argc, char*** argv, bool remove_flags) {
-  std::vector<char*> reduced_argv = absl::ParseCommandLine(*argc, *argv);
+void InitTest(int *argc, char ***argv, bool remove_flags) {
+  std::vector<char *> reduced_argv = absl::ParseCommandLine(*argc, *argv);
   if (remove_flags) {
     *argc = reduced_argv.size();
     for (int i = 0; i < *argc; i++) {

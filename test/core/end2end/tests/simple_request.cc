@@ -32,12 +32,12 @@
 #include "src/core/lib/gpr/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+                                            const char *test_name,
+                                            grpc_channel_args *client_args,
+                                            grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -54,14 +54,14 @@ static gpr_timespec five_seconds_from_now(void) {
   return n_seconds_from_now(5);
 }
 
-static void drain_cq(grpc_completion_queue* cq) {
+static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
@@ -72,13 +72,13 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(grpc_end2end_test_fixture *f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(grpc_end2end_test_fixture *f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -88,7 +88,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void check_peer(char* peer_name) {
+static void check_peer(char *peer_name) {
   // If the peer name is a uds path, then check if it is filled
   if (strncmp(peer_name, "unix:/", strlen("unix:/")) == 0) {
     GPR_ASSERT(strncmp(peer_name, "unix:/tmp/grpc_fullstack_test.",
@@ -98,25 +98,25 @@ static void check_peer(char* peer_name) {
 
 static void simple_request_body(grpc_end2end_test_config config,
                                 grpc_end2end_test_fixture f) {
-  grpc_call* c;
-  grpc_call* s;
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_call *c;
+  grpc_call *s;
+  cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
   grpc_status_code status;
-  const char* error_string;
+  const char *error_string;
   grpc_call_error error;
   grpc_slice details;
   int was_cancelled = 2;
-  char* peer;
-  grpc_stats_data* before =
-      static_cast<grpc_stats_data*>(gpr_malloc(sizeof(grpc_stats_data)));
-  grpc_stats_data* after =
-      static_cast<grpc_stats_data*>(gpr_malloc(sizeof(grpc_stats_data)));
+  char *peer;
+  grpc_stats_data *before =
+      static_cast<grpc_stats_data *>(gpr_malloc(sizeof(grpc_stats_data)));
+  grpc_stats_data *after =
+      static_cast<grpc_stats_data *>(gpr_malloc(sizeof(grpc_stats_data)));
 
 #if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
   grpc_stats_collect(before);
@@ -228,7 +228,7 @@ static void simple_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
-  gpr_free(const_cast<char*>(error_string));
+  gpr_free(const_cast<char *>(error_string));
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);

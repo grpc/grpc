@@ -50,11 +50,11 @@ namespace {
  * unchanged. It is caller's responsibility to gpr_free user_cred.
  */
 // TODO(hork): change this to return std::string
-char* GetHttpProxyServer(const grpc_channel_args* args, char** user_cred) {
+char *GetHttpProxyServer(const grpc_channel_args *args, char **user_cred) {
   GPR_ASSERT(user_cred != nullptr);
   absl::StatusOr<URI> uri;
-  char* proxy_name = nullptr;
-  char** authority_strs = nullptr;
+  char *proxy_name = nullptr;
+  char **authority_strs = nullptr;
   size_t authority_nstrs;
   /* We check the following places to determine the HTTP proxy to use, stopping
    * at the first one that is set:
@@ -64,7 +64,7 @@ char* GetHttpProxyServer(const grpc_channel_args* args, char** user_cred) {
    * 4. http_proxy environment variable
    * If none of the above are set, then no HTTP proxy will be used.
    */
-  char* uri_str =
+  char *uri_str =
       gpr_strdup(grpc_channel_args_find_string(args, GRPC_ARG_HTTP_PROXY));
   if (uri_str == nullptr) uri_str = gpr_getenv("grpc_proxy");
   if (uri_str == nullptr) uri_str = gpr_getenv("https_proxy");
@@ -121,15 +121,15 @@ std::string MaybeAddDefaultPort(absl::string_view target) {
 
 class HttpProxyMapper : public ProxyMapperInterface {
  public:
-  bool MapName(const char* server_uri, const grpc_channel_args* args,
-               char** name_to_resolve, grpc_channel_args** new_args) override {
+  bool MapName(const char *server_uri, const grpc_channel_args *args,
+               char **name_to_resolve, grpc_channel_args **new_args) override {
     if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_HTTP_PROXY, true)) {
       return false;
     }
-    char* user_cred = nullptr;
+    char *user_cred = nullptr;
     *name_to_resolve = GetHttpProxyServer(args, &user_cred);
     if (*name_to_resolve == nullptr) return false;
-    char* no_proxy_str = nullptr;
+    char *no_proxy_str = nullptr;
     std::string server_target;
     absl::StatusOr<URI> uri = URI::Parse(server_uri);
     if (!uri.ok() || uri->path().empty()) {
@@ -148,7 +148,7 @@ class HttpProxyMapper : public ProxyMapperInterface {
     no_proxy_str = gpr_getenv("no_grpc_proxy");
     if (no_proxy_str == nullptr) no_proxy_str = gpr_getenv("no_proxy");
     if (no_proxy_str != nullptr) {
-      static const char* NO_PROXY_SEPARATOR = ",";
+      static const char *NO_PROXY_SEPARATOR = ",";
       bool use_proxy = true;
       std::string server_host;
       std::string server_port;
@@ -161,12 +161,12 @@ class HttpProxyMapper : public ProxyMapperInterface {
         gpr_free(no_proxy_str);
       } else {
         size_t uri_len = server_host.size();
-        char** no_proxy_hosts;
+        char **no_proxy_hosts;
         size_t num_no_proxy_hosts;
         gpr_string_split(no_proxy_str, NO_PROXY_SEPARATOR, &no_proxy_hosts,
                          &num_no_proxy_hosts);
         for (size_t i = 0; i < num_no_proxy_hosts; i++) {
-          char* no_proxy_entry = no_proxy_hosts[i];
+          char *no_proxy_entry = no_proxy_hosts[i];
           size_t no_proxy_len = strlen(no_proxy_entry);
           if (no_proxy_len <= uri_len &&
               gpr_stricmp(no_proxy_entry,
@@ -190,18 +190,18 @@ class HttpProxyMapper : public ProxyMapperInterface {
         MaybeAddDefaultPort(absl::StripPrefix(uri->path(), "/")).c_str();
     grpc_arg args_to_add[2];
     args_to_add[0] = grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_HTTP_CONNECT_SERVER),
-        const_cast<char*>(server_target.c_str()));
+        const_cast<char *>(GRPC_ARG_HTTP_CONNECT_SERVER),
+        const_cast<char *>(server_target.c_str()));
     if (user_cred != nullptr) {
       /* Use base64 encoding for user credentials as stated in RFC 7617 */
-      char* encoded_user_cred =
+      char *encoded_user_cred =
           grpc_base64_encode(user_cred, strlen(user_cred), 0, 0);
       std::string header =
           absl::StrCat("Proxy-Authorization:Basic ", encoded_user_cred);
       gpr_free(encoded_user_cred);
       args_to_add[1] = grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_HTTP_CONNECT_HEADERS),
-          const_cast<char*>(header.c_str()));
+          const_cast<char *>(GRPC_ARG_HTTP_CONNECT_HEADERS),
+          const_cast<char *>(header.c_str()));
       *new_args = grpc_channel_args_copy_and_add(args, args_to_add, 2);
     } else {
       *new_args = grpc_channel_args_copy_and_add(args, args_to_add, 1);
@@ -215,10 +215,10 @@ class HttpProxyMapper : public ProxyMapperInterface {
     return false;
   }
 
-  bool MapAddress(const grpc_resolved_address& /*address*/,
-                  const grpc_channel_args* /*args*/,
-                  grpc_resolved_address** /*new_address*/,
-                  grpc_channel_args** /*new_args*/) override {
+  bool MapAddress(const grpc_resolved_address & /*address*/,
+                  const grpc_channel_args * /*args*/,
+                  grpc_resolved_address ** /*new_address*/,
+                  grpc_channel_args ** /*new_args*/) override {
     return false;
   }
 };

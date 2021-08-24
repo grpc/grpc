@@ -48,7 +48,7 @@ static GPR_THREAD_LOCAL(bool) g_is_nonblocking_poll;
 
 namespace {
 
-int maybe_assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
+int maybe_assert_non_blocking_poll(struct pollfd *pfds, nfds_t nfds,
                                    int timeout) {
   // Only assert that this poll should have zero timeout if we're in the
   // middle of a zero-timeout CQ Next.
@@ -64,8 +64,8 @@ namespace grpc {
 namespace testing {
 namespace {
 
-void* tag(int i) { return reinterpret_cast<void*>(static_cast<intptr_t>(i)); }
-int detag(void* p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
+void *tag(int i) { return reinterpret_cast<void *>(static_cast<intptr_t>(i)); }
+int detag(void *p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
 
 class NonblockingTest : public ::testing::Test {
  protected:
@@ -79,7 +79,7 @@ class NonblockingTest : public ::testing::Test {
     BuildAndStartServer();
   }
 
-  bool LoopForTag(void** tag, bool* ok) {
+  bool LoopForTag(void **tag, bool *ok) {
     // Temporarily set the thread-local nonblocking poll flag so that the polls
     // caused by this loop are indeed sent by the library with zero timeout.
     bool orig_val = g_is_nonblocking_poll;
@@ -98,7 +98,7 @@ class NonblockingTest : public ::testing::Test {
 
   void TearDown() override {
     server_->Shutdown();
-    void* ignored_tag;
+    void *ignored_tag;
     bool ignored_ok;
     cq_->Shutdown();
     while (LoopForTag(&ignored_tag, &ignored_ok)) {
@@ -146,7 +146,7 @@ class NonblockingTest : public ::testing::Test {
       service_->RequestEcho(&srv_ctx, &recv_request, &response_writer,
                             cq_.get(), cq_.get(), tag(2));
 
-      void* got_tag;
+      void *got_tag;
       bool ok;
       EXPECT_TRUE(LoopForTag(&got_tag, &ok));
       EXPECT_TRUE(ok);
@@ -194,7 +194,7 @@ TEST_F(NonblockingTest, SimpleRpc) {
 
 #endif  // GRPC_POSIX_SOCKET
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
 #ifdef GRPC_POSIX_SOCKET
   // Override the poll function before anything else can happen
   grpc_poll_function = maybe_assert_non_blocking_poll;

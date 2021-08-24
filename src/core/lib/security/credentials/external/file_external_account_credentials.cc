@@ -28,7 +28,7 @@ namespace grpc_core {
 RefCountedPtr<FileExternalAccountCredentials>
 FileExternalAccountCredentials::Create(Options options,
                                        std::vector<std::string> scopes,
-                                       grpc_error_handle* error) {
+                                       grpc_error_handle *error) {
   auto creds = MakeRefCounted<FileExternalAccountCredentials>(
       std::move(options), std::move(scopes), error);
   if (*error == GRPC_ERROR_NONE) {
@@ -39,7 +39,7 @@ FileExternalAccountCredentials::Create(Options options,
 }
 
 FileExternalAccountCredentials::FileExternalAccountCredentials(
-    Options options, std::vector<std::string> scopes, grpc_error_handle* error)
+    Options options, std::vector<std::string> scopes, grpc_error_handle *error)
     : ExternalAccountCredentials(options, std::move(scopes)) {
   auto it = options.credential_source.object_value().find("file");
   if (it == options.credential_source.object_value().end()) {
@@ -54,7 +54,7 @@ FileExternalAccountCredentials::FileExternalAccountCredentials(
   file_ = it->second.string_value();
   it = options.credential_source.object_value().find("format");
   if (it != options.credential_source.object_value().end()) {
-    const Json& format_json = it->second;
+    const Json &format_json = it->second;
     if (format_json.type() != Json::Type::OBJECT) {
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "The JSON value of credential source format is not an object.");
@@ -91,7 +91,7 @@ FileExternalAccountCredentials::FileExternalAccountCredentials(
 }
 
 void FileExternalAccountCredentials::RetrieveSubjectToken(
-    HTTPRequestContext* /*ctx*/, const Options& /*options*/,
+    HTTPRequestContext * /*ctx*/, const Options & /*options*/,
     std::function<void(std::string, grpc_error_handle)> cb) {
   struct SliceWrapper {
     ~SliceWrapper() { grpc_slice_unref_internal(slice); }

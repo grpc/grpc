@@ -36,26 +36,26 @@ const char kAlgorithm[] = "AWS4-HMAC-SHA256";
 const char kDateFormat[] = "%a, %d %b %E4Y %H:%M:%S %Z";
 const char kXAmzDateFormat[] = "%Y%m%dT%H%M%SZ";
 
-void SHA256(const std::string& str, unsigned char out[SHA256_DIGEST_LENGTH]) {
+void SHA256(const std::string &str, unsigned char out[SHA256_DIGEST_LENGTH]) {
   SHA256_CTX sha256;
   SHA256_Init(&sha256);
   SHA256_Update(&sha256, str.c_str(), str.size());
   SHA256_Final(out, &sha256);
 }
 
-std::string SHA256Hex(const std::string& str) {
+std::string SHA256Hex(const std::string &str) {
   unsigned char hash[SHA256_DIGEST_LENGTH];
   SHA256(str, hash);
-  std::string hash_str(reinterpret_cast<char const*>(hash),
+  std::string hash_str(reinterpret_cast<char const *>(hash),
                        SHA256_DIGEST_LENGTH);
   return absl::BytesToHexString(hash_str);
 }
 
-std::string HMAC(const std::string& key, const std::string& msg) {
+std::string HMAC(const std::string &key, const std::string &msg) {
   unsigned int len;
   unsigned char digest[EVP_MAX_MD_SIZE];
   HMAC(EVP_sha256(), key.c_str(), key.length(),
-       reinterpret_cast<const unsigned char*>(msg.c_str()), msg.length(),
+       reinterpret_cast<const unsigned char *>(msg.c_str()), msg.length(),
        digest, &len);
   return std::string(digest, digest + len);
 }
@@ -67,7 +67,7 @@ AwsRequestSigner::AwsRequestSigner(
     std::string method, std::string url, std::string region,
     std::string request_payload,
     std::map<std::string, std::string> additional_headers,
-    grpc_error_handle* error)
+    grpc_error_handle *error)
     : access_key_id_(std::move(access_key_id)),
       secret_access_key_(std::move(secret_access_key)),
       token_(std::move(token)),
@@ -129,7 +129,7 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
   canonical_request_vector.emplace_back("\n");
   // 3. CanonicalQueryString
   std::vector<std::string> query_vector;
-  for (const URI::QueryParam& query_kv : url_.query_parameter_pairs()) {
+  for (const URI::QueryParam &query_kv : url_.query_parameter_pairs()) {
     query_vector.emplace_back(absl::StrCat(query_kv.key, "=", query_kv.value));
   }
   std::string query = absl::StrJoin(query_vector, "&");
@@ -141,7 +141,7 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
     if (!token_.empty()) {
       request_headers_.insert({"x-amz-security-token", token_});
     }
-    for (const auto& header : additional_headers_) {
+    for (const auto &header : additional_headers_) {
       request_headers_.insert(
           {absl::AsciiStrToLower(header.first), header.second});
     }
@@ -150,7 +150,7 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
     request_headers_["x-amz-date"] = request_date_full;
   }
   std::vector<absl::string_view> canonical_headers_vector;
-  for (const auto& header : request_headers_) {
+  for (const auto &header : request_headers_) {
     canonical_headers_vector.emplace_back(header.first);
     canonical_headers_vector.emplace_back(":");
     canonical_headers_vector.emplace_back(header.second);
@@ -161,7 +161,7 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
   canonical_request_vector.emplace_back("\n");
   // 5. SignedHeaders
   std::vector<absl::string_view> signed_headers_vector;
-  for (const auto& header : request_headers_) {
+  for (const auto &header : request_headers_) {
     signed_headers_vector.emplace_back(header.first);
   }
   std::string signed_headers = absl::StrJoin(signed_headers_vector, ";");

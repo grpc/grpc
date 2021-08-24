@@ -27,21 +27,21 @@ namespace {
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 
-void timer_init(grpc_timer* timer, grpc_millis deadline,
-                grpc_closure* closure) {
+void timer_init(grpc_timer *timer, grpc_millis deadline,
+                grpc_closure *closure) {
   timer->ee_task_handle = grpc_iomgr_event_engine()->RunAt(
       grpc_core::ToAbslTime(
           grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
       GrpcClosureToCallback(closure, GRPC_ERROR_NONE), {});
 }
 
-void timer_cancel(grpc_timer* timer) {
+void timer_cancel(grpc_timer *timer) {
   auto handle = timer->ee_task_handle;
   grpc_iomgr_event_engine()->TryCancel(handle);
 }
 
 /* Internal API */
-grpc_timer_check_result timer_check(grpc_millis* /* next */) {
+grpc_timer_check_result timer_check(grpc_millis * /* next */) {
   return GRPC_TIMERS_NOT_CHECKED;
 }
 void timer_list_init() {}

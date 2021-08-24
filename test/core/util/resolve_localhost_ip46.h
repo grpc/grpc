@@ -22,7 +22,7 @@
 namespace grpc_core {
 
 // Test whether localhost resolves to ipv4 and/or ipv6
-void LocalhostResolves(bool* ipv4, bool* ipv6);
+void LocalhostResolves(bool *ipv4, bool *ipv6);
 
 }  // namespace grpc_core
 

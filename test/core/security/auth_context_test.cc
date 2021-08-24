@@ -66,7 +66,7 @@ static void test_simple_context(void) {
                     "name") == 0);
   it = grpc_auth_context_property_iterator(ctx.get());
   for (i = 0; i < ctx->properties().count; i++) {
-    const grpc_auth_property* p = grpc_auth_property_iterator_next(&it);
+    const grpc_auth_property *p = grpc_auth_property_iterator_next(&it);
     GPR_ASSERT(p == &ctx->properties().array[i]);
   }
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == nullptr);
@@ -89,7 +89,7 @@ static void test_simple_context(void) {
 static void test_chained_context(void) {
   grpc_core::RefCountedPtr<grpc_auth_context> chained =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
-  grpc_auth_context* chained_ptr = chained.get();
+  grpc_auth_context *chained_ptr = chained.get();
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(std::move(chained));
 
@@ -109,11 +109,11 @@ static void test_chained_context(void) {
                     "name") == 0);
   it = grpc_auth_context_property_iterator(ctx.get());
   for (i = 0; i < ctx->properties().count; i++) {
-    const grpc_auth_property* p = grpc_auth_property_iterator_next(&it);
+    const grpc_auth_property *p = grpc_auth_property_iterator_next(&it);
     GPR_ASSERT(p == &ctx->properties().array[i]);
   }
   for (i = 0; i < chained_ptr->properties().count; i++) {
-    const grpc_auth_property* p = grpc_auth_property_iterator_next(&it);
+    const grpc_auth_property *p = grpc_auth_property_iterator_next(&it);
     GPR_ASSERT(p == &chained_ptr->properties().array[i]);
   }
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == nullptr);
@@ -137,7 +137,7 @@ static void test_chained_context(void) {
   ctx.reset(DEBUG_LOCATION, "test");
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   test_empty_context();
   test_simple_context();

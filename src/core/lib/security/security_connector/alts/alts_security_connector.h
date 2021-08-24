@@ -43,7 +43,7 @@ grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_alts_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-    const char* target_name);
+    const char *target_name);
 
 /**
  * This method creates an ALTS server security connector.
@@ -60,14 +60,14 @@ grpc_alts_server_security_connector_create(
 
 /* Initializes rpc_versions. */
 void grpc_alts_set_rpc_protocol_versions(
-    grpc_gcp_rpc_protocol_versions* rpc_versions);
+    grpc_gcp_rpc_protocol_versions *rpc_versions);
 
 namespace grpc_core {
 namespace internal {
 
 /* Exposed only for testing. */
 grpc_core::RefCountedPtr<grpc_auth_context>
-grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer);
+grpc_alts_auth_context_from_tsi_peer(const tsi_peer *peer);
 
 }  // namespace internal
 }  // namespace grpc_core

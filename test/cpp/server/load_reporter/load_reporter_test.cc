@@ -57,8 +57,8 @@ class MockCensusViewProvider : public CensusViewProvider {
  public:
   MOCK_METHOD0(FetchViewData, CensusViewProvider::ViewDataMap());
 
-  const ::opencensus::stats::ViewDescriptor& FindViewDescriptor(
-      const std::string& view_name) {
+  const ::opencensus::stats::ViewDescriptor &FindViewDescriptor(
+      const std::string &view_name) {
     auto it = view_descriptor_map().find(view_name);
     GPR_ASSERT(it != view_descriptor_map().end());
     return it->second;
@@ -74,13 +74,13 @@ class LoadReporterTest : public ::testing::Test {
  public:
   LoadReporterTest() {}
 
-  MockCensusViewProvider* mock_census_view_provider() {
-    return static_cast<MockCensusViewProvider*>(
+  MockCensusViewProvider *mock_census_view_provider() {
+    return static_cast<MockCensusViewProvider *>(
         load_reporter_->census_view_provider());
   }
 
   void PrepareCpuExpectation(size_t call_num) {
-    auto mock_cpu_stats_provider = static_cast<MockCpuStatsProvider*>(
+    auto mock_cpu_stats_provider = static_cast<MockCpuStatsProvider *>(
         load_reporter_->cpu_stats_provider());
     ::testing::InSequence s;
     for (size_t i = 0; i < call_num; ++i) {
@@ -150,9 +150,9 @@ class LbFeedbackTest : public LoadReporterTest {
  public:
   // Note that [start, start + count) of the fake samples (maybe plus the
   // initial record) are in the window now.
-  void VerifyLbFeedback(const LoadBalancingFeedback& lb_feedback, size_t start,
+  void VerifyLbFeedback(const LoadBalancingFeedback &lb_feedback, size_t start,
                         size_t count) {
-    const CpuStatsProvider::CpuStatsSample* base =
+    const CpuStatsProvider::CpuStatsSample *base =
         start == 0 ? &initial_cpu_stats_ : &kCpuStatsSamples[start - 1];
     double expected_cpu_util =
         static_cast<double>(kCpuStatsSamples[start + count - 1].first -
@@ -199,7 +199,7 @@ TEST_F(LbFeedbackTest, ZeroDuration) {
 TEST_F(LbFeedbackTest, Normal) {
   // Prepare view data list using the <QPS, EPS> samples.
   std::vector<CensusViewProvider::ViewDataMap> view_data_map_list;
-  for (const auto& p : LbFeedbackTest::kQpsEpsSamples) {
+  for (const auto &p : LbFeedbackTest::kQpsEpsSamples) {
     double qps = p.first;
     double eps = p.second;
     double ok_count = (qps - eps) * kFetchAndSampleIntervalSeconds;
@@ -499,7 +499,7 @@ TEST_F(LoadReportTest, BasicReport) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

@@ -19,7 +19,7 @@
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
 
 bool grpc_gcp_handshaker_resp_set_peer_rpc_versions(
-    grpc_gcp_HandshakerResp* resp, upb_arena* arena, uint32_t max_major,
+    grpc_gcp_HandshakerResp *resp, upb_arena *arena, uint32_t max_major,
     uint32_t max_minor, uint32_t min_major, uint32_t min_minor) {
   if (resp == nullptr) {
     gpr_log(GPR_ERROR,
@@ -32,23 +32,23 @@ bool grpc_gcp_handshaker_resp_set_peer_rpc_versions(
   versions.max_rpc_version.minor = max_minor;
   versions.min_rpc_version.major = min_major;
   versions.min_rpc_version.minor = min_minor;
-  grpc_gcp_HandshakerResult* result =
+  grpc_gcp_HandshakerResult *result =
       grpc_gcp_HandshakerResp_mutable_result(resp, arena);
-  grpc_gcp_RpcProtocolVersions* upb_versions =
+  grpc_gcp_RpcProtocolVersions *upb_versions =
       grpc_gcp_HandshakerResult_mutable_peer_rpc_versions(result, arena);
   grpc_gcp_RpcProtocolVersions_assign_from_struct(upb_versions, arena,
                                                   &versions);
   return true;
 }
 
-grpc_gcp_HandshakerReq* grpc_gcp_handshaker_req_decode(grpc_slice slice,
-                                                       upb_arena* arena) {
+grpc_gcp_HandshakerReq *grpc_gcp_handshaker_req_decode(grpc_slice slice,
+                                                       upb_arena *arena) {
   size_t buf_size = GPR_SLICE_LENGTH(slice);
-  void* buf = upb_arena_malloc(arena, buf_size);
-  memcpy(buf, reinterpret_cast<const char*>(GPR_SLICE_START_PTR(slice)),
+  void *buf = upb_arena_malloc(arena, buf_size);
+  memcpy(buf, reinterpret_cast<const char *>(GPR_SLICE_START_PTR(slice)),
          buf_size);
-  grpc_gcp_HandshakerReq* resp = grpc_gcp_HandshakerReq_parse(
-      reinterpret_cast<char*>(buf), buf_size, arena);
+  grpc_gcp_HandshakerReq *resp = grpc_gcp_HandshakerReq_parse(
+      reinterpret_cast<char *>(buf), buf_size, arena);
   if (!resp) {
     gpr_log(GPR_ERROR, "grpc_gcp_HandshakerReq decode error");
     return nullptr;
@@ -57,8 +57,8 @@ grpc_gcp_HandshakerReq* grpc_gcp_handshaker_req_decode(grpc_slice slice,
 }
 
 /* Check equality of a pair of grpc_gcp_identity fields. */
-static bool handshaker_identity_equals(const grpc_gcp_Identity* l_id,
-                                       const grpc_gcp_Identity* r_id) {
+static bool handshaker_identity_equals(const grpc_gcp_Identity *l_id,
+                                       const grpc_gcp_Identity *r_id) {
   if ((grpc_gcp_Identity_has_service_account(l_id) !=
        grpc_gcp_Identity_has_service_account(r_id)) ||
       (grpc_gcp_Identity_has_hostname(l_id) !=
@@ -81,15 +81,15 @@ static bool handshaker_identity_equals(const grpc_gcp_Identity* l_id,
 }
 
 static bool handshaker_rpc_versions_equals(
-    const grpc_gcp_RpcProtocolVersions* l_version,
-    const grpc_gcp_RpcProtocolVersions* r_version) {
-  const grpc_gcp_RpcProtocolVersions_Version* l_maxver =
+    const grpc_gcp_RpcProtocolVersions *l_version,
+    const grpc_gcp_RpcProtocolVersions *r_version) {
+  const grpc_gcp_RpcProtocolVersions_Version *l_maxver =
       grpc_gcp_RpcProtocolVersions_max_rpc_version(l_version);
-  const grpc_gcp_RpcProtocolVersions_Version* r_maxver =
+  const grpc_gcp_RpcProtocolVersions_Version *r_maxver =
       grpc_gcp_RpcProtocolVersions_max_rpc_version(r_version);
-  const grpc_gcp_RpcProtocolVersions_Version* l_minver =
+  const grpc_gcp_RpcProtocolVersions_Version *l_minver =
       grpc_gcp_RpcProtocolVersions_min_rpc_version(l_version);
-  const grpc_gcp_RpcProtocolVersions_Version* r_minver =
+  const grpc_gcp_RpcProtocolVersions_Version *r_minver =
       grpc_gcp_RpcProtocolVersions_min_rpc_version(r_version);
   return (grpc_gcp_RpcProtocolVersions_Version_major(l_maxver) ==
           grpc_gcp_RpcProtocolVersions_Version_major(r_maxver)) &&
@@ -102,8 +102,8 @@ static bool handshaker_rpc_versions_equals(
 }
 
 /* Check equality of a pair of ALTS handshake responses. */
-bool grpc_gcp_handshaker_resp_equals(const grpc_gcp_HandshakerResp* l_resp,
-                                     const grpc_gcp_HandshakerResp* r_resp) {
+bool grpc_gcp_handshaker_resp_equals(const grpc_gcp_HandshakerResp *l_resp,
+                                     const grpc_gcp_HandshakerResp *r_resp) {
   return upb_strview_eql(grpc_gcp_HandshakerResp_out_frames(l_resp),
                          grpc_gcp_HandshakerResp_out_frames(r_resp)) &&
          (grpc_gcp_HandshakerResp_bytes_consumed(l_resp) ==
@@ -118,8 +118,8 @@ bool grpc_gcp_handshaker_resp_equals(const grpc_gcp_HandshakerResp* l_resp,
 
 /* This method checks equality of two handshaker response results. */
 bool grpc_gcp_handshaker_resp_result_equals(
-    const grpc_gcp_HandshakerResult* l_result,
-    const grpc_gcp_HandshakerResult* r_result) {
+    const grpc_gcp_HandshakerResult *l_result,
+    const grpc_gcp_HandshakerResult *r_result) {
   if (l_result == nullptr && r_result == nullptr) {
     return true;
   } else if ((l_result != nullptr && r_result == nullptr) ||
@@ -148,8 +148,8 @@ bool grpc_gcp_handshaker_resp_result_equals(
 
 /* This method checks equality of two handshaker response statuses. */
 bool grpc_gcp_handshaker_resp_status_equals(
-    const grpc_gcp_HandshakerStatus* l_status,
-    const grpc_gcp_HandshakerStatus* r_status) {
+    const grpc_gcp_HandshakerStatus *l_status,
+    const grpc_gcp_HandshakerStatus *r_status) {
   if (l_status == nullptr && r_status == nullptr) {
     return true;
   } else if ((l_status != nullptr && r_status == nullptr) ||

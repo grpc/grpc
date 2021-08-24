@@ -33,8 +33,8 @@ ABSL_FLAG(
 const char kGoldenFilePath[] = "test/cpp/codegen/compiler_test_golden";
 const char kMockGoldenFilePath[] = "test/cpp/codegen/compiler_test_mock_golden";
 
-void run_test(const std::basic_string<char>& generated_file,
-              const std::basic_string<char>& golden_file) {
+void run_test(const std::basic_string<char> &generated_file,
+              const std::basic_string<char> &golden_file) {
   std::ifstream generated(generated_file);
   std::ifstream golden(golden_file);
 
@@ -62,7 +62,7 @@ TEST(GoldenMockFileTest, TestGeneratedMockFile) {
       kMockGoldenFilePath);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);

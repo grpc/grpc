@@ -51,7 +51,7 @@ bool grpc_iomgr_is_any_background_poller_thread();
 /** Returns true if the closure is registered into the background poller. Note
  * that the closure may or may not run yet when this function returns, and the
  * closure should not be blocking or long-running. */
-bool grpc_iomgr_add_closure_to_background_poller(grpc_closure* closure,
+bool grpc_iomgr_add_closure_to_background_poller(grpc_closure *closure,
                                                  grpc_error_handle error);
 
 /* Exposed only for testing */

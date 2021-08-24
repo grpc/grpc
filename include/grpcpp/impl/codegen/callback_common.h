@@ -36,7 +36,7 @@ namespace internal {
 // TODO(vjpai): decide whether it is better for this to take a const lvalue
 //              parameter or an rvalue parameter, or if it even matters
 template <class Func, class... Args>
-void CatchingCallback(Func&& func, Args&&... args) {
+void CatchingCallback(Func &&func, Args &&...args) {
 #if GRPC_ALLOW_EXCEPTIONS
   try {
     func(std::forward<Args>(args)...);
@@ -49,7 +49,7 @@ void CatchingCallback(Func&& func, Args&&... args) {
 }
 
 template <class Reactor, class Func, class... Args>
-Reactor* CatchingReactorGetter(Func&& func, Args&&... args) {
+Reactor *CatchingReactorGetter(Func &&func, Args &&...args) {
 #if GRPC_ALLOW_EXCEPTIONS
   try {
     return func(std::forward<Args>(args)...);
@@ -69,7 +69,7 @@ Reactor* CatchingReactorGetter(Func&& func, Args&&... args) {
 class CallbackWithStatusTag : public grpc_completion_queue_functor {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* /*ptr*/, std::size_t size) {
+  static void operator delete(void * /*ptr*/, std::size_t size) {
     GPR_CODEGEN_ASSERT(size == sizeof(CallbackWithStatusTag));
   }
 
@@ -78,10 +78,10 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
+  static void operator delete(void *, void *) { GPR_CODEGEN_ASSERT(false); }
 
-  CallbackWithStatusTag(grpc_call* call, std::function<void(Status)> f,
-                        CompletionQueueTag* ops)
+  CallbackWithStatusTag(grpc_call *call, std::function<void(Status)> f,
+                        CompletionQueueTag *ops)
       : call_(call), func_(std::move(f)), ops_(ops) {
     g_core_codegen_interface->grpc_call_ref(call);
     functor_run = &CallbackWithStatusTag::StaticRun;
@@ -91,7 +91,7 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
     inlineable = false;
   }
   ~CallbackWithStatusTag() {}
-  Status* status_ptr() { return &status_; }
+  Status *status_ptr() { return &status_; }
 
   // force_run can not be performed on a tag if operations using this tag
   // have been sent to PerformOpsOnCall. It is intended for error conditions
@@ -102,16 +102,16 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
   }
 
  private:
-  grpc_call* call_;
+  grpc_call *call_;
   std::function<void(Status)> func_;
-  CompletionQueueTag* ops_;
+  CompletionQueueTag *ops_;
   Status status_;
 
-  static void StaticRun(grpc_completion_queue_functor* cb, int ok) {
-    static_cast<CallbackWithStatusTag*>(cb)->Run(static_cast<bool>(ok));
+  static void StaticRun(grpc_completion_queue_functor *cb, int ok) {
+    static_cast<CallbackWithStatusTag *>(cb)->Run(static_cast<bool>(ok));
   }
   void Run(bool ok) {
-    void* ignored = ops_;
+    void *ignored = ops_;
 
     if (!ops_->FinalizeResult(&ignored, &ok)) {
       // The tag was swallowed
@@ -135,7 +135,7 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
 class CallbackWithSuccessTag : public grpc_completion_queue_functor {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* /*ptr*/, std::size_t size) {
+  static void operator delete(void * /*ptr*/, std::size_t size) {
     GPR_CODEGEN_ASSERT(size == sizeof(CallbackWithSuccessTag));
   }
 
@@ -144,12 +144,12 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
+  static void operator delete(void *, void *) { GPR_CODEGEN_ASSERT(false); }
 
   CallbackWithSuccessTag() : call_(nullptr) {}
 
-  CallbackWithSuccessTag(const CallbackWithSuccessTag&) = delete;
-  CallbackWithSuccessTag& operator=(const CallbackWithSuccessTag&) = delete;
+  CallbackWithSuccessTag(const CallbackWithSuccessTag &) = delete;
+  CallbackWithSuccessTag &operator=(const CallbackWithSuccessTag &) = delete;
 
   ~CallbackWithSuccessTag() { Clear(); }
 
@@ -159,8 +159,8 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
   // can_inline indicates that this particular callback can be executed inline
   // (without needing a thread hop) and is only used for library-provided server
   // callbacks.
-  void Set(grpc_call* call, std::function<void(bool)> f,
-           CompletionQueueTag* ops, bool can_inline) {
+  void Set(grpc_call *call, std::function<void(bool)> f,
+           CompletionQueueTag *ops, bool can_inline) {
     GPR_CODEGEN_ASSERT(call_ == nullptr);
     g_core_codegen_interface->grpc_call_ref(call);
     call_ = call;
@@ -172,14 +172,14 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
 
   void Clear() {
     if (call_ != nullptr) {
-      grpc_call* call = call_;
+      grpc_call *call = call_;
       call_ = nullptr;
       func_ = nullptr;
       g_core_codegen_interface->grpc_call_unref(call);
     }
   }
 
-  CompletionQueueTag* ops() { return ops_; }
+  CompletionQueueTag *ops() { return ops_; }
 
   // force_run can not be performed on a tag if operations using this tag
   // have been sent to PerformOpsOnCall. It is intended for error conditions
@@ -191,19 +191,19 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
   operator bool() const { return call_ != nullptr; }
 
  private:
-  grpc_call* call_;
+  grpc_call *call_;
   std::function<void(bool)> func_;
-  CompletionQueueTag* ops_;
+  CompletionQueueTag *ops_;
 
-  static void StaticRun(grpc_completion_queue_functor* cb, int ok) {
-    static_cast<CallbackWithSuccessTag*>(cb)->Run(static_cast<bool>(ok));
+  static void StaticRun(grpc_completion_queue_functor *cb, int ok) {
+    static_cast<CallbackWithSuccessTag *>(cb)->Run(static_cast<bool>(ok));
   }
   void Run(bool ok) {
-    void* ignored = ops_;
+    void *ignored = ops_;
     // Allow a "false" return value from FinalizeResult to silence the
     // callback, just as it silences a CQ tag in the async cases
 #ifndef NDEBUG
-    auto* ops = ops_;
+    auto *ops = ops_;
 #endif
     bool do_callback = ops_->FinalizeResult(&ignored, &ok);
     GPR_CODEGEN_DEBUG_ASSERT(ignored == ops);

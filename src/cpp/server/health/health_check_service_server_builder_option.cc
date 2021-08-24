@@ -25,11 +25,11 @@ HealthCheckServiceServerBuilderOption::HealthCheckServiceServerBuilderOption(
     : hc_(std::move(hc)) {}
 // Hand over hc_ to the server.
 void HealthCheckServiceServerBuilderOption::UpdateArguments(
-    ChannelArguments* args) {
+    ChannelArguments *args) {
   args->SetPointer(kHealthCheckServiceInterfaceArg, hc_.release());
 }
 
 void HealthCheckServiceServerBuilderOption::UpdatePlugins(
-    std::vector<std::unique_ptr<ServerBuilderPlugin>>* /*plugins*/) {}
+    std::vector<std::unique_ptr<ServerBuilderPlugin>> * /*plugins*/) {}
 
 }  // namespace grpc

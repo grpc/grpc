@@ -22,7 +22,7 @@
 
 #include <grpc/support/alloc.h>
 
-void gsec_test_random_bytes(uint8_t* bytes, size_t length) {
+void gsec_test_random_bytes(uint8_t *bytes, size_t length) {
   srand(time(nullptr));
   size_t ind;
   for (ind = 0; ind < length; ind++) {
@@ -30,9 +30,9 @@ void gsec_test_random_bytes(uint8_t* bytes, size_t length) {
   }
 }
 
-void gsec_test_random_array(uint8_t** bytes, size_t length) {
+void gsec_test_random_array(uint8_t **bytes, size_t length) {
   if (bytes != nullptr) {
-    *bytes = static_cast<uint8_t*>(gpr_malloc(length));
+    *bytes = static_cast<uint8_t *>(gpr_malloc(length));
     gsec_test_random_bytes(*bytes, length);
   } else {
     fprintf(stderr, "bytes buffer is nullptr in gsec_test_random_array().");
@@ -42,13 +42,13 @@ void gsec_test_random_array(uint8_t** bytes, size_t length) {
 
 uint32_t gsec_test_bias_random_uint32(uint32_t max_length) {
   uint32_t value;
-  gsec_test_random_bytes(reinterpret_cast<uint8_t*>(&value), sizeof(value));
+  gsec_test_random_bytes(reinterpret_cast<uint8_t *>(&value), sizeof(value));
   return value % max_length;
 }
 
-void gsec_test_copy(const uint8_t* src, uint8_t** des, size_t source_len) {
+void gsec_test_copy(const uint8_t *src, uint8_t **des, size_t source_len) {
   if (src != nullptr && des != nullptr) {
-    *des = static_cast<uint8_t*>(gpr_malloc(source_len));
+    *des = static_cast<uint8_t *>(gpr_malloc(source_len));
     memcpy(*des, src, source_len);
   } else {
     fprintf(stderr, "Either src or des buffer is nullptr in gsec_test_copy().");
@@ -56,10 +56,10 @@ void gsec_test_copy(const uint8_t* src, uint8_t** des, size_t source_len) {
   }
 }
 
-void gsec_test_copy_and_alter_random_byte(const uint8_t* src, uint8_t** des,
+void gsec_test_copy_and_alter_random_byte(const uint8_t *src, uint8_t **des,
                                           size_t source_len) {
   if (src != nullptr && des != nullptr) {
-    *des = static_cast<uint8_t*>(gpr_malloc(source_len));
+    *des = static_cast<uint8_t *>(gpr_malloc(source_len));
     memcpy(*des, src, source_len);
     uint32_t offset;
     offset = gsec_test_bias_random_uint32(static_cast<uint32_t>(source_len));
@@ -74,8 +74,8 @@ void gsec_test_copy_and_alter_random_byte(const uint8_t* src, uint8_t** des,
 
 int gsec_test_expect_compare_code_and_substr(grpc_status_code status1,
                                              grpc_status_code status2,
-                                             const char* msg1,
-                                             const char* msg2) {
+                                             const char *msg1,
+                                             const char *msg2) {
   int failure = 1;
   if (status1 != status2) {
     fprintf(stderr, "Status %d does not equal %d.\n", status1, status2);

@@ -63,16 +63,16 @@ static void inc_time() {
   grpc_timer_manager_tick();
 }
 
-static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
+static void *tag(intptr_t x) { return reinterpret_cast<void *>(x); }
 
 template <class A0>
-static void write_csv(std::ostream* out, A0&& a0) {
+static void write_csv(std::ostream *out, A0 &&a0) {
   if (!out) return;
   (*out) << a0 << "\n";
 }
 
 template <class A0, class... Arg>
-static void write_csv(std::ostream* out, A0&& a0, Arg&&... arg) {
+static void write_csv(std::ostream *out, A0 &&a0, Arg &&...arg) {
   if (!out) return;
   (*out) << a0 << ",";
   write_csv(out, std::forward<Arg>(arg)...);
@@ -80,9 +80,9 @@ static void write_csv(std::ostream* out, A0&& a0, Arg&&... arg) {
 
 class TrickledCHTTP2 : public EndpointPairFixture {
  public:
-  TrickledCHTTP2(Service* service, bool streaming, size_t req_size,
+  TrickledCHTTP2(Service *service, bool streaming, size_t req_size,
                  size_t resp_size, size_t kilobits_per_second,
-                 grpc_passthru_endpoint_stats* stats)
+                 grpc_passthru_endpoint_stats *stats)
       : EndpointPairFixture(service, MakeEndpoints(kilobits_per_second, stats),
                             FixtureConfiguration()),
         stats_(stats) {
@@ -111,7 +111,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
     }
   }
 
-  void AddToLabel(std::ostream& out, benchmark::State& state) override {
+  void AddToLabel(std::ostream &out, benchmark::State &state) override {
     out << " writes/iter:"
         << (static_cast<double>(stats_->num_writes) /
             static_cast<double>(state.iterations()))
@@ -135,17 +135,17 @@ class TrickledCHTTP2 : public EndpointPairFixture {
 
   void Log(int64_t iteration) GPR_ATTRIBUTE_NO_TSAN {
     auto now = gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), start_);
-    grpc_chttp2_transport* client =
-        reinterpret_cast<grpc_chttp2_transport*>(client_transport_);
-    grpc_chttp2_transport* server =
-        reinterpret_cast<grpc_chttp2_transport*>(server_transport_);
-    grpc_chttp2_stream* client_stream =
+    grpc_chttp2_transport *client =
+        reinterpret_cast<grpc_chttp2_transport *>(client_transport_);
+    grpc_chttp2_transport *server =
+        reinterpret_cast<grpc_chttp2_transport *>(server_transport_);
+    grpc_chttp2_stream *client_stream =
         client->stream_map.count == 1
-            ? static_cast<grpc_chttp2_stream*>(client->stream_map.values[0])
+            ? static_cast<grpc_chttp2_stream *>(client->stream_map.values[0])
             : nullptr;
-    grpc_chttp2_stream* server_stream =
+    grpc_chttp2_stream *server_stream =
         server->stream_map.count == 1
-            ? static_cast<grpc_chttp2_stream*>(server->stream_map.values[0])
+            ? static_cast<grpc_chttp2_stream *>(server->stream_map.values[0])
             : nullptr;
     write_csv(
         log_.get(),
@@ -198,15 +198,15 @@ class TrickledCHTTP2 : public EndpointPairFixture {
         grpc_trickle_endpoint_trickle(endpoint_pair_.server);
 
     if (update_stats) {
-      UpdateStats(reinterpret_cast<grpc_chttp2_transport*>(client_transport_),
+      UpdateStats(reinterpret_cast<grpc_chttp2_transport *>(client_transport_),
                   &client_stats_, client_backlog);
-      UpdateStats(reinterpret_cast<grpc_chttp2_transport*>(server_transport_),
+      UpdateStats(reinterpret_cast<grpc_chttp2_transport *>(server_transport_),
                   &server_stats_, server_backlog);
     }
   }
 
  private:
-  grpc_passthru_endpoint_stats* stats_;
+  grpc_passthru_endpoint_stats *stats_;
   struct Stats {
     int streams_stalled_due_to_stream_flow_control = 0;
     int streams_stalled_due_to_transport_flow_control = 0;
@@ -217,7 +217,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
   gpr_timespec start_ = gpr_now(GPR_CLOCK_MONOTONIC);
 
   static grpc_endpoint_pair MakeEndpoints(size_t kilobits,
-                                          grpc_passthru_endpoint_stats* stats) {
+                                          grpc_passthru_endpoint_stats *stats) {
     grpc_endpoint_pair p;
     grpc_passthru_endpoint_create(&p.client, &p.server, stats);
     double bytes_per_second = 125.0 * kilobits;
@@ -226,7 +226,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
     return p;
   }
 
-  void UpdateStats(grpc_chttp2_transport* t, Stats* s,
+  void UpdateStats(grpc_chttp2_transport *t, Stats *s,
                    size_t backlog) GPR_ATTRIBUTE_NO_TSAN {
     if (backlog == 0) {
       if (t->lists[GRPC_CHTTP2_LIST_STALLED_BY_STREAM].head != nullptr) {
@@ -239,7 +239,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
   }
 };
 
-static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok,
+static void TrickleCQNext(TrickledCHTTP2 *fixture, void **t, bool *ok,
                           int64_t iteration) {
   while (true) {
     fixture->Log(iteration);
@@ -257,7 +257,7 @@ static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok,
   }
 }
 
-static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
+static void BM_PumpStreamServerToClient_Trickle(benchmark::State &state) {
   EchoTestService::AsyncService service;
   std::unique_ptr<TrickledCHTTP2> fixture(new TrickledCHTTP2(
       &service, true, state.range(0) /* req_size */,
@@ -279,7 +279,7 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
     ClientContext cli_ctx;
     auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
     int need_tags = (1 << 0) | (1 << 1);
-    void* t;
+    void *t;
     bool ok;
     while (need_tags) {
       TrickleCQNext(fixture.get(), &t, &ok, -1);
@@ -340,7 +340,7 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
   state.SetBytesProcessed(state.range(0) * state.iterations());
 }
 
-static void StreamingTrickleArgs(benchmark::internal::Benchmark* b) {
+static void StreamingTrickleArgs(benchmark::internal::Benchmark *b) {
   for (int i = 1; i <= 128 * 1024 * 1024; i *= 8) {
     for (int j = 64; j <= 128 * 1024 * 1024; j *= 8) {
       double expected_time =
@@ -352,7 +352,7 @@ static void StreamingTrickleArgs(benchmark::internal::Benchmark* b) {
 }
 BENCHMARK(BM_PumpStreamServerToClient_Trickle)->Apply(StreamingTrickleArgs);
 
-static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
+static void BM_PumpUnbalancedUnary_Trickle(benchmark::State &state) {
   EchoTestService::AsyncService service;
   std::unique_ptr<TrickledCHTTP2> fixture(new TrickledCHTTP2(
       &service, false, state.range(0) /* req_size */,
@@ -375,9 +375,9 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
     ServerEnv() : response_writer(&ctx) {}
   };
   uint8_t server_env_buffer[2 * sizeof(ServerEnv)];
-  ServerEnv* server_env[2] = {
-      reinterpret_cast<ServerEnv*>(server_env_buffer),
-      reinterpret_cast<ServerEnv*>(server_env_buffer + sizeof(ServerEnv))};
+  ServerEnv *server_env[2] = {
+      reinterpret_cast<ServerEnv *>(server_env_buffer),
+      reinterpret_cast<ServerEnv *>(server_env_buffer + sizeof(ServerEnv))};
   new (server_env[0]) ServerEnv;
   new (server_env[1]) ServerEnv;
   service.RequestEcho(&server_env[0]->ctx, &server_env[0]->recv_request,
@@ -394,14 +394,14 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
     ClientContext cli_ctx;
     std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
         stub->AsyncEcho(&cli_ctx, send_request, fixture->cq()));
-    void* t;
+    void *t;
     bool ok;
     response_reader->Finish(&recv_response, &recv_status, tag(4));
     TrickleCQNext(fixture.get(), &t, &ok, in_warmup ? -1 : state.iterations());
     GPR_ASSERT(ok);
     GPR_ASSERT(t == tag(0) || t == tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
-    ServerEnv* senv = server_env[slot];
+    ServerEnv *senv = server_env[slot];
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
       TrickleCQNext(fixture.get(), &t, &ok,
@@ -442,7 +442,7 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
                           state.range(1) * state.iterations());
 }
 
-static void UnaryTrickleArgs(benchmark::internal::Benchmark* b) {
+static void UnaryTrickleArgs(benchmark::internal::Benchmark *b) {
   for (int bw = 64; bw <= 128 * 1024 * 1024; bw *= 16) {
     b->Args({1, 1, bw});
     for (int i = 64; i <= 128 * 1024 * 1024; i *= 64) {
@@ -467,7 +467,7 @@ namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);

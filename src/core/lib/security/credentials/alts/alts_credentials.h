@@ -29,42 +29,42 @@
 /* Main struct for grpc ALTS channel credential. */
 class grpc_alts_credentials final : public grpc_channel_credentials {
  public:
-  grpc_alts_credentials(const grpc_alts_credentials_options* options,
-                        const char* handshaker_service_url);
+  grpc_alts_credentials(const grpc_alts_credentials_options *options,
+                        const char *handshaker_service_url);
   ~grpc_alts_credentials() override;
 
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* target_name, const grpc_channel_args* args,
-      grpc_channel_args** new_args) override;
+      const char *target_name, const grpc_channel_args *args,
+      grpc_channel_args **new_args) override;
 
-  const grpc_alts_credentials_options* options() const { return options_; }
-  grpc_alts_credentials_options* mutable_options() { return options_; }
-  const char* handshaker_service_url() const { return handshaker_service_url_; }
+  const grpc_alts_credentials_options *options() const { return options_; }
+  grpc_alts_credentials_options *mutable_options() { return options_; }
+  const char *handshaker_service_url() const { return handshaker_service_url_; }
 
  private:
-  grpc_alts_credentials_options* options_;
-  char* handshaker_service_url_;
+  grpc_alts_credentials_options *options_;
+  char *handshaker_service_url_;
 };
 
 /* Main struct for grpc ALTS server credential. */
 class grpc_alts_server_credentials final : public grpc_server_credentials {
  public:
-  grpc_alts_server_credentials(const grpc_alts_credentials_options* options,
-                               const char* handshaker_service_url);
+  grpc_alts_server_credentials(const grpc_alts_credentials_options *options,
+                               const char *handshaker_service_url);
   ~grpc_alts_server_credentials() override;
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector(const grpc_channel_args* /* args */) override;
+  create_security_connector(const grpc_channel_args * /* args */) override;
 
-  const grpc_alts_credentials_options* options() const { return options_; }
-  grpc_alts_credentials_options* mutable_options() { return options_; }
-  const char* handshaker_service_url() const { return handshaker_service_url_; }
+  const grpc_alts_credentials_options *options() const { return options_; }
+  grpc_alts_credentials_options *mutable_options() { return options_; }
+  const char *handshaker_service_url() const { return handshaker_service_url_; }
 
  private:
-  grpc_alts_credentials_options* options_;
-  char* handshaker_service_url_;
+  grpc_alts_credentials_options *options_;
+  char *handshaker_service_url_;
 };
 
 /**
@@ -83,9 +83,9 @@ class grpc_alts_server_credentials final : public grpc_server_credentials {
  * Otherwise, it returns the created credential object.
  */
 
-grpc_channel_credentials* grpc_alts_credentials_create_customized(
-    const grpc_alts_credentials_options* options,
-    const char* handshaker_service_url, bool enable_untrusted_alts);
+grpc_channel_credentials *grpc_alts_credentials_create_customized(
+    const grpc_alts_credentials_options *options,
+    const char *handshaker_service_url, bool enable_untrusted_alts);
 
 /**
  * This method creates an ALTS server credential object with customized
@@ -102,8 +102,8 @@ grpc_channel_credentials* grpc_alts_credentials_create_customized(
  * It returns nullptr if the flag is disabled and ALTS is not running on GCP.
  * Otherwise, it returns the created credential object.
  */
-grpc_server_credentials* grpc_alts_server_credentials_create_customized(
-    const grpc_alts_credentials_options* options,
-    const char* handshaker_service_url, bool enable_untrusted_alts);
+grpc_server_credentials *grpc_alts_server_credentials_create_customized(
+    const grpc_alts_credentials_options *options,
+    const char *handshaker_service_url, bool enable_untrusted_alts);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_ALTS_ALTS_CREDENTIALS_H */

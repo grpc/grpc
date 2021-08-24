@@ -64,15 +64,15 @@ std::string output_json("output.json");
 
 // Creata an echo server
 class EchoServerImpl final : public grpc::testing::TestService::Service {
-  Status EmptyCall(::grpc::ServerContext* /*context*/,
-                   const grpc::testing::Empty* /*request*/,
-                   grpc::testing::Empty* /*response*/) override {
+  Status EmptyCall(::grpc::ServerContext * /*context*/,
+                   const grpc::testing::Empty * /*request*/,
+                   grpc::testing::Empty * /*response*/) override {
     return Status::OK;
   }
 };
 
 // Run client in a thread
-void RunClient(const std::string& client_id, gpr_event* done_ev) {
+void RunClient(const std::string &client_id, gpr_event *done_ev) {
   grpc::ChannelArguments channel_args;
   std::shared_ptr<grpc::ChannelCredentials> channel_creds =
       grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
@@ -130,7 +130,7 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   std::thread client_thread_1(RunClient, "1", &done_ev1);
   std::thread client_thread_2(RunClient, "2", &done_ev2);
   // Run the channelz sampler
-  grpc::SubProcess* test_driver = new grpc::SubProcess(
+  grpc::SubProcess *test_driver = new grpc::SubProcess(
       {g_root + "/channelz_sampler", "--server_address=" + server_address,
        "--custom_credentials_type=" + custom_credentials_type,
        "--sampling_times=" + sampling_times,
@@ -155,13 +155,13 @@ TEST(ChannelzSamplerTest, SimpleTest) {
     GPR_ASSERT(0);
   }
   delete test_driver;
-  gpr_event_set(&done_ev1, reinterpret_cast<void*>(1));
-  gpr_event_set(&done_ev2, reinterpret_cast<void*>(1));
+  gpr_event_set(&done_ev1, reinterpret_cast<void *>(1));
+  gpr_event_set(&done_ev2, reinterpret_cast<void *>(1));
   client_thread_1.join();
   client_thread_2.join();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   std::string me = argv[0];

@@ -117,8 +117,8 @@ static void test_create_many_ephemeral_metadata(bool intern_keys,
 static void test_create_many_persistant_metadata(void) {
   char buffer[GPR_LTOA_MIN_BUFSIZE];
   long i;
-  grpc_mdelem* created =
-      static_cast<grpc_mdelem*>(gpr_malloc(sizeof(grpc_mdelem) * MANY));
+  grpc_mdelem *created =
+      static_cast<grpc_mdelem *>(gpr_malloc(sizeof(grpc_mdelem) * MANY));
   grpc_mdelem md;
 
   gpr_log(GPR_INFO, "test_create_many_persistant_metadata");
@@ -223,9 +223,9 @@ static void test_identity_laws(bool intern_keys, bool intern_values) {
 static void test_things_stick_around(void) {
   size_t i, j;
   size_t nstrs = 1000;
-  grpc_slice* strs =
-      static_cast<grpc_slice*>(gpr_malloc(sizeof(grpc_slice) * nstrs));
-  size_t* shuf = static_cast<size_t*>(gpr_malloc(sizeof(size_t) * nstrs));
+  grpc_slice *strs =
+      static_cast<grpc_slice *>(gpr_malloc(sizeof(grpc_slice) * nstrs));
+  size_t *shuf = static_cast<size_t *>(gpr_malloc(sizeof(size_t) * nstrs));
   grpc_slice test;
 
   gpr_log(GPR_INFO, "test_things_stick_around");
@@ -270,16 +270,16 @@ static void test_things_stick_around(void) {
 }
 
 static void test_user_data_works(void) {
-  int* ud1;
-  int* ud2;
+  int *ud1;
+  int *ud2;
   grpc_mdelem md;
   gpr_log(GPR_INFO, "test_user_data_works");
 
   grpc_init();
   grpc_core::ExecCtx exec_ctx;
-  ud1 = static_cast<int*>(gpr_malloc(sizeof(int)));
+  ud1 = static_cast<int *>(gpr_malloc(sizeof(int)));
   *ud1 = 1;
-  ud2 = static_cast<int*>(gpr_malloc(sizeof(int)));
+  ud2 = static_cast<int *>(gpr_malloc(sizeof(int)));
   *ud2 = 2;
   md = grpc_mdelem_from_slices(
       grpc_slice_intern(grpc_slice_from_static_string("abc")),
@@ -293,16 +293,16 @@ static void test_user_data_works(void) {
 }
 
 static void test_user_data_works_for_allocated_md(void) {
-  int* ud1;
-  int* ud2;
+  int *ud1;
+  int *ud2;
   grpc_mdelem md;
   gpr_log(GPR_INFO, "test_user_data_works");
 
   grpc_init();
   grpc_core::ExecCtx exec_ctx;
-  ud1 = static_cast<int*>(gpr_malloc(sizeof(int)));
+  ud1 = static_cast<int *>(gpr_malloc(sizeof(int)));
   *ud1 = 1;
-  ud2 = static_cast<int*>(gpr_malloc(sizeof(int)));
+  ud2 = static_cast<int *>(gpr_malloc(sizeof(int)));
   *ud2 = 2;
   md = grpc_mdelem_from_slices(grpc_slice_from_static_string("abc"),
                                grpc_slice_from_static_string("123"));
@@ -314,7 +314,7 @@ static void test_user_data_works_for_allocated_md(void) {
   grpc_shutdown();
 }
 
-static void verify_ascii_header_size(const char* key, const char* value,
+static void verify_ascii_header_size(const char *key, const char *value,
                                      bool intern_key, bool intern_value) {
   grpc_mdelem elem = grpc_mdelem_from_slices(
       maybe_intern(grpc_slice_from_static_string(key), intern_key),
@@ -325,7 +325,7 @@ static void verify_ascii_header_size(const char* key, const char* value,
   GRPC_MDELEM_UNREF(elem);
 }
 
-static void verify_binary_header_size(const char* key, const uint8_t* value,
+static void verify_binary_header_size(const char *key, const uint8_t *value,
                                       size_t value_len, bool intern_key,
                                       bool intern_value) {
   grpc_mdelem elem = grpc_mdelem_from_slices(
@@ -335,7 +335,7 @@ static void verify_binary_header_size(const char* key, const uint8_t* value,
   GPR_ASSERT(grpc_is_binary_header(GRPC_MDKEY(elem)));
   size_t elem_size = grpc_chttp2_get_size_in_hpack_table(elem, false);
   grpc_slice value_slice = grpc_slice_from_copied_buffer(
-      reinterpret_cast<const char*>(value), value_len);
+      reinterpret_cast<const char *>(value), value_len);
   grpc_slice base64_encoded = grpc_chttp2_base64_encode(value_slice);
   size_t expected_size = 32 + strlen(key) + GRPC_SLICE_LENGTH(base64_encoded);
   GPR_ASSERT(expected_size == elem_size);
@@ -408,8 +408,8 @@ static void test_grpc_metadata_batch_get_value_with_absent_key(void) {
 
 static void test_grpc_metadata_batch_get_value_returns_one_value(void) {
   grpc_init();
-  const char* kKey = "some_key";
-  const char* kValue = "some_value";
+  const char *kKey = "some_key";
+  const char *kValue = "some_value";
   grpc_metadata_batch metadata;
   grpc_metadata_batch_init(&metadata);
   grpc_linked_mdelem storage;
@@ -429,9 +429,9 @@ static void test_grpc_metadata_batch_get_value_returns_one_value(void) {
 
 static void test_grpc_metadata_batch_get_value_returns_multiple_values(void) {
   grpc_init();
-  const char* kKey = "some_key";
-  const char* kValue1 = "value1";
-  const char* kValue2 = "value2";
+  const char *kKey = "some_key";
+  const char *kValue1 = "value1";
+  const char *kValue2 = "value2";
   grpc_metadata_batch metadata;
   grpc_metadata_batch_init(&metadata);
   grpc_linked_mdelem storage1;
@@ -455,7 +455,7 @@ static void test_grpc_metadata_batch_get_value_returns_multiple_values(void) {
   grpc_shutdown();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_no_op();

@@ -31,17 +31,17 @@
 #include <grpc/support/string_util.h>
 #include "src/core/lib/gpr/string.h"
 
-static void addhdr(grpc_event* ev, std::vector<std::string>* buf) {
+static void addhdr(grpc_event *ev, std::vector<std::string> *buf) {
   buf->push_back(absl::StrFormat("tag:%p", ev->tag));
 }
 
-static const char* errstr(int success) { return success ? "OK" : "ERROR"; }
+static const char *errstr(int success) { return success ? "OK" : "ERROR"; }
 
-static void adderr(int success, std::vector<std::string>* buf) {
+static void adderr(int success, std::vector<std::string> *buf) {
   buf->push_back(absl::StrFormat(" %s", errstr(success)));
 }
 
-std::string grpc_event_string(grpc_event* ev) {
+std::string grpc_event_string(grpc_event *ev) {
   if (ev == nullptr) return "null";
   std::vector<std::string> out;
   switch (ev->type) {

@@ -44,7 +44,7 @@ using ::grpc_event_engine::experimental::DefaultEventEngineFactory;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Promise;
 
-EventEngine* g_event_engine = nullptr;
+EventEngine *g_event_engine = nullptr;
 
 // TODO(nnoble): Instantiate the default EventEngine if none have been provided.
 void iomgr_platform_init(void) { GPR_ASSERT(g_event_engine != nullptr); }
@@ -69,7 +69,7 @@ bool iomgr_platform_is_any_background_poller_thread(void) {
 }
 
 bool iomgr_platform_add_closure_to_background_poller(
-    grpc_closure* /* closure */, grpc_error* /* error */) {
+    grpc_closure * /* closure */, grpc_error * /* error */) {
   return false;
 }
 
@@ -95,7 +95,7 @@ void grpc_set_default_iomgr_platform() {
 
 bool grpc_iomgr_run_in_background() { return false; }
 
-grpc_event_engine::experimental::EventEngine* grpc_iomgr_event_engine() {
+grpc_event_engine::experimental::EventEngine *grpc_iomgr_event_engine() {
   return g_event_engine;
 }
 

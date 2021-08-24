@@ -65,7 +65,7 @@ namespace {
 
 const int kFakeHandshakeServerMaxConcurrentStreams = 40;
 
-void drain_cq(grpc_completion_queue* cq) {
+void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(
@@ -73,12 +73,12 @@ void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-grpc_channel* create_secure_channel_for_test(
-    const char* server_addr, const char* fake_handshake_server_addr,
+grpc_channel *create_secure_channel_for_test(
+    const char *server_addr, const char *fake_handshake_server_addr,
     int reconnect_backoff_ms) {
-  grpc_alts_credentials_options* alts_options =
+  grpc_alts_credentials_options *alts_options =
       grpc_alts_credentials_client_options_create();
-  grpc_channel_credentials* channel_creds =
+  grpc_channel_credentials *channel_creds =
       grpc_alts_credentials_create_customized(alts_options,
                                               fake_handshake_server_addr,
                                               true /* enable_untrusted_alts */);
@@ -87,15 +87,15 @@ grpc_channel* create_secure_channel_for_test(
   // so we prevent subchnannel sharing.
   std::vector<grpc_arg> new_args;
   new_args.push_back(grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL), true));
+      const_cast<char *>(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL), true));
   if (reconnect_backoff_ms != 0) {
     new_args.push_back(grpc_channel_arg_integer_create(
-        const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms"),
+        const_cast<char *>("grpc.testing.fixed_reconnect_backoff_ms"),
         reconnect_backoff_ms));
   }
-  grpc_channel_args* channel_args =
+  grpc_channel_args *channel_args =
       grpc_channel_args_copy_and_add(nullptr, new_args.data(), new_args.size());
-  grpc_channel* channel = grpc_secure_channel_create(channel_creds, server_addr,
+  grpc_channel *channel = grpc_secure_channel_create(channel_creds, server_addr,
                                                      channel_args, nullptr);
   grpc_channel_args_destroy(channel_args);
   grpc_channel_credentials_release(channel_creds);
@@ -129,7 +129,7 @@ class FakeHandshakeServer {
     server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   }
 
-  const char* address() { return address_.c_str(); }
+  const char *address() { return address_.c_str(); }
 
  private:
   std::string address_;
@@ -141,9 +141,9 @@ class TestServer {
  public:
   explicit TestServer()
       : fake_handshake_server_(true /* check num concurrent rpcs */) {
-    grpc_alts_credentials_options* alts_options =
+    grpc_alts_credentials_options *alts_options =
         grpc_alts_credentials_server_options_create();
-    grpc_server_credentials* server_creds =
+    grpc_server_credentials *server_creds =
         grpc_alts_server_credentials_create_customized(
             alts_options, fake_handshake_server_.address(),
             true /* enable_untrusted_alts */);
@@ -172,9 +172,9 @@ class TestServer {
     grpc_completion_queue_destroy(server_cq_);
   }
 
-  const char* address() { return server_addr_.c_str(); }
+  const char *address() { return server_addr_.c_str(); }
 
-  static void PollUntilShutdown(const TestServer* self) {
+  static void PollUntilShutdown(const TestServer *self) {
     grpc_event ev = grpc_completion_queue_next(
         self->server_cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
@@ -183,8 +183,8 @@ class TestServer {
   }
 
  private:
-  grpc_server* server_;
-  grpc_completion_queue* server_cq_;
+  grpc_server *server_;
+  grpc_completion_queue *server_cq_;
   std::unique_ptr<std::thread> server_thd_;
   std::string server_addr_;
   // Give this test server its own ALTS handshake server
@@ -201,7 +201,7 @@ class TestServer {
 class ConnectLoopRunner {
  public:
   explicit ConnectLoopRunner(
-      const char* server_address, const char* fake_handshake_server_addr,
+      const char *server_address, const char *fake_handshake_server_addr,
       int per_connect_deadline_seconds, size_t loops,
       grpc_connectivity_state expected_connectivity_states,
       int reconnect_backoff_ms)
@@ -217,12 +217,12 @@ class ConnectLoopRunner {
 
   ~ConnectLoopRunner() { thd_->join(); }
 
-  static void ConnectLoop(const ConnectLoopRunner* self) {
+  static void ConnectLoop(const ConnectLoopRunner *self) {
     for (size_t i = 0; i < self->loops_; i++) {
       gpr_log(GPR_DEBUG, "runner:%p connect_loop begin loop %ld", self, i);
-      grpc_completion_queue* cq =
+      grpc_completion_queue *cq =
           grpc_completion_queue_create_for_next(nullptr);
-      grpc_channel* channel = create_secure_channel_for_test(
+      grpc_channel *channel = create_secure_channel_for_test(
           self->server_address_.get(), self->fake_handshake_server_addr_.get(),
           self->reconnect_backoff_ms_);
       // Connect, forcing an ALTS handshake
@@ -342,7 +342,7 @@ class FakeTcpServer {
 
   explicit FakeTcpServer(
       AcceptMode accept_mode,
-      const std::function<ProcessReadResult(int, int, int)>& process_read_cb)
+      const std::function<ProcessReadResult(int, int, int)> &process_read_cb)
       : accept_mode_(accept_mode), process_read_cb_(process_read_cb) {
     port_ = grpc_pick_unused_port_or_die();
     accept_socket_ = socket(AF_INET6, SOCK_STREAM, 0);
@@ -368,8 +368,8 @@ class FakeTcpServer {
     memset(&addr, 0, sizeof(addr));
     addr.sin6_family = AF_INET6;
     addr.sin6_port = htons(port_);
-    (reinterpret_cast<char*>(&addr.sin6_addr))[15] = 1;
-    if (bind(accept_socket_, reinterpret_cast<const sockaddr*>(&addr),
+    (reinterpret_cast<char *>(&addr.sin6_addr))[15] = 1;
+    if (bind(accept_socket_, reinterpret_cast<const sockaddr *>(&addr),
              sizeof(addr)) != 0) {
       gpr_log(GPR_ERROR, "Failed to bind socket to [::1]:%d : %d", port_,
               errno);
@@ -388,14 +388,14 @@ class FakeTcpServer {
     gpr_log(GPR_DEBUG,
             "FakeTcpServer stop and "
             "join server thread");
-    gpr_event_set(&stop_ev_, reinterpret_cast<void*>(1));
+    gpr_event_set(&stop_ev_, reinterpret_cast<void *>(1));
     run_server_loop_thd_->join();
     gpr_log(GPR_DEBUG,
             "FakeTcpServer join server "
             "thread complete");
   }
 
-  const char* address() { return address_.c_str(); }
+  const char *address() { return address_.c_str(); }
 
   static ProcessReadResult CloseSocketUponReceivingBytesFromPeer(
       int bytes_received_size, int read_error, int s) {
@@ -479,7 +479,7 @@ class FakeTcpServer {
   //   1) Checks if there are any new TCP connections to accept.
   //   2) Checks if any data has arrived yet on established connections,
   //      and reads from them if so, processing the sockets as configured.
-  static void RunServerLoop(FakeTcpServer* self) {
+  static void RunServerLoop(FakeTcpServer *self) {
     std::set<std::unique_ptr<FakeTcpServerPeer>> peers;
     while (!gpr_event_get(&self->stop_ev_)) {
       int p = accept(self->accept_socket_, nullptr, nullptr);
@@ -499,7 +499,7 @@ class FakeTcpServer {
       }
       auto it = peers.begin();
       while (it != peers.end()) {
-        FakeTcpServerPeer* peer = (*it).get();
+        FakeTcpServerPeer *peer = (*it).get();
         if (self->accept_mode_ == AcceptMode::kEagerlySendSettings) {
           peer->MaybeContinueSendingSettings();
         }
@@ -651,7 +651,7 @@ TEST(AltsConcurrentConnectivityTest,
 
 }  // namespace
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();

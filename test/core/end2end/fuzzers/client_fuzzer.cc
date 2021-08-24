@@ -33,11 +33,11 @@ bool leak_check = true;
 
 static void discard_write(grpc_slice /*slice*/) {}
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
-static void dont_log(gpr_log_func_args* /*args*/) {}
+static void dont_log(gpr_log_func_args * /*args*/) {}
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
@@ -45,34 +45,34 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
 
-    grpc_resource_quota* resource_quota =
+    grpc_resource_quota *resource_quota =
         grpc_resource_quota_create("context_list_test");
-    grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(
+    grpc_endpoint *mock_endpoint = grpc_mock_endpoint_create(
         discard_write,
         grpc_slice_allocator_create(resource_quota, "mock_endpoint"));
-    grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    grpc_transport* transport = grpc_create_chttp2_transport(
+    grpc_completion_queue *cq = grpc_completion_queue_create_for_next(nullptr);
+    grpc_transport *transport = grpc_create_chttp2_transport(
         nullptr, mock_endpoint, true,
         grpc_resource_user_create(resource_quota, "mock_transport"));
     grpc_resource_quota_unref(resource_quota);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     grpc_arg authority_arg = grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-        const_cast<char*>("test-authority"));
-    grpc_channel_args* args =
+        const_cast<char *>(GRPC_ARG_DEFAULT_AUTHORITY),
+        const_cast<char *>("test-authority"));
+    grpc_channel_args *args =
         grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
-    grpc_channel* channel =
+    grpc_channel *channel =
         grpc_channel_create("test-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
                             transport, nullptr, 0, nullptr);
     grpc_channel_args_destroy(args);
     grpc_slice host = grpc_slice_from_static_string("localhost");
-    grpc_call* call = grpc_channel_create_call(
+    grpc_call *call = grpc_channel_create_call(
         channel, nullptr, 0, cq, grpc_slice_from_static_string("/foo"), &host,
         gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
     grpc_metadata_array initial_metadata_recv;
     grpc_metadata_array_init(&initial_metadata_recv);
-    grpc_byte_buffer* response_payload_recv = nullptr;
+    grpc_byte_buffer *response_payload_recv = nullptr;
     grpc_metadata_array trailing_metadata_recv;
     grpc_metadata_array_init(&trailing_metadata_recv);
     grpc_status_code status;
@@ -80,7 +80,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     grpc_op ops[6];
     memset(ops, 0, sizeof(ops));
-    grpc_op* op = ops;
+    grpc_op *op = ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->data.send_initial_metadata.count = 0;
     op->flags = 0;
@@ -114,7 +114,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     grpc_mock_endpoint_put_read(
-        mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
+        mock_endpoint, grpc_slice_from_copied_buffer((const char *)data, size));
 
     grpc_event ev;
     while (true) {

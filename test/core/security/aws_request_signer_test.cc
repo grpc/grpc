@@ -26,10 +26,10 @@ namespace testing {
 namespace {
 // Test cases of Aws endpoints that the aws-sourced credentials will depend
 // on.
-const char* kAmzTestAccessKeyId = "ASIARD4OQDT6A77FR3CL";
-const char* kAmzTestSecretAccessKey =
+const char *kAmzTestAccessKeyId = "ASIARD4OQDT6A77FR3CL";
+const char *kAmzTestSecretAccessKey =
     "Y8AfSaucF37G4PpvfguKZ3/l7Id4uocLXxX0+VTx";
-const char* kAmzTestToken =
+const char *kAmzTestToken =
     "IQoJb3JpZ2luX2VjEIz//////////wEaCXVzLWVhc3QtMiJGMEQCIH7MHX/Oy/"
     "OB8OlLQa9GrqU1B914+iMikqWQW7vPCKlgAiA/"
     "Lsv8Jcafn14owfxXn95FURZNKaaphj0ykpmS+Ki+"
@@ -51,15 +51,15 @@ const char* kAmzTestToken =
     "mz1cg4Ekgcrn/"
     "E09NTsxAqD8NcZ7C7ECom9r+"
     "X3zkDOxaajW6hu3Az8hGlyylDaMiFfRbBJpTIlxp7jfa7CxikNgNtEKLH9iCzvuSg2vhA==";
-const char* kAmzTestDate = "20200811T065522Z";
+const char *kAmzTestDate = "20200811T065522Z";
 
 // Test cases derived from the Aws signature v4 test suite.
 // https://github.com/boto/botocore/tree/master/tests/unit/auth/aws4_testsuite
-const char* kBotoTestAccessKeyId = "AKIDEXAMPLE";
-const char* kBotoTestSecretAccessKey =
+const char *kBotoTestAccessKeyId = "AKIDEXAMPLE";
+const char *kBotoTestSecretAccessKey =
     "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY";
-const char* kBotoTestToken = "";
-const char* kBotoTestDate = "Mon, 09 Sep 2011 23:36:00 GMT";
+const char *kBotoTestToken = "";
+const char *kBotoTestDate = "Mon, 09 Sep 2011 23:36:00 GMT";
 }  // namespace
 
 // AWS official example from the developer doc.
@@ -273,7 +273,7 @@ TEST(GrpcAwsRequestSignerTest, DuplicateRequestDate) {
 
 }  // namespace testing
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();

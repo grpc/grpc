@@ -29,11 +29,11 @@
 bool squelch = true;
 bool leak_check = true;
 
-static void test(const uint8_t* data, size_t size,
+static void test(const uint8_t *data, size_t size,
                  grpc_core::PercentEncodingType type) {
   grpc_init();
   grpc_slice input =
-      grpc_slice_from_copied_buffer(reinterpret_cast<const char*>(data), size);
+      grpc_slice_from_copied_buffer(reinterpret_cast<const char *>(data), size);
   grpc_slice output = grpc_core::PercentEncodeSlice(input, type);
   absl::optional<grpc_slice> decoded_output =
       grpc_core::PercentDecodeSlice(output, type);
@@ -51,7 +51,7 @@ static void test(const uint8_t* data, size_t size,
   grpc_shutdown();
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   test(data, size, grpc_core::PercentEncodingType::URL);
   test(data, size, grpc_core::PercentEncodingType::Compatible);
   return 0;

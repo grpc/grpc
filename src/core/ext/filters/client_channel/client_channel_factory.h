@@ -33,14 +33,14 @@ class ClientChannelFactory {
 
   // Creates a subchannel with the specified args.
   virtual RefCountedPtr<Subchannel> CreateSubchannel(
-      const grpc_channel_args* args) = 0;
+      const grpc_channel_args *args) = 0;
 
   // Returns a channel arg containing the specified factory.
-  static grpc_arg CreateChannelArg(ClientChannelFactory* factory);
+  static grpc_arg CreateChannelArg(ClientChannelFactory *factory);
 
   // Returns the factory from args, or null if not found.
-  static ClientChannelFactory* GetFromChannelArgs(
-      const grpc_channel_args* args);
+  static ClientChannelFactory *GetFromChannelArgs(
+      const grpc_channel_args *args);
 };
 
 }  // namespace grpc_core

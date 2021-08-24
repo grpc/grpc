@@ -34,17 +34,17 @@ class FlatExprBuilder : public CelExpressionBuilder {
   FlatExprBuilder() = default;
 
   absl::StatusOr<std::unique_ptr<CelExpression>> CreateExpression(
-      const google_api_expr_v1alpha1_Expr* expr,
-      const google_api_expr_v1alpha1_SourceInfo* source_info) const override {
+      const google_api_expr_v1alpha1_Expr *expr,
+      const google_api_expr_v1alpha1_SourceInfo *source_info) const override {
     ExecutionPath path;
     return absl::make_unique<CelExpressionFlatImpl>(nullptr, path, 0,
                                                     std::set<std::string>{});
   }
 
   absl::StatusOr<std::unique_ptr<CelExpression>> CreateExpression(
-      const google_api_expr_v1alpha1_Expr* expr,
-      const google_api_expr_v1alpha1_SourceInfo* source_info,
-      std::vector<absl::Status>* warnings) const override {
+      const google_api_expr_v1alpha1_Expr *expr,
+      const google_api_expr_v1alpha1_SourceInfo *source_info,
+      std::vector<absl::Status> *warnings) const override {
     ExecutionPath path;
     return absl::make_unique<CelExpressionFlatImpl>(nullptr, path, 0,
                                                     std::set<std::string>{});

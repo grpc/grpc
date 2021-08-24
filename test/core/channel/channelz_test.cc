@@ -47,7 +47,7 @@ namespace testing {
 // testing peer to access channel internals
 class CallCountingHelperPeer {
  public:
-  explicit CallCountingHelperPeer(CallCountingHelper* node) : node_(node) {}
+  explicit CallCountingHelperPeer(CallCountingHelper *node) : node_(node) {}
 
   gpr_timespec last_call_started_time() const {
     CallCountingHelper::CounterData data;
@@ -56,23 +56,23 @@ class CallCountingHelperPeer {
   }
 
  private:
-  CallCountingHelper* node_;
+  CallCountingHelper *node_;
 };
 
 namespace {
 
-std::vector<intptr_t> GetUuidListFromArray(const Json::Array& arr) {
+std::vector<intptr_t> GetUuidListFromArray(const Json::Array &arr) {
   std::vector<intptr_t> uuids;
-  for (const Json& value : arr) {
+  for (const Json &value : arr) {
     EXPECT_EQ(value.type(), Json::Type::OBJECT);
     if (value.type() != Json::Type::OBJECT) continue;
-    const Json::Object& object = value.object_value();
+    const Json::Object &object = value.object_value();
     auto it = object.find("ref");
     EXPECT_NE(it, object.end());
     if (it == object.end()) continue;
     EXPECT_EQ(it->second.type(), Json::Type::OBJECT);
     if (it->second.type() != Json::Type::OBJECT) continue;
-    const Json::Object& ref_object = it->second.object_value();
+    const Json::Object &ref_object = it->second.object_value();
     it = ref_object.find("channelId");
     EXPECT_NE(it, ref_object.end());
     if (it != ref_object.end()) {
@@ -82,7 +82,7 @@ std::vector<intptr_t> GetUuidListFromArray(const Json::Array& arr) {
   return uuids;
 }
 
-void ValidateJsonArraySize(const Json& array, size_t expected) {
+void ValidateJsonArraySize(const Json &array, size_t expected) {
   if (expected == 0) {
     ASSERT_EQ(array.type(), Json::Type::JSON_NULL);
   } else {
@@ -91,7 +91,7 @@ void ValidateJsonArraySize(const Json& array, size_t expected) {
   }
 }
 
-void ValidateJsonEnd(const Json& json, bool end) {
+void ValidateJsonEnd(const Json &json, bool end) {
   auto it = json.object_value().find("end");
   if (end) {
     ASSERT_NE(it, json.object_value().end());
@@ -115,7 +115,7 @@ void ValidateGetTopChannels(size_t expected_channels) {
                         expected_channels);
   ValidateJsonEnd(parsed_json, true);
   // Also check that the core API formats this correctly.
-  char* core_api_json_str = grpc_channelz_get_top_channels(0);
+  char *core_api_json_str = grpc_channelz_get_top_channels(0);
   grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(
       core_api_json_str);
   gpr_free(core_api_json_str);
@@ -135,7 +135,7 @@ void ValidateGetServers(size_t expected_servers) {
                         expected_servers);
   ValidateJsonEnd(parsed_json, true);
   // Also check that the core API formats this correctly.
-  char* core_api_json_str = grpc_channelz_get_servers(0);
+  char *core_api_json_str = grpc_channelz_get_servers(0);
   grpc::testing::ValidateGetServersResponseProtoJsonTranslation(
       core_api_json_str);
   gpr_free(core_api_json_str);
@@ -146,10 +146,11 @@ class ChannelFixture {
   explicit ChannelFixture(int max_tracer_event_memory = 0) {
     grpc_arg client_a[] = {
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+            const_cast<char *>(
+                GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
             max_tracer_event_memory),
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true)};
+            const_cast<char *>(GRPC_ARG_ENABLE_CHANNELZ), true)};
     grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
     channel_ =
         grpc_insecure_channel_create("fake_target", &client_args, nullptr);
@@ -157,10 +158,10 @@ class ChannelFixture {
 
   ~ChannelFixture() { grpc_channel_destroy(channel_); }
 
-  grpc_channel* channel() { return channel_; }
+  grpc_channel *channel() { return channel_; }
 
  private:
-  grpc_channel* channel_;
+  grpc_channel *channel_;
 };
 
 class ServerFixture {
@@ -168,10 +169,11 @@ class ServerFixture {
   explicit ServerFixture(int max_tracer_event_memory = 0) {
     grpc_arg server_a[] = {
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+            const_cast<char *>(
+                GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
             max_tracer_event_memory),
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true),
+            const_cast<char *>(GRPC_ARG_ENABLE_CHANNELZ), true),
     };
     grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
     server_ = grpc_server_create(&server_args, nullptr);
@@ -179,10 +181,10 @@ class ServerFixture {
 
   ~ServerFixture() { grpc_server_destroy(server_); }
 
-  grpc_server* server() const { return server_; }
+  grpc_server *server() const { return server_; }
 
  private:
-  grpc_server* server_;
+  grpc_server *server_;
 };
 
 struct ValidateChannelDataArgs {
@@ -191,7 +193,7 @@ struct ValidateChannelDataArgs {
   int64_t calls_succeeded;
 };
 
-void ValidateChildInteger(const Json::Object& object, const std::string& key,
+void ValidateChildInteger(const Json::Object &object, const std::string &key,
                           int64_t expected) {
   auto it = object.find(key);
   if (expected == 0) {
@@ -205,14 +207,14 @@ void ValidateChildInteger(const Json::Object& object, const std::string& key,
   EXPECT_EQ(gotten_number, expected);
 }
 
-void ValidateCounters(const std::string& json_str,
-                      const ValidateChannelDataArgs& args) {
+void ValidateCounters(const std::string &json_str,
+                      const ValidateChannelDataArgs &args) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ASSERT_EQ(json.type(), Json::Type::OBJECT);
-  Json::Object* object = json.mutable_object();
-  Json& data = (*object)["data"];
+  Json::Object *object = json.mutable_object();
+  Json &data = (*object)["data"];
   ASSERT_EQ(data.type(), Json::Type::OBJECT);
   ValidateChildInteger(data.object_value(), "callsStarted", args.calls_started);
   ValidateChildInteger(data.object_value(), "callsFailed", args.calls_failed);
@@ -220,30 +222,30 @@ void ValidateCounters(const std::string& json_str,
                        args.calls_succeeded);
 }
 
-void ValidateChannel(ChannelNode* channel,
-                     const ValidateChannelDataArgs& args) {
+void ValidateChannel(ChannelNode *channel,
+                     const ValidateChannelDataArgs &args) {
   std::string json_str = channel->RenderJsonString();
   grpc::testing::ValidateChannelProtoJsonTranslation(json_str.c_str());
   ValidateCounters(json_str, args);
   // also check that the core API formats this the correct way
-  char* core_api_json_str = grpc_channelz_get_channel(channel->uuid());
+  char *core_api_json_str = grpc_channelz_get_channel(channel->uuid());
   grpc::testing::ValidateGetChannelResponseProtoJsonTranslation(
       core_api_json_str);
   gpr_free(core_api_json_str);
 }
 
-void ValidateServer(ServerNode* server, const ValidateChannelDataArgs& args) {
+void ValidateServer(ServerNode *server, const ValidateChannelDataArgs &args) {
   std::string json_str = server->RenderJsonString();
   grpc::testing::ValidateServerProtoJsonTranslation(json_str.c_str());
   ValidateCounters(json_str, args);
   // also check that the core API formats this the correct way
-  char* core_api_json_str = grpc_channelz_get_server(server->uuid());
+  char *core_api_json_str = grpc_channelz_get_server(server->uuid());
   grpc::testing::ValidateGetServerResponseProtoJsonTranslation(
       core_api_json_str);
   gpr_free(core_api_json_str);
 }
 
-gpr_timespec GetLastCallStartedTime(CallCountingHelper* channel) {
+gpr_timespec GetLastCallStartedTime(CallCountingHelper *channel) {
   CallCountingHelperPeer peer(channel);
   return peer.last_call_started_time();
 }
@@ -261,7 +263,7 @@ class ChannelzChannelTest : public ::testing::TestWithParam<size_t> {};
 TEST_P(ChannelzChannelTest, BasicChannel) {
   grpc_core::ExecCtx exec_ctx;
   ChannelFixture channel(GetParam());
-  ChannelNode* channelz_channel =
+  ChannelNode *channelz_channel =
       grpc_channel_get_channelz_node(channel.channel());
   ValidateChannel(channelz_channel, {0, 0, 0});
 }
@@ -271,14 +273,14 @@ TEST(ChannelzChannelTest, ChannelzDisabled) {
   // explicitly disable channelz
   grpc_arg arg[] = {
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+          const_cast<char *>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
           0),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), false)};
+          const_cast<char *>(GRPC_ARG_ENABLE_CHANNELZ), false)};
   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
-  grpc_channel* channel =
+  grpc_channel *channel =
       grpc_insecure_channel_create("fake_target", &args, nullptr);
-  ChannelNode* channelz_channel = grpc_channel_get_channelz_node(channel);
+  ChannelNode *channelz_channel = grpc_channel_get_channelz_node(channel);
   ASSERT_EQ(channelz_channel, nullptr);
   grpc_channel_destroy(channel);
 }
@@ -286,7 +288,7 @@ TEST(ChannelzChannelTest, ChannelzDisabled) {
 TEST_P(ChannelzChannelTest, BasicChannelAPIFunctionality) {
   grpc_core::ExecCtx exec_ctx;
   ChannelFixture channel(GetParam());
-  ChannelNode* channelz_channel =
+  ChannelNode *channelz_channel =
       grpc_channel_get_channelz_node(channel.channel());
   channelz_channel->RecordCallStarted();
   channelz_channel->RecordCallFailed();
@@ -394,7 +396,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidCheck) {
   Json parsed_json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
-  Json& array = (*parsed_json.mutable_object())["channel"];
+  Json &array = (*parsed_json.mutable_object())["channel"];
   ValidateJsonArraySize(array, kNumChannels);
   std::vector<intptr_t> uuids = GetUuidListFromArray(array.array_value());
   for (int i = 0; i < kNumChannels; ++i) {
@@ -414,7 +416,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
   Json parsed_json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
-  Json& array = (*parsed_json.mutable_object())["channel"];
+  Json &array = (*parsed_json.mutable_object())["channel"];
   ValidateJsonArraySize(array, kNumChannels - kMidQuery + 1);
   std::vector<intptr_t> uuids = GetUuidListFromArray(array.array_value());
   for (size_t i = 0; i < uuids.size(); ++i) {
@@ -436,7 +438,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
   Json parsed_json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
-  Json& array = (*parsed_json.mutable_object())["channel"];
+  Json &array = (*parsed_json.mutable_object())["channel"];
   ValidateJsonArraySize(array, 10);
   std::vector<intptr_t> uuids = GetUuidListFromArray(array.array_value());
   for (size_t i = 0; i < uuids.size(); ++i) {
@@ -490,7 +492,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
   Json parsed_json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
-  Json& array = (*parsed_json.mutable_object())["channel"];
+  Json &array = (*parsed_json.mutable_object())["channel"];
   ValidateJsonArraySize(array, kLoopIterations);
   std::vector<intptr_t> uuids = GetUuidListFromArray(array.array_value());
   for (int i = 0; i < kLoopIterations; ++i) {
@@ -506,12 +508,12 @@ TEST_F(ChannelzRegistryBasedTest, InternalChannelTest) {
   // create an internal channel
   grpc_arg client_a[] = {
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
+          const_cast<char *>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true),
+          const_cast<char *>(GRPC_ARG_ENABLE_CHANNELZ), true),
   };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
-  grpc_channel* internal_channel =
+  grpc_channel *internal_channel =
       grpc_insecure_channel_create("fake_target", &client_args, nullptr);
   // The internal channel should not be returned from the request
   ValidateGetTopChannels(10);
@@ -521,7 +523,7 @@ TEST_F(ChannelzRegistryBasedTest, InternalChannelTest) {
 TEST(ChannelzServerTest, BasicServerAPIFunctionality) {
   grpc_core::ExecCtx exec_ctx;
   ServerFixture server(10);
-  ServerNode* channelz_server = server.server()->core_server->channelz_node();
+  ServerNode *channelz_server = server.server()->core_server->channelz_node();
   channelz_server->RecordCallStarted();
   channelz_server->RecordCallFailed();
   channelz_server->RecordCallSucceeded();
@@ -560,7 +562,7 @@ INSTANTIATE_TEST_SUITE_P(ChannelzChannelTestSweep, ChannelzChannelTest,
 }  // namespace channelz
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   ::testing::InitGoogleTest(&argc, argv);

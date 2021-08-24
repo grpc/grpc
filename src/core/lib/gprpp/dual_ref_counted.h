@@ -54,13 +54,13 @@ class DualRefCounted : public Orphanable {
 
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
-    return RefCountedPtr<Child>(static_cast<Child*>(this));
+    return RefCountedPtr<Child>(static_cast<Child *>(this));
   }
 
-  RefCountedPtr<Child> Ref(const DebugLocation& location,
-                           const char* reason) GRPC_MUST_USE_RESULT {
+  RefCountedPtr<Child> Ref(const DebugLocation &location,
+                           const char *reason) GRPC_MUST_USE_RESULT {
     IncrementRefCount(location, reason);
-    return RefCountedPtr<Child>(static_cast<Child*>(this));
+    return RefCountedPtr<Child>(static_cast<Child *>(this));
   }
 
   void Unref() {
@@ -82,7 +82,7 @@ class DualRefCounted : public Orphanable {
     // Now drop the weak ref.
     WeakUnref();
   }
-  void Unref(const DebugLocation& location, const char* reason) {
+  void Unref(const DebugLocation &location, const char *reason) {
     const uint64_t prev_ref_pair =
         refs_.fetch_add(MakeRefPair(-1, 1), std::memory_order_acq_rel);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
@@ -121,11 +121,11 @@ class DualRefCounted : public Orphanable {
     } while (!refs_.compare_exchange_weak(
         prev_ref_pair, prev_ref_pair + MakeRefPair(1, 0),
         std::memory_order_acq_rel, std::memory_order_acquire));
-    return RefCountedPtr<Child>(static_cast<Child*>(this));
+    return RefCountedPtr<Child>(static_cast<Child *>(this));
   }
 
-  RefCountedPtr<Child> RefIfNonZero(const DebugLocation& location,
-                                    const char* reason) GRPC_MUST_USE_RESULT {
+  RefCountedPtr<Child> RefIfNonZero(const DebugLocation &location,
+                                    const char *reason) GRPC_MUST_USE_RESULT {
     uint64_t prev_ref_pair = refs_.load(std::memory_order_acquire);
     do {
       const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
@@ -146,18 +146,18 @@ class DualRefCounted : public Orphanable {
     } while (!refs_.compare_exchange_weak(
         prev_ref_pair, prev_ref_pair + MakeRefPair(1, 0),
         std::memory_order_acq_rel, std::memory_order_acquire));
-    return RefCountedPtr<Child>(static_cast<Child*>(this));
+    return RefCountedPtr<Child>(static_cast<Child *>(this));
   }
 
   WeakRefCountedPtr<Child> WeakRef() GRPC_MUST_USE_RESULT {
     IncrementWeakRefCount();
-    return WeakRefCountedPtr<Child>(static_cast<Child*>(this));
+    return WeakRefCountedPtr<Child>(static_cast<Child *>(this));
   }
 
-  WeakRefCountedPtr<Child> WeakRef(const DebugLocation& location,
-                                   const char* reason) GRPC_MUST_USE_RESULT {
+  WeakRefCountedPtr<Child> WeakRef(const DebugLocation &location,
+                                   const char *reason) GRPC_MUST_USE_RESULT {
     IncrementWeakRefCount(location, reason);
-    return WeakRefCountedPtr<Child>(static_cast<Child*>(this));
+    return WeakRefCountedPtr<Child>(static_cast<Child *>(this));
   }
 
   void WeakUnref() {
@@ -165,7 +165,7 @@ class DualRefCounted : public Orphanable {
     // Grab a copy of the trace flag before the atomic change, since we
     // will no longer be holding a ref afterwards and therefore can't
     // safely access it, since another thread might free us in the interim.
-    const char* trace = trace_;
+    const char *trace = trace_;
 #endif
     const uint64_t prev_ref_pair =
         refs_.fetch_sub(MakeRefPair(0, 1), std::memory_order_acq_rel);
@@ -179,15 +179,15 @@ class DualRefCounted : public Orphanable {
     GPR_ASSERT(weak_refs > 0);
 #endif
     if (GPR_UNLIKELY(prev_ref_pair == MakeRefPair(0, 1))) {
-      delete static_cast<Child*>(this);
+      delete static_cast<Child *>(this);
     }
   }
-  void WeakUnref(const DebugLocation& location, const char* reason) {
+  void WeakUnref(const DebugLocation &location, const char *reason) {
 #ifndef NDEBUG
     // Grab a copy of the trace flag before the atomic change, since we
     // will no longer be holding a ref afterwards and therefore can't
     // safely access it, since another thread might free us in the interim.
-    const char* trace = trace_;
+    const char *trace = trace_;
 #endif
     const uint64_t prev_ref_pair =
         refs_.fetch_sub(MakeRefPair(0, 1), std::memory_order_acq_rel);
@@ -206,18 +206,18 @@ class DualRefCounted : public Orphanable {
     (void)reason;
 #endif
     if (GPR_UNLIKELY(prev_ref_pair == MakeRefPair(0, 1))) {
-      delete static_cast<Child*>(this);
+      delete static_cast<Child *>(this);
     }
   }
 
   // Not copyable nor movable.
-  DualRefCounted(const DualRefCounted&) = delete;
-  DualRefCounted& operator=(const DualRefCounted&) = delete;
+  DualRefCounted(const DualRefCounted &) = delete;
+  DualRefCounted &operator=(const DualRefCounted &) = delete;
 
  protected:
   // Note: Tracing is a no-op in non-debug builds.
   explicit DualRefCounted(
-      const char*
+      const char *
 #ifndef NDEBUG
           // Leave unnamed if NDEBUG to avoid unused parameter warning
           trace
@@ -265,7 +265,7 @@ class DualRefCounted : public Orphanable {
     refs_.fetch_add(MakeRefPair(1, 0), std::memory_order_relaxed);
 #endif
   }
-  void IncrementRefCount(const DebugLocation& location, const char* reason) {
+  void IncrementRefCount(const DebugLocation &location, const char *reason) {
 #ifndef NDEBUG
     const uint64_t prev_ref_pair =
         refs_.fetch_add(MakeRefPair(1, 0), std::memory_order_relaxed);
@@ -299,8 +299,8 @@ class DualRefCounted : public Orphanable {
     refs_.fetch_add(MakeRefPair(0, 1), std::memory_order_relaxed);
 #endif
   }
-  void IncrementWeakRefCount(const DebugLocation& location,
-                             const char* reason) {
+  void IncrementWeakRefCount(const DebugLocation &location,
+                             const char *reason) {
 #ifndef NDEBUG
     const uint64_t prev_ref_pair =
         refs_.fetch_add(MakeRefPair(0, 1), std::memory_order_relaxed);
@@ -320,7 +320,7 @@ class DualRefCounted : public Orphanable {
   }
 
 #ifndef NDEBUG
-  const char* trace_;
+  const char *trace_;
 #endif
   std::atomic<uint64_t> refs_{0};
 };

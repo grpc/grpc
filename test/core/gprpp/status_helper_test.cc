@@ -94,7 +94,7 @@ TEST(StatusUtilTest, ToAndFromProto) {
   StatusSetInt(&s, StatusIntProperty::kErrorNo, 2021);
   StatusSetStr(&s, StatusStrProperty::kOsError, "value");
   upb::Arena arena;
-  google_rpc_Status* msg = internal::StatusToProto(s, arena.ptr());
+  google_rpc_Status *msg = internal::StatusToProto(s, arena.ptr());
   absl::Status s2 = internal::StatusFromProto(msg);
   EXPECT_EQ(s, s2);
 }
@@ -153,7 +153,7 @@ TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
 TEST(StatusUtilTest, AllocPtr) {
   absl::Status statuses[] = {absl::OkStatus(), absl::CancelledError(),
                              absl::AbortedError("Message")};
-  for (const auto& s : statuses) {
+  for (const auto &s : statuses) {
     uintptr_t p = internal::StatusAllocPtr(s);
     EXPECT_EQ(s, internal::StatusGetFromPtr(p));
     internal::StatusFreePtr(p);
@@ -163,7 +163,7 @@ TEST(StatusUtilTest, AllocPtr) {
 }  // namespace
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

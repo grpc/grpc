@@ -26,15 +26,15 @@
 
 using grpc_core::Arena;
 
-static void BM_Arena_NoOp(benchmark::State& state) {
+static void BM_Arena_NoOp(benchmark::State &state) {
   for (auto _ : state) {
     Arena::Create(state.range(0))->Destroy();
   }
 }
 BENCHMARK(BM_Arena_NoOp)->Range(1, 1024 * 1024);
 
-static void BM_Arena_ManyAlloc(benchmark::State& state) {
-  Arena* a = Arena::Create(state.range(0));
+static void BM_Arena_ManyAlloc(benchmark::State &state) {
+  Arena *a = Arena::Create(state.range(0));
   const size_t realloc_after =
       1024 * 1024 * 1024 / ((state.range(1) + 15) & 0xffffff0u);
   while (state.KeepRunning()) {
@@ -49,9 +49,9 @@ static void BM_Arena_ManyAlloc(benchmark::State& state) {
 }
 BENCHMARK(BM_Arena_ManyAlloc)->Ranges({{1, 1024 * 1024}, {1, 32 * 1024}});
 
-static void BM_Arena_Batch(benchmark::State& state) {
+static void BM_Arena_Batch(benchmark::State &state) {
   for (auto _ : state) {
-    Arena* a = Arena::Create(state.range(0));
+    Arena *a = Arena::Create(state.range(0));
     for (int i = 0; i < state.range(1); i++) {
       a->Alloc(state.range(2));
     }
@@ -66,7 +66,7 @@ namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);

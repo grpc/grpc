@@ -39,8 +39,8 @@ using keyvaluestore::Request;
 using keyvaluestore::Response;
 
 struct kv_pair {
-  const char* key;
-  const char* value;
+  const char *key;
+  const char *value;
 };
 
 static const kv_pair kvs_map[] = {
@@ -48,7 +48,7 @@ static const kv_pair kvs_map[] = {
     {"key4", "value4"}, {"key5", "value5"},
 };
 
-const char* get_value_from_map(const char* key) {
+const char *get_value_from_map(const char *key) {
   for (size_t i = 0; i < sizeof(kvs_map) / sizeof(kv_pair); ++i) {
     if (strcmp(key, kvs_map[i].key) == 0) {
       return kvs_map[i].value;
@@ -59,8 +59,8 @@ const char* get_value_from_map(const char* key) {
 
 // Logic and data behind the server's behavior.
 class KeyValueStoreServiceImpl final : public KeyValueStore::Service {
-  Status GetValues(ServerContext* context,
-                   ServerReaderWriter<Response, Request>* stream) override {
+  Status GetValues(ServerContext *context,
+                   ServerReaderWriter<Response, Request> *stream) override {
     Request request;
     while (stream->Read(&request)) {
       Response response;
@@ -90,7 +90,7 @@ void RunServer() {
   server->Wait();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   RunServer();
 
   return 0;

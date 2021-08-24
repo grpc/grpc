@@ -30,7 +30,7 @@ GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_trace);
 
 // TODO(veblush): Remove this deprecated function once codes depending on this
 // function are updated in the internal repo.
-void grpc_tracer_init(const char* env_var_name);
+void grpc_tracer_init(const char *env_var_name);
 
 void grpc_tracer_init();
 void grpc_tracer_shutdown(void);
@@ -46,26 +46,26 @@ namespace grpc_core {
 class TraceFlag;
 class TraceFlagList {
  public:
-  static bool Set(const char* name, bool enabled);
-  static void Add(TraceFlag* flag);
+  static bool Set(const char *name, bool enabled);
+  static void Add(TraceFlag *flag);
 
  private:
   static void LogAllTracers();
-  static TraceFlag* root_tracer_;
+  static TraceFlag *root_tracer_;
 };
 
 namespace testing {
-void grpc_tracer_enable_flag(grpc_core::TraceFlag* flag);
+void grpc_tracer_enable_flag(grpc_core::TraceFlag *flag);
 }
 
 class TraceFlag {
  public:
-  TraceFlag(bool default_enabled, const char* name);
+  TraceFlag(bool default_enabled, const char *name);
   // TraceFlag needs to be trivially destructible since it is used as global
   // variable.
   ~TraceFlag() = default;
 
-  const char* name() const { return name_; }
+  const char *name() const { return name_; }
 
 // Use the symbol GRPC_USE_TRACERS to determine if tracers will be enabled in
 // opt builds (tracers are always on in dbg builds). The default in OSS is for
@@ -89,7 +89,7 @@ class TraceFlag {
 #endif /* defined(GRPC_USE_TRACERS) || !defined(NDEBUG) */
 
  private:
-  friend void grpc_core::testing::grpc_tracer_enable_flag(TraceFlag* flag);
+  friend void grpc_core::testing::grpc_tracer_enable_flag(TraceFlag *flag);
   friend class TraceFlagList;
 
   void set_enabled(bool enabled) {
@@ -100,8 +100,8 @@ class TraceFlag {
 #endif
   }
 
-  TraceFlag* next_tracer_;
-  const char* const name_;
+  TraceFlag *next_tracer_;
+  const char *const name_;
 #ifdef GRPC_THREADSAFE_TRACER
   gpr_atm value_;
 #else
@@ -116,10 +116,10 @@ typedef TraceFlag DebugOnlyTraceFlag;
 #else
 class DebugOnlyTraceFlag {
  public:
-  constexpr DebugOnlyTraceFlag(bool /*default_enabled*/, const char* /*name*/) {
-  }
+  constexpr DebugOnlyTraceFlag(bool /*default_enabled*/,
+                               const char * /*name*/) {}
   constexpr bool enabled() const { return false; }
-  constexpr const char* name() const { return "DebugOnlyTraceFlag"; }
+  constexpr const char *name() const { return "DebugOnlyTraceFlag"; }
 
  private:
   void set_enabled(bool /*enabled*/) {}

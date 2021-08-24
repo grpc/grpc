@@ -32,55 +32,55 @@ typedef struct grpc_custom_tcp_connect grpc_custom_tcp_connect;
 
 typedef struct grpc_custom_socket {
   // Implementation defined
-  void* impl;
-  grpc_endpoint* endpoint;
-  grpc_tcp_listener* listener;
-  grpc_custom_tcp_connect* connector;
+  void *impl;
+  grpc_endpoint *endpoint;
+  grpc_tcp_listener *listener;
+  grpc_custom_tcp_connect *connector;
   int refs;
 } grpc_custom_socket;
 
-typedef void (*grpc_custom_connect_callback)(grpc_custom_socket* socket,
+typedef void (*grpc_custom_connect_callback)(grpc_custom_socket *socket,
                                              grpc_error_handle error);
-typedef void (*grpc_custom_write_callback)(grpc_custom_socket* socket,
+typedef void (*grpc_custom_write_callback)(grpc_custom_socket *socket,
                                            grpc_error_handle error);
-typedef void (*grpc_custom_read_callback)(grpc_custom_socket* socket,
+typedef void (*grpc_custom_read_callback)(grpc_custom_socket *socket,
                                           size_t nread,
                                           grpc_error_handle error);
-typedef void (*grpc_custom_accept_callback)(grpc_custom_socket* socket,
-                                            grpc_custom_socket* client,
+typedef void (*grpc_custom_accept_callback)(grpc_custom_socket *socket,
+                                            grpc_custom_socket *client,
                                             grpc_error_handle error);
-typedef void (*grpc_custom_close_callback)(grpc_custom_socket* socket);
+typedef void (*grpc_custom_close_callback)(grpc_custom_socket *socket);
 
 typedef struct grpc_socket_vtable {
-  grpc_error_handle (*init)(grpc_custom_socket* socket, int domain);
-  void (*connect)(grpc_custom_socket* socket, const grpc_sockaddr* addr,
+  grpc_error_handle (*init)(grpc_custom_socket *socket, int domain);
+  void (*connect)(grpc_custom_socket *socket, const grpc_sockaddr *addr,
                   size_t len, grpc_custom_connect_callback cb);
-  void (*destroy)(grpc_custom_socket* socket);
-  void (*shutdown)(grpc_custom_socket* socket);
-  void (*close)(grpc_custom_socket* socket, grpc_custom_close_callback cb);
-  void (*write)(grpc_custom_socket* socket, grpc_slice_buffer* slices,
+  void (*destroy)(grpc_custom_socket *socket);
+  void (*shutdown)(grpc_custom_socket *socket);
+  void (*close)(grpc_custom_socket *socket, grpc_custom_close_callback cb);
+  void (*write)(grpc_custom_socket *socket, grpc_slice_buffer *slices,
                 grpc_custom_write_callback cb);
-  void (*read)(grpc_custom_socket* socket, char* buffer, size_t length,
+  void (*read)(grpc_custom_socket *socket, char *buffer, size_t length,
                grpc_custom_read_callback cb);
-  grpc_error_handle (*getpeername)(grpc_custom_socket* socket,
-                                   const grpc_sockaddr* addr, int* len);
-  grpc_error_handle (*getsockname)(grpc_custom_socket* socket,
-                                   const grpc_sockaddr* addr, int* len);
-  grpc_error_handle (*bind)(grpc_custom_socket* socket,
-                            const grpc_sockaddr* addr, size_t len, int flags);
-  grpc_error_handle (*listen)(grpc_custom_socket* socket);
-  void (*accept)(grpc_custom_socket* socket, grpc_custom_socket* client,
+  grpc_error_handle (*getpeername)(grpc_custom_socket *socket,
+                                   const grpc_sockaddr *addr, int *len);
+  grpc_error_handle (*getsockname)(grpc_custom_socket *socket,
+                                   const grpc_sockaddr *addr, int *len);
+  grpc_error_handle (*bind)(grpc_custom_socket *socket,
+                            const grpc_sockaddr *addr, size_t len, int flags);
+  grpc_error_handle (*listen)(grpc_custom_socket *socket);
+  void (*accept)(grpc_custom_socket *socket, grpc_custom_socket *client,
                  grpc_custom_accept_callback cb);
 } grpc_socket_vtable;
 
 /* Internal APIs */
-void grpc_custom_endpoint_init(grpc_socket_vtable* impl);
+void grpc_custom_endpoint_init(grpc_socket_vtable *impl);
 
-void grpc_custom_close_server_callback(grpc_tcp_listener* listener);
+void grpc_custom_close_server_callback(grpc_tcp_listener *listener);
 
 /// Takes ownership of \a slice_allocator.
-grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
-                                          grpc_slice_allocator* slice_allocator,
-                                          const char* peer_string);
+grpc_endpoint *custom_tcp_endpoint_create(grpc_custom_socket *socket,
+                                          grpc_slice_allocator *slice_allocator,
+                                          const char *peer_string);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_CUSTOM_H */

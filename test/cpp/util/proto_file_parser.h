@@ -42,8 +42,8 @@ class ProtoFileParser {
   // The parser will search proto files using the server reflection service
   // provided on the given channel. The given protofiles in a source tree rooted
   // from proto_path will also be searched.
-  ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
-                  const std::string& proto_path, const std::string& protofiles);
+  ProtoFileParser(const std::shared_ptr<grpc::Channel> &channel,
+                  const std::string &proto_path, const std::string &protofiles);
 
   ~ProtoFileParser();
 
@@ -52,11 +52,11 @@ class ProtoFileParser {
   // there is ambiguity.
   // Full method name is in the form of Service.Method, it's good to be used in
   // descriptor database queries.
-  std::string GetFullMethodName(const std::string& method);
+  std::string GetFullMethodName(const std::string &method);
 
   // Formatted method name is in the form of /Service/Method, it's good to be
   // used as the argument of Stub::Call()
-  std::string GetFormattedMethodName(const std::string& method);
+  std::string GetFormattedMethodName(const std::string &method);
 
   /// Converts a text or json string to its binary proto representation for the
   /// given method's input or return type.
@@ -69,8 +69,8 @@ class ProtoFileParser {
   ///        json-formatted proto, otherwise it is treated as a text-formatted
   ///        proto
   /// \return the serialised binary proto representation of \c formatted_proto
-  std::string GetSerializedProtoFromMethod(const std::string& method,
-                                           const std::string& formatted_proto,
+  std::string GetSerializedProtoFromMethod(const std::string &method,
+                                           const std::string &formatted_proto,
                                            bool is_request,
                                            bool is_json_format);
 
@@ -79,7 +79,7 @@ class ProtoFileParser {
   /// \param formatted_proto the text- or json-formatted proto string
   /// \return the serialised binary proto representation of \c formatted_proto
   std::string GetSerializedProtoFromMessageType(
-      const std::string& message_type_name, const std::string& formatted_proto,
+      const std::string &message_type_name, const std::string &formatted_proto,
       bool is_json_format);
 
   /// Converts a binary proto string to its text or json string representation
@@ -89,8 +89,8 @@ class ProtoFileParser {
   /// \param the serialised binary proto representation of type
   ///        \c message_type_name
   /// \return the text- or json-formatted proto string of \c serialized_proto
-  std::string GetFormattedStringFromMethod(const std::string& method,
-                                           const std::string& serialized_proto,
+  std::string GetFormattedStringFromMethod(const std::string &method,
+                                           const std::string &serialized_proto,
                                            bool is_request,
                                            bool is_json_format);
 
@@ -100,17 +100,17 @@ class ProtoFileParser {
   ///        \c message_type_name
   /// \return the text- or json-formatted proto string of \c serialized_proto
   std::string GetFormattedStringFromMessageType(
-      const std::string& message_type_name, const std::string& serialized_proto,
+      const std::string &message_type_name, const std::string &serialized_proto,
       bool is_json_format);
 
-  bool IsStreaming(const std::string& method, bool is_request);
+  bool IsStreaming(const std::string &method, bool is_request);
 
   bool HasError() const { return has_error_; }
 
-  void LogError(const std::string& error_msg);
+  void LogError(const std::string &error_msg);
 
  private:
-  std::string GetMessageTypeFromMethod(const std::string& method,
+  std::string GetMessageTypeFromMethod(const std::string &method,
                                        bool is_request);
 
   bool has_error_;
@@ -126,7 +126,7 @@ class ProtoFileParser {
   std::unique_ptr<grpc::protobuf::Message> request_prototype_;
   std::unique_ptr<grpc::protobuf::Message> response_prototype_;
   std::unordered_map<std::string, std::string> known_methods_;
-  std::vector<const protobuf::ServiceDescriptor*> service_desc_list_;
+  std::vector<const protobuf::ServiceDescriptor *> service_desc_list_;
 };
 
 }  // namespace testing

@@ -42,17 +42,17 @@ class MessageHolder : public RpcAllocatorState {
   // AllocateMessasge creates an instance of a subclass with new, the Release()
   // should do a "delete this;".
   virtual void Release() = 0;
-  RequestT* request() { return request_; }
-  ResponseT* response() { return response_; }
+  RequestT *request() { return request_; }
+  ResponseT *response() { return response_; }
 
  protected:
-  void set_request(RequestT* request) { request_ = request; }
-  void set_response(ResponseT* response) { response_ = response; }
+  void set_request(RequestT *request) { request_ = request; }
+  void set_response(ResponseT *response) { response_ = response; }
 
  private:
   // NOTE: subclasses should set these pointers.
-  RequestT* request_;
-  ResponseT* response_;
+  RequestT *request_;
+  ResponseT *response_;
 };
 
 // A custom allocator can be set via the generated code to a callback unary
@@ -63,7 +63,7 @@ template <typename RequestT, typename ResponseT>
 class MessageAllocator {
  public:
   virtual ~MessageAllocator() = default;
-  virtual MessageHolder<RequestT, ResponseT>* AllocateMessages() = 0;
+  virtual MessageHolder<RequestT, ResponseT> *AllocateMessages() = 0;
 };
 
 }  // namespace grpc

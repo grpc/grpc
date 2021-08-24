@@ -49,16 +49,16 @@ class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
  public:
   class Config : public CertificateProviderFactory::Config {
    public:
-    const char* name() const override { return "fake1"; }
+    const char *name() const override { return "fake1"; }
 
     std::string ToString() const override { return "{}"; }
   };
 
-  const char* name() const override { return "fake1"; }
+  const char *name() const override { return "fake1"; }
 
   RefCountedPtr<CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const Json& /*config_json*/,
-                                  grpc_error_handle* /*error*/) override {
+  CreateCertificateProviderConfig(const Json & /*config_json*/,
+                                  grpc_error_handle * /*error*/) override {
     return MakeRefCounted<Config>();
   }
 
@@ -72,16 +72,16 @@ class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
  public:
   class Config : public CertificateProviderFactory::Config {
    public:
-    const char* name() const override { return "fake2"; }
+    const char *name() const override { return "fake2"; }
 
     std::string ToString() const override { return "{}"; }
   };
 
-  const char* name() const override { return "fake2"; }
+  const char *name() const override { return "fake2"; }
 
   RefCountedPtr<CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const Json& /*config_json*/,
-                                  grpc_error_handle* /*error*/) override {
+  CreateCertificateProviderConfig(const Json & /*config_json*/,
+                                  grpc_error_handle * /*error*/) override {
     return MakeRefCounted<Config>();
   }
 
@@ -93,7 +93,7 @@ class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
 
 TEST_F(CertificateProviderStoreTest, Basic) {
   // Set up factories. (Register only one of the factories.)
-  auto* fake_factory_1 = new FakeCertificateProviderFactory1;
+  auto *fake_factory_1 = new FakeCertificateProviderFactory1;
   CertificateProviderRegistry::RegisterCertificateProviderFactory(
       std::unique_ptr<CertificateProviderFactory>(fake_factory_1));
   auto fake_factory_2 = absl::make_unique<FakeCertificateProviderFactory2>();
@@ -132,7 +132,7 @@ TEST_F(CertificateProviderStoreTest, Basic) {
 }
 
 TEST_F(CertificateProviderStoreTest, Multithreaded) {
-  auto* fake_factory_1 = new FakeCertificateProviderFactory1;
+  auto *fake_factory_1 = new FakeCertificateProviderFactory1;
   CertificateProviderRegistry::RegisterCertificateProviderFactory(
       std::unique_ptr<CertificateProviderFactory>(fake_factory_1));
   CertificateProviderStore::PluginDefinitionMap map = {
@@ -151,7 +151,7 @@ TEST_F(CertificateProviderStoreTest, Multithreaded) {
       }
     });
   }
-  for (auto& thread : threads) {
+  for (auto &thread : threads) {
     thread.join();
   }
 }
@@ -160,7 +160,7 @@ TEST_F(CertificateProviderStoreTest, Multithreaded) {
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   auto result = RUN_ALL_TESTS();

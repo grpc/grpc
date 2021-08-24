@@ -38,7 +38,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
       std::unique_ptr<reflection::v1alpha::ServerReflection::Stub> stub);
 
   explicit ProtoReflectionDescriptorDatabase(
-      const std::shared_ptr<grpc::Channel>& channel);
+      const std::shared_ptr<grpc::Channel> &channel);
 
   ~ProtoReflectionDescriptorDatabase() override;
 
@@ -46,22 +46,22 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   //
   // Find a file by file name.  Fills in *output and returns true if found.
   // Otherwise, returns false, leaving the contents of *output undefined.
-  bool FindFileByName(const string& filename,
-                      protobuf::FileDescriptorProto* output) override;
+  bool FindFileByName(const string &filename,
+                      protobuf::FileDescriptorProto *output) override;
 
   // Find the file that declares the given fully-qualified symbol name.
   // If found, fills in *output and returns true, otherwise returns false
   // and leaves *output undefined.
-  bool FindFileContainingSymbol(const string& symbol_name,
-                                protobuf::FileDescriptorProto* output) override;
+  bool FindFileContainingSymbol(const string &symbol_name,
+                                protobuf::FileDescriptorProto *output) override;
 
   // Find the file which defines an extension extending the given message type
   // with the given field number.  If found, fills in *output and returns true,
   // otherwise returns false and leaves *output undefined.  containing_type
   // must be a fully-qualified type name.
   bool FindFileContainingExtension(
-      const string& containing_type, int field_number,
-      protobuf::FileDescriptorProto* output) override;
+      const string &containing_type, int field_number,
+      protobuf::FileDescriptorProto *output) override;
 
   // Finds the tag numbers used by all known extensions of
   // extendee_type, and appends them to output in an undefined
@@ -70,11 +70,11 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   // FindFileContainingExtension will return true on all of the found
   // numbers. Returns true if the search was successful, otherwise
   // returns false and leaves output unchanged.
-  bool FindAllExtensionNumbers(const string& extendee_type,
-                               std::vector<int>* output) override;
+  bool FindAllExtensionNumbers(const string &extendee_type,
+                               std::vector<int> *output) override;
 
   // Provide a list of full names of registered services
-  bool GetServices(std::vector<std::string>* output);
+  bool GetServices(std::vector<std::string> *output);
 
  private:
   typedef ClientReaderWriter<
@@ -83,16 +83,16 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
       ClientStream;
 
   protobuf::FileDescriptorProto ParseFileDescriptorProtoResponse(
-      const std::string& byte_fd_proto);
+      const std::string &byte_fd_proto);
 
   void AddFileFromResponse(
-      const grpc::reflection::v1alpha::FileDescriptorResponse& response);
+      const grpc::reflection::v1alpha::FileDescriptorResponse &response);
 
   std::shared_ptr<ClientStream> GetStream();
 
   bool DoOneRequest(
-      const grpc::reflection::v1alpha::ServerReflectionRequest& request,
-      grpc::reflection::v1alpha::ServerReflectionResponse& response);
+      const grpc::reflection::v1alpha::ServerReflectionRequest &request,
+      grpc::reflection::v1alpha::ServerReflectionResponse &response);
 
   std::shared_ptr<ClientStream> stream_;
   grpc::ClientContext ctx_;

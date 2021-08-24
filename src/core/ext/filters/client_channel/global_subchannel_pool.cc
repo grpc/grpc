@@ -48,7 +48,7 @@ RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance() {
 }
 
 RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
-    const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) {
+    const SubchannelKey &key, RefCountedPtr<Subchannel> constructed) {
   MutexLock lock(&mu_);
   auto it = subchannel_map_.find(key);
   if (it != subchannel_map_.end()) {
@@ -59,10 +59,10 @@ RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
   return constructed;
 }
 
-RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ = nullptr;
+RefCountedPtr<GlobalSubchannelPool> *GlobalSubchannelPool::instance_ = nullptr;
 
-void GlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
-                                                Subchannel* subchannel) {
+void GlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey &key,
+                                                Subchannel *subchannel) {
   MutexLock lock(&mu_);
   auto it = subchannel_map_.find(key);
   // delete only if key hasn't been re-registered to a different subchannel
@@ -73,7 +73,7 @@ void GlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
 }
 
 RefCountedPtr<Subchannel> GlobalSubchannelPool::FindSubchannel(
-    const SubchannelKey& key) {
+    const SubchannelKey &key) {
   MutexLock lock(&mu_);
   auto it = subchannel_map_.find(key);
   if (it == subchannel_map_.end()) return nullptr;

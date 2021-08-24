@@ -50,15 +50,15 @@ TEST(MatchTest, TestVoidReturn) {
 TEST(MatchTest, TestMutable) {
   absl::variant<int, double> v = 1.9;
   MatchMutable(
-      &v, [](int*) { abort(); }, [](double* x) { *x = 0.0; });
+      &v, [](int *) { abort(); }, [](double *x) { *x = 0.0; });
   EXPECT_EQ(v, (absl::variant<int, double>(0.0)));
 }
 
 TEST(MatchTest, TestMutableWithReturn) {
   absl::variant<int, double> v = 1.9;
   EXPECT_EQ(MatchMutable(
-                &v, [](int*) -> int { abort(); },
-                [](double* x) -> int {
+                &v, [](int *) -> int { abort(); },
+                [](double *x) -> int {
                   *x = 0.0;
                   return 1;
                 }),
@@ -69,7 +69,7 @@ TEST(MatchTest, TestMutableWithReturn) {
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

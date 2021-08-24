@@ -33,7 +33,7 @@ namespace grpc {
 ///
 /// \param server The server to add the client to.
 /// \param fd The file descriptor representing a socket.
-void AddInsecureChannelFromFd(Server* server, int fd);
+void AddInsecureChannelFromFd(Server *server, int fd);
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 

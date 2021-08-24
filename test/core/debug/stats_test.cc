@@ -87,7 +87,7 @@ TEST_P(HistogramTest, IncHistogram) {
   const int kHistogram = GetParam();
   std::vector<std::thread> threads;
   int cur_bucket = 0;
-  auto run = [kHistogram](const std::vector<int>& test_values,
+  auto run = [kHistogram](const std::vector<int> &test_values,
                           int expected_bucket) {
     gpr_log(GPR_DEBUG, "expected_bucket:%d nvalues=%" PRIdPTR, expected_bucket,
             test_values.size());
@@ -132,7 +132,7 @@ TEST_P(HistogramTest, IncHistogram) {
     }
   }
   run(test_values, cur_bucket);
-  for (auto& t : threads) {
+  for (auto &t : threads) {
     t.join();
   }
 }
@@ -143,7 +143,7 @@ INSTANTIATE_TEST_SUITE_P(HistogramTestCases, HistogramTest,
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
 /* Only run this test if GRPC_COLLECT_STATS is defined or if it is a debug
  * build.
  */

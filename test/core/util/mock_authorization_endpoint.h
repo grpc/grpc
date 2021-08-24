@@ -32,15 +32,15 @@ class MockAuthorizationEndpoint : public grpc_endpoint {
     grpc_endpoint::vtable = &vtable;
   }
 
-  static absl::string_view GetPeer(grpc_endpoint* ep) {
-    MockAuthorizationEndpoint* m =
-        reinterpret_cast<MockAuthorizationEndpoint*>(ep);
+  static absl::string_view GetPeer(grpc_endpoint *ep) {
+    MockAuthorizationEndpoint *m =
+        reinterpret_cast<MockAuthorizationEndpoint *>(ep);
     return m->peer_address_;
   }
 
-  static absl::string_view GetLocalAddress(grpc_endpoint* ep) {
-    MockAuthorizationEndpoint* m =
-        reinterpret_cast<MockAuthorizationEndpoint*>(ep);
+  static absl::string_view GetLocalAddress(grpc_endpoint *ep) {
+    MockAuthorizationEndpoint *m =
+        reinterpret_cast<MockAuthorizationEndpoint *>(ep);
     return m->local_address_;
   }
 

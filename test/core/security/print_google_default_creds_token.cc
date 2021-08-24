@@ -33,7 +33,7 @@
 #include "test/core/util/cmdline.h"
 
 typedef struct {
-  gpr_mu* mu;
+  gpr_mu *mu;
   grpc_polling_entity pops;
   bool is_done;
 
@@ -41,14 +41,14 @@ typedef struct {
   grpc_closure on_request_metadata;
 } synchronizer;
 
-static void on_metadata_response(void* arg, grpc_error_handle error) {
-  synchronizer* sync = static_cast<synchronizer*>(arg);
+static void on_metadata_response(void *arg, grpc_error_handle error) {
+  synchronizer *sync = static_cast<synchronizer *>(arg);
   if (error != GRPC_ERROR_NONE) {
     fprintf(stderr, "Fetching token failed: %s\n",
             grpc_error_std_string(error).c_str());
     fflush(stderr);
   } else {
-    char* token;
+    char *token;
     GPR_ASSERT(sync->md_array.size == 1);
     token = grpc_slice_to_c_string(GRPC_MDVALUE(sync->md_array.md[0]));
     printf("\nGot token: %s\n\n", token);
@@ -62,15 +62,15 @@ static void on_metadata_response(void* arg, grpc_error_handle error) {
   gpr_mu_unlock(sync->mu);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   int result = 0;
   grpc_core::ExecCtx exec_ctx;
   synchronizer sync;
-  grpc_channel_credentials* creds = nullptr;
-  const char* service_url = "https://test.foo.google.com/Foo";
+  grpc_channel_credentials *creds = nullptr;
+  const char *service_url = "https://test.foo.google.com/Foo";
   grpc_auth_metadata_context context;
-  gpr_cmdline* cl = gpr_cmdline_create("print_google_default_creds_token");
-  grpc_pollset* pollset = nullptr;
+  gpr_cmdline *cl = gpr_cmdline_create("print_google_default_creds_token");
+  grpc_pollset *pollset = nullptr;
   grpc_error_handle error = GRPC_ERROR_NONE;
   gpr_cmdline_add_string(cl, "service_url",
                          "Service URL for the token request.", &service_url);
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
   }
 
   memset(&sync, 0, sizeof(sync));
-  pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+  pollset = static_cast<grpc_pollset *>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &sync.mu);
   sync.pops = grpc_polling_entity_create_from_pollset(pollset);
   sync.is_done = false;
@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
                     grpc_schedule_on_exec_ctx);
 
   error = GRPC_ERROR_NONE;
-  if (reinterpret_cast<grpc_composite_channel_credentials*>(creds)
+  if (reinterpret_cast<grpc_composite_channel_credentials *>(creds)
           ->mutable_call_creds()
           ->get_request_metadata(&sync.pops, context, &sync.md_array,
                                  &sync.on_request_metadata, &error)) {
@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
 
   gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
-    grpc_pollset_worker* worker = nullptr;
+    grpc_pollset_worker *worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(grpc_polling_entity_pollset(&sync.pops), &worker,

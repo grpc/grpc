@@ -161,7 +161,7 @@ static void test_http2_status_to_grpc_status() {
   HTTP2_STATUS_TO_GRPC_STATUS(504, GRPC_STATUS_UNAVAILABLE);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 

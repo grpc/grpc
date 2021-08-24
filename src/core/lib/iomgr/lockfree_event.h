@@ -33,8 +33,8 @@ class LockfreeEvent {
  public:
   LockfreeEvent();
 
-  LockfreeEvent(const LockfreeEvent&) = delete;
-  LockfreeEvent& operator=(const LockfreeEvent&) = delete;
+  LockfreeEvent(const LockfreeEvent &) = delete;
+  LockfreeEvent &operator=(const LockfreeEvent &) = delete;
 
   // These methods are used to initialize and destroy the internal state. These
   // cannot be done in constructor and destructor because SetReady may be called
@@ -52,7 +52,7 @@ class LockfreeEvent {
   // received, in which case the closure would be scheduled immediately.
   // If the shutdown state has already been set, then \a closure is scheduled
   // with the shutdown error.
-  void NotifyOn(grpc_closure* closure);
+  void NotifyOn(grpc_closure *closure);
 
   // Sets the shutdown state. If a closure had been provided by NotifyOn and has
   // not yet been scheduled, it will be scheduled with \a shutdown_error.

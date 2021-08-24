@@ -49,18 +49,18 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* target, const grpc_channel_args* args,
-      grpc_channel_args** new_args) override;
+      const char *target, const grpc_channel_args *args,
+      grpc_channel_args **new_args) override;
 
-  grpc_channel_args* update_arguments(grpc_channel_args* args) override {
+  grpc_channel_args *update_arguments(grpc_channel_args *args) override {
     return inner_creds_->update_arguments(args);
   }
 
-  const grpc_channel_credentials* inner_creds() const {
+  const grpc_channel_credentials *inner_creds() const {
     return inner_creds_.get();
   }
-  const grpc_call_credentials* call_creds() const { return call_creds_.get(); }
-  grpc_call_credentials* mutable_call_creds() { return call_creds_.get(); }
+  const grpc_call_credentials *call_creds() const { return call_creds_.get(); }
+  grpc_call_credentials *mutable_call_creds() { return call_creds_.get(); }
 
  private:
   grpc_core::RefCountedPtr<grpc_channel_credentials> inner_creds_;
@@ -79,20 +79,20 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
       grpc_core::RefCountedPtr<grpc_call_credentials> creds2);
   ~grpc_composite_call_credentials() override = default;
 
-  bool get_request_metadata(grpc_polling_entity* pollent,
+  bool get_request_metadata(grpc_polling_entity *pollent,
                             grpc_auth_metadata_context context,
-                            grpc_credentials_mdelem_array* md_array,
-                            grpc_closure* on_request_metadata,
-                            grpc_error_handle* error) override;
+                            grpc_credentials_mdelem_array *md_array,
+                            grpc_closure *on_request_metadata,
+                            grpc_error_handle *error) override;
 
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
+  void cancel_get_request_metadata(grpc_credentials_mdelem_array *md_array,
                                    grpc_error_handle error) override;
 
   grpc_security_level min_security_level() const override {
     return min_security_level_;
   }
 
-  const CallCredentialsList& inner() const { return inner_; }
+  const CallCredentialsList &inner() const { return inner_; }
   std::string debug_string() override;
 
  private:

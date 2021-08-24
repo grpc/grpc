@@ -31,22 +31,22 @@
 class Watcher : public grpc_core::ConnectivityStateWatcherInterface {
  public:
   void Notify(grpc_connectivity_state new_state,
-              const absl::Status& /* status */) override {
+              const absl::Status & /* status */) override {
     GPR_ASSERT(new_state == GRPC_CHANNEL_SHUTDOWN);
   }
 };
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
 static grpc_closure transport_op_cb;
 
-static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
+static void do_nothing(void * /*arg*/, grpc_error_handle /*error*/) {}
 
-void test_transport_op(grpc_channel* channel) {
+void test_transport_op(grpc_channel *channel) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_transport_op* op = grpc_make_transport_op(nullptr);
+  grpc_transport_op *op = grpc_make_transport_op(nullptr);
   op->start_connectivity_watch = grpc_core::MakeOrphanable<Watcher>();
-  grpc_channel_element* elem =
+  grpc_channel_element *elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   elem->filter->start_transport_op(elem, op);
 
@@ -56,19 +56,19 @@ void test_transport_op(grpc_channel* channel) {
   elem->filter->start_transport_op(elem, op);
 }
 
-int main(int argc, char** argv) {
-  grpc_channel* chan;
-  grpc_call* call;
-  grpc_completion_queue* cq;
-  cq_verifier* cqv;
+int main(int argc, char **argv) {
+  grpc_channel *chan;
+  grpc_call *call;
+  grpc_completion_queue *cq;
+  cq_verifier *cqv;
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  char* peer;
+  char *peer;
 
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
 
-  const char* error_message = "Rpc sent on a lame channel.";
+  const char *error_message = "Rpc sent on a lame channel.";
   grpc_status_code error_code = GRPC_STATUS_ABORTED;
   chan = grpc_lame_client_channel_create("lampoon:national", error_code,
                                          error_message);

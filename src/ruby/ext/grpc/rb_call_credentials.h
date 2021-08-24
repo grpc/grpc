@@ -26,6 +26,6 @@
 /* Initializes the ruby CallCredentials class. */
 void Init_grpc_call_credentials();
 
-grpc_call_credentials* grpc_rb_get_wrapped_call_credentials(VALUE v);
+grpc_call_credentials *grpc_rb_get_wrapped_call_credentials(VALUE v);
 
 #endif /* GRPC_RB_CALL_CREDENTIALS_H_ */

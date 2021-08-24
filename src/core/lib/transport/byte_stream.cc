@@ -34,7 +34,7 @@ namespace grpc_core {
 // SliceBufferByteStream
 //
 
-SliceBufferByteStream::SliceBufferByteStream(grpc_slice_buffer* slice_buffer,
+SliceBufferByteStream::SliceBufferByteStream(grpc_slice_buffer *slice_buffer,
                                              uint32_t flags)
     : ByteStream(static_cast<uint32_t>(slice_buffer->length), flags) {
   GPR_ASSERT(slice_buffer->length <= UINT32_MAX);
@@ -54,12 +54,12 @@ void SliceBufferByteStream::Orphan() {
 }
 
 bool SliceBufferByteStream::Next(size_t /*max_size_hint*/,
-                                 grpc_closure* /*on_complete*/) {
+                                 grpc_closure * /*on_complete*/) {
   GPR_DEBUG_ASSERT(backing_buffer_.count > 0);
   return true;
 }
 
-grpc_error_handle SliceBufferByteStream::Pull(grpc_slice* slice) {
+grpc_error_handle SliceBufferByteStream::Pull(grpc_slice *slice) {
   if (GPR_UNLIKELY(shutdown_error_ != GRPC_ERROR_NONE)) {
     return GRPC_ERROR_REF(shutdown_error_);
   }
@@ -96,7 +96,7 @@ void ByteStreamCache::Destroy() {
 // ByteStreamCache::CachingByteStream
 //
 
-ByteStreamCache::CachingByteStream::CachingByteStream(ByteStreamCache* cache)
+ByteStreamCache::CachingByteStream::CachingByteStream(ByteStreamCache *cache)
     : ByteStream(cache->length_, cache->flags_), cache_(cache) {}
 
 ByteStreamCache::CachingByteStream::~CachingByteStream() {}
@@ -110,14 +110,14 @@ void ByteStreamCache::CachingByteStream::Orphan() {
 }
 
 bool ByteStreamCache::CachingByteStream::Next(size_t max_size_hint,
-                                              grpc_closure* on_complete) {
+                                              grpc_closure *on_complete) {
   if (shutdown_error_ != GRPC_ERROR_NONE) return true;
   if (cursor_ < cache_->cache_buffer_.count) return true;
   GPR_ASSERT(cache_->underlying_stream_ != nullptr);
   return cache_->underlying_stream_->Next(max_size_hint, on_complete);
 }
 
-grpc_error_handle ByteStreamCache::CachingByteStream::Pull(grpc_slice* slice) {
+grpc_error_handle ByteStreamCache::CachingByteStream::Pull(grpc_slice *slice) {
   if (shutdown_error_ != GRPC_ERROR_NONE) {
     return GRPC_ERROR_REF(shutdown_error_);
   }

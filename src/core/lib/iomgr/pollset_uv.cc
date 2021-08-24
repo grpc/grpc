@@ -42,20 +42,20 @@ typedef struct uv_poller_handle {
   int refs;
 } uv_poller_handle;
 
-static uv_poller_handle* g_handle;
+static uv_poller_handle *g_handle;
 
 static void init() {
-  g_handle = (uv_poller_handle*)gpr_malloc(sizeof(uv_poller_handle));
+  g_handle = (uv_poller_handle *)gpr_malloc(sizeof(uv_poller_handle));
   g_handle->refs = 2;
   uv_timer_init(uv_default_loop(), &g_handle->poll_timer);
   uv_timer_init(uv_default_loop(), &g_handle->kick_timer);
 }
 
-static void empty_timer_cb(uv_timer_t* handle) {}
+static void empty_timer_cb(uv_timer_t *handle) {}
 
-static void kick_timer_cb(uv_timer_t* handle) { g_kicked = false; }
+static void kick_timer_cb(uv_timer_t *handle) { g_kicked = false; }
 
-static grpc_error* run_loop(size_t timeout) {
+static grpc_error *run_loop(size_t timeout) {
   if (grpc_pollset_work_run_loop) {
     if (timeout == 0) {
       uv_run(uv_default_loop(), UV_RUN_NOWAIT);
@@ -75,7 +75,7 @@ static void kick() {
   }
 }
 
-static void close_timer_cb(uv_handle_t* handle) {
+static void close_timer_cb(uv_handle_t *handle) {
   g_handle->refs--;
   if (g_handle->refs == 0) {
     gpr_free(g_handle);
@@ -83,8 +83,8 @@ static void close_timer_cb(uv_handle_t* handle) {
 }
 
 static void shutdown() {
-  uv_close((uv_handle_t*)&g_handle->poll_timer, close_timer_cb);
-  uv_close((uv_handle_t*)&g_handle->kick_timer, close_timer_cb);
+  uv_close((uv_handle_t *)&g_handle->poll_timer, close_timer_cb);
+  uv_close((uv_handle_t *)&g_handle->kick_timer, close_timer_cb);
   if (grpc_pollset_work_run_loop) {
     GPR_ASSERT(uv_run(uv_default_loop(), UV_RUN_DEFAULT) == 0);
   }

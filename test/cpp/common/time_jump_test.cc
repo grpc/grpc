@@ -36,20 +36,20 @@
 
 #include "absl/time/time.h"
 
-extern char** environ;
+extern char **environ;
 
 #ifdef GPR_ANDROID
 // Android doesn't have posix_spawn. Use std::system instead
-void run_cmd(const char* cmd) { std::system(cmd); }
+void run_cmd(const char *cmd) { std::system(cmd); }
 #else
-void run_cmd(const char* cmd) {
+void run_cmd(const char *cmd) {
   pid_t pid;
-  const char* argv[] = {const_cast<const char*>("sh"),
-                        const_cast<const char*>("-c"), cmd, nullptr};
+  const char *argv[] = {const_cast<const char *>("sh"),
+                        const_cast<const char *>("-c"), cmd, nullptr};
   int status;
 
-  status = posix_spawn(&pid, const_cast<const char*>("/bin/sh"), nullptr,
-                       nullptr, const_cast<char**>(argv), environ);
+  status = posix_spawn(&pid, const_cast<const char *>("/bin/sh"), nullptr,
+                       nullptr, const_cast<char **>(argv), environ);
   if (status == 0) {
     if (waitpid(pid, &status, 0) == -1) {
       perror("waitpid");
@@ -90,7 +90,7 @@ TEST_P(TimeJumpTest, TimerRunning) {
   grpc_timer timer;
   grpc_timer_init(&timer, grpc_core::ExecCtx::Get()->Now() + 3000,
                   GRPC_CLOSURE_CREATE(
-                      [](void*, grpc_error_handle error) {
+                      [](void *, grpc_error_handle error) {
                         GPR_ASSERT(error == GRPC_ERROR_CANCELLED);
                       },
                       nullptr, grpc_schedule_on_exec_ctx));
@@ -137,7 +137,7 @@ TEST_P(TimeJumpTest, TimedWait) {
   GPR_ASSERT(wakeups <= 3);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

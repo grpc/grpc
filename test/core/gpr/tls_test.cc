@@ -33,7 +33,7 @@
 
 static GPR_THREAD_LOCAL(intptr_t) test_var;
 
-static void thd_body(void* /*arg*/) {
+static void thd_body(void * /*arg*/) {
   intptr_t i;
 
   GPR_ASSERT(test_var == 0);
@@ -47,16 +47,16 @@ static void thd_body(void* /*arg*/) {
 
 /* ------------------------------------------------- */
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   grpc_core::Thread threads[NUM_THREADS];
 
   grpc::testing::TestEnvironment env(argc, argv);
 
-  for (auto& th : threads) {
+  for (auto &th : threads) {
     th = grpc_core::Thread("grpc_tls_test", thd_body, nullptr);
     th.Start();
   }
-  for (auto& th : threads) {
+  for (auto &th : threads) {
     th.Join();
   }
 

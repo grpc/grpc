@@ -50,13 +50,13 @@ class ByteStream : public Orphanable {
   //
   // max_size_hint can be set as a hint as to the maximum number
   // of bytes that would be acceptable to read.
-  virtual bool Next(size_t max_size_hint, grpc_closure* on_complete) = 0;
+  virtual bool Next(size_t max_size_hint, grpc_closure *on_complete) = 0;
 
   // Returns the next slice in the byte stream when it is available, as
   // indicated by Next().
   //
   // Once a slice is returned into *slice, it is owned by the caller.
-  virtual grpc_error_handle Pull(grpc_slice* slice) = 0;
+  virtual grpc_error_handle Pull(grpc_slice *slice) = 0;
 
   // Shuts down the byte stream.
   //
@@ -90,14 +90,14 @@ class ByteStream : public Orphanable {
 class SliceBufferByteStream : public ByteStream {
  public:
   // Removes all slices in slice_buffer, leaving it empty.
-  SliceBufferByteStream(grpc_slice_buffer* slice_buffer, uint32_t flags);
+  SliceBufferByteStream(grpc_slice_buffer *slice_buffer, uint32_t flags);
 
   ~SliceBufferByteStream() override;
 
   void Orphan() override;
 
-  bool Next(size_t max_size_hint, grpc_closure* on_complete) override;
-  grpc_error_handle Pull(grpc_slice* slice) override;
+  bool Next(size_t max_size_hint, grpc_closure *on_complete) override;
+  grpc_error_handle Pull(grpc_slice *slice) override;
   void Shutdown(grpc_error_handle error) override;
 
  private:
@@ -124,21 +124,21 @@ class ByteStreamCache {
  public:
   class CachingByteStream : public ByteStream {
    public:
-    explicit CachingByteStream(ByteStreamCache* cache);
+    explicit CachingByteStream(ByteStreamCache *cache);
 
     ~CachingByteStream() override;
 
     void Orphan() override;
 
-    bool Next(size_t max_size_hint, grpc_closure* on_complete) override;
-    grpc_error_handle Pull(grpc_slice* slice) override;
+    bool Next(size_t max_size_hint, grpc_closure *on_complete) override;
+    grpc_error_handle Pull(grpc_slice *slice) override;
     void Shutdown(grpc_error_handle error) override;
 
     // Resets the byte stream to the start of the underlying stream.
     void Reset();
 
    private:
-    ByteStreamCache* cache_;
+    ByteStreamCache *cache_;
     size_t cursor_ = 0;
     size_t offset_ = 0;
     grpc_error_handle shutdown_error_ = GRPC_ERROR_NONE;
@@ -151,7 +151,7 @@ class ByteStreamCache {
   // Must not be destroyed while still in use by a CachingByteStream.
   void Destroy();
 
-  grpc_slice_buffer* cache_buffer() { return &cache_buffer_; }
+  grpc_slice_buffer *cache_buffer() { return &cache_buffer_; }
 
  private:
   OrphanablePtr<ByteStream> underlying_stream_;

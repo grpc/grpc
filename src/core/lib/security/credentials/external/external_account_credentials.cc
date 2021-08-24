@@ -42,8 +42,8 @@ namespace grpc_core {
 
 namespace {
 
-std::string UrlEncode(const absl::string_view& s) {
-  const char* hex = "0123456789ABCDEF";
+std::string UrlEncode(const absl::string_view &s) {
+  const char *hex = "0123456789ABCDEF";
   std::string result;
   result.reserve(s.length());
   for (auto c : s) {
@@ -63,8 +63,8 @@ std::string UrlEncode(const absl::string_view& s) {
 }  // namespace
 
 RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
-    const Json& json, std::vector<std::string> scopes,
-    grpc_error_handle* error) {
+    const Json &json, std::vector<std::string> scopes,
+    grpc_error_handle *error) {
   GPR_ASSERT(*error == GRPC_ERROR_NONE);
   Options options;
   options.type = GRPC_AUTH_JSON_TYPE_INVALID;
@@ -207,8 +207,8 @@ std::string ExternalAccountCredentials::debug_string() {
 // TODO(chuanr): Avoid starting the remaining requests if the channel gets shut
 // down.
 void ExternalAccountCredentials::fetch_oauth2(
-    grpc_credentials_metadata_request* metadata_req,
-    grpc_httpcli_context* httpcli_context, grpc_polling_entity* pollent,
+    grpc_credentials_metadata_request *metadata_req,
+    grpc_httpcli_context *httpcli_context, grpc_polling_entity *pollent,
     grpc_iomgr_cb_func response_cb, grpc_millis deadline) {
   GPR_ASSERT(ctx_ == nullptr);
   ctx_ = new HTTPRequestContext(httpcli_context, pollent, deadline);
@@ -241,18 +241,18 @@ void ExternalAccountCredentials::ExchangeToken(
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority().c_str());
+  request.host = const_cast<char *>(uri->authority().c_str());
   request.http.path = gpr_strdup(uri->path().c_str());
-  grpc_http_header* headers = nullptr;
+  grpc_http_header *headers = nullptr;
   if (!options_.client_id.empty() && !options_.client_secret.empty()) {
     request.http.hdr_count = 2;
-    headers = static_cast<grpc_http_header*>(
+    headers = static_cast<grpc_http_header *>(
         gpr_malloc(sizeof(grpc_http_header) * request.http.hdr_count));
     headers[0].key = gpr_strdup("Content-Type");
     headers[0].value = gpr_strdup("application/x-www-form-urlencoded");
     std::string raw_cred =
         absl::StrFormat("%s:%s", options_.client_id, options_.client_secret);
-    char* encoded_cred =
+    char *encoded_cred =
         grpc_base64_encode(raw_cred.c_str(), raw_cred.length(), 0, 0);
     std::string str = absl::StrFormat("Basic %s", std::string(encoded_cred));
     headers[1].key = gpr_strdup("Authorization");
@@ -260,7 +260,7 @@ void ExternalAccountCredentials::ExchangeToken(
     gpr_free(encoded_cred);
   } else {
     request.http.hdr_count = 1;
-    headers = static_cast<grpc_http_header*>(
+    headers = static_cast<grpc_http_header *>(
         gpr_malloc(sizeof(grpc_http_header) * request.http.hdr_count));
     headers[0].key = gpr_strdup("Content-Type");
     headers[0].value = gpr_strdup("application/x-www-form-urlencoded");
@@ -289,7 +289,7 @@ void ExternalAccountCredentials::ExchangeToken(
   body_parts.push_back(
       absl::StrFormat("%s=%s", "scope", UrlEncode(scope).c_str()));
   std::string body = absl::StrJoin(body_parts, "&");
-  grpc_resource_quota* resource_quota =
+  grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
@@ -300,10 +300,10 @@ void ExternalAccountCredentials::ExchangeToken(
   grpc_http_request_destroy(&request.http);
 }
 
-void ExternalAccountCredentials::OnExchangeToken(void* arg,
+void ExternalAccountCredentials::OnExchangeToken(void *arg,
                                                  grpc_error_handle error) {
-  ExternalAccountCredentials* self =
-      static_cast<ExternalAccountCredentials*>(arg);
+  ExternalAccountCredentials *self =
+      static_cast<ExternalAccountCredentials *>(arg);
   self->OnExchangeTokenInternal(GRPC_ERROR_REF(error));
 }
 
@@ -316,7 +316,7 @@ void ExternalAccountCredentials::OnExchangeTokenInternal(
       metadata_req_->response = ctx_->response;
       metadata_req_->response.body = gpr_strdup(
           std::string(ctx_->response.body, ctx_->response.body_length).c_str());
-      metadata_req_->response.hdrs = static_cast<grpc_http_header*>(
+      metadata_req_->response.hdrs = static_cast<grpc_http_header *>(
           gpr_malloc(sizeof(grpc_http_header) * ctx_->response.hdr_count));
       for (size_t i = 0; i < ctx_->response.hdr_count; i++) {
         metadata_req_->response.hdrs[i].key =
@@ -363,10 +363,10 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority().c_str());
+  request.host = const_cast<char *>(uri->authority().c_str());
   request.http.path = gpr_strdup(uri->path().c_str());
   request.http.hdr_count = 2;
-  grpc_http_header* headers = static_cast<grpc_http_header*>(
+  grpc_http_header *headers = static_cast<grpc_http_header *>(
       gpr_malloc(sizeof(grpc_http_header) * request.http.hdr_count));
   headers[0].key = gpr_strdup("Content-Type");
   headers[0].value = gpr_strdup("application/x-www-form-urlencoded");
@@ -378,7 +378,7 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
       uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   std::string scope = absl::StrJoin(scopes_, " ");
   std::string body = absl::StrFormat("%s=%s", "scope", scope);
-  grpc_resource_quota* resource_quota =
+  grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
@@ -390,9 +390,9 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
 }
 
 void ExternalAccountCredentials::OnImpersenateServiceAccount(
-    void* arg, grpc_error_handle error) {
-  ExternalAccountCredentials* self =
-      static_cast<ExternalAccountCredentials*>(arg);
+    void *arg, grpc_error_handle error) {
+  ExternalAccountCredentials *self =
+      static_cast<ExternalAccountCredentials *>(arg);
   self->OnImpersenateServiceAccountInternal(GRPC_ERROR_REF(error));
 }
 
@@ -442,7 +442,7 @@ void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
   metadata_req_->response = ctx_->response;
   metadata_req_->response.body = gpr_strdup(body.c_str());
   metadata_req_->response.body_length = body.length();
-  metadata_req_->response.hdrs = static_cast<grpc_http_header*>(
+  metadata_req_->response.hdrs = static_cast<grpc_http_header *>(
       gpr_malloc(sizeof(grpc_http_header) * ctx_->response.hdr_count));
   for (size_t i = 0; i < ctx_->response.hdr_count; i++) {
     metadata_req_->response.hdrs[i].key =
@@ -457,11 +457,11 @@ void ExternalAccountCredentials::FinishTokenFetch(grpc_error_handle error) {
   GRPC_LOG_IF_ERROR("Fetch external account credentials access token",
                     GRPC_ERROR_REF(error));
   // Move object state into local variables.
-  auto* cb = response_cb_;
+  auto *cb = response_cb_;
   response_cb_ = nullptr;
-  auto* metadata_req = metadata_req_;
+  auto *metadata_req = metadata_req_;
   metadata_req_ = nullptr;
-  auto* ctx = ctx_;
+  auto *ctx = ctx_;
   ctx_ = nullptr;
   // Invoke the callback.
   cb(metadata_req, error);
@@ -472,8 +472,8 @@ void ExternalAccountCredentials::FinishTokenFetch(grpc_error_handle error) {
 
 }  // namespace grpc_core
 
-grpc_call_credentials* grpc_external_account_credentials_create(
-    const char* json_string, const char* scopes_string) {
+grpc_call_credentials *grpc_external_account_credentials_create(
+    const char *json_string, const char *scopes_string) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::Json json = grpc_core::Json::Parse(json_string, &error);
   if (error != GRPC_ERROR_NONE) {

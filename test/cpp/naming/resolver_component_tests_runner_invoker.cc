@@ -67,14 +67,14 @@ namespace grpc {
 namespace testing {
 
 void InvokeResolverComponentTestsRunner(
-    std::string test_runner_bin_path, const std::string& test_bin_path,
-    const std::string& dns_server_bin_path,
-    const std::string& records_config_path,
-    const std::string& dns_resolver_bin_path,
-    const std::string& tcp_connect_bin_path) {
+    std::string test_runner_bin_path, const std::string &test_bin_path,
+    const std::string &dns_server_bin_path,
+    const std::string &records_config_path,
+    const std::string &dns_resolver_bin_path,
+    const std::string &tcp_connect_bin_path) {
   int dns_server_port = grpc_pick_unused_port_or_die();
 
-  SubProcess* test_driver = new SubProcess(
+  SubProcess *test_driver = new SubProcess(
       {std::move(test_runner_bin_path), "--test_bin_path=" + test_bin_path,
        "--dns_server_bin_path=" + dns_server_bin_path,
        "--records_config_path=" + records_config_path,
@@ -119,7 +119,7 @@ void InvokeResolverComponentTestsRunner(
 
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   grpc_init();
@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
                     .empty());
     // Use bazel's TEST_SRCDIR environment variable to locate the "test data"
     // binaries.
-    char* test_srcdir = gpr_getenv("TEST_SRCDIR");
+    char *test_srcdir = gpr_getenv("TEST_SRCDIR");
     std::string const bin_dir =
         test_srcdir +
         absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir) +

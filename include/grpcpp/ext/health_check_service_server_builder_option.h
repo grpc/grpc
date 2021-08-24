@@ -34,9 +34,9 @@ class HealthCheckServiceServerBuilderOption : public ServerBuilderOption {
   explicit HealthCheckServiceServerBuilderOption(
       std::unique_ptr<HealthCheckServiceInterface> hc);
   ~HealthCheckServiceServerBuilderOption() override {}
-  void UpdateArguments(ChannelArguments* args) override;
+  void UpdateArguments(ChannelArguments *args) override;
   void UpdatePlugins(
-      std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override;
+      std::vector<std::unique_ptr<ServerBuilderPlugin>> *plugins) override;
 
  private:
   std::unique_ptr<HealthCheckServiceInterface> hc_;

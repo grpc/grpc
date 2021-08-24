@@ -28,7 +28,7 @@
    opcode byte */
 uint32_t grpc_chttp2_hpack_varint_length(uint32_t tail_value);
 
-void grpc_chttp2_hpack_write_varint_tail(uint32_t tail_value, uint8_t* target,
+void grpc_chttp2_hpack_write_varint_tail(uint32_t tail_value, uint8_t *target,
                                          uint32_t tail_length);
 
 /* maximum value that can be bitpacked with the opcode if the opcode has a
@@ -46,7 +46,7 @@ void grpc_chttp2_hpack_write_varint_tail(uint32_t tail_value, uint8_t* target,
 
 #define GRPC_CHTTP2_WRITE_VARINT(n, prefix_bits, prefix_or, target, length)   \
   do {                                                                        \
-    uint8_t* tgt = target;                                                    \
+    uint8_t *tgt = target;                                                    \
     if ((length) == 1u) {                                                     \
       (tgt)[0] = (uint8_t)((prefix_or) | (n));                                \
     } else {                                                                  \

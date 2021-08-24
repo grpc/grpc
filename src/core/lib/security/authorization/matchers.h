@@ -32,7 +32,7 @@ class AuthorizationMatcher {
 
   // Returns whether or not the permission/principal matches the rules of the
   // matcher.
-  virtual bool Matches(const EvaluateArgs& args) const = 0;
+  virtual bool Matches(const EvaluateArgs &args) const = 0;
 
   // Creates an instance of a matcher based off the rules defined in Permission
   // config.
@@ -49,7 +49,7 @@ class AlwaysAuthorizationMatcher : public AuthorizationMatcher {
  public:
   explicit AlwaysAuthorizationMatcher() = default;
 
-  bool Matches(const EvaluateArgs&) const override { return true; }
+  bool Matches(const EvaluateArgs &) const override { return true; }
 };
 
 class AndAuthorizationMatcher : public AuthorizationMatcher {
@@ -58,7 +58,7 @@ class AndAuthorizationMatcher : public AuthorizationMatcher {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers)
       : matchers_(std::move(matchers)) {}
 
-  bool Matches(const EvaluateArgs& args) const override;
+  bool Matches(const EvaluateArgs &args) const override;
 
  private:
   std::vector<std::unique_ptr<AuthorizationMatcher>> matchers_;
@@ -70,7 +70,7 @@ class OrAuthorizationMatcher : public AuthorizationMatcher {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers)
       : matchers_(std::move(matchers)) {}
 
-  bool Matches(const EvaluateArgs& args) const override;
+  bool Matches(const EvaluateArgs &args) const override;
 
  private:
   std::vector<std::unique_ptr<AuthorizationMatcher>> matchers_;
@@ -83,7 +83,7 @@ class NotAuthorizationMatcher : public AuthorizationMatcher {
       std::unique_ptr<AuthorizationMatcher> matcher)
       : matcher_(std::move(matcher)) {}
 
-  bool Matches(const EvaluateArgs& args) const override;
+  bool Matches(const EvaluateArgs &args) const override;
 
  private:
   std::unique_ptr<AuthorizationMatcher> matcher_;
@@ -97,7 +97,7 @@ class HeaderAuthorizationMatcher : public AuthorizationMatcher {
   explicit HeaderAuthorizationMatcher(HeaderMatcher matcher)
       : matcher_(std::move(matcher)) {}
 
-  bool Matches(const EvaluateArgs& args) const override;
+  bool Matches(const EvaluateArgs &args) const override;
 
  private:
   const HeaderMatcher matcher_;
@@ -115,7 +115,7 @@ class IpAuthorizationMatcher : public AuthorizationMatcher {
 
   IpAuthorizationMatcher(Type type, Rbac::CidrRange range);
 
-  bool Matches(const EvaluateArgs& args) const override;
+  bool Matches(const EvaluateArgs &args) const override;
 
  private:
   const Type type_;
@@ -129,7 +129,7 @@ class PortAuthorizationMatcher : public AuthorizationMatcher {
  public:
   explicit PortAuthorizationMatcher(int port) : port_(port) {}
 
-  bool Matches(const EvaluateArgs& args) const override;
+  bool Matches(const EvaluateArgs &args) const override;
 
  private:
   const int port_;
@@ -142,7 +142,7 @@ class AuthenticatedAuthorizationMatcher : public AuthorizationMatcher {
   explicit AuthenticatedAuthorizationMatcher(StringMatcher auth)
       : matcher_(std::move(auth)) {}
 
-  bool Matches(const EvaluateArgs& args) const override;
+  bool Matches(const EvaluateArgs &args) const override;
 
  private:
   const StringMatcher matcher_;
@@ -156,7 +156,7 @@ class ReqServerNameAuthorizationMatcher : public AuthorizationMatcher {
       StringMatcher requested_server_name)
       : matcher_(std::move(requested_server_name)) {}
 
-  bool Matches(const EvaluateArgs&) const override;
+  bool Matches(const EvaluateArgs &) const override;
 
  private:
   const StringMatcher matcher_;
@@ -168,7 +168,7 @@ class PathAuthorizationMatcher : public AuthorizationMatcher {
   explicit PathAuthorizationMatcher(StringMatcher path)
       : matcher_(std::move(path)) {}
 
-  bool Matches(const EvaluateArgs& args) const override;
+  bool Matches(const EvaluateArgs &args) const override;
 
  private:
   const StringMatcher matcher_;
@@ -185,7 +185,7 @@ class PolicyAuthorizationMatcher : public AuthorizationMatcher {
         principals_(
             AuthorizationMatcher::Create(std::move(policy.principals))) {}
 
-  bool Matches(const EvaluateArgs& args) const override;
+  bool Matches(const EvaluateArgs &args) const override;
 
  private:
   std::unique_ptr<AuthorizationMatcher> permissions_;

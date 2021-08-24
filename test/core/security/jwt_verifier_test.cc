@@ -169,12 +169,12 @@ static const char invalid_claims[] =
 
 typedef struct {
   grpc_jwt_verifier_status expected_status;
-  const char* expected_issuer;
-  const char* expected_subject;
+  const char *expected_issuer;
+  const char *expected_subject;
 } verifier_test_config;
 
 static void test_jwt_issuer_email_domain(void) {
-  const char* d = grpc_jwt_issuer_email_domain("https://foo.com");
+  const char *d = grpc_jwt_issuer_email_domain("https://foo.com");
   GPR_ASSERT(d == nullptr);
   d = grpc_jwt_issuer_email_domain("foo.com");
   GPR_ASSERT(d == nullptr);
@@ -206,7 +206,7 @@ static void test_jwt_issuer_email_domain(void) {
 }
 
 static void test_claims_success(void) {
-  grpc_jwt_claims* claims;
+  grpc_jwt_claims *claims;
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(claims_without_time_constraint, &error);
   if (error != GRPC_ERROR_NONE) {
@@ -229,7 +229,7 @@ static void test_claims_success(void) {
 }
 
 static void test_expired_claims_failure(void) {
-  grpc_jwt_claims* claims;
+  grpc_jwt_claims *claims;
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(expired_claims, &error);
   if (error != GRPC_ERROR_NONE) {
@@ -272,7 +272,7 @@ static void test_invalid_claims_failure(void) {
 }
 
 static void test_bad_audience_claims_failure(void) {
-  grpc_jwt_claims* claims;
+  grpc_jwt_claims *claims;
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(claims_without_time_constraint, &error);
   if (error != GRPC_ERROR_NONE) {
@@ -290,7 +290,7 @@ static void test_bad_audience_claims_failure(void) {
 }
 
 static void test_bad_subject_claims_failure(void) {
-  grpc_jwt_claims* claims;
+  grpc_jwt_claims *claims;
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(claims_with_bad_subject, &error);
   if (error != GRPC_ERROR_NONE) {
@@ -307,11 +307,11 @@ static void test_bad_subject_claims_failure(void) {
   grpc_jwt_claims_destroy(claims);
 }
 
-static char* json_key_str(const char* last_part) {
+static char *json_key_str(const char *last_part) {
   size_t result_len = strlen(json_key_str_part1) + strlen(json_key_str_part2) +
                       strlen(last_part);
-  char* result = static_cast<char*>(gpr_malloc(result_len + 1));
-  char* current = result;
+  char *result = static_cast<char *>(gpr_malloc(result_len + 1));
+  char *current = result;
   strcpy(result, json_key_str_part1);
   current += strlen(json_key_str_part1);
   strcpy(current, json_key_str_part2);
@@ -320,18 +320,18 @@ static char* json_key_str(const char* last_part) {
   return result;
 }
 
-static char* good_google_email_keys(void) {
+static char *good_google_email_keys(void) {
   size_t result_len = strlen(good_google_email_keys_part1) +
                       strlen(good_google_email_keys_part2);
-  char* result = static_cast<char*>(gpr_malloc(result_len + 1));
-  char* current = result;
+  char *result = static_cast<char *>(gpr_malloc(result_len + 1));
+  char *current = result;
   strcpy(result, good_google_email_keys_part1);
   current += strlen(good_google_email_keys_part1);
   strcpy(current, good_google_email_keys_part2);
   return result;
 }
 
-static grpc_httpcli_response http_response(int status, char* body) {
+static grpc_httpcli_response http_response(int status, char *body) {
   grpc_httpcli_response response;
   response = {};
   response.status = status;
@@ -341,16 +341,16 @@ static grpc_httpcli_response http_response(int status, char* body) {
 }
 
 static int httpcli_post_should_not_be_called(
-    const grpc_httpcli_request* /*request*/, const char* /*body_bytes*/,
-    size_t /*body_size*/, grpc_millis /*deadline*/, grpc_closure* /*on_done*/,
-    grpc_httpcli_response* /*response*/) {
+    const grpc_httpcli_request * /*request*/, const char * /*body_bytes*/,
+    size_t /*body_size*/, grpc_millis /*deadline*/, grpc_closure * /*on_done*/,
+    grpc_httpcli_response * /*response*/) {
   GPR_ASSERT("HTTP POST should not be called" == nullptr);
   return 1;
 }
 
 static int httpcli_get_google_keys_for_email(
-    const grpc_httpcli_request* request, grpc_millis /*deadline*/,
-    grpc_closure* on_done, grpc_httpcli_response* response) {
+    const grpc_httpcli_request *request, grpc_millis /*deadline*/,
+    grpc_closure *on_done, grpc_httpcli_response *response) {
   *response = http_response(200, good_google_email_keys());
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
@@ -362,21 +362,21 @@ static int httpcli_get_google_keys_for_email(
   return 1;
 }
 
-static void on_verification_success(void* user_data,
+static void on_verification_success(void *user_data,
                                     grpc_jwt_verifier_status status,
-                                    grpc_jwt_claims* claims) {
+                                    grpc_jwt_claims *claims) {
   GPR_ASSERT(status == GRPC_JWT_VERIFIER_OK);
   GPR_ASSERT(claims != nullptr);
-  GPR_ASSERT(user_data == (void*)expected_user_data);
+  GPR_ASSERT(user_data == (void *)expected_user_data);
   GPR_ASSERT(strcmp(grpc_jwt_claims_audience(claims), expected_audience) == 0);
   grpc_jwt_claims_destroy(claims);
 }
 
 static void test_jwt_verifier_google_email_issuer_success(void) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_jwt_verifier* verifier = grpc_jwt_verifier_create(nullptr, 0);
-  char* jwt = nullptr;
-  char* key_str = json_key_str(json_key_str_part3_for_google_email_issuer);
+  grpc_jwt_verifier *verifier = grpc_jwt_verifier_create(nullptr, 0);
+  char *jwt = nullptr;
+  char *key_str = json_key_str(json_key_str_part3_for_google_email_issuer);
   grpc_auth_json_key key = grpc_auth_json_key_create_from_string(key_str);
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
@@ -388,7 +388,7 @@ static void test_jwt_verifier_google_email_issuer_success(void) {
   GPR_ASSERT(jwt != nullptr);
   grpc_jwt_verifier_verify(verifier, nullptr, jwt, expected_audience,
                            on_verification_success,
-                           const_cast<char*>(expected_user_data));
+                           const_cast<char *>(expected_user_data));
   grpc_jwt_verifier_destroy(verifier);
   grpc_core::ExecCtx::Get()->Flush();
   gpr_free(jwt);
@@ -396,8 +396,8 @@ static void test_jwt_verifier_google_email_issuer_success(void) {
 }
 
 static int httpcli_get_custom_keys_for_email(
-    const grpc_httpcli_request* request, grpc_millis /*deadline*/,
-    grpc_closure* on_done, grpc_httpcli_response* response) {
+    const grpc_httpcli_request *request, grpc_millis /*deadline*/,
+    grpc_closure *on_done, grpc_httpcli_response *response) {
   *response = http_response(200, gpr_strdup(good_jwk_set));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "keys.bar.com") == 0);
@@ -408,9 +408,9 @@ static int httpcli_get_custom_keys_for_email(
 
 static void test_jwt_verifier_custom_email_issuer_success(void) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_jwt_verifier* verifier = grpc_jwt_verifier_create(&custom_mapping, 1);
-  char* jwt = nullptr;
-  char* key_str = json_key_str(json_key_str_part3_for_custom_email_issuer);
+  grpc_jwt_verifier *verifier = grpc_jwt_verifier_create(&custom_mapping, 1);
+  char *jwt = nullptr;
+  char *key_str = json_key_str(json_key_str_part3_for_custom_email_issuer);
   grpc_auth_json_key key = grpc_auth_json_key_create_from_string(key_str);
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
@@ -422,16 +422,16 @@ static void test_jwt_verifier_custom_email_issuer_success(void) {
   GPR_ASSERT(jwt != nullptr);
   grpc_jwt_verifier_verify(verifier, nullptr, jwt, expected_audience,
                            on_verification_success,
-                           const_cast<char*>(expected_user_data));
+                           const_cast<char *>(expected_user_data));
   grpc_jwt_verifier_destroy(verifier);
   grpc_core::ExecCtx::Get()->Flush();
   gpr_free(jwt);
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
-static int httpcli_get_jwk_set(const grpc_httpcli_request* request,
-                               grpc_millis /*deadline*/, grpc_closure* on_done,
-                               grpc_httpcli_response* response) {
+static int httpcli_get_jwk_set(const grpc_httpcli_request *request,
+                               grpc_millis /*deadline*/, grpc_closure *on_done,
+                               grpc_httpcli_response *response) {
   *response = http_response(200, gpr_strdup(good_jwk_set));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
@@ -440,10 +440,10 @@ static int httpcli_get_jwk_set(const grpc_httpcli_request* request,
   return 1;
 }
 
-static int httpcli_get_openid_config(const grpc_httpcli_request* request,
+static int httpcli_get_openid_config(const grpc_httpcli_request *request,
                                      grpc_millis /*deadline*/,
-                                     grpc_closure* on_done,
-                                     grpc_httpcli_response* response) {
+                                     grpc_closure *on_done,
+                                     grpc_httpcli_response *response) {
   *response = http_response(200, gpr_strdup(good_openid_config));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "accounts.google.com") == 0);
@@ -456,9 +456,9 @@ static int httpcli_get_openid_config(const grpc_httpcli_request* request,
 
 static void test_jwt_verifier_url_issuer_success(void) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_jwt_verifier* verifier = grpc_jwt_verifier_create(nullptr, 0);
-  char* jwt = nullptr;
-  char* key_str = json_key_str(json_key_str_part3_for_url_issuer);
+  grpc_jwt_verifier *verifier = grpc_jwt_verifier_create(nullptr, 0);
+  char *jwt = nullptr;
+  char *key_str = json_key_str(json_key_str_part3_for_url_issuer);
   grpc_auth_json_key key = grpc_auth_json_key_create_from_string(key_str);
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
@@ -470,24 +470,24 @@ static void test_jwt_verifier_url_issuer_success(void) {
   GPR_ASSERT(jwt != nullptr);
   grpc_jwt_verifier_verify(verifier, nullptr, jwt, expected_audience,
                            on_verification_success,
-                           const_cast<char*>(expected_user_data));
+                           const_cast<char *>(expected_user_data));
   grpc_jwt_verifier_destroy(verifier);
   grpc_core::ExecCtx::Get()->Flush();
   gpr_free(jwt);
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
-static void on_verification_key_retrieval_error(void* user_data,
+static void on_verification_key_retrieval_error(void *user_data,
                                                 grpc_jwt_verifier_status status,
-                                                grpc_jwt_claims* claims) {
+                                                grpc_jwt_claims *claims) {
   GPR_ASSERT(status == GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR);
   GPR_ASSERT(claims == nullptr);
-  GPR_ASSERT(user_data == (void*)expected_user_data);
+  GPR_ASSERT(user_data == (void *)expected_user_data);
 }
 
-static int httpcli_get_bad_json(const grpc_httpcli_request* request,
-                                grpc_millis /*deadline*/, grpc_closure* on_done,
-                                grpc_httpcli_response* response) {
+static int httpcli_get_bad_json(const grpc_httpcli_request *request,
+                                grpc_millis /*deadline*/, grpc_closure *on_done,
+                                grpc_httpcli_response *response) {
   *response = http_response(200, gpr_strdup("{\"bad\": \"stuff\"}"));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
@@ -496,9 +496,9 @@ static int httpcli_get_bad_json(const grpc_httpcli_request* request,
 
 static void test_jwt_verifier_url_issuer_bad_config(void) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_jwt_verifier* verifier = grpc_jwt_verifier_create(nullptr, 0);
-  char* jwt = nullptr;
-  char* key_str = json_key_str(json_key_str_part3_for_url_issuer);
+  grpc_jwt_verifier *verifier = grpc_jwt_verifier_create(nullptr, 0);
+  char *jwt = nullptr;
+  char *key_str = json_key_str(json_key_str_part3_for_url_issuer);
   grpc_auth_json_key key = grpc_auth_json_key_create_from_string(key_str);
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
@@ -510,7 +510,7 @@ static void test_jwt_verifier_url_issuer_bad_config(void) {
   GPR_ASSERT(jwt != nullptr);
   grpc_jwt_verifier_verify(verifier, nullptr, jwt, expected_audience,
                            on_verification_key_retrieval_error,
-                           const_cast<char*>(expected_user_data));
+                           const_cast<char *>(expected_user_data));
   grpc_jwt_verifier_destroy(verifier);
   grpc_core::ExecCtx::Get()->Flush();
   gpr_free(jwt);
@@ -519,9 +519,9 @@ static void test_jwt_verifier_url_issuer_bad_config(void) {
 
 static void test_jwt_verifier_bad_json_key(void) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_jwt_verifier* verifier = grpc_jwt_verifier_create(nullptr, 0);
-  char* jwt = nullptr;
-  char* key_str = json_key_str(json_key_str_part3_for_google_email_issuer);
+  grpc_jwt_verifier *verifier = grpc_jwt_verifier_create(nullptr, 0);
+  char *jwt = nullptr;
+  char *key_str = json_key_str(json_key_str_part3_for_google_email_issuer);
   grpc_auth_json_key key = grpc_auth_json_key_create_from_string(key_str);
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
@@ -533,18 +533,18 @@ static void test_jwt_verifier_bad_json_key(void) {
   GPR_ASSERT(jwt != nullptr);
   grpc_jwt_verifier_verify(verifier, nullptr, jwt, expected_audience,
                            on_verification_key_retrieval_error,
-                           const_cast<char*>(expected_user_data));
+                           const_cast<char *>(expected_user_data));
   grpc_jwt_verifier_destroy(verifier);
   grpc_core::ExecCtx::Get()->Flush();
   gpr_free(jwt);
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
-static void corrupt_jwt_sig(char* jwt) {
+static void corrupt_jwt_sig(char *jwt) {
   grpc_slice sig;
-  char* bad_b64_sig;
-  uint8_t* sig_bytes;
-  char* last_dot = strrchr(jwt, '.');
+  char *bad_b64_sig;
+  uint8_t *sig_bytes;
+  char *last_dot = strrchr(jwt, '.');
   GPR_ASSERT(last_dot != nullptr);
   {
     grpc_core::ExecCtx exec_ctx;
@@ -560,19 +560,19 @@ static void corrupt_jwt_sig(char* jwt) {
   grpc_slice_unref(sig);
 }
 
-static void on_verification_bad_signature(void* user_data,
+static void on_verification_bad_signature(void *user_data,
                                           grpc_jwt_verifier_status status,
-                                          grpc_jwt_claims* claims) {
+                                          grpc_jwt_claims *claims) {
   GPR_ASSERT(status == GRPC_JWT_VERIFIER_BAD_SIGNATURE);
   GPR_ASSERT(claims == nullptr);
-  GPR_ASSERT(user_data == (void*)expected_user_data);
+  GPR_ASSERT(user_data == (void *)expected_user_data);
 }
 
 static void test_jwt_verifier_bad_signature(void) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_jwt_verifier* verifier = grpc_jwt_verifier_create(nullptr, 0);
-  char* jwt = nullptr;
-  char* key_str = json_key_str(json_key_str_part3_for_url_issuer);
+  grpc_jwt_verifier *verifier = grpc_jwt_verifier_create(nullptr, 0);
+  char *jwt = nullptr;
+  char *key_str = json_key_str(json_key_str_part3_for_url_issuer);
   grpc_auth_json_key key = grpc_auth_json_key_create_from_string(key_str);
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
@@ -585,7 +585,7 @@ static void test_jwt_verifier_bad_signature(void) {
   GPR_ASSERT(jwt != nullptr);
   grpc_jwt_verifier_verify(verifier, nullptr, jwt, expected_audience,
                            on_verification_bad_signature,
-                           const_cast<char*>(expected_user_data));
+                           const_cast<char *>(expected_user_data));
   gpr_free(jwt);
   grpc_jwt_verifier_destroy(verifier);
   grpc_core::ExecCtx::Get()->Flush();
@@ -593,28 +593,28 @@ static void test_jwt_verifier_bad_signature(void) {
 }
 
 static int httpcli_get_should_not_be_called(
-    const grpc_httpcli_request* /*request*/, grpc_millis /*deadline*/,
-    grpc_closure* /*on_done*/, grpc_httpcli_response* /*response*/) {
+    const grpc_httpcli_request * /*request*/, grpc_millis /*deadline*/,
+    grpc_closure * /*on_done*/, grpc_httpcli_response * /*response*/) {
   GPR_ASSERT(0);
   return 1;
 }
 
-static void on_verification_bad_format(void* user_data,
+static void on_verification_bad_format(void *user_data,
                                        grpc_jwt_verifier_status status,
-                                       grpc_jwt_claims* claims) {
+                                       grpc_jwt_claims *claims) {
   GPR_ASSERT(status == GRPC_JWT_VERIFIER_BAD_FORMAT);
   GPR_ASSERT(claims == nullptr);
-  GPR_ASSERT(user_data == (void*)expected_user_data);
+  GPR_ASSERT(user_data == (void *)expected_user_data);
 }
 
 static void test_jwt_verifier_bad_format(void) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_jwt_verifier* verifier = grpc_jwt_verifier_create(nullptr, 0);
+  grpc_jwt_verifier *verifier = grpc_jwt_verifier_create(nullptr, 0);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
   grpc_jwt_verifier_verify(verifier, nullptr, "bad jwt", expected_audience,
                            on_verification_bad_format,
-                           const_cast<char*>(expected_user_data));
+                           const_cast<char *>(expected_user_data));
   grpc_jwt_verifier_destroy(verifier);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
@@ -624,7 +624,7 @@ static void test_jwt_verifier_bad_format(void) {
 /* bad signature custom provided email*/
 /* bad key */
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_jwt_issuer_email_domain();

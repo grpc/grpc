@@ -52,8 +52,8 @@ class EchoTestServiceImpl : public EchoTestService::Service {
  public:
   ~EchoTestServiceImpl() override {}
 
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
+  Status Echo(ServerContext *context, const EchoRequest *request,
+              EchoResponse *response) override {
     if (request->message() == kServerErrorMessage) {
       return Status(StatusCode::UNKNOWN, "Server error requested");
     }
@@ -91,8 +91,8 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
     server_thread_.join();
   }
 
-  void ClientMakeEchoCalls(const std::string& lb_id, const std::string& lb_tag,
-                           const std::string& message, size_t num_requests) {
+  void ClientMakeEchoCalls(const std::string &lb_id, const std::string &lb_tag,
+                           const std::string &message, size_t num_requests) {
     auto stub = EchoTestService::NewStub(
         grpc::CreateChannel(server_address_, InsecureChannelCredentials()));
     std::string lb_token = lb_id + lb_tag;
@@ -139,14 +139,14 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
   gpr_log(GPR_INFO, "Initial request sent.");
   ::grpc::lb::v1::LoadReportResponse response;
   stream->Read(&response);
-  const std::string& lb_id = response.initial_response().load_balancer_id();
+  const std::string &lb_id = response.initial_response().load_balancer_id();
   gpr_log(GPR_INFO, "Initial response received (lb_id: %s).", lb_id.c_str());
   ClientMakeEchoCalls(lb_id, "LB_TAG", kOkMessage, 1);
   while (true) {
     stream->Read(&response);
     if (!response.load().empty()) {
       ASSERT_EQ(response.load().size(), 3);
-      for (const auto& load : response.load()) {
+      for (const auto &load : response.load()) {
         if (load.in_progress_report_case()) {
           // The special load record that reports the number of in-progress
           // calls.
@@ -185,7 +185,7 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

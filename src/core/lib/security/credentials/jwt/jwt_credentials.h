@@ -37,17 +37,17 @@ class grpc_service_account_jwt_access_credentials
                                               gpr_timespec token_lifetime);
   ~grpc_service_account_jwt_access_credentials() override;
 
-  bool get_request_metadata(grpc_polling_entity* pollent,
+  bool get_request_metadata(grpc_polling_entity *pollent,
                             grpc_auth_metadata_context context,
-                            grpc_credentials_mdelem_array* md_array,
-                            grpc_closure* on_request_metadata,
-                            grpc_error_handle* error) override;
+                            grpc_credentials_mdelem_array *md_array,
+                            grpc_closure *on_request_metadata,
+                            grpc_error_handle *error) override;
 
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
+  void cancel_get_request_metadata(grpc_credentials_mdelem_array *md_array,
                                    grpc_error_handle error) override;
 
-  const gpr_timespec& jwt_lifetime() const { return jwt_lifetime_; }
-  const grpc_auth_json_key& key() const { return key_; }
+  const gpr_timespec &jwt_lifetime() const { return jwt_lifetime_; }
+  const grpc_auth_json_key &key() const { return key_; }
 
   std::string debug_string() override {
     return absl::StrFormat(
@@ -64,7 +64,7 @@ class grpc_service_account_jwt_access_credentials
   gpr_mu cache_mu_;
   struct {
     grpc_mdelem jwt_md = GRPC_MDNULL;
-    char* service_url = nullptr;
+    char *service_url = nullptr;
     gpr_timespec jwt_expiration;
   } cached_;
 

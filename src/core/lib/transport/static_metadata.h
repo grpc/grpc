@@ -45,9 +45,9 @@ namespace grpc_core {
 constexpr uint64_t kGrpcStaticMetadataInitCanary = 0xCAFEF00DC0FFEE11L;
 uint64_t StaticMetadataInitCanary();
 #endif
-extern const StaticMetadataSlice* g_static_metadata_slice_table;
+extern const StaticMetadataSlice *g_static_metadata_slice_table;
 }  // namespace grpc_core
-inline const grpc_core::StaticMetadataSlice* grpc_static_slice_table() {
+inline const grpc_core::StaticMetadataSlice *grpc_static_slice_table() {
   GPR_DEBUG_ASSERT(grpc_core::StaticMetadataInitCanary() ==
                    grpc_core::kGrpcStaticMetadataInitCanary);
   GPR_DEBUG_ASSERT(grpc_core::g_static_metadata_slice_table != nullptr);
@@ -290,9 +290,9 @@ inline const grpc_core::StaticMetadataSlice* grpc_static_slice_table() {
 
 namespace grpc_core {
 struct StaticSliceRefcount;
-extern StaticSliceRefcount* g_static_metadata_slice_refcounts;
+extern StaticSliceRefcount *g_static_metadata_slice_refcounts;
 }  // namespace grpc_core
-inline grpc_core::StaticSliceRefcount* grpc_static_metadata_refcounts() {
+inline grpc_core::StaticSliceRefcount *grpc_static_metadata_refcounts() {
   GPR_DEBUG_ASSERT(grpc_core::StaticMetadataInitCanary() ==
                    grpc_core::kGrpcStaticMetadataInitCanary);
   GPR_DEBUG_ASSERT(grpc_core::g_static_metadata_slice_refcounts != nullptr);
@@ -303,23 +303,23 @@ inline grpc_core::StaticSliceRefcount* grpc_static_metadata_refcounts() {
   ((slice).refcount != NULL &&                \
    (slice).refcount->GetType() == grpc_slice_refcount::Type::STATIC)
 
-#define GRPC_STATIC_METADATA_INDEX(static_slice)                              \
-  (reinterpret_cast<grpc_core::StaticSliceRefcount*>((static_slice).refcount) \
+#define GRPC_STATIC_METADATA_INDEX(static_slice)                               \
+  (reinterpret_cast<grpc_core::StaticSliceRefcount *>((static_slice).refcount) \
        ->index)
 
 #define GRPC_STATIC_MDELEM_COUNT 85
 
 namespace grpc_core {
-extern StaticMetadata* g_static_mdelem_table;
-extern grpc_mdelem* g_static_mdelem_manifested;
+extern StaticMetadata *g_static_mdelem_table;
+extern grpc_mdelem *g_static_mdelem_manifested;
 }  // namespace grpc_core
-inline grpc_core::StaticMetadata* grpc_static_mdelem_table() {
+inline grpc_core::StaticMetadata *grpc_static_mdelem_table() {
   GPR_DEBUG_ASSERT(grpc_core::StaticMetadataInitCanary() ==
                    grpc_core::kGrpcStaticMetadataInitCanary);
   GPR_DEBUG_ASSERT(grpc_core::g_static_mdelem_table != nullptr);
   return grpc_core::g_static_mdelem_table;
 }
-inline grpc_mdelem* grpc_static_mdelem_manifested() {
+inline grpc_mdelem *grpc_static_mdelem_manifested() {
   GPR_DEBUG_ASSERT(grpc_core::StaticMetadataInitCanary() ==
                    grpc_core::kGrpcStaticMetadataInitCanary);
   GPR_DEBUG_ASSERT(grpc_core::g_static_mdelem_manifested != nullptr);
@@ -549,41 +549,42 @@ typedef enum {
 } grpc_metadata_batch_callouts_index;
 
 typedef union {
-  struct grpc_linked_mdelem* array[GRPC_BATCH_CALLOUTS_COUNT];
+  struct grpc_linked_mdelem *array[GRPC_BATCH_CALLOUTS_COUNT];
   struct {
-    struct grpc_linked_mdelem* path;
-    struct grpc_linked_mdelem* method;
-    struct grpc_linked_mdelem* status;
-    struct grpc_linked_mdelem* authority;
-    struct grpc_linked_mdelem* scheme;
-    struct grpc_linked_mdelem* te;
-    struct grpc_linked_mdelem* grpc_message;
-    struct grpc_linked_mdelem* grpc_status;
-    struct grpc_linked_mdelem* grpc_payload_bin;
-    struct grpc_linked_mdelem* grpc_encoding;
-    struct grpc_linked_mdelem* grpc_accept_encoding;
-    struct grpc_linked_mdelem* grpc_server_stats_bin;
-    struct grpc_linked_mdelem* grpc_tags_bin;
-    struct grpc_linked_mdelem* grpc_trace_bin;
-    struct grpc_linked_mdelem* content_type;
-    struct grpc_linked_mdelem* content_encoding;
-    struct grpc_linked_mdelem* accept_encoding;
-    struct grpc_linked_mdelem* grpc_internal_encoding_request;
-    struct grpc_linked_mdelem* grpc_internal_stream_encoding_request;
-    struct grpc_linked_mdelem* user_agent;
-    struct grpc_linked_mdelem* host;
-    struct grpc_linked_mdelem* grpc_previous_rpc_attempts;
-    struct grpc_linked_mdelem* grpc_retry_pushback_ms;
-    struct grpc_linked_mdelem* x_endpoint_load_metrics_bin;
+    struct grpc_linked_mdelem *path;
+    struct grpc_linked_mdelem *method;
+    struct grpc_linked_mdelem *status;
+    struct grpc_linked_mdelem *authority;
+    struct grpc_linked_mdelem *scheme;
+    struct grpc_linked_mdelem *te;
+    struct grpc_linked_mdelem *grpc_message;
+    struct grpc_linked_mdelem *grpc_status;
+    struct grpc_linked_mdelem *grpc_payload_bin;
+    struct grpc_linked_mdelem *grpc_encoding;
+    struct grpc_linked_mdelem *grpc_accept_encoding;
+    struct grpc_linked_mdelem *grpc_server_stats_bin;
+    struct grpc_linked_mdelem *grpc_tags_bin;
+    struct grpc_linked_mdelem *grpc_trace_bin;
+    struct grpc_linked_mdelem *content_type;
+    struct grpc_linked_mdelem *content_encoding;
+    struct grpc_linked_mdelem *accept_encoding;
+    struct grpc_linked_mdelem *grpc_internal_encoding_request;
+    struct grpc_linked_mdelem *grpc_internal_stream_encoding_request;
+    struct grpc_linked_mdelem *user_agent;
+    struct grpc_linked_mdelem *host;
+    struct grpc_linked_mdelem *grpc_previous_rpc_attempts;
+    struct grpc_linked_mdelem *grpc_retry_pushback_ms;
+    struct grpc_linked_mdelem *x_endpoint_load_metrics_bin;
   } named;
 } grpc_metadata_batch_callouts;
 
 #define GRPC_BATCH_INDEX_OF(slice)                                             \
   (GRPC_IS_STATIC_METADATA_STRING((slice)) &&                                  \
-           reinterpret_cast<grpc_core::StaticSliceRefcount*>((slice).refcount) \
+           reinterpret_cast<grpc_core::StaticSliceRefcount *>(                 \
+               (slice).refcount)                                               \
                    ->index <= static_cast<uint32_t>(GRPC_BATCH_CALLOUTS_COUNT) \
        ? static_cast<grpc_metadata_batch_callouts_index>(                      \
-             reinterpret_cast<grpc_core::StaticSliceRefcount*>(                \
+             reinterpret_cast<grpc_core::StaticSliceRefcount *>(               \
                  (slice).refcount)                                             \
                  ->index)                                                      \
        : GRPC_BATCH_CALLOUTS_COUNT)

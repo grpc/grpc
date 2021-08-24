@@ -30,7 +30,7 @@ namespace {
 class InsecureChannelCredentialsImpl final : public ChannelCredentials {
  public:
   std::shared_ptr<Channel> CreateChannelImpl(
-      const std::string& target, const ChannelArguments& args) override {
+      const std::string &target, const ChannelArguments &args) override {
     return CreateChannelWithInterceptors(
         target, args,
         std::vector<std::unique_ptr<
@@ -38,7 +38,7 @@ class InsecureChannelCredentialsImpl final : public ChannelCredentials {
   }
 
   std::shared_ptr<Channel> CreateChannelWithInterceptors(
-      const std::string& target, const ChannelArguments& args,
+      const std::string &target, const ChannelArguments &args,
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) override {
@@ -50,7 +50,7 @@ class InsecureChannelCredentialsImpl final : public ChannelCredentials {
         std::move(interceptor_creators));
   }
 
-  SecureChannelCredentials* AsSecureCredentials() override { return nullptr; }
+  SecureChannelCredentials *AsSecureCredentials() override { return nullptr; }
 
  private:
   bool IsInsecure() const override { return true; }

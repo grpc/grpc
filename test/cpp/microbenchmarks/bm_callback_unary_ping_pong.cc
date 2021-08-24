@@ -29,7 +29,7 @@ namespace testing {
 
 // Replace "benchmark::internal::Benchmark" with "::testing::Benchmark" to use
 // internal microbenchmarking tooling
-static void SweepSizesArgs(benchmark::internal::Benchmark* b) {
+static void SweepSizesArgs(benchmark::internal::Benchmark *b) {
   b->Args({0, 0});
   for (int i = 1; i <= 128 * 1024 * 1024; i *= 8) {
     // First argument is the message size of request
@@ -110,7 +110,7 @@ namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);

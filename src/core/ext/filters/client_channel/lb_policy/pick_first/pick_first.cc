@@ -48,7 +48,7 @@ class PickFirst : public LoadBalancingPolicy {
  public:
   explicit PickFirst(Args args);
 
-  const char* name() const override { return kPickFirst; }
+  const char *name() const override { return kPickFirst; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
@@ -64,9 +64,9 @@ class PickFirst : public LoadBalancingPolicy {
                               PickFirstSubchannelData> {
    public:
     PickFirstSubchannelData(
-        SubchannelList<PickFirstSubchannelList, PickFirstSubchannelData>*
-            subchannel_list,
-        const ServerAddress& address,
+        SubchannelList<PickFirstSubchannelList, PickFirstSubchannelData>
+            *subchannel_list,
+        const ServerAddress &address,
         RefCountedPtr<SubchannelInterface> subchannel)
         : SubchannelData(subchannel_list, address, std::move(subchannel)) {}
 
@@ -83,9 +83,9 @@ class PickFirst : public LoadBalancingPolicy {
       : public SubchannelList<PickFirstSubchannelList,
                               PickFirstSubchannelData> {
    public:
-    PickFirstSubchannelList(PickFirst* policy, TraceFlag* tracer,
+    PickFirstSubchannelList(PickFirst *policy, TraceFlag *tracer,
                             ServerAddressList addresses,
-                            const grpc_channel_args& args)
+                            const grpc_channel_args &args)
         : SubchannelList(policy, tracer, std::move(addresses),
                          policy->channel_control_helper(), args) {
       // Need to maintain a ref to the LB policy as long as we maintain
@@ -95,7 +95,7 @@ class PickFirst : public LoadBalancingPolicy {
     }
 
     ~PickFirstSubchannelList() override {
-      PickFirst* p = static_cast<PickFirst*>(policy());
+      PickFirst *p = static_cast<PickFirst *>(policy());
       p->Unref(DEBUG_LOCATION, "subchannel_list");
     }
 
@@ -132,7 +132,7 @@ class PickFirst : public LoadBalancingPolicy {
   // Latest pending subchannel list.
   OrphanablePtr<PickFirstSubchannelList> latest_pending_subchannel_list_;
   // Selected subchannel in \a subchannel_list_.
-  PickFirstSubchannelData* selected_ = nullptr;
+  PickFirstSubchannelData *selected_ = nullptr;
   // Are we in IDLE state?
   bool idle_ = false;
   // Are we shut down?
@@ -206,7 +206,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   // can also happen if one of the subchannels in the update is already
   // in the global subchannel pool because it's in use by another channel.
   for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
-    PickFirstSubchannelData* sd = subchannel_list->subchannel(i);
+    PickFirstSubchannelData *sd = subchannel_list->subchannel(i);
     grpc_connectivity_state state = sd->CheckConnectivityStateLocked();
     if (state == GRPC_CHANNEL_READY) {
       subchannel_list_ = std::move(subchannel_list);
@@ -264,10 +264,10 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
   }
   // Update the latest_update_args_
   grpc_arg new_arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
-  const grpc_channel_args* new_args =
+      const_cast<char *>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
+  const grpc_channel_args *new_args =
       grpc_channel_args_copy_and_add(args.args, &new_arg, 1);
-  GPR_SWAP(const grpc_channel_args*, new_args, args.args);
+  GPR_SWAP(const grpc_channel_args *, new_args, args.args);
   grpc_channel_args_destroy(new_args);
   latest_update_args_ = std::move(args);
   // If we are not in idle, start connection attempt immediately.
@@ -279,7 +279,7 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
 
 void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     grpc_connectivity_state connectivity_state) {
-  PickFirst* p = static_cast<PickFirst*>(subchannel_list()->policy());
+  PickFirst *p = static_cast<PickFirst *>(subchannel_list()->policy());
   // The notification must be for a subchannel in either the current or
   // latest pending subchannel lists.
   GPR_ASSERT(subchannel_list() == p->subchannel_list_.get() ||
@@ -371,7 +371,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     }
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
       CancelConnectivityWatchLocked("connection attempt failed");
-      PickFirstSubchannelData* sd = this;
+      PickFirstSubchannelData *sd = this;
       size_t next_index =
           (sd->Index() + 1) % subchannel_list()->num_subchannels();
       sd = subchannel_list()->subchannel(next_index);
@@ -413,7 +413,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
 }
 
 void PickFirst::PickFirstSubchannelData::ProcessUnselectedReadyLocked() {
-  PickFirst* p = static_cast<PickFirst*>(subchannel_list()->policy());
+  PickFirst *p = static_cast<PickFirst *>(subchannel_list()->policy());
   // If we get here, there are two possible cases:
   // 1. We do not currently have a selected subchannel, and the update is
   //    for a subchannel in p->subchannel_list_ that we're trying to
@@ -453,7 +453,7 @@ void PickFirst::PickFirstSubchannelData::ProcessUnselectedReadyLocked() {
 
 void PickFirst::PickFirstSubchannelData::
     CheckConnectivityStateAndStartWatchingLocked() {
-  PickFirst* p = static_cast<PickFirst*>(subchannel_list()->policy());
+  PickFirst *p = static_cast<PickFirst *>(subchannel_list()->policy());
   // Check current state.
   grpc_connectivity_state current_state = CheckConnectivityStateLocked();
   // Start watch.
@@ -471,7 +471,7 @@ void PickFirst::PickFirstSubchannelData::
 
 class PickFirstConfig : public LoadBalancingPolicy::Config {
  public:
-  const char* name() const override { return kPickFirst; }
+  const char *name() const override { return kPickFirst; }
 };
 
 //
@@ -485,10 +485,10 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<PickFirst>(std::move(args));
   }
 
-  const char* name() const override { return kPickFirst; }
+  const char *name() const override { return kPickFirst; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+      const Json & /*json*/, grpc_error_handle * /*error*/) const override {
     return MakeRefCounted<PickFirstConfig>();
   }
 };

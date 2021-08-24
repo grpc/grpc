@@ -38,16 +38,16 @@ typedef struct grpc_rb_xds_server_credentials {
   /* Holder of ruby objects involved in constructing the server credentials */
   VALUE mark;
   /* The actual server credentials */
-  grpc_server_credentials* wrapped;
+  grpc_server_credentials *wrapped;
 } grpc_rb_xds_server_credentials;
 
 /* Destroys the server credentials instances. */
-static void grpc_rb_xds_server_credentials_free_internal(void* p) {
-  grpc_rb_xds_server_credentials* wrapper = NULL;
+static void grpc_rb_xds_server_credentials_free_internal(void *p) {
+  grpc_rb_xds_server_credentials *wrapper = NULL;
   if (p == NULL) {
     return;
   };
-  wrapper = (grpc_rb_xds_server_credentials*)p;
+  wrapper = (grpc_rb_xds_server_credentials *)p;
 
   /* Delete the wrapped object if the mark object is Qnil, which indicates that
      no other object is the actual owner. */
@@ -60,17 +60,17 @@ static void grpc_rb_xds_server_credentials_free_internal(void* p) {
 }
 
 /* Destroys the server credentials instances. */
-static void grpc_rb_xds_server_credentials_free(void* p) {
+static void grpc_rb_xds_server_credentials_free(void *p) {
   grpc_rb_xds_server_credentials_free_internal(p);
   grpc_ruby_shutdown();
 }
 
 /* Protects the mark object from GC */
-static void grpc_rb_xds_server_credentials_mark(void* p) {
+static void grpc_rb_xds_server_credentials_mark(void *p) {
   if (p == NULL) {
     return;
   }
-  grpc_rb_xds_server_credentials* wrapper = (grpc_rb_xds_server_credentials*)p;
+  grpc_rb_xds_server_credentials *wrapper = (grpc_rb_xds_server_credentials *)p;
 
   /* If it's not already cleaned up, mark the mark object */
   if (wrapper->mark != Qnil) {
@@ -93,7 +93,7 @@ static const rb_data_type_t grpc_rb_xds_server_credentials_data_type = {
    Provides safe initial defaults for the instance fields. */
 static VALUE grpc_rb_xds_server_credentials_alloc(VALUE cls) {
   grpc_ruby_init();
-  grpc_rb_xds_server_credentials* wrapper =
+  grpc_rb_xds_server_credentials *wrapper =
       ALLOC(grpc_rb_xds_server_credentials);
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
@@ -112,10 +112,10 @@ static ID id_fallback_creds;
     Initializes ServerCredential instances. */
 static VALUE grpc_rb_xds_server_credentials_init(VALUE self,
                                                  VALUE fallback_creds) {
-  grpc_rb_xds_server_credentials* wrapper = NULL;
-  grpc_server_credentials* creds = NULL;
+  grpc_rb_xds_server_credentials *wrapper = NULL;
+  grpc_server_credentials *creds = NULL;
 
-  grpc_server_credentials* grpc_fallback_creds =
+  grpc_server_credentials *grpc_fallback_creds =
       grpc_rb_get_wrapped_server_credentials(fallback_creds);
   creds = grpc_xds_server_credentials_create(grpc_fallback_creds);
 
@@ -155,8 +155,8 @@ void Init_grpc_xds_server_credentials() {
 }
 
 /* Gets the wrapped grpc_server_credentials from the ruby wrapper */
-grpc_server_credentials* grpc_rb_get_wrapped_xds_server_credentials(VALUE v) {
-  grpc_rb_xds_server_credentials* wrapper = NULL;
+grpc_server_credentials *grpc_rb_get_wrapped_xds_server_credentials(VALUE v) {
+  grpc_rb_xds_server_credentials *wrapper = NULL;
   Check_TypedStruct(v, &grpc_rb_xds_server_credentials_data_type);
   TypedData_Get_Struct(v, grpc_rb_xds_server_credentials,
                        &grpc_rb_xds_server_credentials_data_type, wrapper);

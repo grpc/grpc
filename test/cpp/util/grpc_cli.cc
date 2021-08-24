@@ -73,7 +73,7 @@
 
 ABSL_FLAG(std::string, outfile, "", "Output file (default is stdout)");
 
-static bool SimplePrint(const std::string& outfile, const std::string& output) {
+static bool SimplePrint(const std::string &outfile, const std::string &output) {
   if (outfile.empty()) {
     std::cout << output << std::flush;
   } else {
@@ -84,11 +84,11 @@ static bool SimplePrint(const std::string& outfile, const std::string& output) {
   return true;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
   return grpc::testing::GrpcToolMainLib(
-      argc, const_cast<const char**>(argv), grpc::testing::CliCredentials(),
+      argc, const_cast<const char **>(argv), grpc::testing::CliCredentials(),
       std::bind(SimplePrint, absl::GetFlag(FLAGS_outfile),
                 std::placeholders::_1));
 }

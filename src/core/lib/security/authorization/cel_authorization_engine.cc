@@ -39,7 +39,7 @@ constexpr char kCertServerName[] = "cert_server_name";
 
 std::unique_ptr<CelAuthorizationEngine>
 CelAuthorizationEngine::CreateCelAuthorizationEngine(
-    const std::vector<envoy_config_rbac_v3_RBAC*>& rbac_policies) {
+    const std::vector<envoy_config_rbac_v3_RBAC *> &rbac_policies) {
   if (rbac_policies.empty() || rbac_policies.size() > 2) {
     gpr_log(GPR_ERROR,
             "Invalid rbac policies vector. Must contain either one or two rbac "
@@ -58,28 +58,28 @@ CelAuthorizationEngine::CreateCelAuthorizationEngine(
 }
 
 CelAuthorizationEngine::CelAuthorizationEngine(
-    const std::vector<envoy_config_rbac_v3_RBAC*>& rbac_policies) {
-  for (const auto& rbac_policy : rbac_policies) {
+    const std::vector<envoy_config_rbac_v3_RBAC *> &rbac_policies) {
+  for (const auto &rbac_policy : rbac_policies) {
     // Extract array of policies and store their condition fields in either
     // allow_if_matched_ or deny_if_matched_, depending on the policy action.
     upb::Arena temp_arena;
     size_t policy_num = UPB_MAP_BEGIN;
-    const envoy_config_rbac_v3_RBAC_PoliciesEntry* policy_entry;
+    const envoy_config_rbac_v3_RBAC_PoliciesEntry *policy_entry;
     while ((policy_entry = envoy_config_rbac_v3_RBAC_policies_next(
                 rbac_policy, &policy_num)) != nullptr) {
       const upb_strview policy_name_strview =
           envoy_config_rbac_v3_RBAC_PoliciesEntry_key(policy_entry);
       const std::string policy_name(policy_name_strview.data,
                                     policy_name_strview.size);
-      const envoy_config_rbac_v3_Policy* policy =
+      const envoy_config_rbac_v3_Policy *policy =
           envoy_config_rbac_v3_RBAC_PoliciesEntry_value(policy_entry);
-      const google_api_expr_v1alpha1_Expr* condition =
+      const google_api_expr_v1alpha1_Expr *condition =
           envoy_config_rbac_v3_Policy_condition(policy);
       // Parse condition to make a pointer tied to the lifetime of arena_.
       size_t serial_len;
-      const char* serialized = google_api_expr_v1alpha1_Expr_serialize(
+      const char *serialized = google_api_expr_v1alpha1_Expr_serialize(
           condition, temp_arena.ptr(), &serial_len);
-      const google_api_expr_v1alpha1_Expr* parsed_condition =
+      const google_api_expr_v1alpha1_Expr *parsed_condition =
           google_api_expr_v1alpha1_Expr_parse(serialized, serial_len,
                                               arena_.ptr());
       if (envoy_config_rbac_v3_RBAC_action(rbac_policy) == kAllow) {
@@ -92,9 +92,9 @@ CelAuthorizationEngine::CelAuthorizationEngine(
 }
 
 std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
-    const EvaluateArgs& args) {
+    const EvaluateArgs &args) {
   std::unique_ptr<mock_cel::Activation> activation;
-  for (const auto& elem : envoy_attributes_) {
+  for (const auto &elem : envoy_attributes_) {
     if (elem == kUrlPath) {
       absl::string_view url_path(args.GetPath());
       if (!url_path.empty()) {
@@ -118,7 +118,7 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
           args.GetHeaders();
       std::vector<std::pair<mock_cel::CelValue, mock_cel::CelValue>>
           header_items;
-      for (const auto& header_key : header_keys_) {
+      for (const auto &header_key : header_keys_) {
         auto header_item = headers.find(header_key);
         if (header_item != headers.end()) {
           header_items.push_back(

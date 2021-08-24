@@ -24,7 +24,7 @@ namespace grpc {
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
-void AddInsecureChannelFromFd(grpc::Server* server, int fd) {
+void AddInsecureChannelFromFd(grpc::Server *server, int fd) {
   grpc_server_add_insecure_channel_from_fd(server->c_server(), nullptr, fd);
 }
 

@@ -24,11 +24,11 @@ namespace grpc_core {
 
 DebugOnlyTraceFlag grpc_thread_pool_trace(false, "thread_pool");
 
-inline void* InfLenFIFOQueue::PopFront() {
+inline void *InfLenFIFOQueue::PopFront() {
   // Caller should already check queue is not empty and has already held the
   // mutex. This function will assume that there is at least one element in the
   // queue (i.e. queue_head_->content is valid).
-  void* result = queue_head_->content;
+  void *result = queue_head_->content;
   count_.store(count_.load(std::memory_order_relaxed) - 1,
                std::memory_order_relaxed);
 
@@ -65,9 +65,9 @@ inline void* InfLenFIFOQueue::PopFront() {
   return result;
 }
 
-InfLenFIFOQueue::Node* InfLenFIFOQueue::AllocateNodes(int num) {
+InfLenFIFOQueue::Node *InfLenFIFOQueue::AllocateNodes(int num) {
   num_nodes_ = num_nodes_ + num;
-  Node* new_chunk = static_cast<Node*>(gpr_zalloc(sizeof(Node) * num));
+  Node *new_chunk = static_cast<Node *>(gpr_zalloc(sizeof(Node) * num));
   new_chunk[0].next = &new_chunk[1];
   new_chunk[num - 1].prev = &new_chunk[num - 2];
   for (int i = 1; i < num - 1; ++i) {
@@ -80,9 +80,9 @@ InfLenFIFOQueue::Node* InfLenFIFOQueue::AllocateNodes(int num) {
 InfLenFIFOQueue::InfLenFIFOQueue() {
   delete_list_size_ = kDeleteListInitSize;
   delete_list_ =
-      static_cast<Node**>(gpr_zalloc(sizeof(Node*) * delete_list_size_));
+      static_cast<Node **>(gpr_zalloc(sizeof(Node *) * delete_list_size_));
 
-  Node* new_chunk = AllocateNodes(kQueueInitNumNodes);
+  Node *new_chunk = AllocateNodes(kQueueInitNumNodes);
   delete_list_[delete_list_count_++] = new_chunk;
   queue_head_ = queue_tail_ = new_chunk;
   new_chunk[0].prev = &new_chunk[kQueueInitNumNodes - 1];
@@ -100,20 +100,20 @@ InfLenFIFOQueue::~InfLenFIFOQueue() {
   gpr_free(delete_list_);
 }
 
-void InfLenFIFOQueue::Put(void* elem) {
+void InfLenFIFOQueue::Put(void *elem) {
   MutexLock l(&mu_);
 
   int curr_count = count_.load(std::memory_order_relaxed);
 
   if (queue_tail_ == queue_head_ && curr_count != 0) {
     // List is full. Expands list to double size by inserting new chunk of nodes
-    Node* new_chunk = AllocateNodes(curr_count);
+    Node *new_chunk = AllocateNodes(curr_count);
     delete_list_[delete_list_count_++] = new_chunk;
     // Expands delete list on full.
     if (delete_list_count_ == delete_list_size_) {
       delete_list_size_ = delete_list_size_ * 2;
-      delete_list_ = static_cast<Node**>(
-          gpr_realloc(delete_list_, sizeof(Node*) * delete_list_size_));
+      delete_list_ = static_cast<Node **>(
+          gpr_realloc(delete_list_, sizeof(Node *) * delete_list_size_));
     }
     new_chunk[0].prev = queue_tail_->prev;
     new_chunk[curr_count - 1].next = queue_head_;
@@ -121,7 +121,7 @@ void InfLenFIFOQueue::Put(void* elem) {
     queue_head_->prev = &new_chunk[curr_count - 1];
     queue_tail_ = new_chunk;
   }
-  queue_tail_->content = static_cast<void*>(elem);
+  queue_tail_->content = static_cast<void *>(elem);
 
   // Updates Stats info
   if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
@@ -141,7 +141,7 @@ void InfLenFIFOQueue::Put(void* elem) {
   TopWaiter()->cv.Signal();
 }
 
-void* InfLenFIFOQueue::Get(gpr_timespec* wait_time) {
+void *InfLenFIFOQueue::Get(gpr_timespec *wait_time) {
   MutexLock l(&mu_);
 
   if (count_.load(std::memory_order_relaxed) == 0) {
@@ -166,19 +166,19 @@ void* InfLenFIFOQueue::Get(gpr_timespec* wait_time) {
   return PopFront();
 }
 
-void InfLenFIFOQueue::PushWaiter(Waiter* waiter) {
+void InfLenFIFOQueue::PushWaiter(Waiter *waiter) {
   waiter->next = waiters_.next;
   waiter->prev = &waiters_;
   waiter->next->prev = waiter;
   waiter->prev->next = waiter;
 }
 
-void InfLenFIFOQueue::RemoveWaiter(Waiter* waiter) {
+void InfLenFIFOQueue::RemoveWaiter(Waiter *waiter) {
   GPR_DEBUG_ASSERT(waiter != &waiters_);
   waiter->next->prev = waiter->prev;
   waiter->prev->next = waiter->next;
 }
 
-InfLenFIFOQueue::Waiter* InfLenFIFOQueue::TopWaiter() { return waiters_.next; }
+InfLenFIFOQueue::Waiter *InfLenFIFOQueue::TopWaiter() { return waiters_.next; }
 
 }  // namespace grpc_core

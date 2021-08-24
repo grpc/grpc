@@ -55,11 +55,11 @@ class TlsServerAuthorizationCheckArg {
    * to the constructor. One must remember to free any memory allocated to the
    * C arg after using the setter functions below. **/
   explicit TlsServerAuthorizationCheckArg(
-      grpc_tls_server_authorization_check_arg* arg);
+      grpc_tls_server_authorization_check_arg *arg);
   ~TlsServerAuthorizationCheckArg();
 
   /** Getters for member fields. **/
-  void* cb_user_data() const;
+  void *cb_user_data() const;
   int success() const;
   std::string target_name() const;
   std::string peer_cert() const;
@@ -68,19 +68,19 @@ class TlsServerAuthorizationCheckArg {
   std::string error_details() const;
 
   /** Setters for member fields. **/
-  void set_cb_user_data(void* cb_user_data);
+  void set_cb_user_data(void *cb_user_data);
   void set_success(int success);
-  void set_target_name(const std::string& target_name);
-  void set_peer_cert(const std::string& peer_cert);
-  void set_peer_cert_full_chain(const std::string& peer_cert_full_chain);
+  void set_target_name(const std::string &target_name);
+  void set_peer_cert(const std::string &peer_cert);
+  void set_peer_cert_full_chain(const std::string &peer_cert_full_chain);
   void set_status(grpc_status_code status);
-  void set_error_details(const std::string& error_details);
+  void set_error_details(const std::string &error_details);
 
   /** Calls the C arg's callback function. **/
   void OnServerAuthorizationCheckDoneCallback();
 
  private:
-  grpc_tls_server_authorization_check_arg* c_arg_;
+  grpc_tls_server_authorization_check_arg *c_arg_;
 };
 
 /** An interface that the application derives and uses to instantiate a
@@ -92,9 +92,9 @@ class TlsServerAuthorizationCheckArg {
 struct TlsServerAuthorizationCheckInterface {
   virtual ~TlsServerAuthorizationCheckInterface() = default;
   /** A callback that invokes the server authorization check. **/
-  virtual int Schedule(TlsServerAuthorizationCheckArg* arg) = 0;
+  virtual int Schedule(TlsServerAuthorizationCheckArg *arg) = 0;
   /** A callback that cancels a server authorization check request. **/
-  virtual void Cancel(TlsServerAuthorizationCheckArg* /* arg */) {}
+  virtual void Cancel(TlsServerAuthorizationCheckArg * /* arg */) {}
 };
 
 /** TLS server authorization check config, wraps
@@ -107,7 +107,7 @@ class TlsServerAuthorizationCheckConfig {
           server_authorization_check_interface);
   ~TlsServerAuthorizationCheckConfig();
 
-  int Schedule(TlsServerAuthorizationCheckArg* arg) const {
+  int Schedule(TlsServerAuthorizationCheckArg *arg) const {
     if (server_authorization_check_interface_ == nullptr) {
       gpr_log(GPR_ERROR, "server authorization check interface is nullptr");
       if (arg != nullptr) {
@@ -121,7 +121,7 @@ class TlsServerAuthorizationCheckConfig {
     return server_authorization_check_interface_->Schedule(arg);
   }
 
-  void Cancel(TlsServerAuthorizationCheckArg* arg) const {
+  void Cancel(TlsServerAuthorizationCheckArg *arg) const {
     if (server_authorization_check_interface_ == nullptr) {
       gpr_log(GPR_ERROR, "server authorization check interface is nullptr");
       if (arg != nullptr) {
@@ -136,12 +136,12 @@ class TlsServerAuthorizationCheckConfig {
   }
 
   /** Returns C struct for the server authorization check config. **/
-  grpc_tls_server_authorization_check_config* c_config() const {
+  grpc_tls_server_authorization_check_config *c_config() const {
     return c_config_;
   }
 
  private:
-  grpc_tls_server_authorization_check_config* c_config_;
+  grpc_tls_server_authorization_check_config *c_config_;
   std::shared_ptr<TlsServerAuthorizationCheckInterface>
       server_authorization_check_interface_;
 };
@@ -175,7 +175,7 @@ class TlsCredentialsOptions {
   // called. If not set, an empty string will be used as the name.
   //
   // @param root_cert_name the name of root certs being set.
-  void set_root_cert_name(const std::string& root_cert_name);
+  void set_root_cert_name(const std::string &root_cert_name);
   // Watches the updates of identity key-cert pairs with name
   // |identity_cert_name|. If used in TLS credentials, it is required to be set
   // on the server side, and optional for the client side(in the one-side
@@ -186,17 +186,17 @@ class TlsCredentialsOptions {
   // be used as the name.
   //
   // @param identity_cert_name the name of identity key-cert pairs being set.
-  void set_identity_cert_name(const std::string& identity_cert_name);
+  void set_identity_cert_name(const std::string &identity_cert_name);
 
   // ----- Getters for member fields ----
   // Get the internal c options. This function shall be used only internally.
-  grpc_tls_credentials_options* c_credentials_options() const {
+  grpc_tls_credentials_options *c_credentials_options() const {
     return c_credentials_options_;
   }
 
  private:
   std::shared_ptr<CertificateProviderInterface> certificate_provider_;
-  grpc_tls_credentials_options* c_credentials_options_ = nullptr;
+  grpc_tls_credentials_options *c_credentials_options_ = nullptr;
 };
 
 // Contains configurable options on the client side.

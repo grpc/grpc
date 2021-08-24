@@ -54,15 +54,15 @@ std::string ModuleAlias(const std::string filename) {
 
 // Given a filename like foo/bar/baz.proto, returns the corresponding JavaScript
 // message file foo/bar/baz.js
-std::string GetJSMessageFilename(const std::string& filename) {
+std::string GetJSMessageFilename(const std::string &filename) {
   std::string name = filename;
   return grpc_generator::StripProto(name) + "_pb.js";
 }
 
 // Given a filename like foo/bar/baz.proto, returns the root directory
 // path ../../
-std::string GetRootPath(const std::string& from_filename,
-                        const std::string& to_filename) {
+std::string GetRootPath(const std::string &from_filename,
+                        const std::string &to_filename) {
   if (to_filename.find("google/protobuf") == 0) {
     // Well-known types (.proto files in the google/protobuf directory) are
     // assumed to come from the 'google-protobuf' npm package.  We may want to
@@ -83,23 +83,24 @@ std::string GetRootPath(const std::string& from_filename,
 
 // Return the relative path to load to_file from the directory containing
 // from_file, assuming that both paths are relative to the same directory
-std::string GetRelativePath(const std::string& from_file,
-                            const std::string& to_file) {
+std::string GetRelativePath(const std::string &from_file,
+                            const std::string &to_file) {
   return GetRootPath(from_file, to_file) + to_file;
 }
 
 /* Finds all message types used in all services in the file, and returns them
  * as a map of fully qualified message type name to message descriptor */
-map<std::string, const Descriptor*> GetAllMessages(const FileDescriptor* file) {
-  map<std::string, const Descriptor*> message_types;
+map<std::string, const Descriptor *> GetAllMessages(
+    const FileDescriptor *file) {
+  map<std::string, const Descriptor *> message_types;
   for (int service_num = 0; service_num < file->service_count();
        service_num++) {
-    const ServiceDescriptor* service = file->service(service_num);
+    const ServiceDescriptor *service = file->service(service_num);
     for (int method_num = 0; method_num < service->method_count();
          method_num++) {
-      const MethodDescriptor* method = service->method(method_num);
-      const Descriptor* input_type = method->input_type();
-      const Descriptor* output_type = method->output_type();
+      const MethodDescriptor *method = service->method(method_num);
+      const Descriptor *input_type = method->input_type();
+      const Descriptor *output_type = method->output_type();
       message_types[input_type->full_name()] = input_type;
       message_types[output_type->full_name()] = output_type;
     }
@@ -107,11 +108,11 @@ map<std::string, const Descriptor*> GetAllMessages(const FileDescriptor* file) {
   return message_types;
 }
 
-std::string MessageIdentifierName(const std::string& name) {
+std::string MessageIdentifierName(const std::string &name) {
   return grpc_generator::StringReplace(name, ".", "_");
 }
 
-std::string NodeObjectPath(const Descriptor* descriptor) {
+std::string NodeObjectPath(const Descriptor *descriptor) {
   std::string module_alias = ModuleAlias(descriptor->file()->name());
   std::string name = descriptor->full_name();
   grpc_generator::StripPrefix(&name, descriptor->file()->package() + ".");
@@ -119,8 +120,8 @@ std::string NodeObjectPath(const Descriptor* descriptor) {
 }
 
 // Prints out the message serializer and deserializer functions
-void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
-                             const Parameters& params) {
+void PrintMessageTransformer(const Descriptor *descriptor, Printer *out,
+                             const Parameters &params) {
   map<std::string, std::string> template_vars;
   std::string full_name = descriptor->full_name();
   template_vars["identifier_name"] = MessageIdentifierName(full_name);
@@ -155,9 +156,9 @@ void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
   out->Print("}\n\n");
 }
 
-void PrintMethod(const MethodDescriptor* method, Printer* out) {
-  const Descriptor* input_type = method->input_type();
-  const Descriptor* output_type = method->output_type();
+void PrintMethod(const MethodDescriptor *method, Printer *out) {
+  const Descriptor *input_type = method->input_type();
+  const Descriptor *output_type = method->output_type();
   map<std::string, std::string> vars;
   vars["service_name"] = method->service()->full_name();
   vars["name"] = method->name();
@@ -183,7 +184,7 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
 }
 
 // Prints out the service descriptor object
-void PrintService(const ServiceDescriptor* service, Printer* out) {
+void PrintService(const ServiceDescriptor *service, Printer *out) {
   map<std::string, std::string> template_vars;
   out->Print(GetNodeComments(service, true).c_str());
   template_vars["name"] = service->name();
@@ -206,7 +207,7 @@ void PrintService(const ServiceDescriptor* service, Printer* out) {
   out->Print(GetNodeComments(service, false).c_str());
 }
 
-void PrintImports(const FileDescriptor* file, Printer* out) {
+void PrintImports(const FileDescriptor *file, Printer *out) {
   out->Print("var grpc = require('grpc');\n");
   if (file->message_type_count() > 0) {
     std::string file_path =
@@ -225,24 +226,25 @@ void PrintImports(const FileDescriptor* file, Printer* out) {
   out->Print("\n");
 }
 
-void PrintTransformers(const FileDescriptor* file, Printer* out,
-                       const Parameters& params) {
-  map<std::string, const Descriptor*> messages = GetAllMessages(file);
-  for (std::map<std::string, const Descriptor*>::iterator it = messages.begin();
+void PrintTransformers(const FileDescriptor *file, Printer *out,
+                       const Parameters &params) {
+  map<std::string, const Descriptor *> messages = GetAllMessages(file);
+  for (std::map<std::string, const Descriptor *>::iterator it =
+           messages.begin();
        it != messages.end(); it++) {
     PrintMessageTransformer(it->second, out, params);
   }
   out->Print("\n");
 }
 
-void PrintServices(const FileDescriptor* file, Printer* out) {
+void PrintServices(const FileDescriptor *file, Printer *out) {
   for (int i = 0; i < file->service_count(); i++) {
     PrintService(file->service(i), out);
   }
 }
 }  // namespace
 
-std::string GenerateFile(const FileDescriptor* file, const Parameters& params) {
+std::string GenerateFile(const FileDescriptor *file, const Parameters &params) {
   std::string output;
   {
     StringOutputStream output_stream(&output);

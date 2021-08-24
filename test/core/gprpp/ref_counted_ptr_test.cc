@@ -119,7 +119,7 @@ TEST(RefCountedPtr, ResetFromNullToNonNull) {
 TEST(RefCountedPtr, ResetFromNonNullToNonNull) {
   RefCountedPtr<Foo> foo(new Foo());
   EXPECT_NE(nullptr, foo.get());
-  Foo* original = foo.get();
+  Foo *original = foo.get();
   foo.reset(new Foo());
   EXPECT_NE(nullptr, foo.get());
   EXPECT_NE(original, foo.get());
@@ -142,7 +142,7 @@ TEST(RefCountedPtr, ResetFromNullToNull) {
 TEST(RefCountedPtr, DerefernceOperators) {
   RefCountedPtr<Foo> foo(new Foo());
   foo->value();
-  Foo& foo_ref = *foo;
+  Foo &foo_ref = *foo;
   foo_ref.value();
 }
 
@@ -160,8 +160,8 @@ TEST(RefCountedPtr, EqualityOperators) {
 }
 
 TEST(RefCountedPtr, Swap) {
-  Foo* foo = new Foo();
-  Foo* bar = new Foo();
+  Foo *foo = new Foo();
+  Foo *bar = new Foo();
   RefCountedPtr<Foo> ptr1(foo);
   RefCountedPtr<Foo> ptr2(bar);
   ptr1.swap(ptr2);
@@ -233,7 +233,7 @@ TEST(RefCountedPtr, ResetFromSubclass) {
 }
 
 TEST(RefCountedPtr, EqualityWithSubclass) {
-  Subclass* s = new Subclass();
+  Subclass *s = new Subclass();
   RefCountedPtr<BaseClass> b(s);
   EXPECT_EQ(b, s);
 }
@@ -386,7 +386,7 @@ TEST(WeakRefCountedPtr, DerefernceOperators) {
   RefCountedPtr<Bar> bar_strong(new Bar());
   WeakRefCountedPtr<Bar> bar = bar_strong->WeakRef();
   bar->value();
-  Bar& bar_ref = *bar;
+  Bar &bar_ref = *bar;
   bar_ref.value();
 }
 
@@ -516,7 +516,7 @@ TEST(WeakRefCountedPtr, CanPassWeakSubclassToFunctionExpectingWeakSubclass) {
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

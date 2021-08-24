@@ -63,7 +63,7 @@ struct SslServerCredentialsOptions {
 namespace experimental {
 /// Builds Xds ServerCredentials given fallback credentials
 std::shared_ptr<ServerCredentials> XdsServerCredentials(
-    const std::shared_ptr<ServerCredentials>& fallback_credentials);
+    const std::shared_ptr<ServerCredentials> &fallback_credentials);
 }  // namespace experimental
 
 /// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
@@ -75,7 +75,7 @@ class ServerCredentials : private grpc::GrpcLibraryCodegen {
   /// This method is not thread-safe and has to be called before the server is
   /// started. The last call to this function wins.
   virtual void SetAuthMetadataProcessor(
-      const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) = 0;
+      const std::shared_ptr<grpc::AuthMetadataProcessor> &processor) = 0;
 
  private:
   friend class Server;
@@ -85,14 +85,14 @@ class ServerCredentials : private grpc::GrpcLibraryCodegen {
   // necessary, this friend declaration can be removed too.
   friend std::shared_ptr<ServerCredentials>
   grpc::experimental::XdsServerCredentials(
-      const std::shared_ptr<ServerCredentials>& fallback_credentials);
+      const std::shared_ptr<ServerCredentials> &fallback_credentials);
 
   /// Tries to bind \a server to the given \a addr (eg, localhost:1234,
   /// 192.168.1.1:31416, [::1]:27182, etc.)
   ///
   /// \return bound port number on success, 0 on failure.
   // TODO(dgq): the "port" part seems to be a misnomer.
-  virtual int AddPortToServer(const std::string& addr, grpc_server* server) = 0;
+  virtual int AddPortToServer(const std::string &addr, grpc_server *server) = 0;
 
   // TODO(yashykt): This is a hack since InsecureServerCredentials() cannot use
   // grpc_insecure_server_credentials_create() and should be removed after
@@ -101,14 +101,14 @@ class ServerCredentials : private grpc::GrpcLibraryCodegen {
 
   // TODO(yashkt): This is a hack that should be removed once we remove insecure
   // builds and the indirect method of adding ports to a server.
-  virtual SecureServerCredentials* AsSecureServerCredentials() {
+  virtual SecureServerCredentials *AsSecureServerCredentials() {
     return nullptr;
   }
 };
 
 /// Builds SSL ServerCredentials given SSL specific options
 std::shared_ptr<ServerCredentials> SslServerCredentials(
-    const grpc::SslServerCredentialsOptions& options);
+    const grpc::SslServerCredentialsOptions &options);
 
 std::shared_ptr<ServerCredentials> InsecureServerCredentials();
 
@@ -121,18 +121,18 @@ struct AltsServerCredentialsOptions {
 
 /// Builds ALTS ServerCredentials given ALTS specific options
 std::shared_ptr<ServerCredentials> AltsServerCredentials(
-    const AltsServerCredentialsOptions& options);
+    const AltsServerCredentialsOptions &options);
 
 /// Builds Local ServerCredentials.
 std::shared_ptr<ServerCredentials> AltsServerCredentials(
-    const AltsServerCredentialsOptions& options);
+    const AltsServerCredentialsOptions &options);
 
 std::shared_ptr<ServerCredentials> LocalServerCredentials(
     grpc_local_connect_type type);
 
 /// Builds TLS ServerCredentials given TLS options.
 std::shared_ptr<ServerCredentials> TlsServerCredentials(
-    const experimental::TlsServerCredentialsOptions& options);
+    const experimental::TlsServerCredentialsOptions &options);
 
 }  // namespace experimental
 }  // namespace grpc

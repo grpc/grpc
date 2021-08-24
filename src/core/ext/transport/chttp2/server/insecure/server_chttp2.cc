@@ -29,14 +29,14 @@
 
 namespace {
 
-grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
-                                           grpc_error_handle* /*error*/) {
+grpc_channel_args *ModifyArgsForConnection(grpc_channel_args *args,
+                                           grpc_error_handle * /*error*/) {
   return args;
 }
 
 }  // namespace
 
-int grpc_server_add_insecure_http2_port(grpc_server* server, const char* addr) {
+int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
   grpc_core::ExecCtx exec_ctx;
   int port_num = 0;
   GRPC_API_TRACE("grpc_server_add_insecure_http2_port(server=%p, addr=%s)", 2,

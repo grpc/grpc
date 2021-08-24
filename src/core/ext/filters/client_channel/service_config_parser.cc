@@ -26,7 +26,7 @@ namespace {
 typedef absl::InlinedVector<std::unique_ptr<ServiceConfigParser::Parser>,
                             ServiceConfigParser::kNumPreallocatedParsers>
     ServiceConfigParserList;
-ServiceConfigParserList* g_registered_parsers;
+ServiceConfigParserList *g_registered_parsers;
 }  // namespace
 
 void ServiceConfigParser::Init() {
@@ -45,9 +45,9 @@ size_t ServiceConfigParser::RegisterParser(std::unique_ptr<Parser> parser) {
 }
 
 ServiceConfigParser::ParsedConfigVector
-ServiceConfigParser::ParseGlobalParameters(const grpc_channel_args* args,
-                                           const Json& json,
-                                           grpc_error_handle* error) {
+ServiceConfigParser::ParseGlobalParameters(const grpc_channel_args *args,
+                                           const Json &json,
+                                           grpc_error_handle *error) {
   ParsedConfigVector parsed_global_configs;
   std::vector<grpc_error_handle> error_list;
   for (size_t i = 0; i < g_registered_parsers->size(); i++) {
@@ -66,9 +66,9 @@ ServiceConfigParser::ParseGlobalParameters(const grpc_channel_args* args,
 }
 
 ServiceConfigParser::ParsedConfigVector
-ServiceConfigParser::ParsePerMethodParameters(const grpc_channel_args* args,
-                                              const Json& json,
-                                              grpc_error_handle* error) {
+ServiceConfigParser::ParsePerMethodParameters(const grpc_channel_args *args,
+                                              const Json &json,
+                                              grpc_error_handle *error) {
   ParsedConfigVector parsed_method_configs;
   std::vector<grpc_error_handle> error_list;
   for (size_t i = 0; i < g_registered_parsers->size(); i++) {

@@ -43,14 +43,14 @@ namespace grpc {
 namespace testing {
 
 static std::unique_ptr<BenchmarkService::Stub> BenchmarkStubCreator(
-    const std::shared_ptr<Channel>& ch) {
+    const std::shared_ptr<Channel> &ch) {
   return BenchmarkService::NewStub(ch);
 }
 
 class SynchronousClient
     : public ClientImpl<BenchmarkService::Stub, SimpleRequest> {
  public:
-  explicit SynchronousClient(const ClientConfig& config)
+  explicit SynchronousClient(const ClientConfig &config)
       : ClientImpl<BenchmarkService::Stub, SimpleRequest>(
             config, BenchmarkStubCreator) {
     num_threads_ =
@@ -62,9 +62,9 @@ class SynchronousClient
   ~SynchronousClient() override {}
 
   virtual bool InitThreadFuncImpl(size_t thread_idx) = 0;
-  virtual bool ThreadFuncImpl(HistogramEntry* entry, size_t thread_idx) = 0;
+  virtual bool ThreadFuncImpl(HistogramEntry *entry, size_t thread_idx) = 0;
 
-  void ThreadFunc(size_t thread_idx, Thread* t) override {
+  void ThreadFunc(size_t thread_idx, Thread *t) override {
     if (!InitThreadFuncImpl(thread_idx)) {
       return;
     }
@@ -111,7 +111,7 @@ class SynchronousClient
 
 class SynchronousUnaryClient final : public SynchronousClient {
  public:
-  explicit SynchronousUnaryClient(const ClientConfig& config)
+  explicit SynchronousUnaryClient(const ClientConfig &config)
       : SynchronousClient(config) {
     StartThreads(num_threads_);
   }
@@ -119,11 +119,11 @@ class SynchronousUnaryClient final : public SynchronousClient {
 
   bool InitThreadFuncImpl(size_t /*thread_idx*/) override { return true; }
 
-  bool ThreadFuncImpl(HistogramEntry* entry, size_t thread_idx) override {
+  bool ThreadFuncImpl(HistogramEntry *entry, size_t thread_idx) override {
     if (!WaitToIssue(thread_idx)) {
       return true;
     }
-    auto* stub = channels_[thread_idx % channels_.size()].get_stub();
+    auto *stub = channels_[thread_idx % channels_.size()].get_stub();
     double start = UsageTimer::Now();
     GPR_TIMER_SCOPE("SynchronousUnaryClient::ThreadFunc", 0);
     grpc::ClientContext context;
@@ -143,7 +143,7 @@ class SynchronousUnaryClient final : public SynchronousClient {
 template <class StreamType>
 class SynchronousStreamingClient : public SynchronousClient {
  public:
-  explicit SynchronousStreamingClient(const ClientConfig& config)
+  explicit SynchronousStreamingClient(const ClientConfig &config)
       : SynchronousClient(config),
         context_(num_threads_),
         stream_(num_threads_),
@@ -174,7 +174,7 @@ class SynchronousStreamingClient : public SynchronousClient {
   const int messages_per_stream_;
   std::vector<int> messages_issued_;
 
-  void FinishStream(HistogramEntry* entry, size_t thread_idx) {
+  void FinishStream(HistogramEntry *entry, size_t thread_idx) {
     Status s = stream_[thread_idx]->Finish();
     // don't set the value since the stream is failed and shouldn't be timed
     entry->set_status(s.error_code());
@@ -191,7 +191,7 @@ class SynchronousStreamingClient : public SynchronousClient {
     new (&context_[thread_idx]) ClientContext();
   }
 
-  void CleanupAllStreams(const std::function<void(size_t)>& cleaner) {
+  void CleanupAllStreams(const std::function<void(size_t)> &cleaner) {
     std::vector<std::thread> cleanup_threads;
     for (size_t i = 0; i < num_threads_; i++) {
       cleanup_threads.emplace_back([this, i, cleaner] {
@@ -202,7 +202,7 @@ class SynchronousStreamingClient : public SynchronousClient {
         }
       });
     }
-    for (auto& th : cleanup_threads) {
+    for (auto &th : cleanup_threads) {
       th.join();
     }
   }
@@ -219,7 +219,7 @@ class SynchronousStreamingPingPongClient final
     : public SynchronousStreamingClient<
           grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>> {
  public:
-  explicit SynchronousStreamingPingPongClient(const ClientConfig& config)
+  explicit SynchronousStreamingPingPongClient(const ClientConfig &config)
       : SynchronousStreamingClient(config) {}
   ~SynchronousStreamingPingPongClient() override {
     CleanupAllStreams(
@@ -228,7 +228,7 @@ class SynchronousStreamingPingPongClient final
 
  private:
   bool InitThreadFuncImpl(size_t thread_idx) override {
-    auto* stub = channels_[thread_idx % channels_.size()].get_stub();
+    auto *stub = channels_[thread_idx % channels_.size()].get_stub();
     std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
     if (!shutdown_[thread_idx].val) {
       stream_[thread_idx] = stub->StreamingCall(&context_[thread_idx]);
@@ -239,7 +239,7 @@ class SynchronousStreamingPingPongClient final
     return true;
   }
 
-  bool ThreadFuncImpl(HistogramEntry* entry, size_t thread_idx) override {
+  bool ThreadFuncImpl(HistogramEntry *entry, size_t thread_idx) override {
     if (!WaitToIssue(thread_idx)) {
       return true;
     }
@@ -260,7 +260,7 @@ class SynchronousStreamingPingPongClient final
     }
     stream_[thread_idx]->WritesDone();
     FinishStream(entry, thread_idx);
-    auto* stub = channels_[thread_idx % channels_.size()].get_stub();
+    auto *stub = channels_[thread_idx % channels_.size()].get_stub();
     std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
     if (!shutdown_[thread_idx].val) {
       stream_[thread_idx] = stub->StreamingCall(&context_[thread_idx]);
@@ -276,7 +276,7 @@ class SynchronousStreamingPingPongClient final
 class SynchronousStreamingFromClientClient final
     : public SynchronousStreamingClient<grpc::ClientWriter<SimpleRequest>> {
  public:
-  explicit SynchronousStreamingFromClientClient(const ClientConfig& config)
+  explicit SynchronousStreamingFromClientClient(const ClientConfig &config)
       : SynchronousStreamingClient(config), last_issue_(num_threads_) {}
   ~SynchronousStreamingFromClientClient() override {
     CleanupAllStreams(
@@ -287,7 +287,7 @@ class SynchronousStreamingFromClientClient final
   std::vector<double> last_issue_;
 
   bool InitThreadFuncImpl(size_t thread_idx) override {
-    auto* stub = channels_[thread_idx % channels_.size()].get_stub();
+    auto *stub = channels_[thread_idx % channels_.size()].get_stub();
     std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
     if (!shutdown_[thread_idx].val) {
       stream_[thread_idx] = stub->StreamingFromClient(&context_[thread_idx],
@@ -299,7 +299,7 @@ class SynchronousStreamingFromClientClient final
     return true;
   }
 
-  bool ThreadFuncImpl(HistogramEntry* entry, size_t thread_idx) override {
+  bool ThreadFuncImpl(HistogramEntry *entry, size_t thread_idx) override {
     // Figure out how to make histogram sensible if this is rate-paced
     if (!WaitToIssue(thread_idx)) {
       return true;
@@ -313,7 +313,7 @@ class SynchronousStreamingFromClientClient final
     }
     stream_[thread_idx]->WritesDone();
     FinishStream(entry, thread_idx);
-    auto* stub = channels_[thread_idx % channels_.size()].get_stub();
+    auto *stub = channels_[thread_idx % channels_.size()].get_stub();
     std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
     if (!shutdown_[thread_idx].val) {
       stream_[thread_idx] = stub->StreamingFromClient(&context_[thread_idx],
@@ -329,7 +329,7 @@ class SynchronousStreamingFromClientClient final
 class SynchronousStreamingFromServerClient final
     : public SynchronousStreamingClient<grpc::ClientReader<SimpleResponse>> {
  public:
-  explicit SynchronousStreamingFromServerClient(const ClientConfig& config)
+  explicit SynchronousStreamingFromServerClient(const ClientConfig &config)
       : SynchronousStreamingClient(config), last_recv_(num_threads_) {}
   ~SynchronousStreamingFromServerClient() override {}
 
@@ -337,7 +337,7 @@ class SynchronousStreamingFromServerClient final
   std::vector<double> last_recv_;
 
   bool InitThreadFuncImpl(size_t thread_idx) override {
-    auto* stub = channels_[thread_idx % channels_.size()].get_stub();
+    auto *stub = channels_[thread_idx % channels_.size()].get_stub();
     std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
     if (!shutdown_[thread_idx].val) {
       stream_[thread_idx] =
@@ -349,7 +349,7 @@ class SynchronousStreamingFromServerClient final
     return true;
   }
 
-  bool ThreadFuncImpl(HistogramEntry* entry, size_t thread_idx) override {
+  bool ThreadFuncImpl(HistogramEntry *entry, size_t thread_idx) override {
     GPR_TIMER_SCOPE("SynchronousStreamingFromServerClient::ThreadFunc", 0);
     if (stream_[thread_idx]->Read(&responses_[thread_idx])) {
       double now = UsageTimer::Now();
@@ -358,7 +358,7 @@ class SynchronousStreamingFromServerClient final
       return true;
     }
     FinishStream(entry, thread_idx);
-    auto* stub = channels_[thread_idx % channels_.size()].get_stub();
+    auto *stub = channels_[thread_idx % channels_.size()].get_stub();
     std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
     if (!shutdown_[thread_idx].val) {
       stream_[thread_idx] =
@@ -375,7 +375,7 @@ class SynchronousStreamingBothWaysClient final
     : public SynchronousStreamingClient<
           grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>> {
  public:
-  explicit SynchronousStreamingBothWaysClient(const ClientConfig& config)
+  explicit SynchronousStreamingBothWaysClient(const ClientConfig &config)
       : SynchronousStreamingClient(config) {}
   ~SynchronousStreamingBothWaysClient() override {
     CleanupAllStreams(
@@ -384,7 +384,7 @@ class SynchronousStreamingBothWaysClient final
 
  private:
   bool InitThreadFuncImpl(size_t thread_idx) override {
-    auto* stub = channels_[thread_idx % channels_.size()].get_stub();
+    auto *stub = channels_[thread_idx % channels_.size()].get_stub();
     std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
     if (!shutdown_[thread_idx].val) {
       stream_[thread_idx] = stub->StreamingBothWays(&context_[thread_idx]);
@@ -394,14 +394,14 @@ class SynchronousStreamingBothWaysClient final
     return true;
   }
 
-  bool ThreadFuncImpl(HistogramEntry* /*entry*/,
+  bool ThreadFuncImpl(HistogramEntry * /*entry*/,
                       size_t /*thread_idx*/) override {
     // TODO (vjpai): Do this
     return true;
   }
 };
 
-std::unique_ptr<Client> CreateSynchronousClient(const ClientConfig& config) {
+std::unique_ptr<Client> CreateSynchronousClient(const ClientConfig &config) {
   GPR_ASSERT(!config.use_coalesce_api());  // not supported yet.
   switch (config.rpc_type()) {
     case UNARY:

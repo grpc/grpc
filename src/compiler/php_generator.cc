@@ -35,7 +35,7 @@ using std::map;
 namespace grpc_php_generator {
 namespace {
 
-std::string ConvertToPhpNamespace(const std::string& name) {
+std::string ConvertToPhpNamespace(const std::string &name) {
   std::vector<std::string> tokens = grpc_generator::tokenize(name, ".");
   std::ostringstream oss;
   for (unsigned int i = 0; i < tokens.size(); i++) {
@@ -45,7 +45,7 @@ std::string ConvertToPhpNamespace(const std::string& name) {
   return oss.str();
 }
 
-std::string PackageName(const FileDescriptor* file) {
+std::string PackageName(const FileDescriptor *file) {
   if (file->options().has_php_namespace()) {
     return file->options().php_namespace();
   } else {
@@ -53,8 +53,8 @@ std::string PackageName(const FileDescriptor* file) {
   }
 }
 
-std::string MessageIdentifierName(const std::string& name,
-                                  const FileDescriptor* file) {
+std::string MessageIdentifierName(const std::string &name,
+                                  const FileDescriptor *file) {
   std::vector<std::string> tokens = grpc_generator::tokenize(name, ".");
   std::ostringstream oss;
   if (PackageName(file) != "") {
@@ -64,9 +64,9 @@ std::string MessageIdentifierName(const std::string& name,
   return oss.str();
 }
 
-void PrintMethod(const MethodDescriptor* method, Printer* out) {
-  const Descriptor* input_type = method->input_type();
-  const Descriptor* output_type = method->output_type();
+void PrintMethod(const MethodDescriptor *method, Printer *out) {
+  const Descriptor *input_type = method->input_type();
+  const Descriptor *output_type = method->output_type();
   map<std::string, std::string> vars;
   vars["service_name"] = method->service()->full_name();
   vars["name"] = method->name();
@@ -131,10 +131,10 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
   out->Print("}\n\n");
 }
 
-void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
+void PrintServerMethod(const MethodDescriptor *method, Printer *out) {
   map<std::string, std::string> vars;
-  const Descriptor* input_type = method->input_type();
-  const Descriptor* output_type = method->output_type();
+  const Descriptor *input_type = method->input_type();
+  const Descriptor *output_type = method->output_type();
   vars["service_name"] = method->service()->full_name();
   vars["method_name"] = method->name();
   vars["input_type_id"] =
@@ -145,7 +145,7 @@ void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
   out->Print("/**\n");
   out->Print(GetPHPComments(method, " *").c_str());
 
-  const char* method_template;
+  const char *method_template;
   if (method->client_streaming() && method->server_streaming()) {
     method_template =
         " * @param \\Grpc\\ServerCallReader $$reader read client request data "
@@ -216,8 +216,8 @@ void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
   out->Print(vars, method_template);
 }
 
-void PrintServerMethodDescriptors(const ServiceDescriptor* service,
-                                  Printer* out) {
+void PrintServerMethodDescriptors(const ServiceDescriptor *service,
+                                  Printer *out) {
   map<std::string, std::string> vars;
   vars["service_name"] = service->full_name();
 
@@ -266,9 +266,9 @@ void PrintServerMethodDescriptors(const ServiceDescriptor* service,
 }
 
 // Prints out the service descriptor object
-void PrintService(const ServiceDescriptor* service,
-                  const std::string& class_suffix, bool is_server,
-                  Printer* out) {
+void PrintService(const ServiceDescriptor *service,
+                  const std::string &class_suffix, bool is_server,
+                  Printer *out) {
   map<std::string, std::string> vars;
   out->Print("/**\n");
   out->Print(GetPHPComments(service, " *").c_str());
@@ -309,9 +309,9 @@ void PrintService(const ServiceDescriptor* service,
 }
 }  // namespace
 
-std::string GenerateFile(const FileDescriptor* file,
-                         const ServiceDescriptor* service,
-                         const std::string& class_suffix, bool is_server) {
+std::string GenerateFile(const FileDescriptor *file,
+                         const ServiceDescriptor *service,
+                         const std::string &class_suffix, bool is_server) {
   std::string output;
   {
     StringOutputStream output_stream(&output);

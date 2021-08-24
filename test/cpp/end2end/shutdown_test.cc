@@ -44,18 +44,18 @@ namespace testing {
 
 class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
-  explicit TestServiceImpl(gpr_event* ev) : ev_(ev) {}
+  explicit TestServiceImpl(gpr_event *ev) : ev_(ev) {}
 
-  Status Echo(ServerContext* context, const EchoRequest* /*request*/,
-              EchoResponse* /*response*/) override {
-    gpr_event_set(ev_, reinterpret_cast<void*>(1));
+  Status Echo(ServerContext *context, const EchoRequest * /*request*/,
+              EchoResponse * /*response*/) override {
+    gpr_event_set(ev_, reinterpret_cast<void *>(1));
     while (!context->IsCancelled()) {
     }
     return Status::OK;
   }
 
  private:
-  gpr_event* ev_;
+  gpr_event *ev_;
 };
 
 class ShutdownTest : public ::testing::TestWithParam<string> {
@@ -129,7 +129,7 @@ std::vector<string> GetAllCredentialsTypeList() {
   GPR_ASSERT(!credentials_types.empty());
 
   std::string credentials_type_list("credentials types:");
-  for (const string& type : credentials_types) {
+  for (const string &type : credentials_types) {
     credentials_type_list.append(" " + type);
   }
   gpr_log(GPR_INFO, "%s", credentials_type_list.c_str());
@@ -163,7 +163,7 @@ TEST_P(ShutdownTest, ShutdownTest) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

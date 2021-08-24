@@ -43,7 +43,7 @@ class TimePoint {
   // i) using the existing types having a conversion class such as
   // gpr_timespec and std::chrono::system_clock::time_point or
   // ii) writing a new TimePoint<YourType> to address your case.
-  TimePoint(const T& /*time*/) = delete;
+  TimePoint(const T & /*time*/) = delete;
   gpr_timespec raw_time() = delete;
 };
 
@@ -51,7 +51,7 @@ template <>
 class TimePoint<gpr_timespec> {
  public:
   /* NOLINTNEXTLINE(google-explicit-constructor) */
-  TimePoint(const gpr_timespec& time) : time_(time) {}
+  TimePoint(const gpr_timespec &time) : time_(time) {}
   gpr_timespec raw_time() { return time_; }
 
  private:
@@ -63,11 +63,11 @@ class TimePoint<gpr_timespec> {
 namespace grpc {
 
 // from and to should be absolute time.
-void Timepoint2Timespec(const std::chrono::system_clock::time_point& from,
-                        gpr_timespec* to);
+void Timepoint2Timespec(const std::chrono::system_clock::time_point &from,
+                        gpr_timespec *to);
 void TimepointHR2Timespec(
-    const std::chrono::high_resolution_clock::time_point& from,
-    gpr_timespec* to);
+    const std::chrono::high_resolution_clock::time_point &from,
+    gpr_timespec *to);
 
 std::chrono::system_clock::time_point Timespec2Timepoint(gpr_timespec t);
 
@@ -75,7 +75,7 @@ template <>
 class TimePoint<std::chrono::system_clock::time_point> {
  public:
   /* NOLINTNEXTLINE(google-explicit-constructor) */
-  TimePoint(const std::chrono::system_clock::time_point& time) {
+  TimePoint(const std::chrono::system_clock::time_point &time) {
     Timepoint2Timespec(time, &time_);
   }
   gpr_timespec raw_time() const { return time_; }

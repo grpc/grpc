@@ -43,7 +43,7 @@ DefaultHealthCheckService::DefaultHealthCheckService() {
 }
 
 void DefaultHealthCheckService::SetServingStatus(
-    const std::string& service_name, bool serving) {
+    const std::string &service_name, bool serving) {
   grpc_core::MutexLock lock(&mu_);
   if (shutdown_) {
     // Set to NOT_SERVING in case service_name is not in the map.
@@ -58,8 +58,8 @@ void DefaultHealthCheckService::SetServingStatus(bool serving) {
   if (shutdown_) {
     return;
   }
-  for (auto& p : services_map_) {
-    ServiceData& service_data = p.second;
+  for (auto &p : services_map_) {
+    ServiceData &service_data = p.second;
     service_data.SetServingStatus(status);
   }
 }
@@ -70,48 +70,48 @@ void DefaultHealthCheckService::Shutdown() {
     return;
   }
   shutdown_ = true;
-  for (auto& p : services_map_) {
-    ServiceData& service_data = p.second;
+  for (auto &p : services_map_) {
+    ServiceData &service_data = p.second;
     service_data.SetServingStatus(NOT_SERVING);
   }
 }
 
 DefaultHealthCheckService::ServingStatus
 DefaultHealthCheckService::GetServingStatus(
-    const std::string& service_name) const {
+    const std::string &service_name) const {
   grpc_core::MutexLock lock(&mu_);
   auto it = services_map_.find(service_name);
   if (it == services_map_.end()) {
     return NOT_FOUND;
   }
-  const ServiceData& service_data = it->second;
+  const ServiceData &service_data = it->second;
   return service_data.GetServingStatus();
 }
 
 void DefaultHealthCheckService::RegisterCallHandler(
-    const std::string& service_name,
+    const std::string &service_name,
     std::shared_ptr<HealthCheckServiceImpl::CallHandler> handler) {
   grpc_core::MutexLock lock(&mu_);
-  ServiceData& service_data = services_map_[service_name];
+  ServiceData &service_data = services_map_[service_name];
   service_data.AddCallHandler(handler /* copies ref */);
-  HealthCheckServiceImpl::CallHandler* h = handler.get();
+  HealthCheckServiceImpl::CallHandler *h = handler.get();
   h->SendHealth(std::move(handler), service_data.GetServingStatus());
 }
 
 void DefaultHealthCheckService::UnregisterCallHandler(
-    const std::string& service_name,
-    const std::shared_ptr<HealthCheckServiceImpl::CallHandler>& handler) {
+    const std::string &service_name,
+    const std::shared_ptr<HealthCheckServiceImpl::CallHandler> &handler) {
   grpc_core::MutexLock lock(&mu_);
   auto it = services_map_.find(service_name);
   if (it == services_map_.end()) return;
-  ServiceData& service_data = it->second;
+  ServiceData &service_data = it->second;
   service_data.RemoveCallHandler(handler);
   if (service_data.Unused()) {
     services_map_.erase(it);
   }
 }
 
-DefaultHealthCheckService::HealthCheckServiceImpl*
+DefaultHealthCheckService::HealthCheckServiceImpl *
 DefaultHealthCheckService::GetHealthCheckService(
     std::unique_ptr<ServerCompletionQueue> cq) {
   GPR_ASSERT(impl_ == nullptr);
@@ -126,7 +126,7 @@ DefaultHealthCheckService::GetHealthCheckService(
 void DefaultHealthCheckService::ServiceData::SetServingStatus(
     ServingStatus status) {
   status_ = status;
-  for (auto& call_handler : call_handlers_) {
+  for (auto &call_handler : call_handlers_) {
     call_handler->SendHealth(call_handler /* copies ref */, status);
   }
 }
@@ -137,7 +137,7 @@ void DefaultHealthCheckService::ServiceData::AddCallHandler(
 }
 
 void DefaultHealthCheckService::ServiceData::RemoveCallHandler(
-    const std::shared_ptr<HealthCheckServiceImpl::CallHandler>& handler) {
+    const std::shared_ptr<HealthCheckServiceImpl::CallHandler> &handler) {
   call_handlers_.erase(handler);
 }
 
@@ -151,7 +151,7 @@ const char kHealthWatchMethodName[] = "/grpc.health.v1.Health/Watch";
 }  // namespace
 
 DefaultHealthCheckService::HealthCheckServiceImpl::HealthCheckServiceImpl(
-    DefaultHealthCheckService* database,
+    DefaultHealthCheckService *database,
     std::unique_ptr<ServerCompletionQueue> cq)
     : database_(database), cq_(std::move(cq)) {
   // Add Check() method.
@@ -185,9 +185,9 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::StartServingThread() {
   thread_->Start();
 }
 
-void DefaultHealthCheckService::HealthCheckServiceImpl::Serve(void* arg) {
-  HealthCheckServiceImpl* service = static_cast<HealthCheckServiceImpl*>(arg);
-  void* tag;
+void DefaultHealthCheckService::HealthCheckServiceImpl::Serve(void *arg) {
+  HealthCheckServiceImpl *service = static_cast<HealthCheckServiceImpl *>(arg);
+  void *tag;
   bool ok;
   while (true) {
     if (!service->cq_->Next(&tag, &ok)) {
@@ -195,32 +195,32 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::Serve(void* arg) {
       GPR_ASSERT(service->shutdown_);
       break;
     }
-    auto* next_step = static_cast<CallableTag*>(tag);
+    auto *next_step = static_cast<CallableTag *>(tag);
     next_step->Run(ok);
   }
 }
 
 bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(
-    const ByteBuffer& request, std::string* service_name) {
+    const ByteBuffer &request, std::string *service_name) {
   std::vector<Slice> slices;
   if (!request.Dump(&slices).ok()) return false;
-  uint8_t* request_bytes = nullptr;
+  uint8_t *request_bytes = nullptr;
   size_t request_size = 0;
   if (slices.size() == 1) {
-    request_bytes = const_cast<uint8_t*>(slices[0].begin());
+    request_bytes = const_cast<uint8_t *>(slices[0].begin());
     request_size = slices[0].size();
   } else if (slices.size() > 1) {
-    request_bytes = static_cast<uint8_t*>(gpr_malloc(request.Length()));
-    uint8_t* copy_to = request_bytes;
+    request_bytes = static_cast<uint8_t *>(gpr_malloc(request.Length()));
+    uint8_t *copy_to = request_bytes;
     for (size_t i = 0; i < slices.size(); i++) {
       memcpy(copy_to, slices[i].begin(), slices[i].size());
       copy_to += slices[i].size();
     }
   }
   upb::Arena arena;
-  grpc_health_v1_HealthCheckRequest* request_struct =
+  grpc_health_v1_HealthCheckRequest *request_struct =
       grpc_health_v1_HealthCheckRequest_parse(
-          reinterpret_cast<char*>(request_bytes), request_size, arena.ptr());
+          reinterpret_cast<char *>(request_bytes), request_size, arena.ptr());
   if (slices.size() > 1) {
     gpr_free(request_bytes);
   }
@@ -237,9 +237,9 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(
 }
 
 bool DefaultHealthCheckService::HealthCheckServiceImpl::EncodeResponse(
-    ServingStatus status, ByteBuffer* response) {
+    ServingStatus status, ByteBuffer *response) {
   upb::Arena arena;
-  grpc_health_v1_HealthCheckResponse* response_struct =
+  grpc_health_v1_HealthCheckResponse *response_struct =
       grpc_health_v1_HealthCheckResponse_new(arena.ptr());
   grpc_health_v1_HealthCheckResponse_set_status(
       response_struct,
@@ -247,7 +247,7 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::EncodeResponse(
       : status == SERVING ? grpc_health_v1_HealthCheckResponse_SERVING
                           : grpc_health_v1_HealthCheckResponse_NOT_SERVING);
   size_t buf_length;
-  char* buf = grpc_health_v1_HealthCheckResponse_serialize(
+  char *buf = grpc_health_v1_HealthCheckResponse_serialize(
       response_struct, arena.ptr(), &buf_length);
   if (buf == nullptr) {
     return false;
@@ -264,12 +264,12 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::EncodeResponse(
 //
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
-    CreateAndStart(ServerCompletionQueue* cq,
-                   DefaultHealthCheckService* database,
-                   HealthCheckServiceImpl* service) {
+    CreateAndStart(ServerCompletionQueue *cq,
+                   DefaultHealthCheckService *database,
+                   HealthCheckServiceImpl *service) {
   std::shared_ptr<CallHandler> self =
       std::make_shared<CheckCallHandler>(cq, database, service);
-  CheckCallHandler* handler = static_cast<CheckCallHandler*>(self.get());
+  CheckCallHandler *handler = static_cast<CheckCallHandler *>(self.get());
   {
     grpc_core::MutexLock lock(&service->cq_shutdown_mu_);
     if (service->shutdown_) return;
@@ -284,9 +284,9 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
 }
 
 DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
-    CheckCallHandler(ServerCompletionQueue* cq,
-                     DefaultHealthCheckService* database,
-                     HealthCheckServiceImpl* service)
+    CheckCallHandler(ServerCompletionQueue *cq,
+                     DefaultHealthCheckService *database,
+                     HealthCheckServiceImpl *service)
     : cq_(cq), database_(database), service_(service), writer_(&ctx_) {}
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
@@ -345,12 +345,12 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
 //
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
-    CreateAndStart(ServerCompletionQueue* cq,
-                   DefaultHealthCheckService* database,
-                   HealthCheckServiceImpl* service) {
+    CreateAndStart(ServerCompletionQueue *cq,
+                   DefaultHealthCheckService *database,
+                   HealthCheckServiceImpl *service) {
   std::shared_ptr<CallHandler> self =
       std::make_shared<WatchCallHandler>(cq, database, service);
-  WatchCallHandler* handler = static_cast<WatchCallHandler*>(self.get());
+  WatchCallHandler *handler = static_cast<WatchCallHandler *>(self.get());
   {
     grpc_core::MutexLock lock(&service->cq_shutdown_mu_);
     if (service->shutdown_) return;
@@ -372,9 +372,9 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
 }
 
 DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
-    WatchCallHandler(ServerCompletionQueue* cq,
-                     DefaultHealthCheckService* database,
-                     HealthCheckServiceImpl* service)
+    WatchCallHandler(ServerCompletionQueue *cq,
+                     DefaultHealthCheckService *database,
+                     HealthCheckServiceImpl *service)
     : cq_(cq), database_(database), service_(service), stream_(&ctx_) {}
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
@@ -459,7 +459,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
 }
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
-    SendFinish(std::shared_ptr<CallHandler> self, const Status& status) {
+    SendFinish(std::shared_ptr<CallHandler> self, const Status &status) {
   if (finish_called_) return;
   grpc_core::MutexLock cq_lock(&service_->cq_shutdown_mu_);
   if (service_->shutdown_) return;
@@ -467,7 +467,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
 }
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
-    SendFinishLocked(std::shared_ptr<CallHandler> self, const Status& status) {
+    SendFinishLocked(std::shared_ptr<CallHandler> self, const Status &status) {
   on_finish_done_ =
       CallableTag(std::bind(&WatchCallHandler::OnFinishDone, this,
                             std::placeholders::_1, std::placeholders::_2),

@@ -29,23 +29,23 @@ namespace experimental {
  * config. They populate a C server authorization check arg with the result
  * of a C++ server authorization check schedule/cancel API. **/
 int TlsServerAuthorizationCheckConfigCSchedule(
-    void* /*config_user_data*/, grpc_tls_server_authorization_check_arg* arg) {
+    void * /*config_user_data*/, grpc_tls_server_authorization_check_arg *arg) {
   if (arg == nullptr || arg->config == nullptr ||
       arg->config->context() == nullptr) {
     gpr_log(GPR_ERROR,
             "server authorization check arg was not properly initialized");
     return 1;
   }
-  TlsServerAuthorizationCheckConfig* cpp_config =
-      static_cast<TlsServerAuthorizationCheckConfig*>(arg->config->context());
-  TlsServerAuthorizationCheckArg* cpp_arg =
+  TlsServerAuthorizationCheckConfig *cpp_config =
+      static_cast<TlsServerAuthorizationCheckConfig *>(arg->config->context());
+  TlsServerAuthorizationCheckArg *cpp_arg =
       new TlsServerAuthorizationCheckArg(arg);
   int schedule_result = cpp_config->Schedule(cpp_arg);
   return schedule_result;
 }
 
 void TlsServerAuthorizationCheckConfigCCancel(
-    void* /*config_user_data*/, grpc_tls_server_authorization_check_arg* arg) {
+    void * /*config_user_data*/, grpc_tls_server_authorization_check_arg *arg) {
   if (arg == nullptr || arg->config == nullptr ||
       arg->config->context() == nullptr) {
     gpr_log(GPR_ERROR,
@@ -57,17 +57,17 @@ void TlsServerAuthorizationCheckConfigCCancel(
             "server authorization check arg schedule has already completed");
     return;
   }
-  TlsServerAuthorizationCheckConfig* cpp_config =
-      static_cast<TlsServerAuthorizationCheckConfig*>(arg->config->context());
-  TlsServerAuthorizationCheckArg* cpp_arg =
-      static_cast<TlsServerAuthorizationCheckArg*>(arg->context);
+  TlsServerAuthorizationCheckConfig *cpp_config =
+      static_cast<TlsServerAuthorizationCheckConfig *>(arg->config->context());
+  TlsServerAuthorizationCheckArg *cpp_arg =
+      static_cast<TlsServerAuthorizationCheckArg *>(arg->context);
   cpp_config->Cancel(cpp_arg);
 }
 
-void TlsServerAuthorizationCheckArgDestroyContext(void* context) {
+void TlsServerAuthorizationCheckArgDestroyContext(void *context) {
   if (context != nullptr) {
-    TlsServerAuthorizationCheckArg* cpp_arg =
-        static_cast<TlsServerAuthorizationCheckArg*>(context);
+    TlsServerAuthorizationCheckArg *cpp_arg =
+        static_cast<TlsServerAuthorizationCheckArg *>(context);
     delete cpp_arg;
   }
 }

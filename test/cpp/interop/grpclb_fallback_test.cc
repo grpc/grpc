@@ -86,7 +86,7 @@ enum RpcMode {
   WaitForReady,
 };
 
-GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds,
+GrpclbRouteType DoRPCAndGetPath(TestService::Stub *stub, int deadline_seconds,
                                 RpcMode rpc_mode) {
   gpr_log(GPR_INFO, "DoRPCAndGetPath deadline_seconds:%d rpc_mode:%d",
           deadline_seconds, rpc_mode);
@@ -115,16 +115,16 @@ GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds,
   return response.grpclb_route_type();
 }
 
-GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds) {
+GrpclbRouteType DoRPCAndGetPath(TestService::Stub *stub, int deadline_seconds) {
   return DoRPCAndGetPath(stub, deadline_seconds, FailFast);
 }
 
-GrpclbRouteType DoWaitForReadyRPCAndGetPath(TestService::Stub* stub,
+GrpclbRouteType DoWaitForReadyRPCAndGetPath(TestService::Stub *stub,
                                             int deadline_seconds) {
   return DoRPCAndGetPath(stub, deadline_seconds, WaitForReady);
 }
 
-bool TcpUserTimeoutMutateFd(int fd, grpc_socket_mutator* /*mutator*/) {
+bool TcpUserTimeoutMutateFd(int fd, grpc_socket_mutator * /*mutator*/) {
   int timeout = 20000;  // 20 seconds
   gpr_log(GPR_INFO, "Setting socket option TCP_USER_TIMEOUT on fd: %d", fd);
   if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
@@ -142,12 +142,12 @@ bool TcpUserTimeoutMutateFd(int fd, grpc_socket_mutator* /*mutator*/) {
   return true;
 }
 
-int TcpUserTimeoutCompare(grpc_socket_mutator* /*a*/,
-                          grpc_socket_mutator* /*b*/) {
+int TcpUserTimeoutCompare(grpc_socket_mutator * /*a*/,
+                          grpc_socket_mutator * /*b*/) {
   return 0;
 }
 
-void TcpUserTimeoutDestroy(grpc_socket_mutator* mutator) { gpr_free(mutator); }
+void TcpUserTimeoutDestroy(grpc_socket_mutator *mutator) { gpr_free(mutator); }
 
 const grpc_socket_mutator_vtable kTcpUserTimeoutMutatorVtable =
     grpc_socket_mutator_vtable{TcpUserTimeoutMutateFd, TcpUserTimeoutCompare,
@@ -155,8 +155,8 @@ const grpc_socket_mutator_vtable kTcpUserTimeoutMutatorVtable =
 
 std::unique_ptr<TestService::Stub> CreateFallbackTestStub() {
   grpc::ChannelArguments channel_args;
-  grpc_socket_mutator* tcp_user_timeout_mutator =
-      static_cast<grpc_socket_mutator*>(
+  grpc_socket_mutator *tcp_user_timeout_mutator =
+      static_cast<grpc_socket_mutator *>(
           gpr_malloc(sizeof(tcp_user_timeout_mutator)));
   grpc_socket_mutator_init(tcp_user_timeout_mutator,
                            &kTcpUserTimeoutMutatorVtable);
@@ -170,7 +170,7 @@ std::unique_ptr<TestService::Stub> CreateFallbackTestStub() {
       absl::GetFlag(FLAGS_server_uri), channel_creds, channel_args));
 }
 
-void RunCommand(const std::string& command) {
+void RunCommand(const std::string &command) {
   gpr_log(GPR_INFO, "RunCommand: |%s|", command.c_str());
   int out = std::system(command.c_str());
   if (WIFEXITED(out)) {
@@ -187,7 +187,7 @@ void RunCommand(const std::string& command) {
 }
 
 void RunFallbackBeforeStartupTest(
-    const std::string& break_lb_and_backend_conns_cmd,
+    const std::string &break_lb_and_backend_conns_cmd,
     int per_rpc_deadline_seconds) {
   std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
   RunCommand(break_lb_and_backend_conns_cmd);
@@ -214,7 +214,7 @@ void DoSlowFallbackBeforeStartup() {
 }
 
 void RunFallbackAfterStartupTest(
-    const std::string& break_lb_and_backend_conns_cmd) {
+    const std::string &break_lb_and_backend_conns_cmd) {
   std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
   GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub.get(), 20);
   if (grpclb_route_type != GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND) {
@@ -259,7 +259,7 @@ void DoSlowFallbackAfterStartup() {
 }
 }  // namespace
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   gpr_log(GPR_INFO, "Testing: %s", absl::GetFlag(FLAGS_test_case).c_str());
   if (absl::GetFlag(FLAGS_test_case) == "fast_fallback_before_startup") {
@@ -283,7 +283,7 @@ int main(int argc, char** argv) {
 
 #else
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   gpr_log(GPR_ERROR,
           "This test requires TCP_USER_TIMEOUT, which isn't available");

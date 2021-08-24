@@ -87,7 +87,7 @@ void RegisterOpenCensusViewsForExport() {
 }
 
 // client cumulative
-const ViewDescriptor& ClientSentBytesPerRpcCumulative() {
+const ViewDescriptor &ClientSentBytesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/sent_bytes_per_rpc/cumulative")
@@ -97,7 +97,7 @@ const ViewDescriptor& ClientSentBytesPerRpcCumulative() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientReceivedBytesPerRpcCumulative() {
+const ViewDescriptor &ClientReceivedBytesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/received_bytes_per_rpc/cumulative")
@@ -107,7 +107,7 @@ const ViewDescriptor& ClientReceivedBytesPerRpcCumulative() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientRoundtripLatencyCumulative() {
+const ViewDescriptor &ClientRoundtripLatencyCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/roundtrip_latency/cumulative")
@@ -117,7 +117,7 @@ const ViewDescriptor& ClientRoundtripLatencyCumulative() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientServerLatencyCumulative() {
+const ViewDescriptor &ClientServerLatencyCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/server_latency/cumulative")
@@ -127,7 +127,7 @@ const ViewDescriptor& ClientServerLatencyCumulative() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientCompletedRpcsCumulative() {
+const ViewDescriptor &ClientCompletedRpcsCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/completed_rpcs/cumulative")
@@ -138,7 +138,7 @@ const ViewDescriptor& ClientCompletedRpcsCumulative() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientSentMessagesPerRpcCumulative() {
+const ViewDescriptor &ClientSentMessagesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/received_messages_per_rpc/cumulative")
@@ -148,7 +148,7 @@ const ViewDescriptor& ClientSentMessagesPerRpcCumulative() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientReceivedMessagesPerRpcCumulative() {
+const ViewDescriptor &ClientReceivedMessagesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/sent_messages_per_rpc/cumulative")
@@ -158,7 +158,7 @@ const ViewDescriptor& ClientReceivedMessagesPerRpcCumulative() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientRetriesPerCallCumulative() {
+const ViewDescriptor &ClientRetriesPerCallCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/retries_per_call/cumulative")
@@ -168,7 +168,7 @@ const ViewDescriptor& ClientRetriesPerCallCumulative() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientRetriesCumulative() {
+const ViewDescriptor &ClientRetriesCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/retries/cumulative")
@@ -178,7 +178,7 @@ const ViewDescriptor& ClientRetriesCumulative() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientTransparentRetriesPerCallCumulative() {
+const ViewDescriptor &ClientTransparentRetriesPerCallCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/transparent_retries_per_call/cumulative")
@@ -188,7 +188,7 @@ const ViewDescriptor& ClientTransparentRetriesPerCallCumulative() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientTransparentRetriesCumulative() {
+const ViewDescriptor &ClientTransparentRetriesCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/transparent_retries/cumulative")
@@ -198,7 +198,7 @@ const ViewDescriptor& ClientTransparentRetriesCumulative() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientRetryDelayPerCallCumulative() {
+const ViewDescriptor &ClientRetryDelayPerCallCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/retry_delay_per_call/cumulative")
@@ -209,7 +209,7 @@ const ViewDescriptor& ClientRetryDelayPerCallCumulative() {
 }
 
 // server cumulative
-const ViewDescriptor& ServerSentBytesPerRpcCumulative() {
+const ViewDescriptor &ServerSentBytesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/server/received_bytes_per_rpc/cumulative")
@@ -219,7 +219,7 @@ const ViewDescriptor& ServerSentBytesPerRpcCumulative() {
   return descriptor;
 }
 
-const ViewDescriptor& ServerReceivedBytesPerRpcCumulative() {
+const ViewDescriptor &ServerReceivedBytesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/server/sent_bytes_per_rpc/cumulative")
@@ -229,7 +229,7 @@ const ViewDescriptor& ServerReceivedBytesPerRpcCumulative() {
   return descriptor;
 }
 
-const ViewDescriptor& ServerServerLatencyCumulative() {
+const ViewDescriptor &ServerServerLatencyCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/server/elapsed_time/cumulative")
@@ -239,7 +239,7 @@ const ViewDescriptor& ServerServerLatencyCumulative() {
   return descriptor;
 }
 
-const ViewDescriptor& ServerCompletedRpcsCumulative() {
+const ViewDescriptor &ServerCompletedRpcsCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/server/completed_rpcs/cumulative")
@@ -250,7 +250,7 @@ const ViewDescriptor& ServerCompletedRpcsCumulative() {
   return descriptor;
 }
 
-const ViewDescriptor& ServerSentMessagesPerRpcCumulative() {
+const ViewDescriptor &ServerSentMessagesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/server/received_messages_per_rpc/cumulative")
@@ -260,7 +260,7 @@ const ViewDescriptor& ServerSentMessagesPerRpcCumulative() {
   return descriptor;
 }
 
-const ViewDescriptor& ServerReceivedMessagesPerRpcCumulative() {
+const ViewDescriptor &ServerReceivedMessagesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/server/sent_messages_per_rpc/cumulative")
@@ -271,7 +271,7 @@ const ViewDescriptor& ServerReceivedMessagesPerRpcCumulative() {
 }
 
 // client minute
-const ViewDescriptor& ClientSentBytesPerRpcMinute() {
+const ViewDescriptor &ClientSentBytesPerRpcMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/sent_bytes_per_rpc/minute")
@@ -281,7 +281,7 @@ const ViewDescriptor& ClientSentBytesPerRpcMinute() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientReceivedBytesPerRpcMinute() {
+const ViewDescriptor &ClientReceivedBytesPerRpcMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/received_bytes_per_rpc/minute")
@@ -291,7 +291,7 @@ const ViewDescriptor& ClientReceivedBytesPerRpcMinute() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientRoundtripLatencyMinute() {
+const ViewDescriptor &ClientRoundtripLatencyMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/roundtrip_latency/minute")
@@ -301,7 +301,7 @@ const ViewDescriptor& ClientRoundtripLatencyMinute() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientServerLatencyMinute() {
+const ViewDescriptor &ClientServerLatencyMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/server_latency/minute")
@@ -311,7 +311,7 @@ const ViewDescriptor& ClientServerLatencyMinute() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientCompletedRpcsMinute() {
+const ViewDescriptor &ClientCompletedRpcsMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/completed_rpcs/minute")
@@ -322,7 +322,7 @@ const ViewDescriptor& ClientCompletedRpcsMinute() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientSentMessagesPerRpcMinute() {
+const ViewDescriptor &ClientSentMessagesPerRpcMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/sent_messages_per_rpc/minute")
@@ -332,7 +332,7 @@ const ViewDescriptor& ClientSentMessagesPerRpcMinute() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientReceivedMessagesPerRpcMinute() {
+const ViewDescriptor &ClientReceivedMessagesPerRpcMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/received_messages_per_rpc/minute")
@@ -342,7 +342,7 @@ const ViewDescriptor& ClientReceivedMessagesPerRpcMinute() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientRetriesPerCallMinute() {
+const ViewDescriptor &ClientRetriesPerCallMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/retries_per_call/minute")
@@ -352,7 +352,7 @@ const ViewDescriptor& ClientRetriesPerCallMinute() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientRetriesMinute() {
+const ViewDescriptor &ClientRetriesMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/retries/minute")
@@ -362,7 +362,7 @@ const ViewDescriptor& ClientRetriesMinute() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientTransparentRetriesPerCallMinute() {
+const ViewDescriptor &ClientTransparentRetriesPerCallMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/transparent_retries_per_call/minute")
@@ -372,7 +372,7 @@ const ViewDescriptor& ClientTransparentRetriesPerCallMinute() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientTransparentRetriesMinute() {
+const ViewDescriptor &ClientTransparentRetriesMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/transparent_retries/minute")
@@ -382,7 +382,7 @@ const ViewDescriptor& ClientTransparentRetriesMinute() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientRetryDelayPerCallMinute() {
+const ViewDescriptor &ClientRetryDelayPerCallMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/retry_delay_per_call/minute")
@@ -393,7 +393,7 @@ const ViewDescriptor& ClientRetryDelayPerCallMinute() {
 }
 
 // server minute
-const ViewDescriptor& ServerSentBytesPerRpcMinute() {
+const ViewDescriptor &ServerSentBytesPerRpcMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/sent_bytes_per_rpc/minute")
@@ -403,7 +403,7 @@ const ViewDescriptor& ServerSentBytesPerRpcMinute() {
   return descriptor;
 }
 
-const ViewDescriptor& ServerReceivedBytesPerRpcMinute() {
+const ViewDescriptor &ServerReceivedBytesPerRpcMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/received_bytes_per_rpc/minute")
@@ -413,7 +413,7 @@ const ViewDescriptor& ServerReceivedBytesPerRpcMinute() {
   return descriptor;
 }
 
-const ViewDescriptor& ServerServerLatencyMinute() {
+const ViewDescriptor &ServerServerLatencyMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/server_latency/minute")
@@ -423,7 +423,7 @@ const ViewDescriptor& ServerServerLatencyMinute() {
   return descriptor;
 }
 
-const ViewDescriptor& ServerCompletedRpcsMinute() {
+const ViewDescriptor &ServerCompletedRpcsMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/completed_rpcs/minute")
@@ -434,7 +434,7 @@ const ViewDescriptor& ServerCompletedRpcsMinute() {
   return descriptor;
 }
 
-const ViewDescriptor& ServerSentMessagesPerRpcMinute() {
+const ViewDescriptor &ServerSentMessagesPerRpcMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/sent_messages_per_rpc/minute")
@@ -444,7 +444,7 @@ const ViewDescriptor& ServerSentMessagesPerRpcMinute() {
   return descriptor;
 }
 
-const ViewDescriptor& ServerReceivedMessagesPerRpcMinute() {
+const ViewDescriptor &ServerReceivedMessagesPerRpcMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/received_messages_per_rpc/minute")
@@ -455,7 +455,7 @@ const ViewDescriptor& ServerReceivedMessagesPerRpcMinute() {
 }
 
 // client hour
-const ViewDescriptor& ClientSentBytesPerRpcHour() {
+const ViewDescriptor &ClientSentBytesPerRpcHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/sent_bytes_per_rpc/hour")
@@ -465,7 +465,7 @@ const ViewDescriptor& ClientSentBytesPerRpcHour() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientReceivedBytesPerRpcHour() {
+const ViewDescriptor &ClientReceivedBytesPerRpcHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/received_bytes_per_rpc/hour")
@@ -475,7 +475,7 @@ const ViewDescriptor& ClientReceivedBytesPerRpcHour() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientRoundtripLatencyHour() {
+const ViewDescriptor &ClientRoundtripLatencyHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/roundtrip_latency/hour")
@@ -485,7 +485,7 @@ const ViewDescriptor& ClientRoundtripLatencyHour() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientServerLatencyHour() {
+const ViewDescriptor &ClientServerLatencyHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/server_latency/hour")
@@ -495,7 +495,7 @@ const ViewDescriptor& ClientServerLatencyHour() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientCompletedRpcsHour() {
+const ViewDescriptor &ClientCompletedRpcsHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/completed_rpcs/hour")
@@ -506,7 +506,7 @@ const ViewDescriptor& ClientCompletedRpcsHour() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientSentMessagesPerRpcHour() {
+const ViewDescriptor &ClientSentMessagesPerRpcHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/sent_messages_per_rpc/hour")
@@ -516,7 +516,7 @@ const ViewDescriptor& ClientSentMessagesPerRpcHour() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientReceivedMessagesPerRpcHour() {
+const ViewDescriptor &ClientReceivedMessagesPerRpcHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/received_messages_per_rpc/hour")
@@ -526,7 +526,7 @@ const ViewDescriptor& ClientReceivedMessagesPerRpcHour() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientRetriesPerCallHour() {
+const ViewDescriptor &ClientRetriesPerCallHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/retries_per_call/hour")
@@ -536,7 +536,7 @@ const ViewDescriptor& ClientRetriesPerCallHour() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientRetriesHour() {
+const ViewDescriptor &ClientRetriesHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/retries/hour")
@@ -546,7 +546,7 @@ const ViewDescriptor& ClientRetriesHour() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientTransparentRetriesPerCallHour() {
+const ViewDescriptor &ClientTransparentRetriesPerCallHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/transparent_retries_per_call/hour")
@@ -556,7 +556,7 @@ const ViewDescriptor& ClientTransparentRetriesPerCallHour() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientTransparentRetriesHour() {
+const ViewDescriptor &ClientTransparentRetriesHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/transparent_retries/hour")
@@ -566,7 +566,7 @@ const ViewDescriptor& ClientTransparentRetriesHour() {
   return descriptor;
 }
 
-const ViewDescriptor& ClientRetryDelayPerCallHour() {
+const ViewDescriptor &ClientRetryDelayPerCallHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/retry_delay_per_call/hour")
@@ -577,7 +577,7 @@ const ViewDescriptor& ClientRetryDelayPerCallHour() {
 }
 
 // server hour
-const ViewDescriptor& ServerSentBytesPerRpcHour() {
+const ViewDescriptor &ServerSentBytesPerRpcHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/sent_bytes_per_rpc/hour")
@@ -587,7 +587,7 @@ const ViewDescriptor& ServerSentBytesPerRpcHour() {
   return descriptor;
 }
 
-const ViewDescriptor& ServerReceivedBytesPerRpcHour() {
+const ViewDescriptor &ServerReceivedBytesPerRpcHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/received_bytes_per_rpc/hour")
@@ -597,7 +597,7 @@ const ViewDescriptor& ServerReceivedBytesPerRpcHour() {
   return descriptor;
 }
 
-const ViewDescriptor& ServerServerLatencyHour() {
+const ViewDescriptor &ServerServerLatencyHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/server_latency/hour")
@@ -607,7 +607,7 @@ const ViewDescriptor& ServerServerLatencyHour() {
   return descriptor;
 }
 
-const ViewDescriptor& ServerCompletedRpcsHour() {
+const ViewDescriptor &ServerCompletedRpcsHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/completed_rpcs/hour")
@@ -618,7 +618,7 @@ const ViewDescriptor& ServerCompletedRpcsHour() {
   return descriptor;
 }
 
-const ViewDescriptor& ServerSentMessagesPerRpcHour() {
+const ViewDescriptor &ServerSentMessagesPerRpcHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/sent_messages_per_rpc/hour")
@@ -628,7 +628,7 @@ const ViewDescriptor& ServerSentMessagesPerRpcHour() {
   return descriptor;
 }
 
-const ViewDescriptor& ServerReceivedMessagesPerRpcHour() {
+const ViewDescriptor &ServerReceivedMessagesPerRpcHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/received_messages_per_rpc/hour")

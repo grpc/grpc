@@ -36,18 +36,18 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static char* workarounds_arg[GRPC_MAX_WORKAROUND_ID] = {
-    const_cast<char*>(GRPC_ARG_WORKAROUND_CRONET_COMPRESSION)};
+static char *workarounds_arg[GRPC_MAX_WORKAROUND_ID] = {
+    const_cast<char *>(GRPC_ARG_WORKAROUND_CRONET_COMPRESSION)};
 
 struct fullstack_fixture_data {
   std::string localaddr;
 };
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    grpc_channel_args * /*client_args*/, grpc_channel_args * /*server_args*/) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
-  fullstack_fixture_data* ffd = new fullstack_fixture_data();
+  fullstack_fixture_data *ffd = new fullstack_fixture_data();
   memset(&f, 0, sizeof(f));
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
   f.fixture_data = ffd;
@@ -56,28 +56,28 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   return f;
 }
 
-void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
-                                  grpc_channel_args* client_args) {
-  fullstack_fixture_data* ffd =
-      static_cast<fullstack_fixture_data*>(f->fixture_data);
+void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
+                                  grpc_channel_args *client_args) {
+  fullstack_fixture_data *ffd =
+      static_cast<fullstack_fixture_data *>(f->fixture_data);
   f->client = grpc_insecure_channel_create(ffd->localaddr.c_str(), client_args,
                                            nullptr);
   GPR_ASSERT(f->client);
 }
 
-void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
-                                  grpc_channel_args* server_args) {
+void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
+                                  grpc_channel_args *server_args) {
   int i;
   grpc_core::ExecCtx exec_ctx;
-  fullstack_fixture_data* ffd =
-      static_cast<fullstack_fixture_data*>(f->fixture_data);
+  fullstack_fixture_data *ffd =
+      static_cast<fullstack_fixture_data *>(f->fixture_data);
   grpc_arg args[GRPC_MAX_WORKAROUND_ID];
   for (i = 0; i < GRPC_MAX_WORKAROUND_ID; i++) {
     args[i].key = workarounds_arg[i];
     args[i].type = GRPC_ARG_INTEGER;
     args[i].value.integer = 1;
   }
-  grpc_channel_args* server_args_new =
+  grpc_channel_args *server_args_new =
       grpc_channel_args_copy_and_add(server_args, args, GRPC_MAX_WORKAROUND_ID);
   if (f->server) {
     grpc_server_destroy(f->server);
@@ -90,9 +90,9 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
   grpc_channel_args_destroy(server_args_new);
 }
 
-void chttp2_tear_down_fullstack(grpc_end2end_test_fixture* f) {
-  fullstack_fixture_data* ffd =
-      static_cast<fullstack_fixture_data*>(f->fixture_data);
+void chttp2_tear_down_fullstack(grpc_end2end_test_fixture *f) {
+  fullstack_fixture_data *ffd =
+      static_cast<fullstack_fixture_data *>(f->fixture_data);
   delete ffd;
 }
 
@@ -107,7 +107,7 @@ static grpc_end2end_test_config configs[] = {
      chttp2_init_server_fullstack, chttp2_tear_down_fullstack},
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   size_t i;
 
   grpc::testing::TestEnvironment env(argc, argv);

@@ -31,8 +31,8 @@ class BaseActivation {
   BaseActivation() = default;
 
   // Non-copyable/non-assignable
-  BaseActivation(const BaseActivation&) = delete;
-  BaseActivation& operator=(const BaseActivation&) = delete;
+  BaseActivation(const BaseActivation &) = delete;
+  BaseActivation &operator=(const BaseActivation &) = delete;
 };
 
 // Instance of Activation class is used by evaluator.
@@ -44,11 +44,11 @@ class Activation : public BaseActivation {
   Activation() = default;
 
   // Non-copyable/non-assignable
-  Activation(const Activation&) = delete;
-  Activation& operator=(const Activation&) = delete;
+  Activation(const Activation &) = delete;
+  Activation &operator=(const Activation &) = delete;
 
   // Insert value into Activation.
-  void InsertValue(absl::string_view /*name*/, const CelValue& /*value*/) {}
+  void InsertValue(absl::string_view /*name*/, const CelValue & /*value*/) {}
 };
 
 }  // namespace mock_cel

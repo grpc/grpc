@@ -31,9 +31,9 @@ namespace grpc_core {
 
 class HandshakerFactory {
  public:
-  virtual void AddHandshakers(const grpc_channel_args* args,
-                              grpc_pollset_set* interested_parties,
-                              HandshakeManager* handshake_mgr) = 0;
+  virtual void AddHandshakers(const grpc_channel_args *args,
+                              grpc_pollset_set *interested_parties,
+                              HandshakeManager *handshake_mgr) = 0;
   virtual ~HandshakerFactory() = default;
 };
 

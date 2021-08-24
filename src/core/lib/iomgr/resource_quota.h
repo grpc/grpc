@@ -72,38 +72,38 @@ constexpr size_t GRPC_RESOURCE_QUOTA_CHANNEL_SIZE = 50 * 1024;
 constexpr size_t GRPC_SLICE_ALLOCATOR_MIN_ALLOCATE_SIZE = 256;
 constexpr size_t GRPC_SLICE_ALLOCATOR_MAX_ALLOCATE_SIZE = 4 * 1024 * 1024;
 
-grpc_resource_quota* grpc_resource_quota_ref_internal(
-    grpc_resource_quota* resource_quota);
-void grpc_resource_quota_unref_internal(grpc_resource_quota* resource_quota);
-grpc_resource_quota* grpc_resource_quota_from_channel_args(
-    const grpc_channel_args* channel_args, bool create = true);
+grpc_resource_quota *grpc_resource_quota_ref_internal(
+    grpc_resource_quota *resource_quota);
+void grpc_resource_quota_unref_internal(grpc_resource_quota *resource_quota);
+grpc_resource_quota *grpc_resource_quota_from_channel_args(
+    const grpc_channel_args *channel_args, bool create = true);
 
 /* Return a number indicating current memory pressure:
    0.0 ==> no memory usage
    1.0 ==> maximum memory usage */
 double grpc_resource_quota_get_memory_pressure(
-    grpc_resource_quota* resource_quota);
+    grpc_resource_quota *resource_quota);
 
-size_t grpc_resource_quota_peek_size(grpc_resource_quota* resource_quota);
+size_t grpc_resource_quota_peek_size(grpc_resource_quota *resource_quota);
 
 typedef struct grpc_resource_user grpc_resource_user;
 
-grpc_resource_user* grpc_resource_user_create(
-    grpc_resource_quota* resource_quota, absl::string_view name);
+grpc_resource_user *grpc_resource_user_create(
+    grpc_resource_quota *resource_quota, absl::string_view name);
 
 /* Returns a borrowed reference to the underlying resource quota for this
    resource user. */
-grpc_resource_quota* grpc_resource_user_quota(
-    grpc_resource_user* resource_user);
+grpc_resource_quota *grpc_resource_user_quota(
+    grpc_resource_user *resource_user);
 
-void grpc_resource_user_ref(grpc_resource_user* resource_user);
-void grpc_resource_user_unref(grpc_resource_user* resource_user);
-void grpc_resource_user_shutdown(grpc_resource_user* resource_user);
+void grpc_resource_user_ref(grpc_resource_user *resource_user);
+void grpc_resource_user_unref(grpc_resource_user *resource_user);
+void grpc_resource_user_shutdown(grpc_resource_user *resource_user);
 
 /* Attempts to get quota from the resource_user to create 'thread_count' number
  * of threads. Returns true if successful (i.e the caller is now free to create
  * 'thread_count' number of threads) or false if quota is not available */
-bool grpc_resource_user_allocate_threads(grpc_resource_user* resource_user,
+bool grpc_resource_user_allocate_threads(grpc_resource_user *resource_user,
                                          int thread_count);
 /* Releases 'thread_count' worth of quota back to the resource user. The quota
  * should have been previously obtained successfully by calling
@@ -113,14 +113,14 @@ bool grpc_resource_user_allocate_threads(grpc_resource_user* resource_user,
  * grpc_resource_user_allocate_threads() and grpc_resource_user_free_threads()
  * calls. The only requirement is that the number of threads allocated should
  * all be eventually released */
-void grpc_resource_user_free_threads(grpc_resource_user* resource_user,
+void grpc_resource_user_free_threads(grpc_resource_user *resource_user,
                                      int thread_count);
 
 /* Allocates from the resource user 'size' worth of memory if this won't exceed
  * the resource quota's total size. Returns whether the allocation is done
  * successfully. If allocated successfully, the memory should be freed by the
  * caller eventually. */
-bool grpc_resource_user_safe_alloc(grpc_resource_user* resource_user,
+bool grpc_resource_user_safe_alloc(grpc_resource_user *resource_user,
                                    size_t size);
 /* Allocates from the resource user 'size' worth of memory.
  * If optional_on_done is NULL, then allocate immediately. This may push the
@@ -132,19 +132,19 @@ bool grpc_resource_user_safe_alloc(grpc_resource_user* resource_user,
  * eventually. Or it may be scheduled with an error, in which case the caller
  * fails to allocate the memory and shouldn't free the memory.
  */
-bool grpc_resource_user_alloc(grpc_resource_user* resource_user, size_t size,
-                              grpc_closure* optional_on_done)
+bool grpc_resource_user_alloc(grpc_resource_user *resource_user, size_t size,
+                              grpc_closure *optional_on_done)
     GRPC_MUST_USE_RESULT;
 /* Release memory back to the quota */
-void grpc_resource_user_free(grpc_resource_user* resource_user, size_t size);
+void grpc_resource_user_free(grpc_resource_user *resource_user, size_t size);
 /* Post a memory reclaimer to the resource user. Only one benign and one
    destructive reclaimer can be posted at once. When executed, the reclaimer
    MUST call grpc_resource_user_finish_reclamation before it completes, to
    return control to the resource quota. */
-void grpc_resource_user_post_reclaimer(grpc_resource_user* resource_user,
-                                       bool destructive, grpc_closure* closure);
+void grpc_resource_user_post_reclaimer(grpc_resource_user *resource_user,
+                                       bool destructive, grpc_closure *closure);
 /* Finish a reclamation step */
-void grpc_resource_user_finish_reclamation(grpc_resource_user* resource_user);
+void grpc_resource_user_finish_reclamation(grpc_resource_user *resource_user);
 
 /* Helper to allocate slices from a resource user */
 typedef struct grpc_slice_allocator {
@@ -161,9 +161,9 @@ typedef struct grpc_slice_allocator {
   /* Maximum size that can be allocated. */
   size_t max_length;
   /* Destination for slices to allocate on the current request */
-  grpc_slice_buffer* dest;
+  grpc_slice_buffer *dest;
   /* Parent resource user */
-  grpc_resource_user* resource_user;
+  grpc_resource_user *resource_user;
 } grpc_slice_allocator;
 
 /// Constructs a slice allocator using configuration from \a args.
@@ -173,12 +173,12 @@ typedef struct grpc_slice_allocator {
 /// \a grpc_slice_allocator_allocate for details on how those values are used.
 ///
 /// Caller is responsible for calling \a grpc_slice_allocator_destroy.
-grpc_slice_allocator* grpc_slice_allocator_create(
-    grpc_resource_quota* resource_quota, absl::string_view name,
-    const grpc_channel_args* args = nullptr);
+grpc_slice_allocator *grpc_slice_allocator_create(
+    grpc_resource_quota *resource_quota, absl::string_view name,
+    const grpc_channel_args *args = nullptr);
 
 /* Cleans up after a slice_allocator. */
-void grpc_slice_allocator_destroy(grpc_slice_allocator* slice_allocator);
+void grpc_slice_allocator_destroy(grpc_slice_allocator *slice_allocator);
 
 enum class grpc_slice_allocator_intent {
   kDefault,    // Default intent allocates exactly the memory required.
@@ -192,35 +192,35 @@ enum class grpc_slice_allocator_intent {
    function. If true, the \a cb will not be called. The \a intent argument
    allows allocation of smaller slices if memory pressure is high; the size is
    implementation-dependent. */
-bool grpc_slice_allocator_allocate(grpc_slice_allocator* slice_allocator,
+bool grpc_slice_allocator_allocate(grpc_slice_allocator *slice_allocator,
                                    size_t length, size_t count,
                                    grpc_slice_allocator_intent intent,
-                                   grpc_slice_buffer* dest,
+                                   grpc_slice_buffer *dest,
                                    grpc_iomgr_cb_func cb,
-                                   void* p) GRPC_MUST_USE_RESULT;
+                                   void *p) GRPC_MUST_USE_RESULT;
 
 /* Allows creation of slice_allocators (thus resource_users) without calling
  * code having to understand resource_user concepts. */
 typedef struct grpc_slice_allocator_factory {
   /* Parent resource quota */
-  grpc_resource_quota* resource_quota;
+  grpc_resource_quota *resource_quota;
 } grpc_slice_allocator_factory;
 
 /* Constructs a slice allocator factory. Takes ownership of a ref on
  * \a resource_quota from the caller. Caller is responsible for calling \a
  * grpc_slice_allocator_factory_destroy. */
-grpc_slice_allocator_factory* grpc_slice_allocator_factory_create(
-    grpc_resource_quota* resource_quota);
+grpc_slice_allocator_factory *grpc_slice_allocator_factory_create(
+    grpc_resource_quota *resource_quota);
 
 /* Cleans up after a slice_allocator. */
 void grpc_slice_allocator_factory_destroy(
-    grpc_slice_allocator_factory* slice_allocator_factory);
+    grpc_slice_allocator_factory *slice_allocator_factory);
 
 /** A factory method to create and initialize a slice_allocator using the
   factory's resource quota. \a name is the resulting resource_user name. \a args
   are used to configure the \a slice_allocator */
-grpc_slice_allocator* grpc_slice_allocator_factory_create_slice_allocator(
-    grpc_slice_allocator_factory* slice_allocator_factory,
-    absl::string_view name, grpc_channel_args* args = nullptr);
+grpc_slice_allocator *grpc_slice_allocator_factory_create_slice_allocator(
+    grpc_slice_allocator_factory *slice_allocator_factory,
+    absl::string_view name, grpc_channel_args *args = nullptr);
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H */

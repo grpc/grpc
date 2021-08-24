@@ -32,9 +32,9 @@ static int got_sigint = 0;
 
 static void sigint_handler(int /*x*/) { got_sigint = 1; }
 
-const char* bad_ssl_addr(int argc, char** argv) {
-  gpr_cmdline* cl;
-  const char* addr = nullptr;
+const char *bad_ssl_addr(int argc, char **argv) {
+  gpr_cmdline *cl;
+  const char *addr = nullptr;
   cl = gpr_cmdline_create("test server");
   gpr_cmdline_add_string(cl, "bind", "Bind host:port", &addr);
   gpr_cmdline_parse(cl, argc, argv);
@@ -43,17 +43,17 @@ const char* bad_ssl_addr(int argc, char** argv) {
   return addr;
 }
 
-void bad_ssl_run(grpc_server* server) {
+void bad_ssl_run(grpc_server *server) {
   int shutdown_started = 0;
   int shutdown_finished = 0;
   grpc_event ev;
   grpc_call_error error;
-  grpc_call* s = nullptr;
+  grpc_call *s = nullptr;
   grpc_call_details call_details;
   grpc_metadata_array request_metadata_recv;
 
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-  grpc_completion_queue* shutdown_cq;
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_completion_queue *shutdown_cq;
 
   grpc_call_details_init(&call_details);
   grpc_metadata_array_init(&request_metadata_recv);
@@ -63,7 +63,7 @@ void bad_ssl_run(grpc_server* server) {
 
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
-                                   reinterpret_cast<void*>(1));
+                                   reinterpret_cast<void *>(1));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   signal(SIGINT, sigint_handler);
@@ -87,7 +87,7 @@ void bad_ssl_run(grpc_server* server) {
         nullptr);
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
-        GPR_ASSERT(ev.tag == (void*)1);
+        GPR_ASSERT(ev.tag == (void *)1);
         GPR_ASSERT(ev.success == 0);
         break;
       case GRPC_QUEUE_SHUTDOWN:

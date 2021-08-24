@@ -49,7 +49,7 @@
 namespace grpc {
 namespace testing {
 
-static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
+static std::unique_ptr<Client> CreateClient(const ClientConfig &config) {
   gpr_log(GPR_INFO, "Starting client of type %s %s %d",
           ClientType_Name(config.client_type()).c_str(),
           RpcType_Name(config.rpc_type()).c_str(),
@@ -69,7 +69,7 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
   }
 }
 
-static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
+static std::unique_ptr<Server> CreateServer(const ServerConfig &config) {
   gpr_log(GPR_INFO, "Starting server of type %s",
           ServerType_Name(config.server_type()).c_str());
 
@@ -89,7 +89,7 @@ static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
 
 class ScopedProfile final {
  public:
-  ScopedProfile(const char* filename, bool enable) : enable_(enable) {
+  ScopedProfile(const char *filename, bool enable) : enable_(enable) {
     if (enable_) grpc_profiler_start(filename);
   }
   ~ScopedProfile() {
@@ -102,12 +102,12 @@ class ScopedProfile final {
 
 class WorkerServiceImpl final : public WorkerService::Service {
  public:
-  WorkerServiceImpl(int server_port, QpsWorker* worker)
+  WorkerServiceImpl(int server_port, QpsWorker *worker)
       : acquired_(false), server_port_(server_port), worker_(worker) {}
 
   Status RunClient(
-      ServerContext* ctx,
-      ServerReaderWriter<ClientStatus, ClientArgs>* stream) override {
+      ServerContext *ctx,
+      ServerReaderWriter<ClientStatus, ClientArgs> *stream) override {
     gpr_log(GPR_INFO, "RunClient: Entering");
     InstanceGuard g(this);
     if (!g.Acquired()) {
@@ -121,8 +121,8 @@ class WorkerServiceImpl final : public WorkerService::Service {
   }
 
   Status RunServer(
-      ServerContext* ctx,
-      ServerReaderWriter<ServerStatus, ServerArgs>* stream) override {
+      ServerContext *ctx,
+      ServerReaderWriter<ServerStatus, ServerArgs> *stream) override {
     gpr_log(GPR_INFO, "RunServer: Entering");
     InstanceGuard g(this);
     if (!g.Acquired()) {
@@ -135,13 +135,13 @@ class WorkerServiceImpl final : public WorkerService::Service {
     return ret;
   }
 
-  Status CoreCount(ServerContext* /*ctx*/, const CoreRequest*,
-                   CoreResponse* resp) override {
+  Status CoreCount(ServerContext * /*ctx*/, const CoreRequest *,
+                   CoreResponse *resp) override {
     resp->set_cores(gpr_cpu_num_cores());
     return Status::OK;
   }
 
-  Status QuitWorker(ServerContext* /*ctx*/, const Void*, Void*) override {
+  Status QuitWorker(ServerContext * /*ctx*/, const Void *, Void *) override {
     InstanceGuard g(this);
     if (!g.Acquired()) {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "Quitting worker busy");
@@ -155,7 +155,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
   // Protect against multiple clients using this worker at once.
   class InstanceGuard {
    public:
-    explicit InstanceGuard(WorkerServiceImpl* impl)
+    explicit InstanceGuard(WorkerServiceImpl *impl)
         : impl_(impl), acquired_(impl->TryAcquireInstance()) {}
     ~InstanceGuard() {
       if (acquired_) {
@@ -166,7 +166,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
     bool Acquired() const { return acquired_; }
 
    private:
-    WorkerServiceImpl* const impl_;
+    WorkerServiceImpl *const impl_;
     const bool acquired_;
   };
 
@@ -183,8 +183,8 @@ class WorkerServiceImpl final : public WorkerService::Service {
     acquired_ = false;
   }
 
-  Status RunClientBody(ServerContext* /*ctx*/,
-                       ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
+  Status RunClientBody(ServerContext * /*ctx*/,
+                       ServerReaderWriter<ClientStatus, ClientArgs> *stream) {
     ClientArgs args;
     if (!stream->Read(&args)) {
       return Status(StatusCode::INVALID_ARGUMENT, "Couldn't read args");
@@ -223,8 +223,8 @@ class WorkerServiceImpl final : public WorkerService::Service {
     return Status::OK;
   }
 
-  Status RunServerBody(ServerContext* /*ctx*/,
-                       ServerReaderWriter<ServerStatus, ServerArgs>* stream) {
+  Status RunServerBody(ServerContext * /*ctx*/,
+                       ServerReaderWriter<ServerStatus, ServerArgs> *stream) {
     ServerArgs args;
     if (!stream->Read(&args)) {
       return Status(StatusCode::INVALID_ARGUMENT, "Couldn't read server args");
@@ -271,11 +271,11 @@ class WorkerServiceImpl final : public WorkerService::Service {
   std::mutex mu_;
   bool acquired_;
   int server_port_;
-  QpsWorker* worker_;
+  QpsWorker *worker_;
 };
 
 QpsWorker::QpsWorker(int driver_port, int server_port,
-                     const std::string& credential_type) {
+                     const std::string &credential_type) {
   impl_ = absl::make_unique<WorkerServiceImpl>(server_port, this);
   gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 

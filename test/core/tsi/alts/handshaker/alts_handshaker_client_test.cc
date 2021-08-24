@@ -53,19 +53,19 @@ using grpc_core::internal::alts_handshaker_client_set_cb_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_grpc_caller_for_testing;
 
 typedef struct alts_handshaker_client_test_config {
-  grpc_channel* channel;
-  grpc_completion_queue* cq;
-  alts_handshaker_client* client;
-  alts_handshaker_client* server;
+  grpc_channel *channel;
+  grpc_completion_queue *cq;
+  alts_handshaker_client *client;
+  alts_handshaker_client *server;
   grpc_slice out_frame;
 } alts_handshaker_client_test_config;
 
 static void validate_rpc_protocol_versions(
-    const grpc_gcp_RpcProtocolVersions* versions) {
+    const grpc_gcp_RpcProtocolVersions *versions) {
   GPR_ASSERT(versions != nullptr);
-  const grpc_gcp_RpcProtocolVersions_Version* max_version =
+  const grpc_gcp_RpcProtocolVersions_Version *max_version =
       grpc_gcp_RpcProtocolVersions_max_rpc_version(versions);
-  const grpc_gcp_RpcProtocolVersions_Version* min_version =
+  const grpc_gcp_RpcProtocolVersions_Version *min_version =
       grpc_gcp_RpcProtocolVersions_min_rpc_version(versions);
   GPR_ASSERT(grpc_gcp_RpcProtocolVersions_Version_major(max_version) ==
              kMaxRpcVersionMajor);
@@ -78,11 +78,11 @@ static void validate_rpc_protocol_versions(
 }
 
 static void validate_target_identities(
-    const grpc_gcp_Identity* const* target_identities,
+    const grpc_gcp_Identity *const *target_identities,
     size_t target_identities_count) {
   GPR_ASSERT(target_identities_count == 2);
-  const grpc_gcp_Identity* identity1 = target_identities[1];
-  const grpc_gcp_Identity* identity2 = target_identities[0];
+  const grpc_gcp_Identity *identity1 = target_identities[1];
+  const grpc_gcp_Identity *identity2 = target_identities[0];
   GPR_ASSERT(upb_strview_eql(
       grpc_gcp_Identity_service_account(identity1),
       upb_strview_makez(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT1)));
@@ -95,11 +95,11 @@ static void validate_target_identities(
  * Validate if grpc operation data is correctly populated with the fields of
  * ALTS handshaker client.
  */
-static bool validate_op(alts_handshaker_client* c, const grpc_op* op,
+static bool validate_op(alts_handshaker_client *c, const grpc_op *op,
                         size_t nops, bool is_start) {
   GPR_ASSERT(c != nullptr && op != nullptr && nops != 0);
   bool ok = true;
-  grpc_op* start_op = const_cast<grpc_op*>(op);
+  grpc_op *start_op = const_cast<grpc_op *>(op);
   if (is_start) {
     ok &= (op->op == GRPC_OP_SEND_INITIAL_METADATA);
     ok &= (op->data.send_initial_metadata.count == 0);
@@ -124,20 +124,20 @@ static bool validate_op(alts_handshaker_client* c, const grpc_op* op,
   return ok;
 }
 
-static grpc_gcp_HandshakerReq* deserialize_handshaker_req(
-    grpc_byte_buffer* buffer, upb_arena* arena) {
+static grpc_gcp_HandshakerReq *deserialize_handshaker_req(
+    grpc_byte_buffer *buffer, upb_arena *arena) {
   GPR_ASSERT(buffer != nullptr);
   grpc_byte_buffer_reader bbr;
   GPR_ASSERT(grpc_byte_buffer_reader_init(&bbr, buffer));
   grpc_slice slice = grpc_byte_buffer_reader_readall(&bbr);
-  grpc_gcp_HandshakerReq* req = grpc_gcp_handshaker_req_decode(slice, arena);
+  grpc_gcp_HandshakerReq *req = grpc_gcp_handshaker_req_decode(slice, arena);
   GPR_ASSERT(req != nullptr);
   grpc_slice_unref(slice);
   grpc_byte_buffer_reader_destroy(&bbr);
   return req;
 }
 
-static bool is_recv_status_op(const grpc_op* op, size_t nops) {
+static bool is_recv_status_op(const grpc_op *op, size_t nops) {
   return nops == 1 && op->op == GRPC_OP_RECV_STATUS_ON_CLIENT;
 }
 
@@ -145,10 +145,10 @@ static bool is_recv_status_op(const grpc_op* op, size_t nops) {
  * A mock grpc_caller used to check if client_start, server_start, and next
  * operations correctly handle invalid arguments. It should not be called.
  */
-static grpc_call_error check_must_not_be_called(grpc_call* /*call*/,
-                                                const grpc_op* /*ops*/,
+static grpc_call_error check_must_not_be_called(grpc_call * /*call*/,
+                                                const grpc_op * /*ops*/,
                                                 size_t /*nops*/,
-                                                grpc_closure* /*tag*/) {
+                                                grpc_closure * /*tag*/) {
   GPR_ASSERT(0);
 }
 
@@ -158,38 +158,38 @@ static grpc_call_error check_must_not_be_called(grpc_call* /*call*/,
  * handshake_security_protocol, application_protocol, record_protocol and
  * max_frame_size, and op is correctly populated.
  */
-static grpc_call_error check_client_start_success(grpc_call* /*call*/,
-                                                  const grpc_op* op,
+static grpc_call_error check_client_start_success(grpc_call * /*call*/,
+                                                  const grpc_op *op,
                                                   size_t nops,
-                                                  grpc_closure* closure) {
+                                                  grpc_closure *closure) {
   // RECV_STATUS ops are asserted to always succeed
   if (is_recv_status_op(op, nops)) {
     return GRPC_CALL_OK;
   }
   upb::Arena arena;
-  alts_handshaker_client* client =
-      static_cast<alts_handshaker_client*>(closure->cb_arg);
+  alts_handshaker_client *client =
+      static_cast<alts_handshaker_client *>(closure->cb_arg);
   GPR_ASSERT(alts_handshaker_client_get_closure_for_testing(client) == closure);
-  grpc_gcp_HandshakerReq* req = deserialize_handshaker_req(
+  grpc_gcp_HandshakerReq *req = deserialize_handshaker_req(
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
-  const grpc_gcp_StartClientHandshakeReq* client_start =
+  const grpc_gcp_StartClientHandshakeReq *client_start =
       grpc_gcp_HandshakerReq_client_start(req);
   GPR_ASSERT(grpc_gcp_StartClientHandshakeReq_handshake_security_protocol(
                  client_start) == grpc_gcp_ALTS);
-  upb_strview const* application_protocols =
+  upb_strview const *application_protocols =
       grpc_gcp_StartClientHandshakeReq_application_protocols(client_start,
                                                              nullptr);
   GPR_ASSERT(upb_strview_eql(application_protocols[0],
                              upb_strview_makez(ALTS_APPLICATION_PROTOCOL)));
-  upb_strview const* record_protocols =
+  upb_strview const *record_protocols =
       grpc_gcp_StartClientHandshakeReq_record_protocols(client_start, nullptr);
   GPR_ASSERT(upb_strview_eql(record_protocols[0],
                              upb_strview_makez(ALTS_RECORD_PROTOCOL)));
-  const grpc_gcp_RpcProtocolVersions* rpc_protocol_versions =
+  const grpc_gcp_RpcProtocolVersions *rpc_protocol_versions =
       grpc_gcp_StartClientHandshakeReq_rpc_versions(client_start);
   validate_rpc_protocol_versions(rpc_protocol_versions);
   size_t target_identities_count;
-  const grpc_gcp_Identity* const* target_identities =
+  const grpc_gcp_Identity *const *target_identities =
       grpc_gcp_StartClientHandshakeReq_target_identities(
           client_start, &target_identities_count);
   validate_target_identities(target_identities, target_identities_count);
@@ -208,33 +208,33 @@ static grpc_call_error check_client_start_success(grpc_call* /*call*/,
  * handshake_security_protocol, application_protocol, record_protocol and
  * max_frame_size, and op is correctly populated.
  */
-static grpc_call_error check_server_start_success(grpc_call* /*call*/,
-                                                  const grpc_op* op,
+static grpc_call_error check_server_start_success(grpc_call * /*call*/,
+                                                  const grpc_op *op,
                                                   size_t nops,
-                                                  grpc_closure* closure) {
+                                                  grpc_closure *closure) {
   // RECV_STATUS ops are asserted to always succeed
   if (is_recv_status_op(op, nops)) {
     return GRPC_CALL_OK;
   }
   upb::Arena arena;
-  alts_handshaker_client* client =
-      static_cast<alts_handshaker_client*>(closure->cb_arg);
+  alts_handshaker_client *client =
+      static_cast<alts_handshaker_client *>(closure->cb_arg);
   GPR_ASSERT(alts_handshaker_client_get_closure_for_testing(client) == closure);
-  grpc_gcp_HandshakerReq* req = deserialize_handshaker_req(
+  grpc_gcp_HandshakerReq *req = deserialize_handshaker_req(
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
-  const grpc_gcp_StartServerHandshakeReq* server_start =
+  const grpc_gcp_StartServerHandshakeReq *server_start =
       grpc_gcp_HandshakerReq_server_start(req);
-  upb_strview const* application_protocols =
+  upb_strview const *application_protocols =
       grpc_gcp_StartServerHandshakeReq_application_protocols(server_start,
                                                              nullptr);
   GPR_ASSERT(upb_strview_eql(application_protocols[0],
                              upb_strview_makez(ALTS_APPLICATION_PROTOCOL)));
   GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_handshake_parameters_size(
                  server_start) == 1);
-  grpc_gcp_ServerHandshakeParameters* value;
+  grpc_gcp_ServerHandshakeParameters *value;
   GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_handshake_parameters_get(
       server_start, grpc_gcp_ALTS, &value));
-  upb_strview const* record_protocols =
+  upb_strview const *record_protocols =
       grpc_gcp_ServerHandshakeParameters_record_protocols(value, nullptr);
   GPR_ASSERT(upb_strview_eql(record_protocols[0],
                              upb_strview_makez(ALTS_RECORD_PROTOCOL)));
@@ -251,16 +251,16 @@ static grpc_call_error check_server_start_success(grpc_call* /*call*/,
  * checks if the next handshaker request is populated with correct information,
  * and op is correctly populated.
  */
-static grpc_call_error check_next_success(grpc_call* /*call*/,
-                                          const grpc_op* op, size_t nops,
-                                          grpc_closure* closure) {
+static grpc_call_error check_next_success(grpc_call * /*call*/,
+                                          const grpc_op *op, size_t nops,
+                                          grpc_closure *closure) {
   upb::Arena arena;
-  alts_handshaker_client* client =
-      static_cast<alts_handshaker_client*>(closure->cb_arg);
+  alts_handshaker_client *client =
+      static_cast<alts_handshaker_client *>(closure->cb_arg);
   GPR_ASSERT(alts_handshaker_client_get_closure_for_testing(client) == closure);
-  grpc_gcp_HandshakerReq* req = deserialize_handshaker_req(
+  grpc_gcp_HandshakerReq *req = deserialize_handshaker_req(
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
-  const grpc_gcp_NextHandshakeMessageReq* next =
+  const grpc_gcp_NextHandshakeMessageReq *next =
       grpc_gcp_HandshakerReq_next(req);
   GPR_ASSERT(upb_strview_eql(
       grpc_gcp_NextHandshakeMessageReq_in_bytes(next),
@@ -274,9 +274,9 @@ static grpc_call_error check_next_success(grpc_call* /*call*/,
  * operations correctly handle the situation when the grpc call made to the
  * handshaker service fails.
  */
-static grpc_call_error check_grpc_call_failure(grpc_call* /*call*/,
-                                               const grpc_op* op, size_t nops,
-                                               grpc_closure* /*tag*/) {
+static grpc_call_error check_grpc_call_failure(grpc_call * /*call*/,
+                                               const grpc_op *op, size_t nops,
+                                               grpc_closure * /*tag*/) {
   // RECV_STATUS ops are asserted to always succeed
   if (is_recv_status_op(op, nops)) {
     return GRPC_CALL_OK;
@@ -284,9 +284,9 @@ static grpc_call_error check_grpc_call_failure(grpc_call* /*call*/,
   return GRPC_CALL_ERROR;
 }
 
-static grpc_alts_credentials_options* create_credentials_options(
+static grpc_alts_credentials_options *create_credentials_options(
     bool is_client) {
-  grpc_alts_credentials_options* options =
+  grpc_alts_credentials_options *options =
       is_client ? grpc_alts_credentials_client_options_create()
                 : grpc_alts_credentials_server_options_create();
   if (is_client) {
@@ -295,7 +295,7 @@ static grpc_alts_credentials_options* create_credentials_options(
     grpc_alts_credentials_client_options_add_target_service_account(
         options, ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2);
   }
-  grpc_gcp_rpc_protocol_versions* versions = &options->rpc_versions;
+  grpc_gcp_rpc_protocol_versions *versions = &options->rpc_versions;
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(
       versions, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(
@@ -303,16 +303,16 @@ static grpc_alts_credentials_options* create_credentials_options(
   return options;
 }
 
-static alts_handshaker_client_test_config* create_config() {
-  alts_handshaker_client_test_config* config =
-      static_cast<alts_handshaker_client_test_config*>(
+static alts_handshaker_client_test_config *create_config() {
+  alts_handshaker_client_test_config *config =
+      static_cast<alts_handshaker_client_test_config *>(
           gpr_zalloc(sizeof(*config)));
   config->channel = grpc_insecure_channel_create(
       ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING, nullptr, nullptr);
   config->cq = grpc_completion_queue_create_for_next(nullptr);
-  grpc_alts_credentials_options* client_options =
+  grpc_alts_credentials_options *client_options =
       create_credentials_options(true /* is_client */);
-  grpc_alts_credentials_options* server_options =
+  grpc_alts_credentials_options *server_options =
       create_credentials_options(false /*  is_client */);
   config->server = alts_grpc_handshaker_client_create(
       nullptr, config->channel, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
@@ -335,7 +335,7 @@ static alts_handshaker_client_test_config* create_config() {
   return config;
 }
 
-static void destroy_config(alts_handshaker_client_test_config* config) {
+static void destroy_config(alts_handshaker_client_test_config *config) {
   if (config == nullptr) {
     return;
   }
@@ -349,7 +349,7 @@ static void destroy_config(alts_handshaker_client_test_config* config) {
 
 static void schedule_request_invalid_arg_test() {
   /* Initialization. */
-  alts_handshaker_client_test_config* config = create_config();
+  alts_handshaker_client_test_config *config = create_config();
   /* Tests. */
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
                                                      check_must_not_be_called);
@@ -389,7 +389,7 @@ static void schedule_request_invalid_arg_test() {
 
 static void schedule_request_success_test() {
   /* Initialization. */
-  alts_handshaker_client_test_config* config = create_config();
+  alts_handshaker_client_test_config *config = create_config();
   /* Check client_start success. */
   alts_handshaker_client_set_grpc_caller_for_testing(
       config->client, check_client_start_success);
@@ -438,15 +438,15 @@ static void schedule_request_success_test() {
 }
 
 static void tsi_cb_assert_tsi_internal_error(
-    tsi_result status, void* /*user_data*/,
-    const unsigned char* /*bytes_to_send*/, size_t /*bytes_to_send_size*/,
-    tsi_handshaker_result* /*result*/) {
+    tsi_result status, void * /*user_data*/,
+    const unsigned char * /*bytes_to_send*/, size_t /*bytes_to_send_size*/,
+    tsi_handshaker_result * /*result*/) {
   GPR_ASSERT(status == TSI_INTERNAL_ERROR);
 }
 
 static void schedule_request_grpc_call_failure_test() {
   /* Initialization. */
-  alts_handshaker_client_test_config* config = create_config();
+  alts_handshaker_client_test_config *config = create_config();
   /* Check client_start failure. */
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
                                                      check_grpc_call_failure);
@@ -494,7 +494,7 @@ static void schedule_request_grpc_call_failure_test() {
   destroy_config(config);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   /* Initialization. */
   grpc_init();

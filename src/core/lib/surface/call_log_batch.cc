@@ -32,8 +32,8 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
-static void add_metadata(const grpc_metadata* md, size_t count,
-                         std::vector<std::string>* b) {
+static void add_metadata(const grpc_metadata *md, size_t count,
+                         std::vector<std::string> *b) {
   if (md == nullptr) {
     b->push_back("(nil)");
     return;
@@ -42,13 +42,13 @@ static void add_metadata(const grpc_metadata* md, size_t count,
     b->push_back("\nkey=");
     b->push_back(std::string(grpc_core::StringViewFromSlice(md[i].key)));
     b->push_back(" value=");
-    char* dump = grpc_dump_slice(md[i].value, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char *dump = grpc_dump_slice(md[i].value, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     b->push_back(dump);
     gpr_free(dump);
   }
 }
 
-static std::string grpc_op_string(const grpc_op* op) {
+static std::string grpc_op_string(const grpc_op *op) {
   std::vector<std::string> parts;
   switch (op->op) {
     case GRPC_OP_SEND_INITIAL_METADATA:
@@ -68,7 +68,7 @@ static std::string grpc_op_string(const grpc_op* op) {
           absl::StrFormat("SEND_STATUS_FROM_SERVER status=%d details=",
                           op->data.send_status_from_server.status));
       if (op->data.send_status_from_server.status_details != nullptr) {
-        char* dump = grpc_dump_slice(
+        char *dump = grpc_dump_slice(
             *op->data.send_status_from_server.status_details, GPR_DUMP_ASCII);
         parts.push_back(dump);
         gpr_free(dump);
@@ -102,8 +102,8 @@ static std::string grpc_op_string(const grpc_op* op) {
   return absl::StrJoin(parts, "");
 }
 
-void grpc_call_log_batch(const char* file, int line, gpr_log_severity severity,
-                         const grpc_op* ops, size_t nops) {
+void grpc_call_log_batch(const char *file, int line, gpr_log_severity severity,
+                         const grpc_op *ops, size_t nops) {
   for (size_t i = 0; i < nops; i++) {
     gpr_log(file, line, severity, "ops[%" PRIuPTR "]: %s", i,
             grpc_op_string(&ops[i]).c_str());

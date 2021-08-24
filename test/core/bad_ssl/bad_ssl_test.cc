@@ -34,13 +34,13 @@
 #include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
-static void run_test(const char* target, size_t nops) {
-  grpc_channel_credentials* ssl_creds =
+static void run_test(const char *target, size_t nops) {
+  grpc_channel_credentials *ssl_creds =
       grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
-  grpc_channel* channel;
-  grpc_call* c;
+  grpc_channel *channel;
+  grpc_call *c;
 
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
@@ -48,16 +48,16 @@ static void run_test(const char* target, size_t nops) {
   grpc_status_code status;
   grpc_call_error error;
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(nullptr);
+  cq_verifier *cqv = cq_verifier_create(cq);
 
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
 
   grpc_arg ssl_name_override = {
       GRPC_ARG_STRING,
-      const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-      {const_cast<char*>("foo.test.google.fr")}};
+      const_cast<char *>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
+      {const_cast<char *>("foo.test.google.fr")}};
   grpc_channel_args args;
 
   args.num_args = 1;
@@ -114,18 +114,18 @@ static void run_test(const char* target, size_t nops) {
   grpc_channel_credentials_release(ssl_creds);
 }
 
-int main(int argc, char** argv) {
-  char* me = argv[0];
-  char* lslash = strrchr(me, '/');
-  char* lunder = strrchr(me, '_');
-  char* tmp;
+int main(int argc, char **argv) {
+  char *me = argv[0];
+  char *lslash = strrchr(me, '/');
+  char *lunder = strrchr(me, '_');
+  char *tmp;
   char root[1024];
   char test[64];
   int port = grpc_pick_unused_port_or_die();
-  char* args[10];
+  char *args[10];
   int status;
   size_t i;
-  gpr_subprocess* svr;
+  gpr_subprocess *svr;
   /* figure out where we are */
   if (lslash) {
     memcpy(root, me, static_cast<size_t>(lslash - me));
@@ -144,10 +144,10 @@ int main(int argc, char** argv) {
   /* start the server */
   gpr_asprintf(&args[0], "%s/bad_ssl_%s_server%s", root, test,
                gpr_subprocess_binary_extension());
-  args[1] = const_cast<char*>("--bind");
+  args[1] = const_cast<char *>("--bind");
   std::string joined = grpc_core::JoinHostPort("::", port);
-  args[2] = const_cast<char*>(joined.c_str());
-  svr = gpr_subprocess_create(4, const_cast<const char**>(args));
+  args[2] = const_cast<char *>(joined.c_str());
+  svr = gpr_subprocess_create(4, const_cast<const char **>(args));
   gpr_free(args[0]);
 
   for (i = 3; i <= 4; i++) {

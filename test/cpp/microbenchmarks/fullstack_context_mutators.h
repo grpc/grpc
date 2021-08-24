@@ -52,15 +52,15 @@ auto MakeVector(size_t length, F f) -> std::vector<decltype(f())> {
 class NoOpMutator {
  public:
   template <class ContextType>
-  explicit NoOpMutator(ContextType* /*context*/) {}
+  explicit NoOpMutator(ContextType * /*context*/) {}
 };
 
 template <int length>
 class RandomBinaryMetadata {
  public:
-  static const std::string& Key() { return kKey; }
+  static const std::string &Key() { return kKey; }
 
-  static const std::string& Value() { return kValues[rand() % kValues.size()]; }
+  static const std::string &Value() { return kValues[rand() % kValues.size()]; }
 
  private:
   static const std::string kKey;
@@ -79,9 +79,9 @@ class RandomBinaryMetadata {
 template <int length>
 class RandomAsciiMetadata {
  public:
-  static const std::string& Key() { return kKey; }
+  static const std::string &Key() { return kKey; }
 
-  static const std::string& Value() { return kValues[rand() % kValues.size()]; }
+  static const std::string &Value() { return kValues[rand() % kValues.size()]; }
 
  private:
   static const std::string kKey;
@@ -100,7 +100,7 @@ class RandomAsciiMetadata {
 template <class Generator, int kNumKeys>
 class Client_AddMetadata : public NoOpMutator {
  public:
-  explicit Client_AddMetadata(ClientContext* context) : NoOpMutator(context) {
+  explicit Client_AddMetadata(ClientContext *context) : NoOpMutator(context) {
     for (int i = 0; i < kNumKeys; i++) {
       context->AddMetadata(Generator::Key(), Generator::Value());
     }
@@ -110,7 +110,7 @@ class Client_AddMetadata : public NoOpMutator {
 template <class Generator, int kNumKeys>
 class Server_AddInitialMetadata : public NoOpMutator {
  public:
-  explicit Server_AddInitialMetadata(ServerContext* context)
+  explicit Server_AddInitialMetadata(ServerContext *context)
       : NoOpMutator(context) {
     for (int i = 0; i < kNumKeys; i++) {
       context->AddInitialMetadata(Generator::Key(), Generator::Value());

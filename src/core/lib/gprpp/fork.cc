@@ -236,8 +236,8 @@ void Fork::AwaitThreads() {
   }
 }
 
-internal::ExecCtxState* Fork::exec_ctx_state_ = nullptr;
-internal::ThreadState* Fork::thread_state_ = nullptr;
+internal::ExecCtxState *Fork::exec_ctx_state_ = nullptr;
+internal::ThreadState *Fork::thread_state_ = nullptr;
 std::atomic<bool> Fork::support_enabled_(false);
 bool Fork::override_enabled_ = false;
 Fork::child_postfork_func Fork::reset_child_polling_engine_ = nullptr;

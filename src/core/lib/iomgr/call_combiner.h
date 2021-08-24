@@ -58,20 +58,20 @@ class CallCombiner {
 #define GRPC_CALL_COMBINER_STOP(call_combiner, reason) \
   (call_combiner)->Stop(__FILE__, __LINE__, (reason))
   /// Starts processing \a closure.
-  void Start(grpc_closure* closure, grpc_error_handle error, const char* file,
-             int line, const char* reason);
+  void Start(grpc_closure *closure, grpc_error_handle error, const char *file,
+             int line, const char *reason);
   /// Yields the call combiner to the next closure in the queue, if any.
-  void Stop(const char* file, int line, const char* reason);
+  void Stop(const char *file, int line, const char *reason);
 #else
 #define GRPC_CALL_COMBINER_START(call_combiner, closure, error, reason) \
   (call_combiner)->Start((closure), (error), (reason))
 #define GRPC_CALL_COMBINER_STOP(call_combiner, reason) \
   (call_combiner)->Stop((reason))
   /// Starts processing \a closure.
-  void Start(grpc_closure* closure, grpc_error_handle error,
-             const char* reason);
+  void Start(grpc_closure *closure, grpc_error_handle error,
+             const char *reason);
   /// Yields the call combiner to the next closure in the queue, if any.
-  void Stop(const char* reason);
+  void Stop(const char *reason);
 #endif
 
   /// Registers \a closure to be invoked when Cancel() is called.
@@ -95,15 +95,15 @@ class CallCombiner {
   /// cancellation; this effectively unregisters the previously set closure.
   /// However, most filters will not need to explicitly unregister their
   /// callbacks, as this is done automatically when the call is destroyed.
-  void SetNotifyOnCancel(grpc_closure* closure);
+  void SetNotifyOnCancel(grpc_closure *closure);
 
   /// Indicates that the call has been cancelled.
   void Cancel(grpc_error_handle error);
 
  private:
-  void ScheduleClosure(grpc_closure* closure, grpc_error_handle error);
+  void ScheduleClosure(grpc_closure *closure, grpc_error_handle error);
 #ifdef GRPC_TSAN_ENABLED
-  static void TsanClosure(void* arg, grpc_error_handle error);
+  static void TsanClosure(void *arg, grpc_error_handle error);
 #endif
 
   gpr_atm size_ = 0;  // size_t, num closures in queue or currently executing
@@ -130,7 +130,7 @@ class CallCombiner {
   };
   RefCountedPtr<TsanLock> tsan_lock_ = MakeRefCounted<TsanLock>();
   grpc_closure tsan_closure_;
-  grpc_closure* original_closure_;
+  grpc_closure *original_closure_;
 #endif
 };
 
@@ -147,7 +147,7 @@ class CallCombinerClosureList {
 
   // Adds a closure to the list.  The closure must eventually result in
   // the call combiner being yielded.
-  void Add(grpc_closure* closure, grpc_error_handle error, const char* reason) {
+  void Add(grpc_closure *closure, grpc_error_handle error, const char *reason) {
     closures_.emplace_back(closure, error, reason);
   }
 
@@ -158,13 +158,13 @@ class CallCombinerClosureList {
   // scheduled via ExecCtx::Run(), which will eventually result
   // in yielding the call combiner.  If the list is empty, then the call
   // combiner will be yielded immediately.
-  void RunClosures(CallCombiner* call_combiner) {
+  void RunClosures(CallCombiner *call_combiner) {
     if (closures_.empty()) {
       GRPC_CALL_COMBINER_STOP(call_combiner, "no closures to schedule");
       return;
     }
     for (size_t i = 1; i < closures_.size(); ++i) {
-      auto& closure = closures_[i];
+      auto &closure = closures_[i];
       GRPC_CALL_COMBINER_START(call_combiner, closure.closure, closure.error,
                                closure.reason);
     }
@@ -183,9 +183,9 @@ class CallCombinerClosureList {
 
   // Runs all closures in the call combiner, but does NOT yield the call
   // combiner.  All closures will be scheduled via GRPC_CALL_COMBINER_START().
-  void RunClosuresWithoutYielding(CallCombiner* call_combiner) {
+  void RunClosuresWithoutYielding(CallCombiner *call_combiner) {
     for (size_t i = 0; i < closures_.size(); ++i) {
-      auto& closure = closures_[i];
+      auto &closure = closures_[i];
       GRPC_CALL_COMBINER_START(call_combiner, closure.closure, closure.error,
                                closure.reason);
     }
@@ -196,12 +196,12 @@ class CallCombinerClosureList {
 
  private:
   struct CallCombinerClosure {
-    grpc_closure* closure;
+    grpc_closure *closure;
     grpc_error_handle error;
-    const char* reason;
+    const char *reason;
 
-    CallCombinerClosure(grpc_closure* closure, grpc_error_handle error,
-                        const char* reason)
+    CallCombinerClosure(grpc_closure *closure, grpc_error_handle error,
+                        const char *reason)
         : closure(closure), error(error), reason(reason) {}
   };
 

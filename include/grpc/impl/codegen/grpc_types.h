@@ -38,11 +38,11 @@ typedef enum {
 } grpc_byte_buffer_type;
 
 typedef struct grpc_byte_buffer {
-  void* reserved;
+  void *reserved;
   grpc_byte_buffer_type type;
   union grpc_byte_buffer_data {
     struct /* internal */ {
-      void* reserved[8];
+      void *reserved[8];
     } reserved;
     struct grpc_compressed_buffer {
       grpc_compression_algorithm compression;
@@ -80,9 +80,9 @@ typedef enum {
 } grpc_arg_type;
 
 typedef struct grpc_arg_pointer_vtable {
-  void* (*copy)(void* p);
-  void (*destroy)(void* p);
-  int (*cmp)(void* p, void* q);
+  void *(*copy)(void *p);
+  void (*destroy)(void *p);
+  int (*cmp)(void *p, void *q);
 } grpc_arg_pointer_vtable;
 
 /** A single argument... each argument has a key and a value
@@ -99,13 +99,13 @@ typedef struct grpc_arg_pointer_vtable {
     their keys so that it's possible to change them in the future. */
 typedef struct {
   grpc_arg_type type;
-  char* key;
+  char *key;
   union grpc_arg_value {
-    char* string;
+    char *string;
     int integer;
     struct grpc_arg_pointer {
-      void* p;
-      const grpc_arg_pointer_vtable* vtable;
+      void *p;
+      const grpc_arg_pointer_vtable *vtable;
     } pointer;
   } value;
 } grpc_arg;
@@ -128,7 +128,7 @@ typedef struct {
     details. */
 typedef struct {
   size_t num_args;
-  grpc_arg* args;
+  grpc_arg *args;
 } grpc_channel_args;
 
 /** \defgroup grpc_arg_keys
@@ -538,7 +538,7 @@ typedef struct grpc_metadata {
       There is no need to initialize them, and they will be set to garbage
       during calls to grpc. */
   struct /* internal */ {
-    void* obfuscated[4];
+    void *obfuscated[4];
   } internal_data;
 } grpc_metadata;
 
@@ -567,13 +567,13 @@ typedef struct grpc_event {
   /** The tag passed to grpc_call_start_batch etc to start this operation.
       *Only* GRPC_OP_COMPLETE has a tag. For all other grpc_completion_type
       values, tag is uninitialized. */
-  void* tag;
+  void *tag;
 } grpc_event;
 
 typedef struct {
   size_t count;
   size_t capacity;
-  grpc_metadata* metadata;
+  grpc_metadata *metadata;
 } grpc_metadata_array;
 
 typedef struct {
@@ -581,7 +581,7 @@ typedef struct {
   grpc_slice host;
   gpr_timespec deadline;
   uint32_t flags;
-  void* reserved;
+  void *reserved;
 } grpc_call_details;
 
 typedef enum {
@@ -637,15 +637,15 @@ typedef struct grpc_op {
   /** Write flags bitset for grpc_begin_messages */
   uint32_t flags;
   /** Reserved for future usage */
-  void* reserved;
+  void *reserved;
   union grpc_op_data {
     /** Reserved for future usage */
     struct /* internal */ {
-      void* reserved[8];
+      void *reserved[8];
     } reserved;
     struct grpc_op_send_initial_metadata {
       size_t count;
-      grpc_metadata* metadata;
+      grpc_metadata *metadata;
       /** If \a is_set, \a compression_level will be used for the call.
        * Otherwise, \a compression_level won't be considered */
       struct grpc_op_send_initial_metadata_maybe_compression_level {
@@ -659,16 +659,16 @@ typedef struct grpc_op {
        * and likely empty.  The original owner should still call
        * grpc_byte_buffer_destroy() on this object however.
        */
-      struct grpc_byte_buffer* send_message;
+      struct grpc_byte_buffer *send_message;
     } send_message;
     struct grpc_op_send_status_from_server {
       size_t trailing_metadata_count;
-      grpc_metadata* trailing_metadata;
+      grpc_metadata *trailing_metadata;
       grpc_status_code status;
       /** optional: set to NULL if no details need sending, non-NULL if they do
        * pointer will not be retained past the start_batch call
        */
-      grpc_slice* status_details;
+      grpc_slice *status_details;
     } send_status_from_server;
     /** ownership of the array is with the caller, but ownership of the elements
         stays with the call object (ie key, value members are owned by the call
@@ -676,7 +676,7 @@ typedef struct grpc_op {
         After the operation completes, call grpc_metadata_array_destroy on this
         value, or reuse it in a future op. */
     struct grpc_op_recv_initial_metadata {
-      grpc_metadata_array* recv_initial_metadata;
+      grpc_metadata_array *recv_initial_metadata;
     } recv_initial_metadata;
     /** ownership of the byte buffer is moved to the caller; the caller must
         call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
@@ -684,7 +684,7 @@ typedef struct grpc_op {
         received instead of a message.
        */
     struct grpc_op_recv_message {
-      struct grpc_byte_buffer** recv_message;
+      struct grpc_byte_buffer **recv_message;
     } recv_message;
     struct grpc_op_recv_status_on_client {
       /** ownership of the array is with the caller, but ownership of the
@@ -692,20 +692,20 @@ typedef struct grpc_op {
           by the call object, trailing_metadata->array is owned by the caller).
           After the operation completes, call grpc_metadata_array_destroy on
           this value, or reuse it in a future op. */
-      grpc_metadata_array* trailing_metadata;
-      grpc_status_code* status;
-      grpc_slice* status_details;
+      grpc_metadata_array *trailing_metadata;
+      grpc_status_code *status;
+      grpc_slice *status_details;
       /** If this is not nullptr, it will be populated with the full fidelity
        * error string for debugging purposes. The application is responsible
        * for freeing the data by using gpr_free(). */
-      const char** error_string;
+      const char **error_string;
     } recv_status_on_client;
     struct grpc_op_recv_close_on_server {
       /** out argument, set to 1 if the call failed at the server for
           a reason other than a non-OK status (cancel, deadline
           exceeded, network failure, etc.), 0 otherwise (RPC processing ran to
           completion and was able to provide any status from the server) */
-      int* cancelled;
+      int *cancelled;
     } recv_close_on_server;
   } data;
 } grpc_op;
@@ -714,10 +714,10 @@ typedef struct grpc_op {
 typedef struct {
   /** If non-NULL, will be set to point to a string indicating the LB
    * policy name.  Caller takes ownership. */
-  char** lb_policy_name;
+  char **lb_policy_name;
   /** If non-NULL, will be set to point to a string containing the
    * service config used by the channel in JSON form. */
-  char** service_config_json;
+  char **service_config_json;
 } grpc_channel_info;
 
 typedef struct grpc_resource_quota grpc_resource_quota;
@@ -769,7 +769,7 @@ typedef struct grpc_completion_queue_functor {
       tag is extracted from the completion queue. Its arguments will be a
       pointer to this functor and a boolean that indicates whether the
       operation succeeded (non-zero) or failed (zero) */
-  void (*functor_run)(struct grpc_completion_queue_functor*, int);
+  void (*functor_run)(struct grpc_completion_queue_functor *, int);
 
   /** The inlineable member specifies whether this functor can be run inline.
       This should only be used for trivial internally-defined functors. */
@@ -777,7 +777,7 @@ typedef struct grpc_completion_queue_functor {
 
   /** The following fields are not API. They are meant for internal use. */
   int internal_success;
-  struct grpc_completion_queue_functor* internal_next;
+  struct grpc_completion_queue_functor *internal_next;
 } grpc_completion_queue_functor;
 
 #define GRPC_CQ_CURRENT_VERSION 2
@@ -796,7 +796,7 @@ typedef struct grpc_completion_queue_attributes {
   /* START OF VERSION 2 CQ ATTRIBUTES */
   /** When creating a callbackable CQ, pass in a functor to get invoked when
    * shutdown is complete */
-  grpc_completion_queue_functor* cq_shutdown_cb;
+  grpc_completion_queue_functor *cq_shutdown_cb;
 
   /* END OF VERSION 2 CQ ATTRIBUTES */
 } grpc_completion_queue_attributes;

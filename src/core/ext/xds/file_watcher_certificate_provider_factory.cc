@@ -30,7 +30,7 @@ namespace grpc_core {
 
 namespace {
 
-const char* kFileWatcherPlugin = "file_watcher";
+const char *kFileWatcherPlugin = "file_watcher";
 
 }  // namespace
 
@@ -38,7 +38,7 @@ const char* kFileWatcherPlugin = "file_watcher";
 // FileWatcherCertificateProviderFactory::Config
 //
 
-const char* FileWatcherCertificateProviderFactory::Config::name() const {
+const char *FileWatcherCertificateProviderFactory::Config::name() const {
   return kFileWatcherPlugin;
 }
 
@@ -63,8 +63,8 @@ std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
 }
 
 RefCountedPtr<FileWatcherCertificateProviderFactory::Config>
-FileWatcherCertificateProviderFactory::Config::Parse(const Json& config_json,
-                                                     grpc_error_handle* error) {
+FileWatcherCertificateProviderFactory::Config::Parse(const Json &config_json,
+                                                     grpc_error_handle *error) {
   auto config = MakeRefCounted<FileWatcherCertificateProviderFactory::Config>();
   if (config_json.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -106,13 +106,13 @@ FileWatcherCertificateProviderFactory::Config::Parse(const Json& config_json,
 // FileWatcherCertificateProviderFactory
 //
 
-const char* FileWatcherCertificateProviderFactory::name() const {
+const char *FileWatcherCertificateProviderFactory::name() const {
   return kFileWatcherPlugin;
 }
 
 RefCountedPtr<CertificateProviderFactory::Config>
 FileWatcherCertificateProviderFactory::CreateCertificateProviderConfig(
-    const Json& config_json, grpc_error_handle* error) {
+    const Json &config_json, grpc_error_handle *error) {
   return FileWatcherCertificateProviderFactory::Config::Parse(config_json,
                                                               error);
 }
@@ -125,8 +125,9 @@ FileWatcherCertificateProviderFactory::CreateCertificateProvider(
             config->name(), name());
     return nullptr;
   }
-  auto* file_watcher_config =
-      static_cast<FileWatcherCertificateProviderFactory::Config*>(config.get());
+  auto *file_watcher_config =
+      static_cast<FileWatcherCertificateProviderFactory::Config *>(
+          config.get());
   return MakeRefCounted<FileWatcherCertificateProvider>(
       file_watcher_config->private_key_file(),
       file_watcher_config->identity_cert_file(),

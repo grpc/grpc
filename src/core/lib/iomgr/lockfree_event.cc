@@ -88,7 +88,7 @@ void LockfreeEvent::DestroyEvent() {
                                    kShutdownBit /* shutdown, no error */));
 }
 
-void LockfreeEvent::NotifyOn(grpc_closure* closure) {
+void LockfreeEvent::NotifyOn(grpc_closure *closure) {
   while (true) {
     /* This load needs to be an acquire load because this can be a shutdown
      * error that we might need to reference. Adding acquire semantics makes
@@ -194,7 +194,7 @@ bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {
            happens-after on that edge), and a release to pair with anything
            loading the shutdown state. */
         if (gpr_atm_full_cas(&state_, curr, new_state)) {
-          ExecCtx::Run(DEBUG_LOCATION, reinterpret_cast<grpc_closure*>(curr),
+          ExecCtx::Run(DEBUG_LOCATION, reinterpret_cast<grpc_closure *>(curr),
                        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                            "FD Shutdown", &shutdown_error, 1));
           return true;
@@ -244,7 +244,7 @@ void LockfreeEvent::SetReady() {
            spurious set_ready; release pairs with this or the acquire in
            notify_on (or set_shutdown) */
         else if (gpr_atm_full_cas(&state_, curr, kClosureNotReady)) {
-          ExecCtx::Run(DEBUG_LOCATION, reinterpret_cast<grpc_closure*>(curr),
+          ExecCtx::Run(DEBUG_LOCATION, reinterpret_cast<grpc_closure *>(curr),
                        GRPC_ERROR_NONE);
           return;
         }

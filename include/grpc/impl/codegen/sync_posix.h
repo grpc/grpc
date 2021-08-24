@@ -34,12 +34,12 @@
  */
 typedef struct {
   pthread_mutex_t mutex;
-  int* leak_checker;
+  int *leak_checker;
 } gpr_mu;
 
 typedef struct {
   pthread_cond_t cond_var;
-  int* leak_checker;
+  int *leak_checker;
 } gpr_cv;
 #else
 typedef pthread_mutex_t gpr_mu;

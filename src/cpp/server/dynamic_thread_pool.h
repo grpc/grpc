@@ -36,16 +36,16 @@ class DynamicThreadPool final : public ThreadPoolInterface {
   explicit DynamicThreadPool(int reserve_threads);
   ~DynamicThreadPool() override;
 
-  void Add(const std::function<void()>& callback) override;
+  void Add(const std::function<void()> &callback) override;
 
  private:
   class DynamicThread {
    public:
-    explicit DynamicThread(DynamicThreadPool* pool);
+    explicit DynamicThread(DynamicThreadPool *pool);
     ~DynamicThread();
 
    private:
-    DynamicThreadPool* pool_;
+    DynamicThreadPool *pool_;
     grpc_core::Thread thd_;
     void ThreadFunc();
   };
@@ -57,10 +57,10 @@ class DynamicThreadPool final : public ThreadPoolInterface {
   int reserve_threads_;
   int nthreads_;
   int threads_waiting_;
-  std::list<DynamicThread*> dead_threads_;
+  std::list<DynamicThread *> dead_threads_;
 
   void ThreadFunc();
-  static void ReapThreads(std::list<DynamicThread*>* tlist);
+  static void ReapThreads(std::list<DynamicThread *> *tlist);
 };
 
 }  // namespace grpc

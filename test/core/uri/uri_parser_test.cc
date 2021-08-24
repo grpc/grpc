@@ -36,8 +36,8 @@ using ::testing::Pair;
 static void TestSucceeds(
     absl::string_view uri_text, absl::string_view scheme,
     absl::string_view authority, absl::string_view path,
-    const std::map<absl::string_view, absl::string_view>& query_param_map,
-    const std::vector<grpc_core::URI::QueryParam>& query_param_pairs,
+    const std::map<absl::string_view, absl::string_view> &query_param_map,
+    const std::vector<grpc_core::URI::QueryParam> &query_param_pairs,
     absl::string_view fragment) {
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   ASSERT_TRUE(uri.ok());
@@ -140,7 +140,7 @@ TEST(URIParserTest, QueryParamMapRemainsValidAfterCopyingTheURI) {
     uri_copy = *del_uri;
   }
   ASSERT_THAT(uri_copy.query_parameter_map(), Contains(Pair("a", "2")));
-  grpc_core::URI* del_uri2 = new grpc_core::URI(uri_copy);
+  grpc_core::URI *del_uri2 = new grpc_core::URI(uri_copy);
   grpc_core::URI uri_copy2(*del_uri2);
   delete del_uri2;
   ASSERT_THAT(uri_copy2.query_parameter_map(), Contains(Pair("a", "2")));
@@ -214,7 +214,7 @@ TEST(URIParserTest, InvalidURIsResultInFailureStatuses) {
   TestFails("0invalid_scheme:must_start/with?alpha");
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();

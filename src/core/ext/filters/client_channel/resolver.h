@@ -56,16 +56,16 @@ class Resolver : public InternallyRefCounted<Resolver> {
     ServerAddressList addresses;
     RefCountedPtr<ServiceConfig> service_config;
     grpc_error_handle service_config_error = GRPC_ERROR_NONE;
-    const grpc_channel_args* args = nullptr;
+    const grpc_channel_args *args = nullptr;
 
     // TODO(roth): Remove everything below once grpc_error and
     // grpc_channel_args are convert to copyable and movable C++ objects.
     Result() = default;
     ~Result();
-    Result(const Result& other);
-    Result(Result&& other) noexcept;
-    Result& operator=(const Result& other);
-    Result& operator=(Result&& other) noexcept;
+    Result(const Result &other);
+    Result(Result &&other) noexcept;
+    Result &operator=(const Result &other);
+    Result &operator=(Result &&other) noexcept;
   };
 
   /// A proxy object used by the resolver to return results to the
@@ -88,8 +88,8 @@ class Resolver : public InternallyRefCounted<Resolver> {
   };
 
   // Not copyable nor movable.
-  Resolver(const Resolver&) = delete;
-  Resolver& operator=(const Resolver&) = delete;
+  Resolver(const Resolver &) = delete;
+  Resolver &operator=(const Resolver &) = delete;
   ~Resolver() override = default;
 
   /// Starts resolving.

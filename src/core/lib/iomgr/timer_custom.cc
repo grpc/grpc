@@ -28,14 +28,14 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_custom.h"
 
-static grpc_custom_timer_vtable* custom_timer_impl;
+static grpc_custom_timer_vtable *custom_timer_impl;
 
-void grpc_custom_timer_callback(grpc_custom_timer* t,
+void grpc_custom_timer_callback(grpc_custom_timer *t,
                                 grpc_error_handle /*error*/) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  grpc_timer* timer = t->original;
+  grpc_timer *timer = t->original;
   GPR_ASSERT(timer->pending);
   timer->pending = false;
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure, GRPC_ERROR_NONE);
@@ -43,8 +43,8 @@ void grpc_custom_timer_callback(grpc_custom_timer* t,
   gpr_free(t);
 }
 
-static void timer_init(grpc_timer* timer, grpc_millis deadline,
-                       grpc_closure* closure) {
+static void timer_init(grpc_timer *timer, grpc_millis deadline,
+                       grpc_closure *closure) {
   uint64_t timeout;
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_millis now = grpc_core::ExecCtx::Get()->Now();
@@ -57,17 +57,17 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
   }
   timer->pending = true;
   timer->closure = closure;
-  grpc_custom_timer* timer_wrapper =
-      static_cast<grpc_custom_timer*>(gpr_malloc(sizeof(grpc_custom_timer)));
+  grpc_custom_timer *timer_wrapper =
+      static_cast<grpc_custom_timer *>(gpr_malloc(sizeof(grpc_custom_timer)));
   timer_wrapper->timeout_ms = timeout;
   timer->custom_timer = timer_wrapper;
   timer_wrapper->original = timer;
   custom_timer_impl->start(timer_wrapper);
 }
 
-static void timer_cancel(grpc_timer* timer) {
+static void timer_cancel(grpc_timer *timer) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-  grpc_custom_timer* tw = static_cast<grpc_custom_timer*>(timer->custom_timer);
+  grpc_custom_timer *tw = static_cast<grpc_custom_timer *>(timer->custom_timer);
   if (timer->pending) {
     timer->pending = false;
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure,
@@ -77,7 +77,7 @@ static void timer_cancel(grpc_timer* timer) {
   }
 }
 
-static grpc_timer_check_result timer_check(grpc_millis* /*next*/) {
+static grpc_timer_check_result timer_check(grpc_millis * /*next*/) {
   return GRPC_TIMERS_NOT_CHECKED;
 }
 
@@ -90,7 +90,7 @@ static grpc_timer_vtable custom_timer_vtable = {
     timer_init,      timer_cancel,        timer_check,
     timer_list_init, timer_list_shutdown, timer_consume_kick};
 
-void grpc_custom_timer_init(grpc_custom_timer_vtable* impl) {
+void grpc_custom_timer_init(grpc_custom_timer_vtable *impl) {
   custom_timer_impl = impl;
   grpc_set_timer_impl(&custom_timer_vtable);
 }

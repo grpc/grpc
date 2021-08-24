@@ -31,8 +31,8 @@ using std::transform;
 namespace grpc_ruby_generator {
 
 // Split splits a string using char into elems.
-inline std::vector<std::string>& Split(const std::string& s, char delim,
-                                       std::vector<std::string>* elems) {
+inline std::vector<std::string> &Split(const std::string &s, char delim,
+                                       std::vector<std::string> *elems) {
   std::stringstream ss(s);
   std::string item;
   while (getline(ss, item, delim)) {
@@ -42,15 +42,15 @@ inline std::vector<std::string>& Split(const std::string& s, char delim,
 }
 
 // Split splits a string using char, returning the result in a vector.
-inline std::vector<std::string> Split(const std::string& s, char delim) {
+inline std::vector<std::string> Split(const std::string &s, char delim) {
   std::vector<std::string> elems;
   Split(s, delim, &elems);
   return elems;
 }
 
 // Replace replaces from with to in s.
-inline std::string Replace(std::string s, const std::string& from,
-                           const std::string& to) {
+inline std::string Replace(std::string s, const std::string &from,
+                           const std::string &to) {
   size_t start_pos = s.find(from);
   if (start_pos == std::string::npos) {
     return s;
@@ -60,8 +60,8 @@ inline std::string Replace(std::string s, const std::string& from,
 }
 
 // ReplaceAll replaces all instances of search with replace in s.
-inline std::string ReplaceAll(std::string s, const std::string& search,
-                              const std::string& replace) {
+inline std::string ReplaceAll(std::string s, const std::string &search,
+                              const std::string &replace) {
   size_t pos = 0;
   while ((pos = s.find(search, pos)) != std::string::npos) {
     s.replace(pos, search.length(), replace);
@@ -71,8 +71,8 @@ inline std::string ReplaceAll(std::string s, const std::string& search,
 }
 
 // ReplacePrefix replaces from with to in s if search is a prefix of s.
-inline bool ReplacePrefix(std::string* s, const std::string& from,
-                          const std::string& to) {
+inline bool ReplacePrefix(std::string *s, const std::string &from,
+                          const std::string &to) {
   size_t start_pos = s->find(from);
   if (start_pos == std::string::npos || start_pos != 0) {
     return false;
@@ -101,7 +101,7 @@ inline std::string Modularize(std::string s) {
 }
 
 // RubyPackage gets the ruby package in either proto or ruby_package format
-inline std::string RubyPackage(const grpc::protobuf::FileDescriptor* file) {
+inline std::string RubyPackage(const grpc::protobuf::FileDescriptor *file) {
   std::string package_name = file->package();
   if (file->options().has_ruby_package()) {
     package_name = file->options().ruby_package();
@@ -116,7 +116,7 @@ inline std::string RubyPackage(const grpc::protobuf::FileDescriptor* file) {
 }
 
 // RubyTypeOf updates a proto type to the required ruby equivalent.
-inline std::string RubyTypeOf(const grpc::protobuf::Descriptor* descriptor) {
+inline std::string RubyTypeOf(const grpc::protobuf::Descriptor *descriptor) {
   std::string proto_type = descriptor->full_name();
   if (descriptor->file()->options().has_ruby_package()) {
     // remove the leading package if present

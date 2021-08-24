@@ -39,37 +39,37 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
     return distributor_;
   }
 
-  bool ProvidesRootCerts(const std::string& cert_name);
+  bool ProvidesRootCerts(const std::string &cert_name);
   void UpdateRootCertNameAndDistributor(
-      const std::string& cert_name, absl::string_view root_cert_name,
+      const std::string &cert_name, absl::string_view root_cert_name,
       RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor);
 
-  bool ProvidesIdentityCerts(const std::string& cert_name);
+  bool ProvidesIdentityCerts(const std::string &cert_name);
   void UpdateIdentityCertNameAndDistributor(
-      const std::string& cert_name, absl::string_view identity_cert_name,
+      const std::string &cert_name, absl::string_view identity_cert_name,
       RefCountedPtr<grpc_tls_certificate_distributor>
           identity_cert_distributor);
 
-  bool GetRequireClientCertificate(const std::string& cert_name);
+  bool GetRequireClientCertificate(const std::string &cert_name);
   // Updating \a require_client_certificate for a non-existing \a cert_name has
   // no effect.
-  void UpdateRequireClientCertificate(const std::string& cert_name,
+  void UpdateRequireClientCertificate(const std::string &cert_name,
                                       bool require_client_certificate);
 
-  std::vector<StringMatcher> GetSanMatchers(const std::string& cluster);
+  std::vector<StringMatcher> GetSanMatchers(const std::string &cluster);
   void UpdateSubjectAlternativeNameMatchers(
-      const std::string& cluster, std::vector<StringMatcher> matchers);
+      const std::string &cluster, std::vector<StringMatcher> matchers);
 
   grpc_arg MakeChannelArg() const;
 
   static RefCountedPtr<XdsCertificateProvider> GetFromChannelArgs(
-      const grpc_channel_args* args);
+      const grpc_channel_args *args);
 
  private:
   class ClusterCertificateState {
    public:
     explicit ClusterCertificateState(
-        XdsCertificateProvider* xds_certificate_provider)
+        XdsCertificateProvider *xds_certificate_provider)
         : xds_certificate_provider_(xds_certificate_provider) {}
 
     ~ClusterCertificateState();
@@ -84,19 +84,19 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
     }
 
     void UpdateRootCertNameAndDistributor(
-        const std::string& cert_name, absl::string_view root_cert_name,
+        const std::string &cert_name, absl::string_view root_cert_name,
         RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor);
     void UpdateIdentityCertNameAndDistributor(
-        const std::string& cert_name, absl::string_view identity_cert_name,
+        const std::string &cert_name, absl::string_view identity_cert_name,
         RefCountedPtr<grpc_tls_certificate_distributor>
             identity_cert_distributor);
 
     void UpdateRootCertWatcher(
-        const std::string& cert_name,
-        grpc_tls_certificate_distributor* root_cert_distributor);
+        const std::string &cert_name,
+        grpc_tls_certificate_distributor *root_cert_distributor);
     void UpdateIdentityCertWatcher(
-        const std::string& cert_name,
-        grpc_tls_certificate_distributor* identity_cert_distributor);
+        const std::string &cert_name,
+        grpc_tls_certificate_distributor *identity_cert_distributor);
 
     bool require_client_certificate() const {
       return require_client_certificate_;
@@ -105,22 +105,22 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
       require_client_certificate_ = require_client_certificate;
     }
 
-    void WatchStatusCallback(const std::string& cert_name,
+    void WatchStatusCallback(const std::string &cert_name,
                              bool root_being_watched,
                              bool identity_being_watched);
 
    private:
-    XdsCertificateProvider* xds_certificate_provider_;
+    XdsCertificateProvider *xds_certificate_provider_;
     bool watching_root_certs_ = false;
     bool watching_identity_certs_ = false;
     std::string root_cert_name_;
     std::string identity_cert_name_;
     RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor_;
     RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor_;
-    grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
-        root_cert_watcher_ = nullptr;
-    grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
-        identity_cert_watcher_ = nullptr;
+    grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface
+        *root_cert_watcher_ = nullptr;
+    grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface
+        *identity_cert_watcher_ = nullptr;
     bool require_client_certificate_ = false;
   };
 

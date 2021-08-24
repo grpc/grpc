@@ -37,22 +37,22 @@
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
 typedef struct test_fixture {
-  const char* name;
-  void (*add_server_port)(grpc_server* server, const char* addr);
+  const char *name;
+  void (*add_server_port)(grpc_server *server, const char *addr);
   // Have the creds here so all the channels will share the same one to enabled
   // subchannel sharing if needed.
-  grpc_channel_credentials* creds;
+  grpc_channel_credentials *creds;
 } test_fixture;
 
 #define NUM_CONNECTIONS 100
 
 typedef struct {
-  grpc_server* server;
-  grpc_completion_queue* cq;
+  grpc_server *server;
+  grpc_completion_queue *cq;
 } server_thread_args;
 
-static void server_thread_func(void* args) {
-  server_thread_args* a = static_cast<server_thread_args*>(args);
+static void server_thread_func(void *args) {
+  server_thread_args *a = static_cast<server_thread_args *>(args);
   grpc_event ev = grpc_completion_queue_next(
       a->cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
@@ -60,18 +60,18 @@ static void server_thread_func(void* args) {
   GPR_ASSERT(ev.success == true);
 }
 
-static grpc_channel* create_test_channel(const char* addr,
-                                         grpc_channel_credentials* creds,
+static grpc_channel *create_test_channel(const char *addr,
+                                         grpc_channel_credentials *creds,
                                          bool share_subchannel) {
-  grpc_channel* channel = nullptr;
+  grpc_channel *channel = nullptr;
   std::vector<grpc_arg> args;
   args.push_back(grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL),
+      const_cast<char *>(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL),
       !share_subchannel));
   if (creds != nullptr) {
     args.push_back(grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-        const_cast<char*>("foo.test.google.fr")));
+        const_cast<char *>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
+        const_cast<char *>("foo.test.google.fr")));
   }
   grpc_channel_args channel_args = {args.size(), args.data()};
   if (creds != nullptr) {
@@ -82,16 +82,16 @@ static grpc_channel* create_test_channel(const char* addr,
   return channel;
 }
 
-static void run_test(const test_fixture* fixture, bool share_subchannel) {
+static void run_test(const test_fixture *fixture, bool share_subchannel) {
   gpr_log(GPR_INFO, "TEST: %s sharing subchannel: %d", fixture->name,
           share_subchannel);
 
   std::string addr =
       grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
 
-  grpc_server* server = grpc_server_create(nullptr, nullptr);
+  grpc_server *server = grpc_server_create(nullptr, nullptr);
   fixture->add_server_port(server, addr.c_str());
-  grpc_completion_queue* server_cq =
+  grpc_completion_queue *server_cq =
       grpc_completion_queue_create_for_next(nullptr);
   grpc_server_register_completion_queue(server, server_cq, nullptr);
   grpc_server_start(server);
@@ -100,8 +100,8 @@ static void run_test(const test_fixture* fixture, bool share_subchannel) {
   grpc_core::Thread server_thread("grpc_server", server_thread_func, &sta);
   server_thread.Start();
 
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-  grpc_channel* channels[NUM_CONNECTIONS];
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_channel *channels[NUM_CONNECTIONS];
   for (size_t i = 0; i < NUM_CONNECTIONS; i++) {
     channels[i] =
         create_test_channel(addr.c_str(), fixture->creds, share_subchannel);
@@ -147,22 +147,22 @@ static void run_test(const test_fixture* fixture, bool share_subchannel) {
   grpc_completion_queue_destroy(cq);
 }
 
-static void insecure_test_add_port(grpc_server* server, const char* addr) {
+static void insecure_test_add_port(grpc_server *server, const char *addr) {
   grpc_server_add_insecure_http2_port(server, addr);
 }
 
-static void secure_test_add_port(grpc_server* server, const char* addr) {
+static void secure_test_add_port(grpc_server *server, const char *addr) {
   grpc_slice cert_slice, key_slice;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-  const char* server_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-  const char* server_key =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  const char *server_cert =
+      reinterpret_cast<const char *> GRPC_SLICE_START_PTR(cert_slice);
+  const char *server_key =
+      reinterpret_cast<const char *> GRPC_SLICE_START_PTR(key_slice);
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
-  grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
+  grpc_server_credentials *ssl_creds = grpc_ssl_server_credentials_create(
       nullptr, &pem_key_cert_pair, 1, 0, nullptr);
   grpc_slice_unref(cert_slice);
   grpc_slice_unref(key_slice);
@@ -170,7 +170,7 @@ static void secure_test_add_port(grpc_server* server, const char* addr) {
   grpc_server_credentials_release(ssl_creds);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
@@ -185,9 +185,9 @@ int main(int argc, char** argv) {
   grpc_slice ca_slice;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
-  const char* test_root_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-  grpc_channel_credentials* ssl_creds =
+  const char *test_root_cert =
+      reinterpret_cast<const char *> GRPC_SLICE_START_PTR(ca_slice);
+  grpc_channel_credentials *ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, nullptr, nullptr, nullptr);
   grpc_slice_unref(ca_slice);
   const test_fixture secure_test = {

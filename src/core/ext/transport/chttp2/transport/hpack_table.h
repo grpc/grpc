@@ -56,8 +56,8 @@ class HPackTable {
   HPackTable();
   ~HPackTable();
 
-  HPackTable(const HPackTable&);
-  HPackTable& operator=(const HPackTable&);
+  HPackTable(const HPackTable &);
+  HPackTable &operator=(const HPackTable &);
 
   void SetMaxBytes(uint32_t max_bytes);
   grpc_error_handle SetCurrentTableSize(uint32_t bytes);
@@ -141,7 +141,7 @@ size_t grpc_chttp2_get_size_in_hpack_table(grpc_mdelem elem,
   table */
 inline uintptr_t grpc_chttp2_get_static_hpack_table_index(grpc_mdelem md) {
   uintptr_t index =
-      reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(md)) -
+      reinterpret_cast<grpc_core::StaticMetadata *>(GRPC_MDELEM_DATA(md)) -
       grpc_static_mdelem_table();
   if (index < grpc_core::HPackTable::kLastStaticEntry) {
     return index + 1;  // Hpack static metadata element indices start at 1

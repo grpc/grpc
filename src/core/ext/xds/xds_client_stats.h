@@ -44,14 +44,14 @@ class XdsClient;
 class XdsLocalityName : public RefCounted<XdsLocalityName> {
  public:
   struct Less {
-    bool operator()(const XdsLocalityName* lhs,
-                    const XdsLocalityName* rhs) const {
+    bool operator()(const XdsLocalityName *lhs,
+                    const XdsLocalityName *rhs) const {
       if (lhs == nullptr || rhs == nullptr) return GPR_ICMP(lhs, rhs);
       return lhs->Compare(*rhs) < 0;
     }
 
-    bool operator()(const RefCountedPtr<XdsLocalityName>& lhs,
-                    const RefCountedPtr<XdsLocalityName>& rhs) const {
+    bool operator()(const RefCountedPtr<XdsLocalityName> &lhs,
+                    const RefCountedPtr<XdsLocalityName> &rhs) const {
       return (*this)(lhs.get(), rhs.get());
     }
   };
@@ -61,16 +61,16 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
         zone_(std::move(zone)),
         sub_zone_(std::move(sub_zone)) {}
 
-  bool operator==(const XdsLocalityName& other) const {
+  bool operator==(const XdsLocalityName &other) const {
     return region_ == other.region_ && zone_ == other.zone_ &&
            sub_zone_ == other.sub_zone_;
   }
 
-  bool operator!=(const XdsLocalityName& other) const {
+  bool operator!=(const XdsLocalityName &other) const {
     return !(*this == other);
   }
 
-  int Compare(const XdsLocalityName& other) const {
+  int Compare(const XdsLocalityName &other) const {
     int cmp_result = region_.compare(other.region_);
     if (cmp_result != 0) return cmp_result;
     cmp_result = zone_.compare(other.zone_);
@@ -78,11 +78,11 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
     return sub_zone_.compare(other.sub_zone_);
   }
 
-  const std::string& region() const { return region_; }
-  const std::string& zone() const { return zone_; }
-  const std::string& sub_zone() const { return sub_zone_; }
+  const std::string &region() const { return region_; }
+  const std::string &zone() const { return zone_; }
+  const std::string &sub_zone() const { return sub_zone_; }
 
-  const std::string& AsHumanReadableString() {
+  const std::string &AsHumanReadableString() {
     if (human_readable_string_.empty()) {
       human_readable_string_ =
           absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
@@ -110,9 +110,9 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
     // outlined in the drop_overloads field in the EDS response.
     CategorizedDropsMap categorized_drops;
 
-    Snapshot& operator+=(const Snapshot& other) {
+    Snapshot &operator+=(const Snapshot &other) {
       uncategorized_drops += other.uncategorized_drops;
-      for (const auto& p : other.categorized_drops) {
+      for (const auto &p : other.categorized_drops) {
         categorized_drops[p.first] += p.second;
       }
       return *this;
@@ -120,7 +120,7 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
 
     bool IsZero() const {
       if (uncategorized_drops != 0) return false;
-      for (const auto& p : categorized_drops) {
+      for (const auto &p : categorized_drops) {
         if (p.second != 0) return false;
       }
       return true;
@@ -137,7 +137,7 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
   Snapshot GetSnapshotAndReset();
 
   void AddUncategorizedDrops();
-  void AddCallDropped(const std::string& category);
+  void AddCallDropped(const std::string &category);
 
  private:
   RefCountedPtr<XdsClient> xds_client_;
@@ -159,7 +159,7 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
     uint64_t num_requests_finished_with_metric;
     double total_metric_value;
 
-    BackendMetric& operator+=(const BackendMetric& other) {
+    BackendMetric &operator+=(const BackendMetric &other) {
       num_requests_finished_with_metric +=
           other.num_requests_finished_with_metric;
       total_metric_value += other.total_metric_value;
@@ -178,12 +178,12 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
     uint64_t total_issued_requests;
     std::map<std::string, BackendMetric> backend_metrics;
 
-    Snapshot& operator+=(const Snapshot& other) {
+    Snapshot &operator+=(const Snapshot &other) {
       total_successful_requests += other.total_successful_requests;
       total_requests_in_progress += other.total_requests_in_progress;
       total_error_requests += other.total_error_requests;
       total_issued_requests += other.total_issued_requests;
-      for (const auto& p : other.backend_metrics) {
+      for (const auto &p : other.backend_metrics) {
         backend_metrics[p.first] += p.second;
       }
       return *this;
@@ -194,7 +194,7 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
           total_error_requests != 0 || total_issued_requests != 0) {
         return false;
       }
-      for (const auto& p : backend_metrics) {
+      for (const auto &p : backend_metrics) {
         if (!p.second.IsZero()) return false;
       }
       return true;

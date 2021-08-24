@@ -34,8 +34,8 @@ namespace promise_detail {
 // until the rest are ready.
 template <typename Traits, typename F>
 union Fused {
-  explicit Fused(F&& f) : f(std::forward<F>(f)) {}
-  explicit Fused(PromiseLike<F>&& f) : f(std::forward<PromiseLike<F>>(f)) {}
+  explicit Fused(F &&f) : f(std::forward<F>(f)) {}
+  explicit Fused(PromiseLike<F> &&f) : f(std::forward<PromiseLike<F>>(f)) {}
   ~Fused() {}
   // Wrap the functor in a PromiseLike to handle immediately returning functors
   // and the like.
@@ -64,18 +64,18 @@ struct Joint : public Joint<Traits, kRemaining - 1, Fs...> {
   // Figure out what kind of bitmask will be used by the outer join.
   using Bits = BitSet<sizeof...(Fs)>;
   // Initialize from a tuple of pointers to Fs
-  explicit Joint(std::tuple<Fs*...> fs)
+  explicit Joint(std::tuple<Fs *...> fs)
       : NextJoint(fs), fused(std::move(*std::get<kIdx>(fs))) {}
   // Copy: assume that the Fuse is still in the promise state (since it's not
   // legal to copy after the first poll!)
-  Joint(const Joint& j) : NextJoint(j), fused(j.fused.f) {}
+  Joint(const Joint &j) : NextJoint(j), fused(j.fused.f) {}
   // Move: assume that the Fuse is still in the promise state (since it's not
   // legal to move after the first poll!)
-  Joint(Joint&& j) noexcept
+  Joint(Joint &&j) noexcept
       : NextJoint(std::forward<NextJoint>(j)), fused(std::move(j.fused.f)) {}
   // Destruct: check bits to see if we're in promise or result state, and call
   // the appropriate destructor. Recursively, call up through the join.
-  void DestructAll(const Bits& bits) {
+  void DestructAll(const Bits &bits) {
     if (!bits.is_set(kIdx)) {
       Destruct(&fused.f);
     } else {
@@ -85,12 +85,12 @@ struct Joint : public Joint<Traits, kRemaining - 1, Fs...> {
   }
   // Poll all joints up, and then call finally.
   template <typename F>
-  auto Run(Bits* bits, F finally) -> decltype(finally()) {
+  auto Run(Bits *bits, F finally) -> decltype(finally()) {
     // If we're still in the promise state...
     if (!bits->is_set(kIdx)) {
       // Poll the promise
       auto r = fused.f();
-      if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+      if (auto *p = absl::get_if<kPollReadyIdx>(&r)) {
         // If it's done, then ask the trait to unwrap it and store that result
         // in the Fused, and continue the iteration. Note that OnResult could
         // instead choose to return a value instead of recursing through the
@@ -114,13 +114,13 @@ struct Joint : public Joint<Traits, kRemaining - 1, Fs...> {
 // to do at the end.
 template <typename Traits, typename... Fs>
 struct Joint<Traits, 0, Fs...> {
-  explicit Joint(std::tuple<Fs*...>) {}
-  Joint(const Joint&) {}
-  Joint(Joint&&) noexcept {}
+  explicit Joint(std::tuple<Fs *...>) {}
+  Joint(const Joint &) {}
+  Joint(Joint &&) noexcept {}
   template <typename T>
-  void DestructAll(const T&) {}
+  void DestructAll(const T &) {}
   template <typename F>
-  auto Run(BitSet<sizeof...(Fs)>*, F finally) -> decltype(finally()) {
+  auto Run(BitSet<sizeof...(Fs)> *, F finally) -> decltype(finally()) {
     return finally();
   }
 };
@@ -141,8 +141,8 @@ class BasicJoin {
 
   // Access joint index I
   template <size_t I>
-  Joint<Traits, sizeof...(Fs) - I, Fs...>* GetJoint() {
-    return static_cast<Joint<Traits, sizeof...(Fs) - I, Fs...>*>(&joints_);
+  Joint<Traits, sizeof...(Fs) - I, Fs...> *GetJoint() {
+    return static_cast<Joint<Traits, sizeof...(Fs) - I, Fs...> *>(&joints_);
   }
 
   // The tuple of results of all our promises
@@ -155,15 +155,15 @@ class BasicJoin {
   }
 
  public:
-  explicit BasicJoin(Fs&&... fs) : joints_(std::tuple<Fs*...>(&fs...)) {}
-  BasicJoin& operator=(const BasicJoin&) = delete;
+  explicit BasicJoin(Fs &&...fs) : joints_(std::tuple<Fs *...>(&fs...)) {}
+  BasicJoin &operator=(const BasicJoin &) = delete;
   // Copy a join - only available before polling.
-  BasicJoin(const BasicJoin& other) {
+  BasicJoin(const BasicJoin &other) {
     assert(other.state_.none());
     Construct(&joints_, other.joints_);
   }
   // Move a join - only available before polling.
-  BasicJoin(BasicJoin&& other) noexcept {
+  BasicJoin(BasicJoin &&other) noexcept {
     assert(other.state_.none());
     Construct(&joints_, std::move(other.joints_));
   }

@@ -26,16 +26,17 @@
 #include "src/core/tsi/alts/frame_protector/alts_crypter.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 
-static void alts_crypter_test_random_seal_unseal(alts_crypter* server_seal,
-                                                 alts_crypter* server_unseal,
-                                                 alts_crypter* client_seal,
-                                                 alts_crypter* client_unseal) {
+static void alts_crypter_test_random_seal_unseal(alts_crypter *server_seal,
+                                                 alts_crypter *server_unseal,
+                                                 alts_crypter *client_seal,
+                                                 alts_crypter *client_unseal) {
   size_t data_size = gsec_test_bias_random_uint32(1024) + 1;
   size_t num_overhead_bytes = alts_crypter_num_overhead_bytes(server_seal);
   size_t protected_data_size = data_size + num_overhead_bytes;
-  uint8_t* data_buffer = static_cast<uint8_t*>(gpr_malloc(protected_data_size));
+  uint8_t *data_buffer =
+      static_cast<uint8_t *>(gpr_malloc(protected_data_size));
   gsec_test_random_bytes(data_buffer, data_size);
-  uint8_t* duplicate_buffer = nullptr;
+  uint8_t *duplicate_buffer = nullptr;
   gsec_test_copy(data_buffer, &duplicate_buffer, data_size);
 
   /* Client seal and server unseal */
@@ -64,18 +65,18 @@ static void alts_crypter_test_random_seal_unseal(alts_crypter* server_seal,
 }
 
 static void alts_crypter_test_multiple_random_seal_unseal(
-    alts_crypter* server_seal, alts_crypter* server_unseal,
-    alts_crypter* client_seal, alts_crypter* client_unseal) {
+    alts_crypter *server_seal, alts_crypter *server_unseal,
+    alts_crypter *client_seal, alts_crypter *client_unseal) {
   size_t data_size = gsec_test_bias_random_uint32(1024) + 1;
   size_t num_overhead_bytes = alts_crypter_num_overhead_bytes(server_seal);
   size_t protected_data_size = data_size + num_overhead_bytes;
 
-  uint8_t* data_buffer1 =
-      static_cast<uint8_t*>(gpr_malloc(protected_data_size));
-  uint8_t* data_buffer2 =
-      static_cast<uint8_t*>(gpr_malloc(protected_data_size));
-  uint8_t* duplicate_buffer1 = nullptr;
-  uint8_t* duplicate_buffer2 = nullptr;
+  uint8_t *data_buffer1 =
+      static_cast<uint8_t *>(gpr_malloc(protected_data_size));
+  uint8_t *data_buffer2 =
+      static_cast<uint8_t *>(gpr_malloc(protected_data_size));
+  uint8_t *duplicate_buffer1 = nullptr;
+  uint8_t *duplicate_buffer2 = nullptr;
   gsec_test_random_bytes(data_buffer1, data_size);
   gsec_test_random_bytes(data_buffer2, data_size);
   gsec_test_copy(data_buffer1, &duplicate_buffer1, data_size);
@@ -129,13 +130,13 @@ static void alts_crypter_test_multiple_random_seal_unseal(
 }
 
 static void alts_crypter_test_corrupted_unseal(
-    alts_crypter* server_seal, alts_crypter* server_unseal,
-    alts_crypter* client_seal, alts_crypter* /*client_unseal*/) {
+    alts_crypter *server_seal, alts_crypter *server_unseal,
+    alts_crypter *client_seal, alts_crypter * /*client_unseal*/) {
   size_t data_size = gsec_test_bias_random_uint32(1024) + 1;
   size_t num_overhead_bytes = alts_crypter_num_overhead_bytes(server_seal);
   size_t protected_data_size = data_size + num_overhead_bytes;
-  auto* data_buffer = static_cast<uint8_t*>(gpr_malloc(protected_data_size));
-  auto* zero_buffer = static_cast<uint8_t*>(gpr_zalloc(data_size));
+  auto *data_buffer = static_cast<uint8_t *>(gpr_malloc(protected_data_size));
+  auto *zero_buffer = static_cast<uint8_t *>(gpr_zalloc(data_size));
 
   /* Corrupt a random byte in protected data. */
   size_t size = data_size;
@@ -144,8 +145,8 @@ static void alts_crypter_test_corrupted_unseal(
       client_seal, data_buffer, protected_data_size, size, &size, nullptr);
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(size == protected_data_size);
-  uint8_t* corrupted_data_buffer;
-  char* error_message = nullptr;
+  uint8_t *corrupted_data_buffer;
+  char *error_message = nullptr;
   gsec_test_copy_and_alter_random_byte(data_buffer, &corrupted_data_buffer,
                                        protected_data_size);
   status = alts_crypter_process_in_place(server_unseal, corrupted_data_buffer,
@@ -200,15 +201,15 @@ static void alts_crypter_test_corrupted_unseal(
   gpr_free(zero_buffer);
 }
 
-static void alts_crypter_test_unsync_seal_unseal(alts_crypter* server_seal,
-                                                 alts_crypter* server_unseal,
-                                                 alts_crypter* client_seal,
-                                                 alts_crypter* client_unseal) {
+static void alts_crypter_test_unsync_seal_unseal(alts_crypter *server_seal,
+                                                 alts_crypter *server_unseal,
+                                                 alts_crypter *client_seal,
+                                                 alts_crypter *client_unseal) {
   size_t data_size = gsec_test_bias_random_uint32(1024) + 1;
   size_t num_overhead_bytes = alts_crypter_num_overhead_bytes(server_seal);
   size_t protected_data_size = data_size + num_overhead_bytes;
-  auto* data_buffer = static_cast<uint8_t*>(gpr_malloc(protected_data_size));
-  auto* zero_buffer = static_cast<uint8_t*>(gpr_zalloc(data_size));
+  auto *data_buffer = static_cast<uint8_t *>(gpr_malloc(protected_data_size));
+  auto *zero_buffer = static_cast<uint8_t *>(gpr_zalloc(data_size));
 
   /* Perform two seals at client, one unseal at server. */
   size_t size = data_size;
@@ -225,7 +226,7 @@ static void alts_crypter_test_unsync_seal_unseal(alts_crypter* server_seal,
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(size == protected_data_size);
 
-  char* error_message = nullptr;
+  char *error_message = nullptr;
   status = alts_crypter_process_in_place(server_unseal, data_buffer,
                                          protected_data_size, size, &size,
                                          &error_message);
@@ -262,14 +263,14 @@ static void alts_crypter_test_unsync_seal_unseal(alts_crypter* server_seal,
   gpr_free(zero_buffer);
 }
 
-static void alts_crypter_test_input_sanity_check(alts_crypter* crypter_seal,
-                                                 alts_crypter* crypter_unseal) {
+static void alts_crypter_test_input_sanity_check(alts_crypter *crypter_seal,
+                                                 alts_crypter *crypter_unseal) {
   size_t data_size = gsec_test_bias_random_uint32(1024) + 1;
   size_t num_overhead_bytes = alts_crypter_num_overhead_bytes(crypter_seal);
   size_t protected_data_size = data_size + num_overhead_bytes;
-  auto* data_buffer = static_cast<uint8_t*>(gpr_malloc(protected_data_size));
+  auto *data_buffer = static_cast<uint8_t *>(gpr_malloc(protected_data_size));
   gsec_test_random_bytes(data_buffer, data_size);
-  char* error_message = nullptr;
+  char *error_message = nullptr;
   size_t size = data_size;
 
   /* Crypter is nullptr. */
@@ -341,14 +342,14 @@ static void alts_crypter_test_input_sanity_check(alts_crypter* crypter_seal,
 }
 
 static void create_random_alts_seal_crypter(
-    alts_crypter** server_seal, alts_crypter** server_unseal,
-    alts_crypter** client_seal, alts_crypter** client_unseal,
-    gsec_aead_crypter** server_crypter_seal,
-    gsec_aead_crypter** server_crypter_unseal,
-    gsec_aead_crypter** client_crypter_seal,
-    gsec_aead_crypter** client_crypter_unseal, bool rekey) {
+    alts_crypter **server_seal, alts_crypter **server_unseal,
+    alts_crypter **client_seal, alts_crypter **client_unseal,
+    gsec_aead_crypter **server_crypter_seal,
+    gsec_aead_crypter **server_crypter_unseal,
+    gsec_aead_crypter **client_crypter_seal,
+    gsec_aead_crypter **client_crypter_unseal, bool rekey) {
   size_t key_length = rekey ? kAes128GcmRekeyKeyLength : kAes128GcmKeyLength;
-  uint8_t* key;
+  uint8_t *key;
   gsec_test_random_array(&key, key_length);
   gsec_aes_gcm_aead_crypter_create(key, key_length, kAesGcmNonceLength,
                                    kAesGcmTagLength, rekey, server_crypter_seal,
@@ -375,10 +376,10 @@ static void create_random_alts_seal_crypter(
   gpr_free(key);
 }
 
-static void destroy_random_alts_seal_crypter(alts_crypter* server_seal,
-                                             alts_crypter* server_unseal,
-                                             alts_crypter* client_seal,
-                                             alts_crypter* client_unseal) {
+static void destroy_random_alts_seal_crypter(alts_crypter *server_seal,
+                                             alts_crypter *server_unseal,
+                                             alts_crypter *client_seal,
+                                             alts_crypter *client_unseal) {
   alts_crypter_destroy(server_seal);
   alts_crypter_destroy(server_unseal);
   alts_crypter_destroy(client_seal);
@@ -486,7 +487,7 @@ static void alts_crypter_do_generic_tests() {
                                    client_unseal);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+int main(int /*argc*/, char ** /*argv*/) {
   alts_crypter_do_generic_tests();
   return 0;
 }

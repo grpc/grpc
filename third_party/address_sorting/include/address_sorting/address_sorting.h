@@ -59,14 +59,14 @@ typedef struct address_sorting_sortable {
   // input data; sorting key
   address_sorting_address dest_addr;
   // input data; optional value to attach to the sorting key
-  void* user_data;
+  void *user_data;
   // internal fields, these must be zero'd when passed to sort function
   address_sorting_address source_addr;
   bool source_addr_exists;
   size_t original_index;
 } address_sorting_sortable;
 
-void address_sorting_rfc_6724_sort(address_sorting_sortable* sortables,
+void address_sorting_rfc_6724_sort(address_sorting_sortable *sortables,
                                    size_t sortables_len);
 
 void address_sorting_init();
@@ -80,14 +80,14 @@ typedef struct {
    * address, and fills in *source_addr* with it if one exists.
    * Returns true if a source address exists for the destination address,
    * and false otherwise. */
-  bool (*get_source_addr)(struct address_sorting_source_addr_factory* factory,
-                          const address_sorting_address* dest_addr,
-                          address_sorting_address* source_addr);
-  void (*destroy)(struct address_sorting_source_addr_factory* factory);
+  bool (*get_source_addr)(struct address_sorting_source_addr_factory *factory,
+                          const address_sorting_address *dest_addr,
+                          address_sorting_address *source_addr);
+  void (*destroy)(struct address_sorting_source_addr_factory *factory);
 } address_sorting_source_addr_factory_vtable;
 
 typedef struct address_sorting_source_addr_factory {
-  const address_sorting_source_addr_factory_vtable* vtable;
+  const address_sorting_source_addr_factory_vtable *vtable;
 } address_sorting_source_addr_factory;
 
 /* Platform-compatible address family types */
@@ -100,13 +100,13 @@ typedef enum {
 /* Indicates whether the address is AF_INET, AF_INET6, or another address
  * family. */
 address_sorting_family address_sorting_abstract_get_family(
-    const address_sorting_address* address);
+    const address_sorting_address *address);
 
 void address_sorting_override_source_addr_factory_for_testing(
-    address_sorting_source_addr_factory* factory);
+    address_sorting_source_addr_factory *factory);
 
 bool address_sorting_get_source_addr_for_testing(
-    const address_sorting_address* dest, address_sorting_address* source);
+    const address_sorting_address *dest, address_sorting_address *source);
 
 #ifdef __cplusplus
 }

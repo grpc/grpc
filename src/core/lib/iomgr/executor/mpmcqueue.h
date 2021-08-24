@@ -38,12 +38,12 @@ class MPMCQueueInterface {
 
   // Puts elem into queue immediately at the end of queue.
   // This might cause to block on full queue depending on implementation.
-  virtual void Put(void* elem) = 0;
+  virtual void Put(void *elem) = 0;
 
   // Removes the oldest element from the queue and return it.
   // This might cause to block on empty queue depending on implementation.
   // Optional argument for collecting stats purpose.
-  virtual void* Get(gpr_timespec* wait_time) = 0;
+  virtual void *Get(gpr_timespec *wait_time) = 0;
 
   // Returns number of elements in the queue currently
   virtual int count() const = 0;
@@ -60,13 +60,13 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
 
   // Puts elem into queue immediately at the end of queue. Since the queue has
   // infinite length, this routine will never block and should never fail.
-  void Put(void* elem) override;
+  void Put(void *elem) override;
 
   // Removes the oldest element from the queue and returns it.
   // This routine will cause the thread to block if queue is currently empty.
   // Argument wait_time should be passed in when trace flag turning on (for
   // collecting stats info purpose.)
-  void* Get(gpr_timespec* wait_time) override;
+  void *Get(gpr_timespec *wait_time) override;
 
   // Returns number of elements in queue currently.
   // There might be concurrently add/remove on queue, so count might change
@@ -74,9 +74,9 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   int count() const override { return count_.load(std::memory_order_relaxed); }
 
   struct Node {
-    Node* next;  // Linking
-    Node* prev;
-    void* content;             // Points to actual element
+    Node *next;  // Linking
+    Node *prev;
+    void *content;             // Points to actual element
     gpr_timespec insert_time;  // Time for stats
 
     Node() {
@@ -98,7 +98,7 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   // will NOT check whether queue is empty, and it will NOT acquire mutex.
   // Caller MUST check that queue is not empty and must acquire mutex before
   // callling.
-  void* PopFront();
+  void *PopFront();
 
   // Stats of queue. This will only be collect when debug trace mode is on.
   // All printed stats info will have time measurement in microsecond.
@@ -128,19 +128,19 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   // threads in LIFO order to reduce cache misses.
   struct Waiter {
     CondVar cv;
-    Waiter* next;
-    Waiter* prev;
+    Waiter *next;
+    Waiter *prev;
   };
 
   // Pushs waiter to the front of queue, require caller held mutex
-  void PushWaiter(Waiter* waiter);
+  void PushWaiter(Waiter *waiter);
 
   // Removes waiter from queue, require caller held mutex
-  void RemoveWaiter(Waiter* waiter);
+  void RemoveWaiter(Waiter *waiter);
 
   // Returns pointer to the waiter that should be waken up next, should be the
   // last added waiter.
-  Waiter* TopWaiter();
+  Waiter *TopWaiter();
 
   Mutex mu_;        // Protecting lock
   Waiter waiters_;  // Head of waiting thread queue
@@ -150,14 +150,14 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   // Initial number of nodes allocated
   static const int kQueueInitNumNodes = 1024;
 
-  Node** delete_list_ = nullptr;  // Keeps track of all allocated array entries
+  Node **delete_list_ = nullptr;  // Keeps track of all allocated array entries
                                   // for deleting on destruction
   size_t delete_list_count_ = 0;  // Number of entries in list
   size_t delete_list_size_ = 0;   // Size of the list. List will be expanded to
                                   // double size on full
 
-  Node* queue_head_ = nullptr;  // Head of the queue, remove position
-  Node* queue_tail_ = nullptr;  // End of queue, insert position
+  Node *queue_head_ = nullptr;  // Head of the queue, remove position
+  Node *queue_tail_ = nullptr;  // End of queue, insert position
   std::atomic<int> count_{0};   // Number of elements in queue
   int num_nodes_ = 0;           // Number of nodes allocated
 
@@ -168,7 +168,7 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   // Allocates an array of nodes of size "num", links all nodes together except
   // the first node's prev and last node's next. They should be set by caller
   // manually afterward.
-  Node* AllocateNodes(int num);
+  Node *AllocateNodes(int num);
 };
 
 }  // namespace grpc_core

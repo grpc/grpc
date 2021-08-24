@@ -28,7 +28,7 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 
-static double time_double(struct timeval* tv) {
+static double time_double(struct timeval *tv) {
   return tv->tv_sec + 1e-6 * tv->tv_usec;
 }
 #endif
@@ -40,7 +40,7 @@ double UsageTimer::Now() {
   return ts.tv_sec + 1e-9 * ts.tv_nsec;
 }
 
-static void get_resource_usage(double* utime, double* stime) {
+static void get_resource_usage(double *utime, double *stime) {
 #ifdef __linux__
   struct rusage usage;
   getrusage(RUSAGE_SELF, &usage);
@@ -52,8 +52,8 @@ static void get_resource_usage(double* utime, double* stime) {
 #endif
 }
 
-static void get_cpu_usage(unsigned long long* total_cpu_time,
-                          unsigned long long* idle_cpu_time) {
+static void get_cpu_usage(unsigned long long *total_cpu_time,
+                          unsigned long long *idle_cpu_time) {
 #ifdef __linux__
   std::ifstream proc_stat("/proc/stat");
   proc_stat.ignore(5);

@@ -47,8 +47,8 @@ class Orphanable {
   virtual void Orphan() = 0;
 
   // Not copyable or movable.
-  Orphanable(const Orphanable&) = delete;
-  Orphanable& operator=(const Orphanable&) = delete;
+  Orphanable(const Orphanable &) = delete;
+  Orphanable &operator=(const Orphanable &) = delete;
 
  protected:
   Orphanable() {}
@@ -58,7 +58,7 @@ class Orphanable {
 class OrphanableDelete {
  public:
   template <typename T>
-  void operator()(T* p) {
+  void operator()(T *p) {
     p->Orphan();
   }
 };
@@ -67,7 +67,7 @@ template <typename T, typename Deleter = OrphanableDelete>
 using OrphanablePtr = std::unique_ptr<T, Deleter>;
 
 template <typename T, typename... Args>
-inline OrphanablePtr<T> MakeOrphanable(Args&&... args) {
+inline OrphanablePtr<T> MakeOrphanable(Args &&...args) {
   return OrphanablePtr<T>(new T(std::forward<Args>(args)...));
 }
 
@@ -76,8 +76,8 @@ template <typename Child, UnrefBehavior UnrefBehaviorArg = kUnrefDelete>
 class InternallyRefCounted : public Orphanable {
  public:
   // Not copyable nor movable.
-  InternallyRefCounted(const InternallyRefCounted&) = delete;
-  InternallyRefCounted& operator=(const InternallyRefCounted&) = delete;
+  InternallyRefCounted(const InternallyRefCounted &) = delete;
+  InternallyRefCounted &operator=(const InternallyRefCounted &) = delete;
 
  protected:
   // Allow RefCountedPtr<> to access Unref() and IncrementRefCount().
@@ -85,35 +85,35 @@ class InternallyRefCounted : public Orphanable {
   friend class RefCountedPtr;
 
   // Note: Tracing is a no-op on non-debug builds.
-  explicit InternallyRefCounted(const char* trace = nullptr,
+  explicit InternallyRefCounted(const char *trace = nullptr,
                                 intptr_t initial_refcount = 1)
       : refs_(initial_refcount, trace) {}
   ~InternallyRefCounted() override = default;
 
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
-    return RefCountedPtr<Child>(static_cast<Child*>(this));
+    return RefCountedPtr<Child>(static_cast<Child *>(this));
   }
-  RefCountedPtr<Child> Ref(const DebugLocation& location,
-                           const char* reason) GRPC_MUST_USE_RESULT {
+  RefCountedPtr<Child> Ref(const DebugLocation &location,
+                           const char *reason) GRPC_MUST_USE_RESULT {
     IncrementRefCount(location, reason);
-    return RefCountedPtr<Child>(static_cast<Child*>(this));
+    return RefCountedPtr<Child>(static_cast<Child *>(this));
   }
 
   void Unref() {
     if (GPR_UNLIKELY(refs_.Unref())) {
-      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child*>(this));
+      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child *>(this));
     }
   }
-  void Unref(const DebugLocation& location, const char* reason) {
+  void Unref(const DebugLocation &location, const char *reason) {
     if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
-      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child*>(this));
+      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child *>(this));
     }
   }
 
  private:
   void IncrementRefCount() { refs_.Ref(); }
-  void IncrementRefCount(const DebugLocation& location, const char* reason) {
+  void IncrementRefCount(const DebugLocation &location, const char *reason) {
     refs_.Ref(location, reason);
   }
 

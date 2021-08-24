@@ -33,24 +33,24 @@ void ServerCallbackCall::ScheduleOnDone(bool inline_ondone) {
     grpc_core::ExecCtx exec_ctx;
     struct ClosureWithArg {
       grpc_closure closure;
-      ServerCallbackCall* call;
-      explicit ClosureWithArg(ServerCallbackCall* call_arg) : call(call_arg) {
+      ServerCallbackCall *call;
+      explicit ClosureWithArg(ServerCallbackCall *call_arg) : call(call_arg) {
         GRPC_CLOSURE_INIT(
             &closure,
-            [](void* void_arg, grpc_error_handle) {
-              ClosureWithArg* arg = static_cast<ClosureWithArg*>(void_arg);
+            [](void *void_arg, grpc_error_handle) {
+              ClosureWithArg *arg = static_cast<ClosureWithArg *>(void_arg);
               arg->call->CallOnDone();
               delete arg;
             },
             this, grpc_schedule_on_exec_ctx);
       }
     };
-    ClosureWithArg* arg = new ClosureWithArg(this);
+    ClosureWithArg *arg = new ClosureWithArg(this);
     grpc_core::Executor::Run(&arg->closure, GRPC_ERROR_NONE);
   }
 }
 
-void ServerCallbackCall::CallOnCancel(ServerReactor* reactor) {
+void ServerCallbackCall::CallOnCancel(ServerReactor *reactor) {
   if (reactor->InternalInlineable()) {
     reactor->OnCancel();
   } else {
@@ -60,14 +60,14 @@ void ServerCallbackCall::CallOnCancel(ServerReactor* reactor) {
     grpc_core::ExecCtx exec_ctx;
     struct ClosureWithArg {
       grpc_closure closure;
-      ServerCallbackCall* call;
-      ServerReactor* reactor;
-      ClosureWithArg(ServerCallbackCall* call_arg, ServerReactor* reactor_arg)
+      ServerCallbackCall *call;
+      ServerReactor *reactor;
+      ClosureWithArg(ServerCallbackCall *call_arg, ServerReactor *reactor_arg)
           : call(call_arg), reactor(reactor_arg) {
         GRPC_CLOSURE_INIT(
             &closure,
-            [](void* void_arg, grpc_error_handle) {
-              ClosureWithArg* arg = static_cast<ClosureWithArg*>(void_arg);
+            [](void *void_arg, grpc_error_handle) {
+              ClosureWithArg *arg = static_cast<ClosureWithArg *>(void_arg);
               arg->reactor->OnCancel();
               arg->call->MaybeDone();
               delete arg;
@@ -75,7 +75,7 @@ void ServerCallbackCall::CallOnCancel(ServerReactor* reactor) {
             this, grpc_schedule_on_exec_ctx);
       }
     };
-    ClosureWithArg* arg = new ClosureWithArg(this, reactor);
+    ClosureWithArg *arg = new ClosureWithArg(this, reactor);
     grpc_core::Executor::Run(&arg->closure, GRPC_ERROR_NONE);
   }
 }

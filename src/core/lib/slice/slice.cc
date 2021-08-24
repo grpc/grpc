@@ -30,8 +30,8 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-char* grpc_slice_to_c_string(grpc_slice slice) {
-  char* out = static_cast<char*>(gpr_malloc(GRPC_SLICE_LENGTH(slice) + 1));
+char *grpc_slice_to_c_string(grpc_slice slice) {
+  char *out = static_cast<char *>(gpr_malloc(GRPC_SLICE_LENGTH(slice) + 1));
   memcpy(out, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice));
   out[GRPC_SLICE_LENGTH(slice)] = 0;
   return out;
@@ -73,22 +73,24 @@ static_assert(std::is_trivially_destructible<decltype(kNoopRefcount)>::value,
    with the user provided data pointer & destroy function */
 class NewSliceRefcount {
  public:
-  static void Destroy(void* arg) { delete static_cast<NewSliceRefcount*>(arg); }
+  static void Destroy(void *arg) {
+    delete static_cast<NewSliceRefcount *>(arg);
+  }
 
-  NewSliceRefcount(void (*destroy)(void*), void* user_data)
+  NewSliceRefcount(void (*destroy)(void *), void *user_data)
       : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
               &base_),
         user_destroy_(destroy),
         user_data_(user_data) {}
   ~NewSliceRefcount() { user_destroy_(user_data_); }
 
-  grpc_slice_refcount* base_refcount() { return &base_; }
+  grpc_slice_refcount *base_refcount() { return &base_; }
 
  private:
   grpc_slice_refcount base_;
   RefCount refs_;
-  void (*user_destroy_)(void*);
-  void* user_data_;
+  void (*user_destroy_)(void *);
+  void *user_data_;
 };
 
 }  // namespace grpc_core
@@ -101,26 +103,26 @@ size_t grpc_slice_memory_usage(grpc_slice s) {
   }
 }
 
-grpc_slice grpc_slice_from_static_buffer(const void* s, size_t len) {
+grpc_slice grpc_slice_from_static_buffer(const void *s, size_t len) {
   return grpc_core::ExternallyManagedSlice(s, len);
 }
 
-grpc_slice grpc_slice_from_static_string(const char* s) {
+grpc_slice grpc_slice_from_static_string(const char *s) {
   return grpc_core::ExternallyManagedSlice(s, strlen(s));
 }
 
-grpc_slice grpc_slice_new_with_user_data(void* p, size_t len,
-                                         void (*destroy)(void*),
-                                         void* user_data) {
+grpc_slice grpc_slice_new_with_user_data(void *p, size_t len,
+                                         void (*destroy)(void *),
+                                         void *user_data) {
   grpc_slice slice;
   slice.refcount =
       (new grpc_core::NewSliceRefcount(destroy, user_data))->base_refcount();
-  slice.data.refcounted.bytes = static_cast<uint8_t*>(p);
+  slice.data.refcounted.bytes = static_cast<uint8_t *>(p);
   slice.data.refcounted.length = len;
   return slice;
 }
 
-grpc_slice grpc_slice_new(void* p, size_t len, void (*destroy)(void*)) {
+grpc_slice grpc_slice_new(void *p, size_t len, void (*destroy)(void *)) {
   /* Pass "p" to *destroy when the slice is no longer needed. */
   return grpc_slice_new_with_user_data(p, len, destroy, p);
 }
@@ -130,11 +132,11 @@ namespace grpc_core {
    extended with the user provided data pointer & destroy function */
 class NewWithLenSliceRefcount {
  public:
-  static void Destroy(void* arg) {
-    delete static_cast<NewWithLenSliceRefcount*>(arg);
+  static void Destroy(void *arg) {
+    delete static_cast<NewWithLenSliceRefcount *>(arg);
   }
 
-  NewWithLenSliceRefcount(void (*destroy)(void*, size_t), void* user_data,
+  NewWithLenSliceRefcount(void (*destroy)(void *, size_t), void *user_data,
                           size_t user_length)
       : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
               &base_),
@@ -143,29 +145,29 @@ class NewWithLenSliceRefcount {
         user_destroy_(destroy) {}
   ~NewWithLenSliceRefcount() { user_destroy_(user_data_, user_length_); }
 
-  grpc_slice_refcount* base_refcount() { return &base_; }
+  grpc_slice_refcount *base_refcount() { return &base_; }
 
  private:
   grpc_slice_refcount base_;
   RefCount refs_;
-  void* user_data_;
+  void *user_data_;
   size_t user_length_;
-  void (*user_destroy_)(void*, size_t);
+  void (*user_destroy_)(void *, size_t);
 };
 
 /** grpc_slice_from_moved_(string|buffer) ref count .*/
 class MovedStringSliceRefCount {
  public:
-  explicit MovedStringSliceRefCount(grpc_core::UniquePtr<char>&& str)
+  explicit MovedStringSliceRefCount(grpc_core::UniquePtr<char> &&str)
       : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
               &base_),
         str_(std::move(str)) {}
 
-  grpc_slice_refcount* base_refcount() { return &base_; }
+  grpc_slice_refcount *base_refcount() { return &base_; }
 
  private:
-  static void Destroy(void* arg) {
-    delete static_cast<MovedStringSliceRefCount*>(arg);
+  static void Destroy(void *arg) {
+    delete static_cast<MovedStringSliceRefCount *>(arg);
   }
 
   grpc_slice_refcount base_;
@@ -176,16 +178,16 @@ class MovedStringSliceRefCount {
 // grpc_slice_from_cpp_string() ref count.
 class MovedCppStringSliceRefCount {
  public:
-  explicit MovedCppStringSliceRefCount(std::string&& str)
+  explicit MovedCppStringSliceRefCount(std::string &&str)
       : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
               &base_),
         str_(std::move(str)) {}
 
-  grpc_slice_refcount* base_refcount() { return &base_; }
+  grpc_slice_refcount *base_refcount() { return &base_; }
 
  private:
-  static void Destroy(void* arg) {
-    delete static_cast<MovedCppStringSliceRefCount*>(arg);
+  static void Destroy(void *arg) {
+    delete static_cast<MovedCppStringSliceRefCount *>(arg);
   }
 
   grpc_slice_refcount base_;
@@ -195,17 +197,17 @@ class MovedCppStringSliceRefCount {
 
 }  // namespace grpc_core
 
-grpc_slice grpc_slice_new_with_len(void* p, size_t len,
-                                   void (*destroy)(void*, size_t)) {
+grpc_slice grpc_slice_new_with_len(void *p, size_t len,
+                                   void (*destroy)(void *, size_t)) {
   grpc_slice slice;
   slice.refcount = (new grpc_core::NewWithLenSliceRefcount(destroy, p, len))
                        ->base_refcount();
-  slice.data.refcounted.bytes = static_cast<uint8_t*>(p);
+  slice.data.refcounted.bytes = static_cast<uint8_t *>(p);
   slice.data.refcounted.length = len;
   return slice;
 }
 
-grpc_core::UnmanagedMemorySlice::UnmanagedMemorySlice(const char* source,
+grpc_core::UnmanagedMemorySlice::UnmanagedMemorySlice(const char *source,
                                                       size_t length) {
   if (length <= sizeof(data.inlined.bytes)) {
     refcount = nullptr;
@@ -218,21 +220,21 @@ grpc_core::UnmanagedMemorySlice::UnmanagedMemorySlice(const char* source,
   }
 }
 
-grpc_core::UnmanagedMemorySlice::UnmanagedMemorySlice(const char* source)
+grpc_core::UnmanagedMemorySlice::UnmanagedMemorySlice(const char *source)
     : grpc_core::UnmanagedMemorySlice::UnmanagedMemorySlice(source,
                                                             strlen(source)) {}
 
-grpc_slice grpc_slice_from_copied_buffer(const char* source, size_t length) {
+grpc_slice grpc_slice_from_copied_buffer(const char *source, size_t length) {
   return grpc_core::UnmanagedMemorySlice(source, length);
 }
 
-grpc_slice grpc_slice_from_copied_string(const char* source) {
+grpc_slice grpc_slice_from_copied_string(const char *source) {
   return grpc_core::UnmanagedMemorySlice(source, strlen(source));
 }
 
 grpc_slice grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char> p,
                                         size_t len) {
-  uint8_t* ptr = reinterpret_cast<uint8_t*>(p.get());
+  uint8_t *ptr = reinterpret_cast<uint8_t *>(p.get());
   grpc_slice slice;
   if (len <= sizeof(slice.data.inlined.bytes)) {
     slice.refcount = nullptr;
@@ -260,7 +262,7 @@ grpc_slice grpc_slice_from_cpp_string(std::string str) {
     memcpy(GRPC_SLICE_START_PTR(slice), str.data(), str.size());
   } else {
     slice.data.refcounted.bytes =
-        reinterpret_cast<uint8_t*>(const_cast<char*>(str.data()));
+        reinterpret_cast<uint8_t *>(const_cast<char *>(str.data()));
     slice.data.refcounted.length = str.size();
     slice.refcount =
         (new grpc_core::MovedCppStringSliceRefCount(std::move(str)))
@@ -273,8 +275,8 @@ namespace {
 
 class MallocRefCount {
  public:
-  static void Destroy(void* arg) {
-    MallocRefCount* r = static_cast<MallocRefCount*>(arg);
+  static void Destroy(void *arg) {
+    MallocRefCount *r = static_cast<MallocRefCount *>(arg);
     r->~MallocRefCount();
     gpr_free(r);
   }
@@ -284,7 +286,7 @@ class MallocRefCount {
               &base_) {}
   ~MallocRefCount() = default;
 
-  grpc_slice_refcount* base_refcount() { return &base_; }
+  grpc_slice_refcount *base_refcount() { return &base_; }
 
  private:
   grpc_slice_refcount base_;
@@ -308,8 +310,8 @@ void grpc_core::UnmanagedMemorySlice::HeapInit(size_t length) {
      refcount is a malloc_refcount
      bytes is an array of bytes of the requested length
      Both parts are placed in the same allocation returned from gpr_malloc */
-  auto* rc =
-      static_cast<MallocRefCount*>(gpr_malloc(sizeof(MallocRefCount) + length));
+  auto *rc = static_cast<MallocRefCount *>(
+      gpr_malloc(sizeof(MallocRefCount) + length));
 
   /* Initial refcount on rc is 1 - and it's up to the caller to release
      this reference. */
@@ -319,7 +321,7 @@ void grpc_core::UnmanagedMemorySlice::HeapInit(size_t length) {
   /* The slices refcount points back to the allocated block. */
   refcount = rc->base_refcount();
   /* The data bytes are placed immediately after the refcount struct */
-  data.refcounted.bytes = reinterpret_cast<uint8_t*>(rc + 1);
+  data.refcounted.bytes = reinterpret_cast<uint8_t *>(rc + 1);
   /* And the length of the block is set to the requested length */
   data.refcounted.length = length;
 }
@@ -339,7 +341,7 @@ grpc_core::UnmanagedMemorySlice::UnmanagedMemorySlice(size_t length) {
 }
 
 template <typename Slice>
-static Slice sub_no_ref(const Slice& source, size_t begin, size_t end) {
+static Slice sub_no_ref(const Slice &source, size_t begin, size_t end) {
   Slice subset;
 
   GPR_ASSERT(end >= begin);
@@ -369,7 +371,7 @@ grpc_slice grpc_slice_sub_no_ref(grpc_slice source, size_t begin, size_t end) {
 }
 
 grpc_core::UnmanagedMemorySlice grpc_slice_sub_no_ref(
-    const grpc_core::UnmanagedMemorySlice& source, size_t begin, size_t end) {
+    const grpc_core::UnmanagedMemorySlice &source, size_t begin, size_t end) {
   return sub_no_ref(source, begin, end);
 }
 
@@ -389,7 +391,7 @@ grpc_slice grpc_slice_sub(grpc_slice source, size_t begin, size_t end) {
   return subset;
 }
 
-grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* source, size_t split,
+grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice *source, size_t split,
                                            grpc_slice_ref_whom ref_whom) {
   grpc_slice tail;
 
@@ -441,11 +443,11 @@ grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* source, size_t split,
   return tail;
 }
 
-grpc_slice grpc_slice_split_tail(grpc_slice* source, size_t split) {
+grpc_slice grpc_slice_split_tail(grpc_slice *source, size_t split) {
   return grpc_slice_split_tail_maybe_ref(source, split, GRPC_SLICE_REF_BOTH);
 }
 
-grpc_slice grpc_slice_split_head(grpc_slice* source, size_t split) {
+grpc_slice grpc_slice_split_head(grpc_slice *source, size_t split) {
   grpc_slice head;
 
   if (source->refcount == nullptr) {
@@ -500,10 +502,10 @@ int grpc_slice_eq(grpc_slice a, grpc_slice b) {
   return grpc_slice_default_eq_impl(a, b);
 }
 
-int grpc_slice_differs_refcounted(const grpc_slice& a,
-                                  const grpc_slice& b_not_inline) {
+int grpc_slice_differs_refcounted(const grpc_slice &a,
+                                  const grpc_slice &b_not_inline) {
   size_t a_len;
-  const uint8_t* a_ptr;
+  const uint8_t *a_ptr;
   if (a.refcount) {
     a_len = a.data.refcounted.length;
     a_ptr = a.data.refcounted.bytes;
@@ -532,7 +534,7 @@ int grpc_slice_cmp(grpc_slice a, grpc_slice b) {
                 GRPC_SLICE_LENGTH(a));
 }
 
-int grpc_slice_str_cmp(grpc_slice a, const char* b) {
+int grpc_slice_str_cmp(grpc_slice a, const char *b) {
   size_t b_length = strlen(b);
   int d = static_cast<int>(GRPC_SLICE_LENGTH(a) - b_length);
   if (d != 0) return d;
@@ -547,13 +549,13 @@ int grpc_slice_is_equivalent(grpc_slice a, grpc_slice b) {
          a.data.refcounted.bytes == b.data.refcounted.bytes;
 }
 
-int grpc_slice_buf_start_eq(grpc_slice a, const void* b, size_t len) {
+int grpc_slice_buf_start_eq(grpc_slice a, const void *b, size_t len) {
   if (GRPC_SLICE_LENGTH(a) < len) return 0;
   return 0 == memcmp(GRPC_SLICE_START_PTR(a), b, len);
 }
 
 int grpc_slice_rchr(grpc_slice s, char c) {
-  const char* b = reinterpret_cast<const char*> GRPC_SLICE_START_PTR(s);
+  const char *b = reinterpret_cast<const char *> GRPC_SLICE_START_PTR(s);
   int i;
   for (i = static_cast<int> GRPC_SLICE_LENGTH(s) - 1; i != -1 && b[i] != c;
        i--) {
@@ -562,16 +564,16 @@ int grpc_slice_rchr(grpc_slice s, char c) {
 }
 
 int grpc_slice_chr(grpc_slice s, char c) {
-  const char* b = reinterpret_cast<const char*> GRPC_SLICE_START_PTR(s);
-  const char* p = static_cast<const char*>(memchr(b, c, GRPC_SLICE_LENGTH(s)));
+  const char *b = reinterpret_cast<const char *> GRPC_SLICE_START_PTR(s);
+  const char *p = static_cast<const char *>(memchr(b, c, GRPC_SLICE_LENGTH(s)));
   return p == nullptr ? -1 : static_cast<int>(p - b);
 }
 
 int grpc_slice_slice(grpc_slice haystack, grpc_slice needle) {
   size_t haystack_len = GRPC_SLICE_LENGTH(haystack);
-  const uint8_t* haystack_bytes = GRPC_SLICE_START_PTR(haystack);
+  const uint8_t *haystack_bytes = GRPC_SLICE_START_PTR(haystack);
   size_t needle_len = GRPC_SLICE_LENGTH(needle);
-  const uint8_t* needle_bytes = GRPC_SLICE_START_PTR(needle);
+  const uint8_t *needle_bytes = GRPC_SLICE_START_PTR(needle);
 
   if (haystack_len == 0 || needle_len == 0) return -1;
   if (haystack_len < needle_len) return -1;
@@ -582,8 +584,8 @@ int grpc_slice_slice(grpc_slice haystack, grpc_slice needle) {
     return grpc_slice_chr(haystack, static_cast<char>(*needle_bytes));
   }
 
-  const uint8_t* last = haystack_bytes + haystack_len - needle_len;
-  for (const uint8_t* cur = haystack_bytes; cur != last; ++cur) {
+  const uint8_t *last = haystack_bytes + haystack_len - needle_len;
+  for (const uint8_t *cur = haystack_bytes; cur != last; ++cur) {
     if (0 == memcmp(cur, needle_bytes, needle_len)) {
       return static_cast<int>(cur - haystack_bytes);
     }

@@ -49,21 +49,21 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
 
   // Implements interface methods.
   RefCountedPtr<Subchannel> RegisterSubchannel(
-      const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override
+      const SubchannelKey &key, RefCountedPtr<Subchannel> constructed) override
       ABSL_LOCKS_EXCLUDED(mu_);
-  void UnregisterSubchannel(const SubchannelKey& key,
-                            Subchannel* subchannel) override
+  void UnregisterSubchannel(const SubchannelKey &key,
+                            Subchannel *subchannel) override
       ABSL_LOCKS_EXCLUDED(mu_);
-  RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey& key) override
+  RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey &key) override
       ABSL_LOCKS_EXCLUDED(mu_);
 
  private:
   // The singleton instance. (It's a pointer to RefCountedPtr so that this
   // non-local static object can be trivially destructible.)
-  static RefCountedPtr<GlobalSubchannelPool>* instance_;
+  static RefCountedPtr<GlobalSubchannelPool> *instance_;
 
   // A map from subchannel key to subchannel.
-  std::map<SubchannelKey, Subchannel*> subchannel_map_ ABSL_GUARDED_BY(mu_);
+  std::map<SubchannelKey, Subchannel *> subchannel_map_ ABSL_GUARDED_BY(mu_);
   // To protect subchannel_map_.
   Mutex mu_;
 };

@@ -38,7 +38,7 @@ using grpc_core::Arena;
 
 static void test_noop(void) { Arena::Create(1)->Destroy(); }
 
-static void test(const char* name, size_t init_size, const size_t* allocs,
+static void test(const char *name, size_t init_size, const size_t *allocs,
                  size_t nallocs) {
   std::vector<std::string> parts;
   parts.push_back(
@@ -50,8 +50,8 @@ static void test(const char* name, size_t init_size, const size_t* allocs,
   std::string s = absl::StrJoin(parts, "");
   gpr_log(GPR_INFO, "%s", s.c_str());
 
-  Arena* a = Arena::Create(init_size);
-  void** ps = static_cast<void**>(gpr_zalloc(sizeof(*ps) * nallocs));
+  Arena *a = Arena::Create(init_size);
+  void **ps = static_cast<void **>(gpr_zalloc(sizeof(*ps) * nallocs));
   for (size_t i = 0; i < nallocs; i++) {
     ps[i] = a->Alloc(allocs[i]);
     // ensure the returned address is aligned
@@ -74,20 +74,20 @@ static void test(const char* name, size_t init_size, const size_t* allocs,
 #define CONCURRENT_TEST_THREADS 10
 
 size_t concurrent_test_iterations() {
-  if (sizeof(void*) < 8) return 1000;
+  if (sizeof(void *) < 8) return 1000;
   return 100000;
 }
 
 typedef struct {
   gpr_event ev_start;
-  Arena* arena;
+  Arena *arena;
 } concurrent_test_args;
 
-static void concurrent_test_body(void* arg) {
-  concurrent_test_args* a = static_cast<concurrent_test_args*>(arg);
+static void concurrent_test_body(void *arg) {
+  concurrent_test_args *a = static_cast<concurrent_test_args *>(arg);
   gpr_event_wait(&a->ev_start, gpr_inf_future(GPR_CLOCK_REALTIME));
   for (size_t i = 0; i < concurrent_test_iterations(); i++) {
-    *static_cast<char*>(a->arena->Alloc(1)) = static_cast<char>(i);
+    *static_cast<char *>(a->arena->Alloc(1)) = static_cast<char>(i);
   }
 }
 
@@ -106,16 +106,16 @@ static void concurrent_test(void) {
     thds[i].Start();
   }
 
-  gpr_event_set(&args.ev_start, reinterpret_cast<void*>(1));
+  gpr_event_set(&args.ev_start, reinterpret_cast<void *>(1));
 
-  for (auto& th : thds) {
+  for (auto &th : thds) {
     th.Join();
   }
 
   args.arena->Destroy();
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   grpc::testing::TestEnvironment env(argc, argv);
 
   test_noop();

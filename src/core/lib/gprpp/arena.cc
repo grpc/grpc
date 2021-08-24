@@ -33,7 +33,7 @@
 
 namespace {
 
-void* ArenaStorage(size_t initial_size) {
+void *ArenaStorage(size_t initial_size) {
   static constexpr size_t base_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_core::Arena));
   initial_size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_size);
@@ -51,26 +51,26 @@ void* ArenaStorage(size_t initial_size) {
 namespace grpc_core {
 
 Arena::~Arena() {
-  Zone* z = last_zone_;
+  Zone *z = last_zone_;
   while (z) {
-    Zone* prev_z = z->prev;
+    Zone *prev_z = z->prev;
     z->~Zone();
     gpr_free_aligned(z);
     z = prev_z;
   }
 }
 
-Arena* Arena::Create(size_t initial_size) {
+Arena *Arena::Create(size_t initial_size) {
   return new (ArenaStorage(initial_size)) Arena(initial_size);
 }
 
-std::pair<Arena*, void*> Arena::CreateWithAlloc(size_t initial_size,
-                                                size_t alloc_size) {
+std::pair<Arena *, void *> Arena::CreateWithAlloc(size_t initial_size,
+                                                  size_t alloc_size) {
   static constexpr size_t base_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
-  auto* new_arena =
+  auto *new_arena =
       new (ArenaStorage(initial_size)) Arena(initial_size, alloc_size);
-  void* first_alloc = reinterpret_cast<char*>(new_arena) + base_size;
+  void *first_alloc = reinterpret_cast<char *>(new_arena) + base_size;
   return std::make_pair(new_arena, first_alloc);
 }
 
@@ -81,7 +81,7 @@ size_t Arena::Destroy() {
   return size;
 }
 
-void* Arena::AllocZone(size_t size) {
+void *Arena::AllocZone(size_t size) {
   // If the allocation isn't able to end in the initial zone, create a new
   // zone for this allocation, and any unused space in the initial zone is
   // wasted. This overflowing and wasting is uncommon because of our arena
@@ -90,14 +90,14 @@ void* Arena::AllocZone(size_t size) {
   static constexpr size_t zone_base_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Zone));
   size_t alloc_size = zone_base_size + size;
-  Zone* z = new (gpr_malloc_aligned(alloc_size, GPR_MAX_ALIGNMENT)) Zone();
+  Zone *z = new (gpr_malloc_aligned(alloc_size, GPR_MAX_ALIGNMENT)) Zone();
   {
     gpr_spinlock_lock(&arena_growth_spinlock_);
     z->prev = last_zone_;
     last_zone_ = z;
     gpr_spinlock_unlock(&arena_growth_spinlock_);
   }
-  return reinterpret_cast<char*>(z) + zone_base_size;
+  return reinterpret_cast<char *>(z) + zone_base_size;
 }
 
 }  // namespace grpc_core

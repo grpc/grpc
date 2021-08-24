@@ -57,9 +57,9 @@ grpc_service_account_jwt_access_credentials::
 }
 
 bool grpc_service_account_jwt_access_credentials::get_request_metadata(
-    grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context context,
-    grpc_credentials_mdelem_array* md_array,
-    grpc_closure* /*on_request_metadata*/, grpc_error_handle* error) {
+    grpc_polling_entity * /*pollent*/, grpc_auth_metadata_context context,
+    grpc_credentials_mdelem_array *md_array,
+    grpc_closure * /*on_request_metadata*/, grpc_error_handle *error) {
   gpr_timespec refresh_threshold = gpr_time_from_seconds(
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
 
@@ -79,7 +79,7 @@ bool grpc_service_account_jwt_access_credentials::get_request_metadata(
   }
 
   if (GRPC_MDISNULL(jwt_md)) {
-    char* jwt = nullptr;
+    char *jwt = nullptr;
     /* Generate a new jwt. */
     gpr_mu_lock(&cache_mu_);
     reset_cache();
@@ -109,7 +109,7 @@ bool grpc_service_account_jwt_access_credentials::get_request_metadata(
 }
 
 void grpc_service_account_jwt_access_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* /*md_array*/, grpc_error_handle error) {
+    grpc_credentials_mdelem_array * /*md_array*/, grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
@@ -140,7 +140,7 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
       key, token_lifetime);
 }
 
-static char* redact_private_key(const char* json_key) {
+static char *redact_private_key(const char *json_key) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_key, &error);
   if (error != GRPC_ERROR_NONE || json.type() != Json::Type::OBJECT) {
@@ -151,10 +151,10 @@ static char* redact_private_key(const char* json_key) {
   return gpr_strdup(json.Dump(/*indent=*/2).c_str());
 }
 
-grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(
-    const char* json_key, gpr_timespec token_lifetime, void* reserved) {
+grpc_call_credentials *grpc_service_account_jwt_access_credentials_create(
+    const char *json_key, gpr_timespec token_lifetime, void *reserved) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace)) {
-    char* clean_json = redact_private_key(json_key);
+    char *clean_json = redact_private_key(json_key);
     gpr_log(GPR_INFO,
             "grpc_service_account_jwt_access_credentials_create("
             "json_key=%s, "

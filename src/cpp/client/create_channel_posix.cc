@@ -30,7 +30,7 @@ class ChannelArguments;
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
-std::shared_ptr<Channel> CreateInsecureChannelFromFd(const std::string& target,
+std::shared_ptr<Channel> CreateInsecureChannelFromFd(const std::string &target,
                                                      int fd) {
   grpc::internal::GrpcLibrary init_lib;
   init_lib.init();
@@ -41,7 +41,7 @@ std::shared_ptr<Channel> CreateInsecureChannelFromFd(const std::string& target,
 }
 
 std::shared_ptr<Channel> CreateCustomInsecureChannelFromFd(
-    const std::string& target, int fd, const grpc::ChannelArguments& args) {
+    const std::string &target, int fd, const grpc::ChannelArguments &args) {
   internal::GrpcLibrary init_lib;
   init_lib.init();
   grpc_channel_args channel_args;
@@ -56,7 +56,7 @@ std::shared_ptr<Channel> CreateCustomInsecureChannelFromFd(
 namespace experimental {
 
 std::shared_ptr<Channel> CreateCustomInsecureChannelWithInterceptorsFromFd(
-    const std::string& target, int fd, const ChannelArguments& args,
+    const std::string &target, int fd, const ChannelArguments &args,
     std::vector<
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {

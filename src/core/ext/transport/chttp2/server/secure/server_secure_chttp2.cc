@@ -39,9 +39,9 @@
 
 namespace {
 
-grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
-                                           grpc_error_handle* error) {
-  grpc_server_credentials* server_credentials =
+grpc_channel_args *ModifyArgsForConnection(grpc_channel_args *args,
+                                           grpc_error_handle *error) {
+  grpc_server_credentials *server_credentials =
       grpc_find_server_credentials_in_args(args);
   if (server_credentials == nullptr) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -58,7 +58,7 @@ grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
   }
   grpc_arg arg_to_add =
       grpc_security_connector_to_arg(security_connector.get());
-  grpc_channel_args* new_args =
+  grpc_channel_args *new_args =
       grpc_channel_args_copy_and_add(args, &arg_to_add, 1);
   grpc_channel_args_destroy(args);
   return new_args;
@@ -66,13 +66,13 @@ grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
 
 }  // namespace
 
-int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
-                                      grpc_server_credentials* creds) {
+int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
+                                      grpc_server_credentials *creds) {
   grpc_core::ExecCtx exec_ctx;
   grpc_error_handle err = GRPC_ERROR_NONE;
   grpc_core::RefCountedPtr<grpc_server_security_connector> sc;
   int port_num = 0;
-  grpc_channel_args* args = nullptr;
+  grpc_channel_args *args = nullptr;
   GRPC_API_TRACE(
       "grpc_server_add_secure_http2_port("
       "server=%p, addr=%s, creds=%p)",

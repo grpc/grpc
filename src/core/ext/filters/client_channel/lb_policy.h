@@ -113,21 +113,21 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// automatically freed when the call is complete.
     /// It is more efficient to use this than to allocate memory directly
     /// for allocations that need to be made on a per-call basis.
-    virtual void* Alloc(size_t size) = 0;
+    virtual void *Alloc(size_t size) = 0;
 
     /// Returns the backend metric data returned by the server for the call,
     /// or null if no backend metric data was returned.
     // TODO(roth): Move this out of CallState, since it should not be
     // accessible to the picker, only to the recv_trailing_metadata_ready
     // callback.  It should instead be in its own interface.
-    virtual const BackendMetricData* GetBackendMetricData() = 0;
+    virtual const BackendMetricData *GetBackendMetricData() = 0;
 
     /// EXPERIMENTAL API.
     /// Returns the value of the call attribute \a key.
     /// Keys are static strings, so an attribute can be accessed by an LB
     /// policy implementation only if it knows about the internal key.
     /// Returns a null string_view if key not found.
-    virtual absl::string_view ExperimentalGetCallAttribute(const char* key) = 0;
+    virtual absl::string_view ExperimentalGetCallAttribute(const char *key) = 0;
   };
 
   /// Interface for accessing metadata.
@@ -139,13 +139,13 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
               std::input_iterator_tag,
               std::pair<absl::string_view, absl::string_view>,  // value_type
               std::ptrdiff_t,  // difference_type
-              std::pair<absl::string_view, absl::string_view>*,  // pointer
-              std::pair<absl::string_view, absl::string_view>&   // reference
+              std::pair<absl::string_view, absl::string_view> *,  // pointer
+              std::pair<absl::string_view, absl::string_view> &   // reference
               > {
      public:
-      iterator(const MetadataInterface* md, intptr_t handle)
+      iterator(const MetadataInterface *md, intptr_t handle)
           : md_(md), handle_(handle) {}
-      iterator& operator++() {
+      iterator &operator++() {
         handle_ = md_->IteratorHandleNext(handle_);
         return *this;
       }
@@ -157,7 +157,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
      private:
       friend class MetadataInterface;
-      const MetadataInterface* md_;
+      const MetadataInterface *md_;
       intptr_t handle_;
     };
 
@@ -179,7 +179,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     virtual iterator erase(iterator it) = 0;
 
    protected:
-    intptr_t GetIteratorHandle(const iterator& it) const { return it.handle_; }
+    intptr_t GetIteratorHandle(const iterator &it) const { return it.handle_; }
 
    private:
     friend class iterator;
@@ -197,10 +197,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// The LB policy may use the existing metadata to influence its routing
     /// decision, and it may add new metadata elements to be sent with the
     /// call to the chosen backend.
-    MetadataInterface* initial_metadata;
+    MetadataInterface *initial_metadata;
     /// An interface for accessing call state.  Can be used to allocate
     /// memory associated with the call in an efficient way.
-    CallState* call_state;
+    CallState *call_state;
   };
 
   /// The result of picking a subchannel for a call.
@@ -220,13 +220,13 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
       // TODO(roth): The arguments to this callback should be moved into a
       // struct, so that we can later add new fields without breaking
       // existing implementations.
-      std::function<void(absl::Status, MetadataInterface*, CallState*)>
+      std::function<void(absl::Status, MetadataInterface *, CallState *)>
           recv_trailing_metadata_ready;
 
       explicit Complete(
           RefCountedPtr<SubchannelInterface> sc,
-          std::function<void(absl::Status, MetadataInterface*, CallState*)> cb =
-              nullptr)
+          std::function<void(absl::Status, MetadataInterface *, CallState *)>
+              cb = nullptr)
           : subchannel(std::move(sc)),
             recv_trailing_metadata_ready(std::move(cb)) {}
     };
@@ -301,12 +301,12 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Creates a new subchannel with the specified channel args.
     virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const grpc_channel_args& args) = 0;
+        ServerAddress address, const grpc_channel_args &args) = 0;
 
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.
     virtual void UpdateState(grpc_connectivity_state state,
-                             const absl::Status& status,
+                             const absl::Status &status,
                              std::unique_ptr<SubchannelPicker>) = 0;
 
     /// Requests that the resolver re-resolve.
@@ -326,7 +326,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     ~Config() override = default;
 
     // Returns the load balancing policy name
-    virtual const char* name() const = 0;
+    virtual const char *name() const = 0;
   };
 
   /// Data passed to the UpdateLocked() method when new addresses and
@@ -334,16 +334,16 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   struct UpdateArgs {
     ServerAddressList addresses;
     RefCountedPtr<Config> config;
-    const grpc_channel_args* args = nullptr;
+    const grpc_channel_args *args = nullptr;
 
     // TODO(roth): Remove everything below once channel args is
     // converted to a copyable and movable C++ object.
     UpdateArgs() = default;
     ~UpdateArgs() { grpc_channel_args_destroy(args); }
-    UpdateArgs(const UpdateArgs& other);
-    UpdateArgs(UpdateArgs&& other) noexcept;
-    UpdateArgs& operator=(const UpdateArgs& other);
-    UpdateArgs& operator=(UpdateArgs&& other) noexcept;
+    UpdateArgs(const UpdateArgs &other);
+    UpdateArgs(UpdateArgs &&other) noexcept;
+    UpdateArgs &operator=(const UpdateArgs &other);
+    UpdateArgs &operator=(UpdateArgs &&other) noexcept;
   };
 
   /// Args used to instantiate an LB policy.
@@ -359,18 +359,18 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     // TODO(roth): Clarify ownership semantics here -- currently, this
     // does not take ownership of args, which is the opposite of how we
     // handle them in UpdateArgs.
-    const grpc_channel_args* args = nullptr;
+    const grpc_channel_args *args = nullptr;
   };
 
   explicit LoadBalancingPolicy(Args args, intptr_t initial_refcount = 1);
   ~LoadBalancingPolicy() override;
 
   // Not copyable nor movable.
-  LoadBalancingPolicy(const LoadBalancingPolicy&) = delete;
-  LoadBalancingPolicy& operator=(const LoadBalancingPolicy&) = delete;
+  LoadBalancingPolicy(const LoadBalancingPolicy &) = delete;
+  LoadBalancingPolicy &operator=(const LoadBalancingPolicy &) = delete;
 
   /// Returns the name of the LB policy.
-  virtual const char* name() const = 0;
+  virtual const char *name() const = 0;
 
   /// Updates the policy with new data from the resolver.  Will be invoked
   /// immediately after LB policy is constructed, and then again whenever
@@ -385,7 +385,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Resets connection backoff.
   virtual void ResetBackoffLocked() = 0;
 
-  grpc_pollset_set* interested_parties() const { return interested_parties_; }
+  grpc_pollset_set *interested_parties() const { return interested_parties_; }
 
   // Note: This must be invoked while holding the work_serializer.
   void Orphan() override;
@@ -427,7 +427,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   // Note: LB policies MUST NOT call any method on the helper from their
   // constructor.
-  ChannelControlHelper* channel_control_helper() const {
+  ChannelControlHelper *channel_control_helper() const {
     return channel_control_helper_.get();
   }
 
@@ -438,7 +438,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Work Serializer under which LB policy actions take place.
   std::shared_ptr<WorkSerializer> work_serializer_;
   /// Owned pointer to interested parties in load balancing decisions.
-  grpc_pollset_set* interested_parties_;
+  grpc_pollset_set *interested_parties_;
   /// Channel control helper.
   std::unique_ptr<ChannelControlHelper> channel_control_helper_;
 };

@@ -39,10 +39,10 @@ struct ThreadParams {
   gpr_mu mu;
   int complete;
   int queuing;
-  gpr_mu* pollset_mu[THREADS];
+  gpr_mu *pollset_mu[THREADS];
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc_init();
 
   // Create the threads that all start queueing for work.
@@ -68,11 +68,11 @@ int main(int argc, char** argv) {
   for (int i = 0; i < THREADS; i++) {
     grpc_core::Thread thd(
         "Poller",
-        [](void* params) {
-          ThreadParams* tparams = static_cast<ThreadParams*>(params);
+        [](void *params) {
+          ThreadParams *tparams = static_cast<ThreadParams *>(params);
           grpc_core::ExecCtx exec_ctx;
 
-          gpr_mu* mu;
+          gpr_mu *mu;
           grpc_pollset pollset = {};
           grpc_pollset_init(&pollset, &mu);
 
@@ -136,9 +136,9 @@ int main(int argc, char** argv) {
     ;
   gpr_mu_unlock(&params.mu);
 
-  for (auto& t : threads) t.Join();
+  for (auto &t : threads) t.Join();
   return EXIT_SUCCESS;
 }
 #else /* defined(GRPC_WINSOCK_SOCKET) */
-int main(int /*argc*/, char** /*argv*/) { return 0; }
+int main(int /*argc*/, char ** /*argv*/) { return 0; }
 #endif

@@ -39,14 +39,14 @@ ProtoServerReflection::ProtoServerReflection()
     : descriptor_pool_(protobuf::DescriptorPool::generated_pool()) {}
 
 void ProtoServerReflection::SetServiceList(
-    const std::vector<std::string>* services) {
+    const std::vector<std::string> *services) {
   services_ = services;
 }
 
 Status ProtoServerReflection::ServerReflectionInfo(
-    ServerContext* context,
-    ServerReaderWriter<ServerReflectionResponse, ServerReflectionRequest>*
-        stream) {
+    ServerContext *context,
+    ServerReaderWriter<ServerReflectionResponse, ServerReflectionRequest>
+        *stream) {
   ServerReflectionRequest request;
   ServerReflectionResponse response;
   Status status;
@@ -90,32 +90,32 @@ Status ProtoServerReflection::ServerReflectionInfo(
   return Status::OK;
 }
 
-void ProtoServerReflection::FillErrorResponse(const Status& status,
-                                              ErrorResponse* error_response) {
+void ProtoServerReflection::FillErrorResponse(const Status &status,
+                                              ErrorResponse *error_response) {
   error_response->set_error_code(status.error_code());
   error_response->set_error_message(status.error_message());
 }
 
-Status ProtoServerReflection::ListService(ServerContext* /*context*/,
-                                          ListServiceResponse* response) {
+Status ProtoServerReflection::ListService(ServerContext * /*context*/,
+                                          ListServiceResponse *response) {
   if (services_ == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Services not found.");
   }
-  for (const auto& value : *services_) {
-    ServiceResponse* service_response = response->add_service();
+  for (const auto &value : *services_) {
+    ServiceResponse *service_response = response->add_service();
     service_response->set_name(value);
   }
   return Status::OK;
 }
 
 Status ProtoServerReflection::GetFileByName(
-    ServerContext* /*context*/, const std::string& file_name,
-    ServerReflectionResponse* response) {
+    ServerContext * /*context*/, const std::string &file_name,
+    ServerReflectionResponse *response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
 
-  const protobuf::FileDescriptor* file_desc =
+  const protobuf::FileDescriptor *file_desc =
       descriptor_pool_->FindFileByName(file_name);
   if (file_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "File not found.");
@@ -126,13 +126,13 @@ Status ProtoServerReflection::GetFileByName(
 }
 
 Status ProtoServerReflection::GetFileContainingSymbol(
-    ServerContext* /*context*/, const std::string& symbol,
-    ServerReflectionResponse* response) {
+    ServerContext * /*context*/, const std::string &symbol,
+    ServerReflectionResponse *response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
 
-  const protobuf::FileDescriptor* file_desc =
+  const protobuf::FileDescriptor *file_desc =
       descriptor_pool_->FindFileContainingSymbol(symbol);
   if (file_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Symbol not found.");
@@ -143,19 +143,19 @@ Status ProtoServerReflection::GetFileContainingSymbol(
 }
 
 Status ProtoServerReflection::GetFileContainingExtension(
-    ServerContext* /*context*/, const ExtensionRequest* request,
-    ServerReflectionResponse* response) {
+    ServerContext * /*context*/, const ExtensionRequest *request,
+    ServerReflectionResponse *response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
 
-  const protobuf::Descriptor* desc =
+  const protobuf::Descriptor *desc =
       descriptor_pool_->FindMessageTypeByName(request->containing_type());
   if (desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Type not found.");
   }
 
-  const protobuf::FieldDescriptor* field_desc =
+  const protobuf::FieldDescriptor *field_desc =
       descriptor_pool_->FindExtensionByNumber(desc,
                                               request->extension_number());
   if (field_desc == nullptr) {
@@ -167,21 +167,21 @@ Status ProtoServerReflection::GetFileContainingExtension(
 }
 
 Status ProtoServerReflection::GetAllExtensionNumbers(
-    ServerContext* /*context*/, const std::string& type,
-    ExtensionNumberResponse* response) {
+    ServerContext * /*context*/, const std::string &type,
+    ExtensionNumberResponse *response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
 
-  const protobuf::Descriptor* desc =
+  const protobuf::Descriptor *desc =
       descriptor_pool_->FindMessageTypeByName(type);
   if (desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Type not found.");
   }
 
-  std::vector<const protobuf::FieldDescriptor*> extensions;
+  std::vector<const protobuf::FieldDescriptor *> extensions;
   descriptor_pool_->FindAllExtensions(desc, &extensions);
-  for (const auto& value : extensions) {
+  for (const auto &value : extensions) {
     response->add_extension_number(value->number());
   }
   response->set_base_type_name(type);
@@ -189,9 +189,9 @@ Status ProtoServerReflection::GetAllExtensionNumbers(
 }
 
 void ProtoServerReflection::FillFileDescriptorResponse(
-    const protobuf::FileDescriptor* file_desc,
-    ServerReflectionResponse* response,
-    std::unordered_set<std::string>* seen_files) {
+    const protobuf::FileDescriptor *file_desc,
+    ServerReflectionResponse *response,
+    std::unordered_set<std::string> *seen_files) {
   if (seen_files->find(file_desc->name()) != seen_files->end()) {
     return;
   }

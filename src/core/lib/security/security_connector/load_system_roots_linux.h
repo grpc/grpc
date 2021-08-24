@@ -31,13 +31,13 @@ namespace grpc_core {
 // a directory.
 // Returns such slice.
 // Exposed for testing purposes only.
-grpc_slice CreateRootCertsBundle(const char* certs_directory);
+grpc_slice CreateRootCertsBundle(const char *certs_directory);
 
 // Gets the absolute file path needed to load a certificate file.
 // Populates path_buffer, which must be of size MAXPATHLEN.
 // Exposed for testing purposes only.
-void GetAbsoluteFilePath(const char* valid_file_dir,
-                         const char* file_entry_name, char* path_buffer);
+void GetAbsoluteFilePath(const char *valid_file_dir,
+                         const char *file_entry_name, char *path_buffer);
 
 }  // namespace grpc_core
 

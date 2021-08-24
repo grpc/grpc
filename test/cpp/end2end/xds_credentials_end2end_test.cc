@@ -32,7 +32,7 @@ namespace testing {
 namespace {
 
 class XdsCredentialsEnd2EndFallbackTest
-    : public ::testing::TestWithParam<const char*> {
+    : public ::testing::TestWithParam<const char *> {
  protected:
   XdsCredentialsEnd2EndFallbackTest() {
     int port = grpc_pick_unused_port_or_die();
@@ -70,7 +70,7 @@ TEST_P(XdsCredentialsEnd2EndFallbackTest, NoXdsSchemeInTarget) {
 }
 
 class XdsServerCredentialsEnd2EndFallbackTest
-    : public ::testing::TestWithParam<const char*> {
+    : public ::testing::TestWithParam<const char *> {
  protected:
   XdsServerCredentialsEnd2EndFallbackTest() {
     int port = grpc_pick_unused_port_or_die();
@@ -107,19 +107,19 @@ TEST_P(XdsServerCredentialsEnd2EndFallbackTest, Basic) {
 
 INSTANTIATE_TEST_SUITE_P(XdsCredentialsEnd2EndFallback,
                          XdsCredentialsEnd2EndFallbackTest,
-                         ::testing::ValuesIn(std::vector<const char*>(
+                         ::testing::ValuesIn(std::vector<const char *>(
                              {kInsecureCredentialsType, kTlsCredentialsType})));
 
 INSTANTIATE_TEST_SUITE_P(XdsServerCredentialsEnd2EndFallback,
                          XdsServerCredentialsEnd2EndFallbackTest,
-                         ::testing::ValuesIn(std::vector<const char*>(
+                         ::testing::ValuesIn(std::vector<const char *>(
                              {kInsecureCredentialsType, kTlsCredentialsType})));
 
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   const auto result = RUN_ALL_TESTS();

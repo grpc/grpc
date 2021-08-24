@@ -73,7 +73,7 @@ class ExternalConnectionAcceptor {
   virtual ~ExternalConnectionAcceptor() {}
   // If called before grpc::Server is started or after it is shut down, the new
   // connection will be closed.
-  virtual void HandleNewConnection(NewConnectionParameters* p) = 0;
+  virtual void HandleNewConnection(NewConnectionParameters *p) = 0;
 };
 
 }  // namespace experimental
@@ -106,7 +106,7 @@ class ServerBuilder {
   /// The service must exist for the lifetime of the \a Server instance returned
   /// by \a BuildAndStart().
   /// Matches requests with any :authority
-  ServerBuilder& RegisterService(grpc::Service* service);
+  ServerBuilder &RegisterService(grpc::Service *service);
 
   /// Enlists an endpoint \a addr (port with an optional IP address) to
   /// bind the \a grpc::Server object to be created to.
@@ -123,10 +123,10 @@ class ServerBuilder {
   /// number bound to the \a grpc::Server for the corresponding endpoint after
   /// it is successfully bound by BuildAndStart(), 0 otherwise. AddListeningPort
   /// does not modify this pointer.
-  ServerBuilder& AddListeningPort(
-      const std::string& addr_uri,
+  ServerBuilder &AddListeningPort(
+      const std::string &addr_uri,
       std::shared_ptr<grpc::ServerCredentials> creds,
-      int* selected_port = nullptr);
+      int *selected_port = nullptr);
 
   /// Add a completion queue for handling asynchronous services.
   ///
@@ -168,35 +168,35 @@ class ServerBuilder {
   /// The service must exist for the lifetime of the \a Server instance
   /// returned by \a BuildAndStart(). Only matches requests with :authority \a
   /// host
-  ServerBuilder& RegisterService(const std::string& host,
-                                 grpc::Service* service);
+  ServerBuilder &RegisterService(const std::string &host,
+                                 grpc::Service *service);
 
   /// Register a generic service.
   /// Matches requests with any :authority
   /// This is mostly useful for writing generic gRPC Proxies where the exact
   /// serialization format is unknown
-  ServerBuilder& RegisterAsyncGenericService(
-      grpc::AsyncGenericService* service);
+  ServerBuilder &RegisterAsyncGenericService(
+      grpc::AsyncGenericService *service);
 
   //////////////////////////////////////////////////////////////////////////////
   // Fine control knobs
 
   /// Set max receive message size in bytes.
   /// The default is GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH.
-  ServerBuilder& SetMaxReceiveMessageSize(int max_receive_message_size) {
+  ServerBuilder &SetMaxReceiveMessageSize(int max_receive_message_size) {
     max_receive_message_size_ = max_receive_message_size;
     return *this;
   }
 
   /// Set max send message size in bytes.
   /// The default is GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH.
-  ServerBuilder& SetMaxSendMessageSize(int max_send_message_size) {
+  ServerBuilder &SetMaxSendMessageSize(int max_send_message_size) {
     max_send_message_size_ = max_send_message_size;
     return *this;
   }
 
   /// \deprecated For backward compatibility.
-  ServerBuilder& SetMaxMessageSize(int max_message_size) {
+  ServerBuilder &SetMaxMessageSize(int max_message_size) {
     return SetMaxReceiveMessageSize(max_message_size);
   }
 
@@ -205,23 +205,23 @@ class ServerBuilder {
   ///
   /// Incoming calls compressed with an unsupported algorithm will fail with
   /// \a GRPC_STATUS_UNIMPLEMENTED.
-  ServerBuilder& SetCompressionAlgorithmSupportStatus(
+  ServerBuilder &SetCompressionAlgorithmSupportStatus(
       grpc_compression_algorithm algorithm, bool enabled);
 
   /// The default compression level to use for all channel calls in the
   /// absence of a call-specific level.
-  ServerBuilder& SetDefaultCompressionLevel(grpc_compression_level level);
+  ServerBuilder &SetDefaultCompressionLevel(grpc_compression_level level);
 
   /// The default compression algorithm to use for all channel calls in the
   /// absence of a call-specific level. Note that it overrides any compression
   /// level set by \a SetDefaultCompressionLevel.
-  ServerBuilder& SetDefaultCompressionAlgorithm(
+  ServerBuilder &SetDefaultCompressionAlgorithm(
       grpc_compression_algorithm algorithm);
 
   /// Set the attached buffer pool for this server
-  ServerBuilder& SetResourceQuota(const grpc::ResourceQuota& resource_quota);
+  ServerBuilder &SetResourceQuota(const grpc::ResourceQuota &resource_quota);
 
-  ServerBuilder& SetOption(std::unique_ptr<grpc::ServerBuilderOption> option);
+  ServerBuilder &SetOption(std::unique_ptr<grpc::ServerBuilderOption> option);
 
   /// Options for synchronous servers.
   enum SyncServerOption {
@@ -232,12 +232,12 @@ class ServerBuilder {
   };
 
   /// Only useful if this is a Synchronous server.
-  ServerBuilder& SetSyncServerOption(SyncServerOption option, int value);
+  ServerBuilder &SetSyncServerOption(SyncServerOption option, int value);
 
   /// Add a channel argument (an escape hatch to tuning core library parameters
   /// directly)
   template <class T>
-  ServerBuilder& AddChannelArgument(const std::string& arg, const T& value) {
+  ServerBuilder &AddChannelArgument(const std::string &arg, const T &value) {
     return SetOption(grpc::MakeChannelArgumentOption(arg, value));
   }
 
@@ -248,14 +248,14 @@ class ServerBuilder {
   /// Enable a server workaround. Do not use unless you know what the workaround
   /// does. For explanation and detailed descriptions of workarounds, see
   /// doc/workarounds.md.
-  ServerBuilder& EnableWorkaround(grpc_workaround_list id);
+  ServerBuilder &EnableWorkaround(grpc_workaround_list id);
 
   /// NOTE: class experimental_type is not part of the public API of this class.
   /// TODO(yashykt): Integrate into public API when this is no longer
   /// experimental.
   class experimental_type {
    public:
-    explicit experimental_type(ServerBuilder* builder) : builder_(builder) {}
+    explicit experimental_type(ServerBuilder *builder) : builder_(builder) {}
 
     void SetInterceptorCreators(
         std::vector<std::unique_ptr<
@@ -283,20 +283,20 @@ class ServerBuilder {
             provider);
 
    private:
-    ServerBuilder* builder_;
+    ServerBuilder *builder_;
   };
 
   /// Set the allocator for creating and releasing callback server context.
   /// Takes the owndership of the allocator.
-  ServerBuilder& SetContextAllocator(
+  ServerBuilder &SetContextAllocator(
       std::unique_ptr<grpc::ContextAllocator> context_allocator);
 
   /// Register a generic service that uses the callback API.
   /// Matches requests with any :authority
   /// This is mostly useful for writing generic gRPC Proxies where the exact
   /// serialization format is unknown
-  ServerBuilder& RegisterCallbackGenericService(
-      grpc::CallbackGenericService* service);
+  ServerBuilder &RegisterCallbackGenericService(
+      grpc::CallbackGenericService *service);
 
   /// NOTE: The function experimental() is not stable public API. It is a view
   /// to the experimental components of this class. It may be changed or removed
@@ -308,42 +308,42 @@ class ServerBuilder {
   struct Port {
     std::string addr;
     std::shared_ptr<ServerCredentials> creds;
-    int* selected_port;
+    int *selected_port;
   };
 
   /// Experimental, to be deprecated
   typedef std::unique_ptr<std::string> HostString;
   struct NamedService {
-    explicit NamedService(grpc::Service* s) : service(s) {}
-    NamedService(const std::string& h, grpc::Service* s)
+    explicit NamedService(grpc::Service *s) : service(s) {}
+    NamedService(const std::string &h, grpc::Service *s)
         : host(new std::string(h)), service(s) {}
     HostString host;
-    grpc::Service* service;
+    grpc::Service *service;
   };
 
   /// Experimental, to be deprecated
   std::vector<Port> ports() { return ports_; }
 
   /// Experimental, to be deprecated
-  std::vector<NamedService*> services() {
-    std::vector<NamedService*> service_refs;
-    for (auto& ptr : services_) {
+  std::vector<NamedService *> services() {
+    std::vector<NamedService *> service_refs;
+    for (auto &ptr : services_) {
       service_refs.push_back(ptr.get());
     }
     return service_refs;
   }
 
   /// Experimental, to be deprecated
-  std::vector<grpc::ServerBuilderOption*> options() {
-    std::vector<grpc::ServerBuilderOption*> option_refs;
-    for (auto& ptr : options_) {
+  std::vector<grpc::ServerBuilderOption *> options() {
+    std::vector<grpc::ServerBuilderOption *> option_refs;
+    for (auto &ptr : options_) {
       option_refs.push_back(ptr.get());
     }
     return option_refs;
   }
 
   /// Experimental API, subject to change.
-  void set_fetcher(grpc_server_config_fetcher* server_config_fetcher) {
+  void set_fetcher(grpc_server_config_fetcher *server_config_fetcher) {
     server_config_fetcher_ = server_config_fetcher;
   }
 
@@ -381,14 +381,14 @@ class ServerBuilder {
   SyncServerSettings sync_server_settings_;
 
   /// List of completion queues added via \a AddCompletionQueue method.
-  std::vector<grpc::ServerCompletionQueue*> cqs_;
+  std::vector<grpc::ServerCompletionQueue *> cqs_;
 
   std::shared_ptr<grpc::ServerCredentials> creds_;
   std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>> plugins_;
-  grpc_resource_quota* resource_quota_;
-  grpc::AsyncGenericService* generic_service_{nullptr};
+  grpc_resource_quota *resource_quota_;
+  grpc::AsyncGenericService *generic_service_{nullptr};
   std::unique_ptr<ContextAllocator> context_allocator_;
-  grpc::CallbackGenericService* callback_generic_service_{nullptr};
+  grpc::CallbackGenericService *callback_generic_service_{nullptr};
 
   struct {
     bool is_set;
@@ -404,7 +404,7 @@ class ServerBuilder {
       interceptor_creators_;
   std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
       acceptors_;
-  grpc_server_config_fetcher* server_config_fetcher_ = nullptr;
+  grpc_server_config_fetcher *server_config_fetcher_ = nullptr;
   std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
       authorization_provider_;
 };

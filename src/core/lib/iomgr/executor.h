@@ -30,7 +30,7 @@ namespace grpc_core {
 struct ThreadState {
   gpr_mu mu;
   size_t id;         // For debugging purposes
-  const char* name;  // Thread state name
+  const char *name;  // Thread state name
   gpr_cv cv;
   grpc_closure_list elems;
   size_t depth;  // Number of closures in the closure list
@@ -54,7 +54,7 @@ enum class ExecutorJobType {
 
 class Executor {
  public:
-  explicit Executor(const char* executor_name);
+  explicit Executor(const char *executor_name);
 
   void Init();
 
@@ -70,7 +70,7 @@ class Executor {
 
   /** Enqueue the closure onto the executor. is_short is true if the closure is
    * a short job (i.e expected to not block and complete quickly) */
-  void Enqueue(grpc_closure* closure, grpc_error_handle error, bool is_short);
+  void Enqueue(grpc_closure *closure, grpc_error_handle error, bool is_short);
 
   // TODO(sreek): Currently we have two executors (available globally): The
   // default executor and the resolver executor.
@@ -83,7 +83,7 @@ class Executor {
   // Initialize ALL the executors
   static void InitAll();
 
-  static void Run(grpc_closure* closure, grpc_error_handle error,
+  static void Run(grpc_closure *closure, grpc_error_handle error,
                   ExecutorType executor_type = ExecutorType::DEFAULT,
                   ExecutorJobType job_type = ExecutorJobType::SHORT);
 
@@ -104,11 +104,11 @@ class Executor {
   static bool IsThreadedDefault();
 
  private:
-  static size_t RunClosures(const char* executor_name, grpc_closure_list list);
-  static void ThreadMain(void* arg);
+  static size_t RunClosures(const char *executor_name, grpc_closure_list list);
+  static void ThreadMain(void *arg);
 
-  const char* name_;
-  ThreadState* thd_state_;
+  const char *name_;
+  ThreadState *thd_state_;
   size_t max_threads_;
   gpr_atm num_threads_;
   gpr_spinlock adding_thread_lock_;

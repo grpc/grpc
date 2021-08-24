@@ -43,25 +43,25 @@ class DelegatingChannel : public ::grpc::ChannelInterface {
   }
 
  private:
-  internal::Call CreateCall(const internal::RpcMethod& method,
-                            ClientContext* context,
-                            ::grpc::CompletionQueue* cq) final {
+  internal::Call CreateCall(const internal::RpcMethod &method,
+                            ClientContext *context,
+                            ::grpc::CompletionQueue *cq) final {
     return delegate_channel()->CreateCall(method, context, cq);
   }
 
-  void PerformOpsOnCall(internal::CallOpSetInterface* ops,
-                        internal::Call* call) final {
+  void PerformOpsOnCall(internal::CallOpSetInterface *ops,
+                        internal::Call *call) final {
     delegate_channel()->PerformOpsOnCall(ops, call);
   }
 
-  void* RegisterMethod(const char* method) final {
+  void *RegisterMethod(const char *method) final {
     return delegate_channel()->RegisterMethod(method);
   }
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
                                gpr_timespec deadline,
-                               ::grpc::CompletionQueue* cq,
-                               void* tag) override {
+                               ::grpc::CompletionQueue *cq,
+                               void *tag) override {
     delegate_channel()->NotifyOnStateChangeImpl(last_observed, deadline, cq,
                                                 tag);
   }
@@ -71,15 +71,15 @@ class DelegatingChannel : public ::grpc::ChannelInterface {
     return delegate_channel()->WaitForStateChangeImpl(last_observed, deadline);
   }
 
-  internal::Call CreateCallInternal(const internal::RpcMethod& method,
-                                    ClientContext* context,
-                                    ::grpc::CompletionQueue* cq,
+  internal::Call CreateCallInternal(const internal::RpcMethod &method,
+                                    ClientContext *context,
+                                    ::grpc::CompletionQueue *cq,
                                     size_t interceptor_pos) final {
     return delegate_channel()->CreateCallInternal(method, context, cq,
                                                   interceptor_pos);
   }
 
-  ::grpc::CompletionQueue* CallbackCQ() final {
+  ::grpc::CompletionQueue *CallbackCQ() final {
     return delegate_channel()->CallbackCQ();
   }
 

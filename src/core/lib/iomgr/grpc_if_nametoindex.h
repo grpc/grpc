@@ -25,6 +25,6 @@
 
 /* Returns the interface index corresponding to the interface "name" provided.
  * Returns non-zero upon success, and zero upon failure. */
-uint32_t grpc_if_nametoindex(char* name);
+uint32_t grpc_if_nametoindex(char *name);
 
 #endif /* GRPC_CORE_LIB_IOMGR_GRPC_IF_NAMETOINDEX_H */

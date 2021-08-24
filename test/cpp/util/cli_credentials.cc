@@ -64,12 +64,12 @@ const char ACCESS_TOKEN_PREFIX[] = "access_token=";
 constexpr int ACCESS_TOKEN_PREFIX_LEN =
     sizeof(ACCESS_TOKEN_PREFIX) / sizeof(*ACCESS_TOKEN_PREFIX) - 1;
 
-bool IsAccessToken(const std::string& auth) {
+bool IsAccessToken(const std::string &auth) {
   return auth.length() > ACCESS_TOKEN_PREFIX_LEN &&
          auth.compare(0, ACCESS_TOKEN_PREFIX_LEN, ACCESS_TOKEN_PREFIX) == 0;
 }
 
-std::string AccessToken(const std::string& auth) {
+std::string AccessToken(const std::string &auth) {
   if (!IsAccessToken(auth)) {
     return "";
   }

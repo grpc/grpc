@@ -87,27 +87,27 @@ class GrpcTool {
   explicit GrpcTool();
   virtual ~GrpcTool() {}
 
-  bool Help(int argc, const char** argv, const CliCredentials& cred,
-            const GrpcToolOutputCallback& callback);
-  bool CallMethod(int argc, const char** argv, const CliCredentials& cred,
-                  const GrpcToolOutputCallback& callback);
-  bool ListServices(int argc, const char** argv, const CliCredentials& cred,
-                    const GrpcToolOutputCallback& callback);
-  bool PrintType(int argc, const char** argv, const CliCredentials& cred,
-                 const GrpcToolOutputCallback& callback);
+  bool Help(int argc, const char **argv, const CliCredentials &cred,
+            const GrpcToolOutputCallback &callback);
+  bool CallMethod(int argc, const char **argv, const CliCredentials &cred,
+                  const GrpcToolOutputCallback &callback);
+  bool ListServices(int argc, const char **argv, const CliCredentials &cred,
+                    const GrpcToolOutputCallback &callback);
+  bool PrintType(int argc, const char **argv, const CliCredentials &cred,
+                 const GrpcToolOutputCallback &callback);
   // TODO(zyc): implement the following methods
   // bool ListServices(int argc, const char** argv, GrpcToolOutputCallback
   // callback);
   // bool PrintTypeId(int argc, const char** argv, GrpcToolOutputCallback
   // callback);
-  bool ParseMessage(int argc, const char** argv, const CliCredentials& cred,
-                    const GrpcToolOutputCallback& callback);
-  bool ToText(int argc, const char** argv, const CliCredentials& cred,
-              const GrpcToolOutputCallback& callback);
-  bool ToJson(int argc, const char** argv, const CliCredentials& cred,
-              const GrpcToolOutputCallback& callback);
-  bool ToBinary(int argc, const char** argv, const CliCredentials& cred,
-                const GrpcToolOutputCallback& callback);
+  bool ParseMessage(int argc, const char **argv, const CliCredentials &cred,
+                    const GrpcToolOutputCallback &callback);
+  bool ToText(int argc, const char **argv, const CliCredentials &cred,
+              const GrpcToolOutputCallback &callback);
+  bool ToJson(int argc, const char **argv, const CliCredentials &cred,
+              const GrpcToolOutputCallback &callback);
+  bool ToBinary(int argc, const char **argv, const CliCredentials &cred,
+                const GrpcToolOutputCallback &callback);
 
   void SetPrintCommandMode(int exit_status) {
     print_command_usage_ = true;
@@ -115,29 +115,29 @@ class GrpcTool {
   }
 
  private:
-  void CommandUsage(const std::string& usage) const;
+  void CommandUsage(const std::string &usage) const;
   bool print_command_usage_;
   int usage_exit_status_;
   const std::string cred_usage_;
 };
 
 template <typename T>
-std::function<bool(GrpcTool*, int, const char**, const CliCredentials&,
+std::function<bool(GrpcTool *, int, const char **, const CliCredentials &,
                    GrpcToolOutputCallback)>
-BindWith5Args(T&& func) {
+BindWith5Args(T &&func) {
   return std::bind(std::forward<T>(func), std::placeholders::_1,
                    std::placeholders::_2, std::placeholders::_3,
                    std::placeholders::_4, std::placeholders::_5);
 }
 
 template <typename T>
-size_t ArraySize(T& a) {
+size_t ArraySize(T &a) {
   return ((sizeof(a) / sizeof(*(a))) /
           static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))));
 }
 
 void ParseMetadataFlag(
-    std::multimap<std::string, std::string>* client_metadata) {
+    std::multimap<std::string, std::string> *client_metadata) {
   if (absl::GetFlag(FLAGS_metadata).empty()) {
     return;
   }
@@ -179,7 +179,7 @@ void ParseMetadataFlag(
 }
 
 template <typename T>
-void PrintMetadata(const T& m, const std::string& message) {
+void PrintMetadata(const T &m, const std::string &message) {
   if (m.empty()) {
     return;
   }
@@ -194,9 +194,9 @@ void PrintMetadata(const T& m, const std::string& message) {
   }
 }
 
-void ReadResponse(CliCall* call, const std::string& method_name,
-                  const GrpcToolOutputCallback& callback,
-                  ProtoFileParser* parser, gpr_mu* parser_mu, bool print_mode) {
+void ReadResponse(CliCall *call, const std::string &method_name,
+                  const GrpcToolOutputCallback &callback,
+                  ProtoFileParser *parser, gpr_mu *parser_mu, bool print_mode) {
   std::string serialized_response_proto;
   std::multimap<grpc::string_ref, grpc::string_ref> server_initial_metadata;
 
@@ -226,7 +226,7 @@ void ReadResponse(CliCall* call, const std::string& method_name,
 }
 
 std::shared_ptr<grpc::Channel> CreateCliChannel(
-    const std::string& server_address, const CliCredentials& cred) {
+    const std::string &server_address, const CliCredentials &cred) {
   grpc::ChannelArguments args;
   if (!cred.GetSslTargetNameOverride().empty()) {
     args.SetSslTargetNameOverride(cred.GetSslTargetNameOverride());
@@ -243,8 +243,8 @@ std::shared_ptr<grpc::Channel> CreateCliChannel(
 }
 
 struct Command {
-  const char* command;
-  std::function<bool(GrpcTool*, int, const char**, const CliCredentials&,
+  const char *command;
+  std::function<bool(GrpcTool *, int, const char **, const CliCredentials &,
                      GrpcToolOutputCallback)>
       function;
   int min_args;
@@ -263,7 +263,7 @@ const Command ops[] = {
     {"tojson", BindWith5Args(&GrpcTool::ToJson), 2, 3},
 };
 
-void Usage(const std::string& msg) {
+void Usage(const std::string &msg) {
   fprintf(
       stderr,
       "%s\n"
@@ -281,7 +281,7 @@ void Usage(const std::string& msg) {
   exit(1);
 }
 
-const Command* FindCommand(const std::string& name) {
+const Command *FindCommand(const std::string &name) {
   for (int i = 0; i < static_cast<int>(ArraySize(ops)); i++) {
     if (name == ops[i].command) {
       return &ops[i];
@@ -291,8 +291,8 @@ const Command* FindCommand(const std::string& name) {
 }
 }  // namespace
 
-int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
-                    const GrpcToolOutputCallback& callback) {
+int GrpcToolMainLib(int argc, const char **argv, const CliCredentials &cred,
+                    const GrpcToolOutputCallback &callback) {
   if (argc < 2) {
     Usage("No command specified");
   }
@@ -301,7 +301,7 @@ int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
   argc -= 2;
   argv += 2;
 
-  const Command* cmd = FindCommand(command);
+  const Command *cmd = FindCommand(command);
   if (cmd != nullptr) {
     GrpcTool grpc_tool;
     if (argc < cmd->min_args || argc > cmd->max_args) {
@@ -320,7 +320,7 @@ int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
 
 GrpcTool::GrpcTool() : print_command_usage_(false), usage_exit_status_(0) {}
 
-void GrpcTool::CommandUsage(const std::string& usage) const {
+void GrpcTool::CommandUsage(const std::string &usage) const {
   if (print_command_usage_) {
     fprintf(stderr, "\n%s%s\n", usage.c_str(),
             (usage.empty() || usage[usage.size() - 1] != '\n') ? "\n" : "");
@@ -328,8 +328,8 @@ void GrpcTool::CommandUsage(const std::string& usage) const {
   }
 }
 
-bool GrpcTool::Help(int argc, const char** argv, const CliCredentials& cred,
-                    const GrpcToolOutputCallback& callback) {
+bool GrpcTool::Help(int argc, const char **argv, const CliCredentials &cred,
+                    const GrpcToolOutputCallback &callback) {
   CommandUsage(
       "Print help\n"
       "  grpc_cli help [subcommand]\n");
@@ -337,7 +337,7 @@ bool GrpcTool::Help(int argc, const char** argv, const CliCredentials& cred,
   if (argc == 0) {
     Usage("");
   } else {
-    const Command* cmd = FindCommand(argv[0]);
+    const Command *cmd = FindCommand(argv[0]);
     if (cmd == nullptr) {
       Usage("Unknown command '" + std::string(argv[0]) + "'");
     }
@@ -347,9 +347,9 @@ bool GrpcTool::Help(int argc, const char** argv, const CliCredentials& cred,
   return true;
 }
 
-bool GrpcTool::ListServices(int argc, const char** argv,
-                            const CliCredentials& cred,
-                            const GrpcToolOutputCallback& callback) {
+bool GrpcTool::ListServices(int argc, const char **argv,
+                            const CliCredentials &cred,
+                            const GrpcToolOutputCallback &callback) {
   CommandUsage(
       "List services\n"
       "  grpc_cli ls <address> [<service>[/<method>]]\n"
@@ -381,7 +381,7 @@ bool GrpcTool::ListServices(int argc, const char** argv,
       output = DescribeServiceList(service_list, desc_pool);
     } else {
       for (auto it = service_list.begin(); it != service_list.end(); it++) {
-        auto const& service = *it;
+        auto const &service = *it;
         output.append(service);
         output.append("\n");
       }
@@ -410,7 +410,7 @@ bool GrpcTool::ListServices(int argc, const char** argv,
       }
     }
 
-    const grpc::protobuf::ServiceDescriptor* service =
+    const grpc::protobuf::ServiceDescriptor *service =
         desc_pool.FindServiceByName(service_name);
     if (service != nullptr) {
       if (method_name.empty()) {
@@ -419,7 +419,7 @@ bool GrpcTool::ListServices(int argc, const char** argv,
       } else {
         method_name.insert(0, 1, '.');
         method_name.insert(0, service_name);
-        const grpc::protobuf::MethodDescriptor* method =
+        const grpc::protobuf::MethodDescriptor *method =
             desc_pool.FindMethodByName(method_name);
         if (method != nullptr) {
           output = absl::GetFlag(FLAGS_l) ? DescribeMethod(method)
@@ -435,7 +435,7 @@ bool GrpcTool::ListServices(int argc, const char** argv,
         fprintf(stderr, "Service %s not found.\n", service_name.c_str());
         return false;
       } else {
-        const grpc::protobuf::MethodDescriptor* method =
+        const grpc::protobuf::MethodDescriptor *method =
             desc_pool.FindMethodByName(service_name);
         if (method != nullptr) {
           output = absl::GetFlag(FLAGS_l) ? DescribeMethod(method)
@@ -451,9 +451,9 @@ bool GrpcTool::ListServices(int argc, const char** argv,
   return callback(output);
 }
 
-bool GrpcTool::PrintType(int /*argc*/, const char** argv,
-                         const CliCredentials& cred,
-                         const GrpcToolOutputCallback& callback) {
+bool GrpcTool::PrintType(int /*argc*/, const char **argv,
+                         const CliCredentials &cred,
+                         const GrpcToolOutputCallback &callback) {
   CommandUsage(
       "Print type\n"
       "  grpc_cli type <address> <type>\n"
@@ -468,7 +468,7 @@ bool GrpcTool::PrintType(int /*argc*/, const char** argv,
   grpc::protobuf::DescriptorPool desc_pool(&desc_db);
 
   std::string output;
-  const grpc::protobuf::Descriptor* descriptor =
+  const grpc::protobuf::Descriptor *descriptor =
       desc_pool.FindMessageTypeByName(argv[1]);
   if (descriptor != nullptr) {
     output = descriptor->DebugString();
@@ -479,9 +479,9 @@ bool GrpcTool::PrintType(int /*argc*/, const char** argv,
   return callback(output);
 }
 
-bool GrpcTool::CallMethod(int argc, const char** argv,
-                          const CliCredentials& cred,
-                          const GrpcToolOutputCallback& callback) {
+bool GrpcTool::CallMethod(int argc, const char **argv,
+                          const CliCredentials &cred,
+                          const GrpcToolOutputCallback &callback) {
   CommandUsage(
       "Call method\n"
       "  grpc_cli call <address> <service>[.<method>] <request>\n"
@@ -550,7 +550,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   }
 
   if (parser->IsStreaming(method_name, true /* is_request */)) {
-    std::istream* input_stream;
+    std::istream *input_stream;
     std::ifstream input_file;
 
     if (absl::GetFlag(FLAGS_batch)) {
@@ -652,7 +652,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
         return false;
       }
 
-      std::istream* input_stream;
+      std::istream *input_stream;
       std::ifstream input_file;
 
       if (absl::GetFlag(FLAGS_infile).empty()) {
@@ -848,9 +848,9 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   GPR_UNREACHABLE_CODE(return false);
 }
 
-bool GrpcTool::ParseMessage(int argc, const char** argv,
-                            const CliCredentials& cred,
-                            const GrpcToolOutputCallback& callback) {
+bool GrpcTool::ParseMessage(int argc, const char **argv,
+                            const CliCredentials &cred,
+                            const GrpcToolOutputCallback &callback) {
   CommandUsage(
       "Parse message\n"
       "  grpc_cli parse <address> <type> [<message>]\n"
@@ -943,8 +943,8 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
   return callback(output_ss.str());
 }
 
-bool GrpcTool::ToText(int argc, const char** argv, const CliCredentials& cred,
-                      const GrpcToolOutputCallback& callback) {
+bool GrpcTool::ToText(int argc, const char **argv, const CliCredentials &cred,
+                      const GrpcToolOutputCallback &callback) {
   CommandUsage(
       "Convert binary message to text\n"
       "  grpc_cli totext <protofiles> <type>\n"
@@ -963,8 +963,8 @@ bool GrpcTool::ToText(int argc, const char** argv, const CliCredentials& cred,
   return ParseMessage(argc, argv, cred, callback);
 }
 
-bool GrpcTool::ToJson(int argc, const char** argv, const CliCredentials& cred,
-                      const GrpcToolOutputCallback& callback) {
+bool GrpcTool::ToJson(int argc, const char **argv, const CliCredentials &cred,
+                      const GrpcToolOutputCallback &callback) {
   CommandUsage(
       "Convert binary message to json\n"
       "  grpc_cli tojson <protofiles> <type>\n"
@@ -984,8 +984,8 @@ bool GrpcTool::ToJson(int argc, const char** argv, const CliCredentials& cred,
   return ParseMessage(argc, argv, cred, callback);
 }
 
-bool GrpcTool::ToBinary(int argc, const char** argv, const CliCredentials& cred,
-                        const GrpcToolOutputCallback& callback) {
+bool GrpcTool::ToBinary(int argc, const char **argv, const CliCredentials &cred,
+                        const GrpcToolOutputCallback &callback) {
   CommandUsage(
       "Convert text message to binary\n"
       "  grpc_cli tobinary <protofiles> <type> [<message>]\n"

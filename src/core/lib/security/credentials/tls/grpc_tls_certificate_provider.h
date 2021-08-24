@@ -45,7 +45,7 @@
 struct grpc_tls_certificate_provider
     : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
  public:
-  virtual grpc_pollset_set* interested_parties() const { return nullptr; }
+  virtual grpc_pollset_set *interested_parties() const { return nullptr; }
 
   virtual grpc_core::RefCountedPtr<grpc_tls_certificate_distributor>
   distributor() const = 0;
@@ -107,11 +107,11 @@ class FileWatcherCertificateProvider final
   void ForceUpdate();
   // Read the root certificates from files and update the distributor.
   absl::optional<std::string> ReadRootCertificatesFromFile(
-      const std::string& root_cert_full_path);
+      const std::string &root_cert_full_path);
   // Read the root certificates from files and update the distributor.
   absl::optional<PemKeyCertPairList> ReadIdentityKeyCertPairFromFiles(
-      const std::string& private_key_path,
-      const std::string& identity_certificate_path);
+      const std::string &private_key_path,
+      const std::string &identity_certificate_path);
 
   // Information that is used by the refreshing thread.
   std::string private_key_path_;

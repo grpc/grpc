@@ -35,12 +35,12 @@ class CallOpSetInterface : public CompletionQueueTag {
  public:
   /// Fills in grpc_op, starting from ops[*nops] and moving
   /// upwards.
-  virtual void FillOps(internal::Call* call) = 0;
+  virtual void FillOps(internal::Call *call) = 0;
 
   /// Get the tag to be used at the core completion queue. Generally, the
   /// value of core_cq_tag will be "this". However, it can be overridden if we
   /// want core to process the tag differently (e.g., as a core callback)
-  virtual void* core_cq_tag() = 0;
+  virtual void *core_cq_tag() = 0;
 
   // This will be called while interceptors are run if the RPC is a hijacked
   // RPC. This should set hijacking state for each of the ops.

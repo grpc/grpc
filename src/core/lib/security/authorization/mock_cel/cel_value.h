@@ -69,11 +69,11 @@ class CelValue {
     return CreateNull();
   }
 
-  static CelValue CreateString(const std::string* /*str*/) {
+  static CelValue CreateString(const std::string * /*str*/) {
     return CreateNull();
   }
 
-  static CelValue CreateMap(const CelMap* /*value*/) { return CreateNull(); }
+  static CelValue CreateMap(const CelMap * /*value*/) { return CreateNull(); }
 
  private:
   // Constructs CelValue wrapping value supplied as argument.

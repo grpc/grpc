@@ -38,8 +38,8 @@ class XdsCredentials final : public grpc_channel_credentials {
         fallback_credentials_(std::move(fallback_credentials)) {}
 
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
-      RefCountedPtr<grpc_call_credentials> call_creds, const char* target_name,
-      const grpc_channel_args* args, grpc_channel_args** new_args) override;
+      RefCountedPtr<grpc_call_credentials> call_creds, const char *target_name,
+      const grpc_channel_args *args, grpc_channel_args **new_args) override;
 
  private:
   RefCountedPtr<grpc_channel_credentials> fallback_credentials_;
@@ -53,16 +53,16 @@ class XdsServerCredentials final : public grpc_server_credentials {
         fallback_credentials_(std::move(fallback_credentials)) {}
 
   RefCountedPtr<grpc_server_security_connector> create_security_connector(
-      const grpc_channel_args* /* args */) override;
+      const grpc_channel_args * /* args */) override;
 
  private:
   RefCountedPtr<grpc_server_credentials> fallback_credentials_;
 };
 
 bool TestOnlyXdsVerifySubjectAlternativeNames(
-    const char* const* subject_alternative_names,
+    const char *const *subject_alternative_names,
     size_t subject_alternative_names_size,
-    const std::vector<StringMatcher>& matchers);
+    const std::vector<StringMatcher> &matchers);
 
 }  // namespace grpc_core
 

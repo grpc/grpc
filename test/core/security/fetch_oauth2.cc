@@ -35,7 +35,7 @@
 #include "test/core/security/oauth2_utils.h"
 #include "test/core/util/cmdline.h"
 
-static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
+static grpc_call_credentials *create_sts_creds(const char *json_file_path) {
   grpc::experimental::StsCredentialsOptions options;
   if (strlen(json_file_path) == 0) {
     auto status = grpc::experimental::StsCredentialsOptionsFromEnv(&options);
@@ -48,7 +48,7 @@ static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "load_file", grpc_load_file(json_file_path, 1, &sts_options_slice)));
     auto status = grpc::experimental::StsCredentialsOptionsFromJson(
-        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(sts_options_slice)),
+        reinterpret_cast<const char *>(GRPC_SLICE_START_PTR(sts_options_slice)),
         &options);
     gpr_slice_unref(sts_options_slice);
     if (!status.ok()) {
@@ -58,30 +58,30 @@ static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
   }
   grpc_sts_credentials_options opts =
       grpc::experimental::StsCredentialsCppToCoreOptions(options);
-  grpc_call_credentials* result = grpc_sts_credentials_create(&opts, nullptr);
+  grpc_call_credentials *result = grpc_sts_credentials_create(&opts, nullptr);
   return result;
 }
 
-static grpc_call_credentials* create_refresh_token_creds(
-    const char* json_refresh_token_file_path) {
+static grpc_call_credentials *create_refresh_token_creds(
+    const char *json_refresh_token_file_path) {
   grpc_slice refresh_token;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "load_file",
       grpc_load_file(json_refresh_token_file_path, 1, &refresh_token)));
-  grpc_call_credentials* result = grpc_google_refresh_token_credentials_create(
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(refresh_token),
+  grpc_call_credentials *result = grpc_google_refresh_token_credentials_create(
+      reinterpret_cast<const char *> GRPC_SLICE_START_PTR(refresh_token),
       nullptr);
   gpr_slice_unref(refresh_token);
   return result;
 }
 
-int main(int argc, char** argv) {
-  grpc_call_credentials* creds = nullptr;
-  const char* json_sts_options_file_path = nullptr;
-  const char* json_refresh_token_file_path = nullptr;
-  char* token = nullptr;
+int main(int argc, char **argv) {
+  grpc_call_credentials *creds = nullptr;
+  const char *json_sts_options_file_path = nullptr;
+  const char *json_refresh_token_file_path = nullptr;
+  char *token = nullptr;
   int use_gce = 0;
-  gpr_cmdline* cl = gpr_cmdline_create("fetch_oauth2");
+  gpr_cmdline *cl = gpr_cmdline_create("fetch_oauth2");
   gpr_cmdline_add_string(cl, "json_refresh_token",
                          "File path of the json refresh token.",
                          &json_refresh_token_file_path);

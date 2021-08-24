@@ -64,32 +64,32 @@ uint32_t grpc_compression_bitset_from_message_stream_compression_bitset(
     uint32_t message_bitset, uint32_t stream_bitset);
 
 int grpc_compression_algorithm_from_message_stream_compression_algorithm(
-    grpc_compression_algorithm* algorithm,
+    grpc_compression_algorithm *algorithm,
     grpc_message_compression_algorithm message_algorithm,
     grpc_stream_compression_algorithm stream_algorithm);
 
 /* Interfaces for message compression. */
 
 int grpc_message_compression_algorithm_name(
-    grpc_message_compression_algorithm algorithm, const char** name);
+    grpc_message_compression_algorithm algorithm, const char **name);
 
 grpc_message_compression_algorithm grpc_message_compression_algorithm_for_level(
     grpc_compression_level level, uint32_t accepted_encodings);
 
 int grpc_message_compression_algorithm_parse(
-    grpc_slice value, grpc_message_compression_algorithm* algorithm);
+    grpc_slice value, grpc_message_compression_algorithm *algorithm);
 
 /* Interfaces for stream compression. */
 
 int grpc_stream_compression_algorithm_parse(
-    grpc_slice value, grpc_stream_compression_algorithm* algorithm);
+    grpc_slice value, grpc_stream_compression_algorithm *algorithm);
 
 #ifdef __cplusplus
 }
 #endif
 
 inline int grpc_compression_options_is_algorithm_enabled_internal(
-    const grpc_compression_options* opts,
+    const grpc_compression_options *opts,
     grpc_compression_algorithm algorithm) {
   return GPR_BITGET(opts->enabled_algorithms_bitset, algorithm);
 }

@@ -60,19 +60,19 @@ namespace testing {
 
 namespace {
 
-void* tag(int t) { return reinterpret_cast<void*>(t); }
-int detag(void* p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
+void *tag(int t) { return reinterpret_cast<void *>(t); }
+int detag(void *p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
 
 class Verifier {
  public:
   Verifier() : lambda_run_(false) {}
   // Expect sets the expected ok value for a specific tag
-  Verifier& Expect(int i, bool expect_ok) {
+  Verifier &Expect(int i, bool expect_ok) {
     return ExpectUnless(i, expect_ok, false);
   }
   // ExpectUnless sets the expected ok value for a specific tag
   // unless the tag was already marked seen (as a result of ExpectMaybe)
-  Verifier& ExpectUnless(int i, bool expect_ok, bool seen) {
+  Verifier &ExpectUnless(int i, bool expect_ok, bool seen) {
     if (!seen) {
       expectations_[tag(i)] = expect_ok;
     }
@@ -81,7 +81,7 @@ class Verifier {
   // ExpectMaybe sets the expected ok value for a specific tag, but does not
   // require it to appear
   // If it does, sets *seen to true
-  Verifier& ExpectMaybe(int i, bool expect_ok, bool* seen) {
+  Verifier &ExpectMaybe(int i, bool expect_ok, bool *seen) {
     if (!*seen) {
       maybe_expectations_[tag(i)] = MaybeExpect{expect_ok, seen};
     }
@@ -90,9 +90,9 @@ class Verifier {
 
   // Next waits for 1 async tag to complete, checks its
   // expectations, and returns the tag
-  int Next(CompletionQueue* cq, bool ignore_ok) {
+  int Next(CompletionQueue *cq, bool ignore_ok) {
     bool ok;
-    void* got_tag;
+    void *got_tag;
     EXPECT_TRUE(cq->Next(&got_tag, &ok));
     GotTag(got_tag, ok, ignore_ok);
     return detag(got_tag);
@@ -100,7 +100,7 @@ class Verifier {
 
   template <typename T>
   CompletionQueue::NextStatus DoOnceThenAsyncNext(
-      CompletionQueue* cq, void** got_tag, bool* ok, T deadline,
+      CompletionQueue *cq, void **got_tag, bool *ok, T deadline,
       std::function<void(void)> lambda) {
     if (lambda_run_) {
       return cq->AsyncNext(got_tag, ok, deadline);
@@ -112,11 +112,11 @@ class Verifier {
 
   // Verify keeps calling Next until all currently set
   // expected tags are complete
-  void Verify(CompletionQueue* cq) { Verify(cq, false); }
+  void Verify(CompletionQueue *cq) { Verify(cq, false); }
 
   // This version of Verify allows optionally ignoring the
   // outcome of the expectation
-  void Verify(CompletionQueue* cq, bool ignore_ok) {
+  void Verify(CompletionQueue *cq, bool ignore_ok) {
     GPR_ASSERT(!expectations_.empty() || !maybe_expectations_.empty());
     while (!expectations_.empty()) {
       Next(cq, ignore_ok);
@@ -125,17 +125,17 @@ class Verifier {
   }
 
   // This version of Verify stops after a certain deadline
-  void Verify(CompletionQueue* cq,
+  void Verify(CompletionQueue *cq,
               std::chrono::system_clock::time_point deadline) {
     if (expectations_.empty()) {
       bool ok;
-      void* got_tag;
+      void *got_tag;
       EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline),
                 CompletionQueue::TIMEOUT);
     } else {
       while (!expectations_.empty()) {
         bool ok;
-        void* got_tag;
+        void *got_tag;
         EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline),
                   CompletionQueue::GOT_EVENT);
         GotTag(got_tag, ok, false);
@@ -147,18 +147,18 @@ class Verifier {
   // This version of Verify stops after a certain deadline, and uses the
   // DoThenAsyncNext API
   // to call the lambda
-  void Verify(CompletionQueue* cq,
+  void Verify(CompletionQueue *cq,
               std::chrono::system_clock::time_point deadline,
-              const std::function<void(void)>& lambda) {
+              const std::function<void(void)> &lambda) {
     if (expectations_.empty()) {
       bool ok;
-      void* got_tag;
+      void *got_tag;
       EXPECT_EQ(DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda),
                 CompletionQueue::TIMEOUT);
     } else {
       while (!expectations_.empty()) {
         bool ok;
-        void* got_tag;
+        void *got_tag;
         EXPECT_EQ(DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda),
                   CompletionQueue::GOT_EVENT);
         GotTag(got_tag, ok, false);
@@ -168,7 +168,7 @@ class Verifier {
   }
 
  private:
-  void GotTag(void* got_tag, bool ok, bool ignore_ok) {
+  void GotTag(void *got_tag, bool ok, bool ignore_ok) {
     auto it = expectations_.find(got_tag);
     if (it != expectations_.end()) {
       if (!ignore_ok) {
@@ -195,15 +195,15 @@ class Verifier {
 
   struct MaybeExpect {
     bool ok;
-    bool* seen;
+    bool *seen;
   };
 
-  std::map<void*, bool> expectations_;
-  std::map<void*, MaybeExpect> maybe_expectations_;
+  std::map<void *, bool> expectations_;
+  std::map<void *, MaybeExpect> maybe_expectations_;
   bool lambda_run_;
 };
 
-bool plugin_has_sync_methods(std::unique_ptr<ServerBuilderPlugin>& plugin) {
+bool plugin_has_sync_methods(std::unique_ptr<ServerBuilderPlugin> &plugin) {
   return plugin->has_sync_methods();
 }
 
@@ -213,10 +213,10 @@ bool plugin_has_sync_methods(std::unique_ptr<ServerBuilderPlugin>& plugin) {
 // that needs to be tested here.
 class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
  public:
-  void UpdateArguments(ChannelArguments* /*arg*/) override {}
+  void UpdateArguments(ChannelArguments * /*arg*/) override {}
 
   void UpdatePlugins(
-      std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
+      std::vector<std::unique_ptr<ServerBuilderPlugin>> *plugins) override {
     plugins->erase(std::remove_if(plugins->begin(), plugins->end(),
                                   plugin_has_sync_methods),
                    plugins->end());
@@ -225,8 +225,8 @@ class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
 
 class TestScenario {
  public:
-  TestScenario(bool inproc_stub, const std::string& creds_type, bool hcs,
-               const std::string& content)
+  TestScenario(bool inproc_stub, const std::string &creds_type, bool hcs,
+               const std::string &content)
       : inproc(inproc_stub),
         health_check_service(hcs),
         credentials_type(creds_type),
@@ -238,8 +238,8 @@ class TestScenario {
   const std::string message_content;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
+static std::ostream &operator<<(std::ostream &out,
+                                const TestScenario &scenario) {
   return out << "TestScenario{inproc=" << (scenario.inproc ? "true" : "false")
              << ", credentials='" << scenario.credentials_type
              << ", health_check_service="
@@ -269,7 +269,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
 
   void TearDown() override {
     server_->Shutdown();
-    void* ignored_tag;
+    void *ignored_tag;
     bool ignored_ok;
     cq_->Shutdown();
     while (cq_->Next(&ignored_tag, &ignored_ok)) {
@@ -425,7 +425,7 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
   ResetStub();
   SendRpc(1);
   server_->Shutdown();
-  void* ignored_tag;
+  void *ignored_tag;
   bool ignored_ok;
   cq_->Shutdown();
   while (cq_->Next(&ignored_tag, &ignored_ok)) {
@@ -442,7 +442,7 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
 }
 
 // We do not need to protect notify because the use is synchronized.
-void ServerWait(Server* server, int* notify) {
+void ServerWait(Server *server, int *notify) {
   server->Wait();
   *notify = 1;
 }
@@ -948,7 +948,7 @@ TEST_P(AsyncEnd2endTest, ClientInitialMetadataRpc) {
                         cq_.get(), tag(2));
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
-  const auto& client_initial_metadata = srv_ctx.client_metadata();
+  const auto &client_initial_metadata = srv_ctx.client_metadata();
   EXPECT_EQ(meta1.second,
             ToString(client_initial_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
@@ -994,7 +994,7 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataRpc) {
   srv_ctx.AddInitialMetadata(meta2.first, meta2.second);
   response_writer.SendInitialMetadata(tag(3));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
-  const auto& server_initial_metadata = cli_ctx.GetServerInitialMetadata();
+  const auto &server_initial_metadata = cli_ctx.GetServerInitialMetadata();
   EXPECT_EQ(meta1.second,
             ToString(server_initial_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
@@ -1155,7 +1155,7 @@ TEST_P(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
 
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
-  const auto& server_trailing_metadata = cli_ctx.GetServerTrailingMetadata();
+  const auto &server_trailing_metadata = cli_ctx.GetServerTrailingMetadata();
   EXPECT_EQ(meta1.second,
             ToString(server_trailing_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
@@ -1203,7 +1203,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
                         cq_.get(), tag(2));
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
-  const auto& client_initial_metadata = srv_ctx.client_metadata();
+  const auto &client_initial_metadata = srv_ctx.client_metadata();
   EXPECT_EQ(meta1.second,
             ToString(client_initial_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
@@ -1214,7 +1214,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   srv_ctx.AddInitialMetadata(meta4.first, meta4.second);
   response_writer.SendInitialMetadata(tag(3));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
-  const auto& server_initial_metadata = cli_ctx.GetServerInitialMetadata();
+  const auto &server_initial_metadata = cli_ctx.GetServerInitialMetadata();
   EXPECT_EQ(meta3.second,
             ToString(server_initial_metadata.find(meta3.first)->second));
   EXPECT_EQ(meta4.second,
@@ -1231,7 +1231,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
 
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
-  const auto& server_trailing_metadata = cli_ctx.GetServerTrailingMetadata();
+  const auto &server_trailing_metadata = cli_ctx.GetServerTrailingMetadata();
   EXPECT_EQ(meta5.second,
             ToString(server_trailing_metadata.find(meta5.first)->second));
   EXPECT_EQ(meta6.second,
@@ -1309,7 +1309,7 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
 
 TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   ChannelArguments args;
-  const auto& channel_creds = GetCredentialsProvider()->GetChannelCredentials(
+  const auto &channel_creds = GetCredentialsProvider()->GetChannelCredentials(
       GetParam().credentials_type, &args);
   std::shared_ptr<Channel> channel =
       !(GetParam().inproc) ? ::grpc::CreateCustomChannel(server_address_.str(),
@@ -1424,7 +1424,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     bool ignore_cq_result = false;
     bool want_done_tag = false;
-    std::thread* server_try_cancel_thd = nullptr;
+    std::thread *server_try_cancel_thd = nullptr;
 
     auto verif = Verifier();
 
@@ -1495,7 +1495,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
 
     cli_cq.Shutdown();
-    void* phony_tag;
+    void *phony_tag;
     bool phony_ok;
     while (cli_cq.Next(&phony_tag, &phony_ok)) {
     }
@@ -1572,7 +1572,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       }
     });
 
-    std::thread* server_try_cancel_thd = nullptr;
+    std::thread *server_try_cancel_thd = nullptr;
 
     auto verif = Verifier();
 
@@ -1644,7 +1644,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
 
     cli_cq.Shutdown();
-    void* phony_tag;
+    void *phony_tag;
     bool phony_ok;
     while (cli_cq.Next(&phony_tag, &phony_ok)) {
     }
@@ -1721,7 +1721,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       EXPECT_TRUE(srv_ctx.IsCancelled());
     }
 
-    std::thread* server_try_cancel_thd = nullptr;
+    std::thread *server_try_cancel_thd = nullptr;
 
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
       server_try_cancel_thd =
@@ -1943,7 +1943,7 @@ INSTANTIATE_TEST_SUITE_P(AsyncEnd2endServerTryCancel,
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   // Change the backup poll interval from 5s to 100ms to speed up the
   // ReconnectChannel test
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 100);

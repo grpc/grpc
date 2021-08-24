@@ -25,11 +25,11 @@
 bool squelch = true;
 bool leak_check = true;
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   if (size < 2) return 0;
   const bool url_safe = static_cast<uint8_t>(0x100) < data[0];
   const bool multiline = static_cast<uint8_t>(0x100) < data[1];
-  char* res = grpc_base64_encode(reinterpret_cast<const char*>(data + 2),
+  char *res = grpc_base64_encode(reinterpret_cast<const char *>(data + 2),
                                  size - 2, url_safe, multiline);
   gpr_free(res);
   return 0;

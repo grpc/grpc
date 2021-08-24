@@ -39,14 +39,14 @@ class ChildPolicyHandler::Helper
   ~Helper() override { parent_.reset(DEBUG_LOCATION, "Helper"); }
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      ServerAddress address, const grpc_channel_args& args) override {
+      ServerAddress address, const grpc_channel_args &args) override {
     if (parent_->shutting_down_) return nullptr;
     if (!CalledByCurrentChild() && !CalledByPendingChild()) return nullptr;
     return parent_->channel_control_helper()->CreateSubchannel(
         std::move(address), args);
   }
 
-  void UpdateState(grpc_connectivity_state state, const absl::Status& status,
+  void UpdateState(grpc_connectivity_state state, const absl::Status &status,
                    std::unique_ptr<SubchannelPicker> picker) override {
     if (parent_->shutting_down_) return;
     // If this request is from the pending child policy, ignore it until
@@ -78,7 +78,7 @@ class ChildPolicyHandler::Helper
     // Only forward re-resolution requests from the most recent child,
     // since that's the one that will be receiving any update we receive
     // from the resolver.
-    const LoadBalancingPolicy* latest_child_policy =
+    const LoadBalancingPolicy *latest_child_policy =
         parent_->pending_child_policy_ != nullptr
             ? parent_->pending_child_policy_.get()
             : parent_->child_policy_.get();
@@ -97,7 +97,7 @@ class ChildPolicyHandler::Helper
     parent_->channel_control_helper()->AddTraceEvent(severity, message);
   }
 
-  void set_child(LoadBalancingPolicy* child) { child_ = child; }
+  void set_child(LoadBalancingPolicy *child) { child_ = child; }
 
  private:
   bool CalledByPendingChild() const {
@@ -111,7 +111,7 @@ class ChildPolicyHandler::Helper
   };
 
   RefCountedPtr<ChildPolicyHandler> parent_;
-  LoadBalancingPolicy* child_ = nullptr;
+  LoadBalancingPolicy *child_ = nullptr;
 };
 
 //
@@ -201,7 +201,7 @@ void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
       ConfigChangeRequiresNewPolicyInstance(current_config_.get(),
                                             args.config.get());
   current_config_ = args.config;
-  LoadBalancingPolicy* policy_to_update = nullptr;
+  LoadBalancingPolicy *policy_to_update = nullptr;
   if (create_policy) {
     // Cases 1, 2b, and 3b: create a new child policy.
     // If child_policy_ is null, we set it (case 1), else we set
@@ -215,7 +215,7 @@ void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
               "[child_policy_handler %p] creating new %schild policy %s", this,
               child_policy_ == nullptr ? "" : "pending ", args.config->name());
     }
-    auto& lb_policy =
+    auto &lb_policy =
         child_policy_ == nullptr ? child_policy_ : pending_child_policy_;
     lb_policy = CreateChildPolicy(args.config->name(), *args.args);
     policy_to_update = lb_policy.get();
@@ -257,8 +257,8 @@ void ChildPolicyHandler::ResetBackoffLocked() {
 }
 
 OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
-    const char* child_policy_name, const grpc_channel_args& args) {
-  Helper* helper = new Helper(Ref(DEBUG_LOCATION, "Helper"));
+    const char *child_policy_name, const grpc_channel_args &args) {
+  Helper *helper = new Helper(Ref(DEBUG_LOCATION, "Helper"));
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.channel_control_helper =
@@ -285,14 +285,14 @@ OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
 }
 
 bool ChildPolicyHandler::ConfigChangeRequiresNewPolicyInstance(
-    LoadBalancingPolicy::Config* old_config,
-    LoadBalancingPolicy::Config* new_config) const {
+    LoadBalancingPolicy::Config *old_config,
+    LoadBalancingPolicy::Config *new_config) const {
   return strcmp(old_config->name(), new_config->name()) != 0;
 }
 
 OrphanablePtr<LoadBalancingPolicy>
 ChildPolicyHandler::CreateLoadBalancingPolicy(
-    const char* name, LoadBalancingPolicy::Args args) const {
+    const char *name, LoadBalancingPolicy::Args args) const {
   return LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
       name, std::move(args));
 }

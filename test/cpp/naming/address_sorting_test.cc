@@ -91,13 +91,13 @@ class MockSourceAddrFactory : public address_sorting_source_addr_factory {
  public:
   MockSourceAddrFactory(
       bool ipv4_supported, bool ipv6_supported,
-      const std::map<std::string, TestAddress>& dest_addr_to_src_addr)
+      const std::map<std::string, TestAddress> &dest_addr_to_src_addr)
       : ipv4_supported_(ipv4_supported),
         ipv6_supported_(ipv6_supported),
         dest_addr_to_src_addr_(dest_addr_to_src_addr) {}
 
-  bool GetSourceAddr(const address_sorting_address* dest_addr,
-                     address_sorting_address* source_addr) {
+  bool GetSourceAddr(const address_sorting_address *dest_addr,
+                     address_sorting_address *source_addr) {
     if ((address_sorting_abstract_get_family(dest_addr) ==
              ADDRESS_SORTING_AF_INET &&
          !ipv4_supported_) ||
@@ -133,18 +133,18 @@ class MockSourceAddrFactory : public address_sorting_source_addr_factory {
 };
 
 static bool mock_source_addr_factory_wrapper_get_source_addr(
-    address_sorting_source_addr_factory* factory,
-    const address_sorting_address* dest_addr,
-    address_sorting_address* source_addr) {
-  MockSourceAddrFactory* mock =
-      reinterpret_cast<MockSourceAddrFactory*>(factory);
+    address_sorting_source_addr_factory *factory,
+    const address_sorting_address *dest_addr,
+    address_sorting_address *source_addr) {
+  MockSourceAddrFactory *mock =
+      reinterpret_cast<MockSourceAddrFactory *>(factory);
   return mock->GetSourceAddr(dest_addr, source_addr);
 }
 
 void mock_source_addr_factory_wrapper_destroy(
-    address_sorting_source_addr_factory* factory) {
-  MockSourceAddrFactory* mock =
-      reinterpret_cast<MockSourceAddrFactory*>(factory);
+    address_sorting_source_addr_factory *factory) {
+  MockSourceAddrFactory *mock =
+      reinterpret_cast<MockSourceAddrFactory *>(factory);
   delete mock;
 }
 
@@ -156,23 +156,23 @@ const address_sorting_source_addr_factory_vtable kMockSourceAddrFactoryVtable =
 
 void OverrideAddressSortingSourceAddrFactory(
     bool ipv4_supported, bool ipv6_supported,
-    const std::map<std::string, TestAddress>& dest_addr_to_src_addr) {
-  address_sorting_source_addr_factory* factory = new MockSourceAddrFactory(
+    const std::map<std::string, TestAddress> &dest_addr_to_src_addr) {
+  address_sorting_source_addr_factory *factory = new MockSourceAddrFactory(
       ipv4_supported, ipv6_supported, dest_addr_to_src_addr);
   factory->vtable = &kMockSourceAddrFactoryVtable;
   address_sorting_override_source_addr_factory_for_testing(factory);
 }
 
 grpc_core::ServerAddressList BuildLbAddrInputs(
-    const std::vector<TestAddress>& test_addrs) {
+    const std::vector<TestAddress> &test_addrs) {
   grpc_core::ServerAddressList addresses;
-  for (const auto& addr : test_addrs) {
+  for (const auto &addr : test_addrs) {
     addresses.emplace_back(TestAddressToGrpcResolvedAddress(addr), nullptr);
   }
   return addresses;
 }
 
-void VerifyLbAddrOutputs(const grpc_core::ServerAddressList& addresses,
+void VerifyLbAddrOutputs(const grpc_core::ServerAddressList &addresses,
                          std::vector<std::string> expected_addrs) {
   EXPECT_EQ(addresses.size(), expected_addrs.size());
   for (size_t i = 0; i < addresses.size(); ++i) {
@@ -354,11 +354,11 @@ TEST_F(AddressSortingTest,
   bool ipv6_supported = true;
 // Handle unique observed behavior of inet_ntop(v4-compatible-address) on OS X.
 #if GPR_APPLE == 1
-  const char* v4_compat_dest = "[::0.0.0.2]:443";
-  const char* v4_compat_src = "[::0.0.0.2]:0";
+  const char *v4_compat_dest = "[::0.0.0.2]:443";
+  const char *v4_compat_src = "[::0.0.0.2]:0";
 #else
-  const char* v4_compat_dest = "[::2]:443";
-  const char* v4_compat_src = "[::2]:0";
+  const char *v4_compat_dest = "[::2]:443";
+  const char *v4_compat_src = "[::2]:0";
 #endif
   OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
@@ -721,11 +721,11 @@ TEST_F(AddressSortingTest, TestStableSortV4CompatAndSiteLocalAddresses) {
   bool ipv6_supported = true;
 // Handle unique observed behavior of inet_ntop(v4-compatible-address) on OS X.
 #if GPR_APPLE == 1
-  const char* v4_compat_dest = "[::0.0.0.2]:443";
-  const char* v4_compat_src = "[::0.0.0.3]:0";
+  const char *v4_compat_dest = "[::0.0.0.2]:443";
+  const char *v4_compat_src = "[::0.0.0.3]:0";
 #else
-  const char* v4_compat_dest = "[::2]:443";
-  const char* v4_compat_src = "[::3]:0";
+  const char *v4_compat_dest = "[::2]:443";
+  const char *v4_compat_src = "[::3]:0";
 #endif
   OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
@@ -787,7 +787,7 @@ TEST_F(AddressSortingTest, TestSorterKnowsIpv6LoopbackIsAvailable) {
   sockaddr_in6 ipv6_loopback;
   memset(&ipv6_loopback, 0, sizeof(ipv6_loopback));
   ipv6_loopback.sin6_family = AF_INET6;
-  (reinterpret_cast<char*>(&ipv6_loopback.sin6_addr))[15] = 1;
+  (reinterpret_cast<char *>(&ipv6_loopback.sin6_addr))[15] = 1;
   ipv6_loopback.sin6_port = htons(443);
   // Set up the source and destination parameters of
   // address_sorting_get_source_addr
@@ -802,10 +802,10 @@ TEST_F(AddressSortingTest, TestSorterKnowsIpv6LoopbackIsAvailable) {
       &sort_input_dest, &source_for_sort_input_dest));
   // Now also check that the source address was filled in correctly.
   EXPECT_GT(source_for_sort_input_dest.len, 0u);
-  sockaddr_in6* source_addr_output =
-      reinterpret_cast<sockaddr_in6*>(source_for_sort_input_dest.addr);
+  sockaddr_in6 *source_addr_output =
+      reinterpret_cast<sockaddr_in6 *>(source_for_sort_input_dest.addr);
   EXPECT_EQ(source_addr_output->sin6_family, AF_INET6);
-  char* buf = static_cast<char*>(gpr_zalloc(100));
+  char *buf = static_cast<char *>(gpr_zalloc(100));
   EXPECT_NE(inet_ntop(AF_INET6, &source_addr_output->sin6_addr, buf, 100),
             nullptr)
       << "inet_ntop failed. Errno: " + std::to_string(errno);
@@ -819,7 +819,7 @@ TEST_F(AddressSortingTest, TestSorterKnowsIpv6LoopbackIsAvailable) {
 
 }  // namespace
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc_core::UniquePtr<char> resolver =
       GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (strlen(resolver.get()) == 0) {

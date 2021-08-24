@@ -84,8 +84,8 @@ TEST_F(TimerTest, OneTimerExpires) {
   int timer_fired = 0;
   grpc_timer_init(&timer, grpc_core::ExecCtx::Get()->Now() + 500,
                   GRPC_CLOSURE_CREATE(
-                      [](void* arg, grpc_error_handle) {
-                        int* timer_fired = static_cast<int*>(arg);
+                      [](void *arg, grpc_error_handle) {
+                        int *timer_fired = static_cast<int *>(arg);
                         ++*timer_fired;
                       },
                       &timer_fired, grpc_schedule_on_exec_ctx));
@@ -109,8 +109,8 @@ TEST_F(TimerTest, MultipleTimersExpire) {
   for (int i = 0; i < kNumTimers; ++i) {
     grpc_timer_init(&timers[i], grpc_core::ExecCtx::Get()->Now() + 500 + i,
                     GRPC_CLOSURE_CREATE(
-                        [](void* arg, grpc_error_handle) {
-                          int* timer_fired = static_cast<int*>(arg);
+                        [](void *arg, grpc_error_handle) {
+                          int *timer_fired = static_cast<int *>(arg);
                           ++*timer_fired;
                         },
                         &timer_fired, grpc_schedule_on_exec_ctx));
@@ -136,11 +136,11 @@ TEST_F(TimerTest, CancelSomeTimers) {
   for (int i = 0; i < kNumTimers; ++i) {
     grpc_timer_init(&timers[i], grpc_core::ExecCtx::Get()->Now() + 500 + i,
                     GRPC_CLOSURE_CREATE(
-                        [](void* arg, grpc_error_handle error) {
+                        [](void *arg, grpc_error_handle error) {
                           if (error == GRPC_ERROR_CANCELLED) {
                             return;
                           }
-                          int* timer_fired = static_cast<int*>(arg);
+                          int *timer_fired = static_cast<int *>(arg);
                           ++*timer_fired;
                         },
                         &timer_fired, grpc_schedule_on_exec_ctx));
@@ -166,7 +166,7 @@ TEST_F(TimerTest, DISABLED_TimerNotCanceled) {
   grpc_core::ExecCtx exec_ctx;
   grpc_timer timer;
   grpc_timer_init(&timer, grpc_core::ExecCtx::Get()->Now() + 10000,
-                  GRPC_CLOSURE_CREATE([](void*, grpc_error_handle) {}, nullptr,
+                  GRPC_CLOSURE_CREATE([](void *, grpc_error_handle) {}, nullptr,
                                       grpc_schedule_on_exec_ctx));
 }
 
@@ -178,11 +178,11 @@ TEST_F(TimerTest, DISABLED_CancelRace) {
   const int kNumTimers = 10;
   grpc_timer timers[kNumTimers];
   for (int i = 0; i < kNumTimers; ++i) {
-    grpc_timer* arg = (i != 0) ? &timers[i - 1] : nullptr;
+    grpc_timer *arg = (i != 0) ? &timers[i - 1] : nullptr;
     grpc_timer_init(&timers[i], grpc_core::ExecCtx::Get()->Now() + 100,
                     GRPC_CLOSURE_CREATE(
-                        [](void* arg, grpc_error_handle /*error*/) {
-                          grpc_timer* timer = static_cast<grpc_timer*>(arg);
+                        [](void *arg, grpc_error_handle /*error*/) {
+                          grpc_timer *timer = static_cast<grpc_timer *>(arg);
                           if (timer) {
                             grpc_timer_cancel(timer);
                           }
@@ -205,14 +205,14 @@ TEST_F(TimerTest, DISABLED_CancelNextTimer) {
   }
 
   for (int i = 0; i < kNumTimers; ++i) {
-    grpc_timer* arg = nullptr;
+    grpc_timer *arg = nullptr;
     if (i < kNumTimers - 1) {
       arg = &timers[i + 1];
     }
     grpc_timer_init(&timers[i], grpc_core::ExecCtx::Get()->Now() + 100,
                     GRPC_CLOSURE_CREATE(
-                        [](void* arg, grpc_error_handle /*error*/) {
-                          grpc_timer* timer = static_cast<grpc_timer*>(arg);
+                        [](void *arg, grpc_error_handle /*error*/) {
+                          grpc_timer *timer = static_cast<grpc_timer *>(arg);
                           if (timer) {
                             grpc_timer_cancel(timer);
                           }
@@ -223,7 +223,7 @@ TEST_F(TimerTest, DISABLED_CancelNextTimer) {
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

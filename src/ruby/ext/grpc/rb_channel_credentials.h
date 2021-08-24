@@ -28,7 +28,7 @@
 void Init_grpc_channel_credentials();
 
 /* Gets the wrapped credentials from the ruby wrapper */
-grpc_channel_credentials* grpc_rb_get_wrapped_channel_credentials(VALUE v);
+grpc_channel_credentials *grpc_rb_get_wrapped_channel_credentials(VALUE v);
 
 /* Check if v is kind of ChannelCredentials */
 bool grpc_rb_is_channel_credentials(VALUE v);

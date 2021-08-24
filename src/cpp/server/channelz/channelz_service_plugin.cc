@@ -35,13 +35,14 @@ class ChannelzServicePlugin : public ::grpc::ServerBuilderPlugin {
 
   std::string name() override { return "channelz_service"; }
 
-  void InitServer(grpc::ServerInitializer* si) override {
+  void InitServer(grpc::ServerInitializer *si) override {
     si->RegisterService(channelz_service_);
   }
 
-  void Finish(grpc::ServerInitializer* /*si*/) override {}
+  void Finish(grpc::ServerInitializer * /*si*/) override {}
 
-  void ChangeArguments(const std::string& /*name*/, void* /*value*/) override {}
+  void ChangeArguments(const std::string & /*name*/,
+                       void * /*value*/) override {}
 
   bool has_sync_methods() const override {
     if (channelz_service_) {

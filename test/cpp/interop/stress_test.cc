@@ -36,7 +36,7 @@
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
 
-extern void gpr_default_log(gpr_log_func_args* args);
+extern void gpr_default_log(gpr_log_func_args *args);
 
 ABSL_FLAG(int32_t, metrics_port, 8081, "The metrics server port.");
 
@@ -124,13 +124,13 @@ static int log_level = GPR_LOG_SEVERITY_DEBUG;
 
 // A simple wrapper to grp_default_log() function. This only logs messages at or
 // above the current log level (set in 'log_level' variable)
-void TestLogFunction(gpr_log_func_args* args) {
+void TestLogFunction(gpr_log_func_args *args) {
   if (args->severity >= log_level) {
     gpr_default_log(args);
   }
 }
 
-TestCaseType GetTestTypeFromName(const std::string& test_name) {
+TestCaseType GetTestTypeFromName(const std::string &test_name) {
   TestCaseType test_case = UNKNOWN_TEST;
 
   for (auto it = kTestCaseList.begin(); it != kTestCaseList.end(); it++) {
@@ -144,8 +144,8 @@ TestCaseType GetTestTypeFromName(const std::string& test_name) {
 }
 
 // Converts a string of comma delimited tokens to a vector of tokens
-bool ParseCommaDelimitedString(const std::string& comma_delimited_str,
-                               std::vector<std::string>& tokens) {
+bool ParseCommaDelimitedString(const std::string &comma_delimited_str,
+                               std::vector<std::string> &tokens) {
   size_t bpos = 0;
   size_t epos = std::string::npos;
 
@@ -162,8 +162,8 @@ bool ParseCommaDelimitedString(const std::string& comma_delimited_str,
 // Output:
 //   - Whether parsing was successful (return value)
 //   - Vector of (test_type_enum, weight) pairs returned via 'tests' parameter
-bool ParseTestCasesString(const std::string& test_cases,
-                          std::vector<std::pair<TestCaseType, int>>& tests) {
+bool ParseTestCasesString(const std::string &test_cases,
+                          std::vector<std::pair<TestCaseType, int>> &tests) {
   bool is_success = true;
 
   std::vector<std::string> tokens;
@@ -194,8 +194,8 @@ bool ParseTestCasesString(const std::string& test_cases,
 }
 
 // For debugging purposes
-void LogParameterInfo(const std::vector<std::string>& addresses,
-                      const std::vector<std::pair<TestCaseType, int>>& tests) {
+void LogParameterInfo(const std::vector<std::string> &addresses,
+                      const std::vector<std::pair<TestCaseType, int>> &tests) {
   gpr_log(GPR_INFO, "server_addresses: %s",
           absl::GetFlag(FLAGS_server_addresses).c_str());
   gpr_log(GPR_INFO, "test_cases : %s", absl::GetFlag(FLAGS_test_cases).c_str());
@@ -226,7 +226,7 @@ void LogParameterInfo(const std::vector<std::string>& addresses,
   }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
   if (absl::GetFlag(FLAGS_log_level) > GPR_LOG_SEVERITY_ERROR ||
@@ -296,7 +296,7 @@ int main(int argc, char** argv) {
               channel_idx);
       grpc::testing::ChannelCreationFunc channel_creation_func =
           std::bind(static_cast<std::shared_ptr<grpc::Channel> (*)(
-                        const std::string&, const std::string&,
+                        const std::string &, const std::string &,
                         grpc::testing::transport_security, bool)>(
                         grpc::CreateTestChannel),
                     *it, absl::GetFlag(FLAGS_server_host_override),

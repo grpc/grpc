@@ -28,7 +28,7 @@ TEST(SmokeTest, Empty) { gpr_log(GPR_INFO, __func__); }
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();

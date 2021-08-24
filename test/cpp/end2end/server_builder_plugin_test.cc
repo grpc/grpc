@@ -56,16 +56,17 @@ class TestServerBuilderPlugin : public ServerBuilderPlugin {
 
   std::string name() override { return PLUGIN_NAME; }
 
-  void InitServer(ServerInitializer* si) override {
+  void InitServer(ServerInitializer *si) override {
     init_server_is_called_ = true;
     if (register_service_) {
       si->RegisterService(service_);
     }
   }
 
-  void Finish(ServerInitializer* /*si*/) override { finish_is_called_ = true; }
+  void Finish(ServerInitializer * /*si*/) override { finish_is_called_ = true; }
 
-  void ChangeArguments(const std::string& /*name*/, void* /*value*/) override {
+  void ChangeArguments(const std::string & /*name*/,
+                       void * /*value*/) override {
     change_arguments_is_called_ = true;
   }
 
@@ -101,10 +102,10 @@ class InsertPluginServerBuilderOption : public ServerBuilderOption {
  public:
   InsertPluginServerBuilderOption() { register_service_ = false; }
 
-  void UpdateArguments(ChannelArguments* /*arg*/) override {}
+  void UpdateArguments(ChannelArguments * /*arg*/) override {}
 
   void UpdatePlugins(
-      std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
+      std::vector<std::unique_ptr<ServerBuilderPlugin>> *plugins) override {
     plugins->clear();
 
     std::unique_ptr<TestServerBuilderPlugin> plugin(
@@ -209,25 +210,25 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<ServerCompletionQueue> cq_;
   std::unique_ptr<Server> server_;
-  std::thread* cq_thread_;
+  std::thread *cq_thread_;
   TestServiceImpl service_;
   int port_;
 
  private:
-  TestServerBuilderPlugin* CheckPresent() {
+  TestServerBuilderPlugin *CheckPresent() {
     auto it = builder_->plugins_.begin();
     for (; it != builder_->plugins_.end(); it++) {
       if ((*it)->name() == PLUGIN_NAME) break;
     }
     if (it != builder_->plugins_.end()) {
-      return static_cast<TestServerBuilderPlugin*>(it->get());
+      return static_cast<TestServerBuilderPlugin *>(it->get());
     } else {
       return nullptr;
     }
   }
 
   void RunCQ() {
-    void* tag;
+    void *tag;
     bool ok;
     while (cq_->Next(&tag, &ok)) {
     }
@@ -260,7 +261,7 @@ INSTANTIATE_TEST_SUITE_P(ServerBuilderPluginTest, ServerBuilderPluginTest,
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

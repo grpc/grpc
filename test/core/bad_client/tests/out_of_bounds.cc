@@ -29,8 +29,8 @@
 
 namespace {
 
-void verifier(grpc_server* server, grpc_completion_queue* cq,
-              void* /*registered_method*/) {
+void verifier(grpc_server *server, grpc_completion_queue *cq,
+              void * /*registered_method*/) {
   while (server->core_server->HasOpenConnections()) {
     GPR_ASSERT(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
@@ -38,7 +38,7 @@ void verifier(grpc_server* server, grpc_completion_queue* cq,
   }
 }
 
-void FrameVerifier(const std::string& attack_vector) {
+void FrameVerifier(const std::string &attack_vector) {
   grpc_bad_client_arg args[2];
   args[0] = connection_preface_arg;
   args[1].client_validator = nullptr;
@@ -102,7 +102,7 @@ TEST(OutOfBounds, WindowUpdate) {
 
 }  // namespace
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);

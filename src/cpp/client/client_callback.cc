@@ -31,25 +31,25 @@ void ClientReactor::InternalScheduleOnDone(grpc::Status s) {
   grpc_core::ExecCtx exec_ctx;
   struct ClosureWithArg {
     grpc_closure closure;
-    ClientReactor* const reactor;
+    ClientReactor *const reactor;
     const grpc::Status status;
-    ClosureWithArg(ClientReactor* reactor_arg, grpc::Status s)
+    ClosureWithArg(ClientReactor *reactor_arg, grpc::Status s)
         : reactor(reactor_arg), status(std::move(s)) {
       GRPC_CLOSURE_INIT(
           &closure,
-          [](void* void_arg, grpc_error_handle) {
-            ClosureWithArg* arg = static_cast<ClosureWithArg*>(void_arg);
+          [](void *void_arg, grpc_error_handle) {
+            ClosureWithArg *arg = static_cast<ClosureWithArg *>(void_arg);
             arg->reactor->OnDone(arg->status);
             delete arg;
           },
           this, grpc_schedule_on_exec_ctx);
     }
   };
-  ClosureWithArg* arg = new ClosureWithArg(this, std::move(s));
+  ClosureWithArg *arg = new ClosureWithArg(this, std::move(s));
   grpc_core::Executor::Run(&arg->closure, GRPC_ERROR_NONE);
 }
 
-bool ClientReactor::InternalTrailersOnly(const grpc_call* call) const {
+bool ClientReactor::InternalTrailersOnly(const grpc_call *call) const {
   return grpc_call_is_trailers_only(call);
 }
 

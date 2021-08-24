@@ -31,7 +31,7 @@ namespace grpc_core {
 
 namespace {
 
-uint64_t GetAndResetCounter(std::atomic<uint64_t>* from) {
+uint64_t GetAndResetCounter(std::atomic<uint64_t> *from) {
   return from->exchange(0, std::memory_order_relaxed);
 }
 
@@ -85,7 +85,7 @@ void XdsClusterDropStats::AddUncategorizedDrops() {
   uncategorized_drops_.fetch_add(1);
 }
 
-void XdsClusterDropStats::AddCallDropped(const std::string& category) {
+void XdsClusterDropStats::AddCallDropped(const std::string &category) {
   MutexLock lock(&mu_);
   ++categorized_drops_[category];
 }
@@ -151,7 +151,7 @@ void XdsClusterLocalityStats::AddCallStarted() {
 }
 
 void XdsClusterLocalityStats::AddCallFinished(bool fail) {
-  std::atomic<uint64_t>& to_increment =
+  std::atomic<uint64_t> &to_increment =
       fail ? total_error_requests_ : total_successful_requests_;
   to_increment.fetch_add(1, std::memory_order_relaxed);
   total_requests_in_progress_.fetch_add(-1, std::memory_order_acq_rel);

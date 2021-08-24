@@ -58,7 +58,7 @@ class Loop {
       // Poll the inner promise.
       auto promise_result = promise_();
       // If it returns a value:
-      if (auto* p = absl::get_if<kPollReadyIdx>(&promise_result)) {
+      if (auto *p = absl::get_if<kPollReadyIdx>(&promise_result)) {
         //  - then if it's Continue, destroy the promise and recreate a new one
         //  from our factory.
         if (absl::holds_alternative<Continue>(*p)) {

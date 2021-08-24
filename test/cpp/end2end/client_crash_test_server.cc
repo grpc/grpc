@@ -39,8 +39,8 @@ namespace testing {
 
 class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
   Status BidiStream(
-      ServerContext* /*context*/,
-      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+      ServerContext * /*context*/,
+      ServerReaderWriter<EchoResponse, EchoRequest> *stream) override {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
@@ -67,7 +67,7 @@ void RunServer() {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   grpc::testing::RunServer();
 

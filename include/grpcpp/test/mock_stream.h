@@ -39,8 +39,8 @@ class MockClientReader : public ::grpc::ClientReaderInterface<R> {
   MOCK_METHOD0_T(Finish, Status());
 
   /// ReaderInterface
-  MOCK_METHOD1_T(NextMessageSize, bool(uint32_t*));
-  MOCK_METHOD1_T(Read, bool(R*));
+  MOCK_METHOD1_T(NextMessageSize, bool(uint32_t *));
+  MOCK_METHOD1_T(Read, bool(R *));
 
   /// ClientReaderInterface
   MOCK_METHOD0_T(WaitForInitialMetadata, void());
@@ -55,7 +55,7 @@ class MockClientWriter : public ::grpc::ClientWriterInterface<W> {
   MOCK_METHOD0_T(Finish, Status());
 
   /// WriterInterface
-  MOCK_METHOD2_T(Write, bool(const W&, const WriteOptions));
+  MOCK_METHOD2_T(Write, bool(const W &, const WriteOptions));
 
   /// ClientWriterInterface
   MOCK_METHOD0_T(WritesDone, bool());
@@ -71,11 +71,11 @@ class MockClientReaderWriter
   MOCK_METHOD0_T(Finish, Status());
 
   /// ReaderInterface
-  MOCK_METHOD1_T(NextMessageSize, bool(uint32_t*));
-  MOCK_METHOD1_T(Read, bool(R*));
+  MOCK_METHOD1_T(NextMessageSize, bool(uint32_t *));
+  MOCK_METHOD1_T(Read, bool(R *));
 
   /// WriterInterface
-  MOCK_METHOD2_T(Write, bool(const W&, const WriteOptions));
+  MOCK_METHOD2_T(Write, bool(const W &, const WriteOptions));
 
   /// ClientReaderWriterInterface
   MOCK_METHOD0_T(WaitForInitialMetadata, void());
@@ -92,8 +92,8 @@ class MockClientAsyncResponseReader
 
   /// ClientAsyncResponseReaderInterface
   MOCK_METHOD0_T(StartCall, void());
-  MOCK_METHOD1_T(ReadInitialMetadata, void(void*));
-  MOCK_METHOD3_T(Finish, void(R*, Status*, void*));
+  MOCK_METHOD1_T(ReadInitialMetadata, void(void *));
+  MOCK_METHOD3_T(Finish, void(R *, Status *, void *));
 };
 
 template <class R>
@@ -102,12 +102,12 @@ class MockClientAsyncReader : public ClientAsyncReaderInterface<R> {
   MockClientAsyncReader() = default;
 
   /// ClientAsyncStreamingInterface
-  MOCK_METHOD1_T(StartCall, void(void*));
-  MOCK_METHOD1_T(ReadInitialMetadata, void(void*));
-  MOCK_METHOD2_T(Finish, void(Status*, void*));
+  MOCK_METHOD1_T(StartCall, void(void *));
+  MOCK_METHOD1_T(ReadInitialMetadata, void(void *));
+  MOCK_METHOD2_T(Finish, void(Status *, void *));
 
   /// AsyncReaderInterface
-  MOCK_METHOD2_T(Read, void(R*, void*));
+  MOCK_METHOD2_T(Read, void(R *, void *));
 };
 
 template <class W>
@@ -116,16 +116,16 @@ class MockClientAsyncWriter : public ::grpc::ClientAsyncWriterInterface<W> {
   MockClientAsyncWriter() = default;
 
   /// ClientAsyncStreamingInterface
-  MOCK_METHOD1_T(StartCall, void(void*));
-  MOCK_METHOD1_T(ReadInitialMetadata, void(void*));
-  MOCK_METHOD2_T(Finish, void(Status*, void*));
+  MOCK_METHOD1_T(StartCall, void(void *));
+  MOCK_METHOD1_T(ReadInitialMetadata, void(void *));
+  MOCK_METHOD2_T(Finish, void(Status *, void *));
 
   /// AsyncWriterInterface
-  MOCK_METHOD2_T(Write, void(const W&, void*));
-  MOCK_METHOD3_T(Write, void(const W&, ::grpc::WriteOptions, void*));
+  MOCK_METHOD2_T(Write, void(const W &, void *));
+  MOCK_METHOD3_T(Write, void(const W &, ::grpc::WriteOptions, void *));
 
   /// ClientAsyncWriterInterface
-  MOCK_METHOD1_T(WritesDone, void(void*));
+  MOCK_METHOD1_T(WritesDone, void(void *));
 };
 
 template <class W, class R>
@@ -135,19 +135,19 @@ class MockClientAsyncReaderWriter
   MockClientAsyncReaderWriter() = default;
 
   /// ClientAsyncStreamingInterface
-  MOCK_METHOD1_T(StartCall, void(void*));
-  MOCK_METHOD1_T(ReadInitialMetadata, void(void*));
-  MOCK_METHOD2_T(Finish, void(Status*, void*));
+  MOCK_METHOD1_T(StartCall, void(void *));
+  MOCK_METHOD1_T(ReadInitialMetadata, void(void *));
+  MOCK_METHOD2_T(Finish, void(Status *, void *));
 
   /// AsyncWriterInterface
-  MOCK_METHOD2_T(Write, void(const W&, void*));
-  MOCK_METHOD3_T(Write, void(const W&, ::grpc::WriteOptions, void*));
+  MOCK_METHOD2_T(Write, void(const W &, void *));
+  MOCK_METHOD3_T(Write, void(const W &, ::grpc::WriteOptions, void *));
 
   /// AsyncReaderInterface
-  MOCK_METHOD2_T(Read, void(R*, void*));
+  MOCK_METHOD2_T(Read, void(R *, void *));
 
   /// ClientAsyncReaderWriterInterface
-  MOCK_METHOD1_T(WritesDone, void(void*));
+  MOCK_METHOD1_T(WritesDone, void(void *));
 };
 
 template <class R>
@@ -159,8 +159,8 @@ class MockServerReader : public ::grpc::ServerReaderInterface<R> {
   MOCK_METHOD0_T(SendInitialMetadata, void());
 
   /// ReaderInterface
-  MOCK_METHOD1_T(NextMessageSize, bool(uint32_t*));
-  MOCK_METHOD1_T(Read, bool(R*));
+  MOCK_METHOD1_T(NextMessageSize, bool(uint32_t *));
+  MOCK_METHOD1_T(Read, bool(R *));
 };
 
 template <class W>
@@ -172,7 +172,7 @@ class MockServerWriter : public ::grpc::ServerWriterInterface<W> {
   MOCK_METHOD0_T(SendInitialMetadata, void());
 
   /// WriterInterface
-  MOCK_METHOD2_T(Write, bool(const W&, const WriteOptions));
+  MOCK_METHOD2_T(Write, bool(const W &, const WriteOptions));
 };
 
 template <class W, class R>
@@ -184,11 +184,11 @@ class MockServerReaderWriter : public grpc::ServerReaderWriterInterface<W, R> {
   MOCK_METHOD0_T(SendInitialMetadata, void());
 
   /// ReaderInterface
-  MOCK_METHOD1_T(NextMessageSize, bool(uint32_t*));
-  MOCK_METHOD1_T(Read, bool(R*));
+  MOCK_METHOD1_T(NextMessageSize, bool(uint32_t *));
+  MOCK_METHOD1_T(Read, bool(R *));
 
   /// WriterInterface
-  MOCK_METHOD2_T(Write, bool(const W&, const WriteOptions));
+  MOCK_METHOD2_T(Write, bool(const W &, const WriteOptions));
 };
 
 }  // namespace testing

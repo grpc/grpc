@@ -34,7 +34,7 @@ grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_fake_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-    const char* target, const grpc_channel_args* args);
+    const char *target, const grpc_channel_args *args);
 
 /* Creates a fake connector that emulates real server security.  */
 grpc_core::RefCountedPtr<grpc_server_security_connector>

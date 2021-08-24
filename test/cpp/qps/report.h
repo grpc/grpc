@@ -37,7 +37,7 @@ namespace testing {
 class Reporter {
  public:
   /** Construct a reporter with the given \a name. */
-  explicit Reporter(const string& name) : name_(name) {}
+  explicit Reporter(const string &name) : name_(name) {}
 
   virtual ~Reporter() {}
 
@@ -47,25 +47,25 @@ class Reporter {
   string name() const { return name_; }
 
   /** Reports QPS for the given \a result. */
-  virtual void ReportQPS(const ScenarioResult& result) = 0;
+  virtual void ReportQPS(const ScenarioResult &result) = 0;
 
   /** Reports QPS per core as (YYY/server core). */
-  virtual void ReportQPSPerCore(const ScenarioResult& result) = 0;
+  virtual void ReportQPSPerCore(const ScenarioResult &result) = 0;
 
   /** Reports latencies for the 50, 90, 95, 99 and 99.9 percentiles, in ms. */
-  virtual void ReportLatency(const ScenarioResult& result) = 0;
+  virtual void ReportLatency(const ScenarioResult &result) = 0;
 
   /** Reports system and user time for client and server systems. */
-  virtual void ReportTimes(const ScenarioResult& result) = 0;
+  virtual void ReportTimes(const ScenarioResult &result) = 0;
 
   /** Reports server cpu usage. */
-  virtual void ReportCpuUsage(const ScenarioResult& result) = 0;
+  virtual void ReportCpuUsage(const ScenarioResult &result) = 0;
 
   /** Reports client and server poll usage inside completion queue. */
-  virtual void ReportPollCount(const ScenarioResult& result) = 0;
+  virtual void ReportPollCount(const ScenarioResult &result) = 0;
 
   /** Reports queries per cpu-sec. */
-  virtual void ReportQueriesPerCpuSec(const ScenarioResult& result) = 0;
+  virtual void ReportQueriesPerCpuSec(const ScenarioResult &result) = 0;
 
  private:
   const string name_;
@@ -79,13 +79,13 @@ class CompositeReporter : public Reporter {
   /** Adds a \a reporter to the composite. */
   void add(std::unique_ptr<Reporter> reporter);
 
-  void ReportQPS(const ScenarioResult& result) override;
-  void ReportQPSPerCore(const ScenarioResult& result) override;
-  void ReportLatency(const ScenarioResult& result) override;
-  void ReportTimes(const ScenarioResult& result) override;
-  void ReportCpuUsage(const ScenarioResult& result) override;
-  void ReportPollCount(const ScenarioResult& result) override;
-  void ReportQueriesPerCpuSec(const ScenarioResult& result) override;
+  void ReportQPS(const ScenarioResult &result) override;
+  void ReportQPSPerCore(const ScenarioResult &result) override;
+  void ReportLatency(const ScenarioResult &result) override;
+  void ReportTimes(const ScenarioResult &result) override;
+  void ReportCpuUsage(const ScenarioResult &result) override;
+  void ReportPollCount(const ScenarioResult &result) override;
+  void ReportQueriesPerCpuSec(const ScenarioResult &result) override;
 
  private:
   std::vector<std::unique_ptr<Reporter> > reporters_;
@@ -94,52 +94,52 @@ class CompositeReporter : public Reporter {
 /** Reporter to gpr_log(GPR_INFO). */
 class GprLogReporter : public Reporter {
  public:
-  explicit GprLogReporter(const string& name) : Reporter(name) {}
+  explicit GprLogReporter(const string &name) : Reporter(name) {}
 
  private:
-  void ReportQPS(const ScenarioResult& result) override;
-  void ReportQPSPerCore(const ScenarioResult& result) override;
-  void ReportLatency(const ScenarioResult& result) override;
-  void ReportTimes(const ScenarioResult& result) override;
-  void ReportCpuUsage(const ScenarioResult& result) override;
-  void ReportPollCount(const ScenarioResult& result) override;
-  void ReportQueriesPerCpuSec(const ScenarioResult& result) override;
+  void ReportQPS(const ScenarioResult &result) override;
+  void ReportQPSPerCore(const ScenarioResult &result) override;
+  void ReportLatency(const ScenarioResult &result) override;
+  void ReportTimes(const ScenarioResult &result) override;
+  void ReportCpuUsage(const ScenarioResult &result) override;
+  void ReportPollCount(const ScenarioResult &result) override;
+  void ReportQueriesPerCpuSec(const ScenarioResult &result) override;
 
-  void ReportCoreStats(const char* name, int idx,
-                       const grpc::core::Stats& stats);
+  void ReportCoreStats(const char *name, int idx,
+                       const grpc::core::Stats &stats);
 };
 
 /** Dumps the report to a JSON file. */
 class JsonReporter : public Reporter {
  public:
-  JsonReporter(const string& name, const string& report_file)
+  JsonReporter(const string &name, const string &report_file)
       : Reporter(name), report_file_(report_file) {}
 
  private:
-  void ReportQPS(const ScenarioResult& result) override;
-  void ReportQPSPerCore(const ScenarioResult& result) override;
-  void ReportLatency(const ScenarioResult& result) override;
-  void ReportTimes(const ScenarioResult& result) override;
-  void ReportCpuUsage(const ScenarioResult& result) override;
-  void ReportPollCount(const ScenarioResult& result) override;
-  void ReportQueriesPerCpuSec(const ScenarioResult& result) override;
+  void ReportQPS(const ScenarioResult &result) override;
+  void ReportQPSPerCore(const ScenarioResult &result) override;
+  void ReportLatency(const ScenarioResult &result) override;
+  void ReportTimes(const ScenarioResult &result) override;
+  void ReportCpuUsage(const ScenarioResult &result) override;
+  void ReportPollCount(const ScenarioResult &result) override;
+  void ReportQueriesPerCpuSec(const ScenarioResult &result) override;
 
   const string report_file_;
 };
 
 class RpcReporter : public Reporter {
  public:
-  RpcReporter(const string& name, const std::shared_ptr<grpc::Channel>& channel)
+  RpcReporter(const string &name, const std::shared_ptr<grpc::Channel> &channel)
       : Reporter(name), stub_(ReportQpsScenarioService::NewStub(channel)) {}
 
  private:
-  void ReportQPS(const ScenarioResult& result) override;
-  void ReportQPSPerCore(const ScenarioResult& result) override;
-  void ReportLatency(const ScenarioResult& result) override;
-  void ReportTimes(const ScenarioResult& result) override;
-  void ReportCpuUsage(const ScenarioResult& result) override;
-  void ReportPollCount(const ScenarioResult& result) override;
-  void ReportQueriesPerCpuSec(const ScenarioResult& result) override;
+  void ReportQPS(const ScenarioResult &result) override;
+  void ReportQPSPerCore(const ScenarioResult &result) override;
+  void ReportLatency(const ScenarioResult &result) override;
+  void ReportTimes(const ScenarioResult &result) override;
+  void ReportCpuUsage(const ScenarioResult &result) override;
+  void ReportPollCount(const ScenarioResult &result) override;
+  void ReportQueriesPerCpuSec(const ScenarioResult &result) override;
 
   std::unique_ptr<ReportQpsScenarioService::Stub> stub_;
 };

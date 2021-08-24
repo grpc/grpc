@@ -127,25 +127,25 @@ using SizeTests = ::testing::Types<
 TYPED_TEST_SUITE(TableSizeTest, SizeTests);
 
 template <typename... Ts>
-int sizeof_tuple_of_optionals(std::tuple<Ts...>*) {
+int sizeof_tuple_of_optionals(std::tuple<Ts...> *) {
   return sizeof(std::tuple<absl::optional<Ts>...>);
 }
 
 template <typename... Ts>
-int sizeof_table(std::tuple<Ts...>*) {
+int sizeof_table(std::tuple<Ts...> *) {
   return sizeof(Table<Ts...>);
 }
 
 TYPED_TEST(TableSizeTest, SmallerThanTupleOfOptionals) {
-  EXPECT_GE(sizeof_tuple_of_optionals(static_cast<TypeParam*>(nullptr)),
-            sizeof_table(static_cast<TypeParam*>(nullptr)));
+  EXPECT_GE(sizeof_tuple_of_optionals(static_cast<TypeParam *>(nullptr)),
+            sizeof_table(static_cast<TypeParam *>(nullptr)));
 }
 #endif
 
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

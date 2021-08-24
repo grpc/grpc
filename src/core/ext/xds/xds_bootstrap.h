@@ -41,10 +41,10 @@ class XdsClient;
 
 class XdsChannelCredsRegistry {
  public:
-  static bool IsSupported(const std::string& creds_type);
-  static bool IsValidConfig(const std::string& creds_type, const Json& config);
+  static bool IsSupported(const std::string &creds_type);
+  static bool IsValidConfig(const std::string &creds_type, const Json &config);
   static RefCountedPtr<grpc_channel_credentials> MakeChannelCreds(
-      const std::string& creds_type, const Json& config);
+      const std::string &creds_type, const Json &config);
 };
 
 class XdsBootstrap {
@@ -71,38 +71,38 @@ class XdsBootstrap {
   // If *error is not GRPC_ERROR_NONE after returning, then there was an
   // error parsing the contents.
   static std::unique_ptr<XdsBootstrap> Create(absl::string_view json_string,
-                                              grpc_error_handle* error);
+                                              grpc_error_handle *error);
 
   // Do not instantiate directly -- use Create() above instead.
-  XdsBootstrap(Json json, grpc_error_handle* error);
+  XdsBootstrap(Json json, grpc_error_handle *error);
 
   std::string ToString() const;
 
   // TODO(roth): We currently support only one server. Fix this when we
   // add support for fallback for the xds channel.
-  const XdsServer& server() const { return servers_[0]; }
-  const Node* node() const { return node_.get(); }
-  const std::string& server_listener_resource_name_template() const {
+  const XdsServer &server() const { return servers_[0]; }
+  const Node *node() const { return node_.get(); }
+  const std::string &server_listener_resource_name_template() const {
     return server_listener_resource_name_template_;
   }
 
-  const CertificateProviderStore::PluginDefinitionMap& certificate_providers()
+  const CertificateProviderStore::PluginDefinitionMap &certificate_providers()
       const {
     return certificate_providers_;
   }
 
  private:
-  grpc_error_handle ParseXdsServerList(Json* json);
-  grpc_error_handle ParseXdsServer(Json* json, size_t idx);
-  grpc_error_handle ParseChannelCredsArray(Json* json, XdsServer* server);
-  grpc_error_handle ParseChannelCreds(Json* json, size_t idx,
-                                      XdsServer* server);
-  grpc_error_handle ParseServerFeaturesArray(Json* json, XdsServer* server);
-  grpc_error_handle ParseNode(Json* json);
-  grpc_error_handle ParseLocality(Json* json);
-  grpc_error_handle ParseCertificateProviders(Json* json);
-  grpc_error_handle ParseCertificateProvider(const std::string& instance_name,
-                                             Json* certificate_provider_json);
+  grpc_error_handle ParseXdsServerList(Json *json);
+  grpc_error_handle ParseXdsServer(Json *json, size_t idx);
+  grpc_error_handle ParseChannelCredsArray(Json *json, XdsServer *server);
+  grpc_error_handle ParseChannelCreds(Json *json, size_t idx,
+                                      XdsServer *server);
+  grpc_error_handle ParseServerFeaturesArray(Json *json, XdsServer *server);
+  grpc_error_handle ParseNode(Json *json);
+  grpc_error_handle ParseLocality(Json *json);
+  grpc_error_handle ParseCertificateProviders(Json *json);
+  grpc_error_handle ParseCertificateProvider(const std::string &instance_name,
+                                             Json *certificate_provider_json);
 
   absl::InlinedVector<XdsServer, 1> servers_;
   std::unique_ptr<Node> node_;

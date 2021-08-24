@@ -25,7 +25,7 @@
 namespace grpc_core {
 
 TEST(AuthorizationPolicyProviderTest, StaticDataInitializationSuccessful) {
-  const char* authz_policy =
+  const char *authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
@@ -36,19 +36,19 @@ TEST(AuthorizationPolicyProviderTest, StaticDataInitializationSuccessful) {
       "}";
   auto provider = StaticDataAuthorizationPolicyProvider::Create(authz_policy);
   ASSERT_TRUE(provider.ok());
-  auto* allow_engine =
-      dynamic_cast<GrpcAuthorizationEngine*>((*provider)->allow_engine().get());
+  auto *allow_engine = dynamic_cast<GrpcAuthorizationEngine *>(
+      (*provider)->allow_engine().get());
   ASSERT_NE(allow_engine, nullptr);
   EXPECT_EQ(allow_engine->action(), Rbac::Action::kAllow);
-  auto* deny_engine =
-      dynamic_cast<GrpcAuthorizationEngine*>((*provider)->deny_engine().get());
+  auto *deny_engine =
+      dynamic_cast<GrpcAuthorizationEngine *>((*provider)->deny_engine().get());
   ASSERT_NE(deny_engine, nullptr);
   EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
 }
 
 TEST(AuthorizationPolicyProviderTest,
      StaticDataInitializationFailedInvalidPolicy) {
-  const char* authz_policy = "{}";
+  const char *authz_policy = "{}";
   auto provider = StaticDataAuthorizationPolicyProvider::Create(authz_policy);
   EXPECT_EQ(provider.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(provider.status().message(), "\"name\" field is not present.");
@@ -56,7 +56,7 @@ TEST(AuthorizationPolicyProviderTest,
 
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

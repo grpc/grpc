@@ -30,14 +30,14 @@
 
 namespace {
 
-static constexpr int kPrintfPointerFieldWidth = 2 + 2 * sizeof(void*);
+static constexpr int kPrintfPointerFieldWidth = 2 + 2 * sizeof(void *);
 
-static void DumpPCAndFrameSizeAndSymbol(void (*writerfn)(const char*, void*),
-                                        void* writerfn_arg, void* pc,
-                                        void* symbolize_pc, int framesize,
-                                        const char* const prefix) {
+static void DumpPCAndFrameSizeAndSymbol(void (*writerfn)(const char *, void *),
+                                        void *writerfn_arg, void *pc,
+                                        void *symbolize_pc, int framesize,
+                                        const char *const prefix) {
   char tmp[1024];
-  const char* symbol = "(unknown)";
+  const char *symbol = "(unknown)";
   if (absl::Symbolize(symbolize_pc, tmp, sizeof(tmp))) {
     symbol = tmp;
   }
@@ -52,9 +52,9 @@ static void DumpPCAndFrameSizeAndSymbol(void (*writerfn)(const char*, void*),
   writerfn(buf, writerfn_arg);
 }
 
-static void DumpPCAndFrameSize(void (*writerfn)(const char*, void*),
-                               void* writerfn_arg, void* pc, int framesize,
-                               const char* const prefix) {
+static void DumpPCAndFrameSize(void (*writerfn)(const char *, void *),
+                               void *writerfn_arg, void *pc, int framesize,
+                               const char *const prefix) {
   char buf[100];
   if (framesize <= 0) {
     snprintf(buf, sizeof(buf), "%s@ %*p  (unknown)\n", prefix,
@@ -66,14 +66,14 @@ static void DumpPCAndFrameSize(void (*writerfn)(const char*, void*),
   writerfn(buf, writerfn_arg);
 }
 
-static void DumpStackTrace(void* const stack[], int frame_sizes[], int depth,
+static void DumpStackTrace(void *const stack[], int frame_sizes[], int depth,
                            bool symbolize_stacktrace,
-                           void (*writerfn)(const char*, void*),
-                           void* writerfn_arg) {
+                           void (*writerfn)(const char *, void *),
+                           void *writerfn_arg) {
   for (int i = 0; i < depth; i++) {
     if (symbolize_stacktrace) {
       DumpPCAndFrameSizeAndSymbol(writerfn, writerfn_arg, stack[i],
-                                  reinterpret_cast<char*>(stack[i]) - 1,
+                                  reinterpret_cast<char *>(stack[i]) - 1,
                                   frame_sizes[i], "    ");
     } else {
       DumpPCAndFrameSize(writerfn, writerfn_arg, stack[i], frame_sizes[i],
@@ -82,8 +82,8 @@ static void DumpStackTrace(void* const stack[], int frame_sizes[], int depth,
   }
 }
 
-static void DebugWriteToString(const char* data, void* str) {
-  reinterpret_cast<std::string*>(str)->append(data);
+static void DebugWriteToString(const char *data, void *str) {
+  reinterpret_cast<std::string *>(str)->append(data);
 }
 
 }  // namespace
@@ -94,14 +94,14 @@ namespace testing {
 std::string GetCurrentStackTrace() {
   std::string result = "Stack trace:\n";
   constexpr int kNumStackFrames = 32;
-  void* stack[kNumStackFrames];
+  void *stack[kNumStackFrames];
   int frame_sizes[kNumStackFrames];
   int depth = absl::GetStackFrames(stack, frame_sizes, kNumStackFrames, 1);
   DumpStackTrace(stack, frame_sizes, depth, true, DebugWriteToString, &result);
   return result;
 }
 
-void InitializeStackTracer(const char* argv0) {
+void InitializeStackTracer(const char *argv0) {
   absl::InitializeSymbolizer(argv0);
   grpc_core::SetCurrentStackTraceProvider(&GetCurrentStackTrace);
 }

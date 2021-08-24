@@ -116,39 +116,39 @@ struct Timestamps {
 class TracedBuffer {
  public:
   /** Use AddNewEntry function instead of using this directly. */
-  TracedBuffer(uint32_t seq_no, void* arg)
+  TracedBuffer(uint32_t seq_no, void *arg)
       : seq_no_(seq_no), arg_(arg), next_(nullptr) {}
 
   /** Add a new entry in the TracedBuffer list pointed to by head. Also saves
    * sendmsg_time with the current timestamp. */
-  static void AddNewEntry(grpc_core::TracedBuffer** head, uint32_t seq_no,
-                          int fd, void* arg);
+  static void AddNewEntry(grpc_core::TracedBuffer **head, uint32_t seq_no,
+                          int fd, void *arg);
 
   /** Processes a received timestamp based on sock_extended_err and
    * scm_timestamping structures. It will invoke the timestamps callback if the
    * timestamp type is SCM_TSTAMP_ACK. */
-  static void ProcessTimestamp(grpc_core::TracedBuffer** head,
-                               struct sock_extended_err* serr,
-                               struct cmsghdr* opt_stats,
-                               struct scm_timestamping* tss);
+  static void ProcessTimestamp(grpc_core::TracedBuffer **head,
+                               struct sock_extended_err *serr,
+                               struct cmsghdr *opt_stats,
+                               struct scm_timestamping *tss);
 
   /** Cleans the list by calling the callback for each traced buffer in the list
    * with timestamps that it has. */
-  static void Shutdown(grpc_core::TracedBuffer** head, void* remaining,
+  static void Shutdown(grpc_core::TracedBuffer **head, void *remaining,
                        grpc_error_handle shutdown_err);
 
  private:
   uint32_t seq_no_; /* The sequence number for the last byte in the buffer */
-  void* arg_;       /* The arg to pass to timestamps_callback */
+  void *arg_;       /* The arg to pass to timestamps_callback */
   grpc_core::Timestamps ts_; /* The timestamps corresponding to this buffer */
-  grpc_core::TracedBuffer* next_; /* The next TracedBuffer in the list */
+  grpc_core::TracedBuffer *next_; /* The next TracedBuffer in the list */
 };
 #else  /* GRPC_LINUX_ERRQUEUE */
 class TracedBuffer {
  public:
   /* Phony shutdown function */
-  static void Shutdown(grpc_core::TracedBuffer** /*head*/, void* /*remaining*/,
-                       grpc_error_handle shutdown_err) {
+  static void Shutdown(grpc_core::TracedBuffer ** /*head*/,
+                       void * /*remaining*/, grpc_error_handle shutdown_err) {
     GRPC_ERROR_UNREF(shutdown_err);
   }
 };
@@ -157,7 +157,7 @@ class TracedBuffer {
 /** Sets the callback function to call when timestamps for a write are
  *  collected. The callback does not own a reference to error. */
 void grpc_tcp_set_write_timestamps_callback(
-    void (*fn)(void*, grpc_core::Timestamps*, grpc_error_handle error));
+    void (*fn)(void *, grpc_core::Timestamps *, grpc_error_handle error));
 
 } /* namespace grpc_core */
 

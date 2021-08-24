@@ -20,7 +20,7 @@
 //
 #include "src/compiler/cpp_plugin.h"
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   CppGrpcGenerator generator;
   return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

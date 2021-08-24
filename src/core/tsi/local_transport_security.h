@@ -45,6 +45,6 @@
  * does not fit with an insecure connector, we would need to add a separate
  * handshaker for insecure connectors.
  */
-tsi_result tsi_local_handshaker_create(bool is_client, tsi_handshaker** self);
+tsi_result tsi_local_handshaker_create(bool is_client, tsi_handshaker **self);
 
 #endif /* GRPC_CORE_TSI_LOCAL_TRANSPORT_SECURITY_H */

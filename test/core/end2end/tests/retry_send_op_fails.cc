@@ -40,12 +40,12 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+static void *tag(intptr_t t) { return reinterpret_cast<void *>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+                                            const char *test_name,
+                                            grpc_channel_args *client_args,
+                                            grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -62,14 +62,14 @@ static gpr_timespec five_seconds_from_now(void) {
   return n_seconds_from_now(5);
 }
 
-static void drain_cq(grpc_completion_queue* cq) {
+static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
+static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
@@ -80,13 +80,13 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   f->server = nullptr;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture* f) {
+static void shutdown_client(grpc_end2end_test_fixture *f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = nullptr;
 }
 
-static void end_test(grpc_end2end_test_fixture* f) {
+static void end_test(grpc_end2end_test_fixture *f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -104,32 +104,32 @@ static void end_test(grpc_end2end_test_fixture* f) {
 // - second attempt returns ABORTED but does not retry, because only 2
 //   attempts are allowed
 static void test_retry_send_op_fails(grpc_end2end_test_config config) {
-  grpc_call* c;
-  grpc_call* s;
+  grpc_call *c;
+  grpc_call *s;
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
   grpc_slice request_payload_slice = grpc_slice_from_static_string("foo");
   grpc_slice response_payload_slice = grpc_slice_from_static_string("bar");
-  grpc_byte_buffer* request_payload =
+  grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer* response_payload =
+  grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  grpc_byte_buffer* request_payload_recv = nullptr;
-  grpc_byte_buffer* response_payload_recv = nullptr;
+  grpc_byte_buffer *request_payload_recv = nullptr;
+  grpc_byte_buffer *response_payload_recv = nullptr;
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
   int was_cancelled = 2;
-  char* peer;
+  char *peer;
 
   grpc_arg args[] = {
       grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
-          const_cast<char*>(
+          const_cast<char *>(GRPC_ARG_SERVICE_CONFIG),
+          const_cast<char *>(
               "{\n"
               "  \"methodConfig\": [ {\n"
               "    \"name\": [\n"
@@ -149,7 +149,7 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f =
       begin_test(config, "retry_send_op_fails", &client_args, nullptr);
 
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  cq_verifier *cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -288,23 +288,23 @@ class FailFirstSendOpFilter {
  public:
   class CallData {
    public:
-    static grpc_error_handle Init(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+    static grpc_error_handle Init(grpc_call_element *elem,
+                                  const grpc_call_element_args *args) {
       new (elem->call_data) CallData(args);
       return GRPC_ERROR_NONE;
     }
 
-    static void Destroy(grpc_call_element* elem,
-                        const grpc_call_final_info* /*final_info*/,
-                        grpc_closure* /*ignored*/) {
-      auto* calld = static_cast<CallData*>(elem->call_data);
+    static void Destroy(grpc_call_element *elem,
+                        const grpc_call_final_info * /*final_info*/,
+                        grpc_closure * /*ignored*/) {
+      auto *calld = static_cast<CallData *>(elem->call_data);
       calld->~CallData();
     }
 
     static void StartTransportStreamOpBatch(
-        grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-      auto* chand = static_cast<FailFirstSendOpFilter*>(elem->channel_data);
-      auto* calld = static_cast<CallData*>(elem->call_data);
+        grpc_call_element *elem, grpc_transport_stream_op_batch *batch) {
+      auto *chand = static_cast<FailFirstSendOpFilter *>(elem->channel_data);
+      auto *calld = static_cast<CallData *>(elem->call_data);
       if (!chand->seen_first_) {
         chand->seen_first_ = true;
         calld->fail_ = true;
@@ -322,21 +322,21 @@ class FailFirstSendOpFilter {
     }
 
    private:
-    explicit CallData(const grpc_call_element_args* args)
+    explicit CallData(const grpc_call_element_args *args)
         : call_combiner_(args->call_combiner) {}
 
-    grpc_core::CallCombiner* call_combiner_;
+    grpc_core::CallCombiner *call_combiner_;
     bool fail_ = false;
   };
 
-  static grpc_error_handle Init(grpc_channel_element* elem,
-                                grpc_channel_element_args* /*args*/) {
+  static grpc_error_handle Init(grpc_channel_element *elem,
+                                grpc_channel_element_args * /*args*/) {
     new (elem->channel_data) FailFirstSendOpFilter();
     return GRPC_ERROR_NONE;
   }
 
-  static void Destroy(grpc_channel_element* elem) {
-    auto* chand = static_cast<FailFirstSendOpFilter*>(elem->channel_data);
+  static void Destroy(grpc_channel_element *elem) {
+    auto *chand = static_cast<FailFirstSendOpFilter *>(elem->channel_data);
     chand->~FailFirstSendOpFilter();
   }
 
@@ -359,11 +359,11 @@ grpc_channel_filter FailFirstSendOpFilter::kFilterVtable = {
 
 bool g_enable_filter = false;
 
-bool MaybeAddFilter(grpc_channel_stack_builder* builder, void* /*arg*/) {
+bool MaybeAddFilter(grpc_channel_stack_builder *builder, void * /*arg*/) {
   // Skip if filter is not enabled.
   if (!g_enable_filter) return true;
   // Skip on proxy (which explicitly disables retries).
-  const grpc_channel_args* args =
+  const grpc_channel_args *args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, true)) {
     return true;

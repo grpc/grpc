@@ -57,7 +57,7 @@ class AdminServicesTest : public ::testing::Test {
     request.set_list_services("");
     stream_->Write(request);
     stream_->Read(&response);
-    for (auto& service : response.list_services_response().service()) {
+    for (auto &service : response.list_services_response().service()) {
       services.push_back(service.name());
     }
     return services;
@@ -94,7 +94,7 @@ TEST_F(AdminServicesTest, ValidateRegisteredServices) {
 }  // namespace testing
 }  // namespace grpc
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
