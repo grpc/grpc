@@ -1744,7 +1744,7 @@ void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id) {
 
 static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error) {
   // We want to log this irrespective of whether http tracing is enabled
-  gpr_log(GPR_INFO, "%s: Sending goaway err=%s", t->peer_string.c_str(),
+  gpr_log(GPR_DEBUG, "%s: Sending goaway err=%s", t->peer_string.c_str(),
           grpc_error_std_string(error).c_str());
   t->sent_goaway_state = GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED;
   grpc_http2_error_code http_error;
