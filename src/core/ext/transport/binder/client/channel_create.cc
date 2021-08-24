@@ -44,13 +44,11 @@ namespace grpc {
 namespace experimental {
 
 // This should be called before calling CreateBinderChannel
-// TODO(mingcl): Pass package_name and class_name down to connection helper
 // TODO(mingcl): Invoke a callback and pass binder object to caller after a
 // successful bind
 void BindToOnDeviceServerService(void* jni_env_void, jobject application,
-                                 absl::string_view /*package_name*/,
-                                 absl::string_view /*class_name*/
-) {
+                                 absl::string_view package_name,
+                                 absl::string_view class_name) {
   // Init gRPC library first so gpr_log works
   grpc::internal::GrpcLibrary init_lib;
   init_lib.init();
@@ -58,11 +56,11 @@ void BindToOnDeviceServerService(void* jni_env_void, jobject application,
   JNIEnv* jni_env = static_cast<JNIEnv*>(jni_env_void);
 
   // clang-format off
-  CallStaticJavaMethod(jni_env,
+  grpc_binder::CallStaticJavaMethod(jni_env,
                        "io/grpc/binder/cpp/NativeConnectionHelper",
                        "tryEstablishConnection",
-                       "(Landroid/content/Context;)V",
-                       application);
+                       "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)V",
+                       application, std::string(package_name), std::string(class_name));
   // clang-format on
 }
 
@@ -76,7 +74,7 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
   JNIEnv* jni_env = static_cast<JNIEnv*>(jni_env_void);
 
   // clang-format off
-  jobject object = CallStaticJavaMethodForObject(
+  jobject object = grpc_binder::CallStaticJavaMethodForObject(
       jni_env,
       "io/grpc/binder/cpp/NativeConnectionHelper",
       "getServiceBinder",
