@@ -78,6 +78,11 @@ buildConfigs() {
         -s big_query_table="${table}" -s timeout_seconds=900 \
         -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
         -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
+        -a ci_buildNumber="${KOKORO_BUILD_NUMBER}" \
+        -a ci_buildUrl= "https://source.cloud.google.com/results/invocations/" + "${KOKORO_BUILD_NUMBER}" \
+        -a ci_jobName="${KOKORO_JOB_NAME}" \
+        -a ci_gitCommit="${KOKORO_GIT_COMMIT}" \
+        -a ci_gitActualCommit="${ghprbActualCommit}" \
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=scalable \
         --allow_client_language=c++ --allow_server_language=c++ \

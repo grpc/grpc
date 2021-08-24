@@ -1895,5 +1895,10 @@
     "mode": "NULLABLE", 
     "name": "serverCpuUsage", 
     "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "testMetadata",
+    "type": "STRING"
   }
 ]
