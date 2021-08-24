@@ -228,15 +228,16 @@ namespace {
 
 bool ValidateUrlField(const Json& json, const std::string& field) {
   auto it = json.object_value().find(field);
-  if (it == json.object_value().end() ||
-      it->second.type() != Json::Type::STRING ||
-      it->second.string_value().empty()) {
+  if (it == json.object_value().end()) {
     return true;
+  }
+  if (it->second.type() != Json::Type::STRING ||
+      it->second.string_value().empty()) {
+    return false;
   }
   absl::StatusOr<grpc_core::URI> url =
       grpc_core::URI::Parse(it->second.string_value());
   if (!url.ok()) return false;
-
   if (!absl::EqualsIgnoreCase(url->scheme(), "https")) {
     return false;
   }
