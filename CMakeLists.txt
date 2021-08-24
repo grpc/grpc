@@ -999,20 +999,9 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx timer_test)
   add_dependencies(buildtests_cxx tls_security_connector_test)
   add_dependencies(buildtests_cxx too_many_pings_test)
-<<<<<<< HEAD
-<<<<<<< HEAD
+  add_dependencies(buildtests_cxx transport_stream_receiver_test)
   add_dependencies(buildtests_cxx try_join_test)
-<<<<<<< HEAD
   add_dependencies(buildtests_cxx try_seq_test)
-=======
-=======
-  add_dependencies(buildtests_cxx transport_stream_receiver_test)
->>>>>>> af3d09bcdf (Re-generate project)
->>>>>>> d9d2151716 (Re-generate project)
-=======
-  add_dependencies(buildtests_cxx transport_stream_receiver_test)
-  add_dependencies(buildtests_cxx try_join_test)
->>>>>>> 40fef039c0 (Rebase)
   add_dependencies(buildtests_cxx unknown_frame_bad_client_test)
   add_dependencies(buildtests_cxx uri_parser_test)
   add_dependencies(buildtests_cxx window_overflow_bad_client_test)
