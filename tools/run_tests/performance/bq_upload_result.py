@@ -216,11 +216,11 @@ def _populate_metadata_from_file(scenario_result, test_metadata_file):
 
 
 def _populate_node_metadata_from_file(scenario_result, node_info_file):
-    node_metadata = {'driver':{},'servers':[],'clients':[]}
+    node_metadata = {'driver': {}, 'servers': [], 'clients': []}
     _node_info_to_bq_node_metadata_key_map = {
-        'Name':'name',
-        'PodIP':'podIP',
-        'NodeName':'nodeName',
+        'Name': 'name',
+        'PodIP': 'podIP',
+        'NodeName': 'nodeName',
     }
     with open(node_info_file, 'r') as f:
         file_metadata = json.loads(f.read())
@@ -228,11 +228,13 @@ def _populate_node_metadata_from_file(scenario_result, node_info_file):
             node_metadata['driver'][value] = file_metadata['Driver'][key]
         for clientNodeInfo in file_metadata['Clients']:
             node_metadata['clients'].append({
-                value: clientNodeInfo[key] for key, value in _node_info_to_bq_node_metadata_key_map.items()
+                value: clientNodeInfo[key] for key, value in
+                _node_info_to_bq_node_metadata_key_map.items()
             })
         for serverNodeInfo in file_metadata['Servers']:
             node_metadata['servers'].append({
-                value: serverNodeInfo[key] for key, value in _node_info_to_bq_node_metadata_key_map.items()
+                value: serverNodeInfo[key] for key, value in
+                _node_info_to_bq_node_metadata_key_map.items()
             })
     scenario_result['nodeMetadata'] = node_metadata
 
@@ -273,4 +275,5 @@ else:
                                         args.metadata_file_to_upload,
                                         args.node_info_file_to_upload)
 print('Successfully uploaded %s, %s and %s to BigQuery.\n' %
-      (args.file_to_upload, args.metadata_file_to_upload, args.node_info_file_to_upload))
+      (args.file_to_upload, args.metadata_file_to_upload,
+       args.node_info_file_to_upload))
