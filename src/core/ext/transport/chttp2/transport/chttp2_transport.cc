@@ -1216,19 +1216,17 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     return;
   }
   closure->next_data.scratch -= CLOSURE_BARRIER_FIRST_REF_BIT;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "complete_closure_step: t=%p %p refs=%d flags=0x%04x desc=%s err=%s "
-        "write_state=%s",
-        t, closure,
-        static_cast<int>(closure->next_data.scratch /
-                         CLOSURE_BARRIER_FIRST_REF_BIT),
-        static_cast<int>(closure->next_data.scratch %
-                         CLOSURE_BARRIER_FIRST_REF_BIT),
-        desc, grpc_error_std_string(error).c_str(),
-        write_state_name(t->write_state));
-  }
+  grpc_http_trace.Log(
+      GPR_INFO,
+      "complete_closure_step: t=%p %p refs=%d flags=0x%04x desc=%s err=%s "
+      "write_state=%s",
+      t, closure,
+      static_cast<int>(closure->next_data.scratch /
+                       CLOSURE_BARRIER_FIRST_REF_BIT),
+      static_cast<int>(closure->next_data.scratch %
+                       CLOSURE_BARRIER_FIRST_REF_BIT),
+      desc, grpc_error_std_string(error).c_str(),
+      write_state_name(t->write_state));
   if (error != GRPC_ERROR_NONE) {
     if (closure->error_data.error == GRPC_ERROR_NONE) {
       closure->error_data.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -1637,10 +1635,8 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
     }
   }
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    gpr_log(GPR_INFO, "perform_stream_op[s=%p]: %s", s,
-            grpc_transport_stream_op_batch_string(op).c_str());
-  }
+  grpc_http_trace.Log(GPR_INFO, "perform_stream_op[s=%p]: %s", s,
+                      grpc_transport_stream_op_batch_string(op).c_str());
 
   GRPC_CHTTP2_STREAM_REF(s, "perform_stream_op");
   op->handler_private.extra_arg = gs;
@@ -1833,10 +1829,8 @@ static void perform_transport_op_locked(void* stream_op,
 
 static void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    gpr_log(GPR_INFO, "perform_transport_op[t=%p]: %s", t,
-            grpc_transport_op_string(op).c_str());
-  }
+  grpc_http_trace.Log(GPR_INFO, "perform_transport_op[t=%p]: %s", t,
+                      grpc_transport_op_string(op).c_str());
   op->handler_private.extra_arg = gt;
   GRPC_CHTTP2_REF_TRANSPORT(t, "transport_op");
   t->combiner->Run(GRPC_CLOSURE_INIT(&op->handler_private.closure,
@@ -2626,10 +2620,9 @@ static void start_bdp_ping(void* tp, grpc_error_handle error) {
 
 static void start_bdp_ping_locked(void* tp, grpc_error_handle error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    gpr_log(GPR_INFO, "%s: Start BDP ping err=%s", t->peer_string.c_str(),
-            grpc_error_std_string(error).c_str());
-  }
+  grpc_http_trace.Log(GPR_INFO, "%s: Start BDP ping err=%s",
+                      t->peer_string.c_str(),
+                      grpc_error_std_string(error).c_str());
   if (error != GRPC_ERROR_NONE || t->closed_with_error != GRPC_ERROR_NONE) {
     return;
   }
@@ -2650,10 +2643,9 @@ static void finish_bdp_ping(void* tp, grpc_error_handle error) {
 
 static void finish_bdp_ping_locked(void* tp, grpc_error_handle error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    gpr_log(GPR_INFO, "%s: Complete BDP ping err=%s", t->peer_string.c_str(),
-            grpc_error_std_string(error).c_str());
-  }
+  grpc_http_trace.Log(GPR_INFO, "%s: Complete BDP ping err=%s",
+                      t->peer_string.c_str(),
+                      grpc_error_std_string(error).c_str());
   if (error != GRPC_ERROR_NONE || t->closed_with_error != GRPC_ERROR_NONE) {
     GRPC_CHTTP2_UNREF_TRANSPORT(t, "bdp_ping");
     return;
@@ -3189,21 +3181,19 @@ static void benign_reclaimer_locked(void* arg, grpc_error_handle error) {
       grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
     // Channel with no active streams: send a goaway to try and make it
     // disconnect cleanly
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-      gpr_log(GPR_INFO, "HTTP2: %s - send goaway to free memory",
-              t->peer_string.c_str());
-    }
+    grpc_resource_quota_trace.Log(GPR_INFO,
+                                  "HTTP2: %s - send goaway to free memory",
+                                  t->peer_string.c_str());
     send_goaway(t,
                 grpc_error_set_int(
                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Buffers full"),
                     GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM));
-  } else if (error == GRPC_ERROR_NONE &&
-             GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-    gpr_log(GPR_INFO,
-            "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
-            " streams",
-            t->peer_string.c_str(),
-            grpc_chttp2_stream_map_size(&t->stream_map));
+  } else if (error == GRPC_ERROR_NONE) {
+    grpc_resource_quota_trace.Log(
+        GPR_INFO,
+        "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
+        " streams",
+        t->peer_string.c_str(), grpc_chttp2_stream_map_size(&t->stream_map));
   }
   t->benign_reclaimer_registered = false;
   if (error != GRPC_ERROR_CANCELLED) {
@@ -3226,10 +3216,8 @@ static void destructive_reclaimer_locked(void* arg, grpc_error_handle error) {
   if (error == GRPC_ERROR_NONE && n > 0) {
     grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(
         grpc_chttp2_stream_map_rand(&t->stream_map));
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-      gpr_log(GPR_INFO, "HTTP2: %s - abandon stream id %d",
-              t->peer_string.c_str(), s->id);
-    }
+    grpc_resource_quota_trace.Log(GPR_INFO, "HTTP2: %s - abandon stream id %d",
+                                  t->peer_string.c_str(), s->id);
     grpc_chttp2_cancel_stream(
         t, s,
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Buffers full"),

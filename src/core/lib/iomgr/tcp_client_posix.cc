@@ -106,10 +106,9 @@ done:
 static void tc_on_alarm(void* acp, grpc_error_handle error) {
   int done;
   async_connect* ac = static_cast<async_connect*>(acp);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
-            ac->addr_str.c_str(), grpc_error_std_string(error).c_str());
-  }
+  grpc_tcp_trace.Log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
+                     ac->addr_str.c_str(),
+                     grpc_error_std_string(error).c_str());
   gpr_mu_lock(&ac->mu);
   if (ac->fd != nullptr) {
     grpc_fd_shutdown(
@@ -145,10 +144,9 @@ static void on_writable(void* acp, grpc_error_handle error) {
 
   GRPC_ERROR_REF(error);
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s",
-            ac->addr_str.c_str(), grpc_error_std_string(error).c_str());
-  }
+  grpc_tcp_trace.Log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s",
+                     ac->addr_str.c_str(),
+                     grpc_error_std_string(error).c_str());
 
   gpr_mu_lock(&ac->mu);
   GPR_ASSERT(ac->fd);
@@ -333,10 +331,9 @@ void grpc_tcp_client_create_from_prepared_fd(
                     grpc_schedule_on_exec_ctx);
   ac->channel_args = grpc_channel_args_copy(channel_args);
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: asynchronously connecting fd %p",
-            ac->addr_str.c_str(), fdobj);
-  }
+  grpc_tcp_trace.Log(GPR_INFO,
+                     "CLIENT_CONNECT: %s: asynchronously connecting fd %p",
+                     ac->addr_str.c_str(), fdobj);
 
   gpr_mu_lock(&ac->mu);
   GRPC_CLOSURE_INIT(&ac->on_alarm, tc_on_alarm, ac, grpc_schedule_on_exec_ctx);

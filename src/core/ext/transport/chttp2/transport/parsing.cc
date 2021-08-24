@@ -300,9 +300,8 @@ static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t) {
     case GRPC_CHTTP2_FRAME_GOAWAY:
       return init_goaway_parser(t);
     default:
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-        gpr_log(GPR_ERROR, "Unknown frame type %02x", t->incoming_frame_type);
-      }
+      grpc_http_trace.Log(GPR_ERROR, "Unknown frame type %02x",
+                          t->incoming_frame_type);
       return init_non_header_skip_frame_parser(t);
   }
 }
@@ -786,9 +785,7 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
   if (GPR_LIKELY(err == GRPC_ERROR_NONE)) {
     return err;
   } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, &unused)) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-      gpr_log(GPR_ERROR, "%s", grpc_error_std_string(err).c_str());
-    }
+    grpc_http_trace.Log(GPR_ERROR, "%s", grpc_error_std_string(err).c_str());
     grpc_chttp2_parsing_become_skip_parser(t);
     if (s) {
       s->forced_close_error = err;
