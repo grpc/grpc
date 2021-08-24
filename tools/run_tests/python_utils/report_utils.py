@@ -30,10 +30,14 @@ import six
 def _filter_msg(msg, output_format):
     """Filters out nonprintable and illegal characters from the message."""
     if output_format in ['XML', 'HTML']:
+        if isinstance(msg, bytes):
+            decoded_msg = msg.decode('UTF-8', 'ignore')
+        else:
+            decoded_msg = msg
         # keep whitespaces but remove formfeed and vertical tab characters
         # that make XML report unparsable.
         filtered_msg = ''.join([
-            x for x in msg.decode('UTF-8', 'ignore')
+            x for x in decoded_msg
             if x in string.printable and x != '\f' and x != '\v'
         ])
         if output_format == 'HTML':
