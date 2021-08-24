@@ -40,7 +40,7 @@ class Wakeable {
   virtual void Drop() = 0;
 
  protected:
-  inline virtual ~Wakeable() {}
+  inline ~Wakeable() {}
 };
 
 // An owning reference to a Wakeable.
@@ -100,7 +100,7 @@ class Waker {
 class Activity : private Wakeable {
  public:
   // Cancel execution of the underlying promise.
-  virtual void Cancel() LOCKS_EXCLUDED(mu_) = 0;
+  virtual void Cancel() ABSL_LOCKS_EXCLUDED(mu_) = 0;
 
   // Destroy the Activity - used for the type alias ActivityPtr.
   struct Deleter {
@@ -147,7 +147,7 @@ class Activity : private Wakeable {
   Waker MakeNonOwningWaker() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  protected:
-  inline ~Activity() override {
+  inline virtual ~Activity() {
     if (handle_) {
       DropHandle();
     }
@@ -200,7 +200,7 @@ class Activity : private Wakeable {
   // Otherwise, return false.
   bool RefIfNonzero();
   // Drop the (proved existing) wait handle.
-  void DropHandle() EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void DropHandle() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Current refcount.
   std::atomic<uint32_t> refs_{1};
