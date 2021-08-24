@@ -1,6 +1,6 @@
 name: Happy Pancakes
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, edited, labeled, unlabeled, synchronize, ready_for_review, auto_merge_enabled, auto_merge_disabled]
 jobs:
   check_status:
@@ -13,6 +13,9 @@ jobs:
         uses: styfle/cancel-workflow-action@0.9.1
         with:
           access_token: ${{ github.token }}
+      # Publish pending result
+      - name: Publish Status
+        uses: ouzi-dev/commit-status-updater@v1.1.0
       # Wait until our required statuses are ready or failed
       # Unless force-merge is present, and then just be good.
       - name: Check Status
@@ -71,4 +74,10 @@ jobs:
               // Sleep 15 minutes between polls
               await sleep(15 * 60 * 1000);
             }
+      # Publish the result
+      - name: Publish Status
+        uses: ouzi-dev/commit-status-updater@v1.1.0
+        if: always()
+        with:
+          status: "${{ job.status }}"
 
