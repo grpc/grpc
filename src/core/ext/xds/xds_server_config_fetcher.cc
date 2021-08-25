@@ -413,12 +413,10 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     ListenerWatcher& operator=(const ListenerWatcher&) = delete;
 
     void OnListenerChanged(XdsApi::LdsUpdate listener) override {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_server_config_fetcher_trace)) {
-        gpr_log(
-            GPR_INFO,
-            "[ListenerWatcher %p] Received LDS update from xds client %p: %s",
-            this, xds_client_.get(), listener.ToString().c_str());
-      }
+      grpc_xds_server_config_fetcher_trace.Log(
+          GPR_INFO,
+          "[ListenerWatcher %p] Received LDS update from xds client %p: %s",
+          this, xds_client_.get(), listener.ToString().c_str());
       if (listener.address != listening_address_) {
         OnFatalError(absl::FailedPreconditionError(
             "Address in LDS update does not match listening address"));

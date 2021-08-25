@@ -159,32 +159,29 @@ static bool update_list(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 
 static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                          const char* staller) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_flowctl_trace)) {
-    gpr_log(
-        GPR_DEBUG,
-        "%s:%p stream %d moved to stalled list by %s. This is FULLY expected "
-        "to happen in a healthy program that is not seeing flow control stalls."
-        " However, if you know that there are unwanted stalls, here is some "
-        "helpful data: [fc:pending=%" PRIdPTR ":pending-compressed=%" PRIdPTR
-        ":flowed=%" PRId64 ":peer_initwin=%d:t_win=%" PRId64
-        ":s_win=%d:s_delta=%" PRId64 "]",
-        t->peer_string.c_str(), t, s->id, staller,
-        s->flow_controlled_buffer.length,
-        s->stream_compression_method ==
-                GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS
-            ? 0
-            : s->compressed_data_buffer.length,
-        s->flow_controlled_bytes_flowed,
-        t->settings[GRPC_ACKED_SETTINGS]
-                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
-        t->flow_control->remote_window(),
-        static_cast<uint32_t> GPR_MAX(
-            0,
-            s->flow_control->remote_window_delta() +
-                (int64_t)t->settings[GRPC_PEER_SETTINGS]
-                                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]),
-        s->flow_control->remote_window_delta());
-  }
+  grpc_flowctl_trace.Log(
+      GPR_DEBUG,
+      "%s:%p stream %d moved to stalled list by %s. This is FULLY expected "
+      "to happen in a healthy program that is not seeing flow control stalls."
+      " However, if you know that there are unwanted stalls, here is some "
+      "helpful data: [fc:pending=%" PRIdPTR ":pending-compressed=%" PRIdPTR
+      ":flowed=%" PRId64 ":peer_initwin=%d:t_win=%" PRId64
+      ":s_win=%d:s_delta=%" PRId64 "]",
+      t->peer_string.c_str(), t, s->id, staller,
+      s->flow_controlled_buffer.length,
+      s->stream_compression_method == GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS
+          ? 0
+          : s->compressed_data_buffer.length,
+      s->flow_controlled_bytes_flowed,
+      t->settings[GRPC_ACKED_SETTINGS]
+                 [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
+      t->flow_control->remote_window(),
+      static_cast<uint32_t> GPR_MAX(
+          0,
+          s->flow_control->remote_window_delta() +
+              (int64_t)t->settings[GRPC_PEER_SETTINGS]
+                                  [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]),
+      s->flow_control->remote_window_delta());
 }
 
 /* How many bytes would we like to put on the wire during a single syscall */

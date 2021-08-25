@@ -779,6 +779,7 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/env_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/log_android.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/log_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/log_linux.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/log_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/log_windows.cc" role="src" />

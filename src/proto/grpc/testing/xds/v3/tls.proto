@@ -139,12 +139,43 @@ message UpstreamTlsContext {
 }
 
 message DownstreamTlsContext {
+  enum OcspStaplePolicy {
+    // OCSP responses are optional. If an OCSP response is absent
+    // or expired, the associated certificate will be used for
+    // connections without an OCSP staple.
+    LENIENT_STAPLING = 0;
+
+    // OCSP responses are optional. If an OCSP response is absent,
+    // the associated certificate will be used without an
+    // OCSP staple. If a response is provided but is expired,
+    // the associated certificate will not be used for
+    // subsequent connections. If no suitable certificate is found,
+    // the connection is rejected.
+    STRICT_STAPLING = 1;
+
+    // OCSP responses are required. Configuration will fail if
+    // a certificate is provided without an OCSP response. If a
+    // response expires, the associated certificate will not be
+    // used connections. If no suitable certificate is found, the
+    // connection is rejected.
+    MUST_STAPLE = 2;
+  }
+
   // Common TLS context settings.
   CommonTlsContext common_tls_context = 1;
 
   // If specified, Envoy will reject connections without a valid client
   // certificate.
   google.protobuf.BoolValue require_client_certificate = 2;
+
+  // If specified, Envoy will reject connections without a valid and matching SNI.
+  // [#not-implemented-hide:]
+  google.protobuf.BoolValue require_sni = 3;
+
+  // Config for whether to use certificates if they do not have
+  // an accompanying OCSP response or if the response expires at runtime.
+  // Defaults to LENIENT_STAPLING
+  OcspStaplePolicy ocsp_staple_policy = 8;
 }
 
 

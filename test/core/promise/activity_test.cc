@@ -91,8 +91,8 @@ class SingleBarrier {
 
  private:
   absl::Mutex mu_;
-  Waker waker_ GUARDED_BY(mu_);
-  bool cleared_ GUARDED_BY(mu_) = false;
+  Waker waker_ ABSL_GUARDED_BY(mu_);
+  bool cleared_ ABSL_GUARDED_BY(mu_) = false;
 };
 
 TEST(ActivityTest, ImmediatelyCompleteWithSuccess) {

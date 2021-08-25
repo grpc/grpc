@@ -200,10 +200,9 @@ class XdsClient::ChannelState::AdsCallState
                 .c_str());
         watcher_error = grpc_error_set_int(
             watcher_error, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-          gpr_log(GPR_INFO, "[xds_client %p] %s", ads_calld_->xds_client(),
-                  grpc_error_std_string(watcher_error).c_str());
-        }
+        grpc_xds_client_trace.Log(GPR_INFO, "[xds_client %p] %s",
+                                  ads_calld_->xds_client(),
+                                  grpc_error_std_string(watcher_error).c_str());
         if (type_url_ == XdsApi::kLdsTypeUrl) {
           ListenerState& state = ads_calld_->xds_client()->listener_map_[name_];
           state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
@@ -487,20 +486,17 @@ XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
               : nullptr),
       xds_client_(std::move(xds_client)),
       server_(server) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "[xds_client %p] creating channel to %s",
-            xds_client_.get(), server.server_uri.c_str());
-  }
+  grpc_xds_client_trace.Log(GPR_INFO, "[xds_client %p] creating channel to %s",
+                            xds_client_.get(), server.server_uri.c_str());
   channel_ = CreateXdsChannel(xds_client_->args_, server);
   GPR_ASSERT(channel_ != nullptr);
   StartConnectivityWatchLocked();
 }
 
 XdsClient::ChannelState::~ChannelState() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "[xds_client %p] Destroying xds channel %p", xds_client(),
-            this);
-  }
+  grpc_xds_client_trace.Log(GPR_INFO,
+                            "[xds_client %p] Destroying xds channel %p",
+                            xds_client(), this);
   grpc_channel_destroy(channel_);
   xds_client_.reset(DEBUG_LOCATION, "ChannelState");
 }
@@ -629,12 +625,11 @@ void XdsClient::ChannelState::RetryableCall<T>::StartNewCallLocked() {
   if (shutting_down_) return;
   GPR_ASSERT(chand_->channel_ != nullptr);
   GPR_ASSERT(calld_ == nullptr);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] Start new call from retryable call (chand: %p, "
-            "retryable call: %p)",
-            chand()->xds_client(), chand(), this);
-  }
+  grpc_xds_client_trace.Log(
+      GPR_INFO,
+      "[xds_client %p] Start new call from retryable call (chand: %p, "
+      "retryable call: %p)",
+      chand()->xds_client(), chand(), this);
   calld_ = MakeOrphanable<T>(
       this->Ref(DEBUG_LOCATION, "RetryableCall+start_new_call"));
 }
@@ -643,13 +638,12 @@ template <typename T>
 void XdsClient::ChannelState::RetryableCall<T>::StartRetryTimerLocked() {
   if (shutting_down_) return;
   const grpc_millis next_attempt_time = backoff_.NextAttemptTime();
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    grpc_millis timeout = GPR_MAX(next_attempt_time - ExecCtx::Get()->Now(), 0);
-    gpr_log(GPR_INFO,
-            "[xds_client %p] Failed to connect to xds server (chand: %p) "
-            "retry timer will fire in %" PRId64 "ms.",
-            chand()->xds_client(), chand(), timeout);
-  }
+  grpc_xds_client_trace.Log(
+      GPR_INFO,
+      "[xds_client %p] Failed to connect to xds server (chand: %p) "
+      "retry timer will fire in %" PRId64 "ms.",
+      chand()->xds_client(), chand(),
+      GPR_MAX(next_attempt_time - ExecCtx::Get()->Now(), 0));
   this->Ref(DEBUG_LOCATION, "RetryableCall+retry_timer_start").release();
   grpc_timer_init(&retry_timer_, next_attempt_time, &on_retry_timer_);
   retry_timer_callback_pending_ = true;
@@ -671,12 +665,10 @@ void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimerLocked(
     grpc_error_handle error) {
   retry_timer_callback_pending_ = false;
   if (!shutting_down_ && error == GRPC_ERROR_NONE) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(
-          GPR_INFO,
-          "[xds_client %p] Retry timer fires (chand: %p, retryable call: %p)",
-          chand()->xds_client(), chand(), this);
-    }
+    grpc_xds_client_trace.Log(
+        GPR_INFO,
+        "[xds_client %p] Retry timer fires (chand: %p, retryable call: %p)",
+        chand()->xds_client(), chand(), this);
     StartNewCallLocked();
   }
   GRPC_ERROR_UNREF(error);
@@ -711,12 +703,11 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   grpc_metadata_array_init(&initial_metadata_recv_);
   grpc_metadata_array_init(&trailing_metadata_recv_);
   // Start the call.
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] Starting ADS call (chand: %p, calld: %p, "
-            "call: %p)",
-            xds_client(), chand(), this, call_);
-  }
+  grpc_xds_client_trace.Log(
+      GPR_INFO,
+      "[xds_client %p] Starting ADS call (chand: %p, calld: %p, "
+      "call: %p)",
+      xds_client(), chand(), this, call_);
   // Create the ops.
   grpc_call_error call_error;
   grpc_op ops[3];
@@ -829,15 +820,14 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
     state_map_.erase(type_url);
   }
   sent_initial_message_ = true;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] sending ADS request: type=%s version=%s nonce=%s "
-            "error=%s resources=%s",
-            xds_client(), type_url.c_str(),
-            xds_client()->resource_version_map_[type_url].c_str(),
-            state.nonce.c_str(), grpc_error_std_string(state.error).c_str(),
-            absl::StrJoin(resource_names, " ").c_str());
-  }
+  grpc_xds_client_trace.Log(
+      GPR_INFO,
+      "[xds_client %p] sending ADS request: type=%s version=%s nonce=%s "
+      "error=%s resources=%s",
+      xds_client(), type_url.c_str(),
+      xds_client()->resource_version_map_[type_url].c_str(),
+      state.nonce.c_str(), grpc_error_std_string(state.error).c_str(),
+      absl::StrJoin(resource_names, " ").c_str());
   GRPC_ERROR_UNREF(state.error);
   state.error = GRPC_ERROR_NONE;
   // Create message payload.
@@ -905,12 +895,10 @@ XdsApi::ResourceMetadata CreateResourceMetadataAcked(
 void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
     std::string version, grpc_millis update_time,
     XdsApi::LdsUpdateMap lds_update_map) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] LDS update received containing %" PRIuPTR
-            " resources",
-            xds_client(), lds_update_map.size());
-  }
+  grpc_xds_client_trace.Log(
+      GPR_INFO,
+      "[xds_client %p] LDS update received containing %" PRIuPTR " resources",
+      xds_client(), lds_update_map.size());
   auto& lds_state = state_map_[XdsApi::kLdsTypeUrl];
   std::set<std::string> rds_resource_names_seen;
   for (auto& p : lds_update_map) {
@@ -918,10 +906,9 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
     XdsApi::LdsUpdate& lds_update = p.second.resource;
     auto& state = lds_state.subscribed_resources[listener_name];
     if (state != nullptr) state->Finish();
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "[xds_client %p] LDS resource %s: %s", xds_client(),
-              listener_name.c_str(), lds_update.ToString().c_str());
-    }
+    grpc_xds_client_trace.Log(GPR_INFO, "[xds_client %p] LDS resource %s: %s",
+                              xds_client(), listener_name.c_str(),
+                              lds_update.ToString().c_str());
     // Record the RDS resource names seen.
     if (!lds_update.http_connection_manager.route_config_name.empty()) {
       rds_resource_names_seen.insert(
@@ -931,12 +918,11 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
     ListenerState& listener_state = xds_client()->listener_map_[listener_name];
     if (listener_state.update.has_value() &&
         *listener_state.update == lds_update) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-        gpr_log(GPR_INFO,
-                "[xds_client %p] LDS update for %s identical to current, "
-                "ignoring.",
-                xds_client(), listener_name.c_str());
-      }
+      grpc_xds_client_trace.Log(
+          GPR_INFO,
+          "[xds_client %p] LDS update for %s identical to current, "
+          "ignoring.",
+          xds_client(), listener_name.c_str());
       continue;
     }
     // Update the listener state.
@@ -989,32 +975,27 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
 void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
     std::string version, grpc_millis update_time,
     XdsApi::RdsUpdateMap rds_update_map) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] RDS update received containing %" PRIuPTR
-            " resources",
-            xds_client(), rds_update_map.size());
-  }
+  grpc_xds_client_trace.Log(
+      GPR_INFO,
+      "[xds_client %p] RDS update received containing %" PRIuPTR " resources",
+      xds_client(), rds_update_map.size());
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
   for (auto& p : rds_update_map) {
     const std::string& route_config_name = p.first;
     XdsApi::RdsUpdate& rds_update = p.second.resource;
     auto& state = rds_state.subscribed_resources[route_config_name];
     if (state != nullptr) state->Finish();
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "[xds_client %p] RDS resource:\n%s", xds_client(),
-              rds_update.ToString().c_str());
-    }
+    grpc_xds_client_trace.Log(GPR_INFO, "[xds_client %p] RDS resource:\n%s",
+                              xds_client(), rds_update.ToString().c_str());
     RouteConfigState& route_config_state =
         xds_client()->route_config_map_[route_config_name];
     // Ignore identical update.
     if (route_config_state.update.has_value() &&
         *route_config_state.update == rds_update) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-        gpr_log(GPR_INFO,
-                "[xds_client %p] RDS resource identical to current, ignoring",
-                xds_client());
-      }
+      grpc_xds_client_trace.Log(
+          GPR_INFO,
+          "[xds_client %p] RDS resource identical to current, ignoring",
+          xds_client());
       continue;
     }
     // Update the cache.
@@ -1031,12 +1012,10 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
 void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
     std::string version, grpc_millis update_time,
     XdsApi::CdsUpdateMap cds_update_map) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] CDS update received containing %" PRIuPTR
-            " resources",
-            xds_client(), cds_update_map.size());
-  }
+  grpc_xds_client_trace.Log(
+      GPR_INFO,
+      "[xds_client %p] CDS update received containing %" PRIuPTR " resources",
+      xds_client(), cds_update_map.size());
   auto& cds_state = state_map_[XdsApi::kCdsTypeUrl];
   std::set<std::string> eds_resource_names_seen;
   for (auto& p : cds_update_map) {
@@ -1044,10 +1023,9 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
     XdsApi::CdsUpdate& cds_update = p.second.resource;
     auto& state = cds_state.subscribed_resources[cluster_name];
     if (state != nullptr) state->Finish();
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "[xds_client %p] cluster=%s: %s", xds_client(),
-              cluster_name, cds_update.ToString().c_str());
-    }
+    grpc_xds_client_trace.Log(GPR_INFO, "[xds_client %p] cluster=%s: %s",
+                              xds_client(), cluster_name,
+                              cds_update.ToString().c_str());
     // Record the EDS resource names seen.
     eds_resource_names_seen.insert(cds_update.eds_service_name.empty()
                                        ? cluster_name
@@ -1056,11 +1034,10 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
     ClusterState& cluster_state = xds_client()->cluster_map_[cluster_name];
     if (cluster_state.update.has_value() &&
         *cluster_state.update == cds_update) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-        gpr_log(GPR_INFO,
-                "[xds_client %p] CDS update identical to current, ignoring.",
-                xds_client());
-      }
+      grpc_xds_client_trace.Log(
+          GPR_INFO,
+          "[xds_client %p] CDS update identical to current, ignoring.",
+          xds_client());
       continue;
     }
     // Update the cluster state.
@@ -1112,32 +1089,28 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
 void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdateLocked(
     std::string version, grpc_millis update_time,
     XdsApi::EdsUpdateMap eds_update_map) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] EDS update received containing %" PRIuPTR
-            " resources",
-            xds_client(), eds_update_map.size());
-  }
+  grpc_xds_client_trace.Log(
+      GPR_INFO,
+      "[xds_client %p] EDS update received containing %" PRIuPTR " resources",
+      xds_client(), eds_update_map.size());
   auto& eds_state = state_map_[XdsApi::kEdsTypeUrl];
   for (auto& p : eds_update_map) {
     const char* eds_service_name = p.first.c_str();
     XdsApi::EdsUpdate& eds_update = p.second.resource;
     auto& state = eds_state.subscribed_resources[eds_service_name];
     if (state != nullptr) state->Finish();
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "[xds_client %p] EDS resource %s: %s", xds_client(),
-              eds_service_name, eds_update.ToString().c_str());
-    }
+    grpc_xds_client_trace.Log(GPR_INFO, "[xds_client %p] EDS resource %s: %s",
+                              xds_client(), eds_service_name,
+                              eds_update.ToString().c_str());
     EndpointState& endpoint_state =
         xds_client()->endpoint_map_[eds_service_name];
     // Ignore identical update.
     if (endpoint_state.update.has_value() &&
         *endpoint_state.update == eds_update) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-        gpr_log(GPR_INFO,
-                "[xds_client %p] EDS update identical to current, ignoring.",
-                xds_client());
-      }
+      grpc_xds_client_trace.Log(
+          GPR_INFO,
+          "[xds_client %p] EDS update identical to current, ignoring.",
+          xds_client());
       continue;
     }
     // Update the cluster state.
@@ -1170,13 +1143,11 @@ template <typename StateMap>
 void XdsClient::ChannelState::AdsCallState::RejectAdsUpdateLocked(
     grpc_millis update_time, const XdsApi::AdsParseResult& result,
     StateMap* state_map) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] %s update NACKed containing %" PRIuPTR
-            " resources",
-            xds_client(), result.type_url.c_str(),
-            result.resource_names_failed.size());
-  }
+  grpc_xds_client_trace.Log(
+      GPR_INFO,
+      "[xds_client %p] %s update NACKed containing %" PRIuPTR " resources",
+      xds_client(), result.type_url.c_str(),
+      result.resource_names_failed.size());
   std::string details = grpc_error_std_string(result.parse_error);
   for (auto& name : result.resource_names_failed) {
     auto it = state_map->find(name);
@@ -1555,12 +1526,11 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   grpc_metadata_array_init(&initial_metadata_recv_);
   grpc_metadata_array_init(&trailing_metadata_recv_);
   // Start the call.
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] Starting LRS call (chand: %p, calld: %p, "
-            "call: %p)",
-            xds_client(), chand(), this, call_);
-  }
+  grpc_xds_client_trace.Log(
+      GPR_INFO,
+      "[xds_client %p] Starting LRS call (chand: %p, calld: %p, "
+      "call: %p)",
+      xds_client(), chand(), this, call_);
   // Create the ops.
   grpc_call_error call_error;
   grpc_op ops[3];
@@ -1743,23 +1713,21 @@ bool XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked() {
         GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS) {
       new_load_reporting_interval =
           GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS;
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-        gpr_log(GPR_INFO,
-                "[xds_client %p] Increased load_report_interval to minimum "
-                "value %dms",
-                xds_client(), GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS);
-      }
+      grpc_xds_client_trace.Log(
+          GPR_INFO,
+          "[xds_client %p] Increased load_report_interval to minimum "
+          "value %dms",
+          xds_client(), GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS);
     }
     // Ignore identical update.
     if (send_all_clusters == send_all_clusters_ &&
         cluster_names_ == new_cluster_names &&
         load_reporting_interval_ == new_load_reporting_interval) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-        gpr_log(GPR_INFO,
-                "[xds_client %p] Incoming LRS response identical to current, "
-                "ignoring.",
-                xds_client());
-      }
+      grpc_xds_client_trace.Log(
+          GPR_INFO,
+          "[xds_client %p] Incoming LRS response identical to current, "
+          "ignoring.",
+          xds_client());
       return;
     }
     // Stop current load reporting (if any) to adopt the new config.
@@ -1865,18 +1833,16 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
           bootstrap_->certificate_providers())),
       api_(this, &grpc_xds_client_trace, bootstrap_->node(),
            &bootstrap_->certificate_providers()) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
-  }
+  grpc_xds_client_trace.Log(GPR_INFO, "[xds_client %p] creating xds client",
+                            this);
   // Create ChannelState object.
   chand_ = MakeOrphanable<ChannelState>(
       WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"), bootstrap_->server());
 }
 
 XdsClient::~XdsClient() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "[xds_client %p] destroying xds client", this);
-  }
+  grpc_xds_client_trace.Log(GPR_INFO, "[xds_client %p] destroying xds client",
+                            this);
   grpc_channel_args_destroy(args_);
   grpc_pollset_set_destroy(interested_parties_);
 }
@@ -1902,9 +1868,8 @@ void XdsClient::RemoveChannelzLinkage(
 }
 
 void XdsClient::Orphan() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "[xds_client %p] shutting down xds client", this);
-  }
+  grpc_xds_client_trace.Log(GPR_INFO,
+                            "[xds_client %p] shutting down xds client", this);
   {
     MutexLock lock(g_mu);
     if (g_xds_client == this) g_xds_client = nullptr;
@@ -1938,10 +1903,9 @@ void XdsClient::WatchListenerData(
   // If we've already received an LDS update, notify the new watcher
   // immediately.
   if (listener_state.update.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "[xds_client %p] returning cached listener data for %s",
-              this, listener_name_str.c_str());
-    }
+    grpc_xds_client_trace.Log(
+        GPR_INFO, "[xds_client %p] returning cached listener data for %s", this,
+        listener_name_str.c_str());
     w->OnListenerChanged(*listener_state.update);
   }
   chand_->SubscribeLocked(XdsApi::kLdsTypeUrl, listener_name_str);
@@ -1977,11 +1941,9 @@ void XdsClient::WatchRouteConfigData(
   // If we've already received an RDS update, notify the new watcher
   // immediately.
   if (route_config_state.update.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_client %p] returning cached route config data for %s", this,
-              route_config_name_str.c_str());
-    }
+    grpc_xds_client_trace.Log(
+        GPR_INFO, "[xds_client %p] returning cached route config data for %s",
+        this, route_config_name_str.c_str());
     w->OnRouteConfigChanged(*route_config_state.update);
   }
   chand_->SubscribeLocked(XdsApi::kRdsTypeUrl, route_config_name_str);
@@ -2017,10 +1979,9 @@ void XdsClient::WatchClusterData(
   // If we've already received a CDS update, notify the new watcher
   // immediately.
   if (cluster_state.update.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "[xds_client %p] returning cached cluster data for %s",
-              this, cluster_name_str.c_str());
-    }
+    grpc_xds_client_trace.Log(
+        GPR_INFO, "[xds_client %p] returning cached cluster data for %s", this,
+        cluster_name_str.c_str());
     w->OnClusterChanged(cluster_state.update.value());
   }
   chand_->SubscribeLocked(XdsApi::kCdsTypeUrl, cluster_name_str);
@@ -2055,10 +2016,9 @@ void XdsClient::WatchEndpointData(
   // If we've already received an EDS update, notify the new watcher
   // immediately.
   if (endpoint_state.update.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "[xds_client %p] returning cached endpoint data for %s",
-              this, eds_service_name_str.c_str());
-    }
+    grpc_xds_client_trace.Log(
+        GPR_INFO, "[xds_client %p] returning cached endpoint data for %s", this,
+        eds_service_name_str.c_str());
     w->OnEndpointChanged(endpoint_state.update.value());
   }
   chand_->SubscribeLocked(XdsApi::kEdsTypeUrl, eds_service_name_str);
@@ -2234,9 +2194,8 @@ void XdsClient::NotifyOnErrorLocked(grpc_error_handle error) {
 
 XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
     bool send_all_clusters, const std::set<std::string>& clusters) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "[xds_client %p] start building load report", this);
-  }
+  grpc_xds_client_trace.Log(GPR_INFO,
+                            "[xds_client %p] start building load report", this);
   XdsApi::ClusterLoadReportMap snapshot_map;
   for (auto load_report_it = load_report_map_.begin();
        load_report_it != load_report_map_.end();) {
@@ -2258,12 +2217,11 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
     if (load_report.drop_stats != nullptr) {
       snapshot.dropped_requests +=
           load_report.drop_stats->GetSnapshotAndReset();
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-        gpr_log(GPR_INFO,
-                "[xds_client %p] cluster=%s eds_service_name=%s drop_stats=%p",
-                this, cluster_key.first.c_str(), cluster_key.second.c_str(),
-                load_report.drop_stats);
-      }
+      grpc_xds_client_trace.Log(
+          GPR_INFO,
+          "[xds_client %p] cluster=%s eds_service_name=%s drop_stats=%p", this,
+          cluster_key.first.c_str(), cluster_key.second.c_str(),
+          load_report.drop_stats);
     }
     // Aggregate locality stats.
     for (auto it = load_report.locality_stats.begin();
@@ -2276,14 +2234,13 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
       if (locality_state.locality_stats != nullptr) {
         locality_snapshot +=
             locality_state.locality_stats->GetSnapshotAndReset();
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-          gpr_log(GPR_INFO,
-                  "[xds_client %p] cluster=%s eds_service_name=%s "
-                  "locality=%s locality_stats=%p",
-                  this, cluster_key.first.c_str(), cluster_key.second.c_str(),
-                  locality_name->AsHumanReadableString().c_str(),
-                  locality_state.locality_stats);
-        }
+        grpc_xds_client_trace.Log(
+            GPR_INFO,
+            "[xds_client %p] cluster=%s eds_service_name=%s "
+            "locality=%s locality_stats=%p",
+            this, cluster_key.first.c_str(), cluster_key.second.c_str(),
+            locality_name->AsHumanReadableString().c_str(),
+            locality_state.locality_stats);
       }
       // If the only thing left in this entry was final snapshots from
       // deleted locality stats objects, remove the entry.
@@ -2375,12 +2332,11 @@ std::string GetBootstrapContents(const char* fallback_config,
   // First, try GRPC_XDS_BOOTSTRAP env var.
   grpc_core::UniquePtr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
   if (path != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "Got bootstrap file location from GRPC_XDS_BOOTSTRAP "
-              "environment variable: %s",
-              path.get());
-    }
+    grpc_xds_client_trace.Log(
+        GPR_INFO,
+        "Got bootstrap file location from GRPC_XDS_BOOTSTRAP "
+        "environment variable: %s",
+        path.get());
     grpc_slice contents;
     *error =
         grpc_load_file(path.get(), /*add_null_terminator=*/true, &contents);
@@ -2393,18 +2349,16 @@ std::string GetBootstrapContents(const char* fallback_config,
   grpc_core::UniquePtr<char> env_config(
       gpr_getenv("GRPC_XDS_BOOTSTRAP_CONFIG"));
   if (env_config != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "Got bootstrap contents from GRPC_XDS_BOOTSTRAP_CONFIG "
-              "environment variable");
-    }
+    grpc_xds_client_trace.Log(
+        GPR_INFO,
+        "Got bootstrap contents from GRPC_XDS_BOOTSTRAP_CONFIG "
+        "environment variable");
     return env_config.get();
   }
   // Finally, try fallback config.
   if (fallback_config != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "Got bootstrap contents from fallback config");
-    }
+    grpc_xds_client_trace.Log(GPR_INFO,
+                              "Got bootstrap contents from fallback config");
     return fallback_config;
   }
   // No bootstrap config found.
@@ -2446,10 +2400,8 @@ RefCountedPtr<XdsClient> XdsClient::GetOrCreate(const grpc_channel_args* args,
     std::string bootstrap_contents =
         GetBootstrapContents(g_fallback_bootstrap_config, error);
     if (*error != GRPC_ERROR_NONE) return nullptr;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "xDS bootstrap contents: %s",
-              bootstrap_contents.c_str());
-    }
+    grpc_xds_client_trace.Log(GPR_INFO, "xDS bootstrap contents: %s",
+                              bootstrap_contents.c_str());
     // Parse bootstrap.
     std::unique_ptr<XdsBootstrap> bootstrap =
         XdsBootstrap::Create(bootstrap_contents, error);
