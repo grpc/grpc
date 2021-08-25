@@ -1114,6 +1114,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "intra_activity_waiter",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/intra_activity_waiter.h",
+    ],
+    deps = [
+        "activity",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "latch",
     external_deps = [
         "absl/status",
