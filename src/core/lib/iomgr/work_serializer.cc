@@ -51,19 +51,16 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
 
 void WorkSerializer::WorkSerializerImpl::Run(
     std::function<void()> callback, const grpc_core::DebugLocation& location) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-    gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]",
-            this, location.file(), location.line());
-  }
+  grpc_work_serializer_trace.Log(
+      GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]", this,
+      location.file(), location.line());
   const size_t prev_size = size_.fetch_add(1);
   // The work serializer should not have been orphaned.
   GPR_DEBUG_ASSERT(prev_size > 0);
   if (prev_size == 1) {
     // There is no other closure executing right now on this work serializer.
     // Execute this closure immediately.
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-      gpr_log(GPR_INFO, "  Executing immediately");
-    }
+    grpc_work_serializer_trace.Log(GPR_INFO, "  Executing immediately");
     callback();
     // Loan this thread to the work serializer thread and drain the queue.
     DrainQueue();
@@ -72,22 +69,17 @@ void WorkSerializer::WorkSerializerImpl::Run(
         new CallbackWrapper(std::move(callback), location);
     // There already are closures executing on this work serializer. Simply add
     // this closure to the queue.
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-      gpr_log(GPR_INFO, "  Scheduling on queue : item %p", cb_wrapper);
-    }
+    grpc_work_serializer_trace.Log(GPR_INFO, "  Scheduling on queue : item %p",
+                                   cb_wrapper);
     queue_.Push(&cb_wrapper->mpscq_node);
   }
 }
 
 void WorkSerializer::WorkSerializerImpl::Orphan() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-    gpr_log(GPR_INFO, "WorkSerializer::Orphan() %p", this);
-  }
+  grpc_work_serializer_trace.Log(GPR_INFO, "WorkSerializer::Orphan() %p", this);
   size_t prev_size = size_.fetch_sub(1);
   if (prev_size == 1) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-      gpr_log(GPR_INFO, "  Destroying");
-    }
+    grpc_work_serializer_trace.Log(GPR_INFO, "  Destroying");
     delete this;
   }
 }
@@ -98,24 +90,19 @@ void WorkSerializer::WorkSerializerImpl::Orphan() {
 // is at least 1.
 void WorkSerializer::WorkSerializerImpl::DrainQueue() {
   while (true) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-      gpr_log(GPR_INFO, "WorkSerializer::DrainQueue() %p", this);
-    }
+    grpc_work_serializer_trace.Log(GPR_INFO, "WorkSerializer::DrainQueue() %p",
+                                   this);
     size_t prev_size = size_.fetch_sub(1);
     GPR_DEBUG_ASSERT(prev_size >= 1);
     // It is possible that while draining the queue, one of the callbacks ended
     // up orphaning the work serializer. In that case, delete the object.
     if (prev_size == 1) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-        gpr_log(GPR_INFO, "  Queue Drained. Destroying");
-      }
+      grpc_work_serializer_trace.Log(GPR_INFO, "  Queue Drained. Destroying");
       delete this;
       return;
     }
     if (prev_size == 2) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-        gpr_log(GPR_INFO, "  Queue Drained");
-      }
+      grpc_work_serializer_trace.Log(GPR_INFO, "  Queue Drained");
       return;
     }
     // There is at least one callback on the queue. Pop the callback from the
@@ -126,15 +113,12 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
                 queue_.PopAndCheckEnd(&empty_unused))) == nullptr) {
       // This can happen either due to a race condition within the mpscq
       // implementation or because of a race with Run()
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-        gpr_log(GPR_INFO, "  Queue returned nullptr, trying again");
-      }
+      grpc_work_serializer_trace.Log(GPR_INFO,
+                                     "  Queue returned nullptr, trying again");
     }
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-      gpr_log(GPR_INFO, "  Running item %p : callback scheduled at [%s:%d]",
-              cb_wrapper, cb_wrapper->location.file(),
-              cb_wrapper->location.line());
-    }
+    grpc_work_serializer_trace.Log(
+        GPR_INFO, "  Running item %p : callback scheduled at [%s:%d]",
+        cb_wrapper, cb_wrapper->location.file(), cb_wrapper->location.line());
     cb_wrapper->callback();
     delete cb_wrapper;
   }

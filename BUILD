@@ -109,11 +109,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "guileless"  # @unused
+g_stands_for = "goat"  # @unused
 
 core_version = "18.0.0"  # @unused
 
-version = "1.40.0-dev"  # @unused
+version = "1.41.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -669,6 +669,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/gpr/alloc.h",
         "src/core/lib/gpr/env.h",
+        "src/core/lib/gpr/log_internal.h",
         "src/core/lib/gpr/murmur_hash.h",
         "src/core/lib/gpr/spinlock.h",
         "src/core/lib/gpr/string.h",
@@ -1032,6 +1033,46 @@ grpc_cc_library(
     ],
     deps = [
         "basic_join",
+        "gpr_platform",
+        "promise_status",
+    ],
+)
+
+grpc_cc_library(
+    name = "basic_seq",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/basic_seq.h",
+    ],
+    deps = [
+        "construct_destruct",
+        "gpr_platform",
+        "poll",
+        "promise_factory",
+        "switch",
+    ],
+)
+
+grpc_cc_library(
+    name = "seq",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/seq.h",
+    ],
+    deps = [
+        "basic_seq",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "try_seq",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/try_seq.h",
+    ],
+    deps = [
+        "basic_seq",
         "gpr_platform",
         "promise_status",
     ],

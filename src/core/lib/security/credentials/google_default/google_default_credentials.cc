@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "absl/strings/match.h"
+#include "absl/strings/strip.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -33,6 +34,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
@@ -221,6 +223,52 @@ static int is_metadata_server_reachable() {
   return detector.success;
 }
 
+namespace {
+
+bool ValidateUrlField(const Json& json, const std::string& field) {
+  auto it = json.object_value().find(field);
+  if (it == json.object_value().end()) {
+    return true;
+  }
+  if (it->second.type() != Json::Type::STRING ||
+      it->second.string_value().empty()) {
+    return false;
+  }
+  absl::StatusOr<grpc_core::URI> url =
+      grpc_core::URI::Parse(it->second.string_value());
+  if (!url.ok()) return false;
+  if (!absl::EqualsIgnoreCase(url->scheme(), "https")) {
+    return false;
+  }
+  absl::string_view host;
+  absl::string_view port;
+  grpc_core::SplitHostPort(url->authority(), &host, &port);
+  if (absl::ConsumeSuffix(&host, ".googleapis.com")) {
+    if (host == "sts" || host == "iamcredentials") {
+      return true;
+    } else if (absl::StartsWith(host, "sts.") ||
+               absl::StartsWith(host, "iamcredentials.")) {
+      return true;
+    } else if (absl::EndsWith(host, ".sts") ||
+               absl::EndsWith(host, ".iamcredentials")) {
+      return true;
+    } else if (absl::EndsWith(host, "-sts") ||
+               absl::EndsWith(host, "-iamcredentials")) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool ValidateExteralAccountCredentials(const Json& json) {
+  return json.type() == Json::Type::OBJECT &&
+         ValidateUrlField(json, "token_url") &&
+         ValidateUrlField(json, "service_account_impersonation_url") &&
+         ValidateUrlField(json, "token_info_url");
+}
+
+}  // namespace
+
 /* Takes ownership of creds_path if not NULL. */
 static grpc_error_handle create_default_creds_from_path(
     const std::string& creds_path,
@@ -274,6 +322,11 @@ static grpc_error_handle create_default_creds_from_path(
   }
 
   /* Finally try an external account credentials.*/
+  if (!ValidateExteralAccountCredentials(json)) {
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Invalid external account credentials format.");
+    goto end;
+  }
   result = grpc_core::ExternalAccountCredentials::Create(json, {}, &error);
 
 end:

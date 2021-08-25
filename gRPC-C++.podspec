@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.40.0-dev'
+  version = '1.41.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -535,6 +535,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/sockaddr.h',
                       'src/core/lib/gpr/alloc.h',
                       'src/core/lib/gpr/env.h',
+                      'src/core/lib/gpr/log_internal.h',
                       'src/core/lib/gpr/murmur_hash.h',
                       'src/core/lib/gpr/spinlock.h',
                       'src/core/lib/gpr/string.h',
@@ -1200,6 +1201,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/sockaddr.h',
                               'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/env.h',
+                              'src/core/lib/gpr/log_internal.h',
                               'src/core/lib/gpr/murmur_hash.h',
                               'src/core/lib/gpr/spinlock.h',
                               'src/core/lib/gpr/string.h',

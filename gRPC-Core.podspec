@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.40.0-dev'
+  version = '1.41.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -886,6 +886,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/env_windows.cc',
                       'src/core/lib/gpr/log.cc',
                       'src/core/lib/gpr/log_android.cc',
+                      'src/core/lib/gpr/log_internal.h',
                       'src/core/lib/gpr/log_linux.cc',
                       'src/core/lib/gpr/log_posix.cc',
                       'src/core/lib/gpr/log_windows.cc',
@@ -1788,6 +1789,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/sockaddr.h',
                               'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/env.h',
+                              'src/core/lib/gpr/log_internal.h',
                               'src/core/lib/gpr/murmur_hash.h',
                               'src/core/lib/gpr/spinlock.h',
                               'src/core/lib/gpr/string.h',

@@ -53,13 +53,12 @@ class ChildPolicyHandler::Helper
     // it reports something other than CONNECTING, at which point we swap it
     // into place.
     if (CalledByPendingChild()) {
-      if (GRPC_TRACE_FLAG_ENABLED(*(parent_->tracer_))) {
-        gpr_log(GPR_INFO,
-                "[child_policy_handler %p] helper %p: pending child policy %p "
-                "reports state=%s (%s)",
-                parent_.get(), this, child_, ConnectivityStateName(state),
-                status.ToString().c_str());
-      }
+      parent_->tracer_->Log(
+          GPR_INFO,
+          "[child_policy_handler %p] helper %p: pending child policy %p "
+          "reports state=%s (%s)",
+          parent_.get(), this, child_, ConnectivityStateName(state),
+          status.ToString().c_str());
       if (state == GRPC_CHANNEL_CONNECTING) return;
       grpc_pollset_set_del_pollset_set(
           parent_->child_policy_->interested_parties(),
@@ -83,10 +82,9 @@ class ChildPolicyHandler::Helper
             ? parent_->pending_child_policy_.get()
             : parent_->child_policy_.get();
     if (child_ != latest_child_policy) return;
-    if (GRPC_TRACE_FLAG_ENABLED(*(parent_->tracer_))) {
-      gpr_log(GPR_INFO, "[child_policy_handler %p] started name re-resolving",
-              parent_.get());
-    }
+    parent_->tracer_->Log(GPR_INFO,
+                          "[child_policy_handler %p] started name re-resolving",
+                          parent_.get());
     parent_->channel_control_helper()->RequestReresolution();
   }
 
@@ -119,25 +117,20 @@ class ChildPolicyHandler::Helper
 //
 
 void ChildPolicyHandler::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
-    gpr_log(GPR_INFO, "[child_policy_handler %p] shutting down", this);
-  }
+  tracer_->Log(GPR_INFO, "[child_policy_handler %p] shutting down", this);
   shutting_down_ = true;
   if (child_policy_ != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
-      gpr_log(GPR_INFO, "[child_policy_handler %p] shutting down lb_policy %p",
-              this, child_policy_.get());
-    }
+    tracer_->Log(GPR_INFO,
+                 "[child_policy_handler %p] shutting down lb_policy %p", this,
+                 child_policy_.get());
     grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
                                      interested_parties());
     child_policy_.reset();
   }
   if (pending_child_policy_ != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
-      gpr_log(GPR_INFO,
-              "[child_policy_handler %p] shutting down pending lb_policy %p",
-              this, pending_child_policy_.get());
-    }
+    tracer_->Log(GPR_INFO,
+                 "[child_policy_handler %p] shutting down pending lb_policy %p",
+                 this, pending_child_policy_.get());
     grpc_pollset_set_del_pollset_set(
         pending_child_policy_->interested_parties(), interested_parties());
     pending_child_policy_.reset();
@@ -210,11 +203,9 @@ void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
     // that there's an upper bound on the amount of time it takes us to
     // switch to the new policy, even if the new policy stays in
     // CONNECTING for a very long period of time.
-    if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
-      gpr_log(GPR_INFO,
-              "[child_policy_handler %p] creating new %schild policy %s", this,
-              child_policy_ == nullptr ? "" : "pending ", args.config->name());
-    }
+    tracer_->Log(
+        GPR_INFO, "[child_policy_handler %p] creating new %schild policy %s",
+        this, child_policy_ == nullptr ? "" : "pending ", args.config->name());
     auto& lb_policy =
         child_policy_ == nullptr ? child_policy_ : pending_child_policy_;
     lb_policy = CreateChildPolicy(args.config->name(), *args.args);
@@ -229,12 +220,10 @@ void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
   }
   GPR_ASSERT(policy_to_update != nullptr);
   // Update the policy.
-  if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
-    gpr_log(GPR_INFO, "[child_policy_handler %p] updating %schild policy %p",
-            this,
-            policy_to_update == pending_child_policy_.get() ? "pending " : "",
-            policy_to_update);
-  }
+  tracer_->Log(
+      GPR_INFO, "[child_policy_handler %p] updating %schild policy %p", this,
+      policy_to_update == pending_child_policy_.get() ? "pending " : "",
+      policy_to_update);
   policy_to_update->UpdateLocked(std::move(args));
 }
 
@@ -271,11 +260,9 @@ OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
     return nullptr;
   }
   helper->set_child(lb_policy.get());
-  if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
-    gpr_log(GPR_INFO,
-            "[child_policy_handler %p] created new LB policy \"%s\" (%p)", this,
-            child_policy_name, lb_policy.get());
-  }
+  tracer_->Log(GPR_INFO,
+               "[child_policy_handler %p] created new LB policy \"%s\" (%p)",
+               this, child_policy_name, lb_policy.get());
   channel_control_helper()->AddTraceEvent(
       ChannelControlHelper::TRACE_INFO,
       absl::StrCat("Created new LB policy \"", child_policy_name, "\""));

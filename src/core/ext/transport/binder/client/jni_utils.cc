@@ -20,9 +20,12 @@
 
 #if defined(ANDROID) || defined(__ANDROID__)
 
+namespace grpc_binder {
+
 void CallStaticJavaMethod(JNIEnv* env, const std::string& clazz,
                           const std::string& method, const std::string& type,
-                          jobject application) {
+                          jobject application, const std::string& pkg,
+                          const std::string& cls) {
   jclass cl = env->FindClass(clazz.c_str());
   if (cl == nullptr) {
     gpr_log(GPR_ERROR, "No class %s", clazz.c_str());
@@ -33,7 +36,9 @@ void CallStaticJavaMethod(JNIEnv* env, const std::string& clazz,
     gpr_log(GPR_ERROR, "No method id %s", method.c_str());
   }
 
-  env->CallStaticVoidMethod(cl, mid, application);
+  env->CallStaticVoidMethod(cl, mid, application,
+                            env->NewStringUTF(pkg.c_str()),
+                            env->NewStringUTF(cls.c_str()));
 }
 
 jobject CallStaticJavaMethodForObject(JNIEnv* env, const std::string& clazz,
@@ -59,5 +64,7 @@ jobject CallStaticJavaMethodForObject(JNIEnv* env, const std::string& clazz,
 
   return object;
 }
+
+}  // namespace grpc_binder
 
 #endif

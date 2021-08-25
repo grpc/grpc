@@ -1184,9 +1184,7 @@ class HPackParser::Parser {
           false);
     }
     (*dynamic_table_updates_allowed_)--;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
-      gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", *size);
-    }
+    grpc_trace_chttp2_hpack_parser.Log(GPR_INFO, "MAX TABLE SIZE: %d", *size);
     grpc_error_handle err = table_->SetCurrentTableSize(*size);
     if (err != GRPC_ERROR_NONE) {
       input_->SetError(err);

@@ -302,6 +302,7 @@ libs:
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
@@ -5955,6 +5956,15 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: miscompile_with_no_unique_address_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/compiler_bugs/miscompile_with_no_unique_address_test.cc
+  deps: []
+  uses_polling: false
 - name: mock_stream_test
   gtest: true
   build: test
@@ -6389,6 +6399,23 @@ targets:
   - test/cpp/common/secure_auth_context_test.cc
   deps:
   - grpc++_test_util
+- name: seq_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/switch.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/seq.h
+  src:
+  - test/core/promise/seq_test.cc
+  deps:
+  - absl/types:variant
+  uses_polling: false
 - name: server_builder_plugin_test
   gtest: true
   build: test
@@ -6880,6 +6907,26 @@ targets:
   - src/core/lib/promise/try_join.h
   src:
   - test/core/promise/try_join_test.cc
+  deps:
+  - absl/status:status
+  - absl/status:statusor
+  - absl/types:variant
+  uses_polling: false
+- name: try_seq_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/try_seq.h
+  src:
+  - test/core/promise/try_seq_test.cc
   deps:
   - absl/status:status
   - absl/status:statusor
