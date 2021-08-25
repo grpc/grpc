@@ -183,9 +183,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
   grpc_winsocket* socket = tcp->socket;
   grpc_winsocket_callback_info* info = &socket->read_info;
 
-  if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_INFO, "TCP:%p on_read", tcp);
-  }
+  grpc_tcp_trace.Log(GPR_INFO, "TCP:%p on_read", tcp);
 
   GRPC_ERROR_REF(error);
 
@@ -219,9 +217,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
           }
         }
       } else {
-        if (grpc_tcp_trace.enabled()) {
-          gpr_log(GPR_INFO, "TCP:%p unref read_slice", tcp);
-        }
+        grpc_tcp_trace.Log(GPR_INFO, "TCP:%p unref read_slice", tcp);
         grpc_slice_buffer_reset_and_unref_internal(tcp->read_slices);
         error = tcp->shutting_down
                     ? GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
@@ -249,9 +245,7 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   WSABUF buffers[MAX_WSABUF_COUNT];
   size_t i;
 
-  if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_INFO, "TCP:%p win_read", tcp);
-  }
+  grpc_tcp_trace.Log(GPR_INFO, "TCP:%p win_read", tcp);
 
   if (tcp->shutting_down) {
     grpc_core::ExecCtx::Run(
@@ -319,9 +313,7 @@ static void on_write(void* tcpp, grpc_error_handle error) {
   grpc_winsocket_callback_info* info = &handle->write_info;
   grpc_closure* cb;
 
-  if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_INFO, "TCP:%p on_write", tcp);
-  }
+  grpc_tcp_trace.Log(GPR_INFO, "TCP:%p on_write", tcp);
 
   GRPC_ERROR_REF(error);
 

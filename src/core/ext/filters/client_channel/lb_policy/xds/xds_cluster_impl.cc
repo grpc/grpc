@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
+
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -31,7 +33,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -57,13 +58,15 @@ class CircuitBreakerCallCounterMap {
     explicit CallCounter(Key key) : key_(std::move(key)) {}
     ~CallCounter() override;
 
-    uint32_t Load() { return concurrent_requests_.Load(MemoryOrder::SEQ_CST); }
-    uint32_t Increment() { return concurrent_requests_.FetchAdd(1); }
-    void Decrement() { concurrent_requests_.FetchSub(1); }
+    uint32_t Load() {
+      return concurrent_requests_.load(std::memory_order_seq_cst);
+    }
+    uint32_t Increment() { return concurrent_requests_.fetch_add(1); }
+    void Decrement() { concurrent_requests_.fetch_sub(1); }
 
    private:
     Key key_;
-    Atomic<uint32_t> concurrent_requests_{0};
+    std::atomic<uint32_t> concurrent_requests_{0};
   };
 
   RefCountedPtr<CallCounter> GetOrCreate(const std::string& cluster,
@@ -272,10 +275,9 @@ XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
       drop_config_(xds_cluster_impl_lb->config_->drop_config()),
       drop_stats_(xds_cluster_impl_lb->drop_stats_),
       picker_(std::move(picker)) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
-    gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] constructed new picker %p",
-            xds_cluster_impl_lb, this);
-  }
+  grpc_xds_cluster_impl_lb_trace.Log(
+      GPR_INFO, "[xds_cluster_impl_lb %p] constructed new picker %p",
+      xds_cluster_impl_lb, this);
 }
 
 LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
@@ -356,24 +358,20 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
 XdsClusterImplLb::XdsClusterImplLb(RefCountedPtr<XdsClient> xds_client,
                                    Args args)
     : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
-    gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] created -- using xds client %p",
-            this, xds_client_.get());
-  }
+  grpc_xds_cluster_impl_lb_trace.Log(
+      GPR_INFO, "[xds_cluster_impl_lb %p] created -- using xds client %p", this,
+      xds_client_.get());
 }
 
 XdsClusterImplLb::~XdsClusterImplLb() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_cluster_impl_lb %p] destroying xds_cluster_impl LB policy",
-            this);
-  }
+  grpc_xds_cluster_impl_lb_trace.Log(
+      GPR_INFO,
+      "[xds_cluster_impl_lb %p] destroying xds_cluster_impl LB policy", this);
 }
 
 void XdsClusterImplLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
-    gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] shutting down", this);
-  }
+  grpc_xds_cluster_impl_lb_trace.Log(
+      GPR_INFO, "[xds_cluster_impl_lb %p] shutting down", this);
   shutting_down_ = true;
   // Remove the child policy's interested_parties pollset_set from the
   // xDS policy.
@@ -400,9 +398,8 @@ void XdsClusterImplLb::ResetBackoffLocked() {
 }
 
 void XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
-    gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] Received update", this);
-  }
+  grpc_xds_cluster_impl_lb_trace.Log(
+      GPR_INFO, "[xds_cluster_impl_lb %p] Received update", this);
   // Update config.
   const bool is_initial_update = config_ == nullptr;
   auto old_config = std::move(config_);
@@ -439,13 +436,12 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   // whether) the child has reported.
   if (config_->drop_config() != nullptr && config_->drop_config()->drop_all()) {
     auto drop_picker = absl::make_unique<Picker>(this, picker_);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_cluster_impl_lb %p] updating connectivity (drop all): "
-              "state=READY "
-              "picker=%p",
-              this, drop_picker.get());
-    }
+    grpc_xds_cluster_impl_lb_trace.Log(
+        GPR_INFO,
+        "[xds_cluster_impl_lb %p] updating connectivity (drop all): "
+        "state=READY "
+        "picker=%p",
+        this, drop_picker.get());
     channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
                                           std::move(drop_picker));
     return;
@@ -453,14 +449,13 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   // Otherwise, update only if we have a child picker.
   if (picker_ != nullptr) {
     auto drop_picker = absl::make_unique<Picker>(this, picker_);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_cluster_impl_lb %p] updating connectivity: state=%s "
-              "status=(%s) "
-              "picker=%p",
-              this, ConnectivityStateName(state_), status_.ToString().c_str(),
-              drop_picker.get());
-    }
+    grpc_xds_cluster_impl_lb_trace.Log(
+        GPR_INFO,
+        "[xds_cluster_impl_lb %p] updating connectivity: state=%s "
+        "status=(%s) "
+        "picker=%p",
+        this, ConnectivityStateName(state_), status_.ToString().c_str(),
+        drop_picker.get());
     channel_control_helper()->UpdateState(state_, status_,
                                           std::move(drop_picker));
   }
@@ -476,11 +471,9 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_xds_cluster_impl_lb_trace);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_cluster_impl_lb %p] Created new child policy handler %p",
-            this, lb_policy.get());
-  }
+  grpc_xds_cluster_impl_lb_trace.Log(
+      GPR_INFO, "[xds_cluster_impl_lb %p] Created new child policy handler %p",
+      this, lb_policy.get());
   // Add our interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on
   // this policy, which in turn is tied to the application's call.
@@ -504,11 +497,9 @@ void XdsClusterImplLb::UpdateChildPolicyLocked(ServerAddressList addresses,
       const_cast<char*>(config_->cluster_name().c_str()));
   update_args.args = grpc_channel_args_copy_and_add(args, &cluster_arg, 1);
   // Update the policy.
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_cluster_impl_lb %p] Updating child policy handler %p", this,
-            child_policy_.get());
-  }
+  grpc_xds_cluster_impl_lb_trace.Log(
+      GPR_INFO, "[xds_cluster_impl_lb %p] Updating child policy handler %p",
+      this, child_policy_.get());
   child_policy_->UpdateLocked(std::move(update_args));
 }
 
@@ -551,14 +542,13 @@ void XdsClusterImplLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     std::unique_ptr<SubchannelPicker> picker) {
   if (xds_cluster_impl_policy_->shutting_down_) return;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_cluster_impl_lb %p] child connectivity state update: "
-            "state=%s (%s) "
-            "picker=%p",
-            xds_cluster_impl_policy_.get(), ConnectivityStateName(state),
-            status.ToString().c_str(), picker.get());
-  }
+  grpc_xds_cluster_impl_lb_trace.Log(
+      GPR_INFO,
+      "[xds_cluster_impl_lb %p] child connectivity state update: "
+      "state=%s (%s) "
+      "picker=%p",
+      xds_cluster_impl_policy_.get(), ConnectivityStateName(state),
+      status.ToString().c_str(), picker.get());
   // Save the state and picker.
   xds_cluster_impl_policy_->state_ = state;
   xds_cluster_impl_policy_->status_ = status;

@@ -29,6 +29,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/log_internal.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/string_windows.h"
 #include "src/core/lib/gprpp/examine_stack.h"
@@ -41,15 +42,16 @@ void gpr_log(const char* file, int line, gpr_log_severity severity,
   if (gpr_should_log(severity) == 0) {
     return;
   }
-
-  char* message = NULL;
   va_list args;
-  int ret;
-
-  /* Determine the length. */
   va_start(args, format);
-  ret = _vscprintf(format, args);
+  gpr_vlog(file, line, severity, format, args);
   va_end(args);
+}
+
+void gpr_vlog(const char* file, int line, gpr_log_severity severity,
+              const char* format, va_list args) {
+  char* message;
+  int ret = _vscprintf(format, args);
   if (ret < 0) {
     message = NULL;
   } else {
@@ -58,10 +60,8 @@ void gpr_log(const char* file, int line, gpr_log_severity severity,
     message = (char*)gpr_malloc(strp_buflen);
 
     /* Print to the buffer. */
-    va_start(args, format);
     ret = vsnprintf_s(message, strp_buflen, _TRUNCATE, format, args);
-    va_end(args);
-    if ((size_t)ret != strp_buflen - 1) {
+    if (GPR_UNLIKELY((size_t)ret != strp_buflen - 1)) {
       /* This should never happen. */
       gpr_free(message);
       message = NULL;

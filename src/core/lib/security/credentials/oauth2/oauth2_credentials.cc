@@ -499,12 +499,11 @@ grpc_call_credentials* grpc_google_refresh_token_credentials_create(
     const char* json_refresh_token, void* reserved) {
   grpc_auth_refresh_token token =
       grpc_auth_refresh_token_create_from_string(json_refresh_token);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace)) {
-    gpr_log(GPR_INFO,
-            "grpc_refresh_token_credentials_create(json_refresh_token=%s, "
-            "reserved=%p)",
-            create_loggable_refresh_token(&token).c_str(), reserved);
-  }
+  grpc_api_trace.Log(
+      GPR_INFO,
+      "grpc_refresh_token_credentials_create(json_refresh_token=%s, "
+      "reserved=%p)",
+      create_loggable_refresh_token(&token).c_str(), reserved);
   GPR_ASSERT(reserved == nullptr);
   return grpc_refresh_token_credentials_create_from_auth_refresh_token(token)
       .release();

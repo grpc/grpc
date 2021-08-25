@@ -14,7 +14,7 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
 
-  <%include file="../../debian_jessie_header.include"/>
+  <%include file="../../debian_8_header.include"/>
 
   <%include file="../../apt_get_basic.include"/>
   <%include file="../../python_deps.include"/>

@@ -65,10 +65,9 @@ static void on_alarm(void* acp, grpc_error_handle error) {
   int done;
   grpc_custom_socket* socket = static_cast<grpc_custom_socket*>(acp);
   grpc_custom_tcp_connect* connect = socket->connector;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
-            connect->addr_name.c_str(), grpc_error_std_string(error).c_str());
-  }
+  grpc_tcp_trace.Log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
+                     connect->addr_name.c_str(),
+                     grpc_error_std_string(error).c_str());
   if (error == GRPC_ERROR_NONE) {
     /* error == NONE implies that the timer ran out, and wasn't cancelled. If
        it was cancelled, then the handler that cancelled it also should close
@@ -137,10 +136,9 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   socket->listener = nullptr;
   connect->refs = 2;
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %p %s: asynchronously connecting",
-            socket, connect->addr_name.c_str());
-  }
+  grpc_tcp_trace.Log(GPR_INFO,
+                     "CLIENT_CONNECT: %p %s: asynchronously connecting", socket,
+                     connect->addr_name.c_str());
 
   GRPC_CLOSURE_INIT(&connect->on_alarm, on_alarm, socket,
                     grpc_schedule_on_exec_ctx);

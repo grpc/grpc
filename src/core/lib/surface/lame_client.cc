@@ -18,16 +18,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc.h>
-
 #include <string.h>
 
+#include <atomic>
+
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"

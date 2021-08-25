@@ -224,18 +224,15 @@ XdsClusterManagerLb::XdsClusterManagerLb(Args args)
     : LoadBalancingPolicy(std::move(args)) {}
 
 XdsClusterManagerLb::~XdsClusterManagerLb() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[xds_cluster_manager_lb %p] destroying xds_cluster_manager LB policy",
-        this);
-  }
+  grpc_xds_cluster_manager_lb_trace.Log(
+      GPR_INFO,
+      "[xds_cluster_manager_lb %p] destroying xds_cluster_manager LB policy",
+      this);
 }
 
 void XdsClusterManagerLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
-    gpr_log(GPR_INFO, "[xds_cluster_manager_lb %p] shutting down", this);
-  }
+  grpc_xds_cluster_manager_lb_trace.Log(
+      GPR_INFO, "[xds_cluster_manager_lb %p] shutting down", this);
   shutting_down_ = true;
   children_.clear();
 }
@@ -250,9 +247,8 @@ void XdsClusterManagerLb::ResetBackoffLocked() {
 
 void XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
   if (shutting_down_) return;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
-    gpr_log(GPR_INFO, "[xds_cluster_manager_lb %p] Received update", this);
-  }
+  grpc_xds_cluster_manager_lb_trace.Log(
+      GPR_INFO, "[xds_cluster_manager_lb %p] Received update", this);
   // Update config.
   config_ = std::move(args.config);
   // Deactivate the children not in the new config.
@@ -326,22 +322,20 @@ void XdsClusterManagerLb::UpdateStateLocked() {
   } else {
     connectivity_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
-    gpr_log(GPR_INFO, "[xds_cluster_manager_lb %p] connectivity changed to %s",
-            this, ConnectivityStateName(connectivity_state));
-  }
+  grpc_xds_cluster_manager_lb_trace.Log(
+      GPR_INFO, "[xds_cluster_manager_lb %p] connectivity changed to %s", this,
+      ConnectivityStateName(connectivity_state));
   ClusterPicker::ClusterMap cluster_map;
   for (const auto& p : config_->cluster_map()) {
     const std::string& cluster_name = p.first;
     RefCountedPtr<ChildPickerWrapper>& child_picker = cluster_map[cluster_name];
     child_picker = children_[cluster_name]->picker_wrapper();
     if (child_picker == nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
-        gpr_log(GPR_INFO,
-                "[xds_cluster_manager_lb %p] child %s has not yet returned a "
-                "picker; creating a QueuePicker.",
-                this, cluster_name.c_str());
-      }
+      grpc_xds_cluster_manager_lb_trace.Log(
+          GPR_INFO,
+          "[xds_cluster_manager_lb %p] child %s has not yet returned a "
+          "picker; creating a QueuePicker.",
+          this, cluster_name.c_str());
       child_picker = MakeRefCounted<ChildPickerWrapper>(
           cluster_name,
           absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
@@ -367,32 +361,28 @@ XdsClusterManagerLb::ClusterChild::ClusterChild(
     const std::string& name)
     : xds_cluster_manager_policy_(std::move(xds_cluster_manager_policy)),
       name_(name) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_cluster_manager_lb %p] created ClusterChild %p for %s",
-            xds_cluster_manager_policy_.get(), this, name_.c_str());
-  }
+  grpc_xds_cluster_manager_lb_trace.Log(
+      GPR_INFO, "[xds_cluster_manager_lb %p] created ClusterChild %p for %s",
+      xds_cluster_manager_policy_.get(), this, name_.c_str());
   GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimer, this,
                     grpc_schedule_on_exec_ctx);
 }
 
 XdsClusterManagerLb::ClusterChild::~ClusterChild() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_cluster_manager_lb %p] ClusterChild %p: destroying "
-            "child",
-            xds_cluster_manager_policy_.get(), this);
-  }
+  grpc_xds_cluster_manager_lb_trace.Log(
+      GPR_INFO,
+      "[xds_cluster_manager_lb %p] ClusterChild %p: destroying "
+      "child",
+      xds_cluster_manager_policy_.get(), this);
   xds_cluster_manager_policy_.reset(DEBUG_LOCATION, "ClusterChild");
 }
 
 void XdsClusterManagerLb::ClusterChild::Orphan() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_cluster_manager_lb %p] ClusterChild %p %s: "
-            "shutting down child",
-            xds_cluster_manager_policy_.get(), this, name_.c_str());
-  }
+  grpc_xds_cluster_manager_lb_trace.Log(
+      GPR_INFO,
+      "[xds_cluster_manager_lb %p] ClusterChild %p %s: "
+      "shutting down child",
+      xds_cluster_manager_policy_.get(), this, name_.c_str());
   // Remove the child policy's interested_parties pollset_set from the
   // xDS policy.
   grpc_pollset_set_del_pollset_set(
@@ -421,14 +411,12 @@ XdsClusterManagerLb::ClusterChild::CreateChildPolicyLocked(
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_xds_cluster_manager_lb_trace);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_cluster_manager_lb %p] ClusterChild %p %s: Created "
-            "new child "
-            "policy handler %p",
-            xds_cluster_manager_policy_.get(), this, name_.c_str(),
-            lb_policy.get());
-  }
+  grpc_xds_cluster_manager_lb_trace.Log(
+      GPR_INFO,
+      "[xds_cluster_manager_lb %p] ClusterChild %p %s: Created "
+      "new child "
+      "policy handler %p",
+      xds_cluster_manager_policy_.get(), this, name_.c_str(), lb_policy.get());
   // Add the xDS's interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on
   // xDS LB, which in turn is tied to the application's call.
@@ -458,14 +446,13 @@ void XdsClusterManagerLb::ClusterChild::UpdateLocked(
   update_args.addresses = addresses;
   update_args.args = grpc_channel_args_copy(args);
   // Update the policy.
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_cluster_manager_lb %p] ClusterChild %p %s: "
-            "Updating child "
-            "policy handler %p",
-            xds_cluster_manager_policy_.get(), this, name_.c_str(),
-            child_policy_.get());
-  }
+  grpc_xds_cluster_manager_lb_trace.Log(
+      GPR_INFO,
+      "[xds_cluster_manager_lb %p] ClusterChild %p %s: "
+      "Updating child "
+      "policy handler %p",
+      xds_cluster_manager_policy_.get(), this, name_.c_str(),
+      child_policy_.get());
   child_policy_->UpdateLocked(std::move(update_args));
 }
 
@@ -527,15 +514,13 @@ XdsClusterManagerLb::ClusterChild::Helper::CreateSubchannel(
 void XdsClusterManagerLb::ClusterChild::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     std::unique_ptr<SubchannelPicker> picker) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[xds_cluster_manager_lb %p] child %s: received update: state=%s (%s) "
-        "picker=%p",
-        xds_cluster_manager_child_->xds_cluster_manager_policy_.get(),
-        xds_cluster_manager_child_->name_.c_str(), ConnectivityStateName(state),
-        status.ToString().c_str(), picker.get());
-  }
+  grpc_xds_cluster_manager_lb_trace.Log(
+      GPR_INFO,
+      "[xds_cluster_manager_lb %p] child %s: received update: state=%s (%s) "
+      "picker=%p",
+      xds_cluster_manager_child_->xds_cluster_manager_policy_.get(),
+      xds_cluster_manager_child_->name_.c_str(), ConnectivityStateName(state),
+      status.ToString().c_str(), picker.get());
   if (xds_cluster_manager_child_->xds_cluster_manager_policy_->shutting_down_) {
     return;
   }

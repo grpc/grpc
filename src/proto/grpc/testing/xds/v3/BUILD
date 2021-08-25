@@ -105,6 +105,14 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
+    name = "extension_proto",
+    srcs = [
+        "extension.proto",
+    ],
+    well_known_protos = True,
+)
+
+grpc_proto_library(
     name = "listener_proto",
     srcs = [
         "listener.proto",
@@ -244,6 +252,8 @@ grpc_proto_library(
     ],
     well_known_protos = True,
     deps = [
+        "base_proto",
+        "extension_proto",
         "string_proto",
     ],
 )

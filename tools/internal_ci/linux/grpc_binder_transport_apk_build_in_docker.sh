@@ -27,9 +27,14 @@ cd /var/local/git/grpc
 echo $ANDROID_HOME
 echo $ANDROID_NDK_HOME
 
-# Build all basic targets using the strict warning option which leverages the
+# Build all targets using the strict warning option which leverages the
 # clang compiler to check if sources can pass a set of warning options.
+# CPU are specified because gRPC does not build with 32bit NDK (which has socklen_t
+# defined as int due to an accident).
+# The python option is for disabling python2 enforcement when packing APK
 bazel build --define=use_strict_warning=true \
+  --fat_apk_cpu=x86_64,arm64-v8a \
+  --extra_toolchains=@rules_python//python:autodetecting_toolchain_nonstrict \
   //examples/android/binder/java/io/grpc/binder/cpp/example:app
 
 # Make sure the Java code that will be invoked by binder transport

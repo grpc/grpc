@@ -1,4 +1,4 @@
-# Copyright 2019 gRPC authors.
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,13 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cdef class _AsyncioResolver:
-    cdef:
-        object _loop
-        grpc_custom_resolver* _grpc_resolver
-        object _task_resolve
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-    @staticmethod
-    cdef _AsyncioResolver create(grpc_custom_resolver* grpc_resolver)
+licenses(["notice"])
 
-    cdef void resolve(self, const char* host, const char* port)
+grpc_package(name = "test/core/compiler_bugs")
+
+grpc_cc_test(
+    name = "miscompile_with_no_unique_address_test",
+    srcs = ["miscompile_with_no_unique_address_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:gpr_platform",
+        "//test/core/util:grpc_suppressions",
+    ],
+)

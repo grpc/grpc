@@ -68,18 +68,16 @@ HealthCheckClient::HealthCheckClient(
               .set_jitter(HEALTH_CHECK_RECONNECT_JITTER)
               .set_max_backoff(HEALTH_CHECK_RECONNECT_MAX_BACKOFF_SECONDS *
                                1000)) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
-    gpr_log(GPR_INFO, "created HealthCheckClient %p", this);
-  }
+  grpc_health_check_client_trace.Log(GPR_INFO, "created HealthCheckClient %p",
+                                     this);
   GRPC_CLOSURE_INIT(&retry_timer_callback_, OnRetryTimer, this,
                     grpc_schedule_on_exec_ctx);
   StartCall();
 }
 
 HealthCheckClient::~HealthCheckClient() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
-    gpr_log(GPR_INFO, "destroying HealthCheckClient %p", this);
-  }
+  grpc_health_check_client_trace.Log(GPR_INFO,
+                                     "destroying HealthCheckClient %p", this);
 }
 
 void HealthCheckClient::SetHealthStatus(grpc_connectivity_state state,
@@ -90,10 +88,9 @@ void HealthCheckClient::SetHealthStatus(grpc_connectivity_state state,
 
 void HealthCheckClient::SetHealthStatusLocked(grpc_connectivity_state state,
                                               const char* reason) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
-    gpr_log(GPR_INFO, "HealthCheckClient %p: setting state=%s reason=%s", this,
-            ConnectivityStateName(state), reason);
-  }
+  grpc_health_check_client_trace.Log(
+      GPR_INFO, "HealthCheckClient %p: setting state=%s reason=%s", this,
+      ConnectivityStateName(state), reason);
   if (watcher_ != nullptr) {
     watcher_->Notify(state,
                      state == GRPC_CHANNEL_TRANSIENT_FAILURE
@@ -103,9 +100,8 @@ void HealthCheckClient::SetHealthStatusLocked(grpc_connectivity_state state,
 }
 
 void HealthCheckClient::Orphan() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
-    gpr_log(GPR_INFO, "HealthCheckClient %p: shutting down", this);
-  }
+  grpc_health_check_client_trace.Log(
+      GPR_INFO, "HealthCheckClient %p: shutting down", this);
   {
     MutexLock lock(&mu_);
     shutting_down_ = true;
@@ -128,10 +124,9 @@ void HealthCheckClient::StartCallLocked() {
   GPR_ASSERT(call_state_ == nullptr);
   SetHealthStatusLocked(GRPC_CHANNEL_CONNECTING, "starting health watch");
   call_state_ = MakeOrphanable<CallState>(Ref(), interested_parties_);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
-    gpr_log(GPR_INFO, "HealthCheckClient %p: created CallState %p", this,
-            call_state_.get());
-  }
+  grpc_health_check_client_trace.Log(
+      GPR_INFO, "HealthCheckClient %p: created CallState %p", this,
+      call_state_.get());
   call_state_->StartCall();
 }
 
@@ -164,10 +159,8 @@ void HealthCheckClient::OnRetryTimer(void* arg, grpc_error_handle error) {
     self->retry_timer_callback_pending_ = false;
     if (!self->shutting_down_ && error == GRPC_ERROR_NONE &&
         self->call_state_ == nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
-        gpr_log(GPR_INFO, "HealthCheckClient %p: restarting health check call",
-                self);
-      }
+      grpc_health_check_client_trace.Log(
+          GPR_INFO, "HealthCheckClient %p: restarting health check call", self);
       self->StartCallLocked();
     }
   }
@@ -257,10 +250,9 @@ HealthCheckClient::CallState::CallState(
       payload_(context_) {}
 
 HealthCheckClient::CallState::~CallState() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
-    gpr_log(GPR_INFO, "HealthCheckClient %p: destroying CallState %p",
-            health_check_client_.get(), this);
-  }
+  grpc_health_check_client_trace.Log(
+      GPR_INFO, "HealthCheckClient %p: destroying CallState %p",
+      health_check_client_.get(), this);
   for (size_t i = 0; i < GRPC_CONTEXT_COUNT; i++) {
     if (context_[i].destroy != nullptr) {
       context_[i].destroy(context_[i].value);
@@ -425,8 +417,9 @@ void HealthCheckClient::CallState::StartCancel(void* arg,
 
 void HealthCheckClient::CallState::Cancel() {
   bool expected = false;
-  if (cancelled_.CompareExchangeStrong(&expected, true, MemoryOrder::ACQ_REL,
-                                       MemoryOrder::ACQUIRE)) {
+  if (cancelled_.compare_exchange_strong(expected, true,
+                                         std::memory_order_acq_rel,
+                                         std::memory_order_acquire)) {
     call_->Ref(DEBUG_LOCATION, "cancel").release();
     GRPC_CALL_COMBINER_START(
         &call_combiner_,
@@ -471,7 +464,7 @@ void HealthCheckClient::CallState::DoneReadingRecvMessage(
       state, error == GRPC_ERROR_NONE && !healthy
                  ? "backend unhealthy"
                  : grpc_error_std_string(error).c_str());
-  seen_response_.Store(true, MemoryOrder::RELEASE);
+  seen_response_.store(true, std::memory_order_release);
   grpc_slice_buffer_destroy_internal(&recv_message_buffer_);
   // Start another recv_message batch.
   // This re-uses the ref we're holding.
@@ -561,12 +554,11 @@ void HealthCheckClient::CallState::RecvTrailingMetadataReady(
     status = grpc_get_status_code_from_metadata(
         self->recv_trailing_metadata_.idx.named.grpc_status->md);
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
-    gpr_log(GPR_INFO,
-            "HealthCheckClient %p CallState %p: health watch failed with "
-            "status %d",
-            self->health_check_client_.get(), self, status);
-  }
+  grpc_health_check_client_trace.Log(
+      GPR_INFO,
+      "HealthCheckClient %p CallState %p: health watch failed with "
+      "status %d",
+      self->health_check_client_.get(), self, status);
   // Clean up.
   grpc_metadata_batch_destroy(&self->recv_trailing_metadata_);
   // For status UNIMPLEMENTED, give up and assume always healthy.
@@ -598,7 +590,7 @@ void HealthCheckClient::CallState::CallEndedLocked(bool retry) {
     health_check_client_->call_state_.reset();
     if (retry) {
       GPR_ASSERT(!health_check_client_->shutting_down_);
-      if (seen_response_.Load(MemoryOrder::ACQUIRE)) {
+      if (seen_response_.load(std::memory_order_acquire)) {
         // If the call fails after we've gotten a successful response, reset
         // the backoff and restart the call immediately.
         health_check_client_->retry_backoff_.Reset();

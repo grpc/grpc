@@ -109,11 +109,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "guileless"  # @unused
+g_stands_for = "goat"  # @unused
 
 core_version = "18.0.0"  # @unused
 
-version = "1.40.0-dev"  # @unused
+version = "1.41.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -323,10 +323,18 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     standalone = True,
+    tags = ["avoid_dep"],
     visibility = ["@grpc:public"],
     deps = [
         "gpr_base",
     ],
+)
+
+grpc_cc_library(
+    name = "atomic_utils",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/atomic_utils.h"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -340,6 +348,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
     standalone = True,
+    tags = ["avoid_dep"],
     visibility = ["@grpc:public"],
     deps = [
         "config",
@@ -515,6 +524,7 @@ grpc_cc_library(
     ],
     language = "c++",
     standalone = True,
+    tags = ["avoid_dep"],
     visibility = ["@grpc:public"],
     deps = [
         "gpr",
@@ -662,6 +672,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/gpr/alloc.h",
         "src/core/lib/gpr/env.h",
+        "src/core/lib/gpr/log_internal.h",
         "src/core/lib/gpr/murmur_hash.h",
         "src/core/lib/gpr/spinlock.h",
         "src/core/lib/gpr/string.h",
@@ -670,7 +681,6 @@ grpc_cc_library(
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gpr/useful.h",
         "src/core/lib/gprpp/arena.h",
-        "src/core/lib/gprpp/atomic.h",
         "src/core/lib/gprpp/examine_stack.h",
         "src/core/lib/gprpp/fork.h",
         "src/core/lib/gprpp/global_config.h",
@@ -777,17 +787,6 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc_codegen",
-    ],
-)
-
-grpc_cc_library(
-    name = "atomic",
-    language = "c++",
-    public_hdrs = [
-        "src/core/lib/gprpp/atomic.h",
-    ],
-    deps = [
-        "gpr",
     ],
 )
 
@@ -1002,11 +1001,127 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "basic_join",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/basic_join.h",
+    ],
+    deps = [
+        "bitset",
+        "construct_destruct",
+        "gpr_platform",
+        "poll",
+        "promise_factory",
+    ],
+)
+
+grpc_cc_library(
+    name = "join",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/join.h",
+    ],
+    deps = [
+        "basic_join",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "try_join",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/try_join.h",
+    ],
+    deps = [
+        "basic_join",
+        "gpr_platform",
+        "promise_status",
+    ],
+)
+
+grpc_cc_library(
+    name = "basic_seq",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/basic_seq.h",
+    ],
+    deps = [
+        "construct_destruct",
+        "gpr_platform",
+        "poll",
+        "promise_factory",
+        "switch",
+    ],
+)
+
+grpc_cc_library(
+    name = "seq",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/seq.h",
+    ],
+    deps = [
+        "basic_seq",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "try_seq",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/try_seq.h",
+    ],
+    deps = [
+        "basic_seq",
+        "gpr_platform",
+        "promise_status",
+    ],
+)
+
+grpc_cc_library(
+    name = "activity",
+    srcs = [
+        "src/core/lib/promise/activity.cc",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/activity.h",
+    ],
+    deps = [
+        "atomic_utils",
+        "construct_destruct",
+        "context",
+        "gpr_base",
+        "gpr_codegen",
+        "poll",
+        "promise_factory",
+        "promise_status",
+    ],
+)
+
+grpc_cc_library(
+    name = "wait_set",
+    external_deps = [
+        "absl/container:flat_hash_set",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/wait_set.h",
+    ],
+    deps = [
+        "activity",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "ref_counted",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
     deps = [
-        "atomic",
+        "atomic_utils",
         "debug_location",
         "gpr_base",
         "grpc_trace",
@@ -1019,7 +1134,6 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/dual_ref_counted.h"],
     deps = [
-        "atomic",
         "debug_location",
         "gpr_base",
         "grpc_trace",
@@ -1400,7 +1514,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "atomic",
         "gpr_base",
         "grpc_base_c",
     ],
@@ -3077,6 +3190,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
+    tags = ["avoid_dep"],
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
         "gpr_base",

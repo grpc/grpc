@@ -36,10 +36,8 @@ extern grpc_core::DebugOnlyTraceFlag grpc_fd_trace; /* Disabled by default */
 extern grpc_core::DebugOnlyTraceFlag
     grpc_polling_trace; /* Disabled by default */
 
-#define GRPC_FD_TRACE(format, ...)                        \
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_fd_trace)) {           \
-    gpr_log(GPR_INFO, "(fd-trace) " format, __VA_ARGS__); \
-  }
+#define GRPC_FD_TRACE(format, ...) \
+  grpc_fd_trace.Log(GPR_INFO, "(fd-trace) " format, __VA_ARGS__);
 
 typedef struct grpc_fd grpc_fd;
 

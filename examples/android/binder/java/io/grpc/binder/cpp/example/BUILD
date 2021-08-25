@@ -20,9 +20,14 @@ cc_library(
     linkopts = [
         "-ldl",
         "-llog",
+        "-lm",
+        "-lbinder_ndk",
         "-Wl,--no-undefined",
     ],
-    deps = [],
+    deps = [
+        # Temporarily directly depend on this target before we expose a public API
+        "//src/core/ext/transport/binder/client:grpc_transport_binder_client",
+    ],
     alwayslink = True,
 )
 
@@ -36,6 +41,7 @@ android_library(
     resource_files = glob(["res/**"]),
     deps = [
         ":jni_lib",
+        "@binder_transport_android_helper//io/grpc/binder/cpp:connection_helper",
     ],
 )
 
