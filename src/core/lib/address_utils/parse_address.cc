@@ -23,14 +23,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef GRPC_HAVE_UNIX_SOCKET
-#include <sys/un.h>
-#endif
-#ifdef GRPC_POSIX_SOCKET
-#include <errno.h>
-#include <net/if.h>
-#endif
-
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 
@@ -43,6 +35,20 @@
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+
+#if defined(GRPC_HAVE_UNIX_SOCKET)
+#include <sys/un.h>
+#endif  // defined(GRPC_HAVE_UNIX_SOCKET)
+
+#if defined(GRPC_POSIX_SOCKET)
+#include <errno.h>
+#include <net/if.h>
+#endif
+
+#ifdef GRPC_HAVE_UNIX_SOCKET
+#endif
+#ifdef GRPC_POSIX_SOCKET
+#endif
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 

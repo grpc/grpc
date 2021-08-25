@@ -20,8 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET_TCP_CLIENT
-
+#if defined(GRPC_POSIX_SOCKET_TCP_CLIENT)
 #include "src/core/lib/iomgr/tcp_client_posix.h"
 
 #include <errno.h>
@@ -48,6 +47,9 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/slice/slice_internal.h"
+#endif
+
+#ifdef GRPC_POSIX_SOCKET_TCP_CLIENT
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 

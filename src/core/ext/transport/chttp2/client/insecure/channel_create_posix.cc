@@ -22,8 +22,7 @@
 #include <grpc/grpc_posix.h>
 #include <grpc/support/log.h>
 
-#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
-
+#if defined(GPR_SUPPORT_CHANNELS_FROM_FD)
 #include <fcntl.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -34,6 +33,9 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport.h"
+#endif
+
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
 grpc_channel* grpc_insecure_channel_create_from_fd(
     const char* target, int fd, const grpc_channel_args* args) {

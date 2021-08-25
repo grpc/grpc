@@ -18,14 +18,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_LINUX
-
-#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#if defined(GPR_LINUX)
+#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
 
-#include <string.h>
+#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#endif
+
+#ifdef GPR_LINUX
 
 #define GRPC_ALTS_EXPECT_NAME_GOOGLE "Google"
 #define GRPC_ALTS_EXPECT_NAME_GCE "Google Compute Engine"

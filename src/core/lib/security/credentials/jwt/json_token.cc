@@ -20,6 +20,9 @@
 
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
 #include <string.h>
 
 #include <grpc/grpc_security.h>
@@ -33,11 +36,7 @@
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
 
-extern "C" {
-#include <openssl/bio.h>
-#include <openssl/evp.h>
-#include <openssl/pem.h>
-}
+extern "C" {}
 
 using grpc_core::Json;
 

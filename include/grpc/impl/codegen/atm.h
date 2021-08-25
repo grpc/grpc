@@ -71,10 +71,46 @@
 
 #if defined(GPR_GCC_ATOMIC)
 #include <grpc/impl/codegen/atm_gcc_atomic.h>
-#elif defined(GPR_GCC_SYNC)
+#endif  // defined(GPR_GCC_ATOMIC)
+
+#if defined(GPR_GCC_SYNC)
 #include <grpc/impl/codegen/atm_gcc_sync.h>
-#elif defined(GPR_WINDOWS_ATOMIC)
+#endif  // defined(GPR_GCC_SYNC)
+
+#if defined(GPR_WINDOWS_ATOMIC)
 #include <grpc/impl/codegen/atm_windows.h>
+#endif
+
+#if defined(GPR_GCC_ATOMIC)
+#endif  // defined(GPR_GCC_ATOMIC)
+
+#if defined(GPR_GCC_SYNC)
+#endif  // defined(GPR_GCC_SYNC)
+
+#if defined(GPR_WINDOWS_ATOMIC)
+#endif
+
+#if defined(GPR_GCC_ATOMIC)
+#endif  // defined(GPR_GCC_ATOMIC)
+
+#if defined(GPR_GCC_SYNC)
+#endif  // defined(GPR_GCC_SYNC)
+
+#if defined(GPR_WINDOWS_ATOMIC)
+#endif
+
+#if defined(GPR_GCC_ATOMIC)
+#endif  // defined(GPR_GCC_ATOMIC)
+
+#if defined(GPR_GCC_SYNC)
+#endif  // defined(GPR_GCC_SYNC)
+
+#if defined(GPR_WINDOWS_ATOMIC)
+#endif
+
+#if defined(GPR_GCC_ATOMIC)
+#elif defined(GPR_GCC_SYNC)
+#elif defined(GPR_WINDOWS_ATOMIC)
 #else
 #error could not determine platform for atm
 #endif

@@ -18,11 +18,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_APPLE
-
+#if defined(GPR_APPLE)
 #include <mach/mach.h>
 
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
+#endif
+
+#ifdef GPR_APPLE
 
 namespace grpc {
 namespace load_reporter {

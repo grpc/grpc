@@ -18,12 +18,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WINDOWS
-
+#if defined(GPR_WINDOWS)
 #include <windows.h>
+
 #include <cstdint>
 
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
+#endif
+
+#ifdef GPR_WINDOWS
 
 namespace grpc {
 namespace load_reporter {

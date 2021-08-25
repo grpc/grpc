@@ -26,12 +26,14 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_CFSTREAM
-#import <CoreFoundation/CoreFoundation.h>
-
+#if defined(GRPC_CFSTREAM)
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/lockfree_event.h"
+#endif
+
+#ifdef GRPC_CFSTREAM
+#import <CoreFoundation/CoreFoundation.h>
 
 class GrpcLibraryInitHolder {
  public:

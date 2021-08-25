@@ -16,8 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WINDOWS_STAT
-
+#if defined(GPR_WINDOWS_STAT)
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -25,6 +24,9 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/stat.h"
+#endif
+
+#ifdef GPR_WINDOWS_STAT
 
 namespace grpc_core {
 

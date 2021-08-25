@@ -21,9 +21,11 @@
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_GETHOSTNAME_FALLBACK
-
+#if defined(GRPC_GETHOSTNAME_FALLBACK)
 #include <stddef.h>
+#endif
+
+#ifdef GRPC_GETHOSTNAME_FALLBACK
 
 char* grpc_gethostname() { return NULL; }
 

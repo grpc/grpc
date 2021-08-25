@@ -42,3 +42,5 @@ typedef enum {
 #endif
 
 #endif /* GRPC_IMPL_CODEGEN_CONNECTIVITY_STATE_H */
+
+#include <grpc/impl/codegen/port_platform.h>

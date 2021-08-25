@@ -70,3 +70,5 @@ void grpc_time_averaged_stats_add_sample(grpc_time_averaged_stats* stats,
 double grpc_time_averaged_stats_update_average(grpc_time_averaged_stats* stats);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIME_AVERAGED_STATS_H */
+
+#include <grpc/support/port_platform.h>

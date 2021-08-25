@@ -24,12 +24,14 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET_TCP
-
+#if defined(GRPC_POSIX_SOCKET_TCP)
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/utsname.h>
+#endif
+
+#ifdef GRPC_POSIX_SOCKET_TCP
 
 namespace grpc_core {
 static bool errqueue_supported = false;

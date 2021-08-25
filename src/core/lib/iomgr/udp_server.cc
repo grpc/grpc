@@ -29,8 +29,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET_UDP_SERVER
-
+#if defined(GRPC_POSIX_SOCKET_UDP_SERVER)
 #include "src/core/lib/iomgr/udp_server.h"
 
 #include <errno.h>
@@ -69,6 +68,9 @@
 #include "src/core/lib/iomgr/socket_factory_posix.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#endif
+
+#ifdef GRPC_POSIX_SOCKET_UDP_SERVER
 
 /* A listener which implements basic features of Listening on a port for
  * I/O events*/

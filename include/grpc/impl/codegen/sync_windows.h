@@ -21,9 +21,11 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#ifdef GPR_WINDOWS
-
+#if defined(GPR_WINDOWS)
 #include <grpc/impl/codegen/sync_generic.h>
+#endif
+
+#ifdef GPR_WINDOWS
 
 typedef struct {
   CRITICAL_SECTION cs; /* Not an SRWLock until Vista is unsupported */

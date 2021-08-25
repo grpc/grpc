@@ -20,10 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_WINSOCK_SOCKET
-
-#include "src/core/lib/iomgr/sockaddr.h"
-
+#if defined(GRPC_WINSOCK_SOCKET)
 #include <inttypes.h>
 #include <io.h>
 
@@ -43,10 +40,14 @@
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/slice/slice_internal.h"
+#endif
+
+#ifdef GRPC_WINSOCK_SOCKET
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 

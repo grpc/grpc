@@ -20,10 +20,13 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
-
+#if defined(GRPC_POSIX_SOCKET_UTILS_COMMON)
 #include <netinet/in.h>
+
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#endif
+
+#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
 #ifndef GRPC_SET_SOCKET_DUALSTACK_CUSTOM
 

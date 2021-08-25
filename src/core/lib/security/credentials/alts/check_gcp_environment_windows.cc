@@ -18,10 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WINDOWS
-
-#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
-
+#if defined(GPR_WINDOWS)
 #include <shellapi.h>
 #include <stdio.h>
 #include <tchar.h>
@@ -30,6 +27,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+
+#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#endif
+
+#ifdef GPR_WINDOWS
 
 namespace grpc_core {
 namespace internal {

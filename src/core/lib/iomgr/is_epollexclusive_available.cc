@@ -22,16 +22,18 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_LINUX_EPOLL_CREATE1
-
-#include <grpc/support/log.h>
-
+#if defined(GRPC_LINUX_EPOLL_CREATE1)
 #include <errno.h>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/iomgr/sys_epoll_wrapper.h"
+#endif
+
+#ifdef GRPC_LINUX_EPOLL_CREATE1
 
 /* This polling engine is only relevant on linux kernels supporting epoll() */
 bool grpc_is_epollexclusive_available(void) {

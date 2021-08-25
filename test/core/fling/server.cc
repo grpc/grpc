@@ -24,12 +24,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-
-#ifndef _WIN32
-/* This is for _exit() below, which is temporary. */
-#include <unistd.h>
-#endif
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -41,6 +35,14 @@
 #include "test/core/util/grpc_profiler.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+#if !defined(_WIN32)
+#include <unistd.h>
+#endif
+
+#ifndef _WIN32
+/* This is for _exit() below, which is temporary. */
+#endif
 
 static grpc_completion_queue* cq;
 static grpc_server* server;

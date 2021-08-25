@@ -20,15 +20,17 @@
 
 #include <string.h>
 
-/* This is here for grpc_is_binary_header
- * TODO(murgatroid99): Remove this
- */
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "test/core/util/test_config.h"
+
+/* This is here for grpc_is_binary_header
+ * TODO(murgatroid99): Remove this
+ */
 
 static int all_ok = 1;
 

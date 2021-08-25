@@ -24,12 +24,15 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_LINUX_ERRQUEUE
+#if defined(GRPC_LINUX_ERRQUEUE)
 #include <netinet/in.h>
 #include <string.h>
 #include <time.h>
 
 #include "src/core/lib/gprpp/memory.h"
+#endif
+
+#ifdef GRPC_LINUX_ERRQUEUE
 
 namespace grpc_core {
 namespace {

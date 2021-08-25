@@ -43,10 +43,16 @@
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
 #include "test/cpp/util/service_describer.h"
 
+#if !GPR_WINDOWS
+#include <unistd.h>
+#endif  // !GPR_WINDOWS
+
 #if GPR_WINDOWS
 #include <io.h>
+#endif
+
+#if GPR_WINDOWS
 #else
-#include <unistd.h>
 #endif
 
 ABSL_FLAG(bool, l, false, "Use a long listing format");

@@ -24,15 +24,18 @@
 #include <sstream>
 #include <string>
 
-#ifdef __FreeBSD__
-#include <sys/wait.h>
-#endif
-
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/env.h"
 #include "test/core/util/port.h"
 #include "test/cpp/util/subprocess.h"
+
+#if defined(__FreeBSD__)
+#include <sys/wait.h>
+#endif
+
+#ifdef __FreeBSD__
+#endif
 
 using grpc::SubProcess;
 

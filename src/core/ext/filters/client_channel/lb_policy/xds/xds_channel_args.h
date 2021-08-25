@@ -27,3 +27,5 @@
   "grpc.internal.xds_logical_dns_cluster_fake_resolver_response_generator"
 
 #endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_CHANNEL_ARGS_H
+
+#include <grpc/support/port_platform.h>

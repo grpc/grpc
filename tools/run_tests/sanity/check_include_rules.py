@@ -102,6 +102,7 @@ def fix(filename):
             'test/core/surface/public_headers_must_be_c89.c'
     ]:
         return
+    print(filename)
     with open(filename) as f:
         text = f.read()
     state = "preamble"
@@ -123,9 +124,32 @@ def fix(filename):
     ifstack = []
     line_ifstack = []
     for line_num, line in enumerate(lines):
-        if line.startswith('#if'):
+        if line.startswith('#if '):
             ifstack = list(ifstack)
-            ifstack.append(line)
+            ifstack.append(line[len('#if '):])
+        elif line.startswith('#ifdef'):
+            ifstack = list(ifstack)
+            line = line[len('#ifdef'):].strip()
+            sp = line.find(' ')
+            if sp == -1:
+              ifstack.append('defined(%s)' % line)
+            else:
+              ifstack.append('defined(%s) %s' % (line[:sp], line[sp:]))
+        elif line.startswith('#ifndef'):
+            ifstack = list(ifstack)
+            line = line[len('#ifndef'):].strip()
+            sp = line.find(' ')
+            if sp == -1:
+              ifstack.append('!defined(%s)' % line)
+            else:
+              ifstack.append('!defined(%s) %s' % (line[:sp], line[sp:]))
+        elif line.startswith('#else'):
+            ifstack = list(ifstack)
+            print(ifstack)
+            ifstack[-1] = '!' + ifstack[-1]
+        elif line.startswith('#elif '):
+            ifstack = list(ifstack)
+            ifstack[-1] = line[len('#elif '):]
         elif line.startswith('#endif'):
             ifstack = ifstack[:-1]
         line_ifstack.append(ifstack)
@@ -225,10 +249,10 @@ def fix(filename):
     for include in includes:
       if include.ifstack != ifstack:
         for cond in ifstack:
-          out.append('#endif')
+          out.append('#endif  // %s' % cond)
         out.append('')
         for cond in include.ifstack:
-          out.append(cond)
+          out.append('#if %s' % cond)
         category = include.category
         ifstack = include.ifstack
       if include.category != category:

@@ -20,9 +20,11 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_WINSOCK_SOCKET
-
+#if defined(GRPC_WINSOCK_SOCKET)
 #include "src/core/lib/debug/trace.h"
+#endif
+
+#ifdef GRPC_WINSOCK_SOCKET
 
 grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
     false, "polling"); /* Disabled by default */

@@ -24,3 +24,5 @@
 char* grpc_gethostname();
 
 #endif /* GRPC_CORE_LIB_IOMGR_GETHOSTNAME_H */
+
+#include <grpc/support/port_platform.h>

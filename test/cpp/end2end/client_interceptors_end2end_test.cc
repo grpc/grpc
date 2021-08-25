@@ -16,6 +16,8 @@
  *
  */
 
+#include <gtest/gtest.h>
+
 #include <memory>
 #include <vector>
 
@@ -42,12 +44,14 @@
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "test/cpp/util/string_ref_helper.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#if defined(GRPC_POSIX_SOCKET)
 #include <fcntl.h>
-#include "src/core/lib/iomgr/socket_utils_posix.h"
-#endif /* GRPC_POSIX_SOCKET */
 
-#include <gtest/gtest.h>
+#include "src/core/lib/iomgr/socket_utils_posix.h"
+#endif
+
+#ifdef GRPC_POSIX_SOCKET
+#endif /* GRPC_POSIX_SOCKET */
 
 namespace grpc {
 namespace testing {

@@ -21,21 +21,23 @@
 #include "src/core/lib/iomgr/port.h"
 
 #if GRPC_ARES == 1 && defined(GRPC_UV)
-
-#include "absl/strings/str_format.h"
-
 #include <ares.h>
 #include <uv.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#endif
+
+#if GRPC_ARES == 1 && defined(GRPC_UV)
 
 namespace grpc_core {
 

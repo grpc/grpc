@@ -18,9 +18,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-// This test won't work except with posix sockets enabled
-#ifdef GRPC_POSIX_SOCKET_TCP
-
+#if defined(GRPC_POSIX_SOCKET_TCP)
 #include <arpa/inet.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -44,6 +42,10 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#endif
+
+// This test won't work except with posix sockets enabled
+#ifdef GRPC_POSIX_SOCKET_TCP
 
 #define SSL_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"

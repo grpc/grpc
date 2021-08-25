@@ -23,10 +23,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_LINUX_ENV
-
-#include "src/core/lib/gpr/env.h"
-
+#if defined(GPR_LINUX_ENV)
 #include <dlfcn.h>
 #include <features.h>
 #include <stdlib.h>
@@ -35,8 +32,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#endif
+
+#ifdef GPR_LINUX_ENV
 
 char* gpr_getenv(const char* name) {
   char* result = nullptr;

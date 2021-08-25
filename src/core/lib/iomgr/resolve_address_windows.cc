@@ -20,12 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_WINSOCK_SOCKET
-
-#include "src/core/lib/iomgr/sockaddr.h"
-
-#include "src/core/lib/iomgr/resolve_address.h"
-
+#if defined(GRPC_WINSOCK_SOCKET)
 #include <inttypes.h>
 #include <string.h>
 #include <sys/types.h>
@@ -47,6 +42,11 @@
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
+#endif
+
+#ifdef GRPC_WINSOCK_SOCKET
 
 struct request {
   char* name;

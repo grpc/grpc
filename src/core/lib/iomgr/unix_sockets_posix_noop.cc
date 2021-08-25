@@ -20,11 +20,13 @@
 
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
-#ifndef GRPC_HAVE_UNIX_SOCKET
-
+#if !defined(GRPC_HAVE_UNIX_SOCKET)
 #include <string>
 
 #include <grpc/support/log.h>
+#endif
+
+#ifndef GRPC_HAVE_UNIX_SOCKET
 
 void grpc_create_socketpair_if_unix(int /* sv */[2]) {
   // TODO: Either implement this for the non-Unix socket case or make

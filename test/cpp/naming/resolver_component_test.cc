@@ -62,16 +62,22 @@
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 
+#if !defined(GPR_WINDOWS)
+#include "src/core/lib/iomgr/sockaddr_posix.h"
+#endif  // !defined(GPR_WINDOWS)
+
+#if defined(GPR_WINDOWS)
+#include "src/core/lib/iomgr/sockaddr_windows.h"
+#include "src/core/lib/iomgr/socket_windows.h"
+#include "src/core/lib/iomgr/tcp_windows.h"
+#endif
+
 // TODO(unknown): pull in different headers when enabling this
 // test on windows. Also set BAD_SOCKET_RETURN_VAL
 // to INVALID_SOCKET on windows.
 #ifdef GPR_WINDOWS
-#include "src/core/lib/iomgr/sockaddr_windows.h"
-#include "src/core/lib/iomgr/socket_windows.h"
-#include "src/core/lib/iomgr/tcp_windows.h"
 #define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
 #else
-#include "src/core/lib/iomgr/sockaddr_posix.h"
 #define BAD_SOCKET_RETURN_VAL (-1)
 #endif
 

@@ -20,12 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET_TCP
-
-#include "src/core/lib/iomgr/endpoint_pair.h"
-#include "src/core/lib/iomgr/socket_utils_posix.h"
-#include "src/core/lib/iomgr/unix_sockets_posix.h"
-
+#if defined(GRPC_POSIX_SOCKET_TCP)
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -38,8 +33,15 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
+#include "src/core/lib/iomgr/unix_sockets_posix.h"
+#endif
+
+#ifdef GRPC_POSIX_SOCKET_TCP
 
 static void create_sockets(int sv[2]) {
   int flags;

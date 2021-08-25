@@ -152,3 +152,5 @@ typedef enum {
 #endif
 
 #endif /* GRPC_IMPL_CODEGEN_STATUS_H */
+
+#include <grpc/impl/codegen/port_platform.h>

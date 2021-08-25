@@ -20,13 +20,15 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_UV
-
+#if defined(GRPC_UV)
 #include <stdlib.h>
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/endpoint_pair.h"
+#endif
+
+#ifdef GRPC_UV
 
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
     const char* /* name */, grpc_channel_args* /* args */) {

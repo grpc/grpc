@@ -22,9 +22,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-/* This polling engine is only relevant on linux kernels supporting epoll() */
-#ifdef GRPC_LINUX_EPOLL_CREATE1
-
+#if defined(GRPC_LINUX_EPOLL_CREATE1)
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 
 #include <assert.h>
@@ -61,6 +59,10 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
+#endif
+
+/* This polling engine is only relevant on linux kernels supporting epoll() */
+#ifdef GRPC_LINUX_EPOLL_CREATE1
 
 // debug aid: create workers on the heap (allows asan to spot
 // use-after-destruction)
@@ -1592,7 +1594,6 @@ const grpc_event_engine_vtable* grpc_init_epollex_linux(
 
 #else /* defined(GRPC_LINUX_EPOLL_CREATE1) */
 #if defined(GRPC_POSIX_SOCKET_EV_EPOLLEX)
-#include "src/core/lib/iomgr/ev_epollex_linux.h"
 /* If GRPC_LINUX_EPOLL_CREATE1 is not defined, it means
    epoll_create1 is not available. Return NULL */
 const grpc_event_engine_vtable* grpc_init_epollex_linux(

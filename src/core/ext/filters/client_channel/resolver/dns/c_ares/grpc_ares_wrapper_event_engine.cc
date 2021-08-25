@@ -17,8 +17,10 @@
 #include "src/core/lib/iomgr/port.h"
 
 #if GRPC_ARES == 1 && defined(GRPC_USE_EVENT_ENGINE)
-
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#endif
+
+#if GRPC_ARES == 1 && defined(GRPC_USE_EVENT_ENGINE)
 
 bool grpc_ares_query_ipv6() {
   /* The libuv grpc code currently does not have the code to probe for this,

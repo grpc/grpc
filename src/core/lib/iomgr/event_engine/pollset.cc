@@ -14,13 +14,17 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_USE_EVENT_ENGINE
+#if defined(GRPC_USE_EVENT_ENGINE)
+#include "src/core/lib/iomgr/event_engine/pollset.h"
+
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/iomgr/event_engine/pollset.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#endif
+
+#ifdef GRPC_USE_EVENT_ENGINE
 
 namespace {
 

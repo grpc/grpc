@@ -29,10 +29,6 @@
 #include <poll.h>
 #include <stdio.h>
 #include <string.h>
-
-#ifdef __linux__
-#include <sys/epoll.h>
-#endif
 #include <sys/socket.h>
 
 #include <grpc/support/alloc.h>
@@ -45,6 +41,13 @@
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/histogram.h"
+
+#if defined(__linux__)
+#include <sys/epoll.h>
+#endif
+
+#ifdef __linux__
+#endif
 
 typedef struct fd_pair {
   int read_fd;

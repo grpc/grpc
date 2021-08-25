@@ -21,12 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_APPLE_EV
-
+#if defined(GRPC_APPLE_EV)
 #include <CoreFoundation/CoreFoundation.h>
 
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#endif
+
+#ifdef GRPC_APPLE_EV
 
 void grpc_apple_register_read_stream(CFReadStreamRef read_stream,
                                      dispatch_queue_t dispatch_queue);

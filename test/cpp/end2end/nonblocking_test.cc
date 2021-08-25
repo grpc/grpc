@@ -16,6 +16,8 @@
  *
  */
 
+#include <gtest/gtest.h>
+
 #include <memory>
 
 #include "absl/memory/memory.h"
@@ -33,11 +35,12 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#if defined(GRPC_POSIX_SOCKET)
 #include "src/core/lib/iomgr/ev_posix.h"
-#endif  // GRPC_POSIX_SOCKET
+#endif
 
-#include <gtest/gtest.h>
+#ifdef GRPC_POSIX_SOCKET
+#endif  // GRPC_POSIX_SOCKET
 
 #ifdef GRPC_POSIX_SOCKET
 // Thread-local variable to so that only polls from this test assert

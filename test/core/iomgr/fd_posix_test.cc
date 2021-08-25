@@ -18,11 +18,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-// This test won't work except with posix sockets enabled
-#ifdef GRPC_POSIX_SOCKET_EV
-
-#include "src/core/lib/iomgr/ev_posix.h"
-
+#if defined(GRPC_POSIX_SOCKET_EV)
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -45,6 +41,10 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/util/test_config.h"
+#endif
+
+// This test won't work except with posix sockets enabled
+#ifdef GRPC_POSIX_SOCKET_EV
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;

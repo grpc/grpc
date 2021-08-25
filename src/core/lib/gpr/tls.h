@@ -23,6 +23,12 @@
 
 #include <type_traits>
 
+#if defined(GPR_PTHREAD_TLS)
+#include <pthread.h>
+
+#include <grpc/support/log.h> /* for GPR_ASSERT */
+#endif
+
 /** Thread local storage.
 
    Usage is the same as C++ thread_local. Declaring a thread local:
@@ -52,9 +58,6 @@ class TlsTypeConstrainer {
 }  // namespace grpc_core
 
 #if defined(GPR_PTHREAD_TLS)
-
-#include <grpc/support/log.h> /* for GPR_ASSERT */
-#include <pthread.h>
 
 namespace grpc_core {
 

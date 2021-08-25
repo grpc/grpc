@@ -39,16 +39,22 @@
 #include "src/core/lib/surface/init.h"
 #include "test/core/util/stack_tracer.h"
 
+#if GPR_GETPID_IN_PROCESS_H
+#include <process.h>
+#endif  // GPR_GETPID_IN_PROCESS_H
+
+#if GPR_GETPID_IN_UNISTD_H
+#include <unistd.h>
+#endif
+
 int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;
 
 #if GPR_GETPID_IN_UNISTD_H
-#include <unistd.h>
 static unsigned seed(void) { return static_cast<unsigned>(getpid()); }
 #endif
 
 #if GPR_GETPID_IN_PROCESS_H
-#include <process.h>
 static unsigned seed(void) { return (unsigned)_getpid(); }
 #endif
 

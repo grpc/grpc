@@ -21,11 +21,10 @@
 
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
-
-#define XXH_INLINE_ALL
 #include "xxhash.h"
 
 #include <grpc/support/alloc.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
@@ -39,6 +38,8 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/static_metadata.h"
+
+#define XXH_INLINE_ALL
 
 namespace grpc_core {
 

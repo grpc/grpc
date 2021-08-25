@@ -21,12 +21,14 @@
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_HOST_NAME_MAX
-
+#if defined(GRPC_POSIX_HOST_NAME_MAX)
 #include <limits.h>
 #include <unistd.h>
 
 #include <grpc/support/alloc.h>
+#endif
+
+#ifdef GRPC_POSIX_HOST_NAME_MAX
 
 char* grpc_gethostname() {
   char* hostname = static_cast<char*>(gpr_malloc(HOST_NAME_MAX));

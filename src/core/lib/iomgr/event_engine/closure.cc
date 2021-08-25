@@ -14,12 +14,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_USE_EVENT_ENGINE
+#if defined(GRPC_USE_EVENT_ENGINE)
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/event_engine/pollset.h"
 #include "src/core/lib/transport/error_utils.h"
+#endif
+
+#ifdef GRPC_USE_EVENT_ENGINE
 
 namespace grpc_event_engine {
 namespace experimental {

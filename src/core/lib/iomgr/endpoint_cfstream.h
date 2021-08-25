@@ -31,13 +31,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_CFSTREAM
-
-#import <CoreFoundation/CoreFoundation.h>
-
+#if defined(GRPC_CFSTREAM)
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#endif
+
+#ifdef GRPC_CFSTREAM
+
+#import <CoreFoundation/CoreFoundation.h>
 
 grpc_endpoint* grpc_cfstream_endpoint_create(
     CFReadStreamRef read_stream, CFWriteStreamRef write_stream,

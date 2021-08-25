@@ -23,9 +23,11 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_HAVE_ARPA_NAMESER
-
+#if defined(GRPC_HAVE_ARPA_NAMESER)
 #include <arpa/nameser.h>
+#endif
+
+#ifdef GRPC_HAVE_ARPA_NAMESER
 
 #else /* GRPC_HAVE_ARPA_NAMESER */
 

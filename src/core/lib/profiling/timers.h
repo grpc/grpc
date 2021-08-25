@@ -92,3 +92,5 @@ class ProfileScope {
 #endif /* at least one profiler requested. */
 
 #endif /* GRPC_CORE_LIB_PROFILING_TIMERS_H */
+
+#include <grpc/support/port_platform.h>

@@ -20,20 +20,22 @@
 
 #include "src/core/lib/profiling/timers.h"
 
-#ifdef GRPC_BASIC_PROFILER
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
+#if defined(GRPC_BASIC_PROFILER)
 #include <inttypes.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/global_config.h"
-#include "src/core/lib/profiling/timers.h"
+#endif
+
+#ifdef GRPC_BASIC_PROFILER
 
 typedef enum { BEGIN = '{', END = '}', MARK = '.' } marker_type;
 

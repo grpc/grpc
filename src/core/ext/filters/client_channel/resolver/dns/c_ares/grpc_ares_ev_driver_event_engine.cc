@@ -17,9 +17,11 @@
 #include "src/core/lib/iomgr/port.h"
 
 #if GRPC_ARES == 1 && defined(GRPC_USE_EVENT_ENGINE)
-
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#endif
+
+#if GRPC_ARES == 1 && defined(GRPC_USE_EVENT_ENGINE)
 
 namespace grpc_core {
 

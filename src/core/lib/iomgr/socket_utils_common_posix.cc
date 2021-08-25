@@ -20,21 +20,12 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
-
-#include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/iomgr/socket_utils_posix.h"
-
+#if defined(GRPC_POSIX_SOCKET_UTILS_COMMON)
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <netinet/in.h>
-#ifdef GRPC_LINUX_TCP_H
-#include <linux/tcp.h>
-#else
-#include <netinet/tcp.h>
-#endif
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -51,6 +42,26 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
+#endif  // defined(GRPC_POSIX_SOCKET_UTILS_COMMON)
+
+#if defined(GRPC_POSIX_SOCKET_UTILS_COMMON)
+#if !defined(GRPC_LINUX_TCP_H)
+#include <netinet/tcp.h>
+#endif  // defined(GRPC_POSIX_SOCKET_UTILS_COMMON)
+#endif  // !defined(GRPC_LINUX_TCP_H)
+
+#if defined(GRPC_POSIX_SOCKET_UTILS_COMMON)
+#if defined(GRPC_LINUX_TCP_H)
+#include <linux/tcp.h>
+#endif
+#endif
+
+#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
+#ifdef GRPC_LINUX_TCP_H
+#else
+#endif
 
 /* set a socket to use zerocopy */
 grpc_error_handle grpc_set_socket_zerocopy(int fd) {

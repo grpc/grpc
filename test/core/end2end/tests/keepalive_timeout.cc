@@ -32,8 +32,11 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#if defined(GRPC_POSIX_SOCKET)
 #include "src/core/lib/iomgr/ev_posix.h"
+#endif
+
+#ifdef GRPC_POSIX_SOCKET
 #endif  // GRPC_POSIX_SOCKET
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }

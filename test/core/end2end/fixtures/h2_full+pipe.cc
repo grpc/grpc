@@ -18,11 +18,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-// This test requires posix wakeup fds
-#ifdef GRPC_POSIX_WAKEUP_FD
-
-#include "test/core/end2end/end2end_tests.h"
-
+#if defined(GRPC_POSIX_WAKEUP_FD)
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -37,8 +33,13 @@
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#endif
+
+// This test requires posix wakeup fds
+#ifdef GRPC_POSIX_WAKEUP_FD
 
 struct fullstack_fixture_data {
   std::string localaddr;

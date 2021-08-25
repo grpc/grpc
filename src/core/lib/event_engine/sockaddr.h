@@ -16,10 +16,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_USE_EVENT_ENGINE
+#if defined(GRPC_USE_EVENT_ENGINE)
 #include <grpc/event_engine/port.h>
 
 #include "src/core/lib/iomgr/port.h"
+#endif
+
+#ifdef GRPC_USE_EVENT_ENGINE
 
 typedef struct sockaddr grpc_sockaddr;
 typedef struct sockaddr_in grpc_sockaddr_in;

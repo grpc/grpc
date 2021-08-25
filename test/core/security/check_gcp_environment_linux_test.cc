@@ -21,7 +21,6 @@
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 
 #if GPR_LINUX
-
 #include <stdio.h>
 #include <string.h>
 
@@ -29,6 +28,9 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/tmpfile.h"
+#endif
+
+#if GPR_LINUX
 
 static bool check_bios_data_linux_test(const char* data) {
   /* Create a file with contents data. */

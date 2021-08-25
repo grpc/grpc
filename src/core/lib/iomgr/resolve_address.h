@@ -23,21 +23,29 @@
 
 #include <stddef.h>
 
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/port.h"
-
-#ifdef GRPC_UV
-#include <uv.h>
-#endif
-
-#ifdef GRPC_WINSOCK_SOCKET
-#include <ws2tcpip.h>
-#endif
 
 #if defined(GRPC_POSIX_SOCKET) || defined(GRPC_CFSTREAM)
 #include <sys/socket.h>
+#endif  // defined(GRPC_POSIX_SOCKET) || defined(GRPC_CFSTREAM)
+
+#if defined(GRPC_UV)
+#include <uv.h>
+#endif  // defined(GRPC_UV)
+
+#if defined(GRPC_WINSOCK_SOCKET)
+#include <ws2tcpip.h>
 #endif
 
-#include "src/core/lib/iomgr/pollset_set.h"
+#ifdef GRPC_UV
+#endif
+
+#ifdef GRPC_WINSOCK_SOCKET
+#endif
+
+#if defined(GRPC_POSIX_SOCKET) || defined(GRPC_CFSTREAM)
+#endif
 
 #define GRPC_MAX_SOCKADDR_SIZE 128
 

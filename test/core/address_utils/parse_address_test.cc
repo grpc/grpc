@@ -29,8 +29,11 @@
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "test/core/util/test_config.h"
 
-#ifdef GRPC_HAVE_UNIX_SOCKET
+#if defined(GRPC_HAVE_UNIX_SOCKET)
 #include <sys/un.h>
+#endif
+
+#ifdef GRPC_HAVE_UNIX_SOCKET
 
 static void test_grpc_parse_unix(const char* uri_text, const char* pathname) {
   grpc_core::ExecCtx exec_ctx;

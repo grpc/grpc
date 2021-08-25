@@ -25,10 +25,12 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_WINSOCK_SOCKET
-
+#if defined(GRPC_WINSOCK_SOCKET)
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_windows.h"
+#endif
+
+#ifdef GRPC_WINSOCK_SOCKET
 
 typedef enum {
   GRPC_IOCP_WORK_WORK,

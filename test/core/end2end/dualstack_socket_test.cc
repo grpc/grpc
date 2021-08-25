@@ -18,9 +18,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-// This test won't work except with posix sockets enabled
-#ifdef GRPC_POSIX_SOCKET_EV
-
+#if defined(GRPC_POSIX_SOCKET_EV)
 #include <string.h>
 
 #include <vector>
@@ -45,6 +43,10 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#endif
+
+// This test won't work except with posix sockets enabled
+#ifdef GRPC_POSIX_SOCKET_EV
 
 /* This test exercises IPv4, IPv6, and dualstack sockets in various ways. */
 

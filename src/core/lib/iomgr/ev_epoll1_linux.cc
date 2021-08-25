@@ -22,9 +22,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-/* This polling engine is only relevant on linux kernels supporting epoll
-   epoll_create() or epoll_create1() */
-#ifdef GRPC_LINUX_EPOLL
+#if defined(GRPC_LINUX_EPOLL)
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 
 #include <assert.h>
@@ -59,6 +57,11 @@
 #include "src/core/lib/iomgr/lockfree_event.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
+#endif
+
+/* This polling engine is only relevant on linux kernels supporting epoll
+   epoll_create() or epoll_create1() */
+#ifdef GRPC_LINUX_EPOLL
 
 static grpc_wakeup_fd global_wakeup_fd;
 
@@ -1305,7 +1308,6 @@ const grpc_event_engine_vtable* grpc_init_epoll1_linux(
 
 #else /* defined(GRPC_LINUX_EPOLL) */
 #if defined(GRPC_POSIX_SOCKET_EV_EPOLL1)
-#include "src/core/lib/iomgr/ev_epoll1_linux.h"
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
 const grpc_event_engine_vtable* grpc_init_epoll1_linux(

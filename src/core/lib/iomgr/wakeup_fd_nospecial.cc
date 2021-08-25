@@ -25,10 +25,13 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
-
+#if defined(GRPC_POSIX_NO_SPECIAL_WAKEUP_FD)
 #include <stddef.h>
+
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#endif
+
+#ifdef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
 
 static int check_availability_invalid(void) { return 0; }
 

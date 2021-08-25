@@ -20,17 +20,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WINDOWS
-
-/* Some platforms (namely msys) need wchar to be included BEFORE
-   anything else, especially strsafe.h. */
-#include <wchar.h>
-
+#if defined(GPR_WINDOWS)
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <strsafe.h>
+#include <wchar.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
@@ -38,6 +34,12 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/string_windows.h"
+#endif
+
+#ifdef GPR_WINDOWS
+
+/* Some platforms (namely msys) need wchar to be included BEFORE
+   anything else, especially strsafe.h. */
 
 #if defined UNICODE || defined _UNICODE
 LPTSTR

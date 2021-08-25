@@ -29,3 +29,5 @@ typedef enum {
 } grpc_workaround_list;
 
 #endif /* GRPC_SUPPORT_WORKAROUND_LIST_H */
+
+#include <grpc/support/port_platform.h>

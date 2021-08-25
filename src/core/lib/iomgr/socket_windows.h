@@ -23,7 +23,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_WINSOCK_SOCKET
+#if defined(GRPC_WINSOCK_SOCKET)
 #include <winsock2.h>
 
 #include <grpc/support/atm.h>
@@ -31,6 +31,9 @@
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#endif
+
+#ifdef GRPC_WINSOCK_SOCKET
 
 #ifndef WSA_FLAG_NO_HANDLE_INHERIT
 #define WSA_FLAG_NO_HANDLE_INHERIT 0x80

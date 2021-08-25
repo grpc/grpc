@@ -23,13 +23,14 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_WINSOCK_SOCKET
-
-#include <winsock2.h>
-#include <ws2tcpip.h>
-
+#if defined(GRPC_WINSOCK_SOCKET)
 // must be included after the above
 #include <mswsock.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif
+
+#ifdef GRPC_WINSOCK_SOCKET
 
 typedef struct sockaddr grpc_sockaddr;
 typedef struct sockaddr_in grpc_sockaddr_in;

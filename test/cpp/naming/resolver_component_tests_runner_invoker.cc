@@ -31,15 +31,18 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#ifdef __FreeBSD__
-#include <sys/wait.h>
-#endif
-
 #include "src/core/lib/gpr/env.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
+
+#if defined(__FreeBSD__)
+#include <sys/wait.h>
+#endif
+
+#ifdef __FreeBSD__
+#endif
 
 ABSL_FLAG(
     bool, running_under_bazel, false,

@@ -19,7 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #if GRPC_ARES == 1
-
+#include <address_sorting/address_sorting.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
@@ -29,8 +29,6 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-
-#include <address_sorting/address_sorting.h>
 
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
@@ -50,6 +48,9 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
+#endif
+
+#if GRPC_ARES == 1
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6

@@ -51,3 +51,5 @@ class DebugLocation {
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_GPRPP_DEBUG_LOCATION_H */
+
+#include <grpc/support/port_platform.h>

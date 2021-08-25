@@ -18,14 +18,9 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-// This test won't work except with libuv
-#ifdef GRPC_UV
-
-#include <uv.h>
-
-#include "src/core/lib/iomgr/tcp_server.h"
-
+#if defined(GRPC_UV)
 #include <string.h>
+#include <uv.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -36,8 +31,13 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/tcp_server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#endif
+
+// This test won't work except with libuv
+#ifdef GRPC_UV
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", #x)
 

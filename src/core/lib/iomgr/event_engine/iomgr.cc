@@ -14,7 +14,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_USE_EVENT_ENGINE
+#if defined(GRPC_USE_EVENT_ENGINE)
 #include "src/core/lib/iomgr/event_engine/iomgr.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -27,6 +27,9 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/init.h"
+#endif
+
+#ifdef GRPC_USE_EVENT_ENGINE
 
 extern grpc_tcp_client_vtable grpc_event_engine_tcp_client_vtable;
 extern grpc_tcp_server_vtable grpc_event_engine_tcp_server_vtable;

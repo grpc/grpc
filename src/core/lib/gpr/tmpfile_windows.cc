@@ -18,8 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WINDOWS_TMPFILE
-
+#if defined(GPR_WINDOWS_TMPFILE)
 #include <io.h>
 #include <stdio.h>
 #include <string.h>
@@ -31,6 +30,9 @@
 
 #include "src/core/lib/gpr/string_windows.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#endif
+
+#ifdef GPR_WINDOWS_TMPFILE
 
 FILE* gpr_tmpfile(const char* prefix, char** tmp_filename_out) {
   FILE* result = NULL;

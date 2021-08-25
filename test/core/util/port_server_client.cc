@@ -20,7 +20,7 @@
 
 #include "test/core/util/test_config.h"
 
-#ifdef GRPC_TEST_PICK_PORT
+#if defined(GRPC_TEST_PICK_PORT)
 #include "test/core/util/port_server_client.h"
 
 #include <math.h>
@@ -34,6 +34,9 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/http/httpcli.h"
+#endif
+
+#ifdef GRPC_TEST_PICK_PORT
 
 typedef struct freereq {
   gpr_mu* mu = nullptr;

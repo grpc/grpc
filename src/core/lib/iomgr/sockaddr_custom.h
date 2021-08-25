@@ -25,9 +25,11 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_UV
-
+#if defined(GRPC_UV)
 #include <uv.h>
+#endif
+
+#ifdef GRPC_UV
 
 // TODO(kpayson)  It would be nice to abstract this so we don't
 // depend on anything uv specific

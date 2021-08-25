@@ -21,31 +21,6 @@
 #include "src/core/tsi/ssl_transport_security.h"
 
 #include <limits.h>
-#include <string.h>
-
-/* TODO(jboeuf): refactor inet_ntop into a portability header. */
-/* Note: for whomever reads this and tries to refactor this, this
-   can't be in grpc, it has to be in gpr. */
-#ifdef GPR_WINDOWS
-#include <ws2tcpip.h>
-#else
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#endif
-
-#include <string>
-
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/thd_id.h>
-
-#include "absl/strings/match.h"
-#include "absl/strings/string_view.h"
-
-extern "C" {
 #include <openssl/bio.h>
 #include <openssl/crypto.h> /* For OPENSSL_free */
 #include <openssl/engine.h>
@@ -54,12 +29,42 @@ extern "C" {
 #include <openssl/tls1.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
-}
+#include <string.h>
+
+#include <string>
+
+#include "absl/strings/match.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/thd_id.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_types.h"
 #include "src/core/tsi/transport_security.h"
+
+#if !defined(GPR_WINDOWS)
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#endif  // !defined(GPR_WINDOWS)
+
+#if defined(GPR_WINDOWS)
+#include <ws2tcpip.h>
+#endif
+
+/* TODO(jboeuf): refactor inet_ntop into a portability header. */
+/* Note: for whomever reads this and tries to refactor this, this
+   can't be in grpc, it has to be in gpr. */
+#ifdef GPR_WINDOWS
+#else
+#endif
+
+extern "C" {}
 
 /* --- Constants. ---*/
 

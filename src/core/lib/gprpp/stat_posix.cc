@@ -16,8 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_POSIX_STAT
-
+#if defined(GPR_POSIX_STAT)
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -26,6 +25,9 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/stat.h"
+#endif
+
+#ifdef GPR_POSIX_STAT
 
 namespace grpc_core {
 

@@ -18,11 +18,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_LINUX
-
+#if defined(GPR_LINUX)
 #include <cstdio>
 
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
+#endif
+
+#ifdef GPR_LINUX
 
 namespace grpc {
 namespace load_reporter {

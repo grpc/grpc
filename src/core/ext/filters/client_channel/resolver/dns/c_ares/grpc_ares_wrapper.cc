@@ -19,10 +19,10 @@
 #include <grpc/support/port_platform.h>
 
 #if GRPC_ARES == 1
-
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 
+#include <address_sorting/address_sorting.h>
+#include <ares.h>
 #include <string.h>
 #include <sys/types.h>
 
@@ -30,13 +30,11 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include <ares.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include <address_sorting/address_sorting.h>
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -46,8 +44,12 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/nameser.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/authority_override.h"
+#endif
+
+#if GRPC_ARES == 1
 
 using grpc_core::ServerAddress;
 using grpc_core::ServerAddressList;

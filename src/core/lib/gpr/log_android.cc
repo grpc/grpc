@@ -18,16 +18,19 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_ANDROID
-
+#if defined(GPR_ANDROID)
 #include <android/log.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/gpr/log_internal.h"
+#endif
+
+#ifdef GPR_ANDROID
 
 static android_LogPriority severity_to_log_priority(gpr_log_severity severity) {
   switch (severity) {

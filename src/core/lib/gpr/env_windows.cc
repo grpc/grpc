@@ -18,8 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WINDOWS_ENV
-
+#if defined(GPR_WINDOWS_ENV)
 #include <windows.h>
 
 #include <grpc/support/alloc.h>
@@ -29,6 +28,9 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/string_windows.h"
+#endif
+
+#ifdef GPR_WINDOWS_ENV
 
 char* gpr_getenv(const char* name) {
   char* result = NULL;

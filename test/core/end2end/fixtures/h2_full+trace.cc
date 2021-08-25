@@ -18,13 +18,6 @@
 
 #include <string.h>
 
-#include "src/core/lib/iomgr/port.h"
-#include "test/core/end2end/end2end_tests.h"
-
-#ifdef GRPC_POSIX_SOCKET
-#include <unistd.h>
-#endif
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -35,10 +28,19 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+#if defined(GRPC_POSIX_SOCKET)
+#include <unistd.h>
+#endif
+
+#ifdef GRPC_POSIX_SOCKET
+#endif
 
 struct fullstack_fixture_data {
   std::string localaddr;

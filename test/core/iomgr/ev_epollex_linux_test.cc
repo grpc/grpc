@@ -18,15 +18,19 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-/* This test only relevant on linux systems where epoll() is available */
 #if defined(GRPC_LINUX_EPOLL_CREATE1) && defined(GRPC_LINUX_EVENTFD)
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 
-#include <grpc/grpc.h>
 #include <string.h>
 #include <sys/eventfd.h>
 
+#include <grpc/grpc.h>
+
 #include "test/core/util/test_config.h"
+#endif
+
+/* This test only relevant on linux systems where epoll() is available */
+#if defined(GRPC_LINUX_EPOLL_CREATE1) && defined(GRPC_LINUX_EVENTFD)
 
 static void pollset_destroy(void* ps, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(ps));

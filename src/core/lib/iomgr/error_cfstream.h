@@ -29,3 +29,5 @@ grpc_error_handle grpc_error_create_from_cferror(const char* file, int line,
 #endif /* GRPC_CFSTREAM */
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_CFSTREAM_H */
+
+#include <grpc/support/port_platform.h>

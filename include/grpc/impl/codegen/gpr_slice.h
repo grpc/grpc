@@ -67,3 +67,5 @@
 #endif /* GRPC_ALLOW_GPR_SLICE_FUNCTIONS */
 
 #endif /* GRPC_IMPL_CODEGEN_GPR_SLICE_H */
+
+#include <grpc/impl/codegen/port_platform.h>

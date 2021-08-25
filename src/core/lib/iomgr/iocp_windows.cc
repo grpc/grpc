@@ -20,9 +20,11 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_WINSOCK_SOCKET
+#if defined(GRPC_WINSOCK_SOCKET)
+#include "src/core/lib/iomgr/iocp_windows.h"
 
 #include <winsock2.h>
+
 #include <limits>
 
 #include <grpc/support/alloc.h>
@@ -31,10 +33,12 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/timer.h"
+#endif
+
+#ifdef GRPC_WINSOCK_SOCKET
 
 static ULONG g_iocp_kick_token;
 static OVERLAPPED g_iocp_custom_overlap;

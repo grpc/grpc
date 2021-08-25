@@ -20,22 +20,24 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_POSIX_SYNC
-
-#include "src/core/lib/gprpp/thd.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/thd_id.h>
+#if defined(GPR_POSIX_SYNC)
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/thd_id.h>
+
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/thd.h"
+#endif
+
+#ifdef GPR_POSIX_SYNC
 
 namespace grpc_core {
 namespace {

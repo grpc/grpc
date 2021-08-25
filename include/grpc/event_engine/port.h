@@ -16,24 +16,60 @@
 
 #include <grpc/support/port_platform.h>
 
+#if defined(GPR_ANDROID) || defined(GPR_LINUX) || defined(GPR_APPLE) || \
+    #include <arpa / inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#endif  // defined(GPR_ANDROID) || defined(GPR_LINUX) || defined(GPR_APPLE) ||   \
+
+#if defined(GPR_WINDOWS)
+// must be included after the above
+#include <mswsock.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif  // defined(GPR_WINDOWS)
+
+#if defined(GRPC_UV)
+#include <uv.h>
+#endif
+
+#if defined(GPR_ANDROID) || defined(GPR_LINUX) || defined(GPR_APPLE) || \
+    #endif  // defined(GPR_ANDROID) || defined(GPR_LINUX) || defined(GPR_APPLE) ||   \
+
+#if defined(GPR_WINDOWS)
+#endif  // defined(GPR_WINDOWS)
+
+#if defined(GRPC_UV)
+#endif
+
+#if defined(GPR_ANDROID) || defined(GPR_LINUX) || defined(GPR_APPLE) || \
+    #endif  // defined(GPR_ANDROID) || defined(GPR_LINUX) || defined(GPR_APPLE) ||   \
+
+#if defined(GPR_WINDOWS)
+#endif  // defined(GPR_WINDOWS)
+
+#if defined(GRPC_UV)
+#endif
+
+#if defined(GPR_ANDROID) || defined(GPR_LINUX) || defined(GPR_APPLE) || \
+    #endif  // defined(GPR_ANDROID) || defined(GPR_LINUX) || defined(GPR_APPLE) ||   \
+
+#if defined(GPR_WINDOWS)
+#endif  // defined(GPR_WINDOWS)
+
+#if defined(GRPC_UV)
+#endif
+
 // Platform-specific sockaddr includes
 #ifdef GRPC_UV
-#include <uv.h>
 #elif defined(GPR_ANDROID) || defined(GPR_LINUX) || defined(GPR_APPLE) ||   \
     defined(GPR_FREEBSD) || defined(GPR_OPENBSD) || defined(GPR_SOLARIS) || \
     defined(GPR_AIX) || defined(GPR_NACL) || defined(GPR_FUCHSIA) ||        \
     defined(GRPC_POSIX_SOCKET)
 #define GRPC_EVENT_ENGINE_POSIX
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <unistd.h>
 #elif defined(GPR_WINDOWS)
-#include <winsock2.h>
-#include <ws2tcpip.h>
-// must be included after the above
-#include <mswsock.h>
 #else
 #error UNKNOWN PLATFORM
 #endif

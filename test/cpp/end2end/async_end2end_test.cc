@@ -16,6 +16,8 @@
  *
  */
 
+#include <gtest/gtest.h>
+
 #include <cinttypes>
 #include <memory>
 #include <thread>
@@ -45,11 +47,12 @@
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-#ifdef GRPC_POSIX_SOCKET_EV
+#if defined(GRPC_POSIX_SOCKET_EV)
 #include "src/core/lib/iomgr/ev_posix.h"
-#endif  // GRPC_POSIX_SOCKET_EV
+#endif
 
-#include <gtest/gtest.h>
+#ifdef GRPC_POSIX_SOCKET_EV
+#endif  // GRPC_POSIX_SOCKET_EV
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;

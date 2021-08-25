@@ -19,14 +19,18 @@
 
 #include "absl/base/attributes.h"
 
-#if defined(ANDROID) || defined(__ANDROID__)
+#if !defined(ANDROID) || defined(__ANDROID__)
+#include <cstdint>
+#endif  // !defined(ANDROID) || defined(__ANDROID__)
 
+#if defined(ANDROID) || defined(__ANDROID__)
 #include <android/binder_auto_utils.h>
 #include <android/binder_ibinder.h>
+#endif
+
+#if defined(ANDROID) || defined(__ANDROID__)
 
 #else
-
-#include <cstdint>
 
 using transaction_code_t = uint32_t;
 

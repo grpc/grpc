@@ -21,14 +21,28 @@
 
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
-#ifndef GRPC_CUSTOM_DYNAMICMESSAGEFACTORY
+#if !defined(GRPC_CUSTOM_DESCRIPTORPOOLDATABASE)
+#include <google/protobuf/descriptor.h>
+#endif  // !defined(GRPC_CUSTOM_DESCRIPTORPOOLDATABASE)
+
+#if !defined(GRPC_CUSTOM_DISKSOURCETREE)
+#include <google/protobuf/compiler/importer.h>
+#endif  // !defined(GRPC_CUSTOM_DISKSOURCETREE)
+
+#if !defined(GRPC_CUSTOM_DYNAMICMESSAGEFACTORY)
 #include <google/protobuf/dynamic_message.h>
+#endif  // !defined(GRPC_CUSTOM_DYNAMICMESSAGEFACTORY)
+
+#if !defined(GRPC_CUSTOM_TEXTFORMAT)
+#include <google/protobuf/text_format.h>
+#endif
+
+#ifndef GRPC_CUSTOM_DYNAMICMESSAGEFACTORY
 #define GRPC_CUSTOM_DYNAMICMESSAGEFACTORY \
   ::google::protobuf::DynamicMessageFactory
 #endif
 
 #ifndef GRPC_CUSTOM_DESCRIPTORPOOLDATABASE
-#include <google/protobuf/descriptor.h>
 #define GRPC_CUSTOM_DESCRIPTORPOOLDATABASE \
   ::google::protobuf::DescriptorPoolDatabase
 #define GRPC_CUSTOM_MERGEDDESCRIPTORDATABASE \
@@ -36,12 +50,10 @@
 #endif
 
 #ifndef GRPC_CUSTOM_TEXTFORMAT
-#include <google/protobuf/text_format.h>
 #define GRPC_CUSTOM_TEXTFORMAT ::google::protobuf::TextFormat
 #endif
 
 #ifndef GRPC_CUSTOM_DISKSOURCETREE
-#include <google/protobuf/compiler/importer.h>
 #define GRPC_CUSTOM_DISKSOURCETREE ::google::protobuf::compiler::DiskSourceTree
 #define GRPC_CUSTOM_IMPORTER ::google::protobuf::compiler::Importer
 #define GRPC_CUSTOM_MULTIFILEERRORCOLLECTOR \

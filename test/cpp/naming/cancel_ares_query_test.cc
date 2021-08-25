@@ -48,12 +48,18 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/naming/dns_test_util.h"
 
-#ifdef GPR_WINDOWS
+#if !defined(GPR_WINDOWS)
+#include "src/core/lib/iomgr/sockaddr_posix.h"
+#endif  // !defined(GPR_WINDOWS)
+
+#if defined(GPR_WINDOWS)
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
+#endif
+
+#ifdef GPR_WINDOWS
 #define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
 #else
-#include "src/core/lib/iomgr/sockaddr_posix.h"
 #define BAD_SOCKET_RETURN_VAL (-1)
 #endif
 

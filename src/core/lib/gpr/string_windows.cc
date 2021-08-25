@@ -20,8 +20,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WINDOWS_STRING
-
+#if defined(GPR_WINDOWS_STRING)
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -30,6 +29,9 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
+#endif
+
+#ifdef GPR_WINDOWS_STRING
 
 int gpr_asprintf(char** strp, const char* format, ...) {
   va_list args;

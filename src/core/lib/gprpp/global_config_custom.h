@@ -27,3 +27,5 @@
 //   GPR_GLOBAL_CONFIG_DEFINE_STRING
 
 #endif /* GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_CUSTOM_H */
+
+#include <grpc/support/port_platform.h>

@@ -20,17 +20,33 @@
 
 #include "src/core/lib/gpr/time_precise.h"
 
-#ifdef GPR_POSIX_TIME
-
+#if defined(GPR_POSIX_TIME)
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-#ifdef __linux__
-#include <sys/syscall.h>
-#endif
+
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#endif  // defined(GPR_POSIX_TIME)
+
+#if defined(GPR_POSIX_TIME)
+#if !_POSIX_TIMERS > 0 || defined(__OpenBSD__)
+#include <mach/mach.h>
+#include <mach/mach_time.h>
+#include <sys/time.h>
+#endif  // defined(GPR_POSIX_TIME)
+#endif  // !_POSIX_TIMERS > 0 || defined(__OpenBSD__)
+
+#if defined(GPR_POSIX_TIME)
+#if defined(__linux__)
+#include <sys/syscall.h>
+#endif
+#endif
+
+#ifdef GPR_POSIX_TIME
+#ifdef __linux__
+#endif
 
 static struct timespec timespec_from_gpr(gpr_timespec gts) {
   struct timespec rv;
@@ -83,10 +99,6 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
 }
 #else
 /* For some reason Apple's OSes haven't implemented clock_gettime. */
-
-#include <mach/mach.h>
-#include <mach/mach_time.h>
-#include <sys/time.h>
 
 static double g_time_scale;
 static uint64_t g_time_start;

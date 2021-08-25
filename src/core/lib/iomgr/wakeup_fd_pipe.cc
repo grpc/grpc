@@ -20,10 +20,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_WAKEUP_FD
-
+#if defined(GRPC_POSIX_WAKEUP_FD)
 #include "src/core/lib/iomgr/wakeup_fd_pipe.h"
-#include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
 #include <errno.h>
 #include <string.h>
@@ -32,6 +30,10 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#endif
+
+#ifdef GRPC_POSIX_WAKEUP_FD
 
 static grpc_error_handle pipe_init(grpc_wakeup_fd* fd_info) {
   int pipefd[2];

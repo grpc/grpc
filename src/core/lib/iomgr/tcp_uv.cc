@@ -20,12 +20,12 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_UV
+#if defined(GRPC_UV)
 #include <limits.h>
 #include <string.h>
+#include <uv.h>
 
 #include <grpc/slice_buffer.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -38,8 +38,9 @@
 #include "src/core/lib/iomgr/tcp_custom.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#endif
 
-#include <uv.h>
+#ifdef GRPC_UV
 
 #define IGNORE_CONST(addr) ((grpc_sockaddr*)(uintptr_t)(addr))
 

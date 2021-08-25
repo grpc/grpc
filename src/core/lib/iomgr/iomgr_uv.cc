@@ -21,12 +21,14 @@
 #include "src/core/lib/iomgr/port.h"
 
 #if defined(GRPC_CUSTOM_SOCKET) && defined(GRPC_UV)
-
 #include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset_custom.h"
 #include "src/core/lib/iomgr/tcp_custom.h"
 #include "src/core/lib/iomgr/timer_custom.h"
+#endif
+
+#if defined(GRPC_CUSTOM_SOCKET) && defined(GRPC_UV)
 
 extern grpc_socket_vtable grpc_uv_socket_vtable;
 extern grpc_custom_resolver_vtable uv_resolver_vtable;

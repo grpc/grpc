@@ -14,7 +14,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_USE_EVENT_ENGINE
+#if defined(GRPC_USE_EVENT_ENGINE)
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -30,6 +30,9 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/surface/init.h"
 #include "src/core/lib/transport/error_utils.h"
+#endif
+
+#ifdef GRPC_USE_EVENT_ENGINE
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 

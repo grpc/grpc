@@ -20,8 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET_EV_POLL
-
+#if defined(GRPC_POSIX_SOCKET_EV_POLL)
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 
 #include <assert.h>
@@ -48,6 +47,9 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
+#endif
+
+#ifdef GRPC_POSIX_SOCKET_EV_POLL
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker*)1)
 

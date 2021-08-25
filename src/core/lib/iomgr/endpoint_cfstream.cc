@@ -20,11 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_CFSTREAM_ENDPOINT
-
-#import <CoreFoundation/CoreFoundation.h>
-#import "src/core/lib/iomgr/endpoint_cfstream.h"
-
+#if defined(GRPC_CFSTREAM_ENDPOINT)
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
@@ -38,6 +34,12 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#endif
+
+#ifdef GRPC_CFSTREAM_ENDPOINT
+
+#import <CoreFoundation/CoreFoundation.h>
+#import "src/core/lib/iomgr/endpoint_cfstream.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 

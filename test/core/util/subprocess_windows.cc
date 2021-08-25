@@ -18,17 +18,20 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WINDOWS_SUBPROCESS
-
+#if defined(GPR_WINDOWS_SUBPROCESS)
 #include <string.h>
 #include <tchar.h>
 #include <windows.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/string_windows.h"
 #include "test/core/util/subprocess.h"
+#endif
+
+#ifdef GPR_WINDOWS_SUBPROCESS
 
 struct gpr_subprocess {
   PROCESS_INFORMATION pi;

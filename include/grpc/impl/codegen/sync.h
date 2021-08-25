@@ -47,14 +47,62 @@ extern "C" {
 
 #include <grpc/impl/codegen/sync_generic.h>
 
+#if defined(GPR_ABSEIL_SYNC)
+#include <grpc/impl/codegen/sync_abseil.h>
+#endif  // defined(GPR_ABSEIL_SYNC)
+
 #if defined(GPR_CUSTOM_SYNC)
 #include <grpc/impl/codegen/sync_custom.h>
-#elif defined(GPR_ABSEIL_SYNC)
-#include <grpc/impl/codegen/sync_abseil.h>
-#elif defined(GPR_POSIX_SYNC)
+#endif  // defined(GPR_CUSTOM_SYNC)
+
+#if defined(GPR_POSIX_SYNC)
 #include <grpc/impl/codegen/sync_posix.h>
-#elif defined(GPR_WINDOWS)
+#endif  // defined(GPR_POSIX_SYNC)
+
+#if defined(GPR_WINDOWS)
 #include <grpc/impl/codegen/sync_windows.h>
+#endif
+
+#if defined(GPR_ABSEIL_SYNC)
+#endif  // defined(GPR_ABSEIL_SYNC)
+
+#if defined(GPR_CUSTOM_SYNC)
+#endif  // defined(GPR_CUSTOM_SYNC)
+
+#if defined(GPR_POSIX_SYNC)
+#endif  // defined(GPR_POSIX_SYNC)
+
+#if defined(GPR_WINDOWS)
+#endif
+
+#if defined(GPR_ABSEIL_SYNC)
+#endif  // defined(GPR_ABSEIL_SYNC)
+
+#if defined(GPR_CUSTOM_SYNC)
+#endif  // defined(GPR_CUSTOM_SYNC)
+
+#if defined(GPR_POSIX_SYNC)
+#endif  // defined(GPR_POSIX_SYNC)
+
+#if defined(GPR_WINDOWS)
+#endif
+
+#if defined(GPR_ABSEIL_SYNC)
+#endif  // defined(GPR_ABSEIL_SYNC)
+
+#if defined(GPR_CUSTOM_SYNC)
+#endif  // defined(GPR_CUSTOM_SYNC)
+
+#if defined(GPR_POSIX_SYNC)
+#endif  // defined(GPR_POSIX_SYNC)
+
+#if defined(GPR_WINDOWS)
+#endif
+
+#if defined(GPR_CUSTOM_SYNC)
+#elif defined(GPR_ABSEIL_SYNC)
+#elif defined(GPR_POSIX_SYNC)
+#elif defined(GPR_WINDOWS)
 #else
 #error Unable to determine platform for sync
 #endif

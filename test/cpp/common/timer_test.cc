@@ -29,8 +29,11 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/util/test_config.h"
 
-#ifdef GRPC_POSIX_SOCKET_EV
+#if defined(GRPC_POSIX_SOCKET_EV)
 #include "src/core/lib/iomgr/ev_posix.h"
+#endif
+
+#ifdef GRPC_POSIX_SOCKET_EV
 #endif
 
 // MAYBE_SKIP_TEST is a macro to determine if this particular test configuration

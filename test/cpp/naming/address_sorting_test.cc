@@ -49,10 +49,13 @@
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 
-#ifndef GPR_WINDOWS
+#if !defined(GPR_WINDOWS)
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#endif
+
+#ifndef GPR_WINDOWS
 #endif
 
 namespace {

@@ -26,3 +26,5 @@ void RegisterHttpProxyMapper();
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_PROXY_H */
+
+#include <grpc/support/port_platform.h>

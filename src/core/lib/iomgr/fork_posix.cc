@@ -20,12 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_FORK
-
-#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-#include <pthread.h>
-#endif
-
+#if defined(GRPC_POSIX_FORK)
 #include <string.h>
 
 #include <grpc/fork.h>
@@ -38,6 +33,18 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#endif  // defined(GRPC_POSIX_FORK)
+
+#if defined(GRPC_POSIX_FORK)
+#if defined(GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK)
+#include <pthread.h>
+#endif
+#endif
+
+#ifdef GRPC_POSIX_FORK
+
+#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+#endif
 
 /*
  * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK

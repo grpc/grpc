@@ -30,3 +30,5 @@ struct grpc_chttp2_huffsym {
 extern const grpc_chttp2_huffsym grpc_chttp2_huffsyms[GRPC_CHTTP2_NUM_HUFFSYMS];
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HUFFSYMS_H */
+
+#include <grpc/support/port_platform.h>

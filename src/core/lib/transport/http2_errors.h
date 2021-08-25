@@ -39,3 +39,5 @@ typedef enum {
 } grpc_http2_error_code;
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_HTTP2_ERRORS_H */
+
+#include <grpc/support/port_platform.h>

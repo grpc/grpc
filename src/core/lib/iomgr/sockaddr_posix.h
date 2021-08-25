@@ -23,13 +23,16 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET_SOCKADDR
+#if defined(GRPC_POSIX_SOCKET_SOCKADDR)
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#endif
+
+#ifdef GRPC_POSIX_SOCKET_SOCKADDR
 
 typedef struct sockaddr grpc_sockaddr;
 typedef struct sockaddr_in grpc_sockaddr_in;

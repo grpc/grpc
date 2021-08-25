@@ -25,10 +25,12 @@
 #include <openssl/engine.h>
 #include <openssl/pem.h>
 
-#ifndef OPENSSL_IS_BORINGSSL
-
+#if !defined(OPENSSL_IS_BORINGSSL)
 #include <stdio.h>
 #include <string.h>
+#endif
+
+#ifndef OPENSSL_IS_BORINGSSL
 
 extern "C" {
 static const char engine_id[] = "libengine_passthrough";

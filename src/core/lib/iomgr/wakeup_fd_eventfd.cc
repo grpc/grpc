@@ -20,8 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_LINUX_EVENTFD
-
+#if defined(GRPC_LINUX_EVENTFD)
 #include <errno.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
@@ -30,6 +29,9 @@
 
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
+#endif
+
+#ifdef GRPC_LINUX_EVENTFD
 
 static grpc_error_handle eventfd_create(grpc_wakeup_fd* fd_info) {
   fd_info->read_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);

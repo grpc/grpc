@@ -20,8 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET_TCP
-
+#if defined(GRPC_POSIX_SOCKET_TCP)
 #include "src/core/lib/iomgr/tcp_posix.h"
 
 #include <errno.h>
@@ -35,6 +34,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <algorithm>
 #include <unordered_map>
 
@@ -60,6 +60,9 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#endif
+
+#ifdef GRPC_POSIX_SOCKET_TCP
 
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP

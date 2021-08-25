@@ -20,15 +20,18 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WINDOWS_TIME
-
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
+#if defined(GPR_WINDOWS_TIME)
 #include <limits.h>
 #include <process.h>
 #include <sys/timeb.h>
 
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/gpr/time_precise.h"
+#endif
+
+#ifdef GPR_WINDOWS_TIME
 
 static LARGE_INTEGER g_start_time;
 static double g_time_scale;

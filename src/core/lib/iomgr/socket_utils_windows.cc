@@ -20,12 +20,14 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_WINDOWS_SOCKETUTILS
+#if defined(GRPC_WINDOWS_SOCKETUTILS)
+#include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#endif
 
-#include <grpc/support/log.h>
+#ifdef GRPC_WINDOWS_SOCKETUTILS
 
 uint16_t grpc_htons(uint16_t hostshort) { return htons(hostshort); }
 

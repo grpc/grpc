@@ -20,8 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET_IOMGR
-
+#if defined(GRPC_POSIX_SOCKET_IOMGR)
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -30,6 +29,9 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
+#endif
+
+#ifdef GRPC_POSIX_SOCKET_IOMGR
 
 extern grpc_tcp_server_vtable grpc_posix_tcp_server_vtable;
 extern grpc_tcp_client_vtable grpc_posix_tcp_client_vtable;

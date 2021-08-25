@@ -20,12 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
-
-#include "src/core/lib/iomgr/sockaddr.h"
-
-#include "src/core/lib/iomgr/resolve_address.h"
-
+#if defined(GRPC_POSIX_SOCKET_RESOLVE_ADDRESS)
 #include <string.h>
 #include <sys/types.h>
 
@@ -41,7 +36,12 @@
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#endif
+
+#ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 
 static grpc_error_handle posix_blocking_resolve_address(
     const char* name, const char* default_port,

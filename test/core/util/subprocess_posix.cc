@@ -18,8 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_POSIX_SUBPROCESS
-
+#if defined(GPR_POSIX_SUBPROCESS)
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
@@ -35,6 +34,9 @@
 #include <grpc/support/log.h>
 
 #include "test/core/util/subprocess.h"
+#endif
+
+#ifdef GPR_POSIX_SUBPROCESS
 
 struct gpr_subprocess {
   int pid;

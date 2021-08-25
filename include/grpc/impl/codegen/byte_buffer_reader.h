@@ -40,3 +40,5 @@ struct grpc_byte_buffer_reader {
 #endif
 
 #endif /* GRPC_IMPL_CODEGEN_BYTE_BUFFER_READER_H */
+
+#include <grpc/impl/codegen/port_platform.h>

@@ -48,9 +48,11 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-#ifdef GRPC_POSIX_SOCKET_TCP_SERVER
-
+#if defined(GRPC_POSIX_SOCKET_TCP_SERVER)
 #include "src/core/lib/iomgr/tcp_posix.h"
+#endif
+
+#ifdef GRPC_POSIX_SOCKET_TCP_SERVER
 
 namespace grpc {
 namespace testing {

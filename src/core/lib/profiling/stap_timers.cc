@@ -18,13 +18,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_STAP_PROFILER
-
-#include "src/core/lib/profiling/timers.h"
-
+#if defined(GRPC_STAP_PROFILER)
 #include <sys/sdt.h>
-/* Generated from src/core/profiling/stap_probes.d */
+
 #include "src/core/lib/profiling/stap_probes.h"
+#include "src/core/lib/profiling/timers.h"
+#endif
+
+#ifdef GRPC_STAP_PROFILER
+/* Generated from src/core/profiling/stap_probes.d */
 
 /* Latency profiler API implementation. */
 void gpr_timer_add_mark(int tag, const char* tagstr, void* id, const char* file,

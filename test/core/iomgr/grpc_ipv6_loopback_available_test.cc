@@ -18,17 +18,30 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#if !defined(GRPC_UV)
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+
+#include "test/core/util/test_config.h"
+#endif  // !defined(GRPC_UV)
+
+#if !defined(GRPC_UV)
+#if !defined(GPR_WINDOWS)
+#include "src/core/lib/iomgr/socket_utils_posix.h"
+#endif  // !defined(GRPC_UV)
+#endif  // !defined(GPR_WINDOWS)
+
+#if !defined(GRPC_UV)
+#if defined(GPR_WINDOWS)
+#include "src/core/lib/iomgr/socket_windows.h"
+#endif
+#endif
+
 // grpc_ipv6_loopback_available isn't currently available on UV.
 #ifndef GRPC_UV
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include "test/core/util/test_config.h"
-
 #ifdef GPR_WINDOWS
-#include "src/core/lib/iomgr/socket_windows.h"
 #else
-#include "src/core/lib/iomgr/socket_utils_posix.h"
 #endif
 
 int main(int argc, char** argv) {

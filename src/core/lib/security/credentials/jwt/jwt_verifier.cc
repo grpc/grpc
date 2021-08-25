@@ -21,18 +21,15 @@
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
 
 #include <limits.h>
+#include <openssl/bn.h>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-
-extern "C" {
-#include <openssl/bn.h>
-#include <openssl/pem.h>
-#include <openssl/rsa.h>
-}
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -41,6 +38,8 @@ extern "C" {
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/ssl_types.h"
+
+extern "C" {}
 
 using grpc_core::Json;
 

@@ -18,14 +18,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_UV
-
+#if defined(GRPC_UV)
 #include <uv.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "test/core/end2end/cq_verifier_internal.h"
+#endif
+
+#ifdef GRPC_UV
 
 typedef enum timer_state {
   TIMER_STARTED,

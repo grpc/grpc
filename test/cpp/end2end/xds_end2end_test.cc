@@ -96,9 +96,12 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_config.h"
 
-#ifndef DISABLED_XDS_PROTO_IN_CC
+#if !defined(DISABLED_XDS_PROTO_IN_CC)
 #include "src/cpp/server/csds/csds.h"
 #include "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h"
+#endif
+
+#ifndef DISABLED_XDS_PROTO_IN_CC
 #endif  // DISABLED_XDS_PROTO_IN_CC
 
 namespace grpc {

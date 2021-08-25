@@ -17,6 +17,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <openssl/crypto.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -36,9 +37,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-extern "C" {
-#include <openssl/crypto.h>
-}
+extern "C" {}
 
 static std::string test_server1_key_id;
 

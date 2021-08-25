@@ -31,8 +31,10 @@
 #include "test/core/util/test_config.h"
 
 #if defined(GRPC_PORT_ISOLATED_RUNTIME)
-
 #include "test/core/util/port.h"
+#endif
+
+#if defined(GRPC_PORT_ISOLATED_RUNTIME)
 
 #define MIN_PORT 1025
 #define MAX_PORT 32766

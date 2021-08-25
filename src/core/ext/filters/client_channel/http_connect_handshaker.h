@@ -32,3 +32,5 @@
 void grpc_http_connect_register_handshaker_factory();
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H */
+
+#include <grpc/support/port_platform.h>

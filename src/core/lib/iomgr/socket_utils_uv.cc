@@ -20,14 +20,16 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_UV
-
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
+#if defined(GRPC_UV)
+#include <uv.h>
 
 #include <grpc/support/log.h>
 
-#include <uv.h>
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils.h"
+#endif
+
+#ifdef GRPC_UV
 
 uint16_t grpc_htons(uint16_t hostshort) { return htons(hostshort); }
 

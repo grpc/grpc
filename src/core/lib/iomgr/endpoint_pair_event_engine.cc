@@ -14,14 +14,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_USE_EVENT_ENGINE
-#include "src/core/lib/iomgr/port.h"
-
+#if defined(GRPC_USE_EVENT_ENGINE)
 #include <stdlib.h>
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/iomgr/port.h"
+#endif
+
+#ifdef GRPC_USE_EVENT_ENGINE
 
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
     const char* /* name */, grpc_channel_args* /* args */) {

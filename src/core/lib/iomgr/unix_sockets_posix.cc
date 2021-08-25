@@ -20,9 +20,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_HAVE_UNIX_SOCKET
-
-#include "src/core/lib/iomgr/sockaddr.h"
+#if defined(GRPC_HAVE_UNIX_SOCKET)
+#include "src/core/lib/iomgr/unix_sockets_posix.h"
 
 #include <string.h>
 #include <sys/stat.h>
@@ -31,13 +30,15 @@
 
 #include "absl/strings/str_cat.h"
 
-#include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/iomgr/unix_sockets_posix.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/sockaddr.h"
+#endif
+
+#ifdef GRPC_HAVE_UNIX_SOCKET
 
 void grpc_create_socketpair_if_unix(int sv[2]) {
   GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);

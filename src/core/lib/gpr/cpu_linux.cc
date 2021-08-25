@@ -22,8 +22,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_CPU_LINUX
-
+#if defined(GPR_CPU_LINUX)
 #include <errno.h>
 #include <sched.h>
 #include <string.h>
@@ -32,6 +31,9 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#endif
+
+#ifdef GPR_CPU_LINUX
 
 static int ncpus = 0;
 

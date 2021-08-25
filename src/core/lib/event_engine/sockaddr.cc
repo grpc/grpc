@@ -14,12 +14,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_USE_EVENT_ENGINE
+#if defined(GRPC_USE_EVENT_ENGINE)
 #include <string.h>
 
-#include "grpc/event_engine/event_engine.h"
-#include "grpc/event_engine/port.h"
-#include "grpc/support/log.h"
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/port.h>
+#include <grpc/support/log.h>
+#endif
+
+#ifdef GRPC_USE_EVENT_ENGINE
 
 uint16_t grpc_htons(uint16_t hostshort) { return htons(hostshort); }
 

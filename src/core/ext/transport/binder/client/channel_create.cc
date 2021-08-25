@@ -17,20 +17,20 @@
 #include "src/core/ext/transport/binder/client/channel_create.h"
 
 #if defined(ANDROID) || defined(__ANDROID__)
-
 #include <android/binder_auto_utils.h>
 #include <android/binder_ibinder.h>
 #include <android/binder_ibinder_jni.h>
 #include <android/binder_interface_utils.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpcpp/impl/grpc_library.h>
 
 #include "absl/memory/memory.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
+#include <grpc/support/log.h>
+#include <grpcpp/impl/grpc_library.h>
+
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
 #include "src/core/ext/transport/binder/client/jni_utils.h"
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
@@ -39,6 +39,9 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/client/create_channel_internal.h"
+#endif
+
+#if defined(ANDROID) || defined(__ANDROID__)
 
 namespace grpc {
 namespace experimental {

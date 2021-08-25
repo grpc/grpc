@@ -11,12 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include <grpc/support/port_platform.h>
+
+#if !defined(GRPC_CORE_LIB_GPR_LOG_INTERNAL_H)
+#include <grpc/support/log.h>
+#endif
 
 #ifndef GRPC_CORE_LIB_GPR_LOG_INTERNAL_H
 #define GRPC_CORE_LIB_GPR_LOG_INTERNAL_H
-
-#include "grpc/support/log.h"
 
 /// Log a message, accepting a variadic argument list. See also \a gpr_log.
 void gpr_vlog(const char* file, int line, gpr_log_severity severity,

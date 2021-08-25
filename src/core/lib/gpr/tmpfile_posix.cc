@@ -18,10 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_POSIX_TMPFILE
-
-#include "src/core/lib/gpr/tmpfile.h"
-
+#if defined(GPR_POSIX_TMPFILE)
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +29,10 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/tmpfile.h"
+#endif
+
+#ifdef GPR_POSIX_TMPFILE
 
 FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {
   FILE* result = nullptr;

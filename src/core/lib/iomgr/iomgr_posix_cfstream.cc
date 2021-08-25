@@ -34,8 +34,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_CFSTREAM_IOMGR
-
+#if defined(GRPC_CFSTREAM_IOMGR)
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/ev_apple.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -45,6 +44,9 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
+#endif
+
+#ifdef GRPC_CFSTREAM_IOMGR
 
 static const char* grpc_cfstream_env_var = "grpc_cfstream";
 static const char* grpc_cfstream_run_loop_env_var = "GRPC_CFSTREAM_RUN_LOOP";

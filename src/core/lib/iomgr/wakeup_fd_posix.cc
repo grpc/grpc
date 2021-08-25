@@ -20,11 +20,15 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_WAKEUP_FD
+#if defined(GRPC_POSIX_WAKEUP_FD)
+#include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
 #include <stddef.h>
+
 #include "src/core/lib/iomgr/wakeup_fd_pipe.h"
-#include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#endif
+
+#ifdef GRPC_POSIX_WAKEUP_FD
 
 static const grpc_wakeup_fd_vtable* wakeup_fd_vtable = nullptr;
 

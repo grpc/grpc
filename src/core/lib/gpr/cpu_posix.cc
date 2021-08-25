@@ -19,7 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #if defined(GPR_CPU_POSIX)
-
 #include <errno.h>
 #include <pthread.h>
 #include <string.h>
@@ -30,6 +29,9 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/useful.h"
+#endif
+
+#if defined(GPR_CPU_POSIX)
 
 static long ncpus = 0;
 

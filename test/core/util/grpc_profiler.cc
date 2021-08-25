@@ -18,14 +18,20 @@
 
 #include "test/core/util/grpc_profiler.h"
 
+#if !GRPC_HAVE_PERFTOOLS
+#include <grpc/support/log.h>
+#endif  // !GRPC_HAVE_PERFTOOLS
+
 #if GRPC_HAVE_PERFTOOLS
 #include <gperftools/profiler.h>
+#endif
+
+#if GRPC_HAVE_PERFTOOLS
 
 void grpc_profiler_start(const char* filename) { ProfilerStart(filename); }
 
 void grpc_profiler_stop() { ProfilerStop(); }
 #else
-#include <grpc/support/log.h>
 
 void grpc_profiler_start(const char* filename) {
   static int printed_warning = 0;

@@ -25,9 +25,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#ifdef __linux__
+#if defined(__linux__)
 #include <sys/resource.h>
 #include <sys/time.h>
+#endif
+
+#ifdef __linux__
 
 static double time_double(struct timeval* tv) {
   return tv->tv_sec + 1e-6 * tv->tv_usec;

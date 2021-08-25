@@ -21,11 +21,13 @@
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SYSCONF
-
+#if defined(GRPC_POSIX_SYSCONF)
 #include <unistd.h>
 
 #include <grpc/support/alloc.h>
+#endif
+
+#ifdef GRPC_POSIX_SYSCONF
 
 char* grpc_gethostname() {
   size_t host_name_max = (size_t)sysconf(_SC_HOST_NAME_MAX);

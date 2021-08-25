@@ -18,9 +18,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-// This test won't work except with posix sockets enabled
-#ifdef GRPC_POSIX_SOCKET_TCP
-
+#if defined(GRPC_POSIX_SOCKET_TCP)
 #include "src/core/lib/iomgr/tcp_posix.h"
 
 #include <errno.h>
@@ -43,6 +41,10 @@
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
+#endif
+
+// This test won't work except with posix sockets enabled
+#ifdef GRPC_POSIX_SOCKET_TCP
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;

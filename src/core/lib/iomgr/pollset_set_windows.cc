@@ -22,9 +22,11 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_WINSOCK_SOCKET
-
+#if defined(GRPC_WINSOCK_SOCKET)
 #include "src/core/lib/iomgr/pollset_set_windows.h"
+#endif
+
+#ifdef GRPC_WINSOCK_SOCKET
 
 static grpc_pollset_set* pollset_set_create(void) {
   return (grpc_pollset_set*)((intptr_t)0xdeafbeef);

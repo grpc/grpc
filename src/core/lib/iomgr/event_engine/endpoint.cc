@@ -14,14 +14,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_USE_EVENT_ENGINE
+#if defined(GRPC_USE_EVENT_ENGINE)
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
+
+#include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/time.h>
-#include "absl/strings/string_view.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -33,6 +34,9 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/transport/error_utils.h"
+#endif
+
+#ifdef GRPC_USE_EVENT_ENGINE
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 

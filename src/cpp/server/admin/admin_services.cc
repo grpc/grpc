@@ -30,6 +30,9 @@
 
 #if !defined(GRPC_NO_XDS) && !defined(DISABLED_XDS_PROTO_IN_CC)
 #include "src/cpp/server/csds/csds.h"
+#endif
+
+#if !defined(GRPC_NO_XDS) && !defined(DISABLED_XDS_PROTO_IN_CC)
 #endif  // GRPC_NO_XDS or DISABLED_XDS_PROTO_IN_CC
 namespace grpc {
 

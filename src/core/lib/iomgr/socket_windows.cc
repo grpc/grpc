@@ -20,12 +20,12 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_WINSOCK_SOCKET
-
-#include <winsock2.h>
+#if defined(GRPC_WINSOCK_SOCKET)
+#include "src/core/lib/iomgr/socket_windows.h"
 
 // must be included after winsock2.h
 #include <mswsock.h>
+#include <winsock2.h>
 
 #include "absl/strings/str_format.h"
 
@@ -38,7 +38,9 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
-#include "src/core/lib/iomgr/socket_windows.h"
+#endif
+
+#ifdef GRPC_WINSOCK_SOCKET
 
 static DWORD s_wsa_socket_flags;
 

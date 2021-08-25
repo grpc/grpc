@@ -20,11 +20,10 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_WINSOCK_SOCKET
+#if defined(GRPC_WINSOCK_SOCKET)
+#include "src/core/lib/iomgr/tcp_windows.h"
 
 #include <limits.h>
-
-#include "src/core/lib/iomgr/sockaddr_windows.h"
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -36,12 +35,15 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#endif
+
+#ifdef GRPC_WINSOCK_SOCKET
 
 #if defined(__MSYS__) && defined(GPR_ARCH_64)
 /* Nasty workaround for nasty bug when using the 64 bits msys compiler

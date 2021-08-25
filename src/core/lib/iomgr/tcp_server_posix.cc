@@ -25,8 +25,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET_TCP_SERVER
-
+#if defined(GRPC_POSIX_SOCKET_TCP_SERVER)
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -59,6 +58,9 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#endif
+
+#ifdef GRPC_POSIX_SOCKET_TCP_SERVER
 
 static grpc_error_handle tcp_server_create(
     grpc_closure* shutdown_complete, const grpc_channel_args* args,

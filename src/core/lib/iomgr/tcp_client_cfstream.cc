@@ -21,17 +21,14 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_CFSTREAM_CLIENT
-
+#if defined(GRPC_CFSTREAM_CLIENT)
 #include <CoreFoundation/CoreFoundation.h>
-
+#include <netinet/in.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-
-#include <netinet/in.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -43,6 +40,9 @@
 #include "src/core/lib/iomgr/error_cfstream.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
+#endif
+
+#ifdef GRPC_CFSTREAM_CLIENT
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 

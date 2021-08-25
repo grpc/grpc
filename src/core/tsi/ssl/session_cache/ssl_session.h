@@ -21,13 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <openssl/ssl.h>
+
 #include <grpc/slice.h>
 
-extern "C" {
-#include <openssl/ssl.h>
-}
-
 #include "src/core/lib/gprpp/ref_counted.h"
+
+extern "C" {}
 
 // The main purpose of code here is to provide means to cache SSL sessions
 // in a way that they can be shared between connections.

@@ -15,10 +15,11 @@
 #ifndef GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
 #define GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "absl/types/variant.h"
 #include "absl/utility/utility.h"
+
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/switch.h"

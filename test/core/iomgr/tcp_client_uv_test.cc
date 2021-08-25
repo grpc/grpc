@@ -18,14 +18,9 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-// This test won't work except with libuv
-#ifdef GRPC_UV
-
-#include <uv.h>
-
+#if defined(GRPC_UV)
 #include <string.h>
-
-#include "src/core/lib/iomgr/tcp_client.h"
+#include <uv.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -34,9 +29,14 @@
 
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
+#endif
+
+// This test won't work except with libuv
+#ifdef GRPC_UV
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;

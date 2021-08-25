@@ -21,7 +21,6 @@
 #include "test/core/util/test_config.h"
 
 #if defined(GRPC_TEST_PICK_PORT)
-
 #include "test/core/util/port.h"
 
 #include <stdbool.h>
@@ -37,6 +36,9 @@
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "test/core/util/port_server_client.h"
+#endif
+
+#if defined(GRPC_TEST_PICK_PORT)
 
 static int* chosen_ports = nullptr;
 static size_t num_chosen_ports = 0;

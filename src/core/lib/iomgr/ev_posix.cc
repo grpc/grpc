@@ -20,8 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET_EV
-
+#if defined(GRPC_POSIX_SOCKET_EV)
 #include "src/core/lib/iomgr/ev_posix.h"
 
 #include <string.h>
@@ -37,6 +36,9 @@
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
+#endif
+
+#ifdef GRPC_POSIX_SOCKET_EV
 
 GPR_GLOBAL_CONFIG_DEFINE_STRING(
     grpc_poll_strategy, "all",

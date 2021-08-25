@@ -34,10 +34,13 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-#ifdef GRPC_LINUX_MULTIPOLL_WITH_EPOLL
+#if defined(GRPC_LINUX_MULTIPOLL_WITH_EPOLL)
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
+#endif
+
+#ifdef GRPC_LINUX_MULTIPOLL_WITH_EPOLL
 #endif
 
 static void shutdown_ps(void* ps, grpc_error_handle /*error*/) {

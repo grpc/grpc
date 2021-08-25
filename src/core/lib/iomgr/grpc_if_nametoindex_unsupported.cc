@@ -21,10 +21,12 @@
 #include "src/core/lib/iomgr/port.h"
 
 #if GRPC_IF_NAMETOINDEX == 0 || !defined(GRPC_POSIX_SOCKET_IF_NAMETOINDEX)
+#include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
+#endif
 
-#include <grpc/support/log.h>
+#if GRPC_IF_NAMETOINDEX == 0 || !defined(GRPC_POSIX_SOCKET_IF_NAMETOINDEX)
 
 uint32_t grpc_if_nametoindex(char* name) {
   gpr_log(GPR_DEBUG,

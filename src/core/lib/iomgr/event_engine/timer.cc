@@ -14,7 +14,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_USE_EVENT_ENGINE
+#if defined(GRPC_USE_EVENT_ENGINE)
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/iomgr/error.h"
@@ -23,6 +23,9 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/init.h"
 #include "src/core/lib/transport/error_utils.h"
+#endif
+
+#ifdef GRPC_USE_EVENT_ENGINE
 
 namespace {
 using ::grpc_event_engine::experimental::EventEngine;

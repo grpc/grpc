@@ -22,8 +22,7 @@
 #include <grpc/grpc_posix.h>
 #include <grpc/support/log.h>
 
-#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
-
+#if defined(GPR_SUPPORT_CHANNELS_FROM_FD)
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
@@ -35,6 +34,9 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
+#endif
+
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
 void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
                                               void* reserved, int fd) {

@@ -18,16 +18,19 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_CFSTREAM
+#if defined(GRPC_CFSTREAM)
+#include <CoreFoundation/CoreFoundation.h>
+
 #include <string>
 
 #include "absl/strings/str_format.h"
 
-#include <CoreFoundation/CoreFoundation.h>
-
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/iomgr/error.h"
+#endif
+
+#ifdef GRPC_CFSTREAM
 
 #define MAX_ERROR_DESCRIPTION 256
 

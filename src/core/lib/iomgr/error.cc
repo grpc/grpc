@@ -28,15 +28,18 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#ifdef GPR_WINDOWS
-#include <grpc/support/log_windows.h>
-#endif
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error_internal.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+
+#if defined(GPR_WINDOWS)
+#include <grpc/support/log_windows.h>
+#endif
+
+#ifdef GPR_WINDOWS
+#endif
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,
                                                         "error_refcount");

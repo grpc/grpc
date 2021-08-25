@@ -33,9 +33,12 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_WINSOCK_SOCKET
+#if defined(GRPC_WINSOCK_SOCKET)
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/socket_windows.h"
+#endif
+
+#ifdef GRPC_WINSOCK_SOCKET
 
 /* Create a tcp endpoint given a winsock handle.
  * Takes ownership of the handle.

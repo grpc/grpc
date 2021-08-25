@@ -19,10 +19,12 @@
 #include <grpc/support/port_platform.h>
 
 #if !defined(GPR_LINUX) && !defined(GPR_WINDOWS) && !defined(GPR_APPLE)
-
 #include <grpc/support/log.h>
 
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
+#endif
+
+#if !defined(GPR_LINUX) && !defined(GPR_WINDOWS) && !defined(GPR_APPLE)
 
 namespace grpc {
 namespace load_reporter {

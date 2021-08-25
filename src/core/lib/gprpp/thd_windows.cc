@@ -20,17 +20,19 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WINDOWS
-
-#include "src/core/lib/gprpp/thd.h"
+#if defined(GPR_WINDOWS)
+#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd_id.h>
-#include <string.h>
 
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/thd.h"
+#endif
+
+#ifdef GPR_WINDOWS
 
 namespace {
 class ThreadInternalsWindows;

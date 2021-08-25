@@ -16,11 +16,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_USE_EVENT_ENGINE
+#if defined(GRPC_USE_EVENT_ENGINE)
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resource_quota.h"
+#endif
+
+#ifdef GRPC_USE_EVENT_ENGINE
 
 struct grpc_event_engine_endpoint {
   grpc_endpoint base;

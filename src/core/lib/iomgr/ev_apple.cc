@@ -27,7 +27,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_APPLE_EV
+#if defined(GRPC_APPLE_EV)
+#include "src/core/lib/iomgr/ev_apple.h"
 
 #include <CoreFoundation/CoreFoundation.h>
 
@@ -37,7 +38,9 @@
 
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time_util.h"
-#include "src/core/lib/iomgr/ev_apple.h"
+#endif
+
+#ifdef GRPC_APPLE_EV
 
 grpc_core::DebugOnlyTraceFlag grpc_apple_polling_trace(false, "apple_polling");
 

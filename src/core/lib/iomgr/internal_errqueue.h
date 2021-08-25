@@ -29,16 +29,23 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET_TCP
-
+#if defined(GRPC_POSIX_SOCKET_TCP)
 #include <sys/types.h>
 #include <time.h>
+#endif  // defined(GRPC_POSIX_SOCKET_TCP)
 
-#ifdef GRPC_LINUX_ERRQUEUE
+#if defined(GRPC_POSIX_SOCKET_TCP)
+#if defined(GRPC_LINUX_ERRQUEUE)
 #include <linux/errqueue.h>
 #include <linux/net_tstamp.h>
 #include <linux/netlink.h>
 #include <sys/socket.h>
+#endif
+#endif
+
+#ifdef GRPC_POSIX_SOCKET_TCP
+
+#ifdef GRPC_LINUX_ERRQUEUE
 #endif /* GRPC_LINUX_ERRQUEUE */
 
 namespace grpc_core {

@@ -18,22 +18,27 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_POSIX_LOG
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
+#if defined(GPR_POSIX_LOG)
 #include <inttypes.h>
 #include <pthread.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+
 #include <string>
 
 #include "absl/strings/str_format.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/gpr/log_internal.h"
 #include "src/core/lib/gprpp/examine_stack.h"
+#endif
+
+#ifdef GPR_POSIX_LOG
 
 int gpr_should_log_stacktrace(gpr_log_severity severity);
 

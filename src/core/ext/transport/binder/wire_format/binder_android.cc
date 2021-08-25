@@ -17,14 +17,17 @@
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
 
 #if defined(ANDROID) || defined(__ANDROID__)
-
-#include <grpc/support/log.h>
-
 #include <map>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gprpp/sync.h"
+#endif
+
+#if defined(ANDROID) || defined(__ANDROID__)
 
 namespace grpc_binder {
 namespace {

@@ -23,11 +23,7 @@
 #include <assert.h>
 #include <string.h>
 
-/* This is here for grpc_is_binary_header
- * TODO(murgatroid99): Remove this
- */
 #include <grpc/grpc.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -41,6 +37,10 @@
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
+
+/* This is here for grpc_is_binary_header
+ * TODO(murgatroid99): Remove this
+ */
 
 namespace {
 /* (Maybe-cuckoo) hpack encoder hash table implementation.

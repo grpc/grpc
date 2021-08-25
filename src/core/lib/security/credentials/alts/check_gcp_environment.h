@@ -55,3 +55,5 @@ bool check_bios_data(const char* bios_data);
 bool grpc_alts_is_running_on_gcp();
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_ALTS_CHECK_GCP_ENVIRONMENT_H */
+
+#include <grpc/support/port_platform.h>

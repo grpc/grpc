@@ -19,10 +19,12 @@
 #include <grpc/support/port_platform.h>
 
 #if !defined(GPR_LINUX) && !defined(GPR_WINDOWS)
+#include <grpc/support/log.h>
 
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#endif
 
-#include <grpc/support/log.h>
+#if !defined(GPR_LINUX) && !defined(GPR_WINDOWS)
 
 bool grpc_alts_is_running_on_gcp() {
   gpr_log(GPR_INFO,

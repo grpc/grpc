@@ -21,10 +21,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_CFSTREAM
-#import <CoreFoundation/CoreFoundation.h>
-#import "src/core/lib/iomgr/cfstream_handle.h"
-
+#if defined(GRPC_CFSTREAM)
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
@@ -34,6 +31,11 @@
 #include "src/core/lib/iomgr/error_cfstream.h"
 #include "src/core/lib/iomgr/ev_apple.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#endif
+
+#ifdef GRPC_CFSTREAM
+#import <CoreFoundation/CoreFoundation.h>
+#import "src/core/lib/iomgr/cfstream_handle.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 

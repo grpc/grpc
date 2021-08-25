@@ -21,18 +21,18 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <openssl/ssl.h>
+
 #include <grpc/slice.h>
 #include <grpc/support/sync.h>
-
-extern "C" {
-#include <openssl/ssl.h>
-}
 
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session.h"
+
+extern "C" {}
 
 /// Cache for SSL sessions for sessions resumption.
 ///

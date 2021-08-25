@@ -21,8 +21,10 @@
 #include "src/core/lib/iomgr/port.h"
 
 #if defined(GRPC_POSIX_SOCKET) && !defined(GRPC_HAVE_IFADDRS)
-
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
+#endif
+
+#if defined(GRPC_POSIX_SOCKET) && !defined(GRPC_HAVE_IFADDRS)
 
 grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* /*s*/,
                                                       unsigned /*port_index*/,

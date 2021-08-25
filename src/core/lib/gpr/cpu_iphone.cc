@@ -20,9 +20,11 @@
 
 #include <grpc/support/cpu.h>
 
-#ifdef GPR_CPU_IPHONE
-
+#if defined(GPR_CPU_IPHONE)
 #include <sys/sysctl.h>
+#endif
+
+#ifdef GPR_CPU_IPHONE
 
 unsigned gpr_cpu_num_cores(void) {
   size_t len;
