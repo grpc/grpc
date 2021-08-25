@@ -319,12 +319,10 @@ static void fork_fd_list_add_wakeup_fd(grpc_cached_wakeup_fd* fd) {
 #define UNREF_BY(fd, n, reason) unref_by(fd, n, reason, __FILE__, __LINE__)
 static void ref_by(grpc_fd* fd, int n, const char* reason, const char* file,
                    int line) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_fd_refcount)) {
-    gpr_log(GPR_DEBUG,
-            "FD %d %p   ref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
-            fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
-            gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
-  }
+  grpc_trace_fd_refcount.Log(
+      GPR_DEBUG, "FD %d %p   ref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
+      fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
+      gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
 #else
 #define REF_BY(fd, n, reason) \
   do {                        \
@@ -344,12 +342,10 @@ static void ref_by(grpc_fd* fd, int n) {
 #ifndef NDEBUG
 static void unref_by(grpc_fd* fd, int n, const char* reason, const char* file,
                      int line) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_fd_refcount)) {
-    gpr_log(GPR_DEBUG,
-            "FD %d %p unref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
-            fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
-            gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
-  }
+  grpc_trace_fd_refcount.Log(
+      GPR_DEBUG, "FD %d %p unref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
+      fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
+      gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
 #else
 static void unref_by(grpc_fd* fd, int n) {
 #endif
@@ -574,9 +570,8 @@ static void fd_notify_on_write(grpc_fd* fd, grpc_closure* closure) {
 }
 
 static void fd_notify_on_error(grpc_fd* /*fd*/, grpc_closure* closure) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-    gpr_log(GPR_ERROR, "Polling engine does not support tracking errors.");
-  }
+  grpc_polling_trace.Log(GPR_ERROR,
+                         "Polling engine does not support tracking errors.");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_CANCELLED);
 }
 
@@ -593,9 +588,8 @@ static void fd_set_writable(grpc_fd* fd) {
 }
 
 static void fd_set_error(grpc_fd* /*fd*/) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-    gpr_log(GPR_ERROR, "Polling engine does not support tracking errors.");
-  }
+  grpc_polling_trace.Log(GPR_ERROR,
+                         "Polling engine does not support tracking errors.");
 }
 
 static uint32_t fd_begin_poll(grpc_fd* fd, grpc_pollset* pollset,
@@ -1019,9 +1013,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
       r = grpc_poll_function(pfds, pfd_count, timeout);
       GRPC_SCHEDULING_END_BLOCKING_REGION;
 
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-        gpr_log(GPR_INFO, "%p poll=%d", pollset, r);
-      }
+      grpc_polling_trace.Log(GPR_INFO, "%p poll=%d", pollset, r);
 
       if (r < 0) {
         if (errno != EINTR) {
@@ -1043,9 +1035,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
         }
       } else {
         if (pfds[0].revents & POLLIN_CHECK) {
-          if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-            gpr_log(GPR_INFO, "%p: got_wakeup", pollset);
-          }
+          grpc_polling_trace.Log(GPR_INFO, "%p: got_wakeup", pollset);
           work_combine_error(
               &error, grpc_wakeup_fd_consume_wakeup(&worker.wakeup_fd->fd));
         }
@@ -1053,11 +1043,10 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
           if (watchers[i].fd == nullptr) {
             fd_end_poll(&watchers[i], 0, 0);
           } else {
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-              gpr_log(GPR_INFO, "%p got_event: %d r:%d w:%d [%d]", pollset,
-                      pfds[i].fd, (pfds[i].revents & POLLIN_CHECK) != 0,
-                      (pfds[i].revents & POLLOUT_CHECK) != 0, pfds[i].revents);
-            }
+            grpc_polling_trace.Log(
+                GPR_INFO, "%p got_event: %d r:%d w:%d [%d]", pollset,
+                pfds[i].fd, (pfds[i].revents & POLLIN_CHECK) != 0,
+                (pfds[i].revents & POLLOUT_CHECK) != 0, pfds[i].revents);
             /* This is a mitigation to prevent poll() from spinning on a
              ** POLLHUP https://github.com/grpc/grpc/pull/13665
              */

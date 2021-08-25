@@ -669,6 +669,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/gpr/alloc.h",
         "src/core/lib/gpr/env.h",
+        "src/core/lib/gpr/log_internal.h",
         "src/core/lib/gpr/murmur_hash.h",
         "src/core/lib/gpr/spinlock.h",
         "src/core/lib/gpr/string.h",

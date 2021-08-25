@@ -799,6 +799,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gpr/env_windows.cc )
   s.files += %w( src/core/lib/gpr/log.cc )
   s.files += %w( src/core/lib/gpr/log_android.cc )
+  s.files += %w( src/core/lib/gpr/log_internal.h )
   s.files += %w( src/core/lib/gpr/log_linux.cc )
   s.files += %w( src/core/lib/gpr/log_posix.cc )
   s.files += %w( src/core/lib/gpr/log_windows.cc )
