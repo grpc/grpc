@@ -37,6 +37,7 @@ LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
 BIGQUERY_TABLE_8CORE=e2e_benchmarks.ci_master_results_8core
 BIGQUERY_TABLE_32CORE=e2e_benchmarks.ci_master_results_32core
 # END differentiate experimental configuration from master configuration.
+CLOUD_LOGGING_URL="https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
 PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etesting/pre_built_workers/${LOAD_TEST_PREFIX}"
 UNIQUE_IDENTIFIER="$(date +%Y%m%d%H%M%S)"
 ROOT_DIRECTORY_OF_DOCKERFILES="../test-infra/containers/pre_built_workers/"
@@ -76,6 +77,11 @@ buildConfigs() {
         -s client_pool="${pool}" -s server_pool="${pool}" \
         -s big_query_table="${table}" -s timeout_seconds=900 \
         -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
+        -a ci_buildNumber="${KOKORO_BUILD_NUMBER}" \
+        -a ci_buildUrl="${CLOUD_LOGGING_URL}" \
+        -a ci_jobName="${KOKORO_JOB_NAME}" \
+        -a ci_gitCommit="${KOKORO_GIT_COMMIT}" \
+        -a ci_gitActualCommit="${ghprbActualCommit}" \
         -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=scalable \
