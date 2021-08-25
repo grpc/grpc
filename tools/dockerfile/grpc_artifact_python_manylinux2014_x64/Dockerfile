@@ -23,8 +23,8 @@ RUN yum update -y && yum install -y curl-devel expat-devel gettext-devel openssl
 
 ###################################
 # Install Python build requirements
-RUN /opt/python/cp35-cp35m/bin/pip install --upgrade cython
 RUN /opt/python/cp36-cp36m/bin/pip install --upgrade cython
 RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython
 RUN /opt/python/cp38-cp38/bin/pip install --upgrade cython
 RUN /opt/python/cp39-cp39/bin/pip install --upgrade cython
+RUN /opt/python/cp310-cp310/bin/pip install --upgrade cython
