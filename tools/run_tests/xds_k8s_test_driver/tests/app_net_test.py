@@ -42,7 +42,8 @@ class AppNetTest(xds_k8s_testcase.AppNetXdsKubernetesTestCase):
             self.td.create_router()
 
         with self.subTest('4_start_test_server'):
-            test_server: _XdsTestServer = self.startTestServer()
+            test_server: _XdsTestServer = self.startTestServers(
+                replica_count=1)[0]
 
         with self.subTest('5_setup_server_backends'):
             self.setupServerBackends()
