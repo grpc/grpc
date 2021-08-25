@@ -64,19 +64,12 @@ struct IsVoidCallable<F, absl::void_t<decltype(std::declval<F>()())>> {
 
 // Given F(A,B,C,...), what's the return type?
 template <typename T, typename Ignored = void>
-struct ResultOfTInner;
-template <typename F, typename... Args>
-struct ResultOfTInner<F(Args...), absl::void_t<decltype(std::declval<F>()(
-                                      std::declval<Args>()...))>> {
-  using T = decltype(std::declval<F>()(std::declval<Args>()...));
-};
-
-template <typename T>
 struct ResultOfT;
 template <typename F, typename... Args>
-struct ResultOfT<F(Args...)> {
-  using FP = RemoveCVRef<F>;
-  using T = typename ResultOfTInner<FP(Args...)>::T;
+struct ResultOfT<F(Args...),
+                 absl::void_t<decltype(std::declval<RemoveCVRef<F>>()(
+                     std::declval<Args>()...))>> {
+  using T = decltype(std::declval<RemoveCVRef<F>>()(std::declval<Args>()...));
 };
 
 template <typename T>
@@ -110,14 +103,16 @@ PromiseFactoryImpl(F&& f, A&& arg) {
 // Promote a callable() -> T|Poll<T> to a PromiseFactory(A) -> Promise<T>
 // by dropping the argument passed to the factory.
 template <typename A, typename F>
-absl::enable_if_t<!IsVoidCallable<ResultOf<F()>>::value, PromiseLike<RemoveCVRef<F>>>
+absl::enable_if_t<!IsVoidCallable<ResultOf<F()>>::value,
+                  PromiseLike<RemoveCVRef<F>>>
 PromiseFactoryImpl(F f, A&&) {
   return PromiseLike<F>(std::move(f));
 }
 
 // Promote a callable() -> T|Poll<T> to a PromiseFactory() -> Promise<T>
 template <typename F>
-absl::enable_if_t<!IsVoidCallable<ResultOf<F()>>::value, PromiseLike<RemoveCVRef<F>>>
+absl::enable_if_t<!IsVoidCallable<ResultOf<F()>>::value,
+                  PromiseLike<RemoveCVRef<F>>>
 PromiseFactoryImpl(F f) {
   return PromiseLike<F>(std::move(f));
 }

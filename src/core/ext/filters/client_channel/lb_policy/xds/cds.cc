@@ -243,21 +243,18 @@ void CdsLb::Helper::UpdateState(grpc_connectivity_state state,
                                 const absl::Status& status,
                                 std::unique_ptr<SubchannelPicker> picker) {
   if (parent_->shutting_down_ || parent_->child_policy_ == nullptr) return;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO,
-            "[cdslb %p] state updated by child: %s message_state: (%s)", this,
-            ConnectivityStateName(state), status.ToString().c_str());
-  }
+  grpc_cds_lb_trace.Log(
+      GPR_INFO, "[cdslb %p] state updated by child: %s message_state: (%s)",
+      this, ConnectivityStateName(state), status.ToString().c_str());
   parent_->channel_control_helper()->UpdateState(state, status,
                                                  std::move(picker));
 }
 
 void CdsLb::Helper::RequestReresolution() {
   if (parent_->shutting_down_) return;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] Re-resolution requested from child policy.",
-            parent_.get());
-  }
+  grpc_cds_lb_trace.Log(GPR_INFO,
+                        "[cdslb %p] Re-resolution requested from child policy.",
+                        parent_.get());
   parent_->channel_control_helper()->RequestReresolution();
 }
 
@@ -273,30 +270,23 @@ void CdsLb::Helper::AddTraceEvent(TraceSeverity severity,
 
 CdsLb::CdsLb(RefCountedPtr<XdsClient> xds_client, Args args)
     : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] created -- using xds client %p", this,
-            xds_client_.get());
-  }
+  grpc_cds_lb_trace.Log(GPR_INFO, "[cdslb %p] created -- using xds client %p",
+                        this, xds_client_.get());
 }
 
 CdsLb::~CdsLb() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] destroying cds LB policy", this);
-  }
+  grpc_cds_lb_trace.Log(GPR_INFO, "[cdslb %p] destroying cds LB policy", this);
 }
 
 void CdsLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] shutting down", this);
-  }
+  grpc_cds_lb_trace.Log(GPR_INFO, "[cdslb %p] shutting down", this);
   shutting_down_ = true;
   MaybeDestroyChildPolicyLocked();
   if (xds_client_ != nullptr) {
     for (auto& watcher : watchers_) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-        gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
-                watcher.first.c_str());
-      }
+      grpc_cds_lb_trace.Log(GPR_INFO,
+                            "[cdslb %p] cancelling watch for cluster %s", this,
+                            watcher.first.c_str());
       CancelClusterDataWatch(watcher.first, watcher.second.watcher,
                              /*delay_unsubscription=*/false);
     }
@@ -327,10 +317,8 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   auto old_config = std::move(config_);
   config_ = std::move(args.config);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] received update: cluster=%s", this,
-            config_->cluster().c_str());
-  }
+  grpc_cds_lb_trace.Log(GPR_INFO, "[cdslb %p] received update: cluster=%s",
+                        this, config_->cluster().c_str());
   // Update args.
   grpc_channel_args_destroy(args_);
   args_ = args.args;
@@ -339,10 +327,9 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
   if (old_config == nullptr || old_config->cluster() != config_->cluster()) {
     if (old_config != nullptr) {
       for (auto& watcher : watchers_) {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-          gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
-                  watcher.first.c_str());
-        }
+        grpc_cds_lb_trace.Log(GPR_INFO,
+                              "[cdslb %p] cancelling watch for cluster %s",
+                              this, watcher.first.c_str());
         CancelClusterDataWatch(watcher.first, watcher.second.watcher,
                                /*delay_unsubscription=*/true);
       }
@@ -370,10 +357,8 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
   // Create a new watcher if needed.
   if (state.watcher == nullptr) {
     auto watcher = absl::make_unique<ClusterWatcher>(Ref(), name);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-      gpr_log(GPR_INFO, "[cdslb %p] starting watch for cluster %s", this,
-              name.c_str());
-    }
+    grpc_cds_lb_trace.Log(GPR_INFO, "[cdslb %p] starting watch for cluster %s",
+                          this, name.c_str());
     state.watcher = watcher.get();
     xds_client_->WatchClusterData(name, std::move(watcher));
     return false;
@@ -421,12 +406,10 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
 
 void CdsLb::OnClusterChanged(const std::string& name,
                              XdsApi::CdsUpdate cluster_data) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[cdslb %p] received CDS update for cluster %s from xds client %p: %s",
-        this, name.c_str(), xds_client_.get(), cluster_data.ToString().c_str());
-  }
+  grpc_cds_lb_trace.Log(
+      GPR_INFO,
+      "[cdslb %p] received CDS update for cluster %s from xds client %p: %s",
+      this, name.c_str(), xds_client_.get(), cluster_data.ToString().c_str());
   // Store the update in the map if we are still interested in watching this
   // cluster (i.e., it is not cancelled already).
   // If we've already deleted this entry, then this is an update notification
@@ -496,10 +479,8 @@ void CdsLb::OnClusterChanged(const std::string& name,
       }
       grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
                                        interested_parties());
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-        gpr_log(GPR_INFO, "[cdslb %p] created child policy %s (%p)", this,
-                config->name(), child_policy_.get());
-      }
+      grpc_cds_lb_trace.Log(GPR_INFO, "[cdslb %p] created child policy %s (%p)",
+                            this, config->name(), child_policy_.get());
     }
     // Update child policy.
     UpdateArgs args;
@@ -519,10 +500,9 @@ void CdsLb::OnClusterChanged(const std::string& name,
       ++it;
       continue;
     }
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-      gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
-              cluster_name.c_str());
-    }
+    grpc_cds_lb_trace.Log(GPR_INFO,
+                          "[cdslb %p] cancelling watch for cluster %s", this,
+                          cluster_name.c_str());
     CancelClusterDataWatch(cluster_name, it->second.watcher,
                            /*delay_unsubscription=*/false);
     it = watchers_.erase(it);

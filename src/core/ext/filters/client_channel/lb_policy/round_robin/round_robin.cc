@@ -196,23 +196,19 @@ RoundRobin::Picker::Picker(RoundRobin* parent,
   // TODO(roth): rand(3) is not thread-safe.  This should be replaced with
   // something better as part of https://github.com/grpc/grpc/issues/17891.
   last_picked_index_ = rand() % subchannels_.size();
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-    gpr_log(GPR_INFO,
-            "[RR %p picker %p] created picker from subchannel_list=%p "
-            "with %" PRIuPTR " READY subchannels; last_picked_index_=%" PRIuPTR,
-            parent_, this, subchannel_list, subchannels_.size(),
-            last_picked_index_);
-  }
+  grpc_lb_round_robin_trace.Log(
+      GPR_INFO,
+      "[RR %p picker %p] created picker from subchannel_list=%p "
+      "with %" PRIuPTR " READY subchannels; last_picked_index_=%" PRIuPTR,
+      parent_, this, subchannel_list, subchannels_.size(), last_picked_index_);
 }
 
 RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs /*args*/) {
   last_picked_index_ = (last_picked_index_ + 1) % subchannels_.size();
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-    gpr_log(GPR_INFO,
-            "[RR %p picker %p] returning index %" PRIuPTR ", subchannel=%p",
-            parent_, this, last_picked_index_,
-            subchannels_[last_picked_index_].get());
-  }
+  grpc_lb_round_robin_trace.Log(
+      GPR_INFO, "[RR %p picker %p] returning index %" PRIuPTR ", subchannel=%p",
+      parent_, this, last_picked_index_,
+      subchannels_[last_picked_index_].get());
   return PickResult::Complete(subchannels_[last_picked_index_]);
 }
 
@@ -221,23 +217,18 @@ RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs /*args*/) {
 //
 
 RoundRobin::RoundRobin(Args args) : LoadBalancingPolicy(std::move(args)) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-    gpr_log(GPR_INFO, "[RR %p] Created", this);
-  }
+  grpc_lb_round_robin_trace.Log(GPR_INFO, "[RR %p] Created", this);
 }
 
 RoundRobin::~RoundRobin() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-    gpr_log(GPR_INFO, "[RR %p] Destroying Round Robin policy", this);
-  }
+  grpc_lb_round_robin_trace.Log(GPR_INFO,
+                                "[RR %p] Destroying Round Robin policy", this);
   GPR_ASSERT(subchannel_list_ == nullptr);
   GPR_ASSERT(latest_pending_subchannel_list_ == nullptr);
 }
 
 void RoundRobin::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-    gpr_log(GPR_INFO, "[RR %p] Shutting down", this);
-  }
+  grpc_lb_round_robin_trace.Log(GPR_INFO, "[RR %p] Shutting down", this);
   shutdown_ = true;
   subchannel_list_.reset();
   latest_pending_subchannel_list_.reset();
@@ -368,16 +359,14 @@ void RoundRobin::RoundRobinSubchannelList::
 void RoundRobin::RoundRobinSubchannelData::UpdateConnectivityStateLocked(
     grpc_connectivity_state connectivity_state) {
   RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[RR %p] connectivity changed for subchannel %p, subchannel_list %p "
-        "(index %" PRIuPTR " of %" PRIuPTR "): prev_state=%s new_state=%s",
-        p, subchannel(), subchannel_list(), Index(),
-        subchannel_list()->num_subchannels(),
-        ConnectivityStateName(last_connectivity_state_),
-        ConnectivityStateName(connectivity_state));
-  }
+  grpc_lb_round_robin_trace.Log(
+      GPR_INFO,
+      "[RR %p] connectivity changed for subchannel %p, subchannel_list %p "
+      "(index %" PRIuPTR " of %" PRIuPTR "): prev_state=%s new_state=%s",
+      p, subchannel(), subchannel_list(), Index(),
+      subchannel_list()->num_subchannels(),
+      ConnectivityStateName(last_connectivity_state_),
+      ConnectivityStateName(connectivity_state));
   // Decide what state to report for aggregation purposes.
   // If we haven't seen a failure since the last time we were in state
   // READY, then we report the state change as-is.  However, once we do see
@@ -411,12 +400,11 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
   // loop of re-resolution.
   // Also attempt to reconnect.
   if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-      gpr_log(GPR_INFO,
-              "[RR %p] Subchannel %p has gone into TRANSIENT_FAILURE. "
-              "Requesting re-resolution",
-              p, subchannel());
-    }
+    grpc_lb_round_robin_trace.Log(
+        GPR_INFO,
+        "[RR %p] Subchannel %p has gone into TRANSIENT_FAILURE. "
+        "Requesting re-resolution",
+        p, subchannel());
     p->channel_control_helper()->RequestReresolution();
     subchannel()->AttemptToConnect();
   }
@@ -427,17 +415,14 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
 }
 
 void RoundRobin::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-    gpr_log(GPR_INFO, "[RR %p] received update with %" PRIuPTR " addresses",
-            this, args.addresses.size());
-  }
+  grpc_lb_round_robin_trace.Log(
+      GPR_INFO, "[RR %p] received update with %" PRIuPTR " addresses", this,
+      args.addresses.size());
   // Replace latest_pending_subchannel_list_.
   if (latest_pending_subchannel_list_ != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-      gpr_log(GPR_INFO,
-              "[RR %p] Shutting down previous pending subchannel list %p", this,
-              latest_pending_subchannel_list_.get());
-    }
+    grpc_lb_round_robin_trace.Log(
+        GPR_INFO, "[RR %p] Shutting down previous pending subchannel list %p",
+        this, latest_pending_subchannel_list_.get());
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
       this, &grpc_lb_round_robin_trace, std::move(args.addresses), *args.args);

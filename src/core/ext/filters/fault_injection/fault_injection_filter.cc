@@ -211,13 +211,12 @@ class CallData::ResumeBatchCanceller {
     auto* calld = static_cast<CallData*>(self->elem_->call_data);
     {
       MutexLock lock(&calld->delay_mu_);
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
-        gpr_log(GPR_INFO,
-                "chand=%p calld=%p: cancelling schdueled pick: "
-                "error=%s self=%p calld->resume_batch_canceller_=%p",
-                chand, calld, grpc_error_std_string(error).c_str(), self,
-                calld->resume_batch_canceller_);
-      }
+      grpc_fault_injection_filter_trace.Log(
+          GPR_INFO,
+          "chand=%p calld=%p: cancelling schdueled pick: "
+          "error=%s self=%p calld->resume_batch_canceller_=%p",
+          chand, calld, grpc_error_std_string(error).c_str(), self,
+          calld->resume_batch_canceller_);
       if (error != GRPC_ERROR_NONE && calld->resume_batch_canceller_ == self) {
         // Cancel the delayed pick.
         calld->CancelDelayTimer();
@@ -263,12 +262,11 @@ void CallData::StartTransportStreamOpBatch(
   if (batch->send_initial_metadata) {
     calld->DecideWhetherToInjectFaults(
         batch->payload->send_initial_metadata.send_initial_metadata);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p calld=%p: Fault injection triggered delay=%d abort=%d",
-              elem->channel_data, calld, calld->delay_request_,
-              calld->abort_request_);
-    }
+    grpc_fault_injection_filter_trace.Log(
+        GPR_INFO,
+        "chand=%p calld=%p: Fault injection triggered delay=%d abort=%d",
+        elem->channel_data, calld, calld->delay_request_,
+        calld->abort_request_);
     if (calld->MaybeDelay()) {
       // Delay the batch, and pass down the batch in the scheduled closure.
       calld->DelayBatch(elem, batch);
@@ -445,10 +443,9 @@ void CallData::ResumeBatch(void* arg, grpc_error_handle error) {
       calld->resume_batch_canceller_ == nullptr) {
     return;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
-    gpr_log(GPR_INFO, "chand=%p calld=%p: Resuming delayed stream op batch %p",
-            elem->channel_data, calld, calld->delayed_batch_);
-  }
+  grpc_fault_injection_filter_trace.Log(
+      GPR_INFO, "chand=%p calld=%p: Resuming delayed stream op batch %p",
+      elem->channel_data, calld, calld->delayed_batch_);
   // Lame the canceller
   calld->resume_batch_canceller_ = nullptr;
   // Finish fault injection.

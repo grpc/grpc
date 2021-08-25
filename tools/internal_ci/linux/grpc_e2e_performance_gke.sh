@@ -29,10 +29,6 @@ gcloud config set project grpc-testing
 gcloud container clusters get-credentials benchmarks-prod2 \
     --zone us-central1-b --project grpc-testing
 
-# List tests that have running pods and are in errored state.
-# This is an unexpected condition, and it is logged here for monitoring.
-source tools/internal_ci/helper_scripts/list_leftover_loadtests.sh
-
 # Set up environment variables.
 LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
 # BEGIN differentiate experimental configuration from master configuration.
@@ -41,6 +37,7 @@ LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
 BIGQUERY_TABLE_8CORE=e2e_benchmarks.ci_master_results_8core
 BIGQUERY_TABLE_32CORE=e2e_benchmarks.ci_master_results_32core
 # END differentiate experimental configuration from master configuration.
+CLOUD_LOGGING_URL="https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
 PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etesting/pre_built_workers/${LOAD_TEST_PREFIX}"
 UNIQUE_IDENTIFIER="$(date +%Y%m%d%H%M%S)"
 ROOT_DIRECTORY_OF_DOCKERFILES="../test-infra/containers/pre_built_workers/"
@@ -58,7 +55,7 @@ WORKER_POOL_8CORE=workers-8core-ci
 WORKER_POOL_32CORE=workers-32core-ci
 
 # Update go version.
-TEST_INFRA_GOVERSION=go1.16.6
+TEST_INFRA_GOVERSION=go1.17
 go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
 "${TEST_INFRA_GOVERSION}" download
 
@@ -80,6 +77,11 @@ buildConfigs() {
         -s client_pool="${pool}" -s server_pool="${pool}" \
         -s big_query_table="${table}" -s timeout_seconds=900 \
         -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
+        -a ci_buildNumber="${KOKORO_BUILD_NUMBER}" \
+        -a ci_buildUrl="${CLOUD_LOGGING_URL}" \
+        -a ci_jobName="${KOKORO_JOB_NAME}" \
+        -a ci_gitCommit="${KOKORO_GIT_COMMIT}" \
+        -a ci_gitActualCommit="${ghprbActualCommit}" \
         -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=scalable \
@@ -112,8 +114,9 @@ time ../test-infra/bin/prepare_prebuilt_workers \
     -t "${UNIQUE_IDENTIFIER}" \
     -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"
 
-# Create reports directory.
-mkdir -p runner
+# Create reports directories.
+mkdir -p "runner/${WORKER_POOL_8CORE}" "runner/${WORKER_POOL_32CORE}"
+
 
 # Run tests.
 time ../test-infra/bin/runner \

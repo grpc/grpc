@@ -24,6 +24,7 @@
 #include <grpc/support/atm.h>
 #include <stdbool.h>
 
+#include "src/core/lib/gpr/log_internal.h"
 #include "src/core/lib/gprpp/global_config.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_trace);
@@ -88,6 +89,16 @@ class TraceFlag {
   bool enabled() { return false; }
 #endif /* defined(GRPC_USE_TRACERS) || !defined(NDEBUG) */
 
+  void Log(const char* file, int line, gpr_log_severity severity,
+           const char* format, ...) GPR_PRINT_FORMAT_CHECK(5, 6) {
+    if (GPR_UNLIKELY(enabled())) {
+      va_list args;
+      va_start(args, format);
+      gpr_vlog(file, line, severity, format, args);
+      va_end(args);
+    }
+  }
+
  private:
   friend void grpc_core::testing::grpc_tracer_enable_flag(TraceFlag* flag);
   friend class TraceFlagList;
@@ -120,6 +131,7 @@ class DebugOnlyTraceFlag {
   }
   constexpr bool enabled() const { return false; }
   constexpr const char* name() const { return "DebugOnlyTraceFlag"; }
+  void Log(const char*, int, gpr_log_severity, const char*, ...) {}
 
  private:
   void set_enabled(bool /*enabled*/) {}

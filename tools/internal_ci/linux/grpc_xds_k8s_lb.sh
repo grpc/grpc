@@ -23,6 +23,7 @@ readonly GKE_CLUSTER_ZONE="us-central1-a"
 readonly SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-lb-v1-us-west1-b"
 readonly SECONDARY_GKE_CLUSTER_ZONE="us-west1-b"
 ## xDS test client Docker images
+readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-server"
 readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"
 readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
@@ -31,6 +32,7 @@ readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
 # Builds test app Docker images and pushes them to GCR
 # Globals:
 #   BUILD_APP_PATH
+#   SERVER_IMAGE_NAME: Test server Docker image name
 #   CLIENT_IMAGE_NAME: Test client Docker image name
 #   GIT_COMMIT: SHA-1 of git commit being built
 # Arguments:
@@ -41,13 +43,16 @@ readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
 build_test_app_docker_images() {
   echo "Building C++ xDS interop test app Docker images"
   docker build -f "${SRC_DIR}/tools/dockerfile/interoptest/grpc_interop_cxx_xds/Dockerfile.xds_client" -t "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" "${SRC_DIR}"
+  docker build -f "${SRC_DIR}/tools/dockerfile/interoptest/grpc_interop_cxx_xds/Dockerfile.xds_server" -t "${SERVER_IMAGE_NAME}:${GIT_COMMIT}" "${SRC_DIR}"
   gcloud -q auth configure-docker
   docker push "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}"
+  docker push "${SERVER_IMAGE_NAME}:${GIT_COMMIT}"
 }
 
 #######################################
 # Builds test app and its docker images unless they already exist
 # Globals:
+#   SERVER_IMAGE_NAME: Test server Docker image name
 #   CLIENT_IMAGE_NAME: Test client Docker image name
 #   GIT_COMMIT: SHA-1 of git commit being built
 #   FORCE_IMAGE_BUILD
@@ -58,12 +63,16 @@ build_test_app_docker_images() {
 #######################################
 build_docker_images_if_needed() {
   # Check if images already exist
+  server_tags="$(gcloud_gcr_list_image_tags "${SERVER_IMAGE_NAME}" "${GIT_COMMIT}")"
+  printf "Server image: %s:%s\n" "${SERVER_IMAGE_NAME}" "${GIT_COMMIT}"
+  echo "${server_tags:-Server image not found}"
+
   client_tags="$(gcloud_gcr_list_image_tags "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}")"
   printf "Client image: %s:%s\n" "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}"
   echo "${client_tags:-Client image not found}"
 
   # Build if any of the images are missing, or FORCE_IMAGE_BUILD=1
-  if [[ "${FORCE_IMAGE_BUILD}" == "1" || -z "${client_tags}" ]]; then
+  if [[ "${FORCE_IMAGE_BUILD}" == "1" || -z "${server_tags}" || -z "${client_tags}" ]]; then
     build_test_app_docker_images
   else
     echo "Skipping C++ test app build"
@@ -77,6 +86,7 @@ build_docker_images_if_needed() {
 #   KUBE_CONTEXT: The name of kubectl context with GKE cluster access
 #   SECONDARY_KUBE_CONTEXT: The name of kubectl context with secondary GKE cluster access, if any
 #   TEST_XML_OUTPUT_DIR: Output directory for the test xUnit XML report
+#   SERVER_IMAGE_NAME: Test server Docker image name
 #   CLIENT_IMAGE_NAME: Test client Docker image name
 #   GIT_COMMIT: SHA-1 of git commit being built
 # Arguments:
@@ -93,8 +103,9 @@ run_test() {
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
     --secondary_kube_context="${SECONDARY_KUBE_CONTEXT}" \
+    --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
-    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
+    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml"
 }
 
 #######################################

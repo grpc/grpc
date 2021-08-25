@@ -108,6 +108,43 @@ static const char test_refresh_token_str[] =
     "  \"refresh_token\": \"1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42\","
     "  \"type\": \"authorized_user\"}";
 
+/* Test external account credentials. */
+static const char test_external_account_credentials_str[] =
+    "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+    "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+    "url\":\"\",\"token_url\":\"https://"
+    "sts.googleapis.com:5555/"
+    "token\",\"token_info_url\":\"\",\"credential_source\":{\"file\":"
+    "\"credentials_file_path\"},"
+    "\"quota_project_id\":\"quota_"
+    "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+    "secret\"}";
+
+static const char test_external_account_credentials_multi_pattern_sts_str[] =
+    "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+    "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+    "url\":\"https://sts.test.googleapis.com:5555/"
+    "service_account_impersonation_url\",\"token_url\":\"https://"
+    "test.sts.googleapis.com:5555/token\",\"token_info_url\":\"https://"
+    "test-sts.googleapis.com:5555/"
+    "token_info\",\"credential_source\":{\"file\":\"credentials_file_path\"},"
+    "\"quota_project_id\":\"quota_"
+    "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+    "secret\"}";
+
+static const char test_external_account_credentials_multi_pattern_iam_str[] =
+    "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+    "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+    "url\":\"https://iamcredentials.test.googleapis.com:5555/"
+    "service_account_impersonation_url\",\"token_url\":\"https://"
+    "test.iamcredentials.googleapis.com:5555/"
+    "token\",\"token_info_url\":\"https://"
+    "test-iamcredentials.googleapis.com:5555/"
+    "token_info\",\"credential_source\":{\"file\":\"credentials_file_path\"},"
+    "\"quota_project_id\":\"quota_"
+    "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+    "secret\"}";
+
 static const char valid_oauth2_json_response[] =
     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
     " \"expires_in\":3599, "
@@ -1498,6 +1535,71 @@ static void test_google_default_creds_refresh_token(void) {
           creds->call_creds());
   GPR_ASSERT(strcmp(refresh->refresh_token().client_id,
                     "32555999999.apps.googleusercontent.com") == 0);
+  creds->Unref();
+  gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+}
+
+static void test_google_default_creds_external_account_credentials(void) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_composite_channel_credentials* creds;
+  grpc_flush_cached_google_default_credentials();
+  set_google_default_creds_env_var_with_file_contents(
+      "google_default_creds_external_account_credentials",
+      test_external_account_credentials_str);
+  creds = reinterpret_cast<grpc_composite_channel_credentials*>(
+      grpc_google_default_credentials_create(nullptr));
+  auto* default_creds =
+      reinterpret_cast<const grpc_google_default_channel_credentials*>(
+          creds->inner_creds());
+  GPR_ASSERT(default_creds->ssl_creds() != nullptr);
+  auto* external =
+      reinterpret_cast<const grpc_core::ExternalAccountCredentials*>(
+          creds->call_creds());
+  GPR_ASSERT(external != nullptr);
+  creds->Unref();
+  gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+}
+
+static void
+test_google_default_creds_external_account_credentials_multi_pattern_sts(void) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_composite_channel_credentials* creds;
+  grpc_flush_cached_google_default_credentials();
+  set_google_default_creds_env_var_with_file_contents(
+      "google_default_creds_external_account_credentials",
+      test_external_account_credentials_multi_pattern_sts_str);
+  creds = reinterpret_cast<grpc_composite_channel_credentials*>(
+      grpc_google_default_credentials_create(nullptr));
+  auto* default_creds =
+      reinterpret_cast<const grpc_google_default_channel_credentials*>(
+          creds->inner_creds());
+  GPR_ASSERT(default_creds->ssl_creds() != nullptr);
+  auto* external =
+      reinterpret_cast<const grpc_core::ExternalAccountCredentials*>(
+          creds->call_creds());
+  GPR_ASSERT(external != nullptr);
+  creds->Unref();
+  gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+}
+
+static void
+test_google_default_creds_external_account_credentials_multi_pattern_iam(void) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_composite_channel_credentials* creds;
+  grpc_flush_cached_google_default_credentials();
+  set_google_default_creds_env_var_with_file_contents(
+      "google_default_creds_external_account_credentials",
+      test_external_account_credentials_multi_pattern_iam_str);
+  creds = reinterpret_cast<grpc_composite_channel_credentials*>(
+      grpc_google_default_credentials_create(nullptr));
+  auto* default_creds =
+      reinterpret_cast<const grpc_google_default_channel_credentials*>(
+          creds->inner_creds());
+  GPR_ASSERT(default_creds->ssl_creds() != nullptr);
+  auto* external =
+      reinterpret_cast<const grpc_core::ExternalAccountCredentials*>(
+          creds->call_creds());
+  GPR_ASSERT(external != nullptr);
   creds->Unref();
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
 }
@@ -3393,6 +3495,9 @@ int main(int argc, char** argv) {
   test_jwt_creds_signing_failure();
   test_google_default_creds_auth_key();
   test_google_default_creds_refresh_token();
+  test_google_default_creds_external_account_credentials();
+  test_google_default_creds_external_account_credentials_multi_pattern_sts();
+  test_google_default_creds_external_account_credentials_multi_pattern_iam();
   test_google_default_creds_gce();
   test_google_default_creds_non_gce();
   test_no_google_default_creds();
