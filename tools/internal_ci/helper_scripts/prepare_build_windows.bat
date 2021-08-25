@@ -17,6 +17,8 @@
 @rem set path to CMake
 set PATH=C:\tools\msys64\usr\bin;C:\Python27;C:\Program Files\CMake\bin;%PATH%
 
+dir C:\
+
 @rem If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
 if defined KOKORO_GITHUB_PULL_REQUEST_NUMBER if defined RUN_TESTS_FLAGS (
   set RUN_TESTS_FLAGS=%RUN_TESTS_FLAGS% --filter_pr_tests --base_branch origin/%KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH%
@@ -46,7 +48,6 @@ If "%PREPARE_BUILD_INSTALL_DEPS_PYTHON%" == "true" (
 
 @rem Needed for big_query_utils
 python -m pip install google-api-python-client || goto :error
-python3 -m pip install google-api-python-client || goto :error
 
 git submodule update --init || goto :error
 
