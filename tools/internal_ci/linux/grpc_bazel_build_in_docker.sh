@@ -27,8 +27,8 @@ cd /var/local/git/grpc
 
 # Build all basic targets using the strict warning option which leverages the
 # clang compiler to check if sources can pass a set of warning options.
-# For now //examples/android/binder/ are excluded because it needs Android
-# SDK/NDK to be installed to build
+# For now //examples/android/binder/ and //test/cpp/microbenchmarks/bm_binder
+# are excluded because they need Android SDK/NDK to be installed to build.
 bazel build --define=use_strict_warning=true \
 	-- \
 	:all \
@@ -36,7 +36,8 @@ bazel build --define=use_strict_warning=true \
 	//src/compiler/... \
 	//test/... \
 	//examples/... \
-	-//examples/android/binder/...
+	-//examples/android/binder/... \
+	-//test/cpp/microbenchmarks/bm_binder/...
 
 # TODO(jtattersmusch): Adding a build here for --define=grpc_no_xds is not ideal
 # and we should find a better place for this. Refer

@@ -250,6 +250,28 @@ grpc_cc_test(
     deps = [":fullstack_unary_ping_pong_h"],
 )
 
+grpc_cc_library(
+    name = "bm_callback_ping_pong_binder",
+    testonly = 1,
+    srcs = [
+        "bm_callback_ping_pong_binder.cc",
+    ],
+    hdrs = [
+        "bm_callback_ping_pong_binder.h",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":callback_streaming_ping_pong_h",
+        ":callback_unary_ping_pong_h",
+        ":helpers",
+        "//:gpr_platform",
+        "//src/core/ext/transport/binder/client:grpc_transport_binder_client",
+        "//src/core/ext/transport/binder/server:grpc_transport_binder_server",
+    ],
+)
+
 grpc_cc_test(
     name = "bm_metadata",
     srcs = ["bm_metadata.cc"],
