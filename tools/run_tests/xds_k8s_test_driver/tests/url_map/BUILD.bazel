@@ -22,25 +22,23 @@ URL_MAP_TESTS = glob(["url_map/*_test.py"])
         size = "medium",
         timeout = "long"
         srcs = [test_file_name],
-        data = [
-            "//src/python/grpcio_tests/tests/unit/credentials",
+        args = [
+            "--flagfile=\"config/grpc-testing.cfg\"",
+            "--flagfile=\"config/url-map.cfg\"",
         ],
-        flaky = test_file_name in _FLAKY_TESTS,
+        data = [
+            "//tools/run_tests/xds_k8s_test_driver/config/common.cfg",
+            "//tools/run_tests/xds_k8s_test_driver/config/grpc-testing.cfg",
+            "//tools/run_tests/xds_k8s_test_driver/config/url-map.cfg",
+        ],
         imports = ["../../"],
         main = test_file_name,
+        # To run the K8s framework, we need several more arguments.
+        # tools/internal_ci/linux/grpc_xds_url_map.sh
+        tags = ["manual"],
         python_version = "PY3",
         deps = [
-            ":_common",
-            ":_constants",
-            ":_test_base",
-            ":_test_server",
-            "//src/proto/grpc/testing:benchmark_service_py_pb2",
-            "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
-            "//src/proto/grpc/testing:py_messages_proto",
-            "//src/python/grpcio/grpc:grpcio",
-            "//src/python/grpcio_tests/tests/unit:resources",
-            "//src/python/grpcio_tests/tests/unit/framework/common",
-            "@six",
+            "//tools/run_tests/xds_k8s_test_driver:framework",
         ],
     )
     for test_file_name in URL_MAP_TESTS
