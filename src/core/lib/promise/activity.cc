@@ -22,7 +22,8 @@ namespace grpc_core {
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBALS
 
-thread_local Activity* Activity::g_current_activity_ = nullptr;
+ABSL_CONST_INIT GPR_THREAD_LOCAL(Activity*) Activity::g_current_activity_ =
+    nullptr;
 Waker::Unwakeable Waker::unwakeable_;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -38,7 +39,7 @@ class Activity::Handle final : public Wakeable {
   void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
 
   // Activity is going away... drop its reference and sever the connection back.
-  void DropActivity() {
+  void DropActivity() ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     GPR_ASSERT(activity_ != nullptr);
     activity_ = nullptr;

@@ -46,21 +46,17 @@ grpc_millis BdpEstimator::CompletePing() {
               1e-9 * static_cast<double>(dt_ts.tv_nsec);
   double bw = dt > 0 ? (static_cast<double>(accumulator_) / dt) : 0;
   int start_inter_ping_delay = inter_ping_delay_;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
-    gpr_log(GPR_INFO,
-            "bdp[%s]:complete acc=%" PRId64 " est=%" PRId64
-            " dt=%lf bw=%lfMbs bw_est=%lfMbs",
-            name_, accumulator_, estimate_, dt, bw / 125000.0,
-            bw_est_ / 125000.0);
-  }
+  grpc_bdp_estimator_trace.Log(GPR_INFO,
+                               "bdp[%s]:complete acc=%" PRId64 " est=%" PRId64
+                               " dt=%lf bw=%lfMbs bw_est=%lfMbs",
+                               name_, accumulator_, estimate_, dt,
+                               bw / 125000.0, bw_est_ / 125000.0);
   GPR_ASSERT(ping_state_ == PingState::STARTED);
   if (accumulator_ > 2 * estimate_ / 3 && bw > bw_est_) {
     estimate_ = GPR_MAX(accumulator_, estimate_ * 2);
     bw_est_ = bw;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_INFO, "bdp[%s]: estimate increased to %" PRId64, name_,
-              estimate_);
-    }
+    grpc_bdp_estimator_trace.Log(
+        GPR_INFO, "bdp[%s]: estimate increased to %" PRId64, name_, estimate_);
     inter_ping_delay_ /= 2;  // if the ping estimate changes,
                              // exponentially get faster at probing
   } else if (inter_ping_delay_ < 10000) {
@@ -74,10 +70,8 @@ grpc_millis BdpEstimator::CompletePing() {
   }
   if (start_inter_ping_delay != inter_ping_delay_) {
     stable_estimate_count_ = 0;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_INFO, "bdp[%s]:update_inter_time to %dms", name_,
-              inter_ping_delay_);
-    }
+    grpc_bdp_estimator_trace.Log(GPR_INFO, "bdp[%s]:update_inter_time to %dms",
+                                 name_, inter_ping_delay_);
   }
   ping_state_ = PingState::UNSCHEDULED;
   accumulator_ = 0;

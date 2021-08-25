@@ -1732,6 +1732,7 @@ src/core/lib/gpr/env_posix.cc \
 src/core/lib/gpr/env_windows.cc \
 src/core/lib/gpr/log.cc \
 src/core/lib/gpr/log_android.cc \
+src/core/lib/gpr/log_internal.h \
 src/core/lib/gpr/log_linux.cc \
 src/core/lib/gpr/log_posix.cc \
 src/core/lib/gpr/log_windows.cc \

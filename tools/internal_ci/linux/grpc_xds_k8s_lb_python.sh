@@ -23,6 +23,7 @@ readonly GKE_CLUSTER_ZONE="us-central1-a"
 readonly SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-west1-b"
 readonly SECONDARY_GKE_CLUSTER_ZONE="us-west1-b"
 ## xDS test client Docker images
+readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-server:13171a8b293837517c0446ec0e149e9d10ea3d10"
 readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/python-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"
 readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
@@ -104,7 +105,8 @@ run_test() {
     --kube_context="${KUBE_CONTEXT}" \
     --secondary_kube_context="${SECONDARY_KUBE_CONTEXT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
-    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
+    --server_image="${SERVER_IMAGE_NAME}" \
+    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml"
 }
 
 #######################################
