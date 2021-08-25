@@ -42,6 +42,9 @@ grpc_error_handle SdkServerAuthzFilter::Init(grpc_channel_element* elem,
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Failed to get authorization provider.");
   }
+  // grpc_endpoint isn't needed because the current SDK authorization policy
+  // does not support any rules that requires looking for source or destination
+  // addresses.
   new (elem->channel_data) SdkServerAuthzFilter(
       auth_context != nullptr ? auth_context->Ref() : nullptr,
       /*endpoint=*/nullptr, provider->Ref());
