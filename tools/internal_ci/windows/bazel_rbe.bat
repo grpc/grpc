@@ -30,7 +30,7 @@ set BAZEL_EXITCODE=%errorlevel%
 if not "%UPLOAD_TEST_RESULTS%"=="" (
   @rem Sleep to let ResultStore finish writing results before querying
   timeout /t 60 /nobreak
-  python ./tools/run_tests/python_utils/upload_rbe_results.py
+  python3 ./tools/run_tests/python_utils/upload_rbe_results.py
 )
 
 exit /b %BAZEL_EXITCODE%
