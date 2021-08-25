@@ -12,23 +12,89 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
 grpc_package(name = "test/core/transport/binder")
 
-grpc_cc_test(
-    name = "binder_smoke_test",
-    srcs = ["binder_smoke_test.cc"],
+grpc_cc_library(
+    name = "mock_objects",
+    srcs = ["mock_objects.cc"],
+    hdrs = ["mock_objects.h"],
     external_deps = [
+        "absl/memory",
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//src/core/ext/transport/binder/wire_format:binder",
+        "//src/core/ext/transport/binder/wire_format:wire_reader",
+        "//src/core/ext/transport/binder/wire_format:wire_writer",
+    ],
+)
+
+grpc_cc_test(
+    name = "wire_writer_test",
+    srcs = ["wire_writer_test.cc"],
+    external_deps = [
+        "absl/memory",
         "gtest",
     ],
     language = "C++",
     uses_polling = False,
     deps = [
-        "//:gpr",
+        ":mock_objects",
+        "//src/core/ext/transport/binder/wire_format:wire_writer",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "wire_reader_test",
+    srcs = ["wire_reader_test.cc"],
+    external_deps = [
+        "absl/memory",
+        "gtest",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        ":mock_objects",
+        "//src/core/ext/transport/binder/wire_format:wire_reader",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "transport_stream_receiver_test",
+    srcs = ["transport_stream_receiver_test.cc"],
+    external_deps = [
+        "absl/memory",
+        "gtest",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//src/core/ext/transport/binder/utils:transport_stream_receiver",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "binder_transport_test",
+    srcs = ["binder_transport_test.cc"],
+    external_deps = [
+        "absl/memory",
+        "absl/strings",
+        "gtest",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        ":mock_objects",
         "//:grpc",
+        "//src/core/ext/transport/binder/transport",
         "//test/core/util:grpc_test_util",
     ],
 )
