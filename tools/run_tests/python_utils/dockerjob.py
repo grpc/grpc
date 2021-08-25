@@ -61,7 +61,8 @@ def docker_ip_address(cid, timeout_seconds=15):
     while time.time() - started < timeout_seconds:
         cmd = 'docker inspect %s' % cid
         try:
-            output = subprocess.check_output(cmd, stderr=_DEVNULL, shell=True).decode()
+            output = subprocess.check_output(cmd, stderr=_DEVNULL,
+                                             shell=True).decode()
             json_info = json.loads(output)
             assert len(json_info) == 1
             out = json_info[0]['NetworkSettings']['IPAddress']

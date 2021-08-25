@@ -381,7 +381,8 @@ class CLanguage(object):
                         # add a job to run, filtering for just that test.
                         with open(os.devnull, 'w') as fnull:
                             tests = subprocess.check_output(
-                                [binary, '--gtest_list_tests'], stderr=fnull).decode()
+                                [binary, '--gtest_list_tests'],
+                                stderr=fnull).decode()
                         base = None
                         for line in tests.decode().split('\n'):
                             i = line.find('#')
