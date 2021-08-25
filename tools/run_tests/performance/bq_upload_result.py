@@ -63,7 +63,7 @@ def _upload_netperf_latency_csv_to_bigquery(dataset_id, table_id, result_file):
 
 
 def _upload_scenario_result_to_bigquery(dataset_id, table_id, result_file,
-                                        metadata_file):
+                                        metadata_file, node_info_file):
     with open(result_file, 'r') as f:
         scenario_result = json.loads(f.read())
 
@@ -71,7 +71,7 @@ def _upload_scenario_result_to_bigquery(dataset_id, table_id, result_file,
     _create_results_table(bq, dataset_id, table_id)
 
     if not _insert_scenario_result(bq, dataset_id, table_id, scenario_result,
-                                   metadata_file):
+                                   metadata_file, node_info_file):
         print('Error uploading result to bigquery.')
         sys.exit(1)
 
@@ -90,10 +90,12 @@ def _insert_scenario_result(bq,
                             table_id,
                             scenario_result,
                             test_metadata_file,
+                            node_info_file,
                             flatten=True):
     if flatten:
         _flatten_result_inplace(scenario_result)
     _populate_metadata_from_file(scenario_result, test_metadata_file)
+    _populate_node_metadata_from_file(scenario_result, node_info_file)
     row = big_query_utils.make_row(str(uuid.uuid4()), scenario_result)
     return big_query_utils.insert_rows(bq, _PROJECT_ID, dataset_id, table_id,
                                        [row])
@@ -213,6 +215,30 @@ def _populate_metadata_from_file(scenario_result, test_metadata_file):
     scenario_result['metadata'] = metadata
 
 
+def _populate_node_metadata_from_file(scenario_result, node_info_file):
+    node_metadata = {'driver': {}, 'servers': [], 'clients': []}
+    _node_info_to_bq_node_metadata_key_map = {
+        'Name': 'name',
+        'PodIP': 'podIP',
+        'NodeName': 'nodeName',
+    }
+    with open(node_info_file, 'r') as f:
+        file_metadata = json.loads(f.read())
+        for key, value in _node_info_to_bq_node_metadata_key_map.items():
+            node_metadata['driver'][value] = file_metadata['Driver'][key]
+        for clientNodeInfo in file_metadata['Clients']:
+            node_metadata['clients'].append({
+                value: clientNodeInfo[key] for key, value in
+                _node_info_to_bq_node_metadata_key_map.items()
+            })
+        for serverNodeInfo in file_metadata['Servers']:
+            node_metadata['servers'].append({
+                value: serverNodeInfo[key] for key, value in
+                _node_info_to_bq_node_metadata_key_map.items()
+            })
+    scenario_result['nodeMetadata'] = node_metadata
+
+
 argp = argparse.ArgumentParser(description='Upload result to big query.')
 argp.add_argument('--bq_result_table',
                   required=True,
@@ -227,6 +253,10 @@ argp.add_argument('--metadata_file_to_upload',
                   default='metadata.json',
                   type=str,
                   help='Metadata file to upload.')
+argp.add_argument('--node_info_file_to_upload',
+                  default='node_info.json',
+                  type=str,
+                  help='Node information file to upload.')
 argp.add_argument('--file_format',
                   choices=['scenario_result', 'netperf_latency_csv'],
                   default='scenario_result',
@@ -242,6 +272,8 @@ if args.file_format == 'netperf_latency_csv':
 else:
     _upload_scenario_result_to_bigquery(dataset_id, table_id,
                                         args.file_to_upload,
-                                        args.metadata_file_to_upload)
-print('Successfully uploaded %s and %s to BigQuery.\n' %
-      (args.file_to_upload, args.metadata_file_to_upload))
+                                        args.metadata_file_to_upload,
+                                        args.node_info_file_to_upload)
+print('Successfully uploaded %s, %s and %s to BigQuery.\n' %
+      (args.file_to_upload, args.metadata_file_to_upload,
+       args.node_info_file_to_upload))
