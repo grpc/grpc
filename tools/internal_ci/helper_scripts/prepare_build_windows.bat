@@ -29,9 +29,6 @@ netsh interface ip set dns "Local Area Connection 8" static 169.254.169.254 prim
 netsh interface ip add dnsservers "Local Area Connection 8" 8.8.8.8 index=2
 netsh interface ip add dnsservers "Local Area Connection 8" 8.8.4.4 index=3
 
-@rem Needed for big_query_utils
-python -m pip install google-api-python-client || goto :error
-python3 -m pip install google-api-python-client || goto :error
 
 @rem C# prerequisites: Install dotnet SDK
 powershell -File src\csharp\install_dotnet_sdk.ps1 || goto :error
@@ -46,6 +43,10 @@ set DOTNET_CLI_TELEMETRY_OPTOUT=true
 If "%PREPARE_BUILD_INSTALL_DEPS_PYTHON%" == "true" (
     powershell -File tools\internal_ci\helper_scripts\install_python_interpreters.ps1 || goto :error
 )
+
+@rem Needed for big_query_utils
+python -m pip install google-api-python-client || goto :error
+python3 -m pip install google-api-python-client || goto :error
 
 git submodule update --init || goto :error
 
