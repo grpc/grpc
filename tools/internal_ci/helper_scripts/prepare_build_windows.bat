@@ -15,9 +15,7 @@
 @rem make sure msys binaries are preferred over cygwin binaries
 @rem set path to python 2.7
 @rem set path to CMake
-set PATH=C:\tools\msys64\usr\bin;C:\Python27;C:\Program Files\CMake\bin;%PATH%
-
-dir C:\
+set PATH=C:\tools\msys64\usr\bin;C:\Python37;C:\Python27;C:\Program Files\CMake\bin;%PATH%
 
 @rem If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
 if defined KOKORO_GITHUB_PULL_REQUEST_NUMBER if defined RUN_TESTS_FLAGS (
