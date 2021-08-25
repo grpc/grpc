@@ -13,9 +13,10 @@
 # limitations under the License.
 
 # Docker file for building gRPC manylinux Python artifacts.
-# Updated: 2020-10-08
+# Updated: 2021-08-23
 
-FROM quay.io/pypa/manylinux2014_i686
+# Use a tagged version to use Python 3.5
+FROM quay.io/pypa/manylinux2014_i686:2021-05-01-28d233a
 
 # TODO(jtattermusch): revisit which of the deps are really required
 RUN yum update -y && yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel
