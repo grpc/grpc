@@ -20,16 +20,14 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-# If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
-if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ] && [ -n "$RUN_TESTS_FLAGS" ]; then
-  export RUN_TESTS_FLAGS="$RUN_TESTS_FLAGS --filter_pr_tests --base_branch origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH"
-fi
+echo "Env variables provided by kokoro:"
+echo "KOKORO_GIT_COMMIT $KOKORO_GIT_COMMIT"
+echo "KOKORO_GITHUB_PULL_REQUEST_COMMIT $KOKORO_GITHUB_PULL_REQUEST_COMMIT"
+echo "KOKORO_GITHUB_PULL_REQUEST_NUMBER $KOKORO_GITHUB_PULL_REQUEST_NUMBER"
+echo "KOKORO_GITHUB_COMMIT $KOKORO_GITHUB_COMMIT"
 
-tools/run_tests/run_tests_matrix.py $RUN_TESTS_FLAGS || FAILED="true"
+# show checked-out version
+echo "Currently checked out commit:"
+git log -2
 
-echo 'Exiting gRPC main test script.'
-
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
+exit 1
