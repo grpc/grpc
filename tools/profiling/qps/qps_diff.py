@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 # Copyright 2017 gRPC authors.
 #
@@ -145,7 +145,7 @@ def main(args):
 
     if args.diff_base:
         where_am_i = subprocess.check_output(
-            ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
+            ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
         subprocess.check_call(['git', 'checkout', args.diff_base])
         try:
             build('old', args.jobs)

@@ -96,7 +96,7 @@ for frameworks in [False, True]:
     if args.diff_base:
         old = 'old'
         where_am_i = subprocess.check_output(
-            ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
+            ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
         subprocess.check_call(['git', 'checkout', '--', '.'])
         subprocess.check_call(['git', 'checkout', args.diff_base])
         subprocess.check_call(['git', 'submodule', 'update', '--force'])

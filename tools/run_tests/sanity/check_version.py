@@ -31,7 +31,7 @@ from expand_version import Version
 
 try:
     branch_name = subprocess.check_output('git rev-parse --abbrev-ref HEAD',
-                                          shell=True)
+                                          shell=True).decode()
 except:
     print('WARNING: not a git repository')
     branch_name = None

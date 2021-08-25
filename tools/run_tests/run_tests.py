@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -277,12 +277,12 @@ class CLanguage(object):
             cflags = '-DGRPC_UV -DGRPC_CUSTOM_IOMGR_THREAD_CHECK -DGRPC_CUSTOM_SOCKET '
             try:
                 cflags += subprocess.check_output(
-                    ['pkg-config', '--cflags', 'libuv']).strip() + ' '
+                    ['pkg-config', '--cflags', 'libuv']).decode().strip() + ' '
             except (subprocess.CalledProcessError, OSError):
                 pass
             try:
                 ldflags = subprocess.check_output(
-                    ['pkg-config', '--libs', 'libuv']).strip() + ' '
+                    ['pkg-config', '--libs', 'libuv']).decode().strip() + ' '
             except (subprocess.CalledProcessError, OSError):
                 ldflags = '-luv '
             self._make_options += [
@@ -356,7 +356,7 @@ class CLanguage(object):
                         with open(os.devnull, 'w') as fnull:
                             tests = subprocess.check_output(
                                 [binary, '--benchmark_list_tests'],
-                                stderr=fnull)
+                                stderr=fnull).decode()
                         for line in tests.decode().split('\n'):
                             test = line.strip()
                             if not test:
@@ -381,7 +381,7 @@ class CLanguage(object):
                         # add a job to run, filtering for just that test.
                         with open(os.devnull, 'w') as fnull:
                             tests = subprocess.check_output(
-                                [binary, '--gtest_list_tests'], stderr=fnull)
+                                [binary, '--gtest_list_tests'], stderr=fnull).decode()
                         base = None
                         for line in tests.decode().split('\n'):
                             i = line.find('#')
