@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 
 # Copyright 2017 gRPC authors.
 #
@@ -13,6 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from __future__ import print_function
 
 import collections
 import ctypes
@@ -38,6 +40,7 @@ def c_str(s, encoding='ascii'):
         s = s.encode(encoding)
     result = ''
     for c in s:
+        c = chr(c) if isinstance(c, int) else c
         if not (32 <= ord(c) < 127) or c in ('\\', '"'):
             result += '\\%03o' % ord(c)
         else:

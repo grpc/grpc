@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 
 # Copyright 2015 gRPC authors.
 #
@@ -641,7 +641,7 @@ def perfect_hash(keys, name):
     def f(i, p=p):
         i += p.offset
         x = i % p.t
-        y = i / p.t
+        y = i // p.t
         return x + p.r[y]
 
     return {
