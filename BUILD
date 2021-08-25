@@ -323,6 +323,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     standalone = True,
+    tags = ["avoid_dep"],
     visibility = ["@grpc:public"],
     deps = [
         "gpr_base",
@@ -347,6 +348,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
     standalone = True,
+    tags = ["avoid_dep"],
     visibility = ["@grpc:public"],
     deps = [
         "config",
@@ -522,6 +524,7 @@ grpc_cc_library(
     ],
     language = "c++",
     standalone = True,
+    tags = ["avoid_dep"],
     visibility = ["@grpc:public"],
     deps = [
         "gpr",
@@ -3185,6 +3188,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
+    tags = ["avoid_dep"],
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
         "gpr_base",
