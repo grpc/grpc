@@ -36,14 +36,21 @@ namespace testing {
 namespace {
 
 TEST(TlsCertificateVerifierTest, SyncCertificateVerifierSucceeds) {
+  gpr_log(GPR_ERROR,
+          "TlsCertificateVerifierTest.SyncCertificateVerifierSucceeds starts");
   grpc_tls_custom_verification_check_request request;
   auto verifier =
       ExternalCertificateVerifier::Create<SyncCertificateVerifier>(true);
+  gpr_log(GPR_ERROR, "Inside TlsCertificateVerifierTest.: verifier is created");
   TlsCustomVerificationCheckRequest cpp_request(&request);
   grpc::Status sync_status;
   verifier->Verify(&cpp_request, nullptr, &sync_status);
+  gpr_log(GPR_ERROR,
+          "Inside TlsCertificateVerifierTest.: verifier->Verify is called");
   EXPECT_TRUE(sync_status.ok())
       << sync_status.error_code() << " " << sync_status.error_message();
+  gpr_log(GPR_ERROR,
+          "TlsCertificateVerifierTest.SyncCertificateVerifierSucceeds ends");
 }
 
 TEST(TlsCertificateVerifierTest, SyncCertificateVerifierFails) {
