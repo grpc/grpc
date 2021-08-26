@@ -1019,31 +1019,33 @@ b) the sum of RPCs that either completed with a non-OK status or exceeded
    `max_acceptable_per_rpc_latency_ms` exceeds `soak_max_failures`
 
 Implementations should use a timer with sub-millisecond precision to measure
-latency.
+latency. Also, implementations should avoid setting RPC deadlines and should
+instead wait for each RPC to complete. Doing so provides more data for
+debugging in case of failure. For example, if RPC deadlines are set to
+`soak_per_iteration_max_acceptable_latency_ms` and one of the RPCs hits that
+deadline, it's not clear if the RPC was late by a millisecond or a minute.
 
 This test must be configurable via a few different command line flags:
 
-* `soak_iterations`: controls the number of RPCs to perform.
+* `soak_iterations`: Controls the number of RPCs to perform. This should
+  default to 10.
 
-* `soak_max_failures`: an inclusive upper limit on the number of RPC failures
+* `soak_max_failures`: An inclusive upper limit on the number of RPC failures
   that should be tolerated (i.e. after which the test process should
   still exit 0). A failure is considered to be either a non-OK status or an RPC
-  whose latency exceeds `soak_per_iteration_max_acceptable_latency_ms`.
+  whose latency exceeds `soak_per_iteration_max_acceptable_latency_ms`. This
+  should default to 0.
 
-* `soak_per_iteration_max_acceptable_latency_ms`: an upper limit on the latency
-  of a single RPC in order for that RPC to be considered successful.
+* `soak_per_iteration_max_acceptable_latency_ms`: An upper limit on the latency
+  of a single RPC in order for that RPC to be considered successful. This
+  should default to 1000.
 
-* `soak_overall_timeout_seconds`: the overall number of seconds after which
+* `soak_overall_timeout_seconds`: The overall number of seconds after which
   the test should stop and fail if `soak_iterations` have not yet been
-  completed.
+  completed. This should default to
+  `soak_per_iteration_max_acceptable_latency_ms` * `soak_iterations`.
 
-The following suggestions are optional but encouraged to improve debuggability:
-
-* Implementations should avoid setting RPC deadlines and should instead
-  wait for each RPC to complete. Doing so provides more data for debugging in case
-  of failure. For example, if RPC deadlines are set to
-  `soak_per_iteration_max_acceptable_latency_ms` and one of the RPCs hits that
-  deadline, it's not clear if the RPC was late by a millisecond or a minute.
+The following is optional but encouraged to improve debuggability:
 
 * Implementations should log the number of milliseconds that each RPC takes.
   Additionally, implementations should use a histogram of RPC latencies
