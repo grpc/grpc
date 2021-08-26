@@ -82,8 +82,9 @@ static void CFStreamConnectCleanup(CFStreamConnect* connect) {
 
 static void OnAlarm(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
-  grpc_tcp_trace.Log(GPR_DEBUG, "CLIENT_CONNECT :%p OnAlarm, error:%p", connect,
-                     error);
+  if (grpc_tcp_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnAlarm, error:%p", connect, error);
+  }
   gpr_mu_lock(&connect->mu);
   grpc_closure* closure = connect->closure;
   connect->closure = nil;
@@ -102,8 +103,9 @@ static void OnAlarm(void* arg, grpc_error_handle error) {
 
 static void OnOpen(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
-  grpc_tcp_trace.Log(GPR_DEBUG, "CLIENT_CONNECT :%p OnOpen, error:%p", connect,
-                     error);
+  if (grpc_tcp_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnOpen, error:%p", connect, error);
+  }
   gpr_mu_lock(&connect->mu);
   grpc_timer_cancel(&connect->alarm);
   grpc_closure* closure = connect->closure;
@@ -167,9 +169,10 @@ static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
   gpr_ref_init(&connect->refcount, 1);
   gpr_mu_init(&connect->mu);
 
-  grpc_tcp_trace.Log(GPR_DEBUG,
-                     "CLIENT_CONNECT: %p, %s: asynchronously connecting",
-                     connect, connect->addr_name.c_str());
+  if (grpc_tcp_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %p, %s: asynchronously connecting",
+            connect, connect->addr_name.c_str());
+  }
   connect->slice_allocator = slice_allocator;
 
   CFReadStreamRef read_stream;

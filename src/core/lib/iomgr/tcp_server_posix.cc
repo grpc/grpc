@@ -245,8 +245,10 @@ static void on_read(void* arg, grpc_error_handle err) {
     }
 
     std::string addr_str = grpc_sockaddr_to_uri(&addr);
-    grpc_tcp_trace.Log(GPR_INFO, "SERVER_CONNECT: incoming connection: %s",
-                       addr_str.c_str());
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_INFO, "SERVER_CONNECT: incoming connection: %s",
+              addr_str.c_str());
+    }
 
     std::string name = absl::StrCat("tcp-server-connection:", addr_str);
     grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
@@ -595,9 +597,10 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     }
     grpc_set_socket_no_sigpipe_if_possible(fd);
     std::string addr_str = grpc_sockaddr_to_uri(&addr);
-    grpc_tcp_trace.Log(GPR_INFO,
-                       "SERVER_CONNECT: incoming external connection: %s",
-                       addr_str.c_str());
+    if (grpc_tcp_trace.enabled()) {
+      gpr_log(GPR_INFO, "SERVER_CONNECT: incoming external connection: %s",
+              addr_str.c_str());
+    }
     std::string name = absl::StrCat("tcp-server-connection:", addr_str);
     grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
     read_notifier_pollset =
