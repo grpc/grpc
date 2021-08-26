@@ -24,7 +24,7 @@ package(
 )
 
 grpc_cc_library(
-    name = "transport",
+    name = "binder_transport",
     srcs = [
         "binder_transport.cc",
     ],
