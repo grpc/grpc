@@ -31,6 +31,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -63,12 +64,19 @@ bool grpc_service_account_jwt_access_credentials::get_request_metadata(
   gpr_timespec refresh_threshold = gpr_time_from_seconds(
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
 
+  // Remove service name from service_url to follow the audience format
+  // dictated in https://google.aip.dev/auth/4111.
+  char* url = grpc_remove_service_name_from_uri(context.service_url);
+  if (url == nullptr) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid service URL.");
+    return true;
+  }
   /* See if we can return a cached jwt. */
   grpc_mdelem jwt_md = GRPC_MDNULL;
   {
     gpr_mu_lock(&cache_mu_);
     if (cached_.service_url != nullptr &&
-        strcmp(cached_.service_url, context.service_url) == 0 &&
+        strcmp(cached_.service_url, url) == 0 &&
         !GRPC_MDISNULL(cached_.jwt_md) &&
         (gpr_time_cmp(
              gpr_time_sub(cached_.jwt_expiration, gpr_now(GPR_CLOCK_REALTIME)),
@@ -83,14 +91,13 @@ bool grpc_service_account_jwt_access_credentials::get_request_metadata(
     /* Generate a new jwt. */
     gpr_mu_lock(&cache_mu_);
     reset_cache();
-    jwt = grpc_jwt_encode_and_sign(&key_, context.service_url, jwt_lifetime_,
-                                   nullptr);
+    jwt = grpc_jwt_encode_and_sign(&key_, url, jwt_lifetime_, nullptr);
     if (jwt != nullptr) {
       std::string md_value = absl::StrCat("Bearer ", jwt);
       gpr_free(jwt);
       cached_.jwt_expiration =
           gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), jwt_lifetime_);
-      cached_.service_url = gpr_strdup(context.service_url);
+      cached_.service_url = gpr_strdup(url);
       cached_.jwt_md = grpc_mdelem_from_slices(
           grpc_slice_from_static_string(GRPC_AUTHORIZATION_METADATA_KEY),
           grpc_slice_from_cpp_string(std::move(md_value)));
@@ -105,6 +112,7 @@ bool grpc_service_account_jwt_access_credentials::get_request_metadata(
   } else {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Could not generate JWT.");
   }
+  gpr_free(url);
   return true;
 }
 
@@ -172,4 +180,15 @@ grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(
   return grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
              grpc_auth_json_key_create_from_string(json_key), token_lifetime)
       .release();
+}
+
+char* grpc_remove_service_name_from_uri(const char* peer_uri) {
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(peer_uri);
+  if (!uri.ok()) {
+    return nullptr;
+  }
+  char* result = nullptr;
+  gpr_asprintf(&result, "%s://%s/", uri->scheme().c_str(),
+               uri->authority().c_str());
+  return result;
 }

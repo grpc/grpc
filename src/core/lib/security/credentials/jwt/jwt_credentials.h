@@ -78,4 +78,10 @@ grpc_core::RefCountedPtr<grpc_call_credentials>
 grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     grpc_auth_json_key key, gpr_timespec token_lifetime);
 
+// Helper function that removes RPC service name from uri.
+// The caller takes ownership of the returned value.
+//
+// Exposed for testing purpose.
+char* grpc_remove_service_name_from_uri(const char* peer_uri);
+
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_CREDENTIALS_H */
