@@ -3373,6 +3373,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpcpp/ext/channelz_service_plugin.h",
     ],
+    visibility = ["@grpc:channelz"],
     deps = [
         "gpr",
         "grpc",
