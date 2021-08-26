@@ -235,15 +235,18 @@ class Closure {
       return;
     }
 #ifndef NDEBUG
-    grpc_trace_closure.Log(
-        GPR_DEBUG, "running closure %p: created [%s:%d]: run [%s:%d]", closure,
-        closure->file_created, closure->line_created, location.file(),
-        location.line());
+    if (grpc_trace_closure.enabled()) {
+      gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: run [%s:%d]",
+              closure, closure->file_created, closure->line_created,
+              location.file(), location.line());
+    }
     GPR_ASSERT(closure->cb != nullptr);
 #endif
     closure->cb(closure->cb_arg, error);
 #ifndef NDEBUG
-    grpc_trace_closure.Log(GPR_DEBUG, "closure %p finished", closure);
+    if (grpc_trace_closure.enabled()) {
+      gpr_log(GPR_DEBUG, "closure %p finished", closure);
+    }
 #endif
     GRPC_ERROR_UNREF(error);
   }

@@ -68,16 +68,18 @@ HealthCheckClient::HealthCheckClient(
               .set_jitter(HEALTH_CHECK_RECONNECT_JITTER)
               .set_max_backoff(HEALTH_CHECK_RECONNECT_MAX_BACKOFF_SECONDS *
                                1000)) {
-  grpc_health_check_client_trace.Log(GPR_INFO, "created HealthCheckClient %p",
-                                     this);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
+    gpr_log(GPR_INFO, "created HealthCheckClient %p", this);
+  }
   GRPC_CLOSURE_INIT(&retry_timer_callback_, OnRetryTimer, this,
                     grpc_schedule_on_exec_ctx);
   StartCall();
 }
 
 HealthCheckClient::~HealthCheckClient() {
-  grpc_health_check_client_trace.Log(GPR_INFO,
-                                     "destroying HealthCheckClient %p", this);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
+    gpr_log(GPR_INFO, "destroying HealthCheckClient %p", this);
+  }
 }
 
 void HealthCheckClient::SetHealthStatus(grpc_connectivity_state state,
@@ -88,9 +90,10 @@ void HealthCheckClient::SetHealthStatus(grpc_connectivity_state state,
 
 void HealthCheckClient::SetHealthStatusLocked(grpc_connectivity_state state,
                                               const char* reason) {
-  grpc_health_check_client_trace.Log(
-      GPR_INFO, "HealthCheckClient %p: setting state=%s reason=%s", this,
-      ConnectivityStateName(state), reason);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
+    gpr_log(GPR_INFO, "HealthCheckClient %p: setting state=%s reason=%s", this,
+            ConnectivityStateName(state), reason);
+  }
   if (watcher_ != nullptr) {
     watcher_->Notify(state,
                      state == GRPC_CHANNEL_TRANSIENT_FAILURE
@@ -100,8 +103,9 @@ void HealthCheckClient::SetHealthStatusLocked(grpc_connectivity_state state,
 }
 
 void HealthCheckClient::Orphan() {
-  grpc_health_check_client_trace.Log(
-      GPR_INFO, "HealthCheckClient %p: shutting down", this);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
+    gpr_log(GPR_INFO, "HealthCheckClient %p: shutting down", this);
+  }
   {
     MutexLock lock(&mu_);
     shutting_down_ = true;
@@ -124,9 +128,10 @@ void HealthCheckClient::StartCallLocked() {
   GPR_ASSERT(call_state_ == nullptr);
   SetHealthStatusLocked(GRPC_CHANNEL_CONNECTING, "starting health watch");
   call_state_ = MakeOrphanable<CallState>(Ref(), interested_parties_);
-  grpc_health_check_client_trace.Log(
-      GPR_INFO, "HealthCheckClient %p: created CallState %p", this,
-      call_state_.get());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
+    gpr_log(GPR_INFO, "HealthCheckClient %p: created CallState %p", this,
+            call_state_.get());
+  }
   call_state_->StartCall();
 }
 
@@ -159,8 +164,10 @@ void HealthCheckClient::OnRetryTimer(void* arg, grpc_error_handle error) {
     self->retry_timer_callback_pending_ = false;
     if (!self->shutting_down_ && error == GRPC_ERROR_NONE &&
         self->call_state_ == nullptr) {
-      grpc_health_check_client_trace.Log(
-          GPR_INFO, "HealthCheckClient %p: restarting health check call", self);
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
+        gpr_log(GPR_INFO, "HealthCheckClient %p: restarting health check call",
+                self);
+      }
       self->StartCallLocked();
     }
   }
@@ -250,9 +257,10 @@ HealthCheckClient::CallState::CallState(
       payload_(context_) {}
 
 HealthCheckClient::CallState::~CallState() {
-  grpc_health_check_client_trace.Log(
-      GPR_INFO, "HealthCheckClient %p: destroying CallState %p",
-      health_check_client_.get(), this);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
+    gpr_log(GPR_INFO, "HealthCheckClient %p: destroying CallState %p",
+            health_check_client_.get(), this);
+  }
   for (size_t i = 0; i < GRPC_CONTEXT_COUNT; i++) {
     if (context_[i].destroy != nullptr) {
       context_[i].destroy(context_[i].value);
@@ -554,11 +562,12 @@ void HealthCheckClient::CallState::RecvTrailingMetadataReady(
     status = grpc_get_status_code_from_metadata(
         self->recv_trailing_metadata_.idx.named.grpc_status->md);
   }
-  grpc_health_check_client_trace.Log(
-      GPR_INFO,
-      "HealthCheckClient %p CallState %p: health watch failed with "
-      "status %d",
-      self->health_check_client_.get(), self, status);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
+    gpr_log(GPR_INFO,
+            "HealthCheckClient %p CallState %p: health watch failed with "
+            "status %d",
+            self->health_check_client_.get(), self, status);
+  }
   // Clean up.
   grpc_metadata_batch_destroy(&self->recv_trailing_metadata_);
   // For status UNIMPLEMENTED, give up and assume always healthy.
