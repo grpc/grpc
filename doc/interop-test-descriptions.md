@@ -1061,7 +1061,7 @@ This test is configured with the same command line flags that the rpc_soak test
 is configured with, with only one semantic difference: when measuring an RPCs
 latency to see if it exceeds `soak_per_iteration_max_acceptable_latency_ms` or
 not, the creation of the channel should be included in that
-latency measurement, but the teardown of that channel should <b>not</b> be
+latency measurement, but the teardown of that channel should **not** be
 included in that latency measurement (channel teardown semantics differ widely
 between languages). This latency measurement should also be the value that is
 logged and recorded in the latency histogram.
