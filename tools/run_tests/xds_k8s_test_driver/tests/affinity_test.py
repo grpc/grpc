@@ -34,15 +34,17 @@ _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
 _ChannelzChannelState = grpc_channelz.ChannelState
 
-# Testing metadata consts
+# Testing consts
 _TEST_AFFINITY_METADATA_KEY = 'xds_md'
 _TD_PROPAGATE_CHECK_INTERVAL_SEC = 10
+_TD_PROPAGATE_TIMEOUT = 600
+_REPLICA_COUNT = 3
+_RPC_COUNT = 100
 
 
 class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
     def test_affinity(self) -> None:
-        REPLICA_COUNT = 3
 
         with self.subTest('00_create_health_check'):
             self.td.create_health_check()
@@ -62,7 +64,7 @@ class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         with self.subTest('05_start_test_servers'):
             self.test_servers: List[_XdsTestServer] = self.startTestServers(
-                replica_count=REPLICA_COUNT)
+                replica_count=_REPLICA_COUNT)
 
         with self.subTest('06_add_server_backends_to_backend_services'):
             self.setupServerBackends()
@@ -79,7 +81,7 @@ class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             json_config = json_format.MessageToDict(config)
             parsed = xds_url_map_testcase.DumpedXdsConfig(json_config)
             logging.info('Client received CSDS response: %s', parsed)
-            self.assertLen(parsed.endpoints, REPLICA_COUNT)
+            self.assertLen(parsed.endpoints, _REPLICA_COUNT)
             self.assertEqual(
                 parsed.rds['virtualHosts'][0]['routes'][0]['route']
                 ['hashPolicy'][0]['header']['headerName'],
@@ -93,8 +95,7 @@ class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.assertSuccessfulRpcs(self.test_client)
 
         with self.subTest('10_first_100_affinity_rpcs_pick_same_backend'):
-            num_rpcs = 100
-            rpc_stats = self.getClientRpcStats(self.test_client, num_rpcs)
+            rpc_stats = self.getClientRpcStats(self.test_client, _RPC_COUNT)
             json_lb_stats = json_format.MessageToDict(rpc_stats)
             rpc_distribution = xds_url_map_testcase.RpcDistributionStats(
                 json_lb_stats)
@@ -121,26 +122,27 @@ class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                     s.set_not_serving()
 
         with self.subTest('12_wait_for_unhealth_status_propagation'):
+            deadline = time.time() + _TD_PROPAGATE_TIMEOUT
             success = False
-            for i in range(60):
+            parsed = None
+            while time.time() < deadline:
                 config = self.test_client.csds.fetch_client_status(
                     log_level=logging.INFO)
                 self.assertIsNotNone(config)
                 json_config = json_format.MessageToDict(config)
                 parsed = xds_url_map_testcase.DumpedXdsConfig(json_config)
-                logging.info('Client received CSDS response: %s', parsed)
-                if len(parsed.endpoints) == REPLICA_COUNT - 1:
+                if len(parsed.endpoints) == _REPLICA_COUNT - 1:
                     success = True
                     break
                 logging.info('retrying after %d seconds',
                              _TD_PROPAGATE_CHECK_INTERVAL_SEC)
                 time.sleep(_TD_PROPAGATE_CHECK_INTERVAL_SEC)
+            logging.info('Client received CSDS response: %s', parsed)
             self.assertTrue(
                 success, 'unhealthy status did not propagate after 600 seconds')
 
         with self.subTest('12_next_100_affinity_rpcs_pick_different_backend'):
-            num_rpcs = 100
-            rpc_stats = self.getClientRpcStats(self.test_client, num_rpcs)
+            rpc_stats = self.getClientRpcStats(self.test_client, _RPC_COUNT)
             json_lb_stats = json_format.MessageToDict(rpc_stats)
             rpc_distribution = xds_url_map_testcase.RpcDistributionStats(
                 json_lb_stats)
