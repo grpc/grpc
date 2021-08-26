@@ -18,6 +18,9 @@ licenses(["notice"])
 
 package(
     default_visibility = ["//visibility:public"],
+    features = [
+        "layering_check",
+    ],
 )
 
 grpc_cc_library(
@@ -36,9 +39,10 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "//:gpr_platform",
         "//:grpc++_base",
         "//:grpc_base_c",
-        "//src/core/ext/transport/binder/transport",
+        "//src/core/ext/transport/binder/transport:binder_transport",
         "//src/core/ext/transport/binder/wire_format:binder",
         "//src/core/ext/transport/binder/wire_format:binder_android",
     ],
