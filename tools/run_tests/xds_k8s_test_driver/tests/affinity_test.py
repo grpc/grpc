@@ -123,23 +123,25 @@ class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         with self.subTest('12_wait_for_unhealth_status_propagation'):
             deadline = time.time() + _TD_PROPAGATE_TIMEOUT
-            success = False
             parsed = None
-            while time.time() < deadline:
-                config = self.test_client.csds.fetch_client_status(
-                    log_level=logging.INFO)
-                self.assertIsNotNone(config)
-                json_config = json_format.MessageToDict(config)
-                parsed = xds_url_map_testcase.DumpedXdsConfig(json_config)
-                if len(parsed.endpoints) == _REPLICA_COUNT - 1:
-                    success = True
-                    break
-                logging.info('retrying after %d seconds',
-                             _TD_PROPAGATE_CHECK_INTERVAL_SEC)
-                time.sleep(_TD_PROPAGATE_CHECK_INTERVAL_SEC)
-            logging.info('Client received CSDS response: %s', parsed)
-            self.assertTrue(
-                success, 'unhealthy status did not propagate after 600 seconds')
+            try:
+                while time.time() < deadline:
+                    config = self.test_client.csds.fetch_client_status(
+                        log_level=logging.INFO)
+                    self.assertIsNotNone(config)
+                    json_config = json_format.MessageToDict(config)
+                    parsed = xds_url_map_testcase.DumpedXdsConfig(json_config)
+                    if len(parsed.endpoints) == _REPLICA_COUNT - 1:
+                        break
+                    logging.info(
+                        'CSDS got unexpected endpoints, will retry after %d seconds',
+                        _TD_PROPAGATE_CHECK_INTERVAL_SEC)
+                    time.sleep(_TD_PROPAGATE_CHECK_INTERVAL_SEC)
+                else:
+                    self.fail(
+                        'unhealthy status did not propagate after 600 seconds')
+            finally:
+                logging.info('Client received CSDS response: %s', parsed)
 
         with self.subTest('12_next_100_affinity_rpcs_pick_different_backend'):
             rpc_stats = self.getClientRpcStats(self.test_client, _RPC_COUNT)
