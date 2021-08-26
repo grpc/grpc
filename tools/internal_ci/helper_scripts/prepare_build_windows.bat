@@ -19,7 +19,10 @@ set PATH=C:\tools\msys64\usr\bin;C:\Python37;C:\Python27;C:\Program Files\CMake\
 
 dir C:\Python37\
 
-mklink C:\Python37\python3 C:\Python37\Python3.7
+mklink C:\Python37\python3.exe C:\Python37\python.exe
+
+python --version
+python3 --version
 
 @rem If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
 if defined KOKORO_GITHUB_PULL_REQUEST_NUMBER if defined RUN_TESTS_FLAGS (
