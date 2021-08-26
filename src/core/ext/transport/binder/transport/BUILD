@@ -18,6 +18,9 @@ licenses(["notice"])
 
 package(
     default_visibility = ["//visibility:public"],
+    features = [
+        "layering_check",
+    ],
 )
 
 grpc_cc_library(
@@ -36,6 +39,7 @@ grpc_cc_library(
     deps = [
         "//:gpr",
         "//:gpr_base",
+        "//:gpr_platform",
         "//:grpc",
         "//:grpc_base",
         "//:grpc_base_c",

@@ -18,6 +18,9 @@ licenses(["notice"])
 
 package(
     default_visibility = ["//visibility:public"],
+    features = [
+        "layering_check",
+    ],
 )
 
 # TODO(mingcl): See if it is possible to add flags that warns about undefined symbol at link time
@@ -40,6 +43,7 @@ grpc_cc_library(
         ":grpc_transport_binder_client_impl",
         "//:gpr",
         "//:gpr_base",
+        "//:gpr_platform",
         "//:grpc",
         "//:grpc++_base",
         "//:grpc_base",
@@ -60,6 +64,7 @@ grpc_cc_library(
     deps = [
         "//:gpr",
         "//:gpr_base",
+        "//:gpr_platform",
         "//:grpc",
         "//:grpc++_base",
         "//:grpc_base",
