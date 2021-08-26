@@ -16,10 +16,14 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/transport/binder")
+grpc_package(
+    name = "test/core/transport/binder",
+    visibility = "tests",
+)
 
 grpc_cc_library(
     name = "mock_objects",
+    testonly = 1,
     srcs = ["mock_objects.cc"],
     hdrs = ["mock_objects.h"],
     external_deps = [
