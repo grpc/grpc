@@ -599,6 +599,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc/census.h",
     ],
+    visibility = ["@grpc:public"],
     deps = [
         "gpr_base",
         "grpc_base_c",
