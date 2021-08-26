@@ -31,7 +31,13 @@ namespace testing {
 class SyncCertificateVerifier
     : public ::grpc::experimental::ExternalCertificateVerifier {
  public:
-  explicit SyncCertificateVerifier(bool success) : success_(success) {}
+  explicit SyncCertificateVerifier(bool success) : success_(success) {
+    gpr_log(GPR_ERROR, "SyncCertificateVerifier() is called");
+  }
+
+  ~SyncCertificateVerifier() {
+    gpr_log(GPR_ERROR, "~SyncCertificateVerifier() is called");
+  }
 
   bool Verify(::grpc::experimental::TlsCustomVerificationCheckRequest* request,
               std::function<void(grpc::Status)> callback,
