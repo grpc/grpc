@@ -27,8 +27,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/lib/gpr/log_internal.h"
-
 static android_LogPriority severity_to_log_priority(gpr_log_severity severity) {
   switch (severity) {
     case GPR_LOG_SEVERITY_DEBUG:
@@ -47,16 +45,11 @@ void gpr_log(const char* file, int line, gpr_log_severity severity,
   if (gpr_should_log(severity) == 0) {
     return;
   }
+  char* message = NULL;
   va_list args;
   va_start(args, format);
-  gpr_vlog(file, line, severity, format, args);
-  va_end(args);
-}
-
-void gpr_vlog(const char* file, int line, gpr_log_severity severity,
-              const char* format, va_list args) {
-  char* message = NULL;
   vasprintf(&message, format, args);
+  va_end(args);
   gpr_log_message(file, line, severity, message);
   free(message);
 }

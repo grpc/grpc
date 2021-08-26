@@ -357,9 +357,10 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
         }
       }
       if (g_socket_supports_tcp_user_timeout.load() > 0) {
-        grpc_tcp_trace.Log(GPR_INFO,
-                           "Enabling TCP_USER_TIMEOUT with a timeout of %d ms",
-                           timeout);
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+          gpr_log(GPR_INFO, "Enabling TCP_USER_TIMEOUT with a timeout of %d ms",
+                  timeout);
+        }
         if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
                             sizeof(timeout))) {
           gpr_log(GPR_ERROR, "setsockopt(TCP_USER_TIMEOUT) %s",
@@ -379,8 +380,9 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
       }
     }
   } else {
-    grpc_tcp_trace.Log(GPR_INFO,
-                       "TCP_USER_TIMEOUT not supported for this platform");
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_INFO, "TCP_USER_TIMEOUT not supported for this platform");
+    }
   }
   return GRPC_ERROR_NONE;
 }
