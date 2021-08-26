@@ -1070,6 +1070,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/authorization/authorization_policy_provider_vtable.cc )
   s.files += %w( src/core/lib/security/authorization/evaluate_args.cc )
   s.files += %w( src/core/lib/security/authorization/evaluate_args.h )
+  s.files += %w( src/core/lib/security/authorization/sdk_server_authz_filter.cc )
+  s.files += %w( src/core/lib/security/authorization/sdk_server_authz_filter.h )
   s.files += %w( src/core/lib/security/context/security_context.cc )
   s.files += %w( src/core/lib/security/context/security_context.h )
   s.files += %w( src/core/lib/security/credentials/alts/alts_credentials.cc )

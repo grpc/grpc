@@ -1050,6 +1050,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/authorization/authorization_policy_provider_vtable.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/evaluate_args.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/evaluate_args.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/sdk_server_authz_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/sdk_server_authz_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/alts_credentials.cc" role="src" />

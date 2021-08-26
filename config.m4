@@ -546,6 +546,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/profiling/stap_timers.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
+    src/core/lib/security/authorization/sdk_server_authz_filter.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \

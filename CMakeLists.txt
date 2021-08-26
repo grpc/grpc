@@ -939,6 +939,7 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx remove_stream_from_stalled_lists_test)
   endif()
   add_dependencies(buildtests_cxx retry_throttle_test)
+  add_dependencies(buildtests_cxx sdk_authz_end2end_test)
   add_dependencies(buildtests_cxx secure_auth_context_test)
   add_dependencies(buildtests_cxx seq_test)
   add_dependencies(buildtests_cxx server_builder_plugin_test)
@@ -1226,6 +1227,11 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_library(end2end_tests
+  src/core/lib/security/authorization/grpc_authorization_engine.cc
+  src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
+  src/core/lib/security/authorization/matchers.cc
+  src/core/lib/security/authorization/rbac_policy.cc
+  src/core/lib/security/authorization/rbac_translator.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/data/client_certs.cc
   test/core/end2end/data/server1_cert.cc
@@ -1309,6 +1315,7 @@ add_library(end2end_tests
   test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
   test/core/end2end/tests/retry_throttled.cc
   test/core/end2end/tests/retry_too_many_attempts.cc
+  test/core/end2end/tests/sdk_authz.cc
   test/core/end2end/tests/server_finishes_request.cc
   test/core/end2end/tests/server_streaming.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc
@@ -1983,6 +1990,7 @@ add_library(grpc
   src/core/lib/matchers/matchers.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/sdk_server_authz_filter.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
   src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -13911,6 +13919,60 @@ target_link_libraries(retry_throttle_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(sdk_authz_end2end_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  src/core/lib/security/authorization/grpc_authorization_engine.cc
+  src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
+  src/core/lib/security/authorization/matchers.cc
+  src/core/lib/security/authorization/rbac_policy.cc
+  src/core/lib/security/authorization/rbac_translator.cc
+  src/cpp/server/authorization_policy_provider.cc
+  test/cpp/end2end/sdk_authz_end2end_test.cc
+  test/cpp/end2end/test_service_impl.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(sdk_authz_end2end_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(sdk_authz_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
 )
 
 
