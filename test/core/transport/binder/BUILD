@@ -94,7 +94,7 @@ grpc_cc_test(
     deps = [
         ":mock_objects",
         "//:grpc",
-        "//src/core/ext/transport/binder/transport",
+        "//src/core/ext/transport/binder/transport:binder_transport",
         "//test/core/util:grpc_test_util",
     ],
 )

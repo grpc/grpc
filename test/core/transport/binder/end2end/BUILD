@@ -62,7 +62,7 @@ grpc_cc_library(
         ":fake_binder",
         "//:grpc++_base",
         "//:grpc_base_c",
-        "//src/core/ext/transport/binder/transport",
+        "//src/core/ext/transport/binder/transport:binder_transport",
         "//src/core/ext/transport/binder/wire_format:wire_reader",
     ],
 )
@@ -99,7 +99,7 @@ grpc_cc_test(
         ":echo_service",
         ":end2end_binder_channel",
         ":fake_binder",
-        "//src/core/ext/transport/binder/transport",
+        "//src/core/ext/transport/binder/transport:binder_transport",
         "//src/core/ext/transport/binder/wire_format:wire_reader",
         "//test/core/util:grpc_test_util",
     ],
