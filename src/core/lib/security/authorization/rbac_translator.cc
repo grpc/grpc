@@ -23,21 +23,12 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/strip.h"
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
 
 namespace {
-
-std::unordered_set<std::string> unsupported_headers = {"host",
-                                                       "connection",
-                                                       "keep-alive",
-                                                       "proxy-authenticate",
-                                                       "proxy-authorization",
-                                                       "te",
-                                                       "trailer",
-                                                       "transfer-encoding",
-                                                       "upgrade"};
 
 absl::string_view GetMatcherType(absl::string_view value,
                                  StringMatcher::Type* type) {
@@ -67,6 +58,23 @@ absl::StatusOr<HeaderMatcher> GetHeaderMatcher(absl::string_view name,
   absl::string_view matcher = GetMatcherType(value, &type);
   return HeaderMatcher::Create(name, static_cast<HeaderMatcher::Type>(type),
                                matcher);
+}
+
+bool IsUnsupportedHeader(absl::string_view header_name) {
+  static const char* const kUnsupportedHeaders[] = {"host",
+                                                    "connection",
+                                                    "keep-alive",
+                                                    "proxy-authenticate",
+                                                    "proxy-authorization",
+                                                    "te",
+                                                    "trailer",
+                                                    "transfer-encoding",
+                                                    "upgrade"};
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(kUnsupportedHeaders); ++i) {
+    if (absl::EqualsIgnoreCase(header_name, kUnsupportedHeaders[i]))
+      return true;
+  }
+  return false;
 }
 
 absl::StatusOr<Rbac::Principal> ParsePrincipalsArray(const Json& json) {
@@ -143,12 +151,10 @@ absl::StatusOr<Rbac::Permission> ParseHeaders(const Json& json) {
   if (it->second.type() != Json::Type::STRING) {
     return absl::InvalidArgumentError("\"key\" is not a string.");
   }
-  std::string header_name = it->second.string_value();
-  std::transform(header_name.begin(), header_name.end(), header_name.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
+  absl::string_view header_name = it->second.string_value();
   if (absl::StartsWith(header_name, ":") ||
       absl::StartsWith(header_name, "grpc-") ||
-      unsupported_headers.find(header_name) != unsupported_headers.end()) {
+      IsUnsupportedHeader(header_name)) {
     return absl::InvalidArgumentError(
         absl::StrFormat("Unsupported \"key\" %s.", header_name));
   }

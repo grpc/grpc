@@ -576,7 +576,7 @@ TEST(GenerateRbacPoliciesTest, UnsupportedHostHeader) {
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(rbac_policies.status().message(),
-            "allow_rules 0: \"headers\" 0: Unsupported \"key\" host.");
+            "allow_rules 0: \"headers\" 0: Unsupported \"key\" Host.");
 }
 
 TEST(GenerateRbacPoliciesTest, EmptyHeaderValuesList) {
