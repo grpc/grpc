@@ -64,6 +64,11 @@ namespace experimental {
 /// Builds Xds ServerCredentials given fallback credentials
 std::shared_ptr<ServerCredentials> XdsServerCredentials(
     const std::shared_ptr<ServerCredentials>& fallback_credentials);
+
+/// Builds Binder ServerCredentials.
+#ifdef GPR_ANDROID
+std::shared_ptr<ServerCredentials> BinderServerCredentials();
+#endif  // GPR_ANDROID
 }  // namespace experimental
 
 /// Wrapper around \a grpc_server_credentials, a way to authenticate a server.

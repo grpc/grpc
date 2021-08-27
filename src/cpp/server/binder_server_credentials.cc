@@ -12,11 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/impl/codegen/port_platform.h>
-
-#include "src/core/ext/transport/binder/server/binder_server_credentials.h"
-#include "src/core/ext/transport/binder/wire_format/binder_android.h"
-
+#include <grpc/grpc.h>
 #include <grpcpp/security/server_credentials.h>
 
 #ifdef GPR_ANDROID
@@ -24,10 +20,27 @@
 namespace grpc {
 namespace experimental {
 
+namespace {
+
+class BinderServerCredentialsImpl final : public ServerCredentials {
+ public:
+  int AddPortToServer(const std::string& addr, grpc_server* server) override {
+    return grpc_server_add_binder_port(server, addr.c_str());
+  }
+
+  void SetAuthMetadataProcessor(
+      const std::shared_ptr<AuthMetadataProcessor>& /*processor*/) override {
+    GPR_ASSERT(false);
+  }
+
+ private:
+  bool IsInsecure() const override { return true; }
+};
+
+}  // namespace
+
 std::shared_ptr<ServerCredentials> BinderServerCredentials() {
-  return std::shared_ptr<ServerCredentials>(
-      new grpc::internal::BinderServerCredentialsImpl<
-          grpc_binder::TransactionReceiverAndroid>());
+  return std::shared_ptr<ServerCredentials>(new BinderServerCredentialsImpl());
 }
 
 }  // namespace experimental

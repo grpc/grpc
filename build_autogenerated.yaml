@@ -495,6 +495,18 @@ libs:
   - src/core/ext/filters/message_size/message_size_filter.h
   - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h
   - src/core/ext/filters/workarounds/workaround_utils.h
+  - src/core/ext/transport/binder/server/binder_server.h
+  - src/core/ext/transport/binder/transport/binder_stream.h
+  - src/core/ext/transport/binder/transport/binder_transport.h
+  - src/core/ext/transport/binder/utils/transport_stream_receiver.h
+  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
+  - src/core/ext/transport/binder/wire_format/binder.h
+  - src/core/ext/transport/binder/wire_format/binder_android.h
+  - src/core/ext/transport/binder/wire_format/binder_constants.h
+  - src/core/ext/transport/binder/wire_format/transaction.h
+  - src/core/ext/transport/binder/wire_format/wire_reader.h
+  - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
+  - src/core/ext/transport/binder/wire_format/wire_writer.h
   - src/core/ext/transport/chttp2/alpn/alpn.h
   - src/core/ext/transport/chttp2/client/authority.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
@@ -1030,6 +1042,14 @@ libs:
   - src/core/ext/filters/message_size/message_size_filter.cc
   - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
   - src/core/ext/filters/workarounds/workaround_utils.cc
+  - src/core/ext/transport/binder/server/binder_server.cc
+  - src/core/ext/transport/binder/transport/binder_transport.cc
+  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  - src/core/ext/transport/binder/wire_format/binder_android.cc
+  - src/core/ext/transport/binder/wire_format/binder_constants.cc
+  - src/core/ext/transport/binder/wire_format/transaction.cc
+  - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
+  - src/core/ext/transport/binder/wire_format/wire_writer.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
   - src/core/ext/transport/chttp2/client/authority.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
@@ -1731,6 +1751,18 @@ libs:
   - src/core/ext/filters/message_size/message_size_filter.h
   - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h
   - src/core/ext/filters/workarounds/workaround_utils.h
+  - src/core/ext/transport/binder/server/binder_server.h
+  - src/core/ext/transport/binder/transport/binder_stream.h
+  - src/core/ext/transport/binder/transport/binder_transport.h
+  - src/core/ext/transport/binder/utils/transport_stream_receiver.h
+  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
+  - src/core/ext/transport/binder/wire_format/binder.h
+  - src/core/ext/transport/binder/wire_format/binder_android.h
+  - src/core/ext/transport/binder/wire_format/binder_constants.h
+  - src/core/ext/transport/binder/wire_format/transaction.h
+  - src/core/ext/transport/binder/wire_format/wire_reader.h
+  - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
+  - src/core/ext/transport/binder/wire_format/wire_writer.h
   - src/core/ext/transport/chttp2/alpn/alpn.h
   - src/core/ext/transport/chttp2/client/authority.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
@@ -1993,6 +2025,14 @@ libs:
   - src/core/ext/filters/message_size/message_size_filter.cc
   - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
   - src/core/ext/filters/workarounds/workaround_utils.cc
+  - src/core/ext/transport/binder/server/binder_server.cc
+  - src/core/ext/transport/binder/transport/binder_transport.cc
+  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  - src/core/ext/transport/binder/wire_format/binder_android.cc
+  - src/core/ext/transport/binder/wire_format/binder_constants.cc
+  - src/core/ext/transport/binder/wire_format/transaction.cc
+  - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
+  - src/core/ext/transport/binder/wire_format/wire_writer.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
   - src/core/ext/transport/chttp2/client/authority.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
@@ -2467,6 +2507,7 @@ libs:
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/binder_server_credentials.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
   - src/cpp/server/dynamic_thread_pool.cc
@@ -4559,33 +4600,11 @@ targets:
   language: c++
   headers:
   - src/core/ext/transport/binder/client/channel_create_impl.h
-  - src/core/ext/transport/binder/server/binder_server.h
-  - src/core/ext/transport/binder/server/binder_server_credentials.h
-  - src/core/ext/transport/binder/transport/binder_stream.h
-  - src/core/ext/transport/binder/transport/binder_transport.h
-  - src/core/ext/transport/binder/utils/transport_stream_receiver.h
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
-  - src/core/ext/transport/binder/wire_format/binder.h
-  - src/core/ext/transport/binder/wire_format/binder_android.h
-  - src/core/ext/transport/binder/wire_format/binder_constants.h
-  - src/core/ext/transport/binder/wire_format/transaction.h
-  - src/core/ext/transport/binder/wire_format/wire_reader.h
-  - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
-  - src/core/ext/transport/binder/wire_format/wire_writer.h
   - test/core/transport/binder/end2end/echo_service.h
   - test/core/transport/binder/end2end/fake_binder.h
   src:
   - test/core/transport/binder/end2end/echo.proto
   - src/core/ext/transport/binder/client/channel_create_impl.cc
-  - src/core/ext/transport/binder/server/binder_server.cc
-  - src/core/ext/transport/binder/server/binder_server_credentials.cc
-  - src/core/ext/transport/binder/transport/binder_transport.cc
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  - src/core/ext/transport/binder/wire_format/binder_android.cc
-  - src/core/ext/transport/binder/wire_format/binder_constants.cc
-  - src/core/ext/transport/binder/wire_format/transaction.cc
-  - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
-  - src/core/ext/transport/binder/wire_format/wire_writer.cc
   - test/core/transport/binder/end2end/binder_server_test.cc
   - test/core/transport/binder/end2end/echo_service.cc
   - test/core/transport/binder/end2end/fake_binder.cc
@@ -4598,24 +4617,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/transport/binder_stream.h
-  - src/core/ext/transport/binder/transport/binder_transport.h
-  - src/core/ext/transport/binder/utils/transport_stream_receiver.h
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
-  - src/core/ext/transport/binder/wire_format/binder.h
-  - src/core/ext/transport/binder/wire_format/binder_constants.h
-  - src/core/ext/transport/binder/wire_format/transaction.h
-  - src/core/ext/transport/binder/wire_format/wire_reader.h
-  - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
-  - src/core/ext/transport/binder/wire_format/wire_writer.h
   - test/core/transport/binder/mock_objects.h
   src:
-  - src/core/ext/transport/binder/transport/binder_transport.cc
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  - src/core/ext/transport/binder/wire_format/binder_constants.cc
-  - src/core/ext/transport/binder/wire_format/transaction.cc
-  - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
-  - src/core/ext/transport/binder/wire_format/wire_writer.cc
   - test/core/transport/binder/binder_transport_test.cc
   - test/core/transport/binder/mock_objects.cc
   deps:
@@ -5385,16 +5388,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/transport/binder_stream.h
-  - src/core/ext/transport/binder/transport/binder_transport.h
-  - src/core/ext/transport/binder/utils/transport_stream_receiver.h
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
-  - src/core/ext/transport/binder/wire_format/binder.h
-  - src/core/ext/transport/binder/wire_format/binder_constants.h
-  - src/core/ext/transport/binder/wire_format/transaction.h
-  - src/core/ext/transport/binder/wire_format/wire_reader.h
-  - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
-  - src/core/ext/transport/binder/wire_format/wire_writer.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/common/channel_filter.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -5407,12 +5400,6 @@ targets:
   - test/core/transport/binder/end2end/testing_channel_create.h
   src:
   - test/core/transport/binder/end2end/echo.proto
-  - src/core/ext/transport/binder/transport/binder_transport.cc
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  - src/core/ext/transport/binder/wire_format/binder_constants.cc
-  - src/core/ext/transport/binder/wire_format/transaction.cc
-  - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
-  - src/core/ext/transport/binder/wire_format/wire_writer.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -5546,21 +5533,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/utils/transport_stream_receiver.h
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
-  - src/core/ext/transport/binder/wire_format/binder.h
-  - src/core/ext/transport/binder/wire_format/binder_constants.h
-  - src/core/ext/transport/binder/wire_format/transaction.h
-  - src/core/ext/transport/binder/wire_format/wire_reader.h
-  - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
-  - src/core/ext/transport/binder/wire_format/wire_writer.h
   - test/core/transport/binder/end2end/fake_binder.h
   src:
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  - src/core/ext/transport/binder/wire_format/binder_constants.cc
-  - src/core/ext/transport/binder/wire_format/transaction.cc
-  - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
-  - src/core/ext/transport/binder/wire_format/wire_writer.cc
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/core/transport/binder/end2end/fake_binder_test.cc
   deps:
@@ -7624,13 +7598,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/ext/transport/binder/utils/transport_stream_receiver.h
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
-  - src/core/ext/transport/binder/wire_format/transaction.h
+  headers: []
   src:
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  - src/core/ext/transport/binder/wire_format/transaction.cc
   - test/core/transport/binder/transport_stream_receiver_test.cc
   deps:
   - grpc_test_util
@@ -7729,21 +7698,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/utils/transport_stream_receiver.h
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
-  - src/core/ext/transport/binder/wire_format/binder.h
-  - src/core/ext/transport/binder/wire_format/binder_constants.h
-  - src/core/ext/transport/binder/wire_format/transaction.h
-  - src/core/ext/transport/binder/wire_format/wire_reader.h
-  - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
-  - src/core/ext/transport/binder/wire_format/wire_writer.h
   - test/core/transport/binder/mock_objects.h
   src:
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  - src/core/ext/transport/binder/wire_format/binder_constants.cc
-  - src/core/ext/transport/binder/wire_format/transaction.cc
-  - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
-  - src/core/ext/transport/binder/wire_format/wire_writer.cc
   - test/core/transport/binder/mock_objects.cc
   - test/core/transport/binder/wire_reader_test.cc
   deps:
@@ -7754,21 +7710,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/utils/transport_stream_receiver.h
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
-  - src/core/ext/transport/binder/wire_format/binder.h
-  - src/core/ext/transport/binder/wire_format/binder_constants.h
-  - src/core/ext/transport/binder/wire_format/transaction.h
-  - src/core/ext/transport/binder/wire_format/wire_reader.h
-  - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
-  - src/core/ext/transport/binder/wire_format/wire_writer.h
   - test/core/transport/binder/mock_objects.h
   src:
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  - src/core/ext/transport/binder/wire_format/binder_constants.cc
-  - src/core/ext/transport/binder/wire_format/transaction.cc
-  - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
-  - src/core/ext/transport/binder/wire_format/wire_writer.cc
   - test/core/transport/binder/mock_objects.cc
   - test/core/transport/binder/wire_writer_test.cc
   deps:

@@ -449,6 +449,7 @@ grpc_cc_library(
         "src/cpp/common/tls_certificate_provider.cc",
         "src/cpp/common/tls_credentials_options.cc",
         "src/cpp/common/tls_credentials_options_util.cc",
+        "src/cpp/server/binder_server_credentials.cc",
         "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/secure_server_credentials.cc",
     ],
@@ -1595,6 +1596,7 @@ grpc_cc_library(
         "grpc_fault_injection_filter",
         "grpc_workaround_cronet_compression_filter",
         "grpc_server_backward_compatibility",
+        "//src/core/ext/transport/binder/server:grpc_transport_binder_server",
     ],
 )
 

@@ -1631,6 +1631,14 @@ add_library(grpc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
   src/core/ext/filters/workarounds/workaround_utils.cc
+  src/core/ext/transport/binder/server/binder_server.cc
+  src/core/ext/transport/binder/transport/binder_transport.cc
+  src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  src/core/ext/transport/binder/wire_format/binder_android.cc
+  src/core/ext/transport/binder/wire_format/binder_constants.cc
+  src/core/ext/transport/binder/wire_format/transaction.cc
+  src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
+  src/core/ext/transport/binder/wire_format/wire_writer.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
@@ -2460,6 +2468,14 @@ add_library(grpc_unsecure
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
   src/core/ext/filters/workarounds/workaround_utils.cc
+  src/core/ext/transport/binder/server/binder_server.cc
+  src/core/ext/transport/binder/transport/binder_transport.cc
+  src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  src/core/ext/transport/binder/wire_format/binder_android.cc
+  src/core/ext/transport/binder/wire_format/binder_constants.cc
+  src/core/ext/transport/binder/wire_format/transaction.cc
+  src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
+  src/core/ext/transport/binder/wire_format/wire_writer.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
@@ -2856,6 +2872,7 @@ add_library(grpc++
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
+  src/cpp/server/binder_server_credentials.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
@@ -8388,15 +8405,6 @@ add_executable(binder_server_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/echo.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/echo.grpc.pb.h
   src/core/ext/transport/binder/client/channel_create_impl.cc
-  src/core/ext/transport/binder/server/binder_server.cc
-  src/core/ext/transport/binder/server/binder_server_credentials.cc
-  src/core/ext/transport/binder/transport/binder_transport.cc
-  src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  src/core/ext/transport/binder/wire_format/binder_android.cc
-  src/core/ext/transport/binder/wire_format/binder_constants.cc
-  src/core/ext/transport/binder/wire_format/transaction.cc
-  src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
-  src/core/ext/transport/binder/wire_format/wire_writer.cc
   test/core/transport/binder/end2end/binder_server_test.cc
   test/core/transport/binder/end2end/echo_service.cc
   test/core/transport/binder/end2end/fake_binder.cc
@@ -8436,12 +8444,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(binder_transport_test
-  src/core/ext/transport/binder/transport/binder_transport.cc
-  src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  src/core/ext/transport/binder/wire_format/binder_constants.cc
-  src/core/ext/transport/binder/wire_format/transaction.cc
-  src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
-  src/core/ext/transport/binder/wire_format/wire_writer.cc
   test/core/transport/binder/binder_transport_test.cc
   test/core/transport/binder/mock_objects.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -10601,12 +10603,6 @@ add_executable(end2end_binder_transport_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/echo.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/echo.grpc.pb.h
-  src/core/ext/transport/binder/transport/binder_transport.cc
-  src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  src/core/ext/transport/binder/wire_format/binder_constants.cc
-  src/core/ext/transport/binder/wire_format/transaction.cc
-  src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
-  src/core/ext/transport/binder/wire_format/wire_writer.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
@@ -10970,11 +10966,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(fake_binder_test
-  src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  src/core/ext/transport/binder/wire_format/binder_constants.cc
-  src/core/ext/transport/binder/wire_format/transaction.cc
-  src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
-  src/core/ext/transport/binder/wire_format/wire_writer.cc
   test/core/transport/binder/end2end/fake_binder.cc
   test/core/transport/binder/end2end/fake_binder_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -16034,8 +16025,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(transport_stream_receiver_test
-  src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  src/core/ext/transport/binder/wire_format/transaction.cc
   test/core/transport/binder/transport_stream_receiver_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -16254,11 +16243,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(wire_reader_test
-  src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  src/core/ext/transport/binder/wire_format/binder_constants.cc
-  src/core/ext/transport/binder/wire_format/transaction.cc
-  src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
-  src/core/ext/transport/binder/wire_format/wire_writer.cc
   test/core/transport/binder/mock_objects.cc
   test/core/transport/binder/wire_reader_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -16295,11 +16279,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(wire_writer_test
-  src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  src/core/ext/transport/binder/wire_format/binder_constants.cc
-  src/core/ext/transport/binder/wire_format/transaction.cc
-  src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
-  src/core/ext/transport/binder/wire_format/wire_writer.cc
   test/core/transport/binder/mock_objects.cc
   test/core/transport/binder/wire_writer_test.cc
   third_party/googletest/googletest/src/gtest-all.cc

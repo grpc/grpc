@@ -56,7 +56,11 @@ void* grpc_get_endpoint_binder(const std::string& service);
 
 namespace grpc_core {
 
-template <typename T>
+// This class is generic over BinderTxReceiver (e.g., TransactionReceiverAndroid
+// and FakeTransactionReceiver). This allows us to perform tests in non-Android
+// environments by providing alternative implementations of the underlying
+// binder transaction listener.
+template <typename BinderTxReceiver>
 class BinderServerListener : public Server::ListenerInterface {
  public:
   BinderServerListener(Server* server, std::string addr)
@@ -64,7 +68,7 @@ class BinderServerListener : public Server::ListenerInterface {
 
   void Start(Server* /*server*/,
              const std::vector<grpc_pollset*>* /*pollsets*/) override {
-    tx_receiver_ = absl::make_unique<T>(
+    tx_receiver_ = absl::make_unique<BinderTxReceiver>(
         nullptr, [this](transaction_code_t code,
                         const grpc_binder::ReadableParcel* parcel) {
           return OnSetupTransport(code, parcel);
@@ -134,6 +138,22 @@ class BinderServerListener : public Server::ListenerInterface {
   void* endpoint_binder_ = nullptr;
   std::unique_ptr<grpc_binder::TransactionReceiver> tx_receiver_;
 };
+
+template <typename BinderTxReceiver>
+int AddBinderPort(const std::string& addr, grpc_server* server) {
+  const std::string kBinderUriScheme = "binder:";
+  if (addr.compare(0, kBinderUriScheme.size(), kBinderUriScheme) != 0) {
+    return 0;
+  }
+  size_t pos = kBinderUriScheme.size();
+  while (pos < addr.size() && addr[pos] == '/') pos++;
+  grpc_core::Server* core_server = server->core_server.get();
+  core_server->AddListener(
+      grpc_core::OrphanablePtr<grpc_core::Server::ListenerInterface>(
+          new grpc_core::BinderServerListener<BinderTxReceiver>(
+              core_server, addr.substr(pos))));
+  return 1;
+}
 
 }  // namespace grpc_core
 

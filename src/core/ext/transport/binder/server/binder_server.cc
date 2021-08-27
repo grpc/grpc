@@ -14,13 +14,13 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include "src/core/ext/transport/binder/server/binder_server.h"
-
+#include <grpc/grpc.h>
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "src/core/ext/transport/binder/server/binder_server.h"
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -78,3 +78,10 @@ void* grpc_get_endpoint_binder(const std::string& service) {
   auto iter = g_endpoint_binder_pool->find(service);
   return iter == g_endpoint_binder_pool->end() ? nullptr : iter->second;
 }
+
+#ifdef GPR_ANDROID
+int grpc_server_add_binder_port(grpc_server* server, const char* addr) {
+  return grpc_core::AddBinderPort<grpc_binder::TransactionReceiverAndroid>(
+      std::string(addr), server);
+}
+#endif  // GPR_ANDROID

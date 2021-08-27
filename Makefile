@@ -1120,6 +1120,14 @@ LIBGRPC_SRC = \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc \
     src/core/ext/filters/workarounds/workaround_utils.cc \
+    src/core/ext/transport/binder/server/binder_server.cc \
+    src/core/ext/transport/binder/transport/binder_transport.cc \
+    src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc \
+    src/core/ext/transport/binder/wire_format/binder_android.cc \
+    src/core/ext/transport/binder/wire_format/binder_constants.cc \
+    src/core/ext/transport/binder/wire_format/transaction.cc \
+    src/core/ext/transport/binder/wire_format/wire_reader_impl.cc \
+    src/core/ext/transport/binder/wire_format/wire_writer.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/authority.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
@@ -1797,6 +1805,14 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc \
     src/core/ext/filters/workarounds/workaround_utils.cc \
+    src/core/ext/transport/binder/server/binder_server.cc \
+    src/core/ext/transport/binder/transport/binder_transport.cc \
+    src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc \
+    src/core/ext/transport/binder/wire_format/binder_android.cc \
+    src/core/ext/transport/binder/wire_format/binder_constants.cc \
+    src/core/ext/transport/binder/wire_format/transaction.cc \
+    src/core/ext/transport/binder/wire_format/wire_reader_impl.cc \
+    src/core/ext/transport/binder/wire_format/wire_writer.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/authority.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
