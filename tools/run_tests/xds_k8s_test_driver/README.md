@@ -95,7 +95,7 @@ gcloud iam service-accounts create "${WORKLOAD_SA_NAME}" \
 Enable the service account to [access the Traffic Director API](https://cloud.google.com/traffic-director/docs/prepare-for-envoy-setup#enable-service-account).
 ```shell
 gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
-   --member="serviceAccount:${WORKLOAD_SERVICE_ACCOUNT}" \
+   --member="serviceAccount:${WORKLOAD_SA_EMAIL}" \
    --role="roles/trafficdirector.client"
 ```
 
