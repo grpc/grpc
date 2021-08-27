@@ -1405,14 +1405,14 @@ static void test_jwt_creds_lifetime(void) {
   gpr_free(json_key_string);
 }
 
-static void test_jwt_creds_uri_process(void) {
+static void test_remove_service_from_jwt_uri(void) {
   const char wrong_uri[] = "hello world";
-  GPR_ASSERT(grpc_remove_service_name_from_uri(wrong_uri) == nullptr);
+  GPR_ASSERT(!grpc_core::RemoveServiceNameFromJwtUri(wrong_uri).ok());
   const char valid_uri[] = "https://foo.com/get/";
   const char expected_uri[] = "https://foo.com/";
-  char* output = grpc_remove_service_name_from_uri(valid_uri);
-  GPR_ASSERT(strcmp(output, expected_uri) == 0);
-  gpr_free(output);
+  auto output = grpc_core::RemoveServiceNameFromJwtUri(valid_uri);
+  GPR_ASSERT(output.ok());
+  GPR_ASSERT(strcmp(output->c_str(), expected_uri) == 0);
 }
 
 static void test_jwt_creds_success(void) {
@@ -3509,7 +3509,7 @@ int main(int argc, char** argv) {
   test_jwt_creds_lifetime();
   test_jwt_creds_success();
   test_jwt_creds_signing_failure();
-  test_jwt_creds_uri_process();
+  test_remove_service_from_jwt_uri();
   test_google_default_creds_auth_key();
   test_google_default_creds_refresh_token();
   test_google_default_creds_external_account_credentials();
