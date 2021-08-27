@@ -66,9 +66,11 @@ std::shared_ptr<ServerCredentials> XdsServerCredentials(
     const std::shared_ptr<ServerCredentials>& fallback_credentials);
 
 /// Builds Binder ServerCredentials.
-#ifdef GPR_ANDROID
+///
+/// Calling \a ServerBuilder::AddListeningPort() with Binder ServerCredentials
+/// in a non-Android environment will make the subsequent call to
+/// \a ServerBuilder::BuildAndStart() returns a null pointer.
 std::shared_ptr<ServerCredentials> BinderServerCredentials();
-#endif  // GPR_ANDROID
 }  // namespace experimental
 
 /// Wrapper around \a grpc_server_credentials, a way to authenticate a server.

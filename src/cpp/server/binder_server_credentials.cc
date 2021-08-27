@@ -15,8 +15,6 @@
 #include <grpc/grpc.h>
 #include <grpcpp/security/server_credentials.h>
 
-#ifdef GPR_ANDROID
-
 namespace grpc {
 namespace experimental {
 
@@ -45,5 +43,3 @@ std::shared_ptr<ServerCredentials> BinderServerCredentials() {
 
 }  // namespace experimental
 }  // namespace grpc
-
-#endif  // GPR_ANDROID

@@ -4602,16 +4602,20 @@ targets:
   - src/core/ext/transport/binder/client/channel_create_impl.h
   - test/core/transport/binder/end2end/echo_service.h
   - test/core/transport/binder/end2end/fake_binder.h
+  - test/cpp/end2end/test_service_impl.h
   src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
   - test/core/transport/binder/end2end/echo.proto
   - src/core/ext/transport/binder/client/channel_create_impl.cc
   - test/core/transport/binder/end2end/binder_server_test.cc
   - test/core/transport/binder/end2end/echo_service.cc
   - test/core/transport/binder/end2end/fake_binder.cc
+  - test/cpp/end2end/test_service_impl.cc
   deps:
   - absl/random:random
-  - grpc++
-  - grpc_test_util
+  - grpc++_test_util
 - name: binder_transport_test
   gtest: true
   build: test

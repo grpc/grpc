@@ -26,6 +26,7 @@
 #include "test/core/transport/binder/end2end/echo_service.h"
 #include "test/core/transport/binder/end2end/fake_binder.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/end2end/test_service_impl.h"
 
 namespace grpc {
 namespace testing {
@@ -90,6 +91,17 @@ class BinderServerTest : public ::testing::Test {
     grpc_shutdown();
   }
 };
+
+#ifndef GPR_ANDROID
+TEST(BinderServerCredentialsTest, FailedInNonAndroidEnvironments) {
+  grpc::ServerBuilder server_builder;
+  grpc::testing::TestServiceImpl service;
+  server_builder.RegisterService(&service);
+  server_builder.AddListeningPort(
+      "binder://fail", grpc::experimental::BinderServerCredentials());
+  EXPECT_EQ(server_builder.BuildAndStart(), nullptr);
+}
+#endif  // GPR_ANDROID
 
 TEST_F(BinderServerTest, BuildAndStart) {
   grpc::ServerBuilder server_builder;
