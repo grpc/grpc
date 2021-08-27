@@ -95,14 +95,16 @@ build_docker_images_if_needed() {
 run_test() {
   # Test driver usage:
   # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
-  local test_name="${1:?Usage: run_test test_name}"
   set -x
-  python -m "tests.${test_name}" \
-    --flagfile="${TEST_DRIVER_FLAGFILE}" \
-    --kube_context="${KUBE_CONTEXT}" \
-    --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
-    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
-    --flagfile="config/url-map.cfg"
+  ../../bazel/bazel test tests/url_map:all \
+    --spawn_strategy=local \
+    --test_arg="--flagfile=${TEST_DRIVER_FLAGFILE}" \
+    --test_arg="--kube_context=${KUBE_CONTEXT}" \
+    --test_arg="--client_image=${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
+    --test_arg="--xml_output_file=${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
+    --test_arg="--flagfile=config/url-map.cfg" \
+    --test_output=error
+
   set +x
 }
 

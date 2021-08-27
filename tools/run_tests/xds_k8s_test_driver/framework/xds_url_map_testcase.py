@@ -396,29 +396,28 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         else:
             super().run(result)
 
-    def test_client_config(self):
+    def test(self):
         if self.skip_reason:
             logging.info('Skipping: %s', self.skip_reason)
             self.skipTest(self.skip_reason)
-        retryer = retryers.constant_retryer(
-            wait_fixed=datetime.timedelta(
-                seconds=_URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC),
-            timeout=datetime.timedelta(seconds=_URL_MAP_PROPAGATE_TIMEOUT_SEC),
-            logger=logging,
-            log_level=logging.INFO)
-        try:
-            retryer(self._fetch_and_check_xds_config)
-        finally:
-            logging.info(
-                'latest xDS config:\n%s',
-                GcpResourceManager().td.compute.resource_pretty_format(
-                    self._xds_json_config))
+        with self.subTest('test_client_config'):
+            retryer = retryers.constant_retryer(
+                wait_fixed=datetime.timedelta(
+                    seconds=_URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC),
+                timeout=datetime.timedelta(
+                    seconds=_URL_MAP_PROPAGATE_TIMEOUT_SEC),
+                logger=logging,
+                log_level=logging.INFO)
+            try:
+                retryer(self._fetch_and_check_xds_config)
+            finally:
+                logging.info(
+                    'latest xDS config:\n%s',
+                    GcpResourceManager().td.compute.resource_pretty_format(
+                        self._xds_json_config))
 
-    def test_rpc_distribution(self):
-        if self.skip_reason:
-            logging.info('Skipping: %s', self.skip_reason)
-            self.skipTest(self.skip_reason)
-        self.rpc_distribution_validate(self.test_client)
+        with self.subTest('test_rpc_distribution'):
+            self.rpc_distribution_validate(self.test_client)
 
     @staticmethod
     def configure_and_send(test_client: XdsTestClient,

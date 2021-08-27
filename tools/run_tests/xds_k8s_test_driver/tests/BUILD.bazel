@@ -14,7 +14,7 @@
 
 package(default_testonly = 1, default_visibility = ["//visibility:public"])
 
-URL_MAP_TESTS = glob(["*_test.py"])
+XDS_K8S_TESTS = glob(["*_test.py"])
 
 [
     py_test(
@@ -24,7 +24,6 @@ URL_MAP_TESTS = glob(["*_test.py"])
         srcs = [test_file_name],
         args = [
             "--flagfile=\"config/grpc-testing.cfg\"",
-            "--flagfile=\"config/url-map.cfg\"",
         ],
         shard_count = 4,
         data = ["//config"],
@@ -35,5 +34,5 @@ URL_MAP_TESTS = glob(["*_test.py"])
             "//:framework",
         ],
     )
-    for test_file_name in URL_MAP_TESTS
+    for test_file_name in XDS_K8S_TESTS
 ]

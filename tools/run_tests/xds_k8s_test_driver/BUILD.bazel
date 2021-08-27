@@ -17,10 +17,20 @@ package(default_testonly = 1, default_visibility = ["//visibility:public"])
 load("@xds_k8s_python_requirements//:requirements.bzl", "requirement")
 
 py_library(
+    name = "generated_testing_protos",
+    srcs = glob(["src/**/*.py"]),
+    deps = [
+        requirement("grpcio"),
+        requirement("protobuf")
+    ]
+)
+
+py_library(
     name = "framework",
     data = glob(["kubernetes-manifests/**/*.yaml"]),
     srcs = glob(["framework/**/*.py"]),
     deps = [
+        ":generated_testing_protos",
         requirement("Mako"),
         requirement("PyYAML"),
         requirement("absl-py"),
