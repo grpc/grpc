@@ -14,9 +14,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <cctype>
-#include <unordered_set>
-
 #include "src/core/lib/security/authorization/rbac_translator.h"
 
 #include "absl/strings/str_cat.h"
