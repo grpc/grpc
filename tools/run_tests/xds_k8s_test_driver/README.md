@@ -70,6 +70,10 @@ gcloud beta container clusters create "${CLUSTER_NAME}" \
  --tags=allow-health-checks
 ```
 
+For security tests you also need to create CAs and configure the cluster to use those CAs
+as described
+[here](https://cloud.google.com/traffic-director/docs/security-proxyless-setup#configure-cas).
+
 ##### Create the firewall rule
 Allow [health checking mechanisms](https://cloud.google.com/traffic-director/docs/set-up-proxyless-gke#creating_the_health_check_firewall_rule_and_backend_service)
 to query the workloads health.  
@@ -98,6 +102,13 @@ gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
    --member="serviceAccount:${WORKLOAD_SA_EMAIL}" \
    --role="roles/trafficdirector.client"
 ```
+
+##### Allow access to images
+The test framework needs read access to the client and server images and the bootstrap
+generator image. You may have these images in your project but if you want to use these
+from the grpc-testing project you will have to grant the necessary access to these images
+using https://cloud.google.com/container-registry/docs/access-control#grant or a
+gcloud command.
 
 ##### Allow test driver to configure workload identity automatically
 Test driver will automatically grant `roles/iam.workloadIdentityUser` to 
