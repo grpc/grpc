@@ -804,7 +804,7 @@ grpc_resource_user* grpc_resource_user_create(
   for (int i = 0; i < GRPC_RULIST_COUNT; i++) {
     resource_user->links[i].next = resource_user->links[i].prev = nullptr;
   }
-  if (name != nullptr) {
+  if (!name.empty()) {
     resource_user->name = std::string(name);
   } else {
     resource_user->name = absl::StrCat(
