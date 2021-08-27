@@ -195,7 +195,7 @@ namespace Grpc.Core.Internal
 
         private static class Windows
         {
-            [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
             internal static extern IntPtr LoadLibrary(string filename);
 
             [DllImport("kernel32.dll")]
