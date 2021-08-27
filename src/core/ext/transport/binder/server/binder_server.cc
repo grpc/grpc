@@ -79,11 +79,13 @@ void* grpc_get_endpoint_binder(const std::string& service) {
   return iter == g_endpoint_binder_pool->end() ? nullptr : iter->second;
 }
 
-int grpc_server_add_binder_port(grpc_server* server, const char* addr) {
 #ifdef GPR_ANDROID
+int grpc_server_add_binder_port(grpc_server* server, const char* addr) {
   return grpc_core::AddBinderPort<grpc_binder::TransactionReceiverAndroid>(
       std::string(addr), server);
-#else
-  return 0;
-#endif  // GPR_ANDROID
 }
+#else
+int grpc_server_add_binder_port(grpc_server* /*server*/, const char* /*addr*/) {
+  return 0;
+}
+#endif  // GPR_ANDROID
