@@ -42,6 +42,8 @@ CLOUD_LOGGING_URL="https://source.cloud.google.com/results/invocations/${KOKORO_
 PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etesting/pre_built_workers/${LOAD_TEST_PREFIX}"
 UNIQUE_IDENTIFIER="$(date +%Y%m%d%H%M%S)"
 ROOT_DIRECTORY_OF_DOCKERFILES="../test-infra/containers/pre_built_workers/"
+# Head of the workspace checked out by Kokoro.
+GRPC_GITREF="$(git show --format="%H" --no-patch)"
 # Prebuilt workers for core languages are always built from grpc/grpc.
 if [[ "${KOKORO_GITHUB_COMMIT_URL%/*}" == "https://github.com/grpc/grpc/commit" ]]; then
     GRPC_CORE_GITREF="${KOKORO_GIT_COMMIT}"
@@ -82,8 +84,8 @@ buildConfigs() {
         -a ci_buildNumber="${KOKORO_BUILD_NUMBER}" \
         -a ci_buildUrl="${CLOUD_LOGGING_URL}" \
         -a ci_jobName="${KOKORO_JOB_NAME}" \
-        -a ci_gitCommit="${KOKORO_GIT_COMMIT}" \
-        -a ci_gitActualCommit="${ghprbActualCommit}" \
+        -a ci_gitCommit="${GRPC_GITREF}" \
+        -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=scalable \
         --allow_client_language=c++ --allow_server_language=c++ \

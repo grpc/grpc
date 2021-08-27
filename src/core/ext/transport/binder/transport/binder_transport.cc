@@ -201,9 +201,6 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
     // TODO(mingcl): Will we ever has key-value pair here? According to
     // wireformat client suffix data is always empty.
     tx->SetSuffix(trailing_metadata);
-    if (op->payload->send_trailing_metadata.sent != nullptr) {
-      *op->payload->send_trailing_metadata.sent = true;
-    }
   }
   if (op->recv_initial_metadata) {
     gpr_log(GPR_INFO, "recv_initial_metadata");

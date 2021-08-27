@@ -18,6 +18,9 @@ licenses(["notice"])
 
 package(
     default_visibility = ["//visibility:public"],
+    features = [
+        "layering_check",
+    ],
 )
 
 # TODO(mingcl): See if it is possible to add flags that warns about undefined symbol at link time
@@ -40,12 +43,13 @@ grpc_cc_library(
         ":grpc_transport_binder_client_impl",
         "//:gpr",
         "//:gpr_base",
+        "//:gpr_platform",
         "//:grpc",
         "//:grpc++_base",
         "//:grpc_base",
         "//:grpc_base_c",
         "//:grpc_codegen",
-        "//src/core/ext/transport/binder/transport",
+        "//src/core/ext/transport/binder/transport:binder_transport",
         "//src/core/ext/transport/binder/utils:transport_stream_receiver",
         "//src/core/ext/transport/binder/wire_format:binder_android",
         "//src/core/ext/transport/binder/wire_format:wire_reader",
@@ -60,12 +64,13 @@ grpc_cc_library(
     deps = [
         "//:gpr",
         "//:gpr_base",
+        "//:gpr_platform",
         "//:grpc",
         "//:grpc++_base",
         "//:grpc_base",
         "//:grpc_base_c",
         "//:grpc_codegen",
-        "//src/core/ext/transport/binder/transport",
+        "//src/core/ext/transport/binder/transport:binder_transport",
         "//src/core/ext/transport/binder/wire_format:binder",
     ],
 )

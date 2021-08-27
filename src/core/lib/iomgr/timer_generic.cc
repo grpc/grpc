@@ -363,9 +363,11 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
   timer->hash_table_next = nullptr;
 #endif
 
-  grpc_timer_trace.Log(
-      GPR_INFO, "TIMER %p: SET %" PRId64 " now %" PRId64 " call %p[%p]", timer,
-      deadline, grpc_core::ExecCtx::Get()->Now(), closure, closure->cb);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_trace)) {
+    gpr_log(GPR_INFO, "TIMER %p: SET %" PRId64 " now %" PRId64 " call %p[%p]",
+            timer, deadline, grpc_core::ExecCtx::Get()->Now(), closure,
+            closure->cb);
+  }
 
   if (!g_shared_mutables.initialized) {
     timer->pending = false;
@@ -398,12 +400,13 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
     timer->heap_index = INVALID_HEAP_INDEX;
     list_join(&shard->list, timer);
   }
-  grpc_timer_trace.Log(GPR_INFO,
-                       "  .. add to shard %d with queue_deadline_cap=%" PRId64
-                       " => is_first_timer=%s",
-                       static_cast<int>(shard - g_shards),
-                       shard->queue_deadline_cap,
-                       is_first_timer ? "true" : "false");
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_trace)) {
+    gpr_log(GPR_INFO,
+            "  .. add to shard %d with queue_deadline_cap=%" PRId64
+            " => is_first_timer=%s",
+            static_cast<int>(shard - g_shards), shard->queue_deadline_cap,
+            is_first_timer ? "true" : "false");
+  }
   gpr_mu_unlock(&shard->mu);
 
   /* Deadline may have decreased, we need to adjust the main queue.  Note
@@ -419,8 +422,10 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
      grpc_timer_check. */
   if (is_first_timer) {
     gpr_mu_lock(&g_shared_mutables.mu);
-    grpc_timer_trace.Log(GPR_INFO, "  .. old shard min_deadline=%" PRId64,
-                         shard->min_deadline);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_trace)) {
+      gpr_log(GPR_INFO, "  .. old shard min_deadline=%" PRId64,
+              shard->min_deadline);
+    }
     if (deadline < shard->min_deadline) {
       grpc_millis old_min_deadline = g_shard_queue[0]->min_deadline;
       shard->min_deadline = deadline;
@@ -461,8 +466,10 @@ static void timer_cancel(grpc_timer* timer) {
 
   timer_shard* shard = &g_shards[GPR_HASH_POINTER(timer, g_num_shards)];
   gpr_mu_lock(&shard->mu);
-  grpc_timer_trace.Log(GPR_INFO, "TIMER %p: CANCEL pending=%s", timer,
-                       timer->pending ? "true" : "false");
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_trace)) {
+    gpr_log(GPR_INFO, "TIMER %p: CANCEL pending=%s", timer,
+            timer->pending ? "true" : "false");
+  }
 
   if (timer->pending) {
     REMOVE_FROM_HASH_TABLE(timer);
@@ -501,16 +508,18 @@ static bool refill_heap(timer_shard* shard, grpc_millis now) {
       saturating_add(GPR_MAX(now, shard->queue_deadline_cap),
                      static_cast<grpc_millis>(deadline_delta * 1000.0));
 
-  grpc_timer_check_trace.Log(
-      GPR_INFO, "  .. shard[%d]->queue_deadline_cap --> %" PRId64,
-      static_cast<int>(shard - g_shards), shard->queue_deadline_cap);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
+    gpr_log(GPR_INFO, "  .. shard[%d]->queue_deadline_cap --> %" PRId64,
+            static_cast<int>(shard - g_shards), shard->queue_deadline_cap);
+  }
   for (timer = shard->list.next; timer != &shard->list; timer = next) {
     next = timer->next;
 
     if (timer->deadline < shard->queue_deadline_cap) {
-      grpc_timer_check_trace.Log(
-          GPR_INFO, "  .. add timer with deadline %" PRId64 " to heap",
-          timer->deadline);
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
+        gpr_log(GPR_INFO, "  .. add timer with deadline %" PRId64 " to heap",
+                timer->deadline);
+      }
       list_remove(timer);
       grpc_timer_heap_add(&shard->heap, timer);
     }
@@ -524,21 +533,26 @@ static bool refill_heap(timer_shard* shard, grpc_millis now) {
 static grpc_timer* pop_one(timer_shard* shard, grpc_millis now) {
   grpc_timer* timer;
   for (;;) {
-    grpc_timer_check_trace.Log(
-        GPR_INFO, "  .. shard[%d]: heap_empty=%s",
-        static_cast<int>(shard - g_shards),
-        grpc_timer_heap_is_empty(&shard->heap) ? "true" : "false");
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
+      gpr_log(GPR_INFO, "  .. shard[%d]: heap_empty=%s",
+              static_cast<int>(shard - g_shards),
+              grpc_timer_heap_is_empty(&shard->heap) ? "true" : "false");
+    }
     if (grpc_timer_heap_is_empty(&shard->heap)) {
       if (now < shard->queue_deadline_cap) return nullptr;
       if (!refill_heap(shard, now)) return nullptr;
     }
     timer = grpc_timer_heap_top(&shard->heap);
-    grpc_timer_check_trace.Log(
-        GPR_INFO, "  .. check top timer deadline=%" PRId64 " now=%" PRId64,
-        timer->deadline, now);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
+      gpr_log(GPR_INFO,
+              "  .. check top timer deadline=%" PRId64 " now=%" PRId64,
+              timer->deadline, now);
+    }
     if (timer->deadline > now) return nullptr;
-    grpc_timer_trace.Log(GPR_INFO, "TIMER %p: FIRE %" PRId64 "ms late", timer,
-                         now - timer->deadline);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_trace)) {
+      gpr_log(GPR_INFO, "TIMER %p: FIRE %" PRId64 "ms late", timer,
+              now - timer->deadline);
+    }
     timer->pending = false;
     grpc_timer_heap_pop(&shard->heap);
     return timer;
@@ -560,8 +574,10 @@ static size_t pop_timers(timer_shard* shard, grpc_millis now,
   }
   *new_min_deadline = compute_min_deadline(shard);
   gpr_mu_unlock(&shard->mu);
-  grpc_timer_check_trace.Log(GPR_INFO, "  .. shard[%d] popped %" PRIdPTR,
-                             static_cast<int>(shard - g_shards), n);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
+    gpr_log(GPR_INFO, "  .. shard[%d] popped %" PRIdPTR,
+            static_cast<int>(shard - g_shards), n);
+  }
   return n;
 }
 
@@ -594,10 +610,11 @@ static grpc_timer_check_result run_some_expired_timers(
     gpr_mu_lock(&g_shared_mutables.mu);
     result = GRPC_TIMERS_CHECKED_AND_EMPTY;
 
-    grpc_timer_check_trace.Log(GPR_INFO,
-                               "  .. shard[%d]->min_deadline = %" PRId64,
-                               static_cast<int>(g_shard_queue[0] - g_shards),
-                               g_shard_queue[0]->min_deadline);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
+      gpr_log(GPR_INFO, "  .. shard[%d]->min_deadline = %" PRId64,
+              static_cast<int>(g_shard_queue[0] - g_shards),
+              g_shard_queue[0]->min_deadline);
+    }
 
     while (g_shard_queue[0]->min_deadline < now ||
            (now != GRPC_MILLIS_INF_FUTURE &&
@@ -611,12 +628,14 @@ static grpc_timer_check_result run_some_expired_timers(
         result = GRPC_TIMERS_FIRED;
       }
 
-      grpc_timer_check_trace.Log(
-          GPR_INFO,
-          "  .. result --> %d"
-          ", shard[%d]->min_deadline %" PRId64 " --> %" PRId64 ", now=%" PRId64,
-          result, static_cast<int>(g_shard_queue[0] - g_shards),
-          g_shard_queue[0]->min_deadline, new_min_deadline, now);
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
+        gpr_log(GPR_INFO,
+                "  .. result --> %d"
+                ", shard[%d]->min_deadline %" PRId64 " --> %" PRId64
+                ", now=%" PRId64,
+                result, static_cast<int>(g_shard_queue[0] - g_shards),
+                g_shard_queue[0]->min_deadline, new_min_deadline, now);
+      }
 
       /* An grpc_timer_init() on the shard could intervene here, adding a new
          timer that is earlier than new_min_deadline.  However,
@@ -676,9 +695,10 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
     if (next != nullptr) {
       *next = GPR_MIN(*next, min_timer);
     }
-    grpc_timer_check_trace.Log(
-        GPR_INFO, "TIMER CHECK SKIP: now=%" PRId64 " min_timer=%" PRId64, now,
-        min_timer);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
+      gpr_log(GPR_INFO, "TIMER CHECK SKIP: now=%" PRId64 " min_timer=%" PRId64,
+              now, min_timer);
+    }
     return GRPC_TIMERS_CHECKED_AND_EMPTY;
   }
 
