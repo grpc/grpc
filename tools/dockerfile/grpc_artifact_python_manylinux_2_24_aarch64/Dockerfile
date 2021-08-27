@@ -19,7 +19,7 @@
 # before https://github.com/dockcross/dockcross/pull/449
 # Thanks to that, wheel build with this image aren't actually
 # compliant with manylinux2014, but only with manylinux_2_24
-FROM dockcross/manylinux2014-aarch64:20210702-52fff63
+FROM dockcross/manylinux2014-aarch64:20210826-19322ba
 
 # Make the grpc wheels correctly tagged with manylinux_2_24
 # instead of the incorrect manylinux2014 (see the note above).
