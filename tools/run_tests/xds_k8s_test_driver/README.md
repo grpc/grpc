@@ -62,10 +62,12 @@ export WORKLOAD_SA_EMAIL="${WORKLOAD_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.
 Minimal requirements: [VPC-native](https://cloud.google.com/traffic-director/docs/security-proxyless-setup)
 cluster with [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity) enabled. 
 ```shell
-gcloud beta container clusters create "${CLUSTER_NAME}" \
+gcloud container clusters create "${CLUSTER_NAME}" \
+ --scopes=cloud-platform \
  --zone="${ZONE}" \
  --enable-ip-alias \
  --workload-pool="${PROJECT_ID}.svc.id.goog" \
+ --enable-workload-certificates \
  --workload-metadata=GKE_METADATA \
  --tags=allow-health-checks
 ```
