@@ -71,53 +71,55 @@ class ObservableState {
 
   Poll<absl::optional<T>> PollGet(ObservableVersion* version_seen) {
     absl::MutexLock lock(&mu_);
-    if (!value_.has_value()) {
-      if (version_ != kTombstoneVersion) {
-        // We allow initial no-value, which does not indicate closure.
-        return waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
-      }
-    }
+    if (!Started()) return Pending();
     *version_seen = version_;
     return value_;
   }
 
   Poll<absl::optional<T>> PollNext(ObservableVersion* version_seen) {
     absl::MutexLock lock(&mu_);
-    if (!value_.has_value()) {
-      if (version_ != kTombstoneVersion) {
-        // We allow initial no-value, which does not indicate closure.
-        return waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
-      }
-    }
-    if (version_ == *version_seen) {
-      return waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
-    }
-    *version_seen = version_;
+    if (!NextValueReady(version_seen)) return Pending();
     return value_;
   }
 
   Poll<absl::optional<T>> PollWatch(ObservableVersion* version_seen) {
-    if (*version_seen == kTombstoneVersion) {
-      return Pending();
-    }
+    if (*version_seen == kTombstoneVersion) return Pending();
 
     absl::MutexLock lock(&mu_);
-    if (!value_.has_value()) {
-      if (version_ != kTombstoneVersion) {
-        // We allow initial no-value, which does not indicate closure.
-        return waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
-      }
-    }
-    if (version_ == *version_seen) {
-      return waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
-    }
-    *version_seen = version_;
+    if (!NextValueReady(version_seen)) return Pending();
     // Watch needs to be woken up if the value changes even if it's ready now.
     waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
     return value_;
   }
 
  private:
+  // Returns true if an initial value is set.
+  // If one is not set, add ourselves as pending to waiters_, and return false.
+  bool Started() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    if (!value_.has_value()) {
+      if (version_ != kTombstoneVersion) {
+        // We allow initial no-value, which does not indicate closure.
+        waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // If no value is ready, add ourselves as pending to waiters_ and return
+  // false.
+  // If the next value is ready, update the last version seen and return true.
+  bool NextValueReady(ObservableVersion* version_seen)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    if (!Started()) return false;
+    if (version_ == *version_seen) {
+      waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
+      return false;
+    }
+    *version_seen = version_;
+    return true;
+  }
+
   absl::Mutex mu_;
   WaitSet waiters_ ABSL_GUARDED_BY(mu_);
   ObservableVersion version_ ABSL_GUARDED_BY(mu_) = 1;
