@@ -110,7 +110,11 @@ The test framework needs read access to the client and server images and the boo
 generator image. You may have these images in your project but if you want to use these
 from the grpc-testing project you will have to grant the necessary access to these images
 using https://cloud.google.com/container-registry/docs/access-control#grant or a
-gcloud command.
+gsutil command. For example, to grant access to images stored in `grpc-testing` project GCR, run:
+
+```sh
+gsutil iam ch "serviceAccount:${GCE_SA}:objectViewer" gs://artifacts.grpc-testing.appspot.com/
+```
 
 ##### Allow test driver to configure workload identity automatically
 Test driver will automatically grant `roles/iam.workloadIdentityUser` to 
