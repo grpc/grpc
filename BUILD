@@ -1129,6 +1129,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "latch",
+    external_deps = [
+        "absl/status",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/latch.h",
+    ],
+    deps = [
+        "activity",
+        "gpr_platform",
+        "intra_activity_waiter",
+    ],
+)
+
+grpc_cc_library(
     name = "observable",
     language = "c++",
     public_hdrs = [
