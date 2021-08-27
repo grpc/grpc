@@ -38,6 +38,9 @@ import time
 import traceback
 import uuid
 
+print("Version: ".format(sys.version))
+print("sys.path: ".format(sys.path))
+
 import six
 from six.moves import urllib
 
