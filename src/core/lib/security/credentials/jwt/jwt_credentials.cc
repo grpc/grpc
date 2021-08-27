@@ -31,6 +31,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #include <grpc/support/alloc.h>
@@ -43,9 +44,7 @@ using grpc_core::Json;
 void grpc_service_account_jwt_access_credentials::reset_cache() {
   GRPC_MDELEM_UNREF(cached_.jwt_md);
   cached_.jwt_md = GRPC_MDNULL;
-  if (!cached_.service_url.empty()) {
-    cached_.service_url.clear();
-  }
+  cached_.service_url.clear();
   cached_.jwt_expiration = gpr_inf_past(GPR_CLOCK_REALTIME);
 }
 
@@ -68,7 +67,7 @@ bool grpc_service_account_jwt_access_credentials::get_request_metadata(
   absl::StatusOr<std::string> uri =
       grpc_core::RemoveServiceNameFromJwtUri(context.service_url);
   if (!uri.ok()) {
-    *error = GRPC_ERROR_CREATE_FROM_STRING_VIEW(uri.status().message());
+    *error = absl_status_to_grpc_error(uri.status());
     return true;
   }
   /* See if we can return a cached jwt. */
