@@ -134,19 +134,18 @@ namespace Grpc.Core.Internal
         {
             if (PlatformApis.IsWindows)
             {
-                // TODO(jtattermusch): populate the error on Windows
                 errorMsg = null;
                 var handle = Windows.LoadLibrary(libraryPath);
-
                 if (handle == IntPtr.Zero)
                 {
                     int win32Error = Marshal.GetLastWin32Error();
-                    errorMsg = $"Error {win32Error}: ";
-
+                    errorMsg = $"LoadLibrary failed with error {win32Error}";
+                    // add extra info for the most common error ERROR_MOD_NOT_FOUND
                     if (win32Error == 126)
-                        errorMsg += "The specified module could not be found";
+                    {
+                        errorMsg += ": The specified module could not be found.";
+                    }
                 }
-
                 return handle;
             }
             if (PlatformApis.IsLinux)
