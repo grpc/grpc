@@ -21,6 +21,9 @@ export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export PYTHON=${PYTHON:-python}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 
+# Needed for building binary distribution wheels -- bdist_wheel
+"${PYTHON}" -m pip install --upgrade wheel
+
 if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
 then
   # Install Cython to avoid source wheel build failure.
