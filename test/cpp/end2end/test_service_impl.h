@@ -403,6 +403,7 @@ class TestMultipleServiceImpl : public RpcService {
       response.set_message(request.message());
       if (read_counts == server_write_last) {
         stream->WriteLast(response, WriteOptions());
+        break;
       } else {
         stream->Write(response);
       }

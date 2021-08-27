@@ -56,14 +56,17 @@ class XdsResolver : public Resolver {
         server_name_(absl::StripPrefix(args.uri.path(), "/")),
         args_(grpc_channel_args_copy(args.args)),
         interested_parties_(args.pollset_set) {
-    grpc_xds_resolver_trace.Log(GPR_INFO,
-                                "[xds_resolver %p] created for server name %s",
-                                this, server_name_.c_str());
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+      gpr_log(GPR_INFO, "[xds_resolver %p] created for server name %s", this,
+              server_name_.c_str());
+    }
   }
 
   ~XdsResolver() override {
     grpc_channel_args_destroy(args_);
-    grpc_xds_resolver_trace.Log(GPR_INFO, "[xds_resolver %p] destroyed", this);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+      gpr_log(GPR_INFO, "[xds_resolver %p] destroyed", this);
+    }
   }
 
   void StartLocked() override;
@@ -367,9 +370,10 @@ bool XdsResolver::XdsConfigSelector::Route::operator==(
 XdsResolver::XdsConfigSelector::XdsConfigSelector(
     RefCountedPtr<XdsResolver> resolver, grpc_error_handle* error)
     : resolver_(std::move(resolver)) {
-  grpc_xds_resolver_trace.Log(GPR_INFO,
-                              "[xds_resolver %p] creating XdsConfigSelector %p",
-                              resolver_.get(), this);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[xds_resolver %p] creating XdsConfigSelector %p",
+            resolver_.get(), this);
+  }
   // 1. Construct the route table
   // 2  Update resolver's cluster state map
   // 3. Construct cluster list to hold on to entries in the cluster state
@@ -381,9 +385,10 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
   // invalid data.
   route_table_.reserve(resolver_->current_virtual_host_.routes.size());
   for (auto& route : resolver_->current_virtual_host_.routes) {
-    grpc_xds_resolver_trace.Log(
-        GPR_INFO, "[xds_resolver %p] XdsConfigSelector %p: route: %s",
-        resolver_.get(), this, route.ToString().c_str());
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+      gpr_log(GPR_INFO, "[xds_resolver %p] XdsConfigSelector %p: route: %s",
+              resolver_.get(), this, route.ToString().c_str());
+    }
     route_table_.emplace_back();
     auto& route_entry = route_table_.back();
     route_entry.route = route;
@@ -431,9 +436,10 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
 }
 
 XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
-  grpc_xds_resolver_trace.Log(
-      GPR_INFO, "[xds_resolver %p] destroying XdsConfigSelector %p",
-      resolver_.get(), this);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[xds_resolver %p] destroying XdsConfigSelector %p",
+            resolver_.get(), this);
+  }
   clusters_.clear();
   resolver_->MaybeRemoveUnusedClusters();
 }
@@ -775,8 +781,9 @@ void XdsResolver::StartLocked() {
 }
 
 void XdsResolver::ShutdownLocked() {
-  grpc_xds_resolver_trace.Log(GPR_INFO, "[xds_resolver %p] shutting down",
-                              this);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[xds_resolver %p] shutting down", this);
+  }
   if (xds_client_ != nullptr) {
     if (listener_watcher_ != nullptr) {
       xds_client_->CancelListenerDataWatch(server_name_, listener_watcher_,
@@ -799,8 +806,9 @@ void XdsResolver::ShutdownLocked() {
 }
 
 void XdsResolver::OnListenerUpdate(XdsApi::LdsUpdate listener) {
-  grpc_xds_resolver_trace.Log(
-      GPR_INFO, "[xds_resolver %p] received updated listener data", this);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[xds_resolver %p] received updated listener data", this);
+  }
   if (listener.http_connection_manager.route_config_name !=
       route_config_name_) {
     if (route_config_watcher_ != nullptr) {
@@ -833,8 +841,9 @@ void XdsResolver::OnListenerUpdate(XdsApi::LdsUpdate listener) {
 }
 
 void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
-  grpc_xds_resolver_trace.Log(
-      GPR_INFO, "[xds_resolver %p] received updated route config", this);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[xds_resolver %p] received updated route config", this);
+  }
   // Find the relevant VirtualHost from the RouteConfiguration.
   XdsApi::RdsUpdate::VirtualHost* vhost =
       rds_update.FindVirtualHostForDomain(server_name_);
@@ -923,9 +932,10 @@ void XdsResolver::GenerateResult() {
     OnError(error);
     return;
   }
-  grpc_xds_resolver_trace.Log(
-      GPR_INFO, "[xds_resolver %p] generated service config: %s", this,
-      result.service_config->json_string().c_str());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,
+            result.service_config->json_string().c_str());
+  }
   grpc_arg new_args[] = {
       xds_client_->MakeChannelArg(),
       config_selector->MakeChannelArg(),

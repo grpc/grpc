@@ -33,15 +33,18 @@
 static void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
 #ifndef NDEBUG
   closure->scheduled = false;
-  grpc_trace_closure.Log(GPR_DEBUG,
-                         "running closure %p: created [%s:%d]: %s [%s:%d]",
-                         closure, closure->file_created, closure->line_created,
-                         closure->run ? "run" : "scheduled",
-                         closure->file_initiated, closure->line_initiated);
+  if (grpc_trace_closure.enabled()) {
+    gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: %s [%s:%d]",
+            closure, closure->file_created, closure->line_created,
+            closure->run ? "run" : "scheduled", closure->file_initiated,
+            closure->line_initiated);
+  }
 #endif
   closure->cb(closure->cb_arg, error);
 #ifndef NDEBUG
-  grpc_trace_closure.Log(GPR_DEBUG, "closure %p finished", closure);
+  if (grpc_trace_closure.enabled()) {
+    gpr_log(GPR_DEBUG, "closure %p finished", closure);
+  }
 #endif
   GRPC_ERROR_UNREF(error);
 }

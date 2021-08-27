@@ -323,6 +323,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     standalone = True,
+    tags = ["avoid_dep"],
     visibility = ["@grpc:public"],
     deps = [
         "gpr_base",
@@ -347,6 +348,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
     standalone = True,
+    tags = ["avoid_dep"],
     visibility = ["@grpc:public"],
     deps = [
         "config",
@@ -522,6 +524,7 @@ grpc_cc_library(
     ],
     language = "c++",
     standalone = True,
+    tags = ["avoid_dep"],
     visibility = ["@grpc:public"],
     deps = [
         "gpr",
@@ -596,6 +599,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc/census.h",
     ],
+    visibility = ["@grpc:public"],
     deps = [
         "gpr_base",
         "grpc_base_c",
@@ -669,7 +673,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/gpr/alloc.h",
         "src/core/lib/gpr/env.h",
-        "src/core/lib/gpr/log_internal.h",
         "src/core/lib/gpr/murmur_hash.h",
         "src/core/lib/gpr/spinlock.h",
         "src/core/lib/gpr/string.h",
@@ -2538,6 +2541,7 @@ grpc_cc_library(
         "src/core/lib/http/httpcli_security_connector.cc",
         "src/core/lib/security/authorization/authorization_policy_provider_vtable.cc",
         "src/core/lib/security/authorization/evaluate_args.cc",
+        "src/core/lib/security/authorization/sdk_server_authz_filter.cc",
         "src/core/lib/security/context/security_context.cc",
         "src/core/lib/security/credentials/alts/alts_credentials.cc",
         "src/core/lib/security/credentials/composite/composite_credentials.cc",
@@ -2590,6 +2594,7 @@ grpc_cc_library(
         "src/core/lib/security/authorization/authorization_engine.h",
         "src/core/lib/security/authorization/authorization_policy_provider.h",
         "src/core/lib/security/authorization/evaluate_args.h",
+        "src/core/lib/security/authorization/sdk_server_authz_filter.h",
         "src/core/lib/security/context/security_context.h",
         "src/core/lib/security/credentials/alts/alts_credentials.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",
@@ -3213,6 +3218,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
+    tags = ["avoid_dep"],
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
         "gpr_base",
@@ -3395,6 +3401,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpcpp/ext/channelz_service_plugin.h",
     ],
+    visibility = ["@grpc:channelz"],
     deps = [
         "gpr",
         "grpc",
