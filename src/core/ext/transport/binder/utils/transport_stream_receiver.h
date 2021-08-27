@@ -59,15 +59,6 @@ class TransportStreamReceiver {
   virtual void NotifyRecvTrailingMetadata(
       StreamIdentifier id, absl::StatusOr<Metadata> trailing_metadata,
       int status) = 0;
-
-  // Trailing metadata marks the end of one-side of the stream. Thus, after
-  // receiving trailing metadata from the other-end, we know that there will
-  // never be in-coming message data anymore, and all recv_message callbacks
-  // registered will never be satisfied. This function cancels all such
-  // callbacks gracefully (with GRPC_ERROR_NONE) to avoid being blocked waiting
-  // for them.
-  virtual void CancelRecvMessageCallbacksDueToTrailingMetadata(
-      StreamIdentifier id) = 0;
   // Remove all entries associated with stream number `id`.
   virtual void CancelStream(StreamIdentifier id) = 0;
 

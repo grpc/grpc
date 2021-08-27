@@ -37,7 +37,11 @@ void TransportStreamReceiverImpl::RegisterRecvInitialMetadata(
     grpc_core::MutexLock l(&m_);
     auto iter = pending_initial_metadata_.find(id);
     if (iter == pending_initial_metadata_.end()) {
-      initial_metadata_cbs_[id] = std::move(cb);
+      if (trailing_metadata_recvd_.count(id)) {
+        cb(absl::CancelledError(""));
+      } else {
+        initial_metadata_cbs_[id] = std::move(cb);
+      }
       cb = nullptr;
     } else {
       initial_metadata = std::move(iter->second.front());
@@ -63,7 +67,7 @@ void TransportStreamReceiverImpl::RegisterRecvMessage(
     if (iter == pending_message_.end()) {
       // If we'd already received trailing-metadata and there's no pending
       // messages, cancel the callback.
-      if (recv_message_cancelled_.count(id)) {
+      if (trailing_metadata_recvd_.count(id)) {
         cb(absl::CancelledError(
             TransportStreamReceiver::kGrpcBinderTransportCancelledGracefully));
       } else {
@@ -157,7 +161,7 @@ void TransportStreamReceiverImpl::NotifyRecvTrailingMetadata(
   // parsed after message data, we can safely cancel all upcoming callbacks of
   // recv_message.
   gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
-  CancelRecvMessageCallbacksDueToTrailingMetadata(id);
+  OnRecvTrailingMetadata(id);
   TrailingMetadataCallbackType cb;
   {
     grpc_core::MutexLock l(&m_);
@@ -174,23 +178,39 @@ void TransportStreamReceiverImpl::NotifyRecvTrailingMetadata(
   cb(std::move(trailing_metadata), status);
 }
 
-void TransportStreamReceiverImpl::
-    CancelRecvMessageCallbacksDueToTrailingMetadata(StreamIdentifier id) {
+void TransportStreamReceiverImpl::OnRecvTrailingMetadata(StreamIdentifier id) {
   gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
-  MessageDataCallbackType cb = nullptr;
   {
-    grpc_core::MutexLock l(&m_);
-    auto iter = message_cbs_.find(id);
-    if (iter != message_cbs_.end()) {
-      cb = std::move(iter->second);
-      message_cbs_.erase(iter);
+    InitialMetadataCallbackType cb = nullptr;
+    {
+      grpc_core::MutexLock l(&m_);
+      auto iter = initial_metadata_cbs_.find(id);
+      if (iter != initial_metadata_cbs_.end()) {
+        cb = std::move(iter->second);
+        initial_metadata_cbs_.erase(iter);
+      }
+      trailing_metadata_recvd_.insert(id);
     }
-    recv_message_cancelled_.insert(id);
+    if (cb != nullptr) {
+      // The registered callback will never be satisfied. Cancel it.
+      cb(absl::CancelledError(""));
+    }
   }
-  if (cb != nullptr) {
-    // The registered callback will never be satisfied. Cancel it.
-    cb(absl::CancelledError(
-        TransportStreamReceiver::kGrpcBinderTransportCancelledGracefully));
+  {
+    MessageDataCallbackType cb = nullptr;
+    {
+      grpc_core::MutexLock l(&m_);
+      auto iter = message_cbs_.find(id);
+      if (iter != message_cbs_.end()) {
+        cb = std::move(iter->second);
+        message_cbs_.erase(iter);
+      }
+    }
+    if (cb != nullptr) {
+      // The registered callback will never be satisfied. Cancel it.
+      cb(absl::CancelledError(
+          TransportStreamReceiver::kGrpcBinderTransportCancelledGracefully));
+    }
   }
 }
 
@@ -218,7 +238,7 @@ void TransportStreamReceiverImpl::CancelStream(StreamIdentifier id) {
       trailing_metadata_cbs_.erase(iter);
     }
   }
-  recv_message_cancelled_.erase(id);
+  trailing_metadata_recvd_.erase(id);
   pending_initial_metadata_.erase(id);
   pending_message_.erase(id);
   pending_trailing_metadata_.erase(id);
