@@ -350,7 +350,6 @@ def targets():
         PythonDistribTest('linux', 'x64', 'fedora34'),
         PythonDistribTest('linux', 'x64', 'opensuse'),
         PythonDistribTest('linux', 'x64', 'arch'),
-        PythonDistribTest('linux', 'x64', 'ubuntu1604'),
         PythonDistribTest('linux', 'x64', 'ubuntu1804'),
         PythonDistribTest('linux', 'aarch64', 'python38_buster'),
         PythonDistribTest('linux', 'x64', 'alpine3.7', source=True),
@@ -359,7 +358,6 @@ def targets():
         PythonDistribTest('linux', 'x64', 'centos7', source=True),
         PythonDistribTest('linux', 'x64', 'fedora23', source=True),
         PythonDistribTest('linux', 'x64', 'arch', source=True),
-        PythonDistribTest('linux', 'x64', 'ubuntu1604', source=True),
         PythonDistribTest('linux', 'x64', 'ubuntu1804', source=True),
         # Ruby
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_4'),
