@@ -22,12 +22,12 @@
 
 #ifdef GRPC_UV
 
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
+#include <uv.h>
 
 #include <grpc/support/log.h>
 
-#include <uv.h>
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils.h"
 
 uint16_t grpc_htons(uint16_t hostshort) { return htons(hostshort); }
 

@@ -16,11 +16,10 @@
  *
  */
 
-#include "src/core/lib/iomgr/port.h"
-
-#include "test/core/end2end/end2end_tests.h"
-
 #include <string.h>
+
+#include "src/core/lib/iomgr/port.h"
+#include "test/core/end2end/end2end_tests.h"
 #ifdef GRPC_POSIX_SOCKET
 #include <unistd.h>
 #endif

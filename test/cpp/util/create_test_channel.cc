@@ -18,11 +18,12 @@
 
 #include "test/cpp/util/create_test_channel.h"
 
+#include "absl/flags/flag.h"
+
 #include <grpc/support/log.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
-#include "absl/flags/flag.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
 ABSL_FLAG(std::string, grpc_test_use_grpclb_with_child_policy, "",

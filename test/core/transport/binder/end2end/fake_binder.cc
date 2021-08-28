@@ -14,10 +14,10 @@
 
 #include "test/core/transport/binder/end2end/fake_binder.h"
 
-#include <grpc/support/log.h>
-
 #include <string>
 #include <utility>
+
+#include <grpc/support/log.h>
 
 namespace grpc_binder {
 namespace end2end_testing {

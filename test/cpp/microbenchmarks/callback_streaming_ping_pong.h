@@ -19,8 +19,10 @@
 #ifndef TEST_CPP_MICROBENCHMARKS_CALLBACK_STREAMING_PING_PONG_H
 #define TEST_CPP_MICROBENCHMARKS_CALLBACK_STREAMING_PING_PONG_H
 
-#include <benchmark/benchmark.h>
 #include <sstream>
+
+#include <benchmark/benchmark.h>
+
 #include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/resource_user_util.h"

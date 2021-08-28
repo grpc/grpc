@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 
 #include <string.h>
 
@@ -42,8 +42,8 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
-#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"

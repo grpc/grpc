@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <list>
-
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
+
+#include <list>
 
 #include "upb/upb.hpp"
 

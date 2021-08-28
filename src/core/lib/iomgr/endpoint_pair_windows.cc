@@ -21,15 +21,15 @@
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_WINSOCK_SOCKET
-#include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/iomgr/endpoint_pair.h"
-#include "src/core/lib/iomgr/sockaddr.h"
-
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
 
 #include <grpc/support/log.h>
+
+#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
 

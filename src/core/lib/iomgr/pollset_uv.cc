@@ -22,12 +22,13 @@
 
 #ifdef GRPC_UV
 
+#include <uv.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_custom.h"
-
-#include <uv.h>
 
 /* Indicates that grpc_pollset_work should run an iteration of the UV loop
    before running callbacks. This defaults to 1, and should be disabled if

@@ -22,6 +22,8 @@
 
 #ifdef GRPC_UV
 
+#include <uv.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -29,8 +31,6 @@
 #include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_custom.h"
-
-#include <uv.h>
 
 static void timer_close_callback(uv_handle_t* handle) { gpr_free(handle); }
 

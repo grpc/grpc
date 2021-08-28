@@ -14,11 +14,13 @@
 
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
 
-#include <gtest/gtest.h>
 #include <string>
 #include <utility>
 
+#include <gtest/gtest.h>
+
 #include "absl/memory/memory.h"
+
 #include "test/core/transport/binder/mock_objects.h"
 #include "test/core/util/test_config.h"
 

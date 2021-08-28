@@ -22,8 +22,6 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP_CLIENT
 
-#include "src/core/lib/iomgr/tcp_client_posix.h"
-
 #include <errno.h>
 #include <netinet/in.h>
 #include <string.h>
@@ -44,6 +42,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/tcp_client_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"

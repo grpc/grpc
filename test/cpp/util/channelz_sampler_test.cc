@@ -24,6 +24,8 @@
 #include <string>
 #include <thread>
 
+#include "gtest/gtest.h"
+
 #include "grpc/grpc.h"
 #include "grpc/support/alloc.h"
 #include "grpc/support/port_platform.h"
@@ -37,7 +39,7 @@
 #include "grpcpp/server.h"
 #include "grpcpp/server_builder.h"
 #include "grpcpp/server_context.h"
-#include "gtest/gtest.h"
+
 #include "src/core/lib/gpr/env.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"

@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "grpcpp/security/credentials.h"
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -26,7 +27,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "grpcpp/security/credentials.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"

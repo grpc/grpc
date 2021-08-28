@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/xds/xds_client.h"
+
 #include <inttypes.h>
 #include <limits.h>
 #include <string.h>
@@ -35,7 +37,6 @@
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_channel_args.h"
-#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"

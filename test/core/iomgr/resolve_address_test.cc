@@ -17,15 +17,16 @@
  */
 
 #include "src/core/lib/iomgr/resolve_address.h"
+
+#include <string.h>
+
+#include <address_sorting/address_sorting.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-
-#include <address_sorting/address_sorting.h>
-
-#include <string.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/lib/event_engine/sockaddr.h"

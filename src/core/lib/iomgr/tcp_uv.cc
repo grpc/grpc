@@ -24,8 +24,9 @@
 #include <limits.h>
 #include <string.h>
 
-#include <grpc/slice_buffer.h>
+#include <uv.h>
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -38,8 +39,6 @@
 #include "src/core/lib/iomgr/tcp_custom.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-
-#include <uv.h>
 
 #define IGNORE_CONST(addr) ((grpc_sockaddr*)(uintptr_t)(addr))
 

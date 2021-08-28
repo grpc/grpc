@@ -20,10 +20,11 @@
 
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 
-#include <grpcpp/server_context.h>
-
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/trace/span.h"
+
+#include <grpcpp/server_context.h>
+
 #include "src/cpp/ext/filters/census/channel_filter.h"
 #include "src/cpp/ext/filters/census/client_filter.h"
 #include "src/cpp/ext/filters/census/measures.h"

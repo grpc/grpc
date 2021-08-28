@@ -18,12 +18,13 @@
 
 #include "src/core/lib/security/security_connector/security_connector.h"
 
+#include <stdio.h>
+#include <string.h>
+
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <stdio.h>
-#include <string.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
