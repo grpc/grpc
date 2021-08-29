@@ -68,8 +68,9 @@ bool IsUnsupportedHeader(absl::string_view header_name) {
                                                     "transfer-encoding",
                                                     "upgrade"};
   for (size_t i = 0; i < GPR_ARRAY_SIZE(kUnsupportedHeaders); ++i) {
-    if (absl::EqualsIgnoreCase(header_name, kUnsupportedHeaders[i]))
+    if (absl::EqualsIgnoreCase(header_name, kUnsupportedHeaders[i])) {
       return true;
+    }
   }
   return false;
 }
