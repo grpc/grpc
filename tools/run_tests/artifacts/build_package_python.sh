@@ -32,11 +32,11 @@ strip_binary_wheel() {
     find "$TEMP_WHEEL_DIR" -name "_protoc_compiler*.so" -exec strip --strip-debug {} ";"
     find "$TEMP_WHEEL_DIR" -name "cygrpc*.so" -exec strip --strip-debug {} ";"
 
-    WHEEL_FILE=$(basename "$WHEEL_PATH")
     DISTRIBUTION_NAME=$(basename "$WHEEL_PATH" | cut -d '-' -f 1)
     VERSION=$(basename "$WHEEL_PATH" | cut -d '-' -f 2)
     ${PYTHON} -m wheel pack "$TEMP_WHEEL_DIR/$DISTRIBUTION_NAME-$VERSION" -d "$TEMP_WHEEL_DIR"
-    mv "$TEMP_WHEEL_DIR/*.whl" "$WHEEL_PATH"
+    ls "$TEMP_WHEEL_DIR"
+    mv "$TEMP_WHEEL_DIR/$DISTRIBUTION_NAME-*.whl" "$WHEEL_PATH"
 }
 
 for wheel in artifacts/*.whl; do
