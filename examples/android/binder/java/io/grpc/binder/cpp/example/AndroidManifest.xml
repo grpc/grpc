@@ -1,3 +1,4 @@
+<!-- TODO(mingcl): Rename this app to exampleclient -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="io.grpc.binder.cpp.example"
     android:versionCode="1"
@@ -6,6 +7,10 @@
   <uses-sdk
       android:minSdkVersion="29"
       android:targetSdkVersion="30" />
+
+   <queries>
+      <package android:name="io.grpc.binder.cpp.exampleserver" />
+   </queries>
 
   <application
       android:label="gRPC BinderTransport Cpp">

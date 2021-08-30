@@ -59,10 +59,10 @@ if args.only_changed:
         ['git', 'diff', 'origin/master', 'HEAD', '--name-only'])
     for line in output.decode('ascii').splitlines(False):
         if line in orig_files:
-            print("check: %s" % line)
+            print(("check: %s" % line))
             actual_files.append(line)
         else:
-            print("skip: %s - not in the build" % line)
+            print(("skip: %s - not in the build" % line))
     args.files = actual_files
 
 jobs = []

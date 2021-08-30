@@ -18,10 +18,13 @@ licenses(["notice"])
 
 package(
     default_visibility = ["//visibility:public"],
+    features = [
+        "layering_check",
+    ],
 )
 
 grpc_cc_library(
-    name = "transport",
+    name = "binder_transport",
     srcs = [
         "binder_transport.cc",
     ],
@@ -34,12 +37,9 @@ grpc_cc_library(
         "absl/memory",
     ],
     deps = [
-        "//:gpr",
         "//:gpr_base",
-        "//:grpc",
-        "//:grpc_base",
+        "//:gpr_platform",
         "//:grpc_base_c",
-        "//:grpc_codegen",
         "//src/core/ext/transport/binder/utils:transport_stream_receiver",
         "//src/core/ext/transport/binder/wire_format:binder",
         "//src/core/ext/transport/binder/wire_format:wire_reader",

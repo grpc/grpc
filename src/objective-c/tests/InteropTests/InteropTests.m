@@ -1603,6 +1603,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
   XCTAssertNotNil([[self class] host]);
   __weak XCTestExpectation *expectUserCallComplete =
       [self expectationWithDescription:@"User call completed."];
+  __weak XCTestExpectation *expectResponseCallbackComplete =
+      [self expectationWithDescription:@"Hook interceptor response callback completed"];
 
   NSArray *responses = @[ @1, @2, @3, @4 ];
   __block int index = 0;
@@ -1659,6 +1661,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
         XCTAssertNil(trailingMetadata);
         XCTAssertNotNil(error);
         XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
+        [expectResponseCallbackComplete fulfill];
       }
       didWriteDataHook:nil];
 

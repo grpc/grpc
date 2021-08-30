@@ -148,3 +148,71 @@ grpc_cc_test(
         "//test/core/util:grpc_suppressions",
     ],
 )
+
+grpc_cc_test(
+    name = "seq_test",
+    srcs = ["seq_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:seq",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "try_seq_test",
+    srcs = ["try_seq_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:try_seq",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "activity_test",
+    srcs = ["activity_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:activity",
+        "//:join",
+        "//:promise",
+        "//:seq",
+        "//:wait_set",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "latch_test",
+    srcs = ["latch_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:join",
+        "//:latch",
+        "//:seq",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "observable_test",
+    srcs = ["observable_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:observable",
+        "//:promise",
+        "//:seq",
+        "//test/core/util:grpc_suppressions",
+    ],
+)

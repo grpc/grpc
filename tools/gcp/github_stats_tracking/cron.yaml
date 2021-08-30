@@ -1,4 +1,0 @@
-cron:
-- description: "daily github stats tracking job"
-  url: /daily
-  schedule: every 24 hours

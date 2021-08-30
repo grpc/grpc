@@ -253,7 +253,7 @@ def prepare_remote_hosts(hosts, prepare_local=False):
 
 
 def build_on_remote_hosts(hosts,
-                          languages=scenario_config.LANGUAGES.keys(),
+                          languages=list(scenario_config.LANGUAGES.keys()),
                           build_local=False):
     """Builds performance worker on remote hosts (and maybe also locally)."""
     build_timeout = 45 * 60
@@ -355,7 +355,8 @@ def create_scenarios(languages,
                      server_cpu_load=0):
     """Create jobspecs for scenarios to run."""
     all_workers = [
-        worker for workers in workers_by_lang.values() for worker in workers
+        worker for workers in list(workers_by_lang.values())
+        for worker in workers
     ]
     scenarios = []
     _NO_WORKERS = []

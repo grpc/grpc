@@ -41,13 +41,13 @@ for target_dir in _TARGET_DIRS:
     for root, dirs, filenames in os.walk(target_dir):
         if 'README.md' not in filenames:
             if not printed_banner:
-                print 'Missing README.md'
-                print '================='
+                print('Missing README.md')
+                print('=================')
                 printed_banner = True
-            print root
+            print(root)
             errors += 1
 if printed_banner:
-    print
+    print()
 printed_banner = False
 for target_dir in _TARGET_DIRS:
     for root, dirs, filenames in os.walk(target_dir):
@@ -59,10 +59,10 @@ for target_dir in _TARGET_DIRS:
                 contents = f.read()
             if '\\file' not in contents:
                 if not printed_banner:
-                    print 'Missing \\file comment'
-                    print '======================'
+                    print('Missing \\file comment')
+                    print('======================')
                     printed_banner = True
-                print path
+                print(path)
                 errors += 1
 
 assert errors == 0, 'error count = %d' % errors
