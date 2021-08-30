@@ -369,8 +369,8 @@ class ClientThread extends Thread {
 
         $stub = new Grpc\Testing\TestServiceClient(
             $this->rpc_config->server_address,
-            ['credentials' => Grpc\ChannelCredentials::createInsecure()
-        ]);
+            ['credentials' => Grpc\ChannelCredentials::createInsecure(),
+             'grpc.enable_retries' => 0]);
         // hrtime returns nanoseconds
         $target_next_start_us = hrtime(true) / 1000;
         while (true) {
