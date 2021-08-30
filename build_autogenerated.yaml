@@ -4151,15 +4151,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: tls_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/tls_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: transport_security_common_api_test
   build: test
   language: c
@@ -7440,6 +7431,16 @@ targets:
   - test/core/security/tls_security_connector_test.cc
   deps:
   - grpc_test_util
+- name: tls_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/tls_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: too_many_pings_test
   gtest: true
   build: test
