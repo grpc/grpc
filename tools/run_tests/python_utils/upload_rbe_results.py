@@ -18,9 +18,10 @@ import argparse
 import json
 import os
 import sys
+import urllib.error
+import urllib.parse
+import urllib.request
 import uuid
-
-import urllib2
 
 gcp_utils_dir = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../gcp/utils'))
@@ -121,12 +122,12 @@ def _get_resultstore_data(api_key, invocation_id):
     # that limit, the 'nextPageToken' field is included in the request to get
     # subsequent data, so keep requesting until 'nextPageToken' field is omitted.
     while True:
-        req = urllib2.Request(
+        req = urllib.request.Request(
             url=
             'https://resultstore.googleapis.com/v2/invocations/%s/targets/-/configuredTargets/-/actions?key=%s&pageToken=%s&fields=next_page_token,actions.id,actions.status_attributes,actions.timing,actions.test_action'
             % (invocation_id, api_key, page_token),
             headers={'Content-Type': 'application/json'})
-        results = json.loads(urllib2.urlopen(req).read())
+        results = json.loads(urllib.request.urlopen(req).read())
         all_actions.extend(results['actions'])
         if 'nextPageToken' not in results:
             break
@@ -170,7 +171,8 @@ if __name__ == "__main__":
     if args.resultstore_dump_file:
         with open(args.resultstore_dump_file, 'w') as f:
             json.dump(resultstore_actions, f, indent=4, sort_keys=True)
-        print('Dumped resultstore data to file %s' % args.resultstore_dump_file)
+        print(
+            ('Dumped resultstore data to file %s' % args.resultstore_dump_file))
 
     # google.devtools.resultstore.v2.Action schema:
     # https://github.com/googleapis/googleapis/blob/master/google/devtools/resultstore/v2/action.proto
@@ -256,8 +258,8 @@ if __name__ == "__main__":
                     }
                 })
             except Exception as e:
-                print('Failed to parse test result. Error: %s' % str(e))
-                print(json.dumps(test_case, indent=4))
+                print(('Failed to parse test result. Error: %s' % str(e)))
+                print((json.dumps(test_case, indent=4)))
                 bq_rows.append({
                     'insertId': str(uuid.uuid4()),
                     'json': {
@@ -284,7 +286,7 @@ if __name__ == "__main__":
     if args.bq_dump_file:
         with open(args.bq_dump_file, 'w') as f:
             json.dump(bq_rows, f, indent=4, sort_keys=True)
-        print('Dumped BQ data to file %s' % args.bq_dump_file)
+        print(('Dumped BQ data to file %s' % args.bq_dump_file))
 
     if not args.skip_upload:
         # BigQuery sometimes fails with large uploads, so batch 1,000 rows at a time.

@@ -33,9 +33,10 @@ import sys
 from typing import Any, Dict, Iterable, Mapping, Optional, Type
 import uuid
 
-import scenario_config
-import scenario_config_exporter
 import yaml
+
+from . import scenario_config
+from . import scenario_config_exporter
 
 CONFIGURATION_FILE_HEADER_COMMENT = """
 # Load test configurations generated from a template by loadtest_config.py.
