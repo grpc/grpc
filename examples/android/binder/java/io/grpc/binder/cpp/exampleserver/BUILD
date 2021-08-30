@@ -26,7 +26,9 @@ cc_library(
     ],
     deps = [
         # Temporarily directly depend on this target before we expose a public API
-        "//src/core/ext/transport/binder/client:grpc_transport_binder_client",
+        # TODO(mingcl): Uncomment this after server interfaces are merged
+        # "//src/core/ext/transport/binder/server:grpc_transport_binder_server",
+        "//:grpc++",
         "//examples/protos:helloworld_cc_grpc",
     ],
     alwayslink = True,
@@ -41,9 +43,17 @@ android_library(
     manifest = "AndroidManifest.xml",
     resource_files = glob(["res/**"]),
     deps = [
+        ":endpoint",
         ":jni_lib",
-        "@binder_transport_android_helper//io/grpc/binder/cpp:connection_helper",
     ],
+)
+
+android_library(
+    name = "endpoint",
+    srcs = ["ExportedEndpointService.java"],
+    exports_manifest = True,
+    manifest = "AndroidManifest_endpoint.xml",
+    deps = [],
 )
 
 android_binary(
