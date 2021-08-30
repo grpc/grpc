@@ -108,6 +108,9 @@ struct grpc_binder_stream {
   bool* call_failed_before_recv_message = nullptr;
   grpc_metadata_batch* recv_trailing_metadata;
   grpc_closure* recv_trailing_metadata_finished = nullptr;
+
+  bool trailing_metadata_sent = false;
+  bool need_to_call_trailing_metadata_callback = false;
 };
 
 #endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_STREAM_H
