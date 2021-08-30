@@ -962,7 +962,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/resource_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resource_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_custom.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_factory_posix.cc" role="src" />
