@@ -25,6 +25,7 @@
 #include <sstream>
 #include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
@@ -42,7 +43,7 @@ inline void SendCallbackUnaryPingPong(
     std::mutex* mu, std::condition_variable* cv) {
   int response_msgs_size = state->range(1);
   cli_ctx->AddMetadata(kServerMessageSize, std::to_string(response_msgs_size));
-  stub_->experimental_async()->Echo(
+  stub_->async()->Echo(
       cli_ctx, request, response,
       [state, cli_ctx, request, response, stub_, done, mu, cv](Status s) {
         GPR_ASSERT(s.ok());

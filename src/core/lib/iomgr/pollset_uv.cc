@@ -24,6 +24,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_custom.h"
 
 #include <uv.h>
@@ -54,7 +55,7 @@ static void empty_timer_cb(uv_timer_t* handle) {}
 
 static void kick_timer_cb(uv_timer_t* handle) { g_kicked = false; }
 
-static void run_loop(size_t timeout) {
+static grpc_error* run_loop(size_t timeout) {
   if (grpc_pollset_work_run_loop) {
     if (timeout == 0) {
       uv_run(uv_default_loop(), UV_RUN_NOWAIT);
@@ -64,6 +65,7 @@ static void run_loop(size_t timeout) {
       uv_timer_stop(&g_handle->poll_timer);
     }
   }
+  return GRPC_ERROR_NONE;
 }
 
 static void kick() {

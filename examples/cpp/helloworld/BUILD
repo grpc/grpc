@@ -45,6 +45,16 @@ cc_binary(
 )
 
 cc_binary(
+    name = "greeter_callback_client",
+    srcs = ["greeter_callback_client.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        "//:grpc++",
+        "//examples/protos:helloworld_cc_grpc",
+    ],
+)
+
+cc_binary(
     name = "xds_greeter_client",
     srcs = ["xds_greeter_client.cc"],
     defines = ["BAZEL_BUILD"],
@@ -73,6 +83,17 @@ cc_binary(
     defines = ["BAZEL_BUILD"],
     deps = [
         "//:grpc++",
+        "//examples/protos:helloworld_cc_grpc",
+    ],
+)
+
+cc_binary(
+    name = "greeter_callback_server",
+    srcs = ["greeter_callback_server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        "//:grpc++",
+        "//:grpc++_reflection",
         "//examples/protos:helloworld_cc_grpc",
     ],
 )

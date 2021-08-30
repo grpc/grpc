@@ -1110,6 +1110,10 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
             GPR_INFO,
             "perform_stream_op error %p scheduling recv message-ready %s", s,
             grpc_error_std_string(error).c_str());
+        if (op->payload->recv_message.call_failed_before_recv_message !=
+            nullptr) {
+          *op->payload->recv_message.call_failed_before_recv_message = true;
+        }
         grpc_core::ExecCtx::Run(DEBUG_LOCATION,
                                 op->payload->recv_message.recv_message_ready,
                                 GRPC_ERROR_REF(error));
@@ -1286,7 +1290,6 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   const grpc_channel_args* server_args = grpc_channel_args_copy_and_remove(
       server->core_server->channel_args(), args_to_remove,
       GPR_ARRAY_SIZE(args_to_remove));
-
   // Add a default authority channel argument for the client
   grpc_arg default_authority_arg;
   default_authority_arg.type = GRPC_ARG_STRING;
@@ -1307,7 +1310,7 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   if (error == GRPC_ERROR_NONE) {
     channel =
         grpc_channel_create("inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                            client_transport, nullptr, &error);
+                            client_transport, nullptr, 0, &error);
     if (error != GRPC_ERROR_NONE) {
       GPR_ASSERT(!channel);
       gpr_log(GPR_ERROR, "Failed to create client channel: %s",

@@ -21,8 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <vector>
+
 #include "absl/status/status.h"
 #include "absl/time/time.h"
+#include "absl/types/optional.h"
 
 #include "src/core/lib/gprpp/debug_location.h"
 

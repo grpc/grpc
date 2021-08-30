@@ -9,7 +9,7 @@
 #ifndef ENVOY_CONFIG_ENDPOINT_V3_ENDPOINT_COMPONENTS_PROTO_UPB_H_
 #define ENVOY_CONFIG_ENDPOINT_V3_ENDPOINT_COMPONENTS_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -50,13 +50,19 @@ UPB_INLINE envoy_config_endpoint_v3_Endpoint *envoy_config_endpoint_v3_Endpoint_
 UPB_INLINE envoy_config_endpoint_v3_Endpoint *envoy_config_endpoint_v3_Endpoint_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_endpoint_v3_Endpoint *ret = envoy_config_endpoint_v3_Endpoint_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_endpoint_v3_Endpoint_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_endpoint_v3_Endpoint_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_endpoint_v3_Endpoint *envoy_config_endpoint_v3_Endpoint_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_endpoint_v3_Endpoint *ret = envoy_config_endpoint_v3_Endpoint_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_endpoint_v3_Endpoint_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_endpoint_v3_Endpoint_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_endpoint_v3_Endpoint_serialize(const envoy_config_endpoint_v3_Endpoint *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_endpoint_v3_Endpoint_msginit, arena, len);
@@ -106,13 +112,19 @@ UPB_INLINE envoy_config_endpoint_v3_Endpoint_HealthCheckConfig *envoy_config_end
 UPB_INLINE envoy_config_endpoint_v3_Endpoint_HealthCheckConfig *envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_endpoint_v3_Endpoint_HealthCheckConfig *ret = envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_endpoint_v3_Endpoint_HealthCheckConfig *envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_endpoint_v3_Endpoint_HealthCheckConfig *ret = envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_serialize(const envoy_config_endpoint_v3_Endpoint_HealthCheckConfig *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_msginit, arena, len);
@@ -136,13 +148,19 @@ UPB_INLINE envoy_config_endpoint_v3_LbEndpoint *envoy_config_endpoint_v3_LbEndpo
 UPB_INLINE envoy_config_endpoint_v3_LbEndpoint *envoy_config_endpoint_v3_LbEndpoint_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_endpoint_v3_LbEndpoint *ret = envoy_config_endpoint_v3_LbEndpoint_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_endpoint_v3_LbEndpoint_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_endpoint_v3_LbEndpoint_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_endpoint_v3_LbEndpoint *envoy_config_endpoint_v3_LbEndpoint_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_endpoint_v3_LbEndpoint *ret = envoy_config_endpoint_v3_LbEndpoint_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_endpoint_v3_LbEndpoint_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_endpoint_v3_LbEndpoint_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_endpoint_v3_LbEndpoint_serialize(const envoy_config_endpoint_v3_LbEndpoint *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_endpoint_v3_LbEndpoint_msginit, arena, len);
@@ -218,13 +236,19 @@ UPB_INLINE envoy_config_endpoint_v3_LocalityLbEndpoints *envoy_config_endpoint_v
 UPB_INLINE envoy_config_endpoint_v3_LocalityLbEndpoints *envoy_config_endpoint_v3_LocalityLbEndpoints_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_endpoint_v3_LocalityLbEndpoints *ret = envoy_config_endpoint_v3_LocalityLbEndpoints_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_endpoint_v3_LocalityLbEndpoints_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_endpoint_v3_LocalityLbEndpoints_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_endpoint_v3_LocalityLbEndpoints *envoy_config_endpoint_v3_LocalityLbEndpoints_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_endpoint_v3_LocalityLbEndpoints *ret = envoy_config_endpoint_v3_LocalityLbEndpoints_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_endpoint_v3_LocalityLbEndpoints_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_endpoint_v3_LocalityLbEndpoints_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_endpoint_v3_LocalityLbEndpoints_serialize(const envoy_config_endpoint_v3_LocalityLbEndpoints *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_endpoint_v3_LocalityLbEndpoints_msginit, arena, len);

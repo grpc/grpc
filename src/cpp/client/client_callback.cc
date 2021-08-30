@@ -20,6 +20,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/surface/call.h"
 
 namespace grpc {
 namespace internal {
@@ -46,6 +47,10 @@ void ClientReactor::InternalScheduleOnDone(grpc::Status s) {
   };
   ClosureWithArg* arg = new ClosureWithArg(this, std::move(s));
   grpc_core::Executor::Run(&arg->closure, GRPC_ERROR_NONE);
+}
+
+bool ClientReactor::InternalTrailersOnly(const grpc_call* call) const {
+  return grpc_call_is_trailers_only(call);
 }
 
 }  // namespace internal

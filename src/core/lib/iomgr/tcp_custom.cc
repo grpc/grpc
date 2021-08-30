@@ -64,8 +64,7 @@ struct custom_tcp_endpoint {
   grpc_slice_buffer* read_slices = nullptr;
   grpc_slice_buffer* write_slices = nullptr;
 
-  grpc_resource_user* resource_user;
-  grpc_resource_user_slice_allocator slice_allocator;
+  grpc_slice_allocator* slice_allocator;
 
   bool shutting_down;
 
@@ -75,7 +74,7 @@ struct custom_tcp_endpoint {
 static void tcp_free(grpc_custom_socket* s) {
   custom_tcp_endpoint* tcp =
       reinterpret_cast<custom_tcp_endpoint*>(s->endpoint);
-  grpc_resource_user_unref(tcp->resource_user);
+  grpc_slice_allocator_destroy(tcp->slice_allocator);
   delete tcp;
   s->refs--;
   if (s->refs == 0) {
@@ -203,9 +202,10 @@ static void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   tcp->read_slices = read_slices;
   grpc_slice_buffer_reset_and_unref_internal(read_slices);
   TCP_REF(tcp, "read");
-  if (grpc_resource_user_alloc_slices(&tcp->slice_allocator,
-                                      GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
-                                      tcp->read_slices)) {
+  if (grpc_slice_allocator_allocate(
+          tcp->slice_allocator, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
+          grpc_slice_allocator_intent::kReadBuffer, tcp->read_slices,
+          tcp_read_allocation_done, tcp)) {
     tcp_read_allocation_done(tcp, GRPC_ERROR_NONE);
   }
 }
@@ -297,7 +297,6 @@ static void endpoint_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
     // GRPC_ERROR_REF(why));
     // grpc_core::ExecCtx::Run(DEBUG_LOCATION,tcp->write_cb,
     // GRPC_ERROR_REF(why)); tcp->read_cb = nullptr; tcp->write_cb = nullptr;
-    grpc_resource_user_shutdown(tcp->resource_user);
     grpc_custom_socket_vtable->shutdown(tcp->socket);
   }
   GRPC_ERROR_UNREF(why);
@@ -332,11 +331,6 @@ static absl::string_view endpoint_get_local_address(grpc_endpoint* ep) {
   return tcp->local_address;
 }
 
-static grpc_resource_user* endpoint_get_resource_user(grpc_endpoint* ep) {
-  custom_tcp_endpoint* tcp = reinterpret_cast<custom_tcp_endpoint*>(ep);
-  return tcp->resource_user;
-}
-
 static int endpoint_get_fd(grpc_endpoint* /*ep*/) { return -1; }
 
 static bool endpoint_can_track_err(grpc_endpoint* /*ep*/) { return false; }
@@ -348,14 +342,13 @@ static grpc_endpoint_vtable vtable = {endpoint_read,
                                       endpoint_delete_from_pollset_set,
                                       endpoint_shutdown,
                                       endpoint_destroy,
-                                      endpoint_get_resource_user,
                                       endpoint_get_peer,
                                       endpoint_get_local_address,
                                       endpoint_get_fd,
                                       endpoint_can_track_err};
 
 grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
-                                          grpc_resource_quota* resource_quota,
+                                          grpc_slice_allocator* slice_allocator,
                                           const char* peer_string) {
   custom_tcp_endpoint* tcp = new custom_tcp_endpoint;
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
@@ -381,9 +374,6 @@ grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
     tcp->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
   }
   tcp->shutting_down = false;
-  tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
-  grpc_resource_user_slice_allocator_init(
-      &tcp->slice_allocator, tcp->resource_user, tcp_read_allocation_done, tcp);
-
+  tcp->slice_allocator = slice_allocator;
   return &tcp->base;
 }

@@ -119,6 +119,6 @@ int main(int argc, char** argv) {
 
 #else /* GRPC_POSIX_SOCKET */
 
-int main(int argc, char** argv) { return 1; }
+int main(int /* argc */, char** /* argv */) { return 1; }
 
 #endif /* GRPC_POSIX_SOCKET */

@@ -24,12 +24,15 @@ from typing import Tuple
 import grpc
 from grpc.experimental import aio
 
-from src.proto.grpc.testing import (benchmark_service_pb2_grpc, control_pb2,
-                                    stats_pb2, worker_service_pb2_grpc)
+from src.proto.grpc.testing import benchmark_service_pb2_grpc
+from src.proto.grpc.testing import control_pb2
+from src.proto.grpc.testing import stats_pb2
+from src.proto.grpc.testing import worker_service_pb2_grpc
 from tests.qps import histogram
 from tests.unit import resources
 from tests.unit.framework.common import get_socket
-from tests_aio.benchmark import benchmark_client, benchmark_servicer
+from tests_aio.benchmark import benchmark_client
+from tests_aio.benchmark import benchmark_servicer
 
 _NUM_CORES = multiprocessing.cpu_count()
 _WORKER_ENTRY_FILE = os.path.join(

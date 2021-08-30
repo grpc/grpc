@@ -20,6 +20,8 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/config/core_configuration.h"
+
 void grpc_http_filters_init(void);
 void grpc_http_filters_shutdown(void);
 void grpc_chttp2_plugin_init(void);
@@ -57,6 +59,8 @@ void grpc_message_size_filter_shutdown(void);
 namespace grpc_core {
 void FaultInjectionFilterInit(void);
 void FaultInjectionFilterShutdown(void);
+void GrpcLbPolicyRingHashInit(void);
+void GrpcLbPolicyRingHashShutdown(void);
 }  // namespace grpc_core
 void grpc_service_config_channel_arg_filter_init(void);
 void grpc_service_config_channel_arg_filter_shutdown(void);
@@ -94,6 +98,8 @@ void grpc_register_built_in_plugins(void) {
                        grpc_lb_policy_pick_first_shutdown);
   grpc_register_plugin(grpc_lb_policy_round_robin_init,
                        grpc_lb_policy_round_robin_shutdown);
+  grpc_register_plugin(grpc_core::GrpcLbPolicyRingHashInit,
+                       grpc_core::GrpcLbPolicyRingHashShutdown);
   grpc_register_plugin(grpc_client_idle_filter_init,
                        grpc_client_idle_filter_shutdown);
   grpc_register_plugin(grpc_max_age_filter_init,
@@ -108,4 +114,12 @@ void grpc_register_built_in_plugins(void) {
                        grpc_client_authority_filter_shutdown);
   grpc_register_plugin(grpc_workaround_cronet_compression_filter_init,
                        grpc_workaround_cronet_compression_filter_shutdown);
+}
+
+namespace grpc_core {
+
+void BuildCoreConfiguration(CoreConfiguration::Builder*) {
+  // TODO(ctiller): Incrementally call out to plugins as we require them to register things with builder.
+}
+
 }

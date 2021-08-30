@@ -9,6 +9,24 @@ This section describes how to add gRPC as a dependency to your C++ project.
 In the C++ world, there's no universally accepted standard for managing project dependencies.
 Therefore, gRPC supports several major build systems, which should satisfy most users.
 
+## Supported Platforms
+
+* Supported: These platforms are officially supported. We test our code on these
+platform and have automated continuous integration tests for them.
+
+* Best Effort: We do not have continous integration tests for these, but we are fairly confident that gRPC C++ would work on them.
+We will make our best effort to support them, and we welcome patches for such platforms, but we might need to declare bankruptcy on some issues.
+
+| Operating System | Architectures | Versions | Support Level |
+|------------------|---------------|----------|---------------|
+| Linux - Debian, Ubuntu, CentOS | x86, x64      | clang 3.4+, GCC 4.9+   | Supported |
+| Windows 10+                    | x86, x64      | Visual Studio 2015+    | Supported |
+| MacOS                          | x86, x64      | XCode 7.2+             | Supported |
+| Linux - Others                 | x86, x64      | clang 3.4+, GCC 4.9+   | Best Effort |
+| Linux                          | ARM           |                        | Best Effort |
+| iOS                            |               |                        | Best Effort |
+| Android                        |               |                        | Best Effort |
+
 ## Bazel
 
 Bazel is the primary build system used by the core gRPC development team. Bazel
@@ -122,6 +140,13 @@ first install gRPC C++ using CMake, and have your non-CMake project rely on the
 `pkgconfig` files which are provided by gRPC installation.
 [Example](../../test/distrib/cpp/run_distrib_test_cmake_pkgconfig.sh)
 
+**Note for CentOS 7 users**
+
+CentOS-7 ships with `pkg-config` 0.27.1, which has a
+[bug](https://bugs.freedesktop.org/show_bug.cgi?id=54716) that can make
+invocations take extremely long to complete. If you plan to use `pkg-config`,
+you'll want to upgrade it to something newer.
+
 ## make (deprecated)
 
 The default choice for building on UNIX based systems used to be `make`, but we are no longer recommending it.
@@ -147,11 +172,16 @@ gRPC is available using the [vcpkg](https://github.com/Microsoft/vcpkg) dependen
 # install vcpkg package manager on your system using the official instructions
 git clone https://github.com/Microsoft/vcpkg.git
 cd vcpkg
+
+# Bootstrap on Linux:
 ./bootstrap-vcpkg.sh
+# Bootstrap on Windows instead:
+# ./bootstrap-vcpkg.bat
+
 ./vcpkg integrate install
 
 # install gRPC using vcpkg package manager
-vcpkg install grpc
+./vcpkg install grpc
 ```
 
 The gRPC port in vcpkg is kept up to date by Microsoft team members and community contributors. If the version is out of date, please [create an issue or pull request](https://github.com/Microsoft/vcpkg) on the vcpkg repository.

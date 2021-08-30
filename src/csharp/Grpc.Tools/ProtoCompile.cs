@@ -354,7 +354,7 @@ namespace Grpc.Tools
             {
                 Log.LogError("Proto compiler currently allows only one input when " +
                              "--dependency_out is specified (via ProtoDepDir or DependencyOut). " +
-                             "Tracking issue: https://github.com/google/protobuf/pull/3959");
+                             "Tracking issue: https://github.com/protocolbuffers/protobuf/pull/3959");
             }
 
             // Use ProtoDepDir to autogenerate DependencyOut

@@ -1,3 +1,29 @@
+/*
+ * Copyright (c) 2009-2021, Google LLC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Google LLC nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "upb/json_decode.h"
 
@@ -62,6 +88,7 @@ UPB_NORETURN static void jsondec_err(jsondec *d, const char *msg) {
   UPB_LONGJMP(d->err, 1);
 }
 
+UPB_PRINTF(2, 3)
 UPB_NORETURN static void jsondec_errf(jsondec *d, const char *fmt, ...) {
   va_list argp;
   upb_status_seterrf(d->status, "Error parsing JSON @%d:%d: ", d->line,
@@ -678,7 +705,7 @@ static upb_msgval jsondec_int(jsondec *d, const upb_fielddef *f) {
       }
       val.int64_val = dbl;  /* must be guarded, overflow here is UB */
       if (val.int64_val != dbl) {
-        jsondec_errf(d, "JSON number was not integral (%d != %" PRId64 ")", dbl,
+        jsondec_errf(d, "JSON number was not integral (%f != %" PRId64 ")", dbl,
                      val.int64_val);
       }
       break;
@@ -704,7 +731,7 @@ static upb_msgval jsondec_int(jsondec *d, const upb_fielddef *f) {
 
 /* Parse UINT32 or UINT64 value. */
 static upb_msgval jsondec_uint(jsondec *d, const upb_fielddef *f) {
-  upb_msgval val;
+  upb_msgval val = {0};
 
   switch (jsondec_peek(d)) {
     case JD_NUMBER: {
@@ -714,7 +741,7 @@ static upb_msgval jsondec_uint(jsondec *d, const upb_fielddef *f) {
       }
       val.uint64_val = dbl;  /* must be guarded, overflow here is UB */
       if (val.uint64_val != dbl) {
-        jsondec_errf(d, "JSON number was not integral (%d != %" PRIu64 ")", dbl,
+        jsondec_errf(d, "JSON number was not integral (%f != %" PRIu64 ")", dbl,
                      val.uint64_val);
       }
       break;
@@ -741,7 +768,7 @@ static upb_msgval jsondec_uint(jsondec *d, const upb_fielddef *f) {
 /* Parse DOUBLE or FLOAT value. */
 static upb_msgval jsondec_double(jsondec *d, const upb_fielddef *f) {
   upb_strview str;
-  upb_msgval val;
+  upb_msgval val = {0};
 
   switch (jsondec_peek(d)) {
     case JD_NUMBER:
@@ -905,22 +932,22 @@ static void jsondec_field(jsondec *d, upb_msg *msg, const upb_msgdef *m) {
 
   if (!f) {
     if ((d->options & UPB_JSONDEC_IGNOREUNKNOWN) == 0) {
-      jsondec_errf(d, "Unknown field: '" UPB_STRVIEW_FORMAT "'",
+      jsondec_errf(d, "No such field: " UPB_STRVIEW_FORMAT,
                    UPB_STRVIEW_ARGS(name));
     }
     jsondec_skipval(d);
     return;
   }
 
-  if (upb_fielddef_realcontainingoneof(f) &&
-      upb_msg_whichoneof(msg, upb_fielddef_containingoneof(f))) {
-    jsondec_err(d, "More than one field for this oneof.");
-  }
-
   if (jsondec_peek(d) == JD_NULL && !jsondec_isvalue(f)) {
     /* JSON "null" indicates a default value, so no need to set anything. */
     jsondec_null(d);
     return;
+  }
+
+  if (upb_fielddef_realcontainingoneof(f) &&
+      upb_msg_whichoneof(msg, upb_fielddef_containingoneof(f))) {
+    jsondec_err(d, "More than one field for this oneof.");
   }
 
   preserved = d->debug_field;
@@ -1058,7 +1085,8 @@ static void jsondec_timestamp(jsondec *d, upb_msg *msg, const upb_msgdef *m) {
 
   {
     /* [+-]08:00 or Z */
-    int ofs = 0;
+    int ofs_hour = 0;
+    int ofs_min = 0;
     bool neg = false;
 
     if (ptr == end) goto malformed;
@@ -1069,9 +1097,10 @@ static void jsondec_timestamp(jsondec *d, upb_msg *msg, const upb_msgdef *m) {
         /* fallthrough */
       case '+':
         if ((end - ptr) != 5) goto malformed;
-        ofs = jsondec_tsdigits(d, &ptr, 2, ":00");
-        ofs *= 60 * 60;
-        seconds.int64_val += (neg ? ofs : -ofs);
+        ofs_hour = jsondec_tsdigits(d, &ptr, 2, ":");
+        ofs_min = jsondec_tsdigits(d, &ptr, 2, NULL);
+        ofs_min = ((ofs_hour * 60) + ofs_min) * 60;
+        seconds.int64_val += (neg ? ofs_min : -ofs_min);
         break;
       case 'Z':
         if (ptr != end) goto malformed;
@@ -1424,6 +1453,9 @@ bool upb_json_decode(const char *buf, size_t size, upb_msg *msg,
                      const upb_msgdef *m, const upb_symtab *any_pool,
                      int options, upb_arena *arena, upb_status *status) {
   jsondec d;
+
+  if (size == 0) return true;
+
   d.ptr = buf;
   d.end = buf + size;
   d.arena = arena;

@@ -1,6 +1,6 @@
 genrule(
     name = "copy_six",
-    srcs = ["six-1.12.0/six.py"],
+    srcs = ["six-1.16.0/six.py"],
     outs = ["__init__.py"],
     cmd = "cp $< $(@)",
 )

@@ -24,10 +24,10 @@ import sys
 import tempfile
 import unittest
 
-import six
-
 import grpc
 from grpc_tools import protoc
+import six
+
 from tests.unit import test_common
 
 _MESSAGES_IMPORT = b'import "messages.proto";'

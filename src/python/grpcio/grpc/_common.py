@@ -15,10 +15,10 @@
 
 import logging
 import time
-import six
 
 import grpc
 from grpc._cython import cygrpc
+import six
 
 _LOGGER = logging.getLogger(__name__)
 

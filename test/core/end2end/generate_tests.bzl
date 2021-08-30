@@ -272,85 +272,68 @@ END2END_TESTS = {
     "registered_call": _test_options(),
     "request_with_flags": _test_options(proxyable = False),
     "request_with_payload": _test_options(),
-    # TODO(roth): Remove proxyable=False for all retry tests once we
-    # have a way for the proxy to propagate the fact that trailing
-    # metadata is available when initial metadata is returned.
-    # See https://github.com/grpc/grpc/issues/14467 for context.
-    "retry": _test_options(needs_client_channel = True, proxyable = False),
-    "retry_cancellation": _test_options(
+    "retry": _test_options(needs_client_channel = True),
+    "retry_cancellation": _test_options(needs_client_channel = True),
+    "retry_cancel_during_delay": _test_options(needs_client_channel = True),
+    "retry_cancel_with_multiple_send_batches": _test_options(
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_cancel3",
         needs_client_channel = True,
-        proxyable = False,
     ),
-    "retry_cancel_during_delay": _test_options(
+    "retry_disabled": _test_options(needs_client_channel = True),
+    "retry_exceeds_buffer_size_in_delay": _test_options(
         needs_client_channel = True,
-        proxyable = False,
     ),
-    "retry_disabled": _test_options(needs_client_channel = True, proxyable = False),
     "retry_exceeds_buffer_size_in_initial_batch": _test_options(
         needs_client_channel = True,
-        proxyable = False,
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
         # See b/151617965
         short_name = "retry_exceeds_buffer_size_in_init",
     ),
     "retry_exceeds_buffer_size_in_subsequent_batch": _test_options(
         needs_client_channel = True,
-        proxyable = False,
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
         # See b/151617965
         short_name = "retry_exceeds_buffer_size_in_subseq",
     ),
-    "retry_lb_drop": _test_options(
-        needs_client_channel = True,
-        proxyable = False,
-    ),
-    "retry_non_retriable_status": _test_options(
-        needs_client_channel = True,
-        proxyable = False,
-    ),
+    "retry_lb_drop": _test_options(needs_client_channel = True),
+    "retry_lb_fail": _test_options(needs_client_channel = True),
+    "retry_non_retriable_status": _test_options(needs_client_channel = True),
     "retry_non_retriable_status_before_recv_trailing_metadata_started": _test_options(
         needs_client_channel = True,
-        proxyable = False,
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
         # See b/151617965
         short_name = "retry_non_retriable_status2",
     ),
-    "retry_recv_initial_metadata": _test_options(
+    "retry_per_attempt_recv_timeout": _test_options(
         needs_client_channel = True,
-        proxyable = False,
     ),
-    "retry_recv_message": _test_options(
+    "retry_per_attempt_recv_timeout_on_last_attempt": _test_options(
         needs_client_channel = True,
-        proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_per_attempt_recv_timeout2",
     ),
-    "retry_server_pushback_delay": _test_options(
+    "retry_recv_initial_metadata": _test_options(needs_client_channel = True),
+    "retry_recv_message": _test_options(needs_client_channel = True),
+    "retry_recv_trailing_metadata_error": _test_options(
         needs_client_channel = True,
-        proxyable = False,
     ),
-    "retry_server_pushback_disabled": _test_options(
-        needs_client_channel = True,
-        proxyable = False,
-    ),
-    "retry_streaming": _test_options(needs_client_channel = True, proxyable = False),
-    "retry_streaming_after_commit": _test_options(
-        needs_client_channel = True,
-        proxyable = False,
-    ),
+    "retry_send_op_fails": _test_options(needs_client_channel = True),
+    "retry_server_pushback_delay": _test_options(needs_client_channel = True),
+    "retry_server_pushback_disabled": _test_options(needs_client_channel = True),
+    "retry_streaming": _test_options(needs_client_channel = True),
+    "retry_streaming_after_commit": _test_options(needs_client_channel = True),
     "retry_streaming_succeeds_before_replay_finished": _test_options(
         needs_client_channel = True,
-        proxyable = False,
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
         # See b/151617965
         short_name = "retry_streaming2",
     ),
-    "retry_throttled": _test_options(
-        needs_client_channel = True,
-        proxyable = False,
-    ),
-    "retry_too_many_attempts": _test_options(
-        needs_client_channel = True,
-        proxyable = False,
-    ),
+    "retry_throttled": _test_options(needs_client_channel = True),
+    "retry_too_many_attempts": _test_options(needs_client_channel = True),
+    "sdk_authz": _test_options(secure = True),
     "server_finishes_request": _test_options(),
     "server_streaming": _test_options(needs_http2 = True),
     "shutdown_finishes_calls": _test_options(),
@@ -438,6 +421,7 @@ def grpc_end2end_tests():
             ":proxy",
             ":local_util",
             "//test/core/util:test_lb_policies",
+            "//:grpc_authorization_provider",
         ],
     )
 

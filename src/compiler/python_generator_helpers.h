@@ -61,7 +61,7 @@ static std::string StripModulePrefixes(
   return raw_module_name;
 }
 
-// TODO(https://github.com/google/protobuf/issues/888):
+// TODO(https://github.com/protocolbuffers/protobuf/issues/888):
 // Export `ModuleName` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
 std::string ModuleName(const std::string& filename,
@@ -74,7 +74,7 @@ std::string ModuleName(const std::string& filename,
                              prefixes_to_filter);
 }
 
-// TODO(https://github.com/google/protobuf/issues/888):
+// TODO(https://github.com/protocolbuffers/protobuf/issues/888):
 // Export `ModuleAlias` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
 std::string ModuleAlias(const std::string& filename,

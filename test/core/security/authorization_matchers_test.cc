@@ -339,12 +339,13 @@ TEST_F(AuthorizationMatchersTest,
   EXPECT_TRUE(matcher.Matches(args));
 }
 
-TEST_F(AuthorizationMatchersTest,
-       AuthenticatedMatcherSuccessfulSpiffeIdMatches) {
+TEST_F(AuthorizationMatchersTest, AuthenticatedMatcherSuccessfulUriSanMatches) {
   args_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
                                  GRPC_SSL_TRANSPORT_SECURITY_TYPE);
-  args_.AddPropertyToAuthContext(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
+  args_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME,
                                  "spiffe://foo.abc");
+  args_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME,
+                                 "https://foo.domain.com");
   EvaluateArgs args = args_.MakeEvaluateArgs();
   AuthenticatedAuthorizationMatcher matcher(
       StringMatcher::Create(StringMatcher::Type::kExact,
@@ -354,10 +355,10 @@ TEST_F(AuthorizationMatchersTest,
   EXPECT_TRUE(matcher.Matches(args));
 }
 
-TEST_F(AuthorizationMatchersTest, AuthenticatedMatcherFailedSpiffeIdMatches) {
+TEST_F(AuthorizationMatchersTest, AuthenticatedMatcherFailedUriSanMatches) {
   args_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
                                  GRPC_SSL_TRANSPORT_SECURITY_TYPE);
-  args_.AddPropertyToAuthContext(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
+  args_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME,
                                  "spiffe://bar.abc");
   EvaluateArgs args = args_.MakeEvaluateArgs();
   AuthenticatedAuthorizationMatcher matcher(
@@ -371,11 +372,14 @@ TEST_F(AuthorizationMatchersTest, AuthenticatedMatcherFailedSpiffeIdMatches) {
 TEST_F(AuthorizationMatchersTest, AuthenticatedMatcherSuccessfulDnsSanMatches) {
   args_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
                                  GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  args_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME,
+                                 "spiffe://bar.abc");
   args_.AddPropertyToAuthContext(GRPC_PEER_DNS_PROPERTY_NAME,
                                  "foo.test.domain.com");
   args_.AddPropertyToAuthContext(GRPC_PEER_DNS_PROPERTY_NAME,
                                  "bar.test.domain.com");
   EvaluateArgs args = args_.MakeEvaluateArgs();
+  // No match found in URI SANs, finds match in DNS SANs.
   AuthenticatedAuthorizationMatcher matcher(
       StringMatcher::Create(StringMatcher::Type::kExact,
                             /*matcher=*/"bar.test.domain.com",

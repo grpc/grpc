@@ -21,9 +21,9 @@ import multiprocessing
 import os
 import sys
 
+from python_utils.filter_pull_request_tests import filter_tests
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
-from python_utils.filter_pull_request_tests import filter_tests
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
@@ -266,8 +266,8 @@ def _create_portability_test_jobs(extra_args=[],
 
     # portability C and C++ on x64
     for compiler in [
-            'gcc4.9', 'gcc5.3', 'gcc7.4', 'gcc8.3', 'gcc_musl', 'clang4.0',
-            'clang5.0'
+            'gcc4.9', 'gcc5.3', 'gcc7.4', 'gcc8.3', 'gcc8.3_openssl102',
+            'gcc_musl', 'clang4.0', 'clang5.0'
     ]:
         test_jobs += _generate_jobs(languages=['c', 'c++'],
                                     configs=['dbg'],

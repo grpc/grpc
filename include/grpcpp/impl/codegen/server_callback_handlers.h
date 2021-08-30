@@ -37,17 +37,16 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
       : get_reactor_(std::move(get_reactor)) {}
 
   void SetMessageAllocator(
-      ::grpc::experimental::MessageAllocator<RequestType, ResponseType>*
-          allocator) {
+      MessageAllocator<RequestType, ResponseType>* allocator) {
     allocator_ = allocator;
   }
 
   void RunHandler(const HandlerParameter& param) final {
     // Arena allocate a controller structure (that includes request/response)
     ::grpc::g_core_codegen_interface->grpc_call_ref(param.call->call());
-    auto* allocator_state = static_cast<
-        ::grpc::experimental::MessageHolder<RequestType, ResponseType>*>(
-        param.internal_data);
+    auto* allocator_state =
+        static_cast<MessageHolder<RequestType, ResponseType>*>(
+            param.internal_data);
 
     auto* call = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackUnaryImpl)))
@@ -82,8 +81,7 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
     ::grpc::ByteBuffer buf;
     buf.set_buffer(req);
     RequestType* request = nullptr;
-    ::grpc::experimental::MessageHolder<RequestType, ResponseType>*
-        allocator_state = nullptr;
+    MessageHolder<RequestType, ResponseType>* allocator_state = nullptr;
     if (allocator_ != nullptr) {
       allocator_state = allocator_->AllocateMessages();
     } else {
@@ -109,8 +107,7 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
   std::function<ServerUnaryReactor*(::grpc::CallbackServerContext*,
                                     const RequestType*, ResponseType*)>
       get_reactor_;
-  ::grpc::experimental::MessageAllocator<RequestType, ResponseType>*
-      allocator_ = nullptr;
+  MessageAllocator<RequestType, ResponseType>* allocator_ = nullptr;
 
   class ServerCallbackUnaryImpl : public ServerCallbackUnary {
    public:
@@ -181,8 +178,7 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
 
     ServerCallbackUnaryImpl(
         ::grpc::CallbackServerContext* ctx, ::grpc::internal::Call* call,
-        ::grpc::experimental::MessageHolder<RequestType, ResponseType>*
-            allocator_state,
+        MessageHolder<RequestType, ResponseType>* allocator_state,
         std::function<void()> call_requester)
         : ctx_(ctx),
           call_(*call),
@@ -233,8 +229,7 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
 
     ::grpc::CallbackServerContext* const ctx_;
     ::grpc::internal::Call call_;
-    ::grpc::experimental::MessageHolder<RequestType, ResponseType>* const
-        allocator_state_;
+    MessageHolder<RequestType, ResponseType>* const allocator_state_;
     std::function<void()> call_requester_;
     // reactor_ can always be loaded/stored with relaxed memory ordering because
     // its value is only set once, independently of other data in the object,
