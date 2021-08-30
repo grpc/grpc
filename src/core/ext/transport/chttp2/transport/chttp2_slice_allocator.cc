@@ -22,6 +22,9 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h"
 #include "src/core/lib/iomgr/resource_quota.h"
+#include "src/core/lib/transport/error_utils.h"
+
+extern grpc_core::TraceFlag grpc_tcp_trace;
 
 namespace grpc_event_engine {
 namespace experimental {

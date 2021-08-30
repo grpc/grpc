@@ -528,7 +528,7 @@ grpc_error_handle grpc_ares_ev_driver_create_locked(
     int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer,
     grpc_ares_request* request) {
-  *ev_driver = new grpc_ares_ev_driver();
+  grpc_ares_ev_driver* driver = *ev_driver = new grpc_ares_ev_driver();
   ares_options opts;
   memset(&opts, 0, sizeof(opts));
   opts.flags |= ARES_FLAG_STAYOPEN;
@@ -543,17 +543,16 @@ grpc_error_handle grpc_ares_ev_driver_create_locked(
     gpr_free(*ev_driver);
     return err;
   }
-  (*ev_driver)->work_serializer = std::move(work_serializer);
-  gpr_ref_init(&(*ev_driver)->refs, 1);
-  (*ev_driver)->pollset_set = pollset_set;
-  (*ev_driver)->fds = nullptr;
-  (*ev_driver)->shutting_down = false;
-  (*ev_driver)->request = request;
-  (*ev_driver)->polled_fd_factory =
-      grpc_core::NewGrpcPolledFdFactory((*ev_driver)->work_serializer);
-  (*ev_driver)
-      ->polled_fd_factory->ConfigureAresChannelLocked((*ev_driver)->channel);
-  (*ev_driver)->query_timeout_ms = query_timeout_ms;
+  driver->work_serializer = std::move(work_serializer);
+  gpr_ref_init(&driver->refs, 1);
+  driver->pollset_set = pollset_set;
+  driver->fds = nullptr;
+  driver->shutting_down = false;
+  driver->request = request;
+  driver->polled_fd_factory =
+      grpc_core::NewGrpcPolledFdFactory(driver->work_serializer);
+  driver->polled_fd_factory->ConfigureAresChannelLocked(driver->channel);
+  driver->query_timeout_ms = query_timeout_ms;
   return GRPC_ERROR_NONE;
 }
 

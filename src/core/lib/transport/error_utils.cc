@@ -142,6 +142,9 @@ grpc_error_handle absl_status_to_grpc_error(absl::Status status) {
   if (status.ok()) {
     return GRPC_ERROR_NONE;
   }
+  if (status.code() == absl::StatusCode::kCancelled) {
+    return GRPC_ERROR_CANCELLED;
+  }
   return grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STRING_VIEW(status.message()),
       GRPC_ERROR_INT_GRPC_STATUS, static_cast<grpc_status_code>(status.code()));

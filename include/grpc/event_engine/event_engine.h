@@ -218,7 +218,7 @@ class EventEngine {
    public:
     /// A task handle for DNS Resolution requests.
     struct LookupTaskHandle {
-      intptr_t key[2];
+      intptr_t keys[2];
     };
     /// A DNS SRV record type.
     struct SRVRecord {
@@ -322,7 +322,7 @@ class EventEngine {
 
 // TODO(hork): finalize the API and document it. We need to firm up the story
 // around user-provided EventEngines.
-std::shared_ptr<EventEngine> DefaultEventEngineFactory();
+EventEngine* DefaultEventEngineFactory();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

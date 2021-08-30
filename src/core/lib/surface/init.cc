@@ -23,6 +23,8 @@
 #include <limits.h>
 #include <memory.h>
 
+#include <future>
+
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

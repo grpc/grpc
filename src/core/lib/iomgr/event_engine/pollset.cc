@@ -45,6 +45,7 @@ grpc_error* pollset_work(grpc_pollset* pollset, grpc_pollset_worker** worker,
   (void)worker;
   gpr_cv_wait(&g_cv, &g_mu,
               grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME));
+  grpc_core::ExecCtx::Get()->InvalidateNow();
   return GRPC_ERROR_NONE;
 }
 grpc_error* pollset_kick(grpc_pollset* pollset,
