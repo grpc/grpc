@@ -472,6 +472,8 @@ class CLanguage(object):
             return ('buster_openssl102', [
                 "-DgRPC_SSL_PROVIDER=package",
             ])
+        elif compiler == 'gcc11':
+            return ('gcc_11', [])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
         elif compiler == 'clang4.0':
@@ -480,6 +482,10 @@ class CLanguage(object):
                         version_suffix='-4.0'))
         elif compiler == 'clang5.0':
             return ('ubuntu1604',
+                    self._clang_cmake_configure_extra_args(
+                        version_suffix='-5.0'))
+        elif compiler == 'clang12':
+            return ('clang_12',
                     self._clang_cmake_configure_extra_args(
                         version_suffix='-5.0'))
         else:
