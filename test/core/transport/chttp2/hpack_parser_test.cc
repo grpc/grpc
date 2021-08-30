@@ -63,14 +63,13 @@ static void test_vector(grpc_core::HPackParser* parser,
   grpc_split_slices(mode, &input, 1, &slices, &nslices);
   grpc_slice_unref(input);
 
-  GPR_ASSERT(nslices > 0);
-  for (i = 0; i < nslices - 1; i++) {
-    parser->QueueBufferToParse(slices[i]);
-  }
-
-  {
+  for (i = 0; i < nslices; i++) {
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(parser->Parse(slices[nslices - 1]) == GRPC_ERROR_NONE);
+    auto err = parser->Parse(slices[i], i == nslices - 1);
+    if (err != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "Unexpected parse error: %s", grpc_error_string(err));
+      abort();
+    }
   }
 
   for (i = 0; i < nslices; i++) {
@@ -163,8 +162,8 @@ static void test_vectors(grpc_slice_split_mode mode) {
 
   {
     grpc_core::HPackParser parser;
-    grpc_chttp2_hptbl_set_max_bytes(parser.hpack_table(), 256);
-    grpc_chttp2_hptbl_set_current_table_size(parser.hpack_table(), 256);
+    parser.hpack_table()->SetMaxBytes(256);
+    parser.hpack_table()->SetCurrentTableSize(256);
     /* D.5.1 */
     test_vector(&parser, mode,
                 "4803 3330 3258 0770 7269 7661 7465 611d"
@@ -204,8 +203,8 @@ static void test_vectors(grpc_slice_split_mode mode) {
 
   {
     grpc_core::HPackParser parser;
-    grpc_chttp2_hptbl_set_max_bytes(parser.hpack_table(), 256);
-    grpc_chttp2_hptbl_set_current_table_size(parser.hpack_table(), 256);
+    parser.hpack_table()->SetMaxBytes(256);
+    parser.hpack_table()->SetCurrentTableSize(256);
     /* D.6.1 */
     test_vector(&parser, mode,
                 "4882 6402 5885 aec3 771a 4b61 96d0 7abe"
@@ -238,6 +237,18 @@ static void test_vectors(grpc_slice_split_mode mode) {
          std::make_pair(
              "set-cookie",
              "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1")});
+  }
+
+  {
+    grpc_core::HPackParser parser;
+    // Binary metadata: created using:
+    // tools/codegen/core/gen_header_frame.py
+    //    --compression inc --no_framing --hex
+    //    < test/core/transport/chttp2/binary-metadata.headers
+    test_vector(&parser, mode,
+                "40 09 61 2e 62 2e 63 2d 62 69 6e 0c 62 32 31 6e 4d 6a 41 79 "
+                "4d 51 3d 3d",
+                {std::make_pair("a.b.c-bin", "omg2021")});
   }
 }
 

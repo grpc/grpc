@@ -17,7 +17,7 @@ import enum
 import hashlib
 import logging
 import time
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 from absl import flags
 from absl.testing import absltest
@@ -51,6 +51,7 @@ flags.adopt_module_key_flags(xds_k8s_flags)
 
 # Type aliases
 TrafficDirectorManager = traffic_director.TrafficDirectorManager
+TrafficDirectorAppNetManager = traffic_director.TrafficDirectorAppNetManager
 TrafficDirectorSecureManager = traffic_director.TrafficDirectorSecureManager
 XdsTestServer = server_app.XdsTestServer
 XdsTestClient = client_app.XdsTestClient
@@ -59,6 +60,8 @@ KubernetesClientRunner = client_app.KubernetesClientRunner
 LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
+
+_TD_CONFIG_MAX_WAIT_SEC = 600
 
 
 class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
@@ -89,13 +92,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         cls.firewall_allowed_ports = xds_flags.FIREWALL_ALLOWED_PORTS.value
 
         # Resource names.
-        # TODO(sergiitk): Drop namespace parsing when --namespace is removed.
-        cls.resource_prefix = (xds_flags.RESOURCE_PREFIX.value or
-                               xds_flags.NAMESPACE.value)
-        if not cls.resource_prefix:
-            raise flags.IllegalFlagValueError(
-                'Required one of the flags: --resource_prefix or --namespace')
-
+        cls.resource_prefix = xds_flags.RESOURCE_PREFIX.value
         if xds_flags.RESOURCE_SUFFIX.value is not None:
             cls._resource_suffix_randomize = False
             cls.resource_suffix = xds_flags.RESOURCE_SUFFIX.value
@@ -122,6 +119,8 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         # Resource managers
         cls.k8s_api_manager = k8s.KubernetesApiManager(
             xds_k8s_flags.KUBE_CONTEXT.value)
+        cls.secondary_k8s_api_manager = k8s.KubernetesApiManager(
+            xds_k8s_flags.SECONDARY_KUBE_CONTEXT.value)
         cls.gcp_api_manager = gcp.api.GcpApiManager()
 
     def setUp(self):
@@ -177,6 +176,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
     @classmethod
     def tearDownClass(cls):
         cls.k8s_api_manager.close()
+        cls.secondary_k8s_api_manager.close()
         cls.gcp_api_manager.close()
 
     def tearDown(self):
@@ -200,26 +200,77 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                                self.server_xds_port,
                                health_check_port=self.server_maintenance_port)
 
-    def setupServerBackends(self, *, wait_for_healthy_status=True):
+    def setupServerBackends(self,
+                            *,
+                            wait_for_healthy_status=True,
+                            server_runner=None,
+                            max_rate_per_endpoint: Optional[int] = None):
+        if server_runner is None:
+            server_runner = self.server_runner
         # Load Backends
-        neg_name, neg_zones = self.server_runner.k8s_namespace.get_service_neg(
-            self.server_runner.service_name, self.server_port)
+        neg_name, neg_zones = server_runner.k8s_namespace.get_service_neg(
+            server_runner.service_name, self.server_port)
 
         # Add backends to the Backend Service
-        self.td.backend_service_add_neg_backends(neg_name, neg_zones)
+        self.td.backend_service_add_neg_backends(
+            neg_name, neg_zones, max_rate_per_endpoint=max_rate_per_endpoint)
         if wait_for_healthy_status:
             self.td.wait_for_backends_healthy_status()
+
+    def removeServerBackends(self, *, server_runner=None):
+        if server_runner is None:
+            server_runner = self.server_runner
+        # Load Backends
+        neg_name, neg_zones = server_runner.k8s_namespace.get_service_neg(
+            server_runner.service_name, self.server_port)
+
+        # Remove backends from the Backend Service
+        self.td.backend_service_remove_neg_backends(neg_name, neg_zones)
 
     def assertSuccessfulRpcs(self,
                              test_client: XdsTestClient,
                              num_rpcs: int = 100):
-        lb_stats = self.sendRpcs(test_client, num_rpcs)
+        lb_stats = self.getClientRpcStats(test_client, num_rpcs)
         self.assertAllBackendsReceivedRpcs(lb_stats)
         failed = int(lb_stats.num_failures)
         self.assertLessEqual(
             failed,
             0,
             msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
+
+    def assertRpcsEventuallyGoToGivenServers(self,
+                                             test_client: XdsTestClient,
+                                             servers: List[XdsTestServer],
+                                             num_rpcs: int = 100):
+        retryer = retryers.constant_retryer(
+            wait_fixed=datetime.timedelta(seconds=1),
+            timeout=datetime.timedelta(seconds=_TD_CONFIG_MAX_WAIT_SEC),
+            log_level=logging.INFO)
+        try:
+            retryer(self._assertRpcsEventuallyGoToGivenServers, test_client,
+                    servers, num_rpcs)
+        except retryers.RetryError:
+            logger.exception(
+                'Rpcs did not go to expected servers before timeout %s',
+                _TD_CONFIG_MAX_WAIT_SEC)
+
+    def _assertRpcsEventuallyGoToGivenServers(self, test_client: XdsTestClient,
+                                              servers: List[XdsTestServer],
+                                              num_rpcs: int):
+        server_names = [server.pod_name for server in servers]
+        logger.info(f'Verifying RPCs go to {server_names}')
+        lb_stats = self.getClientRpcStats(test_client, num_rpcs)
+        failed = int(lb_stats.num_failures)
+        self.assertLessEqual(
+            failed,
+            0,
+            msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
+        for server_name in server_names:
+            self.assertIn(server_name, lb_stats.rpcs_by_peer,
+                          f'{server_name} did not receive RPCs')
+        for peer in lb_stats.rpcs_by_peer.keys():
+            self.assertIn(peer, server_names,
+                          f'Unexpected server {peer} received RPCs')
 
     def assertXdsConfigExists(self, test_client: XdsTestClient):
         config = test_client.csds.fetch_client_status(log_level=logging.INFO)
@@ -240,7 +291,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
     def assertFailedRpcs(self,
                          test_client: XdsTestClient,
                          num_rpcs: Optional[int] = 100):
-        lb_stats = self.sendRpcs(test_client, num_rpcs)
+        lb_stats = self.getClientRpcStats(test_client, num_rpcs)
         failed = int(lb_stats.num_failures)
         self.assertEqual(
             failed,
@@ -248,8 +299,8 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
             msg=f'Expected all RPCs to fail: {failed} of {num_rpcs} failed')
 
     @staticmethod
-    def sendRpcs(test_client: XdsTestClient,
-                 num_rpcs: int) -> LoadBalancerStatsResponse:
+    def getClientRpcStats(test_client: XdsTestClient,
+                          num_rpcs: int) -> LoadBalancerStatsResponse:
         lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
         logger.info(
             'Received LoadBalancerStatsResponse from test client %s:\n%s',
@@ -294,7 +345,8 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             gcp_api_manager=self.gcp_api_manager,
             gcp_service_account=self.gcp_service_account,
             xds_server_uri=self.xds_server_uri,
-            network=self.network)
+            network=self.network,
+            debug_use_port_forwarding=self.debug_use_port_forwarding)
 
     def initKubernetesClientRunner(self) -> KubernetesClientRunner:
         return KubernetesClientRunner(
@@ -312,14 +364,21 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             stats_port=self.client_port,
             reuse_namespace=self.server_namespace == self.client_namespace)
 
-    def startTestServer(self, replica_count=1, **kwargs) -> XdsTestServer:
-        test_server = self.server_runner.run(
+    def startTestServers(self,
+                         replica_count=1,
+                         server_runner=None,
+                         **kwargs) -> List[XdsTestServer]:
+        if server_runner is None:
+            server_runner = self.server_runner
+        test_servers = server_runner.run(
             replica_count=replica_count,
             test_port=self.server_port,
             maintenance_port=self.server_maintenance_port,
-            **kwargs)[0]
-        test_server.set_xds_address(self.server_xds_host, self.server_xds_port)
-        return test_server
+            **kwargs)
+        for test_server in test_servers:
+            test_server.set_xds_address(self.server_xds_host,
+                                        self.server_xds_port)
+        return test_servers
 
     def startTestClient(self, test_server: XdsTestServer,
                         **kwargs) -> XdsTestClient:
@@ -327,6 +386,18 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
                                              **kwargs)
         test_client.wait_for_active_server_channel()
         return test_client
+
+
+class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
+    td: TrafficDirectorAppNetManager
+
+    def initTrafficDirectorManager(self) -> TrafficDirectorAppNetManager:
+        return TrafficDirectorAppNetManager(
+            self.gcp_api_manager,
+            project=self.project,
+            resource_prefix=self.resource_prefix,
+            resource_suffix=self.resource_suffix,
+            network=self.network)
 
 
 class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):

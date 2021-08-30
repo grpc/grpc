@@ -35,7 +35,7 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 brew config
 
 # Add GCP credentials for BQ access
-pip install --user google-api-python-client oauth2client six==1.15.0
+pip install --user google-api-python-client oauth2client six==1.16.0
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 

@@ -35,6 +35,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 static gpr_mu* g_mu;
@@ -108,9 +109,9 @@ void test_succeeds(void) {
   GPR_ASSERT(uv_tcp_getsockname(svr_handle, (struct sockaddr*)addr,
                                 (int*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, NULL, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&done, &g_connecting, NULL, NULL, &resolved_addr,
-                          GRPC_MILLIS_INF_FUTURE);
-
+  grpc_tcp_client_connect(&done, &g_connecting,
+                          grpc_slice_allocator_create_unlimited(), NULL, NULL,
+                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
   gpr_mu_lock(g_mu);
 
   while (g_connections_complete == connections_complete_before) {
@@ -151,9 +152,9 @@ void test_fails(void) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, NULL, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&done, &g_connecting, NULL, NULL, &resolved_addr,
-                          GRPC_MILLIS_INF_FUTURE);
-
+  grpc_tcp_client_connect(&done, &g_connecting,
+                          grpc_slice_allocator_create_unlimited(), NULL, NULL,
+                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
   gpr_mu_lock(g_mu);
 
   /* wait for the connection callback to finish */
@@ -166,7 +167,7 @@ void test_fails(void) {
         break;
       case GRPC_TIMERS_NOT_CHECKED:
         polling_deadline = grpc_timespec_to_millis_round_up(now);
-      // fallthrough
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         GPR_ASSERT(GRPC_LOG_IF_ERROR(
             "pollset_work",

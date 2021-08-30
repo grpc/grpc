@@ -45,7 +45,7 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
 
   // An initial size of 1 keeps track of whether the work serializer has been
   // orphaned.
-  Atomic<size_t> size_{1};
+  std::atomic<size_t> size_{1};
   MultiProducerSingleConsumerQueue queue_;
 };
 
@@ -55,7 +55,7 @@ void WorkSerializer::WorkSerializerImpl::Run(
     gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]",
             this, location.file(), location.line());
   }
-  const size_t prev_size = size_.FetchAdd(1);
+  const size_t prev_size = size_.fetch_add(1);
   // The work serializer should not have been orphaned.
   GPR_DEBUG_ASSERT(prev_size > 0);
   if (prev_size == 1) {
@@ -83,7 +83,7 @@ void WorkSerializer::WorkSerializerImpl::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
     gpr_log(GPR_INFO, "WorkSerializer::Orphan() %p", this);
   }
-  size_t prev_size = size_.FetchSub(1);
+  size_t prev_size = size_.fetch_sub(1);
   if (prev_size == 1) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
       gpr_log(GPR_INFO, "  Destroying");
@@ -101,7 +101,7 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
       gpr_log(GPR_INFO, "WorkSerializer::DrainQueue() %p", this);
     }
-    size_t prev_size = size_.FetchSub(1);
+    size_t prev_size = size_.fetch_sub(1);
     GPR_DEBUG_ASSERT(prev_size >= 1);
     // It is possible that while draining the queue, one of the callbacks ended
     // up orphaning the work serializer. In that case, delete the object.

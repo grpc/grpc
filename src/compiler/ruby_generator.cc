@@ -109,7 +109,7 @@ void PrintService(const ServiceDescriptor* service, Printer* out) {
 // ruby generator
 // to ensure compatibility (with the exception of int and string type changes).
 // See
-// https://github.com/google/protobuf/blob/master/src/google/protobuf/compiler/ruby/ruby_generator.cc#L250
+// https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/compiler/ruby/ruby_generator.cc#L250
 // TODO: keep up to date with protoc code generation, though this behavior isn't
 // expected to change
 bool IsLower(char ch) { return ch >= 'a' && ch <= 'z'; }

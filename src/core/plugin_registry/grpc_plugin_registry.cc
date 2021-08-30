@@ -20,6 +20,8 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/config/core_configuration.h"
+
 void grpc_http_filters_init(void);
 void grpc_http_filters_shutdown(void);
 void grpc_chttp2_plugin_init(void);
@@ -159,4 +161,12 @@ void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_core::GoogleCloud2ProdResolverInit,
                        grpc_core::GoogleCloud2ProdResolverShutdown);
 #endif
+}
+
+namespace grpc_core {
+
+void BuildCoreConfiguration(CoreConfiguration::Builder*) {
+  // TODO(ctiller): Incrementally call out to plugins as we require them to register things with builder.
+}
+
 }

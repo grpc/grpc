@@ -872,7 +872,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                            // - If you're developing the server, consider using response streaming,
                            // or let clients filter
                            //   responses by setting a google.protobuf.FieldMask in the request:
-                           //   https://github.com/google/protobuf/blob/master/src/google/protobuf/field_mask.proto
+                           //   https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/field_mask.proto
                            XCTAssertEqualObjects(
                                error.localizedDescription,
                                @"Received message larger than max (4194305 vs. 4194304)");
@@ -1603,6 +1603,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
   XCTAssertNotNil([[self class] host]);
   __weak XCTestExpectation *expectUserCallComplete =
       [self expectationWithDescription:@"User call completed."];
+  __weak XCTestExpectation *expectResponseCallbackComplete =
+      [self expectationWithDescription:@"Hook interceptor response callback completed"];
 
   NSArray *responses = @[ @1, @2, @3, @4 ];
   __block int index = 0;
@@ -1659,6 +1661,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
         XCTAssertNil(trailingMetadata);
         XCTAssertNotNil(error);
         XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
+        [expectResponseCallbackComplete fulfill];
       }
       didWriteDataHook:nil];
 

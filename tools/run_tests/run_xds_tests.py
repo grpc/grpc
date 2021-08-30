@@ -1169,6 +1169,7 @@ def test_api_listener(gcp, backend_service, instance_group,
                       alternate_backend_service):
     logger.info("Running api_listener")
     passed = True
+    new_config_suffix = ''
     try:
         wait_for_healthy_backends(gcp, backend_service, instance_group)
         backend_instances = get_instance_names(gcp, instance_group)
@@ -2421,7 +2422,8 @@ def create_instance_template(gcp, name, network, source_image, machine_type,
                 'boot': True,
                 'initializeParams': {
                     'sourceImage': source_image
-                }
+                },
+                'autoDelete': True
             }],
             'metadata': {
                 'items': [{
@@ -2648,13 +2650,14 @@ def get_health_check_firewall_rule(gcp, firewall_name):
         gcp.health_check_firewall_rule = GcpResource(firewall_name, None)
 
 
-def get_backend_service(gcp, backend_service_name):
+def get_backend_service(gcp, backend_service_name, record_error=True):
     try:
         result = gcp.compute.backendServices().get(
             project=gcp.project, backendService=backend_service_name).execute()
         backend_service = GcpResource(backend_service_name, result['selfLink'])
     except Exception as e:
-        gcp.errors.append(e)
+        if record_error:
+            gcp.errors.append(e)
         backend_service = GcpResource(backend_service_name, None)
     gcp.backend_services.append(backend_service)
     return backend_service
@@ -3088,6 +3091,12 @@ class GcpState(object):
         self.errors = []
 
 
+logging.debug(
+    "script start time: %s",
+    datetime.datetime.now(
+        datetime.timezone.utc).astimezone().strftime("%Y-%m-%dT%H:%M:%S %Z"))
+logging.debug("logging local timezone: %s",
+              datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo)
 alpha_compute = None
 if args.compute_discovery_document:
     with open(args.compute_discovery_document, 'r') as discovery_doc:
@@ -3131,6 +3140,8 @@ try:
     firewall_name = _BASE_FIREWALL_RULE_NAME + gcp_suffix
     backend_service_name = _BASE_BACKEND_SERVICE_NAME + gcp_suffix
     alternate_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-alternate' + gcp_suffix
+    extra_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-extra' + gcp_suffix
+    more_extra_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-more-extra' + gcp_suffix
     url_map_name = _BASE_URL_MAP_NAME + gcp_suffix
     service_host_name = _BASE_SERVICE_HOST + gcp_suffix
     target_proxy_name = _BASE_TARGET_PROXY_NAME + gcp_suffix
@@ -3139,6 +3150,8 @@ try:
     instance_group_name = _BASE_INSTANCE_GROUP_NAME + gcp_suffix
     same_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-same-zone' + gcp_suffix
     secondary_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-secondary-zone' + gcp_suffix
+    potential_service_ports = list(args.service_port_range)
+    random.shuffle(potential_service_ports)
     if args.use_existing_gcp_resources:
         logger.info('Reusing existing GCP resources')
         get_health_check(gcp, health_check_name)
@@ -3146,6 +3159,11 @@ try:
         backend_service = get_backend_service(gcp, backend_service_name)
         alternate_backend_service = get_backend_service(
             gcp, alternate_backend_service_name)
+        extra_backend_service = get_backend_service(gcp,
+                                                    extra_backend_service_name,
+                                                    record_error=False)
+        more_extra_backend_service = get_backend_service(
+            gcp, more_extra_backend_service_name, record_error=False)
         get_url_map(gcp, url_map_name)
         get_target_proxy(gcp, target_proxy_name)
         get_global_forwarding_rule(gcp, forwarding_rule_name)
@@ -3164,8 +3182,6 @@ try:
             gcp, alternate_backend_service_name)
         create_url_map(gcp, url_map_name, backend_service, service_host_name)
         create_target_proxy(gcp, target_proxy_name)
-        potential_service_ports = list(args.service_port_range)
-        random.shuffle(potential_service_ports)
         create_global_forwarding_rule(gcp, forwarding_rule_name,
                                       potential_service_ports)
         if not gcp.service_port:

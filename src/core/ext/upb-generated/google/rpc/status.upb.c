@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "google/rpc/status.upb.h"
 #include "google/protobuf/any.upb.h"
 
@@ -18,15 +18,15 @@ static const upb_msglayout *const google_rpc_Status_submsgs[1] = {
 };
 
 static const upb_msglayout_field google_rpc_Status__fields[3] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 5, 1},
-  {2, UPB_SIZE(4, 8), 0, 0, 9, 1},
-  {3, UPB_SIZE(12, 24), 0, 0, 11, 3},
+  {1, UPB_SIZE(0, 0), 0, 0, 5, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(12, 24), 0, 0, 11, _UPB_MODE_ARRAY},
 };
 
 const upb_msglayout google_rpc_Status_msginit = {
   &google_rpc_Status_submsgs[0],
   &google_rpc_Status__fields[0],
-  UPB_SIZE(16, 32), 3, false, 255,
+  UPB_SIZE(16, 32), 3, false, 3, 255,
 };
 
 #include "upb/port_undef.inc"

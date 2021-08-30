@@ -77,34 +77,17 @@ struct grpc_tcp_server {
   bool shutdown;
   bool so_reuseport;
 
-  grpc_resource_quota* resource_quota;
+  grpc_slice_allocator_factory* slice_allocator_factory;
 };
 
-static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
-                                           const grpc_channel_args* args,
-                                           grpc_tcp_server** server) {
+static grpc_error_handle tcp_server_create(
+    grpc_closure* shutdown_complete, const grpc_channel_args* args,
+    grpc_slice_allocator_factory* slice_allocator_factory,
+    grpc_tcp_server** server) {
   grpc_tcp_server* s =
       static_cast<grpc_tcp_server*>(gpr_malloc(sizeof(grpc_tcp_server)));
-  // Let the implementation decide if so_reuseport can be enabled or not.
-  s->so_reuseport = true;
-  s->resource_quota = grpc_resource_quota_create(nullptr);
-  for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
-    if (!grpc_channel_args_find_bool(args, GRPC_ARG_ALLOW_REUSEPORT, true)) {
-      s->so_reuseport = false;
-    }
-    if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
-      if (args->args[i].type == GRPC_ARG_POINTER) {
-        grpc_resource_quota_unref_internal(s->resource_quota);
-        s->resource_quota = grpc_resource_quota_ref_internal(
-            static_cast<grpc_resource_quota*>(args->args[i].value.pointer.p));
-      } else {
-        grpc_resource_quota_unref_internal(s->resource_quota);
-        gpr_free(s);
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            GRPC_ARG_RESOURCE_QUOTA " must be a pointer to a buffer pool");
-      }
-    }
-  }
+  s->so_reuseport =
+      grpc_channel_args_find_bool(args, GRPC_ARG_ALLOW_REUSEPORT, true);
   gpr_ref_init(&s->refs, 1);
   s->on_accept_cb = nullptr;
   s->on_accept_cb_arg = nullptr;
@@ -115,6 +98,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->shutdown_starting.tail = nullptr;
   s->shutdown_complete = shutdown_complete;
   s->shutdown = false;
+  s->slice_allocator_factory = slice_allocator_factory;
   *server = s;
   return GRPC_ERROR_NONE;
 }
@@ -144,7 +128,7 @@ static void finish_shutdown(grpc_tcp_server* s) {
     sp->next = nullptr;
     gpr_free(sp);
   }
-  grpc_resource_quota_unref_internal(s->resource_quota);
+  grpc_slice_allocator_factory_destroy(s->slice_allocator_factory);
   gpr_free(s);
 }
 
@@ -235,8 +219,11 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
     gpr_log(GPR_INFO, "SERVER_CONNECT: %p accepted connection: %s", sp->server,
             peer_name_string.c_str());
   }
-  ep = custom_tcp_endpoint_create(socket, sp->server->resource_quota,
-                                  peer_name_string.c_str());
+  ep = custom_tcp_endpoint_create(
+      socket,
+      grpc_slice_allocator_factory_create_slice_allocator(
+          sp->server->slice_allocator_factory, peer_name_string),
+      peer_name_string.c_str());
   acceptor->from_server = sp->server;
   acceptor->port_index = sp->port_index;
   acceptor->fd_index = 0;
