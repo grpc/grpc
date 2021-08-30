@@ -44,7 +44,7 @@ DEBUG_USE_PORT_FORWARDING = flags.DEFINE_bool(
 ENABLE_WORKLOAD_IDENTITY = flags.DEFINE_bool(
     "enable_workload_identity",
     default=True,
-    help="Disable the WorkloadIdentity feature simplify permission control")
+    help="Enable the WorkloadIdentity feature")
 
 flags.mark_flags_as_required([
     "kube_context",
