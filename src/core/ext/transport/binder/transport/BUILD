@@ -33,8 +33,9 @@ grpc_cc_library(
         "binder_transport.h",
     ],
     external_deps = [
-        "absl/strings",
+        "absl/container:flat_hash_map",
         "absl/memory",
+        "absl/strings",
     ],
     deps = [
         "//:gpr_base",
