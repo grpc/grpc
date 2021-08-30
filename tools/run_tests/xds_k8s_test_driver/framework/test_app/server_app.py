@@ -181,7 +181,8 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
                  reuse_service=False,
                  reuse_namespace=False,
                  namespace_template=None,
-                 debug_use_port_forwarding=False):
+                 debug_use_port_forwarding=False,
+                 disable_workload_identity=False):
         super().__init__(k8s_namespace, namespace_template, reuse_namespace)
 
         # Settings
@@ -200,10 +201,15 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         self.service_template = service_template
         self.reuse_service = reuse_service
         self.debug_use_port_forwarding = debug_use_port_forwarding
+        self.disable_workload_identity = disable_workload_identity
         # Service account settings:
         # Kubernetes service account
-        self.service_account_name = service_account_name or deployment_name
-        self.service_account_template = service_account_template
+        if self.disable_workload_identity:
+            self.service_account_name = None
+            self.service_account_template = None
+        else:
+            self.service_account_name = service_account_name or deployment_name
+            self.service_account_template = service_account_template
         # GCP.
         self.gcp_project = gcp_project
         self.gcp_ui_url = gcp_api_manager.gcp_ui_url
@@ -271,19 +277,20 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
                 test_port=test_port)
         self._wait_service_neg(self.service_name, test_port)
 
-        # Allow Kubernetes service account to use the GCP service account
-        # identity.
-        self._grant_workload_identity_user(
-            gcp_iam=self.gcp_iam,
-            gcp_service_account=self.gcp_service_account,
-            service_account_name=self.service_account_name)
+        if not self.disable_workload_identity:
+            # Allow Kubernetes service account to use the GCP service account
+            # identity.
+            self._grant_workload_identity_user(
+                gcp_iam=self.gcp_iam,
+                gcp_service_account=self.gcp_service_account,
+                service_account_name=self.service_account_name)
 
-        # Create service account
-        self.service_account = self._create_service_account(
-            self.service_account_template,
-            service_account_name=self.service_account_name,
-            namespace_name=self.k8s_namespace.name,
-            gcp_service_account=self.gcp_service_account)
+            # Create service account
+            self.service_account = self._create_service_account(
+                self.service_account_template,
+                service_account_name=self.service_account_name,
+                namespace_name=self.k8s_namespace.name,
+                gcp_service_account=self.gcp_service_account)
 
         # Always create a new deployment
         self.deployment = self._create_deployment(
@@ -291,7 +298,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
             deployment_name=self.deployment_name,
             image_name=self.image_name,
             namespace_name=self.k8s_namespace.name,
-            service_account_name=self.service_account_name,
+            # service_account_name=self.service_account_name,
             td_bootstrap_image=self.td_bootstrap_image,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
@@ -351,7 +358,8 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         if (self.service and not self.reuse_service) or force:
             self._delete_service(self.service_name)
             self.service = None
-        if self.service_account or force:
+        if not self.disable_workload_identity and (self.service_account or
+                                                   force):
             self._revoke_workload_identity_user(
                 gcp_iam=self.gcp_iam,
                 gcp_service_account=self.gcp_service_account,

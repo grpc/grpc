@@ -41,9 +41,12 @@ DEBUG_USE_PORT_FORWARDING = flags.DEFINE_bool(
     "debug_use_port_forwarding",
     default=False,
     help="Development only: use kubectl port-forward to connect to test app")
+DISABLE_WORKLOAD_IDENTITY = flags.DEFINE_bool(
+    "disable_workload_identity",
+    default=False,
+    help="Disable the WorkloadIdentity feature simplify permission control")
 
 flags.mark_flags_as_required([
-    "gcp_service_account",
     "kube_context",
     "td_bootstrap_image",
     "server_image",
