@@ -298,7 +298,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
             deployment_name=self.deployment_name,
             image_name=self.image_name,
             namespace_name=self.k8s_namespace.name,
-            # service_account_name=self.service_account_name,
+            service_account_name=self.service_account_name,
             td_bootstrap_image=self.td_bootstrap_image,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
