@@ -340,19 +340,6 @@ def _create_portability_test_jobs(extra_args=[],
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
 
-    # TODO(jtattermusch): a large portion of the libuv tests is failing,
-    # which can end up killing the kokoro job due to gigabytes of error logs
-    # generated. Remove the --build_only flag
-    # once https://github.com/grpc/grpc/issues/17556 is fixed.
-    test_jobs += _generate_jobs(languages=['c'],
-                                configs=['dbg'],
-                                platforms=['linux'],
-                                iomgr_platforms=['uv'],
-                                labels=['portability', 'corelang'],
-                                extra_args=extra_args + ['--build_only'],
-                                inner_jobs=inner_jobs,
-                                timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
-
     return test_jobs
 
 
