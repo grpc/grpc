@@ -114,7 +114,7 @@ _ALLOWLIST_DICT = {
 }
 
 # Regex that combines all keys in _ALLOWLIST_DICT
-_ALL_TRIGGERS = "(" + ")|(".join(list(_ALLOWLIST_DICT.keys())) + ")"
+_ALL_TRIGGERS = "(" + ")|(".join(_ALLOWLIST_DICT.keys()) + ")"
 
 # Add all triggers to their respective test suites
 for trigger, test_suites in six.iteritems(_ALLOWLIST_DICT):

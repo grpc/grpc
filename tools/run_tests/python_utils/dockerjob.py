@@ -22,7 +22,7 @@ import tempfile
 import time
 import uuid
 
-from . import jobset
+import jobset
 
 _DEVNULL = open(os.devnull, 'w')
 

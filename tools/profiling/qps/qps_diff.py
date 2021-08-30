@@ -69,7 +69,7 @@ def build(name, jobs):
     subprocess.check_call(['git', 'submodule', 'update'])
     try:
         subprocess.check_call(_make_cmd(jobs))
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError, e:
         subprocess.check_call(['make', 'clean'])
         subprocess.check_call(_make_cmd(jobs))
     os.rename('bins', 'qps_diff_%s' % name)
@@ -93,11 +93,11 @@ def _load_qps(fname):
     try:
         with open(fname) as f:
             return json.loads(f.read())['qps']
-    except IOError as e:
-        print(("IOError occurred reading file: %s" % fname))
+    except IOError, e:
+        print("IOError occurred reading file: %s" % fname)
         return None
-    except ValueError as e:
-        print(("ValueError occurred reading file: %s" % fname))
+    except ValueError, e:
+        print("ValueError occurred reading file: %s" % fname)
         return None
 
 
@@ -128,8 +128,8 @@ def diff(scenarios, loops, old, new):
     rows = []
     for sn in scenarios:
         mdn_diff = abs(_median(new_data[sn]) - _median(old_data[sn]))
-        print(('%s: %s=%r %s=%r mdn_diff=%r' %
-               (sn, new, new_data[sn], old, old_data[sn], mdn_diff)))
+        print('%s: %s=%r %s=%r mdn_diff=%r' %
+              (sn, new, new_data[sn], old, old_data[sn], mdn_diff))
         s = bm_speedup.speedup(new_data[sn], old_data[sn], 10e-5)
         if abs(s) > 3 and mdn_diff > 0.5:
             rows.append([sn, '%+d%%' % s])
@@ -162,7 +162,7 @@ def main(args):
         text = '[qps] Performance differences noted:\n%s' % diff_output
     else:
         text = '[qps] No significant performance differences'
-    print(('%s' % text))
+    print('%s' % text)
     check_on_pr.check_on_pr('QPS', '```\n%s\n```' % text)
 
 

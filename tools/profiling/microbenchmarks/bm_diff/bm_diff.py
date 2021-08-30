@@ -120,7 +120,7 @@ class Benchmark:
             if abs(s) > 3:
                 if mdn_diff > 0.5 or 'trickle' in f:
                     self.final[f] = '%+d%%' % s
-        return list(self.final.keys())
+        return self.final.keys()
 
     def skip(self):
         return not self.final
@@ -199,7 +199,7 @@ def diff(bms, loops, regex, track, old, new, counters):
                     benchmarks[name].add_sample(track, row, False)
 
     really_interesting = set()
-    for name, bm in list(benchmarks.items()):
+    for name, bm in benchmarks.items():
         _maybe_print(name)
         really_interesting.update(bm.process(track, new, old))
     fields = [f for f in track if f in really_interesting]
@@ -231,4 +231,4 @@ if __name__ == '__main__':
     args = _args()
     diff, note = diff(args.benchmarks, args.loops, args.regex, args.track,
                       args.old, args.new, args.counters)
-    print(('%s\n%s' % (note, diff if diff else "No performance differences")))
+    print('%s\n%s' % (note, diff if diff else "No performance differences"))

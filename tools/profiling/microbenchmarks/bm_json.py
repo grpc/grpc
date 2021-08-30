@@ -174,7 +174,7 @@ def parse_name(name):
     out.update(
         dict((k, numericalize(v))
              for k, v in zip(_BM_SPECS[name]['dyn'], dyn_args)))
-    out.update(dict(list(zip(_BM_SPECS[name]['tpl'], tpl_args))))
+    out.update(dict(zip(_BM_SPECS[name]['tpl'], tpl_args)))
     return out
 
 
