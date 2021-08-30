@@ -907,11 +907,11 @@ void uvEndpoint::Write(
     grpc_event_engine::experimental::SliceBuffer* data) {
   uvTCP* tcp = uvTCP_;
   GPR_ASSERT(tcp->write_bufs_ == nullptr);
-  size_t count = data->count();
+  size_t count = data->Count();
   tcp->write_bufs_ = new uv_buf_t[count];
   tcp->write_bufs_count_ = count;
   tcp->on_writable_ = std::move(on_writable);
-  data->enumerate([tcp](uint8_t* base, size_t len, size_t index) {
+  data->Enumerate([tcp](uint8_t* base, size_t len, size_t index) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       std::string prefix = absl::StrFormat("EE::UV::uvEndpoint@%p::Write", tcp);
       hexdump(prefix, base, len);
@@ -949,7 +949,7 @@ void uvEndpoint::Write(
 void uvEndpoint::Read(
     grpc_event_engine::experimental::EventEngine::Callback on_read,
     grpc_event_engine::experimental::SliceBuffer* buffer) {
-  buffer->clear();
+  buffer->Clear();
   uvTCP* tcp = uvTCP_;
   tcp->read_sb_ = buffer;
   tcp->on_read_ = std::move(on_read);
@@ -967,7 +967,7 @@ void uvEndpoint::Read(
                 uvTCP* tcp = reinterpret_cast<uvTCP*>(handle->data);
                 // TODO(nnoble): seems like we should have a way to get
                 // individual Slices. discuss.
-                tcp->read_sb_->enumerate(
+                tcp->read_sb_->Enumerate(
                     [buf](uint8_t* start, size_t len, size_t idx) {
                       if (idx == 0) {
                         buf->base = reinterpret_cast<char*>(start);
@@ -985,19 +985,19 @@ void uvEndpoint::Read(
                   return;
                 }
                 if (nread == UV_EOF) {
-                  tcp->read_sb_->trim_end(tcp->read_sb_->length());
+                  tcp->read_sb_->TrimEnd(tcp->read_sb_->Length());
                   // this is unfortunate, but returning OK means there's more to
                   // read and gets us into an infinite loop.
                   on_read(absl::ResourceExhaustedError("EOF"));
                   return;
                 };
-                if (nread < tcp->read_sb_->length()) {
-                  tcp->read_sb_->trim_end(tcp->read_sb_->length() - nread);
+                if (nread < tcp->read_sb_->Length()) {
+                  tcp->read_sb_->TrimEnd(tcp->read_sb_->Length() - nread);
                 }
                 if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
                   std::string prefix =
                       absl::StrFormat("EE::UV::uvEndpoint@%p::Read", tcp);
-                  tcp->read_sb_->enumerate(
+                  tcp->read_sb_->Enumerate(
                       [nread](uint8_t* start, size_t len, size_t idx) {
                         hexdump("arst", start, nread);
                       });
