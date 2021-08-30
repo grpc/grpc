@@ -144,7 +144,7 @@ def main(args):
         text = '[%s] No significant performance differences' % args.pr_comment_name
     if note:
         text = note + '\n\n' + text
-    print(('%s' % text))
+    print('%s' % text)
     check_on_pr.check_on_pr('Benchmark', '```\n%s\n```' % text)
 
 

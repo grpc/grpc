@@ -44,4 +44,4 @@ for line in data:
             assert (err in errs)
             errs.remove(err)
 
-print(("leaked:", errs))
+print "leaked:", errs

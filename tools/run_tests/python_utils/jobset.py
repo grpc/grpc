@@ -44,7 +44,7 @@ def strip_non_ascii_chars(s):
 
 def sanitized_environment(env):
     sanitized = {}
-    for key, value in list(env.items()):
+    for key, value in env.items():
         sanitized[strip_non_ascii_chars(key)] = strip_non_ascii_chars(value)
     return sanitized
 
@@ -221,7 +221,7 @@ class JobSpec(object):
 
     def __str__(self):
         return '%s: %s %s' % (self.shortname, ' '.join(
-            '%s=%s' % kv for kv in list(self.environ.items())), ' '.join(
+            '%s=%s' % kv for kv in self.environ.items()), ' '.join(
                 self.cmdline))
 
 

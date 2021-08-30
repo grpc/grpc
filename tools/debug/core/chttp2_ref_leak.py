@@ -39,6 +39,6 @@ for line in sys.stdin:
         else:
             outstanding[m.group(2)].remove(m.group(3))
 
-for obj, remaining in list(outstanding.items()):
+for obj, remaining in outstanding.items():
     if remaining:
-        print(('LEAKED: %s %r' % (obj, remaining)))
+        print 'LEAKED: %s %r' % (obj, remaining)

@@ -141,7 +141,7 @@ if args.hex:
     all_bytes = []
     for line in payload_bytes:
         all_bytes.extend(line)
-    print(('{%s}' % ', '.join('0x%02x' % c for c in all_bytes)))
+    print '{%s}' % ', '.join('0x%02x' % c for c in all_bytes)
 else:
     for line in payload_bytes:
-        print((esc_c(line)))
+        print esc_c(line)

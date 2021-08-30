@@ -41,7 +41,7 @@ SANITIZE = {
 }
 
 if sys.argv[1] == '--schema':
-    print((',\n'.join('%s:%s' % (k, t.upper()) for k, t in columns)))
+    print(',\n'.join('%s:%s' % (k, t.upper()) for k, t in columns))
     sys.exit(0)
 
 with open(sys.argv[1]) as f:
