@@ -114,7 +114,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         cls.force_cleanup = _FORCE_CLEANUP.value
         cls.debug_use_port_forwarding = \
             xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
-        cls.disable_workload_identity = xds_k8s_flags.DISABLE_WORKLOAD_IDENTITY.value
+        cls.enable_workload_identity = xds_k8s_flags.enable_workload_identity.value
         cls.check_local_certs = _CHECK_LOCAL_CERTS.value
 
         # Resource managers
@@ -348,7 +348,7 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             xds_server_uri=self.xds_server_uri,
             network=self.network,
             debug_use_port_forwarding=self.debug_use_port_forwarding,
-            disable_workload_identity=self.disable_workload_identity)
+            enable_workload_identity=self.enable_workload_identity)
 
     def initKubernetesClientRunner(self) -> KubernetesClientRunner:
         return KubernetesClientRunner(
@@ -363,7 +363,7 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             xds_server_uri=self.xds_server_uri,
             network=self.network,
             debug_use_port_forwarding=self.debug_use_port_forwarding,
-            disable_workload_identity=self.disable_workload_identity,
+            enable_workload_identity=self.enable_workload_identity,
             stats_port=self.client_port,
             reuse_namespace=self.server_namespace == self.client_namespace)
 
