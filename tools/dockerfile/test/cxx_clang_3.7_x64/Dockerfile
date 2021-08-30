@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM gcc:11
+FROM silkeh/clang:3.7
 
-RUN apt-get update && apt-get install -y curl git golang wget
+RUN apt-get update && apt-get install -y build-essential curl git golang wget
 #====================
 # Python dependencies
 

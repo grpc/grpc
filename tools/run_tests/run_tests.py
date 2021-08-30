@@ -464,8 +464,6 @@ class CLanguage(object):
             return ('jessie', [])
         elif compiler == 'gcc5.3':
             return ('ubuntu1604', [])
-        elif compiler == 'gcc7.4':
-            return ('ubuntu1804', [])
         elif compiler == 'gcc8.3':
             return ('buster', [])
         elif compiler == 'gcc8.3_openssl102':
@@ -476,18 +474,14 @@ class CLanguage(object):
             return ('gcc_11', [])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
-        elif compiler == 'clang4.0':
-            return ('ubuntu1604',
+        elif compiler == 'clang3.7':
+            return ('clang_3.7',
                     self._clang_cmake_configure_extra_args(
-                        version_suffix='-4.0'))
-        elif compiler == 'clang5.0':
-            return ('ubuntu1604',
-                    self._clang_cmake_configure_extra_args(
-                        version_suffix='-5.0'))
+                        version_suffix='-3.7'))
         elif compiler == 'clang12':
             return ('clang_12',
                     self._clang_cmake_configure_extra_args(
-                        version_suffix='-5.0'))
+                        version_suffix='-12'))
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
