@@ -2650,6 +2650,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "hpack_constants",
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/hpack_constants.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+    ]
+)
+
+grpc_cc_library(
     name = "hpack_encoder_index",
     hdrs = [
         "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h",
@@ -2660,6 +2671,24 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "hpack_encoder_table",
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h",
+    ],
+    srcs = [
+        "src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc",
+    ],
+    language = "c++",
+    external_deps = [
+                "absl/container:inlined_vector",
+    ],
+    deps = [
+        "gpr",
+        "hpack_constants"
     ],
 )
 
@@ -2681,7 +2710,8 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/frame_window_update.cc",
         "src/core/ext/transport/chttp2/transport/hpack_encoder.cc",
         "src/core/ext/transport/chttp2/transport/hpack_parser.cc",
-        "src/core/ext/transport/chttp2/transport/hpack_table.cc",
+        "src/core/ext/transport/chttp2/transport/hpack_parser_table.cc",
+        "src/core/ext/transport/chttp2/transport/hpack_utils.cc",
         "src/core/ext/transport/chttp2/transport/http2_settings.cc",
         "src/core/ext/transport/chttp2/transport/huffsyms.cc",
         "src/core/ext/transport/chttp2/transport/incoming_metadata.cc",
@@ -2707,7 +2737,8 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/frame_window_update.h",
         "src/core/ext/transport/chttp2/transport/hpack_encoder.h",
         "src/core/ext/transport/chttp2/transport/hpack_parser.h",
-        "src/core/ext/transport/chttp2/transport/hpack_table.h",
+        "src/core/ext/transport/chttp2/transport/hpack_parser_table.h",
+        "src/core/ext/transport/chttp2/transport/hpack_utils.h",
         "src/core/ext/transport/chttp2/transport/http2_settings.h",
         "src/core/ext/transport/chttp2/transport/huffsyms.h",
         "src/core/ext/transport/chttp2/transport/incoming_metadata.h",
@@ -2731,6 +2762,8 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
         "hpack_encoder_index",
+        "hpack_encoder_table",
+        "hpack_constants",
         "match",
         "popularity_count",
     ],
