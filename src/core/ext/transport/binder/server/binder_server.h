@@ -56,104 +56,14 @@ void* grpc_get_endpoint_binder(const std::string& service);
 
 namespace grpc_core {
 
-// This class is generic over BinderTxReceiver (e.g., TransactionReceiverAndroid
-// and FakeTransactionReceiver). This allows us to perform tests in non-Android
-// environments by providing alternative implementations of the underlying
-// binder transaction listener.
-template <typename BinderTxReceiver>
-class BinderServerListener : public Server::ListenerInterface {
- public:
-  BinderServerListener(Server* server, std::string addr)
-      : server_(server), addr_(std::move(addr)) {}
+// Consume a callback, produce a transaction listener. This is used to perform
+// testing in non-Android environments where the actual binder is not available.
+using BinderTxReceiverFactory =
+    std::function<std::unique_ptr<grpc_binder::TransactionReceiver>(
+        grpc_binder::TransactionReceiver::OnTransactCb)>;
 
-  void Start(Server* /*server*/,
-             const std::vector<grpc_pollset*>* /*pollsets*/) override {
-    tx_receiver_ = absl::make_unique<BinderTxReceiver>(
-        nullptr, [this](transaction_code_t code,
-                        const grpc_binder::ReadableParcel* parcel) {
-          return OnSetupTransport(code, parcel);
-        });
-    endpoint_binder_ = tx_receiver_->GetRawBinder();
-    grpc_add_endpoint_binder(addr_, endpoint_binder_);
-  }
-
-  channelz::ListenSocketNode* channelz_listen_socket_node() const override {
-    return nullptr;
-  }
-
-  void SetOnDestroyDone(grpc_closure* on_destroy_done) override {
-    on_destroy_done_ = on_destroy_done;
-  }
-
-  void Orphan() override { delete this; }
-
-  ~BinderServerListener() override {
-    ExecCtx::Get()->Flush();
-    if (on_destroy_done_) {
-      ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, GRPC_ERROR_NONE);
-      ExecCtx::Get()->Flush();
-    }
-    grpc_remove_endpoint_binder(addr_);
-  }
-
- private:
-  absl::Status OnSetupTransport(transaction_code_t code,
-                                const grpc_binder::ReadableParcel* parcel) {
-    grpc_core::ExecCtx exec_ctx;
-    if (grpc_binder::BinderTransportTxCode(code) !=
-        grpc_binder::BinderTransportTxCode::SETUP_TRANSPORT) {
-      return absl::InvalidArgumentError("Not a SETUP_TRANSPORT request");
-    }
-    int version;
-    absl::Status status = parcel->ReadInt32(&version);
-    if (!status.ok()) {
-      return status;
-    }
-    gpr_log(GPR_INFO, "version = %d", version);
-    // TODO(waynetu): Check supported version.
-    std::unique_ptr<grpc_binder::Binder> client_binder{};
-    status = parcel->ReadBinder(&client_binder);
-    if (!status.ok()) {
-      return status;
-    }
-    if (!client_binder) {
-      return absl::InvalidArgumentError("NULL binder read from the parcel");
-    }
-    client_binder->Initialize();
-    // Finish the second half of SETUP_TRANSPORT in
-    // grpc_create_binder_transport_server().
-    grpc_transport* server_transport =
-        grpc_create_binder_transport_server(std::move(client_binder));
-    GPR_ASSERT(server_transport);
-    grpc_channel_args* args = grpc_channel_args_copy(server_->channel_args());
-    grpc_error_handle error = server_->SetupTransport(server_transport, nullptr,
-                                                      args, nullptr, nullptr);
-    grpc_channel_args_destroy(args);
-    return grpc_error_to_absl_status(error);
-  }
-
-  Server* server_;
-  grpc_closure* on_destroy_done_ = nullptr;
-  std::string addr_;
-  void* endpoint_binder_ = nullptr;
-  std::unique_ptr<grpc_binder::TransactionReceiver> tx_receiver_;
-};
-
-template <typename BinderTxReceiver>
-int AddBinderPort(const std::string& addr, grpc_server* server) {
-  const std::string kBinderUriScheme = "binder:";
-  if (addr.compare(0, kBinderUriScheme.size(), kBinderUriScheme) != 0) {
-    return 0;
-  }
-  size_t pos = kBinderUriScheme.size();
-  while (pos < addr.size() && addr[pos] == '/') pos++;
-  grpc_core::Server* core_server = server->core_server.get();
-  core_server->AddListener(
-      grpc_core::OrphanablePtr<grpc_core::Server::ListenerInterface>(
-          new grpc_core::BinderServerListener<BinderTxReceiver>(
-              core_server, addr.substr(pos))));
-  return 1;
-}
+bool AddBinderPort(const std::string& addr, grpc_server* server,
+                   BinderTxReceiverFactory factory);
 
 }  // namespace grpc_core
 

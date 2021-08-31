@@ -21,6 +21,7 @@
 #include <thread>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
 #include "src/core/ext/transport/binder/server/binder_server.h"
 #include "test/core/transport/binder/end2end/echo_service.h"
@@ -36,8 +37,13 @@ namespace {
 class BinderServerCredentialsImpl final : public ServerCredentials {
  public:
   int AddPortToServer(const std::string& addr, grpc_server* server) override {
-    return grpc_core::AddBinderPort<
-        grpc_binder::end2end_testing::FakeTransactionReceiver>(addr, server);
+    return grpc_core::AddBinderPort(
+        addr, server,
+        [](grpc_binder::TransactionReceiver::OnTransactCb transact_cb) {
+          return absl::make_unique<
+              grpc_binder::end2end_testing::FakeTransactionReceiver>(
+              nullptr, std::move(transact_cb));
+        });
   }
 
   void SetAuthMetadataProcessor(
