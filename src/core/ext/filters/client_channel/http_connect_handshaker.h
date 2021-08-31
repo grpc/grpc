@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include "src/core/lib/config/core_configuration.h"
 
 /// Channel arg indicating the server in HTTP CONNECT request (string).

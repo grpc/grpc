@@ -173,4 +173,4 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   SecurityRegisterHandshakerFactories(builder);
 }
 
-}
+}  // namespace grpc_core
