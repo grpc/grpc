@@ -71,9 +71,10 @@ export CC=/usr/bin/gcc
   composer install && \
   ./bin/generate_proto_php.sh)
 
-GRPC_VERBOSITY=debug GRPC_TRACE=retry,channel,call_combiner,client_channel_routing,fault_injection_filter "$PYTHON" \
+GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
-  --test_case="fault_injection" \
+  --halt_after_fail \
+  --test_case="timeout,fault_injection" \
   --project_id=grpc-testing \
   --project_num=830293263384 \
   --source_image=projects/grpc-testing/global/images/xds-test-server-4 \
@@ -84,3 +85,15 @@ GRPC_VERBOSITY=debug GRPC_TRACE=retry,channel,call_combiner,client_channel_routi
   ${XDS_V3_OPT-} \
   --client_cmd='./src/php/bin/run_xds_client.sh --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} {fail_on_failed_rpc} {rpcs_to_send} {metadata_to_send}'
 
+GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb "$PYTHON" \
+  tools/run_tests/run_xds_tests.py \
+  --halt_after_fail \
+  --test_case="all,path_matching,header_matching" \
+  --project_id=grpc-testing \
+  --project_num=830293263384 \
+  --source_image=projects/grpc-testing/global/images/xds-test-server-4 \
+  --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
+  --gcp_suffix=$(date '+%s') \
+  --verbose \
+  ${XDS_V3_OPT-} \
+  --client_cmd='php -d extension=grpc.so -d extension=pthreads.so src/php/tests/interop/xds_client.php --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} {fail_on_failed_rpc} {rpcs_to_send} {metadata_to_send}'

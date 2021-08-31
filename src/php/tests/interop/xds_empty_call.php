@@ -36,7 +36,8 @@ $server_address = $args['server'];
 $num = $args['num'];
 
 $stub = new Grpc\Testing\TestServiceClient($server_address, [
-    'credentials' => Grpc\ChannelCredentials::createInsecure()
+    'credentials' => Grpc\ChannelCredentials::createInsecure(),
+    'grpc.enable_retries' => 0,
 ]);
 
 $empty_request = new Grpc\Testing\EmptyMessage();
