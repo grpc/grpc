@@ -63,6 +63,7 @@ struct async_connect {
   grpc_endpoint** ep;
   grpc_closure* closure;
   grpc_channel_args* channel_args;
+  grpc_slice_allocator* slice_allocator;
 };
 
 static grpc_error_handle prepare_socket(const grpc_resolved_address* addr,
@@ -118,14 +119,18 @@ static void tc_on_alarm(void* acp, grpc_error_handle error) {
   gpr_mu_unlock(&ac->mu);
   if (done) {
     gpr_mu_destroy(&ac->mu);
+    if (ac->slice_allocator != nullptr) {
+      grpc_slice_allocator_destroy(ac->slice_allocator);
+    }
     grpc_channel_args_destroy(ac->channel_args);
     delete ac;
   }
 }
 
 grpc_endpoint* grpc_tcp_client_create_from_fd(
-    grpc_fd* fd, const grpc_channel_args* channel_args, const char* addr_str) {
-  return grpc_tcp_create(fd, channel_args, addr_str);
+    grpc_fd* fd, const grpc_channel_args* channel_args, const char* addr_str,
+    grpc_slice_allocator* slice_allocator) {
+  return grpc_tcp_create(fd, channel_args, addr_str, slice_allocator);
 }
 
 static void on_writable(void* acp, grpc_error_handle error) {
@@ -174,8 +179,9 @@ static void on_writable(void* acp, grpc_error_handle error) {
   switch (so_error) {
     case 0:
       grpc_pollset_set_del_fd(ac->interested_parties, fd);
-      *ep = grpc_tcp_client_create_from_fd(fd, ac->channel_args,
-                                           ac->addr_str.c_str());
+      *ep = grpc_tcp_client_create_from_fd(
+          fd, ac->channel_args, ac->addr_str.c_str(), ac->slice_allocator);
+      ac->slice_allocator = nullptr;
       fd = nullptr;
       break;
     case ENOBUFS:
@@ -237,6 +243,10 @@ finish:
     // This is safe even outside the lock, because "done", the sentinel, is
     // populated *inside* the lock.
     gpr_mu_destroy(&ac->mu);
+    if (ac->slice_allocator != nullptr) {
+      grpc_slice_allocator_destroy(ac->slice_allocator);
+      ac->slice_allocator = nullptr;
+    }
     grpc_channel_args_destroy(ac->channel_args);
     delete ac;
   }
@@ -279,7 +289,8 @@ grpc_error_handle grpc_tcp_client_prepare_fd(
 void grpc_tcp_client_create_from_prepared_fd(
     grpc_pollset_set* interested_parties, grpc_closure* closure, const int fd,
     const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
-    grpc_millis deadline, grpc_endpoint** ep) {
+    grpc_millis deadline, grpc_endpoint** ep,
+    grpc_slice_allocator* slice_allocator) {
   int err;
   do {
     err = connect(fd, reinterpret_cast<const grpc_sockaddr*>(addr->addr),
@@ -291,11 +302,13 @@ void grpc_tcp_client_create_from_prepared_fd(
 
   if (err >= 0) {
     *ep = grpc_tcp_client_create_from_fd(fdobj, channel_args,
-                                         grpc_sockaddr_to_uri(addr).c_str());
+                                         grpc_sockaddr_to_uri(addr).c_str(),
+                                         slice_allocator);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
     return;
   }
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
+    grpc_slice_allocator_destroy(slice_allocator);
     grpc_error_handle error = GRPC_OS_ERROR(errno, "connect");
     error = grpc_error_set_str(
         error, GRPC_ERROR_STR_TARGET_ADDRESS,
@@ -315,6 +328,7 @@ void grpc_tcp_client_create_from_prepared_fd(
   ac->addr_str = grpc_sockaddr_to_uri(addr);
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
+  ac->slice_allocator = slice_allocator;
   GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,
                     grpc_schedule_on_exec_ctx);
   ac->channel_args = grpc_channel_args_copy(channel_args);
@@ -332,6 +346,7 @@ void grpc_tcp_client_create_from_prepared_fd(
 }
 
 static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
+                        grpc_slice_allocator* slice_allocator,
                         grpc_pollset_set* interested_parties,
                         const grpc_channel_args* channel_args,
                         const grpc_resolved_address* addr,
@@ -342,12 +357,13 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   *ep = nullptr;
   if ((error = grpc_tcp_client_prepare_fd(channel_args, addr, &mapped_addr,
                                           &fd)) != GRPC_ERROR_NONE) {
+    grpc_slice_allocator_destroy(slice_allocator);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return;
   }
   grpc_tcp_client_create_from_prepared_fd(interested_parties, closure, fd,
                                           channel_args, &mapped_addr, deadline,
-                                          ep);
+                                          ep, slice_allocator);
 }
 
 grpc_tcp_client_vtable grpc_posix_tcp_client_vtable = {tcp_connect};

@@ -42,7 +42,7 @@ class StaticDataAuthorizationPolicyProvider
   // StaticDataAuthorizationPolicyProvider.
   explicit StaticDataAuthorizationPolicyProvider(RbacPolicies policies);
 
-  AuthorizationEngines engines() override {
+  AuthorizationEngines engines() const override {
     return {allow_engine_, deny_engine_};
   }
 
