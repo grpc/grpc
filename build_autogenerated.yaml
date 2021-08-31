@@ -7544,6 +7544,21 @@ targets:
   - test/core/uri/uri_parser_test.cc
   deps:
   - grpc_test_util
+- name: visitor_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/overload.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/visitor.h
+  src:
+  - test/core/promise/visitor_test.cc
+  deps:
+  - absl/types:variant
+  uses_polling: false
 - name: window_overflow_bad_client_test
   gtest: true
   build: test
