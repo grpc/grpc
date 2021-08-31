@@ -344,8 +344,8 @@ def targets():
         CSharpDistribTest('windows', 'x86'),
         CSharpDistribTest('windows', 'x64'),
         # Python
-        PythonDistribTest('linux', 'x64', 'stretch'),
-        PythonDistribTest('linux', 'x86', 'stretch'),
+        PythonDistribTest('linux', 'x64', 'buster'),
+        PythonDistribTest('linux', 'x86', 'buster'),
         PythonDistribTest('linux', 'x64', 'centos7'),
         PythonDistribTest('linux', 'x64', 'fedora34'),
         PythonDistribTest('linux', 'x64', 'opensuse'),
