@@ -89,7 +89,7 @@ class CoreConfiguration {
   }
 
  private:
-  CoreConfiguration(Builder* builder);
+  explicit CoreConfiguration(Builder* builder);
 
   // Create a new CoreConfiguration, and either set it or throw it away.
   // We allow multiple CoreConfiguration's to be created in parallel.
