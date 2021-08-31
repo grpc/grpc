@@ -223,9 +223,15 @@ grpc_core::UnmanagedMemorySlice::UnmanagedMemorySlice(const char* source)
                                                             strlen(source)) {}
 
 grpc_slice grpc_slice_from_copied_buffer(const char* source, size_t length) {
-  // Create a ref-counted slice.
-  grpc_slice slice = grpc_core::UnmanagedMemorySlice(
-      length, grpc_core::UnmanagedMemorySlice::ForceHeapAllocation());
+  grpc_slice slice;
+  if (length <= sizeof(slice.data.inlined.bytes)) {
+    slice.refcount = nullptr;
+    slice.data.inlined.length = length;
+  } else {
+    // Create a ref-counted slice.
+    slice = grpc_core::UnmanagedMemorySlice(
+        length, grpc_core::UnmanagedMemorySlice::ForceHeapAllocation());
+  }
   memcpy(GRPC_SLICE_START_PTR(slice), source, length);
   return slice;
 }

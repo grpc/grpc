@@ -160,13 +160,21 @@ static void test_retry_send_initial_metadata_refs(
   gpr_free(peer);
 
   grpc_metadata_array_init(&client_send_initial_metadata);
-  client_send_initial_metadata.count = 1;
-  client_send_initial_metadata.metadata =
-      static_cast<grpc_metadata*>(gpr_malloc(sizeof(grpc_metadata)));
+  client_send_initial_metadata.count = 2;
+  client_send_initial_metadata.metadata = static_cast<grpc_metadata*>(
+      gpr_malloc(client_send_initial_metadata.count * sizeof(grpc_metadata)));
+  // First element is short enough for slices to be inlined.
   client_send_initial_metadata.metadata[0].key =
       grpc_slice_from_copied_string(std::string("foo").c_str());
   client_send_initial_metadata.metadata[0].value =
       grpc_slice_from_copied_string(std::string("bar").c_str());
+  // Second element requires slice allocation.
+  client_send_initial_metadata.metadata[1].key =
+      grpc_slice_from_copied_string(
+          std::string(GRPC_SLICE_INLINED_SIZE + 1, 'x').c_str());
+  client_send_initial_metadata.metadata[1].value =
+      grpc_slice_from_copied_string(
+          std::string(GRPC_SLICE_INLINED_SIZE + 1, 'y').c_str());
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -272,25 +280,17 @@ static void test_retry_send_initial_metadata_refs(
   cq_verify(cqv);
 
   // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
-  bool found_retry_header = false;
-  for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    if (grpc_slice_eq(request_metadata_recv.metadata[i].key,
-                      GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS)) {
-      GPR_ASSERT(
-          grpc_slice_eq(request_metadata_recv.metadata[i].value, GRPC_MDSTR_1));
-      found_retry_header = true;
-      break;
-    } else {
-      GPR_ASSERT(
-          grpc_core::StringViewFromSlice(request_metadata_recv.metadata[i].key)
-              == "foo");
-      GPR_ASSERT(
-          grpc_core::StringViewFromSlice(
-              request_metadata_recv.metadata[i].value)
-              == "bar");
-    }
-  }
-  GPR_ASSERT(found_retry_header);
+  GPR_ASSERT(contains_metadata_slices(&request_metadata_recv,
+                                      GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS,
+                                      GRPC_MDSTR_1));
+  // It should also contain the initial metadata, even though the client
+  // freed it already.
+  GPR_ASSERT(contains_metadata(&request_metadata_recv, "foo", "bar"));
+  GPR_ASSERT(
+      contains_metadata(
+          &request_metadata_recv,
+          std::string(GRPC_SLICE_INLINED_SIZE + 1, 'x').c_str(),
+          std::string(GRPC_SLICE_INLINED_SIZE + 1, 'y').c_str()));
 
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != nullptr);
