@@ -39,8 +39,8 @@ const CoreConfiguration& CoreConfiguration::BuildNewAndMaybeSet() {
   // here, in which case we drop the work we did and use the one that got set
   // first
   CoreConfiguration* expected = nullptr;
-  if (!config_.compare_exchange_strong(expected, p,
-                                       std::memory_order_release)) {
+  if (!config_.compare_exchange_strong(expected, p, std::memory_order_acq_rel,
+                                       std::memory_order_acquire)) {
     delete p;
     return *expected;
   }
