@@ -26,6 +26,8 @@ namespace grpc_core {
 // sizes.
 class HPackEncoderTable {
  public:
+  HPackEncoderTable() : elem_size_(hpack_constants::kInitialTableEntries) {}
+
   // Reserve space in table for the new element, evict entries if needed.
   // Return the new index of the element. Return 0 to indicate not adding to
   // table.
@@ -58,7 +60,7 @@ class HPackEncoderTable {
   uint32_t table_size_ = 0;
   // The size of each element in the HPACK table.
   absl::InlinedVector<uint16_t, hpack_constants::kInitialTableEntries>
-      elem_size_{hpack_constants::kInitialTableEntries};
+      elem_size_;
 };
 
 }  // namespace grpc_core

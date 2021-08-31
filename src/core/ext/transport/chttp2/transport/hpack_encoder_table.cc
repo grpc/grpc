@@ -37,7 +37,7 @@ uint32_t HPackEncoderTable::AllocateIndex(size_t element_size) {
   while (table_size_ + element_size > max_table_size_) {
     EvictOne();
   }
-  GPR_ASSERT(table_elems_ < max_table_size_);
+  GPR_ASSERT(table_elems_ < elem_size_.size());
   elem_size_[new_index % elem_size_.size()] =
       static_cast<uint16_t>(element_size);
   table_size_ += element_size;
@@ -66,9 +66,10 @@ bool HPackEncoderTable::SetMaxSize(uint32_t max_table_size) {
 void HPackEncoderTable::EvictOne() {
   tail_remote_index_++;
   GPR_ASSERT(tail_remote_index_ > 0);
-  GPR_ASSERT(table_size_ >= elem_size_[tail_remote_index_ % elem_size_.size()]);
   GPR_ASSERT(table_elems_ > 0);
-  table_size_ -= elem_size_[tail_remote_index_ % elem_size_.size()];
+  auto removing_size = elem_size_[tail_remote_index_ % elem_size_.size()];
+  GPR_ASSERT(table_size_ >= removing_size);
+  table_size_ -= removing_size;
   table_elems_--;
 }
 
