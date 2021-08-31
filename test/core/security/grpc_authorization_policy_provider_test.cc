@@ -62,7 +62,7 @@ TEST(AuthorizationPolicyProviderTest,
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
   ASSERT_TRUE(provider.ok());
-  AuthorizationEngines engines = (*provider)->engines();
+  auto engines = (*provider)->engines();
   auto* allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
   ASSERT_NE(allow_engine, nullptr);
@@ -92,7 +92,7 @@ TEST(AuthorizationPolicyProviderTest,
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
   ASSERT_TRUE(provider.ok());
-  AuthorizationEngines engines = (*provider)->engines();
+  auto engines = (*provider)->engines();
   auto* allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
   ASSERT_NE(allow_engine, nullptr);
@@ -136,7 +136,7 @@ TEST(AuthorizationPolicyProviderTest,
         EXPECT_EQ(status, GRPC_STATUS_INVALID_ARGUMENT);
         EXPECT_EQ(strcmp(error_details, "\"name\" field is not present."), 0);
       });
-  AuthorizationEngines engines = provider->engines();
+  auto engines = provider->engines();
   auto* allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
   ASSERT_NE(allow_engine, nullptr);
