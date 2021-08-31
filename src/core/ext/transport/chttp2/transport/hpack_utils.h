@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_UTILS_H
+#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_UTILS_H
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/transport/metadata.h"
@@ -23,3 +26,5 @@ size_t MetadataSizeInHPackTable(grpc_mdelem elem,
                                 bool use_true_binary_metadata);
 
 }  // namespace grpc_core
+
+#endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_UTILS_H
