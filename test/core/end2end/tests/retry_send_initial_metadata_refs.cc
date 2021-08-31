@@ -143,8 +143,8 @@ static void test_retry_send_initial_metadata_refs(
               "}")),
   };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
-  grpc_end2end_test_fixture f =
-      begin_test(config, "retry_send_initial_metadata_refs", &client_args, nullptr);
+  grpc_end2end_test_fixture f = begin_test(
+      config, "retry_send_initial_metadata_refs", &client_args, nullptr);
 
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
@@ -169,9 +169,8 @@ static void test_retry_send_initial_metadata_refs(
   client_send_initial_metadata.metadata[0].value =
       grpc_slice_from_copied_string(std::string("bar").c_str());
   // Second element requires slice allocation.
-  client_send_initial_metadata.metadata[1].key =
-      grpc_slice_from_copied_string(
-          std::string(GRPC_SLICE_INLINED_SIZE + 1, 'x').c_str());
+  client_send_initial_metadata.metadata[1].key = grpc_slice_from_copied_string(
+      std::string(GRPC_SLICE_INLINED_SIZE + 1, 'x').c_str());
   client_send_initial_metadata.metadata[1].value =
       grpc_slice_from_copied_string(
           std::string(GRPC_SLICE_INLINED_SIZE + 1, 'y').c_str());
@@ -287,10 +286,9 @@ static void test_retry_send_initial_metadata_refs(
   // freed it already.
   GPR_ASSERT(contains_metadata(&request_metadata_recv, "foo", "bar"));
   GPR_ASSERT(
-      contains_metadata(
-          &request_metadata_recv,
-          std::string(GRPC_SLICE_INLINED_SIZE + 1, 'x').c_str(),
-          std::string(GRPC_SLICE_INLINED_SIZE + 1, 'y').c_str()));
+      contains_metadata(&request_metadata_recv,
+                        std::string(GRPC_SLICE_INLINED_SIZE + 1, 'x').c_str(),
+                        std::string(GRPC_SLICE_INLINED_SIZE + 1, 'y').c_str()));
 
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != nullptr);

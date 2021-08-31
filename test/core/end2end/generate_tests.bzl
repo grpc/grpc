@@ -321,7 +321,8 @@ END2END_TESTS = {
         needs_client_channel = True,
     ),
     "retry_send_initial_metadata_refs": _test_options(
-        needs_client_channel = True),
+        needs_client_channel = True,
+    ),
     "retry_send_op_fails": _test_options(needs_client_channel = True),
     "retry_server_pushback_delay": _test_options(needs_client_channel = True),
     "retry_server_pushback_disabled": _test_options(needs_client_channel = True),
