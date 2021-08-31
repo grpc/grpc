@@ -216,3 +216,16 @@ grpc_cc_test(
         "//test/core/util:grpc_suppressions",
     ],
 )
+
+grpc_cc_test(
+    name = "visitor_test",
+    srcs = ["visitor_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:visitor",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
