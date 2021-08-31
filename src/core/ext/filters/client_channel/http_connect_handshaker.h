@@ -37,6 +37,6 @@ namespace grpc_core {
 // Register the HTTP Connect handshaker into the configuration builder.
 void RegisterHttpConnectHandshaker(CoreConfiguration::Builder* builder);
 
-}
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H */

@@ -26,7 +26,7 @@ void HandshakerRegistryBuilder::RegisterHandshakerFactory(
     bool at_start, HandshakerType handshaker_type,
     std::unique_ptr<HandshakerFactory> factory) {
   auto* vec = &factories_[handshaker_type];
-  auto where = at_start? vec->begin() : vec->end();
+  auto where = at_start ? vec->begin() : vec->end();
   vec->insert(where, std::move(factory));
 }
 
