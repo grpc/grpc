@@ -440,12 +440,6 @@ GRPCAPI void grpc_server_set_config_fetcher(
 GRPCAPI int grpc_server_add_insecure_http2_port(grpc_server* server,
                                                 const char* addr);
 
-/** EXPERIMENTAL.  Add a "binder port" to the server that listens to incoming
- *  binder transactions.
- *  Returns 1 on success, 0 on failure (or called in non-Android environments)
- *  REQUIRES: server not started */
-GRPCAPI int grpc_server_add_binder_port(grpc_server* server, const char* addr);
-
 /** Start a server - tells all listeners to start listening */
 GRPCAPI void grpc_server_start(grpc_server* server);
 

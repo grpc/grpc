@@ -227,9 +227,6 @@ extern grpc_server_set_config_fetcher_type grpc_server_set_config_fetcher_import
 typedef int(*grpc_server_add_insecure_http2_port_type)(grpc_server* server, const char* addr);
 extern grpc_server_add_insecure_http2_port_type grpc_server_add_insecure_http2_port_import;
 #define grpc_server_add_insecure_http2_port grpc_server_add_insecure_http2_port_import
-typedef int(*grpc_server_add_binder_port_type)(grpc_server* server, const char* addr);
-extern grpc_server_add_binder_port_type grpc_server_add_binder_port_import;
-#define grpc_server_add_binder_port grpc_server_add_binder_port_import
 typedef void(*grpc_server_start_type)(grpc_server* server);
 extern grpc_server_start_type grpc_server_start_import;
 #define grpc_server_start grpc_server_start_import

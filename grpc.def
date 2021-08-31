@@ -61,7 +61,6 @@ EXPORTS
     grpc_server_config_fetcher_destroy
     grpc_server_set_config_fetcher
     grpc_server_add_insecure_http2_port
-    grpc_server_add_binder_port
     grpc_server_start
     grpc_server_shutdown_and_notify
     grpc_server_cancel_all_calls

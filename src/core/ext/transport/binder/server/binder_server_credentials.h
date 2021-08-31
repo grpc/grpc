@@ -12,34 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/grpc.h>
+#ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_SERVER_BINDER_SERVER_CREDENTIALS_H
+#define GRPC_CORE_EXT_TRANSPORT_BINDER_SERVER_BINDER_SERVER_CREDENTIALS_H
+
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <grpcpp/security/server_credentials.h>
 
 namespace grpc {
 namespace experimental {
 
-namespace {
-
-class BinderServerCredentialsImpl final : public ServerCredentials {
- public:
-  int AddPortToServer(const std::string& addr, grpc_server* server) override {
-    return grpc_server_add_binder_port(server, addr.c_str());
-  }
-
-  void SetAuthMetadataProcessor(
-      const std::shared_ptr<AuthMetadataProcessor>& /*processor*/) override {
-    GPR_ASSERT(false);
-  }
-
- private:
-  bool IsInsecure() const override { return true; }
-};
-
-}  // namespace
-
-std::shared_ptr<ServerCredentials> BinderServerCredentials() {
-  return std::shared_ptr<ServerCredentials>(new BinderServerCredentialsImpl());
-}
+/// Builds Binder ServerCredentials.
+///
+/// Calling \a ServerBuilder::AddListeningPort() with Binder ServerCredentials
+/// in a non-Android environment will make the subsequent call to
+/// \a ServerBuilder::BuildAndStart() returns a null pointer.
+std::shared_ptr<grpc::ServerCredentials> BinderServerCredentials();
 
 }  // namespace experimental
 }  // namespace grpc
+
+#endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_SERVER_BINDER_SERVER_CREDENTIALS_H

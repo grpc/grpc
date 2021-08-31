@@ -27,9 +27,11 @@ grpc_cc_library(
     name = "grpc_transport_binder_server",
     srcs = [
         "binder_server.cc",
+        "binder_server_credentials.cc",
     ],
     hdrs = [
         "binder_server.h",
+        "binder_server_credentials.h",
     ],
     external_deps = [
         "absl/memory",
@@ -38,6 +40,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "//:gpr_platform",
+        "//:grpc++_internals",
         "//:grpc_base_c",
         "//src/core/ext/transport/binder/transport:binder_transport",
         "//src/core/ext/transport/binder/wire_format:binder",

@@ -24,6 +24,7 @@
 #include "absl/memory/memory.h"
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
 #include "src/core/ext/transport/binder/server/binder_server.h"
+#include "src/core/ext/transport/binder/server/binder_server_credentials.h"
 #include "test/core/transport/binder/end2end/echo_service.h"
 #include "test/core/transport/binder/end2end/fake_binder.h"
 #include "test/core/util/test_config.h"
@@ -107,7 +108,7 @@ TEST(BinderServerCredentialsTest, FailedInNonAndroidEnvironments) {
       "binder://fail", grpc::experimental::BinderServerCredentials());
   EXPECT_EQ(server_builder.BuildAndStart(), nullptr);
 }
-#endif  // GPR_ANDROID
+#endif  // !GPR_ANDROID
 
 TEST_F(BinderServerTest, BuildAndStart) {
   grpc::ServerBuilder server_builder;

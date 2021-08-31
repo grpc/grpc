@@ -177,18 +177,3 @@ bool AddBinderPort(const std::string& addr, grpc_server* server,
 }
 
 }  // namespace grpc_core
-
-#ifdef GPR_ANDROID
-int grpc_server_add_binder_port(grpc_server* server, const char* addr) {
-  return grpc_core::AddBinderPort(
-      std::string(addr), server,
-      [](grpc_binder::TransactionReceiver::OnTransactCb transact_cb) {
-        return absl::make_unique<grpc_binder::TransactionReceiverAndroid>(
-            nullptr, std::move(transact_cb));
-      });
-}
-#else
-int grpc_server_add_binder_port(grpc_server* /*server*/, const char* /*addr*/) {
-  return 0;
-}
-#endif  // GPR_ANDROID
