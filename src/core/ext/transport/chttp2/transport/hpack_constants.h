@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_CONSTANTS_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_CONSTANTS_H
 
+#include <stdint.h>
+
 namespace grpc_core {
 namespace hpack_constants {
 // Per entry overhead bytes as per the spec
