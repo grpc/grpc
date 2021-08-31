@@ -2828,7 +2828,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_platform",
-    ]
+    ],
 )
 
 grpc_cc_library(
@@ -2847,19 +2847,19 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "hpack_encoder_table",
-    hdrs = [
-        "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h",
-    ],
     srcs = [
         "src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc",
     ],
-    language = "c++",
-    external_deps = [
-                "absl/container:inlined_vector",
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h",
     ],
+    external_deps = [
+        "absl/container:inlined_vector",
+    ],
+    language = "c++",
     deps = [
         "gpr",
-        "hpack_constants"
+        "hpack_constants",
     ],
 )
 
@@ -2932,9 +2932,9 @@ grpc_cc_library(
         "grpc_http_filters",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
+        "hpack_constants",
         "hpack_encoder_index",
         "hpack_encoder_table",
-        "hpack_constants",
         "match",
         "popularity_count",
     ],
