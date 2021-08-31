@@ -23,10 +23,11 @@ std::atomic<CoreConfiguration*> CoreConfiguration::config_{nullptr};
 CoreConfiguration::Builder::Builder() = default;
 
 CoreConfiguration* CoreConfiguration::Builder::Build() {
-  return new CoreConfiguration;
+  return new CoreConfiguration(this);
 }
 
-CoreConfiguration::CoreConfiguration() = default;
+CoreConfiguration::CoreConfiguration(Builder* builder)
+    : handshaker_registry_(builder->handshaker_registry_.Build()) {}
 
 const CoreConfiguration& CoreConfiguration::BuildNewAndMaybeSet() {
   // Construct builder, pass it up to code that knows about build configuration

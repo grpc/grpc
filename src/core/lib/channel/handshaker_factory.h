@@ -23,11 +23,13 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/lib/channel/handshaker.h"
-
 // A handshaker factory is used to create handshakers.
 
+typedef struct grpc_pollset_set grpc_pollset_set;
+
 namespace grpc_core {
+
+class HandshakeManager;
 
 class HandshakerFactory {
  public:
