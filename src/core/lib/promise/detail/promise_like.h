@@ -54,7 +54,7 @@ struct PollWrapper {
 
 template <typename T>
 struct PollWrapper<Poll<T>> {
-  static Poll<T> Wrap(Poll<T>&& x) { return x; }
+  static Poll<T> Wrap(Poll<T>&& x) { return std::forward<Poll<T>>(x); }
 };
 
 template <typename T>
@@ -73,6 +73,10 @@ class PromiseLike {
   auto operator()() -> decltype(WrapInPoll(f_())) { return WrapInPoll(f_()); }
   using Result = typename PollTraits<decltype(WrapInPoll(f_()))>::Type;
 };
+
+// T -> T, const T& -> T
+template <typename T>
+using RemoveCVRef = absl::remove_cv_t<absl::remove_reference_t<T>>;
 
 }  // namespace promise_detail
 }  // namespace grpc_core

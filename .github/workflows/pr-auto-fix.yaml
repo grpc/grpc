@@ -67,6 +67,7 @@ jobs:
           delete-branch: true
           branch-suffix: short-commit-hash
           commit-message: "Automated change: Fix sanity tests"
+          title: Automated fix for ${{ github.ref }}
           body: |
             PanCakes to the rescue!
 

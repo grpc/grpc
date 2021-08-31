@@ -39,7 +39,7 @@ RUN apk update && apk add \
 # Install Python packages from PyPI
 RUN pip install --upgrade pip==19.3.1
 RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.15.0 twisted==17.5.0
+RUN pip install futures==3.1.1 enum34==1.1.10 protobuf==3.5.2.post1 six==1.16.0 twisted==19.10.0
 RUN pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
 
 # Google Cloud platform API libraries

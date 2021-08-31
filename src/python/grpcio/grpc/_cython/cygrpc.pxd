@@ -42,9 +42,6 @@ IF UNAME_SYSNAME != "Windows":
     include "_cygrpc/fork_posix.pxd.pxi"
 
 # Following pxi files are part of the Aio module
-include "_cygrpc/aio/iomgr/socket.pxd.pxi"
-include "_cygrpc/aio/iomgr/timer.pxd.pxi"
-include "_cygrpc/aio/iomgr/resolver.pxd.pxi"
 include "_cygrpc/aio/completion_queue.pxd.pxi"
 include "_cygrpc/aio/rpc_status.pxd.pxi"
 include "_cygrpc/aio/grpc_aio.pxd.pxi"

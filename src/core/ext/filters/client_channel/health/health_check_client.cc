@@ -425,8 +425,9 @@ void HealthCheckClient::CallState::StartCancel(void* arg,
 
 void HealthCheckClient::CallState::Cancel() {
   bool expected = false;
-  if (cancelled_.CompareExchangeStrong(&expected, true, MemoryOrder::ACQ_REL,
-                                       MemoryOrder::ACQUIRE)) {
+  if (cancelled_.compare_exchange_strong(expected, true,
+                                         std::memory_order_acq_rel,
+                                         std::memory_order_acquire)) {
     call_->Ref(DEBUG_LOCATION, "cancel").release();
     GRPC_CALL_COMBINER_START(
         &call_combiner_,
@@ -471,7 +472,7 @@ void HealthCheckClient::CallState::DoneReadingRecvMessage(
       state, error == GRPC_ERROR_NONE && !healthy
                  ? "backend unhealthy"
                  : grpc_error_std_string(error).c_str());
-  seen_response_.Store(true, MemoryOrder::RELEASE);
+  seen_response_.store(true, std::memory_order_release);
   grpc_slice_buffer_destroy_internal(&recv_message_buffer_);
   // Start another recv_message batch.
   // This re-uses the ref we're holding.
@@ -598,7 +599,7 @@ void HealthCheckClient::CallState::CallEndedLocked(bool retry) {
     health_check_client_->call_state_.reset();
     if (retry) {
       GPR_ASSERT(!health_check_client_->shutting_down_);
-      if (seen_response_.Load(MemoryOrder::ACQUIRE)) {
+      if (seen_response_.load(std::memory_order_acquire)) {
         // If the call fails after we've gotten a successful response, reset
         // the backoff and restart the call immediately.
         health_check_client_->retry_backoff_.Reset();
