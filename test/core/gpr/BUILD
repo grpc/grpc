@@ -134,6 +134,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "tls_test",
     srcs = ["tls_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     uses_polling = False,
     deps = [

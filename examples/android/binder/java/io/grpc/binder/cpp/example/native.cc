@@ -15,6 +15,9 @@
 #include <android/log.h>
 #include <jni.h>
 
+#include "examples/protos/helloworld.grpc.pb.h"
+#include "examples/protos/helloworld.pb.h"
+
 #include "src/core/ext/transport/binder/client/channel_create.h"
 
 extern "C" JNIEXPORT jstring JNICALL
@@ -24,12 +27,22 @@ Java_io_grpc_binder_cpp_example_ButtonPressHandler_native_1entry(
   __android_log_print(ANDROID_LOG_INFO, "Demo", "Line number %d", __LINE__);
   if (first) {
     first = false;
-    grpc::experimental::BindToOnDeviceServerService(env, application, "", "");
+    grpc::experimental::BindToOnDeviceServerService(
+        env, application, "io.grpc.binder.cpp.exampleserver",
+        "io.grpc.binder.cpp.exampleserver.ExportedEndpointService");
     return env->NewStringUTF("Clicked 1 time");
   } else {
-    // Create a channel. For now we only want to make sure it compiles.
     auto channel =
         grpc::experimental::CreateBinderChannel(env, application, "", "");
-    return env->NewStringUTF("Clicked more than 1 time");
+    auto stub = helloworld::Greeter::NewStub(channel);
+    grpc::ClientContext context;
+    helloworld::HelloRequest request;
+    helloworld::HelloReply response;
+    request.set_name("BinderTransportClient");
+    grpc::Status status = stub->SayHello(&context, request, &response);
+    if (status.ok()) {
+      return env->NewStringUTF(response.message().c_str());
+    }
+    return env->NewStringUTF("Clicked more than 1 time. Status not ok");
   }
 }
