@@ -1112,9 +1112,6 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                 id request = [RMTStreamingOutputCallRequest
                                                     messageWithPayloadSize:requests[index]
                                                      requestedResponseSize:responses[index]];
-                                                XCTAssertLessThanOrEqual(
-                                                    index, writeMessageCount,
-                                                    @"Message received before writing message.");
                                                 [call writeMessage:request];
                                                 [call receiveNextMessage];
                                               } else {
@@ -1140,6 +1137,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [call writeMessage:request];
 
   [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
+  XCTAssertEqual(writeMessageCount, 4);
 }
 
 - (void)testEmptyStreamRPC {
@@ -1557,9 +1555,6 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                 id request = [RMTStreamingOutputCallRequest
                                                     messageWithPayloadSize:requests[messageIndex]
                                                      requestedResponseSize:responses[messageIndex]];
-                                                XCTAssertLessThanOrEqual(
-                                                    messageIndex, writeMessageCount,
-                                                    @"Message received before writing message.");
                                                 [call writeMessage:request];
                                                 [call receiveNextMessage];
                                               } else {
@@ -1585,7 +1580,6 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [call writeMessage:request];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
-  XCTAssertEqual(writeMessageCount, 4);
   XCTAssertEqual(startCount, 1);
   XCTAssertEqual(writeDataCount, 4);
   XCTAssertEqual(finishCount, 1);
@@ -1594,6 +1588,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   XCTAssertEqual(responseDataCount, 4);
   XCTAssertEqual(responseCloseCount, 1);
   XCTAssertEqual(didWriteDataCount, 4);
+  XCTAssertEqual(writeMessageCount, 4);
 }
 
 // Chain a default interceptor and a hook interceptor which, after one write, cancels the call
@@ -1802,9 +1797,6 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                 id request = [RMTStreamingOutputCallRequest
                                                     messageWithPayloadSize:requests[index]
                                                      requestedResponseSize:responses[index]];
-                                                XCTAssertLessThanOrEqual(
-                                                    index, writeMessageCount,
-                                                    @"Message received before writing message.");
                                                 [call writeMessage:request];
                                                 [call receiveNextMessage];
                                               } else {
@@ -1835,6 +1827,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   XCTAssertEqual(responseDataCount, 4);
   XCTAssertEqual(responseCloseCount, 1);
   XCTAssertEqual(didWriteDataCount, 4);
+  XCTAssertEqual(writeMessageCount, 4);
   globalInterceptorFactory.enabled = NO;
 }
 
@@ -1988,9 +1981,6 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                 id request = [RMTStreamingOutputCallRequest
                                                     messageWithPayloadSize:requests[index]
                                                      requestedResponseSize:responses[index]];
-                                                XCTAssertLessThanOrEqual(
-                                                    index, writeMessageCount,
-                                                    @"Message received before writing message.");
                                                 [call writeMessage:request];
                                                 [call receiveNextMessage];
                                               } else {
@@ -2026,6 +2016,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   XCTAssertEqual(globalResponseDataCount, 4);
   XCTAssertEqual(globalResponseCloseCount, 1);
   XCTAssertEqual(globalDidWriteDataCount, 4);
+  XCTAssertEqual(writeMessageCount, 4);
   globalInterceptorFactory.enabled = NO;
 }
 
