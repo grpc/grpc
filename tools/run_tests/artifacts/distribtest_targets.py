@@ -238,7 +238,7 @@ class PHP7DistribTest(object):
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
-        self.labels = ['distribtest', 'php7', platform, arch]
+        self.labels = ['distribtest', 'php', 'php7', platform, arch]
         if docker_suffix:
             self.labels.append(docker_suffix)
 
