@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_CONSTANTS_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_CONSTANTS_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <stdint.h>
 
 namespace grpc_core {
