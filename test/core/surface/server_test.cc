@@ -72,7 +72,6 @@ void test_request_call_on_no_server_cq(void) {
   grpc_server_destroy(server);
 }
 
-// GRPC_ARG_ALLOW_REUSEPORT isn't supported for custom servers
 void test_bind_server_twice(void) {
   grpc_arg a = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_ALLOW_REUSEPORT), 0);
