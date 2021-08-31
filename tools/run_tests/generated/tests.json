@@ -1532,7 +1532,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "hpack_parser_test",
+    "name": "hpack_parser_table_test",
     "platforms": [
       "linux",
       "mac",
@@ -1556,7 +1556,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "hpack_table_test",
+    "name": "hpack_parser_test",
     "platforms": [
       "linux",
       "mac",

@@ -510,10 +510,13 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_rst_stream.h
   - src/core/ext/transport/chttp2/transport/frame_settings.h
   - src/core/ext/transport/chttp2/transport/frame_window_update.h
+  - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder_index.h
+  - src/core/ext/transport/chttp2/transport/hpack_encoder_table.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
-  - src/core/ext/transport/chttp2/transport/hpack_table.h
+  - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
+  - src/core/ext/transport/chttp2/transport/hpack_utils.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/incoming_metadata.h
@@ -1053,8 +1056,10 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_settings.cc
   - src/core/ext/transport/chttp2/transport/frame_window_update.cc
   - src/core/ext/transport/chttp2/transport/hpack_encoder.cc
+  - src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
-  - src/core/ext/transport/chttp2/transport/hpack_table.cc
+  - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  - src/core/ext/transport/chttp2/transport/hpack_utils.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/incoming_metadata.cc
@@ -1751,10 +1756,13 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_rst_stream.h
   - src/core/ext/transport/chttp2/transport/frame_settings.h
   - src/core/ext/transport/chttp2/transport/frame_window_update.h
+  - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder_index.h
+  - src/core/ext/transport/chttp2/transport/hpack_encoder_table.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
-  - src/core/ext/transport/chttp2/transport/hpack_table.h
+  - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
+  - src/core/ext/transport/chttp2/transport/hpack_utils.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/incoming_metadata.h
@@ -2019,8 +2027,10 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_settings.cc
   - src/core/ext/transport/chttp2/transport/frame_window_update.cc
   - src/core/ext/transport/chttp2/transport/hpack_encoder.cc
+  - src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
-  - src/core/ext/transport/chttp2/transport/hpack_table.cc
+  - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  - src/core/ext/transport/chttp2/transport/hpack_utils.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/incoming_metadata.cc
@@ -3535,21 +3545,21 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: hpack_parser_table_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/transport/chttp2/hpack_parser_table_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: hpack_parser_test
   build: test
   language: c
   headers: []
   src:
   - test/core/transport/chttp2/hpack_parser_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: hpack_table_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/hpack_table_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
