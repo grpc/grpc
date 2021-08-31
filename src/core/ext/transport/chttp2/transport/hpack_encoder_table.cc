@@ -56,10 +56,10 @@ bool HPackEncoderTable::SetMaxSize(uint32_t max_table_size) {
   max_table_size_ = max_table_size;
   const size_t max_table_elems =
       hpack_constants::EntriesForBytes(max_table_size);
+  // TODO(ctiller): integrate with ResourceQuota to rebuild smaller when we can.
   if (max_table_elems > elem_size_.size()) {
     Rebuild(std::max(max_table_elems, 2 * elem_size_.size()));
   }
-  // TODO(ctiller): integrate with ResourceQuota to rebuild smaller when we can.
   return true;
 }
 
