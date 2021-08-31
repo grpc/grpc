@@ -114,7 +114,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         cls.force_cleanup = _FORCE_CLEANUP.value
         cls.debug_use_port_forwarding = \
             xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
-        cls.enable_workload_identity = xds_k8s_flags.enable_workload_identity.value
+        cls.enable_workload_identity = xds_k8s_flags.ENABLE_WORKLOAD_IDENTITY.value
         cls.check_local_certs = _CHECK_LOCAL_CERTS.value
 
         # Resource managers
