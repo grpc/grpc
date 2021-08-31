@@ -21,7 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <deque>
 #include <memory>
 #include <vector>
 
@@ -65,7 +64,7 @@ class HandshakerRegistryBuilder {
   HandshakerRegistry Build();
 
  private:
-  std::deque<std::unique_ptr<HandshakerFactory>>
+  std::vector<std::unique_ptr<HandshakerFactory>>
       factories_[NUM_HANDSHAKER_TYPES];
 };
 
