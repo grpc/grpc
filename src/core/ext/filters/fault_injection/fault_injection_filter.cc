@@ -166,6 +166,7 @@ class CallData {
   grpc_timer delay_timer_ ABSL_GUARDED_BY(delay_mu_);
   ResumeBatchCanceller* resume_batch_canceller_ ABSL_GUARDED_BY(delay_mu_);
   grpc_transport_stream_op_batch* delayed_batch_ ABSL_GUARDED_BY(delay_mu_);
+  grpc_error_handle delay_cancelled_error_ = GRPC_ERROR_NONE;
   // Abort states
   grpc_error_handle abort_error_ = GRPC_ERROR_NONE;
   grpc_closure recv_trailing_metadata_ready_;
@@ -222,9 +223,10 @@ class CallData::ResumeBatchCanceller {
         // Cancel the delayed pick.
         calld->CancelDelayTimer();
         calld->FaultInjectionFinished();
-        // Fail pending batches on the call.
+        // Fail pending batches and keep the error for future batches
+        calld->delay_cancelled_error_ = GRPC_ERROR_REF(error)
         grpc_transport_stream_op_batch_finish_with_failure(
-            calld->delayed_batch_, GRPC_ERROR_REF(error),
+            calld->delayed_batch_, calld->delay_cancelled_error_,
             calld->call_combiner_);
       }
     }
@@ -471,6 +473,9 @@ void CallData::HijackedRecvTrailingMetadataReady(void* arg,
   if (calld->abort_error_ != GRPC_ERROR_NONE) {
     error = grpc_error_add_child(GRPC_ERROR_REF(error),
                                  GRPC_ERROR_REF(calld->abort_error_));
+  } if (calld->delay_cancelled_error_ != GRPC_ERROR_NONE) {
+    error = grpc_error_add_child(GRPC_ERROR_REF(error),
+                                 GRPC_ERROR_REF(calld->delay_cancelled_error_));
   } else {
     error = GRPC_ERROR_REF(error);
   }
