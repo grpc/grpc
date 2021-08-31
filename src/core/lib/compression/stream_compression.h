@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdbool.h>
+
 #include <zlib.h>
 
 #include <grpc/slice_buffer.h>

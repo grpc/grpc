@@ -20,7 +20,6 @@
 #define TESTHELPER_H
 
 #import <XCTest/XCTest.h>
-#import <src/proto/grpc/testing/echo.grpc.pb.h>
 
 #import <map>
 #import <sstream>
@@ -29,6 +28,8 @@
 #import <grpcpp/impl/codegen/config.h>
 #import <grpcpp/impl/codegen/string_ref.h>
 #import <grpcpp/support/client_interceptor.h>
+
+#import "src/proto/grpc/testing/echo.grpc.pb.h"
 
 const char* const kServerFinishAfterNReads = "server_finish_after_n_reads";
 const char* const kServerResponseStreamsToSend = "server_responses_to_send";
