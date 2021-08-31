@@ -401,12 +401,11 @@ void grpc_metadata_batch_copy(grpc_metadata_batch* src,
   size_t i = 0;
   for (grpc_linked_mdelem* elem = src->list.head; elem != nullptr;
        elem = elem->next) {
-    // If the mdelem is ref-counted, take a ref.
+    // If the mdelem is not external, take a ref.
     // Otherwise, create a new copy, holding its own refs to the
     // underlying slices.
     grpc_mdelem md;
-    if (GRPC_MDELEM_STORAGE(elem->md) == GRPC_MDELEM_STORAGE_INTERNED ||
-        GRPC_MDELEM_STORAGE(elem->md) == GRPC_MDELEM_STORAGE_ALLOCATED) {
+    if (GRPC_MDELEM_STORAGE(elem->md) != GRPC_MDELEM_STORAGE_EXTERNAL) {
       md = GRPC_MDELEM_REF(elem->md);
     } else {
       md = grpc_mdelem_from_slices(
