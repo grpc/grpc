@@ -3475,10 +3475,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc++_test",
+    testonly = True,
     srcs = [
         "src/cpp/client/channel_test_peer.cc",
     ],
-    testonly = True,
     external_deps = [
         "gtest",
     ],
