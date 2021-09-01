@@ -299,10 +299,12 @@ void CallData::StartTransportStreamOpBatch(
       grpc_transport_stream_op_batch_finish_with_failure(
           batch, GRPC_ERROR_REF(calld->abort_error_), calld->call_combiner_);
       return;
-    } if (calld->delay_cancelled_error_ != GRPC_ERROR_NONE) {
+    }
+    if (calld->delay_cancelled_error_ != GRPC_ERROR_NONE) {
       // If the delay is cancelled, populate the error to any batch afterward.
       grpc_transport_stream_op_batch_finish_with_failure(
-          batch, GRPC_ERROR_REF(calld->delay_cancelled_error_), calld->call_combiner_);
+          batch, GRPC_ERROR_REF(calld->delay_cancelled_error_),
+          calld->call_combiner_);
       return;
     }
   }

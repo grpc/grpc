@@ -12239,13 +12239,14 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayOk) {
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
   ClientContext context;
-  context.set_deadline(grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
+  context.set_deadline(
+      grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
   auto stream = stub_->BidiStream(&context);
   stream->WritesDone();
   auto status = stream->Finish();
-  EXPECT_TRUE(status.ok())
-      << status.error_message() << ", " << status.error_details() << ", "
-      << context.debug_error_string();
+  EXPECT_TRUE(status.ok()) << status.error_message() << ", "
+                           << status.error_details() << ", "
+                           << context.debug_error_string();
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayError) {
@@ -12270,7 +12271,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayError) {
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
   ClientContext context;
-  context.set_deadline(grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
+  context.set_deadline(
+      grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
   auto stream = stub_->BidiStream(&context);
   stream->WritesDone();
   auto status = stream->Finish();
