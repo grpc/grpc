@@ -2175,6 +2175,7 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
       return;
     }
     // Save cancel_error in case subsequent batches are started.
+    GRPC_ERROR_UNREF(cancelled_from_surface_);
     cancelled_from_surface_ = GRPC_ERROR_REF(cancel_error);
     // Cancel retry timer.
     if (retry_timer_pending_) {
