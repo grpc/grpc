@@ -13,9 +13,7 @@
 # limitations under the License.
 
 # Docker file for building gRPC manylinux Python artifacts.
-# Updated: 2021-08-27
 
-# Use a tagged version to use Python 3.10
 FROM quay.io/pypa/manylinux2014_x86_64:2021-08-26-12e5da0
 
 # manylinux_2_17 is the preferred alias of manylinux2014
