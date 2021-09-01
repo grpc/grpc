@@ -238,7 +238,7 @@ class PHP7DistribTest(object):
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
-        self.labels = ['distribtest', 'php7', platform, arch]
+        self.labels = ['distribtest', 'php', 'php7', platform, arch]
         if docker_suffix:
             self.labels.append(docker_suffix)
 
@@ -344,11 +344,10 @@ def targets():
         CSharpDistribTest('windows', 'x86'),
         CSharpDistribTest('windows', 'x64'),
         # Python
-        PythonDistribTest('linux', 'x64', 'jessie'),
-        PythonDistribTest('linux', 'x86', 'jessie'),
-        PythonDistribTest('linux', 'x64', 'centos6'),
+        PythonDistribTest('linux', 'x64', 'stretch'),
+        PythonDistribTest('linux', 'x86', 'stretch'),
         PythonDistribTest('linux', 'x64', 'centos7'),
-        PythonDistribTest('linux', 'x64', 'fedora23'),
+        PythonDistribTest('linux', 'x64', 'fedora34'),
         PythonDistribTest('linux', 'x64', 'opensuse'),
         PythonDistribTest('linux', 'x64', 'arch'),
         PythonDistribTest('linux', 'x64', 'ubuntu1604'),

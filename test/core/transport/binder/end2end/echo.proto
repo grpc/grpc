@@ -1,0 +1,38 @@
+// Copyright 2021 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// A simple RPC service that echos what the client passes in. The request and
+// the response simply contains the text represented in a string.
+//
+// This service is for end-to-end testing with fake binder tunnels.
+syntax = "proto3";
+
+// TODO(waynetu): This can be replaced by EchoTestService in
+// src/proto/grpc/testing/echo.proto
+package grpc_binder.end2end_testing;
+
+message EchoRequest {
+  string text = 1;
+}
+
+message EchoResponse {
+  string text = 1;
+}
+
+service EchoService {
+  rpc EchoUnaryCall(EchoRequest) returns (EchoResponse);
+  rpc EchoServerStreamingCall(EchoRequest) returns (stream EchoResponse);
+  rpc EchoClientStreamingCall(stream EchoRequest) returns (EchoResponse);
+  rpc EchoBiDirStreamingCall(stream EchoRequest) returns (stream EchoResponse);
+}

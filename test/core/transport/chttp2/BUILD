@@ -83,6 +83,22 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "flow_control_test",
+    size = "large",
+    srcs = ["flow_control_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "hpack_encoder_test",
     srcs = ["hpack_encoder_test.cc"],
     language = "C++",
@@ -192,5 +208,31 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "popularity_count_test",
+    srcs = ["popularity_count_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr_platform",
+        "//:popularity_count",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "hpack_encoder_index_test",
+    srcs = ["hpack_encoder_index_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr_platform",
+        "//:hpack_encoder_index",
+        "//test/core/util:grpc_suppressions",
     ],
 )

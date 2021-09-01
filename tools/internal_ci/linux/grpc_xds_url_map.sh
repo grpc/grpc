@@ -18,8 +18,8 @@ set -ex -o igncr || set -ex
 # Constants
 readonly GITHUB_REPOSITORY_NAME="grpc"
 # GKE Cluster
-readonly GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
-readonly GKE_CLUSTER_ZONE="us-central1-a"
+readonly GKE_CLUSTER_NAME="interop-test-psm-basic"
+readonly GKE_CLUSTER_ZONE="us-central1-c"
 ## xDS test client Docker images
 readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"

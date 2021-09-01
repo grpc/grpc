@@ -108,7 +108,8 @@ class FileWatcherCertificateProvider final
   // Read the root certificates from files and update the distributor.
   absl::optional<std::string> ReadRootCertificatesFromFile(
       const std::string& root_cert_full_path);
-  // Read the root certificates from files and update the distributor.
+  // Read the private key and the certificate chain from files and update the
+  // distributor.
   absl::optional<PemKeyCertPairList> ReadIdentityKeyCertPairFromFiles(
       const std::string& private_key_path,
       const std::string& identity_certificate_path);
@@ -127,11 +128,11 @@ class FileWatcherCertificateProvider final
   grpc_core::Mutex mu_;
   // The most-recent credential data. It will be empty if the most recent read
   // attempt failed.
-  std::string root_certificate_;
-  grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
+  std::string root_certificate_ ABSL_GUARDED_BY(mu_);
+  grpc_core::PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
-  std::map<std::string, WatcherInfo> watcher_info_;
+  std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);
 };
 
 //  Checks if the private key matches the certificate's public key.

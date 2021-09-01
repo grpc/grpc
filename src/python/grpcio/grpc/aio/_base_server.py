@@ -14,12 +14,13 @@
 """Abstract base classes for server-side classes."""
 
 import abc
-from typing import Generic, Mapping, Optional, Iterable, Sequence
+from typing import Generic, Iterable, Mapping, Optional, Sequence
 
 import grpc
 
-from ._typing import RequestType, ResponseType
 from ._metadata import Metadata
+from ._typing import RequestType
+from ._typing import ResponseType
 
 
 class Server(abc.ABC):
@@ -205,7 +206,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     def invocation_metadata(self) -> Optional[Metadata]:
-        """Accesses the metadata from the sent by the client.
+        """Accesses the metadata sent by the client.
 
         Returns:
           The invocation :term:`metadata`.

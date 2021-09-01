@@ -72,6 +72,7 @@ class _Plugin(object):
 
         try:
             import contextvars  # pylint: disable=wrong-import-position
+
             # The plugin may be invoked on a thread created by Core, which will not
             # have the context propagated. This context is stored and installed in
             # the thread invoking the plugin.

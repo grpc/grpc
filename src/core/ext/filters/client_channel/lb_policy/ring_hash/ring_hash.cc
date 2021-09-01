@@ -380,18 +380,12 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
 }
 
 RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
-  PickResult result;
-  // Initialize to PICK_FAILED.
-  result.type = PickResult::PICK_FAILED;
   auto hash =
       args.call_state->ExperimentalGetCallAttribute(kRequestRingHashAttribute);
   uint64_t h;
   if (!absl::SimpleAtoi(hash, &h)) {
-    result.error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("xds ring hash value is not a number").c_str()),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
-    return result;
+    return PickResult::Fail(
+        absl::InternalError("xds ring hash value is not a number"));
   }
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
   // (ketama_get_server) NOTE: The algorithm depends on using signed integers
@@ -431,15 +425,12 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       };
   switch (ring_[first_index].connectivity_state) {
     case GRPC_CHANNEL_READY:
-      result.type = PickResult::PICK_COMPLETE;
-      result.subchannel = ring_[first_index].subchannel;
-      return result;
+      return PickResult::Complete(ring_[first_index].subchannel);
     case GRPC_CHANNEL_IDLE:
       ScheduleSubchannelConnectionAttempt(ring_[first_index].subchannel);
-      // fallthrough
+      ABSL_FALLTHROUGH_INTENDED;
     case GRPC_CHANNEL_CONNECTING:
-      result.type = PickResult::PICK_QUEUE;
-      return result;
+      return PickResult::Queue();
     default:  // GRPC_CHANNEL_TRANSIENT_FAILURE
       break;
   }
@@ -455,18 +446,15 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       continue;
     }
     if (entry.connectivity_state == GRPC_CHANNEL_READY) {
-      result.type = PickResult::PICK_COMPLETE;
-      result.subchannel = entry.subchannel;
-      return result;
+      return PickResult::Complete(entry.subchannel);
     }
     if (!found_second_subchannel) {
       switch (entry.connectivity_state) {
         case GRPC_CHANNEL_IDLE:
           ScheduleSubchannelConnectionAttempt(entry.subchannel);
-          // fallthrough
+          ABSL_FALLTHROUGH_INTENDED;
         case GRPC_CHANNEL_CONNECTING:
-          result.type = PickResult::PICK_QUEUE;
-          return result;
+          return PickResult::Queue();
         default:
           break;
       }
@@ -483,13 +471,8 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       }
     }
   }
-  result.error =
-      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                             absl::StrCat("xds ring hash found a subchannel "
-                                          "that is in TRANSIENT_FAILURE state")
-                                 .c_str()),
-                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
-  return result;
+  return PickResult::Fail(absl::UnavailableError(
+      "xds ring hash found a subchannel that is in TRANSIENT_FAILURE state"));
 }
 
 //
@@ -580,13 +563,11 @@ bool RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
                                   this));
     return false;
   }
-  grpc_error* error =
-      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                             "connections to backend failing or idle"),
-                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+  absl::Status status =
+      absl::UnavailableError("connections to backend failing or idle");
   p->channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
-      absl::make_unique<TransientFailurePicker>(error));
+      GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+      absl::make_unique<TransientFailurePicker>(status));
   return true;
 }
 
@@ -724,12 +705,10 @@ void RingHash::UpdateLocked(UpdateArgs args) {
       this, &grpc_lb_ring_hash_trace, std::move(addresses), *args.args);
   if (subchannel_list_->num_subchannels() == 0) {
     // If the new list is empty, immediately transition to TRANSIENT_FAILURE.
-    grpc_error* error =
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+    absl::Status status = absl::UnavailableError("Empty update");
     channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
-        absl::make_unique<TransientFailurePicker>(error));
+        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+        absl::make_unique<TransientFailurePicker>(status));
   } else {
     // Start watching the new list.
     subchannel_list_->StartWatchingLocked();

@@ -275,10 +275,15 @@ class PHPArtifact:
         return []
 
     def build_jobspec(self):
-        return create_docker_jobspec(
-            self.name,
-            'tools/dockerfile/test/php73_zts_stretch_{}'.format(self.arch),
-            'tools/run_tests/artifacts/build_artifact_php.sh')
+        if self.platform == 'linux':
+            return create_docker_jobspec(
+                self.name,
+                'tools/dockerfile/test/php73_zts_stretch_{}'.format(self.arch),
+                'tools/run_tests/artifacts/build_artifact_php.sh')
+        else:
+            return create_jobspec(
+                self.name, ['tools/run_tests/artifacts/build_artifact_php.sh'],
+                use_workspace=True)
 
 
 class ProtocArtifact:
@@ -358,15 +363,11 @@ def targets():
         PythonArtifact('manylinux2014', 'x86', 'cp37-cp37m'),
         PythonArtifact('manylinux2014', 'x86', 'cp38-cp38'),
         PythonArtifact('manylinux2014', 'x86', 'cp39-cp39'),
-        PythonArtifact('manylinux2010', 'x64', 'cp27-cp27m'),
-        PythonArtifact('manylinux2010', 'x64', 'cp27-cp27mu'),
         PythonArtifact('manylinux2010', 'x64', 'cp35-cp35m'),
         PythonArtifact('manylinux2010', 'x64', 'cp36-cp36m'),
         PythonArtifact('manylinux2010', 'x64', 'cp37-cp37m'),
         PythonArtifact('manylinux2010', 'x64', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x64', 'cp39-cp39'),
-        PythonArtifact('manylinux2010', 'x86', 'cp27-cp27m'),
-        PythonArtifact('manylinux2010', 'x86', 'cp27-cp27mu'),
         PythonArtifact('manylinux2010', 'x86', 'cp35-cp35m'),
         PythonArtifact('manylinux2010', 'x86', 'cp36-cp36m'),
         PythonArtifact('manylinux2010', 'x86', 'cp37-cp37m'),
@@ -380,19 +381,16 @@ def targets():
         PythonArtifact('linux_extra', 'armv7', 'cp37-cp37m'),
         PythonArtifact('linux_extra', 'armv7', 'cp38-cp38'),
         PythonArtifact('linux_extra', 'armv7', 'cp39-cp39'),
-        PythonArtifact('macos', 'x64', 'python2.7'),
         PythonArtifact('macos', 'x64', 'python3.5'),
         PythonArtifact('macos', 'x64', 'python3.6'),
         PythonArtifact('macos', 'x64', 'python3.7'),
         PythonArtifact('macos', 'x64', 'python3.8'),
         PythonArtifact('macos', 'x64', 'python3.9'),
-        PythonArtifact('windows', 'x86', 'Python27_32bit'),
         PythonArtifact('windows', 'x86', 'Python35_32bit'),
         PythonArtifact('windows', 'x86', 'Python36_32bit'),
         PythonArtifact('windows', 'x86', 'Python37_32bit'),
         PythonArtifact('windows', 'x86', 'Python38_32bit'),
         PythonArtifact('windows', 'x86', 'Python39_32bit'),
-        PythonArtifact('windows', 'x64', 'Python27'),
         PythonArtifact('windows', 'x64', 'Python35'),
         PythonArtifact('windows', 'x64', 'Python36'),
         PythonArtifact('windows', 'x64', 'Python37'),
@@ -400,5 +398,6 @@ def targets():
         PythonArtifact('windows', 'x64', 'Python39'),
         RubyArtifact('linux', 'x64'),
         RubyArtifact('macos', 'x64'),
-        PHPArtifact('linux', 'x64')
+        PHPArtifact('linux', 'x64'),
+        PHPArtifact('macos', 'x64')
     ]

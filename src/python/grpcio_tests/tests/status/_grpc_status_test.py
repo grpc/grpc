@@ -11,7 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests of grpc_status."""
+"""Tests of grpc_status.
+
+isort:skip_file
+"""
 
 # NOTE(lidiz) This module only exists in Bazel BUILD file, for more details
 # please refer to comments in the "bazel_namespace_package_hack" module.

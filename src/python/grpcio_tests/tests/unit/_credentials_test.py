@@ -13,11 +13,11 @@
 # limitations under the License.
 """Tests of credentials."""
 
-import unittest
 import logging
-import six
+import unittest
 
 import grpc
+import six
 
 
 class CredentialsTest(unittest.TestCase):

@@ -133,7 +133,7 @@ class ClientChannel {
   void RemoveConnectivityWatcher(
       AsyncConnectivityStateWatcherInterface* watcher);
 
-  RefCountedPtr<LoadBalancedCall> CreateLoadBalancedCall(
+  OrphanablePtr<LoadBalancedCall> CreateLoadBalancedCall(
       const grpc_call_element_args& args, grpc_polling_entity* pollent,
       grpc_closure* on_call_destruction_complete,
       ConfigSelector::CallDispatchController* call_dispatch_controller,
@@ -183,7 +183,7 @@ class ClientChannel {
     grpc_connectivity_state* state_;
     grpc_closure* on_complete_;
     grpc_closure* watcher_timer_init_;
-    Atomic<bool> done_{false};
+    std::atomic<bool> done_{false};
   };
 
   struct ResolverQueuedCall {
@@ -209,7 +209,7 @@ class ClientChannel {
 
   // Note: Does NOT return a new ref.
   grpc_error_handle disconnect_error() const {
-    return disconnect_error_.Load(MemoryOrder::ACQUIRE);
+    return disconnect_error_.load(std::memory_order_acquire);
   }
 
   // Note: All methods with "Locked" suffix must be invoked from within
@@ -276,7 +276,6 @@ class ClientChannel {
   // Fields set at construction and never modified.
   //
   const bool deadline_checking_enabled_;
-  const bool enable_retries_;
   grpc_channel_stack* owning_stack_;
   ClientChannelFactory* client_channel_factory_;
   const grpc_channel_args* channel_args_;
@@ -349,7 +348,7 @@ class ClientChannel {
   // Fields accessed from both data plane mutex and control plane
   // work_serializer.
   //
-  Atomic<grpc_error_handle> disconnect_error_;
+  std::atomic<grpc_error_handle> disconnect_error_{GRPC_ERROR_NONE};
 
   //
   // Fields guarded by a mutex, since they need to be accessed
@@ -372,16 +371,17 @@ class ClientChannel {
 // ClientChannel::LoadBalancedCall
 //
 
-// TODO(roth): Consider whether this actually needs to be RefCounted<>.
-// Ideally, it should be single-owner, or at least InternallyRefCounted<>.
+// TODO(roth): As part of simplifying cancellation in the filter stack,
+// this should no longer need to be ref-counted.
 class ClientChannel::LoadBalancedCall
-    : public RefCounted<LoadBalancedCall, PolymorphicRefCount, kUnrefCallDtor> {
+    : public InternallyRefCounted<LoadBalancedCall, kUnrefCallDtor> {
  public:
   // If on_call_destruction_complete is non-null, then it will be
   // invoked once the LoadBalancedCall is completely destroyed.
-  // If it is null, then the caller is responsible for calling
-  // set_on_call_destruction_complete() before the LoadBalancedCall is
-  // destroyed.
+  // If it is null, then the caller is responsible for checking whether
+  // the LB call has a subchannel call and ensuring that the
+  // on_call_destruction_complete closure passed down from the surface
+  // is not invoked until after the subchannel call stack is destroyed.
   LoadBalancedCall(
       ClientChannel* chand, const grpc_call_element_args& args,
       grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
@@ -389,12 +389,7 @@ class ClientChannel::LoadBalancedCall
       bool is_transparent_retry);
   ~LoadBalancedCall() override;
 
-  // Callers must call this before unreffing if they did not set the
-  // closure via the ctor.
-  void set_on_call_destruction_complete(
-      grpc_closure* on_call_destruction_complete) {
-    on_call_destruction_complete_ = on_call_destruction_complete;
-  }
+  void Orphan() override;
 
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 
@@ -408,6 +403,10 @@ class ClientChannel::LoadBalancedCall
   // Schedules a callback to process the completed pick.  The callback
   // will not run until after this method returns.
   void AsyncPickDone(grpc_error_handle error);
+
+  RefCountedPtr<SubchannelCall> subchannel_call() const {
+    return subchannel_call_;
+  }
 
  private:
   class LbQueuedCallCanceller;
@@ -495,7 +494,7 @@ class ClientChannel::LoadBalancedCall
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
-  std::function<void(grpc_error_handle, LoadBalancingPolicy::MetadataInterface*,
+  std::function<void(absl::Status, LoadBalancingPolicy::MetadataInterface*,
                      LoadBalancingPolicy::CallState*)>
       lb_recv_trailing_metadata_ready_;
 
@@ -508,7 +507,6 @@ class ClientChannel::LoadBalancedCall
 
   // For intercepting recv_initial_metadata_ready.
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
-  uint32_t* recv_initial_metadata_flags_ = nullptr;
   grpc_closure recv_initial_metadata_ready_;
   grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
 

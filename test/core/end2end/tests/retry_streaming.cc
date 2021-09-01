@@ -138,8 +138,6 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
 
   grpc_arg args[] = {
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1),
-      grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
           1024 * 8),
       grpc_channel_arg_integer_create(

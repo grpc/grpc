@@ -13,13 +13,12 @@
 # limitations under the License.
 """Tests of grpc_channelz.v1.channelz."""
 
-import unittest
-import logging
 import asyncio
+import logging
+import unittest
 
 import grpc
 from grpc.experimental import aio
-
 from grpc_channelz.v1 import channelz
 from grpc_channelz.v1 import channelz_pb2
 from grpc_channelz.v1 import channelz_pb2_grpc

@@ -1108,9 +1108,9 @@ InteropClient::PerformOneSoakTestIteration(
   if (!s.ok()) {
     return std::make_tuple(false, elapsed_ms, context.debug_error_string());
   } else if (elapsed_ms > max_acceptable_per_iteration_latency_ms) {
-    std::string debug_string =
-        absl::StrFormat("%d ms exceeds max acceptable latency: %d ms.",
-                        elapsed_ms, max_acceptable_per_iteration_latency_ms);
+    std::string debug_string = absl::StrFormat(
+        "%d ms exceeds max acceptable latency: %d ms, peer: %s", elapsed_ms,
+        max_acceptable_per_iteration_latency_ms, context.peer());
     return std::make_tuple(false, elapsed_ms, std::move(debug_string));
   } else {
     return std::make_tuple(true, elapsed_ms, "");
