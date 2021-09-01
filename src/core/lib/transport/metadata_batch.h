@@ -196,6 +196,13 @@ void grpc_metadata_batch_assert_ok(grpc_metadata_batch* batch);
 
 /// Copies \a src to \a dst.  \a storage must point to an array of
 /// \a grpc_linked_mdelem structs of at least the same size as \a src.
+///
+/// For each mdelem in \a src, if the mdelem is of storage types
+/// GRPC_MDELEM_STORAGE_INTERNED or GRPC_MDELEM_STORAGE_ALLOCATED,
+/// refs the original mdelem for the copy.  Otherwise, makes a new
+/// mdelem that will hold its own refs to the key and value slices.
+///
+/// Currently used only in the retry code.
 void grpc_metadata_batch_copy(grpc_metadata_batch* src,
                               grpc_metadata_batch* dst,
                               grpc_linked_mdelem* storage);
