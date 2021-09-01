@@ -159,6 +159,8 @@ extern void retry_recv_message(grpc_end2end_test_config config);
 extern void retry_recv_message_pre_init(void);
 extern void retry_recv_trailing_metadata_error(grpc_end2end_test_config config);
 extern void retry_recv_trailing_metadata_error_pre_init(void);
+extern void retry_send_initial_metadata_refs(grpc_end2end_test_config config);
+extern void retry_send_initial_metadata_refs_pre_init(void);
 extern void retry_send_op_fails(grpc_end2end_test_config config);
 extern void retry_send_op_fails_pre_init(void);
 extern void retry_server_pushback_delay(grpc_end2end_test_config config);
@@ -278,6 +280,7 @@ void grpc_end2end_tests_pre_init(void) {
   retry_recv_initial_metadata_pre_init();
   retry_recv_message_pre_init();
   retry_recv_trailing_metadata_error_pre_init();
+  retry_send_initial_metadata_refs_pre_init();
   retry_send_op_fails_pre_init();
   retry_server_pushback_delay_pre_init();
   retry_server_pushback_disabled_pre_init();
@@ -378,6 +381,7 @@ void grpc_end2end_tests(int argc, char **argv,
     retry_recv_initial_metadata(config);
     retry_recv_message(config);
     retry_recv_trailing_metadata_error(config);
+    retry_send_initial_metadata_refs(config);
     retry_send_op_fails(config);
     retry_server_pushback_delay(config);
     retry_server_pushback_disabled(config);
@@ -665,6 +669,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("retry_recv_trailing_metadata_error", argv[i])) {
       retry_recv_trailing_metadata_error(config);
+      continue;
+    }
+    if (0 == strcmp("retry_send_initial_metadata_refs", argv[i])) {
+      retry_send_initial_metadata_refs(config);
       continue;
     }
     if (0 == strcmp("retry_send_op_fails", argv[i])) {
