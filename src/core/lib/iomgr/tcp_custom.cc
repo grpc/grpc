@@ -253,8 +253,7 @@ static void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* write_slices,
   tcp->write_slices = write_slices;
   GPR_ASSERT(tcp->write_slices->count <= UINT_MAX);
   if (tcp->write_slices->count == 0) {
-    // No slices means we don't have to do anything,
-    // and libuv doesn't like empty writes
+    // No slices means we don't have to do anything
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
     return;
   }

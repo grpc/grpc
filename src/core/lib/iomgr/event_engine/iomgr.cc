@@ -19,7 +19,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/event_engine/iomgr.h"
-#include "src/core/lib/iomgr/event_engine/promise.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -51,12 +50,6 @@ void iomgr_platform_init(void) { GPR_ASSERT(g_event_engine != nullptr); }
 void iomgr_platform_flush(void) {}
 
 void iomgr_platform_shutdown(void) {
-  Promise<absl::Status> shutdown_status_promise;
-  g_event_engine->Shutdown([&shutdown_status_promise](absl::Status status) {
-    shutdown_status_promise.Set(std::move(status));
-  });
-  auto shutdown_status = shutdown_status_promise.Get();
-  GPR_ASSERT(shutdown_status.ok());
   delete g_event_engine;
   g_event_engine = nullptr;
 }

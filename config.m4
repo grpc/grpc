@@ -78,12 +78,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/resolver.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_event_engine.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc \
@@ -445,7 +443,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/endpoint_cfstream.cc \
     src/core/lib/iomgr/endpoint_pair_event_engine.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \
-    src/core/lib/iomgr/endpoint_pair_uv.cc \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
     src/core/lib/iomgr/error.cc \
     src/core/lib/iomgr/error_cfstream.cc \
@@ -481,7 +478,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
     src/core/lib/iomgr/iomgr_posix_cfstream.cc \
-    src/core/lib/iomgr/iomgr_uv.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
     src/core/lib/iomgr/load_file.cc \
@@ -492,7 +488,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/pollset_set.cc \
     src/core/lib/iomgr/pollset_set_custom.cc \
     src/core/lib/iomgr/pollset_set_windows.cc \
-    src/core/lib/iomgr/pollset_uv.cc \
     src/core/lib/iomgr/pollset_windows.cc \
     src/core/lib/iomgr/resolve_address.cc \
     src/core/lib/iomgr/resolve_address_custom.cc \
@@ -504,7 +499,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/socket_utils_common_posix.cc \
     src/core/lib/iomgr/socket_utils_linux.cc \
     src/core/lib/iomgr/socket_utils_posix.cc \
-    src/core/lib/iomgr/socket_utils_uv.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
     src/core/lib/iomgr/tcp_client.cc \
@@ -521,7 +515,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
     src/core/lib/iomgr/tcp_server_windows.cc \
-    src/core/lib/iomgr/tcp_uv.cc \
     src/core/lib/iomgr/tcp_windows.cc \
     src/core/lib/iomgr/time_averaged_stats.cc \
     src/core/lib/iomgr/timer.cc \
@@ -529,7 +522,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/timer_generic.cc \
     src/core/lib/iomgr/timer_heap.cc \
     src/core/lib/iomgr/timer_manager.cc \
-    src/core/lib/iomgr/timer_uv.cc \
     src/core/lib/iomgr/udp_server.cc \
     src/core/lib/iomgr/unix_sockets_posix.cc \
     src/core/lib/iomgr/unix_sockets_posix_noop.cc \

@@ -14,10 +14,6 @@
 // limitations under the License.
 //
 
-// With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
-// using that endpoint. Because of various transitive includes in uv.h,
-// including windows.h on Windows, uv.h must be included before other system
-// headers. Therefore, sockaddr.h must always be included first
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"

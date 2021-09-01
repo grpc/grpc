@@ -464,7 +464,3 @@ grpc_tcp_server_vtable custom_tcp_server_vtable = {
     tcp_server_port_fd_count, tcp_server_port_fd,
     tcp_server_ref,           tcp_server_shutdown_starting_add,
     tcp_server_unref,         tcp_server_shutdown_listeners};
-
-#ifdef GRPC_UV_TEST
-grpc_tcp_server_vtable* default_tcp_server_vtable = &custom_tcp_server_vtable;
-#endif
