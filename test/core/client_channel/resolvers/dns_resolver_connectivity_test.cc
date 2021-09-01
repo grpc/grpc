@@ -57,8 +57,8 @@ static void my_resolve_address(const char* addr, const char* /*default_port*/,
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
 }
 
-static grpc_address_resolver_vtable test_resolver = {my_resolve_address,
-                                                     nullptr};
+static grpc_address_resolver_vtable test_resolver = {
+    my_resolve_address, nullptr, nullptr, nullptr, nullptr, nullptr};
 
 static grpc_ares_request* my_dns_lookup_ares_locked(
     const char* /*dns_server*/, const char* addr, const char* /*default_port*/,

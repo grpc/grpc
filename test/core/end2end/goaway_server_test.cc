@@ -101,7 +101,12 @@ static grpc_error_handle my_blocking_resolve_address(
 }
 
 static grpc_address_resolver_vtable test_resolver = {
-    my_resolve_address, my_blocking_resolve_address};
+    my_resolve_address,
+    my_blocking_resolve_address,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr};
 
 static grpc_ares_request* my_dns_lookup_ares_locked(
     const char* dns_server, const char* addr, const char* default_port,

@@ -45,6 +45,10 @@ struct grpc_custom_resolver {
 
 static grpc_custom_resolver_vtable* resolve_address_vtable = nullptr;
 
+namespace {
+using ::grpc_event_engine::experimental::EventEngine;
+}  // namespace
+
 static int retry_named_port_failure(grpc_custom_resolver* r,
                                     grpc_resolved_addresses** res) {
   // This loop is copied from resolve_address_posix.c
@@ -67,23 +71,6 @@ static int retry_named_port_failure(grpc_custom_resolver* r,
     }
   }
   return 0;
-}
-
-void grpc_custom_resolve_callback(grpc_custom_resolver* r,
-                                  grpc_resolved_addresses* result,
-                                  grpc_error_handle error) {
-  GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-  grpc_core::ExecCtx exec_ctx;
-  if (error == GRPC_ERROR_NONE) {
-    *r->addresses = result;
-  } else if (retry_named_port_failure(r, nullptr)) {
-    return;
-  }
-  if (r->on_done) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
-  }
-  delete r;
 }
 
 static grpc_error_handle try_split_host_port(const char* name,
@@ -160,8 +147,63 @@ static void resolve_address_impl(const char* name, const char* default_port,
   resolve_address_vtable->resolve_async(r, r->host.c_str(), r->port.c_str());
 }
 
+static EventEngine::DNSResolver::LookupTaskHandle lookup_hostname(
+    grpc_event_engine::experimental::EventEngine::DNSResolver::
+        LookupHostnameCallback on_resolved,
+    absl::string_view address, absl::string_view default_port,
+    absl::Time deadline, grpc_pollset_set* /*interested_parties*/) {
+  (void)on_resolved;
+  (void)address;
+  (void)default_port;
+  (void)deadline;
+  abort();
+}
+
+static EventEngine::DNSResolver::LookupTaskHandle lookup_srv_record(
+    grpc_closure* on_resolved, absl::string_view name, absl::Time deadline,
+    grpc_pollset_set* /*interested_parties*/) {
+  (void)on_resolved;
+  (void)name;
+  (void)deadline;
+  abort();
+}
+
+static EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
+    grpc_closure* on_resolved, absl::string_view name, absl::Time deadline,
+    grpc_pollset_set* /*interested_parties*/) {
+  (void)on_resolved;
+  (void)name;
+  (void)deadline;
+  abort();
+}
+
+static void try_cancel_lookup(
+    EventEngine::DNSResolver::LookupTaskHandle handle) {
+  (void)handle;
+  abort();
+}
+
 static grpc_address_resolver_vtable custom_resolver_vtable = {
-    resolve_address_impl, blocking_resolve_address_impl};
+    resolve_address_impl, blocking_resolve_address_impl,
+    lookup_hostname,      lookup_srv_record,
+    lookup_txt_record,    try_cancel_lookup};
+
+void grpc_custom_resolve_callback(grpc_custom_resolver* r,
+                                  grpc_resolved_addresses* result,
+                                  grpc_error_handle error) {
+  GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
+  if (error == GRPC_ERROR_NONE) {
+    *r->addresses = result;
+  } else if (retry_named_port_failure(r, nullptr)) {
+    return;
+  }
+  if (r->on_done) {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
+  }
+  delete r;
+}
 
 void grpc_custom_resolver_init(grpc_custom_resolver_vtable* impl) {
   resolve_address_vtable = impl;

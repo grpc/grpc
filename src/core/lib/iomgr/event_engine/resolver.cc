@@ -102,9 +102,44 @@ grpc_error* blocking_resolve_address(const char* name, const char* default_port,
   return evt.Get();
 }
 
+EventEngine::DNSResolver::LookupTaskHandle lookup_hostname(
+    EventEngine::DNSResolver::LookupHostnameCallback on_resolved,
+    absl::string_view address, absl::string_view default_port,
+    absl::Time deadline, grpc_pollset_set* /*interested_parties*/) {
+  (void)on_resolved;
+  (void)address;
+  (void)default_port;
+  (void)deadline;
+  abort();
+}
+
+EventEngine::DNSResolver::LookupTaskHandle lookup_srv_record(
+    grpc_closure* on_resolved, absl::string_view name, absl::Time deadline,
+    grpc_pollset_set* /*interested_parties*/) {
+  (void)on_resolved;
+  (void)name;
+  (void)deadline;
+  abort();
+}
+
+EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
+    grpc_closure* on_resolved, absl::string_view name, absl::Time deadline,
+    grpc_pollset_set* /*interested_parties*/) {
+  (void)on_resolved;
+  (void)name;
+  (void)deadline;
+  abort();
+}
+
+void try_cancel_lookup(EventEngine::DNSResolver::LookupTaskHandle handle) {
+  (void)handle;
+  abort();
+}
+
 }  // namespace
 
 grpc_address_resolver_vtable grpc_event_engine_resolver_vtable{
-    resolve_address, blocking_resolve_address};
+    resolve_address,   blocking_resolve_address, lookup_hostname,
+    lookup_srv_record, lookup_txt_record,        try_cancel_lookup};
 
 #endif  // GRPC_USE_EVENT_ENGINE

@@ -25,6 +25,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#include <grpc/event_engine/event_engine.h>
+
 #ifdef GRPC_WINSOCK_SOCKET
 #include <ws2tcpip.h>
 #endif
@@ -59,6 +61,20 @@ typedef struct grpc_address_resolver_vtable {
   grpc_error_handle (*blocking_resolve_address)(
       const char* name, const char* default_port,
       grpc_resolved_addresses** addresses);
+  grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle (
+      *lookup_hostname)(grpc_event_engine::experimental::EventEngine::
+                            DNSResolver::LookupHostnameCallback on_resolved,
+                        absl::string_view address,
+                        absl::string_view default_port, absl::Time deadline,
+                        grpc_pollset_set* interested_parties);
+  grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle (
+      *lookup_srv)(grpc_closure* on_resolved, absl::string_view name,
+                   absl::Time deadline, grpc_pollset_set* interested_parties);
+  grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle (
+      *lookup_txt)(grpc_closure* on_resolved, absl::string_view name,
+                   absl::Time deadline, grpc_pollset_set* interested_parties);
+  void (*try_cancel_lookup)(grpc_event_engine::experimental::EventEngine::
+                                DNSResolver::LookupTaskHandle handle);
 } grpc_address_resolver_vtable;
 
 void grpc_set_resolver_impl(grpc_address_resolver_vtable* vtable);
@@ -79,5 +95,47 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses);
 grpc_error_handle grpc_blocking_resolve_address(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses);
+
+/// Asynchronously resolve an address.
+///
+/// \a default_port may be a non-numeric named service port, and will only
+/// be used if \a address does not already contain a port component.
+///
+/// When the lookup is complete, the \a on_resolved callback will be invoked
+/// with a status indicating the success or failure of the lookup.
+grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
+grpc_dns_lookup_hostname(grpc_event_engine::experimental::EventEngine::
+                             DNSResolver::LookupHostnameCallback on_resolved,
+                         absl::string_view address,
+                         absl::string_view default_port, absl::Time deadline,
+                         grpc_pollset_set* interested_parties);
+
+/// Asynchronously perform an SRV record lookup.
+///
+/// \a on_resolve has the same meaning and expectations as \a
+/// LookupHostname's \a on_resolve callback.
+grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
+grpc_dns_lookup_srv_record(grpc_closure* on_resolved, absl::string_view name,
+                           absl::Time deadline,
+                           grpc_pollset_set* interested_parties);
+
+/// Asynchronously perform a TXT record lookup.
+///
+/// \a on_resolve has the same meaning and expectations as \a
+/// LookupHostname's \a on_resolve callback.
+grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
+grpc_dns_lookup_txt_record(grpc_closure* on_resolved, absl::string_view name,
+                           absl::Time deadline,
+                           grpc_pollset_set* interested_parties);
+
+/// Cancel an asynchronous lookup operation.
+///
+/// Note that this is a "best effort" cancellation. No guarantee is made that
+/// the lookup will be cancelled, the lookup could be in any stage. In all
+/// cases, the \a on_resolved callback will be run exactly once from either
+/// cancellation or from its activation.
+void grpc_dns_try_cancel(
+    grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
+        handle);
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H */

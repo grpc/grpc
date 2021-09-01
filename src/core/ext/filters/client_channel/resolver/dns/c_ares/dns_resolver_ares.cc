@@ -56,6 +56,10 @@
 #define GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_DNS_RECONNECT_JITTER 0.2
 
+namespace {
+using ::grpc_event_engine::experimental::EventEngine;
+}  // namespace
+
 namespace grpc_core {
 
 namespace {
@@ -458,6 +462,42 @@ class AresDnsResolverFactory : public ResolverFactory {
 
 }  // namespace grpc_core
 
+static EventEngine::DNSResolver::LookupTaskHandle lookup_hostname(
+    grpc_event_engine::experimental::EventEngine::DNSResolver::
+        LookupHostnameCallback on_resolved,
+    absl::string_view address, absl::string_view default_port,
+    absl::Time deadline, grpc_pollset_set* /*interested_parties*/) {
+  (void)on_resolved;
+  (void)address;
+  (void)default_port;
+  (void)deadline;
+  abort();
+}
+
+static EventEngine::DNSResolver::LookupTaskHandle lookup_srv_record(
+    grpc_closure* on_resolved, absl::string_view name, absl::Time deadline,
+    grpc_pollset_set* /*interested_parties*/) {
+  (void)on_resolved;
+  (void)name;
+  (void)deadline;
+  abort();
+}
+
+static EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
+    grpc_closure* on_resolved, absl::string_view name, absl::Time deadline,
+    grpc_pollset_set* /*interested_parties*/) {
+  (void)on_resolved;
+  (void)name;
+  (void)deadline;
+  abort();
+}
+
+static void try_cancel_lookup(
+    EventEngine::DNSResolver::LookupTaskHandle handle) {
+  (void)handle;
+  abort();
+}
+
 extern grpc_address_resolver_vtable* grpc_resolve_address_impl;
 static grpc_address_resolver_vtable* default_resolver;
 
@@ -469,7 +509,9 @@ static grpc_error_handle blocking_resolve_address_ares(
 }
 
 static grpc_address_resolver_vtable ares_resolver = {
-    grpc_resolve_address_ares, blocking_resolve_address_ares};
+    grpc_resolve_address_ares, blocking_resolve_address_ares,
+    lookup_hostname,           lookup_srv_record,
+    lookup_txt_record,         try_cancel_lookup};
 
 static bool should_use_ares(const char* resolver_env) {
   // TODO(lidiz): Remove the "g_custom_iomgr_enabled" flag once c-ares support

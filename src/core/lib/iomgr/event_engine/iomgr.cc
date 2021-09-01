@@ -41,7 +41,6 @@ namespace {
 
 using ::grpc_event_engine::experimental::DefaultEventEngineFactory;
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::Promise;
 
 EventEngine* g_event_engine = nullptr;
 

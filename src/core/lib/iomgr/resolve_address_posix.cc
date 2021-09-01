@@ -42,6 +42,10 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
+namespace {
+using ::grpc_event_engine::experimental::EventEngine;
+}  // namespace
+
 static grpc_error_handle posix_blocking_resolve_address(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses) {
@@ -169,6 +173,44 @@ static void posix_resolve_address(const char* name, const char* default_port,
                            grpc_core::ExecutorType::RESOLVER);
 }
 
+static EventEngine::DNSResolver::LookupTaskHandle lookup_hostname(
+    grpc_event_engine::experimental::EventEngine::DNSResolver::
+        LookupHostnameCallback on_resolved,
+    absl::string_view address, absl::string_view default_port,
+    absl::Time deadline, grpc_pollset_set* /*interested_parties*/) {
+  (void)on_resolved;
+  (void)address;
+  (void)default_port;
+  (void)deadline;
+  abort();
+}
+
+static EventEngine::DNSResolver::LookupTaskHandle lookup_srv_record(
+    grpc_closure* on_resolved, absl::string_view name, absl::Time deadline,
+    grpc_pollset_set* /*interested_parties*/) {
+  (void)on_resolved;
+  (void)name;
+  (void)deadline;
+  abort();
+}
+
+static EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
+    grpc_closure* on_resolved, absl::string_view name, absl::Time deadline,
+    grpc_pollset_set* /*interested_parties*/) {
+  (void)on_resolved;
+  (void)name;
+  (void)deadline;
+  abort();
+}
+
+static void try_cancel_lookup(
+    EventEngine::DNSResolver::LookupTaskHandle handle) {
+  (void)handle;
+  abort();
+}
+
 grpc_address_resolver_vtable grpc_posix_resolver_vtable = {
-    posix_resolve_address, posix_blocking_resolve_address};
+    posix_resolve_address, posix_blocking_resolve_address,
+    lookup_hostname,       lookup_srv_record,
+    lookup_txt_record,     try_cancel_lookup};
 #endif
