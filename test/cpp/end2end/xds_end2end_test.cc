@@ -12216,8 +12216,40 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   EXPECT_EQ(kMaxFault, num_delayed);
 }
 
-TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayBidiStream) {
-  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 3000;
+TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayOk) {
+  // kRpcTimeoutMilliseconds is 10s should never be reached.
+  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 10000;
+  const uint32_t kFixedDelaySeconds = 1;
+  const uint32_t kDelayPercentagePerHundred = 100;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create an EDS resource
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
+  delay_percentage->set_numerator(kDelayPercentagePerHundred);
+  delay_percentage->set_denominator(FractionalPercent::HUNDRED);
+  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
+  fixed_delay->set_seconds(kFixedDelaySeconds);
+  // Config fault injection via different setup
+  SetFilterConfig(http_fault);
+  ClientContext context;
+  context.set_deadline(grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
+  auto stream = stub_->BidiStream(&context);
+  stream->WritesDone();
+  auto status = stream->Finish();
+  EXPECT_TRUE(status.ok())
+      << status.error_message() << ", " << status.error_details() << ", "
+      << context.debug_error_string();
+}
+
+TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayError) {
+  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 500;
   const uint32_t kFixedDelaySeconds = 100;
   const uint32_t kDelayPercentagePerHundred = 100;
   SetNextResolution({});
@@ -12237,26 +12269,14 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayBidiStream) {
   fixed_delay->set_seconds(kFixedDelaySeconds);
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
-  // RouteConfiguration route_config = default_route_config_;
-  // auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  // route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  // auto* header_matcher1 = route1->mutable_match()->add_headers();
-  // header_matcher1->set_name("header1");
-  // header_matcher1->set_exact_match("POST,PUT,GET");
-  // Send kNumRpcs RPCs and count the delays.
   ClientContext context;
-  EchoRequest request;
-  EchoResponse response;
-  request.set_message("Hello");
-  context->set_deadline(grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
-  stream = stub_->BidiStream(&context);
-  EXPECT_TRUE(stream->Write(request));
-  stream->Read(&response);
-  EXPECT_EQ(request.message(), response.message());
-  auto status = streaming_rpcs[i].stream->Finish();
-    EXPECT_TRUE(status.ok())
-        << status.error_message() << ", " << status.error_details() << ", "
-        << streaming_rpcs[i].context.debug_error_string();
+  context.set_deadline(grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
+  auto stream = stub_->BidiStream(&context);
+  stream->WritesDone();
+  auto status = stream->Finish();
+  EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code())
+      << status.error_message() << ", " << status.error_details() << ", "
+      << context.debug_error_string();
 }
 
 class BootstrapSourceTest : public XdsEnd2endTest {
