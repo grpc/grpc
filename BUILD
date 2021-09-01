@@ -3478,6 +3478,7 @@ grpc_cc_library(
     srcs = [
         "src/cpp/client/channel_test_peer.cc",
     ],
+    testonly = True,
     external_deps = [
         "gtest",
     ],
