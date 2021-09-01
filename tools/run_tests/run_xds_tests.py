@@ -2554,6 +2554,7 @@ def create_url_map(gcp, name, backend_service, host_name):
         project=gcp.project, body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
     gcp.url_map = GcpResource(config['name'], result['targetLink'])
+    gcp.url_maps.append(gcp.url_map)
 
 
 def patch_url_map_host_rule_with_port(gcp, name, backend_service, host_name):
@@ -2592,6 +2593,7 @@ def create_target_proxy(gcp, name, validate_for_proxyless=True):
             body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
     gcp.target_proxy = GcpResource(config['name'], result['targetLink'])
+    gcp.target_proxies.append(gcp.target_proxy)
 
 
 def create_global_forwarding_rule(gcp,
@@ -2620,6 +2622,7 @@ def create_global_forwarding_rule(gcp,
                 wait_for_global_operation(gcp, result['name'])
                 gcp.global_forwarding_rule = GcpResource(
                     config['name'], result['targetLink'])
+                gcp.global_forwarding_rules.append(gcp.global_forwarding_rule)
                 gcp.service_port = port
                 return
             except googleapiclient.errors.HttpError as http_error:
@@ -2671,7 +2674,7 @@ def get_url_map(gcp, url_map_name):
     except Exception as e:
         gcp.errors.append(e)
         gcp.url_map = GcpResource(url_map_name, None)
-
+    gcp.url_maps.append(gcp.url_map)
 
 def get_target_proxy(gcp, target_proxy_name):
     try:
@@ -2687,6 +2690,7 @@ def get_target_proxy(gcp, target_proxy_name):
     except Exception as e:
         gcp.errors.append(e)
         gcp.target_proxy = GcpResource(target_proxy_name, None)
+    gcp.target_proxies.append(gcp.target_proxy)
 
 
 def get_global_forwarding_rule(gcp, forwarding_rule_name):
@@ -2698,6 +2702,7 @@ def get_global_forwarding_rule(gcp, forwarding_rule_name):
     except Exception as e:
         gcp.errors.append(e)
         gcp.global_forwarding_rule = GcpResource(forwarding_rule_name, None)
+    gcp.global_forwarding_rules.append(gcp.global_forwarding_rule)
 
 
 def get_instance_template(gcp, template_name):
@@ -2741,6 +2746,12 @@ def delete_global_forwarding_rule(gcp, name=None):
         logger.info('Delete failed: %s', http_error)
 
 
+def delete_global_forwarding_rules(gcp):
+  for forwarding_rule in gcp.global_forwarding_rules:
+    if forwarding_rule:
+      delete_global_forwarding_rule(gcp, forwarding_rule)
+
+
 def delete_target_proxy(gcp, name=None):
     if name:
         proxy_to_delete = name
@@ -2761,6 +2772,11 @@ def delete_target_proxy(gcp, name=None):
     except googleapiclient.errors.HttpError as http_error:
         logger.info('Delete failed: %s', http_error)
 
+def delete_target_proxies(gcp):
+  for target_proxy in gcp.target_proxies:
+    if target_proxy:
+      delete_target_proxy(gcp, target_proxy)
+
 
 def delete_url_map(gcp, name=None):
     if name:
@@ -2775,6 +2791,12 @@ def delete_url_map(gcp, name=None):
         wait_for_global_operation(gcp, result['name'])
     except googleapiclient.errors.HttpError as http_error:
         logger.info('Delete failed: %s', http_error)
+
+
+def delete_url_maps(gcp):
+  for url_map in gcp.url_maps:
+    if url_map:
+      delete_url_map(url_map)
 
 
 def delete_backend_service(gcp, backend_service):
@@ -3041,12 +3063,9 @@ def get_instance_names(gcp, instance_group):
 
 
 def clean_up(gcp):
-    if gcp.global_forwarding_rule:
-        delete_global_forwarding_rule(gcp)
-    if gcp.target_proxy:
-        delete_target_proxy(gcp)
-    if gcp.url_map:
-        delete_url_map(gcp)
+    delete_global_forwarding_rules(gcp)
+    delete_target_proxies(gcp)
+    delete_url_maps(gcp)
     delete_backend_services(gcp)
     if gcp.health_check_firewall_rule:
         delete_firewall(gcp)
@@ -3085,6 +3104,9 @@ class GcpState(object):
         self.url_map = None
         self.target_proxy = None
         self.global_forwarding_rule = None
+        self.url_maps = []
+        self.target_proxies = []
+        self.global_forwarding_rules = []
         self.service_port = None
         self.instance_template = None
         self.instance_groups = []
@@ -3143,9 +3165,12 @@ try:
     extra_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-extra' + gcp_suffix
     more_extra_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-more-extra' + gcp_suffix
     url_map_name = _BASE_URL_MAP_NAME + gcp_suffix
+    url_map_name_2 = url_map_name + '2'
     service_host_name = _BASE_SERVICE_HOST + gcp_suffix
     target_proxy_name = _BASE_TARGET_PROXY_NAME + gcp_suffix
+    target_proxy_name_2 = target_proxy_name + '2'
     forwarding_rule_name = _BASE_FORWARDING_RULE_NAME + gcp_suffix
+    forwarding_rule_name_2 = forwarding_rule_name + '2'
     template_name = _BASE_TEMPLATE_NAME + gcp_suffix
     instance_group_name = _BASE_INSTANCE_GROUP_NAME + gcp_suffix
     same_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-same-zone' + gcp_suffix
@@ -3167,6 +3192,9 @@ try:
         get_url_map(gcp, url_map_name)
         get_target_proxy(gcp, target_proxy_name)
         get_global_forwarding_rule(gcp, forwarding_rule_name)
+        get_url_map(gcp, url_map_name_2)
+        get_target_proxy(gcp, target_proxy_name_2)
+        get_global_forwarding_rule(gcp, forwarding_rule_name_2)
         get_instance_template(gcp, template_name)
         instance_group = get_instance_group(gcp, args.zone, instance_group_name)
         same_zone_instance_group = get_instance_group(
