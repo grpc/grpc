@@ -113,12 +113,12 @@ TEST(PipeTest, CanFilter) {
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
       [&pipe] {
+        auto doubler = pipe.receiver.Filter(
+            [](int p) { return absl::StatusOr<int>(p * 2); });
+        auto adder = pipe.sender.Filter(
+            [](int p) { return absl::StatusOr<int>(p + 1); });
         return Seq(
-            Join(pipe.sender.Push(42), pipe.receiver.Filter([](int p) {
-              return absl::StatusOr<int>(p * 2);
-            }),
-                 pipe.sender.Filter(
-                     [](int p) { return absl::StatusOr<int>(p + 1); }),
+            Join(pipe.sender.Push(42), std::move(doubler), std::move(adder),
                  Seq(pipe.receiver.Next(),
                      [&pipe](absl::optional<int> i) {
                        auto x = std::move(pipe.receiver);
