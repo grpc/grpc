@@ -16,14 +16,23 @@
 
 #include "src/core/ext/transport/binder/client/channel_create.h"
 
-#if defined(ANDROID) || defined(__ANDROID__)
+// The interface is only defined if GPR_ANDROID is defined, because some
+// arguments requires JNI.
+// Furthermore, the interface is non-phony only when
+// GPR_SUPPORT_BINDER_TRANSPORT is true because actual implementation of binder
+// transport requires newer version of NDK API
+
+#ifdef GPR_ANDROID
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
+
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
 #include <android/binder_auto_utils.h>
 #include <android/binder_ibinder.h>
 #include <android/binder_ibinder_jni.h>
 #include <android/binder_interface_utils.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/impl/grpc_library.h>
@@ -94,4 +103,20 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
 }  // namespace experimental
 }  // namespace grpc
 
-#endif  // ANDROID
+#else  // !GPR_SUPPORT_BINDER_TRANSPORT
+
+std::shared_ptr<grpc::Channel> CreateBinderChannel(void*, jobject,
+                                                   absl::string_view,
+                                                   absl::string_view) {
+  GPR_ASSERT(0);
+  return {};
+}
+
+void BindToOnDeviceServerService(void*, jobject, absl::string_view,
+                                 absl::string_view) {
+  GPR_ASSERT(0);
+}
+
+#endif  // GPR_SUPPORT_BINDER_TRANSPORT
+
+#endif  // GPR_ANDROID
