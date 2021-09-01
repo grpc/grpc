@@ -458,7 +458,8 @@ void CallData::ResumeBatch(void* arg, grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     calld->abort_error_ = error;
     grpc_transport_stream_op_batch_finish_with_failure(
-        calld->delayed_batch_, GRPC_ERROR_REF(calld->abort_error_), calld->call_combiner_);
+        calld->delayed_batch_, GRPC_ERROR_REF(calld->abort_error_),
+        calld->call_combiner_);
     return;
   }
   // Chain to the next filter.
