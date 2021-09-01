@@ -205,6 +205,16 @@ All GRPC calls need to specify an internal ID. We will use HTTP2 stream-ids as c
 ##### Data Frames
 DATA frame boundaries have no relation to **Length-Prefixed-Message** boundaries and implementations should make no assumptions about their alignment.
 
+##### Early Server Closure
+
+If a server responds with **Trailers** before the client's END_STREAM, then the
+server should send RST_STREAM with NO_ERROR error code immediately following
+that HEADERS frame as suggested by RFC 7540 Section 8.1 to allow the stream to
+be deallocated. Similarly, when a client receives **Trailers** before the
+client's END_STREAM, then the client should send RST_STREAM with NO_ERROR error
+code to allow the stream to be deallocted. This is done on both client and
+server because the remote behavior cannot be guaranteed.
+
 ##### Errors
 
 When an application or runtime error occurs during an RPC a **Status** and **Status-Message** are delivered in **Trailers**.
@@ -229,6 +239,25 @@ CONNECT_ERROR|INTERNAL
 ENHANCE_YOUR_CALM|RESOURCE_EXHAUSTED ...with additional error detail provided by runtime to indicate that the exhausted resource is bandwidth.
 INADEQUATE_SECURITY| PERMISSION_DENIED … with additional detail indicating that permission was denied as protocol is not secure enough for call.
 
+##### Client Cancellation
+
+Client cancellation is performed by the client sending RST_STREAM with CANCEL
+error code. The RPC's deadline expiring is considered a client cancellation.
+Client implementations are entitled to fail calls with DEADLINE_EXCEEDED at any
+point after the deadline expires, even if doing so would throw away messages and
+trailers.
+
+gRPC servers track the deadline of the RPC as communicated by **Timeout**. When
+the server detects the client's deadline has expired (which implies it hasn't
+received the client's RST_STREAM yet) the server should locally cancel the RPC
+and send RST_STREAM with CANCEL error code. Since the server is separated from
+the client by a round-trip time, the client will generally not need to process
+the server's RST_STREAM. However, to deal with client-side races and minor
+clock-rate skew, when a call fails with CANCELLED status the client is
+encouraged to check whether the deadline has expired and fail the call with
+DEADLINE_EXCEEDED instead of CANCELLED. Note that the client must fully-generate
+the failure locally, without using any part of the server's failure (i.e.,
+response metadata from server must be discarded).
 
 ##### Security
 
