@@ -177,7 +177,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.19'
+    ss.dependency 'BoringSSL-GRPC', '0.0.20'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
@@ -265,13 +265,11 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc',
-                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_event_engine.cc',
-                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc',
@@ -978,7 +976,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/endpoint_pair.h',
                       'src/core/lib/iomgr/endpoint_pair_event_engine.cc',
                       'src/core/lib/iomgr/endpoint_pair_posix.cc',
-                      'src/core/lib/iomgr/endpoint_pair_uv.cc',
                       'src/core/lib/iomgr/endpoint_pair_windows.cc',
                       'src/core/lib/iomgr/error.cc',
                       'src/core/lib/iomgr/error.h',
@@ -1039,7 +1036,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/iomgr_internal.h',
                       'src/core/lib/iomgr/iomgr_posix.cc',
                       'src/core/lib/iomgr/iomgr_posix_cfstream.cc',
-                      'src/core/lib/iomgr/iomgr_uv.cc',
                       'src/core/lib/iomgr/iomgr_windows.cc',
                       'src/core/lib/iomgr/is_epollexclusive_available.cc',
                       'src/core/lib/iomgr/is_epollexclusive_available.h',
@@ -1060,8 +1056,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/pollset_set_custom.h',
                       'src/core/lib/iomgr/pollset_set_windows.cc',
                       'src/core/lib/iomgr/pollset_set_windows.h',
-                      'src/core/lib/iomgr/pollset_uv.cc',
-                      'src/core/lib/iomgr/pollset_uv.h',
                       'src/core/lib/iomgr/pollset_windows.cc',
                       'src/core/lib/iomgr/pollset_windows.h',
                       'src/core/lib/iomgr/port.h',
@@ -1075,7 +1069,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/resource_quota.cc',
                       'src/core/lib/iomgr/resource_quota.h',
                       'src/core/lib/iomgr/sockaddr.h',
-                      'src/core/lib/iomgr/sockaddr_custom.h',
                       'src/core/lib/iomgr/sockaddr_posix.h',
                       'src/core/lib/iomgr/sockaddr_windows.h',
                       'src/core/lib/iomgr/socket_factory_posix.cc',
@@ -1087,7 +1080,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/socket_utils_linux.cc',
                       'src/core/lib/iomgr/socket_utils_posix.cc',
                       'src/core/lib/iomgr/socket_utils_posix.h',
-                      'src/core/lib/iomgr/socket_utils_uv.cc',
                       'src/core/lib/iomgr/socket_utils_windows.cc',
                       'src/core/lib/iomgr/socket_windows.cc',
                       'src/core/lib/iomgr/socket_windows.h',
@@ -1112,7 +1104,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc',
                       'src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc',
                       'src/core/lib/iomgr/tcp_server_windows.cc',
-                      'src/core/lib/iomgr/tcp_uv.cc',
                       'src/core/lib/iomgr/tcp_windows.cc',
                       'src/core/lib/iomgr/tcp_windows.h',
                       'src/core/lib/iomgr/time_averaged_stats.cc',
@@ -1127,7 +1118,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/timer_heap.h',
                       'src/core/lib/iomgr/timer_manager.cc',
                       'src/core/lib/iomgr/timer_manager.h',
-                      'src/core/lib/iomgr/timer_uv.cc',
                       'src/core/lib/iomgr/udp_server.cc',
                       'src/core/lib/iomgr/udp_server.h',
                       'src/core/lib/iomgr/unix_sockets_posix.cc',
@@ -1872,7 +1862,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/pollset_set.h',
                               'src/core/lib/iomgr/pollset_set_custom.h',
                               'src/core/lib/iomgr/pollset_set_windows.h',
-                              'src/core/lib/iomgr/pollset_uv.h',
                               'src/core/lib/iomgr/pollset_windows.h',
                               'src/core/lib/iomgr/port.h',
                               'src/core/lib/iomgr/python_util.h',
@@ -1880,7 +1869,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/resolve_address_custom.h',
                               'src/core/lib/iomgr/resource_quota.h',
                               'src/core/lib/iomgr/sockaddr.h',
-                              'src/core/lib/iomgr/sockaddr_custom.h',
                               'src/core/lib/iomgr/sockaddr_posix.h',
                               'src/core/lib/iomgr/sockaddr_windows.h',
                               'src/core/lib/iomgr/socket_factory_posix.h',
@@ -2192,6 +2180,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/retry_recv_initial_metadata.cc',
                       'test/core/end2end/tests/retry_recv_message.cc',
                       'test/core/end2end/tests/retry_recv_trailing_metadata_error.cc',
+                      'test/core/end2end/tests/retry_send_initial_metadata_refs.cc',
                       'test/core/end2end/tests/retry_send_op_fails.cc',
                       'test/core/end2end/tests/retry_server_pushback_delay.cc',
                       'test/core/end2end/tests/retry_server_pushback_disabled.cc',

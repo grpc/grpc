@@ -173,7 +173,8 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             gcp_service_account=self.gcp_service_account,
             td_bootstrap_image=self.td_bootstrap_image,
             xds_server_uri=self.xds_server_uri,
-            network=self.network)
+            network=self.network,
+            enable_workload_identity=self.enable_workload_identity)
         self.test_server_alternative_runner = server_app.KubernetesServerRunner(
             self.k8s_namespace,
             deployment_name=self.server_name + '-alternative',
@@ -184,6 +185,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             td_bootstrap_image=self.td_bootstrap_image,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
+            enable_workload_identity=self.enable_workload_identity,
             reuse_namespace=True)
         self.test_server_affinity_runner = server_app.KubernetesServerRunner(
             self.k8s_namespace,
@@ -195,6 +197,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             td_bootstrap_image=self.td_bootstrap_image,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
+            enable_workload_identity=self.enable_workload_identity,
             reuse_namespace=True)
         logging.info('Strategy of GCP resources management: %s', self.strategy)
 
@@ -221,6 +224,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             xds_server_uri=self.xds_server_uri,
             network=self.network,
             debug_use_port_forwarding=self.debug_use_port_forwarding,
+            enable_workload_identity=self.enable_workload_identity,
             stats_port=self.client_port)
 
     def _pre_cleanup(self):
