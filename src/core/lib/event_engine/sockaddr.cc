@@ -16,9 +16,9 @@
 #ifdef GRPC_USE_EVENT_ENGINE
 #include <string.h>
 
-#include "grpc/event_engine/event_engine.h"
-#include "grpc/event_engine/port.h"
-#include "grpc/support/log.h"
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/port.h>
+#include <grpc/support/log.h>
 
 uint16_t grpc_htons(uint16_t hostshort) { return htons(hostshort); }
 

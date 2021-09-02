@@ -32,6 +32,8 @@
 
 #include "include/grpc++/grpc++.h"
 #include "include/grpcpp/opencensus.h"
+#include <grpc++/grpc++.h>
+#include <grpcpp/opencensus.h>
 
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"

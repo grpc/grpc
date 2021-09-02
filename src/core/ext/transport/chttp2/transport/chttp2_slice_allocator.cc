@@ -20,7 +20,7 @@
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 
-#include "grpc/event_engine/slice_allocator.h"
+#include <grpc/event_engine/slice_allocator.h>
 
 #include "src/core/lib/iomgr/resource_quota.h"
 
