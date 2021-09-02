@@ -105,6 +105,14 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
 
 #else  // !GPR_SUPPORT_BINDER_TRANSPORT
 
+namespace grpc {
+namespace experimental {
+
+void BindToOnDeviceServerService(void*, jobject, absl::string_view,
+                                 absl::string_view) {
+  GPR_ASSERT(0);
+}
+
 std::shared_ptr<grpc::Channel> CreateBinderChannel(void*, jobject,
                                                    absl::string_view,
                                                    absl::string_view) {
@@ -112,10 +120,8 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(void*, jobject,
   return {};
 }
 
-void BindToOnDeviceServerService(void*, jobject, absl::string_view,
-                                 absl::string_view) {
-  GPR_ASSERT(0);
-}
+}  // namespace experimental
+}  // namespace grpc
 
 #endif  // GPR_SUPPORT_BINDER_TRANSPORT
 
