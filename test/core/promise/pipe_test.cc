@@ -31,12 +31,15 @@ TEST(PipeTest, CanSendAndReceive) {
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
       [&pipe] {
-        return Seq(Join(pipe.sender.Push(42), pipe.receiver.Next()),
-                   [](std::tuple<bool, absl::optional<int>> result) {
-                     EXPECT_EQ(result,
-                               std::make_tuple(true, absl::optional<int>(42)));
-                     return absl::OkStatus();
-                   });
+        return Seq(
+            // Concurrently: send 42 into the pipe, and receive from the pipe.
+            Join(pipe.sender.Push(42), pipe.receiver.Next()),
+            // Once complete, verify successful sending and the received value
+            // is 42.
+            [](std::tuple<bool, absl::optional<int>> result) {
+              EXPECT_EQ(result, std::make_tuple(true, absl::optional<int>(42)));
+              return absl::OkStatus();
+            });
       },
       NoCallbackScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
@@ -48,12 +51,15 @@ TEST(PipeTest, CanReceiveAndSend) {
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
       [&pipe] {
-        return Seq(Join(pipe.receiver.Next(), pipe.sender.Push(42)),
-                   [](std::tuple<absl::optional<int>, bool> result) {
-                     EXPECT_EQ(result,
-                               std::make_tuple(absl::optional<int>(42), true));
-                     return absl::OkStatus();
-                   });
+        return Seq(
+            // Concurrently: receive from the pipe, and send 42 into the pipe.
+            Join(pipe.receiver.Next(), pipe.sender.Push(42)),
+            // Once complete, verify the received value is 42 and successful
+            // sending.
+            [](std::tuple<absl::optional<int>, bool> result) {
+              EXPECT_EQ(result, std::make_tuple(absl::optional<int>(42), true));
+              return absl::OkStatus();
+            });
       },
       NoCallbackScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
@@ -66,19 +72,25 @@ TEST(PipeTest, CanSeeClosedOnSend) {
   auto receiver =
       absl::make_unique<PipeReceiver<int>>(std::move(pipe.receiver));
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  // Push 42 onto the pipe - this will the pipe's one-deep send buffer.
   EXPECT_TRUE(NowOrNever(sender.Push(42)).has_value());
   MakeActivity(
       [&sender, &receiver] {
-        return Seq(Join(sender.Push(43),
-                        [&receiver] {
-                          receiver.reset();
-                          return absl::OkStatus();
-                        }),
-                   [](std::tuple<bool, absl::Status> result) {
-                     EXPECT_EQ(result,
-                               std::make_tuple(false, absl::OkStatus()));
-                     return absl::OkStatus();
-                   });
+        return Seq(
+            // Concurrently:
+            // - push 43 into the sender, which will stall because the buffer is
+            //   full
+            // - and close the receiver, which will fail the pending send.
+            Join(sender.Push(43),
+                 [&receiver] {
+                   receiver.reset();
+                   return absl::OkStatus();
+                 }),
+            // Verify both that the send failed and that we executed the close.
+            [](std::tuple<bool, absl::Status> result) {
+              EXPECT_EQ(result, std::make_tuple(false, absl::OkStatus()));
+              return absl::OkStatus();
+            });
       },
       NoCallbackScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
@@ -92,16 +104,23 @@ TEST(PipeTest, CanSeeClosedOnReceive) {
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
       [&sender, &receiver] {
-        return Seq(Join(receiver.Next(),
-                        [&sender] {
-                          sender.reset();
-                          return absl::OkStatus();
-                        }),
-                   [](std::tuple<absl::optional<int>, absl::Status> result) {
-                     EXPECT_EQ(result, std::make_tuple(absl::optional<int>(),
-                                                       absl::OkStatus()));
-                     return absl::OkStatus();
-                   });
+        return Seq(
+            // Concurrently:
+            // - wait for a received value (will stall forever since we push
+            //   nothing into the queue)
+            // - close the sender, which will signal the receiver to return an
+            //   end-of-stream.
+            Join(receiver.Next(),
+                 [&sender] {
+                   sender.reset();
+                   return absl::OkStatus();
+                 }),
+            // Verify we received end-of-stream and closed the sender.
+            [](std::tuple<absl::optional<int>, absl::Status> result) {
+              EXPECT_EQ(result, std::make_tuple(absl::optional<int>(),
+                                                absl::OkStatus()));
+              return absl::OkStatus();
+            });
       },
       NoCallbackScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
@@ -113,17 +132,26 @@ TEST(PipeTest, CanFilter) {
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
       [&pipe] {
+        // Setup some filters here, carefully getting ordering correct by doing
+        // so outside of the Join().
         auto doubler = pipe.receiver.Filter(
             [](int p) { return absl::StatusOr<int>(p * 2); });
         auto adder = pipe.sender.Filter(
             [](int p) { return absl::StatusOr<int>(p + 1); });
         return Seq(
+            // Concurrently:
+            // - push 42 into the pipe
+            // - wait for a value to be received, and filter it by doubling it
+            // - wait for a value to be received, and filter it by adding one to
+            // it
+            // - wait for a value to be received and close the pipe.
             Join(pipe.sender.Push(42), std::move(doubler), std::move(adder),
                  Seq(pipe.receiver.Next(),
                      [&pipe](absl::optional<int> i) {
                        auto x = std::move(pipe.receiver);
                        return i;
                      })),
+            // Verify all of the above happened correctly.
             [](std::tuple<bool, absl::Status, absl::Status, absl::optional<int>>
                    result) {
               EXPECT_EQ(result, std::make_tuple(true, absl::OkStatus(),
