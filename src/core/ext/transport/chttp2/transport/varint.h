@@ -43,7 +43,7 @@ class VarintWriter {
  public:
   static constexpr uint32_t kMaxInPrefix = MaxInVarintPrefix(kPrefixBits);
 
-  VarintWriter(uint32_t value)
+  explicit VarintWriter(uint32_t value)
       : value_(value),
         length_(value < kMaxInPrefix ? 1 : VarintLength(value - kMaxInPrefix)) {
   }
