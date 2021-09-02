@@ -177,13 +177,19 @@ def _generate_pb2_grpc_src_impl(context):
         mnemonic = "ProtocInvocation",
     )
 
+    py_info = PyInfo(
+        transitive_sources = depset(direct = out_files, transitive = [context.attr._grpc_library[PyInfo].transitive_sources]),
+        imports = depset(transitive = [context.attr._grpc_library[PyInfo].imports]),
+    )
+
+    runfiles = context.runfiles(files = out_files, transitive_files = py_info.transitive_sources).merge(context.attr._grpc_library[DefaultInfo].data_runfiles)
+
     return [
-        DefaultInfo(files = depset(direct = out_files)),
-        PyInfo(
-            transitive_sources = depset(),
-            # Imports are already configured by the generated py impl
-            imports = depset(),
+        DefaultInfo(
+            files = depset(direct = out_files),
+            runfiles = runfiles,
         ),
+        py_info,
     ]
 
 _generate_pb2_grpc_src = rule(
@@ -211,6 +217,10 @@ _generate_pb2_grpc_src = rule(
             providers = ["files_to_run"],
             cfg = "host",
             default = Label("//external:protocol_compiler"),
+        ),
+        "_grpc_library": attr.label(
+            default = Label("//src/python/grpcio/grpc:grpcio"),
+            providers = [PyInfo],
         ),
     },
     implementation = _generate_pb2_grpc_src_impl,
@@ -240,7 +250,6 @@ def py_grpc_library(
       **kwargs: Additional arguments to be supplied to the invocation of
         py_library.
     """
-    codegen_grpc_target = "_{}_grpc_codegen".format(name)
     if len(srcs) != 1:
         fail("Can only compile a single proto at a time.")
 
@@ -248,23 +257,10 @@ def py_grpc_library(
         fail("Deps must have length 1.")
 
     _generate_pb2_grpc_src(
-        name = codegen_grpc_target,
+        name = name,
         deps = srcs,
         strip_prefixes = strip_prefixes,
         plugin = plugin,
-        **kwargs
-    )
-
-    native.py_library(
-        name = name,
-        srcs = [
-            ":{}".format(codegen_grpc_target),
-        ],
-        deps = [
-            Label("//src/python/grpcio/grpc:grpcio"),
-        ] + deps + [
-            ":{}".format(codegen_grpc_target),
-        ],
         **kwargs
     )
 
