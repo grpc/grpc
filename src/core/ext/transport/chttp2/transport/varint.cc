@@ -22,7 +22,9 @@
 
 #include "absl/base/attributes.h"
 
-uint32_t grpc_chttp2_hpack_varint_length(uint32_t tail_value) {
+namespace grpc_core {
+
+uint32_t VarintLength(uint32_t tail_value) {
   if (tail_value < (1 << 7)) {
     return 2;
   } else if (tail_value < (1 << 14)) {
@@ -36,7 +38,7 @@ uint32_t grpc_chttp2_hpack_varint_length(uint32_t tail_value) {
   }
 }
 
-void grpc_chttp2_hpack_write_varint_tail(uint32_t tail_value, uint8_t* target,
+void VarintWriteTail(uint32_t tail_value, uint8_t* target,
                                          uint32_t tail_length) {
   switch (tail_length) {
     case 5:
@@ -55,4 +57,6 @@ void grpc_chttp2_hpack_write_varint_tail(uint32_t tail_value, uint8_t* target,
       target[0] = static_cast<uint8_t>((tail_value) | 0x80);
   }
   target[tail_length - 1] &= 0x7f;
+}
+
 }

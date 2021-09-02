@@ -31,20 +31,62 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
-/* maximum table size we'll actually use */
-#define GRPC_CHTTP2_HPACKC_MAX_TABLE_SIZE (1024 * 1024)
+extern grpc_core::TraceFlag grpc_http_trace;
 
 namespace grpc_core {
 
-extern TraceFlag grpc_http_trace;
+// Wrapper to take an array of mdelems and make them encodable
+class MetadataArray {
+ public:
+  MetadataArray(grpc_mdelem** elems, size_t count) : elems_(elems), count_(count) {}
+
+  template <typename Encoder>
+  void Encode(Encoder* encoder) const {
+    for (size_t i=0; i<count_; i++) {
+      encoder->Encode(*elems_[i]);
+    }
+  }
+
+ private:
+  grpc_mdelem** elems_;
+  size_t count_;
+};
+
+namespace metadata_detail {
+template <typename A, typename B>
+class ConcatMetadata {
+ public:
+  ConcatMetadata(const A& a, const B& b) : a_(a), b_(b) {}
+
+  template <typename Encoder>
+  void Encode(Encoder* encoder) const {
+    a_.Encode(encoder);
+    b_.Encode(encoder);
+  }
+
+ private:
+  const A& a_;
+  const B& b_;
+};
+}
+
+template <typename A, typename B>
+metadata_detail::ConcatMetadata<A, B> ConcatMetadata(const A& a, const B& b) {
+  return metadata_detail::ConcatMetadata<A, B>(a, b);
+}
 
 class HPackCompressor {
  public:
   HPackCompressor() = default;
   ~HPackCompressor() = default;
 
+  // Maximum table size we'll actually use.
+  static constexpr uint32_t kMaxTableSize = 1024 * 1024;
+
   void SetMaxTableSize(uint32_t max_table_size);
   void SetMaxUsableSize(uint32_t max_table_size);
+
+  uint32_t test_only_table_size() const { return table_.test_only_table_size(); }
 
   struct EncodeHeaderOptions {
     uint32_t stream_id;
@@ -64,19 +106,8 @@ class HPackCompressor {
   class Framer {
    public:
     Framer(const EncodeHeaderOptions& options, HPackCompressor* compressor,
-           grpc_slice_buffer* output)
-        : max_frame_size_(options.max_frame_size),
-          use_true_binary_metadata_(options.use_true_binary_metadata),
-          is_end_of_stream_(options.is_end_of_stream),
-          stream_id_(options.stream_id),
-          output_(output),
-          stats_(options.stats),
-          prefix_(BeginFrame()) {
-      if (absl::exchange(compressor_->advertise_table_size_change_, false)) {
-        AdvertiseTableSizeChange();
-      }
-    }
-    ~Framer();
+           grpc_slice_buffer* output);
+    ~Framer() { FinishFrame(true); }
 
     Framer(const Framer&) = delete;
     Framer& operator=(const Framer&) = delete;
@@ -102,9 +133,14 @@ class HPackCompressor {
     void EncodeDynamic(grpc_mdelem elem);
     static GPR_ATTRIBUTE_NOINLINE void Log(grpc_mdelem elem);
 
+    void EmitLitHdrIncIdx(uint32_t key_index, grpc_mdelem elem);
+    void EmitLitHdrNotIdx(uint32_t key_index, grpc_mdelem elem);
+    void EmitLitHdrWithStringKeyIncIdx(grpc_mdelem elem);
+    void EmitLitHdrWithStringKeyNotIdx(grpc_mdelem elem);
+
     size_t CurrentFrameSize() const;
     void Add(grpc_slice slice);
-    uint8_t AddTiny(size_t len);
+    uint8_t* AddTiny(size_t len);
 
     // maximum size of a frame
     const size_t max_frame_size_;
@@ -124,6 +160,8 @@ class HPackCompressor {
   };
 
  private:
+  static constexpr size_t kNumFilterValues = 32;
+
   void AddKeyWithIndex(grpc_slice_refcount* key_ref, uint32_t new_index,
                        uint32_t key_hash);
   void AddElemWithIndex(grpc_mdelem elem, uint32_t new_index,
@@ -145,7 +183,7 @@ class HPackCompressor {
   // a new literal should be added to the compression table or not.
   // They track a single integer that counts how often a particular value has
   // been seen. When that count reaches max (255), all values are halved.
-  grpc_core::PopularityCount<GRPC_CHTTP2_HPACKC_NUM_VALUES> filter_elems_;
+  grpc_core::PopularityCount<kNumFilterValues> filter_elems_;
 
   class KeyElem {
    public:
@@ -222,10 +260,10 @@ class HPackCompressor {
 
   // entry tables for keys & elems: these tables track values that have been
   // seen and *may* be in the decompressor table
-  grpc_core::HPackEncoderIndex<KeyElem, GRPC_CHTTP2_HPACKC_NUM_VALUES>
-      elem_index;
-  grpc_core::HPackEncoderIndex<KeySliceRef, GRPC_CHTTP2_HPACKC_NUM_VALUES>
-      key_index;
+  grpc_core::HPackEncoderIndex<KeyElem, kNumFilterValues> elem_index_;
+  grpc_core::HPackEncoderIndex<KeySliceRef, kNumFilterValues> key_index_;
 };
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H */
