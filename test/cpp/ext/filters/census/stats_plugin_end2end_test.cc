@@ -20,12 +20,12 @@
 #include <thread>  // NOLINT
 #include <vector>
 
+#include <grpc++/grpc++.h>
+#include <grpcpp/opencensus.h>
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "include/grpc++/grpc++.h"
-#include "include/grpcpp/opencensus.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/stats/tag_key.h"
 #include "opencensus/stats/testing/test_utils.h"
