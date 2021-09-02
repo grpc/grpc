@@ -75,6 +75,7 @@ class AllTest(unittest.TestCase):
             'access_token_call_credentials',
             'composite_call_credentials',
             'composite_channel_credentials',
+            'compute_engine_channel_credentials',
             'ssl_server_credentials',
             'ssl_server_certificate_configuration',
             'dynamic_ssl_server_credentials',

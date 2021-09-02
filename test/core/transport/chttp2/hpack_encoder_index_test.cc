@@ -16,7 +16,7 @@
  *
  */
 
-#include "include/grpc/impl/codegen/port_platform.h"
+#include <grpc/impl/codegen/port_platform.h>
 
 #include <gtest/gtest.h>
 #include <random>
