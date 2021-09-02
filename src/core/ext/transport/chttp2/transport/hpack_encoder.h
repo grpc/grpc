@@ -115,8 +115,8 @@ class HPackCompressor {
     Framer(const Framer&) = delete;
     Framer& operator=(const Framer&) = delete;
 
-    void Encode(grpc_mdelem elem);
-    void EncodeDeadline(grpc_millis millis);
+    void Encode(grpc_mdelem md);
+    void EncodeDeadline(grpc_millis deadline);
 
    private:
     struct FramePrefix {
