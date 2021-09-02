@@ -476,12 +476,10 @@ class CLanguage(object):
             return ('alpine', [])
         elif compiler == 'clang3.4':
             return ('clang_3.4',
-                    self._clang_cmake_configure_extra_args(
-                        version_suffix='-3.4'))
+                    self._clang_cmake_configure_extra_args())
         elif compiler == 'clang12':
             return ('clang_12',
-                    self._clang_cmake_configure_extra_args(
-                        version_suffix='-12'))
+                    self._clang_cmake_configure_extra_args())
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
