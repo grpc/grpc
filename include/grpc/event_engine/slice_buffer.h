@@ -46,6 +46,15 @@ class SliceBuffer final {
   SliceBuffer(const SliceBuffer& other) : sb_(other.sb_) {}
   SliceBuffer(SliceBuffer&& other) : sb_(other.sb_) { other.sb_ = nullptr; }
 
+  // This easier to write than an iterator, and essentially does the same, in a
+  // less flexible manner. We probably want to eventually write a proper
+  // iterator class for this, and use the more typical begin/end pattern, but
+  // this can do for now.
+  //
+  // Note that an hypothetical iterator cannot use a temporary slice, as it
+  // might do an inline copy of the data, which would end up being a stack
+  // temporary. So the equivalent iterator class for this needs to be an
+  // almost-slice, but not quite, and requires careful design.
   void Enumerate(std::function<void(uint8_t*, size_t, size_t)> cb) {
     const size_t cnt = Count();
     for (size_t i = 0; i < cnt; i++) {

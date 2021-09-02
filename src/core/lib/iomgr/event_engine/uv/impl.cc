@@ -13,6 +13,7 @@
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/event_engine/promise.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 
@@ -76,6 +77,9 @@ constexpr size_t READ_BUFFER_SIZE = 4096;
 /// It will hold the few common data and functions between the Listener and
 /// Endpoint classes that will derive from it.
 ///
+/// The derived classes should hold all of the extra information that has to
+/// follow the lifespan of the LibUV base socket, such as timers, callback
+/// functors, buffers, etc.
 ////////////////////////////////////////////////////////////////////////////////
 class LibuvWrapperBase {
  public:
@@ -92,6 +96,14 @@ class LibuvWrapperBase {
   // from the corresponding libuv Thread.
   void RegisterUnsafe(LibuvEventEngine* engine);
 
+  // Schedules a close of the base socket into the libuv loop. If the derived
+  // class has more handles to wait on closing, like timers, then it needs
+  // to tell how many in the \a extraCloses argument.
+  //
+  // NOTE: the derived classes USED to hold extra timers, due to the original
+  // API having deadlines, but since those are gone, we're now always calling
+  // this with extraCloses=0 at the moment. Should this change again in the
+  // future however, this can be used again.
   void CloseUnsafe(int extraCloses) {
     tcp_.data = this;
     to_close_ = 1 + extraCloses;
@@ -104,7 +116,9 @@ class LibuvWrapperBase {
   // contain more than one LibUV handle, which all need to have LibUV calling
   // us individually when it's safe to delete each of them. We shouldn't care
   // about the type of each of these handle, as long as they have been closed
-  // with their respective API.
+  // with their respective API. The idea being we won't have one object per
+  // LibUV handle, but rather group all of the needed handles into a single
+  // derived class, that we will delete all at once.
   static void LibuvCloseCB(uv_handle_t* handle) {
     LibuvWrapperBase* self = reinterpret_cast<LibuvWrapperBase*>(handle->data);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -117,6 +131,8 @@ class LibuvWrapperBase {
   }
 
   uv_tcp_t tcp_;
+
+ private:
   int to_close_ = 0;
 };
 
@@ -144,6 +160,9 @@ class LibuvListenerWrapper final : public LibuvWrapperBase {
     }
   }
 
+  // Schedules closing of the listener. Should be called from the proxy class'
+  // destructor. Once the closing is completed, this object will automatically
+  // delf-delete from the base class.
   void Close(LibuvEventEngine* engine);
 
   // When LibUV is finally done with the listener, this destructor will be
@@ -192,7 +211,9 @@ class LibuvEndpointWrapper final : public LibuvWrapperBase {
 
 ////////////////////////////////////////////////////////////////////////////////
 /// This class is only a tiny, very temporary shell around the engine itself,
-/// and doesn't hold any state of its own.
+/// and doesn't hold any state of its own. It only exists at the moment because
+/// of the need to implement the DNSResolver class in EventEngine. Maybe the
+/// cares implementation will change this into a more fleshed out class.
 ////////////////////////////////////////////////////////////////////////////////
 class LibuvDNSResolver final
     : public grpc_event_engine::experimental::EventEngine::DNSResolver {
@@ -230,8 +251,8 @@ class LibuvDNSResolver final
 /// The Event Engine Listener class. Aside from implementing the listener API,
 /// it will only hold a pointer to a LibuvListenerWrapper.
 ///
-/// Its main reason of existence is to transform its destruction into
-/// scheduling a LibUV close() call of the underlying socket.
+/// It is a proxy class, and its main reason of existence is to transform its
+/// destruction into scheduling a LibUV close() call of the underlying socket.
 ////////////////////////////////////////////////////////////////////////////////
 class LibuvListener final
     : public grpc_event_engine::experimental::EventEngine::Listener {
@@ -250,6 +271,8 @@ class LibuvListener final
   virtual ~LibuvListener() override;
 
  private:
+  // The LibuvEventEngine pointer is tucked away into the uv_loop_t user data.
+  // Retrieve this pointer and cast it back to the LibuvEventEngine pointer.
   LibuvEventEngine* GetEventEngine() {
     return reinterpret_cast<LibuvEventEngine*>(uvTCP_->GetLoop()->data);
   }
@@ -269,7 +292,8 @@ class LibuvListener final
 /// connection information. The initial connection information is held in it,
 /// because of the limbo state the handle is in between the moment we are
 /// requested to initiate the connection, and the moment we are actually
-/// connected and giving back the endpoint to the callback.
+/// connected and giving back the endpoint to the callback. Other than that, it
+/// essentially is a proxy class to LibuvEndpointWrapper.
 ///
 /// It's separate from the LibuvEndpointWrapper in order to transform its
 /// destruction into scheduling a LibUV close() call of the underlying socket.
@@ -298,6 +322,12 @@ class LibuvEndpoint final
     uvTCP_->RegisterUnsafe(engine);
   }
 
+  // When a listener creates an endpoint for an incoming connection, we need to
+  // accept it and register it in the libuv loop. This can only be called from
+  // the libuv thread. This function can be expanded into fanning out the
+  // incoming connection to multiple libuv loops in the future.
+  //
+  // Returns true if the accept was successful.
   bool AcceptUnsafe(LibuvEventEngine* engine, uv_stream_t* server) {
     RegisterUnsafe(engine);
     int r;
@@ -307,6 +337,8 @@ class LibuvEndpoint final
               r);
     }
     if (r == 0) {
+      // Not sure what to do here if we're failing. Maybe just abort? But that
+      // seems extreme given it shouldn't be a fatal error.
       PopulateAddressesUnsafe();
       return true;
     }
@@ -316,10 +348,14 @@ class LibuvEndpoint final
   virtual ~LibuvEndpoint() override;
 
  private:
+  // The LibuvEventEngine pointer is tucked away into the uv_loop_t user data.
+  // Retrieve this pointer and cast it back to the LibuvEventEngine pointer.
   LibuvEventEngine* GetEventEngine() {
-    return reinterpret_cast<LibuvEventEngine*>(uvTCP_->tcp_.loop->data);
+    return reinterpret_cast<LibuvEventEngine*>(uvTCP_->GetLoop()->data);
   }
 
+  // Fills out the local and peer addresses of the connected socket. Needs to be
+  // called from the libuv loop thread. Returns 0 if successful.
   int PopulateAddressesUnsafe() {
     auto populate =
         [this](
@@ -367,18 +403,23 @@ class LibuvEndpoint final
       nullptr;
 };
 
-struct SchedulingRequest : grpc_core::MultiProducerSingleConsumerQueue::Node {
-  typedef std::function<void(LibuvEventEngine*)> functor;
-  SchedulingRequest(functor&& f) : f_(std::move(f)) {}
-  functor f_;
-};
-
 ////////////////////////////////////////////////////////////////////////////////
-/// The LibUV Event Engine itself.
+/// The LibUV Event Engine itself. It implements an EventEngine class.
 ////////////////////////////////////////////////////////////////////////////////
 class LibuvEventEngine final
     : public grpc_event_engine::experimental::EventEngine {
-  std::thread::id worker_thread_id_;
+  // Since libuv is single-threaded and not thread-safe, we will be running
+  // all operations in a multi-producer/single-consumer manner, where all of the
+  // surface API of the EventEngine will only just schedule work to be executed
+  // on the libuv thread. This structure holds one of these piece of work to
+  // execute. Each "work" is just a standard functor that takes the
+  // LibuvEventEngine pointer as an argument, in an attempt to lower capture
+  // costs.
+  struct SchedulingRequest : grpc_core::MultiProducerSingleConsumerQueue::Node {
+    typedef std::function<void(LibuvEventEngine*)> functor;
+    SchedulingRequest(functor&& f) : f_(std::move(f)) {}
+    functor f_;
+  };
 
  public:
   LibuvEventEngine() {
@@ -386,8 +427,12 @@ class LibuvEventEngine final
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "LibuvEventEngine:%p created", this);
     }
+    // Creating the libuv loop thread straight upon construction. We don't need
+    // the thread to be joinable, since it'll exit on its own gracefully without
+    // needing for us to wait on it.
     grpc_core::Thread::Options options;
     options.set_joinable(false);
+    // Why isn't grpc_core::Thread accepting a lambda?
     thread_ = grpc_core::Thread(
         "uv loop",
         [](void* arg) {
@@ -397,10 +442,15 @@ class LibuvEventEngine final
         this, &success, options);
     thread_.Start();
     GPR_ASSERT(success);
-    success = ready_.get_future().get();
+    // This promise will be set to true once the thread has fully started and is
+    // operational, so let's wait on it.
+    success = ready_.Get();
     GPR_ASSERT(success);
   }
 
+  // Schedules one lambda to be executed on the libuv thread. Our libuv loop
+  // will have a special async event which is the only piece of API that's
+  // marked as thread-safe.
   void Schedule(SchedulingRequest::functor&& f) {
     SchedulingRequest* request = new SchedulingRequest(std::move(f));
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -414,6 +464,10 @@ class LibuvEventEngine final
   uv_loop_t* GetLoop() { return &loop_; }
 
  private:
+  // This is the callback that libuv will call on its thread once the
+  // uv_async_send call above is being processed. The kick is only guaranteed to
+  // be called once per loop iteration, even if we sent the event multiple
+  // times, so we have to process as many events from the queue as possible.
   void Kicker() {
     bool empty = false;
     while (!empty) {
@@ -434,11 +488,17 @@ class LibuvEventEngine final
   }
 
   void Thread() {
-    // ugh
+    // Ugh. LibUV doesn't take upon itself to mask SIGPIPE on its own on Unix
+    // systems. If a connection gets broken, we will get killed, unless we mask
+    // it out. These 4 lines of code likely need to be enclosed in a non-Windows
+    // #ifdef check, although I'm not certain what platforms will or will not
+    // have the necessary function calls here.
     sigset_t set;
     sigemptyset(&set);
     sigaddset(&set, SIGPIPE);
     pthread_sigmask(SIG_BLOCK, &set, NULL);
+
+    // Setting up the loop.
     int r = 0;
     worker_thread_id_ = std::this_thread::get_id();
     r = uv_loop_init(&loop_);
@@ -453,13 +513,27 @@ class LibuvEventEngine final
         gpr_log(GPR_ERROR, "LibuvEventEngine@%p::Thread, failed to start: %i",
                 this, r);
       }
-      ready_.set_value(false);
+      ready_.Set(false);
       return;
     }
-    ready_.set_value(true);
+    ready_.Set(true);
+
+    // The meat of running our event loop. We need the various exec contexts,
+    // because some of the callbacks we will call will depend on them existing.
+    //
+    // Calling uv_run with UV_RUN_ONCE will stall until there is any sort of
+    // event to process whatsoever, and then will return 0 if it needs to
+    // shutdown. The libuv loop will shutdown naturally when there's no more
+    // event to process. Since we created the async event for kick, there will
+    // always be at least one event holding the loop, until we explicitly weaken
+    // its reference to permit a graceful shutdown.
+    //
+    // When/if there are no longer any sort of exec contexts needed to flush,
+    // then we can simply use UV_RUN instead, which will never return until
+    // there's no more events to process, which is even more graceful.
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx ctx;
-    while (uv_run(&loop_, UV_RUN_ONCE) != 0 && !shutdown_) {
+    while (uv_run(&loop_, UV_RUN_ONCE) != 0) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
         gpr_log(GPR_ERROR,
                 "LibuvEventEngine@%p::Thread, uv_run requests a "
@@ -468,6 +542,7 @@ class LibuvEventEngine final
       }
       ctx.Flush();
     }
+
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::Thread, shutting down", this);
     }
@@ -485,6 +560,9 @@ class LibuvEventEngine final
       gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::CreateListener, created %p",
               this, ret.get());
     }
+    // Scheduling should have a guarantee on ordering. We don't need to wait
+    // until this is finished to return. Any subsequent call on the returned
+    // listener will schedule more work after this one.
     Schedule([&ret](LibuvEventEngine* engine) { ret->RegisterUnsafe(engine); });
     return ret;
   }
@@ -520,7 +598,6 @@ class LibuvEventEngine final
       gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::Shutdown", this);
     }
     on_shutdown_complete_ = on_shutdown_complete;
-    shutdown_ = true;
     Schedule([](LibuvEventEngine* engine) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
         gpr_log(GPR_DEBUG,
@@ -528,8 +605,16 @@ class LibuvEventEngine final
                 "Kicker now",
                 engine);
       }
+      // Shutting down at this point is essentially just this unref call here.
+      // After it, the libuv loop will continue working until it has no more
+      // events to monitor. It means that scheduling new work becomes
+      // essentially undefined behavior, which is in line with our surface API
+      // contracts, which stipulate the same thing.
       uv_unref(reinterpret_cast<uv_handle_t*>(&engine->kicker_));
       if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+        // This is an unstable API from libuv that we use for its intended
+        // purpose: debugging. This can tell us if there's lingering handles
+        // that are still going to hold up the loop at this point.
         uv_walk(
             &engine->loop_,
             [](uv_handle_t* handle, void* arg) {
@@ -544,39 +629,92 @@ class LibuvEventEngine final
     });
   }
 
+  // Helpers for the internal Task classes.
   void EraseTask(intptr_t taskKey);
   void EraseLookupTask(intptr_t taskKey);
 
   uv_loop_t loop_;
   uv_async_t kicker_;
-  std::promise<bool> ready_;
+  // This should be set only once to true by the thread when it's done setting
+  // itself up.
+  grpc_event_engine::experimental::Promise<bool> ready_;
   grpc_core::Thread thread_;
   grpc_core::MultiProducerSingleConsumerQueue queue_;
+
+  // We keep a list of all of the tasks here. The atomics will serve as a simple
+  // counter mechanism, with the assumption that if it ever rolls over, the
+  // colliding tasks will have long been completed.
+  //
+  // NOTE: now that we're returning two intptr_t instead of just one for the
+  // keys, this can be improved, as we can hold the pointer in one
+  // key, and a tag in the other, to avoid the ABA problem. We'll keep the
+  // atomics as tags in the second key slot, but we can get rid of the maps.
+  //
+  // TODO(nnoble): remove the maps, and fold the pointers into the keys,
+  // alongside the ABA tag.
   std::atomic<intptr_t> taskKey_;
   std::atomic<intptr_t> lookupTaskKey_;
   std::unordered_map<intptr_t, LibuvTask*> taskMap_;
   std::unordered_map<intptr_t, LibuvLookupTask*> lookupTaskMap_;
   grpc_event_engine::experimental::EventEngine::Callback on_shutdown_complete_;
-  bool shutdown_ = false;
+
+  // Hopefully temporary until we can solve shutdown from the main grpc code.
+  // Used by IsWorkerThread.
+  std::thread::id worker_thread_id_;
 
   friend class LibuvDNSResolver;
   friend class LibuvLookupTask;
   friend class LibuvTask;
 };
 
+////////////////////////////////////////////////////////////////////////////////
+/// The LibuvTask class will be used for Run and RunAt from LibuvEventEngine,
+/// and will be internally what's allocated for the returned TaskHandle.
+///
+/// Its API is to be used solely by the Run and RunAt functions, while in the
+/// libuv loop thread.
+////////////////////////////////////////////////////////////////////////////////
 class LibuvTask {
  public:
-  LibuvTask(LibuvEventEngine* engine) : key_(engine->taskKey_.fetch_add(1)) {
+  LibuvTask(LibuvEventEngine* engine,
+            grpc_event_engine::experimental::EventEngine::Callback&& fn)
+      : fn_(std::move(fn)), key_(engine->taskKey_.fetch_add(1)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "LibuvTask@%p, created: key = %" PRIiPTR, this, key_);
     }
     timer_.data = this;
   }
-  grpc_event_engine::experimental::EventEngine::Callback fn_;
-  bool triggered_ = false;
-  uv_timer_t timer_;
-  const intptr_t key_;
-  void Cancel() {
+
+  void StartUnsafe(LibuvEventEngine* engine, uint64_t timeout) {
+    uv_timer_init(&engine->loop_, &timer_);
+    uv_timer_start(
+        &timer_,
+        [](uv_timer_t* timer) {
+          LibuvTask* task = reinterpret_cast<LibuvTask*>(timer->data);
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+            gpr_log(GPR_DEBUG, "LibuvTask@%p, triggered: key = %" PRIiPTR, task,
+                    task->Key());
+          }
+          task->CancelUnsafe();
+          task->triggered_ = true;
+          task->fn_(absl::OkStatus());
+        },
+        timeout, 0);
+  }
+
+  void TryCancelUnsafe() {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "LibuvTask@%p, cancelled: key = %" PRIiPTR, this,
+              key_);
+    }
+    CancelUnsafe();
+    if (!triggered_) {
+      fn_(absl::CancelledError());
+    }
+  }
+
+  // This one will be used by both TryCancel and the completion callback.
+  void CancelUnsafe() {
     if (uv_is_closing(reinterpret_cast<uv_handle_t*>(&timer_))) {
       return;
     }
@@ -589,19 +727,94 @@ class LibuvTask {
       engine->EraseTask(task->key_);
     });
   }
+
+  intptr_t Key() { return key_; }
+
+ private:
+  grpc_event_engine::experimental::EventEngine::Callback fn_;
+  bool triggered_ = false;
+  uv_timer_t timer_;
+  const intptr_t key_;
 };
 
+////////////////////////////////////////////////////////////////////////////////
+/// The LibuvLookupTask class will be used exclusively by the LibuvEventEngine's
+/// resolver functions.
+///
+/// Its API is to be used solely while in the libuv loop thread.
+////////////////////////////////////////////////////////////////////////////////
 class LibuvLookupTask {
  public:
-  LibuvLookupTask(LibuvEventEngine* engine)
-      : key_(engine->lookupTaskKey_.fetch_add(1)) {
+  LibuvLookupTask(LibuvEventEngine* engine,
+                  grpc_event_engine::experimental::EventEngine::DNSResolver::
+                      LookupHostnameCallback on_resolve,
+                  absl::string_view address, absl::string_view default_port)
+      : key_(engine->lookupTaskKey_.fetch_add(1)),
+        on_resolve_(std::move(on_resolve)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "LibuvLookupTask@%p, created: key = %" PRIiPTR, this,
               key_);
     }
     req_.data = this;
     timer_.data = this;
+    if (!grpc_core::SplitHostPort(address, &address_, &default_port_)) {
+      address_ = std::string(address);
+      default_port_ = std::string(default_port);
+    }
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "LookupHostname for %s:%s", address_.c_str(),
+              default_port_.c_str());
+    }
   }
+
+  intptr_t Key() { return key_; }
+
+  void StartUnsafe(LibuvEventEngine* engine, absl::Time deadline) {
+    const char* const ccaddress = address_.c_str();
+    const char* const ccdefault_port = default_port_.c_str();
+    // Start resolving, and if successful, call the main resolver callback code.
+    int r = uv_getaddrinfo(
+        &engine->loop_, &req_,
+        [](uv_getaddrinfo_t* req, int status, struct addrinfo* res) {
+          LibuvLookupTask* task = reinterpret_cast<LibuvLookupTask*>(req->data);
+          task->LibuvResolverCallback(status, res);
+        },
+        ccaddress, ccdefault_port, nullptr);
+    // If we weren't successful in starting the resolution, our callback will
+    // never be called, so we can simply fast-abort now.
+    if (r != 0) {
+      auto on_resolve = std::move(on_resolve_);
+      engine->EraseLookupTask(key_);
+      on_resolve(absl::UnknownError("Resolution error"));
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+        gpr_log(GPR_DEBUG, "LookupHostname for %s:%s failed early with %i",
+                address_.c_str(), default_port_.c_str(), r);
+      }
+      return;
+    }
+    // Otherwise, set our timer, and request a cancellation of the lookup. The
+    // uv_cancel call will fail if the call already finished or was already
+    // canceled, which is fine with us, and we don't need take any further
+    // action.
+    uv_timer_init(&engine->loop_, &timer_);
+    absl::Duration timeout = deadline - absl::Now();
+    uv_timer_start(
+        &timer_,
+        [](uv_timer_t* timer) {
+          LibuvLookupTask* task =
+              reinterpret_cast<LibuvLookupTask*>(timer->data);
+          task->deadline_exceeded_ = true;
+          uv_cancel(reinterpret_cast<uv_req_t*>(&task->req_));
+        },
+        timeout / absl::Milliseconds(1), 0);
+  }
+
+  void CancelUnsafe(LibuvEventEngine* engine) {
+    uv_timer_stop(&timer_);
+    uv_cancel(reinterpret_cast<uv_req_t*>(&req_));
+  }
+
+ private:
   std::string address_;
   std::string default_port_;
   uv_getaddrinfo_t req_;
@@ -610,7 +823,10 @@ class LibuvLookupTask {
   const intptr_t key_;
   grpc_event_engine::experimental::EventEngine::DNSResolver::
       LookupHostnameCallback on_resolve_;
-  void uvResolverCallback(int status, struct addrinfo* res) {
+
+  // Unlike other callbacks in this code, this one is guaranteed to only be
+  // called once by libuv.
+  void LibuvResolverCallback(int status, struct addrinfo* res) {
     uv_timer_stop(&timer_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "LookupHostname for %s:%s completed with status = %i",
@@ -644,24 +860,15 @@ class LibuvLookupTask {
       on_resolve_(std::move(ret));
     }
   }
-  static void uvTimerCallback(uv_timer_t* timer) {
-    LibuvLookupTask* task = reinterpret_cast<LibuvLookupTask*>(timer->data);
-    task->deadline_exceeded_ = true;
-    uv_cancel(reinterpret_cast<uv_req_t*>(&task->req_));
-  }
-  void Cancel(LibuvEventEngine* engine) {
-    uv_timer_stop(&timer_);
-    uv_cancel(reinterpret_cast<uv_req_t*>(&req_));
-  }
 };
 
-}  // namespace
-
+// Some implementation details require circular dependencies between classes, so
+// we're implementing them here instead.
 absl::Status LibuvEndpoint::Connect(
     LibuvEventEngine* engine,
     grpc_event_engine::experimental::EventEngine::OnConnectCallback on_connect,
     const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr) {
-  on_connect_ = on_connect;
+  on_connect_ = std::move(on_connect);
   engine->Schedule([addr, this](LibuvEventEngine* engine) {
     uvTCP_->RegisterUnsafe(engine);
     int r = uv_tcp_connect(
@@ -686,6 +893,9 @@ absl::Status LibuvEndpoint::Connect(
                 "uv_tcp_connect gave us an asynchronous error"));
           }
         });
+    // If we fail the call to uv_connect, the handle won't even be monitored by
+    // the libuv, and won't need to be closed (it won't be in an opened state).
+    // We can bail early here.
     if (r != 0) {
       auto on_connect = std::move(on_connect_);
       if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -733,12 +943,13 @@ absl::StatusOr<int> LibuvListener::Bind(
     gpr_log(GPR_DEBUG, "LibuvListener@%p::Bind to %s", uvTCP_,
             grpc_sockaddr_to_uri(&grpcaddr).c_str());
   }
-  std::promise<absl::StatusOr<int>> p;
+  grpc_event_engine::experimental::Promise<absl::StatusOr<int>> p;
   GetEventEngine()->Schedule([this, &p, &addr](LibuvEventEngine* engine) {
+    // Most of this code is boilerplate to get the bound port back out.
     int r = uv_tcp_bind(&uvTCP_->tcp_, addr.address(), 0 /* flags */);
     switch (r) {
       case UV_EINVAL:
-        p.set_value(absl::InvalidArgumentError(
+        p.Set(absl::InvalidArgumentError(
             "uv_tcp_bind said we passed an invalid argument to it"));
         return;
       case 0:
@@ -748,17 +959,18 @@ absl::StatusOr<int> LibuvListener::Bind(
           gpr_log(GPR_INFO, "LibuvListener@%p::Bind, uv_tcp_bind failed: %i",
                   uvTCP_, r);
         }
-        p.set_value(absl::UnknownError(
+        p.Set(absl::UnknownError(
             "uv_tcp_bind returned an error code we don't know about"));
         return;
     }
+
     sockaddr_storage boundAddr;
     int addrLen = sizeof(boundAddr);
     r = uv_tcp_getsockname(&uvTCP_->tcp_,
                            reinterpret_cast<sockaddr*>(&boundAddr), &addrLen);
     switch (r) {
       case UV_EINVAL:
-        p.set_value(absl::InvalidArgumentError(
+        p.Set(absl::InvalidArgumentError(
             "uv_tcp_getsockname said we passed an invalid argument to it"));
         return;
       case 0:
@@ -769,19 +981,19 @@ absl::StatusOr<int> LibuvListener::Bind(
                   "LibuvListener@%p::Bind, uv_tcp_getsockname failed: %i",
                   uvTCP_, r);
         }
-        p.set_value(absl::UnknownError(
+        p.Set(absl::UnknownError(
             "uv_tcp_getsockname returned an error code we don't know about"));
         return;
     }
     switch (boundAddr.ss_family) {
       case AF_INET: {
         sockaddr_in* sin = (sockaddr_in*)&boundAddr;
-        p.set_value(grpc_htons(sin->sin_port));
+        p.Set(grpc_htons(sin->sin_port));
         break;
       }
       case AF_INET6: {
         sockaddr_in6* sin6 = (sockaddr_in6*)&boundAddr;
-        p.set_value(grpc_htons(sin6->sin6_port));
+        p.Set(grpc_htons(sin6->sin6_port));
         break;
       }
       default:
@@ -789,23 +1001,27 @@ absl::StatusOr<int> LibuvListener::Bind(
           gpr_log(GPR_INFO, "LibuvListener@%p::Bind, unknown addr family: %i",
                   uvTCP_, boundAddr.ss_family);
         }
-        p.set_value(absl::InvalidArgumentError(
+        p.Set(absl::InvalidArgumentError(
             "returned socket address in :Bind is neither IPv4 nor IPv6"));
         return;
     }
+
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "LibuvListener@%p::Bind, success", uvTCP_);
     }
   });
-  return p.get_future().get();
+  return p.Get();
 }
 
 absl::Status LibuvListener::Start() {
-  std::promise<absl::Status> ret;
+  grpc_event_engine::experimental::Promise<absl::Status> ret;
   GetEventEngine()->Schedule([this, &ret](LibuvEventEngine* engine) {
     int r;
+    // The callback to uv_listen will be invoked every time there is a new
+    // connection coming up. The job then is to create a new endpoint, and
+    // accept the incoming connection on it.
     r = uv_listen(
-        reinterpret_cast<uv_stream_t*>(&uvTCP_->tcp_), 42,
+        reinterpret_cast<uv_stream_t*>(&uvTCP_->tcp_), 42 /* backlog */,
         [](uv_stream_t* server, int status) {
           if (status < 0) return;
           LibuvListenerWrapper* l =
@@ -815,6 +1031,8 @@ absl::Status LibuvListener::Start() {
                             "TODO(nnoble): get peer name"));
           LibuvEventEngine* engine =
               static_cast<LibuvEventEngine*>(server->loop->data);
+          // If we fail accepting, we don't need to do anything, as the
+          // unique_ptr will take care of deleting the failed endpoint.
           if (e->AcceptUnsafe(engine, server)) {
             l->on_accept_(std::move(e));
           }
@@ -823,21 +1041,22 @@ absl::Status LibuvListener::Start() {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
         gpr_log(GPR_DEBUG, "LibuvListener@%p::Start, success", uvTCP_);
       }
-      ret.set_value(absl::OkStatus());
+      ret.Set(absl::OkStatus());
     } else {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
         gpr_log(GPR_INFO, "LibuvListener@%p::Start, failure: %i", uvTCP_, r);
       }
-      ret.set_value(absl::UnknownError(
+      ret.Set(absl::UnknownError(
           "uv_listen returned an error code we don't know about"));
     }
   });
-  auto status = ret.get_future().get();
+  auto status = ret.Get();
   // until we can handle "SO_REUSEPORT", always return OkStatus.
   // return status;
   return absl::OkStatus();
 }
 
+// Might as well just reuse the same codepath for both cases ¯\_(ツ)_/¯
 LibuvEventEngine::TaskHandle LibuvEventEngine::Run(Callback fn,
                                                    RunOptions opts) {
   return RunAt(absl::Now(), fn, opts);
@@ -846,10 +1065,11 @@ LibuvEventEngine::TaskHandle LibuvEventEngine::Run(Callback fn,
 LibuvEventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time when,
                                                      Callback fn,
                                                      RunOptions opts) {
-  LibuvTask* task = new LibuvTask(this);
-  task->fn_ = std::move(fn);
+  LibuvTask* task = new LibuvTask(this, std::move(fn));
   absl::Time now = absl::Now();
   uint64_t timeout;
+  // Since libuv doesn't have a concept of negative timeout, we need to clamp
+  // this to avoid almost-infinite timers.
   if (now >= when) {
     timeout = 0;
   } else {
@@ -859,48 +1079,23 @@ LibuvEventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time when,
     gpr_log(GPR_DEBUG,
             "LibuvTask@%p::RunAt, scheduled, timeout=%" PRIu64
             ", key = %" PRIiPTR,
-            task, timeout, task->key_);
+            task, timeout, task->Key());
   }
   Schedule([task, timeout](LibuvEventEngine* engine) {
-    intptr_t key = task->key_;
+    intptr_t key = task->Key();
     engine->taskMap_[key] = task;
-    uv_timer_init(&engine->loop_, &task->timer_);
-    uv_timer_start(
-        &task->timer_,
-        [](uv_timer_t* timer) {
-          LibuvTask* task = reinterpret_cast<LibuvTask*>(timer->data);
-          if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-            gpr_log(GPR_DEBUG, "LibuvTask@%p, triggered: key = %" PRIiPTR, task,
-                    task->key_);
-          }
-          task->Cancel();
-          task->triggered_ = true;
-          task->fn_(absl::OkStatus());
-        },
-        timeout, 0);
+    task->StartUnsafe(engine, timeout);
   });
 
-  return {task->key_};
-}
-
-grpc_event_engine::experimental::EventEngine*
-grpc_event_engine::experimental::DefaultEventEngineFactory() {
-  return new LibuvEventEngine();
+  return {task->Key()};
 }
 
 void LibuvEventEngine::TryCancel(TaskHandle handle) {
   Schedule([handle](LibuvEventEngine* engine) {
     auto it = engine->taskMap_.find(handle.keys[0]);
     if (it == engine->taskMap_.end()) return;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_DEBUG, "LibuvTask@%p, cancelled: key = %" PRIiPTR, it->second,
-              it->second->key_);
-    }
     auto* task = it->second;
-    task->Cancel();
-    if (!task->triggered_) {
-      task->fn_(absl::CancelledError());
-    }
+    task->TryCancelUnsafe();
   });
 }
 
@@ -909,46 +1104,15 @@ LibuvDNSResolver::LookupHostname(LookupHostnameCallback on_resolve,
                                  absl::string_view address,
                                  absl::string_view default_port,
                                  absl::Time deadline) {
-  LibuvLookupTask* task = new LibuvLookupTask(engine_);
-  task->on_resolve_ = std::move(on_resolve);
-  if (!grpc_core::SplitHostPort(address, &task->address_,
-                                &task->default_port_)) {
-    task->address_ = std::string(address);
-    task->default_port_ = std::string(default_port);
-  }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_DEBUG, "LookupHostname for %s:%s scheduled",
-            task->address_.c_str(), task->default_port_.c_str());
-  }
+  LibuvLookupTask* task = new LibuvLookupTask(engine_, std::move(on_resolve),
+                                              address, default_port);
   engine_->Schedule([task, deadline](LibuvEventEngine* engine) {
-    intptr_t key = task->key_;
+    intptr_t key = task->Key();
     engine->lookupTaskMap_[key] = task;
-    const char* ccaddress = task->address_.c_str();
-    const char* ccdefault_port = task->default_port_.c_str();
-    int r = uv_getaddrinfo(
-        &engine->loop_, &task->req_,
-        [](uv_getaddrinfo_t* req, int status, struct addrinfo* res) {
-          LibuvLookupTask* task = reinterpret_cast<LibuvLookupTask*>(req->data);
-          task->uvResolverCallback(status, res);
-        },
-        ccaddress, ccdefault_port, nullptr);
-    if (r != 0) {
-      auto on_resolve = std::move(task->on_resolve_);
-      engine->EraseLookupTask(key);
-      on_resolve(absl::UnknownError("Resolution error"));
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-        gpr_log(GPR_DEBUG, "LookupHostname for %s:%s failed early with %i",
-                task->address_.c_str(), task->default_port_.c_str(), r);
-      }
-      return;
-    }
-    uv_timer_init(&engine->loop_, &task->timer_);
-    absl::Duration timeout = deadline - absl::Now();
-    uv_timer_start(&task->timer_, LibuvLookupTask::uvTimerCallback,
-                   timeout / absl::Milliseconds(1), 0);
+    task->StartUnsafe(engine, deadline);
   });
 
-  return {task->key_};
+  return {task->Key()};
 }
 
 void LibuvDNSResolver::TryCancelLookup(
@@ -957,7 +1121,7 @@ void LibuvDNSResolver::TryCancelLookup(
   engine_->Schedule([task](LibuvEventEngine* engine) {
     auto it = engine->lookupTaskMap_.find(task.keys[0]);
     if (it == engine->lookupTaskMap_.end()) return;
-    it->second->Cancel(engine);
+    it->second->CancelUnsafe(engine);
   });
 }
 
@@ -977,11 +1141,17 @@ void LibuvEventEngine::EraseLookupTask(intptr_t taskKey) {
 
 LibuvEndpoint::~LibuvEndpoint() {
   LibuvEndpointWrapper* tcp = uvTCP_;
+  // When the proxy class is deleted, schedule a stop of our reads, and finally
+  // close the socket.
+  //
+  // Question: what do we do if this proxy class is deleted, but we still get a
+  // read from the other thread? The on_read callback will still get called
+  // while this is getting scheduled. Is this okay?
   GetEventEngine()->Schedule([tcp](LibuvEventEngine* engine) {
     if (tcp->on_read_) {
       uv_read_stop(reinterpret_cast<uv_stream_t*>(&tcp->tcp_));
-      auto cb = std::move(tcp->on_read_);
-      cb(absl::CancelledError());
+      auto on_read = std::move(tcp->on_read_);
+      on_read(absl::CancelledError());
     }
     tcp->CloseUnsafe(0);
   });
@@ -992,6 +1162,10 @@ void LibuvEndpoint::Write(
     grpc_event_engine::experimental::SliceBuffer* data) {
   LibuvEndpointWrapper* tcp = uvTCP_;
   GPR_ASSERT(tcp->write_bufs_ == nullptr);
+  // LibUV obviously doesn't understand the concept of grpc slices, and has its
+  // own structure that can look fairly similar at a glance. We'll have to
+  // create as many of these libuv write buffers as we have input slices, and
+  // set them all up with all the pointers and sizes from the slices themselves.
   size_t count = data->Count();
   tcp->write_bufs_ = new uv_buf_t[count];
   tcp->write_bufs_count_ = count;
@@ -1036,6 +1210,21 @@ void LibuvEndpoint::Read(
     grpc_event_engine::experimental::SliceBuffer* buffer) {
   buffer->Clear();
   LibuvEndpointWrapper* tcp = uvTCP_;
+  // The read case is a tiny bit of a square peg round hole situation,
+  // unfortunately. When libuv starts a read, it'll call us back with a request
+  // to allocate data, but in the grpc case, we want this the other way around,
+  // for the resource quota allocator, especially since the libuv callback has
+  // to return immediately with available memory.
+  //
+  // Also, libuv works in a firehose fashion, meaning it'll call the allocation
+  // + read callbacks continuously, until stopped. Since we can't know in
+  // advance if we are going to continue reading or not, and since we may need
+  // to delay due to the resource quota, we'll need to tell libuv to stop
+  // reading immediately when we get a read callback.
+  //
+  // We may be able to cheese this somehow by keeping a few slices in advance,
+  // and reusing them instead of waiting for the resource allocation to
+  // complete, but that'd be further iteration on this code for later.
   tcp->read_sb_ = buffer;
   tcp->on_read_ = std::move(on_read);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -1047,12 +1236,13 @@ void LibuvEndpoint::Read(
         this->GetEventEngine()->Schedule([tcp](LibuvEventEngine* engine) {
           uv_read_start(
               reinterpret_cast<uv_stream_t*>(&tcp->tcp_),
+              // The allocator callback from libuv to us asking for memory to
+              // write to to complete the read operation.
               [](uv_handle_t* handle, size_t /* suggested_size */,
                  uv_buf_t* buf) {
                 LibuvEndpointWrapper* tcp =
                     reinterpret_cast<LibuvEndpointWrapper*>(handle->data);
-                // TODO(nnoble): seems like we should have a way to get
-                // individual Slices. discuss.
+                // TODO(nnoble): Rework this with iterators when we have them.
                 tcp->read_sb_->Enumerate(
                     [buf](uint8_t* start, size_t len, size_t idx) {
                       if (idx == 0) {
@@ -1061,6 +1251,7 @@ void LibuvEndpoint::Read(
                       }
                     });
               },
+              // The actual read callback from libuv.
               [](uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
                 LibuvEndpointWrapper* tcp =
                     reinterpret_cast<LibuvEndpointWrapper*>(stream->data);
@@ -1073,7 +1264,7 @@ void LibuvEndpoint::Read(
                 }
                 if (nread == UV_EOF) {
                   tcp->read_sb_->TrimEnd(tcp->read_sb_->Length());
-                  // this is unfortunate, but returning OK means there's more to
+                  // This is unfortunate, but returning OK means there's more to
                   // read and gets us into an infinite loop.
                   on_read(absl::ResourceExhaustedError("EOF"));
                   return;
@@ -1096,5 +1287,15 @@ void LibuvEndpoint::Read(
 }
 
 void LibuvListenerWrapper::Close(LibuvEventEngine* engine) {
+  // We don't have any other handle to close, so this is a straight call to
+  // CloseUnsafe.
   engine->Schedule([this](LibuvEventEngine* engine) { CloseUnsafe(0); });
+}
+
+}  // namespace
+
+// The only exposed function, which acts as our entry point.
+grpc_event_engine::experimental::EventEngine*
+grpc_event_engine::experimental::DefaultEventEngineFactory() {
+  return new LibuvEventEngine();
 }
