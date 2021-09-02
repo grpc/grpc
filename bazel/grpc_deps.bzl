@@ -346,6 +346,17 @@ def grpc_deps():
             ],
         )
 
+    if "udpa" not in native.existing_rules():
+        http_archive(
+            name = "udpa",
+            sha256 = "9c9f3863da3351a983c63bf63edb5671ddbe0c4cb75f158c9ec83ad2debac05c",
+            strip_prefix = "udpa-6414d713912e988471d192940b62bf552b11793a",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/github.com/cncf/udpa/archive/6414d713912e988471d192940b62bf552b11793a.tar.gz",
+                "https://github.com/cncf/udpa/archive/6414d713912e988471d192940b62bf552b11793a.tar.gz",
+            ],
+        )
+
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",

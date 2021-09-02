@@ -4201,30 +4201,29 @@ grpc_cc_library(
     ],
 )
 
-# Once upb code-gen issue is resolved, replace udpa_orca_upb with this.
-# grpc_upb_proto_library(
-#     name = "udpa_orca_upb",
-#     deps = ["@envoy_api//udpa/data/orca/v1:orca_load_report"]
-# )
+grpc_upb_proto_library(
+     name = "udpa_orca_upb",
+     deps = ["@udpa//udpa/data/orca/v1:pkg"]
+ )
 
-grpc_cc_library(
-    name = "udpa_orca_upb",
-    srcs = [
-        "src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "proto_gen_validate_upb",
-    ],
-)
+#grpc_cc_library(
+#    name = "udpa_orca_upb",
+#    srcs = [
+#        "src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c",
+#    ],
+#    hdrs = [
+#        "src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h",
+#    ],
+#    external_deps = [
+#        "upb_lib",
+#        "upb_lib_descriptor",
+#        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+#    ],
+#    language = "c++",
+#    deps = [
+#        "proto_gen_validate_upb",
+#    ],
+#)
 
 grpc_cc_library(
     name = "udpa_annotations_upb",
