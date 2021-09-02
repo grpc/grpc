@@ -30,8 +30,6 @@
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/tags/with_tag_map.h"
 
-#include "include/grpc++/grpc++.h"
-#include "include/grpcpp/opencensus.h"
 #include <grpc++/grpc++.h>
 #include <grpcpp/opencensus.h>
 
