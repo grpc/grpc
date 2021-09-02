@@ -15,9 +15,9 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_ANDROID_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_ANDROID_H
 
-#if defined(ANDROID) || defined(__ANDROID__)
-
 #include <grpc/impl/codegen/port_platform.h>
+
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
 #include <android/binder_auto_utils.h>
 #include <android/binder_ibinder.h>
@@ -31,11 +31,6 @@
 
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
-
-// TODO(b/192208764): move this check to somewhere else
-#if __ANDROID_API__ < 29
-#error "We only support Android API level >= 29."
-#endif
 
 namespace grpc_binder {
 
@@ -128,6 +123,6 @@ class TransactionReceiverAndroid final : public TransactionReceiver {
 
 }  // namespace grpc_binder
 
-#endif  // defined(ANDROID) || defined(__ANDROID__)
+#endif /*GPR_SUPPORT_BINDER_TRANSPORT*/
 
 #endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_ANDROID_H
