@@ -133,7 +133,11 @@ TEST(PipeTest, CanFilter) {
   MakeActivity(
       [&pipe] {
         // Setup some filters here, carefully getting ordering correct by doing
-        // so outside of the Join().
+        // so outside of the Join() since C++ does not define execution order
+        // between arguments.
+        // TODO(ctiller): A future change to Pipe will specify an ordering
+        // between filters added to sender and receiver, at which point these
+        // should move back.
         auto doubler = pipe.receiver.Filter(
             [](int p) { return absl::StatusOr<int>(p * 2); });
         auto adder = pipe.sender.Filter(
@@ -143,7 +147,7 @@ TEST(PipeTest, CanFilter) {
             // - push 42 into the pipe
             // - wait for a value to be received, and filter it by doubling it
             // - wait for a value to be received, and filter it by adding one to
-            // it
+            //   it
             // - wait for a value to be received and close the pipe.
             Join(pipe.sender.Push(42), std::move(doubler), std::move(adder),
                  Seq(pipe.receiver.Next(),
