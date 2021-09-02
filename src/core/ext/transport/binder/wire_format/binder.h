@@ -46,6 +46,7 @@ class WritableParcel {
   virtual int32_t GetDataPosition() const = 0;
   virtual absl::Status SetDataPosition(int32_t pos) = 0;
   virtual absl::Status WriteInt32(int32_t data) = 0;
+  virtual absl::Status WriteInt64(int64_t data) = 0;
   virtual absl::Status WriteBinder(HasRawBinder* binder) = 0;
   virtual absl::Status WriteString(absl::string_view s) = 0;
   virtual absl::Status WriteByteArray(const int8_t* buffer, int32_t length) = 0;
@@ -66,6 +67,7 @@ class ReadableParcel {
  public:
   virtual ~ReadableParcel() = default;
   virtual absl::Status ReadInt32(int32_t* data) const = 0;
+  virtual absl::Status ReadInt64(int64_t* data) const = 0;
   virtual absl::Status ReadBinder(std::unique_ptr<Binder>* data) const = 0;
   // TODO(waynetu): Provide better interfaces.
   virtual absl::Status ReadByteArray(std::string* data) const = 0;

@@ -205,6 +205,12 @@ absl::Status WritableParcelAndroid::WriteInt32(int32_t data) {
              : absl::InternalError("AParcel_writeInt32 failed");
 }
 
+absl::Status WritableParcelAndroid::WriteInt64(int64_t data) {
+  return AParcel_writeInt64(parcel_, data) == STATUS_OK
+             ? absl::OkStatus()
+             : absl::InternalError("AParcel_writeInt64 failed");
+}
+
 absl::Status WritableParcelAndroid::WriteBinder(HasRawBinder* binder) {
   return AParcel_writeStrongBinder(
              parcel_, reinterpret_cast<AIBinder*>(binder->GetRawBinder())) ==
@@ -230,6 +236,12 @@ absl::Status ReadableParcelAndroid::ReadInt32(int32_t* data) const {
   return AParcel_readInt32(parcel_, data) == STATUS_OK
              ? absl::OkStatus()
              : absl::InternalError("AParcel_readInt32 failed");
+}
+
+absl::Status ReadableParcelAndroid::ReadInt64(int64_t* data) const {
+  return AParcel_readInt64(parcel_, data) == STATUS_OK
+             ? absl::OkStatus()
+             : absl::InternalError("AParcel_readInt64 failed");
 }
 
 absl::Status ReadableParcelAndroid::ReadBinder(

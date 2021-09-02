@@ -77,4 +77,13 @@ absl::Status WireWriterImpl::RpcCall(const Transaction& tx) {
   // is an undefined behavior.
   return binder_->Transact(BinderTransportTxCode(tx.GetTxCode()));
 }
+
+absl::Status WireWriterImpl::Ack(int64_t num_bytes) {
+  grpc_core::MutexLock lock(&mu_);
+  RETURN_IF_ERROR(binder_->PrepareTransaction());
+  WritableParcel* parcel = binder_->GetWritableParcel();
+  RETURN_IF_ERROR(parcel->WriteInt64(num_bytes));
+  return binder_->Transact(BinderTransportTxCode::ACKNOWLEDGE_BYTES);
+}
+
 }  // namespace grpc_binder

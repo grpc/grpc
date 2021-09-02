@@ -46,6 +46,7 @@ class WritableParcelAndroid final : public WritableParcel {
   int32_t GetDataPosition() const override;
   absl::Status SetDataPosition(int32_t pos) override;
   absl::Status WriteInt32(int32_t data) override;
+  absl::Status WriteInt64(int64_t data) override;
   absl::Status WriteBinder(HasRawBinder* binder) override;
   absl::Status WriteString(absl::string_view s) override;
   absl::Status WriteByteArray(const int8_t* buffer, int32_t length) override;
@@ -65,6 +66,7 @@ class ReadableParcelAndroid final : public ReadableParcel {
   ~ReadableParcelAndroid() override = default;
 
   absl::Status ReadInt32(int32_t* data) const override;
+  absl::Status ReadInt64(int64_t* data) const override;
   absl::Status ReadBinder(std::unique_ptr<Binder>* data) const override;
   absl::Status ReadByteArray(std::string* data) const override;
   // FIXME(waynetu): Fix the interface.

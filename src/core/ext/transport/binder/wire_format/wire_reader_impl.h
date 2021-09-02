@@ -62,7 +62,7 @@ class WireReaderImpl : public WireReader {
   /// setup, we assume that the first half of SETUP_TRANSPORT (up to step 2) is
   /// already done somewhere else (see test/end2end/binder_transport_test.cc for
   /// how it's handled in the testing environment).
-  std::unique_ptr<WireWriter> SetupTransport(
+  std::shared_ptr<WireWriter> SetupTransport(
       std::unique_ptr<Binder> binder) override;
 
   absl::Status ProcessTransaction(transaction_code_t code,
@@ -104,11 +104,20 @@ class WireReaderImpl : public WireReader {
   // called. Be cautious not to access it afterward.
   std::unique_ptr<Binder> other_end_binder_;
   absl::flat_hash_map<transaction_code_t, int32_t> expected_seq_num_;
+  absl::flat_hash_map<transaction_code_t, std::string> message_buffer_;
   std::unique_ptr<TransactionReceiver> tx_receiver_;
   bool is_client_;
   // When WireReaderImpl gets destructed, call on_destruct_callback_. This is
   // mostly for decrementing the reference count of its transport.
   std::function<void()> on_destruct_callback_;
+
+  // ACK every 16k bytes.
+  static constexpr int64_t kFlowControlAckBytes = 16 * 1024;
+  int64_t num_incoming_bytes_ = 0;
+  int64_t num_acknowledged_bytes_ = 0;
+
+  // Used to send ACK.
+  std::shared_ptr<WireWriter> wire_writer_;
 };
 
 }  // namespace grpc_binder

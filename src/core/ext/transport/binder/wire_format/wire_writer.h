@@ -32,12 +32,14 @@ class WireWriter {
  public:
   virtual ~WireWriter() = default;
   virtual absl::Status RpcCall(const Transaction& call) = 0;
+  virtual absl::Status Ack(int64_t num_bytes) = 0;
 };
 
 class WireWriterImpl : public WireWriter {
  public:
   explicit WireWriterImpl(std::unique_ptr<Binder> binder);
   absl::Status RpcCall(const Transaction& tx) override;
+  absl::Status Ack(int64_t num_bytes) override;
 
  private:
   grpc_core::Mutex mu_;
