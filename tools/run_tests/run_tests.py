@@ -474,10 +474,10 @@ class CLanguage(object):
             return ('gcc_11', [])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
-        elif compiler == 'clang3.7':
-            return ('clang_3.7',
+        elif compiler == 'clang3.4':
+            return ('clang_3.4',
                     self._clang_cmake_configure_extra_args(
-                        version_suffix='-3.7'))
+                        version_suffix='-3.4'))
         elif compiler == 'clang12':
             return ('clang_12',
                     self._clang_cmake_configure_extra_args(

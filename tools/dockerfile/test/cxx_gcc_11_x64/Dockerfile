@@ -14,7 +14,7 @@
 
 FROM gcc:11
 
-RUN apt-get update && apt-get install -y curl git golang wget
+RUN apt-get update && apt-get install -y curl git golang wget zip
 #====================
 # Python dependencies
 
@@ -32,6 +32,7 @@ RUN pip install virtualenv==16.7.9
 RUN pip install futures==3.1.1 enum34==1.1.10 protobuf==3.5.2.post1 six==1.16.0 twisted==19.10.0
 
 RUN pip install PyYAML==5.4.1
+RUN apt-get install python-is-python2
 # Google Cloud platform API libraries
 RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
