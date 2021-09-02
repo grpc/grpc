@@ -78,14 +78,14 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   grpc_slice_buffer_init(&outbuf);
   while (state.KeepRunning()) {
     c.EncodeHeaders(
-        grpc_core::HPackCompressor::EncodeHeaderOptions {
-        static_cast<uint32_t>(state.iterations()),
-        true,
-        false,
-        static_cast<size_t>(1024),
-        &stats,
-    },
-    b, &outbuf);
+        grpc_core::HPackCompressor::EncodeHeaderOptions{
+            static_cast<uint32_t>(state.iterations()),
+            true,
+            false,
+            static_cast<size_t>(1024),
+            &stats,
+        },
+        b, &outbuf);
     grpc_slice_buffer_reset_and_unref_internal(&outbuf);
     grpc_core::ExecCtx::Get()->Flush();
   }
@@ -127,14 +127,14 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
   while (state.KeepRunning()) {
     static constexpr int kEnsureMaxFrameAtLeast = 2;
     c.EncodeHeaders(
-    grpc_core::HPackCompressor::EncodeHeaderOptions {
-        static_cast<uint32_t>(state.iterations()),
-        state.range(0) != 0,
-        Fixture::kEnableTrueBinary,
-        static_cast<size_t>(state.range(1) + kEnsureMaxFrameAtLeast),
-        &stats,
-    },
-    b, &outbuf);
+        grpc_core::HPackCompressor::EncodeHeaderOptions{
+            static_cast<uint32_t>(state.iterations()),
+            state.range(0) != 0,
+            Fixture::kEnableTrueBinary,
+            static_cast<size_t>(state.range(1) + kEnsureMaxFrameAtLeast),
+            &stats,
+        },
+        b, &outbuf);
     if (!logged_representative_output && state.iterations() > 3) {
       logged_representative_output = true;
       for (size_t i = 0; i < outbuf.count; i++) {

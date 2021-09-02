@@ -311,9 +311,9 @@ void HPackCompressor::Framer::EmitLitHdrWithStringKeyIncIdx(grpc_mdelem elem) {
   GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX_V();
   GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
   StringKey key(GRPC_MDKEY(elem));
-  StringValue emit(DefinitelyInterned(), elem, use_true_binary_metadata_);
   key.WritePrefix(0x40, AddTiny(key.prefix_length()));
   Add(grpc_slice_ref_internal(key.key()));
+  StringValue emit(DefinitelyInterned(), elem, use_true_binary_metadata_);
   emit.WritePrefix(AddTiny(emit.prefix_length()));
   Add(emit.data());
 }
@@ -322,9 +322,9 @@ void HPackCompressor::Framer::EmitLitHdrWithStringKeyNotIdx(grpc_mdelem elem) {
   GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX_V();
   GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
   StringKey key(GRPC_MDKEY(elem));
-  StringValue emit(UnsureIfInterned(), elem, use_true_binary_metadata_);
   key.WritePrefix(0x00, AddTiny(key.prefix_length()));
   Add(grpc_slice_ref_internal(key.key()));
+  StringValue emit(UnsureIfInterned(), elem, use_true_binary_metadata_);
   emit.WritePrefix(AddTiny(emit.prefix_length()));
   Add(emit.data());
 }
@@ -448,9 +448,6 @@ void HPackCompressor::Framer::EncodeDynamic(grpc_mdelem elem) {
     compressor_->AddKey(elem, decoder_space_usage, key_hash);
   }
 }
-
-#define STRLEN_LIT(x) (sizeof(x) - 1)
-#define TIMEOUT_KEY "grpc-timeout"
 
 void HPackCompressor::Framer::EncodeDeadline(grpc_millis deadline) {
   char timeout_str[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];

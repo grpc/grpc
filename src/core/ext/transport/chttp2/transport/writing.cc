@@ -577,8 +577,9 @@ class StreamWriteContext {
                           [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
               &s_->stats.outgoing},
           grpc_core::ConcatMetadata(
-              grpc_core::MetadataArray(extra_headers_for_trailing_metadata_,
-                            num_extra_headers_for_trailing_metadata_),
+              grpc_core::MetadataArray(
+                  extra_headers_for_trailing_metadata_,
+                  num_extra_headers_for_trailing_metadata_),
               *s_->send_trailing_metadata),
           &t_->outbuf);
     }

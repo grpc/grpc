@@ -41,7 +41,7 @@
 
 #define TEST(x) run_test(x, #x)
 
-grpc_core::HPackCompressor *g_compressor;
+grpc_core::HPackCompressor* g_compressor;
 int g_failure = 0;
 
 void** to_delete = nullptr;
@@ -199,7 +199,7 @@ static void verify(const verify_params params, const char* expected,
 
   grpc_transport_one_way_stats stats;
   stats = {};
-  grpc_core::HPackCompressor::EncodeHeaderOptions hopt {
+  grpc_core::HPackCompressor::EncodeHeaderOptions hopt{
       0xdeadbeef,                      /* stream_id */
       params.eof,                      /* is_eof */
       params.use_true_binary_metadata, /* use_true_binary_metadata */
@@ -273,11 +273,12 @@ static void verify_continuation_headers(const char* key, const char* value,
 
   grpc_transport_one_way_stats stats;
   stats = {};
-  grpc_core::HPackCompressor::EncodeHeaderOptions hopt = {0xdeadbeef, /* stream_id */
-                                     is_eof,     /* is_eof */
-                                     false,      /* use_true_binary_metadata */
-                                     150,        /* max_frame_size */
-                                     &stats /* stats */};
+  grpc_core::HPackCompressor::EncodeHeaderOptions hopt = {
+      0xdeadbeef, /* stream_id */
+      is_eof,     /* is_eof */
+      false,      /* use_true_binary_metadata */
+      150,        /* max_frame_size */
+      &stats /* stats */};
   g_compressor->EncodeHeaders(hopt, b, &output);
   verify_frames(output, is_eof);
   grpc_slice_buffer_destroy_internal(&output);

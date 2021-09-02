@@ -38,11 +38,12 @@ namespace grpc_core {
 // Wrapper to take an array of mdelems and make them encodable
 class MetadataArray {
  public:
-  MetadataArray(grpc_mdelem** elems, size_t count) : elems_(elems), count_(count) {}
+  MetadataArray(grpc_mdelem** elems, size_t count)
+      : elems_(elems), count_(count) {}
 
   template <typename Encoder>
   void Encode(Encoder* encoder) const {
-    for (size_t i=0; i<count_; i++) {
+    for (size_t i = 0; i < count_; i++) {
       encoder->Encode(*elems_[i]);
     }
   }
@@ -68,7 +69,7 @@ class ConcatMetadata {
   const A& a_;
   const B& b_;
 };
-}
+}  // namespace metadata_detail
 
 template <typename A, typename B>
 metadata_detail::ConcatMetadata<A, B> ConcatMetadata(const A& a, const B& b) {
@@ -86,7 +87,9 @@ class HPackCompressor {
   void SetMaxTableSize(uint32_t max_table_size);
   void SetMaxUsableSize(uint32_t max_table_size);
 
-  uint32_t test_only_table_size() const { return table_.test_only_table_size(); }
+  uint32_t test_only_table_size() const {
+    return table_.test_only_table_size();
+  }
 
   struct EncodeHeaderOptions {
     uint32_t stream_id;
@@ -160,7 +163,7 @@ class HPackCompressor {
   };
 
  private:
-  static constexpr size_t kNumFilterValues = 32;
+  static constexpr size_t kNumFilterValues = 64;
 
   void AddKeyWithIndex(grpc_slice_refcount* key_ref, uint32_t new_index,
                        uint32_t key_hash);

@@ -39,7 +39,7 @@ uint32_t VarintLength(uint32_t tail_value) {
 }
 
 void VarintWriteTail(uint32_t tail_value, uint8_t* target,
-                                         uint32_t tail_length) {
+                     uint32_t tail_length) {
   switch (tail_length) {
     case 5:
       target[4] = static_cast<uint8_t>((tail_value >> 28) | 0x80);
@@ -59,4 +59,4 @@ void VarintWriteTail(uint32_t tail_value, uint8_t* target,
   target[tail_length - 1] &= 0x7f;
 }
 
-}
+}  // namespace grpc_core
