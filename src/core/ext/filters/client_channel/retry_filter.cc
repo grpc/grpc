@@ -88,9 +88,7 @@
 
 // TODO(roth): In subsequent PRs:
 // - add support for transparent retries (including initial metadata)
-// - figure out how to record stats in census for retries
-//   (census filter is on top of this one)
-// - add census stats for retries
+// - implement hedging
 
 // By default, we buffer 256 KiB per RPC for retries.
 // TODO(roth): Do we have any data to suggest a better value?
@@ -538,6 +536,8 @@ class RetryFilter::CallData {
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
   grpc_call_context_element* call_context_;
+
+  grpc_error_handle cancelled_from_surface_ = GRPC_ERROR_NONE;
 
   RefCountedPtr<CallStackDestructionBarrier> call_stack_destruction_barrier_;
 
@@ -2141,6 +2141,7 @@ RetryFilter::CallData::~CallData() {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     GPR_ASSERT(pending_batches_[i].batch == nullptr);
   }
+  GRPC_ERROR_UNREF(cancelled_from_surface_);
 }
 
 void RetryFilter::CallData::StartTransportStreamOpBatch(
@@ -2173,6 +2174,9 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
       call_attempt_->CancelFromSurface(batch);
       return;
     }
+    // Save cancel_error in case subsequent batches are started.
+    GRPC_ERROR_UNREF(cancelled_from_surface_);
+    cancelled_from_surface_ = GRPC_ERROR_REF(cancel_error);
     // Cancel retry timer.
     if (retry_timer_pending_) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
@@ -2201,6 +2205,15 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
   }
   // If we do not yet have a call attempt, create one.
   if (call_attempt_ == nullptr) {
+    // If we were previously cancelled from the surface, cancel this
+    // batch instead of creating a call attempt.
+    if (cancelled_from_surface_ != GRPC_ERROR_NONE) {
+      PendingBatchClear(pending);
+      // Note: This will release the call combiner.
+      grpc_transport_stream_op_batch_finish_with_failure(
+          batch, GRPC_ERROR_REF(cancelled_from_surface_), call_combiner_);
+      return;
+    }
     // If there is no retry policy, then commit retries immediately.
     // This ensures that the code below will always jump to the fast path.
     // TODO(roth): Remove this special case when we implement
