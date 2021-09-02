@@ -69,10 +69,13 @@ def _generate_py_impl(context):
         imports.append("%s/%s/%s" % (context.workspace_name, context.label.package, out_dir.import_path))
 
     return [
-        DefaultInfo(files = depset(direct = out_files)),
+        DefaultInfo(
+            files = depset(direct = out_files),
+            runfiles = context.runfiles(files = out_files, transitive_files = context.attr._protobuf_library[PyInfo].transitive_sources),
+        ),
         PyInfo(
-            transitive_sources = depset(),
-            imports = depset(direct = imports),
+            transitive_sources = depset(direct = out_files, transitive = [context.attr._protobuf_library[PyInfo].transitive_sources]),
+            imports = depset(direct = imports, transitive = [context.attr._protobuf_library[PyInfo].imports]),
         ),
     ]
 
@@ -95,6 +98,10 @@ _generate_pb2_src = rule(
             executable = True,
             cfg = "host",
         ),
+        "_protobuf_library": attr.label(
+            default = Label("@com_google_protobuf//:protobuf_python"),
+            providers = [PyInfo],
+        ),
     },
     implementation = _generate_py_impl,
 )
@@ -114,24 +121,13 @@ def py_proto_library(
       **kwargs: Additional arguments to be supplied to the invocation of
         py_library.
     """
-    codegen_target = "_{}_codegen".format(name)
     if len(deps) != 1:
         fail("Can only compile a single proto at a time.")
 
     _generate_pb2_src(
-        name = codegen_target,
+        name = name,
         deps = deps,
         plugin = plugin,
-        **kwargs
-    )
-
-    native.py_library(
-        name = name,
-        srcs = [":{}".format(codegen_target)],
-        deps = [
-            "@com_google_protobuf//:protobuf_python",
-            ":{}".format(codegen_target),
-        ],
         **kwargs
     )
 
