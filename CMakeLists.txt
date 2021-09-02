@@ -633,8 +633,8 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c histogram_test)
   add_dependencies(buildtests_c host_port_test)
   add_dependencies(buildtests_c hpack_encoder_test)
+  add_dependencies(buildtests_c hpack_parser_table_test)
   add_dependencies(buildtests_c hpack_parser_test)
-  add_dependencies(buildtests_c hpack_table_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c httpcli_test)
   endif()
@@ -1654,8 +1654,10 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/frame_settings.cc
   src/core/ext/transport/chttp2/transport/frame_window_update.cc
   src/core/ext/transport/chttp2/transport/hpack_encoder.cc
+  src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
-  src/core/ext/transport/chttp2/transport/hpack_table.cc
+  src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  src/core/ext/transport/chttp2/transport/hpack_utils.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/incoming_metadata.cc
@@ -2479,8 +2481,10 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/frame_settings.cc
   src/core/ext/transport/chttp2/transport/frame_window_update.cc
   src/core/ext/transport/chttp2/transport/hpack_encoder.cc
+  src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
-  src/core/ext/transport/chttp2/transport/hpack_table.cc
+  src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  src/core/ext/transport/chttp2/transport/hpack_utils.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/incoming_metadata.cc
@@ -5831,6 +5835,33 @@ target_link_libraries(hpack_encoder_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(hpack_parser_table_test
+  test/core/transport/chttp2/hpack_parser_table_test.cc
+)
+
+target_include_directories(hpack_parser_table_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+
+target_link_libraries(hpack_parser_table_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(hpack_parser_test
   test/core/transport/chttp2/hpack_parser_test.cc
 )
@@ -5850,33 +5881,6 @@ target_include_directories(hpack_parser_test
 )
 
 target_link_libraries(hpack_parser_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(hpack_table_test
-  test/core/transport/chttp2/hpack_table_test.cc
-)
-
-target_include_directories(hpack_table_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(hpack_table_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )

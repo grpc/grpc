@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/ext/transport/chttp2/transport/hpack_table.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -134,13 +134,13 @@ static void test_many_additions(void) {
                                    grpc_slice_from_cpp_string(value));
     GPR_ASSERT(tbl.Add(elem) == GRPC_ERROR_NONE);
     GRPC_MDELEM_UNREF(elem);
-    assert_index(&tbl, 1 + HPackTable::kLastStaticEntry, key.c_str(),
-                 value.c_str());
+    assert_index(&tbl, 1 + grpc_core::hpack_constants::kLastStaticEntry,
+                 key.c_str(), value.c_str());
     if (i) {
       std::string key = absl::StrCat("K:", i - 1);
       std::string value = absl::StrCat("VALUE:", i - 1);
-      assert_index(&tbl, 2 + HPackTable::kLastStaticEntry, key.c_str(),
-                   value.c_str());
+      assert_index(&tbl, 2 + grpc_core::hpack_constants::kLastStaticEntry,
+                   key.c_str(), value.c_str());
     }
   }
 }
