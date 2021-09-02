@@ -281,6 +281,13 @@ class EventEngine {
     virtual void TryCancelLookup(LookupTaskHandle handle) = 0;
   };
 
+  /// At time of destruction, the EventEngine must have no active
+  /// responsibilities. EventEngine users (applications) are responsible for
+  /// cancelling all tasks and DNS lookups, shutting down listeners and
+  /// endpoints, prior to EventEngine destruction. If there are any outstanding
+  /// tasks, any running listeners, etc. at time of EventEngine destruction,
+  /// that is an invalid use of the API, and it will result in undefined
+  /// behavior.
   virtual ~EventEngine() = default;
 
   // TODO(nnoble): consider whether we can remove this method before we
