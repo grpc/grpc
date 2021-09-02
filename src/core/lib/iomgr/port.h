@@ -20,11 +20,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_UV
-#ifndef GRPC_CUSTOM_SOCKET
-#define GRPC_CUSTOM_SOCKET
-#endif
-#endif
 /* This needs to be separate from the other conditions because it needs to
  * apply to custom sockets too */
 #ifdef GPR_WINDOWS
