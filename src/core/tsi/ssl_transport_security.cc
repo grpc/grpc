@@ -503,10 +503,10 @@ static void log_ssl_error_stack(void) {
 /* Performs an SSL_read and handle errors. */
 static tsi_result do_ssl_read(SSL* ssl, unsigned char* unprotected_bytes,
                               size_t* unprotected_bytes_size) {
-  int read_from_ssl;
   GPR_ASSERT(*unprotected_bytes_size <= INT_MAX);
-  read_from_ssl = SSL_read(ssl, unprotected_bytes,
-                           static_cast<int>(*unprotected_bytes_size));
+  ERR_clear_error();
+  int read_from_ssl = SSL_read(ssl, unprotected_bytes,
+                               static_cast<int>(*unprotected_bytes_size));
   if (read_from_ssl <= 0) {
     read_from_ssl = SSL_get_error(ssl, read_from_ssl);
     switch (read_from_ssl) {
@@ -536,10 +536,10 @@ static tsi_result do_ssl_read(SSL* ssl, unsigned char* unprotected_bytes,
 /* Performs an SSL_write and handle errors. */
 static tsi_result do_ssl_write(SSL* ssl, unsigned char* unprotected_bytes,
                                size_t unprotected_bytes_size) {
-  int ssl_write_result;
   GPR_ASSERT(unprotected_bytes_size <= INT_MAX);
-  ssl_write_result = SSL_write(ssl, unprotected_bytes,
-                               static_cast<int>(unprotected_bytes_size));
+  ERR_clear_error();
+  int ssl_write_result = SSL_write(ssl, unprotected_bytes,
+                                   static_cast<int>(unprotected_bytes_size));
   if (ssl_write_result < 0) {
     ssl_write_result = SSL_get_error(ssl, ssl_write_result);
     if (ssl_write_result == SSL_ERROR_WANT_READ) {
@@ -1449,6 +1449,7 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
     impl->result = TSI_OK;
     return impl->result;
   } else {
+    ERR_clear_error();
     /* Get ready to get some bytes from SSL. */
     int ssl_result = SSL_do_handshake(impl->ssl);
     ssl_result = SSL_get_error(impl->ssl, ssl_result);
@@ -1645,6 +1646,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
       tsi_ssl_handshaker_resume_session(ssl,
                                         client_factory->session_cache.get());
     }
+    ERR_clear_error();
     ssl_result = SSL_do_handshake(ssl);
     ssl_result = SSL_get_error(ssl, ssl_result);
     if (ssl_result != SSL_ERROR_WANT_READ) {
