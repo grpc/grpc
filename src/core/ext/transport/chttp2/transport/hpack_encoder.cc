@@ -372,7 +372,7 @@ void HPackCompressor::Framer::EncodeDynamic(grpc_mdelem elem) {
   // 2) grpc filters/core should be checked during debug builds. */
 #ifndef NDEBUG
   if (GRPC_SLICE_START_PTR(elem_key)[0] != ':') { /* regular header */
-    seen_regular_header_ = 1;
+    seen_regular_header_ = true;
   } else {
     GPR_DEBUG_ASSERT(
         !seen_regular_header_ &&
