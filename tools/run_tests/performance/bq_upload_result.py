@@ -238,7 +238,7 @@ def _populate_node_metadata_from_file(scenario_result, node_info_file):
                 value: serverNodeInfo[key] for key, value in
                 _node_info_to_bq_node_metadata_key_map.items()
             })
-            
+
     scenario_result['nodeMetadata'] = node_metadata
 
 
