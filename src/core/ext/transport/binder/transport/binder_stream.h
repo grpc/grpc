@@ -51,7 +51,6 @@ struct grpc_binder_stream {
       : t(t),
         refcount(refcount),
         arena(arena),
-        seq(0),
         tx_code(tx_code),
         is_client(is_client) {
     // TODO(waynetu): Should this be protected?
@@ -74,13 +73,11 @@ struct grpc_binder_stream {
   }
 
   int GetTxCode() const { return tx_code; }
-  int GetThenIncSeq() { return seq++; }
 
   grpc_binder_transport* t;
   grpc_stream_refcount* refcount;
   grpc_core::Arena* arena;
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> sbs;
-  int seq;
   int tx_code;
   bool is_client;
   bool is_closed = false;
