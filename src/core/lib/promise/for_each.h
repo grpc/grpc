@@ -62,8 +62,8 @@ class ForEach {
 
   ForEach(const ForEach&) = delete;
   ForEach& operator=(const ForEach&) = delete;
-  ForEach(ForEach&&) noexcept = default;
-  ForEach& operator=(ForEach&&) noexcept = default;
+  ForEach(ForEach&&) = default;
+  ForEach& operator=(ForEach&&) = default;
 
   Poll<Result> operator()() {
     return absl::visit(CallPoll<false>{this}, state_);
