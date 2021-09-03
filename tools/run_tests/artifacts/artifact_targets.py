@@ -201,7 +201,7 @@ class RubyArtifact:
         return create_jobspec(
             self.name, ['tools/run_tests/artifacts/build_artifact_ruby.sh'],
             use_workspace=True,
-            timeout_seconds=60 * 60)
+            timeout_seconds=90 * 60)
 
 
 class CSharpExtArtifact:
