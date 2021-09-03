@@ -48,8 +48,8 @@ absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
   grpc_error_handle error =
       grpc_load_file(std::string(policy_path).c_str(), 0, &policy_slice);
   if (error != GRPC_ERROR_NONE) {
-    absl::Status status = absl::Status(absl::StatusCode::kInvalidArgument,
-                                       grpc_error_std_string(error));
+    absl::Status status =
+        absl::InvalidArgumentError(grpc_error_std_string(error));
     GRPC_ERROR_UNREF(error);
     return status;
   }
@@ -67,32 +67,35 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 
 absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
 FileWatcherAuthorizationPolicyProvider::Create(
-    absl::string_view authz_policy_path, unsigned int refresh_interval_sec) {
+    absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
+    std::function<void(grpc_status_code status, const char* error_details)>
+        on_error_cb) {
   GPR_ASSERT(!authz_policy_path.empty());
   GPR_ASSERT(refresh_interval_sec > 0);
-  auto authz_policy = ReadPolicyFromFile(authz_policy_path);
-  if (!authz_policy.ok()) {
-    return authz_policy.status();
-  }
-  auto rbac_policies_or = GenerateRbacPolicies(*authz_policy);
-  if (!rbac_policies_or.ok()) {
-    return rbac_policies_or.status();
-  }
-  return MakeRefCounted<FileWatcherAuthorizationPolicyProvider>(
-      authz_policy_path, refresh_interval_sec, std::move(*authz_policy),
-      std::move(*rbac_policies_or));
+  absl::Status status;
+  auto provider = MakeRefCounted<FileWatcherAuthorizationPolicyProvider>(
+      authz_policy_path, refresh_interval_sec, std::move(on_error_cb), &status);
+  if (!status.ok()) return status;
+  return provider;
 }
 
 FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
     absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
-    std::string authz_policy, RbacPolicies rbac_policies)
+    std::function<void(grpc_status_code status, const char* error_details)>
+        on_error_cb,
+    absl::Status* status)
     : authz_policy_path_(std::string(authz_policy_path)),
       refresh_interval_sec_(refresh_interval_sec),
-      authz_policy_(std::move(authz_policy)) {
+      on_error_cb_(std::move(on_error_cb)) {
   gpr_event_init(&shutdown_event_);
+  // Initial read is done synchronously.
+  *status = ForceUpdate();
+  if (!status->ok()) {
+    return;
+  }
   auto thread_lambda = [](void* arg) {
-    WeakRefCountedPtr<FileWatcherAuthorizationPolicyProvider> provider =
-        static_cast<FileWatcherAuthorizationPolicyProvider*>(arg)->WeakRef();
+    WeakRefCountedPtr<FileWatcherAuthorizationPolicyProvider> provider(
+        static_cast<FileWatcherAuthorizationPolicyProvider*>(arg));
     GPR_ASSERT(provider != nullptr);
     while (true) {
       void* value = gpr_event_wait(
@@ -109,14 +112,10 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
       }
     }
   };
-  refresh_thread_ = grpc_core::Thread(
+  refresh_thread_ = new grpc_core::Thread(
       "FileWatcherAuthorizationPolicyProvider_refreshing_thread", thread_lambda,
-      this);
-  refresh_thread_.Start();
-  allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
-      std::move(rbac_policies.allow_policy));
-  deny_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
-      std::move(rbac_policies.deny_policy));
+      WeakRef().release());
+  refresh_thread_->Start();
 }
 
 absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
@@ -131,7 +130,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
     if (!rbac_policies_or.ok()) {
       return rbac_policies_or.status();
     }
-    authz_policy_ = *authz_policy;
+    authz_policy_ = std::move(*authz_policy);
     allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
         std::move(rbac_policies_or->allow_policy));
     deny_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
@@ -142,7 +141,14 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
 
 void FileWatcherAuthorizationPolicyProvider::Orphan() {
   gpr_event_set(&shutdown_event_, reinterpret_cast<void*>(1));
-  refresh_thread_.Join();
+  if (refresh_thread_ != nullptr) {
+    refresh_thread_->Join();
+  }
+}
+
+FileWatcherAuthorizationPolicyProvider::
+    ~FileWatcherAuthorizationPolicyProvider() {
+  delete refresh_thread_;
 }
 
 }  // namespace grpc_core
@@ -162,41 +168,27 @@ grpc_authorization_policy_provider_static_data_create(
         gpr_strdup(std::string(provider_or.status().message()).c_str());
     return nullptr;
   }
-  *code = GRPC_STATUS_OK;
-  *error_details = nullptr;
   return provider_or->release();
 }
 
 grpc_authorization_policy_provider*
 grpc_authorization_policy_provider_file_watcher_create(
     const char* authz_policy_path, unsigned int refresh_interval_sec,
+    grpc_authorization_policy_provider_file_watcher_on_error_cb cb,
     grpc_status_code* code, const char** error_details) {
   GPR_ASSERT(authz_policy_path != nullptr);
   auto provider_or = grpc_core::FileWatcherAuthorizationPolicyProvider::Create(
-      authz_policy_path, refresh_interval_sec);
+      authz_policy_path, refresh_interval_sec, std::move(cb));
   if (!provider_or.ok()) {
     *code = static_cast<grpc_status_code>(provider_or.status().code());
     *error_details =
         gpr_strdup(std::string(provider_or.status().message()).c_str());
     return nullptr;
   }
-  *code = GRPC_STATUS_OK;
-  *error_details = nullptr;
   return provider_or->release();
 }
 
 void grpc_authorization_policy_provider_release(
     grpc_authorization_policy_provider* provider) {
   if (provider != nullptr) provider->Unref();
-}
-
-GRPCAPI void grpc_authorization_policy_provider_file_watcher_set_error_callback(
-    grpc_authorization_policy_provider* provider,
-    grpc_authorization_policy_provider_file_watcher_on_error_cb cb) {
-  GPR_ASSERT(provider != nullptr);
-  auto file_watcher_provider =
-      dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
-          provider);
-  GPR_ASSERT(file_watcher_provider != nullptr);
-  file_watcher_provider->SetErrorStatusCallback(cb);
 }

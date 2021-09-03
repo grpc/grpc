@@ -20,11 +20,11 @@
 #include "test/core/util/tls_utils.h"
 
 #define VALID_POLICY_PATH_1 \
-  "src/core/lib/security/authorization/test_policies/valid_policy_1.json"
+  "test/core/security/authorization/test_policies/valid_policy_1.json"
 #define VALID_POLICY_PATH_2 \
-  "src/core/lib/security/authorization/test_policies/valid_policy_2.json"
+  "test/core/security/authorization/test_policies/valid_policy_2.json"
 #define INVALID_POLICY_PATH \
-  "src/core/lib/security/authorization/test_policies/invalid_policy.json"
+  "test/core/security/authorization/test_policies/invalid_policy.json"
 
 namespace grpc {
 
@@ -52,7 +52,8 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherCreateReturnsProvider) {
       grpc_core::testing::GetFileContents(VALID_POLICY_PATH_1));
   grpc::Status status;
   auto provider = experimental::FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1, &status);
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
+      /*on_error_cb=*/nullptr, &status);
   ASSERT_NE(provider, nullptr);
   EXPECT_NE(provider->c_provider(), nullptr);
   EXPECT_TRUE(status.ok());
@@ -64,7 +65,8 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherCreateReturnsErrorStatus) {
       grpc_core::testing::GetFileContents(INVALID_POLICY_PATH));
   grpc::Status status;
   auto provider = experimental::FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1, &status);
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
+      /*on_error_cb=*/nullptr, &status);
   ASSERT_EQ(provider, nullptr);
   EXPECT_EQ(status.error_code(), grpc::StatusCode::INVALID_ARGUMENT);
   EXPECT_EQ(status.error_message(), "\"name\" field is not present.");
@@ -76,12 +78,12 @@ TEST(AuthorizationPolicyProviderTest,
       grpc_core::testing::GetFileContents(VALID_POLICY_PATH_1));
   grpc::Status status;
   auto provider = experimental::FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1, &status);
-  provider->SetErrorStatusCallback(
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
       [](grpc_status_code status, const char* error_details) {
         EXPECT_EQ(status, GRPC_STATUS_INVALID_ARGUMENT);
         EXPECT_EQ(strcmp(error_details, "\"name\" field is not present."), 0);
-      });
+      },
+      &status);
   ASSERT_NE(provider, nullptr);
   EXPECT_NE(provider->c_provider(), nullptr);
   EXPECT_TRUE(status.ok());

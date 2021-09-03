@@ -65,27 +65,25 @@ class FileWatcherAuthorizationPolicyProvider
     : public grpc_authorization_policy_provider {
  public:
   static absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
-  Create(absl::string_view authz_policy_path,
-         unsigned int refresh_interval_sec);
+  Create(absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
+         std::function<void(grpc_status_code status, const char* error_details)>
+             on_error_cb);
 
   // Use factory method "Create" to create an instance of
   // FileWatcherAuthorizationPolicyProvider.
-  explicit FileWatcherAuthorizationPolicyProvider(
+  FileWatcherAuthorizationPolicyProvider(
       absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
-      std::string authz_policy, RbacPolicies rbac_policies);
+      std::function<void(grpc_status_code status, const char* error_details)>
+          on_error_cb,
+      absl::Status* status);
+
+  ~FileWatcherAuthorizationPolicyProvider() override;
 
   void Orphan() override;
 
   AuthorizationEngines engines() override {
     grpc_core::MutexLock lock(&mu_);
     return {allow_engine_, deny_engine_};
-  }
-
-  void SetErrorStatusCallback(
-      std::function<void(grpc_status_code status, const char* error_details)>
-          on_error_cb) {
-    grpc_core::MutexLock lock(&cb_mu_);
-    on_error_cb_ = std::move(on_error_cb);
   }
 
  private:
@@ -95,7 +93,7 @@ class FileWatcherAuthorizationPolicyProvider
   std::string authz_policy_path_;
   unsigned int refresh_interval_sec_;
 
-  Thread refresh_thread_;
+  Thread* refresh_thread_ = nullptr;
   gpr_event shutdown_event_;
 
   grpc_core::Mutex cb_mu_;

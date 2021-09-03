@@ -20,7 +20,7 @@
 
 #include <memory>
 
-// TODO(yihuazhang): remove the forward declaration here and include
+// TODO(yihuazhang): remove the forward declarations here and include
 // <grpc/grpc_security.h> directly once the insecure builds are cleaned up.
 typedef struct grpc_authorization_policy_provider
     grpc_authorization_policy_provider;
@@ -68,8 +68,11 @@ class StaticDataAuthorizationPolicyProvider
 class FileWatcherAuthorizationPolicyProvider
     : public AuthorizationPolicyProviderInterface {
  public:
+  // Sets callback to be executed anytime reloading fails due to I/O errors or
+  // invalid policy.
   static std::shared_ptr<FileWatcherAuthorizationPolicyProvider> Create(
       const std::string& authz_policy_path, unsigned int refresh_interval_sec,
+      grpc_authorization_policy_provider_file_watcher_on_error_cb on_error_cb,
       grpc::Status* status);
 
   // Use factory method "Create" to create an instance of
@@ -79,11 +82,6 @@ class FileWatcherAuthorizationPolicyProvider
       : c_provider_(provider) {}
 
   ~FileWatcherAuthorizationPolicyProvider() override;
-
-  // Sets callback to be executed anytime reloading fails due to I/O errors or
-  // invalid policy.
-  void SetErrorStatusCallback(
-      grpc_authorization_policy_provider_file_watcher_on_error_cb on_error_cb);
 
   grpc_authorization_policy_provider* c_provider() override {
     return c_provider_;

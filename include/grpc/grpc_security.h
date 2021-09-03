@@ -1111,6 +1111,18 @@ grpc_authorization_policy_provider_static_data_create(
 
 /**
  * EXPERIMENTAL - Subject to change.
+ * Callback function that is executed when reading policy from file path fails
+ * due to I/O error/invalid policy. This is specific to
+ * |FileWatcherAuthorizationPolicyProvider|.
+ * - code is the error status code on failure.
+ * - error_details contains details about the error. The function does not take
+ * ownership of this string.
+ */
+typedef void (*grpc_authorization_policy_provider_file_watcher_on_error_cb)(
+    grpc_status_code status, const char* error_details);
+
+/**
+ * EXPERIMENTAL - Subject to change.
  * Creates a grpc_authorization_policy_provider by watching for SDK
  * authorization policy changes in filesystem.
  * - authz_policy is the file path of SDK authorization policy.
@@ -1125,27 +1137,8 @@ grpc_authorization_policy_provider_static_data_create(
 GRPCAPI grpc_authorization_policy_provider*
 grpc_authorization_policy_provider_file_watcher_create(
     const char* authz_policy_path, unsigned int refresh_interval_sec,
+    grpc_authorization_policy_provider_file_watcher_on_error_cb cb,
     grpc_status_code* code, const char** error_details);
-
-/**
- * EXPERIMENTAL - Subject to change.
- * Callback function that is executed when reading policy from file path fails
- * due to I/O error/invalid policy. This is specific to
- * |FileWatcherAuthorizationPolicyProvider|.
- * - code is the error status code on failure.
- * - error_details contains details about the error.
- */
-typedef void (*grpc_authorization_policy_provider_file_watcher_on_error_cb)(
-    grpc_status_code status, const char* error_details);
-
-/**
- * EXPERIMENTAL - Subject to change.
- * Sets callback function to be executed when reading policy from file path
- * fails. This is specific to |FileWatcherAuthorizationPolicyProvider|.
- */
-GRPCAPI void grpc_authorization_policy_provider_file_watcher_set_error_callback(
-    grpc_authorization_policy_provider* provider,
-    grpc_authorization_policy_provider_file_watcher_on_error_cb cb);
 
 /**
  * EXPERIMENTAL - Subject to change.

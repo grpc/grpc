@@ -24,11 +24,11 @@
 #include "test/core/util/tls_utils.h"
 
 #define VALID_POLICY_PATH_1 \
-  "src/core/lib/security/authorization/test_policies/valid_policy_1.json"
+  "test/core/security/authorization/test_policies/valid_policy_1.json"
 #define VALID_POLICY_PATH_2 \
-  "src/core/lib/security/authorization/test_policies/valid_policy_2.json"
+  "test/core/security/authorization/test_policies/valid_policy_2.json"
 #define INVALID_POLICY_PATH \
-  "src/core/lib/security/authorization/test_policies/invalid_policy.json"
+  "test/core/security/authorization/test_policies/invalid_policy.json"
 
 namespace grpc_core {
 
@@ -60,7 +60,8 @@ TEST(AuthorizationPolicyProviderTest,
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
+      /*on_error_cb=*/nullptr);
   ASSERT_TRUE(provider.ok());
   auto engines = (*provider)->engines();
   auto* allow_engine =
@@ -80,7 +81,8 @@ TEST(AuthorizationPolicyProviderTest,
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
       testing::GetFileContents(INVALID_POLICY_PATH));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
+      /*on_error_cb=*/nullptr);
   EXPECT_EQ(provider.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(provider.status().message(), "\"name\" field is not present.");
 }
@@ -90,7 +92,8 @@ TEST(AuthorizationPolicyProviderTest,
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
+      /*on_error_cb=*/nullptr);
   ASSERT_TRUE(provider.ok());
   auto engines = (*provider)->engines();
   auto* allow_engine =
@@ -103,7 +106,7 @@ TEST(AuthorizationPolicyProviderTest,
   ASSERT_NE(deny_engine, nullptr);
   EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
   EXPECT_EQ(deny_engine->num_policies(), 1);
-
+  // Rewrite the file with a different valid authorization policy.
   tmp_authz_policy->RewriteFile(testing::GetFileContents(VALID_POLICY_PATH_2));
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
@@ -125,18 +128,14 @@ TEST(AuthorizationPolicyProviderTest,
      FileWatcherInitializationInvalidPolicyRefreshSkipReload) {
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
-  auto file_provider = FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
-  ASSERT_TRUE(file_provider.ok());
-  auto provider =
-      static_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
-          (*file_provider).get());
-  provider->SetErrorStatusCallback(
+  auto provider = FileWatcherAuthorizationPolicyProvider::Create(
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
       [](grpc_status_code status, const char* error_details) {
         EXPECT_EQ(status, GRPC_STATUS_INVALID_ARGUMENT);
         EXPECT_EQ(strcmp(error_details, "\"name\" field is not present."), 0);
       });
-  auto engines = provider->engines();
+  ASSERT_TRUE(provider.ok());
+  auto engines = (*provider)->engines();
   auto* allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
   ASSERT_NE(allow_engine, nullptr);
@@ -147,13 +146,12 @@ TEST(AuthorizationPolicyProviderTest,
   ASSERT_NE(deny_engine, nullptr);
   EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
   EXPECT_EQ(deny_engine->num_policies(), 1);
-
   // Skips the following policy update, and continues to use the valid policy.
   tmp_authz_policy->RewriteFile(testing::GetFileContents(INVALID_POLICY_PATH));
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
-  engines = provider->engines();
+  engines = (*provider)->engines();
   allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
   ASSERT_NE(allow_engine, nullptr);
