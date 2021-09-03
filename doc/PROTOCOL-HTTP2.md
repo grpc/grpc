@@ -255,9 +255,8 @@ the client by a round-trip time, the client will generally not need to process
 the server's RST_STREAM. However, to deal with client-side races and minor
 clock-rate skew, when a call fails with CANCELLED status the client is
 encouraged to check whether the deadline has expired and fail the call with
-DEADLINE_EXCEEDED instead of CANCELLED. Note that the client must fully-generate
-the failure locally, without using any part of the server's failure (i.e.,
-response metadata from server must be discarded).
+DEADLINE_EXCEEDED instead of CANCELLED. Note that the client must fully generate
+the failure locally, without using any part of **Trailers**.
 
 ##### Security
 
