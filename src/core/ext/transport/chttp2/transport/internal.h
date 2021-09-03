@@ -394,7 +394,7 @@ struct grpc_chttp2_transport {
   grpc_chttp2_server_ping_recv_state ping_recv_state;
 
   /** parser for headers */
-  grpc_chttp2_hpack_parser hpack_parser;
+  grpc_core::HPackParser hpack_parser;
   /** simple one shot parsers */
   union {
     grpc_chttp2_window_update_parser window_update;
@@ -555,7 +555,7 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch* recv_initial_metadata;
   grpc_closure* recv_initial_metadata_ready = nullptr;
   bool* trailing_metadata_available = nullptr;
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
+  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message = nullptr;
   bool* call_failed_before_recv_message = nullptr;
   grpc_closure* recv_message_ready = nullptr;
   grpc_metadata_batch* recv_trailing_metadata;

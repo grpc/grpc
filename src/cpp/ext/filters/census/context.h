@@ -64,6 +64,11 @@ class CensusContext {
             name, parent_ctxt)),
         tags_({}) {}
 
+  void AddSpanAttribute(absl::string_view key,
+                        opencensus::trace::AttributeValueRef attribute) {
+    span_.AddAttribute(key, attribute);
+  }
+
   const ::opencensus::trace::Span& Span() const { return span_; }
   const ::opencensus::tags::TagMap& tags() const { return tags_; }
 

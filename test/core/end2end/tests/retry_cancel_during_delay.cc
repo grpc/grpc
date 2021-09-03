@@ -120,8 +120,6 @@ static void test_retry_cancel_during_delay(grpc_end2end_test_config config,
   char* peer;
 
   grpc_arg args[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1),
       grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
           const_cast<char*>(

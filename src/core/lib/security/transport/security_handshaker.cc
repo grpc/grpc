@@ -521,10 +521,18 @@ class FailHandshaker : public Handshaker {
   void Shutdown(grpc_error_handle why) override { GRPC_ERROR_UNREF(why); }
   void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                    grpc_closure* on_handshake_done,
-                   HandshakerArgs* /*args*/) override {
-    ExecCtx::Run(DEBUG_LOCATION, on_handshake_done,
-                 GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                     "Failed to create security handshaker"));
+                   HandshakerArgs* args) override {
+    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Failed to create security handshaker");
+    grpc_endpoint_shutdown(args->endpoint, GRPC_ERROR_REF(error));
+    grpc_endpoint_destroy(args->endpoint);
+    args->endpoint = nullptr;
+    grpc_channel_args_destroy(args->args);
+    args->args = nullptr;
+    grpc_slice_buffer_destroy_internal(args->read_buffer);
+    gpr_free(args->read_buffer);
+    args->read_buffer = nullptr;
+    ExecCtx::Run(DEBUG_LOCATION, on_handshake_done, error);
   }
 
  private:

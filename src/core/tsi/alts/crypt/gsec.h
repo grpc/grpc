@@ -30,7 +30,7 @@
 #include <grpc/grpc.h>
 
 #ifndef _STRUCT_IOVEC
-#ifndef GRPC_EVENT_ENGINE_POSIX
+#if !defined(GRPC_EVENT_ENGINE_POSIX)
 struct iovec {
   void* iov_base;
   size_t iov_len;

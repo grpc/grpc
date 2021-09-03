@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+#include "src/core/lib/event_engine/sockaddr.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -354,9 +355,7 @@ int main(int argc, char** argv) {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
   } else if (resolver_type != nullptr &&
              gpr_stricmp(resolver_type, "ares") == 0) {
-#ifndef GRPC_UV
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
-#endif
   } else {
     gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
     abort();

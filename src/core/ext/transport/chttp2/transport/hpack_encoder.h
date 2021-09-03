@@ -24,6 +24,9 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
+#include "src/core/ext/transport/chttp2/transport/popularity_count.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -39,17 +42,10 @@
 extern grpc_core::TraceFlag grpc_http_trace;
 
 struct grpc_chttp2_hpack_compressor {
-  uint32_t max_table_size;
-  uint32_t max_table_elems;
-  uint32_t cap_table_elems;
-  /** maximum number of bytes we'll use for the decode table (to guard against
-      peers ooming us by setting decode table size high) */
+  // maximum number of bytes we'll use for the decode table (to guard against
+  // peers ooming us by setting decode table size high)
   uint32_t max_usable_size;
-  /* one before the lowest usable table index */
-  uint32_t tail_remote_index;
-  uint32_t table_size;
-  uint32_t table_elems;
-  uint16_t* table_elem_size;
+  grpc_core::ManualConstructor<grpc_core::HPackEncoderTable> table;
   /** if non-zero, advertise to the decoder that we'll start using a table
       of this size */
   uint8_t advertise_table_size_change;
@@ -59,28 +55,91 @@ struct grpc_chttp2_hpack_compressor {
      a new literal should be added to the compression table or not.
      They track a single integer that counts how often a particular value has
      been seen. When that count reaches max (255), all values are halved. */
-  uint32_t filter_elems_sum;
-  uint8_t filter_elems[GRPC_CHTTP2_HPACKC_NUM_VALUES];
+  grpc_core::ManualConstructor<
+      grpc_core::PopularityCount<GRPC_CHTTP2_HPACKC_NUM_VALUES>>
+      filter_elems;
+
+  class KeyElem {
+   public:
+    class Stored {
+     public:
+      Stored() : elem_(GRPC_MDNULL) {}
+      explicit Stored(grpc_mdelem elem) : elem_(GRPC_MDELEM_REF(elem)) {}
+      Stored(const Stored& other) : elem_(GRPC_MDELEM_REF(other.elem_)) {}
+      Stored& operator=(Stored other) {
+        std::swap(elem_, other.elem_);
+        return *this;
+      }
+      ~Stored() { GRPC_MDELEM_UNREF(elem_); }
+
+      const grpc_mdelem& elem() const { return elem_; }
+
+      bool operator==(const Stored& other) const noexcept {
+        return elem_.payload == other.elem_.payload;
+      }
+
+     private:
+      grpc_mdelem elem_;
+    };
+
+    KeyElem(grpc_mdelem elem, uint32_t hash) : elem_(elem), hash_(hash) {}
+    KeyElem(const KeyElem&);
+    KeyElem& operator=(const KeyElem&);
+
+    uint32_t hash() const {
+      // TODO(ctiller): unify this with what's in the cc file when we move this
+      // code to c++
+      return hash_ >> 6;
+    }
+
+    Stored stored() const { return Stored(elem_); }
+
+    bool operator==(const Stored& stored) const noexcept {
+      return elem_.payload == stored.elem().payload;
+    }
+
+   private:
+    grpc_mdelem elem_;
+    uint32_t hash_;
+  };
+
+  class KeySliceRef {
+   public:
+    using Stored = grpc_core::RefCountedPtr<grpc_slice_refcount>;
+
+    KeySliceRef(grpc_slice_refcount* ref, uint32_t hash)
+        : ref_(ref), hash_(hash) {}
+    KeySliceRef(const KeySliceRef&) = delete;
+    KeySliceRef& operator=(const KeySliceRef&) = delete;
+
+    uint32_t hash() const {
+      // TODO(ctiller): unify this with what's in the cc file when we move this
+      // code to c++
+      return hash_ >> 6;
+    }
+
+    Stored stored() const {
+      ref_->Ref();
+      return Stored(ref_);
+    }
+
+    bool operator==(const Stored& stored) const noexcept {
+      return ref_ == stored.get();
+    }
+
+   private:
+    grpc_slice_refcount* ref_;
+    uint32_t hash_;
+  };
 
   /* entry tables for keys & elems: these tables track values that have been
      seen and *may* be in the decompressor table */
-  struct {
-    struct {
-      grpc_mdelem value;
-      uint32_t index;
-    } entries[GRPC_CHTTP2_HPACKC_NUM_VALUES];
-  } elem_table; /* Metadata table management */
-  struct {
-    struct {
-      /* Only store the slice refcount - we do not need the byte buffer or
-         length of the slice since we only need to store a mapping between the
-         identity of the slice and the corresponding HPACK index. Since the
-         slice *must* be static or interned, the refcount is sufficient to
-         establish identity. */
-      grpc_slice_refcount* value;
-      uint32_t index;
-    } entries[GRPC_CHTTP2_HPACKC_NUM_VALUES];
-  } key_table; /* Key table management */
+  grpc_core::ManualConstructor<
+      grpc_core::HPackEncoderIndex<KeyElem, GRPC_CHTTP2_HPACKC_NUM_VALUES>>
+      elem_index;
+  grpc_core::ManualConstructor<
+      grpc_core::HPackEncoderIndex<KeySliceRef, GRPC_CHTTP2_HPACKC_NUM_VALUES>>
+      key_index;
 };
 
 void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor* c);

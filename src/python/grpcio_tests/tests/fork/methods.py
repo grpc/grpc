@@ -22,7 +22,6 @@ import threading
 import time
 
 import grpc
-
 from six.moves import queue
 
 from src.proto.grpc.testing import empty_pb2

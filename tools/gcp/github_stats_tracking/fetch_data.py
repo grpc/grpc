@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from github import Github, Label
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timedelta
 from time import time
+
+from github import Github
+from github import Label
 from google.cloud import bigquery
 
 ACCESS_TOKEN = ""

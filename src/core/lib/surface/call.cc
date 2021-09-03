@@ -105,13 +105,13 @@ struct batch_control {
   } completion_data;
   grpc_closure start_batch;
   grpc_closure finish_batch;
-  grpc_core::Atomic<intptr_t> steps_to_complete;
+  std::atomic<intptr_t> steps_to_complete{0};
   gpr_atm batch_error = reinterpret_cast<gpr_atm>(GRPC_ERROR_NONE);
   void set_num_steps_to_complete(uintptr_t steps) {
-    steps_to_complete.Store(steps, grpc_core::MemoryOrder::RELEASE);
+    steps_to_complete.store(steps, std::memory_order_release);
   }
   bool completed_batch_step() {
-    return steps_to_complete.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) == 1;
+    return steps_to_complete.fetch_sub(1, std::memory_order_acq_rel) == 1;
   }
 };
 
@@ -151,6 +151,11 @@ struct grpc_call {
   }
 
   ~grpc_call() {
+    for (int i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
+      if (context[i].destroy) {
+        context[i].destroy(context[i].value);
+      }
+    }
     gpr_free(static_cast<void*>(const_cast<char*>(final_info.error_string)));
   }
 
@@ -553,11 +558,6 @@ static void destroy_call(void* call, grpc_error_handle /*error*/) {
   }
   for (ii = 0; ii < c->send_extra_metadata_count; ii++) {
     GRPC_MDELEM_UNREF(c->send_extra_metadata[ii].md);
-  }
-  for (i = 0; i < GRPC_CONTEXT_COUNT; i++) {
-    if (c->context[i].destroy) {
-      c->context[i].destroy(c->context[i].value);
-    }
   }
   if (c->cq) {
     GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
@@ -1625,7 +1625,6 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         grpc_metadata& compression_md = call->compression_md;
         compression_md.key = grpc_empty_slice();
         compression_md.value = grpc_empty_slice();
-        compression_md.flags = 0;
         size_t additional_metadata_count = 0;
         grpc_compression_level effective_compression_level =
             GRPC_COMPRESS_LEVEL_NONE;

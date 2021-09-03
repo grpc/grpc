@@ -13,9 +13,9 @@
 # limitations under the License.
 """Tests application-provided metadata, status code, and details."""
 
+import logging
 import threading
 import unittest
-import logging
 
 import grpc
 

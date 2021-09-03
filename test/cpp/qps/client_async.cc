@@ -822,7 +822,6 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
           next_state_ = State::READ_DONE;
           stream_->Read(&response_, ClientRpcContext::tag(this));
           return true;
-          break;
         case State::READ_DONE:
           entry->set_value((UsageTimer::Now() - start_) * 1e9);
           callback_(status_, &response_);
@@ -841,7 +840,6 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
         case State::FINISH_DONE:
           next_state_ = State::INVALID;
           return false;
-          break;
         default:
           GPR_ASSERT(false);
           return false;

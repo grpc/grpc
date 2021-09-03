@@ -14,10 +14,10 @@
 """Reference implementation for health checking in gRPC Python."""
 
 import collections
-import threading
 import sys
-import grpc
+import threading
 
+import grpc
 from grpc_health.v1 import health_pb2 as _health_pb2
 from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
 

@@ -24,14 +24,10 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 # pre-built images in the optimization.
 gcloud auth configure-docker
 
-# Connect to benchmarks-prod cluster.
+# Connect to benchmarks-prod2 cluster.
 gcloud config set project grpc-testing
-gcloud container clusters get-credentials benchmarks-prod \
+gcloud container clusters get-credentials benchmarks-prod2 \
     --zone us-central1-b --project grpc-testing
-
-# List tests that have running pods and are in errored state.
-# This is an unexpected condition, and it is logged here for monitoring.
-source tools/internal_ci/helper_scripts/list_leftover_loadtests.sh
 
 # Set up environment variables.
 LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
@@ -41,9 +37,12 @@ LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
 BIGQUERY_TABLE_8CORE=e2e_benchmarks.ci_master_results_8core
 BIGQUERY_TABLE_32CORE=e2e_benchmarks.ci_master_results_32core
 # END differentiate experimental configuration from master configuration.
+CLOUD_LOGGING_URL="https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
 PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etesting/pre_built_workers/${LOAD_TEST_PREFIX}"
 UNIQUE_IDENTIFIER="$(date +%Y%m%d%H%M%S)"
 ROOT_DIRECTORY_OF_DOCKERFILES="../test-infra/containers/pre_built_workers/"
+# Head of the workspace checked out by Kokoro.
+GRPC_GITREF="$(git show --format="%H" --no-patch)"
 # Prebuilt workers for core languages are always built from grpc/grpc.
 if [[ "${KOKORO_GITHUB_COMMIT_URL%/*}" == "https://github.com/grpc/grpc/commit" ]]; then
     GRPC_CORE_GITREF="${KOKORO_GIT_COMMIT}"
@@ -52,22 +51,21 @@ else
 fi
 GRPC_GO_GITREF="$(git ls-remote https://github.com/grpc/grpc-go.git master | cut -f1)"
 GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/grpc-java.git master | cut -f1)"
-# Prebuilt driver comes from the latest test-infra release.
-LATEST_TEST_INFRA_RELEASE="$(curl -s https://api.github.com/repos/grpc/test-infra/releases | jq '.[0].tag_name' | tr -d '"')"
-if [[ -z "${LATEST_TEST_INFRA_RELEASE}" ]]; then
-    exit 1
-fi
-DRIVER_IMAGE="gcr.io/grpc-testing/e2etest/runtime/driver:${LATEST_TEST_INFRA_RELEASE}"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-8core-ci
 WORKER_POOL_32CORE=workers-32core-ci
 
+# Update go version.
+TEST_INFRA_GOVERSION=go1.17
+go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
+"${TEST_INFRA_GOVERSION}" download
+
 # Clone test-infra repository to one upper level directory than grpc.
 pushd ..
 git clone --recursive https://github.com/grpc/test-infra.git
 cd test-infra
-make all-tools
+make GOCMD="${TEST_INFRA_GOVERSION}" all-tools
 popd
 
 # Build test configurations.
@@ -77,10 +75,15 @@ buildConfigs() {
     shift 2
     tools/run_tests/performance/loadtest_config.py "$@" \
         -t ./tools/run_tests/performance/templates/loadtest_template_prebuilt_all_languages.yaml \
-        -s driver_pool="${DRIVER_POOL}" -s driver_image="${DRIVER_IMAGE}" \
+        -s driver_pool="${DRIVER_POOL}" -s driver_image= \
         -s client_pool="${pool}" -s server_pool="${pool}" \
         -s big_query_table="${table}" -s timeout_seconds=900 \
         -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
+        -a ci_buildNumber="${KOKORO_BUILD_NUMBER}" \
+        -a ci_buildUrl="${CLOUD_LOGGING_URL}" \
+        -a ci_jobName="${KOKORO_JOB_NAME}" \
+        -a ci_gitCommit="${GRPC_GITREF}" \
+        -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
         -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=scalable \
@@ -88,7 +91,7 @@ buildConfigs() {
         -o "./loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l csharp -l go -l java -l python -l ruby
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l csharp -l go -l java -l php7 -l php7_protobuf_c -l python -l ruby
 buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" -l c++ -l csharp -l go -l java
 
 # Delete prebuilt images on exit.
@@ -106,14 +109,16 @@ time ../test-infra/bin/prepare_prebuilt_workers \
     -l "csharp:${GRPC_CORE_GITREF}" \
     -l "go:${GRPC_GO_GITREF}" \
     -l "java:${GRPC_JAVA_GITREF}" \
+    -l "php7:${GRPC_CORE_GITREF}" \
     -l "python:${GRPC_CORE_GITREF}" \
     -l "ruby:${GRPC_CORE_GITREF}" \
     -p "${PREBUILT_IMAGE_PREFIX}" \
     -t "${UNIQUE_IDENTIFIER}" \
     -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"
 
-# Create reports directory.
-mkdir -p runner
+# Create reports directories.
+mkdir -p "runner/${WORKER_POOL_8CORE}" "runner/${WORKER_POOL_32CORE}"
+
 
 # Run tests.
 time ../test-infra/bin/runner \

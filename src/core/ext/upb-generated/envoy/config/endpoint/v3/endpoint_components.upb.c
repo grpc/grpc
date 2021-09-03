@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
@@ -25,26 +25,26 @@ static const upb_msglayout *const envoy_config_endpoint_v3_Endpoint_submsgs[2] =
 };
 
 static const upb_msglayout_field envoy_config_endpoint_v3_Endpoint__fields[3] = {
-  {1, UPB_SIZE(12, 24), 1, 0, 11, 1},
-  {2, UPB_SIZE(16, 32), 2, 1, 11, 1},
-  {3, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {1, UPB_SIZE(12, 24), 1, 0, 11, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(16, 32), 2, 1, 11, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_endpoint_v3_Endpoint_msginit = {
   &envoy_config_endpoint_v3_Endpoint_submsgs[0],
   &envoy_config_endpoint_v3_Endpoint__fields[0],
-  UPB_SIZE(24, 48), 3, false, 255,
+  UPB_SIZE(24, 48), 3, false, 3, 255,
 };
 
 static const upb_msglayout_field envoy_config_endpoint_v3_Endpoint_HealthCheckConfig__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 13, 1},
-  {2, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 13, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_msginit = {
   NULL,
   &envoy_config_endpoint_v3_Endpoint_HealthCheckConfig__fields[0],
-  UPB_SIZE(16, 32), 2, false, 255,
+  UPB_SIZE(16, 32), 2, false, 2, 255,
 };
 
 static const upb_msglayout *const envoy_config_endpoint_v3_LbEndpoint_submsgs[3] = {
@@ -54,17 +54,17 @@ static const upb_msglayout *const envoy_config_endpoint_v3_LbEndpoint_submsgs[3]
 };
 
 static const upb_msglayout_field envoy_config_endpoint_v3_LbEndpoint__fields[5] = {
-  {1, UPB_SIZE(16, 24), UPB_SIZE(-25, -41), 1, 11, 1},
-  {2, UPB_SIZE(4, 4), 0, 0, 14, 1},
-  {3, UPB_SIZE(8, 8), 1, 0, 11, 1},
-  {4, UPB_SIZE(12, 16), 2, 2, 11, 1},
-  {5, UPB_SIZE(16, 24), UPB_SIZE(-25, -41), 0, 9, 1},
+  {1, UPB_SIZE(16, 24), UPB_SIZE(-25, -41), 1, 11, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(8, 8), 1, 0, 11, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(12, 16), 2, 2, 11, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(16, 24), UPB_SIZE(-25, -41), 0, 9, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_endpoint_v3_LbEndpoint_msginit = {
   &envoy_config_endpoint_v3_LbEndpoint_submsgs[0],
   &envoy_config_endpoint_v3_LbEndpoint__fields[0],
-  UPB_SIZE(32, 48), 5, false, 255,
+  UPB_SIZE(32, 48), 5, false, 5, 255,
 };
 
 static const upb_msglayout *const envoy_config_endpoint_v3_LocalityLbEndpoints_submsgs[3] = {
@@ -74,17 +74,17 @@ static const upb_msglayout *const envoy_config_endpoint_v3_LocalityLbEndpoints_s
 };
 
 static const upb_msglayout_field envoy_config_endpoint_v3_LocalityLbEndpoints__fields[5] = {
-  {1, UPB_SIZE(8, 8), 1, 0, 11, 1},
-  {2, UPB_SIZE(20, 32), 0, 1, 11, 3},
-  {3, UPB_SIZE(12, 16), 2, 2, 11, 1},
-  {5, UPB_SIZE(4, 4), 0, 0, 13, 1},
-  {6, UPB_SIZE(16, 24), 3, 2, 11, 1},
+  {1, UPB_SIZE(8, 8), 1, 0, 11, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(20, 32), 0, 1, 11, _UPB_MODE_ARRAY},
+  {3, UPB_SIZE(12, 16), 2, 2, 11, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(4, 4), 0, 0, 13, _UPB_MODE_SCALAR},
+  {6, UPB_SIZE(16, 24), 3, 2, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_endpoint_v3_LocalityLbEndpoints_msginit = {
   &envoy_config_endpoint_v3_LocalityLbEndpoints_submsgs[0],
   &envoy_config_endpoint_v3_LocalityLbEndpoints__fields[0],
-  UPB_SIZE(24, 40), 5, false, 255,
+  UPB_SIZE(24, 40), 5, false, 3, 255,
 };
 
 #include "upb/port_undef.inc"

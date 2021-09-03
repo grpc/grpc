@@ -19,7 +19,7 @@
 # before https://github.com/dockcross/dockcross/pull/449
 # Thanks to that, wheel build with this image aren't actually
 # compliant with manylinux2014, but only with manylinux_2_24
-FROM dockcross/manylinux2014-aarch64:20200929-608e6ac
+FROM dockcross/manylinux2014-aarch64:20210826-19322ba
 
 # Make the grpc wheels correctly tagged with manylinux_2_24
 # instead of the incorrect manylinux2014 (see the note above).
@@ -27,11 +27,11 @@ ENV AUDITWHEEL_PLAT manylinux_2_24_$AUDITWHEEL_ARCH
 
 ###################################
 # Install Python build requirements
-RUN /opt/python/cp35-cp35m/bin/pip install --upgrade cython
 RUN /opt/python/cp36-cp36m/bin/pip install --upgrade cython
 RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython
 RUN /opt/python/cp38-cp38/bin/pip install --upgrade cython
 RUN /opt/python/cp39-cp39/bin/pip install --upgrade cython
+RUN /opt/python/cp310-cp310/bin/pip install --upgrade cython
 
 # the dockcross docker image sets variables like CC, CXX etc.
 # to point to the crosscompilation toolchain, but doesn't set corresponding

@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/extensions/filters/common/fault/v3/fault.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/duration.upb.h"
@@ -24,21 +24,21 @@ static const upb_msglayout *const envoy_extensions_filters_common_fault_v3_Fault
 };
 
 static const upb_msglayout_field envoy_extensions_filters_common_fault_v3_FaultDelay__fields[3] = {
-  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 2, 11, 1},
-  {4, UPB_SIZE(4, 8), 1, 1, 11, 1},
-  {5, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, 1},
+  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 2, 11, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(4, 8), 1, 1, 11, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_common_fault_v3_FaultDelay_msginit = {
   &envoy_extensions_filters_common_fault_v3_FaultDelay_submsgs[0],
   &envoy_extensions_filters_common_fault_v3_FaultDelay__fields[0],
-  UPB_SIZE(16, 32), 3, false, 255,
+  UPB_SIZE(16, 32), 3, false, 0, 255,
 };
 
 const upb_msglayout envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false, 255,
+  UPB_SIZE(0, 0), 0, false, 0, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_common_fault_v3_FaultRateLimit_submsgs[3] = {
@@ -48,31 +48,31 @@ static const upb_msglayout *const envoy_extensions_filters_common_fault_v3_Fault
 };
 
 static const upb_msglayout_field envoy_extensions_filters_common_fault_v3_FaultRateLimit__fields[3] = {
-  {1, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, 1},
-  {2, UPB_SIZE(4, 8), 1, 2, 11, 1},
-  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 1, 11, 1},
+  {1, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(4, 8), 1, 2, 11, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 1, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_common_fault_v3_FaultRateLimit_msginit = {
   &envoy_extensions_filters_common_fault_v3_FaultRateLimit_submsgs[0],
   &envoy_extensions_filters_common_fault_v3_FaultRateLimit__fields[0],
-  UPB_SIZE(16, 32), 3, false, 255,
+  UPB_SIZE(16, 32), 3, false, 3, 255,
 };
 
 static const upb_msglayout_field envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 4, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 4, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_msginit = {
   NULL,
   &envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit__fields[0],
-  UPB_SIZE(8, 8), 1, false, 255,
+  UPB_SIZE(8, 8), 1, false, 1, 255,
 };
 
 const upb_msglayout envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false, 255,
+  UPB_SIZE(0, 0), 0, false, 0, 255,
 };
 
 #include "upb/port_undef.inc"
