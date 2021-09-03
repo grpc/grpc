@@ -26,6 +26,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 #include "src/core/ext/transport/chttp2/transport/popularity_count.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -42,17 +43,10 @@
 extern grpc_core::TraceFlag grpc_http_trace;
 
 struct grpc_chttp2_hpack_compressor {
-  uint32_t max_table_size;
-  uint32_t max_table_elems;
-  uint32_t cap_table_elems;
-  /** maximum number of bytes we'll use for the decode table (to guard against
-      peers ooming us by setting decode table size high) */
+  // maximum number of bytes we'll use for the decode table (to guard against
+  // peers ooming us by setting decode table size high)
   uint32_t max_usable_size;
-  /* one before the lowest usable table index */
-  uint32_t tail_remote_index;
-  uint32_t table_size;
-  uint32_t table_elems;
-  uint16_t* table_elem_size;
+  grpc_core::ManualConstructor<grpc_core::HPackEncoderTable> table;
   /** if non-zero, advertise to the decoder that we'll start using a table
       of this size */
   uint8_t advertise_table_size_change;
@@ -62,7 +56,9 @@ struct grpc_chttp2_hpack_compressor {
      a new literal should be added to the compression table or not.
      They track a single integer that counts how often a particular value has
      been seen. When that count reaches max (255), all values are halved. */
-  grpc_core::PopularityCount<GRPC_CHTTP2_HPACKC_NUM_VALUES> filter_elems;
+  grpc_core::ManualConstructor<
+      grpc_core::PopularityCount<GRPC_CHTTP2_HPACKC_NUM_VALUES>>
+      filter_elems;
 
   class KeyElem {
    public:
@@ -141,10 +137,10 @@ struct grpc_chttp2_hpack_compressor {
      seen and *may* be in the decompressor table */
   grpc_core::ManualConstructor<
       grpc_core::HPackEncoderIndex<KeyElem, GRPC_CHTTP2_HPACKC_NUM_VALUES>>
-      elem_table;
+      elem_index;
   grpc_core::ManualConstructor<
       grpc_core::HPackEncoderIndex<KeySliceRef, GRPC_CHTTP2_HPACKC_NUM_VALUES>>
-      key_table;
+      key_index;
 };
 
 void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor* c);
