@@ -187,8 +187,6 @@ void grpc_tls_certificate_verifier_cancel(
 grpc_tls_certificate_verifier* grpc_tls_certificate_verifier_external_create(
     grpc_tls_certificate_verifier_external* external_verifier) {
   grpc_core::ExecCtx exec_ctx;
-  gpr_log(GPR_ERROR,
-          "CORE: grpc_tls_certificate_verifier_external_create() called");
   return new grpc_core::ExternalCertificateVerifier(external_verifier);
 }
 
@@ -202,7 +200,6 @@ void grpc_tls_certificate_verifier_release(
     grpc_tls_certificate_verifier* verifier) {
   GRPC_API_TRACE("grpc_tls_certificate_verifier_release(verifier=%p)", 1,
                  (verifier));
-  gpr_log(GPR_ERROR, "CORE: grpc_tls_certificate_verifier_release() called");
   grpc_core::ExecCtx exec_ctx;
   if (verifier != nullptr) verifier->Unref();
 }
