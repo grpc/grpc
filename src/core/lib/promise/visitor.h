@@ -34,10 +34,10 @@ struct PollPromise {
 };
 
 template <typename... Promises>
-struct ResultOf;
+struct ResultOfPromises;
 
 template <typename Promise, typename... Promises>
-struct ResultOf<Promise, Promises...> {
+struct ResultOfPromises<Promise, Promises...> {
   using Type = typename PollTraits<decltype(std::declval<Promise>()())>::Type;
 };
 
@@ -47,7 +47,7 @@ class Promise {
   template <typename P>
   explicit Promise(P p) : promise_(std::move(p)) {}
 
-  using Result = typename ResultOf<Promises...>::Type;
+  using Result = typename ResultOfPromises<Promises...>::Type;
 
   Poll<Result> operator()() { return absl::visit(PollPromise{}, promise_); }
 
