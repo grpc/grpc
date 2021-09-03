@@ -35,7 +35,7 @@ class SyncCertificateVerifier
     gpr_log(GPR_ERROR, "SyncCertificateVerifier() is called");
   }
 
-  ~SyncCertificateVerifier() {
+  ~SyncCertificateVerifier() override {
     gpr_log(GPR_ERROR, "~SyncCertificateVerifier() is called");
   }
 
