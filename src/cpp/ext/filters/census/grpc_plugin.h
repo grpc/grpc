@@ -25,7 +25,6 @@
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 
-#include "include/grpcpp/opencensus.h"
 #include <grpcpp/opencensus.h>
 
 namespace grpc {
