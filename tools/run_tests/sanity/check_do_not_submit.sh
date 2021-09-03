@@ -17,4 +17,8 @@
 
 set -e
 cd "$(dirname "$0")/../../.."
-grep -Irn --exclude='check_do_not_submit.sh' 'DO NOT SUBMIT'
+grep -Irn \
+  --exclude='check_do_not_submit.sh' \
+  --exclude-dir='.git/' \
+  --exclude-dir='third_party/' \
+  'DO NOT SUBMIT'
