@@ -293,6 +293,25 @@ TEST_P(End2EndBinderTransportTest, BiDirStreamingCallThroughFakeBinderChannel) {
   server->Shutdown();
 }
 
+TEST_P(End2EndBinderTransportTest, LargeMessage) {
+  grpc::ChannelArguments args;
+  grpc::ServerBuilder builder;
+  end2end_testing::EchoServer service;
+  builder.RegisterService(&service);
+  std::unique_ptr<grpc::Server> server = builder.BuildAndStart();
+  std::shared_ptr<grpc::Channel> channel = BinderChannel(server.get(), args);
+  std::unique_ptr<EchoService::Stub> stub = EchoService::NewStub(channel);
+  grpc::ClientContext context;
+  EchoRequest request;
+  EchoResponse response;
+  request.set_text(std::string(1000000, 'a'));
+  grpc::Status status = stub->EchoUnaryCall(&context, request, &response);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(response.text(), std::string(1000000, 'a'));
+
+  server->Shutdown();
+}
+
 INSTANTIATE_TEST_SUITE_P(
     End2EndBinderTransportTestWithDifferentDelayTimes,
     End2EndBinderTransportTest,

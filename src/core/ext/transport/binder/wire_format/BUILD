@@ -86,6 +86,7 @@ grpc_cc_library(
     srcs = ["wire_writer.cc"],
     hdrs = ["wire_writer.h"],
     external_deps = [
+        "absl/container:flat_hash_map",
         "absl/strings",
     ],
     deps = [
