@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "grpc/event_engine/slice_allocator.h"
+#include <grpc/event_engine/slice_allocator.h>
 
 #include <functional>
 

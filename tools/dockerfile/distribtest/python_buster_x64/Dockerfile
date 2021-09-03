@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:stretch
+FROM debian:buster
 
 RUN apt-get update && apt-get install -y python3 python3-pip
 RUN pip3 install virtualenv==16.7.9

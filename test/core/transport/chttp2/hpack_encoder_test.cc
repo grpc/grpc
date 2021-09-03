@@ -30,6 +30,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -345,8 +346,8 @@ static void verify_table_size_change_match_elem_size(const char* key,
   grpc_mdelem elem = grpc_mdelem_from_slices(
       grpc_slice_intern(grpc_slice_from_static_string(key)),
       grpc_slice_intern(grpc_slice_from_static_string(value)));
-  size_t elem_size = grpc_chttp2_get_size_in_hpack_table(elem, use_true_binary);
-  size_t initial_table_size = g_compressor.table_size;
+  size_t elem_size = grpc_core::MetadataSizeInHPackTable(elem, use_true_binary);
+  size_t initial_table_size = g_compressor.table->test_only_table_size();
   grpc_linked_mdelem* e =
       static_cast<grpc_linked_mdelem*>(gpr_malloc(sizeof(*e)));
   grpc_metadata_batch b;
@@ -372,7 +373,8 @@ static void verify_table_size_change_match_elem_size(const char* key,
   grpc_slice_buffer_destroy_internal(&output);
   grpc_metadata_batch_destroy(&b);
 
-  GPR_ASSERT(g_compressor.table_size == elem_size + initial_table_size);
+  GPR_ASSERT(g_compressor.table->test_only_table_size() ==
+             elem_size + initial_table_size);
   gpr_free(e);
 }
 

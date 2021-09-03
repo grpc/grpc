@@ -218,6 +218,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "pipe_test",
+    srcs = ["pipe_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:join",
+        "//:pipe",
+        "//:promise",
+        "//:seq",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
     name = "visitor_test",
     srcs = ["visitor_test.cc"],
     external_deps = ["gtest"],
@@ -228,4 +243,3 @@ grpc_cc_test(
         "//test/core/util:grpc_suppressions",
     ],
 )
-

@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/transport/chttp2/transport/hpack_table.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 
 #include <assert.h>
 #include <string.h>
@@ -38,10 +38,7 @@ extern grpc_core::TraceFlag grpc_http_trace;
 
 namespace grpc_core {
 
-using hpack_table_detail::EntriesForBytes;
-using hpack_table_detail::kInlineEntries;
-
-HPackTable::HPackTable() : entries_(kInlineEntries) {}
+HPackTable::HPackTable() = default;
 
 HPackTable::~HPackTable() {
   for (size_t i = 0; i < num_entries_; i++) {
@@ -54,7 +51,7 @@ void HPackTable::EvictOne() {
   grpc_mdelem first_entry = entries_[first_entry_];
   size_t elem_bytes = GRPC_SLICE_LENGTH(GRPC_MDKEY(first_entry)) +
                       GRPC_SLICE_LENGTH(GRPC_MDVALUE(first_entry)) +
-                      kEntryOverhead;
+                      hpack_constants::kEntryOverhead;
   GPR_ASSERT(elem_bytes <= mem_used_);
   mem_used_ -= static_cast<uint32_t>(elem_bytes);
   first_entry_ = ((first_entry_ + 1) % entries_.size());
@@ -103,13 +100,14 @@ grpc_error_handle HPackTable::SetCurrentTableSize(uint32_t bytes) {
     EvictOne();
   }
   current_table_bytes_ = bytes;
-  max_entries_ = EntriesForBytes(bytes);
+  max_entries_ = hpack_constants::EntriesForBytes(bytes);
   if (max_entries_ > entries_.size()) {
     Rebuild(max_entries_);
   } else if (max_entries_ < entries_.size() / 3) {
     // TODO(ctiller): move to resource quota system, only shrink under memory
     // pressure
-    uint32_t new_cap = std::max(max_entries_, kInlineEntries);
+    uint32_t new_cap =
+        std::max(max_entries_, static_cast<uint32_t>(kInlineEntries));
     if (new_cap != entries_.size()) {
       Rebuild(new_cap);
     }
@@ -120,7 +118,8 @@ grpc_error_handle HPackTable::SetCurrentTableSize(uint32_t bytes) {
 grpc_error_handle HPackTable::Add(grpc_mdelem md) {
   /* determine how many bytes of buffer this entry represents */
   size_t elem_bytes = GRPC_SLICE_LENGTH(GRPC_MDKEY(md)) +
-                      GRPC_SLICE_LENGTH(GRPC_MDVALUE(md)) + kEntryOverhead;
+                      GRPC_SLICE_LENGTH(GRPC_MDVALUE(md)) +
+                      hpack_constants::kEntryOverhead;
 
   if (current_table_bytes_ > max_bytes_) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -162,23 +161,3 @@ grpc_error_handle HPackTable::Add(grpc_mdelem md) {
 }
 
 }  // namespace grpc_core
-
-static size_t get_base64_encoded_size(size_t raw_length) {
-  static const uint8_t tail_xtra[3] = {0, 2, 3};
-  return raw_length / 3 * 4 + tail_xtra[raw_length % 3];
-}
-
-size_t grpc_chttp2_get_size_in_hpack_table(grpc_mdelem elem,
-                                           bool use_true_binary_metadata) {
-  const uint8_t* key_buf = GRPC_SLICE_START_PTR(GRPC_MDKEY(elem));
-  size_t key_len = GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
-  size_t overhead_and_key = 32 + key_len;
-  size_t value_len = GRPC_SLICE_LENGTH(GRPC_MDVALUE(elem));
-  if (grpc_key_is_binary_header(key_buf, key_len)) {
-    return overhead_and_key + (use_true_binary_metadata
-                                   ? value_len + 1
-                                   : get_base64_encoded_size(value_len));
-  } else {
-    return overhead_and_key + value_len;
-  }
-}

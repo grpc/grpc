@@ -23,9 +23,9 @@
 #include "absl/status/statusor.h"
 #include "absl/time/time.h"
 
-#include "grpc/event_engine/endpoint_config.h"
-#include "grpc/event_engine/port.h"
-#include "grpc/event_engine/slice_allocator.h"
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/port.h>
+#include <grpc/event_engine/slice_allocator.h>
 
 // TODO(hork): Define the Endpoint::Write metrics collection system
 namespace grpc_event_engine {
@@ -308,16 +308,6 @@ class EventEngine {
   /// callback will be run exactly once from either cancellation or from its
   /// activation.
   virtual void TryCancel(TaskHandle handle) = 0;
-  /// Immediately run all callbacks with status indicating the shutdown. Every
-  /// EventEngine is expected to shut down exactly once. No new callbacks/tasks
-  /// should be scheduled after shutdown has begun, no new connections should be
-  /// created.
-  ///
-  /// If the \a on_shutdown_complete callback is given a non-OK status, errors
-  /// are expected to be unrecoverable. For example, an implementation could
-  /// warn callers about leaks if memory cannot be freed within a certain
-  /// timeframe.
-  virtual void Shutdown(Callback on_shutdown_complete) = 0;
 };
 
 // TODO(hork): finalize the API and document it. We need to firm up the story
