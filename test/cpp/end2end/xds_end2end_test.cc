@@ -2491,9 +2491,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   class XdsServingStatusNotifier
       : public grpc::experimental::XdsServerServingStatusNotifierInterface {
    public:
-    void OnServingStatusUpdate(std::string uri, grpc::Status status) override {
+    void OnServingStatusUpdate(std::string uri,
+                               ServingStatusUpdate update) override {
       grpc_core::MutexLock lock(&mu_);
-      status_map[uri] = status;
+      status_map[uri] = update.status;
       cond_.Signal();
     }
 
