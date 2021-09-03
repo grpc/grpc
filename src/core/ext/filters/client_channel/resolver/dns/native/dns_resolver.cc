@@ -39,11 +39,6 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 
-#define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
-#define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
-#define GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS 120
-#define GRPC_DNS_RECONNECT_JITTER 0.2
-
 namespace grpc_core {
 
 namespace {

@@ -570,6 +570,7 @@ static void log_address_sorting_list(const grpc_ares_request* r,
   }
 }
 
+// TODO(hork): generalize this beyond ares
 void grpc_cares_wrapper_address_sorting_sort(const grpc_ares_request* r,
                                              ServerAddressList* addresses) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {

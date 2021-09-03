@@ -1570,6 +1570,7 @@ grpc_cc_library(
         "grpc_max_age_filter",
         "grpc_message_size_filter",
         "grpc_resolver_dns_ares",
+        "grpc_resolver_iomgr",
         "grpc_resolver_fake",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
@@ -2399,12 +2400,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_resolver_dns_selection",
+    name = "grpc_resolver_common",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/service_config_parser.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h",
+        "src/core/ext/filters/client_channel/resolver/dns/service_config_parser.h",
+    ],
+    external_deps = [
+        "absl/strings",
     ],
     language = "c++",
     deps = [
@@ -2426,7 +2432,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
-        "grpc_resolver_dns_selection",
+        "grpc_resolver_common",
     ],
 )
 
@@ -2459,7 +2465,28 @@ grpc_cc_library(
         "grpc_base_c",
         "grpc_client_channel",
         "grpc_grpclb_balancer_addresses",
-        "grpc_resolver_dns_selection",
+        "grpc_resolver_common",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_resolver_iomgr",
+    srcs = [
+        "src/core/ext/filters/client_channel/resolver/dns/iomgr/dns_resolver_iomgr.cc",
+    ],
+    external_deps = [
+        "absl/functional:bind_front",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/container:inlined_vector",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_base",
+        "grpc_base_c",
+        "grpc_client_channel",
+        "grpc_grpclb_balancer_addresses",
+        "grpc_resolver_common",
     ],
 )
 

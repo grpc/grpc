@@ -183,11 +183,17 @@ static EventEngine::DNSResolver::LookupTaskHandle lookup_hostname(
   (void)default_port;
   (void)deadline;
   abort();
+  // DO NOT SUBMIT(hork): implement
+  // grpc_resolved_addresses* addrs;
+  // posix_resolve_address(address, default_port, nullptr, DNS, &addrs);
 }
 
 static EventEngine::DNSResolver::LookupTaskHandle lookup_srv_record(
-    grpc_closure* on_resolved, absl::string_view name, absl::Time deadline,
+    grpc_event_engine::experimental::EventEngine::DNSResolver::LookupSRVCallback
+        on_resolved,
+    absl::string_view name, absl::Time deadline,
     grpc_pollset_set* /*interested_parties*/) {
+  // DO NOT SUBMIT(hork): implement
   (void)on_resolved;
   (void)name;
   (void)deadline;
@@ -195,8 +201,11 @@ static EventEngine::DNSResolver::LookupTaskHandle lookup_srv_record(
 }
 
 static EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
-    grpc_closure* on_resolved, absl::string_view name, absl::Time deadline,
+    grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXTCallback
+        on_resolved,
+    absl::string_view name, absl::Time deadline,
     grpc_pollset_set* /*interested_parties*/) {
+  // DO NOT SUBMIT(hork): implement
   (void)on_resolved;
   (void)name;
   (void)deadline;
@@ -205,6 +214,7 @@ static EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
 
 static void try_cancel_lookup(
     EventEngine::DNSResolver::LookupTaskHandle handle) {
+  // DO NOT SUBMIT(hork): implement
   (void)handle;
   abort();
 }

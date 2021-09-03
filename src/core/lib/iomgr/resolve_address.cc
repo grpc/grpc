@@ -64,17 +64,21 @@ grpc_dns_lookup_hostname(grpc_event_engine::experimental::EventEngine::
 }
 
 grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
-grpc_dns_lookup_srv_record(grpc_closure* on_resolved, absl::string_view name,
-                           absl::Time deadline,
-                           grpc_pollset_set* interested_parties) {
+grpc_dns_lookup_srv_record(
+    grpc_event_engine::experimental::EventEngine::DNSResolver::LookupSRVCallback
+        on_resolved,
+    absl::string_view name, absl::Time deadline,
+    grpc_pollset_set* interested_parties) {
   return grpc_resolve_address_impl->lookup_srv(on_resolved, name, deadline,
                                                interested_parties);
 }
 
 grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
-grpc_dns_lookup_txt_record(grpc_closure* on_resolved, absl::string_view name,
-                           absl::Time deadline,
-                           grpc_pollset_set* interested_parties) {
+grpc_dns_lookup_txt_record(
+    grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXTCallback
+        on_resolved,
+    absl::string_view name, absl::Time deadline,
+    grpc_pollset_set* interested_parties) {
   return grpc_resolve_address_impl->lookup_txt(on_resolved, name, deadline,
                                                interested_parties);
 }

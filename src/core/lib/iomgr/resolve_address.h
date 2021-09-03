@@ -38,6 +38,11 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 
 #define GRPC_MAX_SOCKADDR_SIZE 128
+#define GRPC_DNS_DEFAULT_QUERY_TIMEOUT_MS 120000
+#define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
+#define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
+#define GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS 120
+#define GRPC_DNS_RECONNECT_JITTER 0.2
 
 struct grpc_resolved_address {
   char addr[GRPC_MAX_SOCKADDR_SIZE];
@@ -68,11 +73,15 @@ typedef struct grpc_address_resolver_vtable {
                         absl::string_view default_port, absl::Time deadline,
                         grpc_pollset_set* interested_parties);
   grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle (
-      *lookup_srv)(grpc_closure* on_resolved, absl::string_view name,
-                   absl::Time deadline, grpc_pollset_set* interested_parties);
+      *lookup_srv)(grpc_event_engine::experimental::EventEngine::DNSResolver::
+                       LookupSRVCallback on_resolved,
+                   absl::string_view name, absl::Time deadline,
+                   grpc_pollset_set* interested_parties);
   grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle (
-      *lookup_txt)(grpc_closure* on_resolved, absl::string_view name,
-                   absl::Time deadline, grpc_pollset_set* interested_parties);
+      *lookup_txt)(grpc_event_engine::experimental::EventEngine::DNSResolver::
+                       LookupTXTCallback on_resolved,
+                   absl::string_view name, absl::Time deadline,
+                   grpc_pollset_set* interested_parties);
   void (*try_cancel_lookup)(grpc_event_engine::experimental::EventEngine::
                                 DNSResolver::LookupTaskHandle handle);
 } grpc_address_resolver_vtable;
@@ -115,18 +124,22 @@ grpc_dns_lookup_hostname(grpc_event_engine::experimental::EventEngine::
 /// \a on_resolve has the same meaning and expectations as \a
 /// LookupHostname's \a on_resolve callback.
 grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
-grpc_dns_lookup_srv_record(grpc_closure* on_resolved, absl::string_view name,
-                           absl::Time deadline,
-                           grpc_pollset_set* interested_parties);
+grpc_dns_lookup_srv_record(
+    grpc_event_engine::experimental::EventEngine::DNSResolver::LookupSRVCallback
+        on_resolved,
+    absl::string_view name, absl::Time deadline,
+    grpc_pollset_set* interested_parties);
 
 /// Asynchronously perform a TXT record lookup.
 ///
 /// \a on_resolve has the same meaning and expectations as \a
 /// LookupHostname's \a on_resolve callback.
 grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
-grpc_dns_lookup_txt_record(grpc_closure* on_resolved, absl::string_view name,
-                           absl::Time deadline,
-                           grpc_pollset_set* interested_parties);
+grpc_dns_lookup_txt_record(
+    grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXTCallback
+        on_resolved,
+    absl::string_view name, absl::Time deadline,
+    grpc_pollset_set* interested_parties);
 
 /// Cancel an asynchronous lookup operation.
 ///

@@ -166,7 +166,9 @@ static EventEngine::DNSResolver::LookupTaskHandle lookup_hostname(
 }
 
 static EventEngine::DNSResolver::LookupTaskHandle lookup_srv_record(
-    grpc_closure* on_resolved, absl::string_view name, absl::Time deadline,
+    grpc_event_engine::experimental::EventEngine::DNSResolver::LookupSRVCallback
+        on_resolved,
+    absl::string_view name, absl::Time deadline,
     grpc_pollset_set* /*interested_parties*/) {
   (void)on_resolved;
   (void)name;
@@ -175,7 +177,9 @@ static EventEngine::DNSResolver::LookupTaskHandle lookup_srv_record(
 }
 
 static EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
-    grpc_closure* on_resolved, absl::string_view name, absl::Time deadline,
+    grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXTCallback
+        on_resolved,
+    absl::string_view name, absl::Time deadline,
     grpc_pollset_set* /*interested_parties*/) {
   (void)on_resolved;
   (void)name;

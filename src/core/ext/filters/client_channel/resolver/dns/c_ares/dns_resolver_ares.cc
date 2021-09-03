@@ -37,6 +37,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/service_config_parser.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
@@ -44,17 +45,10 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
-#include "src/core/lib/json/json.h"
-
-#define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
-#define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
-#define GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS 120
-#define GRPC_DNS_RECONNECT_JITTER 0.2
 
 namespace {
 using ::grpc_event_engine::experimental::EventEngine;
@@ -217,94 +211,6 @@ void AresDnsResolver::OnNextResolutionLocked(grpc_error_handle error) {
   }
   Unref(DEBUG_LOCATION, "next_resolution_timer");
   GRPC_ERROR_UNREF(error);
-}
-
-bool ValueInJsonArray(const Json::Array& array, const char* value) {
-  for (const Json& entry : array) {
-    if (entry.type() == Json::Type::STRING && entry.string_value() == value) {
-      return true;
-    }
-  }
-  return false;
-}
-
-std::string ChooseServiceConfig(char* service_config_choice_json,
-                                grpc_error_handle* error) {
-  Json json = Json::Parse(service_config_choice_json, error);
-  if (*error != GRPC_ERROR_NONE) return "";
-  if (json.type() != Json::Type::ARRAY) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Service Config Choices, error: should be of type array");
-    return "";
-  }
-  const Json* service_config = nullptr;
-  absl::InlinedVector<grpc_error_handle, 4> error_list;
-  for (const Json& choice : json.array_value()) {
-    if (choice.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Service Config Choice, error: should be of type object"));
-      continue;
-    }
-    // Check client language, if specified.
-    auto it = choice.object_value().find("clientLanguage");
-    if (it != choice.object_value().end()) {
-      if (it->second.type() != Json::Type::ARRAY) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:clientLanguage error:should be of type array"));
-      } else if (!ValueInJsonArray(it->second.array_value(), "c++")) {
-        continue;
-      }
-    }
-    // Check client hostname, if specified.
-    it = choice.object_value().find("clientHostname");
-    if (it != choice.object_value().end()) {
-      if (it->second.type() != Json::Type::ARRAY) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:clientHostname error:should be of type array"));
-      } else {
-        char* hostname = grpc_gethostname();
-        if (hostname == nullptr ||
-            !ValueInJsonArray(it->second.array_value(), hostname)) {
-          continue;
-        }
-      }
-    }
-    // Check percentage, if specified.
-    it = choice.object_value().find("percentage");
-    if (it != choice.object_value().end()) {
-      if (it->second.type() != Json::Type::NUMBER) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:percentage error:should be of type number"));
-      } else {
-        int random_pct = rand() % 100;
-        int percentage;
-        if (sscanf(it->second.string_value().c_str(), "%d", &percentage) != 1) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:percentage error:should be of type integer"));
-        } else if (random_pct > percentage || percentage == 0) {
-          continue;
-        }
-      }
-    }
-    // Found service config.
-    it = choice.object_value().find("serviceConfig");
-    if (it == choice.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:serviceConfig error:required field missing"));
-    } else if (it->second.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:serviceConfig error:should be of type object"));
-    } else if (service_config == nullptr) {
-      service_config = &it->second;
-    }
-  }
-  if (!error_list.empty()) {
-    service_config = nullptr;
-    *error = GRPC_ERROR_CREATE_FROM_VECTOR("Service Config Choices Parser",
-                                           &error_list);
-  }
-  if (service_config == nullptr) return "";
-  return service_config->Dump();
 }
 
 void AresDnsResolver::OnResolved(void* arg, grpc_error_handle error) {
@@ -475,7 +381,9 @@ static EventEngine::DNSResolver::LookupTaskHandle lookup_hostname(
 }
 
 static EventEngine::DNSResolver::LookupTaskHandle lookup_srv_record(
-    grpc_closure* on_resolved, absl::string_view name, absl::Time deadline,
+    grpc_event_engine::experimental::EventEngine::DNSResolver::LookupSRVCallback
+        on_resolved,
+    absl::string_view name, absl::Time deadline,
     grpc_pollset_set* /*interested_parties*/) {
   (void)on_resolved;
   (void)name;
@@ -484,7 +392,9 @@ static EventEngine::DNSResolver::LookupTaskHandle lookup_srv_record(
 }
 
 static EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
-    grpc_closure* on_resolved, absl::string_view name, absl::Time deadline,
+    grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXTCallback
+        on_resolved,
+    absl::string_view name, absl::Time deadline,
     grpc_pollset_set* /*interested_parties*/) {
   (void)on_resolved;
   (void)name;
