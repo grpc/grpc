@@ -136,6 +136,14 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
    public:
     virtual ~MetadataInterface() = default;
 
+    //////////////////////////////////////////////////////////////////////////
+    // TODO(ctiller): DO NOT MAKE THIS A PUBLIC API YET
+    // This needs some API design to ensure we can add/remove/replace metadata
+    // keys... we're deliberately not doing so to save some time whilst
+    // cleaning up the internal metadata representation, but we should add
+    // something back before making this a public API.
+    //////////////////////////////////////////////////////////////////////////
+
     /// Adds a key/value pair.
     /// Does NOT take ownership of \a key or \a value.
     /// Implementations must ensure that the key and value remain alive
