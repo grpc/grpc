@@ -15,10 +15,10 @@
 #
 # Checks if any file contains "DO NOT SUBMIT"
 
-set -e
 cd "$(dirname "$0")/../../.."
 grep -Irn \
   --exclude='check_do_not_submit.sh' \
   --exclude-dir='.git/' \
   --exclude-dir='third_party/' \
   'DO NOT SUBMIT'
+test $? -eq 1 || exit 1
