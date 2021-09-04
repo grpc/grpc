@@ -177,7 +177,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.19'
+    ss.dependency 'BoringSSL-GRPC', '0.0.20'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
@@ -371,13 +371,18 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/frame_settings.h',
                       'src/core/ext/transport/chttp2/transport/frame_window_update.cc',
                       'src/core/ext/transport/chttp2/transport/frame_window_update.h',
+                      'src/core/ext/transport/chttp2/transport/hpack_constants.h',
                       'src/core/ext/transport/chttp2/transport/hpack_encoder.cc',
                       'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
                       'src/core/ext/transport/chttp2/transport/hpack_encoder_index.h',
+                      'src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc',
+                      'src/core/ext/transport/chttp2/transport/hpack_encoder_table.h',
                       'src/core/ext/transport/chttp2/transport/hpack_parser.cc',
                       'src/core/ext/transport/chttp2/transport/hpack_parser.h',
-                      'src/core/ext/transport/chttp2/transport/hpack_table.cc',
-                      'src/core/ext/transport/chttp2/transport/hpack_table.h',
+                      'src/core/ext/transport/chttp2/transport/hpack_parser_table.cc',
+                      'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
+                      'src/core/ext/transport/chttp2/transport/hpack_utils.cc',
+                      'src/core/ext/transport/chttp2/transport/hpack_utils.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.cc',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.cc',
@@ -1527,10 +1532,13 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/frame_rst_stream.h',
                               'src/core/ext/transport/chttp2/transport/frame_settings.h',
                               'src/core/ext/transport/chttp2/transport/frame_window_update.h',
+                              'src/core/ext/transport/chttp2/transport/hpack_constants.h',
                               'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
                               'src/core/ext/transport/chttp2/transport/hpack_encoder_index.h',
+                              'src/core/ext/transport/chttp2/transport/hpack_encoder_table.h',
                               'src/core/ext/transport/chttp2/transport/hpack_parser.h',
-                              'src/core/ext/transport/chttp2/transport/hpack_table.h',
+                              'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
+                              'src/core/ext/transport/chttp2/transport/hpack_utils.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/incoming_metadata.h',
@@ -2180,6 +2188,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/retry_recv_initial_metadata.cc',
                       'test/core/end2end/tests/retry_recv_message.cc',
                       'test/core/end2end/tests/retry_recv_trailing_metadata_error.cc',
+                      'test/core/end2end/tests/retry_send_initial_metadata_refs.cc',
                       'test/core/end2end/tests/retry_send_op_fails.cc',
                       'test/core/end2end/tests/retry_server_pushback_delay.cc',
                       'test/core/end2end/tests/retry_server_pushback_disabled.cc',

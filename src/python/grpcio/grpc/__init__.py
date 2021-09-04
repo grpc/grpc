@@ -2144,6 +2144,7 @@ __all__ = (
     'access_token_call_credentials',
     'composite_call_credentials',
     'composite_channel_credentials',
+    'compute_engine_channel_credentials',
     'local_channel_credentials',
     'local_server_credentials',
     'alts_channel_credentials',
