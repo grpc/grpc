@@ -27,6 +27,7 @@ namespace grpc_binder {
 class MockWritableParcel : public WritableParcel {
  public:
   MOCK_METHOD(int32_t, GetDataPosition, (), (const, override));
+  MOCK_METHOD(int32_t, GetDataSize, (), (const, override));
   MOCK_METHOD(absl::Status, SetDataPosition, (int32_t), (override));
   MOCK_METHOD(absl::Status, WriteInt32, (int32_t), (override));
   MOCK_METHOD(absl::Status, WriteInt64, (int64_t), (override));
@@ -40,6 +41,7 @@ class MockWritableParcel : public WritableParcel {
 
 class MockReadableParcel : public ReadableParcel {
  public:
+  MOCK_METHOD(int32_t, GetDataSize, (), (const, override));
   MOCK_METHOD(absl::Status, ReadInt32, (int32_t*), (const, override));
   MOCK_METHOD(absl::Status, ReadInt64, (int64_t*), (const, override));
   MOCK_METHOD(absl::Status, ReadBinder, (std::unique_ptr<Binder>*),
