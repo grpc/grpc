@@ -26,13 +26,15 @@
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
 #include "src/core/lib/gprpp/sync.h"
 
+extern "C" {
 // TODO(mingcl): This function is introduced at API level 32 and is not
 // available in any NDK release yet. So we export it weakly so that we can use
 // it without triggering undefined reference error. Its purpose is to disable
 // header in Parcel to conform to the BinderChannel wire format.
-extern "C" {
 extern void AIBinder_Class_disableInterfaceTokenHeader(AIBinder_Class* clazz)
     __attribute__((weak));
+// This is released in API level 31.
+extern int32_t AParcel_getDataSize(const AParcel* parcel) __attribute__((weak));
 }
 
 namespace grpc_binder {
@@ -194,6 +196,15 @@ int32_t WritableParcelAndroid::GetDataPosition() const {
   return AParcel_getDataPosition(parcel_);
 }
 
+int32_t WritableParcelAndroid::GetDataSize() const {
+  if (AParcel_getDataSize) {
+    return AParcel_getDataSize(parcel_);
+  } else {
+    gpr_log(GPR_INFO, "[Warning] AParcel_getDataSize is not available");
+    return 0;
+  }
+}
+
 absl::Status WritableParcelAndroid::SetDataPosition(int32_t pos) {
   return AParcel_setDataPosition(parcel_, pos) == STATUS_OK
              ? absl::OkStatus()
@@ -231,6 +242,15 @@ absl::Status WritableParcelAndroid::WriteByteArray(const int8_t* buffer,
   return AParcel_writeByteArray(parcel_, buffer, length) == STATUS_OK
              ? absl::OkStatus()
              : absl::InternalError("AParcel_writeByteArray failed");
+}
+
+int32_t ReadableParcelAndroid::GetDataSize() const {
+  if (AParcel_getDataSize) {
+    return AParcel_getDataSize(parcel_);
+  } else {
+    gpr_log(GPR_INFO, "[Warning] AParcel_getDataSize is not available");
+    return -1;
+  }
 }
 
 absl::Status ReadableParcelAndroid::ReadInt32(int32_t* data) const {

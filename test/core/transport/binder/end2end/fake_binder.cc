@@ -28,6 +28,8 @@ FakeWritableParcel::FakeWritableParcel() : data_(1) {}
 
 int32_t FakeWritableParcel::GetDataPosition() const { return data_position_; }
 
+int32_t FakeWritableParcel::GetDataSize() const { return data_size_; }
+
 absl::Status FakeWritableParcel::SetDataPosition(int32_t pos) {
   if (data_.size() < static_cast<size_t>(pos) + 1) {
     data_.resize(pos + 1);
@@ -39,24 +41,28 @@ absl::Status FakeWritableParcel::SetDataPosition(int32_t pos) {
 absl::Status FakeWritableParcel::WriteInt32(int32_t data) {
   data_[data_position_] = data;
   SetDataPosition(data_position_ + 1).IgnoreError();
+  data_size_ += 4;
   return absl::OkStatus();
 }
 
 absl::Status FakeWritableParcel::WriteInt64(int64_t data) {
   data_[data_position_] = data;
   SetDataPosition(data_position_ + 1).IgnoreError();
+  data_size_ += 8;
   return absl::OkStatus();
 }
 
 absl::Status FakeWritableParcel::WriteBinder(HasRawBinder* binder) {
   data_[data_position_] = binder->GetRawBinder();
   SetDataPosition(data_position_ + 1).IgnoreError();
+  data_size_ += 8;
   return absl::OkStatus();
 }
 
 absl::Status FakeWritableParcel::WriteString(absl::string_view s) {
   data_[data_position_] = std::string(s);
   SetDataPosition(data_position_ + 1).IgnoreError();
+  data_size_ += s.size();
   return absl::OkStatus();
 }
 
@@ -64,8 +70,11 @@ absl::Status FakeWritableParcel::WriteByteArray(const int8_t* buffer,
                                                 int32_t length) {
   data_[data_position_] = std::vector<int8_t>(buffer, buffer + length);
   SetDataPosition(data_position_ + 1).IgnoreError();
+  data_size_ += length;
   return absl::OkStatus();
 }
+
+int32_t FakeReadableParcel::GetDataSize() const { return data_size_; }
 
 absl::Status FakeReadableParcel::ReadInt32(int32_t* data) const {
   if (data_position_ >= data_.size() ||

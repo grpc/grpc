@@ -81,7 +81,7 @@ class WireReaderTest : public ::testing::Test {
   std::shared_ptr<StrictMock<MockTransportStreamReceiver>>
       transport_stream_receiver_;
   WireReaderImpl wire_reader_;
-  StrictMock<MockReadableParcel> mock_readable_parcel_;
+  MockReadableParcel mock_readable_parcel_;
 };
 
 MATCHER_P(StatusOrStrEq, target, "") {
@@ -279,6 +279,8 @@ TEST_F(WireReaderTest, InBoundFlowControl) {
   ::testing::InSequence sequence;
   UnblockSetupTransport();
 
+  // data size
+  EXPECT_CALL(mock_readable_parcel_, GetDataSize).WillOnce(Return(1000));
   // flag
   ExpectReadInt32(kFlagMessageData | kFlagMessageDataIsPartial);
   // sequence number
@@ -292,6 +294,7 @@ TEST_F(WireReaderTest, InBoundFlowControl) {
   // Data is not completed. No callback will be triggered.
   EXPECT_TRUE(CallProcessTransaction(kFirstCallId).ok());
 
+  EXPECT_CALL(mock_readable_parcel_, GetDataSize).WillOnce(Return(1000));
   // flag
   ExpectReadInt32(kFlagMessageData);
   // sequence number
