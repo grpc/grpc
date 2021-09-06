@@ -19,6 +19,7 @@ def set_pragma(filename, pragma):
             saw_first_define = True
             lines.append('')
             lines.append('// IWYU pragma: %s' % pragma)
+            lines.append('')
     open(filename, 'w').write('\n'.join(lines) + '\n')
 
 def set_exports(pub, cg):
