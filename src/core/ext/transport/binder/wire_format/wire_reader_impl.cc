@@ -277,6 +277,7 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
     transaction_code_t code, const ReadableParcel* parcel,
     int* cancellation_flags) {
   GPR_ASSERT(cancellation_flags);
+  num_incoming_bytes_ += parcel->GetDataSize();
 
   int flags;
   RETURN_IF_ERROR(parcel->ReadInt32(&flags));
@@ -344,8 +345,6 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
     }
     gpr_log(GPR_INFO, "msg_data = %s", msg_data.c_str());
     message_buffer_[code] += msg_data;
-    // TODO(waynetu): This should be parcel->GetDataSize().
-    num_incoming_bytes_ += count;
     if ((flags & kFlagMessageDataIsPartial) == 0) {
       std::string s = std::move(message_buffer_[code]);
       message_buffer_.erase(code);

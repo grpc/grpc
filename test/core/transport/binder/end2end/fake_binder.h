@@ -84,6 +84,7 @@ class FakeWritableParcel final : public WritableParcel {
  public:
   FakeWritableParcel();
   int32_t GetDataPosition() const override;
+  int32_t GetDataSize() const override;
   absl::Status SetDataPosition(int32_t pos) override;
   absl::Status WriteInt32(int32_t data) override;
   absl::Status WriteInt64(int64_t data) override;
@@ -96,6 +97,7 @@ class FakeWritableParcel final : public WritableParcel {
  private:
   FakeData data_;
   size_t data_position_ = 0;
+  int32_t data_size_ = 0;
 };
 
 // A fake readable parcel.
@@ -104,7 +106,23 @@ class FakeWritableParcel final : public WritableParcel {
 // methods to retrieve those data in the receiving end.
 class FakeReadableParcel final : public ReadableParcel {
  public:
-  explicit FakeReadableParcel(FakeData data) : data_(std::move(data)) {}
+  explicit FakeReadableParcel(FakeData data) : data_(std::move(data)) {
+    for (auto& d : data_) {
+      if (absl::holds_alternative<int32_t>(d)) {
+        data_size_ += 4;
+      } else if (absl::holds_alternative<int64_t>(d)) {
+        data_size_ += 8;
+      } else if (absl::holds_alternative<void*>(d)) {
+        data_size_ += 8;
+      } else if (absl::holds_alternative<std::string>(d)) {
+        data_size_ += absl::get<std::string>(d).size();
+      } else {
+        data_size_ += absl::get<std::vector<int8_t>>(d).size();
+      }
+    }
+  }
+
+  int32_t GetDataSize() const override;
   absl::Status ReadInt32(int32_t* data) const override;
   absl::Status ReadInt64(int64_t* data) const override;
   absl::Status ReadBinder(std::unique_ptr<Binder>* data) const override;
@@ -114,6 +132,7 @@ class FakeReadableParcel final : public ReadableParcel {
  private:
   const FakeData data_;
   mutable size_t data_position_ = 0;
+  int32_t data_size_ = 0;
 };
 
 class FakeBinder;
