@@ -316,10 +316,9 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
   expectation++;
   gpr_log(GPR_INFO, "sequence number = %d", seq_num);
   if (flags & kFlagPrefix) {
-    char method_ref[111];
-    memset(method_ref, 0, sizeof(method_ref));
+    std::string method_ref;
     if (!is_client_) {
-      RETURN_IF_ERROR(parcel->ReadString(method_ref));
+      RETURN_IF_ERROR(parcel->ReadString(&method_ref));
     }
     absl::StatusOr<Metadata> initial_metadata_or_error = parse_metadata(parcel);
     if (!initial_metadata_or_error.ok()) {
@@ -353,10 +352,9 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
   if (flags & kFlagSuffix) {
     if (flags & kFlagStatusDescription) {
       // FLAG_STATUS_DESCRIPTION set
-      char desc[111];
-      memset(desc, 0, sizeof(desc));
-      RETURN_IF_ERROR(parcel->ReadString(desc));
-      gpr_log(GPR_INFO, "description = %s", desc);
+      std::string desc;
+      RETURN_IF_ERROR(parcel->ReadString(&desc));
+      gpr_log(GPR_INFO, "description = %s", desc.c_str());
     }
     Metadata trailing_metadata;
     if (is_client_) {

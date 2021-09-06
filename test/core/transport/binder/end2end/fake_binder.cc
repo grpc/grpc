@@ -106,14 +106,12 @@ absl::Status FakeReadableParcel::ReadBinder(
   return absl::OkStatus();
 }
 
-absl::Status FakeReadableParcel::ReadString(char data[111]) const {
+absl::Status FakeReadableParcel::ReadString(std::string* str) const {
   if (data_position_ >= data_.size() ||
       !absl::holds_alternative<std::string>(data_[data_position_])) {
     return absl::InternalError("ReadString failed");
   }
-  const std::string& s = absl::get<std::string>(data_[data_position_++]);
-  if (s.size() >= 100) return absl::InternalError("ReadString failed");
-  std::memcpy(data, s.data(), s.size());
+  *str = absl::get<std::string>(data_[data_position_++]);
   return absl::OkStatus();
 }
 

@@ -86,6 +86,43 @@ binder_status_t f_onTransact(AIBinder* binder, transaction_code_t code,
     return STATUS_UNKNOWN_ERROR;
   }
 }
+
+// StdStringAllocator, ReadString, StdVectorAllocator, and ReadVector's
+// implementations are copied from android/binder_parcel_utils.h
+// We cannot include the header because it does not compile in C++11
+
+bool StdStringAllocator(void* stringData, int32_t length, char** buffer) {
+  if (length <= 0) return false;
+
+  std::string* str = static_cast<std::string*>(stringData);
+  str->resize(static_cast<size_t>(length) - 1);
+  *buffer = &(*str)[0];
+  return true;
+}
+
+binder_status_t AParcelReadString(const AParcel* parcel, std::string* str) {
+  void* stringData = static_cast<void*>(str);
+  return AParcel_readString(parcel, stringData, StdStringAllocator);
+}
+
+template <typename T>
+bool StdVectorAllocator(void* vectorData, int32_t length, T** outBuffer) {
+  if (length < 0) return false;
+
+  std::vector<T>* vec = static_cast<std::vector<T>*>(vectorData);
+  if (static_cast<size_t>(length) > vec->max_size()) return false;
+
+  vec->resize(static_cast<size_t>(length));
+  *outBuffer = vec->data();
+  return true;
+}
+
+binder_status_t AParcelReadVector(const AParcel* parcel,
+                                  std::vector<uint8_t>* vec) {
+  void* vectorData = static_cast<void*>(vec);
+  return AParcel_readByteArray(parcel, vectorData, StdVectorAllocator<int8_t>);
+}
+
 }  // namespace
 
 ndk::SpAIBinder FromJavaBinder(JNIEnv* jni_env, jobject binder) {
@@ -276,36 +313,18 @@ absl::Status ReadableParcelAndroid::ReadBinder(
   return absl::OkStatus();
 }
 
-namespace {
-
-bool byte_array_allocator(void* arrayData, int32_t length, int8_t** outBuffer) {
-  std::string tmp;
-  tmp.resize(length);
-  *reinterpret_cast<std::string*>(arrayData) = tmp;
-  *outBuffer = reinterpret_cast<int8_t*>(
-      &(*reinterpret_cast<std::string*>(arrayData))[0]);
-  return true;
-}
-
-bool string_allocator(void* stringData, int32_t length, char** outBuffer) {
-  if (length > 0) {
-    // TODO(mingcl): Don't fix the length of the string
-    GPR_ASSERT(length < 100);  // call should preallocate 100 bytes
-    *outBuffer = reinterpret_cast<char*>(stringData);
-  }
-  return true;
-}
-
-}  // namespace
-
 absl::Status ReadableParcelAndroid::ReadByteArray(std::string* data) const {
-  return AParcel_readByteArray(parcel_, data, byte_array_allocator) == STATUS_OK
-             ? absl::OkStatus()
-             : absl::InternalError("AParcel_readByteArray failed");
+  std::vector<uint8_t> vec;
+  if (AParcelReadVector(parcel_, &vec) == STATUS_OK) {
+    data->resize(vec.size());
+    memcpy(&((*data)[0]), &vec[0], vec.size());
+    return absl::OkStatus();
+  }
+  return absl::InternalError("AParcel_readByteArray failed");
 }
 
-absl::Status ReadableParcelAndroid::ReadString(char data[111]) const {
-  return AParcel_readString(parcel_, data, string_allocator) == STATUS_OK
+absl::Status ReadableParcelAndroid::ReadString(std::string* str) const {
+  return AParcelReadString(parcel_, str) == STATUS_OK
              ? absl::OkStatus()
              : absl::InternalError("AParcel_readString failed");
 }
