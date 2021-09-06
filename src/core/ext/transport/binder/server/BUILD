@@ -34,6 +34,7 @@ grpc_cc_library(
         "binder_server_credentials.h",
     ],
     external_deps = [
+        "absl/container:flat_hash_map",
         "absl/memory",
         "absl/status",
     ],
