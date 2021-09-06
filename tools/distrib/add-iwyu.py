@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+
+import os
+
+def to_inc(filename):
+    """Given filename, synthesize what should go in an include statement to get that file"""
+    if filename.startswith("include/"):
+        return '<%s>' % filename[len("include/"):]
+    return '"%s"' % filename
+
+def set_pragma(filename, pragma):
+    """Set the file-level IWYU pragma in filename"""
+    lines = []
+    saw_first_define = False
+    for line in open(filename).read().splitlines():
+        if line.startswith('// IWYU pragma: '): continue
+        lines.append(line)
+        if not saw_first_define and line.startswith('#define '):
+            saw_first_define = True
+            lines.append('')
+            lines.append('// IWYU pragma: %s' % pragma)
+    open(filename, 'w').write('\n'.join(lines) + '\n')
+
+def set_exports(pub, cg):
+    """In file pub, mark the include for cg with IWYU pragma: export"""
+    lines = []
+    for line in open(pub).read().splitlines():
+        if line.startswith('#include %s' % to_inc(cg)):
+            lines.append('#include %s // IWYU pragma: export' % to_inc(cg))
+        else:
+            lines.append(line)
+    open(pub, 'w').write('\n'.join(lines) + '\n')
+
+def fix_tree(tree):
+    """Fix one include tree"""
+    # Map of filename --> paths including that filename
+    reverse_map = {}
+    # The same, but for things with '/impl/codegen' in their names
+    cg_reverse_map = {}
+    for root, dirs, files in os.walk(tree):
+        root_map = cg_reverse_map if '/impl/codegen' in root else reverse_map
+        for filename in files:
+            root_map.setdefault(filename, []).append(root)
+    # For each thing in '/impl/codegen' figure out what exports it
+    for filename, paths in cg_reverse_map.items():
+        # Exclude non-headers
+        if not filename.endswith('.h'): continue
+        pragma = None
+        # If the path for a file in /impl/codegen is ambiguous, just don't bother
+        if len(paths) == 1:
+            path = paths[0]
+            # Check if we have an exporting candidate
+            if filename in reverse_map:
+                proper = reverse_map[filename]
+                # And that it too is unambiguous
+                if len(proper) == 1:
+                    # Build the two relevant pathnames
+                    cg = path + '/' + filename
+                    pub = proper[0] + '/' + filename
+                    # And see if the public file actually includes the /impl/codegen file
+                    if ('#include %s' % to_inc(cg)) in open(pub).read():
+                        # Finally, if it does, we'll set that pragma
+                        pragma = 'private, include %s' % to_inc(cg)
+                        # And mark the export
+                        set_exports(pub, cg)
+        # If we can't find a good alternative include to point people to,
+        # mark things private anyway... we don't want to recommend people include
+        # from impl/codegen
+        if not pragma:
+            pragma = 'private'
+        for path in paths:
+            set_pragma(path + '/' + filename, pragma)
+
+fix_tree('include/grpc')
+fix_tree('include/grpcpp')
+

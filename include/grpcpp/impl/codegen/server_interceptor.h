@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SERVER_INTERCEPTOR_H
 #define GRPCPP_IMPL_CODEGEN_SERVER_INTERCEPTOR_H
 
+// IWYU pragma: private, include <grpcpp/impl/codegen/server_interceptor.h>
+
 #include <atomic>
 #include <vector>
 

@@ -19,6 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_ATM_WINDOWS_H
 #define GRPC_IMPL_CODEGEN_ATM_WINDOWS_H
 
+// IWYU pragma: private, include <grpc/impl/codegen/atm_windows.h>
+
 /** Win32 variant of atm_platform.h */
 #include <grpc/impl/codegen/port_platform.h>
 

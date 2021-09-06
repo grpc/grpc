@@ -18,6 +18,8 @@
 
 #ifndef GRPC_IMPL_CODEGEN_SYNC_H
 #define GRPC_IMPL_CODEGEN_SYNC_H
+
+// IWYU pragma: private, include <grpc/impl/codegen/sync.h>
 /** Synchronization primitives for GPR.
 
    The type  gpr_mu              provides a non-reentrant mutex (lock).

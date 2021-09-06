@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_H
 #define GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_H
 
+// IWYU pragma: private, include <grpcpp/impl/codegen/server_context.h>
+
 #include <atomic>
 #include <cassert>
 #include <map>
