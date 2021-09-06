@@ -21,8 +21,6 @@
 
 // IWYU pragma: private
 
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif

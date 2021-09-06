@@ -21,8 +21,6 @@
 
 // IWYU pragma: private, include <grpcpp/impl/codegen/status_code_enum.h>
 
-
-
 namespace grpc {
 
 enum StatusCode {

@@ -21,8 +21,6 @@
 
 // IWYU pragma: private
 
-
-
 #include <functional>
 
 #include <grpc/impl/codegen/grpc_types.h>

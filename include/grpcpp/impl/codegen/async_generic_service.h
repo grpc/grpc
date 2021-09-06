@@ -21,8 +21,6 @@
 
 // IWYU pragma: private, include <grpcpp/impl/codegen/async_generic_service.h>
 
-
-
 #include <grpc/impl/codegen/port_platform.h>
 
 #include <grpcpp/impl/codegen/async_stream.h>

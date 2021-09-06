@@ -21,8 +21,6 @@
 
 // IWYU pragma: private, include <grpc/impl/codegen/status.h>
 
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif

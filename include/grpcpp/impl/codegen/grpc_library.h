@@ -21,8 +21,6 @@
 
 // IWYU pragma: private, include <grpcpp/impl/codegen/grpc_library.h>
 
-
-
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 
 namespace grpc {

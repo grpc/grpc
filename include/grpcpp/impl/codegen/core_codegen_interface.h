@@ -21,8 +21,6 @@
 
 // IWYU pragma: private
 
-
-
 #include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>

@@ -20,8 +20,6 @@
 
 // IWYU pragma: private, include <grpcpp/impl/codegen/server_callback.h>
 
-
-
 #include <atomic>
 #include <functional>
 #include <type_traits>

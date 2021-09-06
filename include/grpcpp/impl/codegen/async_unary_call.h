@@ -21,8 +21,6 @@
 
 // IWYU pragma: private, include <grpcpp/impl/codegen/async_unary_call.h>
 
-
-
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/call_op_set.h>
 #include <grpcpp/impl/codegen/call_op_set_interface.h>

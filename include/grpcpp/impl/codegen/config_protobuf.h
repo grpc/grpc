@@ -21,8 +21,6 @@
 
 // IWYU pragma: private
 
-
-
 #define GRPC_OPEN_SOURCE_PROTO
 
 #ifndef GRPC_CUSTOM_MESSAGE

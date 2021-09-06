@@ -21,8 +21,6 @@
 
 // IWYU pragma: private
 
-
-
 #include <memory>
 
 #include <grpcpp/impl/codegen/channel_interface.h>

@@ -21,8 +21,6 @@
 
 // IWYU pragma: private, include <grpc/impl/codegen/log.h>
 
-
-
 #include <grpc/impl/codegen/port_platform.h>
 
 #include <stdarg.h>

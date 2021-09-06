@@ -20,8 +20,6 @@
 
 // IWYU pragma: private
 
-
-
 /** WARNING: Please do not use this header. This was added as a temporary
  * measure to not break some of the external projects that depend on
  * gpr_slice_* functions. We are actively working on moving all the

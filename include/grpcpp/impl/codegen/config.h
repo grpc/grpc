@@ -21,8 +21,6 @@
 
 // IWYU pragma: private, include <grpcpp/impl/codegen/config.h>
 
-
-
 #include <string>
 
 /// The following macros are deprecated and appear only for users

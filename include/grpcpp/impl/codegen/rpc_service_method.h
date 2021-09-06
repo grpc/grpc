@@ -21,8 +21,6 @@
 
 // IWYU pragma: private, include <grpcpp/impl/codegen/rpc_service_method.h>
 
-
-
 #include <climits>
 #include <functional>
 #include <map>

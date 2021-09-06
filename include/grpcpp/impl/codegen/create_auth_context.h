@@ -21,8 +21,6 @@
 
 // IWYU pragma: private
 
-
-
 #include <memory>
 
 #include <grpc/impl/codegen/grpc_types.h>

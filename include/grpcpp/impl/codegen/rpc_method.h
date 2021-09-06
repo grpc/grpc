@@ -21,8 +21,6 @@
 
 // IWYU pragma: private, include <grpcpp/impl/codegen/rpc_method.h>
 
-
-
 #include <memory>
 
 #include <grpcpp/impl/codegen/channel_interface.h>
