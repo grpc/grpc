@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,9 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#!/usr/bin/env python3
-
 import os
+
 
 def to_inc(filename):
     """Given filename, synthesize what should go in an include statement to get that file"""
@@ -22,12 +23,14 @@ def to_inc(filename):
         return '<%s>' % filename[len("include/"):]
     return '"%s"' % filename
 
+
 def set_pragma(filename, pragma):
     """Set the file-level IWYU pragma in filename"""
     lines = []
     saw_first_define = False
     for line in open(filename).read().splitlines():
-        if line.startswith('// IWYU pragma: '): continue
+        if line.startswith('// IWYU pragma: '):
+            continue
         lines.append(line)
         if not saw_first_define and line.startswith('#define '):
             saw_first_define = True
@@ -36,15 +39,17 @@ def set_pragma(filename, pragma):
             lines.append('')
     open(filename, 'w').write('\n'.join(lines) + '\n')
 
+
 def set_exports(pub, cg):
     """In file pub, mark the include for cg with IWYU pragma: export"""
     lines = []
     for line in open(pub).read().splitlines():
         if line.startswith('#include %s' % to_inc(cg)):
-            lines.append('#include %s // IWYU pragma: export' % to_inc(cg))
+            lines.append('#include %s  // IWYU pragma: export' % to_inc(cg))
         else:
             lines.append(line)
     open(pub, 'w').write('\n'.join(lines) + '\n')
+
 
 def fix_tree(tree):
     """Fix one include tree"""
@@ -59,7 +64,8 @@ def fix_tree(tree):
     # For each thing in '/impl/codegen' figure out what exports it
     for filename, paths in cg_reverse_map.items():
         # Exclude non-headers
-        if not filename.endswith('.h'): continue
+        if not filename.endswith('.h'):
+            continue
         pragma = None
         # If the path for a file in /impl/codegen is ambiguous, just don't bother
         if len(paths) == 1:
@@ -86,6 +92,6 @@ def fix_tree(tree):
         for path in paths:
             set_pragma(path + '/' + filename, pragma)
 
+
 fix_tree('include/grpc')
 fix_tree('include/grpcpp')
-

@@ -21,6 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/sync_posix.h> // IWYU pragma: export
+#include <grpc/impl/codegen/sync_posix.h>  // IWYU pragma: export
 
 #endif /* GRPC_SUPPORT_SYNC_POSIX_H */
