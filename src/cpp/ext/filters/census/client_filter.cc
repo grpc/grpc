@@ -194,14 +194,10 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
 //
 
 OpenCensusCallTracer::OpenCensusCallTracer(const grpc_call_element_args* args)
-    : path_(grpc_slice_ref_internal(args->path)),
+    : call_context_(args->context),
+      path_(grpc_slice_ref_internal(args->path)),
       method_(GetMethod(&path_)),
-      arena_(args->arena) {
-  auto* parent_context = reinterpret_cast<CensusContext*>(
-      args->context[GRPC_CONTEXT_TRACING].value);
-  GenerateClientContext(absl::StrCat("Sent.", method_), &context_,
-                        (parent_context == nullptr) ? nullptr : parent_context);
-}
+      arena_(args->arena) {}
 
 OpenCensusCallTracer::~OpenCensusCallTracer() {
   std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
@@ -239,6 +235,16 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
     ++num_active_rpcs_;
   }
   if (is_first_attempt) {
+    // Note that we are generating the overall call context here instead of in
+    // the constructor of `OpenCensusCallTracer` due to the semantics of
+    // `grpc_census_call_set_context` which allows the application to set the
+    // census context for a call anytime before the first call to
+    // `grpc_call_start_batch`.
+    auto* parent_context = reinterpret_cast<CensusContext*>(
+        call_context_[GRPC_CONTEXT_TRACING].value);
+    GenerateClientContext(
+        absl::StrCat("Sent.", method_), &context_,
+        (parent_context == nullptr) ? nullptr : parent_context);
     return arena_->New<OpenCensusCallAttemptTracer>(
         this, attempt_num, is_transparent_retry, true /* arena_allocated */);
   }

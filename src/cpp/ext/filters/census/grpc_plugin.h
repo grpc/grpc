@@ -21,8 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpcpp/opencensus.h>
 #include "absl/strings/string_view.h"
-#include "include/grpcpp/opencensus.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 
