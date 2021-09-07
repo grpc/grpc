@@ -82,10 +82,8 @@ proto_library(
     ],
 )
 
-# Also test the custom plugin execution parameter
 py_proto_library(
     name = "helloworld_moved_py_pb2",
-    plugin = ":dummy_plugin",
     deps = [":helloworld_moved_proto"],
 )
 
@@ -105,14 +103,5 @@ py_test(
         ":helloworld_moved_py_pb2",
         ":helloworld_moved_py_pb2_grpc",
         ":timestamp_py_pb2",
-    ],
-)
-
-py_binary(
-    name = "dummy_plugin",
-    srcs = [":dummy_plugin.py"],
-    python_version = "PY3",
-    deps = [
-        "@com_google_protobuf//:protobuf_python",
     ],
 )
