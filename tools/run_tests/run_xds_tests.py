@@ -2680,18 +2680,19 @@ def get_backend_service(gcp, backend_service_name, record_error=True):
     return backend_service
 
 
-def get_url_map(gcp, url_map_name):
+def get_url_map(gcp, url_map_name, record_error=True):
     try:
         result = gcp.compute.urlMaps().get(project=gcp.project,
                                            urlMap=url_map_name).execute()
         url_map = GcpResource(url_map_name, result['selfLink'])
     except Exception as e:
-        gcp.errors.append(e)
+        if record_error:
+            gcp.errors.append(e)
         url_map = GcpResource(url_map_name, None)
     gcp.url_maps.append(url_map)
 
 
-def get_target_proxy(gcp, target_proxy_name):
+def get_target_proxy(gcp, target_proxy_name, record_error=True):
     try:
         if gcp.alpha_compute:
             result = gcp.alpha_compute.targetGrpcProxies().get(
@@ -2703,19 +2704,21 @@ def get_target_proxy(gcp, target_proxy_name):
                 targetHttpProxy=target_proxy_name).execute()
         target_proxy = GcpResource(target_proxy_name, result['selfLink'])
     except Exception as e:
-        gcp.errors.append(e)
+        if record_error:
+            gcp.errors.append(e)
         target_proxy = GcpResource(target_proxy_name, None)
     gcp.target_proxies.append(target_proxy)
 
 
-def get_global_forwarding_rule(gcp, forwarding_rule_name):
+def get_global_forwarding_rule(gcp, forwarding_rule_name, record_error=True):
     try:
         result = gcp.compute.globalForwardingRules().get(
             project=gcp.project, forwardingRule=forwarding_rule_name).execute()
         global_forwarding_rule = GcpResource(forwarding_rule_name,
                                              result['selfLink'])
     except Exception as e:
-        gcp.errors.append(e)
+        if record_error:
+            gcp.errors.append(e)
         global_forwarding_rule = GcpResource(forwarding_rule_name, None)
     gcp.global_forwarding_rules.append(global_forwarding_rule)
 
@@ -3220,9 +3223,11 @@ try:
         get_url_map(gcp, url_map_name)
         get_target_proxy(gcp, target_proxy_name)
         get_global_forwarding_rule(gcp, forwarding_rule_name)
-        get_url_map(gcp, url_map_name_2)
-        get_target_proxy(gcp, target_proxy_name_2)
-        get_global_forwarding_rule(gcp, forwarding_rule_name_2)
+        get_url_map(gcp, url_map_name_2, record_error=False)
+        get_target_proxy(gcp, target_proxy_name_2, record_error=False)
+        get_global_forwarding_rule(gcp,
+                                   forwarding_rule_name_2,
+                                   record_error=False)
         get_instance_template(gcp, template_name)
         instance_group = get_instance_group(gcp, args.zone, instance_group_name)
         same_zone_instance_group = get_instance_group(
