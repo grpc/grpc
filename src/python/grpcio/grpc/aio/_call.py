@@ -627,8 +627,8 @@ class StreamStreamCall(_StreamRequestMixin, _StreamResponseMixin, Call,
         super().__init__(
             channel.call(method, deadline, credentials, wait_for_ready),
             metadata, request_serializer, response_deserializer, loop)
-        self._initializer = self._loop.create_task(self._prepare_rpc())
         self._init_stream_request_mixin(request_iterator)
+        self._initializer = self._loop.create_task(self._prepare_rpc())
         self._init_stream_response_mixin(self._initializer)
 
     async def _prepare_rpc(self):
