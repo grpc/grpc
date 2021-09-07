@@ -19,7 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_BYTE_BUFFER_H
 #define GRPCPP_IMPL_CODEGEN_BYTE_BUFFER_H
 
-// IWYU pragma: private, include <grpcpp/impl/codegen/byte_buffer.h>
+// IWYU pragma: private, include <grpcpp/support/byte_buffer.h>
 
 #include <grpc/impl/codegen/byte_buffer.h>
 

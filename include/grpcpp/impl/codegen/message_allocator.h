@@ -19,7 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_MESSAGE_ALLOCATOR_H
 #define GRPCPP_IMPL_CODEGEN_MESSAGE_ALLOCATOR_H
 
-// IWYU pragma: private, include <grpcpp/impl/codegen/message_allocator.h>
+// IWYU pragma: private, include <grpcpp/support/message_allocator.h>
 
 namespace grpc {
 

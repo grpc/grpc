@@ -19,7 +19,7 @@
 #ifndef GRPC_IMPL_CODEGEN_SYNC_H
 #define GRPC_IMPL_CODEGEN_SYNC_H
 
-// IWYU pragma: private, include <grpc/impl/codegen/sync.h>
+// IWYU pragma: private, include <grpc/support/sync.h>
 
 /** Synchronization primitives for GPR.
 

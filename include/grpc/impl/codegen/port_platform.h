@@ -19,7 +19,7 @@
 #ifndef GRPC_IMPL_CODEGEN_PORT_PLATFORM_H
 #define GRPC_IMPL_CODEGEN_PORT_PLATFORM_H
 
-// IWYU pragma: private, include <grpc/impl/codegen/port_platform.h>
+// IWYU pragma: private, include <grpc/support/port_platform.h>
 
 /*
  * Define GPR_BACKWARDS_COMPATIBILITY_MODE to try harder to be ABI

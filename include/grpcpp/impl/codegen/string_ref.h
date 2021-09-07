@@ -19,7 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_STRING_REF_H
 #define GRPCPP_IMPL_CODEGEN_STRING_REF_H
 
-// IWYU pragma: private, include <grpcpp/impl/codegen/string_ref.h>
+// IWYU pragma: private, include <grpcpp/support/string_ref.h>
 
 #include <string.h>
 

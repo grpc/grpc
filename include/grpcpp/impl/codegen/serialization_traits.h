@@ -19,7 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SERIALIZATION_TRAITS_H
 #define GRPCPP_IMPL_CODEGEN_SERIALIZATION_TRAITS_H
 
-// IWYU pragma: private, include <grpcpp/impl/codegen/serialization_traits.h>
+// IWYU pragma: private, include <grpcpp/impl/serialization_traits.h>
 
 namespace grpc {
 

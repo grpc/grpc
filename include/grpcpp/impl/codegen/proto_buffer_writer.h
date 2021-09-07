@@ -19,7 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_PROTO_BUFFER_WRITER_H
 #define GRPCPP_IMPL_CODEGEN_PROTO_BUFFER_WRITER_H
 
-// IWYU pragma: private, include <grpcpp/impl/codegen/proto_buffer_writer.h>
+// IWYU pragma: private, include <grpcpp/support/proto_buffer_writer.h>
 
 #include <type_traits>
 

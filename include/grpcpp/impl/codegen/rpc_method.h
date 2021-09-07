@@ -19,7 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_RPC_METHOD_H
 #define GRPCPP_IMPL_CODEGEN_RPC_METHOD_H
 
-// IWYU pragma: private, include <grpcpp/impl/codegen/rpc_method.h>
+// IWYU pragma: private, include <grpcpp/impl/rpc_method.h>
 
 #include <memory>
 

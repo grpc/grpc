@@ -18,7 +18,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CALL_H
 #define GRPCPP_IMPL_CODEGEN_CALL_H
 
-// IWYU pragma: private, include <grpcpp/impl/codegen/call.h>
+// IWYU pragma: private, include <grpcpp/impl/call.h>
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/impl/codegen/call_hook.h>

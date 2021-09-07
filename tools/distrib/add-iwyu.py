@@ -81,7 +81,7 @@ def fix_tree(tree):
                     # And see if the public file actually includes the /impl/codegen file
                     if ('#include %s' % to_inc(cg)) in open(pub).read():
                         # Finally, if it does, we'll set that pragma
-                        pragma = 'private, include %s' % to_inc(cg)
+                        pragma = 'private, include %s' % to_inc(pub)
                         # And mark the export
                         set_exports(pub, cg)
         # If we can't find a good alternative include to point people to,

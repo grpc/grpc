@@ -19,7 +19,7 @@
 #ifndef GRPC_IMPL_CODEGEN_BYTE_BUFFER_READER_H
 #define GRPC_IMPL_CODEGEN_BYTE_BUFFER_READER_H
 
-// IWYU pragma: private, include <grpc/impl/codegen/byte_buffer_reader.h>
+// IWYU pragma: private, include <grpc/byte_buffer_reader.h>
 
 #ifdef __cplusplus
 extern "C" {

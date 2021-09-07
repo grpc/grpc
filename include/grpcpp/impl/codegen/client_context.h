@@ -34,7 +34,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CLIENT_CONTEXT_H
 #define GRPCPP_IMPL_CODEGEN_CLIENT_CONTEXT_H
 
-// IWYU pragma: private, include <grpcpp/impl/codegen/client_context.h>
+// IWYU pragma: private, include <grpcpp/client_context.h>
 
 #include <map>
 #include <memory>

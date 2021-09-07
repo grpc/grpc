@@ -32,7 +32,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_COMPLETION_QUEUE_H
 #define GRPCPP_IMPL_CODEGEN_COMPLETION_QUEUE_H
 
-// IWYU pragma: private, include <grpcpp/impl/codegen/completion_queue.h>
+// IWYU pragma: private, include <grpcpp/completion_queue.h>
 
 #include <list>
 

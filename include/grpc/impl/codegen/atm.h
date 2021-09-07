@@ -19,7 +19,7 @@
 #ifndef GRPC_IMPL_CODEGEN_ATM_H
 #define GRPC_IMPL_CODEGEN_ATM_H
 
-// IWYU pragma: private, include <grpc/impl/codegen/atm.h>
+// IWYU pragma: private, include <grpc/support/atm.h>
 
 /** This interface provides atomic operations and barriers.
    It is internal to gpr support code and should not be used outside it.

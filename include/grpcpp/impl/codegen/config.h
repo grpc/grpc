@@ -19,7 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CONFIG_H
 #define GRPCPP_IMPL_CODEGEN_CONFIG_H
 
-// IWYU pragma: private, include <grpcpp/impl/codegen/config.h>
+// IWYU pragma: private, include <grpcpp/support/config.h>
 
 #include <string>
 

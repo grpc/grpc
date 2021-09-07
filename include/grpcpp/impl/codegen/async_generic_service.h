@@ -19,7 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_ASYNC_GENERIC_SERVICE_H
 #define GRPCPP_IMPL_CODEGEN_ASYNC_GENERIC_SERVICE_H
 
-// IWYU pragma: private, include <grpcpp/impl/codegen/async_generic_service.h>
+// IWYU pragma: private, include <grpcpp/generic/async_generic_service.h>
 
 #include <grpc/impl/codegen/port_platform.h>
 

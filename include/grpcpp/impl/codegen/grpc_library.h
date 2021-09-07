@@ -19,7 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_GRPC_LIBRARY_H
 #define GRPCPP_IMPL_CODEGEN_GRPC_LIBRARY_H
 
-// IWYU pragma: private, include <grpcpp/impl/codegen/grpc_library.h>
+// IWYU pragma: private, include <grpcpp/impl/grpc_library.h>
 
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 

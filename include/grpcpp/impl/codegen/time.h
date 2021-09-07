@@ -19,7 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_TIME_H
 #define GRPCPP_IMPL_CODEGEN_TIME_H
 
-// IWYU pragma: private, include <grpcpp/impl/codegen/time.h>
+// IWYU pragma: private, include <grpcpp/support/time.h>
 
 #include <chrono>
 

@@ -19,7 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SERVICE_TYPE_H
 #define GRPCPP_IMPL_CODEGEN_SERVICE_TYPE_H
 
-// IWYU pragma: private, include <grpcpp/impl/codegen/service_type.h>
+// IWYU pragma: private, include <grpcpp/impl/service_type.h>
 
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>

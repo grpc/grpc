@@ -19,7 +19,7 @@
 #ifndef GRPC_IMPL_CODEGEN_SYNC_WINDOWS_H
 #define GRPC_IMPL_CODEGEN_SYNC_WINDOWS_H
 
-// IWYU pragma: private, include <grpc/impl/codegen/sync_windows.h>
+// IWYU pragma: private, include <grpc/support/sync_windows.h>
 
 #include <grpc/impl/codegen/port_platform.h>
 
