@@ -48,7 +48,7 @@ jobs:
       - name: Install Python Packages
         run: |
           python -m pip install --upgrade pip
-          pip install pyyaml mako
+          pip install pyyaml mako virtualenv
           sudo apt-get install python-dev
       - name: Check out repository code
         uses: actions/checkout@v2
