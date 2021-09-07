@@ -317,7 +317,9 @@ absl::Status ReadableParcelAndroid::ReadByteArray(std::string* data) const {
   std::vector<uint8_t> vec;
   if (AParcelReadVector(parcel_, &vec) == STATUS_OK) {
     data->resize(vec.size());
-    memcpy(&((*data)[0]), &vec[0], vec.size());
+    if (!vec.empty()) {
+      memcpy(&((*data)[0]), vec.data(), vec.size());
+    }
     return absl::OkStatus();
   }
   return absl::InternalError("AParcel_readByteArray failed");
