@@ -22,10 +22,8 @@
 
 #include "examples/protos/helloworld.grpc.pb.h"
 #include "examples/protos/helloworld.pb.h"
-
-// TODO(mingcl): Uncomment this after server interfaces are merged
-// #include "src/core/ext/transport/binder/server/binder_server.h"
-// #include "src/core/ext/transport/binder/server/binder_server_credentials.h"
+#include "src/core/ext/transport/binder/server/binder_server.h"
+#include "src/core/ext/transport/binder/server/binder_server_credentials.h"
 
 namespace {
 class GreeterService : public helloworld::Greeter::Service {
@@ -60,11 +58,10 @@ Java_io_grpc_binder_cpp_exampleserver_ExportedEndpointService_init_1grpc_1server
   grpc::ServerBuilder server_builder;
   server_builder.RegisterService(&service);
 
-  // TODO(mingcl): Uncomment this after server interfaces are merged
-  //
-  // grpc_endpoint_binder_pool_init();
-  // server_builder.AddListeningPort("binder://example.service",
-  // grpc::experimental::BinderServerCredentials());
+  grpc_endpoint_binder_pool_init();
+  server_builder.AddListeningPort(
+      "binder://example.service",
+      grpc::experimental::BinderServerCredentials());
 
   server = server_builder.BuildAndStart();
 }
@@ -75,11 +72,8 @@ Java_io_grpc_binder_cpp_exampleserver_ExportedEndpointService_get_1endpoint_1bin
   __android_log_print(ANDROID_LOG_INFO, "DemoServer", "Line number %d",
                       __LINE__);
 
-  // TODO(mingcl): Uncomment this after server interfaces are merged
-  // auto ai_binder =
-  // static_cast<AIBinder*>(grpc::experimental::binder::GetEndpointBinder("example.service"));
-
-  AIBinder* ai_binder = nullptr;
+  auto ai_binder = static_cast<AIBinder*>(
+      grpc::experimental::binder::GetEndpointBinder("example.service"));
 
   __android_log_print(ANDROID_LOG_INFO, "DemoServer", "ai_binder = %p",
                       ai_binder);
