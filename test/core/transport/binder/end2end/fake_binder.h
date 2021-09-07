@@ -182,9 +182,7 @@ class PersistentFakeTransactionReceiver {
 // other end of the tunnel by following the information in its endpoint.
 class FakeBinder final : public Binder {
  public:
-  explicit FakeBinder(FakeEndpoint* endpoint) : endpoint_(endpoint) {
-    endpoint_->owner = this;
-  }
+  explicit FakeBinder(FakeEndpoint* endpoint) : endpoint_(endpoint) {}
 
   void Initialize() override {}
   absl::Status PrepareTransaction() override {

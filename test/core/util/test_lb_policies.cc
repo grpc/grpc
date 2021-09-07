@@ -77,19 +77,6 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
 };
 
 //
-// CopyMetadataToVector()
-//
-
-MetadataVector CopyMetadataToVector(
-    LoadBalancingPolicy::MetadataInterface* metadata) {
-  MetadataVector result;
-  for (auto p : *metadata) {
-    result.push_back({std::string(p.first), std::string(p.second)});
-  }
-  return result;
-}
-
-//
 // TestPickArgsLb
 //
 
@@ -119,7 +106,7 @@ class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
       // Report args seen.
       PickArgsSeen args_seen;
       args_seen.path = std::string(args.path);
-      args_seen.metadata = CopyMetadataToVector(args.initial_metadata);
+      args_seen.metadata = args.initial_metadata->TestOnlyCopyToVector();
       cb_(args_seen);
       // Do pick.
       return delegate_picker_->Pick(args);
@@ -293,7 +280,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       TrailingMetadataArgsSeen args_seen;
       args_seen.backend_metric_data = call_state->GetBackendMetricData();
       GPR_ASSERT(recv_trailing_metadata != nullptr);
-      args_seen.metadata = CopyMetadataToVector(recv_trailing_metadata);
+      args_seen.metadata = recv_trailing_metadata->TestOnlyCopyToVector();
       cb_(args_seen);
       this->~TrailingMetadataHandler();
     }
