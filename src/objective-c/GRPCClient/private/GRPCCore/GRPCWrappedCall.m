@@ -143,9 +143,11 @@
       __weak typeof(self) weakSelf = self;
       _handler = ^{
         __strong typeof(self) strongSelf = weakSelf;
-        NSDictionary *metadata =
-            [NSDictionary grpc_dictionaryFromMetadataArray:strongSelf->_headers];
-        handler(metadata);
+        if (strongSelf) {
+          NSDictionary *metadata =
+              [NSDictionary grpc_dictionaryFromMetadataArray:strongSelf->_headers];
+          handler(metadata);
+        }
       };
     }
   }
@@ -175,7 +177,9 @@
       __weak typeof(self) weakSelf = self;
       _handler = ^{
         __strong typeof(self) strongSelf = weakSelf;
-        handler(strongSelf->_receivedMessage);
+        if (strongSelf) {
+          handler(strongSelf->_receivedMessage);
+        }
       };
     }
   }
