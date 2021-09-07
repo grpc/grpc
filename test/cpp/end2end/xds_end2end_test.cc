@@ -8135,6 +8135,8 @@ class XdsSecurityTest : public BasicTest {
       auto* transport_socket = cluster.mutable_transport_socket();
       transport_socket->set_name("envoy.transport_sockets.tls");
       UpstreamTlsContext upstream_tls_context;
+      // TODO(yashykt): Modify this to use the new security fields once the
+      // actual production infrastructure starts using the new fields.
       if (!identity_instance_name.empty()) {
         upstream_tls_context.mutable_common_tls_context()
             ->mutable_tls_certificate_certificate_provider_instance()
@@ -8247,9 +8249,8 @@ TEST_P(XdsSecurityTest,
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr(
-                  "TLS configuration provided but no "
-                  "validation_context_certificate_provider_instance found."));
+              ::testing::HasSubstr("TLS configuration provided but no "
+                                   "ca_certificate_provider_instance found."));
 }
 
 TEST_P(
@@ -8270,9 +8271,8 @@ TEST_P(
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr(
-                  "TLS configuration provided but no "
-                  "validation_context_certificate_provider_instance found."));
+              ::testing::HasSubstr("TLS configuration provided but no "
+                                   "ca_certificate_provider_instance found."));
 }
 
 TEST_P(
@@ -8292,9 +8292,8 @@ TEST_P(
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr(
-                  "TLS configuration provided but no "
-                  "validation_context_certificate_provider_instance found."));
+              ::testing::HasSubstr("TLS configuration provided but no "
+                                   "ca_certificate_provider_instance found."));
 }
 
 TEST_P(XdsSecurityTest, RegexSanMatcherDoesNotAllowIgnoreCase) {
@@ -8515,6 +8514,68 @@ TEST_P(XdsSecurityTest,
       response_state.error_message,
       ::testing::HasSubstr(
           "CertificateValidationContext: custom_validator_config unsupported"));
+}
+
+TEST_P(XdsSecurityTest, TestTlsConfigurationInValidationContext) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  WaitForBackend(0, WaitForBackendOptions().set_allow_failures(true));
+  Status status = SendRpc();
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+}
+
+TEST_P(XdsSecurityTest, NacksValidationContextSdsSecretConfig) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_validation_context_sds_secret_config();
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("validation_context_sds_secret_config unsupported"));
+}
+
+TEST_P(XdsSecurityTest, TestTlsConfigurationInCombinedValidationContext) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_default_validation_context()
+      ->mutable_ca_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  WaitForBackend(0, WaitForBackendOptions().set_allow_failures(true));
+  Status status = SendRpc();
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithNoSanMatchers) {
@@ -9136,6 +9197,8 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     auto* filter_chain = listener.add_filter_chains();
     filter_chain->add_filters()->mutable_typed_config()->PackFrom(
         HttpConnectionManager());
+    // TODO(yashykt): Modify this to use the new security fields once the actual
+    // production infrastructure starts using the new fields.
     if (!identity_instance_name.empty()) {
       auto* transport_socket = filter_chain->mutable_transport_socket();
       transport_socket->set_name("envoy.transport_sockets.tls");
@@ -9449,9 +9512,8 @@ TEST_P(XdsServerSecurityTest,
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr(
-                  "TLS configuration provided but no "
-                  "tls_certificate_certificate_provider_instance found."));
+              ::testing::HasSubstr("TLS configuration provided but no "
+                                   "tls_certificate_provider_instance found."));
 }
 
 TEST_P(XdsServerSecurityTest, UnknownIdentityCertificateProvider) {
@@ -9480,6 +9542,98 @@ TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr(
                   "Unrecognized certificate provider instance name: unknown"));
+}
+
+TEST_P(XdsServerSecurityTest, TestTlsNewSecurityFields) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  Listener listener;
+  listener.set_name(absl::StrCat(
+      ipv6_only_ ? "grpc/server?xds.resource.listening_address=[::1]:"
+                 : "grpc/server?xds.resource.listening_address=127.0.0.1:",
+      backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      ipv6_only_ ? "[::1]" : "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  downstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
+}
+
+TEST_P(XdsServerSecurityTest, NacksFieldTlsCertificates) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  Listener listener;
+  listener.set_name(absl::StrCat(
+      ipv6_only_ ? "grpc/server?xds.resource.listening_address=[::1]:"
+                 : "grpc/server?xds.resource.listening_address=127.0.0.1:",
+      backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      ipv6_only_ ? "[::1]" : "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  downstream_tls_context.mutable_common_tls_context()->add_tls_certificates();
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("tls_certificates unsupported"));
+}
+
+TEST_P(XdsServerSecurityTest, NacksFieldTlsCertificateSdsSecretConfigs) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  Listener listener;
+  listener.set_name(absl::StrCat(
+      ipv6_only_ ? "grpc/server?xds.resource.listening_address=[::1]:"
+                 : "grpc/server?xds.resource.listening_address=127.0.0.1:",
+      backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      ipv6_only_ ? "[::1]" : "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  downstream_tls_context.mutable_common_tls_context()
+      ->add_tls_certificate_sds_secret_configs();
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("tls_certificate_sds_secret_configs unsupported"));
 }
 
 TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {

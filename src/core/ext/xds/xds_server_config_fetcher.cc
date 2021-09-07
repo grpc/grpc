@@ -259,12 +259,12 @@ FilterChainMatchManager::CreateOrGetXdsCertificateProviderFromFilterChainData(
   // Configure root cert.
   absl::string_view root_provider_instance_name =
       filter_chain->downstream_tls_context.common_tls_context
-          .combined_validation_context
-          .validation_context_certificate_provider_instance.instance_name;
+          .certificate_validation_context.ca_certificate_provider_instance
+          .instance_name;
   absl::string_view root_provider_cert_name =
       filter_chain->downstream_tls_context.common_tls_context
-          .combined_validation_context
-          .validation_context_certificate_provider_instance.certificate_name;
+          .certificate_validation_context.ca_certificate_provider_instance
+          .certificate_name;
   if (!root_provider_instance_name.empty()) {
     certificate_providers.root =
         xds_client_->certificate_provider_store()
@@ -278,10 +278,10 @@ FilterChainMatchManager::CreateOrGetXdsCertificateProviderFromFilterChainData(
   // Configure identity cert.
   absl::string_view identity_provider_instance_name =
       filter_chain->downstream_tls_context.common_tls_context
-          .tls_certificate_certificate_provider_instance.instance_name;
+          .tls_certificate_provider_instance.instance_name;
   absl::string_view identity_provider_cert_name =
       filter_chain->downstream_tls_context.common_tls_context
-          .tls_certificate_certificate_provider_instance.certificate_name;
+          .tls_certificate_provider_instance.certificate_name;
   if (!identity_provider_instance_name.empty()) {
     certificate_providers.instance =
         xds_client_->certificate_provider_store()
