@@ -56,48 +56,6 @@ class MetadataBatch {
   /// lifetime of the gRPC call.
   grpc_linked_mdelem* AddMetadata(const string& key, const string& value);
 
-  class const_iterator : public std::iterator<std::bidirectional_iterator_tag,
-                                              const grpc_mdelem> {
-   public:
-    const grpc_mdelem& operator*() const { return elem_->md; }
-    grpc_mdelem operator->() const { return elem_->md; }
-
-    const_iterator& operator++() {
-      elem_ = elem_->next;
-      return *this;
-    }
-    const_iterator operator++(int) {
-      const_iterator tmp(*this);
-      operator++();
-      return tmp;
-    }
-    const_iterator& operator--() {
-      elem_ = elem_->prev;
-      return *this;
-    }
-    const_iterator operator--(int) {
-      const_iterator tmp(*this);
-      operator--();
-      return tmp;
-    }
-
-    bool operator==(const const_iterator& other) const {
-      return elem_ == other.elem_;
-    }
-    bool operator!=(const const_iterator& other) const {
-      return elem_ != other.elem_;
-    }
-
-   private:
-    friend class MetadataBatch;
-    explicit const_iterator(grpc_linked_mdelem* elem) : elem_(elem) {}
-
-    grpc_linked_mdelem* elem_;
-  };
-
-  const_iterator begin() const { return const_iterator(batch_->list.head); }
-  const_iterator end() const { return const_iterator(nullptr); }
-
  private:
   grpc_metadata_batch* batch_;  // Not owned.
 };
