@@ -2851,7 +2851,6 @@ grpc_error_handle UpstreamTlsContextParse(
 }
 
 grpc_error_handle CdsLogicalDnsParse(
-    const EncodingContext& context,
     const envoy_config_cluster_v3_Cluster* cluster,
     XdsApi::CdsUpdate* cds_update) {
   const auto* load_assignment =
@@ -2956,7 +2955,7 @@ grpc_error_handle CdsResourceParse(
   } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
              envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
     cds_update->cluster_type = XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS;
-    grpc_error_handle error = CdsLogicalDnsParse(context, cluster, cds_update);
+    grpc_error_handle error = CdsLogicalDnsParse(cluster, cds_update);
     if (error != GRPC_ERROR_NONE) errors.push_back(error);
   } else {
     if (!envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
@@ -3237,7 +3236,7 @@ grpc_error_handle DropParseAndAppend(
 }
 
 grpc_error_handle EdsResourceParse(
-    const EncodingContext& context,
+    const EncodingContext& /*context*/,
     const envoy_config_endpoint_v3_ClusterLoadAssignment*
         cluster_load_assignment,
     bool /*is_v2*/, XdsApi::EdsUpdate* eds_update) {
