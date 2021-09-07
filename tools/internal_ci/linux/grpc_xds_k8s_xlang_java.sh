@@ -22,9 +22,9 @@ readonly GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
 readonly GKE_CLUSTER_ZONE="us-central1-a"
 
 ## xDS test server/client Docker images
-readonly COMMON_IMAGE_LOCATION="gcr.io/grpc-testing/xds-interop"
-readonly SERVER_LANG="cpp go"
-readonly CLIENT_LANG="java"
+readonly IMAGE_REPO="gcr.io/grpc-testing/xds-interop"
+readonly SERVER_LANG="cpp go java"
+readonly CLIENT_LANG="cpp go java"
 readonly VERSION_TAG="v1.40.x"
 
 #######################################
@@ -45,16 +45,18 @@ readonly VERSION_TAG="v1.40.x"
 run_test() {
   # Test driver usage:
   # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
-  local test_name="${1:?Usage: run_test test_name server_image_name client_image_name}"
-  local server_image_name="${2:?Usage: run_test test_name server_image_name client_image_name}"
-  local client_image_name="${3:?Usage: run_test test_name server_image_name client_image_name}"
+  local tag="${1:?Usage: run_test tag server_lang client_lang}"
+  local slang="${2:?Usage: run_test tag server_lang client_lang}"
+  local clang="${3:?Usage: run_test tag server_lang client_lang}"
+  local server_image_name="${IMAGE_REPO}/${slang}-server:${tag}"
+  local client_image_name="${IMAGE_REPO}/${clang}-client:${tag}"
   set -x
-  python -m "tests.${test_name}" \
+  python -m "tests.security_test" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
     --server_image="${server_image_name}" \
     --client_image="${client_image_name}" \
-    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
+    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${tag}/${clang}-${slang}/sponge_log.xml" \
     --force_cleanup \
     --nocheck_local_certs
   set +x
@@ -94,11 +96,24 @@ main() {
     cd "${SRC_DIR}/${TEST_DRIVER_PATH}"
   fi
 
+  local failed_tests=0
   # Run tests
-  local client_image_name="${COMMON_IMAGE_LOCATION}/${CLIENT_LANG}-client:${VERSION_TAG}"
-  for LANG in ${SERVER_LANG}
+  for TAG in ${VERSION_TAG}
   do
-    run_test security_test "${COMMON_IMAGE_LOCATION}/${LANG}-server:${VERSION_TAG}" ${client_image_name}
+    for CLANG in ${CLIENT_LANG}
+    do
+    local client_image_name="${IMAGE_REPO}/${CLANG}-client:${TAG}"
+    for SLANG in ${SERVER_LANG}
+    do
+      if [ "${CLANG}" != "${SLANG}" ]; then
+        run_test "${TAG}" "${SLANG}" "${CLANG}" || (( failed_tests++ ))
+      fi
+    done
+    echo "Failed test suites: ${failed_tests}"
+    if (( failed_tests > 0 )); then
+      exit 1
+    fi
+    done
   done
 }
 
