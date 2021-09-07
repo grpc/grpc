@@ -47,34 +47,40 @@ void RemoveEndpointBinder(const std::string& service) {
 }  // namespace experimental
 }  // namespace grpc
 
-grpc_core::Mutex* g_endpoint_binder_pool_mu = nullptr;
-absl::flat_hash_map<std::string, void*>* g_endpoint_binder_pool = nullptr;
+static absl::flat_hash_map<std::string, void*>* g_endpoint_binder_pool =
+    nullptr;
 
-void grpc_endpoint_binder_pool_init() {
-  g_endpoint_binder_pool_mu = new grpc_core::Mutex();
-  g_endpoint_binder_pool = new absl::flat_hash_map<std::string, void*>();
+namespace {
+
+grpc_core::Mutex* GetBinderPoolMutex() {
+  static grpc_core::Mutex* mu = new grpc_core::Mutex();
+  return mu;
 }
 
-void grpc_endpoint_binder_pool_shutdown() {
-  g_endpoint_binder_pool_mu->Lock();
-  delete g_endpoint_binder_pool;
-  g_endpoint_binder_pool_mu->Unlock();
-  delete g_endpoint_binder_pool_mu;
-}
+}  // namespace
 
 void grpc_add_endpoint_binder(const std::string& service,
                               void* endpoint_binder) {
-  grpc_core::MutexLock lock(g_endpoint_binder_pool_mu);
+  grpc_core::MutexLock lock(GetBinderPoolMutex());
+  if (g_endpoint_binder_pool == nullptr) {
+    g_endpoint_binder_pool = new absl::flat_hash_map<std::string, void*>();
+  }
   (*g_endpoint_binder_pool)[service] = endpoint_binder;
 }
 
 void grpc_remove_endpoint_binder(const std::string& service) {
-  grpc_core::MutexLock lock(g_endpoint_binder_pool_mu);
+  grpc_core::MutexLock lock(GetBinderPoolMutex());
+  if (g_endpoint_binder_pool == nullptr) {
+    return;
+  }
   g_endpoint_binder_pool->erase(service);
 }
 
 void* grpc_get_endpoint_binder(const std::string& service) {
-  grpc_core::MutexLock lock(g_endpoint_binder_pool_mu);
+  grpc_core::MutexLock lock(GetBinderPoolMutex());
+  if (g_endpoint_binder_pool == nullptr) {
+    return nullptr;
+  }
   auto iter = g_endpoint_binder_pool->find(service);
   return iter == g_endpoint_binder_pool->end() ? nullptr : iter->second;
 }
