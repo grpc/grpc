@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 set -e
 
 export TEST=true
@@ -33,7 +32,7 @@ third_party/boringssl-with-bazel fc44652a42b396e1645d5e72aba053349992136a
 third_party/cares/cares e982924acee7f7313b4baa4ee5ec000c5e373c30
 third_party/envoy-api 2f0d081fab0b0823f088c6e368f40e1992f46fcd
 third_party/googleapis 2f9af297c84c55c8b871ba4495e01ade42476c92
-third_party/googletest c9ccac7cb7345901884aabf5d1a786cfa6e2f397
+third_party/googletest e2239ee6043f73722e7aa812a459f54a28552929
 third_party/libuv 15ae750151ac9341e5945eb38f8982d59fb99201
 third_party/opencensus-proto 4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89
 third_party/opentelemetry 60fa8754d890b5c55949a8c68dcfd7ab5c2395df
