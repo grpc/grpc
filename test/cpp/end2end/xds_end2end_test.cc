@@ -7349,7 +7349,7 @@ TEST_P(CdsTest, MultipleBadResources) {
       {"cluster", kClusterName2},
   };
   CheckRpcSendFailure(CheckRpcSendFailureOptions().set_rpc_options(
-      RpcOptions().set_metadata(std::move(metadata_default_cluster))));
+      RpcOptions().set_metadata(std::move(metadata_cluster_2))));
 }
 
 // Tests that we don't trigger does-not-exist callbacks for a resource
