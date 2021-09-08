@@ -208,9 +208,12 @@ def _generate_pb2_grpc_src_impl(context):
         mnemonic = "ProtocInvocation",
     )
 
-    py_info = PyInfo(
-        transitive_sources = depset(direct = out_files, transitive = [context.attr._grpc_library[PyInfo].transitive_sources]),
-        imports = depset(transitive = [context.attr._grpc_library[PyInfo].imports]),
+    p = PyInfo(transitive_sources = depset(direct = out_files))
+    py_info = _merge_pyinfos(
+        [
+            p,
+            context.attr._grpc_library[PyInfo],
+        ] + [dep[PyInfo] for dep in context.attr.py_deps],
     )
 
     runfiles = context.runfiles(files = out_files, transitive_files = py_info.transitive_sources).merge(context.attr._grpc_library[DefaultInfo].data_runfiles)
@@ -229,6 +232,11 @@ _generate_pb2_grpc_src = rule(
             mandatory = True,
             allow_empty = False,
             providers = [ProtoInfo],
+        ),
+        "py_deps": attr.label_list(
+            mandatory = True,
+            allow_empty = False,
+            providers = [PyInfo],
         ),
         "strip_prefixes": attr.string_list(),
         "_grpc_plugin": attr.label(
@@ -281,6 +289,7 @@ def py_grpc_library(
     _generate_pb2_grpc_src(
         name = name,
         deps = srcs,
+        py_deps = deps,
         strip_prefixes = strip_prefixes,
         **kwargs
     )
