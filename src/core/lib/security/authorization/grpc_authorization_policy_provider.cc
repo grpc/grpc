@@ -70,8 +70,7 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
 FileWatcherAuthorizationPolicyProvider::Create(
     absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
-    std::function<void(grpc_status_code code, const char* error_details)>
-        cb) {
+    std::function<void(grpc_status_code code, const char* error_details)> cb) {
   GPR_ASSERT(!authz_policy_path.empty());
   GPR_ASSERT(refresh_interval_sec > 0);
   absl::Status status;

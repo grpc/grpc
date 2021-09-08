@@ -1115,11 +1115,13 @@ grpc_authorization_policy_provider_static_data_create(
  * due to I/O error/invalid policy. Callback will also be executed when the
  * reload recovers from error, ex. when user replaces invalid policy with a
  * valid policy. This is specific to |FileWatcherAuthorizationPolicyProvider|.
- * - code is the error status code on failure. On success, it equals GRPC_STATUS_OK.
- * - error_details contains details about the error if any. The function does not take
- *   ownership of this string.
+ * - code is the error status code on failure. On success, it equals
+ *   GRPC_STATUS_OK.
+ * - error_details contains details about the error if any. The function does
+ *   not take ownership of this string.
  */
-typedef void (*grpc_authorization_policy_provider_file_watcher_reload_status_cb)(
+typedef void (
+    *grpc_authorization_policy_provider_file_watcher_reload_status_cb)(
     grpc_status_code code, const char* error_details);
 
 /**

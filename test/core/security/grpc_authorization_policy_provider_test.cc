@@ -169,8 +169,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
-      nullptr);
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1, nullptr);
   ASSERT_TRUE(provider.ok());
   auto engines = (*provider)->engines();
   auto* allow_engine =

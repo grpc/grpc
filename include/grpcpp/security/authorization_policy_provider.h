@@ -24,7 +24,8 @@
 // <grpc/grpc_security.h> directly once the insecure builds are cleaned up.
 typedef struct grpc_authorization_policy_provider
     grpc_authorization_policy_provider;
-typedef void (*grpc_authorization_policy_provider_file_watcher_reload_status_cb)(
+typedef void (
+    *grpc_authorization_policy_provider_file_watcher_reload_status_cb)(
     grpc_status_code code, const char* error_details);
 
 namespace grpc {
