@@ -22,8 +22,6 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#include "src/core/lib/iomgr/tcp_posix.h"
-
 #include <errno.h>
 #include <limits.h>
 #include <netinet/in.h>
@@ -35,6 +33,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <algorithm>
 #include <unordered_map>
 
@@ -57,6 +56,7 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -1257,10 +1257,10 @@ void tcp_shutdown_buffer_list(grpc_tcp* tcp) {
   }
 }
 
-#if defined(IOV_MAX) && IOV_MAX < 1000
+#if defined(IOV_MAX) && IOV_MAX < 260
 #define MAX_WRITE_IOVEC IOV_MAX
 #else
-#define MAX_WRITE_IOVEC 1000
+#define MAX_WRITE_IOVEC 260
 #endif
 msg_iovlen_type TcpZerocopySendRecord::PopulateIovs(size_t* unwind_slice_idx,
                                                     size_t* unwind_byte_idx,
@@ -1305,13 +1305,17 @@ void TcpZerocopySendRecord::UpdateOffsetForBytesSent(size_t sending_length,
 // returns true if done, false if pending; if returning true, *error is set
 static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
                                   grpc_error_handle* error) {
-  struct msghdr msg;
-  struct iovec iov[MAX_WRITE_IOVEC];
   msg_iovlen_type iov_size;
   ssize_t sent_length = 0;
   size_t sending_length;
   size_t unwind_slice_idx;
   size_t unwind_byte_idx;
+  bool tried_sending_message;
+  msghdr msg;
+  // iov consumes a large space. Keep it as the last item on the stack to
+  // improve locality. After all, we expect only the first elements of it being
+  // populated in most cases.
+  iovec iov[MAX_WRITE_IOVEC];
   while (true) {
     sending_length = 0;
     iov_size = record->PopulateIovs(&unwind_slice_idx, &unwind_byte_idx,
@@ -1321,7 +1325,7 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
     msg.msg_iov = iov;
     msg.msg_iovlen = iov_size;
     msg.msg_flags = 0;
-    bool tried_sending_message = false;
+    tried_sending_message = false;
     // Before calling sendmsg (with or without timestamps): we
     // take a single ref on the zerocopy send record.
     tcp->tcp_zerocopy_send_ctx.NoteSend(record);

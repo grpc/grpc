@@ -16,9 +16,9 @@
 
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
 
-#include <grpc/support/log.h>
-
 #include <utility>
+
+#include <grpc/support/log.h>
 
 #define RETURN_IF_ERROR(expr)           \
   do {                                  \
@@ -77,4 +77,13 @@ absl::Status WireWriterImpl::RpcCall(const Transaction& tx) {
   // is an undefined behavior.
   return binder_->Transact(BinderTransportTxCode(tx.GetTxCode()));
 }
+
+absl::Status WireWriterImpl::Ack(int64_t num_bytes) {
+  grpc_core::MutexLock lock(&mu_);
+  RETURN_IF_ERROR(binder_->PrepareTransaction());
+  WritableParcel* parcel = binder_->GetWritableParcel();
+  RETURN_IF_ERROR(parcel->WriteInt64(num_bytes));
+  return binder_->Transact(BinderTransportTxCode::ACKNOWLEDGE_BYTES);
+}
+
 }  // namespace grpc_binder

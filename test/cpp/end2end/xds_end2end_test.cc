@@ -3417,16 +3417,14 @@ TEST_P(GlobalXdsClientTest, MultipleBadResources) {
         const auto response_state =
             balancers_[0]->ads_service()->lds_response_state();
         return response_state.state != AdsServiceImpl::ResponseState::NACKED ||
-               !absl::StrContains(
-                   response_state.error_message,
-                   absl::StrCat(
-                       kServerName,
-                       ": Listener has neither address nor ApiListener")) ||
-               !absl::StrContains(
-                   response_state.error_message,
-                   absl::StrCat(
-                       kServerName2,
-                       ": Listener has neither address nor ApiListener"));
+               ::testing::Matches(::testing::ContainsRegex(absl::StrCat(
+                   kServerName,
+                   ": validation error.*"
+                   "Listener has neither address nor ApiListener.*",
+                   kServerName2,
+                   ": validation error.*"
+                   "Listener has neither address nor ApiListener")))(
+                   response_state.error_message);
       }));
   ASSERT_FALSE(timed_out);
 }
@@ -7255,12 +7253,14 @@ TEST_P(CdsTest, MultipleBadResources) {
   const auto response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
-              ::testing::AllOf(
-                  ::testing::HasSubstr(absl::StrCat(
-                      kDefaultClusterName, ": DiscoveryType is not valid.")),
-                  ::testing::HasSubstr(absl::StrCat(
-                      kClusterName2, ": DiscoveryType is not valid."))));
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::ContainsRegex(absl::StrCat(kDefaultClusterName,
+                                            ": validation error.*"
+                                            "DiscoveryType is not valid.*",
+                                            kClusterName2,
+                                            ": validation error.*"
+                                            "DiscoveryType is not valid")));
 }
 
 // Tests that CDS client should send a NACK if the eds_config in CDS response
@@ -12216,6 +12216,74 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   EXPECT_EQ(kMaxFault, num_delayed);
 }
 
+TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayOk) {
+  // kRpcTimeoutMilliseconds is 10s should never be reached.
+  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 10000;
+  const uint32_t kFixedDelaySeconds = 1;
+  const uint32_t kDelayPercentagePerHundred = 100;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create an EDS resource
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
+  delay_percentage->set_numerator(kDelayPercentagePerHundred);
+  delay_percentage->set_denominator(FractionalPercent::HUNDRED);
+  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
+  fixed_delay->set_seconds(kFixedDelaySeconds);
+  // Config fault injection via different setup
+  SetFilterConfig(http_fault);
+  ClientContext context;
+  context.set_deadline(
+      grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
+  auto stream = stub_->BidiStream(&context);
+  stream->WritesDone();
+  auto status = stream->Finish();
+  EXPECT_TRUE(status.ok()) << status.error_message() << ", "
+                           << status.error_details() << ", "
+                           << context.debug_error_string();
+}
+
+// This case catches a bug in the retry code that was triggered by a bad
+// interaction with the FI code.  See https://github.com/grpc/grpc/pull/27217
+// for description.
+TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayError) {
+  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 500;
+  const uint32_t kFixedDelaySeconds = 100;
+  const uint32_t kDelayPercentagePerHundred = 100;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create an EDS resource
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
+  delay_percentage->set_numerator(kDelayPercentagePerHundred);
+  delay_percentage->set_denominator(FractionalPercent::HUNDRED);
+  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
+  fixed_delay->set_seconds(kFixedDelaySeconds);
+  // Config fault injection via different setup
+  SetFilterConfig(http_fault);
+  ClientContext context;
+  context.set_deadline(
+      grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
+  auto stream = stub_->BidiStream(&context);
+  stream->WritesDone();
+  auto status = stream->Finish();
+  EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code())
+      << status.error_message() << ", " << status.error_details() << ", "
+      << context.debug_error_string();
+}
+
 class BootstrapSourceTest : public XdsEnd2endTest {
  public:
   BootstrapSourceTest() : XdsEnd2endTest(4, 1) {}
@@ -12836,7 +12904,6 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
   CheckRpcSendOk();
   for (int o = 0; o < kFetchConfigRetries; o++) {
     auto csds_response = FetchCsdsResponse();
-
     // Check if error state is propagated
     bool ok = ::testing::Value(
         csds_response.config(0).xds_config(),

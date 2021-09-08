@@ -16,21 +16,33 @@
 
 #include "src/core/ext/transport/binder/client/channel_create.h"
 
-#if defined(ANDROID) || defined(__ANDROID__)
+// The interface is only defined if GPR_ANDROID is defined, because some
+// arguments requires JNI.
+// Furthermore, the interface is non-phony only when
+// GPR_SUPPORT_BINDER_TRANSPORT is true because actual implementation of binder
+// transport requires newer version of NDK API
+
+#ifdef GPR_ANDROID
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
+
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
+
+#include <grpc/support/port_platform.h>
 
 #include <android/binder_auto_utils.h>
 #include <android/binder_ibinder.h>
 #include <android/binder_ibinder_jni.h>
 #include <android/binder_interface_utils.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpcpp/impl/grpc_library.h>
 
 #include "absl/memory/memory.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+
+#include <grpc/support/log.h>
+#include <grpcpp/impl/grpc_library.h>
+
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
 #include "src/core/ext/transport/binder/client/jni_utils.h"
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
@@ -69,8 +81,20 @@ void BindToOnDeviceServerService(void* jni_env_void, jobject application,
 // https://stackoverflow.com/a/3055749)
 // TODO(mingcl): Support multiple endpoint binder objects
 std::shared_ptr<grpc::Channel> CreateBinderChannel(
+    void* jni_env_void, jobject application, absl::string_view package_name,
+    absl::string_view class_name) {
+  return CreateCustomBinderChannel(jni_env_void, application, package_name,
+                                   class_name, ChannelArguments());
+}
+
+// BindToOndeviceServerService need to be called before this, in a different
+// task (due to Android API design). (Reference:
+// https://stackoverflow.com/a/3055749)
+// TODO(mingcl): Support multiple endpoint binder objects
+std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
     void* jni_env_void, jobject /*application*/,
-    absl::string_view /*package_name*/, absl::string_view /*class_name*/) {
+    absl::string_view /*package_name*/, absl::string_view /*class_name*/,
+    const ChannelArguments& args) {
   JNIEnv* jni_env = static_cast<JNIEnv*>(jni_env_void);
 
   // clang-format off
@@ -81,12 +105,14 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
       "()Landroid/os/IBinder;");
   // clang-format on
 
+  grpc_channel_args channel_args;
+  args.SetChannelArgs(&channel_args);
   return CreateChannelInternal(
       "",
       ::grpc::internal::CreateChannelFromBinderImpl(
           absl::make_unique<grpc_binder::BinderAndroid>(
               grpc_binder::FromJavaBinder(jni_env, object)),
-          nullptr),
+          &channel_args),
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
 }
@@ -94,4 +120,33 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
 }  // namespace experimental
 }  // namespace grpc
 
-#endif  // ANDROID
+#else  // !GPR_SUPPORT_BINDER_TRANSPORT
+
+namespace grpc {
+namespace experimental {
+
+void BindToOnDeviceServerService(void*, jobject, absl::string_view,
+                                 absl::string_view) {
+  GPR_ASSERT(0);
+}
+
+std::shared_ptr<grpc::Channel> CreateBinderChannel(void*, jobject,
+                                                   absl::string_view,
+                                                   absl::string_view) {
+  GPR_ASSERT(0);
+  return {};
+}
+
+std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
+    void*, jobject, absl::string_view, absl::string_view,
+    const ChannelArguments&) {
+  GPR_ASSERT(0);
+  return {};
+}
+
+}  // namespace experimental
+}  // namespace grpc
+
+#endif  // GPR_SUPPORT_BINDER_TRANSPORT
+
+#endif  // GPR_ANDROID

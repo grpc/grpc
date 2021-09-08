@@ -18,13 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/tcp_custom.h"
 
 #include <limits.h>
 #include <string.h>
 
 #include <grpc/slice_buffer.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -32,9 +31,9 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/iomgr/tcp_custom.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -254,8 +253,7 @@ static void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* write_slices,
   tcp->write_slices = write_slices;
   GPR_ASSERT(tcp->write_slices->count <= UINT_MAX);
   if (tcp->write_slices->count == 0) {
-    // No slices means we don't have to do anything,
-    // and libuv doesn't like empty writes
+    // No slices means we don't have to do anything
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
     return;
   }

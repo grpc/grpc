@@ -18,13 +18,14 @@
 // top-level metadata. The following tests verify that the interactions between
 // WireReaderImpl and both the output (readable) parcel and the transport stream
 // receiver are correct in all possible situations.
-#include <gtest/gtest.h>
-
 #include <memory>
 #include <string>
 #include <utility>
 
+#include <gtest/gtest.h>
+
 #include "absl/memory/memory.h"
+
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 #include "test/core/transport/binder/mock_objects.h"
 #include "test/core/util/test_config.h"
@@ -266,6 +267,39 @@ TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagSuffixWithoutStatus) {
               NotifyRecvTrailingMetadata(kFirstCallId,
                                          StatusOrContainerEq(Metadata{}), 0));
 
+  EXPECT_TRUE(CallProcessTransaction(kFirstCallId).ok());
+}
+
+TEST_F(WireReaderTest, InBoundFlowControl) {
+  ::testing::InSequence sequence;
+
+  // flag
+  ExpectReadInt32(kFlagMessageData | kFlagMessageDataIsPartial);
+  // sequence number
+  ExpectReadInt32(0);
+  // message size
+  ExpectReadInt32(1000);
+  EXPECT_CALL(mock_readable_parcel_, ReadByteArray)
+      .WillOnce(DoAll(SetArgPointee<0>(std::string(1000, 'a')),
+                      Return(absl::OkStatus())));
+
+  // Data is not completed. No callback will be triggered.
+  EXPECT_TRUE(CallProcessTransaction(kFirstCallId).ok());
+
+  // flag
+  ExpectReadInt32(kFlagMessageData);
+  // sequence number
+  ExpectReadInt32(1);
+  // message size
+  ExpectReadInt32(1000);
+  EXPECT_CALL(mock_readable_parcel_, ReadByteArray)
+      .WillOnce(DoAll(SetArgPointee<0>(std::string(1000, 'b')),
+                      Return(absl::OkStatus())));
+
+  EXPECT_CALL(*transport_stream_receiver_,
+              NotifyRecvMessage(kFirstCallId,
+                                StatusOrContainerEq(std::string(1000, 'a') +
+                                                    std::string(1000, 'b'))));
   EXPECT_TRUE(CallProcessTransaction(kFirstCallId).ok());
 }
 

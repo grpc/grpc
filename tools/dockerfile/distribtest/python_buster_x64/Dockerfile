@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+FROM debian:buster
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/windows/grpc_run_tests_matrix.bat"
-timeout_mins: 240
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
-
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "-f portability windows -j 1 --inner_jobs 8 --internal_ci"
-}
+RUN apt-get update && apt-get install -y python3 python3-pip
+RUN pip3 install virtualenv==16.7.9

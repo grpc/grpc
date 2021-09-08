@@ -15,16 +15,19 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_CHANNEL_CREATE_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_CHANNEL_CREATE_H
 
-#if defined(ANDROID) || defined(__ANDROID__)
-
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#ifdef GPR_ANDROID
+
 #include <grpc/support/port_platform.h>
-#include <grpcpp/channel.h>
+
 #include <jni.h>
 
 #include "absl/strings/string_view.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/support/channel_arguments.h>
 
 namespace grpc {
 namespace experimental {
@@ -41,6 +44,13 @@ void BindToOnDeviceServerService(void* jni_env_void, jobject application,
 std::shared_ptr<grpc::Channel> CreateBinderChannel(
     void* jni_env_void, jobject application, absl::string_view package_name,
     absl::string_view class_name);
+
+// Need to be invoked after BindToOnDeviceServerService
+// Create a new Channel from server package name and service class name and with
+// custom channel arguments.
+std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
+    void* jni_env_void, jobject application, absl::string_view package_name,
+    absl::string_view class_name, const ChannelArguments& args);
 
 }  // namespace experimental
 }  // namespace grpc

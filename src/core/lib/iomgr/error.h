@@ -24,6 +24,8 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+#include "absl/status/status.h"
+
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -31,8 +33,6 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/status_helper.h"
-
-#include "absl/status/status.h"
 
 /// Opaque representation of an error.
 /// See https://github.com/grpc/grpc/blob/master/doc/core/grpc-error.md for a

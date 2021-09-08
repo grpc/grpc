@@ -14,10 +14,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/security/authorization/cel_authorization_engine.h"
+
 #include "absl/memory/memory.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/security/authorization/cel_authorization_engine.h"
 
 namespace grpc_core {
 

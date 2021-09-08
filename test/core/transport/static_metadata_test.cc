@@ -16,12 +16,13 @@
  *
  */
 
+#include "src/core/lib/transport/static_metadata.h"
+
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 
 #include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {

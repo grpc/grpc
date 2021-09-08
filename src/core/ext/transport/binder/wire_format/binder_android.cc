@@ -14,17 +14,26 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include "src/core/ext/transport/binder/wire_format/binder_android.h"
-
-#if defined(ANDROID) || defined(__ANDROID__)
-
-#include <grpc/support/log.h>
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
 #include <map>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+
+#include <grpc/support/log.h>
+
+#include "src/core/ext/transport/binder/wire_format/binder_android.h"
 #include "src/core/lib/gprpp/sync.h"
+
+// TODO(mingcl): This function is introduced at API level 32 and is not
+// available in any NDK release yet. So we export it weakly so that we can use
+// it without triggering undefined reference error. Its purpose is to disable
+// header in Parcel to conform to the BinderChannel wire format.
+extern "C" {
+extern void AIBinder_Class_disableInterfaceTokenHeader(AIBinder_Class* clazz)
+    __attribute__((weak));
+}
 
 namespace grpc_binder {
 namespace {
@@ -93,6 +102,16 @@ TransactionReceiverAndroid::TransactionReceiverAndroid(
       /*interfaceDescriptor=*/"", f_onCreate_userdata, f_onDestroy_delete,
       f_onTransact);
 
+  if (AIBinder_Class_disableInterfaceTokenHeader) {
+    AIBinder_Class_disableInterfaceTokenHeader(aibinder_class);
+  } else {
+    // TODO(mingcl): Make this a fatal error
+    gpr_log(GPR_ERROR,
+            "AIBinder_Class_disableInterfaceTokenHeader remain unresolved. "
+            "This BinderTransport implementation contains header and is not "
+            "compatible with Java's implementation");
+  }
+
   // Pass the on-transact callback to the on-create function of the binder. The
   // on-create function equips the callback with a mutex and gives it to the
   // user data stored in the binder which can be retrieved later.
@@ -125,6 +144,17 @@ void AssociateWithNoopClass(AIBinder* binder) {
   // Need to associate class before using it
   AIBinder_Class* aibinder_class = AIBinder_Class_define(
       "", f_onCreate_noop, f_onDestroy_noop, f_onTransact_noop);
+
+  if (AIBinder_Class_disableInterfaceTokenHeader) {
+    AIBinder_Class_disableInterfaceTokenHeader(aibinder_class);
+  } else {
+    // TODO(mingcl): Make this a fatal error
+    gpr_log(GPR_ERROR,
+            "AIBinder_Class_disableInterfaceTokenHeader remain unresolved. "
+            "This BinderTransport implementation contains header and is not "
+            "compatible with Java's implementation");
+  }
+
   gpr_log(GPR_INFO, "AIBinder_associateClass = %d",
           static_cast<int>(AIBinder_associateClass(binder, aibinder_class)));
 }
@@ -176,6 +206,12 @@ absl::Status WritableParcelAndroid::WriteInt32(int32_t data) {
              : absl::InternalError("AParcel_writeInt32 failed");
 }
 
+absl::Status WritableParcelAndroid::WriteInt64(int64_t data) {
+  return AParcel_writeInt64(parcel_, data) == STATUS_OK
+             ? absl::OkStatus()
+             : absl::InternalError("AParcel_writeInt64 failed");
+}
+
 absl::Status WritableParcelAndroid::WriteBinder(HasRawBinder* binder) {
   return AParcel_writeStrongBinder(
              parcel_, reinterpret_cast<AIBinder*>(binder->GetRawBinder())) ==
@@ -201,6 +237,12 @@ absl::Status ReadableParcelAndroid::ReadInt32(int32_t* data) const {
   return AParcel_readInt32(parcel_, data) == STATUS_OK
              ? absl::OkStatus()
              : absl::InternalError("AParcel_readInt32 failed");
+}
+
+absl::Status ReadableParcelAndroid::ReadInt64(int64_t* data) const {
+  return AParcel_readInt64(parcel_, data) == STATUS_OK
+             ? absl::OkStatus()
+             : absl::InternalError("AParcel_readInt64 failed");
 }
 
 absl::Status ReadableParcelAndroid::ReadBinder(
@@ -250,4 +292,4 @@ absl::Status ReadableParcelAndroid::ReadString(char data[111]) const {
 
 }  // namespace grpc_binder
 
-#endif  // defined(ANDROID) || defined(__ANDROID__)
+#endif  // GPR_SUPPORT_BINDER_TRANSPORT

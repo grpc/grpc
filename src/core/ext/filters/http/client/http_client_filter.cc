@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/http/client/http_client_filter.h"
+
 #include <stdint.h>
 #include <string.h>
 
@@ -30,7 +32,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/profiling/timers.h"

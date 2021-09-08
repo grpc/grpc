@@ -20,11 +20,12 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-#include <openssl/rsa.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <string>
+
+#include <openssl/rsa.h>
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -171,7 +172,9 @@ static const char test_signed_jwt_token_type2[] =
 static const char test_signed_jwt_path_prefix[] = "test_sign_jwt";
 
 static const char test_service_url[] = "https://foo.com/foo.v1";
+static const char test_service_url_no_service_name[] = "https://foo.com/";
 static const char other_test_service_url[] = "https://bar.com/bar.v1";
+static const char other_test_service_url_no_service_name[] = "https://bar.com/";
 
 static const char test_sts_endpoint_url[] =
     "https://foo.com:5555/v1/token-exchange";
@@ -1326,9 +1329,13 @@ static void validate_jwt_encode_and_sign_params(
 }
 
 static char* encode_and_sign_jwt_success(const grpc_auth_json_key* json_key,
-                                         const char* /*audience*/,
+                                         const char* audience,
                                          gpr_timespec token_lifetime,
                                          const char* scope) {
+  if (strcmp(audience, test_service_url_no_service_name) != 0 &&
+      strcmp(audience, other_test_service_url_no_service_name) != 0) {
+    return nullptr;
+  }
   validate_jwt_encode_and_sign_params(json_key, scope, token_lifetime);
   return gpr_strdup(test_signed_jwt);
 }
@@ -1397,6 +1404,16 @@ static void test_jwt_creds_lifetime(void) {
   grpc_call_credentials_release(jwt_creds);
 
   gpr_free(json_key_string);
+}
+
+static void test_remove_service_from_jwt_uri(void) {
+  const char wrong_uri[] = "hello world";
+  GPR_ASSERT(!grpc_core::RemoveServiceNameFromJwtUri(wrong_uri).ok());
+  const char valid_uri[] = "https://foo.com/get/";
+  const char expected_uri[] = "https://foo.com/";
+  auto output = grpc_core::RemoveServiceNameFromJwtUri(valid_uri);
+  GPR_ASSERT(output.ok());
+  GPR_ASSERT(strcmp(output->c_str(), expected_uri) == 0);
 }
 
 static void test_jwt_creds_success(void) {
@@ -3493,6 +3510,7 @@ int main(int argc, char** argv) {
   test_jwt_creds_lifetime();
   test_jwt_creds_success();
   test_jwt_creds_signing_failure();
+  test_remove_service_from_jwt_uri();
   test_google_default_creds_auth_key();
   test_google_default_creds_refresh_token();
   test_google_default_creds_external_account_credentials();

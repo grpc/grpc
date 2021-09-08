@@ -20,10 +20,10 @@
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h"
 
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-
-#include <string.h>
 
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h"

@@ -553,32 +553,6 @@ TEST(GenerateRbacPoliciesTest, UnsupportedPseudoHeaders) {
             "allow_rules 0: \"headers\" 0: Unsupported \"key\" :method.");
 }
 
-TEST(GenerateRbacPoliciesTest, UnsupportedhostHeader) {
-  const char* authz_policy =
-      "{"
-      "  \"name\": \"authz\","
-      "  \"deny_rules\": ["
-      "    {"
-      "      \"name\": \"policy\","
-      "      \"request\": {"
-      "        \"headers\": ["
-      "          {"
-      "            \"key\": \"host\","
-      "            \"values\": ["
-      "              \"*\""
-      "            ]"
-      "          }"
-      "        ]"
-      "      }"
-      "    }"
-      "  ]"
-      "}";
-  auto rbac_policies = GenerateRbacPolicies(authz_policy);
-  EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(rbac_policies.status().message(),
-            "deny_rules 0: \"headers\" 0: Unsupported \"key\" host.");
-}
-
 TEST(GenerateRbacPoliciesTest, UnsupportedHostHeader) {
   const char* authz_policy =
       "{"

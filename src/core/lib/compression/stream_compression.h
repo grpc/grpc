@@ -23,8 +23,9 @@
 
 #include <stdbool.h>
 
-#include <grpc/slice_buffer.h>
 #include <zlib.h>
+
+#include <grpc/slice_buffer.h>
 
 #include "src/core/lib/transport/static_metadata.h"
 

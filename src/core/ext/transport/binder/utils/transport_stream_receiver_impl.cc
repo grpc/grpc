@@ -16,11 +16,11 @@
 
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h"
 
-#include <grpc/support/log.h>
-
 #include <functional>
 #include <string>
 #include <utility>
+
+#include <grpc/support/log.h>
 
 namespace grpc_binder {
 

@@ -22,8 +22,6 @@
 
 #ifdef GRPC_HAVE_IFADDRS
 
-#include "src/core/lib/iomgr/tcp_server_utils_posix.h"
-
 #include <errno.h>
 #include <ifaddrs.h>
 #include <stddef.h>
@@ -39,6 +37,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 
 /* Return the listener in s with address addr or NULL. */
 static grpc_tcp_listener* find_listener_with_addr(grpc_tcp_server* s,

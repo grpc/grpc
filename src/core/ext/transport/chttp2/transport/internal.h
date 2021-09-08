@@ -345,7 +345,7 @@ struct grpc_chttp2_transport {
   /** data to write now */
   grpc_slice_buffer outbuf;
   /** hpack encoding */
-  grpc_chttp2_hpack_compressor hpack_compressor;
+  grpc_core::HPackCompressor hpack_compressor;
   /** is this a client? */
   bool is_client;
 

@@ -24,13 +24,16 @@
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "include/grpc++/grpc++.h"
-#include "include/grpcpp/opencensus.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/stats/tag_key.h"
 #include "opencensus/stats/testing/test_utils.h"
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/tags/with_tag_map.h"
+
+#include <grpc++/grpc++.h>
+#include <grpcpp/opencensus.h>
+
+#include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
@@ -49,11 +52,23 @@ using ::opencensus::tags::WithTagMap;
 
 static const auto TEST_TAG_KEY = TagKey::Register("my_key");
 static const auto TEST_TAG_VALUE = "my_value";
+const char* kExpectedTraceIdKey = "expected_trace_id";
 
 class EchoServer final : public EchoTestService::Service {
-  ::grpc::Status Echo(::grpc::ServerContext* /*context*/,
+  ::grpc::Status Echo(::grpc::ServerContext* context,
                       const EchoRequest* request,
                       EchoResponse* response) override {
+    for (const auto& metadata : context->client_metadata()) {
+      if (metadata.first == kExpectedTraceIdKey) {
+        EXPECT_EQ(metadata.second, reinterpret_cast<const grpc::CensusContext*>(
+                                       context->census_context())
+                                       ->Span()
+                                       .context()
+                                       .trace_id()
+                                       .ToHex());
+        break;
+      }
+    }
     if (request->param().expected_error().code() == 0) {
       response->set_message(request->message());
       return ::grpc::Status::OK;
@@ -513,6 +528,24 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
                 &Distribution::mean,
                 ::testing::AllOf(::testing::Ge(50), ::testing::Le(300))))));
   }
+}
+
+// Test that CensusContext object set by application is used.
+TEST_F(StatsPluginEnd2EndTest, TestApplicationCensusContextFlows) {
+  auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
+  ResetStub(channel);
+  EchoRequest request;
+  request.set_message("foo");
+  EchoResponse response;
+  ::grpc::ClientContext context;
+  ::grpc::CensusContext app_census_context("root",
+                                           ::opencensus::tags::TagMap{});
+  context.set_census_context(
+      reinterpret_cast<census_context*>(&app_census_context));
+  context.AddMetadata(kExpectedTraceIdKey,
+                      app_census_context.Span().context().trace_id().ToHex());
+  ::grpc::Status status = stub_->Echo(&context, request, &response);
+  EXPECT_TRUE(status.ok());
 }
 
 }  // namespace

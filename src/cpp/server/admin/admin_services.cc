@@ -22,7 +22,6 @@
 
 #include <grpcpp/ext/admin_services.h>
 #include <grpcpp/impl/server_builder_plugin.h>
-
 #include <grpcpp/server_builder.h>
 
 // TODO(lidiz) build a real registration system that can pull in services

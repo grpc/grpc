@@ -16,10 +16,6 @@
  *
  */
 
-#include "src/core/lib/iomgr/port.h"
-
-#include "test/core/end2end/end2end_tests.h"
-
 #include <string.h>
 #ifdef GRPC_POSIX_SOCKET
 #include <unistd.h>
@@ -38,9 +34,11 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

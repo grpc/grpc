@@ -27,6 +27,7 @@ cc_library(
     deps = [
         # Temporarily directly depend on this target before we expose a public API
         "//src/core/ext/transport/binder/client:grpc_transport_binder_client",
+        "//examples/protos:helloworld_cc_grpc",
     ],
     alwayslink = True,
 )
