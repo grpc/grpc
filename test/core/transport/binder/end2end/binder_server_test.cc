@@ -89,14 +89,8 @@ class BinderServerTest : public ::testing::Test {
   ~BinderServerTest() override {
     delete grpc_binder::end2end_testing::g_transaction_processor;
   }
-  static void SetUpTestSuite() {
-    grpc_init();
-    grpc_endpoint_binder_pool_init();
-  }
-  static void TearDownTestSuite() {
-    grpc_endpoint_binder_pool_shutdown();
-    grpc_shutdown();
-  }
+  static void SetUpTestSuite() { grpc_init(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
 };
 
 #ifndef GPR_ANDROID

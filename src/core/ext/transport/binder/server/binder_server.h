@@ -41,14 +41,6 @@ void RemoveEndpointBinder(const std::string& service);
 }  // namespace experimental
 }  // namespace grpc
 
-extern grpc_core::Mutex* g_endpoint_binder_pool_mu;
-extern absl::flat_hash_map<std::string, void*>* g_endpoint_binder_pool;
-
-// TODO(waynetu): Can these two functions be called in grpc_init() and
-// grpc_shutdown()?
-void grpc_endpoint_binder_pool_init();
-void grpc_endpoint_binder_pool_shutdown();
-
 void grpc_add_endpoint_binder(const std::string& service,
                               void* endpoint_binder);
 void grpc_remove_endpoint_binder(const std::string& service);

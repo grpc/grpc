@@ -58,7 +58,6 @@ Java_io_grpc_binder_cpp_exampleserver_ExportedEndpointService_init_1grpc_1server
   grpc::ServerBuilder server_builder;
   server_builder.RegisterService(&service);
 
-  grpc_endpoint_binder_pool_init();
   server_builder.AddListeningPort(
       "binder://example.service",
       grpc::experimental::BinderServerCredentials());
