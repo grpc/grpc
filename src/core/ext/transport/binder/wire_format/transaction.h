@@ -33,6 +33,7 @@ ABSL_CONST_INIT extern const int kFlagOutOfBandClose;
 ABSL_CONST_INIT extern const int kFlagExpectSingleMessage;
 ABSL_CONST_INIT extern const int kFlagStatusDescription;
 ABSL_CONST_INIT extern const int kFlagMessageDataIsParcelable;
+ABSL_CONST_INIT extern const int kFlagMessageDataIsPartial;
 
 using Metadata = std::vector<std::pair<std::string, std::string>>;
 
