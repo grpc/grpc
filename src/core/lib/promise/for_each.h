@@ -68,8 +68,12 @@ class ForEach {
 
   ForEach(const ForEach&) = delete;
   ForEach& operator=(const ForEach&) = delete;
-  ForEach(ForEach&&) noexcept = default;
-  ForEach& operator=(ForEach&&) noexcept = default;
+  // noexcept causes compiler errors on older gcc's
+  // NOLINTNEXTLINE(performance-noexcept-move-constructor)
+  ForEach(ForEach&&) = default;
+  // noexcept causes compiler errors on older gcc's
+  // NOLINTNEXTLINE(performance-noexcept-move-constructor)
+  ForEach& operator=(ForEach&&) = default;
 
   Poll<Result> operator()() {
     return absl::visit(CallPoll<false>{this}, state_);
