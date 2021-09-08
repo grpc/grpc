@@ -34,14 +34,14 @@ class CoreConfiguration {
   // their configuration and assemble the published CoreConfiguration.
   class Builder {
    public:
-    HandshakerRegistryBuilder* handshaker_registry() {
+    HandshakerRegistry::Builder* handshaker_registry() {
       return &handshaker_registry_;
     }
 
    private:
     friend class CoreConfiguration;
 
-    HandshakerRegistryBuilder handshaker_registry_;
+    HandshakerRegistry::Builder handshaker_registry_;
 
     Builder();
     CoreConfiguration* Build();

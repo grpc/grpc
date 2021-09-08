@@ -36,34 +36,32 @@ typedef enum {
   NUM_HANDSHAKER_TYPES,  // Must be last.
 } HandshakerType;
 
-class HandshakerRegistryBuilder;
-
 class HandshakerRegistry {
  public:
+  class Builder {
+   public:
+    /// Registers a new handshaker factory.  Takes ownership.
+    /// If \a at_start is true, the new handshaker will be at the beginning of
+    /// the list.  Otherwise, it will be added to the end.
+    void RegisterHandshakerFactory(bool at_start,
+                                   HandshakerType handshaker_type,
+                                   std::unique_ptr<HandshakerFactory> factory);
+
+    HandshakerRegistry Build();
+
+   private:
+    std::vector<std::unique_ptr<HandshakerFactory>>
+        factories_[NUM_HANDSHAKER_TYPES];
+  };
+
   void AddHandshakers(HandshakerType handshaker_type,
                       const grpc_channel_args* args,
                       grpc_pollset_set* interested_parties,
                       HandshakeManager* handshake_mgr) const;
 
  private:
-  friend class HandshakerRegistryBuilder;
   HandshakerRegistry() = default;
 
-  std::vector<std::unique_ptr<HandshakerFactory>>
-      factories_[NUM_HANDSHAKER_TYPES];
-};
-
-class HandshakerRegistryBuilder {
- public:
-  /// Registers a new handshaker factory.  Takes ownership.
-  /// If \a at_start is true, the new handshaker will be at the beginning of
-  /// the list.  Otherwise, it will be added to the end.
-  void RegisterHandshakerFactory(bool at_start, HandshakerType handshaker_type,
-                                 std::unique_ptr<HandshakerFactory> factory);
-
-  HandshakerRegistry Build();
-
- private:
   std::vector<std::unique_ptr<HandshakerFactory>>
       factories_[NUM_HANDSHAKER_TYPES];
 };

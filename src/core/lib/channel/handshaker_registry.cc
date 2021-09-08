@@ -22,15 +22,15 @@
 
 namespace grpc_core {
 
-void HandshakerRegistryBuilder::RegisterHandshakerFactory(
+void HandshakerRegistry::Builder::RegisterHandshakerFactory(
     bool at_start, HandshakerType handshaker_type,
     std::unique_ptr<HandshakerFactory> factory) {
-  auto* vec = &factories_[handshaker_type];
-  auto where = at_start ? vec->begin() : vec->end();
-  vec->insert(where, std::move(factory));
+  auto& vec = factories_[handshaker_type];
+  auto where = at_start ? vec.begin() : vec.end();
+  vec.insert(where, std::move(factory));
 }
 
-HandshakerRegistry HandshakerRegistryBuilder::Build() {
+HandshakerRegistry HandshakerRegistry::Builder::Build() {
   HandshakerRegistry out;
   for (size_t i = 0; i < NUM_HANDSHAKER_TYPES; i++) {
     out.factories_[i] = std::move(factories_[i]);
