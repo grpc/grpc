@@ -18,10 +18,10 @@
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 
-#include <vector>
-
 #include <errno.h>
 #include <stdlib.h>
+
+#include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"

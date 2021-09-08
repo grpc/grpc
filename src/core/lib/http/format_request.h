@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/slice.h>
+
 #include "src/core/lib/http/httpcli.h"
 
 grpc_slice grpc_httpcli_format_get_request(const grpc_httpcli_request* request);

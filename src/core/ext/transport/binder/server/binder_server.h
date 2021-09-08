@@ -21,6 +21,7 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
+
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -40,14 +41,6 @@ void RemoveEndpointBinder(const std::string& service);
 }  // namespace binder
 }  // namespace experimental
 }  // namespace grpc
-
-extern grpc_core::Mutex* g_endpoint_binder_pool_mu;
-extern absl::flat_hash_map<std::string, void*>* g_endpoint_binder_pool;
-
-// TODO(waynetu): Can these two functions be called in grpc_init() and
-// grpc_shutdown()?
-void grpc_endpoint_binder_pool_init();
-void grpc_endpoint_binder_pool_shutdown();
 
 void grpc_add_endpoint_binder(const std::string& service,
                               void* endpoint_binder);

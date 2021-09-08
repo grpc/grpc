@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/surface/init.h"
-
 #include <limits.h>
 #include <string.h>
 
@@ -33,6 +31,7 @@
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/init.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 void grpc_security_pre_init(void) {}
@@ -99,5 +98,3 @@ void grpc_register_security_filters(void) {
                                    maybe_prepend_sdk_server_authz_filter,
                                    nullptr);
 }
-
-void grpc_security_init() { grpc_core::SecurityRegisterHandshakerFactories(); }

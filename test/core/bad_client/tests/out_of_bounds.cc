@@ -21,6 +21,7 @@
 #include <gtest/gtest.h>
 
 #include <grpc/support/string_util.h>
+
 #include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
 

@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CONFIG_H
 #define GRPCPP_IMPL_CODEGEN_CONFIG_H
 
+// IWYU pragma: private, include <grpcpp/support/config.h>
+
 #include <string>
 
 /// The following macros are deprecated and appear only for users

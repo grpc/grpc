@@ -14,14 +14,17 @@
 
 #include "src/core/ext/transport/binder/server/binder_server.h"
 
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/impl/grpc_library.h>
-#include <gtest/gtest.h>
 #include <memory>
 #include <thread>
 #include <vector>
 
+#include <gtest/gtest.h>
+
 #include "absl/memory/memory.h"
+
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/impl/grpc_library.h>
+
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
 #include "src/core/ext/transport/binder/server/binder_server.h"
 #include "src/core/ext/transport/binder/server/binder_server_credentials.h"
@@ -89,14 +92,8 @@ class BinderServerTest : public ::testing::Test {
   ~BinderServerTest() override {
     delete grpc_binder::end2end_testing::g_transaction_processor;
   }
-  static void SetUpTestSuite() {
-    grpc_init();
-    grpc_endpoint_binder_pool_init();
-  }
-  static void TearDownTestSuite() {
-    grpc_endpoint_binder_pool_shutdown();
-    grpc_shutdown();
-  }
+  static void SetUpTestSuite() { grpc_init(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
 };
 
 #ifndef GPR_ANDROID

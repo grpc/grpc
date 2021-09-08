@@ -18,8 +18,6 @@
 
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
 
-#include "src/core/lib/iomgr/sockaddr.h"
-
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
@@ -45,6 +43,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"

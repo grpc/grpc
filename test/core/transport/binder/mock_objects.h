@@ -29,6 +29,7 @@ class MockWritableParcel : public WritableParcel {
   MOCK_METHOD(int32_t, GetDataPosition, (), (const, override));
   MOCK_METHOD(absl::Status, SetDataPosition, (int32_t), (override));
   MOCK_METHOD(absl::Status, WriteInt32, (int32_t), (override));
+  MOCK_METHOD(absl::Status, WriteInt64, (int64_t), (override));
   MOCK_METHOD(absl::Status, WriteBinder, (HasRawBinder*), (override));
   MOCK_METHOD(absl::Status, WriteString, (absl::string_view), (override));
   MOCK_METHOD(absl::Status, WriteByteArray, (const int8_t*, int32_t),
@@ -40,6 +41,7 @@ class MockWritableParcel : public WritableParcel {
 class MockReadableParcel : public ReadableParcel {
  public:
   MOCK_METHOD(absl::Status, ReadInt32, (int32_t*), (const, override));
+  MOCK_METHOD(absl::Status, ReadInt64, (int64_t*), (const, override));
   MOCK_METHOD(absl::Status, ReadBinder, (std::unique_ptr<Binder>*),
               (const, override));
   MOCK_METHOD(absl::Status, ReadByteArray, (std::string*), (const, override));
@@ -86,6 +88,7 @@ class MockTransactionReceiver : public TransactionReceiver {
 class MockWireWriter : public WireWriter {
  public:
   MOCK_METHOD(absl::Status, RpcCall, (const Transaction&), (override));
+  MOCK_METHOD(absl::Status, Ack, (int64_t), (override));
 };
 
 class MockTransportStreamReceiver : public TransportStreamReceiver {

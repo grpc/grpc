@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_RPC_METHOD_H
 #define GRPCPP_IMPL_CODEGEN_RPC_METHOD_H
 
+// IWYU pragma: private, include <grpcpp/impl/rpc_method.h>
+
 #include <memory>
 
 #include <grpcpp/impl/codegen/channel_interface.h>

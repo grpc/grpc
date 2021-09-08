@@ -19,6 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_FORK_H
 #define GRPC_IMPL_CODEGEN_FORK_H
 
+// IWYU pragma: private, include <grpc/fork.h>
+
 /**
  * gRPC applications should call this before calling fork().  There should be no
  * active gRPC function calls between calling grpc_prefork() and

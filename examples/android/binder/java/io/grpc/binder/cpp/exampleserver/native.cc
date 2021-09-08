@@ -17,11 +17,13 @@
 #include <android/binder_ibinder_jni.h>
 #include <android/binder_interface_utils.h>
 #include <android/log.h>
-#include <grpcpp/grpcpp.h>
 #include <jni.h>
 
 #include "examples/protos/helloworld.grpc.pb.h"
 #include "examples/protos/helloworld.pb.h"
+
+#include <grpcpp/grpcpp.h>
+
 #include "src/core/ext/transport/binder/server/binder_server.h"
 #include "src/core/ext/transport/binder/server/binder_server_credentials.h"
 
@@ -58,7 +60,6 @@ Java_io_grpc_binder_cpp_exampleserver_ExportedEndpointService_init_1grpc_1server
   grpc::ServerBuilder server_builder;
   server_builder.RegisterService(&service);
 
-  grpc_endpoint_binder_pool_init();
   server_builder.AddListeningPort(
       "binder://example.service",
       grpc::experimental::BinderServerCredentials());

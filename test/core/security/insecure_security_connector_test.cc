@@ -16,12 +16,13 @@
 //
 //
 
+#include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <grpc/grpc_security.h>
 
-#include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"

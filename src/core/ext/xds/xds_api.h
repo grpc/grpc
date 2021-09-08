@@ -27,13 +27,12 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
+#include "envoy/admin/v3/config_dump.upb.h"
 #include "re2/re2.h"
-
 #include "upb/def.hpp"
 
 #include <grpc/slice_buffer.h>
 
-#include "envoy/admin/v3/config_dump.upb.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"

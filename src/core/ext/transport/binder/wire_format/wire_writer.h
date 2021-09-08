@@ -17,10 +17,10 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <grpc/support/log.h>
-
 #include <string>
 #include <vector>
+
+#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/transaction.h"
@@ -32,12 +32,14 @@ class WireWriter {
  public:
   virtual ~WireWriter() = default;
   virtual absl::Status RpcCall(const Transaction& call) = 0;
+  virtual absl::Status Ack(int64_t num_bytes) = 0;
 };
 
 class WireWriterImpl : public WireWriter {
  public:
   explicit WireWriterImpl(std::unique_ptr<Binder> binder);
   absl::Status RpcCall(const Transaction& tx) override;
+  absl::Status Ack(int64_t num_bytes) override;
 
  private:
   grpc_core::Mutex mu_;

@@ -16,13 +16,14 @@
  *
  */
 
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/log.h>
+#include "src/core/lib/channel/channel_args.h"
+
 #include <string.h>
 
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/log.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

@@ -14,10 +14,10 @@
 
 #include "test/core/transport/binder/end2end/fake_binder.h"
 
-#include <grpc/support/log.h>
-
 #include <string>
 #include <utility>
+
+#include <grpc/support/log.h>
 
 namespace grpc_binder {
 namespace end2end_testing {
@@ -37,6 +37,12 @@ absl::Status FakeWritableParcel::SetDataPosition(int32_t pos) {
 }
 
 absl::Status FakeWritableParcel::WriteInt32(int32_t data) {
+  data_[data_position_] = data;
+  SetDataPosition(data_position_ + 1).IgnoreError();
+  return absl::OkStatus();
+}
+
+absl::Status FakeWritableParcel::WriteInt64(int64_t data) {
   data_[data_position_] = data;
   SetDataPosition(data_position_ + 1).IgnoreError();
   return absl::OkStatus();
@@ -67,6 +73,15 @@ absl::Status FakeReadableParcel::ReadInt32(int32_t* data) const {
     return absl::InternalError("ReadInt32 failed");
   }
   *data = absl::get<int32_t>(data_[data_position_++]);
+  return absl::OkStatus();
+}
+
+absl::Status FakeReadableParcel::ReadInt64(int64_t* data) const {
+  if (data_position_ >= data_.size() ||
+      !absl::holds_alternative<int64_t>(data_[data_position_])) {
+    return absl::InternalError("ReadInt64 failed");
+  }
+  *data = absl::get<int64_t>(data_[data_position_++]);
   return absl::OkStatus();
 }
 

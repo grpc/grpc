@@ -19,9 +19,11 @@
 /* This benchmark exists to ensure that the benchmark integration is
  * working */
 
-#include <benchmark/benchmark.h>
 #include <string.h>
+
 #include <sstream>
+
+#include <benchmark/benchmark.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

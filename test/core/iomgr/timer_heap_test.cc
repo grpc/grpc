@@ -16,8 +16,6 @@
  *
  */
 
-#include "src/core/lib/iomgr/port.h"
-
 #include "src/core/lib/iomgr/timer_heap.h"
 
 #include <stdlib.h>
@@ -27,6 +25,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/port.h"
 #include "test/core/util/test_config.h"
 
 static gpr_atm random_deadline(void) { return rand(); }

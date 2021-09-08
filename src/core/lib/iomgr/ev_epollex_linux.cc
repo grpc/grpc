@@ -18,14 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <grpc/support/log.h>
+
+#include "src/core/lib/iomgr/port.h"
 
 /* This polling engine is only relevant on linux kernels supporting epoll() */
 #ifdef GRPC_LINUX_EPOLL_CREATE1
-
-#include "src/core/lib/iomgr/ev_epollex_linux.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -54,6 +52,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/block_annotate.h"
+#include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/is_epollexclusive_available.h"
 #include "src/core/lib/iomgr/lockfree_event.h"

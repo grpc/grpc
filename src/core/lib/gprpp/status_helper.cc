@@ -19,9 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time_util.h"
-
-#include <grpc/support/log.h>
 
 #include "absl/strings/cord.h"
 #include "absl/strings/escaping.h"
@@ -29,10 +26,13 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/time/clock.h"
-
 #include "google/protobuf/any.upb.h"
 #include "google/rpc/status.upb.h"
 #include "upb/upb.hpp"
+
+#include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/time_util.h"
 
 namespace grpc_core {
 

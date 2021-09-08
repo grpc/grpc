@@ -15,6 +15,8 @@
  * limitations under the License.
  *
  */
+#include <grpc/support/port_platform.h>
+
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -24,9 +26,10 @@
 #include <string>
 #include <thread>
 
+#include "gtest/gtest.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -37,7 +40,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include "gtest/gtest.h"
+
 #include "src/core/lib/gpr/env.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"

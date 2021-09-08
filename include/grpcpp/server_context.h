@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SERVER_CONTEXT_H
 #define GRPCPP_SERVER_CONTEXT_H
 
-#include <grpcpp/impl/codegen/server_context.h>
+#include <grpcpp/impl/codegen/server_context.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SERVER_CONTEXT_H
