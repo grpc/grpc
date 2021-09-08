@@ -53,7 +53,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherCreateReturnsProvider) {
   grpc::Status status;
   auto provider = experimental::FileWatcherAuthorizationPolicyProvider::Create(
       tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
-      /*on_error_cb=*/nullptr, &status);
+      /*cb=*/nullptr, &status);
   ASSERT_NE(provider, nullptr);
   EXPECT_NE(provider->c_provider(), nullptr);
   EXPECT_TRUE(status.ok());
@@ -66,7 +66,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherCreateReturnsErrorStatus) {
   grpc::Status status;
   auto provider = experimental::FileWatcherAuthorizationPolicyProvider::Create(
       tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
-      /*on_error_cb=*/nullptr, &status);
+      /*cb=*/nullptr, &status);
   ASSERT_EQ(provider, nullptr);
   EXPECT_EQ(status.error_code(), grpc::StatusCode::INVALID_ARGUMENT);
   EXPECT_EQ(status.error_message(), "\"name\" field is not present.");
