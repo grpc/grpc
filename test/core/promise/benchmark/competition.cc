@@ -15,7 +15,9 @@
 /* This benchmark exists to ensure that immediately-firing alarms are fast */
 
 #include <benchmark/benchmark.h>
+
 #include "absl/synchronization/mutex.h"
+
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/for_each.h"
