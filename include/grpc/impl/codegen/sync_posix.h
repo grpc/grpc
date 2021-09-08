@@ -19,6 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_SYNC_POSIX_H
 #define GRPC_IMPL_CODEGEN_SYNC_POSIX_H
 
+// IWYU pragma: private, include <grpc/support/sync.h>
+
 #include <grpc/impl/codegen/port_platform.h>
 
 #include <pthread.h>

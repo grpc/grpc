@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_INTERCEPTOR_COMMON_H
 #define GRPCPP_IMPL_CODEGEN_INTERCEPTOR_COMMON_H
 
+// IWYU pragma: private
+
 #include <array>
 #include <functional>
 

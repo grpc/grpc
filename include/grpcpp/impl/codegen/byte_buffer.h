@@ -19,14 +19,17 @@
 #ifndef GRPCPP_IMPL_CODEGEN_BYTE_BUFFER_H
 #define GRPCPP_IMPL_CODEGEN_BYTE_BUFFER_H
 
-#include <vector>
+// IWYU pragma: private, include <grpcpp/support/byte_buffer.h>
 
 #include <grpc/impl/codegen/byte_buffer.h>
+
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/serialization_traits.h>
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/status.h>
+
+#include <vector>
 
 namespace grpc {
 

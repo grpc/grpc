@@ -24,21 +24,16 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-/// A set of parameters used to configure an endpoint, either when initiating a
-/// new connection on the client side or when listening for incoming connections
-/// on the server side. An EndpointConfig contains a set of zero or more
-/// Settings. Each setting has a unique name, which can be used to fetch that
-/// Setting via the Get() method. Each Setting has a value, which can be an
-/// integer, string, or void pointer. Each EE impl should define the set of
-/// Settings that it supports being passed into it, along with the corresponding
-/// type.
+/// Collection of parameters used to configure client and server endpoints. The
+/// \a EndpointConfig maps string-valued keys to values of type int,
+/// string_view, or void pointer. Each EventEngine implementation should
+/// document its set of supported configuration options.
 class EndpointConfig {
  public:
   virtual ~EndpointConfig() = default;
   using Setting = absl::variant<absl::monostate, int, absl::string_view, void*>;
-  /// Returns an EndpointConfig Setting. If there is no Setting associated with
-  /// \a key in the EndpointConfig, an \a absl::monostate type will be
-  /// returned. Caller does not take ownership of resulting value.
+  /// Returns the Setting for a specified key, or \a absl::monostate if there is
+  /// no such entry. Caller does not take ownership of the resulting value.
   virtual Setting Get(absl::string_view key) const = 0;
 };
 
