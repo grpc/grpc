@@ -26,6 +26,9 @@ namespace grpc_core {
 
 namespace for_each_detail {
 
+// Helper function: at the end of each iteration of a for-each loop, this is
+// called. If the iteration failed, return failure. If the iteration succeeded,
+// then call the next iteration.
 template <typename Reader, typename CallPoll>
 Poll<absl::Status> FinishIteration(absl::Status* r, Reader* reader,
                                    CallPoll call_poll) {
@@ -36,6 +39,9 @@ Poll<absl::Status> FinishIteration(absl::Status* r, Reader* reader,
   return std::move(*r);
 }
 
+// Done creates statuses for the end of the iteration. It's templated on the
+// type of the result of the ForEach loop, so that we can introduce new types
+// easily.
 template <typename T>
 struct Done;
 template <>
@@ -74,6 +80,10 @@ class ForEach {
   ActionFactory action_factory_;
   absl::variant<ReaderNext, ActionPromise> state_;
 
+  // Call the inner poll function, and if it's finished, start the next
+  // iteration. If kSetState==true, also set the current state in self->state_.
+  // We omit that on the first iteration because it's common to poll once and
+  // not change state, which saves us some work.
   template <bool kSetState>
   struct CallPoll {
     ForEach* const self;

@@ -34,21 +34,26 @@ TEST(ForEachTest, SendThriceWithPipe) {
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
       [&pipe, &num_received] {
-        return Map(Join(Seq(
-                            pipe.sender.Push(1),
-                            [&pipe] { return pipe.sender.Push(2); },
-                            [&pipe] { return pipe.sender.Push(3); },
-                            [&pipe] {
-                              auto drop = std::move(pipe.sender);
-                              return absl::OkStatus();
-                            }),
-                        ForEach(std::move(pipe.receiver),
-                                [&num_received](int i) {
-                                  num_received++;
-                                  EXPECT_EQ(num_received, i);
-                                  return absl::OkStatus();
-                                })),
-                   JustElem<1>());
+        return Map(
+            Join(
+                // Push 3 things into a pipe -- 1, 2, then 3 -- then close.
+                Seq(
+                    pipe.sender.Push(1),
+                    [&pipe] { return pipe.sender.Push(2); },
+                    [&pipe] { return pipe.sender.Push(3); },
+                    [&pipe] {
+                      auto drop = std::move(pipe.sender);
+                      return absl::OkStatus();
+                    }),
+                // Use a ForEach loop to read them out and verify all values are
+                // seen.
+                ForEach(std::move(pipe.receiver),
+                        [&num_received](int i) {
+                          num_received++;
+                          EXPECT_EQ(num_received, i);
+                          return absl::OkStatus();
+                        })),
+            JustElem<1>());
       },
       NoCallbackScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
