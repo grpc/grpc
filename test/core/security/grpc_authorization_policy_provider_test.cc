@@ -37,14 +37,16 @@ TEST(AuthorizationPolicyProviderTest, StaticDataInitializationSuccessful) {
       testing::GetFileContents(VALID_POLICY_PATH_1));
   ASSERT_TRUE(provider.ok());
   auto engines = (*provider)->engines();
-  ASSERT_NE(engines.allow_engine, nullptr);
-  EXPECT_EQ(dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get())
-                ->action(),
-            Rbac::Action::kAllow);
-  ASSERT_NE(engines.deny_engine, nullptr);
-  EXPECT_EQ(dynamic_cast<GrpcAuthorizationEngine*>(engines.deny_engine.get())
-                ->action(),
-            Rbac::Action::kDeny);
+  auto* allow_engine =
+      dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
+  ASSERT_NE(allow_engine, nullptr);
+  EXPECT_EQ(allow_engine->action(), Rbac::Action::kAllow);
+  EXPECT_EQ(allow_engine->num_policies(), 1);
+  auto* deny_engine =
+      dynamic_cast<GrpcAuthorizationEngine*>(engines.deny_engine.get());
+  ASSERT_NE(deny_engine, nullptr);
+  EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
+  EXPECT_EQ(deny_engine->num_policies(), 1);
 }
 
 TEST(AuthorizationPolicyProviderTest,
@@ -87,8 +89,7 @@ TEST(AuthorizationPolicyProviderTest,
   EXPECT_EQ(provider.status().message(), "\"name\" field is not present.");
 }
 
-TEST(AuthorizationPolicyProviderTest,
-     FileWatcherInitializationSuccessValidPolicyRefresh) {
+TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
@@ -125,7 +126,7 @@ TEST(AuthorizationPolicyProviderTest,
 }
 
 TEST(AuthorizationPolicyProviderTest,
-     FileWatcherInitializationInvalidPolicyRefreshSkipReload) {
+     FileWatcherInvalidPolicyRefreshSkipReload) {
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(

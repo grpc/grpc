@@ -14,6 +14,7 @@
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpcpp/security/authorization_policy_provider.h>
 
 namespace grpc {
@@ -22,7 +23,7 @@ namespace experimental {
 std::shared_ptr<StaticDataAuthorizationPolicyProvider>
 StaticDataAuthorizationPolicyProvider::Create(const std::string& authz_policy,
                                               grpc::Status* status) {
-  grpc_status_code code;
+  grpc_status_code code = GRPC_STATUS_OK;
   const char* error_details;
   grpc_authorization_policy_provider* provider =
       grpc_authorization_policy_provider_static_data_create(
@@ -44,13 +45,13 @@ StaticDataAuthorizationPolicyProvider::
 std::shared_ptr<FileWatcherAuthorizationPolicyProvider>
 FileWatcherAuthorizationPolicyProvider::Create(
     const std::string& authz_policy_path, unsigned int refresh_interval_sec,
-    grpc_authorization_policy_provider_file_watcher_on_error_cb on_error_cb,
+    grpc_authorization_policy_provider_file_watcher_cb cb,
     grpc::Status* status) {
-  grpc_status_code code;
+  grpc_status_code code = GRPC_STATUS_OK;
   const char* error_details;
   grpc_authorization_policy_provider* provider =
       grpc_authorization_policy_provider_file_watcher_create(
-          authz_policy_path.c_str(), refresh_interval_sec, on_error_cb, &code,
+          authz_policy_path.c_str(), refresh_interval_sec, cb, &code,
           &error_details);
   if (code != GRPC_STATUS_OK) {
     *status = grpc::Status(static_cast<grpc::StatusCode>(code), error_details);

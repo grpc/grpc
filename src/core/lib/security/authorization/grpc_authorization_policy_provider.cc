@@ -24,6 +24,8 @@
 
 namespace grpc_core {
 
+extern TraceFlag grpc_sdk_authz_trace;
+
 absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
 StaticDataAuthorizationPolicyProvider::Create(absl::string_view authz_policy) {
   auto policies_or = GenerateRbacPolicies(authz_policy);
@@ -69,24 +71,23 @@ absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
 FileWatcherAuthorizationPolicyProvider::Create(
     absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
     std::function<void(grpc_status_code status, const char* error_details)>
-        on_error_cb) {
+        cb) {
   GPR_ASSERT(!authz_policy_path.empty());
   GPR_ASSERT(refresh_interval_sec > 0);
   absl::Status status;
   auto provider = MakeRefCounted<FileWatcherAuthorizationPolicyProvider>(
-      authz_policy_path, refresh_interval_sec, std::move(on_error_cb), &status);
+      authz_policy_path, refresh_interval_sec, std::move(cb), &status);
   if (!status.ok()) return status;
   return provider;
 }
 
 FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
     absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
-    std::function<void(grpc_status_code status, const char* error_details)>
-        on_error_cb,
+    std::function<void(grpc_status_code status, const char* error_details)> cb,
     absl::Status* status)
     : authz_policy_path_(std::string(authz_policy_path)),
       refresh_interval_sec_(refresh_interval_sec),
-      on_error_cb_(std::move(on_error_cb)) {
+      cb_(std::move(cb)) {
   gpr_event_init(&shutdown_event_);
   // Initial read is done synchronously.
   *status = ForceUpdate();
@@ -105,10 +106,18 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
         return;
       }
       absl::Status status = provider->ForceUpdate();
-      grpc_core::MutexLock lock(&(provider->cb_mu_));
-      if (provider->on_error_cb_ != nullptr && !status.ok()) {
-        provider->on_error_cb_(static_cast<grpc_status_code>(status.code()),
-                               std::string(status.message()).c_str());
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
+        gpr_log(GPR_INFO,
+                "authorization policy reload status. code=%d error_details=%s",
+                status.code(), std::string(status.message()).c_str());
+      }
+      if (provider->cb_ != nullptr &&
+          (!status.ok() || provider->reload_failed_)) {
+        provider->cb_(static_cast<grpc_status_code>(status.code()),
+                      std::string(status.message()).c_str());
+      }
+      if (!status.ok()) {
+        provider->reload_failed_ = true;
       }
     }
   };
@@ -174,11 +183,11 @@ grpc_authorization_policy_provider_static_data_create(
 grpc_authorization_policy_provider*
 grpc_authorization_policy_provider_file_watcher_create(
     const char* authz_policy_path, unsigned int refresh_interval_sec,
-    grpc_authorization_policy_provider_file_watcher_on_error_cb cb,
+    grpc_authorization_policy_provider_file_watcher_cb cb,
     grpc_status_code* code, const char** error_details) {
   GPR_ASSERT(authz_policy_path != nullptr);
   auto provider_or = grpc_core::FileWatcherAuthorizationPolicyProvider::Create(
-      authz_policy_path, refresh_interval_sec, std::move(cb));
+      authz_policy_path, refresh_interval_sec, cb);
   if (!provider_or.ok()) {
     *code = static_cast<grpc_status_code>(provider_or.status().code());
     *error_details =

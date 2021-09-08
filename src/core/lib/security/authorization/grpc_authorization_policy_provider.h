@@ -67,14 +67,14 @@ class FileWatcherAuthorizationPolicyProvider
   static absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
   Create(absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
          std::function<void(grpc_status_code status, const char* error_details)>
-             on_error_cb);
+             cb);
 
   // Use factory method "Create" to create an instance of
   // FileWatcherAuthorizationPolicyProvider.
   FileWatcherAuthorizationPolicyProvider(
       absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
       std::function<void(grpc_status_code status, const char* error_details)>
-          on_error_cb,
+          cb,
       absl::Status* status);
 
   ~FileWatcherAuthorizationPolicyProvider() override;
@@ -96,10 +96,10 @@ class FileWatcherAuthorizationPolicyProvider
   Thread* refresh_thread_ = nullptr;
   gpr_event shutdown_event_;
 
-  grpc_core::Mutex cb_mu_;
-  // Callback function to execute when we get an error during policy reload.
-  std::function<void(grpc_status_code status, const char* error_details)>
-      on_error_cb_ ABSL_GUARDED_BY(cb_mu_);
+  bool reload_failed_ = false;
+  // Callback function to execute when we get an error during policy reload. The
+  // callback is also executed when we recover from error.
+  std::function<void(grpc_status_code status, const char* error_details)> cb_;
 
   grpc_core::Mutex mu_;
   // The latest valid policy.

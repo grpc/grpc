@@ -24,7 +24,7 @@
 // <grpc/grpc_security.h> directly once the insecure builds are cleaned up.
 typedef struct grpc_authorization_policy_provider
     grpc_authorization_policy_provider;
-typedef void (*grpc_authorization_policy_provider_file_watcher_on_error_cb)(
+typedef void (*grpc_authorization_policy_provider_file_watcher_cb)(
     grpc_status_code status, const char* error_details);
 
 namespace grpc {
@@ -68,11 +68,9 @@ class StaticDataAuthorizationPolicyProvider
 class FileWatcherAuthorizationPolicyProvider
     : public AuthorizationPolicyProviderInterface {
  public:
-  // Sets callback to be executed anytime reloading fails due to I/O errors or
-  // invalid policy.
   static std::shared_ptr<FileWatcherAuthorizationPolicyProvider> Create(
       const std::string& authz_policy_path, unsigned int refresh_interval_sec,
-      grpc_authorization_policy_provider_file_watcher_on_error_cb on_error_cb,
+      grpc_authorization_policy_provider_file_watcher_cb cb,
       grpc::Status* status);
 
   // Use factory method "Create" to create an instance of
