@@ -94,7 +94,7 @@ static void test_allow_authorized_request(grpc_end2end_test_config config) {
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
-  grpc_status_code status;
+  grpc_status_code status = GRPC_STATUS_OK;
   const char* error_string = nullptr;
   grpc_call_error error;
   grpc_slice details = grpc_empty_slice();
@@ -229,7 +229,7 @@ static void test_deny_unauthorized_request(grpc_end2end_test_config config) {
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
-  grpc_status_code status;
+  grpc_status_code status = GRPC_STATUS_OK;
   const char* error_string = nullptr;
   grpc_call_error error;
   grpc_slice details = grpc_empty_slice();
@@ -338,7 +338,7 @@ static void test_deny_request_no_match_in_policy(
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
-  grpc_status_code status;
+  grpc_status_code status = GRPC_STATUS_OK;
   const char* error_string = nullptr;
   grpc_call_error error;
   grpc_slice details = grpc_empty_slice();
