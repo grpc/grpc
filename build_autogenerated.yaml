@@ -4553,6 +4553,50 @@ targets:
   - posix
   - mac
   uses_polling: false
+- name: binder_server_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/server/binder_server.h
+  - src/core/ext/transport/binder/server/binder_server_credentials.h
+  - src/core/ext/transport/binder/transport/binder_stream.h
+  - src/core/ext/transport/binder/transport/binder_transport.h
+  - src/core/ext/transport/binder/utils/transport_stream_receiver.h
+  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
+  - src/core/ext/transport/binder/wire_format/binder.h
+  - src/core/ext/transport/binder/wire_format/binder_android.h
+  - src/core/ext/transport/binder/wire_format/binder_constants.h
+  - src/core/ext/transport/binder/wire_format/transaction.h
+  - src/core/ext/transport/binder/wire_format/wire_reader.h
+  - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
+  - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - test/core/transport/binder/end2end/echo_service.h
+  - test/core/transport/binder/end2end/fake_binder.h
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/core/transport/binder/end2end/echo.proto
+  - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/server/binder_server.cc
+  - src/core/ext/transport/binder/server/binder_server_credentials.cc
+  - src/core/ext/transport/binder/transport/binder_transport.cc
+  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  - src/core/ext/transport/binder/wire_format/binder_android.cc
+  - src/core/ext/transport/binder/wire_format/binder_constants.cc
+  - src/core/ext/transport/binder/wire_format/transaction.cc
+  - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
+  - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - test/core/transport/binder/end2end/binder_server_test.cc
+  - test/core/transport/binder/end2end/echo_service.cc
+  - test/core/transport/binder/end2end/fake_binder.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - absl/random:random
+  - grpc++_test_util
 - name: binder_transport_test
   gtest: true
   build: test
