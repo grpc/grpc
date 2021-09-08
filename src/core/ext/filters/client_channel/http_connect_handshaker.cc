@@ -32,7 +32,9 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/http/format_request.h"
@@ -382,10 +384,10 @@ class HttpConnectHandshakerFactory : public HandshakerFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
-
-void grpc_http_connect_register_handshaker_factory() {
-  grpc_core::HandshakerRegistry::RegisterHandshakerFactory(
+void RegisterHttpConnectHandshaker(CoreConfiguration::Builder* builder) {
+  builder->handshaker_registry()->RegisterHandshakerFactory(
       true /* at_start */, grpc_core::HANDSHAKER_CLIENT,
       absl::make_unique<grpc_core::HttpConnectHandshakerFactory>());
 }
+
+}  // namespace grpc_core
