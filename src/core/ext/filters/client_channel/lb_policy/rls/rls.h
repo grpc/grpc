@@ -34,6 +34,7 @@
 
 #include "absl/hash/hash.h"
 #include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
@@ -61,8 +62,7 @@ class RlsLb : public LoadBalancingPolicy {
     KeyMap BuildKeyMap(const MetadataInterface* initial_metadata) const;
 
    private:
-    std::map<std::string /*header_name*/,
-             std::vector<std::pair<std::string /*key_name*/, int /*priority*/>>>
+    std::map<std::string /*key_name*/, std::vector<std::string /*header_name*/>>
         pattern_;
   };
 
@@ -179,8 +179,9 @@ class RlsLb : public LoadBalancingPolicy {
       // Implementation of ChannelControlHelper interface.
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          const grpc_channel_args& args) override;
+          ServerAddress address, const grpc_channel_args& args) override;
       void UpdateState(grpc_connectivity_state state,
+                       const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
       void AddTraceEvent(TraceSeverity severity,
@@ -385,13 +386,10 @@ class RlsLb : public LoadBalancingPolicy {
       explicit StateWatcher(RefCountedPtr<ControlChannel> channel);
 
      private:
-      void OnConnectivityStateChange(
-          grpc_connectivity_state new_state) override;
-
-      void OnReadyLocked();
+      void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                     const absl::Status& status) override;
 
       RefCountedPtr<ControlChannel> channel_;
-
       bool was_transient_failure_ = false;
     };
 

@@ -24,16 +24,16 @@
 #include <unordered_set>
 #include <utility>
 
-#include <grpc/impl/codegen/byte_buffer_reader.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "upb/upb.hpp"
+
+#include <grpc/impl/codegen/byte_buffer_reader.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
@@ -51,6 +51,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -344,11 +345,8 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
   key.path = std::string(args.path);
   std::lock_guard<std::recursive_mutex> lock(lb_policy_->mu_);
   if (lb_policy_->is_shutdown_) {
-    PickResult result;
-    result.type = PickResult::PICK_FAILED;
-    result.error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("LB policy already shut down");
-    return result;
+    return PickResult::Fail(
+        absl::UnavailableError("LB policy already shut down"));
   }
   const KeyMapBuilder* key_map_builder =
       lb_policy_->FindKeyMapBuilder(key.path);
@@ -366,12 +364,8 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
                   "throttled",
                   lb_policy_.get(), this);
         }
-        PickResult result;
-        result.type = PickResult::PICK_FAILED;
-        result.error = grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("RLS request throttled"),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-        return result;
+        return PickResult::Fail(
+            absl::UnavailableError("RLS request throttled"));
       } else {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
           gpr_log(GPR_DEBUG,
@@ -388,9 +382,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
                 "[rlslb %p] picker=%p: pick queued as the RLS call is made",
                 lb_policy_.get(), this);
       }
-      PickResult result;
-      result.type = PickResult::PICK_QUEUE;
-      return result;
+      return PickResult::Queue();
     }
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
@@ -417,7 +409,6 @@ RlsLb::Cache::Entry::Entry(RefCountedPtr<RlsLb> lb_policy)
 }
 
 LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
-  PickResult result;
   grpc_millis now = ExecCtx::Get()->Now();
   if (stale_time_ < now && backoff_time_ < now) {
     bool call_throttled =
@@ -430,11 +421,8 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
                   "throttled",
                   lb_policy_.get(), this);
         }
-        result.type = PickResult::PICK_FAILED;
-        result.error = grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("RLS request throttled"),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-        return result;
+        return PickResult::Fail(
+            absl::UnavailableError("RLS request throttled"));
       } else {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
           gpr_log(GPR_DEBUG,
@@ -456,10 +444,8 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
                 "policy wrapper is empty",
                 lb_policy_.get(), this);
       }
-      result.type = PickResult::PICK_FAILED;
-      result.error =
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("child policy does not exist");
-      return result;
+      return PickResult::Fail(
+          absl::UnavailableError("child policy does not exist"));
     } else {
       if (!header_data_.empty()) {
         char* copied_header_data = static_cast<char*>(
@@ -491,17 +477,12 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
                     "[rlslb %p] cache entry=%p: pick queued due to child "
                     "policy in CONNECTING state",
                     lb_policy_.get(), this);
-            result.type = PickResult::PICK_QUEUE;
-            return result;
+            return PickResult::Queue();
           default:
             continue;
         }
       }
-      result.type = PickResult::PICK_FAILED;
-      result.error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("RLS request in backoff"),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-      return result;
+      return PickResult::Fail(absl::UnavailableError("RLS request in backoff"));
     }
   } else if (now <= backoff_time_) {
     if (lb_policy_->config_->default_target().empty()) {
@@ -510,10 +491,7 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
                 "[rlslb %p] cache entry=%p: pick failed due to backoff",
                 lb_policy_.get(), this);
       }
-      result.type = PickResult::PICK_FAILED;
-      result.error = grpc_error_add_child(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("RLS request in backoff"),
-          GRPC_ERROR_REF(status_));
+      return PickResult::Fail(absl::UnavailableError("RLS request in backoff"));
     } else {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
         gpr_log(GPR_DEBUG,
@@ -530,9 +508,8 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
               "refreshing request",
               lb_policy_.get(), this);
     }
-    result.type = PickResult::PICK_QUEUE;
+    return PickResult::Queue();
   }
-  return result;
 }
 
 void RlsLb::Cache::Entry::ResetBackoff() {
@@ -1020,11 +997,12 @@ RlsLb::ControlChannel::ControlChannel(RefCountedPtr<RlsLb> lb_policy,
             lb_policy.get(), this, channel_);
   }
   if (channel_ != nullptr) {
-    watcher_ = new StateWatcher(Ref());
-    grpc_client_channel_start_connectivity_watch(
-        grpc_channel_stack_last_element(
-            grpc_channel_get_channel_stack(channel_)),
-        GRPC_CHANNEL_IDLE, OrphanablePtr<StateWatcher>(watcher_));
+    ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
+    GPR_ASSERT(client_channel != nullptr);
+    watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "StateWatcher"));
+    client_channel->AddConnectivityWatcher(
+        GRPC_CHANNEL_IDLE,
+        OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
   }
 }
 
@@ -1038,10 +1016,9 @@ void RlsLb::ControlChannel::Orphan() {
   is_shutdown_ = true;
   if (channel_ != nullptr) {
     if (watcher_ != nullptr) {
-      grpc_client_channel_stop_connectivity_watch(
-          grpc_channel_stack_last_element(
-              grpc_channel_get_channel_stack(channel_)),
-          watcher_);
+      ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
+      GPR_ASSERT(client_channel != nullptr);
+      client_channel->RemoveConnectivityWatcher(watcher_);
       watcher_ = nullptr;
     }
     grpc_channel_destroy(channel_);
@@ -1098,38 +1075,29 @@ void RlsLb::ControlChannel::Throttle::RegisterResponse(bool success) {
 // StateWatcher implementation
 RlsLb::ControlChannel::StateWatcher::StateWatcher(
     RefCountedPtr<ControlChannel> channel)
-    : channel_(std::move(channel)) {}
+    : AsyncConnectivityStateWatcherInterface(
+          channel->lb_policy_->work_serializer()),
+      channel_(std::move(channel)) {}
 
 void RlsLb::ControlChannel::StateWatcher::OnConnectivityStateChange(
-    grpc_connectivity_state new_state) {
+    grpc_connectivity_state new_state, const absl::Status& status) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_DEBUG,
-            "[rlslb %p] ControlChannel=%p, StateWatcher=%p, new_state=%d: "
-            "connectivity state change",
-            channel_->lb_policy_.get(), channel_.get(), this, new_state);
+            "[rlslb %p] ControlChannel=%p StateWatcher=%p: "
+            "state changed to %s (%s)",
+            channel_->lb_policy_.get(), channel_.get(), this,
+            ConnectivityStateName(new_state), status.ToString().c_str());
   }
   std::lock_guard<std::recursive_mutex> lock(channel_->lb_policy_->mu_);
+  if (channel_->is_shutdown_) return;
   if (new_state == GRPC_CHANNEL_READY && was_transient_failure_) {
     was_transient_failure_ = false;
-    channel_->lb_policy_->work_serializer()->Run([this]() { OnReadyLocked(); },
-                                                 DEBUG_LOCATION);
+    channel_->lb_policy_->cache_.ResetAllBackoff();
+    if (channel_->lb_policy_->config_->default_target().empty()) {
+      channel_->lb_policy_->UpdatePicker();
+    }
   } else if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     was_transient_failure_ = true;
-  }
-}
-
-void RlsLb::ControlChannel::StateWatcher::OnReadyLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-    gpr_log(GPR_DEBUG,
-            "[rlslb %p] ControlChannel=%p, StateWatcher=%p: channel transits "
-            "to READY",
-            channel_->lb_policy_.get(), channel_.get(), this);
-  }
-  if (channel_->is_shutdown_) return;
-  std::lock_guard<std::recursive_mutex> lock(channel_->lb_policy_->mu_);
-  channel_->lb_policy_->cache_.ResetAllBackoff();
-  if (channel_->lb_policy_->config_->default_target().empty()) {
-    channel_->lb_policy_->UpdatePicker();
   }
 }
 
@@ -1152,9 +1120,7 @@ LoadBalancingPolicy::PickResult RlsLb::ChildPolicyWrapper::Pick(PickArgs args) {
               "is not ready",
               lb_policy_.get(), this);
     }
-    PickResult result;
-    result.type = PickResult::PICK_QUEUE;
-    return result;
+    return PickResult::Queue();
   } else {
     return picker_->Pick(args);
   }
@@ -1171,7 +1137,8 @@ void RlsLb::ChildPolicyWrapper::UpdateLocked(
   // returned RLS target fails the validation
   if (error != GRPC_ERROR_NONE) {
     picker_ = std::unique_ptr<LoadBalancingPolicy::SubchannelPicker>(
-        new TransientFailurePicker(error));
+        new TransientFailurePicker(grpc_error_to_absl_status(error)));
+    GRPC_ERROR_UNREF(error);
     child_policy_ = nullptr;
     return;
   }
@@ -1235,24 +1202,28 @@ void RlsLb::ChildPolicyWrapper::Orphan() {
 // ChildPolicyHelper implementation
 RefCountedPtr<SubchannelInterface>
 RlsLb::ChildPolicyWrapper::ChildPolicyHelper::CreateSubchannel(
-    const grpc_channel_args& args) {
+    ServerAddress address, const grpc_channel_args& args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_DEBUG,
-            "[rlslb %p] ChildPolicyHelper=%p, ChildPolicyWrapper=%p: "
-            "CreateSubchannel",
-            wrapper_->lb_policy_.get(), this, wrapper_.get());
+            "[rlslb %p] ChildPolicyHelper=%p ChildPolicyWrapper=%p: "
+            "CreateSubchannel() for %s",
+            wrapper_->lb_policy_.get(), this, wrapper_.get(),
+            address.ToString().c_str());
   }
   if (wrapper_->is_shutdown_) return nullptr;
-  return wrapper_->lb_policy_->channel_control_helper()->CreateSubchannel(args);
+  return wrapper_->lb_policy_->channel_control_helper()->CreateSubchannel(
+      std::move(address), args);
 }
 
 void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
-    grpc_connectivity_state state, std::unique_ptr<SubchannelPicker> picker) {
+    grpc_connectivity_state state, const absl::Status& status,
+    std::unique_ptr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_DEBUG,
-            "[rlslb %p] ChildPolicyHelper=%p, ChildPolicyWrapper=%p: "
-            "UpdateState(state=%d, picker=%p)",
-            wrapper_->lb_policy_.get(), this, wrapper_.get(), state,
+            "[rlslb %p] ChildPolicyHelper=%p ChildPolicyWrapper=%p: "
+            "UpdateState(state=%s, status=%s, picker=%p)",
+            wrapper_->lb_policy_.get(), this, wrapper_.get(),
+            ConnectivityStateName(state), status.ToString().c_str(),
             picker.get());
   }
   std::lock_guard<std::recursive_mutex> lock(wrapper_->lb_policy_->mu_);
@@ -1309,10 +1280,9 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri_str = grpc_channel_arg_get_string(arg);
   GPR_ASSERT(server_uri_str != nullptr);
-  grpc_uri* uri = grpc_uri_parse(server_uri_str, true);
-  GPR_ASSERT(uri->path[0] != '\0');
-  server_name_ = std::string(uri->path[0] == '/' ? uri->path + 1 : uri->path);
-  grpc_uri_destroy(uri);
+  absl::StatusOr<URI> uri = URI::Parse(server_uri_str);
+  GPR_ASSERT(uri.ok());
+  server_name_ = std::string(absl::StripPrefix(uri->path(), "/"));
   mu_.lock();
   RefCountedPtr<RlsLbConfig> old_config = config_;
   config_ = args.config;
@@ -1469,8 +1439,12 @@ void RlsLb::UpdatePickerCallback(void* arg, grpc_error* error) {
           }
         }
         lb_policy->mu_.unlock();
+        absl::Status status;
+        if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+          status = absl::UnavailableError("no children available");
+        }
         lb_policy->channel_control_helper()->UpdateState(
-            state, absl::make_unique<Picker>(lb_policy->Ref()));
+            state, status, absl::make_unique<Picker>(lb_policy->Ref()));
       },
       DEBUG_LOCATION);
 }
@@ -1486,13 +1460,13 @@ RlsLb::KeyMapBuilder::KeyMapBuilder(const Json& config, grpc_error** error) {
   absl::InlinedVector<grpc_error*, 1> error_list;
   grpc_error* internal_error = GRPC_ERROR_NONE;
   const Json::Array& headers = config.array_value();
-  std::unordered_set<std::string> key_set;
-  key_set.reserve(headers.size());
   int idx = 0;
   for (const Json& name_matcher_json : headers) {
+    ++idx;
     if (name_matcher_json.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("\"headers\" array element ", idx, " is not an object")
+          absl::StrCat("\"headers\" array element ", (idx - 1),
+                       " is not an object")
               .c_str()));
       continue;
     }
@@ -1506,37 +1480,31 @@ RlsLb::KeyMapBuilder::KeyMapBuilder(const Json& config, grpc_error** error) {
         ParseStringFieldFromJsonObject(name_matcher, "key", &internal_error);
     if (internal_error != GRPC_ERROR_NONE) {
       error_list.push_back(internal_error);
-    } else {
-      const std::string& key = *key_ptr;
-      if (key_set.find(key) != key_set.end()) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("duplicate key \"", key, "\"").c_str()));
-      } else {
-        key_set.insert(key);
-        const Json::Array* names_ptr = ParseArrayFieldFromJsonObject(
-            name_matcher, "names", &internal_error, true);
-        if (internal_error != GRPC_ERROR_NONE) {
-          error_list.push_back(internal_error);
-        } else if (names_ptr != nullptr) {
-          const Json::Array& names = *names_ptr;
-          int idx2 = 0;
-          for (const Json& name_json : names) {
-            if (name_json.type() != Json::Type::STRING) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                  absl::StrCat("\"names\" array element ,", idx2,
-                               " is not a string")
-                      .c_str()));
-            } else {
-              const std::string& name = name_json.string_value();
-              // Use the index of the element as the key's priority.
-              pattern_[name].push_back(std::make_pair(key, idx2));
-            }
-            idx2++;
-          }
-        }
-      }
+      continue;
     }
-    idx++;
+    if (pattern_.find(*key_ptr) != pattern_.end()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("duplicate key \"", *key_ptr, "\"").c_str()));
+    }
+    const Json::Array* names_ptr = ParseArrayFieldFromJsonObject(
+        name_matcher, "names", &internal_error, true);
+    if (internal_error != GRPC_ERROR_NONE) {
+      error_list.push_back(internal_error);
+      continue;
+    }
+    int idx2 = 0;
+    for (const Json& name_json : *names_ptr) {
+      if (name_json.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("\"names\" array element ,", idx2,
+                         " is not a string")
+                .c_str()));
+      } else {
+        const std::string& name = name_json.string_value();
+        pattern_[*key_ptr].push_back(name);
+      }
+      idx2++;
+    }
   }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR(
       "errors parsing RLS key builder config", &error_list);
@@ -1546,27 +1514,16 @@ RlsLb::KeyMap RlsLb::KeyMapBuilder::BuildKeyMap(
     const MetadataInterface* initial_metadata) const {
   if (initial_metadata == nullptr) return KeyMap();
   KeyMap key_map;
-  std::map<std::string, int> priority_map;
-  for (auto it = initial_metadata->begin(); it != initial_metadata->end();
-       ++it) {
-    auto item = (*it);
-    absl::string_view& md_field = item.first;
-    absl::string_view& md_value = item.second;
-    auto key_list_it = pattern_.find(std::string(md_field));
-    if (key_list_it != pattern_.end()) {
-      auto& key_list = key_list_it->second;
-      for (auto& key_priority_pair : key_list) {
-        const std::string& key = key_priority_pair.first;
-        int priority = key_priority_pair.second;
-        auto key_map_entry_it = key_map.find(key);
-        if (key_map_entry_it == key_map.end() || priority < priority_map[key]) {
-          key_map[key] = std::string(md_value);
-          priority_map[key] = priority;
-        } else if (key_map_entry_it != key_map.end() &&
-                   priority == priority_map[key]) {
-          key_map[key] += ',';
-          key_map[key] += std::string(md_value);
-        }
+  for (const auto& p : pattern_) {
+    const std::string& key = p.first;
+    const std::vector<std::string>& names = p.second;
+    for (const auto& name : names) {
+      std::string buffer;
+      absl::optional<absl::string_view> value =
+          initial_metadata->Lookup(name, &buffer);
+      if (value.has_value()) {
+        key_map[key] = std::string(*value);
+        break;
       }
     }
   }

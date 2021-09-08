@@ -154,6 +154,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Produce a vector of metadata key/value strings for tests.
     virtual std::vector<std::pair<std::string, std::string>>
     TestOnlyCopyToVector() = 0;
+
+    virtual absl::optional<absl::string_view> Lookup(
+        absl::string_view key, std::string* buffer) const = 0;
   };
 
   /// Arguments used when picking a subchannel for a call.

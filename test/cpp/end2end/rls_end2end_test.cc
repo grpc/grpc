@@ -16,6 +16,16 @@
  *
  */
 
+#include <deque>
+#include <map>
+#include <thread>
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
+
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
@@ -23,12 +33,10 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
 
-#include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
-#include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -44,13 +52,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include <deque>
-#include <map>
-#include <thread>
 
 namespace grpc {
 namespace testing {
@@ -198,7 +199,9 @@ class BalancerServiceImpl : public BalancerService {
       }
       {
         grpc::internal::MutexLock lock(&mu_);
-        serverlist_cond_.WaitUntil(&mu_, [this] { return serverlist_done_; });
+        while (!serverlist_done_) {
+          serverlist_cond_.Wait(&mu_);
+        }
       }
 
       if (client_load_reporting_interval_seconds_ > 0) {
@@ -283,7 +286,9 @@ class BalancerServiceImpl : public BalancerService {
 
   const ClientStats& WaitForLoadReport() {
     grpc::internal::MutexLock lock(&mu_);
-    load_report_cond_.WaitUntil(&mu_, [this] { return load_report_ready_; });
+    while (!load_report_ready_) {
+      load_report_cond_.Wait(&mu_);
+    }
     load_report_ready_ = false;
     return client_stats_;
   }
@@ -292,7 +297,7 @@ class BalancerServiceImpl : public BalancerService {
     grpc::internal::MutexLock lock(&mu_);
     if (!serverlist_done_) {
       serverlist_done_ = true;
-      serverlist_cond_.Broadcast();
+      serverlist_cond_.SignalAll();
     }
   }
 
@@ -314,9 +319,9 @@ class BalancerServiceImpl : public BalancerService {
   std::vector<ResponseDelayPair> responses_and_delays_;
   grpc::internal::Mutex mu_;
   grpc::internal::CondVar load_report_cond_;
-  bool load_report_ready_ = false;
+  bool load_report_ready_ ABSL_GUARDED_BY(mu_) = false;
   grpc::internal::CondVar serverlist_cond_;
-  bool serverlist_done_ = false;
+  bool serverlist_done_ ABSL_GUARDED_BY(mu_) = false;
   ClientStats client_stats_;
 };
 
@@ -473,7 +478,7 @@ class FakeResolverResponseGeneratorWrapper {
     if (service_config_json != nullptr) {
       result.service_config_error = GRPC_ERROR_NONE;
       result.service_config = grpc_core::ServiceConfig::Create(
-          service_config_json, &result.service_config_error);
+          result.args, service_config_json, &result.service_config_error);
       GPR_ASSERT(result.service_config_error == GRPC_ERROR_NONE);
       GPR_ASSERT(result.service_config != nullptr);
     }
