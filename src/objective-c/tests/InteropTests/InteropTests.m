@@ -40,6 +40,10 @@
 #define TEST_TIMEOUT 32
 #define STREAMING_CALL_TEST_TIMEOUT 64
 
+#define SMALL_PAYLOAD_SIZE 10
+#define LARGE_REQUEST_PAYLOAD_SIZE 271828
+#define LARGE_RESPONSE_PAYLOAD_SIZE 314159
+
 static const int kTestRetries = 3;
 extern const char *kCFStreamVarName;
 
@@ -579,8 +583,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
   RMTSimpleRequest *request = [RMTSimpleRequest message];
   request.responseType = RMTPayloadType_Compressable;
-  request.responseSize = 314159;
-  request.payload.body = [NSMutableData dataWithLength:271828];
+  request.responseSize = LARGE_RESPONSE_PAYLOAD_SIZE;
+  request.payload.body = [NSMutableData dataWithLength:LARGE_REQUEST_PAYLOAD_SIZE];
 
   [_service unaryCallWithRequest:request
                          handler:^(RMTSimpleResponse *response, NSError *error) {
@@ -588,7 +592,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
                            RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
                            expectedResponse.payload.type = RMTPayloadType_Compressable;
-                           expectedResponse.payload.body = [NSMutableData dataWithLength:314159];
+                           expectedResponse.payload.body =
+                               [NSMutableData dataWithLength:LARGE_RESPONSE_PAYLOAD_SIZE];
                            XCTAssertEqualObjects(response, expectedResponse);
 
                            [expectation fulfill];
@@ -607,8 +612,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
   RMTSimpleRequest *request = [RMTSimpleRequest message];
   request.responseType = RMTPayloadType_Compressable;
-  request.responseSize = 314159;
-  request.payload.body = [NSMutableData dataWithLength:271828];
+  request.responseSize = LARGE_RESPONSE_PAYLOAD_SIZE;
+  request.payload.body = [NSMutableData dataWithLength:LARGE_REQUEST_PAYLOAD_SIZE];
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   // For backwards compatibility
@@ -628,7 +633,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
         XCTAssertNil(error, @"Unexpected error: %@", error);
         RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
         expectedResponse.payload.type = RMTPayloadType_Compressable;
-        expectedResponse.payload.body = [NSMutableData dataWithLength:314159];
+        expectedResponse.payload.body = [NSMutableData dataWithLength:LARGE_RESPONSE_PAYLOAD_SIZE];
         XCTAssertEqualObjects(response, expectedResponse);
         XCTAssertEqualObjects(handler.responseHeaders[@"x-grpc-test-echo-initial"], @"test-header");
         XCTAssertEqualObjects(handler.responseTrailers[@"x-grpc-test-echo-trailing-bin"],
@@ -641,7 +646,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
         XCTAssertNil(error, @"Unexpected error: %@", error);
         RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
         expectedResponse.payload.type = RMTPayloadType_Compressable;
-        expectedResponse.payload.body = [NSMutableData dataWithLength:314159];
+        expectedResponse.payload.body = [NSMutableData dataWithLength:LARGE_RESPONSE_PAYLOAD_SIZE];
         XCTAssertEqualObjects(response, expectedResponse);
         XCTAssertEqualObjects(handlerMainQueue.responseHeaders[@"x-grpc-test-echo-initial"],
                               @"test-header");
@@ -666,8 +671,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
   RMTSimpleRequest *request = [RMTSimpleRequest message];
   request.responseType = RMTPayloadType_Compressable;
-  request.responseSize = 314159;
-  request.payload.body = [NSMutableData dataWithLength:271828];
+  request.responseSize = LARGE_RESPONSE_PAYLOAD_SIZE;
+  request.payload.body = [NSMutableData dataWithLength:LARGE_REQUEST_PAYLOAD_SIZE];
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   // For backwards compatibility
@@ -686,7 +691,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                        [RMTSimpleResponse message];
                                    expectedResponse.payload.type = RMTPayloadType_Compressable;
                                    expectedResponse.payload.body =
-                                       [NSMutableData dataWithLength:314159];
+                                       [NSMutableData dataWithLength:LARGE_RESPONSE_PAYLOAD_SIZE];
                                    XCTAssertEqualObjects(message, expectedResponse);
 
                                    [expectReceive fulfill];
@@ -712,8 +717,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
     RMTSimpleRequest *request = [RMTSimpleRequest message];
     request.responseType = RMTPayloadType_Compressable;
-    request.responseSize = 314159;
-    request.payload.body = [NSMutableData dataWithLength:271828];
+    request.responseSize = SMALL_PAYLOAD_SIZE;
+    request.payload.body = [NSMutableData dataWithLength:SMALL_PAYLOAD_SIZE];
     if (i % 3 == 0) {
       request.responseStatus.code = GRPC_STATUS_UNAVAILABLE;
     } else if (i % 7 == 0) {
@@ -735,7 +740,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                          [RMTSimpleResponse message];
                                      expectedResponse.payload.type = RMTPayloadType_Compressable;
                                      expectedResponse.payload.body =
-                                         [NSMutableData dataWithLength:314159];
+                                         [NSMutableData dataWithLength:SMALL_PAYLOAD_SIZE];
                                      XCTAssertEqualObjects(message, expectedResponse);
                                    }
                                  }
@@ -750,7 +755,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
     GRPCUnaryProtoCall *call = calls[i];
     [call start];
   }
-  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
+
+  [self waitForExpectations:completeExpectations timeout:STREAMING_CALL_TEST_TIMEOUT];
 }
 
 - (void)concurrentRPCsWithErrors {
@@ -762,8 +768,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
   for (int i = 0; i < kNumRpcs; ++i) {
     RMTSimpleRequest *request = [RMTSimpleRequest message];
     request.responseType = RMTPayloadType_Compressable;
-    request.responseSize = 314159;
-    request.payload.body = [NSMutableData dataWithLength:271828];
+    request.responseSize = SMALL_PAYLOAD_SIZE;
+    request.payload.body = [NSMutableData dataWithLength:SMALL_PAYLOAD_SIZE];
     if (i % 3 == 0) {
       request.responseStatus.code = GRPC_STATUS_UNAVAILABLE;
     } else if (i % 7 == 0) {
@@ -776,7 +782,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
                             if (error == nil) {
                               RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
                               expectedResponse.payload.type = RMTPayloadType_Compressable;
-                              expectedResponse.payload.body = [NSMutableData dataWithLength:314159];
+                              expectedResponse.payload.body =
+                                  [NSMutableData dataWithLength:SMALL_PAYLOAD_SIZE];
                               XCTAssertEqualObjects(response, expectedResponse);
                             }
                             // DEBUG
@@ -805,8 +812,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
   RMTSimpleRequest *request = [RMTSimpleRequest message];
   request.responseType = RMTPayloadType_Compressable;
-  request.responseSize = 10;
-  request.payload.body = [NSMutableData dataWithLength:10];
+  request.responseSize = SMALL_PAYLOAD_SIZE;
+  request.payload.body = [NSMutableData dataWithLength:SMALL_PAYLOAD_SIZE];
 
   [GRPCCall enableOpBatchLog:YES];
   [_service unaryCallWithRequest:request
@@ -1351,8 +1358,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
   RMTSimpleRequest *request = [RMTSimpleRequest message];
   request.responseType = RMTPayloadType_Compressable;
-  request.responseSize = 314159;
-  request.payload.body = [NSMutableData dataWithLength:271828];
+  request.responseSize = LARGE_RESPONSE_PAYLOAD_SIZE;
+  request.payload.body = [NSMutableData dataWithLength:LARGE_REQUEST_PAYLOAD_SIZE];
   request.expectCompressed.value = YES;
   [GRPCCall setDefaultCompressMethod:GRPCCompressGzip forhost:[[self class] host]];
 
@@ -1362,7 +1369,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
                            RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
                            expectedResponse.payload.type = RMTPayloadType_Compressable;
-                           expectedResponse.payload.body = [NSMutableData dataWithLength:314159];
+                           expectedResponse.payload.body =
+                               [NSMutableData dataWithLength:LARGE_RESPONSE_PAYLOAD_SIZE];
                            XCTAssertEqualObjects(response, expectedResponse);
 
                            [expectation fulfill];
