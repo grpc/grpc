@@ -72,7 +72,7 @@ namespace grpc_binder {
 namespace end2end_testing {
 
 using FakeData = std::vector<
-    absl::variant<int32_t, void*, std::string, std::vector<int8_t>>>;
+    absl::variant<int32_t, int64_t, void*, std::string, std::vector<int8_t>>>;
 
 // A fake writable parcel.
 //
@@ -85,6 +85,7 @@ class FakeWritableParcel final : public WritableParcel {
   int32_t GetDataPosition() const override;
   absl::Status SetDataPosition(int32_t pos) override;
   absl::Status WriteInt32(int32_t data) override;
+  absl::Status WriteInt64(int64_t data) override;
   absl::Status WriteBinder(HasRawBinder* binder) override;
   absl::Status WriteString(absl::string_view s) override;
   absl::Status WriteByteArray(const int8_t* buffer, int32_t length) override;
@@ -104,6 +105,7 @@ class FakeReadableParcel final : public ReadableParcel {
  public:
   explicit FakeReadableParcel(FakeData data) : data_(std::move(data)) {}
   absl::Status ReadInt32(int32_t* data) const override;
+  absl::Status ReadInt64(int64_t* data) const override;
   absl::Status ReadBinder(std::unique_ptr<Binder>* data) const override;
   absl::Status ReadByteArray(std::string* data) const override;
   absl::Status ReadString(char data[111]) const override;

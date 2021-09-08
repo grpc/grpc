@@ -29,7 +29,7 @@ namespace grpc_binder {
 class WireReader : public grpc_core::InternallyRefCounted<WireReader> {
  public:
   ~WireReader() override = default;
-  virtual std::unique_ptr<WireWriter> SetupTransport(
+  virtual std::shared_ptr<WireWriter> SetupTransport(
       std::unique_ptr<Binder> endpoint_binder) = 0;
 };
 
