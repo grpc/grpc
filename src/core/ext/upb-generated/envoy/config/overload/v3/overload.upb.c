@@ -119,22 +119,34 @@ const upb_msglayout envoy_config_overload_v3_OverloadAction_msginit = {
   UPB_SIZE(24, 48), 3, false, 3, 255,
 };
 
-static const upb_msglayout *const envoy_config_overload_v3_OverloadManager_submsgs[3] = {
+static const upb_msglayout_field envoy_config_overload_v3_BufferFactoryConfig__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 13, _UPB_MODE_SCALAR},
+};
+
+const upb_msglayout envoy_config_overload_v3_BufferFactoryConfig_msginit = {
+  NULL,
+  &envoy_config_overload_v3_BufferFactoryConfig__fields[0],
+  UPB_SIZE(8, 8), 1, false, 1, 255,
+};
+
+static const upb_msglayout *const envoy_config_overload_v3_OverloadManager_submsgs[4] = {
+  &envoy_config_overload_v3_BufferFactoryConfig_msginit,
   &envoy_config_overload_v3_OverloadAction_msginit,
   &envoy_config_overload_v3_ResourceMonitor_msginit,
   &google_protobuf_Duration_msginit,
 };
 
-static const upb_msglayout_field envoy_config_overload_v3_OverloadManager__fields[3] = {
-  {1, UPB_SIZE(4, 8), 1, 2, 11, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(8, 16), 0, 1, 11, _UPB_MODE_ARRAY},
-  {3, UPB_SIZE(12, 24), 0, 0, 11, _UPB_MODE_ARRAY},
+static const upb_msglayout_field envoy_config_overload_v3_OverloadManager__fields[4] = {
+  {1, UPB_SIZE(4, 8), 1, 3, 11, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(12, 24), 0, 2, 11, _UPB_MODE_ARRAY},
+  {3, UPB_SIZE(16, 32), 0, 1, 11, _UPB_MODE_ARRAY},
+  {4, UPB_SIZE(8, 16), 2, 0, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_overload_v3_OverloadManager_msginit = {
   &envoy_config_overload_v3_OverloadManager_submsgs[0],
   &envoy_config_overload_v3_OverloadManager__fields[0],
-  UPB_SIZE(16, 32), 3, false, 3, 255,
+  UPB_SIZE(24, 40), 4, false, 4, 255,
 };
 
 #include "upb/port_undef.inc"

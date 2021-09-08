@@ -1144,8 +1144,10 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/frame_settings.cc \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
+    src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
-    src/core/ext/transport/chttp2/transport/hpack_table.cc \
+    src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
+    src/core/ext/transport/chttp2/transport/hpack_utils.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
@@ -1817,8 +1819,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/frame_settings.cc \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
+    src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
-    src/core/ext/transport/chttp2/transport/hpack_table.cc \
+    src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
+    src/core/ext/transport/chttp2/transport/hpack_utils.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
@@ -2304,6 +2308,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/ssl/dtls_method.cc \
     third_party/boringssl-with-bazel/src/ssl/dtls_record.cc \
     third_party/boringssl-with-bazel/src/ssl/encrypted_client_hello.cc \
+    third_party/boringssl-with-bazel/src/ssl/extensions.cc \
     third_party/boringssl-with-bazel/src/ssl/handoff.cc \
     third_party/boringssl-with-bazel/src/ssl/handshake.cc \
     third_party/boringssl-with-bazel/src/ssl/handshake_client.cc \
@@ -2326,7 +2331,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/ssl/ssl_versions.cc \
     third_party/boringssl-with-bazel/src/ssl/ssl_x509.cc \
     third_party/boringssl-with-bazel/src/ssl/t1_enc.cc \
-    third_party/boringssl-with-bazel/src/ssl/t1_lib.cc \
     third_party/boringssl-with-bazel/src/ssl/tls13_both.cc \
     third_party/boringssl-with-bazel/src/ssl/tls13_client.cc \
     third_party/boringssl-with-bazel/src/ssl/tls13_enc.cc \

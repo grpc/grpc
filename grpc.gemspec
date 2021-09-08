@@ -32,7 +32,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.15'
+  s.add_dependency 'google-protobuf', '~> 3.17'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '>= 1.9'
@@ -284,13 +284,18 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_settings.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_window_update.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_window_update.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/hpack_constants.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_encoder.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_encoder.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_encoder_index.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc )
+  s.files += %w( src/core/ext/transport/chttp2/transport/hpack_encoder_table.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_parser.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_parser.h )
-  s.files += %w( src/core/ext/transport/chttp2/transport/hpack_table.cc )
-  s.files += %w( src/core/ext/transport/chttp2/transport/hpack_table.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/hpack_parser_table.cc )
+  s.files += %w( src/core/ext/transport/chttp2/transport/hpack_parser_table.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/hpack_utils.cc )
+  s.files += %w( src/core/ext/transport/chttp2/transport/hpack_utils.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_settings.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_settings.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/huffsyms.cc )
@@ -1558,12 +1563,12 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/asn1/a_utctm.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/asn1/a_utf8.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/asn1/asn1_lib.c )
-  s.files += %w( third_party/boringssl-with-bazel/src/crypto/asn1/asn1_locl.h )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/asn1/asn1_par.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/asn1/asn_pack.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/asn1/f_enum.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/asn1/f_int.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/asn1/f_string.c )
+  s.files += %w( third_party/boringssl-with-bazel/src/crypto/asn1/internal.h )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/asn1/tasn_dec.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/asn1/tasn_enc.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/asn1/tasn_fre.c )
@@ -1760,6 +1765,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/hrss/internal.h )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/internal.h )
+  s.files += %w( third_party/boringssl-with-bazel/src/crypto/lhash/internal.h )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/lhash/lhash.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/mem.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/obj/obj.c )
@@ -1978,6 +1984,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/boringssl-with-bazel/src/ssl/dtls_method.cc )
   s.files += %w( third_party/boringssl-with-bazel/src/ssl/dtls_record.cc )
   s.files += %w( third_party/boringssl-with-bazel/src/ssl/encrypted_client_hello.cc )
+  s.files += %w( third_party/boringssl-with-bazel/src/ssl/extensions.cc )
   s.files += %w( third_party/boringssl-with-bazel/src/ssl/handoff.cc )
   s.files += %w( third_party/boringssl-with-bazel/src/ssl/handshake.cc )
   s.files += %w( third_party/boringssl-with-bazel/src/ssl/handshake_client.cc )
@@ -2001,7 +2008,6 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/boringssl-with-bazel/src/ssl/ssl_versions.cc )
   s.files += %w( third_party/boringssl-with-bazel/src/ssl/ssl_x509.cc )
   s.files += %w( third_party/boringssl-with-bazel/src/ssl/t1_enc.cc )
-  s.files += %w( third_party/boringssl-with-bazel/src/ssl/t1_lib.cc )
   s.files += %w( third_party/boringssl-with-bazel/src/ssl/tls13_both.cc )
   s.files += %w( third_party/boringssl-with-bazel/src/ssl/tls13_client.cc )
   s.files += %w( third_party/boringssl-with-bazel/src/ssl/tls13_enc.cc )

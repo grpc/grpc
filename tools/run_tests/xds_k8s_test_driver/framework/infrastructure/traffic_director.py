@@ -179,7 +179,8 @@ class TrafficDirectorManager:
     def create_backend_service(
             self,
             protocol: Optional[BackendServiceProtocol] = _BackendGRPC,
-            subset_size: Optional[int] = None):
+            subset_size: Optional[int] = None,
+            affinity_header: Optional[str] = None):
         if protocol is None:
             protocol = _BackendGRPC
 
@@ -189,7 +190,8 @@ class TrafficDirectorManager:
             name,
             health_check=self.health_check,
             protocol=protocol,
-            subset_size=subset_size)
+            subset_size=subset_size,
+            affinity_header=affinity_header)
         self.backend_service = resource
         self.backend_service_protocol = protocol
 

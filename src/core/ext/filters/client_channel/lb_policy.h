@@ -134,34 +134,15 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Implemented by the client channel and used by the SubchannelPicker.
   class MetadataInterface {
    public:
-    class iterator
-        : public std::iterator<
-              std::input_iterator_tag,
-              std::pair<absl::string_view, absl::string_view>,  // value_type
-              std::ptrdiff_t,  // difference_type
-              std::pair<absl::string_view, absl::string_view>*,  // pointer
-              std::pair<absl::string_view, absl::string_view>&   // reference
-              > {
-     public:
-      iterator(const MetadataInterface* md, intptr_t handle)
-          : md_(md), handle_(handle) {}
-      iterator& operator++() {
-        handle_ = md_->IteratorHandleNext(handle_);
-        return *this;
-      }
-      bool operator==(iterator other) const {
-        return md_ == other.md_ && handle_ == other.handle_;
-      }
-      bool operator!=(iterator other) const { return !(*this == other); }
-      value_type operator*() const { return md_->IteratorHandleGet(handle_); }
-
-     private:
-      friend class MetadataInterface;
-      const MetadataInterface* md_;
-      intptr_t handle_;
-    };
-
     virtual ~MetadataInterface() = default;
+
+    //////////////////////////////////////////////////////////////////////////
+    // TODO(ctiller): DO NOT MAKE THIS A PUBLIC API YET
+    // This needs some API design to ensure we can add/remove/replace metadata
+    // keys... we're deliberately not doing so to save some time whilst
+    // cleaning up the internal metadata representation, but we should add
+    // something back before making this a public API.
+    //////////////////////////////////////////////////////////////////////////
 
     /// Adds a key/value pair.
     /// Does NOT take ownership of \a key or \a value.
@@ -170,23 +151,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// CallState::Alloc().
     virtual void Add(absl::string_view key, absl::string_view value) = 0;
 
-    /// Iteration interface.
-    virtual iterator begin() const = 0;
-    virtual iterator end() const = 0;
-
-    /// Removes the element pointed to by \a it.
-    /// Returns an iterator pointing to the next element.
-    virtual iterator erase(iterator it) = 0;
-
-   protected:
-    intptr_t GetIteratorHandle(const iterator& it) const { return it.handle_; }
-
-   private:
-    friend class iterator;
-
-    virtual intptr_t IteratorHandleNext(intptr_t handle) const = 0;
-    virtual std::pair<absl::string_view /*key*/, absl::string_view /*value */>
-    IteratorHandleGet(intptr_t handle) const = 0;
+    /// Produce a vector of metadata key/value strings for tests.
+    virtual std::vector<std::pair<std::string, std::string>>
+    TestOnlyCopyToVector() = 0;
   };
 
   /// Arguments used when picking a subchannel for a call.

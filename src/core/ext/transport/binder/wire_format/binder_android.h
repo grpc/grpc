@@ -15,9 +15,9 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_ANDROID_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_ANDROID_H
 
-#if defined(ANDROID) || defined(__ANDROID__)
-
 #include <grpc/impl/codegen/port_platform.h>
+
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
 #include <android/binder_auto_utils.h>
 #include <android/binder_ibinder.h>
@@ -30,11 +30,6 @@
 #include "absl/memory/memory.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
-
-// TODO(b/192208764): move this check to somewhere else
-#if __ANDROID_API__ < 29
-#error "We only support Android API level >= 29."
-#endif
 
 namespace grpc_binder {
 
@@ -51,6 +46,7 @@ class WritableParcelAndroid final : public WritableParcel {
   int32_t GetDataPosition() const override;
   absl::Status SetDataPosition(int32_t pos) override;
   absl::Status WriteInt32(int32_t data) override;
+  absl::Status WriteInt64(int64_t data) override;
   absl::Status WriteBinder(HasRawBinder* binder) override;
   absl::Status WriteString(absl::string_view s) override;
   absl::Status WriteByteArray(const int8_t* buffer, int32_t length) override;
@@ -70,6 +66,7 @@ class ReadableParcelAndroid final : public ReadableParcel {
   ~ReadableParcelAndroid() override = default;
 
   absl::Status ReadInt32(int32_t* data) const override;
+  absl::Status ReadInt64(int64_t* data) const override;
   absl::Status ReadBinder(std::unique_ptr<Binder>* data) const override;
   absl::Status ReadByteArray(std::string* data) const override;
   // FIXME(waynetu): Fix the interface.
@@ -127,6 +124,6 @@ class TransactionReceiverAndroid final : public TransactionReceiver {
 
 }  // namespace grpc_binder
 
-#endif  // defined(ANDROID) || defined(__ANDROID__)
+#endif /*GPR_SUPPORT_BINDER_TRANSPORT*/
 
 #endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_ANDROID_H
