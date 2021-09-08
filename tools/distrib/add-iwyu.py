@@ -52,6 +52,12 @@ def set_exports(pub, cg):
     open(pub, 'w').write('\n'.join(lines) + '\n')
 
 
+CG_ROOTS = (
+    (r'sync', 'grpc/support/sync.h'),
+    (r'atm', 'grpc/support/atm.h'),
+)
+
+
 def fix_tree(tree):
     """Fix one include tree"""
     # Map of filename --> paths including that filename
@@ -68,8 +74,19 @@ def fix_tree(tree):
         if not filename.endswith('.h'):
             continue
         pragma = None
+        # Check for our 'special' headers: if we see one of these, we just
+        # hardcode where they go to because there's some complicated rules.
+        for root, target in CG_ROOTS:
+          if filename.startswith(root):
+            pragma = 'private, include <%s>' % target
+            if len(paths) == 1:
+              path = paths[0]
+              if filename.startswith(root + '.'):
+                set_exports('include/' + target, path + '/' + filename)
+              if filename.startswith(root + '_'):
+                set_exports(path + '/' + root + '.h', path + '/' + filename)
         # If the path for a file in /impl/codegen is ambiguous, just don't bother
-        if len(paths) == 1:
+        if not pragma and len(paths) == 1:
             path = paths[0]
             # Check if we have an exporting candidate
             if filename in reverse_map:
@@ -79,6 +96,7 @@ def fix_tree(tree):
                     # Build the two relevant pathnames
                     cg = path + '/' + filename
                     pub = proper[0] + '/' + filename
+                    print(filename, pub, cg)
                     # And see if the public file actually includes the /impl/codegen file
                     if ('#include %s' % to_inc(cg)) in open(pub).read():
                         # Finally, if it does, we'll set that pragma
