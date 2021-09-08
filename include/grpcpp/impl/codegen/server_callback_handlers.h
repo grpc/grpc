@@ -18,6 +18,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SERVER_CALLBACK_HANDLERS_H
 #define GRPCPP_IMPL_CODEGEN_SERVER_CALLBACK_HANDLERS_H
 
+// IWYU pragma: private
+
 #include <grpcpp/impl/codegen/message_allocator.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/server_callback.h>
