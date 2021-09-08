@@ -18,10 +18,11 @@
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 
+#include <string.h>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
-#include <string.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/load_file.h"

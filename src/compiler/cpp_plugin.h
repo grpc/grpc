@@ -23,7 +23,6 @@
 #include <sstream>
 
 #include "src/compiler/config.h"
-
 #include "src/compiler/cpp_generator.h"
 #include "src/compiler/generator_helpers.h"
 #include "src/compiler/protobuf_plugin.h"

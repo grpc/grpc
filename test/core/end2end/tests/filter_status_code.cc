@@ -24,8 +24,6 @@
  * https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -40,6 +38,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
 static bool g_enable_filter = false;
 static gpr_mu g_mu;

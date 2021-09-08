@@ -16,8 +16,6 @@
  *
  */
 
-#include "src/core/lib/iomgr/resolve_address.h"
-
 #include <net/if.h>
 #include <string.h>
 #include <sys/un.h>
@@ -39,6 +37,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/test_config.h"
 

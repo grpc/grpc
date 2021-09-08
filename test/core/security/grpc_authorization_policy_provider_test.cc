@@ -14,12 +14,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
+
 #include <gmock/gmock.h>
-#include <grpc/grpc_security.h>
 #include <gtest/gtest.h>
 
+#include <grpc/grpc_security.h>
+
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
-#include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {

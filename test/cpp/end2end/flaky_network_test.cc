@@ -16,20 +16,7 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/health_check_service_interface.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-#include <gtest/gtest.h>
 
 #include <algorithm>
 #include <condition_variable>
@@ -38,7 +25,22 @@
 #include <random>
 #include <thread>
 
+#include <gtest/gtest.h>
+
 #include "absl/memory/memory.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/health_check_service_interface.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gpr/env.h"

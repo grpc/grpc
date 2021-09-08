@@ -23,12 +23,12 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include <stddef.h>
+
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/impl/codegen/status.h>
-
-#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {

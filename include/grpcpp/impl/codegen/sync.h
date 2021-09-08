@@ -29,12 +29,11 @@
 
 #include <mutex>
 
+#include "absl/synchronization/mutex.h"
+
 #include <grpc/impl/codegen/log.h>
 #include <grpc/impl/codegen/sync.h>
-
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
-
-#include "absl/synchronization/mutex.h"
 
 // The core library is not accessible in C++ codegen headers, and vice versa.
 // Thus, we need to have duplicate headers with similar functionality.

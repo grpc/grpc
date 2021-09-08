@@ -16,16 +16,17 @@
  *
  */
 
+#include <memory>
+#include <sstream>
+
+#include "absl/flags/flag.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/support/channel_arguments.h>
 
-#include <memory>
-#include <sstream>
-
-#include "absl/flags/flag.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
