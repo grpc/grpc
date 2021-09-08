@@ -13,8 +13,10 @@
 // limitations under the License.
 
 #include "src/core/lib/promise/observable.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 

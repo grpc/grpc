@@ -16,11 +16,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/event_engine/slice_allocator.h>
-
 #include <functional>
 
 #include "absl/status/status.h"
+
+#include <grpc/event_engine/slice_allocator.h>
 
 #include "src/core/lib/iomgr/resource_quota.h"
 

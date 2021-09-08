@@ -19,9 +19,11 @@
 #ifndef GRPC_RB_XDS_SERVER_CREDENTIALS_H_
 #define GRPC_RB_XDS_SERVER_CREDENTIALS_H_
 
-#include <grpc/grpc_security.h>
 #include <ruby/ruby.h>
+
 #include <stdbool.h>
+
+#include <grpc/grpc_security.h>
 
 /* Initializes the ruby XdsServerCredentials class. */
 void Init_grpc_xds_server_credentials();

@@ -16,19 +16,22 @@
  *
  */
 
-#include <gmock/gmock.h>
-#include <grpc/byte_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <string>
 
+#include <gmock/gmock.h>
+
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+
+#include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"

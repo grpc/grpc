@@ -16,6 +16,8 @@
  *
  */
 
+#include "src/cpp/server/secure_server_credentials.h"
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -25,7 +27,6 @@
 #include <grpcpp/security/auth_metadata_processor.h>
 
 #include "src/cpp/common/secure_auth_context.h"
-#include "src/cpp/server/secure_server_credentials.h"
 
 namespace grpc {
 

@@ -22,8 +22,6 @@
 
 #ifdef GRPC_POSIX_SOCKET_EV_POLL
 
-#include "src/core/lib/iomgr/ev_poll_posix.h"
-
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
@@ -45,6 +43,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
+#include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"

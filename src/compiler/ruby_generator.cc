@@ -16,12 +16,13 @@
  *
  */
 
+#include "src/compiler/ruby_generator.h"
+
 #include <cctype>
 #include <map>
 #include <vector>
 
 #include "src/compiler/config.h"
-#include "src/compiler/ruby_generator.h"
 #include "src/compiler/ruby_generator_helpers-inl.h"
 #include "src/compiler/ruby_generator_map-inl.h"
 #include "src/compiler/ruby_generator_string-inl.h"

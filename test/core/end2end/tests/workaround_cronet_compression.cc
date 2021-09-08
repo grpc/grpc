@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -35,6 +33,7 @@
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 

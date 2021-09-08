@@ -16,11 +16,11 @@
  *
  */
 
-#include <grpcpp/support/channel_arguments.h>
+#include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 #include <grpcpp/grpcpp.h>
-#include <gtest/gtest.h>
+#include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

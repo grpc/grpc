@@ -18,14 +18,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/ext/transport/chttp2/transport/context_list.h"
-#include "src/core/ext/transport/chttp2/transport/internal.h"
-
 #include <limits.h>
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/context_list.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/profiling/timers.h"

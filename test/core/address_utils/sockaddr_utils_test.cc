@@ -14,9 +14,9 @@
 // limitations under the License.
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
 
 #include <errno.h>
 #include <string.h>
@@ -25,7 +25,9 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
+
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils.h"
 #include "test/core/util/test_config.h"
 
 namespace {

@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -27,9 +25,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 

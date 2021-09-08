@@ -16,15 +16,17 @@
  *
  */
 
-#include "absl/strings/str_cat.h"
+#include "src/core/ext/filters/client_channel/service_config.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/grpc.h>
+
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/gpr/string.h"

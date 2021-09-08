@@ -18,6 +18,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SERVER_CALLBACK_H
 #define GRPCPP_IMPL_CODEGEN_SERVER_CALLBACK_H
 
+// IWYU pragma: private, include <grpcpp/support/server_callback.h>
+
 #include <atomic>
 #include <functional>
 #include <type_traits>

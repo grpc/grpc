@@ -18,18 +18,18 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
-#include "absl/strings/str_format.h"
-
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "absl/strings/str_format.h"
+
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"

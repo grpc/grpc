@@ -19,6 +19,6 @@
 #ifndef GRPC_SUPPORT_PORT_PLATFORM_H
 #define GRPC_SUPPORT_PORT_PLATFORM_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/impl/codegen/port_platform.h>  // IWYU pragma: export
 
 #endif /* GRPC_SUPPORT_PORT_PLATFORM_H */

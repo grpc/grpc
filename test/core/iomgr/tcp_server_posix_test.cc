@@ -21,8 +21,6 @@
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP_SERVER
 
-#include "src/core/lib/iomgr/tcp_server.h"
-
 #include <errno.h>
 #include <ifaddrs.h>
 #include <netinet/in.h>
@@ -44,6 +42,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/tcp_server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

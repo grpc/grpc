@@ -21,8 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc_security_constants.h>
 #include "absl/strings/string_view.h"
+
+#include <grpc/grpc_security_constants.h>
+
 #include "src/core/tsi/transport_security_interface.h"
 
 extern "C" {

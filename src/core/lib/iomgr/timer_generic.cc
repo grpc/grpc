@@ -18,15 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <inttypes.h>
 
 #include <string>
 
 #include "absl/strings/str_cat.h"
-
-#include "src/core/lib/iomgr/timer.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
@@ -38,7 +34,9 @@
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/time_averaged_stats.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_heap.h"
 
 #define INVALID_HEAP_INDEX 0xffffffffu

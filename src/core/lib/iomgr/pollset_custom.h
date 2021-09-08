@@ -21,9 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/error.h"
-
 #include <stddef.h>
+
+#include "src/core/lib/iomgr/error.h"
 
 typedef struct grpc_custom_poller_vtable {
   void (*init)();

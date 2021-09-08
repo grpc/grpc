@@ -18,14 +18,17 @@
 // transform into the correct sequence of binder transactions.
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 
-#include <grpc/grpc.h>
-#include <gtest/gtest.h>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include <gtest/gtest.h>
+
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
+
+#include <grpc/grpc.h>
+
 #include "src/core/ext/transport/binder/transport/binder_stream.h"
 #include "test/core/transport/binder/mock_objects.h"
 #include "test/core/util/test_config.h"

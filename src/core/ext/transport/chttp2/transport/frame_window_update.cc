@@ -19,13 +19,14 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
-#include "src/core/ext/transport/chttp2/transport/internal.h"
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 
 grpc_slice grpc_chttp2_window_update_create(
     uint32_t id, uint32_t window_delta, grpc_transport_one_way_stats* stats) {

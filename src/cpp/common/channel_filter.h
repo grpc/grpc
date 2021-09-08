@@ -19,12 +19,12 @@
 #ifndef GRPCXX_CHANNEL_FILTER_H
 #define GRPCXX_CHANNEL_FILTER_H
 
+#include <functional>
+#include <vector>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/impl/codegen/config.h>
-
-#include <functional>
-#include <vector>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/surface/channel_init.h"

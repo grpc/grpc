@@ -17,10 +17,10 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include "absl/meta/type_traits.h"
+
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
-
-#include "absl/meta/type_traits.h"
 
 // PromiseFactory is an adaptor class.
 //

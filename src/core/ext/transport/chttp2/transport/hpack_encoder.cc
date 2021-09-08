@@ -27,7 +27,6 @@
  * TODO(murgatroid99): Remove this
  */
 #include <grpc/grpc.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 

@@ -21,6 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/sync_abseil.h>
+#include <grpc/impl/codegen/sync_abseil.h>  // IWYU pragma: export
 
 #endif /* GRPC_SUPPORT_SYNC_ABSEIL_H */

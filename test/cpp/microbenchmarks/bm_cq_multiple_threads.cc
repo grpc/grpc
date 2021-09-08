@@ -16,9 +16,11 @@
  *
  */
 
-#include <benchmark/benchmark.h>
 #include <string.h>
+
 #include <atomic>
+
+#include <benchmark/benchmark.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

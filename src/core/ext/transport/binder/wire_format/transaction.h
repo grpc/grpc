@@ -17,12 +17,12 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <grpc/support/log.h>
-
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/log.h>
 
 namespace grpc_binder {
 

@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SUPPORT_CONFIG_H
 #define GRPCPP_SUPPORT_CONFIG_H
 
-#include <grpcpp/impl/codegen/config.h>
+#include <grpcpp/impl/codegen/config.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SUPPORT_CONFIG_H

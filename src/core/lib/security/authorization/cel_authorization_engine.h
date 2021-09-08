@@ -18,7 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/log.h>
 #include <map>
 #include <memory>
 #include <string>
@@ -28,6 +27,8 @@
 #include "envoy/config/rbac/v3/rbac.upb.h"
 #include "google/api/expr/v1alpha1/syntax.upb.h"
 #include "upb/upb.hpp"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/security/authorization/mock_cel/activation.h"

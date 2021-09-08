@@ -23,7 +23,6 @@
 #ifdef GRPC_CFSTREAM_ENDPOINT
 
 #import <CoreFoundation/CoreFoundation.h>
-#import "src/core/lib/iomgr/endpoint_cfstream.h"
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -34,6 +33,7 @@
 #include "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#import "src/core/lib/iomgr/endpoint_cfstream.h"
 #include "src/core/lib/iomgr/error_cfstream.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/slice/slice_internal.h"

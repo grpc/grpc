@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -31,6 +29,7 @@
 #include "src/core/lib/compression/compression_args.h"
 #include "src/core/lib/surface/call.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
