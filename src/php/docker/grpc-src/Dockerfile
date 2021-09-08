@@ -23,8 +23,8 @@ ARG MAKEFLAGS=-j8
 
 WORKDIR /tmp
 
-RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
-  mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \
+RUN wget https://phar.phpunit.de/phpunit-8.5.13.phar && \
+  mv phpunit-8.5.13.phar /usr/local/bin/phpunit && \
   chmod +x /usr/local/bin/phpunit
 
 
@@ -32,13 +32,13 @@ WORKDIR /github/grpc
 
 COPY . .
 
-RUN make && make install
+RUN make shared_c static_c
 
 
 WORKDIR /github/grpc/src/php/ext/grpc
 
 RUN phpize && \
-  ./configure --enable-tests && \
+  GRPC_LIB_SUBDIR=libs/opt ./configure --enable-grpc=/github/grpc --enable-tests && \
   make && \
   make install
 

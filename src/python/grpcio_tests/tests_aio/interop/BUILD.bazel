@@ -70,7 +70,7 @@ py_binary(
     deps = [
         ":methods",
         "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_tests/tests/interop:client",
+        "//src/python/grpcio_tests/tests/interop:client_lib",
         "//src/python/grpcio_tests/tests/interop:resources",
     ],
 )

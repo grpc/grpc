@@ -16,12 +16,13 @@
  *
  */
 
-#include <string.h>
-
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/cpp/common/channel_filter.h"
 
+#include <string.h>
+
 #include <grpcpp/impl/codegen/slice.h>
+
+#include "src/core/lib/channel/channel_stack.h"
 
 namespace grpc {
 
@@ -87,7 +88,7 @@ void ChannelFilterPluginInit() {
   for (size_t i = 0; i < channel_filters->size(); ++i) {
     FilterRecord& filter = (*channel_filters)[i];
     grpc_channel_init_register_stage(filter.stack_type, filter.priority,
-                                     MaybeAddFilter, (void*)&filter);
+                                     MaybeAddFilter, &filter);
   }
 }
 

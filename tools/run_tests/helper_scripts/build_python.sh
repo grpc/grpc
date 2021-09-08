@@ -153,7 +153,7 @@ fi
 # See https://github.com/grpc/grpc/issues/14815 for more context. We cannot rely
 # on pip to upgrade itself because if pip is too old, it may not have the required
 # TLS version to run `pip install`.
-curl https://bootstrap.pypa.io/get-pip.py | $VENV_PYTHON
+curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | $VENV_PYTHON
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
@@ -184,14 +184,15 @@ case "$VENV" in
   ;;
 esac
 
+
+pip_install --upgrade setuptools==44.1.1
 pip_install --upgrade pip==19.3.1
-pip_install --upgrade setuptools
 pip_install --upgrade cython
-pip_install --upgrade six enum34 protobuf
+pip_install --upgrade six protobuf
 
 if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
 then
-  pip_install futures
+  pip_install --upgrade futures enum34
 fi
 
 pip_install_dir "$ROOT"
@@ -218,6 +219,12 @@ pip_install_dir "$ROOT/src/python/grpcio_reflection"
 $VENV_PYTHON "$ROOT/src/python/grpcio_status/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_status/setup.py" build_package_protos
 pip_install_dir "$ROOT/src/python/grpcio_status"
+
+# Build/install csds
+pip_install_dir "$ROOT/src/python/grpcio_csds"
+
+# Build/install admin
+pip_install_dir "$ROOT/src/python/grpcio_admin"
 
 # Install testing
 pip_install_dir "$ROOT/src/python/grpcio_testing"

@@ -21,8 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
+
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
@@ -42,7 +43,7 @@ class MPMCQueueInterface {
   // Removes the oldest element from the queue and return it.
   // This might cause to block on empty queue depending on implementation.
   // Optional argument for collecting stats purpose.
-  virtual void* Get(gpr_timespec* wait_time = nullptr) = 0;
+  virtual void* Get(gpr_timespec* wait_time) = 0;
 
   // Returns number of elements in the queue currently
   virtual int count() const = 0;
@@ -55,22 +56,22 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
 
   // Releases all resources held by the queue. The queue must be empty, and no
   // one waits on conditional variables.
-  ~InfLenFIFOQueue();
+  ~InfLenFIFOQueue() override;
 
   // Puts elem into queue immediately at the end of queue. Since the queue has
   // infinite length, this routine will never block and should never fail.
-  void Put(void* elem);
+  void Put(void* elem) override;
 
   // Removes the oldest element from the queue and returns it.
   // This routine will cause the thread to block if queue is currently empty.
   // Argument wait_time should be passed in when trace flag turning on (for
   // collecting stats info purpose.)
-  void* Get(gpr_timespec* wait_time = nullptr);
+  void* Get(gpr_timespec* wait_time) override;
 
   // Returns number of elements in queue currently.
   // There might be concurrently add/remove on queue, so count might change
   // quickly.
-  int count() const { return count_.Load(MemoryOrder::RELAXED); }
+  int count() const override { return count_.load(std::memory_order_relaxed); }
 
   struct Node {
     Node* next;  // Linking
@@ -157,7 +158,7 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
 
   Node* queue_head_ = nullptr;  // Head of the queue, remove position
   Node* queue_tail_ = nullptr;  // End of queue, insert position
-  Atomic<int> count_{0};        // Number of elements in queue
+  std::atomic<int> count_{0};   // Number of elements in queue
   int num_nodes_ = 0;           // Number of nodes allocated
 
   Stats stats_;            // Stats info

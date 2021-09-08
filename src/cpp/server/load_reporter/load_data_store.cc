@@ -18,14 +18,16 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include "src/cpp/server/load_reporter/load_data_store.h"
+
 #include <stdio.h>
+
 #include <cstdlib>
 #include <set>
 #include <unordered_map>
 #include <vector>
 
 #include "src/core/lib/iomgr/socket_utils.h"
-#include "src/cpp/server/load_reporter/load_data_store.h"
 
 namespace grpc {
 namespace load_reporter {
@@ -43,7 +45,7 @@ bool UnorderedMapOfSetEraseKeyValue(std::unordered_map<K, std::set<V>>& map,
   auto it = map.find(key);
   if (it != map.end()) {
     size_t erased = it->second.erase(value);
-    if (it->second.size() == 0) {
+    if (it->second.empty()) {
       map.erase(it);
     }
     return erased;

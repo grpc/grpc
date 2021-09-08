@@ -31,7 +31,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t i) { return (void*)i; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 struct test_state {
   int is_client;
@@ -136,8 +136,8 @@ static void cleanup_test() {
   grpc_completion_queue_shutdown(g_state.cq);
   while (grpc_completion_queue_next(g_state.cq,
                                     gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
-             .type != GRPC_QUEUE_SHUTDOWN)
-    ;
+             .type != GRPC_QUEUE_SHUTDOWN) {
+  }
   grpc_completion_queue_destroy(g_state.cq);
 }
 

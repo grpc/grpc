@@ -28,7 +28,7 @@ RUN ln -s /usr/local/go/bin/go /usr/local/bin
 # Install Python packages from PyPI
 RUN pip install --upgrade pip==19.3.1
 RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
+RUN pip install futures==3.1.1 enum34==1.1.10 protobuf==3.5.2.post1 six==1.16.0 twisted==19.10.0
 
 # Define the default command.
 CMD ["bash"]

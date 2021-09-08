@@ -18,9 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
+
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -66,16 +68,16 @@ static bool input_is_valid(const uint8_t* input_ptr, size_t length) {
   return true;
 }
 
-#define COMPOSE_OUTPUT_BYTE_0(input_ptr)        \
-  (uint8_t)((decode_table[input_ptr[0]] << 2) | \
-            (decode_table[input_ptr[1]] >> 4))
+#define COMPOSE_OUTPUT_BYTE_0(input_ptr)          \
+  (uint8_t)((decode_table[(input_ptr)[0]] << 2) | \
+            (decode_table[(input_ptr)[1]] >> 4))
 
-#define COMPOSE_OUTPUT_BYTE_1(input_ptr)        \
-  (uint8_t)((decode_table[input_ptr[1]] << 4) | \
-            (decode_table[input_ptr[2]] >> 2))
+#define COMPOSE_OUTPUT_BYTE_1(input_ptr)          \
+  (uint8_t)((decode_table[(input_ptr)[1]] << 4) | \
+            (decode_table[(input_ptr)[2]] >> 2))
 
 #define COMPOSE_OUTPUT_BYTE_2(input_ptr) \
-  (uint8_t)((decode_table[input_ptr[2]] << 6) | decode_table[input_ptr[3]])
+  (uint8_t)((decode_table[(input_ptr)[2]] << 6) | decode_table[(input_ptr)[3]])
 
 // By RFC 4648, if the length of the encoded string without padding is 4n+r,
 // the length of decoded string is: 1) 3n if r = 0, 2) 3n + 1 if r = 2, 3, or
@@ -146,7 +148,7 @@ bool grpc_base64_decode_partial(struct grpc_base64_decode_context* ctx) {
       switch (input_tail) {
         case 3:
           ctx->output_cur[1] = COMPOSE_OUTPUT_BYTE_1(ctx->input_cur);
-        /* fallthrough */
+          ABSL_FALLTHROUGH_INTENDED;
         case 2:
           ctx->output_cur[0] = COMPOSE_OUTPUT_BYTE_0(ctx->input_cur);
       }

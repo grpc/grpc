@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/compression/compression_args.h"
+
 #include <limits.h>
 #include <string.h>
 
@@ -28,7 +30,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/compression/compression_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 
@@ -55,7 +56,7 @@ grpc_channel_args* grpc_channel_args_set_channel_default_compression_algorithm(
   GPR_ASSERT(algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT);
   grpc_arg tmp;
   tmp.type = GRPC_ARG_INTEGER;
-  tmp.key = (char*)GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM;
+  tmp.key = const_cast<char*>(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM);
   tmp.value.integer = algorithm;
   return grpc_channel_args_copy_and_add(a, &tmp, 1);
 }
@@ -108,7 +109,8 @@ grpc_channel_args* grpc_channel_args_compression_algorithm_set_state(
     /* create a new arg */
     grpc_arg tmp;
     tmp.type = GRPC_ARG_INTEGER;
-    tmp.key = (char*)GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET;
+    tmp.key =
+        const_cast<char*>(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET);
     /* all enabled by default */
     tmp.value.integer = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
     if (state != 0) {

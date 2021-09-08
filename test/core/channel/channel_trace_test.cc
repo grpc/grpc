@@ -16,6 +16,8 @@
  *
  */
 
+#include "src/core/lib/channel/channel_trace.h"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -25,19 +27,14 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/surface/channel.h"
-
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
-
-#include <stdlib.h>
-#include <string.h>
 
 namespace grpc_core {
 namespace channelz {
@@ -73,8 +70,8 @@ void ValidateChannelTraceData(const Json& json,
   Json::Object object = json.object_value();
   Json& num_events_logged_json = object["numEventsLogged"];
   ASSERT_EQ(num_events_logged_json.type(), Json::Type::STRING);
-  size_t num_events_logged =
-      (size_t)strtol(num_events_logged_json.string_value().c_str(), nullptr, 0);
+  size_t num_events_logged = static_cast<size_t>(
+      strtol(num_events_logged_json.string_value().c_str(), nullptr, 0));
   ASSERT_EQ(num_events_logged, num_events_logged_expected);
   Json& start_time_json = object["creationTimestamp"];
   ASSERT_EQ(start_time_json.type(), Json::Type::STRING);
@@ -102,7 +99,7 @@ void ValidateChannelTrace(ChannelTrace* tracer, size_t num_events_logged) {
 
 class ChannelFixture {
  public:
-  ChannelFixture(int max_tracer_event_memory) {
+  explicit ChannelFixture(int max_tracer_event_memory) {
     grpc_arg client_a = grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
         max_tracer_event_memory);

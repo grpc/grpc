@@ -17,11 +17,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import logging
 import argparse
+import logging
+
 import grpc
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
+
+helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
+    "helloworld.proto")
 
 
 def process(stub, request):

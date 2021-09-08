@@ -14,17 +14,18 @@
 """Tests behavior of the Call classes."""
 
 import asyncio
+import datetime
 import logging
 import unittest
-import datetime
 
 import grpc
 from grpc.experimental import aio
 
-from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
+from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import test_pb2_grpc
+from tests_aio.unit._constants import UNREACHABLE_TARGET
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
-from tests_aio.unit._constants import UNREACHABLE_TARGET
 
 _SHORT_TIMEOUT_S = datetime.timedelta(seconds=1).total_seconds()
 
@@ -472,6 +473,24 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
 
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
+    async def test_empty_responses(self):
+        # Prepares the request
+        request = messages_pb2.StreamingOutputCallRequest()
+        for _ in range(_NUM_STREAM_RESPONSES):
+            request.response_parameters.append(
+                messages_pb2.ResponseParameters())
+
+        # Invokes the actual RPC
+        call = self._stub.StreamingOutputCall(request)
+
+        for _ in range(_NUM_STREAM_RESPONSES):
+            response = await call.read()
+            self.assertIs(type(response),
+                          messages_pb2.StreamingOutputCallResponse)
+            self.assertEqual(b'', response.SerializeToString())
+
+        self.assertEqual(grpc.StatusCode.OK, await call.code())
+
 
 class TestStreamUnaryCall(_MulticallableTestMixin, AioTestBase):
 
@@ -624,6 +643,10 @@ class TestStreamUnaryCall(_MulticallableTestMixin, AioTestBase):
 _STREAM_OUTPUT_REQUEST_ONE_RESPONSE = messages_pb2.StreamingOutputCallRequest()
 _STREAM_OUTPUT_REQUEST_ONE_RESPONSE.response_parameters.append(
     messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE))
+_STREAM_OUTPUT_REQUEST_ONE_EMPTY_RESPONSE = messages_pb2.StreamingOutputCallRequest(
+)
+_STREAM_OUTPUT_REQUEST_ONE_EMPTY_RESPONSE.response_parameters.append(
+    messages_pb2.ResponseParameters())
 
 
 class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
@@ -806,6 +829,15 @@ class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
         async for response in call:
             self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
+        self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
+    async def test_empty_ping_pong(self):
+        call = self._stub.FullDuplexCall()
+        for _ in range(_NUM_STREAM_RESPONSES):
+            await call.write(_STREAM_OUTPUT_REQUEST_ONE_EMPTY_RESPONSE)
+            response = await call.read()
+            self.assertEqual(b'', response.SerializeToString())
+        await call.done_writing()
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
 

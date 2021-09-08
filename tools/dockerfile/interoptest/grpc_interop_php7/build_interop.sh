@@ -27,14 +27,17 @@ ${name}')
 cp -r /var/local/jenkins/service_account $HOME || true
 
 cd /var/local/git/grpc
+grpc_root="$(pwd)"
 
-# Install gRPC C core and build codegen plugins
-make -j4 install_c plugins
+# Install gRPC C core
+make -j4 shared_c static_c
 
-(cd src/php/ext/grpc && phpize && ./configure && make -j4)
-
-# Install protobuf (need access to protoc)
-(cd third_party/protobuf && make -j4 install)
+# Build gRPC PHP native extension
+pushd src/php/ext/grpc
+phpize
+GRPC_LIB_SUBDIR=libs/opt ./configure --enable-grpc="${grpc_root}"
+make -j4
+popd
 
 cd src/php
 

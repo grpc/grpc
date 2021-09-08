@@ -33,8 +33,6 @@ VIRTUALENV=yapf_virtual_environment
 
 python3 -m virtualenv $VIRTUALENV -p $(which python3)
 PYTHON=${VIRTUALENV}/bin/python
-"$PYTHON" -m pip install --upgrade pip==19.3.1
-"$PYTHON" -m pip install --upgrade futures
-"$PYTHON" -m pip install yapf==0.28.0
+"$PYTHON" -m pip install yapf==0.30.0
 
-$PYTHON -m yapf $ACTION --recursive --style=setup.cfg "${DIRS[@]}"
+$PYTHON -m yapf $ACTION --parallel --recursive --style=setup.cfg "${DIRS[@]}"

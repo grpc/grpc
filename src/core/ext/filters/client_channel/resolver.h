@@ -32,6 +32,9 @@
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount;
 
+// Name associated with individual address, if available.
+#define GRPC_ARG_ADDRESS_NAME "grpc.address_name"
+
 namespace grpc_core {
 
 /// Interface for name resolution.
@@ -52,7 +55,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
   struct Result {
     ServerAddressList addresses;
     RefCountedPtr<ServiceConfig> service_config;
-    grpc_error* service_config_error = GRPC_ERROR_NONE;
+    grpc_error_handle service_config_error = GRPC_ERROR_NONE;
     const grpc_channel_args* args = nullptr;
 
     // TODO(roth): Remove everything below once grpc_error and
@@ -78,7 +81,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
     /// Returns a transient error to the channel.
     /// If the resolver does not set the GRPC_ERROR_INT_GRPC_STATUS
     /// attribute on the error, calls will be failed with status UNKNOWN.
-    virtual void ReturnError(grpc_error* error) = 0;
+    virtual void ReturnError(grpc_error_handle error) = 0;
 
     // TODO(yashkt): As part of the service config error handling
     // changes, add a method to parse the service config JSON string.
@@ -87,7 +90,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
   // Not copyable nor movable.
   Resolver(const Resolver&) = delete;
   Resolver& operator=(const Resolver&) = delete;
-  virtual ~Resolver() = default;
+  ~Resolver() override = default;
 
   /// Starts resolving.
   virtual void StartLocked() = 0;
@@ -122,21 +125,10 @@ class Resolver : public InternallyRefCounted<Resolver> {
   }
 
  protected:
-  Resolver(std::shared_ptr<WorkSerializer> work_serializer,
-           std::unique_ptr<ResultHandler> result_handler);
+  Resolver();
 
   /// Shuts down the resolver.
   virtual void ShutdownLocked() = 0;
-
-  std::shared_ptr<WorkSerializer> work_serializer() const {
-    return work_serializer_;
-  }
-
-  ResultHandler* result_handler() const { return result_handler_.get(); }
-
- private:
-  std::shared_ptr<WorkSerializer> work_serializer_;
-  std::unique_ptr<ResultHandler> result_handler_;
 };
 
 }  // namespace grpc_core

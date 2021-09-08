@@ -28,3 +28,6 @@ URI.2 = https://bar.test.domain.com/test
 URI.3 = spiffe://foo.com/bar/baz
 email.1 = foo@test.domain.com
 email.2 = bar@test.domain.com
+IP.1 = 192.168.7.1
+IP.2 = 13::17
+RID.1 = 1.2.3.4

@@ -43,7 +43,7 @@ class ThreadPoolInterface {
   // current thread to be blocked (in case of unable to schedule).
   // Closure should contain a function pointer and arguments it will take, more
   // details for closure struct at /grpc/include/grpc/impl/codegen/grpc_types.h
-  virtual void Add(grpc_experimental_completion_queue_functor* closure) = 0;
+  virtual void Add(grpc_completion_queue_functor* closure) = 0;
 
   // Returns the current number of pending closures
   virtual int num_pending_closures() const = 0;
@@ -65,9 +65,9 @@ class ThreadPoolWorker {
   ThreadPoolWorker(const char* thd_name, MPMCQueueInterface* queue,
                    Thread::Options& options, int index)
       : queue_(queue), thd_name_(thd_name), index_(index) {
-    thd_ = Thread(thd_name,
-                  [](void* th) { static_cast<ThreadPoolWorker*>(th)->Run(); },
-                  this, nullptr, options);
+    thd_ = Thread(
+        thd_name, [](void* th) { static_cast<ThreadPoolWorker*>(th)->Run(); },
+        this, nullptr, options);
   }
 
   ~ThreadPoolWorker() {}
@@ -99,7 +99,7 @@ class ThreadPool : public ThreadPoolInterface {
   // Creates a thread pool with size of "num_threads", with default thread name
   // "ThreadPoolWorker" and all thread options set to default. If the given size
   // is 0 or less, there will be 1 worker thread created inside pool.
-  ThreadPool(int num_threads);
+  explicit ThreadPool(int num_threads);
 
   // Same as ThreadPool(int num_threads) constructor, except
   // that it also sets "thd_name" as the name of all threads in the thread pool.
@@ -120,7 +120,7 @@ class ThreadPool : public ThreadPoolInterface {
 
   // Adds given closure into pending queue immediately. Since closure queue has
   // infinite length, this routine will not block.
-  void Add(grpc_experimental_completion_queue_functor* closure) override;
+  void Add(grpc_completion_queue_functor* closure) override;
 
   int num_pending_closures() const override;
   int pool_capacity() const override;
@@ -134,7 +134,8 @@ class ThreadPool : public ThreadPoolInterface {
   ThreadPoolWorker** threads_ = nullptr;  // Array of worker threads
   MPMCQueueInterface* queue_ = nullptr;   // Closure queue
 
-  Atomic<bool> shut_down_{false};  // Destructor has been called if set to true
+  std::atomic<bool> shut_down_{
+      false};  // Destructor has been called if set to true
 
   void SharedThreadPoolConstructor();
   // For ThreadPool, default stack size for mobile platform is 1952K. for other

@@ -21,8 +21,6 @@
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <fcntl.h>
 #include <string.h>
 
@@ -30,9 +28,11 @@
 #include <grpc/grpc_posix.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
 typedef struct {
@@ -119,6 +119,6 @@ int main(int argc, char** argv) {
 
 #else /* GRPC_POSIX_SOCKET */
 
-int main(int argc, char** argv) { return 1; }
+int main(int /* argc */, char** /* argv */) { return 1; }
 
 #endif /* GRPC_POSIX_SOCKET */

@@ -15,11 +15,13 @@
 # limitations under the License.
 
 from __future__ import print_function
+
 import json
+import os
 import pipes
 import shutil
 import sys
-import os
+
 import yaml
 
 run_tests_root = os.path.abspath(
@@ -77,7 +79,8 @@ def guess_cpu(scenario_json, is_tsan):
     server = threads_required(scenario_json, 'server', is_tsan)
     # make an arbitrary guess if set to auto-detect
     # about the size of the jenkins instances we have for unit tests
-    if client == 0 or server == 0: return 'capacity'
+    if client == 0 or server == 0:
+        return 'capacity'
     return (scenario_json['num_clients'] * client +
             scenario_json['num_servers'] * server)
 

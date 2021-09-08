@@ -16,11 +16,13 @@
  *
  */
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <gtest/gtest.h>
 #include <stdio.h>
 #include <string.h>
+
+#include <gtest/gtest.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
@@ -44,7 +46,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-void* tag(intptr_t t) { return (void*)t; }
+void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 gpr_timespec five_seconds_time() { return grpc_timeout_seconds_to_deadline(5); }
 
@@ -193,7 +195,6 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
       auth, GRPC_SSL_SESSION_REUSED_PROPERTY);
   const grpc_auth_property* property = grpc_auth_property_iterator_next(&it);
   GPR_ASSERT(property != nullptr);
-
   if (expect_session_reuse) {
     GPR_ASSERT(strcmp(property->value, "true") == 0);
   } else {

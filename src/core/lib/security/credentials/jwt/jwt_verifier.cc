@@ -87,10 +87,11 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
     return Json();  // JSON null
   }
   absl::string_view string = grpc_core::StringViewFromSlice(slice);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(string, &error);
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s", grpc_error_string(error));
+    gpr_log(GPR_ERROR, "JSON parse error: %s",
+            grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
     json = Json();  // JSON null
   }
@@ -149,7 +150,8 @@ static jose_header* jose_header_from_json(Json json) {
      https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
    */
   alg_value = it->second.string_value().c_str();
-  if (it->second.type() != Json::Type::STRING || strncmp(alg_value, "RS", 2) ||
+  if (it->second.type() != Json::Type::STRING ||
+      strncmp(alg_value, "RS", 2) != 0 ||
       evp_md_from_alg(alg_value) == nullptr) {
     gpr_log(GPR_ERROR, "Invalid alg field");
     goto error;
@@ -411,7 +413,7 @@ static Json json_from_http(const grpc_httpcli_response* response) {
             response->status);
     return Json();  // JSON null
   }
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(
       absl::string_view(response->body, response->body_length), &error);
   if (error != GRPC_ERROR_NONE) {
@@ -626,7 +628,7 @@ end:
   return result;
 }
 
-static void on_keys_retrieved(void* user_data, grpc_error* /*error*/) {
+static void on_keys_retrieved(void* user_data, grpc_error_handle /*error*/) {
   verifier_cb_ctx* ctx = static_cast<verifier_cb_ctx*>(user_data);
   Json json = json_from_http(&ctx->responses[HTTP_RESPONSE_KEYS]);
   EVP_PKEY* verification_key = nullptr;
@@ -665,7 +667,8 @@ end:
   verifier_cb_ctx_destroy(ctx);
 }
 
-static void on_openid_config_retrieved(void* user_data, grpc_error* /*error*/) {
+static void on_openid_config_retrieved(void* user_data,
+                                       grpc_error_handle /*error*/) {
   verifier_cb_ctx* ctx = static_cast<verifier_cb_ctx*>(user_data);
   const grpc_http_response* response = &ctx->responses[HTTP_RESPONSE_OPENID];
   Json json = json_from_http(response);
@@ -692,7 +695,7 @@ static void on_openid_config_retrieved(void* user_data, grpc_error* /*error*/) {
   req.host = gpr_strdup(jwks_uri);
   req.http.path = const_cast<char*>(strchr(jwks_uri, '/'));
   if (req.http.path == nullptr) {
-    req.http.path = (char*)"";
+    req.http.path = const_cast<char*>("");
   } else {
     *(req.host + (req.http.path - jwks_uri)) = '\0';
   }
@@ -706,7 +709,6 @@ static void on_openid_config_retrieved(void* user_data, grpc_error* /*error*/) {
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
-  grpc_resource_quota_unref_internal(resource_quota);
   gpr_free(req.host);
   return;
 
@@ -753,8 +755,8 @@ const char* grpc_jwt_issuer_email_domain(const char* issuer) {
   if (dot == nullptr || dot == email_domain) return email_domain;
   GPR_ASSERT(dot > email_domain);
   /* There may be a subdomain, we just want the domain. */
-  dot = static_cast<const char*>(gpr_memrchr(
-      (void*)email_domain, '.', static_cast<size_t>(dot - email_domain)));
+  dot = static_cast<const char*>(
+      gpr_memrchr(email_domain, '.', static_cast<size_t>(dot - email_domain)));
   if (dot == nullptr) return email_domain;
   return dot + 1;
 }
@@ -831,7 +833,6 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
       &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
       &ctx->responses[rsp_idx]);
-  grpc_resource_quota_unref_internal(resource_quota);
   gpr_free(req.host);
   gpr_free(req.http.path);
   return;

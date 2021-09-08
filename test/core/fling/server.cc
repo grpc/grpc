@@ -16,14 +16,14 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #ifndef _WIN32
 /* This is for _exit() below, which is temporary. */
 #include <unistd.h>
@@ -59,7 +59,7 @@ static int was_cancelled = 2;
 static grpc_op unary_ops[6];
 static int got_sigint = 0;
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 typedef enum {
   FLING_SERVER_NEW_REQUEST = 1,
@@ -253,7 +253,7 @@ int main(int argc, char** argv) {
     s = static_cast<call_state*>(ev.tag);
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
-        switch ((intptr_t)s) {
+        switch (reinterpret_cast<intptr_t>(s)) {
           case FLING_SERVER_NEW_REQUEST:
             if (call != nullptr) {
               if (0 == grpc_slice_str_cmp(call_details.method,

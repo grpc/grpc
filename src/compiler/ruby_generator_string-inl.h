@@ -19,11 +19,11 @@
 #ifndef GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_STRING_INL_H
 #define GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_STRING_INL_H
 
-#include "src/compiler/config.h"
-
 #include <algorithm>
 #include <sstream>
 #include <vector>
+
+#include "src/compiler/config.h"
 
 using std::getline;
 using std::transform;
@@ -116,16 +116,15 @@ inline std::string RubyPackage(const grpc::protobuf::FileDescriptor* file) {
 }
 
 // RubyTypeOf updates a proto type to the required ruby equivalent.
-inline std::string RubyTypeOf(const grpc::protobuf::Descriptor* descriptor,
-                              const std::string& package) {
+inline std::string RubyTypeOf(const grpc::protobuf::Descriptor* descriptor) {
   std::string proto_type = descriptor->full_name();
-  ReplacePrefix(&proto_type, package,
-                "");                    // remove the leading package if present
-  ReplacePrefix(&proto_type, ".", "");  // remove the leading . (no package)
   if (descriptor->file()->options().has_ruby_package()) {
+    // remove the leading package if present
+    ReplacePrefix(&proto_type, descriptor->file()->package(), "");
+    ReplacePrefix(&proto_type, ".", "");  // remove the leading . (no package)
     proto_type = RubyPackage(descriptor->file()) + "." + proto_type;
   }
-  std::string res(proto_type);
+  std::string res("." + proto_type);
   if (res.find('.') == std::string::npos) {
     return res;
   } else {

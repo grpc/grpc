@@ -18,8 +18,8 @@ py_binary(
     python_version = "PY3",
     srcs_version = "PY2AND3",
     deps = [
-        "//examples:helloworld_py_pb2",
-        "//examples:helloworld_py_pb2_grpc",
+        "//examples/protos:helloworld_py_pb2",
+        "//examples/protos:helloworld_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
     ],
 )
@@ -30,8 +30,8 @@ py_binary(
     python_version = "PY3",
     srcs_version = "PY2AND3",
     deps = [
-        "//examples:helloworld_py_pb2",
-        "//examples:helloworld_py_pb2_grpc",
+        "//examples/protos:helloworld_py_pb2",
+        "//examples/protos:helloworld_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
     ],
 )

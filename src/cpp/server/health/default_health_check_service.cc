@@ -16,18 +16,19 @@
  *
  */
 
+#include "src/cpp/server/health/default_health_check_service.h"
+
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "upb/upb.hpp"
 
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/method_handler_impl.h>
+#include <grpcpp/impl/codegen/method_handler.h>
 
-#include "src/cpp/server/health/default_health_check_service.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
-#include "upb/upb.hpp"
 
 #define MAX_SERVICE_NAME_LENGTH 200
 
@@ -114,7 +115,7 @@ DefaultHealthCheckService::HealthCheckServiceImpl*
 DefaultHealthCheckService::GetHealthCheckService(
     std::unique_ptr<ServerCompletionQueue> cq) {
   GPR_ASSERT(impl_ == nullptr);
-  impl_.reset(new HealthCheckServiceImpl(this, std::move(cq)));
+  impl_ = absl::make_unique<HealthCheckServiceImpl>(this, std::move(cq));
   return impl_.get();
 }
 
@@ -160,8 +161,8 @@ DefaultHealthCheckService::HealthCheckServiceImpl::HealthCheckServiceImpl(
   AddMethod(new internal::RpcServiceMethod(
       kHealthWatchMethodName, internal::RpcMethod::SERVER_STREAMING, nullptr));
   // Create serving thread.
-  thread_ = std::unique_ptr<::grpc_core::Thread>(
-      new ::grpc_core::Thread("grpc_health_check_service", Serve, this));
+  thread_ = absl::make_unique<::grpc_core::Thread>("grpc_health_check_service",
+                                                   Serve, this);
 }
 
 DefaultHealthCheckService::HealthCheckServiceImpl::~HealthCheckServiceImpl() {
@@ -242,10 +243,9 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::EncodeResponse(
       grpc_health_v1_HealthCheckResponse_new(arena.ptr());
   grpc_health_v1_HealthCheckResponse_set_status(
       response_struct,
-      status == NOT_FOUND
-          ? grpc_health_v1_HealthCheckResponse_SERVICE_UNKNOWN
-          : status == SERVING ? grpc_health_v1_HealthCheckResponse_SERVING
-                              : grpc_health_v1_HealthCheckResponse_NOT_SERVING);
+      status == NOT_FOUND ? grpc_health_v1_HealthCheckResponse_SERVICE_UNKNOWN
+      : status == SERVING ? grpc_health_v1_HealthCheckResponse_SERVING
+                          : grpc_health_v1_HealthCheckResponse_NOT_SERVING);
   size_t buf_length;
   char* buf = grpc_health_v1_HealthCheckResponse_serialize(
       response_struct, arena.ptr(), &buf_length);

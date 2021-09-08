@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CONFIG_PROTOBUF_H
 #define GRPCPP_IMPL_CODEGEN_CONFIG_PROTOBUF_H
 
+// IWYU pragma: private
+
 #define GRPC_OPEN_SOURCE_PROTO
 
 #ifndef GRPC_CUSTOM_MESSAGE
@@ -65,6 +67,7 @@
 
 #ifndef GRPC_CUSTOM_JSONUTIL
 #include <google/protobuf/util/json_util.h>
+#include <google/protobuf/util/type_resolver_util.h>
 #define GRPC_CUSTOM_JSONUTIL ::google::protobuf::util
 #define GRPC_CUSTOM_UTIL_STATUS ::google::protobuf::util::Status
 #endif
@@ -90,6 +93,7 @@ namespace util {
 typedef GRPC_CUSTOM_UTIL_STATUS Status;
 }  // namespace util
 
+// NOLINTNEXTLINE(misc-unused-alias-decls)
 namespace json = GRPC_CUSTOM_JSONUTIL;
 
 namespace io {

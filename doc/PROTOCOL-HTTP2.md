@@ -215,7 +215,7 @@ The following mapping from RST_STREAM error codes to GRPC error codes is applied
 
 HTTP2 Code|GRPC Code
 ----------|-----------
-NO_ERROR(0)|INTERNAL - An explicit GRPC status of OK should have been sent but this might be used to aggressively lameduck in some scenarios.
+NO_ERROR(0)|INTERNAL - An explicit GRPC status of OK should have been sent but this might be used to aggressively [lameduck](https://landing.google.com/sre/sre-book/chapters/load-balancing-datacenter/#identifying-bad-tasks-flow-control-and-lame-ducks-bEs0uy) in some scenarios.
 PROTOCOL_ERROR(1)|INTERNAL
 INTERNAL_ERROR(2)|INTERNAL
 FLOW_CONTROL_ERROR(3)|INTERNAL

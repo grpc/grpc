@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -30,13 +28,15 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
 enum { TIMEOUT = 200000 };
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 void gpr_default_log(gpr_log_func_args* args);
 
@@ -53,10 +53,11 @@ static void test_no_error_log(gpr_log_func_args* args) {
   }
 }
 
-static gpr_atm g_log_func = (gpr_atm)gpr_default_log;
+static gpr_atm g_log_func = reinterpret_cast<gpr_atm>(gpr_default_log);
 
 static void log_dispatcher_func(gpr_log_func_args* args) {
-  gpr_log_func log_func = (gpr_log_func)gpr_atm_no_barrier_load(&g_log_func);
+  gpr_log_func log_func =
+      reinterpret_cast<gpr_log_func>(gpr_atm_no_barrier_load(&g_log_func));
   log_func(args);
 }
 

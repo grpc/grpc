@@ -16,8 +16,10 @@
 set -ex
 
 readonly UPB_GENERATED_SRC=src/core/ext/upb-generated
+readonly UPBDEFS_GENERATED_SRC=src/core/ext/upbdefs-generated
 readonly UPB_TMP_OUTPUT="$(mktemp -d)"
 
 tools/codegen/core/gen_upb_api.sh "$UPB_TMP_OUTPUT"
 
-diff -rq "$UPB_GENERATED_SRC" "$UPB_TMP_OUTPUT"
+diff -rq "$UPB_GENERATED_SRC" "$UPB_TMP_OUTPUT/upb-generated"
+diff -rq "$UPBDEFS_GENERATED_SRC" "$UPB_TMP_OUTPUT/upbdefs-generated"

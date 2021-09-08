@@ -21,7 +21,8 @@
 #include <sstream>
 #include <thread>
 
-#include <gflags/gflags.h>
+#include "absl/flags/flag.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -37,12 +38,13 @@
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
 
-DEFINE_bool(use_alts, false,
-            "Whether to use alts. Enable alts will disable tls.");
-DEFINE_bool(use_tls, false, "Whether to use tls.");
-DEFINE_string(custom_credentials_type, "", "User provided credentials type.");
-DEFINE_int32(port, 0, "Server port.");
-DEFINE_int32(max_send_message_size, -1, "The maximum send message size.");
+ABSL_FLAG(bool, use_alts, false,
+          "Whether to use alts. Enable alts will disable tls.");
+ABSL_FLAG(bool, use_tls, false, "Whether to use tls.");
+ABSL_FLAG(std::string, custom_credentials_type, "",
+          "User provided credentials type.");
+ABSL_FLAG(int32_t, port, 0, "Server port.");
+ABSL_FLAG(int32_t, max_send_message_size, -1, "The maximum send message size.");
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -51,7 +53,6 @@ using grpc::ServerCredentials;
 using grpc::ServerReader;
 using grpc::ServerReaderWriter;
 using grpc::ServerWriter;
-using grpc::SslServerCredentialsOptions;
 using grpc::Status;
 using grpc::WriteOptions;
 using grpc::testing::InteropServerContextInspector;
@@ -139,7 +140,7 @@ class TestServiceImpl : public TestService::Service {
  public:
   Status EmptyCall(ServerContext* context,
                    const grpc::testing::Empty* /*request*/,
-                   grpc::testing::Empty* /*response*/) {
+                   grpc::testing::Empty* /*response*/) override {
     MaybeEchoMetadata(context);
     return Status::OK;
   }
@@ -147,16 +148,16 @@ class TestServiceImpl : public TestService::Service {
   // Response contains current timestamp. We ignore everything in the request.
   Status CacheableUnaryCall(ServerContext* context,
                             const SimpleRequest* /*request*/,
-                            SimpleResponse* response) {
+                            SimpleResponse* response) override {
     gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
-    std::string timestamp = std::to_string((long long unsigned)ts.tv_nsec);
+    std::string timestamp = std::to_string(ts.tv_nsec);
     response->mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
     context->AddInitialMetadata("cache-control", "max-age=60, public");
     return Status::OK;
   }
 
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
-                   SimpleResponse* response) {
+                   SimpleResponse* response) override {
     MaybeEchoMetadata(context);
     if (request->has_response_compressed()) {
       const bool compression_requested = request->response_compressed().value();
@@ -192,7 +193,7 @@ class TestServiceImpl : public TestService::Service {
 
   Status StreamingOutputCall(
       ServerContext* context, const StreamingOutputCallRequest* request,
-      ServerWriter<StreamingOutputCallResponse>* writer) {
+      ServerWriter<StreamingOutputCallResponse>* writer) override {
     StreamingOutputCallResponse response;
     bool write_success = true;
     for (int i = 0; write_success && i < request->response_parameters_size();
@@ -233,7 +234,7 @@ class TestServiceImpl : public TestService::Service {
 
   Status StreamingInputCall(ServerContext* context,
                             ServerReader<StreamingInputCallRequest>* reader,
-                            StreamingInputCallResponse* response) {
+                            StreamingInputCallResponse* response) override {
     StreamingInputCallRequest request;
     int aggregated_payload_size = 0;
     while (reader->Read(&request)) {
@@ -253,7 +254,7 @@ class TestServiceImpl : public TestService::Service {
   Status FullDuplexCall(
       ServerContext* context,
       ServerReaderWriter<StreamingOutputCallResponse,
-                         StreamingOutputCallRequest>* stream) {
+                         StreamingOutputCallRequest>* stream) override {
     MaybeEchoMetadata(context);
     StreamingOutputCallRequest request;
     StreamingOutputCallResponse response;
@@ -289,7 +290,7 @@ class TestServiceImpl : public TestService::Service {
   Status HalfDuplexCall(
       ServerContext* /*context*/,
       ServerReaderWriter<StreamingOutputCallResponse,
-                         StreamingOutputCallRequest>* stream) {
+                         StreamingOutputCallRequest>* stream) override {
     std::vector<StreamingOutputCallRequest> requests;
     StreamingOutputCallRequest request;
     while (stream->Read(&request)) {
@@ -318,14 +319,15 @@ class TestServiceImpl : public TestService::Service {
 
 void grpc::testing::interop::RunServer(
     const std::shared_ptr<ServerCredentials>& creds) {
-  RunServer(creds, FLAGS_port, nullptr, nullptr);
+  RunServer(creds, absl::GetFlag(FLAGS_port), nullptr, nullptr);
 }
 
 void grpc::testing::interop::RunServer(
     const std::shared_ptr<ServerCredentials>& creds,
     std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
         server_options) {
-  RunServer(creds, FLAGS_port, nullptr, std::move(server_options));
+  RunServer(creds, absl::GetFlag(FLAGS_port), nullptr,
+            std::move(server_options));
 }
 
 void grpc::testing::interop::RunServer(
@@ -355,8 +357,8 @@ void grpc::testing::interop::RunServer(
       builder.SetOption(std::move((*server_options)[i]));
     }
   }
-  if (FLAGS_max_send_message_size >= 0) {
-    builder.SetMaxSendMessageSize(FLAGS_max_send_message_size);
+  if (absl::GetFlag(FLAGS_max_send_message_size) >= 0) {
+    builder.SetMaxSendMessageSize(absl::GetFlag(FLAGS_max_send_message_size));
   }
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());

@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_STATUS_H
 #define GRPCPP_IMPL_CODEGEN_STATUS_H
 
+// IWYU pragma: private, include <grpcpp/support/status.h>
+
 #include <grpc/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/status_code_enum.h>

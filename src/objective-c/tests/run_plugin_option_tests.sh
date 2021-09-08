@@ -37,11 +37,12 @@ rm -rf RemoteTestClient/*pb*
 $PROTOC \
     --plugin=protoc-gen-grpc=$PLUGIN \
     --objc_out=RemoteTestClient \
-    --grpc_out=runtime_import_prefix=$RUNTIME_IMPORT_PREFIX:RemoteTestClient \
+    --grpc_out=grpc_local_import_prefix=$RUNTIME_IMPORT_PREFIX,runtime_import_prefix=$RUNTIME_IMPORT_PREFIX:RemoteTestClient \
     -I $ROOT_DIR \
     -I ../../../third_party/protobuf/src \
     $ROOT_DIR/src/objective-c/examples/RemoteTestClient/*.proto
 
+# Verify the "runtime_import_prefix" option
 # Verify the output proto filename
 [ -e ./RemoteTestClient/src/objective-c/examples/RemoteTestClient/Test.pbrpc.m ] || {
     echo >&2 "protoc outputs wrong filename."
@@ -61,6 +62,19 @@ $PROTOC \
     egrep '#import "'"${RUNTIME_IMPORT_PREFIX}"`" ] && {
     echo >&2 "protoc generated import with wrong filename."
     exit 1
+}
+
+# Verify the "grpc_local_import_directory" option
+# Verify system files are imported in a "local" way in header files.
+[ "`cat RemoteTestClient/src/objective-c/examples/RemoteTestClient/Test.pbrpc.h |
+    egrep '#import "'"${RUNTIME_IMPORT_PREFIX}"'/ProtoRPC/.*\.h'`"] || {
+    echo >&2 "grpc system files should be imported with full paths."    
+}
+
+# Verify system files are imported in a "local" way in source files.
+[ "`cat RemoteTestClient/src/objective-c/examples/RemoteTestClient/Test.pbrpc.m |
+    egrep '#import "'"${RUNTIME_IMPORT_PREFIX}"'/ProtoRPC/.*\.h'`"] || {
+    echo >&2 "grpc system files should be imported with full paths."    
 }
 
 # Run one extra command to clear $? before exiting the script to prevent

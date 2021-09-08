@@ -71,6 +71,38 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     add_message "grpc.testing.LoadBalancerStatsResponse" do
       map :rpcs_by_peer, :string, :int32, 1
       optional :num_failures, :int32, 2
+      map :rpcs_by_method, :string, :message, 3, "grpc.testing.LoadBalancerStatsResponse.RpcsByPeer"
+    end
+    add_message "grpc.testing.LoadBalancerStatsResponse.RpcsByPeer" do
+      map :rpcs_by_peer, :string, :int32, 1
+    end
+    add_message "grpc.testing.LoadBalancerAccumulatedStatsRequest" do
+    end
+    add_message "grpc.testing.LoadBalancerAccumulatedStatsResponse" do
+      map :num_rpcs_started_by_method, :string, :int32, 1
+      map :num_rpcs_succeeded_by_method, :string, :int32, 2
+      map :num_rpcs_failed_by_method, :string, :int32, 3
+      map :stats_per_method, :string, :message, 4, "grpc.testing.LoadBalancerAccumulatedStatsResponse.MethodStats"
+    end
+    add_message "grpc.testing.LoadBalancerAccumulatedStatsResponse.MethodStats" do
+      optional :rpcs_started, :int32, 1
+      map :result, :int32, :int32, 2
+    end
+    add_message "grpc.testing.ClientConfigureRequest" do
+      repeated :types, :enum, 1, "grpc.testing.ClientConfigureRequest.RpcType"
+      repeated :metadata, :message, 2, "grpc.testing.ClientConfigureRequest.Metadata"
+      optional :timeout_sec, :int32, 3
+    end
+    add_message "grpc.testing.ClientConfigureRequest.Metadata" do
+      optional :type, :enum, 1, "grpc.testing.ClientConfigureRequest.RpcType"
+      optional :key, :string, 2
+      optional :value, :string, 3
+    end
+    add_enum "grpc.testing.ClientConfigureRequest.RpcType" do
+      value :EMPTY_CALL, 0
+      value :UNARY_CALL, 1
+    end
+    add_message "grpc.testing.ClientConfigureResponse" do
     end
     add_enum "grpc.testing.PayloadType" do
       value :COMPRESSABLE, 0
@@ -99,6 +131,14 @@ module Grpc
     ReconnectInfo = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ReconnectInfo").msgclass
     LoadBalancerStatsRequest = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.LoadBalancerStatsRequest").msgclass
     LoadBalancerStatsResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.LoadBalancerStatsResponse").msgclass
+    LoadBalancerStatsResponse::RpcsByPeer = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.LoadBalancerStatsResponse.RpcsByPeer").msgclass
+    LoadBalancerAccumulatedStatsRequest = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.LoadBalancerAccumulatedStatsRequest").msgclass
+    LoadBalancerAccumulatedStatsResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.LoadBalancerAccumulatedStatsResponse").msgclass
+    LoadBalancerAccumulatedStatsResponse::MethodStats = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.LoadBalancerAccumulatedStatsResponse.MethodStats").msgclass
+    ClientConfigureRequest = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientConfigureRequest").msgclass
+    ClientConfigureRequest::Metadata = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientConfigureRequest.Metadata").msgclass
+    ClientConfigureRequest::RpcType = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientConfigureRequest.RpcType").enummodule
+    ClientConfigureResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientConfigureResponse").msgclass
     PayloadType = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.PayloadType").enummodule
     GrpclbRouteType = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.GrpclbRouteType").enummodule
   end

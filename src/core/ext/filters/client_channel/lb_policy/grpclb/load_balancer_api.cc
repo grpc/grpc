@@ -19,12 +19,13 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
-#include "src/core/lib/gpr/useful.h"
 
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/timestamp.upb.h"
 
 #include <grpc/support/alloc.h>
+
+#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
 
@@ -155,13 +156,13 @@ grpc_millis grpc_grpclb_duration_to_millis(
 
 }  // namespace
 
-bool GrpcLbResponseParse(const grpc_slice& encoded_grpc_grpclb_response,
+bool GrpcLbResponseParse(const grpc_slice& serialized_response,
                          upb_arena* arena, GrpcLbResponse* result) {
   grpc_lb_v1_LoadBalanceResponse* response =
       grpc_lb_v1_LoadBalanceResponse_parse(
           reinterpret_cast<const char*>(
-              GRPC_SLICE_START_PTR(encoded_grpc_grpclb_response)),
-          GRPC_SLICE_LENGTH(encoded_grpc_grpclb_response), arena);
+              GRPC_SLICE_START_PTR(serialized_response)),
+          GRPC_SLICE_LENGTH(serialized_response), arena);
   // Handle serverlist responses.
   if (ParseServerList(*response, &result->serverlist)) {
     result->type = result->SERVERLIST;

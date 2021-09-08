@@ -34,12 +34,23 @@ Most gRPC implementations support the following URI schemes:
     resolver does not support this, but the c-ares based resolver
     supports specifying this in the form "IP:port".)
 
-- `unix:path` or `unix://absolute_path` -- Unix domain sockets (Unix systems only)
+- `unix:path`, `unix://absolute_path` -- Unix domain sockets (Unix systems only)
   - `path` indicates the location of the desired socket.
   - In the first form, the path may be relative or absolute; in the
     second form, the path must be absolute (i.e., there will actually be
     three slashes, two prior to the path and another to begin the
     absolute path).
+
+- `unix-abstract:abstract_path` -- Unix domain socket in abstract namespace (Unix systems only)
+  - `abstract_path` indicates a name in the abstract namespace.
+  - The name has no connection with filesystem pathnames.
+  - No permissions will apply to the socket - any process/user may access the socket.
+  - The underlying implementation of Abstract sockets uses a null byte ('\0')
+    as the first character; the implementation will prepend this null. Do not include 
+    the null in `abstract_path`.
+  - `abstract_path` cannot contain null bytes.
+    - TODO(https://github.com/grpc/grpc/issues/24638): Unix allows abstract socket names to contain null bytes, 
+      but this is not supported by the gRPC C-core implementation.
 
 The following schemes are supported by the gRPC C-core implementation,
 but may not be supported in other languages:

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2016 gRPC authors.
 #
@@ -14,13 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-
-import sys
-import yaml
 import os
 import re
 import subprocess
+import sys
+
+import yaml
 
 errors = 0
 
@@ -66,7 +65,7 @@ if not check_version(top_version):
     errors += 1
     print(warning % ('version', top_version))
 
-for tag, value in settings.iteritems():
+for tag, value in settings.items():
     if re.match(r'^[a-z]+_version$', tag):
         value = Version(value)
         if tag != 'core_version':

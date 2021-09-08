@@ -54,8 +54,8 @@
   if (_callOptions.transport != NULL) {
     id<GRPCTransportFactory> transportFactory =
         [[GRPCTransportRegistry sharedInstance] getTransportFactoryWithID:_callOptions.transport];
-    if (!
-        [transportFactory respondsToSelector:@selector(createCoreChannelFactoryWithCallOptions:)]) {
+    if (![transportFactory
+            respondsToSelector:@selector(createCoreChannelFactoryWithCallOptions:)]) {
       // impossible because we are using GRPCCore now
       [NSException raise:NSInternalInconsistencyException
                   format:@"Transport factory type is wrong"];
@@ -100,14 +100,22 @@
 - (NSDictionary *)channelArgs {
   NSMutableDictionary *args = [NSMutableDictionary new];
 
-  NSString *userAgent = @"grpc-objc/" GRPC_OBJC_VERSION_STRING;
+  NSMutableString *userAgent = [[NSMutableString alloc] init];
   NSString *userAgentPrefix = _callOptions.userAgentPrefix;
   if (userAgentPrefix.length != 0) {
-    args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] =
-        [_callOptions.userAgentPrefix stringByAppendingFormat:@" %@", userAgent];
-  } else {
-    args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] = userAgent;
+    [userAgent appendFormat:@"%@ ", userAgentPrefix];
   }
+
+  NSString *gRPCUserAgent = [NSString
+      stringWithFormat:@"grpc-objc-%@/%@", [self getTransportTypeString], GRPC_OBJC_VERSION_STRING];
+  [userAgent appendString:gRPCUserAgent];
+
+  NSString *userAgentSuffix = _callOptions.userAgentSuffix;
+  if (userAgentSuffix.length != 0) {
+    [userAgent appendFormat:@" %@", userAgentSuffix];
+  }
+
+  args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] = [userAgent copy];
 
   NSString *hostNameOverride = _callOptions.hostNameOverride;
   if (hostNameOverride) {
@@ -159,6 +167,18 @@
   [args addEntriesFromDictionary:_callOptions.additionalChannelArgs];
 
   return args;
+}
+
+- (NSString *)getTransportTypeString {
+  switch (_callOptions.transportType) {
+    case GRPCTransportTypeCronet:
+      return @"cronet";
+    case GRPCTransportTypeInsecure:
+    case GRPCTransportTypeChttp2BoringSSL:
+      return @"cfstream";
+    default:
+      return @"unknown";
+  }
 }
 
 - (id)copyWithZone:(NSZone *)zone {
@@ -271,8 +291,11 @@
 }
 
 - (void)dealloc {
-  if (_unmanagedChannel) {
-    grpc_channel_destroy(_unmanagedChannel);
+  @synchronized(self) {
+    if (_unmanagedChannel) {
+      grpc_channel_destroy(_unmanagedChannel);
+      _unmanagedChannel = NULL;
+    }
   }
 }
 

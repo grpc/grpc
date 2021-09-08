@@ -21,15 +21,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/status.h>
+#include <stddef.h>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/time.h>
-#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,8 +86,7 @@ GRPCAPI void grpc_shutdown(void);
     https://github.com/grpc/grpc/issues/15334 */
 GRPCAPI int grpc_is_initialized(void);
 
-/** EXPERIMENTAL. Blocking shut down grpc library.
-    This is only for wrapped language to use now. */
+/** DEPRECATED. Recommend to use grpc_shutdown only */
 GRPCAPI void grpc_shutdown_blocking(void);
 
 /** Return a string representing the current version of grpc */
@@ -116,8 +115,7 @@ GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_pluck(
     of GRPC_CQ_CALLBACK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING.
     This function is experimental. */
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_callback(
-    grpc_experimental_completion_queue_functor* shutdown_callback,
-    void* reserved);
+    grpc_completion_queue_functor* shutdown_callback, void* reserved);
 
 /** Create a completion queue */
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create(
@@ -218,11 +216,6 @@ GRPCAPI grpc_call* grpc_channel_create_call(
     grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* completion_queue, grpc_slice method,
     const grpc_slice* host, gpr_timespec deadline, void* reserved);
-
-/** Ping the channels peer (load balanced channels will select one sub-channel
-    to ping); if the channel is not connected, posts a failed. */
-GRPCAPI void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
-                               void* tag, void* reserved);
 
 /** Pre-register a method/host pair on a channel.
     method and host are not owned and must remain alive while the channel is
@@ -417,6 +410,30 @@ GRPCAPI void grpc_server_register_completion_queue(grpc_server* server,
                                                    grpc_completion_queue* cq,
                                                    void* reserved);
 
+// There might be more methods added later, so users should take care to memset
+// this to 0 before using it.
+typedef struct {
+  void (*on_serving_status_update)(void* user_data, const char* uri,
+                                   grpc_status_code code,
+                                   const char* error_message);
+  void* user_data;
+} grpc_server_xds_status_notifier;
+
+typedef struct grpc_server_config_fetcher grpc_server_config_fetcher;
+
+/** EXPERIMENTAL.  Creates an xDS config fetcher. */
+GRPCAPI grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
+    grpc_server_xds_status_notifier notifier, const grpc_channel_args* args);
+
+/** EXPERIMENTAL.  Destroys a config fetcher. */
+GRPCAPI void grpc_server_config_fetcher_destroy(
+    grpc_server_config_fetcher* config_fetcher);
+
+/** EXPERIMENTAL.  Sets the server's config fetcher.  Takes ownership.
+    Must be called before adding ports */
+GRPCAPI void grpc_server_set_config_fetcher(
+    grpc_server* server, grpc_server_config_fetcher* config_fetcher);
+
 /** Add a HTTP2 over plaintext over tcp listener.
     Returns bound port number on success, 0 on failure.
     REQUIRES: server not started */
@@ -487,6 +504,10 @@ GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
 GRPCAPI void grpc_resource_quota_set_max_threads(
     grpc_resource_quota* resource_quota, int new_max_threads);
 
+/** EXPERIMENTAL.  Dumps xDS configs as a serialized ClientConfig proto.
+    The full name of the proto is envoy.service.status.v3.ClientConfig. */
+GRPCAPI grpc_slice grpc_dump_xds_configs();
+
 /** Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota
  */
 GRPCAPI const grpc_arg_pointer_vtable* grpc_resource_quota_arg_vtable(void);
@@ -532,6 +553,14 @@ GRPCAPI char* grpc_channelz_get_subchannel(intptr_t subchannel_id);
 /* Returns a single Socket, or else a NOT_FOUND code. The returned string
    is allocated and must be freed by the application. */
 GRPCAPI char* grpc_channelz_get_socket(intptr_t socket_id);
+
+/**
+ * EXPERIMENTAL - Subject to change.
+ * Fetch a vtable for grpc_channel_arg that points to
+ * grpc_authorization_policy_provider.
+ */
+GRPCAPI const grpc_arg_pointer_vtable*
+grpc_authorization_policy_provider_arg_vtable(void);
 
 #ifdef __cplusplus
 }

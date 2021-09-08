@@ -30,6 +30,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 static const int kConnectTimeout = 5;
@@ -40,7 +41,7 @@ static const int kBufferSize = 10000;
 
 static const int kRunLoopTimeout = 1;
 
-static void set_atm(void *arg, grpc_error *error) {
+static void set_atm(void *arg, grpc_error_handle error) {
   gpr_atm *p = static_cast<gpr_atm *>(arg);
   gpr_atm_full_cas(p, -1, reinterpret_cast<gpr_atm>(error));
 }
@@ -116,7 +117,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   resolved_addr.len = sizeof(struct sockaddr_in);
   addr->sin_family = AF_INET;
 
-  /* create a dummy server */
+  /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
   XCTAssertGreaterThanOrEqual(svr_fd, 0);
   XCTAssertEqual(bind(svr_fd, (struct sockaddr *)addr, (socklen_t)resolved_addr.len), 0);
@@ -125,7 +126,8 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   /* connect to it */
   XCTAssertEqual(getsockname(svr_fd, (struct sockaddr *)addr, (socklen_t *)&resolved_addr.len), 0);
   init_event_closure(&done, &connected);
-  grpc_tcp_client_connect(&done, &ep_, nullptr, nullptr, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_tcp_client_connect(&done, &ep_, grpc_slice_allocator_create_unlimited(), nullptr, nullptr,
+                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
 
   /* await the connection */
   do {
@@ -138,7 +140,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
 
   /* wait for the connection callback to finish */
   XCTAssertEqual([self waitForEvent:&connected timeout:kConnectTimeout], YES);
-  XCTAssertEqual(reinterpret_cast<grpc_error *>(connected), GRPC_ERROR_NONE);
+  XCTAssertEqual(reinterpret_cast<grpc_error_handle>(connected), GRPC_ERROR_NONE);
 }
 
 - (void)tearDown {
@@ -170,7 +172,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   grpc_endpoint_write(ep_, &write_slices, &write_done, nullptr);
 
   XCTAssertEqual([self waitForEvent:&write timeout:kWriteTimeout], YES);
-  XCTAssertEqual(reinterpret_cast<grpc_error *>(write), GRPC_ERROR_NONE);
+  XCTAssertEqual(reinterpret_cast<grpc_error_handle>(write), GRPC_ERROR_NONE);
 
   while (recv_size < kBufferSize) {
     ssize_t size = recv(svr_fd_, read_buffer, kBufferSize, 0);
@@ -189,7 +191,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
     init_event_closure(&read_done, &read);
     grpc_endpoint_read(ep_, &read_one_slice, &read_done, /*urgent=*/false);
     XCTAssertEqual([self waitForEvent:&read timeout:kReadTimeout], YES);
-    XCTAssertEqual(reinterpret_cast<grpc_error *>(read), GRPC_ERROR_NONE);
+    XCTAssertEqual(reinterpret_cast<grpc_error_handle>(read), GRPC_ERROR_NONE);
     grpc_slice_buffer_move_into(&read_one_slice, &read_slices);
     XCTAssertLessThanOrEqual(read_slices.length, kBufferSize);
   }
@@ -227,7 +229,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   grpc_endpoint_write(ep_, &write_slices, &write_done, nullptr);
 
   XCTAssertEqual([self waitForEvent:&write timeout:kWriteTimeout], YES);
-  XCTAssertEqual(reinterpret_cast<grpc_error *>(write), GRPC_ERROR_NONE);
+  XCTAssertEqual(reinterpret_cast<grpc_error_handle>(write), GRPC_ERROR_NONE);
 
   while (recv_size < kBufferSize) {
     ssize_t size = recv(svr_fd_, read_buffer, kBufferSize, 0);
@@ -244,7 +246,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
 
   grpc_core::ExecCtx::Get()->Flush();
   XCTAssertEqual([self waitForEvent:&read timeout:kReadTimeout], YES);
-  XCTAssertNotEqual(reinterpret_cast<grpc_error *>(read), GRPC_ERROR_NONE);
+  XCTAssertNotEqual(reinterpret_cast<grpc_error_handle>(read), GRPC_ERROR_NONE);
 
   grpc_slice_buffer_reset_and_unref(&read_slices);
   grpc_slice_buffer_reset_and_unref(&write_slices);
@@ -276,7 +278,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   grpc_endpoint_write(ep_, &write_slices, &write_done, nullptr);
 
   XCTAssertEqual([self waitForEvent:&write timeout:kWriteTimeout], YES);
-  XCTAssertEqual(reinterpret_cast<grpc_error *>(write), GRPC_ERROR_NONE);
+  XCTAssertEqual(reinterpret_cast<grpc_error_handle>(write), GRPC_ERROR_NONE);
 
   while (recv_size < kBufferSize) {
     ssize_t size = recv(svr_fd_, read_buffer, kBufferSize, 0);
@@ -290,7 +292,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   close(svr_fd_);
 
   XCTAssertEqual([self waitForEvent:&read timeout:kReadTimeout], YES);
-  XCTAssertNotEqual(reinterpret_cast<grpc_error *>(read), GRPC_ERROR_NONE);
+  XCTAssertNotEqual(reinterpret_cast<grpc_error_handle>(read), GRPC_ERROR_NONE);
 
   grpc_endpoint_shutdown(ep_, GRPC_ERROR_NONE);
   grpc_slice_buffer_reset_and_unref(&read_slices);
@@ -316,7 +318,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   close(svr_fd_);
 
   XCTAssertEqual([self waitForEvent:&read timeout:kReadTimeout], YES);
-  XCTAssertNotEqual(reinterpret_cast<grpc_error *>(read), GRPC_ERROR_NONE);
+  XCTAssertNotEqual(reinterpret_cast<grpc_error_handle>(read), GRPC_ERROR_NONE);
 
   grpc_endpoint_shutdown(ep_, GRPC_ERROR_NONE);
   grpc_slice_buffer_reset_and_unref(&read_slices);
@@ -326,7 +328,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
 
 #else  // GRPC_CFSTREAM
 
-// Dummy test suite
+// Phony test suite
 @interface CFStreamEndpointTests : XCTestCase
 @end
 

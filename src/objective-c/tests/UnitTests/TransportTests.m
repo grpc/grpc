@@ -68,13 +68,13 @@ static GRPCFakeTransportFactory *fakeTransportFactory;
 
 @end
 
-@interface DummyInterceptor : GRPCInterceptor
+@interface PhonyInterceptor : GRPCInterceptor
 
 @property(atomic) BOOL hit;
 
 @end
 
-@implementation DummyInterceptor {
+@implementation PhonyInterceptor {
   GRPCInterceptorManager *_manager;
   BOOL _passthrough;
 }
@@ -114,15 +114,15 @@ static GRPCFakeTransportFactory *fakeTransportFactory;
 
 @end
 
-@interface DummyInterceptorFactory : NSObject <GRPCInterceptorFactory>
+@interface PhonyInterceptorFactory : NSObject <GRPCInterceptorFactory>
 
 - (instancetype)initWithPassthrough:(BOOL)passthrough;
 
-@property(nonatomic, readonly) DummyInterceptor *lastInterceptor;
+@property(nonatomic, readonly) PhonyInterceptor *lastInterceptor;
 
 @end
 
-@implementation DummyInterceptorFactory {
+@implementation PhonyInterceptorFactory {
   BOOL _passthrough;
 }
 
@@ -134,7 +134,7 @@ static GRPCFakeTransportFactory *fakeTransportFactory;
 }
 
 - (GRPCInterceptor *)createInterceptorWithManager:(GRPCInterceptorManager *)interceptorManager {
-  _lastInterceptor = [[DummyInterceptor alloc]
+  _lastInterceptor = [[PhonyInterceptor alloc]
       initWithInterceptorManager:interceptorManager
                    dispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
                      passthrough:_passthrough];
@@ -214,8 +214,8 @@ static GRPCFakeTransportFactory *fakeTransportFactory;
       [self expectationWithDescription:@"Expect call complete"];
   [GRPCFakeTransportFactory sharedInstance].nextTransportInstance = nil;
 
-  DummyInterceptorFactory *factory = [[DummyInterceptorFactory alloc] initWithPassthrough:YES];
-  DummyInterceptorFactory *factory2 = [[DummyInterceptorFactory alloc] initWithPassthrough:NO];
+  PhonyInterceptorFactory *factory = [[PhonyInterceptorFactory alloc] initWithPassthrough:YES];
+  PhonyInterceptorFactory *factory2 = [[PhonyInterceptorFactory alloc] initWithPassthrough:NO];
   [[GRPCFakeTransportFactory sharedInstance]
       setTransportInterceptorFactories:@[ factory, factory2 ]];
   GRPCRequestOptions *requestOptions =

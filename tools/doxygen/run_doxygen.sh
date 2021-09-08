@@ -19,9 +19,13 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../..
 
-for i in core c++ core.internal c++.internal objc objc.internal
+src/php/bin/php_extension_to_php_doc.sh generate
+
+for i in core c++ core.internal c++.internal objc objc.internal php
 do
 	rm -rf doc/ref/$i
 	mkdir -p doc/ref/$i
 	doxygen tools/doxygen/Doxyfile.$i
 done
+
+src/php/bin/php_extension_to_php_doc.sh cleanup

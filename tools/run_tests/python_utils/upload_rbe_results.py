@@ -15,11 +15,12 @@
 """Uploads RBE results to BigQuery"""
 
 import argparse
-import os
 import json
+import os
 import sys
-import urllib2
 import uuid
+
+import urllib2
 
 gcp_utils_dir = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../gcp/utils'))
@@ -28,8 +29,8 @@ import big_query_utils
 
 _DATASET_ID = 'jenkins_test_results'
 _DESCRIPTION = 'Test results from master RBE builds on Kokoro'
-# 90 days in milliseconds
-_EXPIRATION_MS = 90 * 24 * 60 * 60 * 1000
+# 365 days in milliseconds
+_EXPIRATION_MS = 365 * 24 * 60 * 60 * 1000
 _PARTITION_TYPE = 'DAY'
 _PROJECT_ID = 'grpc-testing'
 _RESULTS_SCHEMA = [
@@ -287,7 +288,8 @@ if __name__ == "__main__":
 
     if not args.skip_upload:
         # BigQuery sometimes fails with large uploads, so batch 1,000 rows at a time.
-        for i in range((len(bq_rows) / 1000) + 1):
-            _upload_results_to_bq(bq_rows[i * 1000:(i + 1) * 1000])
+        MAX_ROWS = 1000
+        for i in range(0, len(bq_rows), MAX_ROWS):
+            _upload_results_to_bq(bq_rows[i:i + MAX_ROWS])
     else:
         print('Skipped upload to bigquery.')

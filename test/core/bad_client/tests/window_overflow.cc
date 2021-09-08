@@ -16,14 +16,13 @@
  *
  */
 
-#include "test/core/bad_client/bad_client.h"
-
 #include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/surface/server.h"
+#include "test/core/bad_client/bad_client.h"
 
 #define PFX_STR                                                            \
   "\x00\x00\x00\x04\x01\x00\x00\x00\x00"                                   \
@@ -44,7 +43,7 @@
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {
-  while (grpc_server_has_open_connections(server)) {
+  while (server->core_server->HasOpenConnections()) {
     GPR_ASSERT(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
                    .type == GRPC_QUEUE_TIMEOUT);

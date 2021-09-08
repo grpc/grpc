@@ -145,10 +145,10 @@ AllocatedMetadata::AllocatedMetadata(
 AllocatedMetadata::~AllocatedMetadata() {
   grpc_slice_unref_internal(key());
   grpc_slice_unref_internal(value());
-  void* user_data = user_data_.data.Load(grpc_core::MemoryOrder::RELAXED);
+  void* user_data = user_data_.data.load(std::memory_order_relaxed);
   if (user_data) {
     destroy_user_data_func destroy_user_data =
-        user_data_.destroy_user_data.Load(grpc_core::MemoryOrder::RELAXED);
+        user_data_.destroy_user_data.load(std::memory_order_relaxed);
     destroy_user_data(user_data);
   }
 }
@@ -189,10 +189,10 @@ InternedMetadata::InternedMetadata(const grpc_slice& key,
 InternedMetadata::~InternedMetadata() {
   grpc_slice_unref_internal(key());
   grpc_slice_unref_internal(value());
-  void* user_data = user_data_.data.Load(grpc_core::MemoryOrder::RELAXED);
+  void* user_data = user_data_.data.load(std::memory_order_relaxed);
   if (user_data) {
     destroy_user_data_func destroy_user_data =
-        user_data_.destroy_user_data.Load(grpc_core::MemoryOrder::RELAXED);
+        user_data_.destroy_user_data.load(std::memory_order_relaxed);
     destroy_user_data(user_data);
   }
 }
@@ -250,8 +250,18 @@ void grpc_mdctx_global_shutdown() {
     gpr_mu_destroy(&shard->mu);
     gc_mdtab(shard);
     if (shard->count != 0) {
-      gpr_log(GPR_DEBUG, "WARNING: %" PRIuPTR " metadata elements were leaked",
+      gpr_log(GPR_ERROR, "WARNING: %" PRIuPTR " metadata elements were leaked",
               shard->count);
+      for (size_t i = 0; i < shard->capacity; i++) {
+        for (InternedMetadata* md = shard->elems[i].next; md;
+             md = md->bucket_next()) {
+          char* key_str = grpc_slice_to_c_string(md->key());
+          char* value_str = grpc_slice_to_c_string(md->value());
+          gpr_log(GPR_ERROR, "mdelem '%s' = '%s'", key_str, value_str);
+          gpr_free(key_str);
+          gpr_free(value_str);
+        }
+      }
       if (grpc_iomgr_abort_on_leaks()) {
         abort();
       }
@@ -550,9 +560,9 @@ grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata* metadata) {
 }
 
 static void* get_user_data(UserData* user_data, void (*destroy_func)(void*)) {
-  if (user_data->destroy_user_data.Load(grpc_core::MemoryOrder::ACQUIRE) ==
+  if (user_data->destroy_user_data.load(std::memory_order_acquire) ==
       destroy_func) {
-    return user_data->data.Load(grpc_core::MemoryOrder::RELAXED);
+    return user_data->data.load(std::memory_order_relaxed);
   } else {
     return nullptr;
   }
@@ -584,16 +594,16 @@ static void* set_user_data(UserData* ud, void (*destroy_func)(void*),
                            void* data) {
   GPR_ASSERT((data == nullptr) == (destroy_func == nullptr));
   grpc_core::ReleasableMutexLock lock(&ud->mu_user_data);
-  if (ud->destroy_user_data.Load(grpc_core::MemoryOrder::RELAXED)) {
+  if (ud->destroy_user_data.load(std::memory_order_relaxed)) {
     /* user data can only be set once */
-    lock.Unlock();
+    lock.Release();
     if (destroy_func != nullptr) {
       destroy_func(data);
     }
-    return ud->data.Load(grpc_core::MemoryOrder::RELAXED);
+    return ud->data.load(std::memory_order_relaxed);
   }
-  ud->data.Store(data, grpc_core::MemoryOrder::RELAXED);
-  ud->destroy_user_data.Store(destroy_func, grpc_core::MemoryOrder::RELEASE);
+  ud->data.store(data, std::memory_order_relaxed);
+  ud->destroy_user_data.store(destroy_func, std::memory_order_release);
   return data;
 }
 
@@ -663,6 +673,10 @@ void grpc_mdelem_do_unref(grpc_mdelem gmd DEBUG_ARGS) {
 
 void grpc_mdelem_on_final_unref(grpc_mdelem_data_storage storage, void* ptr,
                                 uint32_t hash DEBUG_ARGS) {
+#ifndef NDEBUG
+  (void)file;
+  (void)line;
+#endif
   switch (storage) {
     case GRPC_MDELEM_STORAGE_EXTERNAL:
     case GRPC_MDELEM_STORAGE_STATIC:

@@ -1,6 +1,0 @@
-FROM debian:10
-  
-<%include file="./apt_get_basic.include"/>
-<%include file="./apt_get_python_27.include"/>
-<%include file="./gcp_api_libraries.include"/>
-<%include file="./run_tests_addons.include"/>

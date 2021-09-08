@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 # Copyright 2017 gRPC authors.
 #
@@ -15,20 +15,20 @@
 # limitations under the License.
 """ Python utility to run opt and counters benchmarks and save json output """
 
-import bm_constants
-
 import argparse
-import subprocess
-import multiprocessing
-import random
 import itertools
-import sys
+import multiprocessing
 import os
+import random
+import subprocess
+import sys
+
+import bm_constants
+import jobset
 
 sys.path.append(
     os.path.join(os.path.dirname(sys.argv[0]), '..', '..', '..', 'run_tests',
                  'python_utils'))
-import jobset
 
 
 def _args():
@@ -70,7 +70,8 @@ def _args():
     args = argp.parse_args()
     assert args.name
     if args.loops < 3:
-        print "WARNING: This run will likely be noisy. Increase loops to at least 3."
+        print("WARNING: This run will likely be noisy. Increase loops to at "
+              "least 3.")
     return args
 
 
@@ -80,6 +81,7 @@ def _collect_bm_data(bm, cfg, name, regex, idx, loops):
             'bm_diff_%s/%s/%s' % (name, cfg, bm), '--benchmark_list_tests',
             '--benchmark_filter=%s' % regex
     ]).splitlines():
+        line = line.decode('UTF-8')
         stripped_line = line.strip().replace("/",
                                              "_").replace("<", "_").replace(
                                                  ">", "_").replace(", ", "_")

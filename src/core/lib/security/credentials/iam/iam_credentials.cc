@@ -20,12 +20,13 @@
 
 #include "src/core/lib/security/credentials/iam/iam_credentials.h"
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
-#include "absl/strings/str_format.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/surface/api_trace.h"
 
@@ -36,13 +37,13 @@ grpc_google_iam_credentials::~grpc_google_iam_credentials() {
 bool grpc_google_iam_credentials::get_request_metadata(
     grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context /*context*/,
     grpc_credentials_mdelem_array* md_array,
-    grpc_closure* /*on_request_metadata*/, grpc_error** /*error*/) {
+    grpc_closure* /*on_request_metadata*/, grpc_error_handle* /*error*/) {
   grpc_credentials_mdelem_array_append(md_array, &md_array_);
   return true;
 }
 
 void grpc_google_iam_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* /*md_array*/, grpc_error* error) {
+    grpc_credentials_mdelem_array* /*md_array*/, grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 

@@ -16,12 +16,13 @@
  *
  */
 
+#include "src/core/lib/transport/static_metadata.h"
+
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 
 #include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -42,9 +43,9 @@ TEST(StaticMetadataTest, ReadAllStaticElements) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
-  grpc::testing::TestEnvironment env(argc, argv);
   int retval = RUN_ALL_TESTS();
   grpc_shutdown();
   return retval;

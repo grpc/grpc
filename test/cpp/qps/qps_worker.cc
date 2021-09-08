@@ -25,6 +25,8 @@
 #include <thread>
 #include <vector>
 
+#include "absl/memory/memory.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
@@ -65,7 +67,6 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
     default:
       abort();
   }
-  abort();
 }
 
 static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
@@ -84,7 +85,6 @@ static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
     default:
       abort();
   }
-  abort();
 }
 
 class ScopedProfile final {
@@ -155,7 +155,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
   // Protect against multiple clients using this worker at once.
   class InstanceGuard {
    public:
-    InstanceGuard(WorkerServiceImpl* impl)
+    explicit InstanceGuard(WorkerServiceImpl* impl)
         : impl_(impl), acquired_(impl->TryAcquireInstance()) {}
     ~InstanceGuard() {
       if (acquired_) {
@@ -232,7 +232,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
     if (!args.has_setup()) {
       return Status(StatusCode::INVALID_ARGUMENT, "Bad server creation args");
     }
-    if (server_port_ > 0) {
+    if (server_port_ > 0 && args.setup().port() == 0) {
       args.mutable_setup()->set_port(server_port_);
     }
     gpr_log(GPR_INFO, "RunServerBody: about to create server");
@@ -276,7 +276,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
 
 QpsWorker::QpsWorker(int driver_port, int server_port,
                      const std::string& credential_type) {
-  impl_.reset(new WorkerServiceImpl(server_port, this));
+  impl_ = absl::make_unique<WorkerServiceImpl>(server_port, this);
   gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 
   std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();

@@ -47,7 +47,7 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
 
 class InteropClientContextInspector {
  public:
-  InteropClientContextInspector(const ::grpc::ClientContext& context)
+  explicit InteropClientContextInspector(const ::grpc::ClientContext& context)
       : context_(context) {}
 
   // Inspector methods, able to peek inside ClientContext, follow.
@@ -68,7 +68,7 @@ class InteropClientContextInspector {
 
 class AdditionalMetadataInterceptor : public experimental::Interceptor {
  public:
-  AdditionalMetadataInterceptor(
+  explicit AdditionalMetadataInterceptor(
       std::multimap<std::string, std::string> additional_metadata)
       : additional_metadata_(std::move(additional_metadata)) {}
 
@@ -91,7 +91,7 @@ class AdditionalMetadataInterceptor : public experimental::Interceptor {
 class AdditionalMetadataInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
-  AdditionalMetadataInterceptorFactory(
+  explicit AdditionalMetadataInterceptorFactory(
       std::multimap<std::string, std::string> additional_metadata)
       : additional_metadata_(std::move(additional_metadata)) {}
 

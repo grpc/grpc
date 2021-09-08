@@ -16,6 +16,10 @@
  *
  */
 
+#include <gtest/gtest.h>
+
+#include "absl/memory/memory.h"
+
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -32,8 +36,6 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
-
-#include <gtest/gtest.h>
 
 namespace grpc {
 namespace testing {
@@ -57,8 +59,8 @@ class ProtoServerReflectionTest : public ::testing::Test {
     std::shared_ptr<Channel> channel =
         grpc::CreateChannel(target, InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
-    desc_db_.reset(new ProtoReflectionDescriptorDatabase(channel));
-    desc_pool_.reset(new protobuf::DescriptorPool(desc_db_.get()));
+    desc_db_ = absl::make_unique<ProtoReflectionDescriptorDatabase>(channel);
+    desc_pool_ = absl::make_unique<protobuf::DescriptorPool>(desc_db_.get());
   }
 
   string to_string(const int number) {
@@ -133,7 +135,7 @@ TEST_F(ProtoServerReflectionTest, CheckResponseWithLocalDescriptorPool) {
   std::vector<std::string> services;
   desc_db_->GetServices(&services);
   // The service list has at least one service (reflection servcie).
-  EXPECT_TRUE(services.size() > 0);
+  EXPECT_TRUE(!services.empty());
 
   for (auto it = services.begin(); it != services.end(); ++it) {
     CompareService(*it);

@@ -207,8 +207,9 @@ void JsonWriter::EscapeString(const std::string& string) {
        * Any other range is technically reserved for future usage, so if we
        * don't want the software to break in the future, we have to allow
        * anything else. The first non-unicode character is 0x110000. */
-      if (((utf32 >= 0xd800) && (utf32 <= 0xdfff)) || (utf32 >= 0x110000))
+      if (((utf32 >= 0xd800) && (utf32 <= 0xdfff)) || (utf32 >= 0x110000)) {
         break;
+      }
       if (utf32 >= 0x10000) {
         /* If utf32 contains a character that is above 0xffff, it needs to be
          * broken down into a utf-16 surrogate pair. A surrogate pair is first

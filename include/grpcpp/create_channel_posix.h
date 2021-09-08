@@ -19,9 +19,10 @@
 #ifndef GRPCPP_CREATE_CHANNEL_POSIX_H
 #define GRPCPP_CREATE_CHANNEL_POSIX_H
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 
-#include <grpc/support/port_platform.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/support/channel_arguments.h>
 
@@ -57,8 +58,8 @@ namespace experimental {
 std::shared_ptr<grpc::Channel>
 CreateCustomInsecureChannelWithInterceptorsFromFd(
     const std::string& target, int fd, const grpc::ChannelArguments& args,
-    std::unique_ptr<std::vector<
-        std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>>
+    std::vector<
+        std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
 
 }  // namespace experimental

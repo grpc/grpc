@@ -34,7 +34,7 @@ BdpEstimator::BdpEstimator(const char* name)
       accumulator_(0),
       estimate_(65536),
       ping_start_time_(gpr_time_0(GPR_CLOCK_MONOTONIC)),
-      inter_ping_delay_(100.0),  // start at 100ms
+      inter_ping_delay_(100),  // start at 100ms
       stable_estimate_count_(0),
       bw_est_(0),
       name_(name) {}

@@ -33,6 +33,7 @@
 #include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc {
 namespace testing {
@@ -95,7 +96,7 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
     auto stub = EchoTestService::NewStub(
         grpc::CreateChannel(server_address_, InsecureChannelCredentials()));
     std::string lb_token = lb_id + lb_tag;
-    for (int i = 0; i < num_requests; ++i) {
+    for (size_t i = 0; i < num_requests; ++i) {
       ClientContext ctx;
       if (!lb_token.empty()) ctx.AddMetadata(GRPC_LB_TOKEN_MD_KEY, lb_token);
       EchoRequest request;
@@ -185,6 +186,7 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

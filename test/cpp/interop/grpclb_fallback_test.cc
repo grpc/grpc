@@ -18,21 +18,21 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <gflags/gflags.h>
 #include <inttypes.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
 #include <chrono>
 #include <cstdlib>
 #include <memory>
 #include <string>
 #include <thread>
+
+#include "absl/flags/flag.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -42,23 +42,24 @@
 #include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "src/proto/grpc/testing/test.pb.h"
-
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-DEFINE_string(custom_credentials_type, "", "User provided credentials type.");
-DEFINE_string(server_uri, "localhost:1000", "Server URI target");
-DEFINE_string(unroute_lb_and_backend_addrs_cmd, "exit 1",
-              "Shell command used to make LB and backend addresses unroutable");
-DEFINE_string(blackhole_lb_and_backend_addrs_cmd, "exit 1",
-              "Shell command used to make LB and backend addresses blackholed");
-DEFINE_string(
-    test_case, "",
+ABSL_FLAG(std::string, custom_credentials_type, "",
+          "User provided credentials type.");
+ABSL_FLAG(std::string, server_uri, "localhost:1000", "Server URI target");
+ABSL_FLAG(std::string, unroute_lb_and_backend_addrs_cmd, "exit 1",
+          "Shell command used to make LB and backend addresses unroutable");
+ABSL_FLAG(std::string, blackhole_lb_and_backend_addrs_cmd, "exit 1",
+          "Shell command used to make LB and backend addresses blackholed");
+ABSL_FLAG(
+    std::string, test_case, "",
     "Test case to run. Valid options are:\n\n"
     "fast_fallback_before_startup : fallback before establishing connection to "
     "LB;\n"
@@ -152,11 +153,8 @@ int TcpUserTimeoutCompare(grpc_socket_mutator* /*a*/,
 void TcpUserTimeoutDestroy(grpc_socket_mutator* mutator) { gpr_free(mutator); }
 
 const grpc_socket_mutator_vtable kTcpUserTimeoutMutatorVtable =
-    grpc_socket_mutator_vtable{
-        .mutate_fd = TcpUserTimeoutMutateFd,
-        .compare = TcpUserTimeoutCompare,
-        .destroy = TcpUserTimeoutDestroy,
-    };
+    grpc_socket_mutator_vtable{TcpUserTimeoutMutateFd, TcpUserTimeoutCompare,
+                               TcpUserTimeoutDestroy, nullptr};
 
 std::unique_ptr<TestService::Stub> CreateFallbackTestStub() {
   grpc::ChannelArguments channel_args;
@@ -170,9 +168,9 @@ std::unique_ptr<TestService::Stub> CreateFallbackTestStub() {
   channel_args.SetInt(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, 0);
   std::shared_ptr<grpc::ChannelCredentials> channel_creds =
       grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
-          FLAGS_custom_credentials_type, &channel_args);
-  return TestService::NewStub(
-      grpc::CreateCustomChannel(FLAGS_server_uri, channel_creds, channel_args));
+          absl::GetFlag(FLAGS_custom_credentials_type), &channel_args);
+  return TestService::NewStub(grpc::CreateCustomChannel(
+      absl::GetFlag(FLAGS_server_uri), channel_creds, channel_args));
 }
 
 void RunCommand(const std::string& command) {
@@ -209,11 +207,13 @@ void RunFallbackBeforeStartupTest(
 }
 
 void DoFastFallbackBeforeStartup() {
-  RunFallbackBeforeStartupTest(FLAGS_unroute_lb_and_backend_addrs_cmd, 9);
+  RunFallbackBeforeStartupTest(
+      absl::GetFlag(FLAGS_unroute_lb_and_backend_addrs_cmd), 9);
 }
 
 void DoSlowFallbackBeforeStartup() {
-  RunFallbackBeforeStartupTest(FLAGS_blackhole_lb_and_backend_addrs_cmd, 20);
+  RunFallbackBeforeStartupTest(
+      absl::GetFlag(FLAGS_blackhole_lb_and_backend_addrs_cmd), 20);
 }
 
 void RunFallbackAfterStartupTest(
@@ -252,39 +252,45 @@ void RunFallbackAfterStartupTest(
 }
 
 void DoFastFallbackAfterStartup() {
-  RunFallbackAfterStartupTest(FLAGS_unroute_lb_and_backend_addrs_cmd);
+  RunFallbackAfterStartupTest(
+      absl::GetFlag(FLAGS_unroute_lb_and_backend_addrs_cmd));
 }
 
 void DoSlowFallbackAfterStartup() {
-  RunFallbackAfterStartupTest(FLAGS_blackhole_lb_and_backend_addrs_cmd);
+  RunFallbackAfterStartupTest(
+      absl::GetFlag(FLAGS_blackhole_lb_and_backend_addrs_cmd));
 }
 }  // namespace
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
-  gpr_log(GPR_INFO, "Testing: %s", FLAGS_test_case.c_str());
-  if (FLAGS_test_case == "fast_fallback_before_startup") {
+  gpr_log(GPR_INFO, "Testing: %s", absl::GetFlag(FLAGS_test_case).c_str());
+  if (absl::GetFlag(FLAGS_test_case) == "fast_fallback_before_startup") {
     DoFastFallbackBeforeStartup();
     gpr_log(GPR_INFO, "DoFastFallbackBeforeStartup done!");
-  } else if (FLAGS_test_case == "slow_fallback_before_startup") {
+  } else if (absl::GetFlag(FLAGS_test_case) == "slow_fallback_before_startup") {
     DoSlowFallbackBeforeStartup();
     gpr_log(GPR_INFO, "DoSlowFallbackBeforeStartup done!");
-  } else if (FLAGS_test_case == "fast_fallback_after_startup") {
+  } else if (absl::GetFlag(FLAGS_test_case) == "fast_fallback_after_startup") {
     DoFastFallbackAfterStartup();
     gpr_log(GPR_INFO, "DoFastFallbackAfterStartup done!");
-  } else if (FLAGS_test_case == "slow_fallback_after_startup") {
+  } else if (absl::GetFlag(FLAGS_test_case) == "slow_fallback_after_startup") {
     DoSlowFallbackAfterStartup();
     gpr_log(GPR_INFO, "DoSlowFallbackAfterStartup done!");
   } else {
-    gpr_log(GPR_ERROR, "Invalid test case: %s", FLAGS_test_case.c_str());
+    gpr_log(GPR_ERROR, "Invalid test case: %s",
+            absl::GetFlag(FLAGS_test_case).c_str());
     abort();
   }
 }
+
 #else
+
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   gpr_log(GPR_ERROR,
           "This test requires TCP_USER_TIMEOUT, which isn't available");
   abort();
 }
+
 #endif  // SOCKET_SUPPORTS_TCP_USER_TIMEOUT

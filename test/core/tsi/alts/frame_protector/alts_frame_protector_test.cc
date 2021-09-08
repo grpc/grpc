@@ -16,13 +16,14 @@
  *
  */
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 
 #include <stdbool.h>
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/tsi/alts/crypt/gsec.h"
-#include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 #include "test/core/tsi/transport_security_test_lib.h"

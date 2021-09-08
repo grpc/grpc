@@ -27,14 +27,6 @@
     def is_absl_lib(target_name):
       return target_name.startswith("absl/");
 
-    proto_re = re.compile('(.*)\\.proto')
-
-    def proto_to_cc(filename):
-      m = proto_re.match(filename)
-      if not m:
-        return filename
-      return '$(GENDIR)/' + m.group(1) + '.pb.cc $(GENDIR)/' + m.group(1) + '.grpc.pb.cc'
-
     sources_that_need_openssl = set()
     sources_that_don_t_need_openssl = set()
 
@@ -57,7 +49,17 @@
       'csharp': 'CSHARP'
     }
   %>
-
+  <%
+    # Makefile is only intended for internal needs (building distribution artifacts etc.)
+    # so we can restrict the number of libraries/targets that are buildable using the Makefile.
+    # Other targets can be built with cmake or bazel.
+    # TODO(jtattermusch): Figure out how to avoid the need to list the dependencies explicitly.
+    # Currently it is necessary because some dependencies are marked as "build: private" in build.yaml
+    # (which itself is correct, as they are not "public" libraries from our perspective and cmake
+    # needs to have them marked as such)
+    filtered_libs = [lib for lib in libs if (lib.build in ['all'] and lib.language != 'c++') or lib.name in ['ares', 'boringssl', 're2', 'upb', 'z']]
+    filtered_targets = [tgt for tgt in targets if tgt.build in ['all'] and lib.language != 'c++']
+  %>
 
   comma := ,
 
@@ -72,6 +74,13 @@
   SYSTEM = MINGW32
   endif
 
+  # Basic machine detection
+  HOST_MACHINE = $(shell uname -m)
+  ifeq ($(HOST_MACHINE),x86_64)
+  HOST_IS_X86_64 = true
+  else
+  HOST_IS_X86_64 = false
+  endif
 
   MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
   ifndef BUILDDIR
@@ -108,9 +117,9 @@
   LIBDIR = $(BUILDDIR_ABSOLUTE)/libs
   GENDIR = $(BUILDDIR_ABSOLUTE)/gens
 
-  # Configurations
+  # Configurations (as defined under "configs" section in build_handwritten.yaml)
 
-  % for name, args in configs.iteritems():
+  % for name, args in configs.items():
   VALID_CONFIG_${name} = 1
   %  if args.get('compile_the_world', False):
   REQUIRE_CUSTOM_LIBRARIES_${name} = 1
@@ -132,7 +141,6 @@
 
   prefix ?= /usr/local
 
-  PROTOC ?= protoc
   DTRACE ?= dtrace
   CONFIG ?= opt
   # Doing X ?= Y is the same as:
@@ -280,28 +288,6 @@
   LDFLAGS += -pthread
   endif
 
-  # If we are installing into a non-default prefix, both
-  # the libraries we build, and the apps users build,
-  # need to know how to find the libraries they depend on.
-  # There is much gnashing of teeth about this subject.
-  # It's tricky to do that without editing images during install,
-  # as you don't want tests during build to find previously installed and
-  # now stale libraries, etc.
-  ifeq ($(SYSTEM),Linux)
-  ifneq ($(prefix),/usr)
-  # Linux best practice for rpath on installed files is probably:
-  # 1) .pc file provides -Wl,-rpath,$(prefix)/lib
-  # 2) binaries we install into $(prefix)/bin use -Wl,-rpath,$ORIGIN/../lib
-  # 3) libraries we install into $(prefix)/lib use -Wl,-rpath,$ORIGIN
-  # cf. https://www.akkadia.org/drepper/dsohowto.pdf
-  # Doing all of that right is hard, but using -Wl,-rpath,$ORIGIN is always
-  # safe, and solves problems seen in the wild.  Note that $ORIGIN
-  # is a literal string interpreted much later by ld.so.  Escape it
-  # here with a dollar sign so Make doesn't expand $O.
-  LDFLAGS += '-Wl,-rpath,$$ORIGIN'
-  endif
-  endif
-
   #
   # The steps for cross-compiling are as follows:
   # First, clone and make install of grpc using the native compilers for the host.
@@ -325,8 +311,7 @@
   USE_BUILT_PROTOC = false
   endif
 
-  GTEST_LIB = -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googletest third_party/googletest/googletest/src/gtest-all.cc -Ithird_party/googletest/googlemock/include -Ithird_party/googletest/googlemock third_party/googletest/googlemock/src/gmock-all.cc
-  GTEST_LIB += -lgflags -std=c++11
+  # V=1 can be used to print commands run by make
   ifeq ($(V),1)
   E = @:
   Q =
@@ -364,51 +349,6 @@
 
   CACHE_MK =
 
-  HAS_PKG_CONFIG ?= $(shell command -v $(PKG_CONFIG) >/dev/null 2>&1 && echo true || echo false)
-
-  ifeq ($(HAS_PKG_CONFIG), true)
-  CACHE_MK += HAS_PKG_CONFIG = true,
-  endif
-
-  CORE_PC_TEMPLATE = prefix=$(prefix),\
-  exec_prefix=${'\$${prefix}'},\
-  includedir=${'\$${prefix}'}/include,\
-  libdir=${'\$${exec_prefix}'}/lib,\
-  ,\
-  Name: $(PC_NAME),\
-  Description: $(PC_DESCRIPTION),\
-  Version: $(CORE_VERSION),\
-  Cflags: -I${'\$${includedir}'} $(PC_CFLAGS),\
-  Requires: $(PC_REQUIRES),\
-  Libs: -L${'\$${libdir}'} $(PC_LIB),\
-  Libs.private: $(PC_LIBS_PRIVATE)
-
-  CPP_PC_TEMPLATE = prefix=$(prefix),\
-  exec_prefix=${'\$${prefix}'},\
-  includedir=${'\$${prefix}'}/include,\
-  libdir=${'\$${exec_prefix}'}/lib,\
-  ,\
-  Name: $(PC_NAME),\
-  Description: $(PC_DESCRIPTION),\
-  Version: $(CPP_VERSION),\
-  Cflags: -I${'\$${includedir}'} $(PC_CFLAGS),\
-  Requires: $(PC_REQUIRES),\
-  Libs: -L${'\$${libdir}'} $(PC_LIB),\
-  Libs.private: $(PC_LIBS_PRIVATE)
-
-  CSHARP_PC_TEMPLATE = prefix=$(prefix),\
-  exec_prefix=${'\$${prefix}'},\
-  includedir=${'\$${prefix}'}/include,\
-  libdir=${'\$${exec_prefix}'}/lib,\
-  ,\
-  Name: $(PC_NAME),\
-  Description: $(PC_DESCRIPTION),\
-  Version: $(CSHARP_VERSION),\
-  Cflags: -I${'\$${includedir}'} $(PC_CFLAGS),\
-  Requires: $(PC_REQUIRES),\
-  Libs: -L${'\$${libdir}'} $(PC_LIB),\
-  Libs.private: $(PC_LIBS_PRIVATE)
-
   ifeq ($(SYSTEM),MINGW32)
   EXECUTABLE_SUFFIX = .exe
   SHARED_EXT_CORE = dll
@@ -444,107 +384,7 @@
   IS_GIT_FOLDER = true
   endif
 
-  ifeq ($(HAS_PKG_CONFIG),true)
-  OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
-  ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
-  PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.12.0 protobuf
-  CARES_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.11.0 libcares
-  else # HAS_PKG_CONFIG
-
-  ifeq ($(SYSTEM),MINGW32)
-  OPENSSL_LIBS = ssl32 eay32
-  else
-  OPENSSL_LIBS = ssl crypto
-  endif
-
-  OPENSSL_ALPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-alpn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
-  BORINGSSL_COMPILE_CHECK_CMD = $(CC) $(CPPFLAGS) ${defaults.boringssl.CPPFLAGS} $(CFLAGS) ${defaults.boringssl.CFLAGS} -o $(TMPOUT) test/build/boringssl.c $(LDFLAGS)
-  ZLIB_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
-  PROTOBUF_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
-  CARES_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/c-ares.c -lcares $(LDFLAGS)
-
-  endif # HAS_PKG_CONFIG
-
-  PERFTOOLS_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/perftools.c -lprofiler $(LDFLAGS)
-
-  PROTOC_CHECK_CMD = which protoc > /dev/null
-  PROTOC_CHECK_VERSION_CMD = protoc --version | grep -q libprotoc.3
-  DTRACE_CHECK_CMD = which dtrace > /dev/null
-  SYSTEMTAP_HEADERS_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/systemtap.c $(LDFLAGS)
-
-  ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
-  HAS_SYSTEM_PERFTOOLS ?= $(shell $(PERFTOOLS_CHECK_CMD) 2> /dev/null && echo true || echo false)
-  ifeq ($(HAS_SYSTEM_PERFTOOLS),true)
-  DEFINES += GRPC_HAVE_PERFTOOLS
-  LIBS += profiler
-  CACHE_MK += HAS_SYSTEM_PERFTOOLS = true,
-  endif
-  endif
-
-  HAS_SYSTEM_PROTOBUF_VERIFY = $(shell $(PROTOBUF_CHECK_CMD) 2> /dev/null && echo true || echo false)
-  ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
-  HAS_SYSTEM_OPENSSL_ALPN ?= $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
-  ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
-  CACHE_MK += HAS_SYSTEM_OPENSSL_ALPN = true,
-  endif
-  HAS_SYSTEM_ZLIB ?= $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
-  ifeq ($(HAS_SYSTEM_ZLIB),true)
-  CACHE_MK += HAS_SYSTEM_ZLIB = true,
-  endif
-  HAS_SYSTEM_PROTOBUF ?= $(HAS_SYSTEM_PROTOBUF_VERIFY)
-  ifeq ($(HAS_SYSTEM_PROTOBUF),true)
-  CACHE_MK += HAS_SYSTEM_PROTOBUF = true,
-  endif
-  HAS_SYSTEM_CARES ?=  $(shell $(CARES_CHECK_CMD) 2> /dev/null && echo true || echo false)
-  ifeq ($(HAS_SYSTEM_CARES),true)
-  CACHE_MK += HAS_SYSTEM_CARES = true,
-  endif
-  else
-  # override system libraries if the config requires a custom compiled library
-  HAS_SYSTEM_OPENSSL_ALPN = false
-  HAS_SYSTEM_ZLIB = false
-  HAS_SYSTEM_PROTOBUF = false
-  HAS_SYSTEM_CARES = false
-  endif
-
-  HAS_PROTOC ?= $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
-  ifeq ($(HAS_PROTOC),true)
-  CACHE_MK += HAS_PROTOC = true,
-  HAS_VALID_PROTOC ?= $(shell $(PROTOC_CHECK_VERSION_CMD) 2> /dev/null && echo true || echo false)
-  ifeq ($(HAS_VALID_PROTOC),true)
-  CACHE_MK += HAS_VALID_PROTOC = true,
-  endif
-  else
-  HAS_VALID_PROTOC = false
-  endif
-
-  # Check for Systemtap (https://sourceware.org/systemtap/), first by making sure <sys/sdt.h> is present
-  # in the system and secondly by checking for the "dtrace" binary (on Linux, this is part of the Systemtap
-  # distribution. It's part of the base system on BSD/Solaris machines).
-  ifndef HAS_SYSTEMTAP
-  HAS_SYSTEMTAP_HEADERS = $(shell $(SYSTEMTAP_HEADERS_CHECK_CMD) 2> /dev/null && echo true || echo false)
-  HAS_DTRACE = $(shell $(DTRACE_CHECK_CMD) 2> /dev/null && echo true || echo false)
-  HAS_SYSTEMTAP = false
-  ifeq ($(HAS_SYSTEMTAP_HEADERS),true)
-  ifeq ($(HAS_DTRACE),true)
-  HAS_SYSTEMTAP = true
-  endif
-  endif
-  endif
-
-  ifeq ($(HAS_SYSTEMTAP),true)
-  CACHE_MK += HAS_SYSTEMTAP = true,
-  endif
-
-  # Note that for testing purposes, one can do:
-  #   make HAS_EMBEDDED_OPENSSL_ALPN=false
-  # to emulate the fact we do not have OpenSSL in the third_party folder.
-  ifeq ($(wildcard third_party/boringssl-with-bazel/src/include/openssl/ssl.h),)
-  HAS_EMBEDDED_OPENSSL_ALPN = false
-  else
-  CAN_COMPILE_EMBEDDED_OPENSSL ?= $(shell $(BORINGSSL_COMPILE_CHECK_CMD) 2> /dev/null && echo true || echo false)
-  HAS_EMBEDDED_OPENSSL_ALPN = $(CAN_COMPILE_EMBEDDED_OPENSSL)
-  endif
+  # Setup zlib dependency
 
   ifeq ($(wildcard third_party/zlib/zlib.h),)
   HAS_EMBEDDED_ZLIB = false
@@ -552,34 +392,11 @@
   HAS_EMBEDDED_ZLIB = true
   endif
 
-  ifeq ($(wildcard third_party/protobuf/src/google/protobuf/descriptor.pb.h),)
-  HAS_EMBEDDED_PROTOBUF = false
-  ifneq ($(HAS_VALID_PROTOC),true)
-  NO_PROTOC = true
-  endif
-  else
-  HAS_EMBEDDED_PROTOBUF = true
-  endif
-
-  ifeq ($(wildcard third_party/cares/cares/ares.h),)
-  HAS_EMBEDDED_CARES = false
-  else
-  HAS_EMBEDDED_CARES = true
-  endif
-
-  PC_REQUIRES_GRPC =
-  PC_LIBS_GRPC =
-
-  ifeq ($(HAS_SYSTEM_ZLIB),false)
-  ifeq ($(HAS_EMBEDDED_ZLIB), true)
-  EMBED_ZLIB ?= true
-  else
-  DEP_MISSING += zlib
-  EMBED_ZLIB ?= broken
-  endif
-  else
+  # for zlib, we support building both from submodule
+  # and from system-installed zlib. In some builds,
+  # embedding zlib is not desirable.
+  # By default we use the system zlib (to match legacy behavior)
   EMBED_ZLIB ?= false
-  endif
 
   ifeq ($(EMBED_ZLIB),true)
   ZLIB_DEP = $(LIBDIR)/$(CONFIG)/libz.a
@@ -587,227 +404,90 @@
   ZLIB_MERGE_OBJS = $(LIBZ_OBJS)
   CPPFLAGS += -Ithird_party/zlib
   else
-  ifeq ($(HAS_PKG_CONFIG),true)
-  CPPFLAGS += $(shell $(PKG_CONFIG) --cflags zlib)
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs-only-L zlib)
-  LIBS += $(patsubst -l%,%,$(shell $(PKG_CONFIG) --libs-only-l zlib))
-  PC_REQUIRES_GRPC += zlib
-  else
-  PC_LIBS_GRPC += -lz
   LIBS += z
   endif
+
+  # Setup c-ares dependency
+
+  ifeq ($(wildcard third_party/cares/cares/ares.h),)
+  HAS_EMBEDDED_CARES = false
+  else
+  HAS_EMBEDDED_CARES = true
   endif
-
-  CARES_PKG_CONFIG = false
-
-  ifeq ($(HAS_SYSTEM_CARES),false)
-  ifeq ($(HAS_EMBEDDED_CARES), true)
+  
+  ifeq ($(HAS_EMBEDDED_CARES),true)
   EMBED_CARES ?= true
   else
+  # only building with c-ares from submodule is supported
   DEP_MISSING += cares
   EMBED_CARES ?= broken
   endif
-  else
-  EMBED_CARES ?= false
-  endif
-
-  ADDRESS_SORTING_DEP = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
-  ADDRESS_SORTING_MERGE_OBJS = $(LIBADDRESS_SORTING_OBJS)
-  ADDRESS_SORTING_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
-  CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
-
-  GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
-  GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
-
-  RE2_DEP = $(LIBDIR)/$(CONFIG)/libre2.a
-  RE2_MERGE_OBJS = $(LIBRE2_OBJS)
-  RE2_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libre2.a
-
-  UPB_DEP = $(LIBDIR)/$(CONFIG)/libupb.a
-  UPB_MERGE_OBJS = $(LIBUPB_OBJS)
-  UPB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libupb.a
 
   ifeq ($(EMBED_CARES),true)
   CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
   CARES_MERGE_OBJS = $(LIBARES_OBJS)
   CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
   CPPFLAGS := -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
-  else
-  ifeq ($(HAS_PKG_CONFIG),true)
-  PC_REQUIRES_GRPC += libcares
-  CPPFLAGS += $(shell $(PKG_CONFIG) --cflags libcares)
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs-only-L libcares)
-  LIBS += $(patsubst -l%,%,$(shell $(PKG_CONFIG) --libs-only-l libcares))
-  else
-  PC_LIBS_GRPC += -lcares
-  LIBS += cares
-  endif
   endif
 
-  OPENSSL_PKG_CONFIG = false
+  # Setup address_sorting dependency
 
-  PC_REQUIRES_SECURE =
-  PC_LIBS_SECURE =
+  ADDRESS_SORTING_DEP = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
+  ADDRESS_SORTING_MERGE_OBJS = $(LIBADDRESS_SORTING_OBJS)
+  ADDRESS_SORTING_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
+  CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
 
-  ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
-  EMBED_OPENSSL ?= false
-  NO_SECURE ?= false
-  else # HAS_SYSTEM_OPENSSL_ALPN=false
-  ifneq ($(HAS_EMBEDDED_OPENSSL_ALPN),false)
-  EMBED_OPENSSL ?= $(HAS_EMBEDDED_OPENSSL_ALPN)
-  NO_SECURE ?= false
-  else # HAS_EMBEDDED_OPENSSL_ALPN=false
-  NO_SECURE ?= true
-  endif # HAS_EMBEDDED_OPENSSL_ALPN
-  endif # HAS_SYSTEM_OPENSSL_ALPN
+  # Setup abseil dependency
 
-  OPENSSL_DEP :=
-  OPENSSL_MERGE_LIBS :=
-  ifeq ($(NO_SECURE),false)
+  GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
+  GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
+  ifeq ($(HOST_IS_X86_64),true)
+  ABSL_RANDOM_HWAES_FLAGS = -maes -msse4
+  else
+  ABSL_RANDOM_HWAES_FLAGS =
+  endif
+
+  # Setup re2 dependency
+
+  RE2_DEP = $(LIBDIR)/$(CONFIG)/libre2.a
+  RE2_MERGE_OBJS = $(LIBRE2_OBJS)
+  RE2_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libre2.a
+
+  # Setup upb dependency
+
+  UPB_DEP = $(LIBDIR)/$(CONFIG)/libupb.a
+  UPB_MERGE_OBJS = $(LIBUPB_OBJS)
+  UPB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libupb.a
+
+  # Setup boringssl dependency
+
+  ifeq ($(wildcard third_party/boringssl-with-bazel/src/include/openssl/ssl.h),)
+  HAS_EMBEDDED_OPENSSL = false
+  else
+  HAS_EMBEDDED_OPENSSL = true
+  endif
+
+  ifeq ($(HAS_EMBEDDED_OPENSSL),true)
+  EMBED_OPENSSL ?= true
+  else
+  # only support building boringssl from submodule
+  DEP_MISSING += openssl
+  EMBED_OPENSSL ?= broken
+  endif
+
   ifeq ($(EMBED_OPENSSL),true)
   OPENSSL_DEP += $(LIBDIR)/$(CONFIG)/libboringssl.a
   OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
   OPENSSL_MERGE_OBJS += $(LIBBORINGSSL_OBJS)
   # need to prefix these to ensure overriding system libraries
-  CPPFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CPPFLAGS)
-  else ifneq ($(EMBED_OPENSSL),false)
-  OPENSSL_DEP += $(EMBED_OPENSSL)/libssl.a $(EMBED_OPENSSL)/libcrypto.a
-  OPENSSL_MERGE_LIBS += $(EMBED_OPENSSL)/libssl.a $(EMBED_OPENSSL)/libcrypto.a
-  OPENSSL_MERGE_OBJS += $(wildcard $(EMBED_OPENSSL)/grpc_obj/*.o)
-  # need to prefix these to ensure overriding system libraries
-  CPPFLAGS := -I$(EMBED_OPENSSL)/include $(CPPFLAGS)
-  else # EMBED_OPENSSL=false
-  ifeq ($(HAS_PKG_CONFIG),true)
-  OPENSSL_PKG_CONFIG = true
-  PC_REQUIRES_SECURE = openssl
-  CPPFLAGS := $(shell $(PKG_CONFIG) --cflags openssl) $(CPPFLAGS)
-  LDFLAGS_OPENSSL_PKG_CONFIG = $(shell $(PKG_CONFIG) --libs-only-L openssl)
-  ifeq ($(SYSTEM),Linux)
-  ifneq ($(LDFLAGS_OPENSSL_PKG_CONFIG),)
-  LDFLAGS_OPENSSL_PKG_CONFIG += $(shell $(PKG_CONFIG) --libs-only-L openssl | sed s/L/Wl,-rpath,/)
-  endif # LDFLAGS_OPENSSL_PKG_CONFIG=''
-  endif # System=Linux
-  LDFLAGS := $(LDFLAGS_OPENSSL_PKG_CONFIG) $(LDFLAGS)
-  else # HAS_PKG_CONFIG=false
-  LIBS_SECURE = $(OPENSSL_LIBS)
-  endif # HAS_PKG_CONFIG
+  CPPFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CPPFLAGS)  
   ifeq ($(DISABLE_ALPN),true)
   CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
   LIBS_SECURE = $(OPENSSL_LIBS)
   endif # DISABLE_ALPN
-  PC_LIBS_SECURE = $(addprefix -l, $(LIBS_SECURE))
   endif # EMBED_OPENSSL
-  endif # NO_SECURE
-
-  ifeq ($(OPENSSL_PKG_CONFIG),true)
-  LDLIBS_SECURE += $(shell $(PKG_CONFIG) --libs-only-l openssl)
-  else
+  
   LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
-  endif
-
-  # gpr .pc file
-  PC_NAME = gpr
-  PC_DESCRIPTION = gRPC platform support library
-  PC_CFLAGS =
-  PC_REQUIRES = $(PC_REQUIRES_GPR)
-  PC_LIBS_PRIVATE = $(PC_LIBS_GPR)
-  PC_LIB = -lgpr
-  GPR_PC_FILE := $(CORE_PC_TEMPLATE)
-
-  # grpc .pc file
-  PC_NAME = gRPC
-  PC_DESCRIPTION = high performance general RPC framework
-  PC_CFLAGS =
-  PC_REQUIRES = gpr $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
-  PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
-  PC_LIB = -lgrpc
-  GRPC_PC_FILE := $(CORE_PC_TEMPLATE)
-
-  # grpc_unsecure .pc file
-  PC_NAME = gRPC unsecure
-  PC_DESCRIPTION = high performance general RPC framework without SSL
-  PC_CFLAGS =
-  PC_REQUIRES = gpr $(PC_REQUIRES_GRPC)
-  PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
-  PC_LIB = -lgrpc_unsecure
-  GRPC_UNSECURE_PC_FILE := $(CORE_PC_TEMPLATE)
-
-  PROTOBUF_PKG_CONFIG = false
-
-  PC_REQUIRES_GRPCXX =
-  PC_LIBS_GRPCXX =
-
-  CPPFLAGS := -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googlemock/include $(CPPFLAGS)
-
-  PROTOC_PLUGINS_ALL =\
-  % for tgt in targets:
-  % if tgt.build == 'protoc':
-   $(BINDIR)/$(CONFIG)/${tgt.name}\
-  % endif
-  % endfor
-
-  PROTOC_PLUGINS_DIR = $(BINDIR)/$(CONFIG)
-
-  ifeq ($(HAS_SYSTEM_PROTOBUF),true)
-  ifeq ($(HAS_PKG_CONFIG),true)
-  PROTOBUF_PKG_CONFIG = true
-  PC_REQUIRES_GRPCXX = protobuf
-  CPPFLAGS := $(CPPFLAGS) $(shell $(PKG_CONFIG) --cflags protobuf)
-  LDFLAGS_PROTOBUF_PKG_CONFIG = $(shell $(PKG_CONFIG) --libs-only-L protobuf)
-  ifeq ($(SYSTEM),Linux)
-  ifneq ($(LDFLAGS_PROTOBUF_PKG_CONFIG),)
-  LDFLAGS_PROTOBUF_PKG_CONFIG += $(shell $(PKG_CONFIG) --libs-only-L protobuf | sed s/L/Wl,-rpath,/)
-  endif
-  endif
-  else
-  PC_LIBS_GRPCXX = -lprotobuf
-  endif
-  PROTOC_PLUGINS = $(PROTOC_PLUGINS_ALL)
-  else
-  ifeq ($(HAS_EMBEDDED_PROTOBUF),true)
-  PROTOBUF_DEP = $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a
-  CPPFLAGS := -Ithird_party/protobuf/src $(CPPFLAGS)
-  LDFLAGS := -L$(LIBDIR)/$(CONFIG)/protobuf $(LDFLAGS)
-  ifneq ($(USE_BUILT_PROTOC),false)
-  PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
-  PROTOC_PLUGINS = $(PROTOC_PLUGINS_ALL)
-  else
-  PROTOC_PLUGINS =
-  PROTOC_PLUGINS_DIR = $(prefix)/bin
-  endif
-  else
-  NO_PROTOBUF = true
-  endif
-  endif
-
-  LIBS_PROTOBUF = protobuf
-  LIBS_PROTOC = protoc protobuf
-
-  HOST_LDLIBS_PROTOC += $(addprefix -l, $(LIBS_PROTOC))
-
-  ifeq ($(PROTOBUF_PKG_CONFIG),true)
-  LDLIBS_PROTOBUF += $(shell $(PKG_CONFIG) --libs-only-l protobuf)
-  else
-  LDLIBS_PROTOBUF += $(addprefix -l, $(LIBS_PROTOBUF))
-  endif
-
-  # grpc++ .pc file
-  PC_NAME = gRPC++
-  PC_DESCRIPTION = C++ wrapper for gRPC
-  PC_CFLAGS =
-  PC_REQUIRES = grpc $(PC_REQUIRES_GRPCXX)
-  PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
-  PC_LIB = -lgrpc++
-  GRPCXX_PC_FILE := $(CPP_PC_TEMPLATE)
-
-  # grpc++_unsecure .pc file
-  PC_NAME = gRPC++ unsecure
-  PC_DESCRIPTION = C++ wrapper for gRPC without SSL
-  PC_CFLAGS =
-  PC_REQUIRES = grpc_unsecure $(PC_REQUIRES_GRPCXX)
-  PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
-  PC_LIB = -lgrpc++_unsecure
-  GRPCXX_UNSECURE_PC_FILE := $(CPP_PC_TEMPLATE)
 
   ifeq ($(MAKECMDGOALS),clean)
   NO_DEPS = true
@@ -816,8 +496,8 @@
   .SECONDARY = %.pb.h %.pb.cc
 
   ifeq ($(DEP_MISSING),)
-  all: static shared plugins\
-  % for tgt in targets:
+  all: static shared\
+  % for tgt in filtered_targets:
   % if tgt.build == 'all':
    $(BINDIR)/$(CONFIG)/${tgt.name}\
   % endif
@@ -857,10 +537,6 @@
 
   openssl_dep_error: openssl_dep_message git_update stop
 
-  protobuf_dep_error: protobuf_dep_message git_update stop
-
-  protoc_dep_error: protoc_dep_message git_update stop
-
   openssl_dep_message:
   	@echo
   	@echo "DEPENDENCY ERROR"
@@ -869,35 +545,7 @@
   	@echo "Your system doesn't have one, and either the third_party directory"
   	@echo "doesn't have it, or your compiler can't build BoringSSL."
   	@echo
-  	@echo "Please consult INSTALL to get more information."
-  	@echo
-  	@echo "If you need information about why these tests failed, run:"
-  	@echo
-  	@echo "  make run_dep_checks"
-  	@echo
-
-  protobuf_dep_message:
-  	@echo
-  	@echo "DEPENDENCY ERROR"
-  	@echo
-  	@echo "The target you are trying to run requires protobuf 3.12.0+"
-  	@echo "Your system doesn't have it, and neither does the third_party directory."
-  	@echo
-  	@echo "Please consult INSTALL to get more information."
-  	@echo
-  	@echo "If you need information about why these tests failed, run:"
-  	@echo
-  	@echo "  make run_dep_checks"
-  	@echo
-
-  protoc_dep_message:
-  	@echo
-  	@echo "DEPENDENCY ERROR"
-  	@echo
-  	@echo "The target you are trying to run requires protobuf-compiler 3.12.0+"
-  	@echo "Your system doesn't have it, and neither does the third_party directory."
-  	@echo
-  	@echo "Please consult INSTALL to get more information."
+  	@echo "Please consult BUILDING.md to get more information."
   	@echo
   	@echo "If you need information about why these tests failed, run:"
   	@echo
@@ -912,43 +560,32 @@
   	@echo "to build requires systemtap 2.7+ (on Linux) or dtrace (on other "
   	@echo "platforms such as Solaris and *BSD). "
   	@echo
-  	@echo "Please consult INSTALL to get more information."
+  	@echo "Please consult BUILDING.md to get more information."
   	@echo
+
+  install_not_supported_message:
+  	@echo
+  	@echo "Installing via 'make' is no longer supported. Use cmake or bazel instead."
+  	@echo
+  	@echo "Please consult BUILDING.md to get more information."
+  	@echo
+
+  install_not_supported_error: install_not_supported_message stop
 
   stop:
   	@false
 
-  % for tgt in targets:
+  % for tgt in filtered_targets:
   ${tgt.name}: $(BINDIR)/$(CONFIG)/${tgt.name}
   % endfor
 
   run_dep_checks:
-  	$(OPENSSL_ALPN_CHECK_CMD) || true
-  	$(ZLIB_CHECK_CMD) || true
-  	$(PERFTOOLS_CHECK_CMD) || true
-  	$(PROTOBUF_CHECK_CMD) || true
-  	$(PROTOC_CHECK_VERSION_CMD) || true
-  	$(CARES_CHECK_CMD) || true
-
-  third_party/protobuf/configure:
-  	$(E) "[AUTOGEN] Preparing protobuf"
-  	$(Q)(cd third_party/protobuf ; autoreconf -f -i -Wall,no-obsolete)
-
-  $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
-  	$(E) "[MAKE]    Building protobuf"
-  	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
-  	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
-  	$(Q)$(MAKE) -C third_party/protobuf clean
-  	$(Q)$(MAKE) -C third_party/protobuf
-  	$(Q)mkdir -p $(BINDIR)/$(CONFIG)/protobuf
-  	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a $(LIBDIR)/$(CONFIG)/protobuf
-  	$(Q)cp third_party/protobuf/src/.libs/libprotobuf.a $(LIBDIR)/$(CONFIG)/protobuf
-  	$(Q)cp third_party/protobuf/src/protoc $(BINDIR)/$(CONFIG)/protobuf
+  	@echo "run_dep_checks target has been deprecated."
 
   static: static_c static_cxx
 
-  static_c: pc_c pc_c_unsecure cache.mk \
-  % for lib in libs:
+  static_c: cache.mk \
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -957,8 +594,8 @@
   % endfor
 
 
-  static_cxx: pc_cxx pc_cxx_unsecure cache.mk \
-  % for lib in libs:
+  static_cxx: cache.mk \
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c++':
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -968,7 +605,7 @@
 
 
   static_csharp: static_c \
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'csharp':
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -979,8 +616,8 @@
 
   shared: shared_c shared_cxx
 
-  shared_c: pc_c pc_c_unsecure cache.mk\
-  % for lib in libs:
+  shared_c: cache.mk\
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)\
@@ -988,8 +625,8 @@
   % endif
   % endfor
 
-  shared_cxx: pc_cxx pc_cxx_unsecure cache.mk\
-  % for lib in libs:
+  shared_cxx: cache.mk\
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c++':
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)\
@@ -999,7 +636,7 @@
 
 
   shared_csharp: shared_c \
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'csharp':
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)\
@@ -1009,12 +646,10 @@
 
   grpc_csharp_ext: shared_csharp
 
-  plugins: $(PROTOC_PLUGINS)
-
   privatelibs: privatelibs_c privatelibs_cxx
 
   privatelibs_c: \
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'private' and lib.language == 'c' and not lib.get('external_deps', None) and not lib.boringssl:
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -1022,17 +657,9 @@
   % endif
   % endfor
 
-  pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
-
-  pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
-
-  pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
-
-  pc_cxx_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc
-
   ifeq ($(EMBED_OPENSSL),true)
   privatelibs_cxx: \
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'private' and lib.language == 'c++' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -1042,7 +669,7 @@
 
   else
   privatelibs_cxx: \
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'private' and lib.language == 'c++' and not lib.get('external_deps', None) and not lib.boringssl:
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -1053,123 +680,15 @@
   endif
 
 
-  buildtests: buildtests_c buildtests_cxx
-
-  buildtests_c: privatelibs_c <%text>\</%text>
-  % for tgt in targets:
-  % if tgt.build == 'test' and not tgt.language == 'c++' and not tgt.get('external_deps', None):
-    $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
-  % endif
-  % endfor
-
-
-  ifeq ($(EMBED_OPENSSL),true)
-  buildtests_cxx: privatelibs_cxx <%text>\</%text>
-  % for tgt in targets:
-  % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None):
-    $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
-  % endif
-  % endfor
-
-  else
-  buildtests_cxx: privatelibs_cxx <%text>\</%text>
-  % for tgt in targets:
-  % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl:
-    $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
-  % endif
-  % endfor
-
-  endif
-
-
-  test: test_c test_cxx
-
-  flaky_test: flaky_test_c flaky_test_cxx
-
-  test_c: buildtests_c
-  % for tgt in targets:
-  % if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
-  	$(E) "[RUN]     Testing ${tgt.name}"
-  	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
-  % endif
-  % endfor
-
-
-  flaky_test_c: buildtests_c
-  % for tgt in targets:
-  % if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and tgt.get('flaky', False) and not tgt.get('external_deps', None):
-  	$(E) "[RUN]     Testing ${tgt.name}"
-  	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
-  % endif
-  % endfor
-
-
-  test_cxx: buildtests_cxx
-  % for tgt in targets:
-  % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
-  	$(E) "[RUN]     Testing ${tgt.name}"
-  	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
-  % endif
-  % endfor
-
-
-  flaky_test_cxx: buildtests_cxx
-  % for tgt in targets:
-  % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and tgt.get('flaky', False) and not tgt.get('external_deps', None):
-  	$(E) "[RUN]     Testing ${tgt.name}"
-  	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
-  % endif
-  % endfor
-
-
-  test_python: static_c
-  	$(E) "[RUN]     Testing python code"
-  	$(Q) tools/run_tests/run_tests.py -lpython -c$(CONFIG)
-
-
-  tools: tools_c tools_cxx
-
-
-  tools_c: privatelibs_c\
-  % for tgt in targets:
-  % if tgt.build == 'tool' and not tgt.language=='c++':
-   $(BINDIR)/$(CONFIG)/${tgt.name}\
-  % endif
-  % endfor
-
-
-  tools_cxx: privatelibs_cxx\
-  % for tgt in targets:
-  % if tgt.build == 'tool' and tgt.language=='c++':
-   $(BINDIR)/$(CONFIG)/${tgt.name}\
-  % endif
-  % endfor
-
-
-  buildbenchmarks: privatelibs\
-  % for tgt in targets:
-  % if tgt.build == 'benchmark':
-   $(BINDIR)/$(CONFIG)/${tgt.name}\
-  % endif
-  % endfor
-
-
-  benchmarks: buildbenchmarks
-
   strip: strip-static strip-shared
 
   strip-static: strip-static_c strip-static_cxx
 
   strip-shared: strip-shared_c strip-shared_cxx
 
-
-  # TODO(nnoble): the strip target is stripping in-place, instead
-  # of copying files in a temporary folder.
-  # This prevents proper debugging after running make install.
-
   strip-static_c: static_c
   ifeq ($(CONFIG),opt)
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
@@ -1185,7 +704,7 @@
 
   strip-static_cxx: static_cxx
   ifeq ($(CONFIG),opt)
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c++":
   % if lib.build == "all":
@@ -1199,7 +718,7 @@
 
   strip-shared_c: shared_c
   ifeq ($(CONFIG),opt)
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
@@ -1215,7 +734,7 @@
 
   strip-shared_cxx: shared_cxx
   ifeq ($(CONFIG),opt)
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c++":
   % if lib.build == "all":
@@ -1229,7 +748,7 @@
 
   strip-shared_csharp: shared_csharp
   ifeq ($(CONFIG),opt)
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "csharp":
   % if lib.build == "all":
@@ -1244,57 +763,6 @@
   cache.mk::
   	$(E) "[MAKE]    Generating $@"
   	$(Q) echo "$(CACHE_MK)" | tr , '\n' >$@
-
-  $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc:
-  	$(E) "[MAKE]    Generating $@"
-  	$(Q) mkdir -p $(@D)
-  	$(Q) echo "$(GPR_PC_FILE)" | tr , '\n' >$@
-
-  $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc:
-  	$(E) "[MAKE]    Generating $@"
-  	$(Q) mkdir -p $(@D)
-  	$(Q) echo "$(GRPC_PC_FILE)" | tr , '\n' >$@
-
-  $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc:
-  	$(E) "[MAKE]    Generating $@"
-  	$(Q) mkdir -p $(@D)
-  	$(Q) echo "$(GRPC_UNSECURE_PC_FILE)" | tr , '\n' >$@
-
-  $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc:
-  	$(E) "[MAKE]    Generating $@"
-  	$(Q) mkdir -p $(@D)
-  	$(Q) echo "$(GRPCXX_PC_FILE)" | tr , '\n' >$@
-
-  $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc:
-  	$(E) "[MAKE]    Generating $@"
-  	$(Q) mkdir -p $(@D)
-  	$(Q) echo "$(GRPCXX_UNSECURE_PC_FILE)" | tr , '\n' >$@
-
-  % for p in protos:
-  ifeq ($(NO_PROTOC),true)
-  $(GENDIR)/${p}.pb.cc: protoc_dep_error
-  $(GENDIR)/${p}.grpc.pb.cc: protoc_dep_error
-  else
-  <%
-    pluginflags=""
-  %>
-  % if p in ["src/proto/grpc/testing/compiler_test", "src/proto/grpc/testing/echo"]:
-  <%
-    pluginflags="generate_mock_code=true:"
-  %>
-  % endif
-  $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc' % q for q in proto_deps.get(p, []))}
-  	$(E) "[PROTOC]  Generating protobuf CC file from $<"
-  	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
-
-  $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(GENDIR)/${p}.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
-  	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
-  	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=${pluginflags}$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
-  endif
-
-  % endfor
 
   ifeq ($(CONFIG),stapprof)
   src/core/profiling/stap_timers.c: $(GENDIR)/src/core/profiling/stap_probes.h
@@ -1343,125 +811,17 @@
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
-  install: install_c install_cxx install-plugins install-certs
+  install: install_not_supported_error
 
-  install_c: install-headers_c install-static_c install-shared_c
+  install_c: install_not_supported_error
 
-  install_cxx: install-headers_cxx install-static_cxx install-shared_cxx
+  install_cxx: install_not_supported_error
 
-  install_csharp: install-shared_csharp install_c
+  install_csharp: install_not_supported_error
 
-  install_grpc_csharp_ext: install_csharp
+  install-static: install_not_supported_error
 
-  install-headers: install-headers_c install-headers_cxx
-
-  install-headers_c:
-  	$(E) "[INSTALL] Installing public C headers"
-  	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
-  	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
-
-  install-headers_cxx:
-  	$(E) "[INSTALL] Installing public C++ headers"
-  	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
-  	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
-
-  install-static: install-static_c install-static_cxx
-
-  install-static_c: static_c strip-static_c install-pkg-config_c
-  % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.language == "c":
-  % if lib.build == "all":
-  % if not lib.get('external_deps', None):
-  	$(E) "[INSTALL] Installing lib${lib.name}.a"
-  	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
-  % endif
-  % endif
-  % endif
-  % endif
-  % endfor
-
-  install-static_cxx: static_cxx strip-static_cxx install-pkg-config_cxx
-  % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.language == "c++":
-  % if lib.build == "all":
-  	$(E) "[INSTALL] Installing lib${lib.name}.a"
-  	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
-  % endif
-  % endif
-  % endif
-  % endfor
-
-  <%def name="install_shared(lang_filter)">\
-  % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.language == lang_filter:
-  % if lib.build == "all":
-  % if not lib.get('external_deps', None):
-  	$(E) "[INSTALL] Installing $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]})"
-  	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]})
-  ifeq ($(SYSTEM),MINGW32)
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]})-dll.a $(prefix)/lib/lib${lib.name}.a
-  else ifneq ($(SYSTEM),Darwin)
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major}
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so
-  endif
-  % endif
-  % endif
-  % endif
-  % endif
-  % endfor
-  ifneq ($(SYSTEM),MINGW32)
-  ifneq ($(SYSTEM),Darwin)
-  	$(Q) ldconfig || true
-  endif
-  endif
-  </%def>
-
-  install-shared_c: shared_c strip-shared_c install-pkg-config_c
-  ${install_shared("c")}
-
-  install-shared_cxx: shared_cxx strip-shared_cxx install-shared_c install-pkg-config_cxx
-  ${install_shared("c++")}
-
-  install-shared_csharp: shared_csharp strip-shared_csharp
-  ${install_shared("csharp")}
-
-  install-plugins: $(PROTOC_PLUGINS)
-  	$(E) "[INSTALL] Installing grpc protoc plugins"
-  % for tgt in targets:
-  % if tgt.build == 'protoc':
-  	$(Q) $(INSTALL) -d $(prefix)/bin
-  	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/${tgt.name} $(prefix)/bin/${tgt.name}
-  % endif
-  % endfor
-
-  install-grpc-cli: grpc_cli
-  	$(E) "[INSTALL] Installing grpc cli"
-  	$(Q) $(INSTALL) -d $(prefix)/bin
-  	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_cli $(prefix)/bin/grpc_cli
-
-  install-pkg-config_c: pc_c pc_c_unsecure
-  	$(E) "[INSTALL] Installing C pkg-config files"
-  	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc $(prefix)/lib/pkgconfig/gpr.pc
-  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
-  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
-
-  install-pkg-config_cxx: pc_cxx pc_cxx_unsecure
-  	$(E) "[INSTALL] Installing C++ pkg-config files"
-  	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix)/lib/pkgconfig/grpc++.pc
-  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
-
-  install-certs: etc/roots.pem
-  	$(E) "[INSTALL] Installing root certificates"
-  	$(Q) $(INSTALL) -d $(prefix)/share/grpc
-  	$(Q) $(INSTALL) etc/roots.pem $(prefix)/share/grpc/roots.pem
+  install-certs: install_not_supported_error
 
   clean:
   	$(E) "[CLEAN]   Cleaning build directories."
@@ -1470,7 +830,7 @@
 
   # The various libraries
 
-  % for lib in libs:
+  % for lib in filtered_libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   ${makelib(lib)}
   % endif
@@ -1500,22 +860,16 @@
       "defaults": "abseil",
       "src": sorted(used_abseil_srcs),
       "hdr": sorted(used_abseil_hdrs),
-      "secure": False,
     })
   %>
   ${makelib(grpc_abseil_lib)}
 
-  # All of the test targets, and protoc plugins
-
-  % for tgt in targets:
-  ${maketarget(tgt)}
-  % endfor
-
   <%def name="makelib(lib)">
+  # start of build recipe for library "${lib.name}" (generated by makelib(lib) template function)
   LIB${lib.name.upper()}_SRC = \\
 
   % for src in lib.src:
-      ${proto_to_cc(src)} \\
+      ${src} \\
 
   % endfor
 
@@ -1536,13 +890,13 @@
   LIB${lib.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
 
   % if lib.get('defaults', None):
-  %  for name, value in defaults.get(lib.defaults).iteritems():
+  %  for name, value in defaults.get(lib.defaults).items():
   $(LIB${lib.name.upper()}_OBJS): ${name} += ${value}
   %  endfor
   % endif
 
   ## If the library requires OpenSSL, let's add some restrictions.
-  % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
+  % if 'libssl' in lib.get('deps', []):
   ifeq ($(NO_SECURE),true)
 
   # You can't build secure libraries if you don't have OpenSSL.
@@ -1555,37 +909,9 @@
 
   else
 
-  % if lib.language == 'c++':
-  ifeq ($(NO_PROTOBUF),true)
-
-  # You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
-
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
-
-  % if lib.build == "all":
-  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}): protobuf_dep_error
-  % endif
-
-  else
-  % endif
-
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) \
   ## The else here corresponds to the if secure earlier.
   % else:
-  % if lib.language == 'c++':
-  ifeq ($(NO_PROTOBUF),true)
-
-  # You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
-
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
-
-  % if lib.build == "all":
-  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}): protobuf_dep_error
-  % endif
-
-  else
-
-  % endif
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
   % if lib.name not in ['z', 'ares', 'address_sorting', 're2', 'upb', 'grpc_abseil']:
   $(ZLIB_DEP) \
@@ -1596,9 +922,6 @@
   $(GRPC_ABSEIL_DEP) \
   % endif
   % endif
-  % if lib.language == 'c++':
-   $(PROTOBUF_DEP)\
-  % endif
    $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
@@ -1608,7 +931,7 @@
    $(ADDRESS_SORTING_MERGE_OBJS) \
    $(RE2_MERGE_OBJS) \
    $(UPB_MERGE_OBJS) \
-  % if lib.get('secure', 'check') == True:
+  % if 'libssl' in lib.get('deps', []):
    $(OPENSSL_MERGE_OBJS) \
   % endif
   % endif
@@ -1625,7 +948,7 @@
    $(ADDRESS_SORTING_MERGE_OBJS) \
    $(RE2_MERGE_OBJS) \
    $(UPB_MERGE_OBJS) \
-  % if lib.get('secure', 'check') == True:
+  % if 'libssl' in lib.get('deps', []):
    $(OPENSSL_MERGE_OBJS) \
   % endif
   % endif
@@ -1635,11 +958,7 @@
   endif
 
   <%
-
-    if lib.language == 'c++':
-      ld = '$(LDXX)'
-    else:
-      ld = '$(LDXX)'
+    ld = '$(LDXX)'
 
     out_mingbase = '$(LIBDIR)/$(CONFIG)/' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
     out_libbase = '$(LIBDIR)/$(CONFIG)/lib' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
@@ -1650,48 +969,29 @@
     lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
     mingw_libs = ''
     mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
-    if lib.language == 'c++':
-      lib_deps += ' $(PROTOBUF_DEP)'
-      mingw_lib_deps += ' $(PROTOBUF_DEP)'
-    if lib.get('deps_linkage', None) == 'static':
-      for dep in lib.get('deps', []):
-        if is_absl_lib(dep): continue
-        lib_archive = '$(LIBDIR)/$(CONFIG)/lib' + dep + '.a'
-        common = common + ' ' + lib_archive
-        lib_deps = lib_deps + ' ' + lib_archive
-        mingw_lib_deps = mingw_lib_deps + ' ' + lib_archive
-    else:
-      for dep in lib.get('deps', []):
-        if is_absl_lib(dep): continue
-        dep_lib = None
-        for dl in libs:
-          if dl.name == dep:
-            dep_lib = dl
-        assert dep_lib, 'lib %s not found (in %s)' % (dep, lib.name)
-        link_libs = link_libs + ' -l' + dep
-        lib_deps = lib_deps + ' $(LIBDIR)/$(CONFIG)/lib' + dep + '.$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
-        mingw_libs = mingw_libs + ' -l' + dep + '$(SHARED_VERSION_' + lang_to_var[dep_lib.language] + ')-dll'
-        mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '$(SHARED_VERSION_' + lang_to_var[dep_lib.language] + ').$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
+    for dep in lib.get('deps', []):
+      if is_absl_lib(dep): continue
+      if 'libssl' == dep: continue
+      lib_archive = '$(LIBDIR)/$(CONFIG)/lib' + dep + '.a'
+      common = common + ' ' + lib_archive
+      lib_deps = lib_deps + ' ' + lib_archive
+      mingw_lib_deps = mingw_lib_deps + ' ' + lib_archive
 
-    security = lib.get('secure', 'check')
+    security = 'libssl' in lib.get('deps', [])
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
     common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS)'
 
     if security in [True, 'check']:
       for src in lib.src:
-        if not proto_re.match(src):
-          sources_that_need_openssl.add(src)
+        sources_that_need_openssl.add(src)
     else:
       for src in lib.src:
         sources_that_don_t_need_openssl.add(src)
 
-    if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
+    if 'libssl' in lib.get('deps', []):
       lib_deps = lib_deps + ' $(OPENSSL_DEP)'
       mingw_lib_deps = mingw_lib_deps + ' $(OPENSSL_DEP)'
-
-    if lib.language == 'c++':
-      common = common + ' $(LDLIBSXX) $(LDLIBS_PROTOBUF)'
 
     ldflags = '$(LDFLAGS)'
     if lib.get('LDFLAGS', None):
@@ -1719,209 +1019,26 @@
   endif
   endif
   % endif
-  % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
+  % if 'libssl' in lib.get('deps', []):
   ## If the lib was secure, we have to close the Makefile's if that tested
   ## the presence of OpenSSL.
 
   endif
   % endif
-  % if lib.language == 'c++':
-  ## If the lib was C++, we have to close the Makefile's if that tested
-  ## the presence of protobuf 3.12.0+
 
-  endif
-  % endif
-
-  % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
+  % if 'libssl' in lib.get('deps', []):
   ifneq ($(NO_SECURE),true)
   % endif
   ifneq ($(NO_DEPS),true)
   -include $(LIB${lib.name.upper()}_OBJS:.o=.dep)
   endif
-  % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
+  % if 'libssl' in lib.get('deps', []):
   endif
   % endif
-  % for src in lib.src:
-  % if not proto_re.match(src) and any(proto_re.match(src2) for src2 in lib.src):
-  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in lib.src if proto_re.match(src2))}
-  % endif
-  % endfor
+  # end of build recipe for library "${lib.name}"
   </%def>
 
-  <%def name="maketarget(tgt)"><% has_no_sources = not tgt.src %>
-  % if not has_no_sources:
-  ${tgt.name.upper()}_SRC = \\
-
-  % for src in tgt.src:
-      ${proto_to_cc(src)} \\
-
-  % endfor
-
-  ${tgt.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(${tgt.name.upper()}_SRC))))
-  % endif
-  % if tgt.get('secure', 'check') == True or tgt.get('secure', 'check') == 'check':
-  ifeq ($(NO_SECURE),true)
-
-  # You can't build secure targets if you don't have OpenSSL.
-
-  $(BINDIR)/$(CONFIG)/${tgt.name}: openssl_dep_error
-
-  else
-
-  % endif
-
-  % if tgt.boringssl:
-  # boringssl needs an override to ensure that it does not include
-  # system openssl headers regardless of other configuration
-  # we do so here with a target specific variable assignment
-  $(${tgt.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-  $(${tgt.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CXXFLAGS)
-  $(${tgt.name.upper()}_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
-  % else:
-  % endif
-
-  ##
-  ## We're not trying to add a dependency on building zlib and openssl here,
-  ## as it's already done in the libraries. We're assuming that the build
-  ## trickles down, and that a secure target requires a secure version of
-  ## a library.
-  ##
-  ## That simplifies the codegen a bit, but prevents a fully defined Makefile.
-  ## I can live with that.
-  ##
-  % if tgt.build == 'protoc' or tgt.language == 'c++':
-
-  ifeq ($(NO_PROTOBUF),true)
-
-  # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
-
-  $(BINDIR)/$(CONFIG)/${tgt.name}: protobuf_dep_error
-
-  else
-
-  $(BINDIR)/$(CONFIG)/${tgt.name}: \
-  % if not has_no_sources:
-  $(PROTOBUF_DEP) $(${tgt.name.upper()}_OBJS)\
-  % endif
-  % else:
-  $(BINDIR)/$(CONFIG)/${tgt.name}: \
-  % if not has_no_sources:
-  $(${tgt.name.upper()}_OBJS)\
-  % endif
-  % endif
-  % for dep in tgt.deps:
-  %  if not is_absl_lib(dep):
-   $(LIBDIR)/$(CONFIG)/lib${dep}.a\
-  %  endif
-  % endfor
-
-  % if tgt.language == "c++" or tgt.boringssl or tgt.build == 'fuzzer':
-  ## C++ targets specificies.
-  % if tgt.build == 'protoc':
-  	$(E) "[HOSTLD]  Linking $@"
-  	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) \
-  % if not has_no_sources:
-  $(${tgt.name.upper()}_OBJS)\
-  % endif
-  % else:
-  	$(E) "[LD]      Linking $@"
-  	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(LDXX) $(LDFLAGS) \
-  % if not has_no_sources:
-  $(${tgt.name.upper()}_OBJS)\
-  % endif
-  % endif
-  % else:
-  ## C-only targets specificities.
-  	$(E) "[LD]      Linking $@"
-  	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(LDXX) $(LDFLAGS) \
-  % if not has_no_sources:
-  $(${tgt.name.upper()}_OBJS)\
-  % endif
-  % endif
-  % for dep in tgt.deps:
-   $(LIBDIR)/$(CONFIG)/lib${dep}.a\
-  % endfor
-  % if tgt.language == "c++":
-  % if tgt.build == 'protoc':
-   $(HOST_LDLIBSXX) $(HOST_LDLIBS_PROTOC)\
-  % else:
-   $(LDLIBSXX) $(LDLIBS_PROTOBUF)\
-  % endif
-  % endif
-  % if tgt.build == 'protoc':
-   $(HOST_LDLIBS)\
-  % else:
-   $(LDLIBS)\
-  % endif
-  % if tgt.build == 'protoc':
-   $(HOST_LDLIBS_PROTOC)\
-  % elif tgt.get('secure', 'check') == True or tgt.get('secure', 'check') == 'check':
-   $(LDLIBS_SECURE)\
-  % endif
-  % if tgt.language == 'c++' and tgt.build == 'test':
-   $(GTEST_LIB)\
-  % elif tgt.language == 'c++' and tgt.build == 'benchmark':
-   $(GTEST_LIB)\
-  % endif
-  % if tgt.build == 'fuzzer':
-   -lFuzzer\
-  % endif
-   -o $(BINDIR)/$(CONFIG)/${tgt.name}
-  % if tgt.build == 'protoc' or tgt.language == 'c++':
-
-  endif
-  % endif
-  % if tgt.get('secure', 'check') == True or tgt.get('secure', 'check') == 'check':
-
-  endif
-  % endif
-
-  % if tgt.get('defaults', None):
-  %  for name, value in defaults.get(tgt.defaults).iteritems():
-  $(${tgt.name.upper()}_OBJS): ${name} += ${value}
-  %  endfor
-  % endif
-  % for src in tgt.src:
-  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
-  % for dep in tgt.deps:
-   $(LIBDIR)/$(CONFIG)/lib${dep}.a\
-  % endfor
-
-  % if tgt.language == 'c89':
-  % for src in tgt.src:
-  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o : ${src}
-  	$(E) "[C]       Compiling $<"
-  	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(CC) $(CPPFLAGS) $(CFLAGS) -std=c89 -pedantic -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
-  % endfor
-  % endif
-
-  % endfor
-  % if not has_no_sources:
-  deps_${tgt.name}: $(${tgt.name.upper()}_OBJS:.o=.dep)
-  % endif
-
-  % if not has_no_sources:
-  % if tgt.get('secure', 'check') == True or tgt.get('secure', 'check') == 'check':
-  ifneq ($(NO_SECURE),true)
-  % endif
-  ifneq ($(NO_DEPS),true)
-  -include $(${tgt.name.upper()}_OBJS:.o=.dep)
-  endif
-  % if tgt.get('secure', 'check') == True or tgt.get('secure', 'check') == 'check':
-  endif
-  % endif
-  % endif
-  % for src in tgt.src:
-  % if not proto_re.match(src) and any(proto_re.match(src2) for src2 in tgt.src):
-  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in tgt.src if proto_re.match(src2))}
-  % endif
-  % endfor
-  </%def>
-
+  # TODO(jtattermusch): is there a way to get around this hack?
   ifneq ($(OPENSSL_DEP),)
   # This is to ensure the embedded OpenSSL is built beforehand, properly
   # installing headers to their final destination on the drive. We need this
@@ -1937,10 +1054,7 @@
   dep_error openssl_dep_error openssl_dep_message git_update stop \
   buildtests buildtests_c buildtests_cxx \
   test test_c test_cxx \
-  install install_c install_cxx \
-  install-headers install-headers_c install-headers_cxx \
-  install-shared install-shared_c install-shared_cxx \
-  install-static install-static_c install-static_cxx \
+  install install_c install_cxx install_csharp install-static install-certs \
   strip strip-shared strip-static \
   strip_c strip-shared_c strip-static_c \
   strip_cxx strip-shared_cxx strip-static_cxx \

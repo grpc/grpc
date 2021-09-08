@@ -19,12 +19,12 @@
 #ifndef GRPCPP_SERVER_BUILDER_H
 #define GRPCPP_SERVER_BUILDER_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <climits>
 #include <map>
 #include <memory>
 #include <vector>
-
-#include <grpc/impl/codegen/port_platform.h>
 
 #include <grpc/compression.h>
 #include <grpc/support/cpu.h>
@@ -33,22 +33,20 @@
 #include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/impl/server_builder_plugin.h>
+#include <grpcpp/security/authorization_policy_provider.h>
 #include <grpcpp/server.h>
 #include <grpcpp/support/config.h>
 
 struct grpc_resource_quota;
 
-namespace grpc_impl {
+namespace grpc {
 
 class CompletionQueue;
 class Server;
 class ServerCompletionQueue;
-class ServerCredentials;
-}  // namespace grpc_impl
-
-namespace grpc {
-
 class AsyncGenericService;
+class ResourceQuota;
+class ServerCredentials;
 class Service;
 namespace testing {
 class ServerBuilderPluginTest;
@@ -58,13 +56,7 @@ namespace internal {
 class ExternalConnectionAcceptorImpl;
 }  // namespace internal
 
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-namespace experimental {
-#endif
 class CallbackGenericService;
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-}  // namespace experimental
-#endif
 
 namespace experimental {
 // EXPERIMENTAL API:
@@ -85,6 +77,9 @@ class ExternalConnectionAcceptor {
 };
 
 }  // namespace experimental
+}  // namespace grpc
+
+namespace grpc {
 
 /// A builder class for the creation and startup of \a grpc::Server instances.
 class ServerBuilder {
@@ -121,16 +116,16 @@ class ServerBuilder {
   /// \param addr_uri The address to try to bind to the server in URI form. If
   /// the scheme name is omitted, "dns:///" is assumed. To bind to any address,
   /// please use IPv6 any, i.e., [::]:<port>, which also accepts IPv4
-  /// connections.  Valid values include dns:///localhost:1234, /
-  /// 192.168.1.1:31416, dns:///[::1]:27182, etc.).
+  /// connections.  Valid values include dns:///localhost:1234,
+  /// 192.168.1.1:31416, dns:///[::1]:27182, etc.
   /// \param creds The credentials associated with the server.
-  /// \param selected_port[out] If not `nullptr`, gets populated with the port
+  /// \param[out] selected_port If not `nullptr`, gets populated with the port
   /// number bound to the \a grpc::Server for the corresponding endpoint after
   /// it is successfully bound by BuildAndStart(), 0 otherwise. AddListeningPort
   /// does not modify this pointer.
   ServerBuilder& AddListeningPort(
       const std::string& addr_uri,
-      std::shared_ptr<grpc_impl::ServerCredentials> creds,
+      std::shared_ptr<grpc::ServerCredentials> creds,
       int* selected_port = nullptr);
 
   /// Add a completion queue for handling asynchronous services.
@@ -163,7 +158,7 @@ class ServerBuilder {
   /// not polling the completion queue frequently) will have a significantly
   /// negative performance impact and hence should not be used in production
   /// use cases.
-  std::unique_ptr<grpc_impl::ServerCompletionQueue> AddCompletionQueue(
+  std::unique_ptr<grpc::ServerCompletionQueue> AddCompletionQueue(
       bool is_frequently_polled = true);
 
   //////////////////////////////////////////////////////////////////////////////
@@ -269,15 +264,6 @@ class ServerBuilder {
       builder_->interceptor_creators_ = std::move(interceptor_creators);
     }
 
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-    /// Register a generic service that uses the callback API.
-    /// Matches requests with any :authority
-    /// This is mostly useful for writing generic gRPC Proxies where the exact
-    /// serialization format is unknown
-    ServerBuilder& RegisterCallbackGenericService(
-        grpc::experimental::CallbackGenericService* service);
-#endif
-
     enum class ExternalConnectionType {
       FROM_FD = 0  // in the form of a file descriptor
     };
@@ -290,18 +276,27 @@ class ServerBuilder {
     AddExternalConnectionAcceptor(ExternalConnectionType type,
                                   std::shared_ptr<ServerCredentials> creds);
 
+    /// Sets server authorization policy provider in
+    /// GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER channel argument.
+    void SetAuthorizationPolicyProvider(
+        std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
+            provider);
+
    private:
     ServerBuilder* builder_;
   };
 
-#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+  /// Set the allocator for creating and releasing callback server context.
+  /// Takes the owndership of the allocator.
+  ServerBuilder& SetContextAllocator(
+      std::unique_ptr<grpc::ContextAllocator> context_allocator);
+
   /// Register a generic service that uses the callback API.
   /// Matches requests with any :authority
   /// This is mostly useful for writing generic gRPC Proxies where the exact
   /// serialization format is unknown
   ServerBuilder& RegisterCallbackGenericService(
       grpc::CallbackGenericService* service);
-#endif
 
   /// NOTE: The function experimental() is not stable public API. It is a view
   /// to the experimental components of this class. It may be changed or removed
@@ -312,7 +307,7 @@ class ServerBuilder {
   /// Experimental, to be deprecated
   struct Port {
     std::string addr;
-    std::shared_ptr<grpc_impl::ServerCredentials> creds;
+    std::shared_ptr<ServerCredentials> creds;
     int* selected_port;
   };
 
@@ -347,6 +342,14 @@ class ServerBuilder {
     return option_refs;
   }
 
+  /// Experimental API, subject to change.
+  void set_fetcher(grpc_server_config_fetcher* server_config_fetcher) {
+    server_config_fetcher_ = server_config_fetcher;
+  }
+
+  /// Experimental API, subject to change.
+  virtual ChannelArguments BuildChannelArgs();
+
  private:
   friend class ::grpc::testing::ServerBuilderPluginTest;
 
@@ -378,18 +381,14 @@ class ServerBuilder {
   SyncServerSettings sync_server_settings_;
 
   /// List of completion queues added via \a AddCompletionQueue method.
-  std::vector<grpc_impl::ServerCompletionQueue*> cqs_;
+  std::vector<grpc::ServerCompletionQueue*> cqs_;
 
-  std::shared_ptr<grpc_impl::ServerCredentials> creds_;
+  std::shared_ptr<grpc::ServerCredentials> creds_;
   std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>> plugins_;
   grpc_resource_quota* resource_quota_;
   grpc::AsyncGenericService* generic_service_{nullptr};
-#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+  std::unique_ptr<ContextAllocator> context_allocator_;
   grpc::CallbackGenericService* callback_generic_service_{nullptr};
-#else
-  grpc::experimental::CallbackGenericService* callback_generic_service_{
-      nullptr};
-#endif
 
   struct {
     bool is_set;
@@ -405,6 +404,9 @@ class ServerBuilder {
       interceptor_creators_;
   std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
       acceptors_;
+  grpc_server_config_fetcher* server_config_fetcher_ = nullptr;
+  std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
+      authorization_provider_;
 };
 
 }  // namespace grpc

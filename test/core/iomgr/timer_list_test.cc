@@ -21,14 +21,14 @@
 // This test only works with the generic timer implementation
 #ifndef GRPC_CUSTOM_SOCKET
 
-#include "src/core/lib/iomgr/iomgr_internal.h"
-#include "src/core/lib/iomgr/timer.h"
-
 #include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tracer_util.h"
 
@@ -41,8 +41,8 @@ static int cb_called[MAX_CB][2];
 static const int64_t kMillisIn25Days = 2160000000;
 static const int64_t kHoursIn25Days = 600;
 
-static void cb(void* arg, grpc_error* error) {
-  cb_called[(intptr_t)arg][error == GRPC_ERROR_NONE]++;
+static void cb(void* arg, grpc_error_handle error) {
+  cb_called[reinterpret_cast<intptr_t>(arg)][error == GRPC_ERROR_NONE]++;
 }
 
 static void add_test(void) {

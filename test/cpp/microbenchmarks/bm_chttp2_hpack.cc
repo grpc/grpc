@@ -18,12 +18,15 @@
 
 /* Microbenchmarks around CHTTP2 HPACK operations */
 
-#include <benchmark/benchmark.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <string.h>
+
 #include <memory>
 #include <sstream>
+
+#include <benchmark/benchmark.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
@@ -32,7 +35,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
-
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
@@ -53,11 +55,8 @@ static grpc_slice MakeSlice(std::vector<uint8_t> bytes) {
 static void BM_HpackEncoderInitDestroy(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  std::unique_ptr<grpc_chttp2_hpack_compressor> c(
-      new grpc_chttp2_hpack_compressor);
   for (auto _ : state) {
-    grpc_chttp2_hpack_compressor_init(c.get());
-    grpc_chttp2_hpack_compressor_destroy(c.get());
+    grpc_core::HPackCompressor c;
     grpc_core::ExecCtx::Get()->Flush();
   }
 
@@ -74,27 +73,25 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   grpc_metadata_batch_init(&b);
   b.deadline = saved_now + 30 * 1000;
 
-  std::unique_ptr<grpc_chttp2_hpack_compressor> c(
-      new grpc_chttp2_hpack_compressor);
-  grpc_chttp2_hpack_compressor_init(c.get());
+  grpc_core::HPackCompressor c;
   grpc_transport_one_way_stats stats;
   stats = {};
   grpc_slice_buffer outbuf;
   grpc_slice_buffer_init(&outbuf);
   while (state.KeepRunning()) {
-    grpc_encode_header_options hopt = {
-        static_cast<uint32_t>(state.iterations()),
-        true,
-        false,
-        static_cast<size_t>(1024),
-        &stats,
-    };
-    grpc_chttp2_encode_header(c.get(), nullptr, 0, &b, &hopt, &outbuf);
+    c.EncodeHeaders(
+        grpc_core::HPackCompressor::EncodeHeaderOptions{
+            static_cast<uint32_t>(state.iterations()),
+            true,
+            false,
+            static_cast<size_t>(1024),
+            &stats,
+        },
+        b, &outbuf);
     grpc_slice_buffer_reset_and_unref_internal(&outbuf);
     grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_metadata_batch_destroy(&b);
-  grpc_chttp2_hpack_compressor_destroy(c.get());
   grpc_slice_buffer_destroy_internal(&outbuf);
 
   std::ostringstream label;
@@ -124,23 +121,22 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
   }
 
-  std::unique_ptr<grpc_chttp2_hpack_compressor> c(
-      new grpc_chttp2_hpack_compressor);
-  grpc_chttp2_hpack_compressor_init(c.get());
+  grpc_core::HPackCompressor c;
   grpc_transport_one_way_stats stats;
   stats = {};
   grpc_slice_buffer outbuf;
   grpc_slice_buffer_init(&outbuf);
   while (state.KeepRunning()) {
     static constexpr int kEnsureMaxFrameAtLeast = 2;
-    grpc_encode_header_options hopt = {
-        static_cast<uint32_t>(state.iterations()),
-        state.range(0) != 0,
-        Fixture::kEnableTrueBinary,
-        static_cast<size_t>(state.range(1) + kEnsureMaxFrameAtLeast),
-        &stats,
-    };
-    grpc_chttp2_encode_header(c.get(), nullptr, 0, &b, &hopt, &outbuf);
+    c.EncodeHeaders(
+        grpc_core::HPackCompressor::EncodeHeaderOptions{
+            static_cast<uint32_t>(state.iterations()),
+            state.range(0) != 0,
+            Fixture::kEnableTrueBinary,
+            static_cast<size_t>(state.range(1) + kEnsureMaxFrameAtLeast),
+            &stats,
+        },
+        b, &outbuf);
     if (!logged_representative_output && state.iterations() > 3) {
       logged_representative_output = true;
       for (size_t i = 0; i < outbuf.count; i++) {
@@ -153,7 +149,6 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
     grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_metadata_batch_destroy(&b);
-  grpc_chttp2_hpack_compressor_destroy(c.get());
   grpc_slice_buffer_destroy_internal(&outbuf);
 
   std::ostringstream label;
@@ -434,17 +429,8 @@ BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
 static void BM_HpackParserInitDestroy(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  grpc_chttp2_hpack_parser p;
-  // Initial destruction so we don't leak memory in the loop.
-  grpc_chttp2_hptbl_destroy(&p.table);
   for (auto _ : state) {
-    grpc_chttp2_hpack_parser_init(&p);
-    // Note that grpc_chttp2_hpack_parser_destroy frees the table dynamic
-    // elements so we need to recreate it here. In actual operation,
-    // new grpc_chttp2_hpack_parser_destroy allocates the table once
-    // and for all.
-    new (&p.table) grpc_chttp2_hptbl();
-    grpc_chttp2_hpack_parser_destroy(&p);
+    { grpc_core::HPackParser(); }
     grpc_core::ExecCtx::Get()->Flush();
   }
 
@@ -452,41 +438,44 @@ static void BM_HpackParserInitDestroy(benchmark::State& state) {
 }
 BENCHMARK(BM_HpackParserInitDestroy);
 
-static grpc_error* UnrefHeader(void* /*user_data*/, grpc_mdelem md) {
+static grpc_error_handle UnrefHeader(void* /*user_data*/, grpc_mdelem md) {
   GRPC_MDELEM_UNREF(md);
   return GRPC_ERROR_NONE;
 }
 
-template <class Fixture, grpc_error* (*OnHeader)(void*, grpc_mdelem)>
+template <class Fixture, grpc_error_handle (*OnHeader)(void*, grpc_mdelem)>
 static void BM_HpackParserParseHeader(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   std::vector<grpc_slice> init_slices = Fixture::GetInitSlices();
   std::vector<grpc_slice> benchmark_slices = Fixture::GetBenchmarkSlices();
-  grpc_chttp2_hpack_parser p;
-  grpc_chttp2_hpack_parser_init(&p);
+  grpc_core::HPackParser p;
   const int kArenaSize = 4096 * 4096;
-  p.on_header_user_data = grpc_core::Arena::Create(kArenaSize);
-  p.on_header = OnHeader;
+  auto* arena = grpc_core::Arena::Create(kArenaSize);
+  p.BeginFrame([arena](grpc_mdelem e) { return OnHeader(arena, e); },
+               grpc_core::HPackParser::Boundary::None,
+               grpc_core::HPackParser::Priority::None);
   for (auto slice : init_slices) {
-    GPR_ASSERT(GRPC_ERROR_NONE == grpc_chttp2_hpack_parser_parse(&p, slice));
+    GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice, false));
   }
   while (state.KeepRunning()) {
     for (auto slice : benchmark_slices) {
-      GPR_ASSERT(GRPC_ERROR_NONE == grpc_chttp2_hpack_parser_parse(&p, slice));
+      GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice, false));
     }
     grpc_core::ExecCtx::Get()->Flush();
     // Recreate arena every 4k iterations to avoid oom
     if (0 == (state.iterations() & 0xfff)) {
-      static_cast<grpc_core::Arena*>(p.on_header_user_data)->Destroy();
-      p.on_header_user_data = grpc_core::Arena::Create(kArenaSize);
+      arena->Destroy();
+      arena = grpc_core::Arena::Create(kArenaSize);
+      p.BeginFrame([arena](grpc_mdelem e) { return OnHeader(arena, e); },
+                   grpc_core::HPackParser::Boundary::None,
+                   grpc_core::HPackParser::Priority::None);
     }
   }
   // Clean up
-  static_cast<grpc_core::Arena*>(p.on_header_user_data)->Destroy();
+  arena->Destroy();
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);
-  grpc_chttp2_hpack_parser_destroy(&p);
 
   track_counters.Finish(state);
 }
@@ -784,7 +773,7 @@ class RepresentativeServerTrailingMetadata {
 static void free_timeout(void* p) { gpr_free(p); }
 
 // Benchmark the current on_initial_header implementation
-static grpc_error* OnInitialHeader(void* user_data, grpc_mdelem md) {
+static grpc_error_handle OnInitialHeader(void* user_data, grpc_mdelem md) {
   // Setup for benchmark. This will bloat the absolute values of this benchmark
   grpc_chttp2_incoming_metadata_buffer buffer(
       static_cast<grpc_core::Arena*>(user_data));
@@ -825,7 +814,8 @@ static grpc_error* OnInitialHeader(void* user_data, grpc_mdelem md) {
     if (!seen_error) {
       buffer.size = new_size;
     }
-    grpc_error* error = grpc_chttp2_incoming_metadata_buffer_add(&buffer, md);
+    grpc_error_handle error =
+        grpc_chttp2_incoming_metadata_buffer_add(&buffer, md);
     if (error != GRPC_ERROR_NONE) {
       GPR_ASSERT(0);
     }
@@ -834,7 +824,7 @@ static grpc_error* OnInitialHeader(void* user_data, grpc_mdelem md) {
 }
 
 // Benchmark timeout handling
-static grpc_error* OnHeaderTimeout(void* /*user_data*/, grpc_mdelem md) {
+static grpc_error_handle OnHeaderTimeout(void* /*user_data*/, grpc_mdelem md) {
   if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
     grpc_millis* cached_timeout =
         static_cast<grpc_millis*>(grpc_mdelem_get_user_data(md, free_timeout));

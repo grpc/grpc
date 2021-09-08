@@ -23,7 +23,7 @@ python -m virtualenv ${VIRTUAL_ENV}
 PYTHON=${VIRTUAL_ENV}/bin/python
 "$PYTHON" -m pip install --upgrade pip==19.3.1
 "$PYTHON" -m pip install --upgrade futures
-"$PYTHON" -m pip install yapf==0.28.0
+"$PYTHON" -m pip install yapf==0.30.0
 
 pushd "$(dirname "${0}")/../.."
 FILES=$(find . -path ./third_party -prune -o -name '*.bzl' -print)

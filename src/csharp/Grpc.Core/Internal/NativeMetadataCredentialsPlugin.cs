@@ -62,6 +62,10 @@ namespace Grpc.Core.Internal
 
             try
             {
+                // NOTE: The serviceUrlPtr and methodNamePtr values come from the grpc_auth_metadata_context
+                // and are only guaranteed to be valid until synchronous return of this handler.
+                // We are effectively making a copy of these strings by creating C# string from the native char pointers,
+                // and passing the resulting C# strings to the context is therefore safe.
                 var context = new AuthInterceptorContext(Marshal.PtrToStringAnsi(serviceUrlPtr), Marshal.PtrToStringAnsi(methodNamePtr));
                 // Make a guarantee that credentials_notify_from_plugin is invoked async to be compliant with c-core API.
                 ThreadPool.QueueUserWorkItem(async (stateInfo) => await GetMetadataAsync(context, callbackPtr, userDataPtr));

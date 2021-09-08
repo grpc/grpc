@@ -21,6 +21,7 @@
 #include <climits>
 
 #include <grpc/support/log.h>
+
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
@@ -58,7 +59,8 @@ ThreadManager::ThreadManager(const char* name,
       max_pollers_(max_pollers == -1 ? INT_MAX : max_pollers),
       num_threads_(0),
       max_active_threads_sofar_(0) {
-  resource_user_ = grpc_resource_user_create(resource_quota, name);
+  resource_user_ =
+      grpc_resource_user_create(resource_quota, name != nullptr ? name : "");
 }
 
 ThreadManager::~ThreadManager() {
@@ -152,7 +154,7 @@ void ThreadManager::MainWorkLoop() {
     bool ok;
     WorkStatus work_status = PollForWork(&tag, &ok);
 
-    grpc_core::ReleasableMutexLock lock(&mu_);
+    grpc_core::LockableAndReleasableMutexLock lock(&mu_);
     // Reduce the number of pollers by 1 and check what happened with the poll
     num_pollers_--;
     bool done = false;
@@ -179,11 +181,13 @@ void ThreadManager::MainWorkLoop() {
               max_active_threads_sofar_ = num_threads_;
             }
             // Drop lock before spawning thread to avoid contention
-            lock.Unlock();
+            lock.Release();
             WorkerThread* worker = new WorkerThread(this);
             if (worker->created()) {
               worker->Start();
             } else {
+              // Get lock again to undo changes to poller/thread counters.
+              grpc_core::MutexLock failure_lock(&mu_);
               num_pollers_--;
               num_threads_--;
               resource_exhausted = true;
@@ -193,17 +197,17 @@ void ThreadManager::MainWorkLoop() {
             // There is still at least some thread polling, so we can go on
             // even though we are below the number of pollers that we would
             // like to have (min_pollers_)
-            lock.Unlock();
+            lock.Release();
           } else {
             // There are no pollers to spare and we couldn't allocate
             // a new thread, so resources are exhausted!
-            lock.Unlock();
+            lock.Release();
             resource_exhausted = true;
           }
         } else {
           // There are a sufficient number of pollers available so we can do
           // the work and continue polling with our existing poller threads
-          lock.Unlock();
+          lock.Release();
         }
         // Lock is always released at this point - do the application work
         // or return resource exhausted if there is new work but we couldn't

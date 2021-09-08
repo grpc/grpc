@@ -23,10 +23,10 @@ ${name}')
 cd /var/local/git/grpc
 
 VIRTUAL_ENV=$(mktemp -d)
-virtualenv "$VIRTUAL_ENV"
+virtualenv "$VIRTUAL_ENV" -p python3
 PYTHON="$VIRTUAL_ENV"/bin/python
-"$PYTHON" -m pip install --upgrade pip
-"$PYTHON" -m pip install --upgrade grpcio grpcio-tools google-api-python-client google-auth-httplib2 oauth2client
+"$PYTHON" -m pip install --upgrade pip==19.3.1
+"$PYTHON" -m pip install --upgrade grpcio grpcio-tools google-api-python-client google-auth-httplib2 oauth2client xds-protos
 
 # Prepare generated Python code.
 TOOLS_DIR=tools/run_tests
@@ -46,14 +46,34 @@ touch "$TOOLS_DIR"/src/proto/grpc/testing/__init__.py
     "$PROTO_SOURCE_DIR"/messages.proto \
     "$PROTO_SOURCE_DIR"/empty.proto
 
+HEALTH_PROTO_SOURCE_DIR=src/proto/grpc/health/v1
+HEALTH_PROTO_DEST_DIR=${TOOLS_DIR}/${HEALTH_PROTO_SOURCE_DIR}
+mkdir -p ${HEALTH_PROTO_DEST_DIR}
+touch "$TOOLS_DIR"/src/proto/grpc/health/__init__.py
+touch "$TOOLS_DIR"/src/proto/grpc/health/v1/__init__.py
+
+"$PYTHON" -m grpc_tools.protoc \
+    --proto_path=. \
+    --python_out=${TOOLS_DIR} \
+    --grpc_python_out=${TOOLS_DIR} \
+    ${HEALTH_PROTO_SOURCE_DIR}/health.proto
+
 python tools/run_tests/run_tests.py -l csharp -c opt --build_only
 
-GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_routing_lb,cds_lb,eds_lb,priority_lb,weighted_target_lb,lrs_lb "$PYTHON" \
+# Test cases "path_matching" and "header_matching" are not included in "all",
+# because not all interop clients in all languages support these new tests.
+#
+# TODO(jtattermusch): remove "path_matching" and "header_matching" from
+# --test_case after they are added into "all".
+GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
-    --test_case=all \
+    --halt_after_fail \
+    --test_case="all,path_matching,header_matching" \
     --project_id=grpc-testing \
-    --source_image=projects/grpc-testing/global/images/xds-test-server \
+    --project_num=830293263384 \
+    --source_image=projects/grpc-testing/global/images/xds-test-server-2 \
     --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
     --gcp_suffix=$(date '+%s') \
     --verbose \
-    --client_cmd='dotnet exec src/csharp/Grpc.IntegrationTesting.XdsClient/bin/Release/netcoreapp2.1/Grpc.IntegrationTesting.XdsClient.dll -- --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps}'
+    ${XDS_V3_OPT-} \
+    --client_cmd='dotnet exec src/csharp/Grpc.IntegrationTesting.XdsClient/bin/Release/netcoreapp2.1/Grpc.IntegrationTesting.XdsClient.dll -- --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} {rpcs_to_send} {metadata_to_send}'

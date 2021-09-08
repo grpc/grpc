@@ -46,6 +46,7 @@ cdef class _AioCall(GrpcCallWrapper):
 
     def __cinit__(self, AioChannel channel, object deadline,
                   bytes method, CallCredentials call_credentials, object wait_for_ready):
+        init_grpc_aio()
         self.call = NULL
         self._channel = channel
         self._loop = channel.loop
@@ -63,6 +64,7 @@ cdef class _AioCall(GrpcCallWrapper):
     def __dealloc__(self):
         if self.call:
             grpc_call_unref(self.call)
+        shutdown_grpc_aio()
 
     def _repr(self) -> str:
         """Assembles the RPC representation string."""
@@ -132,37 +134,38 @@ cdef class _AioCall(GrpcCallWrapper):
     cdef void _set_status(self, AioRpcStatus status) except *:
         cdef list waiters
 
+        # No more waiters should be expected since status has been set.
         self._status = status
 
         if self._initial_metadata is None:
             self._set_initial_metadata(_IMMUTABLE_EMPTY_METADATA)
 
-        # No more waiters should be expected since status
-        # has been set.
-        waiters = self._waiters_status
-        self._waiters_status = None
-
-        for waiter in waiters:
+        for waiter in self._waiters_status:
             if not waiter.done():
                 waiter.set_result(None)
+        self._waiters_status = []
 
         for callback in self._done_callbacks:
             callback()
 
     cdef void _set_initial_metadata(self, tuple initial_metadata) except *:
+        if self._initial_metadata is not None:
+            # Some gRPC calls might end before the initial metadata arrived in
+            # the Call object. That causes this method to be invoked twice: 1.
+            # filled with an empty metadata; 2. updated with the actual user
+            # provided metadata.
+            return
+
         cdef list waiters
 
+        # No more waiters should be expected since initial metadata has been
+        # set.
         self._initial_metadata = initial_metadata
 
-        # No more waiters should be expected since initial metadata
-        # has been set.
-        waiters = self._waiters_initial_metadata
-        self._waiters_initial_metadata = None
-
-        for waiter in waiters:
+        for waiter in self._waiters_initial_metadata:
             if not waiter.done():
                 waiter.set_result(None)
-
+        self._waiters_initial_metadata = []
 
     def add_done_callback(self, callback):
         if self.done():
@@ -358,7 +361,7 @@ cdef class _AioCall(GrpcCallWrapper):
             self,
             self._loop
         )
-        if received_message:
+        if received_message is not None:
             return received_message
         else:
             return EOF

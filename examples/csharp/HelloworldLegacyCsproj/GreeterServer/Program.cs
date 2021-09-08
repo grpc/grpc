@@ -30,7 +30,7 @@ namespace GreeterServer
 
     class Program
     {
-        const int Port = 50051;
+        const int Port = 30051;
 
         public static void Main(string[] args)
         {

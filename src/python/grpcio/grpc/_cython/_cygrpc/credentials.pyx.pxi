@@ -45,20 +45,29 @@ cdef int _get_metadata(void *state,
   cdef size_t metadata_count
   cdef grpc_metadata *c_metadata
   def callback(metadata, grpc_status_code status, bytes error_details):
+    cdef char* c_error_details = NULL
+    if error_details is not None:
+      c_error_details = <char*> error_details
     if status == StatusCode.ok:
       _store_c_metadata(metadata, &c_metadata, &metadata_count)
-      cb(user_data, c_metadata, metadata_count, status, NULL)
+      with nogil:
+        cb(user_data, c_metadata, metadata_count, status, NULL)
       _release_c_metadata(c_metadata, metadata_count)
     else:
-      cb(user_data, NULL, 0, status, error_details)
+      with nogil:
+        cb(user_data, NULL, 0, status, c_error_details)
   args = context.service_url, context.method_name, callback,
-  _spawn_callback_async(<object>state, args)
+  plugin = <object>state
+  if plugin._stored_ctx is not None:
+    plugin._stored_ctx.copy().run(_spawn_callback_async, plugin, args)
+  else:
+    _spawn_callback_async(<object>state, args)
   return 0  # Asynchronous return
 
 
 cdef void _destroy(void *state) except * with gil:
   cpython.Py_DECREF(<object>state)
-  grpc_shutdown_blocking()
+  grpc_shutdown()
 
 
 cdef class MetadataPluginCallCredentials(CallCredentials):
@@ -124,7 +133,7 @@ cdef class SSLSessionCacheLRU:
   def __dealloc__(self):
     if self._cache != NULL:
         grpc_ssl_session_cache_destroy(self._cache)
-    grpc_shutdown_blocking()
+    grpc_shutdown()
 
 
 cdef class SSLChannelCredentials(ChannelCredentials):
@@ -178,6 +187,18 @@ cdef class CompositeChannelCredentials(ChannelCredentials):
     return c_composition
 
 
+cdef class XDSChannelCredentials(ChannelCredentials):
+
+    def __cinit__(self, fallback_credentials):
+        self._fallback_credentials = fallback_credentials
+
+    cdef grpc_channel_credentials *c(self) except *:
+      cdef grpc_channel_credentials *c_fallback_creds = self._fallback_credentials.c()
+      cdef grpc_channel_credentials *xds_creds = grpc_xds_credentials_create(c_fallback_creds)
+      grpc_channel_credentials_release(c_fallback_creds)
+      return xds_creds
+
+
 cdef class ServerCertificateConfig:
 
   def __cinit__(self):
@@ -190,7 +211,7 @@ cdef class ServerCertificateConfig:
   def __dealloc__(self):
     grpc_ssl_server_certificate_config_destroy(self.c_cert_config)
     gpr_free(self.c_ssl_pem_key_cert_pairs)
-    grpc_shutdown_blocking()
+    grpc_shutdown()
 
 
 cdef class ServerCredentials:
@@ -206,7 +227,7 @@ cdef class ServerCredentials:
   def __dealloc__(self):
     if self.c_credentials != NULL:
       grpc_server_credentials_release(self.c_credentials)
-    grpc_shutdown_blocking()
+    grpc_shutdown()
 
 cdef const char* _get_c_pem_root_certs(pem_root_certs):
   if pem_root_certs is None:
@@ -347,11 +368,31 @@ cdef class LocalChannelCredentials(ChannelCredentials):
 def channel_credentials_local(grpc_local_connect_type local_connect_type):
   return LocalChannelCredentials(local_connect_type)
 
+cdef class InsecureChannelCredentials(ChannelCredentials):
+
+  cdef grpc_channel_credentials *c(self) except *:
+    return grpc_insecure_credentials_create()
+
+def channel_credentials_insecure():
+  return InsecureChannelCredentials()
+
 def server_credentials_local(grpc_local_connect_type local_connect_type):
   cdef ServerCredentials credentials = ServerCredentials()
   credentials.c_credentials = grpc_local_server_credentials_create(local_connect_type)
   return credentials
 
+def xds_server_credentials(ServerCredentials fallback_credentials):
+  cdef ServerCredentials credentials = ServerCredentials()
+  credentials.c_credentials = grpc_xds_server_credentials_create(fallback_credentials.c_credentials)
+  # NOTE: We do not need to call grpc_server_credentials_release on the
+  # fallback credentials here because this will be done by the __dealloc__
+  # method of its Cython wrapper.
+  return credentials
+
+def insecure_server_credentials():
+  cdef ServerCredentials credentials = ServerCredentials()
+  credentials.c_credentials = grpc_insecure_server_credentials_create()
+  return credentials
 
 cdef class ALTSChannelCredentials(ChannelCredentials):
 
@@ -380,3 +421,22 @@ def server_credentials_alts():
   # Options can be destroyed as deep copy was performed.
   grpc_alts_credentials_options_destroy(c_options)
   return credentials
+
+
+cdef class ComputeEngineChannelCredentials(ChannelCredentials):
+  cdef grpc_channel_credentials* _c_creds
+  cdef grpc_call_credentials* _call_creds
+
+  def __cinit__(self, CallCredentials call_creds):
+    self._c_creds = NULL
+    self._call_creds = call_creds.c()
+    if self._call_creds == NULL:
+      raise ValueError("Call credentials may not be NULL.")
+
+  cdef grpc_channel_credentials *c(self) except *:
+    self._c_creds = grpc_google_default_credentials_create(self._call_creds)
+    return self._c_creds
+
+
+def channel_credentials_compute_engine(call_creds):
+  return ComputeEngineChannelCredentials(call_creds)

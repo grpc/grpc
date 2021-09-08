@@ -16,11 +16,13 @@
  *
  */
 
-#include <grpcpp/support/error_details.h>
 #include <gtest/gtest.h>
+
+#include <grpcpp/support/error_details.h>
 
 #include "src/proto/grpc/status/status.pb.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc {
 namespace {
@@ -118,6 +120,7 @@ TEST(SetTest, ValidScopeErrorCode) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

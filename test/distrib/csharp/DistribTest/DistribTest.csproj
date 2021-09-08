@@ -56,6 +56,16 @@
     <Prefer32Bit>true</Prefer32Bit>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <!-- this project is built with a legacy C# compiler, so ref structs are not supported.
+         Use GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE to still allow building the protobuf
+         generate code -->
+    <DefineConstants>$(DefineConstants);GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE</DefineConstants>
+    <!-- Create a binding redirect to avoid mismatch between different versions of System.Memory
+         being referenced by Grpc.Core and Google.Protobuf.
+         See http://go.microsoft.com/fwlink/?LinkId=294190  -->
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Grpc.Auth">
       <HintPath>..\packages\Grpc.Auth.__GRPC_NUGET_VERSION__\lib\net45\Grpc.Auth.dll</HintPath>
@@ -101,7 +111,7 @@
       <HintPath>..\packages\Google.Apis.Auth.1.15.0\lib\net45\Google.Apis.Auth.PlatformServices.dll</HintPath>
     </Reference>
     <Reference Include="Google.Protobuf">
-      <HintPath>..\packages\Google.Protobuf.3.12.2\lib\net45\Google.Protobuf.dll</HintPath>
+      <HintPath>..\packages\Google.Protobuf.3.13.0\lib\net45\Google.Protobuf.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

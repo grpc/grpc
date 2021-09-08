@@ -19,6 +19,7 @@ licenses(["notice"])  # Apache v2
 grpc_package(name = "test/core/transport/chttp2")
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
+load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
 grpc_fuzzer(
     name = "hpack_parser_fuzzer",
@@ -82,6 +83,22 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "flow_control_test",
+    size = "large",
+    srcs = ["flow_control_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "hpack_encoder_test",
     srcs = ["hpack_encoder_test.cc"],
     language = "C++",
@@ -106,8 +123,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "hpack_table_test",
-    srcs = ["hpack_table_test.cc"],
+    name = "hpack_parser_table_test",
+    srcs = ["hpack_parser_table_test.cc"],
     language = "C++",
     uses_polling = False,
     deps = [
@@ -145,6 +162,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     "too_many_pings_test",
+    timeout = "long",  # Required for internal test infrastructure (cl/325757166)
     srcs = ["too_many_pings_test.cc"],
     external_deps = ["gtest"],
     deps = [
@@ -167,5 +185,54 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "remove_stream_from_stalled_lists_test",
+    srcs = ["remove_stream_from_stalled_lists_test.cc"],
+    # use LARGE_MACHINE because this test needs a certaim amount
+    # of parallelism in order to reproduce the original crash that it's meant
+    # to regression test for (a crash which is fixed by
+    # https://github.com/grpc/grpc/pull/23984). Experiments show that if this
+    # test doesn't use LARGE_MACHINE, then it will almost never reproduce the
+    # intended crash (as it's meant to before the fix is applied). But with
+    # LARGE_MACHINE, it can reproduce at a high rate.
+    exec_properties = LARGE_MACHINE,
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "popularity_count_test",
+    srcs = ["popularity_count_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr_platform",
+        "//:popularity_count",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "hpack_encoder_index_test",
+    srcs = ["hpack_encoder_index_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr_platform",
+        "//:hpack_encoder_index",
+        "//test/core/util:grpc_suppressions",
     ],
 )

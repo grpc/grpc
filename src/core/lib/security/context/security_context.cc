@@ -18,21 +18,22 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/security/context/security_context.h"
+
 #include <string.h>
+
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
-
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount(
     false, "auth_context_refcount");
@@ -294,9 +295,10 @@ static const grpc_arg_pointer_vtable auth_context_pointer_vtable = {
     auth_context_pointer_arg_copy, auth_context_pointer_arg_destroy,
     auth_context_pointer_cmp};
 
-grpc_arg grpc_auth_context_to_arg(grpc_auth_context* p) {
-  return grpc_channel_arg_pointer_create((char*)GRPC_AUTH_CONTEXT_ARG, p,
-                                         &auth_context_pointer_vtable);
+grpc_arg grpc_auth_context_to_arg(grpc_auth_context* c) {
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_AUTH_CONTEXT_ARG), c,
+      &auth_context_pointer_vtable);
 }
 
 grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg) {

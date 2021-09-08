@@ -16,11 +16,11 @@
  *
  */
 
-#include <grpcpp/security/credentials.h>
-
 #include <grpc/grpc_cronet.h>
 #include <grpcpp/channel.h>
+#include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
+
 #include "src/cpp/client/create_channel_internal.h"
 
 namespace grpc {
@@ -55,10 +55,9 @@ class CronetChannelCredentialsImpl final : public ChannelCredentials {
   }
   void* engine_;
 };
-}  // namespace grpc
-namespace grpc_impl {
+
 std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void* engine) {
   return std::shared_ptr<ChannelCredentials>(
       new grpc::CronetChannelCredentialsImpl(engine));
 }
-}  // namespace grpc_impl
+}  // namespace grpc

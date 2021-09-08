@@ -1,0 +1,62 @@
+# Copyright 2020 The gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+package(default_visibility = [
+    "//examples/python:__subpackages__",
+    "//src/python:__subpackages__",
+    "//tools/distrib/python/grpcio_tools:__subpackages__",
+])
+
+load("//bazel:cython_library.bzl", "pyx_library")
+load("grpcio_tools.bzl", "internal_copied_filegroup")
+
+cc_library(
+    name = "protoc_lib",
+    srcs = ["grpc_tools/main.cc"],
+    hdrs = ["grpc_tools/main.h"],
+    includes = ["."],
+    deps = [
+        "//src/compiler:grpc_plugin_support",
+        "@com_google_protobuf//:protoc_lib",
+    ],
+)
+
+pyx_library(
+    name = "cyprotoc",
+    srcs = ["grpc_tools/_protoc_compiler.pyx"],
+    deps = [":protoc_lib"],
+)
+
+internal_copied_filegroup(
+    name = "well_known_protos",
+    srcs = ["@com_google_protobuf//:well_known_protos"],
+    dest = "grpc_tools/_proto/",
+    strip_prefix = "src/",
+)
+
+py_library(
+    name = "grpc_tools",
+    srcs = [
+        "grpc_tools/__init__.py",
+        "grpc_tools/protoc.py",
+    ],
+    data = [":well_known_protos"],
+    imports = ["."],
+    srcs_version = "PY2AND3",
+    deps = [
+        ":cyprotoc",
+        "//src/python/grpcio/grpc:grpcio",
+        "@com_google_protobuf//:protobuf_python",
+    ],
+)

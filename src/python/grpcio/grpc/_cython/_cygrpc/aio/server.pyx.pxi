@@ -45,6 +45,7 @@ class _ServerStoppedError(BaseError):
 cdef class RPCState:
 
     def __cinit__(self, AioServer server):
+        init_grpc_aio()
         self.call = NULL
         self.server = server
         grpc_metadata_array_init(&self.request_metadata)
@@ -106,6 +107,7 @@ cdef class RPCState:
         grpc_metadata_array_destroy(&self.request_metadata)
         if self.call:
             grpc_call_unref(self.call)
+        shutdown_grpc_aio()
 
 
 cdef class _ServicerContext:
@@ -195,14 +197,23 @@ cdef class _ServicerContext:
     def set_trailing_metadata(self, object metadata):
         self._rpc_state.trailing_metadata = tuple(metadata)
 
+    def trailing_metadata(self):
+        return self._rpc_state.trailing_metadata
+
     def invocation_metadata(self):
         return self._rpc_state.invocation_metadata()
 
     def set_code(self, object code):
         self._rpc_state.status_code = get_status_code(code)
 
+    def code(self):
+        return self._rpc_state.status_code
+
     def set_details(self, str details):
         self._rpc_state.status_details = details
+
+    def details(self):
+        return self._rpc_state.status_details
 
     def set_compression(self, object compression):
         if self._rpc_state.metadata_sent:
@@ -249,6 +260,12 @@ cdef class _ServicerContext:
             return ctx
         else:
             return {}
+
+    def time_remaining(self):
+        if self._rpc_state.details.deadline.seconds == _GPR_INF_FUTURE.seconds:
+            return None
+        else:
+            return max(_time_from_timespec(self._rpc_state.details.deadline) - time.time(), 0)
 
 
 cdef class _SyncServicerContext:
@@ -308,6 +325,9 @@ cdef class _SyncServicerContext:
 
     def auth_context(self):
         return self._context.auth_context()
+
+    def time_remaining(self):
+        return self._context.time_remaining()
 
 
 async def _run_interceptor(object interceptors, object query_handler,
@@ -779,6 +799,40 @@ cdef CallbackFailureHandler SERVER_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHan
     InternalError)
 
 
+cdef class _ConcurrentRpcLimiter:
+
+    def __cinit__(self, int maximum_concurrent_rpcs, object loop):
+        if maximum_concurrent_rpcs <= 0:
+            raise ValueError("maximum_concurrent_rpcs should be a postive integer")
+        self._maximum_concurrent_rpcs = maximum_concurrent_rpcs
+        self._active_rpcs = 0
+        self._active_rpcs_condition = asyncio.Condition()
+        self._loop = loop
+
+    async def check_before_request_call(self):
+        await self._active_rpcs_condition.acquire()
+        try:
+            predicate = lambda: self._active_rpcs < self._maximum_concurrent_rpcs
+            await self._active_rpcs_condition.wait_for(predicate)
+            self._active_rpcs += 1
+        finally:
+            self._active_rpcs_condition.release()
+
+    async def _decrease_active_rpcs_count_with_lock(self):
+        await self._active_rpcs_condition.acquire()
+        try:
+            self._active_rpcs -= 1
+            self._active_rpcs_condition.notify()
+        finally:
+            self._active_rpcs_condition.release()
+
+    def _decrease_active_rpcs_count(self, unused_future):
+        self._loop.create_task(self._decrease_active_rpcs_count_with_lock())
+
+    def decrease_once_finished(self, object rpc_task):
+        rpc_task.add_done_callback(self._decrease_active_rpcs_count)
+
+
 cdef class AioServer:
 
     def __init__(self, loop, thread_pool, generic_handlers, interceptors,
@@ -786,7 +840,8 @@ cdef class AioServer:
         init_grpc_aio()
         # NOTE(lidiz) Core objects won't be deallocated automatically.
         # If AioServer.shutdown is not called, those objects will leak.
-        self._server = Server(options)
+        # TODO(rbellevi): Support xDS in aio server.
+        self._server = Server(options, False)
         grpc_server_register_completion_queue(
             self._server.c_server,
             global_completion_queue(),
@@ -813,9 +868,9 @@ cdef class AioServer:
             self._interceptors = ()
 
         self._thread_pool = thread_pool
-
-        if maximum_concurrent_rpcs:
-            raise NotImplementedError()
+        if maximum_concurrent_rpcs is not None:
+            self._limiter = _ConcurrentRpcLimiter(maximum_concurrent_rpcs,
+                                                  loop)
 
     def add_generic_rpc_handlers(self, object generic_rpc_handlers):
         self._generic_handlers.extend(generic_rpc_handlers)
@@ -858,6 +913,9 @@ cdef class AioServer:
             if self._status != AIO_SERVER_STATUS_RUNNING:
                 break
 
+            if self._limiter is not None:
+                await self._limiter.check_before_request_call()
+
             # Accepts new request from Core
             rpc_state = await self._request_call()
 
@@ -872,7 +930,7 @@ cdef class AioServer:
                                    self._loop)
 
             # Fires off a task that listens on the cancellation from client.
-            self._loop.create_task(
+            rpc_task = self._loop.create_task(
                 _schedule_rpc_coro(
                     rpc_coro,
                     rpc_state,
@@ -880,8 +938,13 @@ cdef class AioServer:
                 )
             )
 
+            if self._limiter is not None:
+                self._limiter.decrease_once_finished(rpc_task)
+
     def _serving_task_crash_handler(self, object task):
         """Shutdown the server immediately if unexpectedly exited."""
+        if task.cancelled():
+            return
         if task.exception() is None:
             return
         if self._status != AIO_SERVER_STATUS_STOPPING:

@@ -21,15 +21,17 @@ if [ $# -lt 1 ];then
   exit 1
 fi
 
-echo "Change a repo manager to $0"
+echo "Change repo manager to $1"
 
 BASE_PATH=$(dirname $0)
 
 for file in bug_report.md cleanup_request.md feature_request.md question.md
 do
-	sed -i -E "s/assignees: ([a-zA-Z0-9-]+)/assignees: $1/" $BASE_PATH/ISSUE_TEMPLATE/$file
+	sed -i".bak" -E "s/assignees: ([a-zA-Z0-9-]+)/assignees: $1/" "$BASE_PATH/ISSUE_TEMPLATE/$file"
+  rm "$BASE_PATH/ISSUE_TEMPLATE/$file.bak"
 done
 
-sed -i -E "s/^@([a-zA-Z0-9-]+)/@$1/" $BASE_PATH/pull_request_template.md
+sed -i".bak" -E "s/^@([a-zA-Z0-9-]+)/@$1/" "$BASE_PATH/pull_request_template.md"
+rm "$BASE_PATH/pull_request_template.md.bak"
 
 echo "Done"

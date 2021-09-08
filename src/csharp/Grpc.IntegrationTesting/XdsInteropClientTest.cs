@@ -59,6 +59,7 @@ namespace Grpc.IntegrationTesting
                 NumChannels = 1,
                 Qps = 1,
                 RpcTimeoutSec = 10,
+                Rpc = "UnaryCall",
                 Server = $"{Host}:{backendServer.Ports.Single().BoundPort}",
             });
 
@@ -89,7 +90,7 @@ namespace Grpc.IntegrationTesting
             string backendName = "backend1";
             backendService.UnaryHandler = (request, context) =>
             {
-                return Task.FromResult(new SimpleResponse { Hostname = backendName});
+                return Task.FromResult(new SimpleResponse { Hostname = backendName });
             };
 
             var cancellationTokenSource = new CancellationTokenSource();
@@ -104,6 +105,9 @@ namespace Grpc.IntegrationTesting
             Assert.AreEqual(0, stats.NumFailures);
             Assert.AreEqual(backendName, stats.RpcsByPeer.Keys.Single());
             Assert.AreEqual(5, stats.RpcsByPeer[backendName]);
+            Assert.AreEqual("UnaryCall", stats.RpcsByMethod.Keys.Single());
+            Assert.AreEqual(backendName, stats.RpcsByMethod["UnaryCall"].RpcsByPeer_.Keys.Single());
+            Assert.AreEqual(5, stats.RpcsByMethod["UnaryCall"].RpcsByPeer_[backendName]);
 
             await Task.Delay(100);
 
@@ -116,6 +120,36 @@ namespace Grpc.IntegrationTesting
             Assert.AreEqual(0, stats2.NumFailures);
             Assert.AreEqual(backendName, stats2.RpcsByPeer.Keys.Single());
             Assert.AreEqual(3, stats2.RpcsByPeer[backendName]);
+            Assert.AreEqual("UnaryCall", stats2.RpcsByMethod.Keys.Single());
+            Assert.AreEqual(backendName, stats2.RpcsByMethod["UnaryCall"].RpcsByPeer_.Keys.Single());
+            Assert.AreEqual(3, stats2.RpcsByMethod["UnaryCall"].RpcsByPeer_[backendName]);
+            
+            cancellationTokenSource.Cancel();
+            await runChannelsTask;
+        }
+
+        [Test]
+        public async Task HostnameReadFromResponseHeaders()
+        {
+            string correctBackendName = "backend1";
+            backendService.UnaryHandler = async (request, context) =>
+            {
+                await context.WriteResponseHeadersAsync(new Metadata { {"hostname", correctBackendName} });
+                return new SimpleResponse { Hostname = "wrong_hostname" };
+            };
+
+            var cancellationTokenSource = new CancellationTokenSource();
+            var runChannelsTask = xdsInteropClient.RunChannelsAsync(cancellationTokenSource.Token);
+
+            var stats = await lbStatsClient.GetClientStatsAsync(new LoadBalancerStatsRequest
+            {
+                NumRpcs = 3,
+                TimeoutSec = 10,
+            }, deadline: DateTime.UtcNow.AddSeconds(30));
+
+            Assert.AreEqual(0, stats.NumFailures);
+            Assert.AreEqual(correctBackendName, stats.RpcsByPeer.Keys.Single());
+            Assert.AreEqual(3, stats.RpcsByPeer[correctBackendName]);
             
             cancellationTokenSource.Cancel();
             await runChannelsTask;
@@ -124,10 +158,16 @@ namespace Grpc.IntegrationTesting
         public class BackendServiceImpl : TestService.TestServiceBase
         {
             public UnaryServerMethod<SimpleRequest, SimpleResponse> UnaryHandler { get; set; }
+            public UnaryServerMethod<Empty, Empty> EmptyHandler { get; set; }
 
             public override Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
             {
                 return UnaryHandler(request, context);
+            }
+
+            public override Task<Empty> EmptyCall(Empty request, ServerCallContext context)
+            {
+                return EmptyHandler(request, context);
             }
         }
     }

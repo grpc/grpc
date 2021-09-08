@@ -227,7 +227,7 @@ static int set_socket_nonblocking(thread_args* args) {
   return 0;
 }
 
-static int do_nothing(thread_args* args) { return 0; }
+static int do_nothing(thread_args* /*args*/) { return 0; }
 
 #ifdef __linux__
 /* Special case for epoll, where we need to create the fd ahead of time. */

@@ -23,6 +23,7 @@
 
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
+
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 
@@ -44,7 +45,7 @@ class Http2Client {
  private:
   class ServiceStub {
    public:
-    ServiceStub(const std::shared_ptr<Channel>& channel);
+    explicit ServiceStub(const std::shared_ptr<Channel>& channel);
 
     TestService::Stub* Get();
 

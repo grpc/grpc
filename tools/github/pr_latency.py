@@ -31,12 +31,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from datetime import datetime
+from datetime import timedelta
 import json
 import logging
 import pprint
-import urllib2
 
-from datetime import datetime, timedelta
+import urllib2
 
 logging.basicConfig(format='%(asctime)s %(message)s')
 
@@ -118,17 +119,24 @@ def get_status_data(statuses_url, system):
     failures = 0
     errors = 0
     latest_datetime = None
-    if not statuses: return None
-    if system == 'kokoro': string_in_target_url = 'kokoro'
-    elif system == 'jenkins': string_in_target_url = 'grpc-testing'
+    if not statuses:
+        return None
+    if system == 'kokoro':
+        string_in_target_url = 'kokoro'
+    elif system == 'jenkins':
+        string_in_target_url = 'grpc-testing'
     for status in statuses['statuses']:
         if not status['target_url'] or string_in_target_url not in status[
                 'target_url']:
             continue  # Ignore jenkins
-        if status['state'] == 'pending': return None
-        elif status['state'] == 'success': successes += 1
-        elif status['state'] == 'failure': failures += 1
-        elif status['state'] == 'error': errors += 1
+        if status['state'] == 'pending':
+            return None
+        elif status['state'] == 'success':
+            successes += 1
+        elif status['state'] == 'failure':
+            failures += 1
+        elif status['state'] == 'error':
+            errors += 1
         if not latest_datetime:
             latest_datetime = parse_timestamp(status['updated_at'])
         else:
@@ -174,7 +182,8 @@ def main():
     args_parser = build_args_parser()
     args = args_parser.parse_args()
     TOKEN = args.token
-    if args.format == 'csv': print_csv_header()
+    if args.format == 'csv':
+        print_csv_header()
     for pr_data in get_pr_data():
         commit_data = get_commits_data(pr_data['number'])
         # PR with a single commit -> use the PRs creation time.

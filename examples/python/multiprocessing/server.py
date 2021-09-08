@@ -23,12 +23,11 @@ import datetime
 import logging
 import math
 import multiprocessing
-import time
 import socket
 import sys
+import time
 
 import grpc
-
 import prime_pb2
 import prime_pb2_grpc
 

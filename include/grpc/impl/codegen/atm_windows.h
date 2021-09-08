@@ -19,8 +19,12 @@
 #ifndef GRPC_IMPL_CODEGEN_ATM_WINDOWS_H
 #define GRPC_IMPL_CODEGEN_ATM_WINDOWS_H
 
+// IWYU pragma: private, include <grpc/support/atm.h>
+
 /** Win32 variant of atm_platform.h */
 #include <grpc/impl/codegen/port_platform.h>
+
+#ifdef GPR_WINDOWS
 
 typedef intptr_t gpr_atm;
 #define GPR_ATM_MAX INTPTR_MAX
@@ -124,5 +128,7 @@ static __inline gpr_atm gpr_atm_full_fetch_add(gpr_atm* p, gpr_atm delta) {
 static __inline gpr_atm gpr_atm_full_xchg(gpr_atm* p, gpr_atm n) {
   return (gpr_atm)InterlockedExchangePointer((PVOID*)p, (PVOID)n);
 }
+
+#endif /* GPR_WINDOWS */
 
 #endif /* GRPC_IMPL_CODEGEN_ATM_WINDOWS_H */

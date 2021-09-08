@@ -16,12 +16,15 @@
  *
  */
 
+#include <gtest/gtest.h>
+
 #include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/slice.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/impl/codegen/proto_utils.h>
 #include <grpcpp/impl/grpc_library.h>
-#include <gtest/gtest.h>
+
+#include "test/core/util/test_config.h"
 
 namespace grpc {
 
@@ -187,6 +190,7 @@ TEST_F(WriterTest, LargeBlockLargeBackup) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -16,9 +16,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <cstring>
-
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
+
+#include <cstring>
 
 #include "absl/strings/str_cat.h"
 
@@ -36,16 +36,17 @@ class ChildPolicyHandler::Helper
   explicit Helper(RefCountedPtr<ChildPolicyHandler> parent)
       : parent_(std::move(parent)) {}
 
-  ~Helper() { parent_.reset(DEBUG_LOCATION, "Helper"); }
+  ~Helper() override { parent_.reset(DEBUG_LOCATION, "Helper"); }
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      const grpc_channel_args& args) override {
+      ServerAddress address, const grpc_channel_args& args) override {
     if (parent_->shutting_down_) return nullptr;
     if (!CalledByCurrentChild() && !CalledByPendingChild()) return nullptr;
-    return parent_->channel_control_helper()->CreateSubchannel(args);
+    return parent_->channel_control_helper()->CreateSubchannel(
+        std::move(address), args);
   }
 
-  void UpdateState(grpc_connectivity_state state,
+  void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                    std::unique_ptr<SubchannelPicker> picker) override {
     if (parent_->shutting_down_) return;
     // If this request is from the pending child policy, ignore it until
@@ -55,8 +56,9 @@ class ChildPolicyHandler::Helper
       if (GRPC_TRACE_FLAG_ENABLED(*(parent_->tracer_))) {
         gpr_log(GPR_INFO,
                 "[child_policy_handler %p] helper %p: pending child policy %p "
-                "reports state=%s",
-                parent_.get(), this, child_, ConnectivityStateName(state));
+                "reports state=%s (%s)",
+                parent_.get(), this, child_, ConnectivityStateName(state),
+                status.ToString().c_str());
       }
       if (state == GRPC_CHANNEL_CONNECTING) return;
       grpc_pollset_set_del_pollset_set(
@@ -67,7 +69,8 @@ class ChildPolicyHandler::Helper
       // This request is from an outdated child, so ignore it.
       return;
     }
-    parent_->channel_control_helper()->UpdateState(state, std::move(picker));
+    parent_->channel_control_helper()->UpdateState(state, status,
+                                                   std::move(picker));
   }
 
   void RequestReresolution() override {

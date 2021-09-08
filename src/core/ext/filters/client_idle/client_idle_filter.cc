@@ -20,9 +20,10 @@
 
 #include <limits.h>
 
+#include <atomic>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/http2_errors.h"
@@ -126,8 +127,8 @@ grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
 
 class ChannelData {
  public:
-  static grpc_error* Init(grpc_channel_element* elem,
-                          grpc_channel_element_args* args);
+  static grpc_error_handle Init(grpc_channel_element* elem,
+                                grpc_channel_element_args* args);
   static void Destroy(grpc_channel_element* elem);
 
   static void StartTransportOp(grpc_channel_element* elem,
@@ -139,11 +140,12 @@ class ChannelData {
 
  private:
   ChannelData(grpc_channel_element* elem, grpc_channel_element_args* args,
-              grpc_error** error);
+              grpc_error_handle* error);
   ~ChannelData() = default;
 
-  static void IdleTimerCallback(void* arg, grpc_error* error);
-  static void IdleTransportOpCompleteCallback(void* arg, grpc_error* error);
+  static void IdleTimerCallback(void* arg, grpc_error_handle error);
+  static void IdleTransportOpCompleteCallback(void* arg,
+                                              grpc_error_handle error);
 
   void StartIdleTimer();
 
@@ -158,8 +160,8 @@ class ChannelData {
 
   // Member data used to track the state of channel.
   grpc_millis last_idle_time_;
-  Atomic<intptr_t> call_count_{0};
-  Atomic<ChannelState> state_{IDLE};
+  std::atomic<intptr_t> call_count_{0};
+  std::atomic<ChannelState> state_{IDLE};
 
   // Idle timer and its callback closure.
   grpc_timer idle_timer_;
@@ -170,9 +172,9 @@ class ChannelData {
   grpc_closure idle_transport_op_complete_callback_;
 };
 
-grpc_error* ChannelData::Init(grpc_channel_element* elem,
-                              grpc_channel_element_args* args) {
-  grpc_error* error = GRPC_ERROR_NONE;
+grpc_error_handle ChannelData::Init(grpc_channel_element* elem,
+                                    grpc_channel_element_args* args) {
+  grpc_error_handle error = GRPC_ERROR_NONE;
   new (elem->channel_data) ChannelData(elem, args, &error);
   return error;
 }
@@ -186,8 +188,8 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
                                    grpc_transport_op* op) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   // Catch the disconnect_with_error transport op.
-  if (op->disconnect_with_error != nullptr) {
-    // IncreaseCallCount() introduces a dummy call and prevent the timer from
+  if (op->disconnect_with_error != GRPC_ERROR_NONE) {
+    // IncreaseCallCount() introduces a phony call and prevent the timer from
     // being reset by other threads.
     chand->IncreaseCallCount();
     // If the timer has been set, cancel the timer.
@@ -200,20 +202,21 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
 }
 
 void ChannelData::IncreaseCallCount() {
-  const intptr_t previous_value = call_count_.FetchAdd(1, MemoryOrder::RELAXED);
+  const intptr_t previous_value =
+      call_count_.fetch_add(1, std::memory_order_relaxed);
   GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR,
                        previous_value + 1);
   if (previous_value == 0) {
     // This call is the one that makes the channel busy.
     // Loop here to make sure the previous decrease operation has finished.
-    ChannelState state = state_.Load(MemoryOrder::RELAXED);
+    ChannelState state = state_.load(std::memory_order_relaxed);
     while (true) {
       switch (state) {
         // Timer has not been set. Switch to CALLS_ACTIVE.
         case IDLE:
           // In this case, no other threads will modify the state, so we can
           // just store the value.
-          state_.Store(CALLS_ACTIVE, MemoryOrder::RELAXED);
+          state_.store(CALLS_ACTIVE, std::memory_order_relaxed);
           return;
         // Timer has been set. Switch to TIMER_PENDING_CALLS_ACTIVE.
         case TIMER_PENDING:
@@ -221,17 +224,17 @@ void ChannelData::IncreaseCallCount() {
           // At this point, the state may have been switched to IDLE by the
           // idle timer callback. Therefore, use CAS operation to change the
           // state atomically.
-          // Use MemoryOrder::ACQUIRE on success to ensure last_idle_time_ has
-          // been properly set in DecreaseCallCount().
-          if (state_.CompareExchangeWeak(&state, TIMER_PENDING_CALLS_ACTIVE,
-                                         MemoryOrder::ACQUIRE,
-                                         MemoryOrder::RELAXED)) {
+          // Use std::memory_order_acquire on success to ensure last_idle_time_
+          // has been properly set in DecreaseCallCount().
+          if (state_.compare_exchange_weak(state, TIMER_PENDING_CALLS_ACTIVE,
+                                           std::memory_order_acquire,
+                                           std::memory_order_relaxed)) {
             return;
           }
           break;
         default:
           // The state has not been switched to desired value yet, try again.
-          state = state_.Load(MemoryOrder::RELAXED);
+          state = state_.load(std::memory_order_relaxed);
           break;
       }
     }
@@ -239,16 +242,17 @@ void ChannelData::IncreaseCallCount() {
 }
 
 void ChannelData::DecreaseCallCount() {
-  const intptr_t previous_value = call_count_.FetchSub(1, MemoryOrder::RELAXED);
+  const intptr_t previous_value =
+      call_count_.fetch_sub(1, std::memory_order_relaxed);
   GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR,
                        previous_value - 1);
   if (previous_value == 1) {
     // This call is the one that makes the channel idle.
-    // last_idle_time_ does not need to be Atomic<> because busy-loops in
+    // last_idle_time_ does not need to be std::atomic<> because busy-loops in
     // IncreaseCallCount(), DecreaseCallCount() and IdleTimerCallback() will
     // prevent multiple threads from simultaneously accessing this variable.
     last_idle_time_ = ExecCtx::Get()->Now();
-    ChannelState state = state_.Load(MemoryOrder::RELAXED);
+    ChannelState state = state_.load(std::memory_order_relaxed);
     while (true) {
       switch (state) {
         // Timer has not been set. Set the timer and switch to TIMER_PENDING
@@ -256,7 +260,7 @@ void ChannelData::DecreaseCallCount() {
           // Release store here to make other threads see the updated value of
           // last_idle_time_.
           StartIdleTimer();
-          state_.Store(TIMER_PENDING, MemoryOrder::RELEASE);
+          state_.store(TIMER_PENDING, std::memory_order_release);
           return;
         // Timer has been set. Switch to
         // TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START
@@ -266,15 +270,15 @@ void ChannelData::DecreaseCallCount() {
           // state atomically.
           // Release store here to make the idle timer callback see the updated
           // value of last_idle_time_ to properly reset the idle timer.
-          if (state_.CompareExchangeWeak(
-                  &state, TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START,
-                  MemoryOrder::RELEASE, MemoryOrder::RELAXED)) {
+          if (state_.compare_exchange_weak(
+                  state, TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START,
+                  std::memory_order_release, std::memory_order_relaxed)) {
             return;
           }
           break;
         default:
           // The state has not been switched to desired value yet, try again.
-          state = state_.Load(MemoryOrder::RELAXED);
+          state = state_.load(std::memory_order_relaxed);
           break;
       }
     }
@@ -283,7 +287,7 @@ void ChannelData::DecreaseCallCount() {
 
 ChannelData::ChannelData(grpc_channel_element* elem,
                          grpc_channel_element_args* args,
-                         grpc_error** /*error*/)
+                         grpc_error_handle* /*error*/)
     : elem_(elem),
       channel_stack_(args->channel_stack),
       client_idle_timeout_(GetClientIdleTimeout(args->channel_args)) {
@@ -303,7 +307,7 @@ ChannelData::ChannelData(grpc_channel_element* elem,
                     grpc_schedule_on_exec_ctx);
 }
 
-void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
+void ChannelData::IdleTimerCallback(void* arg, grpc_error_handle error) {
   GRPC_IDLE_FILTER_LOG("timer alarms");
   ChannelData* chand = static_cast<ChannelData*>(arg);
   if (error != GRPC_ERROR_NONE) {
@@ -312,38 +316,41 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
     return;
   }
   bool finished = false;
-  ChannelState state = chand->state_.Load(MemoryOrder::RELAXED);
+  ChannelState state = chand->state_.load(std::memory_order_relaxed);
   while (!finished) {
     switch (state) {
       case TIMER_PENDING:
         // Change the state to PROCESSING to block IncreaseCallCout() until the
         // EnterIdle() operation finishes, preventing mistakenly entering IDLE
         // when active RPC exists.
-        finished = chand->state_.CompareExchangeWeak(
-            &state, PROCESSING, MemoryOrder::ACQUIRE, MemoryOrder::RELAXED);
+        finished = chand->state_.compare_exchange_weak(
+            state, PROCESSING, std::memory_order_acquire,
+            std::memory_order_relaxed);
         if (finished) {
           chand->EnterIdle();
-          chand->state_.Store(IDLE, MemoryOrder::RELAXED);
+          chand->state_.store(IDLE, std::memory_order_relaxed);
         }
         break;
       case TIMER_PENDING_CALLS_ACTIVE:
-        finished = chand->state_.CompareExchangeWeak(
-            &state, CALLS_ACTIVE, MemoryOrder::RELAXED, MemoryOrder::RELAXED);
+        finished = chand->state_.compare_exchange_weak(
+            state, CALLS_ACTIVE, std::memory_order_relaxed,
+            std::memory_order_relaxed);
         break;
       case TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START:
         // Change the state to PROCESSING to block IncreaseCallCount() until the
         // StartIdleTimer() operation finishes, preventing mistakenly restarting
         // the timer after grpc_timer_cancel() when shutdown.
-        finished = chand->state_.CompareExchangeWeak(
-            &state, PROCESSING, MemoryOrder::ACQUIRE, MemoryOrder::RELAXED);
+        finished = chand->state_.compare_exchange_weak(
+            state, PROCESSING, std::memory_order_acquire,
+            std::memory_order_relaxed);
         if (finished) {
           chand->StartIdleTimer();
-          chand->state_.Store(TIMER_PENDING, MemoryOrder::RELAXED);
+          chand->state_.store(TIMER_PENDING, std::memory_order_relaxed);
         }
         break;
       default:
         // The state has not been switched to desired value yet, try again.
-        state = chand->state_.Load(MemoryOrder::RELAXED);
+        state = chand->state_.load(std::memory_order_relaxed);
         break;
     }
   }
@@ -352,7 +359,7 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
 }
 
 void ChannelData::IdleTransportOpCompleteCallback(void* arg,
-                                                  grpc_error* /*error*/) {
+                                                  grpc_error_handle /*error*/) {
   ChannelData* chand = static_cast<ChannelData*>(arg);
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "idle transport op");
 }
@@ -381,15 +388,15 @@ void ChannelData::EnterIdle() {
 
 class CallData {
  public:
-  static grpc_error* Init(grpc_call_element* elem,
-                          const grpc_call_element_args* args);
+  static grpc_error_handle Init(grpc_call_element* elem,
+                                const grpc_call_element_args* args);
   static void Destroy(grpc_call_element* elem,
                       const grpc_call_final_info* final_info,
                       grpc_closure* then_schedule_closure);
 };
 
-grpc_error* CallData::Init(grpc_call_element* elem,
-                           const grpc_call_element_args* /*args*/) {
+grpc_error_handle CallData::Init(grpc_call_element* elem,
+                                 const grpc_call_element_args* /*args*/) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   chand->IncreaseCallCount();
   return GRPC_ERROR_NONE;

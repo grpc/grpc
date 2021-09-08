@@ -31,13 +31,13 @@
 
   COPY . .
 
-  RUN make && make install
+  RUN make shared_c static_c
 
 
   WORKDIR /github/grpc/src/php/ext/grpc
 
   RUN phpize && ${'\\'}
-    ./configure --enable-tests && ${'\\'}
+    GRPC_LIB_SUBDIR=libs/opt ./configure --enable-grpc=/github/grpc --enable-tests && ${'\\'}
     make && ${'\\'}
     make install
 

@@ -22,7 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/impl/codegen/gpr_types.h> /* for gpr_timespec */
-#include <grpc/impl/codegen/sync.h>
+#include <grpc/impl/codegen/sync.h>      // IWYU pragma: export
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,12 +94,12 @@ GPRAPI void gpr_cv_broadcast(gpr_cv* cv);
    GPR_ONCE_INIT.  e.g.,
      static gpr_once once_var = GPR_ONCE_INIT;     */
 
-/** Ensure that (*init_routine)() has been called exactly once (for the
+/** Ensure that (*init_function)() has been called exactly once (for the
    specified gpr_once instance) and then return.
    If multiple threads call gpr_once() on the same gpr_once instance, one of
-   them will call (*init_routine)(), and the others will block until that call
+   them will call (*init_function)(), and the others will block until that call
    finishes.*/
-GPRAPI void gpr_once_init(gpr_once* once, void (*init_routine)(void));
+GPRAPI void gpr_once_init(gpr_once* once, void (*init_function)(void));
 
 /** --- One-time event notification ---
 

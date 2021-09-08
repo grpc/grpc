@@ -16,7 +16,7 @@ that gets printed to stderr.
 
 `GRPC_TRACE` can be used to enable extra logging for some internal gRPC components. Enabling the right traces can be invaluable
 for diagnosing for what is going wrong when things aren't working as intended. Possible values for `GRPC_TRACE` are listed in [Environment Variables Overview](doc/environment_variables.md).
-Multiple traces can be enable at once (use comma as separator).
+Multiple traces can be enabled at once (use comma as separator).
 
 ```
 # Enable debug logs for an application

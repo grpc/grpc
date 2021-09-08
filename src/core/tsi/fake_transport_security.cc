@@ -474,12 +474,21 @@ static void fake_zero_copy_grpc_protector_destroy(
   gpr_free(impl);
 }
 
+static tsi_result fake_zero_copy_grpc_protector_max_frame_size(
+    tsi_zero_copy_grpc_protector* self, size_t* max_frame_size) {
+  if (self == nullptr || max_frame_size == nullptr) return TSI_INVALID_ARGUMENT;
+  tsi_fake_zero_copy_grpc_protector* impl =
+      reinterpret_cast<tsi_fake_zero_copy_grpc_protector*>(self);
+  *max_frame_size = impl->max_frame_size;
+  return TSI_OK;
+}
+
 static const tsi_zero_copy_grpc_protector_vtable
     zero_copy_grpc_protector_vtable = {
         fake_zero_copy_grpc_protector_protect,
         fake_zero_copy_grpc_protector_unprotect,
         fake_zero_copy_grpc_protector_destroy,
-        nullptr /* fake_zero_copy_grpc_protector_max_frame_size */
+        fake_zero_copy_grpc_protector_max_frame_size,
 };
 
 /* --- tsi_handshaker_result methods implementation. ---*/
@@ -490,7 +499,7 @@ struct fake_handshaker_result {
   size_t unused_bytes_size;
 };
 static tsi_result fake_handshaker_result_extract_peer(
-    const tsi_handshaker_result* self, tsi_peer* peer) {
+    const tsi_handshaker_result* /*self*/, tsi_peer* peer) {
   /* Construct a tsi_peer with 1 property: certificate type, security_level. */
   tsi_result result = tsi_construct_peer(2, peer);
   if (result != TSI_OK) return result;
@@ -524,7 +533,8 @@ static tsi_result fake_handshaker_result_create_frame_protector(
 static tsi_result fake_handshaker_result_get_unused_bytes(
     const tsi_handshaker_result* self, const unsigned char** bytes,
     size_t* bytes_size) {
-  fake_handshaker_result* result = (fake_handshaker_result*)self;
+  fake_handshaker_result* result = reinterpret_cast<fake_handshaker_result*>(
+      const_cast<tsi_handshaker_result*>(self));
   *bytes_size = result->unused_bytes_size;
   *bytes = result->unused_bytes;
   return TSI_OK;
@@ -577,11 +587,13 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
   }
   if (!impl->outgoing_frame.needs_draining) {
     tsi_fake_handshake_message next_message_to_send =
+        // NOLINTNEXTLINE(bugprone-misplaced-widening-cast)
         static_cast<tsi_fake_handshake_message>(impl->next_message_to_send + 2);
     const char* msg_string =
         tsi_fake_handshake_message_to_string(impl->next_message_to_send);
-    result = tsi_fake_frame_set_data((unsigned char*)msg_string,
-                                     strlen(msg_string), &impl->outgoing_frame);
+    result = tsi_fake_frame_set_data(
+        reinterpret_cast<unsigned char*>(const_cast<char*>(msg_string)),
+        strlen(msg_string), &impl->outgoing_frame);
     if (result != TSI_OK) return result;
     if (next_message_to_send > TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
       next_message_to_send = TSI_FAKE_HANDSHAKE_MESSAGE_MAX;

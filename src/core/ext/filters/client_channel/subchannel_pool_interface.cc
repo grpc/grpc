@@ -44,13 +44,27 @@ SubchannelKey::SubchannelKey(const SubchannelKey& other) {
 }
 
 SubchannelKey& SubchannelKey::operator=(const SubchannelKey& other) {
+  if (&other == this) {
+    return *this;
+  }
   grpc_channel_args_destroy(const_cast<grpc_channel_args*>(args_));
   Init(other.args_, grpc_channel_args_copy);
   return *this;
 }
 
-int SubchannelKey::Cmp(const SubchannelKey& other) const {
-  return grpc_channel_args_compare(args_, other.args_);
+SubchannelKey::SubchannelKey(SubchannelKey&& other) noexcept {
+  args_ = other.args_;
+  other.args_ = nullptr;
+}
+
+SubchannelKey& SubchannelKey::operator=(SubchannelKey&& other) noexcept {
+  args_ = other.args_;
+  other.args_ = nullptr;
+  return *this;
+}
+
+bool SubchannelKey::operator<(const SubchannelKey& other) const {
+  return grpc_channel_args_compare(args_, other.args_) < 0;
 }
 
 void SubchannelKey::Init(

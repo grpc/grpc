@@ -16,6 +16,8 @@
  *
  */
 
+#include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -27,7 +29,6 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
-#include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"
@@ -52,7 +53,9 @@
 #define ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL \
   "test application protocol"
 #define ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL "test record protocol"
-#define ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE 256 * 1024
+#define ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE (2 * 1024 * 1024)
+#define ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY "peer"
+#define ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE "attributes"
 
 using grpc_core::internal::alts_handshaker_client_check_fields_for_testing;
 using grpc_core::internal::alts_handshaker_client_get_handshaker_for_testing;
@@ -64,7 +67,6 @@ using grpc_core::internal::alts_handshaker_client_ref_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_cb_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_fields_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_recv_bytes_for_testing;
-using grpc_core::internal::alts_handshaker_client_set_vtable_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_get_client_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_get_is_client_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_set_client_vtable_for_testing;
@@ -148,6 +150,11 @@ static grpc_byte_buffer* generate_handshaker_response(
       result = grpc_gcp_HandshakerResp_mutable_result(resp, arena.ptr());
       peer_identity =
           grpc_gcp_HandshakerResult_mutable_peer_identity(result, arena.ptr());
+      grpc_gcp_Identity_attributes_set(
+          peer_identity,
+          upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY),
+          upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE),
+          arena.ptr());
       grpc_gcp_Identity_set_service_account(
           peer_identity,
           upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY));
@@ -177,6 +184,11 @@ static grpc_byte_buffer* generate_handshaker_response(
       result = grpc_gcp_HandshakerResp_mutable_result(resp, arena.ptr());
       peer_identity =
           grpc_gcp_HandshakerResult_mutable_peer_identity(result, arena.ptr());
+      grpc_gcp_Identity_attributes_set(
+          peer_identity,
+          upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY),
+          upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE),
+          arena.ptr());
       grpc_gcp_Identity_set_service_account(
           peer_identity,
           upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY));
@@ -328,6 +340,25 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
                     peer_account.size) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
                     local_account.size) == 0);
+  size_t iter = UPB_MAP_BEGIN;
+  grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry =
+      grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
+  GPR_ASSERT(peer_attributes_entry != nullptr);
+  while (peer_attributes_entry != nullptr) {
+    upb_strview key = grpc_gcp_AltsContext_PeerAttributesEntry_key(
+        const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(
+            peer_attributes_entry));
+    upb_strview val = grpc_gcp_AltsContext_PeerAttributesEntry_value(
+        const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(
+            peer_attributes_entry));
+    GPR_ASSERT(upb_strview_eql(
+        key, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
+    GPR_ASSERT(upb_strview_eql(
+        val,
+        upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
+    peer_attributes_entry =
+        grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
+  }
   /* Validate security level. */
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
                     peer.properties[4].value.data,
@@ -402,6 +433,25 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
                     peer_account.size) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
                     local_account.size) == 0);
+  size_t iter = UPB_MAP_BEGIN;
+  grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry =
+      grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
+  GPR_ASSERT(peer_attributes_entry != nullptr);
+  while (peer_attributes_entry != nullptr) {
+    upb_strview key = grpc_gcp_AltsContext_PeerAttributesEntry_key(
+        const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(
+            peer_attributes_entry));
+    upb_strview val = grpc_gcp_AltsContext_PeerAttributesEntry_value(
+        const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(
+            peer_attributes_entry));
+    GPR_ASSERT(upb_strview_eql(
+        key, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
+    GPR_ASSERT(upb_strview_eql(
+        val,
+        upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
+    peer_attributes_entry =
+        grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
+  }
   /* Check security level. */
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
                     peer.properties[4].value.data,

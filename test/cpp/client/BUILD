@@ -21,6 +21,11 @@ grpc_package(name = "test/cpp/client")
 grpc_cc_test(
     name = "credentials_test",
     srcs = ["credentials_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     external_deps = [
         "gtest",
     ],

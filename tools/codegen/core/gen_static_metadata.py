@@ -14,13 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
 import hashlib
 import itertools
-import collections
 import os
-import sys
-import subprocess
 import re
+import subprocess
+import sys
+
 import perfection
 
 # Configuration: a list of either strings or 2-tuples of strings.
@@ -65,8 +66,10 @@ CONFIG = [
     # well known method names
     '/grpc.lb.v1.LoadBalancer/BalanceLoad',
     '/envoy.service.load_stats.v2.LoadReportingService/StreamLoadStats',
+    '/envoy.service.load_stats.v3.LoadReportingService/StreamLoadStats',
     '/grpc.health.v1.Health/Watch',
     '/envoy.service.discovery.v2.AggregatedDiscoveryService/StreamAggregatedResources',
+    '/envoy.service.discovery.v3.AggregatedDiscoveryService/StreamAggregatedResources',
     # compression algorithm names
     'deflate',
     'gzip',
@@ -635,7 +638,7 @@ static uint32_t %(name)s_phash(uint32_t i) {
   uint32_t y = i / %(t)d;
   uint32_t h = x;
   if (y < GPR_ARRAY_SIZE(%(name)s_r)) {
-    uint32_t delta = (uint32_t)%(name)s_r[y];
+    uint32_t delta = static_cast<uint32_t>(%(name)s_r[y]);
     h += delta;
   }
   return h;

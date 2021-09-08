@@ -31,30 +31,6 @@ grpc_byte_buffer *string_to_byte_buffer(char *string, size_t length) {
   return buffer;
 }
 
-#if PHP_MAJOR_VERSION < 7
-
-void byte_buffer_to_string(grpc_byte_buffer *buffer, char **out_string,
-                           size_t *out_length) {
-  grpc_byte_buffer_reader reader;
-  if (buffer == NULL || !grpc_byte_buffer_reader_init(&reader, buffer)) {
-    /* TODO(dgq): distinguish between the error cases. */
-    *out_string = NULL;
-    *out_length = 0;
-    return;
-  }
-
-  grpc_slice slice = grpc_byte_buffer_reader_readall(&reader);
-  size_t length = GRPC_SLICE_LENGTH(slice);
-  char *string = ecalloc(length + 1, sizeof(char));
-  memcpy(string, GRPC_SLICE_START_PTR(slice), length);
-  grpc_slice_unref(slice);
-
-  *out_string = string;
-  *out_length = length;
-}
-
-#else
-
 zend_string* byte_buffer_to_zend_string(grpc_byte_buffer *buffer) {
   grpc_byte_buffer_reader reader;
   if (buffer == NULL || !grpc_byte_buffer_reader_init(&reader, buffer)) {
@@ -78,5 +54,3 @@ zend_string* byte_buffer_to_zend_string(grpc_byte_buffer *buffer) {
   
   return zstr;
 }
-
-#endif // PHP_MAJOR_VERSION < 7

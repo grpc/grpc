@@ -18,6 +18,10 @@
 
 #include <thread>
 
+#include <gtest/gtest.h>
+
+#include "absl/memory/memory.h"
+
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -35,8 +39,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
-
-#include <gtest/gtest.h>
 
 #define PLUGIN_NAME "TestServerBuilderPlugin"
 
@@ -138,7 +140,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
 
   void SetUp() override {
     port_ = grpc_pick_unused_port_or_die();
-    builder_.reset(new ServerBuilder());
+    builder_ = absl::make_unique<ServerBuilder>();
   }
 
   void InsertPlugin() {
@@ -227,8 +229,8 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   void RunCQ() {
     void* tag;
     bool ok;
-    while (cq_->Next(&tag, &ok))
-      ;
+    while (cq_->Next(&tag, &ok)) {
+    }
   }
 };
 

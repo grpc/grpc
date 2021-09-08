@@ -17,6 +17,7 @@
  */
 
 #include <grpc/grpc.h>
+
 #include "test/core/util/test_config.h"
 
 int main(int argc, char** argv) {
@@ -53,7 +54,7 @@ int main(int argc, char** argv) {
   grpc_server_start(server);
   grpc_server_shutdown_and_notify(server, cq2, nullptr);
   grpc_completion_queue_next(cq2, gpr_inf_future(GPR_CLOCK_REALTIME),
-                             nullptr); /* cue queue hang */
+                             nullptr); /* cue queue freeze */
   grpc_completion_queue_shutdown(cq1);
   grpc_completion_queue_shutdown(cq2);
   grpc_completion_queue_shutdown(cq3);

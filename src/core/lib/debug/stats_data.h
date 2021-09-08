@@ -24,6 +24,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <inttypes.h>
+
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 typedef enum {
@@ -397,43 +398,43 @@ typedef enum {
   GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_CQ_EV_QUEUE_TRANSIENT_POP_FAILURES)
 #define GRPC_STATS_INC_CALL_INITIAL_SIZE(value) \
   grpc_stats_inc_call_initial_size((int)(value))
-void grpc_stats_inc_call_initial_size(int x);
+void grpc_stats_inc_call_initial_size(int value);
 #define GRPC_STATS_INC_POLL_EVENTS_RETURNED(value) \
   grpc_stats_inc_poll_events_returned((int)(value))
-void grpc_stats_inc_poll_events_returned(int x);
+void grpc_stats_inc_poll_events_returned(int value);
 #define GRPC_STATS_INC_TCP_WRITE_SIZE(value) \
   grpc_stats_inc_tcp_write_size((int)(value))
-void grpc_stats_inc_tcp_write_size(int x);
+void grpc_stats_inc_tcp_write_size(int value);
 #define GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(value) \
   grpc_stats_inc_tcp_write_iov_size((int)(value))
-void grpc_stats_inc_tcp_write_iov_size(int x);
+void grpc_stats_inc_tcp_write_iov_size(int value);
 #define GRPC_STATS_INC_TCP_READ_SIZE(value) \
   grpc_stats_inc_tcp_read_size((int)(value))
-void grpc_stats_inc_tcp_read_size(int x);
+void grpc_stats_inc_tcp_read_size(int value);
 #define GRPC_STATS_INC_TCP_READ_OFFER(value) \
   grpc_stats_inc_tcp_read_offer((int)(value))
-void grpc_stats_inc_tcp_read_offer(int x);
+void grpc_stats_inc_tcp_read_offer(int value);
 #define GRPC_STATS_INC_TCP_READ_OFFER_IOV_SIZE(value) \
   grpc_stats_inc_tcp_read_offer_iov_size((int)(value))
-void grpc_stats_inc_tcp_read_offer_iov_size(int x);
+void grpc_stats_inc_tcp_read_offer_iov_size(int value);
 #define GRPC_STATS_INC_HTTP2_SEND_MESSAGE_SIZE(value) \
   grpc_stats_inc_http2_send_message_size((int)(value))
-void grpc_stats_inc_http2_send_message_size(int x);
+void grpc_stats_inc_http2_send_message_size(int value);
 #define GRPC_STATS_INC_HTTP2_SEND_INITIAL_METADATA_PER_WRITE(value) \
   grpc_stats_inc_http2_send_initial_metadata_per_write((int)(value))
-void grpc_stats_inc_http2_send_initial_metadata_per_write(int x);
+void grpc_stats_inc_http2_send_initial_metadata_per_write(int value);
 #define GRPC_STATS_INC_HTTP2_SEND_MESSAGE_PER_WRITE(value) \
   grpc_stats_inc_http2_send_message_per_write((int)(value))
-void grpc_stats_inc_http2_send_message_per_write(int x);
+void grpc_stats_inc_http2_send_message_per_write(int value);
 #define GRPC_STATS_INC_HTTP2_SEND_TRAILING_METADATA_PER_WRITE(value) \
   grpc_stats_inc_http2_send_trailing_metadata_per_write((int)(value))
-void grpc_stats_inc_http2_send_trailing_metadata_per_write(int x);
+void grpc_stats_inc_http2_send_trailing_metadata_per_write(int value);
 #define GRPC_STATS_INC_HTTP2_SEND_FLOWCTL_PER_WRITE(value) \
   grpc_stats_inc_http2_send_flowctl_per_write((int)(value))
-void grpc_stats_inc_http2_send_flowctl_per_write(int x);
+void grpc_stats_inc_http2_send_flowctl_per_write(int value);
 #define GRPC_STATS_INC_SERVER_CQS_CHECKED(value) \
   grpc_stats_inc_server_cqs_checked((int)(value))
-void grpc_stats_inc_server_cqs_checked(int x);
+void grpc_stats_inc_server_cqs_checked(int value);
 #else
 #define GRPC_STATS_INC_CLIENT_CALLS_CREATED()
 #define GRPC_STATS_INC_SERVER_CALLS_CREATED()

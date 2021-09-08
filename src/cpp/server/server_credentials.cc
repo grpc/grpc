@@ -16,10 +16,14 @@
  *
  */
 
-#include <grpcpp/security/server_credentials_impl.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/security/server_credentials.h>
 
-namespace grpc_impl {
+namespace grpc {
+
+static internal::GrpcLibraryInitializer g_gli_initializer;
+ServerCredentials::ServerCredentials() { g_gli_initializer.summon(); }
 
 ServerCredentials::~ServerCredentials() {}
 
-}  // namespace grpc_impl
+}  // namespace grpc

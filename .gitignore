@@ -96,6 +96,9 @@ DerivedData
 *.xcuserstate
 *.DS_Store
 
+# Swift Package Manager files
+Package.resolved
+
 # Objective-C generated files
 *.pbobjc.*
 *.pbrpc.*
@@ -151,3 +154,6 @@ BenchmarkDotNet.Artifacts/
 
 # pyenv config
 .python-version
+
+# clang JSON compilation database file
+compile_commands.json

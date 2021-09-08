@@ -23,8 +23,12 @@
 
 #include <condition_variable>
 #include <mutex>
+#include <thread>
 #include <unordered_map>
 #include <vector>
+
+#include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -33,11 +37,10 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/slice.h>
 
-#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
-#include "src/proto/grpc/testing/payloads.pb.h"
-
 #include "src/core/lib/gpr/env.h"
 #include "src/cpp/util/core_stats.h"
+#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
+#include "src/proto/grpc/testing/payloads.pb.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/qps_worker.h"
@@ -359,8 +362,8 @@ class Client {
         // Closed-loop doesn't use random dist at all
         break;
       case LoadParams::kPoisson:
-        random_dist.reset(
-            new ExpDist(load.poisson().offered_load() / num_threads));
+        random_dist = absl::make_unique<ExpDist>(load.poisson().offered_load() /
+                                                 num_threads);
         break;
       default:
         GPR_ASSERT(false);
@@ -407,7 +410,7 @@ class Client {
   void MaybeStartRequests() {
     if (!started_requests_) {
       started_requests_ = true;
-      gpr_event_set(&start_requests_, (void*)1);
+      gpr_event_set(&start_requests_, reinterpret_cast<void*>(1));
     }
   }
 
@@ -438,7 +441,7 @@ class ClientImpl : public Client {
     ClientRequestCreator<RequestType> create_req(&request_,
                                                  config.payload_config());
   }
-  virtual ~ClientImpl() {}
+  ~ClientImpl() override {}
   const RequestType* request() { return &request_; }
 
   void WaitForChannelsToConnect() {
@@ -520,7 +523,7 @@ class ClientImpl : public Client {
       }
 
       std::string inproc_pfx(INPROC_NAME_PREFIX);
-      if (target.find(inproc_pfx) != 0) {
+      if (!absl::StartsWith(target, inproc_pfx)) {
         channel_ = CreateTestChannel(
             target, type, config.security_params().server_host_override(),
             !config.security_params().use_test_ca(),
@@ -562,11 +565,11 @@ class ClientImpl : public Client {
       create_stub_;
 };
 
-std::unique_ptr<Client> CreateSynchronousClient(const ClientConfig& args);
-std::unique_ptr<Client> CreateAsyncClient(const ClientConfig& args);
-std::unique_ptr<Client> CreateCallbackClient(const ClientConfig& args);
+std::unique_ptr<Client> CreateSynchronousClient(const ClientConfig& config);
+std::unique_ptr<Client> CreateAsyncClient(const ClientConfig& config);
+std::unique_ptr<Client> CreateCallbackClient(const ClientConfig& config);
 std::unique_ptr<Client> CreateGenericAsyncStreamingClient(
-    const ClientConfig& args);
+    const ClientConfig& config);
 
 }  // namespace testing
 }  // namespace grpc

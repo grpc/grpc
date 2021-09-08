@@ -19,26 +19,37 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CLIENT_UNARY_CALL_H
 #define GRPCPP_IMPL_CODEGEN_CLIENT_UNARY_CALL_H
 
+// IWYU pragma: private, include <grpcpp/impl/client_unary_call.h>
+
 #include <grpcpp/impl/codegen/call.h>
+#include <grpcpp/impl/codegen/call_op_set.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/status.h>
 
-namespace grpc_impl {
-
-class ClientContext;
-}  // namespace grpc_impl
 namespace grpc {
 
+class ClientContext;
 namespace internal {
 class RpcMethod;
-/// Wrapper that performs a blocking unary call
-template <class InputMessage, class OutputMessage>
+
+/// Wrapper that performs a blocking unary call. May optionally specify the base
+/// class of the Request and Response so that the internal calls and structures
+/// below this may be based on those base classes and thus achieve code reuse
+/// across different RPCs (e.g., for protobuf, MessageLite would be a base
+/// class).
+template <class InputMessage, class OutputMessage,
+          class BaseInputMessage = InputMessage,
+          class BaseOutputMessage = OutputMessage>
 Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
-                         grpc_impl::ClientContext* context,
+                         grpc::ClientContext* context,
                          const InputMessage& request, OutputMessage* result) {
-  return BlockingUnaryCallImpl<InputMessage, OutputMessage>(
+  static_assert(std::is_base_of<BaseInputMessage, InputMessage>::value,
+                "Invalid input message specification");
+  static_assert(std::is_base_of<BaseOutputMessage, OutputMessage>::value,
+                "Invalid output message specification");
+  return BlockingUnaryCallImpl<BaseInputMessage, BaseOutputMessage>(
              channel, method, context, request, result)
       .status();
 }
@@ -47,9 +58,9 @@ template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl {
  public:
   BlockingUnaryCallImpl(ChannelInterface* channel, const RpcMethod& method,
-                        grpc_impl::ClientContext* context,
+                        grpc::ClientContext* context,
                         const InputMessage& request, OutputMessage* result) {
-    ::grpc_impl::CompletionQueue cq(grpc_completion_queue_attributes{
+    ::grpc::CompletionQueue cq(grpc_completion_queue_attributes{
         GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
         nullptr});  // Pluckable completion queue
     ::grpc::internal::Call call(channel->CreateCall(method, context, &cq));

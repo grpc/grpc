@@ -19,32 +19,16 @@
 #ifndef GRPCPP_IMPL_CODEGEN_BYTE_BUFFER_H
 #define GRPCPP_IMPL_CODEGEN_BYTE_BUFFER_H
 
-#include <grpc/impl/codegen/byte_buffer.h>
+// IWYU pragma: private, include <grpcpp/support/byte_buffer.h>
 
+#include <vector>
+
+#include <grpc/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/serialization_traits.h>
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/status.h>
-
-#include <vector>
-
-namespace grpc_impl {
-namespace internal {
-
-template <class RequestType, class ResponseType>
-class CallbackUnaryHandler;
-template <class RequestType, class ResponseType>
-class CallbackServerStreamingHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class RpcMethodHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class ServerStreamingHandler;
-template <::grpc::StatusCode code>
-class ErrorMethodHandler;
-
-}  // namespace internal
-}  // namespace grpc_impl
 
 namespace grpc {
 
@@ -53,6 +37,16 @@ class ByteBuffer;
 class ServerInterface;
 
 namespace internal {
+template <class RequestType, class ResponseType>
+class CallbackUnaryHandler;
+template <class RequestType, class ResponseType>
+class CallbackServerStreamingHandler;
+template <class RequestType>
+void* UnaryDeserializeHelper(grpc_byte_buffer*, ::grpc::Status*, RequestType*);
+template <class ServiceType, class RequestType, class ResponseType>
+class ServerStreamingHandler;
+template <::grpc::StatusCode code>
+class ErrorMethodHandler;
 class CallOpSendMessage;
 template <class R>
 class CallOpRecvMessage;
@@ -121,6 +115,13 @@ class ByteBuffer final {
     return *this;
   }
 
+  // If this ByteBuffer's representation is a single flat slice, returns a
+  // slice referencing that array.
+  Status TrySingleSlice(Slice* slice) const;
+
+  /// Dump (read) the buffer contents into \a slics.
+  Status DumpToSingleSlice(Slice* slice) const;
+
   /// Dump (read) the buffer contents into \a slices.
   Status Dump(std::vector<Slice>* slices) const;
 
@@ -169,16 +170,17 @@ class ByteBuffer final {
   template <class R>
   friend class internal::CallOpRecvMessage;
   friend class internal::CallOpGenericRecvMessage;
+  template <class RequestType>
+  friend void* internal::UnaryDeserializeHelper(grpc_byte_buffer*,
+                                                ::grpc::Status*, RequestType*);
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::RpcMethodHandler;
-  template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::ServerStreamingHandler;
+  friend class internal::ServerStreamingHandler;
   template <class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::CallbackUnaryHandler;
+  friend class internal::CallbackUnaryHandler;
   template <class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::CallbackServerStreamingHandler;
+  friend class internal::CallbackServerStreamingHandler;
   template <StatusCode code>
-  friend class ::grpc_impl::internal::ErrorMethodHandler;
+  friend class internal::ErrorMethodHandler;
   template <class R>
   friend class internal::DeserializeFuncType;
   friend class ProtoBufferReader;
@@ -201,10 +203,14 @@ class ByteBuffer final {
 
   class ByteBufferPointer {
    public:
+    /* NOLINTNEXTLINE(google-explicit-constructor) */
     ByteBufferPointer(const ByteBuffer* b)
         : bbuf_(const_cast<ByteBuffer*>(b)) {}
+    /* NOLINTNEXTLINE(google-explicit-constructor) */
     operator ByteBuffer*() { return bbuf_; }
+    /* NOLINTNEXTLINE(google-explicit-constructor) */
     operator grpc_byte_buffer*() { return bbuf_->buffer_; }
+    /* NOLINTNEXTLINE(google-explicit-constructor) */
     operator grpc_byte_buffer**() { return &bbuf_->buffer_; }
 
    private:

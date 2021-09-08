@@ -18,11 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/alloc.h>
-
-#include <grpc/support/log.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/profiling/timers.h"
 
 void* gpr_malloc(size_t size) {
@@ -66,9 +67,10 @@ void* gpr_malloc_aligned(size_t size, size_t alignment) {
   GPR_ASSERT(((alignment - 1) & alignment) == 0);  // Must be power of 2.
   size_t extra = alignment - 1 + sizeof(void*);
   void* p = gpr_malloc(size + extra);
-  void** ret = (void**)(((uintptr_t)p + extra) & ~(alignment - 1));
+  void** ret = reinterpret_cast<void**>(
+      (reinterpret_cast<uintptr_t>(p) + extra) & ~(alignment - 1));
   ret[-1] = p;
-  return (void*)ret;
+  return ret;
 }
 
 void gpr_free_aligned(void* ptr) { gpr_free((static_cast<void**>(ptr))[-1]); }

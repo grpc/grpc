@@ -20,13 +20,14 @@
 
 #include "src/core/lib/channel/channel_trace.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
@@ -67,16 +68,18 @@ ChannelTrace::ChannelTrace(size_t max_event_memory)
       max_event_memory_(max_event_memory),
       head_trace_(nullptr),
       tail_trace_(nullptr) {
-  if (max_event_memory_ == 0)
+  if (max_event_memory_ == 0) {
     return;  // tracing is disabled if max_event_memory_ == 0
+  }
   gpr_mu_init(&tracer_mu_);
   time_created_ = grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
                                           GPR_CLOCK_REALTIME);
 }
 
 ChannelTrace::~ChannelTrace() {
-  if (max_event_memory_ == 0)
+  if (max_event_memory_ == 0) {
     return;  // tracing is disabled if max_event_memory_ == 0
+  }
   TraceEvent* it = head_trace_;
   while (it != nullptr) {
     TraceEvent* to_free = it;

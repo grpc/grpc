@@ -23,6 +23,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/http/httpcli.h"
@@ -30,12 +36,6 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/surface/api_trace.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 
 /* -- Common. -- */
 
@@ -67,14 +67,14 @@ static const grpc_arg_pointer_vtable credentials_pointer_vtable = {
 
 grpc_arg grpc_channel_credentials_to_arg(
     grpc_channel_credentials* credentials) {
-  return grpc_channel_arg_pointer_create((char*)GRPC_ARG_CHANNEL_CREDENTIALS,
-                                         credentials,
-                                         &credentials_pointer_vtable);
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_CHANNEL_CREDENTIALS), credentials,
+      &credentials_pointer_vtable);
 }
 
 grpc_channel_credentials* grpc_channel_credentials_from_arg(
     const grpc_arg* arg) {
-  if (strcmp(arg->key, GRPC_ARG_CHANNEL_CREDENTIALS)) return nullptr;
+  if (strcmp(arg->key, GRPC_ARG_CHANNEL_CREDENTIALS) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
             GRPC_ARG_CHANNEL_CREDENTIALS);
@@ -134,9 +134,9 @@ static const grpc_arg_pointer_vtable cred_ptr_vtable = {
     server_credentials_pointer_arg_copy, server_credentials_pointer_arg_destroy,
     server_credentials_pointer_cmp};
 
-grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* p) {
-  return grpc_channel_arg_pointer_create((char*)GRPC_SERVER_CREDENTIALS_ARG, p,
-                                         &cred_ptr_vtable);
+grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* c) {
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_SERVER_CREDENTIALS_ARG), c, &cred_ptr_vtable);
 }
 
 grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg) {

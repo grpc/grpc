@@ -14,9 +14,26 @@
 
 FROM centos:7
 
-RUN yum install -y python
+RUN yum install -y python3
+RUN yum install -y python3-devel
 RUN yum install -y epel-release
-RUN yum install -y python-pip
-RUN pip install virtualenv
-RUN yum groupinstall -y 'Development Tools'
-RUN yum install -y python-devel
+RUN yum install -y python3-pip
+RUN pip3 install --upgrade pip==19.3.1
+RUN pip3 install -U virtualenv
+
+# The default gcc of CentOS 7 is gcc 4.8 which is older than gcc 4.9,
+# the minimum supported gcc version for gRPC Core so let's upgrade to
+# the oldest one that can build gRPC on Centos 7.
+RUN yum install -y centos-release-scl
+RUN yum install -y devtoolset-8-binutils devtoolset-8-gcc devtoolset-8-gcc-c++
+
+# Activate devtoolset-8 by default
+# https://austindewey.com/2019/03/26/enabling-software-collections-binaries-on-a-docker-image/
+RUN echo $'#!/bin/bash\n\
+source scl_source enable devtoolset-8\n\
+"$@"\n' > /usr/bin/entrypoint.sh
+RUN chmod +x /usr/bin/entrypoint.sh
+RUN cat /usr/bin/entrypoint.sh
+ENTRYPOINT [ "/usr/bin/entrypoint.sh" ]
+
+CMD ["/bin/bash"]

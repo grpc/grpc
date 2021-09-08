@@ -22,6 +22,7 @@
 #include "channel.h"
 #include "server.h"
 #include "timeval.h"
+#include "version.h"
 #include "channel_credentials.h"
 #include "call_credentials.h"
 #include "server_credentials.h"
@@ -159,6 +160,7 @@ void destroy_grpc_channels() {
     wrapped_channel.wrapper = le->channel;
     grpc_channel_wrapper *channel = wrapped_channel.wrapper;
     grpc_channel_destroy(channel->wrapped);
+    channel->wrapped = NULL;
   PHP_GRPC_HASH_FOREACH_END()
 }
 
@@ -170,9 +172,7 @@ void prefork() {
 // Called at post fork
 void php_grpc_clean_persistent_list(TSRMLS_D) {
     zend_hash_clean(&grpc_persistent_list);
-    zend_hash_destroy(&grpc_persistent_list);
     zend_hash_clean(&grpc_target_upper_bound_map);
-    zend_hash_destroy(&grpc_target_upper_bound_map);
 }
 
 void postfork_child() {
@@ -190,7 +190,7 @@ void postfork_child() {
   grpc_php_shutdown_completion_queue(TSRMLS_C);
 
   // clean-up grpc_core
-  grpc_shutdown_blocking();
+  grpc_shutdown();
   if (grpc_is_initialized() > 0) {
     zend_throw_exception(spl_ce_UnexpectedValueException,
                          "Oops, failed to shutdown gRPC Core after fork()",
@@ -542,6 +542,10 @@ PHP_MINIT_FUNCTION(grpc) {
                          GRPC_CHANNEL_SHUTDOWN,
                          CONST_CS | CONST_PERSISTENT);
 
+  /** grpc version string */
+  REGISTER_STRING_CONSTANT("Grpc\\VERSION", PHP_GRPC_VERSION,
+                           CONST_CS | CONST_PERSISTENT);
+  
   grpc_init_call(TSRMLS_C);
   GRPC_STARTUP(channel);
   grpc_init_server(TSRMLS_C);
@@ -566,7 +570,7 @@ PHP_MSHUTDOWN_FUNCTION(grpc) {
     zend_hash_destroy(&grpc_target_upper_bound_map);
     grpc_shutdown_timeval(TSRMLS_C);
     grpc_php_shutdown_completion_queue(TSRMLS_C);
-    grpc_shutdown_blocking();
+    grpc_shutdown();
     GRPC_G(initialized) = 0;
   }
   return SUCCESS;

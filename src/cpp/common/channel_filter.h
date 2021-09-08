@@ -19,12 +19,12 @@
 #ifndef GRPCXX_CHANNEL_FILTER_H
 #define GRPCXX_CHANNEL_FILTER_H
 
+#include <functional>
+#include <vector>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/impl/codegen/config.h>
-
-#include <functional>
-#include <vector>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -56,48 +56,6 @@ class MetadataBatch {
   /// lifetime of the gRPC call.
   grpc_linked_mdelem* AddMetadata(const string& key, const string& value);
 
-  class const_iterator : public std::iterator<std::bidirectional_iterator_tag,
-                                              const grpc_mdelem> {
-   public:
-    const grpc_mdelem& operator*() const { return elem_->md; }
-    const grpc_mdelem operator->() const { return elem_->md; }
-
-    const_iterator& operator++() {
-      elem_ = elem_->next;
-      return *this;
-    }
-    const_iterator operator++(int) {
-      const_iterator tmp(*this);
-      operator++();
-      return tmp;
-    }
-    const_iterator& operator--() {
-      elem_ = elem_->prev;
-      return *this;
-    }
-    const_iterator operator--(int) {
-      const_iterator tmp(*this);
-      operator--();
-      return tmp;
-    }
-
-    bool operator==(const const_iterator& other) const {
-      return elem_ == other.elem_;
-    }
-    bool operator!=(const const_iterator& other) const {
-      return elem_ != other.elem_;
-    }
-
-   private:
-    friend class MetadataBatch;
-    explicit const_iterator(grpc_linked_mdelem* elem) : elem_(elem) {}
-
-    grpc_linked_mdelem* elem_;
-  };
-
-  const_iterator begin() const { return const_iterator(batch_->list.head); }
-  const_iterator end() const { return const_iterator(nullptr); }
-
  private:
   grpc_metadata_batch* batch_;  // Not owned.
 };
@@ -113,7 +71,7 @@ class TransportOp {
   grpc_transport_op* op() const { return op_; }
 
   // TODO(roth): Add a C++ wrapper for grpc_error?
-  grpc_error* disconnect_with_error() const {
+  grpc_error_handle disconnect_with_error() const {
     return op_->disconnect_with_error;
   }
   bool send_goaway() const { return op_->goaway_error != GRPC_ERROR_NONE; }
@@ -236,8 +194,8 @@ class ChannelData {
   // TODO(roth): Come up with a more C++-like API for the channel element.
 
   /// Initializes the channel data.
-  virtual grpc_error* Init(grpc_channel_element* /*elem*/,
-                           grpc_channel_element_args* /*args*/) {
+  virtual grpc_error_handle Init(grpc_channel_element* /*elem*/,
+                                 grpc_channel_element_args* /*args*/) {
     return GRPC_ERROR_NONE;
   }
 
@@ -259,8 +217,8 @@ class CallData {
   // TODO(roth): Come up with a more C++-like API for the call element.
 
   /// Initializes the call data.
-  virtual grpc_error* Init(grpc_call_element* /*elem*/,
-                           const grpc_call_element_args* /*args*/) {
+  virtual grpc_error_handle Init(grpc_call_element* /*elem*/,
+                                 const grpc_call_element_args* /*args*/) {
     return GRPC_ERROR_NONE;
   }
 
@@ -288,8 +246,8 @@ class ChannelFilter final {
  public:
   static const size_t channel_data_size = sizeof(ChannelDataType);
 
-  static grpc_error* InitChannelElement(grpc_channel_element* elem,
-                                        grpc_channel_element_args* args) {
+  static grpc_error_handle InitChannelElement(grpc_channel_element* elem,
+                                              grpc_channel_element_args* args) {
     // Construct the object in the already-allocated memory.
     ChannelDataType* channel_data = new (elem->channel_data) ChannelDataType();
     return channel_data->Init(elem, args);
@@ -319,8 +277,8 @@ class ChannelFilter final {
 
   static const size_t call_data_size = sizeof(CallDataType);
 
-  static grpc_error* InitCallElement(grpc_call_element* elem,
-                                     const grpc_call_element_args* args) {
+  static grpc_error_handle InitCallElement(grpc_call_element* elem,
+                                           const grpc_call_element_args* args) {
     // Construct the object in the already-allocated memory.
     CallDataType* call_data = new (elem->call_data) CallDataType();
     return call_data->Init(elem, args);

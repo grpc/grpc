@@ -19,13 +19,12 @@
 #ifndef GRPCPP_IMPL_CODEGEN_INTERCEPTED_CHANNEL_H
 #define GRPCPP_IMPL_CODEGEN_INTERCEPTED_CHANNEL_H
 
+// IWYU pragma: private
+
 #include <grpcpp/impl/codegen/channel_interface.h>
 
-namespace grpc_impl {
-class CompletionQueue;
-}
-
 namespace grpc {
+class CompletionQueue;
 
 namespace internal {
 
@@ -37,7 +36,7 @@ class InterceptorBatchMethodsImpl;
 /// see the RPC.
 class InterceptedChannel : public ChannelInterface {
  public:
-  virtual ~InterceptedChannel() { channel_ = nullptr; }
+  ~InterceptedChannel() override { channel_ = nullptr; }
 
   /// Get the current channel state. If the channel is in IDLE and
   /// \a try_to_connect is set to true, try to connect.
@@ -49,8 +48,8 @@ class InterceptedChannel : public ChannelInterface {
   InterceptedChannel(ChannelInterface* channel, size_t pos)
       : channel_(channel), interceptor_pos_(pos) {}
 
-  Call CreateCall(const RpcMethod& method, ::grpc_impl::ClientContext* context,
-                  ::grpc_impl::CompletionQueue* cq) override {
+  Call CreateCall(const RpcMethod& method, ::grpc::ClientContext* context,
+                  ::grpc::CompletionQueue* cq) override {
     return channel_->CreateCallInternal(method, context, cq, interceptor_pos_);
   }
 
@@ -63,7 +62,7 @@ class InterceptedChannel : public ChannelInterface {
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
                                gpr_timespec deadline,
-                               ::grpc_impl::CompletionQueue* cq,
+                               ::grpc::CompletionQueue* cq,
                                void* tag) override {
     return channel_->NotifyOnStateChangeImpl(last_observed, deadline, cq, tag);
   }
@@ -72,7 +71,7 @@ class InterceptedChannel : public ChannelInterface {
     return channel_->WaitForStateChangeImpl(last_observed, deadline);
   }
 
-  ::grpc_impl::CompletionQueue* CallbackCQ() override {
+  ::grpc::CompletionQueue* CallbackCQ() override {
     return channel_->CallbackCQ();
   }
 

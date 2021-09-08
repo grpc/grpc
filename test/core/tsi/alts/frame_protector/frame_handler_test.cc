@@ -16,6 +16,8 @@
  *
  */
 
+#include "src/core/tsi/alts/frame_protector/frame_handler.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -24,7 +26,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/tsi/alts/frame_protector/frame_handler.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 
 const size_t kFrameHandlerTestBufferSize = 1024;
@@ -107,7 +108,7 @@ static void frame_n_deframe(frame_handler* handler, unsigned char* payload,
 
 static void frame_handler_test_frame_deframe() {
   unsigned char payload[] = "hello world";
-  size_t payload_length = strlen((char*)payload) + 1;
+  size_t payload_length = strlen(reinterpret_cast<char*>(payload)) + 1;
   frame_handler* handler = create_frame_handler();
   frame_n_deframe(handler, payload, payload_length,
                   frame_length(payload_length), frame_length(payload_length));

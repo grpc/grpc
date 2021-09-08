@@ -347,6 +347,10 @@ static char *roots_filename;
   [self testIndividualCase:(char *)"server_finishes_request"];
 }
 
+- (void)testServerStreaming {
+  [self testIndividualCase:(char *)"server_streaming"];
+}
+
 - (void)testShutdownFinishesCalls {
   [self testIndividualCase:(char *)"shutdown_finishes_calls"];
 }

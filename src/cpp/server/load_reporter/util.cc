@@ -18,13 +18,12 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <grpcpp/ext/server_load_reporting.h>
-
 #include <cmath>
 
 #include <grpc/support/log.h>
+#include <grpcpp/ext/server_load_reporting.h>
 
-namespace grpc_impl {
+namespace grpc {
 namespace load_reporter {
 namespace experimental {
 
@@ -44,4 +43,4 @@ void AddLoadReportingCost(grpc::ServerContext* ctx,
 
 }  // namespace experimental
 }  // namespace load_reporter
-}  // namespace grpc_impl
+}  // namespace grpc

@@ -31,6 +31,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/tsi/transport_security_grpc.h"
 
+namespace {
+
 /* Main struct for local TSI zero-copy frame protector. */
 typedef struct local_zero_copy_grpc_protector {
   tsi_zero_copy_grpc_protector base;
@@ -197,7 +199,9 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     nullptr, /* shutdown */
 };
 
-tsi_result local_tsi_handshaker_create(bool is_client, tsi_handshaker** self) {
+}  // namespace
+
+tsi_result tsi_local_handshaker_create(bool is_client, tsi_handshaker** self) {
   if (self == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to local_tsi_handshaker_create()");
     return TSI_INVALID_ARGUMENT;

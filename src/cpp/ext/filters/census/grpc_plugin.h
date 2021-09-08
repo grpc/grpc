@@ -22,13 +22,10 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
-#include "include/grpcpp/opencensus.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 
-namespace grpc_impl {
-class ServerContext;
-}
+#include <grpcpp/opencensus.h>
 
 namespace grpc {
 
@@ -46,6 +43,9 @@ extern const absl::string_view kRpcClientReceivedMessagesPerRpcMeasureName;
 extern const absl::string_view kRpcClientReceivedBytesPerRpcMeasureName;
 extern const absl::string_view kRpcClientRoundtripLatencyMeasureName;
 extern const absl::string_view kRpcClientServerLatencyMeasureName;
+extern const absl::string_view kRpcClientRetriesPerCallMeasureName;
+extern const absl::string_view kRpcClientTransparentRetriesPerCallMeasureName;
+extern const absl::string_view kRpcClientRetryDelayPerCallMeasureName;
 
 extern const absl::string_view kRpcServerSentMessagesPerRpcMeasureName;
 extern const absl::string_view kRpcServerSentBytesPerRpcMeasureName;
@@ -63,6 +63,12 @@ ClientReceivedBytesPerRpcCumulative();
 const ::opencensus::stats::ViewDescriptor& ClientRoundtripLatencyCumulative();
 const ::opencensus::stats::ViewDescriptor& ClientServerLatencyCumulative();
 const ::opencensus::stats::ViewDescriptor& ClientCompletedRpcsCumulative();
+const ::opencensus::stats::ViewDescriptor& ClientRetriesPerCallCumulative();
+const ::opencensus::stats::ViewDescriptor& ClientRetriesCumulative();
+const ::opencensus::stats::ViewDescriptor&
+ClientTransparentRetriesPerCallCumulative();
+const ::opencensus::stats::ViewDescriptor& ClientTransparentRetriesCumulative();
+const ::opencensus::stats::ViewDescriptor& ClientRetryDelayPerCallCumulative();
 
 const ::opencensus::stats::ViewDescriptor& ServerSentBytesPerRpcCumulative();
 const ::opencensus::stats::ViewDescriptor&
@@ -81,6 +87,12 @@ const ::opencensus::stats::ViewDescriptor& ClientReceivedBytesPerRpcMinute();
 const ::opencensus::stats::ViewDescriptor& ClientRoundtripLatencyMinute();
 const ::opencensus::stats::ViewDescriptor& ClientServerLatencyMinute();
 const ::opencensus::stats::ViewDescriptor& ClientCompletedRpcsMinute();
+const ::opencensus::stats::ViewDescriptor& ClientRetriesPerCallMinute();
+const ::opencensus::stats::ViewDescriptor& ClientRetriesMinute();
+const ::opencensus::stats::ViewDescriptor&
+ClientTransparentRetriesPerCallMinute();
+const ::opencensus::stats::ViewDescriptor& ClientTransparentRetriesMinute();
+const ::opencensus::stats::ViewDescriptor& ClientRetryDelayPerCallMinute();
 
 const ::opencensus::stats::ViewDescriptor& ServerSentMessagesPerRpcMinute();
 const ::opencensus::stats::ViewDescriptor& ServerSentBytesPerRpcMinute();
@@ -96,6 +108,12 @@ const ::opencensus::stats::ViewDescriptor& ClientReceivedBytesPerRpcHour();
 const ::opencensus::stats::ViewDescriptor& ClientRoundtripLatencyHour();
 const ::opencensus::stats::ViewDescriptor& ClientServerLatencyHour();
 const ::opencensus::stats::ViewDescriptor& ClientCompletedRpcsHour();
+const ::opencensus::stats::ViewDescriptor& ClientRetriesPerCallHour();
+const ::opencensus::stats::ViewDescriptor& ClientRetriesHour();
+const ::opencensus::stats::ViewDescriptor&
+ClientTransparentRetriesPerCallHour();
+const ::opencensus::stats::ViewDescriptor& ClientTransparentRetriesHour();
+const ::opencensus::stats::ViewDescriptor& ClientRetryDelayPerCallHour();
 
 const ::opencensus::stats::ViewDescriptor& ServerSentMessagesPerRpcHour();
 const ::opencensus::stats::ViewDescriptor& ServerSentBytesPerRpcHour();

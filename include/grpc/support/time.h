@@ -21,10 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/gpr_types.h>
-
 #include <stddef.h>
 #include <time.h>
+
+#include <grpc/impl/codegen/gpr_types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,7 +51,7 @@ GPRAPI gpr_timespec gpr_now(gpr_clock_type clock);
 
 /** Convert a timespec from one clock to another */
 GPRAPI gpr_timespec gpr_convert_clock_type(gpr_timespec t,
-                                           gpr_clock_type target_clock);
+                                           gpr_clock_type clock_type);
 
 /** Return -ve, 0, or +ve according to whether a < b, a == b, or a > b
    respectively.  */
@@ -66,12 +66,12 @@ GPRAPI gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b);
 
 /** Return a timespec representing a given number of time units. INT64_MIN is
    interpreted as gpr_inf_past, and INT64_MAX as gpr_inf_future.  */
-GPRAPI gpr_timespec gpr_time_from_micros(int64_t x, gpr_clock_type clock_type);
-GPRAPI gpr_timespec gpr_time_from_nanos(int64_t x, gpr_clock_type clock_type);
-GPRAPI gpr_timespec gpr_time_from_millis(int64_t x, gpr_clock_type clock_type);
-GPRAPI gpr_timespec gpr_time_from_seconds(int64_t x, gpr_clock_type clock_type);
-GPRAPI gpr_timespec gpr_time_from_minutes(int64_t x, gpr_clock_type clock_type);
-GPRAPI gpr_timespec gpr_time_from_hours(int64_t x, gpr_clock_type clock_type);
+GPRAPI gpr_timespec gpr_time_from_micros(int64_t us, gpr_clock_type clock_type);
+GPRAPI gpr_timespec gpr_time_from_nanos(int64_t ns, gpr_clock_type clock_type);
+GPRAPI gpr_timespec gpr_time_from_millis(int64_t ms, gpr_clock_type clock_type);
+GPRAPI gpr_timespec gpr_time_from_seconds(int64_t s, gpr_clock_type clock_type);
+GPRAPI gpr_timespec gpr_time_from_minutes(int64_t m, gpr_clock_type clock_type);
+GPRAPI gpr_timespec gpr_time_from_hours(int64_t h, gpr_clock_type clock_type);
 
 GPRAPI int32_t gpr_time_to_millis(gpr_timespec timespec);
 

@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/slice.h>
+
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -33,12 +34,10 @@ struct grpc_chttp2_window_update_parser {
 grpc_slice grpc_chttp2_window_update_create(
     uint32_t id, uint32_t window_delta, grpc_transport_one_way_stats* stats);
 
-grpc_error* grpc_chttp2_window_update_parser_begin_frame(
+grpc_error_handle grpc_chttp2_window_update_parser_begin_frame(
     grpc_chttp2_window_update_parser* parser, uint32_t length, uint8_t flags);
-grpc_error* grpc_chttp2_window_update_parser_parse(void* parser,
-                                                   grpc_chttp2_transport* t,
-                                                   grpc_chttp2_stream* s,
-                                                   const grpc_slice& slice,
-                                                   int is_last);
+grpc_error_handle grpc_chttp2_window_update_parser_parse(
+    void* parser, grpc_chttp2_transport* t, grpc_chttp2_stream* s,
+    const grpc_slice& slice, int is_last);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_WINDOW_UPDATE_H */

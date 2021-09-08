@@ -609,6 +609,31 @@ function statusCodeAndMessage($stub)
                $status->details);
 }
 
+function specialStatusMessage($stub)
+{
+    $test_code = Grpc\STATUS_UNKNOWN;
+    $test_msg = "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n";
+
+    $echo_status = new Grpc\Testing\EchoStatus();
+    $echo_status->setCode($test_code);
+    $echo_status->setMessage($test_msg);
+
+    $request = new Grpc\Testing\SimpleRequest();
+    $request->setResponseStatus($echo_status);
+
+    $call = $stub->UnaryCall($request);
+    list($result, $status) = $call->wait();
+
+    hardAssert(
+        $status->code === $test_code,
+        'Received unexpected UnaryCall status code: ' . $status->code
+    );
+    hardAssert(
+        $status->details === $test_msg,
+        'Received unexpected UnaryCall status details: ' . $status->details
+    );
+}
+
 # NOTE: the stub input to this function is from UnimplementedService
 function unimplementedService($stub)
 {
@@ -760,6 +785,9 @@ function interop_main($args, $stub = false)
             break;
         case 'status_code_and_message':
             statusCodeAndMessage($stub);
+            break;
+        case 'special_status_message':
+            specialStatusMessage($stub);
             break;
         case 'unimplemented_service':
             unimplementedService($stub);

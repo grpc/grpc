@@ -21,6 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/sync_windows.h>
+#include <grpc/impl/codegen/sync_windows.h>  // IWYU pragma: export
 
 #endif /* GRPC_SUPPORT_SYNC_WINDOWS_H */

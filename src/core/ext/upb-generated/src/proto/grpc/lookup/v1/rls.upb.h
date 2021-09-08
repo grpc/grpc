@@ -9,8 +9,9 @@
 #ifndef SRC_PROTO_GRPC_LOOKUP_V1_RLS_PROTO_UPB_H_
 #define SRC_PROTO_GRPC_LOOKUP_V1_RLS_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -38,7 +39,19 @@ UPB_INLINE grpc_lookup_v1_RouteLookupRequest *grpc_lookup_v1_RouteLookupRequest_
 UPB_INLINE grpc_lookup_v1_RouteLookupRequest *grpc_lookup_v1_RouteLookupRequest_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_lookup_v1_RouteLookupRequest *ret = grpc_lookup_v1_RouteLookupRequest_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_lookup_v1_RouteLookupRequest_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_lookup_v1_RouteLookupRequest_msginit, arena)) return NULL;
+  return ret;
+}
+UPB_INLINE grpc_lookup_v1_RouteLookupRequest *grpc_lookup_v1_RouteLookupRequest_parse_ex(const char *buf, size_t size,
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
+  grpc_lookup_v1_RouteLookupRequest *ret = grpc_lookup_v1_RouteLookupRequest_new(arena);
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_lookup_v1_RouteLookupRequest_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_lookup_v1_RouteLookupRequest_serialize(const grpc_lookup_v1_RouteLookupRequest *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lookup_v1_RouteLookupRequest_msginit, arena, len);
@@ -91,7 +104,19 @@ UPB_INLINE grpc_lookup_v1_RouteLookupResponse *grpc_lookup_v1_RouteLookupRespons
 UPB_INLINE grpc_lookup_v1_RouteLookupResponse *grpc_lookup_v1_RouteLookupResponse_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_lookup_v1_RouteLookupResponse *ret = grpc_lookup_v1_RouteLookupResponse_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_lookup_v1_RouteLookupResponse_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_lookup_v1_RouteLookupResponse_msginit, arena)) return NULL;
+  return ret;
+}
+UPB_INLINE grpc_lookup_v1_RouteLookupResponse *grpc_lookup_v1_RouteLookupResponse_parse_ex(const char *buf, size_t size,
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
+  grpc_lookup_v1_RouteLookupResponse *ret = grpc_lookup_v1_RouteLookupResponse_new(arena);
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_lookup_v1_RouteLookupResponse_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_lookup_v1_RouteLookupResponse_serialize(const grpc_lookup_v1_RouteLookupResponse *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lookup_v1_RouteLookupResponse_msginit, arena, len);
@@ -107,10 +132,10 @@ UPB_INLINE upb_strview* grpc_lookup_v1_RouteLookupResponse_mutable_targets(grpc_
   return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
 }
 UPB_INLINE upb_strview* grpc_lookup_v1_RouteLookupResponse_resize_targets(grpc_lookup_v1_RouteLookupResponse *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(8, 16), len, UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor2(msg, UPB_SIZE(8, 16), len, UPB_SIZE(3, 4), arena);
 }
 UPB_INLINE bool grpc_lookup_v1_RouteLookupResponse_add_targets(grpc_lookup_v1_RouteLookupResponse *msg, upb_strview val, upb_arena *arena) {
-  return _upb_array_append_accessor(msg, UPB_SIZE(8, 16), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(8, 16), UPB_SIZE(3, 4), &val,
       arena);
 }
 

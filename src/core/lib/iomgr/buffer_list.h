@@ -23,13 +23,12 @@
 
 #include "absl/types/optional.h"
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
+#include "src/core/lib/iomgr/port.h"
 
 namespace grpc_core {
 
@@ -135,7 +134,7 @@ class TracedBuffer {
   /** Cleans the list by calling the callback for each traced buffer in the list
    * with timestamps that it has. */
   static void Shutdown(grpc_core::TracedBuffer** head, void* remaining,
-                       grpc_error* shutdown_err);
+                       grpc_error_handle shutdown_err);
 
  private:
   uint32_t seq_no_; /* The sequence number for the last byte in the buffer */
@@ -146,9 +145,9 @@ class TracedBuffer {
 #else  /* GRPC_LINUX_ERRQUEUE */
 class TracedBuffer {
  public:
-  /* Dummy shutdown function */
+  /* Phony shutdown function */
   static void Shutdown(grpc_core::TracedBuffer** /*head*/, void* /*remaining*/,
-                       grpc_error* shutdown_err) {
+                       grpc_error_handle shutdown_err) {
     GRPC_ERROR_UNREF(shutdown_err);
   }
 };
@@ -156,9 +155,8 @@ class TracedBuffer {
 
 /** Sets the callback function to call when timestamps for a write are
  *  collected. The callback does not own a reference to error. */
-void grpc_tcp_set_write_timestamps_callback(void (*fn)(void*,
-                                                       grpc_core::Timestamps*,
-                                                       grpc_error* error));
+void grpc_tcp_set_write_timestamps_callback(
+    void (*fn)(void*, grpc_core::Timestamps*, grpc_error_handle error));
 
 } /* namespace grpc_core */
 

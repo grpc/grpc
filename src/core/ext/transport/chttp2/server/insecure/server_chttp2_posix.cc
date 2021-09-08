@@ -41,32 +41,42 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
   GPR_ASSERT(reserved == nullptr);
 
   grpc_core::ExecCtx exec_ctx;
+  grpc_core::Server* core_server = server->core_server.get();
 
+  const grpc_channel_args* server_args = core_server->channel_args();
   std::string name = absl::StrCat("fd:", fd);
-  grpc_endpoint* server_endpoint =
-      grpc_tcp_create(grpc_fd_create(fd, name.c_str(), true),
-                      grpc_server_get_channel_args(server), name.c_str());
-
-  const grpc_channel_args* server_args = grpc_server_get_channel_args(server);
+  grpc_resource_quota* resource_quota =
+      grpc_resource_quota_create(name.c_str());
+  grpc_endpoint* server_endpoint = grpc_tcp_create(
+      grpc_fd_create(fd, name.c_str(), true), server_args, name.c_str(),
+      grpc_slice_allocator_create(resource_quota, name, server_args));
   grpc_transport* transport = grpc_create_chttp2_transport(
-      server_args, server_endpoint, false /* is_client */);
-
-  grpc_pollset** pollsets;
-  size_t num_pollsets = 0;
-  grpc_server_get_pollsets(server, &pollsets, &num_pollsets);
-
-  for (size_t i = 0; i < num_pollsets; i++) {
-    grpc_endpoint_add_to_pollset(server_endpoint, pollsets[i]);
+      server_args, server_endpoint, false /* is_client */,
+      grpc_resource_user_create(resource_quota,
+                                absl::StrCat(name, ":transport")));
+  grpc_error_handle error = core_server->SetupTransport(
+      transport, nullptr, server_args, nullptr,
+      grpc_resource_user_create(resource_quota,
+                                absl::StrCat(name, ":channel")));
+  grpc_resource_quota_unref_internal(resource_quota);
+  if (error == GRPC_ERROR_NONE) {
+    for (grpc_pollset* pollset : core_server->pollsets()) {
+      grpc_endpoint_add_to_pollset(server_endpoint, pollset);
+    }
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+  } else {
+    gpr_log(GPR_ERROR, "Failed to create channel: %s",
+            grpc_error_std_string(error).c_str());
+    GRPC_ERROR_UNREF(error);
+    grpc_transport_destroy(transport);
   }
-
-  grpc_server_setup_transport(server, transport, nullptr, server_args, nullptr);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
 }
 
 #else  // !GPR_SUPPORT_CHANNELS_FROM_FD
 
-void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
-                                              void* reserved, int fd) {
+void grpc_server_add_insecure_channel_from_fd(grpc_server* /* server */,
+                                              void* /* reserved */,
+                                              int /* fd */) {
   GPR_ASSERT(0);
 }
 

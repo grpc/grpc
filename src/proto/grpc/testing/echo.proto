@@ -15,15 +15,17 @@
 
 syntax = "proto3";
 
+package grpc.testing;
+
 import "src/proto/grpc/testing/echo_messages.proto";
 import "src/proto/grpc/testing/simple_messages.proto";
-
-package grpc.testing;
 
 service EchoTestService {
   rpc Echo(EchoRequest) returns (EchoResponse);
   rpc Echo1(EchoRequest) returns (EchoResponse);
   rpc Echo2(EchoRequest) returns (EchoResponse);
+  rpc CheckDeadlineUpperBound(SimpleRequest) returns (StringValue);
+  rpc CheckDeadlineSet(SimpleRequest) returns (StringValue);
   // A service which checks that the initial metadata sent over contains some
   // expected key value pair
   rpc CheckClientInitialMetadata(SimpleRequest) returns (SimpleResponse);
@@ -31,6 +33,7 @@ service EchoTestService {
   rpc ResponseStream(EchoRequest) returns (stream EchoResponse);
   rpc BidiStream(stream EchoRequest) returns (stream EchoResponse);
   rpc Unimplemented(EchoRequest) returns (EchoResponse);
+  rpc UnimplementedBidi(stream EchoRequest) returns (stream EchoResponse);
 }
 
 service EchoTest1Service {
@@ -64,5 +67,4 @@ service UnimplementedEchoService {
 }
 
 // A service without any rpc defined to test coverage.
-service NoRpcService {
-}
+service NoRpcService {}

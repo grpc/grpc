@@ -56,7 +56,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
     HealthCheckServiceImpl(DefaultHealthCheckService* database,
                            std::unique_ptr<ServerCompletionQueue> cq);
 
-    ~HealthCheckServiceImpl();
+    ~HealthCheckServiceImpl() override;
 
     void StartServingThread();
 

@@ -28,7 +28,7 @@
   "unit.connectivity_test.TestConnectivityState",
   "unit.context_peer_test.TestContextPeer",
   "unit.done_callback_test.TestDoneCallback",
-  "unit.init_test.TestChannel",
+  "unit.init_test.TestInit",
   "unit.metadata_test.TestMetadata",
   "unit.outside_init_test.TestOutsideInit",
   "unit.secure_call_test.TestStreamStreamSecureCall",
@@ -36,6 +36,7 @@
   "unit.secure_call_test.TestUnaryUnarySecureCall",
   "unit.server_interceptor_test.TestServerInterceptor",
   "unit.server_test.TestServer",
+  "unit.server_time_remaining_test.TestServerTimeRemaining",
   "unit.timeout_test.TestTimeout",
   "unit.wait_for_connection_test.TestWaitForConnection",
   "unit.wait_for_ready_test.TestWaitForReady"

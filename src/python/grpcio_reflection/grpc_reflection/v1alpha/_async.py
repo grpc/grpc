@@ -16,7 +16,6 @@
 from typing import AsyncIterable
 
 import grpc
-
 from grpc_reflection.v1alpha import reflection_pb2 as _reflection_pb2
 from grpc_reflection.v1alpha._base import BaseReflectionServicer
 
@@ -25,8 +24,8 @@ class ReflectionServicer(BaseReflectionServicer):
     """Servicer handling RPCs for service statuses."""
 
     async def ServerReflectionInfo(
-            self, request_iterator: AsyncIterable[
-                _reflection_pb2.ServerReflectionRequest], unused_context
+        self, request_iterator: AsyncIterable[
+            _reflection_pb2.ServerReflectionRequest], unused_context
     ) -> AsyncIterable[_reflection_pb2.ServerReflectionResponse]:
         async for request in request_iterator:
             if request.HasField('file_by_filename'):

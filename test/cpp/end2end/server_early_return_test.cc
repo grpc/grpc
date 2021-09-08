@@ -16,6 +16,8 @@
  *
  */
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -33,8 +35,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
-
-#include <gtest/gtest.h>
 
 namespace grpc {
 namespace testing {
@@ -115,7 +115,7 @@ class ServerEarlyReturnTest : public ::testing::Test {
   void SetUp() override {
     int port = grpc_pick_unused_port_or_die();
     picked_port_ = port;
-    server_address_ << "127.0.0.1:" << port;
+    server_address_ << "localhost:" << port;
     ServerBuilder builder;
     builder.AddListeningPort(server_address_.str(),
                              InsecureServerCredentials());

@@ -21,9 +21,9 @@ import multiprocessing
 import os
 import sys
 
+from python_utils.filter_pull_request_tests import filter_tests
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
-from python_utils.filter_pull_request_tests import filter_tests
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
@@ -180,15 +180,6 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
 
-    # supported on linux only
-    test_jobs += _generate_jobs(languages=['php7'],
-                                configs=['dbg', 'opt'],
-                                platforms=['linux'],
-                                labels=['basictests', 'multilang'],
-                                extra_args=extra_args +
-                                ['--report_multi_target'],
-                                inner_jobs=inner_jobs)
-
     # supported on all platforms.
     test_jobs += _generate_jobs(
         languages=['c'],
@@ -239,7 +230,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
-    test_jobs += _generate_jobs(languages=['grpc-node', 'ruby', 'php'],
+    test_jobs += _generate_jobs(languages=['grpc-node', 'ruby', 'php7'],
                                 configs=['dbg', 'opt'],
                                 platforms=['linux', 'macos'],
                                 labels=['basictests', 'multilang'],
@@ -275,8 +266,8 @@ def _create_portability_test_jobs(extra_args=[],
 
     # portability C and C++ on x64
     for compiler in [
-            'gcc4.9', 'gcc5.3', 'gcc7.4', 'gcc8.3', 'gcc_musl', 'clang3.5',
-            'clang3.6', 'clang3.7', 'clang7.0'
+            'gcc4.9', 'gcc5.3', 'gcc7.4', 'gcc8.3', 'gcc8.3_openssl102',
+            'gcc_musl', 'clang4.0', 'clang5.0'
     ]:
         test_jobs += _generate_jobs(languages=['c', 'c++'],
                                     configs=['dbg'],
@@ -339,26 +330,6 @@ def _create_portability_test_jobs(extra_args=[],
                                 extra_args=extra_args,
                                 timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
-    # TODO(zyc): Turn on this test after adding c-ares support on windows.
-    # C with the c-ares DNS resolver on Windows
-    # test_jobs += _generate_jobs(languages=['c'],
-    #                             configs=['dbg'], platforms=['windows'],
-    #                             labels=['portability', 'corelang'],
-    #                             extra_args=extra_args,
-    #                             extra_envs={'GRPC_DNS_RESOLVER': 'ares'})
-
-    # C and C++ build with cmake on Linux
-    # TODO(jtattermusch): some of the tests are failing, so we force --build_only
-    # to make sure it's buildable at least.
-    test_jobs += _generate_jobs(languages=['c', 'c++'],
-                                configs=['dbg'],
-                                platforms=['linux'],
-                                arch='default',
-                                compiler='cmake',
-                                labels=['portability', 'corelang'],
-                                extra_args=extra_args + ['--build_only'],
-                                inner_jobs=inner_jobs)
-
     test_jobs += _generate_jobs(languages=['python'],
                                 configs=['dbg'],
                                 platforms=['linux'],
@@ -368,19 +339,6 @@ def _create_portability_test_jobs(extra_args=[],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
-
-    # TODO(jtattermusch): a large portion of the libuv tests is failing,
-    # which can end up killing the kokoro job due to gigabytes of error logs
-    # generated. Remove the --build_only flag
-    # once https://github.com/grpc/grpc/issues/17556 is fixed.
-    test_jobs += _generate_jobs(languages=['c'],
-                                configs=['dbg'],
-                                platforms=['linux'],
-                                iomgr_platforms=['uv'],
-                                labels=['portability', 'corelang'],
-                                extra_args=extra_args + ['--build_only'],
-                                inner_jobs=inner_jobs,
-                                timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     return test_jobs
 
@@ -398,7 +356,8 @@ def _runs_per_test_type(arg_str):
     """Auxiliary function to parse the "runs_per_test" flag."""
     try:
         n = int(arg_str)
-        if n <= 0: raise ValueError
+        if n <= 0:
+            raise ValueError
         return n
     except:
         msg = '\'{}\' is not a positive integer'.format(arg_str)

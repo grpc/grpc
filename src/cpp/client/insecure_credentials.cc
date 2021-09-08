@@ -15,16 +15,16 @@
  * limitations under the License.
  *
  */
-#include <grpcpp/security/credentials.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
+#include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
+
 #include "src/cpp/client/create_channel_internal.h"
 
-namespace grpc_impl {
+namespace grpc {
 
 namespace {
 class InsecureChannelCredentialsImpl final : public ChannelCredentials {
@@ -51,6 +51,9 @@ class InsecureChannelCredentialsImpl final : public ChannelCredentials {
   }
 
   SecureChannelCredentials* AsSecureCredentials() override { return nullptr; }
+
+ private:
+  bool IsInsecure() const override { return true; }
 };
 }  // namespace
 
@@ -59,4 +62,4 @@ std::shared_ptr<ChannelCredentials> InsecureChannelCredentials() {
       new InsecureChannelCredentialsImpl());
 }
 
-}  // namespace grpc_impl
+}  // namespace grpc

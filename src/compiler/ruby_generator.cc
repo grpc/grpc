@@ -16,12 +16,13 @@
  *
  */
 
+#include "src/compiler/ruby_generator.h"
+
 #include <cctype>
 #include <map>
 #include <vector>
 
 #include "src/compiler/config.h"
-#include "src/compiler/ruby_generator.h"
 #include "src/compiler/ruby_generator_helpers-inl.h"
 #include "src/compiler/ruby_generator_map-inl.h"
 #include "src/compiler/ruby_generator_string-inl.h"
@@ -38,13 +39,12 @@ namespace grpc_ruby_generator {
 namespace {
 
 // Prints out the method using the ruby gRPC DSL.
-void PrintMethod(const MethodDescriptor* method, const std::string& package,
-                 Printer* out) {
-  std::string input_type = RubyTypeOf(method->input_type(), package);
+void PrintMethod(const MethodDescriptor* method, Printer* out) {
+  std::string input_type = RubyTypeOf(method->input_type());
   if (method->client_streaming()) {
     input_type = "stream(" + input_type + ")";
   }
-  std::string output_type = RubyTypeOf(method->output_type(), package);
+  std::string output_type = RubyTypeOf(method->output_type());
   if (method->server_streaming()) {
     output_type = "stream(" + output_type + ")";
   }
@@ -62,8 +62,7 @@ void PrintMethod(const MethodDescriptor* method, const std::string& package,
 }
 
 // Prints out the service using the ruby gRPC DSL.
-void PrintService(const ServiceDescriptor* service, const std::string& package,
-                  Printer* out) {
+void PrintService(const ServiceDescriptor* service, Printer* out) {
   if (service->method_count() == 0) {
     return;
   }
@@ -82,7 +81,7 @@ void PrintService(const ServiceDescriptor* service, const std::string& package,
   // Write the indented class body.
   out->Indent();
   out->Print("\n");
-  out->Print("include GRPC::GenericService\n");
+  out->Print("include ::GRPC::GenericService\n");
   out->Print("\n");
   out->Print("self.marshal_class_method = :encode\n");
   out->Print("self.unmarshal_class_method = :decode\n");
@@ -91,7 +90,7 @@ void PrintService(const ServiceDescriptor* service, const std::string& package,
   out->Print(pkg_vars, "self.service_name = '$service_full_name$'\n");
   out->Print("\n");
   for (int i = 0; i < service->method_count(); ++i) {
-    PrintMethod(service->method(i), package, out);
+    PrintMethod(service->method(i), out);
   }
   out->Outdent();
 
@@ -111,7 +110,7 @@ void PrintService(const ServiceDescriptor* service, const std::string& package,
 // ruby generator
 // to ensure compatibility (with the exception of int and string type changes).
 // See
-// https://github.com/google/protobuf/blob/master/src/google/protobuf/compiler/ruby/ruby_generator.cc#L250
+// https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/compiler/ruby/ruby_generator.cc#L250
 // TODO: keep up to date with protoc code generation, though this behavior isn't
 // expected to change
 bool IsLower(char ch) { return ch >= 'a' && ch <= 'z'; }
@@ -201,7 +200,7 @@ std::string GetServices(const FileDescriptor* file) {
     }
     for (int i = 0; i < file->service_count(); ++i) {
       auto service = file->service(i);
-      PrintService(service, file->package(), &out);
+      PrintService(service, &out);
     }
     for (size_t i = 0; i < modules.size(); ++i) {
       out.Outdent();

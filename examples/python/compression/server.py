@@ -17,14 +17,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from concurrent import futures
 import argparse
+from concurrent import futures
 import logging
 import threading
+
 import grpc
 
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
+from examples.protos import helloworld_pb2
+from examples.protos import helloworld_pb2_grpc
 
 _DESCRIPTION = 'A server capable of compression.'
 _COMPRESSION_OPTIONS = {

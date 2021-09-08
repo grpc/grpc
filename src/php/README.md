@@ -11,8 +11,7 @@ gRPC PHP installation instructions for Google Cloud Platform is in
 
 ### Prerequisites
 
-* `php`: version 7.0 or above (PHP 5.x support will be deprecated some time
-in 2020).
+* `php`: version 7.0 or above (PHP 5.x support is deprecated from Sep 2020).
 * `pecl`
 * `composer`
 * `phpunit` (optional)
@@ -51,15 +50,14 @@ Clone this repository at the [latest stable release tag](https://github.com/grpc
 
 ```sh
 $ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc
+$ cd grpc
 ```
 
-#### Build and install the gRPC C core library
+#### Build the gRPC C core library
 
 ```sh
-$ cd grpc
 $ git submodule update --init
 $ EXTRA_DEFINES=GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK make
-$ [sudo] make install
 ```
 
 #### Build and install the `grpc` extension
@@ -67,9 +65,10 @@ $ [sudo] make install
 Compile the `grpc` extension from source
 
 ```sh
-$ cd grpc/src/php/ext/grpc
+$ grpc_root="$(pwd)"
+$ cd src/php/ext/grpc
 $ phpize
-$ ./configure
+$ GRPC_LIB_SUBDIR=libs/opt ./configure --enable-grpc="${grpc_root}"
 $ make
 $ [sudo] make install
 ```
@@ -142,7 +141,7 @@ v1.8.0 | 3.5.0 | v1.21.3 | 3.7.0
 
 If `protoc` hasn't been installed, you can download the `protoc` binary from
 the protocol buffers
-[Github repository](https://github.com/google/protobuf/releases).
+[Github repository](https://github.com/protocolbuffers/protobuf/releases).
 Then unzip this file and update the environment variable `PATH` to include the
 path to the protoc binary file.
 
@@ -162,21 +161,22 @@ You need the `grpc_php_plugin` to generate the PHP client stub classes. This
 plugin works with the main `protoc` binary to generate classes that you can
 import into your project.
 
-It should already been compiled when you run `make` from the root directory
-of this repo. The plugin can be found in the `bins/opt` directory. We are
-planning to provide a better way to download and install the plugin
-in the future.
-
-You can also just build the `grpc_php_plugin` by running:
+You can build `grpc_php_plugin` with `cmake`:
 
 ```sh
 $ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc
 $ cd grpc
 $ git submodule update --init
-$ make grpc_php_plugin
+$ mkdir -p cmake/build
+$ cd cmake/build
+$ cmake ../..
+$ make protoc grpc_php_plugin
 ```
 
-Alternatively, you can also build the `grpc_php_plugin` with `bazel` now:
+The commands above will make `protoc` and `grpc_php_plugin` available
+in `cmake/build/third_party/protobuf/protoc` and `cmake/build/grpc_php_plugin`.
+
+Alternatively, you can also build the `grpc_php_plugin` with `bazel`:
 
 ```sh
 $ bazel build @com_google_protobuf//:protoc
@@ -230,7 +230,7 @@ Or require the `google/protobuf` composer package. Add this to your
 
 ### Generate PHP classes from your service definition
 
-With all the above done, now you can define your message and service defintion
+With all the above done, now you can define your message and service definition
 in a `.proto` file and generate the corresponding PHP classes, which you can
 import into your project, with a command similar to the following:
 

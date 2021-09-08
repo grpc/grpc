@@ -1,24 +1,51 @@
 /*
-** require("lua") -- A Lua extension for upb.
-**
-** Exposes only the core library
-** (sub-libraries are exposed in other extensions).
-**
-** 64-bit woes: Lua can only represent numbers of type lua_Number (which is
-** double unless the user specifically overrides this).  Doubles can represent
-** the entire range of 64-bit integers, but lose precision once the integers are
-** greater than 2^53.
-**
-** Lua 5.3 is adding support for integers, which will allow for 64-bit
-** integers (which can be interpreted as signed or unsigned).
-**
-** LuaJIT supports 64-bit signed and unsigned boxed representations
-** through its "cdata" mechanism, but this is not portable to regular Lua.
-**
-** Hopefully Lua 5.3 will come soon enough that we can either use Lua 5.3
-** integer support or LuaJIT 64-bit cdata for users that need the entire
-** domain of [u]int64 values.
-*/
+ * Copyright (c) 2009-2021, Google LLC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Google LLC nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * require("lua") -- A Lua extension for upb.
+ *
+ * Exposes only the core library
+ * (sub-libraries are exposed in other extensions).
+ *
+ * 64-bit woes: Lua can only represent numbers of type lua_Number (which is
+ * double unless the user specifically overrides this).  Doubles can represent
+ * the entire range of 64-bit integers, but lose precision once the integers are
+ * greater than 2^53.
+ *
+ * Lua 5.3 is adding support for integers, which will allow for 64-bit
+ * integers (which can be interpreted as signed or unsigned).
+ *
+ * LuaJIT supports 64-bit signed and unsigned boxed representations
+ * through its "cdata" mechanism, but this is not portable to regular Lua.
+ *
+ * Hopefully Lua 5.3 will come soon enough that we can either use Lua 5.3
+ * integer support or LuaJIT 64-bit cdata for users that need the entire
+ * domain of [u]int64 values.
+ */
 
 #include "upb/bindings/lua/upb.h"
 
@@ -84,6 +111,24 @@ int lua_getiuservalue(lua_State *L, int index, int n) {
 }
 #endif
 
+/* We use this function as the __index metamethod when a type has both methods
+ * and an __index metamethod. */
+int lupb_indexmm(lua_State *L) {
+  /* Look up in __index table (which is a closure param). */
+  lua_pushvalue(L, 2);
+  lua_rawget(L, lua_upvalueindex(1));
+  if (!lua_isnil(L, -1)) {
+    return 1;
+  }
+
+  /* Not found, chain to user __index metamethod. */
+  lua_pushvalue(L, lua_upvalueindex(2));
+  lua_pushvalue(L, 1);
+  lua_pushvalue(L, 2);
+  lua_call(L, 2, 1);
+  return 1;
+}
+
 void lupb_register_type(lua_State *L, const char *name, const luaL_Reg *m,
                         const luaL_Reg *mm) {
   luaL_newmetatable(L, name);
@@ -93,14 +138,17 @@ void lupb_register_type(lua_State *L, const char *name, const luaL_Reg *m,
   }
 
   if (m) {
-    /* Methods go in the mt's __index method.  This implies that you can'
-     * implement __index and also have methods. */
-    lua_getfield(L, -1, "__index");
-    lupb_assert(L, lua_isnil(L, -1));
-    lua_pop(L, 1);
-
-    lua_createtable(L, 0, 0);
+    lua_createtable(L, 0, 0);  /* __index table */
     lupb_setfuncs(L, m);
+
+    /* Methods go in the mt's __index slot.  If the user also specified an
+     * __index metamethod, use our custom lupb_indexmm() that can check both. */
+    lua_getfield(L, -2, "__index");
+    if (lua_isnil(L, -1)) {
+      lua_pop(L, 1);
+    } else {
+      lua_pushcclosure(L, &lupb_indexmm, 2);
+    }
     lua_setfield(L, -2, "__index");
   }
 

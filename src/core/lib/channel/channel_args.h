@@ -117,7 +117,6 @@ grpc_arg grpc_channel_arg_pointer_create(char* name, void* value,
                                          const grpc_arg_pointer_vtable* vtable);
 
 // Returns a string representing channel args in human-readable form.
-// Callers takes ownership of result.
 std::string grpc_channel_args_string(const grpc_channel_args* args);
 
 // Takes ownership of the old_args

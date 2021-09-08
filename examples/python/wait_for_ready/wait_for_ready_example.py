@@ -13,17 +13,16 @@
 # limitations under the License.
 """The Python example of utilizing wait-for-ready flag."""
 
-from __future__ import print_function
-import logging
 from concurrent import futures
 from contextlib import contextmanager
+import logging
 import socket
 import threading
 
 import grpc
 
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
+helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
+    "helloworld.proto")
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)

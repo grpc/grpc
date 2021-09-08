@@ -16,24 +16,23 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
-
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/server.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -214,7 +213,7 @@ static void test_channelz(grpc_end2end_test_config config) {
   GPR_ASSERT(channelz_channel != nullptr);
 
   grpc_core::channelz::ServerNode* channelz_server =
-      grpc_server_get_channelz_node(f.server);
+      f.server->core_server->channelz_node();
   GPR_ASSERT(channelz_server != nullptr);
 
   std::string json = channelz_channel->RenderJsonString();
@@ -275,7 +274,7 @@ static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
   GPR_ASSERT(channelz_channel != nullptr);
 
   grpc_core::channelz::ServerNode* channelz_server =
-      grpc_server_get_channelz_node(f.server);
+      f.server->core_server->channelz_node();
   GPR_ASSERT(channelz_server != nullptr);
 
   run_one_request(config, f, true);

@@ -65,11 +65,13 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
  public:
   /// Creates a new service config from parsing \a json_string.
   /// Returns null on parse error.
-  static RefCountedPtr<ServiceConfig> Create(absl::string_view json_string,
-                                             grpc_error** error);
+  static RefCountedPtr<ServiceConfig> Create(const grpc_channel_args* args,
+                                             absl::string_view json_string,
+                                             grpc_error_handle* error);
 
-  ServiceConfig(std::string json_string, Json json, grpc_error** error);
-  ~ServiceConfig();
+  ServiceConfig(const grpc_channel_args* args, std::string json_string,
+                Json json, grpc_error_handle* error);
+  ~ServiceConfig() override;
 
   const std::string& json_string() const { return json_string_; }
 
@@ -89,12 +91,14 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
  private:
   // Helper functions for parsing the method configs.
-  grpc_error* ParsePerMethodParams();
-  grpc_error* ParseJsonMethodConfig(const Json& json);
+  grpc_error_handle ParsePerMethodParams(const grpc_channel_args* args);
+  grpc_error_handle ParseJsonMethodConfig(const grpc_channel_args* args,
+                                          const Json& json);
 
   // Returns a path string for the JSON name object specified by json.
   // Sets *error on error.
-  static std::string ParseJsonMethodName(const Json& json, grpc_error** error);
+  static std::string ParseJsonMethodName(const Json& json,
+                                         grpc_error_handle* error);
 
   std::string json_string_;
   Json json_;

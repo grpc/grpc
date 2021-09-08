@@ -31,7 +31,7 @@ namespace testing {
 typedef std::function<bool(const std::string&)> GrpcToolOutputCallback;
 
 int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
-                    GrpcToolOutputCallback callback);
+                    const GrpcToolOutputCallback& callback);
 
 }  // namespace testing
 }  // namespace grpc

@@ -21,17 +21,22 @@
 
 #include <functional>
 #include <map>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/slice.h>
+#include <grpc/grpc.h>
 
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/service_config_parser.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/transport/metadata_batch.h"
+
+// Channel arg key for ConfigSelector.
+#define GRPC_ARG_CONFIG_SELECTOR "grpc.internal.config_selector"
 
 namespace grpc_core {
 
@@ -39,26 +44,66 @@ namespace grpc_core {
 // MethodConfig and provide input to LB policies on a per-call basis.
 class ConfigSelector : public RefCounted<ConfigSelector> {
  public:
+  using CallAttributes = std::map<const char*, absl::string_view>;
+
+  // An interface to be used by the channel when dispatching calls.
+  class CallDispatchController {
+   public:
+    virtual ~CallDispatchController() = default;
+
+    // Called by the channel to decide if it should retry the call upon a
+    // failure.
+    virtual bool ShouldRetry() = 0;
+
+    // Called by the channel when no more LB picks will be performed for
+    // the call.
+    virtual void Commit() = 0;
+  };
+
   struct GetCallConfigArgs {
     grpc_slice* path;
     grpc_metadata_batch* initial_metadata;
+    Arena* arena;
   };
 
   struct CallConfig {
     // Can be set to indicate the call should be failed.
-    grpc_error* error = GRPC_ERROR_NONE;
+    grpc_error_handle error = GRPC_ERROR_NONE;
     // The per-method parsed configs that will be passed to
     // ServiceConfigCallData.
     const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
+    // A ref to the service config that contains method_configs, held by
+    // the call to ensure that method_configs lives long enough.
+    RefCountedPtr<ServiceConfig> service_config;
     // Call attributes that will be accessible to LB policy implementations.
-    std::map<const char*, absl::string_view> call_attributes;
-    // A callback that, if set, will be invoked when the call is
-    // committed (i.e., when we know that we will never again need to
-    // ask the picker for a subchannel for this call).
-    std::function<void()> on_call_committed;
+    CallAttributes call_attributes;
+    // Call dispatch controller.
+    CallDispatchController* call_dispatch_controller = nullptr;
   };
 
-  virtual ~ConfigSelector() = default;
+  ~ConfigSelector() override = default;
+
+  virtual const char* name() const = 0;
+
+  // Will be called only if the two objects have the same name, so
+  // subclasses can be free to safely down-cast the argument.
+  virtual bool Equals(const ConfigSelector* other) const = 0;
+
+  static bool Equals(const ConfigSelector* cs1, const ConfigSelector* cs2) {
+    if (cs1 == nullptr) return cs2 == nullptr;
+    if (cs2 == nullptr) return false;
+    if (strcmp(cs1->name(), cs2->name()) != 0) return false;
+    return cs1->Equals(cs2);
+  }
+
+  // The channel will call this when the resolver returns a new ConfigSelector
+  // to determine what set of dynamic filters will be configured.
+  virtual std::vector<const grpc_channel_filter*> GetFilters() { return {}; }
+  // Modifies channel args to be passed to the dynamic filter stack.
+  // Takes ownership of argument.  Caller takes ownership of result.
+  virtual grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) {
+    return args;
+  }
 
   virtual CallConfig GetCallConfig(GetCallConfigArgs args) = 0;
 
@@ -71,14 +116,24 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 class DefaultConfigSelector : public ConfigSelector {
  public:
   explicit DefaultConfigSelector(RefCountedPtr<ServiceConfig> service_config)
-      : service_config_(std::move(service_config)) {}
+      : service_config_(std::move(service_config)) {
+    // The client channel code ensures that this will never be null.
+    // If neither the resolver nor the client application provide a
+    // config, a default empty config will be used.
+    GPR_DEBUG_ASSERT(service_config_ != nullptr);
+  }
+
+  const char* name() const override { return "default"; }
+
+  // Only comparing the ConfigSelector itself, not the underlying
+  // service config, so we always return true.
+  bool Equals(const ConfigSelector* /*other*/) const override { return true; }
 
   CallConfig GetCallConfig(GetCallConfigArgs args) override {
     CallConfig call_config;
-    if (service_config_ != nullptr) {
-      call_config.method_configs =
-          service_config_->GetMethodParsedConfigVector(*args.path);
-    }
+    call_config.method_configs =
+        service_config_->GetMethodParsedConfigVector(*args.path);
+    call_config.service_config = service_config_;
     return call_config;
   }
 

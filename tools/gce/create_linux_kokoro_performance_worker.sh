@@ -30,7 +30,7 @@ CLOUD_PROJECT=grpc-testing
 ZONE=us-central1-b  # this zone allows 32core machines
 
 INSTANCE_NAME="${1:-grpc-kokoro-performance-server1}"
-MACHINE_TYPE=n1-standard-32
+MACHINE_TYPE=e2-standard-32
 
 gcloud compute instances create "$INSTANCE_NAME" \
     --project="$CLOUD_PROJECT" \

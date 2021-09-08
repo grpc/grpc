@@ -16,13 +16,12 @@
  *
  */
 
-#include "test/core/bad_client/bad_client.h"
-
 #include <string.h>
 
 #include <grpc/grpc.h>
 
 #include "src/core/lib/surface/server.h"
+#include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
 
 #define PFX_STR                      \
@@ -49,7 +48,7 @@
   "\x00\x00\x20\x00\x00\x00\x00\x00\x01" \
   "\x00\x00\x00\x00"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {

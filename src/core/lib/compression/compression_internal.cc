@@ -18,13 +18,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/compression/compression_internal.h"
+
 #include <stdlib.h>
 #include <string.h>
 
 #include <grpc/compression.h>
 
 #include "src/core/lib/compression/algorithm_metadata.h"
-#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -34,21 +35,26 @@
 
 grpc_message_compression_algorithm
 grpc_message_compression_algorithm_from_slice(const grpc_slice& str) {
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY))
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY)) {
     return GRPC_MESSAGE_COMPRESS_NONE;
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_DEFLATE))
+  }
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_DEFLATE)) {
     return GRPC_MESSAGE_COMPRESS_DEFLATE;
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_GZIP))
+  }
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_GZIP)) {
     return GRPC_MESSAGE_COMPRESS_GZIP;
+  }
   return GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT;
 }
 
 grpc_stream_compression_algorithm grpc_stream_compression_algorithm_from_slice(
     const grpc_slice& str) {
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY))
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY)) {
     return GRPC_STREAM_COMPRESS_NONE;
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_GZIP))
+  }
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_GZIP)) {
     return GRPC_STREAM_COMPRESS_GZIP;
+  }
   return GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT;
 }
 
@@ -163,7 +169,6 @@ int grpc_compression_algorithm_from_message_stream_compression_algorithm(
         return 0;
     }
   }
-  return 0;
 }
 
 /* Interfaces for message compression. */
@@ -260,7 +265,6 @@ int grpc_message_compression_algorithm_parse(
   } else {
     return 0;
   }
-  return 0;
 }
 
 /* Interfaces for stream compression. */
@@ -276,5 +280,4 @@ int grpc_stream_compression_algorithm_parse(
   } else {
     return 0;
   }
-  return 0;
 }

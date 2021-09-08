@@ -49,7 +49,7 @@ def _create_build_map():
 
     if set(target_build_map.keys()).intersection(label_build_map.keys()):
         raise Exception('Target names need to be distinct from label names')
-    return dict(target_build_map.items() + label_build_map.items())
+    return dict(list(target_build_map.items()) + list(label_build_map.items()))
 
 
 _BUILD_MAP = _create_build_map()
@@ -73,6 +73,11 @@ argp.add_argument('-t',
                   default=False,
                   action='store_const',
                   const=True)
+argp.add_argument('-x',
+                  '--xml_report',
+                  default='report_taskrunner_sponge_log.xml',
+                  type=str,
+                  help='Filename for the JUnit-compatible XML report')
 
 args = argp.parse_args()
 
@@ -83,7 +88,7 @@ for label in args.build:
 
 # Among targets selected by -b, filter out those that don't match the filter
 targets = [t for t in targets if all(f in t.labels for f in args.filter)]
-targets = sorted(set(targets))
+targets = sorted(set(targets), key=lambda target: target.name)
 
 # Execute pre-build phase
 prebuild_jobs = []
@@ -109,7 +114,7 @@ num_failures, resultset = jobset.run(build_jobs,
                                      newline_on_success=True,
                                      maxjobs=args.jobs)
 report_utils.render_junit_xml_report(resultset,
-                                     'report_taskrunner_sponge_log.xml',
+                                     args.xml_report,
                                      suite_name='tasks')
 if num_failures == 0:
     jobset.message('SUCCESS',

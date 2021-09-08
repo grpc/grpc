@@ -90,8 +90,12 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
 
     int num_threads = config.async_server_threads();
     if (num_threads <= 0) {  // dynamic sizing
-      num_threads = cores();
-      gpr_log(GPR_INFO, "Sizing async server to %d threads", num_threads);
+      num_threads = std::min(64, cores());
+      gpr_log(GPR_INFO,
+              "Sizing async server to %d threads. Defaults to number of cores "
+              "in machine or 64 threads if machine has more than 64 cores to "
+              "avoid OOMs.",
+              num_threads);
     }
 
     int tpc = std::max(1, config.threads_per_cq());  // 1 if unspecified
@@ -162,7 +166,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
       threads_.emplace_back(&AsyncQpsServerTest::ThreadFunc, this, i);
     }
   }
-  ~AsyncQpsServerTest() {
+  ~AsyncQpsServerTest() override {
     for (auto ss = shutdown_state_.begin(); ss != shutdown_state_.end(); ++ss) {
       std::lock_guard<std::mutex> lock((*ss)->mutex);
       (*ss)->shutdown = true;
@@ -180,8 +184,8 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     for (auto cq = srv_cqs_.begin(); cq != srv_cqs_.end(); ++cq) {
       bool ok;
       void* got_tag;
-      while ((*cq)->Next(&got_tag, &ok))
-        ;
+      while ((*cq)->Next(&got_tag, &ok)) {
+      }
     }
   }
 

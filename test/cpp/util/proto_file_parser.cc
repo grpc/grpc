@@ -23,6 +23,9 @@
 #include <sstream>
 #include <unordered_set>
 
+#include "absl/memory/memory.h"
+#include "absl/strings/str_split.h"
+
 #include <grpcpp/support/config.h>
 
 namespace grpc {
@@ -70,16 +73,20 @@ ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
       dynamic_factory_(new protobuf::DynamicMessageFactory()) {
   std::vector<std::string> service_list;
   if (channel) {
-    reflection_db_.reset(new grpc::ProtoReflectionDescriptorDatabase(channel));
+    reflection_db_ =
+        absl::make_unique<grpc::ProtoReflectionDescriptorDatabase>(channel);
     reflection_db_->GetServices(&service_list);
   }
 
   std::unordered_set<std::string> known_services;
   if (!protofiles.empty()) {
-    source_tree_.MapPath("", proto_path);
-    error_printer_.reset(new ErrorPrinter(this));
-    importer_.reset(
-        new protobuf::compiler::Importer(&source_tree_, error_printer_.get()));
+    for (const absl::string_view single_path : absl::StrSplit(
+             proto_path, GRPC_CLI_PATH_SEPARATOR, absl::AllowEmpty())) {
+      source_tree_.MapPath("", std::string(single_path));
+    }
+    error_printer_ = absl::make_unique<ErrorPrinter>(this);
+    importer_ = absl::make_unique<protobuf::compiler::Importer>(
+        &source_tree_, error_printer_.get());
 
     std::string file_name;
     std::stringstream ss(protofiles);
@@ -95,7 +102,8 @@ ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
       }
     }
 
-    file_db_.reset(new protobuf::DescriptorPoolDatabase(*importer_->pool()));
+    file_db_ =
+        absl::make_unique<protobuf::DescriptorPoolDatabase>(*importer_->pool());
   }
 
   if (!reflection_db_ && !file_db_) {
@@ -108,11 +116,11 @@ ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
   } else if (!file_db_) {
     desc_db_ = std::move(reflection_db_);
   } else {
-    desc_db_.reset(new protobuf::MergedDescriptorDatabase(reflection_db_.get(),
-                                                          file_db_.get()));
+    desc_db_ = absl::make_unique<protobuf::MergedDescriptorDatabase>(
+        reflection_db_.get(), file_db_.get());
   }
 
-  desc_pool_.reset(new protobuf::DescriptorPool(desc_db_.get()));
+  desc_pool_ = absl::make_unique<protobuf::DescriptorPool>(desc_db_.get());
 
   for (auto it = service_list.begin(); it != service_list.end(); it++) {
     if (known_services.find(*it) == known_services.end()) {
@@ -298,14 +306,14 @@ std::string ProtoFileParser::GetFormattedStringFromMessageType(
   if (is_json_format) {
     grpc::protobuf::json::JsonPrintOptions jsonPrintOptions;
     jsonPrintOptions.add_whitespace = true;
-    if (!grpc::protobuf::json::MessageToJsonString(
-             *msg.get(), &formatted_string, jsonPrintOptions)
+    if (!grpc::protobuf::json::MessageToJsonString(*msg, &formatted_string,
+                                                   jsonPrintOptions)
              .ok()) {
       LogError("Failed to print proto message to json format");
       return "";
     }
   } else {
-    if (!protobuf::TextFormat::PrintToString(*msg.get(), &formatted_string)) {
+    if (!protobuf::TextFormat::PrintToString(*msg, &formatted_string)) {
       LogError("Failed to print proto message to text format");
       return "";
     }

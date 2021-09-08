@@ -21,11 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/log.h>
+#include <string.h>
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
-#include <string.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -176,7 +176,7 @@ namespace grpc_core {
 struct StaticSliceRefcount {
   static grpc_slice_refcount kStaticSubRefcount;
 
-  StaticSliceRefcount(uint32_t index)
+  explicit StaticSliceRefcount(uint32_t index)
       : base(&kStaticSubRefcount, grpc_slice_refcount::Type::STATIC),
         index(index) {}
 
@@ -231,6 +231,7 @@ inline int grpc_slice_refcount::Eq(const grpc_slice& a, const grpc_slice& b) {
       GPR_DEBUG_ASSERT(
           (GRPC_STATIC_METADATA_INDEX(a) == GRPC_STATIC_METADATA_INDEX(b)) ==
           (a.refcount == b.refcount));
+      ABSL_FALLTHROUGH_INTENDED;
     case Type::INTERNED:
       return a.refcount == b.refcount;
     case Type::NOP:
@@ -310,7 +311,7 @@ inline bool grpc_slice_static_interned_equal(const grpc_slice& a,
 
 void grpc_slice_intern_init(void);
 void grpc_slice_intern_shutdown(void);
-void grpc_test_only_set_slice_hash_seed(uint32_t key);
+void grpc_test_only_set_slice_hash_seed(uint32_t seed);
 // if slice matches a static slice, returns the static slice
 // otherwise returns the passed in slice (without reffing it)
 // used for surface boundaries where we might receive an un-interned static

@@ -39,13 +39,13 @@ class LoadReportingServiceServerBuilderPlugin : public ServerBuilderPlugin {
   void UpdateServerBuilder(ServerBuilder* builder) override;
 
   // Registers the load reporter service.
-  void InitServer(grpc_impl::ServerInitializer* si) override;
+  void InitServer(ServerInitializer* si) override;
 
   // Starts the load reporter service.
-  void Finish(grpc_impl::ServerInitializer* si) override;
+  void Finish(ServerInitializer* si) override;
 
-  void ChangeArguments(const std::string& name, void* value) override {}
-  void UpdateChannelArguments(grpc::ChannelArguments* args) override {}
+  void ChangeArguments(const std::string& /*name*/, void* /*value*/) override {}
+  void UpdateChannelArguments(grpc::ChannelArguments* /*args*/) override {}
   bool has_sync_methods() const override;
   bool has_async_methods() const override;
 

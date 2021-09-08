@@ -26,7 +26,7 @@ module Grpc
     module WorkerService
       class Service
 
-        include GRPC::GenericService
+        include ::GRPC::GenericService
 
         self.marshal_class_method = :encode
         self.unmarshal_class_method = :decode
@@ -38,18 +38,18 @@ module Grpc
         # stats. Closing the stream will initiate shutdown of the test server
         # and once the shutdown has finished, the OK status is sent to terminate
         # this RPC.
-        rpc :RunServer, stream(ServerArgs), stream(ServerStatus)
+        rpc :RunServer, stream(::Grpc::Testing::ServerArgs), stream(::Grpc::Testing::ServerStatus)
         # Start client with specified workload.
         # First request sent specifies the ClientConfig followed by ClientStatus
         # response. After that, a "Mark" can be sent anytime to request the latest
         # stats. Closing the stream will initiate shutdown of the test client
         # and once the shutdown has finished, the OK status is sent to terminate
         # this RPC.
-        rpc :RunClient, stream(ClientArgs), stream(ClientStatus)
+        rpc :RunClient, stream(::Grpc::Testing::ClientArgs), stream(::Grpc::Testing::ClientStatus)
         # Just return the core count - unary call
-        rpc :CoreCount, CoreRequest, CoreResponse
+        rpc :CoreCount, ::Grpc::Testing::CoreRequest, ::Grpc::Testing::CoreResponse
         # Quit this worker
-        rpc :QuitWorker, Void, Void
+        rpc :QuitWorker, ::Grpc::Testing::Void, ::Grpc::Testing::Void
       end
 
       Stub = Service.rpc_stub_class

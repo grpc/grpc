@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -27,6 +25,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -130,7 +129,7 @@ static grpc_end2end_test_config configs[] = {
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER |
-         FEATURE_MASK_DOES_NOT_SUPPORT_SEND_CALL_CREDENTIALS,
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE,
      nullptr, chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_fake_secure_fullstack,
      chttp2_init_server_fake_secure_fullstack,

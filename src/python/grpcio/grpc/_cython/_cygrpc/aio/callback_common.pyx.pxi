@@ -49,7 +49,7 @@ cdef class CallbackWrapper:
 
     @staticmethod
     cdef void functor_run(
-            grpc_experimental_completion_queue_functor* functor,
+            grpc_completion_queue_functor* functor,
             int success):
         cdef CallbackContext *context = <CallbackContext *>functor
         cdef object waiter = <object>context.waiter
@@ -60,7 +60,7 @@ cdef class CallbackWrapper:
                 waiter.set_result(None)
         cpython.Py_DECREF(<object>context.callback_wrapper)
 
-    cdef grpc_experimental_completion_queue_functor *c_functor(self):
+    cdef grpc_completion_queue_functor *c_functor(self):
         return &self.context.functor
 
 
@@ -130,6 +130,8 @@ async def _receive_message(GrpcCallWrapper grpc_call_wrapper,
         #
         # Since they all indicates finish, they are better be merged.
         _LOGGER.debug('Failed to receive any message from Core')
+    # NOTE(lidiz) The returned message might be an empty bytes (aka. b'').
+    # Please explicitly check if it is None or falsey string object!
     return receive_op.message()
 
 

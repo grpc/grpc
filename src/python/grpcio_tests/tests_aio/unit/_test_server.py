@@ -17,9 +17,11 @@ import datetime
 
 import grpc
 from grpc.experimental import aio
-from tests.unit import resources
 
-from src.proto.grpc.testing import empty_pb2, messages_pb2, test_pb2_grpc
+from src.proto.grpc.testing import empty_pb2
+from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import test_pb2_grpc
+from tests.unit import resources
 from tests_aio.unit import _constants
 
 _INITIAL_METADATA_KEY = "x-grpc-test-echo-initial"
@@ -67,10 +69,13 @@ class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
                 await asyncio.sleep(
                     datetime.timedelta(microseconds=response_parameters.
                                        interval_us).total_seconds())
-            yield messages_pb2.StreamingOutputCallResponse(
-                payload=messages_pb2.Payload(type=request.response_type,
-                                             body=b'\x00' *
-                                             response_parameters.size))
+            if response_parameters.size != 0:
+                yield messages_pb2.StreamingOutputCallResponse(
+                    payload=messages_pb2.Payload(type=request.response_type,
+                                                 body=b'\x00' *
+                                                 response_parameters.size))
+            else:
+                yield messages_pb2.StreamingOutputCallResponse()
 
     # Next methods are extra ones that are registred programatically
     # when the sever is instantiated. They are not being provided by
@@ -96,10 +101,13 @@ class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
                     await asyncio.sleep(
                         datetime.timedelta(microseconds=response_parameters.
                                            interval_us).total_seconds())
-                yield messages_pb2.StreamingOutputCallResponse(
-                    payload=messages_pb2.Payload(type=request.payload.type,
-                                                 body=b'\x00' *
-                                                 response_parameters.size))
+                if response_parameters.size != 0:
+                    yield messages_pb2.StreamingOutputCallResponse(
+                        payload=messages_pb2.Payload(type=request.payload.type,
+                                                     body=b'\x00' *
+                                                     response_parameters.size))
+                else:
+                    yield messages_pb2.StreamingOutputCallResponse()
 
 
 def _create_extra_generic_handler(servicer: TestServiceServicer):

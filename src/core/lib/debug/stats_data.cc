@@ -20,8 +20,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
+
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
@@ -280,6 +281,7 @@ const char* grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
     "Number of streams whose payload was written per TCP write",
     "Number of streams terminated per TCP write",
     "Number of flow control updates written per TCP write",
+    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
     "How many completion queues were checked looking for a CQ that had "
     "requested the incoming call",
 };

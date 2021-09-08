@@ -19,14 +19,16 @@
 #ifndef GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
+// IWYU pragma: private
+
 #include <grpc/impl/codegen/port_platform.h>
+
+#include <stddef.h>
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/impl/codegen/status.h>
-
-#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,9 +56,6 @@ typedef struct grpc_byte_buffer {
 /** Completion Queues enable notification of the completion of
  * asynchronous actions. */
 typedef struct grpc_completion_queue grpc_completion_queue;
-
-/** An alarm associated with a completion queue. */
-typedef struct grpc_alarm grpc_alarm;
 
 /** The Channel interface allows creation of Call objects. */
 typedef struct grpc_channel grpc_channel;
@@ -202,8 +201,15 @@ typedef struct {
 #define GRPC_ARG_HTTP2_MAX_FRAME_SIZE "grpc.http2.max_frame_size"
 /** Should BDP probing be performed? */
 #define GRPC_ARG_HTTP2_BDP_PROBE "grpc.http2.bdp_probe"
-/** Minimum time between sending successive ping frames without receiving any
-    data/header frame, Int valued, milliseconds. */
+/** (DEPRECATED) Does not have any effect.
+    Earlier, this arg configured the minimum time between successive ping frames
+    without receiving any data/header frame, Int valued, milliseconds. This put
+    unnecessary constraints on the configuration of keepalive pings,
+    requiring users to set this channel arg along with
+    GRPC_ARG_KEEPALIVE_TIME_MS. This arg also limited the activity of the other
+    source of pings in gRPC Core - BDP pings, but BDP pings are only sent when
+    there is receive-side data activity, making this arg unuseful for BDP pings
+    too.  */
 #define GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_time_between_pings_ms"
 /** Minimum allowed time between a server receiving successive ping frames
@@ -346,6 +352,17 @@ typedef struct {
 /* Timeout in milliseconds to use for calls to the grpclb load balancer.
    If 0 or unset, the balancer calls will have no deadline. */
 #define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS "grpc.grpclb_call_timeout_ms"
+/* Specifies the xDS bootstrap config as a JSON string.
+   FOR TESTING PURPOSES ONLY -- DO NOT USE IN PRODUCTION.
+   This option allows controlling the bootstrap configuration on a
+   per-channel basis, which is useful in tests.  However, this results
+   in having a separate xDS client instance per channel rather than
+   using the global instance, which is not the intended way to use xDS.
+   Currently, this will (a) add unnecessary load on the xDS server and
+   (b) break use of CSDS, and there may be additional side effects in
+   the future. */
+#define GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG \
+  "grpc.TEST_ONLY_DO_NOT_USE_IN_PROD.xds_bootstrap_config"
 /* Timeout in milliseconds to wait for the serverlist from the grpclb load
    balancer before using fallback backend addresses from the resolver.
    If 0, enter fallback mode immediately. Default value is 10000. */
@@ -355,11 +372,6 @@ typedef struct {
    over to the next priority. Default value is 10 seconds. */
 #define GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS \
   "grpc.priority_failover_timeout_ms"
-/* Timeout in milliseconds to wait for a resource to be returned from
- * the xds server before assuming that it does not exist.
- * The default is 15 seconds. */
-#define GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS \
-  "grpc.xds_resource_does_not_exist_timeout_ms"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
   "grpc.workaround.cronet_compression"
@@ -371,12 +383,26 @@ typedef struct {
     Defaults to "blend". In the current implementation "blend" is equivalent to
     "latency". */
 #define GRPC_ARG_OPTIMIZATION_TARGET "grpc.optimization_target"
-/** If set to zero, disables retry behavior. Otherwise, transparent retries
-    are enabled for all RPCs, and configurable retries are enabled when they
-    are configured via the service config. For details, see:
+/** Enables retry functionality.  Defaults to true.  When enabled,
+    configurable retries are enabled when they are configured via the
+    service config.  For details, see:
       https://github.com/grpc/proposal/blob/master/A6-client-retries.md
+    NOTE: Transparent retries are not yet implemented.  When they are
+          implemented, they will also be enabled by this arg.
+    NOTE: Hedging functionality is not yet implemented, so those
+          fields in the service config will currently be ignored.  See
+          also the GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING arg below.
  */
 #define GRPC_ARG_ENABLE_RETRIES "grpc.enable_retries"
+/** Enables hedging functionality, as described in:
+      https://github.com/grpc/proposal/blob/master/A6-client-retries.md
+    Default is currently false, since this functionality is not yet
+    fully implemented.
+    NOTE: This channel arg is experimental and will eventually be removed.
+          Once hedging functionality has been implemented and proves stable,
+          this arg will be removed, and the hedging functionality will
+          be enabled via the GRPC_ARG_ENABLE_RETRIES arg above. */
+#define GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING "grpc.experimental.enable_hedging"
 /** Per-RPC retry buffer size, in bytes. Default is 256 KiB. */
 #define GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE "grpc.per_rpc_retry_buffer_size"
 /** Channel arg that carries the bridged objective c object for custom metrics
@@ -415,6 +441,10 @@ typedef struct {
 #define GRPC_ARG_CHANNEL_POOL_DOMAIN "grpc.channel_pooling_domain"
 /** gRPC Objective-C channel pooling id. */
 #define GRPC_ARG_CHANNEL_ID "grpc.channel_id"
+/** Channel argument for grpc_authorization_policy_provider. If present, enables
+    gRPC authorization check. */
+#define GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER \
+  "grpc.authorization_policy_provider"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -460,7 +490,7 @@ typedef enum grpc_call_error {
 
 /** Default send/receive message size limits in bytes. -1 for unlimited. */
 /** TODO(roth) Make this match the default receive limit after next release */
-#define GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH -1
+#define GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH (-1)
 #define GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH (4 * 1024 * 1024)
 
 /** Write Flags: */
@@ -478,6 +508,7 @@ typedef enum grpc_call_error {
   (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS | GRPC_WRITE_THROUGH)
 
 /** Initial metadata flags */
+/** These flags are to be passed to the `grpc_op::flags` field */
 /** Signal that the call is idempotent */
 #define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
 /** Signal that the call should not return UNAVAILABLE before it has started */
@@ -504,8 +535,6 @@ typedef struct grpc_metadata {
      changing them, update metadata.h at the same time. */
   grpc_slice key;
   grpc_slice value;
-
-  uint32_t flags;
 
   /** The following fields are reserved for grpc internal use.
       There is no need to initialize them, and they will be set to garbage
@@ -729,21 +758,20 @@ typedef enum {
   /** Events are popped out by calling grpc_completion_queue_pluck() API ONLY*/
   GRPC_CQ_PLUCK,
 
-  /** EXPERIMENTAL: Events trigger a callback specified as the tag */
+  /** Events trigger a callback specified as the tag */
   GRPC_CQ_CALLBACK
 } grpc_cq_completion_type;
 
-/** EXPERIMENTAL: Specifies an interface class to be used as a tag
-    for callback-based completion queues. This can be used directly,
-    as the first element of a struct in C, or as a base class in C++.
-    Its "run" value should be assigned to some non-member function, such as
-    a static method. */
-typedef struct grpc_experimental_completion_queue_functor {
+/** Specifies an interface class to be used as a tag for callback-based
+ * completion queues. This can be used directly, as the first element of a
+ * struct in C, or as a base class in C++. Its "run" value should be assigned to
+ * some non-member function, such as a static method. */
+typedef struct grpc_completion_queue_functor {
   /** The run member specifies a function that will be called when this
       tag is extracted from the completion queue. Its arguments will be a
       pointer to this functor and a boolean that indicates whether the
       operation succeeded (non-zero) or failed (zero) */
-  void (*functor_run)(struct grpc_experimental_completion_queue_functor*, int);
+  void (*functor_run)(struct grpc_completion_queue_functor*, int);
 
   /** The inlineable member specifies whether this functor can be run inline.
       This should only be used for trivial internally-defined functors. */
@@ -751,10 +779,8 @@ typedef struct grpc_experimental_completion_queue_functor {
 
   /** The following fields are not API. They are meant for internal use. */
   int internal_success;
-  struct grpc_experimental_completion_queue_functor* internal_next;
-} grpc_experimental_completion_queue_functor;
-
-/* The upgrade to version 2 is currently experimental. */
+  struct grpc_completion_queue_functor* internal_next;
+} grpc_completion_queue_functor;
 
 #define GRPC_CQ_CURRENT_VERSION 2
 #define GRPC_CQ_VERSION_MINIMUM_FOR_CALLBACKABLE 2
@@ -769,10 +795,10 @@ typedef struct grpc_completion_queue_attributes {
 
   /* END OF VERSION 1 CQ ATTRIBUTES */
 
-  /* EXPERIMENTAL: START OF VERSION 2 CQ ATTRIBUTES */
+  /* START OF VERSION 2 CQ ATTRIBUTES */
   /** When creating a callbackable CQ, pass in a functor to get invoked when
    * shutdown is complete */
-  grpc_experimental_completion_queue_functor* cq_shutdown_cb;
+  grpc_completion_queue_functor* cq_shutdown_cb;
 
   /* END OF VERSION 2 CQ ATTRIBUTES */
 } grpc_completion_queue_attributes;

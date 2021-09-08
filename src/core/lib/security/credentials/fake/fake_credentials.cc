@@ -59,7 +59,7 @@ class grpc_fake_server_credentials final : public grpc_server_credentials {
   ~grpc_fake_server_credentials() override = default;
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector() override {
+  create_security_connector(const grpc_channel_args* /*args*/) override {
     return grpc_fake_server_security_connector_create(this->Ref());
   }
 };
@@ -76,7 +76,8 @@ grpc_fake_transport_security_server_credentials_create() {
 
 grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets) {
   return grpc_channel_arg_string_create(
-      (char*)GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_targets);
+      const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
+      expected_targets);
 }
 
 const char* grpc_fake_transport_get_expected_targets(
@@ -91,7 +92,7 @@ const char* grpc_fake_transport_get_expected_targets(
 bool grpc_md_only_test_credentials::get_request_metadata(
     grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context /*context*/,
     grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
-    grpc_error** /*error*/) {
+    grpc_error_handle* /*error*/) {
   grpc_credentials_mdelem_array_add(md_array, md_);
   if (is_async_) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_request_metadata,
@@ -102,7 +103,7 @@ bool grpc_md_only_test_credentials::get_request_metadata(
 }
 
 void grpc_md_only_test_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* /*md_array*/, grpc_error* error) {
+    grpc_credentials_mdelem_array* /*md_array*/, grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 

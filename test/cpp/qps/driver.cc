@@ -16,6 +16,8 @@
  *
  */
 
+#include "test/cpp/qps/driver.h"
+
 #include <cinttypes>
 #include <deque>
 #include <list>
@@ -37,7 +39,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/qps/client.h"
-#include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/qps/stats.h"
@@ -45,7 +46,6 @@
 
 using std::deque;
 using std::list;
-using std::thread;
 using std::unique_ptr;
 using std::vector;
 
@@ -77,7 +77,7 @@ static deque<string> get_workers(const string& env_name) {
       }
     }
   }
-  if (out.size() == 0) {
+  if (out.empty()) {
     gpr_log(GPR_ERROR,
             "Environment variable \"%s\" does not contain a list of QPS "
             "workers to use. Set it to a comma-separated list of "
@@ -148,7 +148,7 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   // all clients
   double qps = 0;
   double client_system_cpu_load = 0, client_user_cpu_load = 0;
-  for (size_t i = 0; i < result->client_stats_size(); i++) {
+  for (int i = 0; i < result->client_stats_size(); i++) {
     auto client_stat = result->client_stats(i);
     qps += client_stat.latencies().count() / client_stat.time_elapsed();
     client_system_cpu_load +=
@@ -159,7 +159,7 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   // Calculate cpu load for each server and then aggregate results for all
   // servers
   double server_system_cpu_load = 0, server_user_cpu_load = 0;
-  for (size_t i = 0; i < result->server_stats_size(); i++) {
+  for (int i = 0; i < result->server_stats_size(); i++) {
     auto server_stat = result->server_stats(i);
     server_system_cpu_load +=
         server_stat.time_system() / server_stat.time_elapsed();
@@ -410,7 +410,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       workers.push_back(addr);
     }
   }
-  GPR_ASSERT(workers.size() != 0);
+  GPR_ASSERT(!workers.empty());
 
   // if num_clients is set to <=0, do dynamic sizing: all workers
   // except for servers are clients
@@ -463,11 +463,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       gpr_log(GPR_ERROR, "Server %zu did not yield initial status", i);
       GPR_ASSERT(false);
     }
-    if (qps_server_target_override.length() > 0) {
-      // overriding the qps server target only works if there is 1 server
-      GPR_ASSERT(num_servers == 1);
-      client_config.add_server_targets(qps_server_target_override);
-    } else if (run_inproc) {
+    if (run_inproc) {
       std::string cli_target(INPROC_NAME_PREFIX);
       cli_target += std::to_string(i);
       client_config.add_server_targets(cli_target);
@@ -478,7 +474,12 @@ std::unique_ptr<ScenarioResult> RunScenario(
       client_config.add_server_targets(cli_target.c_str());
     }
   }
-
+  if (qps_server_target_override.length() > 0) {
+    // overriding the qps server target only makes since if there is <= 1
+    // servers
+    GPR_ASSERT(num_servers <= 1);
+    client_config.add_server_targets(qps_server_target_override);
+  }
   client_config.set_median_latency_collection_interval_millis(
       median_latency_collection_interval_millis);
 
@@ -634,9 +635,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   ReceiveFinalStatusFromServer(servers, *result);
   ShutdownServers(servers, *result);
 
-  if (g_inproc_servers != nullptr) {
-    delete g_inproc_servers;
-  }
+  delete g_inproc_servers;
 
   merged_latencies.FillProto(result->mutable_latencies());
   for (std::unordered_map<int, int64_t>::iterator it = merged_statuses.begin();
@@ -655,7 +654,7 @@ bool RunQuit(
   // Get client, server lists
   bool result = true;
   auto workers = get_workers("QPS_WORKERS");
-  if (workers.size() == 0) {
+  if (workers.empty()) {
     return false;
   }
 
@@ -664,10 +663,10 @@ bool RunQuit(
         workers[i],
         GetCredType(workers[i], per_worker_credential_types, credential_type),
         nullptr /* call creds */, {} /* interceptor creators */));
-    Void dummy;
+    Void phony;
     grpc::ClientContext ctx;
     ctx.set_wait_for_ready(true);
-    Status s = stub->QuitWorker(&ctx, dummy, &dummy);
+    Status s = stub->QuitWorker(&ctx, phony, &phony);
     if (!s.ok()) {
       gpr_log(GPR_ERROR, "Worker %zu could not be properly quit because %s", i,
               s.error_message().c_str());

@@ -22,14 +22,15 @@
 #ifdef GRPC_POSIX_SOCKET_TCP
 
 #include <arpa/inet.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
 #include <string>
+
+#include <openssl/err.h>
+#include <openssl/ssl.h>
 
 #include "absl/strings/str_cat.h"
 
@@ -120,13 +121,12 @@ static bool verify_peer_options_test(verify_peer_options* verify_options) {
   int port = grpc_pick_unused_port_or_die();
   gpr_event_init(&client_handshake_complete);
 
-  // Launch the gRPC server thread.
-  bool ok;
-  grpc_core::Thread thd("grpc_client_ssl_test", server_thread, &port, &ok);
-  GPR_ASSERT(ok);
-  thd.Start();
-
   // Load key pair and establish client SSL credentials.
+  // NOTE: we intentionally load the credential files before starting
+  // the server thread because grpc_load_file can experience trouble
+  // when two threads attempt to load the same file concurrently
+  // and server thread also reads the same files as soon as it starts.
+  // See https://github.com/grpc/grpc/issues/23503 for details.
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
   grpc_slice ca_slice, cert_slice, key_slice;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
@@ -143,6 +143,12 @@ static bool verify_peer_options_test(verify_peer_options* verify_options) {
       reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
   grpc_channel_credentials* ssl_creds = grpc_ssl_credentials_create(
       ca_cert, &pem_key_cert_pair, verify_options, nullptr);
+
+  // Launch the gRPC server thread.
+  bool ok;
+  grpc_core::Thread thd("grpc_client_ssl_test", server_thread, &port, &ok);
+  GPR_ASSERT(ok);
+  thd.Start();
 
   // Establish a channel pointing at the TLS server. Since the gRPC runtime is
   // lazy, this won't necessarily establish a connection yet.
@@ -230,6 +236,7 @@ static void verify_destruct(void* userdata) { destruct_userdata = userdata; }
 
 int main(int argc, char* argv[]) {
   grpc::testing::TestEnvironment env(argc, argv);
+  grpc_init();
 
   int userdata = 42;
   verify_peer_options verify_options;
@@ -267,6 +274,7 @@ int main(int argc, char* argv[]) {
 
   grpc_slice_unref(cert_slice);
 
+  grpc_shutdown();
   return 0;
 }
 

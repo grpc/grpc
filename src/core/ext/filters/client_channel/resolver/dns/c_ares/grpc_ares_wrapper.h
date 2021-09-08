@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <ares.h>
+
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -74,7 +76,7 @@ extern void (*grpc_cancel_ares_request_locked)(grpc_ares_request* request);
 
 /* Initialize gRPC ares wrapper. Must be called at least once before
    grpc_resolve_address_ares(). */
-grpc_error* grpc_ares_init(void);
+grpc_error_handle grpc_ares_init(void);
 
 /* Uninitialized gRPC ares wrapper. If there was more than one previous call to
    grpc_ares_init(), this function uninitializes the gRPC ares wrapper only if
@@ -92,6 +94,9 @@ bool grpc_ares_query_ipv6();
 /* Sorts destinations in lb_addrs according to RFC 6724. */
 void grpc_cares_wrapper_address_sorting_sort(
     const grpc_ares_request* request, grpc_core::ServerAddressList* addresses);
+
+/* Exposed in this header for C-core tests only */
+extern void (*grpc_ares_test_only_inject_config)(ares_channel channel);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H \
         */

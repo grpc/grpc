@@ -1,0 +1,77 @@
+// Copyright 2020 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Local copy of Envoy xDS proto file, used for testing only.
+
+syntax = "proto3";
+
+package envoy.config.core.v3;
+
+// [#protodoc-title: Configuration sources]
+
+// Aggregated Discovery Service (ADS) options. This is currently empty, but when
+// set in :ref:`ConfigSource <envoy_api_msg_config.core.v3.ConfigSource>` can be used to
+// specify that ADS is to be used.
+message AggregatedConfigSource {
+}
+
+// [#not-implemented-hide:]
+// Self-referencing config source options. This is currently empty, but when
+// set in :ref:`ConfigSource <envoy_api_msg_config.core.v3.ConfigSource>` can be used to
+// specify that other data can be obtained from the same server.
+message SelfConfigSource {
+}
+
+// Configuration for :ref:`listeners <config_listeners>`, :ref:`clusters
+// <config_cluster_manager>`, :ref:`routes
+// <envoy_api_msg_config.route.v3.RouteConfiguration>`, :ref:`endpoints
+// <arch_overview_service_discovery>` etc. may either be sourced from the
+// filesystem or from an xDS API source. Filesystem configs are watched with
+// inotify for updates.
+// [#next-free-field: 7]
+message ConfigSource {
+  oneof config_source_specifier {
+    // Path on the filesystem to source and watch for configuration updates.
+    // When sourcing configuration for :ref:`secret <envoy_api_msg_extensions.transport_sockets.tls.v3.Secret>`,
+    // the certificate and key files are also watched for updates.
+    //
+    // .. note::
+    //
+    //  The path to the source must exist at config load time.
+    //
+    // .. note::
+    //
+    //   Envoy will only watch the file path for *moves.* This is because in general only moves
+    //   are atomic. The same method of swapping files as is demonstrated in the
+    //   :ref:`runtime documentation <config_runtime_symbolic_link_swap>` can be used here also.
+    string path = 1;
+
+    // When set, ADS will be used to fetch resources. The ADS API configuration
+    // source in the bootstrap configuration is used.
+    AggregatedConfigSource ads = 3;
+
+    // [#not-implemented-hide:]
+    // When set, the client will access the resources from the same server it got the
+    // ConfigSource from, although not necessarily from the same stream. This is similar to the
+    // :ref:`ads<envoy_api_field.ConfigSource.ads>` field, except that the client may use a
+    // different stream to the same server. As a result, this field can be used for things
+    // like LRS that cannot be sent on an ADS stream. It can also be used to link from (e.g.)
+    // LDS to RDS on the same server without requiring the management server to know its name
+    // or required credentials.
+    // [#next-major-version: In xDS v3, consider replacing the ads field with this one, since
+    // this field can implicitly mean to use the same stream in the case where the ConfigSource
+    // is provided via ADS and the specified data can also be obtained via ADS.]
+    SelfConfigSource self = 5;
+  }
+}

@@ -21,7 +21,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/security/credentials/credentials.h"
-
 #include "src/core/lib/security/security_connector/ssl/ssl_security_connector.h"
 
 class grpc_ssl_credentials : public grpc_channel_credentials {
@@ -64,12 +63,12 @@ struct grpc_ssl_server_certificate_config_fetcher {
 
 class grpc_ssl_server_credentials final : public grpc_server_credentials {
  public:
-  grpc_ssl_server_credentials(
+  explicit grpc_ssl_server_credentials(
       const grpc_ssl_server_credentials_options& options);
   ~grpc_ssl_server_credentials() override;
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector() override;
+  create_security_connector(const grpc_channel_args* /* args */) override;
 
   bool has_cert_config_fetcher() const {
     return certificate_config_fetcher_.cb != nullptr;

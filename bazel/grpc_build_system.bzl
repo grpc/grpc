@@ -24,6 +24,7 @@
 #
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 
@@ -48,6 +49,8 @@ def _get_external_deps(external_deps):
     for dep in external_deps:
         if dep == "address_sorting":
             ret += ["//third_party/address_sorting"]
+        elif dep == "xxhash":
+            ret += ["//third_party/xxhash"]
         elif dep == "cares":
             ret += select({
                 "//:grpc_no_ares": [],
@@ -61,13 +64,53 @@ def _get_external_deps(external_deps):
             ret += ["//external:" + dep]
     return ret
 
+def _update_visibility(visibility):
+    if visibility == None:
+        return None
+
+    # Visibility rules prefixed with '@grpc_' are used to flag different visibility rule
+    # classes upstream.
+    PUBLIC = ["//visibility:public"]
+    PRIVATE = ["//:__subpackages__"]
+    VISIBILITY_TARGETS = {
+        "alt_gpr_base_legacy": PRIVATE,
+        "alt_grpc++_base_legacy": PRIVATE,
+        "alt_grpc_base_legacy": PRIVATE,
+        "alt_grpc++_base_unsecure_legacy": PRIVATE,
+        "alts_frame_protector": PRIVATE,
+        "channelz": PRIVATE,
+        "client_channel": PRIVATE,
+        "debug_location": PRIVATE,
+        "endpoint_tests": PRIVATE,
+        "grpclb": PRIVATE,
+        "grpc_opencensus_plugin": PUBLIC,
+        "grpc_resolver_fake": PRIVATE,
+        "grpc++_test": PRIVATE,
+        "public": PUBLIC,
+        "ref_counted_ptr": PRIVATE,
+        "trace": PRIVATE,
+        "tsi_interface": PRIVATE,
+        "tsi": PRIVATE,
+        "xds": PRIVATE,
+    }
+    final_visibility = []
+    for rule in visibility:
+        if rule.startswith("@grpc:"):
+            for replacement in VISIBILITY_TARGETS[rule[len("@grpc:"):]]:
+                final_visibility.append(replacement)
+        else:
+            final_visibility.append(rule)
+    return [x for x in final_visibility]
+
 def grpc_cc_library(
         name,
         srcs = [],
         public_hdrs = [],
         hdrs = [],
         external_deps = [],
+        defines = [],
         deps = [],
+        select_deps = None,
         standalone = False,
         language = "C++",
         testonly = False,
@@ -75,7 +118,9 @@ def grpc_cc_library(
         alwayslink = 0,
         data = [],
         use_cfstream = False,
-        tags = []):
+        tags = [],
+        linkstatic = False):
+    visibility = _update_visibility(visibility)
     copts = []
     if use_cfstream:
         copts = if_mac(["-DGRPC_CFSTREAM"])
@@ -85,10 +130,14 @@ def grpc_cc_library(
     if use_cfstream:
         linkopts = linkopts + if_mac(["-framework CoreFoundation"])
 
+    if select_deps:
+        deps += select(select_deps)
+
     native.cc_library(
         name = name,
         srcs = srcs,
-        defines = select({
+        defines = defines +
+                  select({
                       "//:grpc_no_ares": ["GRPC_ARES=0"],
                       "//conditions:default": [],
                   }) +
@@ -103,17 +152,19 @@ def grpc_cc_library(
                   }),
         hdrs = hdrs + public_hdrs,
         deps = deps + _get_external_deps(external_deps),
-        copts = copts,
+        copts = GRPC_DEFAULT_COPTS + copts,
         visibility = visibility,
         testonly = testonly,
         linkopts = linkopts,
         includes = [
             "include",
             "src/core/ext/upb-generated",  # Once upb code-gen issue is resolved, remove this.
+            "src/core/ext/upbdefs-generated",  # Once upb code-gen issue is resolved, remove this.
         ],
         alwayslink = alwayslink,
         data = data,
         tags = tags,
+        linkstatic = linkstatic,
     )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
@@ -168,8 +219,8 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None):
-    copts = if_mac(["-DGRPC_CFSTREAM"])
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = []):
+    copts = copts + if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
 
@@ -180,7 +231,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "args": args,
         "data": data,
         "deps": deps + _get_external_deps(external_deps),
-        "copts": copts,
+        "copts": GRPC_DEFAULT_COPTS + copts,
         "linkopts": if_not_windows(["-pthread"]),
         "size": size,
         "timeout": timeout,
@@ -230,7 +281,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         **args
     )
 
-def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = []):
+def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = [], features = []):
     copts = []
     if language.upper() == "C":
         copts = ["-std=c99"]
@@ -242,9 +293,10 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         testonly = testonly,
         linkshared = linkshared,
         deps = deps + _get_external_deps(external_deps),
-        copts = copts,
+        copts = GRPC_DEFAULT_COPTS + copts,
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,
+        features = features,
     )
 
 def grpc_generate_one_off_targets():

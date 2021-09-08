@@ -21,13 +21,13 @@
 #if defined(GPR_POSIX_SYNC) && !defined(GPR_ABSEIL_SYNC) && \
     !defined(GPR_CUSTOM_SYNC)
 
+#include <errno.h>
+#include <time.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-
-#include <errno.h>
-#include <time.h>
 
 #include "src/core/lib/profiling/timers.h"
 
@@ -116,10 +116,6 @@ void gpr_cv_destroy(gpr_cv* cv) {
 #endif
 }
 
-#define gpr_convert_clock_type_debug(t, clock_type, now1, now2, add_result, \
-                                     sub_result)                            \
-  gpr_convert_clock_type((t), (clock_type))
-
 int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
   int err = 0;
   if (gpr_time_cmp(abs_deadline, gpr_inf_future(abs_deadline.clock_type)) ==
@@ -132,11 +128,9 @@ int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
   } else {
     struct timespec abs_deadline_ts;
 #if GPR_LINUX
-    abs_deadline = gpr_convert_clock_type_debug(
-        abs_deadline, GPR_CLOCK_MONOTONIC, now1, now2, add_result, sub_result);
+    abs_deadline = gpr_convert_clock_type(abs_deadline, GPR_CLOCK_MONOTONIC);
 #else
-    abs_deadline = gpr_convert_clock_type_debug(
-        abs_deadline, GPR_CLOCK_REALTIME, now1, now2, add_result, sub_result);
+    abs_deadline = gpr_convert_clock_type(abs_deadline, GPR_CLOCK_REALTIME);
 #endif  // GPR_LINUX
     abs_deadline_ts.tv_sec = static_cast<time_t>(abs_deadline.tv_sec);
     abs_deadline_ts.tv_nsec = abs_deadline.tv_nsec;

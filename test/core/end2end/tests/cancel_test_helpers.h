@@ -19,6 +19,8 @@
 #ifndef GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H
 #define GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H
 
+#include <grpc/grpc.h>
+
 typedef struct {
   const char* name;
   grpc_call_error (*initiate_cancel)(grpc_call* call, void* reserved);

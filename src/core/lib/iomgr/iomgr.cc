@@ -31,7 +31,6 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/buffer_list.h"
@@ -51,7 +50,6 @@ static gpr_cv g_rcv;
 static int g_shutdown;
 static grpc_iomgr_object g_root_object;
 static bool g_grpc_abort_on_leaks;
-static grpc_core::Atomic<bool> g_iomgr_non_polling{false};
 
 void grpc_iomgr_init() {
   grpc_core::ExecCtx exec_ctx;
@@ -61,7 +59,7 @@ void grpc_iomgr_init() {
   gpr_cv_init(&g_rcv);
   grpc_core::Executor::InitAll();
   g_root_object.next = g_root_object.prev = &g_root_object;
-  g_root_object.name = (char*)"root";
+  g_root_object.name = const_cast<char*>("root");
   grpc_iomgr_platform_init();
   grpc_timer_list_init();
   grpc_core::grpc_errqueue_init();
@@ -96,7 +94,6 @@ void grpc_iomgr_shutdown() {
   {
     grpc_timer_manager_shutdown();
     grpc_iomgr_platform_flush();
-    grpc_core::Executor::ShutdownAll();
 
     gpr_mu_lock(&g_mu);
     g_shutdown = 1;
@@ -151,6 +148,7 @@ void grpc_iomgr_shutdown() {
     gpr_mu_unlock(&g_mu);
     grpc_timer_list_shutdown();
     grpc_core::ExecCtx::Get()->Flush();
+    grpc_core::Executor::ShutdownAll();
   }
 
   /* ensure all threads have left g_mu */
@@ -171,7 +169,7 @@ bool grpc_iomgr_is_any_background_poller_thread() {
 }
 
 bool grpc_iomgr_add_closure_to_background_poller(grpc_closure* closure,
-                                                 grpc_error* error) {
+                                                 grpc_error_handle error) {
   return grpc_iomgr_platform_add_closure_to_background_poller(closure, error);
 }
 
@@ -194,11 +192,3 @@ void grpc_iomgr_unregister_object(grpc_iomgr_object* obj) {
 }
 
 bool grpc_iomgr_abort_on_leaks(void) { return g_grpc_abort_on_leaks; }
-
-bool grpc_iomgr_non_polling() {
-  return g_iomgr_non_polling.Load(grpc_core::MemoryOrder::SEQ_CST);
-}
-
-void grpc_iomgr_mark_non_polling_internal() {
-  g_iomgr_non_polling.Store(true, grpc_core::MemoryOrder::SEQ_CST);
-}

@@ -15,6 +15,7 @@
 
 import os
 import sys
+
 import yaml
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
@@ -33,7 +34,10 @@ def struct(**kwargs):
 # generate_tests.bzl is now the source of truth for end2end tests.
 # The .bzl file is basically a python file and we can "execute" it
 # to get access to the variables it defines.
-execfile('test/core/end2end/generate_tests.bzl')
+exec(
+    compile(
+        open('test/core/end2end/generate_tests.bzl', "rb").read(),
+        'test/core/end2end/generate_tests.bzl', 'exec'))
 
 
 def main():

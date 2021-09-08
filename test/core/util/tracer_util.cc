@@ -16,15 +16,14 @@
  *
  */
 
-#include "test/core/util/test_config.h"
-
 #include "src/core/lib/debug/trace.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
 
 void grpc_tracer_enable_flag(grpc_core::TraceFlag* flag) {
-  flag->set_enabled(1);
+  flag->set_enabled(true);
 }
 
 }  // namespace testing

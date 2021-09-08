@@ -16,14 +16,15 @@
  *
  */
 
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
+
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
@@ -39,6 +40,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
+// For normal TLS connections.
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
@@ -50,13 +52,17 @@ struct fullstack_secure_fixture_data {
     for (size_t ind = 0; ind < thd_list.size(); ind++) {
       thd_list[ind].Join();
     }
+    grpc_tls_certificate_provider_release(client_provider);
+    grpc_tls_certificate_provider_release(server_provider);
   }
   std::string localaddr;
   grpc_tls_version tls_version;
   ThreadList thd_list;
+  grpc_tls_certificate_provider* client_provider = nullptr;
+  grpc_tls_certificate_provider* server_provider = nullptr;
 };
 
-static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
+static grpc_end2end_test_fixture chttp2_create_fixture_static_data(
     grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/,
     grpc_tls_version tls_version) {
   grpc_end2end_test_fixture f;
@@ -65,22 +71,79 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   memset(&f, 0, sizeof(f));
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
   ffd->tls_version = tls_version;
+  grpc_slice root_slice, cert_slice, key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(CA_CERT_PATH, 1, &root_slice)));
+  std::string root_cert =
+      std::string(grpc_core::StringViewFromSlice(root_slice));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+  std::string identity_cert =
+      std::string(grpc_core::StringViewFromSlice(cert_slice));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+  std::string private_key =
+      std::string(grpc_core::StringViewFromSlice(key_slice));
+  grpc_tls_identity_pairs* client_pairs = grpc_tls_identity_pairs_create();
+  grpc_tls_identity_pairs_add_pair(client_pairs, private_key.c_str(),
+                                   identity_cert.c_str());
+  ffd->client_provider = grpc_tls_certificate_provider_static_data_create(
+      root_cert.c_str(), client_pairs);
+  grpc_tls_identity_pairs* server_pairs = grpc_tls_identity_pairs_create();
+  grpc_tls_identity_pairs_add_pair(server_pairs, private_key.c_str(),
+                                   identity_cert.c_str());
+  ffd->server_provider = grpc_tls_certificate_provider_static_data_create(
+      root_cert.c_str(), server_pairs);
+  f.fixture_data = ffd;
+  f.cq = grpc_completion_queue_create_for_next(nullptr);
+  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
+  grpc_slice_unref(root_slice);
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
+  return f;
+}
+
+static grpc_end2end_test_fixture chttp2_create_fixture_cert_watcher(
+    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/,
+    grpc_tls_version tls_version) {
+  grpc_end2end_test_fixture f;
+  int port = grpc_pick_unused_port_or_die();
+  fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
+  memset(&f, 0, sizeof(f));
+  ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
+  ffd->tls_version = tls_version;
+  ffd->client_provider = grpc_tls_certificate_provider_file_watcher_create(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  ffd->server_provider = grpc_tls_certificate_provider_file_watcher_create(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
   f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   return f;
 }
 
-static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack_tls1_2(
+static grpc_end2end_test_fixture chttp2_create_fixture_static_data_tls1_2(
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
-  return chttp2_create_fixture_secure_fullstack(client_args, server_args,
-                                                grpc_tls_version::TLS1_2);
+  return chttp2_create_fixture_static_data(client_args, server_args,
+                                           grpc_tls_version::TLS1_2);
 }
 
-static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack_tls1_3(
+static grpc_end2end_test_fixture chttp2_create_fixture_static_data_tls1_3(
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
-  return chttp2_create_fixture_secure_fullstack(client_args, server_args,
-                                                grpc_tls_version::TLS1_3);
+  return chttp2_create_fixture_static_data(client_args, server_args,
+                                           grpc_tls_version::TLS1_3);
+}
+
+static grpc_end2end_test_fixture chttp2_create_fixture_cert_watcher_tls1_2(
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+  return chttp2_create_fixture_cert_watcher(client_args, server_args,
+                                            grpc_tls_version::TLS1_2);
+}
+
+static grpc_end2end_test_fixture chttp2_create_fixture_cert_watcher_tls1_3(
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+  return chttp2_create_fixture_cert_watcher(client_args, server_args,
+                                            grpc_tls_version::TLS1_3);
 }
 
 static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
@@ -151,82 +214,6 @@ static int server_authz_check_async(
   return 1;
 }
 
-// Synchronous implementation of schedule field in
-// grpc_tls_credential_reload_config instance that is a part of client-side
-// grpc_tls_credentials_options instance.
-static int client_cred_reload_sync(void* /*config_user_data*/,
-                                   grpc_tls_credential_reload_arg* arg) {
-  if (!arg->key_materials_config->pem_key_cert_pair_list().empty()) {
-    arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
-    return 0;
-  }
-  grpc_slice ca_slice, cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-  const char* server_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-  const char* server_key =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
-  if (arg->key_materials_config->pem_key_cert_pair_list().empty()) {
-    const auto* pem_key_cert_pair_ptr = &pem_key_cert_pair;
-    grpc_tls_key_materials_config_set_key_materials(
-        arg->key_materials_config, ca_cert, &pem_key_cert_pair_ptr, 1);
-  }
-  // new credential has been reloaded.
-  arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW;
-  grpc_slice_unref(cert_slice);
-  grpc_slice_unref(key_slice);
-  grpc_slice_unref(ca_slice);
-  return 0;
-}
-
-// Synchronous implementation of schedule field in
-// grpc_tls_credential_reload_config instance that is a part of server-side
-// grpc_tls_credentials_options instance.
-static int server_cred_reload_sync(void* /*config_user_data*/,
-                                   grpc_tls_credential_reload_arg* arg) {
-  if (!arg->key_materials_config->pem_key_cert_pair_list().empty()) {
-    arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
-    return 0;
-  }
-  grpc_slice ca_slice, cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-  const char* server_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-  const char* server_key =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
-  GPR_ASSERT(arg != nullptr);
-  GPR_ASSERT(arg->key_materials_config != nullptr);
-  GPR_ASSERT(arg->key_materials_config->pem_key_cert_pair_list().data() !=
-             nullptr);
-  if (arg->key_materials_config->pem_key_cert_pair_list().empty()) {
-    const auto* pem_key_cert_pair_ptr = &pem_key_cert_pair;
-    grpc_tls_key_materials_config_set_key_materials(
-        arg->key_materials_config, ca_cert, &pem_key_cert_pair_ptr, 1);
-  }
-  // new credential has been reloaded.
-  arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW;
-  grpc_slice_unref(cert_slice);
-  grpc_slice_unref(key_slice);
-  grpc_slice_unref(ca_slice);
-  return 0;
-}
-
 // Create a TLS channel credential.
 static grpc_channel_credentials* create_tls_channel_credentials(
     fullstack_secure_fixture_data* ffd) {
@@ -234,12 +221,11 @@ static grpc_channel_credentials* create_tls_channel_credentials(
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   options->set_min_tls_version(ffd->tls_version);
   options->set_max_tls_version(ffd->tls_version);
-  /* Set credential reload config. */
-  grpc_tls_credential_reload_config* reload_config =
-      grpc_tls_credential_reload_config_create(nullptr, client_cred_reload_sync,
-                                               nullptr, nullptr);
-  grpc_tls_credentials_options_set_credential_reload_config(options,
-                                                            reload_config);
+  // Set credential provider.
+  grpc_tls_credentials_options_set_certificate_provider(options,
+                                                        ffd->client_provider);
+  grpc_tls_credentials_options_watch_root_certs(options);
+  grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
   /* Set server authorization check config. */
   grpc_tls_server_authorization_check_config* check_config =
       grpc_tls_server_authorization_check_config_create(
@@ -248,6 +234,7 @@ static grpc_channel_credentials* create_tls_channel_credentials(
       options, check_config);
   /* Create TLS channel credentials. */
   grpc_channel_credentials* creds = grpc_tls_credentials_create(options);
+  grpc_tls_server_authorization_check_config_release(check_config);
   return creds;
 }
 
@@ -257,12 +244,11 @@ static grpc_server_credentials* create_tls_server_credentials(
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   options->set_min_tls_version(ffd->tls_version);
   options->set_max_tls_version(ffd->tls_version);
-  /* Set credential reload config. */
-  grpc_tls_credential_reload_config* reload_config =
-      grpc_tls_credential_reload_config_create(nullptr, server_cred_reload_sync,
-                                               nullptr, nullptr);
-  grpc_tls_credentials_options_set_credential_reload_config(options,
-                                                            reload_config);
+  // Set credential provider.
+  grpc_tls_credentials_options_set_certificate_provider(options,
+                                                        ffd->server_provider);
+  grpc_tls_credentials_options_watch_root_certs(options);
+  grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
   /* Set client certificate request type. */
   grpc_tls_credentials_options_set_cert_request_type(
       options, GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
@@ -309,21 +295,47 @@ static void chttp2_init_server(grpc_end2end_test_fixture* f,
 }
 
 static grpc_end2end_test_config configs[] = {
-    /* client sync reload async authz + server sync reload. */
+    // client: static data provider + async custom verification
+    // server: static data provider
+    // extra: TLS 1.2
     {"chttp2/simple_ssl_fullstack_tls1_2",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
-     "foo.test.google.fr", chttp2_create_fixture_secure_fullstack_tls1_2,
+     "foo.test.google.fr", chttp2_create_fixture_static_data_tls1_2,
      chttp2_init_client, chttp2_init_server, chttp2_tear_down_secure_fullstack},
+    // client: static data provider + async custom verification
+    // server: static data provider
+    // extra: TLS 1.3
     {"chttp2/simple_ssl_fullstack_tls1_3",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
-     "foo.test.google.fr", chttp2_create_fixture_secure_fullstack_tls1_3,
+     "foo.test.google.fr", chttp2_create_fixture_static_data_tls1_3,
      chttp2_init_client, chttp2_init_server, chttp2_tear_down_secure_fullstack},
+    // client: certificate watcher provider + async custom verification
+    // server: certificate watcher provider
+    // extra: TLS 1.2
+    {"chttp2/reloading_from_files_ssl_fullstack_tls1_2",
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+     "foo.test.google.fr", chttp2_create_fixture_cert_watcher_tls1_2,
+     chttp2_init_client, chttp2_init_server, chttp2_tear_down_secure_fullstack},
+    // client: certificate watcher provider + async custom verification
+    // server: certificate watcher provider
+    // extra: TLS 1.3
+    {"chttp2/reloading_from_files_ssl_fullstack_tls1_3",
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+     "foo.test.google.fr", chttp2_create_fixture_cert_watcher_tls1_3,
+     chttp2_init_client, chttp2_init_server, chttp2_tear_down_secure_fullstack},
+
 };
 
 int main(int argc, char** argv) {

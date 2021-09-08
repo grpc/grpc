@@ -21,12 +21,12 @@
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_UDP_SERVER
 
-#include "src/core/lib/iomgr/udp_server.h"
-
 #include <netinet/in.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+#include <vector>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -41,6 +41,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/socket_factory_posix.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/udp_server.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", #x)
@@ -170,7 +171,7 @@ static test_socket_factory* test_socket_factory_create(void) {
   return factory;
 }
 
-static void destroy_pollset(void* p, grpc_error* /*error*/) {
+static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
@@ -198,7 +199,8 @@ static void test_no_op_with_start(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
   LOG_TEST("test_no_op_with_start");
-  grpc_udp_server_start(s, nullptr, 0, nullptr);
+  std::vector<grpc_pollset*> empty_pollset;
+  grpc_udp_server_start(s, &empty_pollset, nullptr);
   grpc_udp_server_destroy(s, nullptr);
   shutdown_and_destroy_pollset();
 }
@@ -280,7 +282,8 @@ static void test_no_op_with_port_and_start(void) {
                                       snd_buf_size, &handler_factory,
                                       g_num_listeners) > 0);
 
-  grpc_udp_server_start(s, nullptr, 0, nullptr);
+  std::vector<grpc_pollset*> empty_pollset;
+  grpc_udp_server_start(s, &empty_pollset, nullptr);
   GPR_ASSERT(g_number_of_starts == g_num_listeners);
   grpc_udp_server_destroy(s, nullptr);
 
@@ -300,7 +303,6 @@ static void test_receive(int number_of_clients) {
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
   int i;
   grpc_millis deadline;
-  grpc_pollset* pollsets[1];
   LOG_TEST("test_receive");
   gpr_log(GPR_INFO, "clients=%d", number_of_clients);
 
@@ -320,8 +322,9 @@ static void test_receive(int number_of_clients) {
                          (socklen_t*)&resolved_addr.len) == 0);
   GPR_ASSERT(resolved_addr.len <= sizeof(struct sockaddr_storage));
 
-  pollsets[0] = g_pollset;
-  grpc_udp_server_start(s, pollsets, 1, nullptr);
+  std::vector<grpc_pollset*> test_pollsets;
+  test_pollsets.emplace_back(g_pollset);
+  grpc_udp_server_start(s, &test_pollsets, nullptr);
 
   gpr_mu_lock(g_mu);
 

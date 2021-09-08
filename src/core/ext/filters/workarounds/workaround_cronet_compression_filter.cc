@@ -54,7 +54,8 @@ static bool get_user_agent_mdelem(const grpc_metadata_batch* batch,
 }
 
 // Callback invoked when we receive an initial metadata.
-static void recv_initial_metadata_ready(void* user_data, grpc_error* error) {
+static void recv_initial_metadata_ready(void* user_data,
+                                        grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
 
@@ -105,7 +106,7 @@ static void cronet_compression_start_transport_stream_op_batch(
 }
 
 // Constructor for call_data.
-static grpc_error* cronet_compression_init_call_elem(
+static grpc_error_handle cronet_compression_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* /*args*/) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->next_recv_initial_metadata_ready = nullptr;
@@ -122,7 +123,7 @@ static void cronet_compression_destroy_call_elem(
     grpc_closure* /*ignored*/) {}
 
 // Constructor for channel_data.
-static grpc_error* cronet_compression_init_channel_elem(
+static grpc_error_handle cronet_compression_init_channel_elem(
     grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
@@ -192,7 +193,7 @@ static bool register_workaround_cronet_compression(
   if (a == nullptr) {
     return true;
   }
-  if (grpc_channel_arg_get_bool(a, false) == false) {
+  if (!grpc_channel_arg_get_bool(a, false)) {
     return true;
   }
   return grpc_channel_stack_builder_prepend_filter(

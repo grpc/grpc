@@ -20,6 +20,24 @@ licenses(["notice"])  # Apache v2
 grpc_package(name = "test/core/gprpp")
 
 grpc_cc_test(
+    name = "examine_stack_test",
+    srcs = ["examine_stack_test.cc"],
+    external_deps = [
+        "absl/debugging:stacktrace",
+        "absl/debugging:symbolize",
+        "gtest",
+    ],
+    language = "C++",
+    # TODO(https://github.com/grpc/grpc/issues/24627): Disable this on Windows
+    tags = ["no_windows"],
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "fork_test",
     srcs = ["fork_test.cc"],
     language = "C++",
@@ -68,6 +86,57 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "bitset_test",
+    srcs = ["bitset_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:bitset",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "match_test",
+    srcs = ["match_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:match",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "overload_test",
+    srcs = ["overload_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:overload",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "table_test",
+    srcs = ["table_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/types:optional",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:table",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -122,6 +191,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "dual_ref_counted_test",
+    srcs = ["dual_ref_counted_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:dual_ref_counted",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "ref_counted_ptr_test",
     srcs = ["ref_counted_ptr_test.cc"],
     external_deps = [
@@ -129,6 +211,7 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
+        "//:dual_ref_counted",
         "//:ref_counted",
         "//:ref_counted_ptr",
         "//test/core/util:grpc_test_util",
@@ -143,5 +226,60 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "stat_test",
+    srcs = ["stat_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "status_helper_test",
+    srcs = ["status_helper_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "time_util_test",
+    srcs = ["time_util_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "capture_test",
+    srcs = ["capture_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:capture",
+        "//test/core/util:grpc_suppressions",
     ],
 )

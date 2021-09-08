@@ -14,9 +14,6 @@
 
 setlocal
 
-set GENERATOR=%1
-set ARCHITECTURE=%2
-
 cd /d %~dp0\..\..\..
 
 mkdir cmake
@@ -24,7 +21,7 @@ cd cmake
 mkdir build
 cd build
 
-cmake -G %GENERATOR% -A %ARCHITECTURE% -DgRPC_BUILD_TESTS=ON ../.. || goto :error
+cmake -DgRPC_BUILD_TESTS=ON %* ../.. || goto :error
 
 endlocal
 

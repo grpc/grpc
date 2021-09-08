@@ -22,7 +22,7 @@ grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
 grpc_config = ENV['GRPC_CONFIG'] || 'opt'
 
-ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
+ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
 
 if ENV['AR'].nil? || ENV['AR'].size == 0
     ENV['AR'] = RbConfig::CONFIG['AR']
@@ -45,9 +45,19 @@ if RUBY_PLATFORM =~ /darwin/
 ENV['EMBED_OPENSSL'] = 'true'
 ENV['EMBED_ZLIB'] = 'true'
 ENV['EMBED_CARES'] = 'true'
+
 ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
-ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if RUBY_PLATFORM =~ /darwin/
+if RUBY_PLATFORM =~ /darwin/
+  if RUBY_PLATFORM =~ /arm64/
+    ENV['ARCH_FLAGS'] = '-arch arm64'
+  else
+    ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64'
+  end
+end
+
 ENV['CPPFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
+ENV['CPPFLAGS'] += ' -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="\"RUBY\"" '
+ENV['CPPFLAGS'] += ' -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="\"1.41.0.dev\"" '
 
 output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
 grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)

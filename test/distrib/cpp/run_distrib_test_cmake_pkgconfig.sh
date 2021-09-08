@@ -78,8 +78,16 @@ cmake \
 make -j4 install
 popd
 
-# Build helloworld example using Makefiles and pkg-config
-cd examples/cpp/helloworld
+# Build helloworld example using Makefile and pkg-config
+pushd examples/cpp/helloworld
 export PKG_CONFIG_PATH=/usr/local/grpc/lib/pkgconfig
 export PATH=$PATH:/usr/local/grpc/bin
 make
+popd
+
+# Build route_guide example using Makefile and pkg-config
+pushd examples/cpp/route_guide
+export PKG_CONFIG_PATH=/usr/local/grpc/lib/pkgconfig
+export PATH=$PATH:/usr/local/grpc/bin
+make
+popd

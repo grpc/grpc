@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -31,6 +29,7 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
 enum { TIMEOUT = 200000 };
 
@@ -39,7 +38,7 @@ static gpr_mu g_mu;
 static gpr_timespec g_client_latency;
 static gpr_timespec g_server_latency;
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -247,8 +246,8 @@ static void test_request(grpc_end2end_test_config config) {
  * Test latency filter
  */
 
-static grpc_error* init_call_elem(grpc_call_element* /*elem*/,
-                                  const grpc_call_element_args* /*args*/) {
+static grpc_error_handle init_call_elem(
+    grpc_call_element* /*elem*/, const grpc_call_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
@@ -268,8 +267,8 @@ static void server_destroy_call_elem(grpc_call_element* /*elem*/,
   gpr_mu_unlock(&g_mu);
 }
 
-static grpc_error* init_channel_elem(grpc_channel_element* /*elem*/,
-                                     grpc_channel_element_args* /*args*/) {
+static grpc_error_handle init_channel_elem(
+    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
@@ -326,15 +325,15 @@ static bool maybe_add_filter(grpc_channel_stack_builder* builder, void* arg) {
 
 static void init_plugin(void) {
   gpr_mu_init(&g_mu);
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
-                                   maybe_add_filter,
-                                   (void*)&test_client_filter);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
-                                   maybe_add_filter,
-                                   (void*)&test_client_filter);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
-                                   maybe_add_filter,
-                                   (void*)&test_server_filter);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_CHANNEL, INT_MAX, maybe_add_filter,
+      const_cast<grpc_channel_filter*>(&test_client_filter));
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX, maybe_add_filter,
+      const_cast<grpc_channel_filter*>(&test_client_filter));
+  grpc_channel_init_register_stage(
+      GRPC_SERVER_CHANNEL, INT_MAX, maybe_add_filter,
+      const_cast<grpc_channel_filter*>(&test_server_filter));
 }
 
 static void destroy_plugin(void) { gpr_mu_destroy(&g_mu); }

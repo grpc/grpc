@@ -18,16 +18,18 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/container/inlined_vector.h"
-
 #include "src/core/lib/channel/handshaker_registry.h"
-#include "src/core/lib/gpr/alloc.h"
-#include "src/core/lib/gprpp/memory.h"
 
 #include <string.h>
+
 #include <algorithm>
 
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/support/alloc.h>
+
+#include "src/core/lib/gpr/alloc.h"
+#include "src/core/lib/gprpp/memory.h"
 
 //
 // grpc_handshaker_factory_list

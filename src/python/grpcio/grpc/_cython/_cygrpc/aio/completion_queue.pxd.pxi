@@ -53,6 +53,7 @@ cdef class BaseCompletionQueue:
 cdef class _BoundEventLoop:
     cdef readonly object loop
     cdef readonly object read_socket  # socket.socket
+    cdef bint _has_reader
 
 
 cdef class PollerCompletionQueue(BaseCompletionQueue):
@@ -67,9 +68,3 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
 
     cdef void _poll(self) nogil
     cdef shutdown(self)
-
-
-cdef class CallbackCompletionQueue(BaseCompletionQueue):
-    cdef object _shutdown_completed  # asyncio.Future
-    cdef CallbackWrapper _wrapper
-    cdef object _loop

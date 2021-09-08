@@ -36,7 +36,7 @@ class ChildPolicyHandler : public LoadBalancingPolicy {
   ChildPolicyHandler(Args args, TraceFlag* tracer)
       : LoadBalancingPolicy(std::move(args)), tracer_(tracer) {}
 
-  virtual const char* name() const override { return "child_policy_handler"; }
+  const char* name() const override { return "child_policy_handler"; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;

@@ -17,11 +17,12 @@
  */
 
 #include <arpa/inet.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+#include <openssl/err.h>
+#include <openssl/ssl.h>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -30,15 +31,13 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/iomgr/load_file.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-
 #include "src/core/lib/channel/handshaker_factory.h"
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
-
 #include "test/core/handshake/server_ssl_common.h"
+#include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 /* The purpose of this test is to exercise the case when a
  * grpc *security_handshaker* begins its handshake with data already
@@ -53,9 +52,9 @@ namespace grpc_core {
 
 class ReadAheadHandshaker : public Handshaker {
  public:
-  virtual ~ReadAheadHandshaker() {}
+  ~ReadAheadHandshaker() override {}
   const char* name() const override { return "read_ahead"; }
-  void Shutdown(grpc_error* /*why*/) override {}
+  void Shutdown(grpc_error_handle /*why*/) override {}
   void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                    grpc_closure* on_handshake_done,
                    HandshakerArgs* args) override {
@@ -77,13 +76,13 @@ class ReadAheadHandshakerFactory : public HandshakerFactory {
 }  // namespace grpc_core
 
 int main(int /*argc*/, char* /*argv*/[]) {
-  using namespace grpc_core;
   grpc_init();
-  HandshakerRegistry::RegisterHandshakerFactory(
-      true /* at_start */, HANDSHAKER_SERVER,
-      absl::make_unique<ReadAheadHandshakerFactory>());
+  grpc_core::HandshakerRegistry::RegisterHandshakerFactory(
+      true /* at_start */, grpc_core::HANDSHAKER_SERVER,
+      absl::make_unique<grpc_core::ReadAheadHandshakerFactory>());
   const char* full_alpn_list[] = {"grpc-exp", "h2"};
   GPR_ASSERT(server_ssl_test(full_alpn_list, 2, "grpc-exp"));
-  grpc_shutdown_blocking();
+  CleanupSslLibrary();
+  grpc_shutdown();
   return 0;
 }

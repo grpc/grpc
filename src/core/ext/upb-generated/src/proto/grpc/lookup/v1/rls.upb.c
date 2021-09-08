@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "src/proto/grpc/lookup/v1/rls.upb.h"
 
 #include "upb/port_def.inc"
@@ -17,38 +17,38 @@ static const upb_msglayout *const grpc_lookup_v1_RouteLookupRequest_submsgs[1] =
 };
 
 static const upb_msglayout_field grpc_lookup_v1_RouteLookupRequest__fields[4] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), 0, 0, 9, 1},
-  {3, UPB_SIZE(16, 32), 0, 0, 9, 1},
-  {4, UPB_SIZE(24, 48), 0, 0, 11, _UPB_LABEL_MAP},
+  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(16, 32), 0, 0, 9, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(24, 48), 0, 0, 11, _UPB_MODE_MAP},
 };
 
 const upb_msglayout grpc_lookup_v1_RouteLookupRequest_msginit = {
   &grpc_lookup_v1_RouteLookupRequest_submsgs[0],
   &grpc_lookup_v1_RouteLookupRequest__fields[0],
-  UPB_SIZE(32, 64), 4, false,
+  UPB_SIZE(32, 64), 4, false, 4, 255,
 };
 
 static const upb_msglayout_field grpc_lookup_v1_RouteLookupRequest_KeyMapEntry__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), 0, 0, 9, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout grpc_lookup_v1_RouteLookupRequest_KeyMapEntry_msginit = {
   NULL,
   &grpc_lookup_v1_RouteLookupRequest_KeyMapEntry__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 2, 255,
 };
 
 static const upb_msglayout_field grpc_lookup_v1_RouteLookupResponse__fields[2] = {
-  {2, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {3, UPB_SIZE(8, 16), 0, 0, 9, 3},
+  {2, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_ARRAY},
 };
 
 const upb_msglayout grpc_lookup_v1_RouteLookupResponse_msginit = {
   NULL,
   &grpc_lookup_v1_RouteLookupResponse__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 0, 255,
 };
 
 #include "upb/port_undef.inc"

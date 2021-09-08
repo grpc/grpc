@@ -20,6 +20,8 @@
 #include <memory>
 #include <thread>
 
+#include "absl/memory/memory.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -51,7 +53,6 @@
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
-using grpc::testing::kTlsCredentialsType;
 using std::chrono::system_clock;
 
 namespace grpc {
@@ -59,7 +60,7 @@ namespace testing {
 
 namespace {
 
-void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
+void* tag(int t) { return reinterpret_cast<void*>(t); }
 int detag(void* p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
 
 class Verifier {
@@ -120,6 +121,7 @@ class Verifier {
     while (!expectations_.empty()) {
       Next(cq, ignore_ok);
     }
+    maybe_expectations_.clear();
   }
 
   // This version of Verify stops after a certain deadline
@@ -139,6 +141,7 @@ class Verifier {
         GotTag(got_tag, ok, false);
       }
     }
+    maybe_expectations_.clear();
   }
 
   // This version of Verify stops after a certain deadline, and uses the
@@ -161,6 +164,7 @@ class Verifier {
         GotTag(got_tag, ok, false);
       }
     }
+    maybe_expectations_.clear();
   }
 
  private:
@@ -181,6 +185,7 @@ class Verifier {
         if (!ignore_ok) {
           EXPECT_EQ(it2->second.ok, ok);
         }
+        maybe_expectations_.erase(it2);
       } else {
         gpr_log(GPR_ERROR, "Unexpected tag: %p", got_tag);
         abort();
@@ -267,8 +272,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     void* ignored_tag;
     bool ignored_ok;
     cq_->Shutdown();
-    while (cq_->Next(&ignored_tag, &ignored_ok))
-      ;
+    while (cq_->Next(&ignored_tag, &ignored_ok)) {
+    }
     stub_.reset();
     grpc_recycle_unused_port(port_);
   }
@@ -278,7 +283,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
         GetParam().credentials_type);
     builder.AddListeningPort(server_address_.str(), server_creds);
-    service_.reset(new grpc::testing::EchoTestService::AsyncService());
+    service_ =
+        absl::make_unique<grpc::testing::EchoTestService::AsyncService>();
     builder.RegisterService(service_.get());
     if (GetParam().health_check_service) {
       builder.RegisterService(&health_check_);
@@ -422,8 +428,8 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
   void* ignored_tag;
   bool ignored_ok;
   cq_->Shutdown();
-  while (cq_->Next(&ignored_tag, &ignored_ok))
-    ;
+  while (cq_->Next(&ignored_tag, &ignored_ok)) {
+  }
   BuildAndStartServer();
   // It needs more than GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS time to
   // reconnect the channel.
@@ -1489,9 +1495,9 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
 
     cli_cq.Shutdown();
-    void* dummy_tag;
-    bool dummy_ok;
-    while (cli_cq.Next(&dummy_tag, &dummy_ok)) {
+    void* phony_tag;
+    bool phony_ok;
+    while (cli_cq.Next(&phony_tag, &phony_ok)) {
     }
   }
 
@@ -1638,9 +1644,9 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
 
     cli_cq.Shutdown();
-    void* dummy_tag;
-    bool dummy_ok;
-    while (cli_cq.Next(&dummy_tag, &dummy_ok)) {
+    void* phony_tag;
+    bool phony_ok;
+    while (cli_cq.Next(&phony_tag, &phony_ok)) {
     }
   }
 
@@ -1900,13 +1906,13 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
       }
       messages.push_back(big_msg);
     }
-#ifndef MEMORY_SANITIZER
-    // 4MB message processing with SSL is very slow under msan
-    // (causes timeouts) and doesn't really increase the signal from tests.
-    // Reserve 100 bytes for other fields of the message proto.
-    messages.push_back(
-        std::string(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH - 100, 'a'));
-#endif
+    if (!BuiltUnderMsan()) {
+      // 4MB message processing with SSL is very slow under msan
+      // (causes timeouts) and doesn't really increase the signal from tests.
+      // Reserve 100 bytes for other fields of the message proto.
+      messages.push_back(
+          std::string(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH - 100, 'a'));
+    }
   }
 
   // TODO (sreek) Renable tests with health check service after the issue

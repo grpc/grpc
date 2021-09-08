@@ -16,10 +16,11 @@
  *
  */
 
-#include <grpc/grpc.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+
+#include <grpc/grpc.h>
 
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -51,6 +52,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   grpc_slice_buffer_destroy(&input_buffer);
   grpc_slice_buffer_destroy(&output_buffer);
-  grpc_shutdown_blocking();
+  grpc_shutdown();
   return 0;
 }

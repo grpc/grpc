@@ -19,14 +19,21 @@
 #ifndef GRPCPP_IMPL_CODEGEN_DELEGATING_CHANNEL_H
 #define GRPCPP_IMPL_CODEGEN_DELEGATING_CHANNEL_H
 
+// IWYU pragma: private
+
+#include <memory>
+
+#include <grpcpp/impl/codegen/channel_interface.h>
+
 namespace grpc {
 namespace experimental {
 
 class DelegatingChannel : public ::grpc::ChannelInterface {
  public:
-  virtual ~DelegatingChannel() {}
+  ~DelegatingChannel() override {}
 
-  DelegatingChannel(std::shared_ptr<::grpc::ChannelInterface> delegate_channel)
+  explicit DelegatingChannel(
+      std::shared_ptr<::grpc::ChannelInterface> delegate_channel)
       : delegate_channel_(delegate_channel) {}
 
   grpc_connectivity_state GetState(bool try_to_connect) override {
@@ -40,7 +47,7 @@ class DelegatingChannel : public ::grpc::ChannelInterface {
  private:
   internal::Call CreateCall(const internal::RpcMethod& method,
                             ClientContext* context,
-                            ::grpc_impl::CompletionQueue* cq) final {
+                            ::grpc::CompletionQueue* cq) final {
     return delegate_channel()->CreateCall(method, context, cq);
   }
 
@@ -55,7 +62,7 @@ class DelegatingChannel : public ::grpc::ChannelInterface {
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
                                gpr_timespec deadline,
-                               ::grpc_impl::CompletionQueue* cq,
+                               ::grpc::CompletionQueue* cq,
                                void* tag) override {
     delegate_channel()->NotifyOnStateChangeImpl(last_observed, deadline, cq,
                                                 tag);
@@ -68,13 +75,13 @@ class DelegatingChannel : public ::grpc::ChannelInterface {
 
   internal::Call CreateCallInternal(const internal::RpcMethod& method,
                                     ClientContext* context,
-                                    ::grpc_impl::CompletionQueue* cq,
+                                    ::grpc::CompletionQueue* cq,
                                     size_t interceptor_pos) final {
     return delegate_channel()->CreateCallInternal(method, context, cq,
                                                   interceptor_pos);
   }
 
-  ::grpc_impl::CompletionQueue* CallbackCQ() final {
+  ::grpc::CompletionQueue* CallbackCQ() final {
     return delegate_channel()->CallbackCQ();
   }
 

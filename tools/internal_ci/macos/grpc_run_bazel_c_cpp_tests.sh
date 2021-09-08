@@ -48,7 +48,7 @@ if [ "$UPLOAD_TEST_RESULTS" != "" ]
 then
   # Sleep to let ResultStore finish writing results before querying
   sleep 60
-  python ./tools/run_tests/python_utils/upload_rbe_results.py
+  PYTHONHTTPSVERIFY=0 python ./tools/run_tests/python_utils/upload_rbe_results.py
 fi
 
 if [ "$FAILED" != "" ]

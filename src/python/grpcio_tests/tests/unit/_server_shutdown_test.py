@@ -14,16 +14,16 @@
 """Tests clean shutdown of server on various interpreter exit conditions.
 
 The tests in this module spawn a subprocess for each test case, the
-test is considered successful if it doesn't hang/timeout.
+test is considered successful if it doesn't freeze/timeout.
 """
 
 import atexit
+import logging
 import os
 import subprocess
 import sys
 import threading
 import unittest
-import logging
 
 from tests.unit import _server_shutdown_scenarios
 

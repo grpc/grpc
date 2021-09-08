@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
+
 #include <string.h>
 
 #include <string>
@@ -30,9 +32,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
-#include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
-#include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -50,7 +51,7 @@ constexpr char kEncodedIpv6AddressLengthString[] = "32";
 constexpr char kEmptyAddressLengthString[] = "00";
 constexpr size_t kLengthPrefixSize = 2;
 
-grpc_error* ServerLoadReportingChannelData::Init(
+grpc_error_handle ServerLoadReportingChannelData::Init(
     grpc_channel_element* /* elem */, grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
   // Find and record the peer_identity.
@@ -72,7 +73,7 @@ grpc_error* ServerLoadReportingChannelData::Init(
 
 void ServerLoadReportingCallData::Destroy(
     grpc_call_element* elem, const grpc_call_final_info* final_info,
-    grpc_closure* then_call_closure) {
+    grpc_closure* /*then_call_closure*/) {
   ServerLoadReportingChannelData* chand =
       reinterpret_cast<ServerLoadReportingChannelData*>(elem->channel_data);
   // Only record an end if we've recorded its corresponding start, which is
@@ -134,18 +135,18 @@ std::string ServerLoadReportingCallData::GetCensusSafeClientIpString() {
             "metadata.");
     return "";
   }
-  // Parse the client URI string into grpc_uri.
-  grpc_uri* client_uri = grpc_uri_parse(client_uri_str, true);
-  if (client_uri == nullptr) {
+  absl::StatusOr<grpc_core::URI> client_uri =
+      grpc_core::URI::Parse(client_uri_str);
+  if (!client_uri.ok()) {
     gpr_log(GPR_ERROR,
             "Unable to parse the client URI string (peer string) to a client "
-            "URI.");
+            "URI. Error: %s",
+            client_uri.status().ToString().c_str());
     return "";
   }
   // Parse the client URI into grpc_resolved_address.
   grpc_resolved_address resolved_address;
-  bool success = grpc_parse_uri(client_uri, &resolved_address);
-  grpc_uri_destroy(client_uri);
+  bool success = grpc_parse_uri(*client_uri, &resolved_address);
   if (!success) {
     gpr_log(GPR_ERROR,
             "Unable to parse client URI into a grpc_resolved_address.");
@@ -180,7 +181,7 @@ void ServerLoadReportingCallData::StoreClientIpAndLrToken(const char* lr_token,
       gpr_zalloc(client_ip_and_lr_token_len_ * sizeof(char)));
   char* cur_pos = client_ip_and_lr_token_;
   // Store the IP length prefix.
-  if (client_ip.size() == 0) {
+  if (client_ip.empty()) {
     strncpy(cur_pos, kEmptyAddressLengthString, kLengthPrefixSize);
   } else if (client_ip.size() == 8) {
     strncpy(cur_pos, kEncodedIpv4AddressLengthString, kLengthPrefixSize);
@@ -200,7 +201,7 @@ void ServerLoadReportingCallData::StoreClientIpAndLrToken(const char* lr_token,
     strncpy(cur_pos, lr_token, lr_token_len);
   }
   GPR_ASSERT(cur_pos + lr_token_len - client_ip_and_lr_token_ ==
-             client_ip_and_lr_token_len_);
+             long(client_ip_and_lr_token_len_));
 }
 
 grpc_filtered_mdelem ServerLoadReportingCallData::RecvInitialMetadataFilter(
@@ -232,8 +233,8 @@ grpc_filtered_mdelem ServerLoadReportingCallData::RecvInitialMetadataFilter(
   return GRPC_FILTERED_MDELEM(md);
 }
 
-void ServerLoadReportingCallData::RecvInitialMetadataReady(void* arg,
-                                                           grpc_error* err) {
+void ServerLoadReportingCallData::RecvInitialMetadataReady(
+    void* arg, grpc_error_handle err) {
   grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(arg);
   ServerLoadReportingCallData* calld =
       reinterpret_cast<ServerLoadReportingCallData*>(elem->call_data);
@@ -264,8 +265,8 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(void* arg,
                           GRPC_ERROR_REF(err));
 }
 
-grpc_error* ServerLoadReportingCallData::Init(
-    grpc_call_element* elem, const grpc_call_element_args* args) {
+grpc_error_handle ServerLoadReportingCallData::Init(
+    grpc_call_element* elem, const grpc_call_element_args* /*args*/) {
   service_method_ = grpc_empty_slice();
   GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
                     elem, grpc_schedule_on_exec_ctx);
@@ -339,8 +340,8 @@ bool MaybeAddServerLoadReportingFilter(const grpc_channel_args& args) {
 // time if we build with the filter target.
 struct ServerLoadReportingFilterStaticRegistrar {
   ServerLoadReportingFilterStaticRegistrar() {
-    static grpc_core::Atomic<bool> registered{false};
-    if (registered.Load(grpc_core::MemoryOrder::ACQUIRE)) return;
+    static std::atomic<bool> registered{false};
+    if (registered.load(std::memory_order_acquire)) return;
     RegisterChannelFilter<ServerLoadReportingChannelData,
                           ServerLoadReportingCallData>(
         "server_load_reporting", GRPC_SERVER_CHANNEL, INT_MAX,
@@ -353,7 +354,7 @@ struct ServerLoadReportingFilterStaticRegistrar {
     ::grpc::load_reporter::MeasureEndBytesReceived();
     ::grpc::load_reporter::MeasureEndLatencyMs();
     ::grpc::load_reporter::MeasureOtherCallMetric();
-    registered.Store(true, grpc_core::MemoryOrder::RELEASE);
+    registered.store(true, std::memory_order_release);
   }
 } server_load_reporting_filter_static_registrar;
 

@@ -1,0 +1,17 @@
+bazel-bin
+bazel-grpc
+bazel-out
+bazel-testlogs
+bins
+libs
+objs
+third_party/abseil-cpp
+third_party/bloaty
+third_party/boringssl-with-bazel
+third_party/googleapis
+third_party/googletest
+third_party/opencensus-proto
+third_party/protobuf
+third_party/protoc-gen-validate
+third_party/udpa
+third_party/upb

@@ -19,7 +19,11 @@
 #ifndef GRPC_IMPL_CODEGEN_SYNC_WINDOWS_H
 #define GRPC_IMPL_CODEGEN_SYNC_WINDOWS_H
 
+// IWYU pragma: private, include <grpc/support/sync.h>
+
 #include <grpc/impl/codegen/port_platform.h>
+
+#ifdef GPR_WINDOWS
 
 #include <grpc/impl/codegen/sync_generic.h>
 
@@ -32,5 +36,7 @@ typedef CONDITION_VARIABLE gpr_cv;
 
 typedef INIT_ONCE gpr_once;
 #define GPR_ONCE_INIT INIT_ONCE_STATIC_INIT
+
+#endif /* GPR_WINDOWS */
 
 #endif /* GRPC_IMPL_CODEGEN_SYNC_WINDOWS_H */

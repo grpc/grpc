@@ -38,7 +38,7 @@ namespace {
 
 class JsonReader {
  public:
-  static grpc_error* Parse(absl::string_view input, Json* output);
+  static grpc_error_handle Parse(absl::string_view input, Json* output);
 
  private:
   enum class Status {
@@ -117,7 +117,7 @@ class JsonReader {
   bool container_just_begun_ = false;
   uint16_t unicode_char_ = 0;
   uint16_t unicode_high_surrogate_ = 0;
-  std::vector<grpc_error*> errors_;
+  std::vector<grpc_error_handle> errors_;
   bool truncated_errors_ = false;
 
   Json root_value_;
@@ -279,10 +279,8 @@ JsonReader::Status JsonReader::Run() {
       case GRPC_JSON_READ_CHAR_EOF:
         if (IsComplete()) {
           return Status::GRPC_JSON_DONE;
-        } else {
-          return Status::GRPC_JSON_PARSE_ERROR;
         }
-        break;
+        return Status::GRPC_JSON_PARSE_ERROR;
 
       /* Processing whitespaces. */
       case ' ':
@@ -341,14 +339,12 @@ JsonReader::Status JsonReader::Run() {
             } else if (c == '}' &&
                        stack_.back()->type() != Json::Type::OBJECT) {
               return Status::GRPC_JSON_PARSE_ERROR;
-              return Status::GRPC_JSON_PARSE_ERROR;
             } else if (c == ']' && stack_.back()->type() != Json::Type::ARRAY) {
               return Status::GRPC_JSON_PARSE_ERROR;
             }
             if (!SetNumber()) return Status::GRPC_JSON_PARSE_ERROR;
             state_ = State::GRPC_JSON_STATE_VALUE_END;
-            /* The missing break here is intentional. */
-            /* fallthrough */
+            ABSL_FALLTHROUGH_INTENDED;
 
           case State::GRPC_JSON_STATE_VALUE_END:
           case State::GRPC_JSON_STATE_OBJECT_KEY_BEGIN:
@@ -413,8 +409,9 @@ JsonReader::Status JsonReader::Run() {
 
           /* This is the \\ case. */
           case State::GRPC_JSON_STATE_STRING_ESCAPE:
-            if (unicode_high_surrogate_ != 0)
+            if (unicode_high_surrogate_ != 0) {
               return Status::GRPC_JSON_PARSE_ERROR;
+            }
             StringAddChar('\\');
             if (escaped_string_was_key_) {
               state_ = State::GRPC_JSON_STATE_OBJECT_KEY_STRING;
@@ -593,14 +590,16 @@ JsonReader::Status JsonReader::Run() {
                  */
                 if ((unicode_char_ & 0xfc00) == 0xd800) {
                   /* high surrogate utf-16 */
-                  if (unicode_high_surrogate_ != 0)
+                  if (unicode_high_surrogate_ != 0) {
                     return Status::GRPC_JSON_PARSE_ERROR;
+                  }
                   unicode_high_surrogate_ = unicode_char_;
                 } else if ((unicode_char_ & 0xfc00) == 0xdc00) {
                   /* low surrogate utf-16 */
                   uint32_t utf32;
-                  if (unicode_high_surrogate_ == 0)
+                  if (unicode_high_surrogate_ == 0) {
                     return Status::GRPC_JSON_PARSE_ERROR;
+                  }
                   utf32 = 0x10000;
                   utf32 += static_cast<uint32_t>(
                       (unicode_high_surrogate_ - 0xd800) * 0x400);
@@ -609,8 +608,9 @@ JsonReader::Status JsonReader::Run() {
                   unicode_high_surrogate_ = 0;
                 } else {
                   /* anything else */
-                  if (unicode_high_surrogate_ != 0)
+                  if (unicode_high_surrogate_ != 0) {
                     return Status::GRPC_JSON_PARSE_ERROR;
+                  }
                   StringAddUtf32(unicode_char_);
                 }
                 if (escaped_string_was_key_) {
@@ -817,7 +817,7 @@ JsonReader::Status JsonReader::Run() {
   GPR_UNREACHABLE_CODE(return Status::GRPC_JSON_INTERNAL_ERROR);
 }
 
-grpc_error* JsonReader::Parse(absl::string_view input, Json* output) {
+grpc_error_handle JsonReader::Parse(absl::string_view input, Json* output) {
   JsonReader reader(input);
   Status status = reader.Run();
   if (reader.truncated_errors_) {
@@ -845,7 +845,7 @@ grpc_error* JsonReader::Parse(absl::string_view input, Json* output) {
 
 }  // namespace
 
-Json Json::Parse(absl::string_view json_str, grpc_error** error) {
+Json Json::Parse(absl::string_view json_str, grpc_error_handle* error) {
   Json value;
   *error = JsonReader::Parse(json_str, &value);
   return value;
