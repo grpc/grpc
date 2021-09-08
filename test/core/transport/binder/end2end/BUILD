@@ -110,3 +110,20 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "binder_server_test",
+    srcs = ["binder_server_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/core/ext/transport/binder/client:grpc_transport_binder_client_impl",
+        "//src/core/ext/transport/binder/server:grpc_transport_binder_server",
+        "//test/core/transport/binder/end2end:echo_service",
+        "//test/core/transport/binder/end2end:fake_binder",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/end2end:test_service_impl",
+    ],
+)

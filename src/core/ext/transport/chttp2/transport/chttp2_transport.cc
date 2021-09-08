@@ -204,7 +204,6 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   grpc_slice_buffer_destroy_internal(&qbuf);
 
   grpc_slice_buffer_destroy_internal(&outbuf);
-  grpc_chttp2_hpack_compressor_destroy(&hpack_compressor);
 
   grpc_error_handle error =
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Transport destroyed");
@@ -280,8 +279,7 @@ static bool read_channel_args(grpc_chttp2_transport* t,
       const int value =
           grpc_channel_arg_get_integer(&channel_args->args[i], options);
       if (value >= 0) {
-        grpc_chttp2_hpack_compressor_set_max_usable_size(
-            &t->hpack_compressor, static_cast<uint32_t>(value));
+        t->hpack_compressor.SetMaxUsableSize(value);
       }
     } else if (0 == strcmp(channel_args->args[i].key,
                            GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)) {
@@ -474,7 +472,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     grpc_slice_buffer_add(&outbuf, grpc_slice_from_copied_string(
                                        GRPC_CHTTP2_CLIENT_CONNECT_STRING));
   }
-  grpc_chttp2_hpack_compressor_init(&hpack_compressor);
   grpc_slice_buffer_init(&qbuf);
   // copy in initial settings to all setting sets
   size_t i;
@@ -2352,8 +2349,8 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 
   size_t msg_len = GRPC_SLICE_LENGTH(slice);
   GPR_ASSERT(msg_len <= UINT32_MAX);
-  uint32_t msg_len_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)msg_len, 1);
-  message_pfx = GRPC_SLICE_MALLOC(14 + msg_len_len);
+  grpc_core::VarintWriter<1> msg_len_writer(msg_len);
+  message_pfx = GRPC_SLICE_MALLOC(14 + msg_len_writer.length());
   p = GRPC_SLICE_START_PTR(message_pfx);
   *p++ = 0x00; /* literal header, not indexed */
   *p++ = 12;   /* len(grpc-message) */
@@ -2369,8 +2366,8 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   *p++ = 'a';
   *p++ = 'g';
   *p++ = 'e';
-  GRPC_CHTTP2_WRITE_VARINT((uint32_t)msg_len, 1, 0, p, (uint32_t)msg_len_len);
-  p += msg_len_len;
+  msg_len_writer.Write(0, p);
+  p += msg_len_writer.length();
   GPR_ASSERT(p == GRPC_SLICE_END_PTR(message_pfx));
   len += static_cast<uint32_t> GRPC_SLICE_LENGTH(message_pfx);
   len += static_cast<uint32_t>(msg_len);

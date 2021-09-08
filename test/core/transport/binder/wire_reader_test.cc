@@ -269,6 +269,39 @@ TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagSuffixWithoutStatus) {
   EXPECT_TRUE(CallProcessTransaction(kFirstCallId).ok());
 }
 
+TEST_F(WireReaderTest, InBoundFlowControl) {
+  ::testing::InSequence sequence;
+
+  // flag
+  ExpectReadInt32(kFlagMessageData | kFlagMessageDataIsPartial);
+  // sequence number
+  ExpectReadInt32(0);
+  // message size
+  ExpectReadInt32(1000);
+  EXPECT_CALL(mock_readable_parcel_, ReadByteArray)
+      .WillOnce(DoAll(SetArgPointee<0>(std::string(1000, 'a')),
+                      Return(absl::OkStatus())));
+
+  // Data is not completed. No callback will be triggered.
+  EXPECT_TRUE(CallProcessTransaction(kFirstCallId).ok());
+
+  // flag
+  ExpectReadInt32(kFlagMessageData);
+  // sequence number
+  ExpectReadInt32(1);
+  // message size
+  ExpectReadInt32(1000);
+  EXPECT_CALL(mock_readable_parcel_, ReadByteArray)
+      .WillOnce(DoAll(SetArgPointee<0>(std::string(1000, 'b')),
+                      Return(absl::OkStatus())));
+
+  EXPECT_CALL(*transport_stream_receiver_,
+              NotifyRecvMessage(kFirstCallId,
+                                StatusOrContainerEq(std::string(1000, 'a') +
+                                                    std::string(1000, 'b'))));
+  EXPECT_TRUE(CallProcessTransaction(kFirstCallId).ok());
+}
+
 }  // namespace grpc_binder
 
 int main(int argc, char** argv) {

@@ -57,6 +57,14 @@ typedef struct grpc_metadata_batch {
       or GRPC_MILLIS_INF_FUTURE if this batch does not need to send a
       grpc-timeout */
   grpc_millis deadline;
+
+  template <typename Encoder>
+  void Encode(Encoder* encoder) const {
+    for (auto* l = list.head; l; l = l->next) {
+      encoder->Encode(l->md);
+    }
+    if (deadline != GRPC_MILLIS_INF_FUTURE) encoder->EncodeDeadline(deadline);
+  }
 } grpc_metadata_batch;
 
 void grpc_metadata_batch_init(grpc_metadata_batch* batch);
