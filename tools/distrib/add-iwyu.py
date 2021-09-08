@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
 import os
 
 
@@ -54,13 +55,13 @@ def set_exports(pub, cg):
 def fix_tree(tree):
     """Fix one include tree"""
     # Map of filename --> paths including that filename
-    reverse_map = {}
+    reverse_map = collections.defaultdict(list)
     # The same, but for things with '/impl/codegen' in their names
-    cg_reverse_map = {}
+    cg_reverse_map = collections.defaultdict(list)
     for root, dirs, files in os.walk(tree):
         root_map = cg_reverse_map if '/impl/codegen' in root else reverse_map
         for filename in files:
-            root_map.setdefault(filename, []).append(root)
+            root_map[filename].append(root)
     # For each thing in '/impl/codegen' figure out what exports it
     for filename, paths in cg_reverse_map.items():
         # Exclude non-headers
