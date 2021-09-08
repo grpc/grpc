@@ -107,6 +107,11 @@ class PythonArtifact:
         self.py_version = py_version
         if 'manylinux' in platform:
             self.labels.append('linux')
+        if 'linux_extra' in platform:
+            # linux_extra wheels used to be built by a separate kokoro job.
+            # Their build is now much faster, so they can be included
+            # in the regular artifact build.
+            self.labels.append('linux')
 
     def pre_build_jobspecs(self):
         return []
