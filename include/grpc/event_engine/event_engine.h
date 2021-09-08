@@ -23,9 +23,9 @@
 #include "absl/status/statusor.h"
 #include "absl/time/time.h"
 
-#include "grpc/event_engine/endpoint_config.h"
-#include "grpc/event_engine/port.h"
-#include "grpc/event_engine/slice_allocator.h"
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/port.h>
+#include <grpc/event_engine/slice_allocator.h>
 
 // TODO(hork): Define the Endpoint::Write metrics collection system
 namespace grpc_event_engine {
@@ -286,9 +286,10 @@ class EventEngine {
   /// Run a callback as soon as possible.
   ///
   /// The \a fn callback's \a status argument is used to indicate whether it was
-  /// executed normally. For example, the status may be CANCELLED if
-  /// \a TryCancel was called, or if the EventEngine is being shut down.
-  virtual TaskHandle Run(Callback fn, RunOptions opts) = 0;
+  /// executed normally. For example, the status may be CANCELLED if the
+  /// EventEngine is being shut down. \a fn is guaranteed to be called exactly
+  /// once.
+  virtual void Run(Callback fn, RunOptions opts) = 0;
   /// Synonymous with scheduling an alarm to run at time \a when.
   ///
   /// The callback \a fn will execute when either when time \a when arrives
@@ -308,16 +309,6 @@ class EventEngine {
   /// callback will be run exactly once from either cancellation or from its
   /// activation.
   virtual void TryCancel(TaskHandle handle) = 0;
-  /// Immediately run all callbacks with status indicating the shutdown. Every
-  /// EventEngine is expected to shut down exactly once. No new callbacks/tasks
-  /// should be scheduled after shutdown has begun, no new connections should be
-  /// created.
-  ///
-  /// If the \a on_shutdown_complete callback is given a non-OK status, errors
-  /// are expected to be unrecoverable. For example, an implementation could
-  /// warn callers about leaks if memory cannot be freed within a certain
-  /// timeframe.
-  virtual void Shutdown(Callback on_shutdown_complete) = 0;
 };
 
 // TODO(hork): finalize the API and document it. We need to firm up the story

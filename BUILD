@@ -1158,6 +1158,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "pipe",
+    external_deps = [
+        "absl/status",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/pipe.h",
+    ],
+    deps = [
+        "activity",
+        "gpr_platform",
+        "intra_activity_waiter",
+    ],
+)
+
+grpc_cc_library(
     name = "ref_counted",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
@@ -1234,7 +1250,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/endpoint_cfstream.cc",
         "src/core/lib/iomgr/endpoint_pair_event_engine.cc",
         "src/core/lib/iomgr/endpoint_pair_posix.cc",
-        "src/core/lib/iomgr/endpoint_pair_uv.cc",
         "src/core/lib/iomgr/endpoint_pair_windows.cc",
         "src/core/lib/iomgr/error.cc",
         "src/core/lib/iomgr/error_cfstream.cc",
@@ -1270,7 +1285,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr_internal.cc",
         "src/core/lib/iomgr/iomgr_posix.cc",
         "src/core/lib/iomgr/iomgr_posix_cfstream.cc",
-        "src/core/lib/iomgr/iomgr_uv.cc",
         "src/core/lib/iomgr/iomgr_windows.cc",
         "src/core/lib/iomgr/is_epollexclusive_available.cc",
         "src/core/lib/iomgr/load_file.cc",
@@ -1281,7 +1295,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/pollset_set.cc",
         "src/core/lib/iomgr/pollset_set_custom.cc",
         "src/core/lib/iomgr/pollset_set_windows.cc",
-        "src/core/lib/iomgr/pollset_uv.cc",
         "src/core/lib/iomgr/pollset_windows.cc",
         "src/core/lib/iomgr/resolve_address.cc",
         "src/core/lib/iomgr/resolve_address_custom.cc",
@@ -1293,7 +1306,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_utils_common_posix.cc",
         "src/core/lib/iomgr/socket_utils_linux.cc",
         "src/core/lib/iomgr/socket_utils_posix.cc",
-        "src/core/lib/iomgr/socket_utils_uv.cc",
         "src/core/lib/iomgr/socket_utils_windows.cc",
         "src/core/lib/iomgr/socket_windows.cc",
         "src/core/lib/iomgr/tcp_client.cc",
@@ -1310,7 +1322,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc",
         "src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc",
         "src/core/lib/iomgr/tcp_server_windows.cc",
-        "src/core/lib/iomgr/tcp_uv.cc",
         "src/core/lib/iomgr/tcp_windows.cc",
         "src/core/lib/iomgr/time_averaged_stats.cc",
         "src/core/lib/iomgr/timer.cc",
@@ -1318,7 +1329,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/timer_generic.cc",
         "src/core/lib/iomgr/timer_heap.cc",
         "src/core/lib/iomgr/timer_manager.cc",
-        "src/core/lib/iomgr/timer_uv.cc",
         "src/core/lib/iomgr/udp_server.cc",
         "src/core/lib/iomgr/unix_sockets_posix.cc",
         "src/core/lib/iomgr/unix_sockets_posix_noop.cc",
@@ -1446,7 +1456,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/pollset_set.h",
         "src/core/lib/iomgr/pollset_set_custom.h",
         "src/core/lib/iomgr/pollset_set_windows.h",
-        "src/core/lib/iomgr/pollset_uv.h",
         "src/core/lib/iomgr/pollset_windows.h",
         "src/core/lib/iomgr/port.h",
         "src/core/lib/iomgr/python_util.h",
@@ -1454,7 +1463,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/resolve_address_custom.h",
         "src/core/lib/iomgr/resource_quota.h",
         "src/core/lib/iomgr/sockaddr.h",
-        "src/core/lib/iomgr/sockaddr_custom.h",
         "src/core/lib/iomgr/sockaddr_posix.h",
         "src/core/lib/iomgr/sockaddr_windows.h",
         "src/core/lib/iomgr/socket_factory_posix.h",
@@ -2443,12 +2451,10 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc",
-        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_event_engine.cc",
-        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
     ],
@@ -2822,6 +2828,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "hpack_constants",
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/hpack_constants.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "hpack_encoder_index",
     hdrs = [
         "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h",
@@ -2832,6 +2849,24 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "hpack_encoder_table",
+    srcs = [
+        "src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc",
+    ],
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h",
+    ],
+    external_deps = [
+        "absl/container:inlined_vector",
+    ],
+    language = "c++",
+    deps = [
+        "gpr",
+        "hpack_constants",
     ],
 )
 
@@ -2853,7 +2888,8 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/frame_window_update.cc",
         "src/core/ext/transport/chttp2/transport/hpack_encoder.cc",
         "src/core/ext/transport/chttp2/transport/hpack_parser.cc",
-        "src/core/ext/transport/chttp2/transport/hpack_table.cc",
+        "src/core/ext/transport/chttp2/transport/hpack_parser_table.cc",
+        "src/core/ext/transport/chttp2/transport/hpack_utils.cc",
         "src/core/ext/transport/chttp2/transport/http2_settings.cc",
         "src/core/ext/transport/chttp2/transport/huffsyms.cc",
         "src/core/ext/transport/chttp2/transport/incoming_metadata.cc",
@@ -2879,7 +2915,8 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/frame_window_update.h",
         "src/core/ext/transport/chttp2/transport/hpack_encoder.h",
         "src/core/ext/transport/chttp2/transport/hpack_parser.h",
-        "src/core/ext/transport/chttp2/transport/hpack_table.h",
+        "src/core/ext/transport/chttp2/transport/hpack_parser_table.h",
+        "src/core/ext/transport/chttp2/transport/hpack_utils.h",
         "src/core/ext/transport/chttp2/transport/http2_settings.h",
         "src/core/ext/transport/chttp2/transport/huffsyms.h",
         "src/core/ext/transport/chttp2/transport/incoming_metadata.h",
@@ -2902,7 +2939,9 @@ grpc_cc_library(
         "grpc_http_filters",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
+        "hpack_constants",
         "hpack_encoder_index",
+        "hpack_encoder_table",
         "match",
         "popularity_count",
     ],
@@ -3476,6 +3515,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc++_test",
+    testonly = True,
     srcs = [
         "src/cpp/client/channel_test_peer.cc",
     ],

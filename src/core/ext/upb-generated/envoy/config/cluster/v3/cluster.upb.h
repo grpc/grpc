@@ -1830,23 +1830,19 @@ UPB_INLINE char *envoy_config_cluster_v3_LoadBalancingPolicy_Policy_serialize(co
   return upb_encode(msg, &envoy_config_cluster_v3_LoadBalancingPolicy_Policy_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview envoy_config_cluster_v3_LoadBalancingPolicy_Policy_name(const envoy_config_cluster_v3_LoadBalancingPolicy_Policy *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
-UPB_INLINE bool envoy_config_cluster_v3_LoadBalancingPolicy_Policy_has_typed_config(const envoy_config_cluster_v3_LoadBalancingPolicy_Policy *msg) { return _upb_hasbit(msg, 1); }
-UPB_INLINE const struct google_protobuf_Any* envoy_config_cluster_v3_LoadBalancingPolicy_Policy_typed_config(const envoy_config_cluster_v3_LoadBalancingPolicy_Policy *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct google_protobuf_Any*); }
+UPB_INLINE bool envoy_config_cluster_v3_LoadBalancingPolicy_Policy_has_typed_extension_config(const envoy_config_cluster_v3_LoadBalancingPolicy_Policy *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_cluster_v3_LoadBalancingPolicy_Policy_typed_extension_config(const envoy_config_cluster_v3_LoadBalancingPolicy_Policy *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct envoy_config_core_v3_TypedExtensionConfig*); }
 
-UPB_INLINE void envoy_config_cluster_v3_LoadBalancingPolicy_Policy_set_name(envoy_config_cluster_v3_LoadBalancingPolicy_Policy *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
-}
-UPB_INLINE void envoy_config_cluster_v3_LoadBalancingPolicy_Policy_set_typed_config(envoy_config_cluster_v3_LoadBalancingPolicy_Policy *msg, struct google_protobuf_Any* value) {
+UPB_INLINE void envoy_config_cluster_v3_LoadBalancingPolicy_Policy_set_typed_extension_config(envoy_config_cluster_v3_LoadBalancingPolicy_Policy *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
   _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct google_protobuf_Any*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct envoy_config_core_v3_TypedExtensionConfig*) = value;
 }
-UPB_INLINE struct google_protobuf_Any* envoy_config_cluster_v3_LoadBalancingPolicy_Policy_mutable_typed_config(envoy_config_cluster_v3_LoadBalancingPolicy_Policy *msg, upb_arena *arena) {
-  struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_config_cluster_v3_LoadBalancingPolicy_Policy_typed_config(msg);
+UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_cluster_v3_LoadBalancingPolicy_Policy_mutable_typed_extension_config(envoy_config_cluster_v3_LoadBalancingPolicy_Policy *msg, upb_arena *arena) {
+  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_config_cluster_v3_LoadBalancingPolicy_Policy_typed_extension_config(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Any*)_upb_msg_new(&google_protobuf_Any_msginit, arena);
+    sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_msg_new(&envoy_config_core_v3_TypedExtensionConfig_msginit, arena);
     if (!sub) return NULL;
-    envoy_config_cluster_v3_LoadBalancingPolicy_Policy_set_typed_config(msg, sub);
+    envoy_config_cluster_v3_LoadBalancingPolicy_Policy_set_typed_extension_config(msg, sub);
   }
   return sub;
 }

@@ -182,7 +182,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
                  reuse_namespace=False,
                  namespace_template=None,
                  debug_use_port_forwarding=False,
-                 enable_workload_identity=False):
+                 enable_workload_identity=True):
         super().__init__(k8s_namespace, namespace_template, reuse_namespace)
 
         # Settings
@@ -250,6 +250,9 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         if not (isinstance(test_port, int) and
                 isinstance(maintenance_port, int)):
             raise TypeError('Port numbers must be integer')
+
+        if secure_mode and not self.enable_workload_identity:
+            raise ValueError('Secure mode requires Workload Identity enabled.')
 
         logger.info(
             'Deploying xDS test server "%s" to k8s namespace %s: test_port=%s '

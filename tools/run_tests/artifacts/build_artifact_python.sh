@@ -19,8 +19,10 @@ cd "$(dirname "$0")/../../.."
 
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export PYTHON=${PYTHON:-python}
-export PIP=${PIP:-pip}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
+
+# Needed for building binary distribution wheels -- bdist_wheel
+"${PYTHON}" -m pip install --upgrade wheel
 
 if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
 then
@@ -31,7 +33,7 @@ then
   # Any installation step is a potential source of breakages,
   # so we are trying to perform as few download-and-install operations
   # as possible.
-  "${PIP}" install --upgrade cython
+  "${PYTHON}" -m pip install --upgrade cython
 fi
 
 # Allow build_ext to build C/C++ files in parallel
@@ -144,15 +146,15 @@ fi
 # are in a docker image or in a virtualenv.
 if [ "$GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS" != "" ]
 then
-  "${PIP}" install -rrequirements.txt
+  "${PYTHON}" -m pip install -rrequirements.txt
 
   if [ "$("$PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
   then
-    "${PIP}" install futures>=2.2.0 enum34>=1.0.4
+    "${PYTHON}" -m pip install futures>=2.2.0 enum34>=1.0.4
   fi
 
-  "${PIP}" install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
-  "${PIP}" install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
+  "${PYTHON}" -m pip install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
+  "${PYTHON}" -m pip install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
 
   # Note(lidiz) setuptools's "sdist" command creates a source tarball, which
   # demands an extra step of building the wheel. The building step is merely ran
@@ -191,9 +193,9 @@ then
 
   # Build grpcio_admin source distribution and it needs the cutting-edge version
   # of Channelz and CSDS to be installed.
-  "${PIP}" install --upgrade xds-protos==0.0.8
-  "${PIP}" install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
-  "${PIP}" install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
+  "${PYTHON}" -m pip install --upgrade xds-protos==0.0.8
+  "${PYTHON}" -m pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
+  "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_admin/setup.py \
       sdist bdist_wheel
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
