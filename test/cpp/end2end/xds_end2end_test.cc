@@ -3389,44 +3389,98 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
 // Tests that the NACK for multiple bad LDS resources includes both errors.
 TEST_P(GlobalXdsClientTest, MultipleBadResources) {
   constexpr char kServerName2[] = "server.other.com";
+  constexpr char kServerName3[] = "server.another.com";
   auto listener = default_listener_;
   listener.clear_api_listener();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   listener.set_name(kServerName2);
   balancers_[0]->ads_service()->SetLdsResource(listener);
+  listener = default_listener_;
+  listener.set_name(kServerName3);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
   // Need to create a second channel to subscribe to a second LDS resource.
   auto channel2 = CreateChannel(0, kServerName2);
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
-  ClientContext context;
-  EchoRequest request;
-  request.set_message(kRequestMessage);
-  EchoResponse response;
-  grpc::Status status = stub2->Echo(&context, request, &response);
-  EXPECT_FALSE(status.ok());
-  // Wait for second NACK to be reported to xDS server.
+  {
+    ClientContext context;
+    EchoRequest request;
+    request.set_message(kRequestMessage);
+    EchoResponse response;
+    grpc::Status status = stub2->Echo(&context, request, &response);
+    EXPECT_FALSE(status.ok());
+    // Wait for second NACK to be reported to xDS server.
+    auto deadline = absl::Now() + absl::Seconds(30);
+    bool timed_out = false;
+    CheckRpcSendFailure(
+        CheckRpcSendFailureOptions().set_continue_predicate([&](size_t) {
+          if (absl::Now() >= deadline) {
+            timed_out = true;
+            return false;
+          }
+          const auto response_state =
+              balancers_[0]->ads_service()->lds_response_state();
+          return response_state.state !=
+                     AdsServiceImpl::ResponseState::NACKED ||
+                 ::testing::Matches(::testing::ContainsRegex(absl::StrCat(
+                     kServerName,
+                     ": validation error.*"
+                     "Listener has neither address nor ApiListener.*",
+                     kServerName2,
+                     ": validation error.*"
+                     "Listener has neither address nor ApiListener")))(
+                     response_state.error_message);
+        }));
+    ASSERT_FALSE(timed_out);
+  }
+  // Now start a new channel with a third server name, this one with a
+  // valid resource.
+  auto channel3 = CreateChannel(0, kServerName3);
+  auto stub3 = grpc::testing::EchoTestService::NewStub(channel3);
+  {
+    ClientContext context;
+    EchoRequest request;
+    request.set_message(kRequestMessage);
+    EchoResponse response;
+    grpc::Status status = stub3->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                             << " message=" << status.error_message();
+  }
+}
+
+// Tests that we don't trigger does-not-exist callbacks for a resource
+// that was previously valid but is updated to be invalid.
+TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
+  // Set up valid resources and check that the channel works.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendOk();
+  // Now send an update changing the Listener to be invalid.
+  auto listener = default_listener_;
+  listener.clear_api_listener();
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  // Wait for xDS server to see NACK.
   auto deadline = absl::Now() + absl::Seconds(30);
-  bool timed_out = false;
-  CheckRpcSendFailure(
-      CheckRpcSendFailureOptions().set_continue_predicate([&](size_t) {
-        if (absl::Now() >= deadline) {
-          timed_out = true;
-          return false;
-        }
-        const auto response_state =
-            balancers_[0]->ads_service()->lds_response_state();
-        return response_state.state != AdsServiceImpl::ResponseState::NACKED ||
-               ::testing::Matches(::testing::ContainsRegex(absl::StrCat(
-                   kServerName,
-                   ": validation error.*"
-                   "Listener has neither address nor ApiListener.*",
-                   kServerName2,
-                   ": validation error.*"
-                   "Listener has neither address nor ApiListener")))(
-                   response_state.error_message);
-      }));
-  ASSERT_FALSE(timed_out);
+  do {
+    CheckRpcSendOk();
+    ASSERT_LT(absl::Now(), deadline);
+  } while (balancers_[0]->ads_service()->lds_response_state().state !=
+           AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
+              ::testing::ContainsRegex(absl::StrCat(
+                  kServerName,
+                  ": validation error.*"
+                  "Listener has neither address nor ApiListener")));
+  // Check one more time, just to make sure it still works after NACK.
+  CheckRpcSendOk();
 }
 
 class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {
@@ -7233,19 +7287,42 @@ TEST_P(CdsTest, UnsupportedClusterType) {
 // Tests that the NACK for multiple bad resources includes both errors.
 TEST_P(CdsTest, MultipleBadResources) {
   constexpr char kClusterName2[] = "cluster_name_2";
-  // Use unsupported type for default cluster.
+  constexpr char kClusterName3[] = "cluster_name_3";
+  // Add cluster with unsupported type.
   auto cluster = default_cluster_;
+  cluster.set_name(kClusterName2);
   cluster.set_type(Cluster::STATIC);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Add second cluster with the same error.
-  cluster.set_name(kClusterName2);
+  cluster.set_name(kClusterName3);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  // Change RouteConfig to point to both clusters.
+  // Change RouteConfig to point to all clusters.
   RouteConfiguration route_config = default_route_config_;
+  route_config.mutable_virtual_hosts(0)->clear_routes();
+  // First route: default cluster, selected based on header.
   auto* route = route_config.mutable_virtual_hosts(0)->add_routes();
   route->mutable_match()->set_prefix("");
+  auto* header_matcher = route->mutable_match()->add_headers();
+  header_matcher->set_name("cluster");
+  header_matcher->set_exact_match(kDefaultClusterName);
+  route->mutable_route()->set_cluster(kDefaultClusterName);
+  // Second route: cluster 2, selected based on header.
+  route = route_config.mutable_virtual_hosts(0)->add_routes();
+  route->mutable_match()->set_prefix("");
+  header_matcher = route->mutable_match()->add_headers();
+  header_matcher->set_name("cluster");
+  header_matcher->set_exact_match(kClusterName2);
   route->mutable_route()->set_cluster(kClusterName2);
+  // Third route: cluster 3, used by default.
+  route = route_config.mutable_virtual_hosts(0)->add_routes();
+  route->mutable_match()->set_prefix("");
+  route->mutable_route()->set_cluster(kClusterName3);
   SetRouteConfiguration(0, route_config);
+  // Add EDS resource.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send RPC.
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -7255,12 +7332,54 @@ TEST_P(CdsTest, MultipleBadResources) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(
       response_state.error_message,
-      ::testing::ContainsRegex(absl::StrCat(kDefaultClusterName,
+      ::testing::ContainsRegex(absl::StrCat(kClusterName2,
                                             ": validation error.*"
                                             "DiscoveryType is not valid.*",
-                                            kClusterName2,
+                                            kClusterName3,
                                             ": validation error.*"
                                             "DiscoveryType is not valid")));
+  // RPCs for default cluster should succeed.
+  std::vector<std::pair<std::string, std::string>> metadata_default_cluster = {
+      {"cluster", kDefaultClusterName},
+  };
+  CheckRpcSendOk(
+      1, RpcOptions().set_metadata(std::move(metadata_default_cluster)));
+  // RPCs for cluster 2 should fail.
+  std::vector<std::pair<std::string, std::string>> metadata_cluster_2 = {
+      {"cluster", kClusterName2},
+  };
+  CheckRpcSendFailure(CheckRpcSendFailureOptions().set_rpc_options(
+      RpcOptions().set_metadata(std::move(metadata_cluster_2))));
+}
+
+// Tests that we don't trigger does-not-exist callbacks for a resource
+// that was previously valid but is updated to be invalid.
+TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Check that everything works.
+  CheckRpcSendOk();
+  // Now send an update changing the Cluster to be invalid.
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::STATIC);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Wait for xDS server to see NACK.
+  auto deadline = absl::Now() + absl::Seconds(30);
+  do {
+    CheckRpcSendOk();
+    ASSERT_LT(absl::Now(), deadline);
+  } while (balancers_[0]->ads_service()->cds_response_state().state !=
+           AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(balancers_[0]->ads_service()->cds_response_state().error_message,
+              ::testing::ContainsRegex(absl::StrCat(
+                  kDefaultClusterName,
+                  ": validation error.*DiscoveryType is not valid")));
+  // Check one more time, just to make sure it still works after NACK.
+  CheckRpcSendOk();
 }
 
 // Tests that CDS client should send a NACK if the eds_config in CDS response

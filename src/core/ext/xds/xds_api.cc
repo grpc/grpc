@@ -3408,15 +3408,6 @@ upb_strview EdsResourceName(
       eds_resource);
 }
 
-template <typename UpdateMap>
-void MoveUpdatesToFailedSet(UpdateMap* update_map,
-                            std::set<std::string>* resource_names_failed) {
-  for (const auto& p : *update_map) {
-    resource_names_failed->insert(p.first);
-  }
-  update_map->clear();
-}
-
 }  // namespace
 
 XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
@@ -3462,40 +3453,24 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
         IsLds, MaybeLogListener, LdsResourceParse, response, "LDS",
         expected_listener_names, &result.lds_update_map,
         &result.resource_names_failed);
-    if (result.parse_error != GRPC_ERROR_NONE) {
-      MoveUpdatesToFailedSet(&result.lds_update_map,
-                             &result.resource_names_failed);
-    }
   } else if (IsRds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_route_v3_RouteConfiguration_parse,
         RdsResourceName, IsRds, MaybeLogRouteConfiguration, RouteConfigParse,
         response, "RDS", expected_route_configuration_names,
         &result.rds_update_map, &result.resource_names_failed);
-    if (result.parse_error != GRPC_ERROR_NONE) {
-      MoveUpdatesToFailedSet(&result.rds_update_map,
-                             &result.resource_names_failed);
-    }
   } else if (IsCds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_cluster_v3_Cluster_parse, CdsResourceName, IsCds,
         MaybeLogCluster, CdsResourceParse, response, "CDS",
         expected_cluster_names, &result.cds_update_map,
         &result.resource_names_failed);
-    if (result.parse_error != GRPC_ERROR_NONE) {
-      MoveUpdatesToFailedSet(&result.cds_update_map,
-                             &result.resource_names_failed);
-    }
   } else if (IsEds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_endpoint_v3_ClusterLoadAssignment_parse,
         EdsResourceName, IsEds, MaybeLogClusterLoadAssignment, EdsResourceParse,
         response, "EDS", expected_eds_service_names, &result.eds_update_map,
         &result.resource_names_failed);
-    if (result.parse_error != GRPC_ERROR_NONE) {
-      MoveUpdatesToFailedSet(&result.eds_update_map,
-                             &result.resource_names_failed);
-    }
   }
   return result;
 }
