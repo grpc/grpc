@@ -76,7 +76,7 @@ class OverloadFactory {
 
 template <typename Factory, typename Arg>
 using FactoryResultForArg =
-    decltype(std::declval<Factory>()(std::move(std::declval<Arg>())));
+    decltype(std::declval<Factory>()(std::declval<Arg>()));
 
 template <typename Factory, typename... Args>
 using PromiseFromFactoryForArgs =
