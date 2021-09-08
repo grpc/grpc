@@ -1333,7 +1333,7 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
       have_valid_resources = !result.lds_update_map.empty();
       AcceptLdsUpdateLocked(result.version, update_time,
                             std::move(result.lds_update_map),
-                            std::move(result.resource_names_failed));
+                            result.resource_names_failed);
     } else if (result.type_url == XdsApi::kRdsTypeUrl) {
       have_valid_resources = !result.rds_update_map.empty();
       AcceptRdsUpdateLocked(result.version, update_time,
@@ -1342,7 +1342,7 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
       have_valid_resources = !result.cds_update_map.empty();
       AcceptCdsUpdateLocked(result.version, update_time,
                             std::move(result.cds_update_map),
-                            std::move(result.resource_names_failed));
+                            result.resource_names_failed);
     } else if (result.type_url == XdsApi::kEdsTypeUrl) {
       have_valid_resources = !result.eds_update_map.empty();
       AcceptEdsUpdateLocked(result.version, update_time,
