@@ -79,14 +79,15 @@ def fix_tree(tree, cg_roots):
         # Check for our 'special' headers: if we see one of these, we just
         # hardcode where they go to because there's some complicated rules.
         for root, target in cg_roots:
-          if filename.startswith(root):
-            pragma = 'private, include <%s>' % target
-            if len(paths) == 1:
-              path = paths[0]
-              if filename.startswith(root + '.'):
-                set_exports('include/' + target, path + '/' + filename)
-              if filename.startswith(root + '_'):
-                set_exports(path + '/' + root + '.h', path + '/' + filename)
+            if filename.startswith(root):
+                pragma = 'private, include <%s>' % target
+                if len(paths) == 1:
+                    path = paths[0]
+                    if filename.startswith(root + '.'):
+                        set_exports('include/' + target, path + '/' + filename)
+                    if filename.startswith(root + '_'):
+                        set_exports(path + '/' + root + '.h',
+                                    path + '/' + filename)
         # If the path for a file in /impl/codegen is ambiguous, just don't bother
         if not pragma and len(paths) == 1:
             path = paths[0]
