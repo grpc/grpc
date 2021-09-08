@@ -1,4 +1,5 @@
-# Copyright 2020 gRPC authors.
+#! /bin/bash
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,8 +12,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Checks if any file contains "DO NOT SUBMIT"
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/distrib/python/grpcio_tools/grpc_version.py.template`!!!
-
-VERSION = '1.41.0.dev0'
-PROTOBUF_VERSION = '3.17.3'
+cd "$(dirname "$0")/../../.." || exit 1
+grep -Irn \
+  --exclude='check_do_not_submit.sh' \
+  --exclude-dir='.git/' \
+  --exclude-dir='third_party/' \
+  'DO NOT SUBMIT'
+test $? -eq 1 || exit 1

@@ -14,6 +14,7 @@
 #include "envoy/type/matcher/v3/metadata.upb.h"
 #include "envoy/type/matcher/v3/path.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
+#include "envoy/type/v3/range.upb.h"
 #include "google/api/expr/v1alpha1/checked.upb.h"
 #include "google/api/expr/v1alpha1/syntax.upb.h"
 #include "envoy/annotations/deprecation.upb.h"
@@ -74,7 +75,7 @@ const upb_msglayout envoy_config_rbac_v3_Policy_msginit = {
   UPB_SIZE(24, 40), 4, false, 4, 255,
 };
 
-static const upb_msglayout *const envoy_config_rbac_v3_Permission_submsgs[7] = {
+static const upb_msglayout *const envoy_config_rbac_v3_Permission_submsgs[8] = {
   &envoy_config_core_v3_CidrRange_msginit,
   &envoy_config_rbac_v3_Permission_msginit,
   &envoy_config_rbac_v3_Permission_Set_msginit,
@@ -82,9 +83,10 @@ static const upb_msglayout *const envoy_config_rbac_v3_Permission_submsgs[7] = {
   &envoy_type_matcher_v3_MetadataMatcher_msginit,
   &envoy_type_matcher_v3_PathMatcher_msginit,
   &envoy_type_matcher_v3_StringMatcher_msginit,
+  &envoy_type_v3_Int32Range_msginit,
 };
 
-static const upb_msglayout_field envoy_config_rbac_v3_Permission__fields[10] = {
+static const upb_msglayout_field envoy_config_rbac_v3_Permission__fields[11] = {
   {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, _UPB_MODE_SCALAR},
   {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, _UPB_MODE_SCALAR},
   {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 8, _UPB_MODE_SCALAR},
@@ -95,12 +97,13 @@ static const upb_msglayout_field envoy_config_rbac_v3_Permission__fields[10] = {
   {8, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, _UPB_MODE_SCALAR},
   {9, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 6, 11, _UPB_MODE_SCALAR},
   {10, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 5, 11, _UPB_MODE_SCALAR},
+  {11, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 7, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_rbac_v3_Permission_msginit = {
   &envoy_config_rbac_v3_Permission_submsgs[0],
   &envoy_config_rbac_v3_Permission__fields[0],
-  UPB_SIZE(8, 16), 10, false, 10, 255,
+  UPB_SIZE(8, 16), 11, false, 11, 255,
 };
 
 static const upb_msglayout *const envoy_config_rbac_v3_Permission_Set_submsgs[1] = {
