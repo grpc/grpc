@@ -286,9 +286,10 @@ class EventEngine {
   /// Run a callback as soon as possible.
   ///
   /// The \a fn callback's \a status argument is used to indicate whether it was
-  /// executed normally. For example, the status may be CANCELLED if
-  /// \a TryCancel was called, or if the EventEngine is being shut down.
-  virtual TaskHandle Run(Callback fn, RunOptions opts) = 0;
+  /// executed normally. For example, the status may be CANCELLED if the
+  /// EventEngine is being shut down. \a fn is guaranteed to be called exactly
+  /// once.
+  virtual void Run(Callback fn, RunOptions opts) = 0;
   /// Synonymous with scheduling an alarm to run at time \a when.
   ///
   /// The callback \a fn will execute when either when time \a when arrives

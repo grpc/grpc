@@ -157,21 +157,29 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
   }
   if (op->send_message && gbs->cancellation_error.ok()) {
     gpr_log(GPR_INFO, "send_message");
-    grpc_slice s;
-    bool next_result =
-        op->payload->send_message.send_message->Next(SIZE_MAX, nullptr);
-    gpr_log(GPR_INFO, "next_result = %d", static_cast<int>(next_result));
-    op->payload->send_message.send_message->Pull(&s);
-    auto* p = GRPC_SLICE_START_PTR(s);
-    int len = GRPC_SLICE_LENGTH(s);
-    std::string message_data(reinterpret_cast<char*>(p), len);
+    size_t remaining = op->payload->send_message.send_message->length();
+    std::string message_data;
+    while (remaining > 0) {
+      grpc_slice message_slice;
+      // TODO(waynetu): Temporarily assume that the message is ready.
+      GPR_ASSERT(
+          op->payload->send_message.send_message->Next(SIZE_MAX, nullptr));
+      grpc_error_handle error =
+          op->payload->send_message.send_message->Pull(&message_slice);
+      // TODO(waynetu): Cancel the stream if error is not GRPC_ERROR_NONE.
+      GPR_ASSERT(error == GRPC_ERROR_NONE);
+      uint8_t* p = GRPC_SLICE_START_PTR(message_slice);
+      size_t len = GRPC_SLICE_LENGTH(message_slice);
+      remaining -= len;
+      message_data += std::string(reinterpret_cast<char*>(p), len);
+      grpc_slice_unref_internal(message_slice);
+    }
     gpr_log(GPR_INFO, "message_data = %s", message_data.c_str());
     GPR_ASSERT(tx);
     tx->SetData(message_data);
     // TODO(b/192369787): Are we supposed to reset here to avoid
     // use-after-free issue in call.cc?
     op->payload->send_message.send_message.reset();
-    grpc_slice_unref_internal(s);
   }
   if (op->send_trailing_metadata && gbs->cancellation_error.ok()) {
     gpr_log(GPR_INFO, "send_trailing_metadata");

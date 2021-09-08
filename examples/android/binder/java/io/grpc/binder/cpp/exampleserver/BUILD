@@ -26,8 +26,7 @@ cc_library(
     ],
     deps = [
         # Temporarily directly depend on this target before we expose a public API
-        # TODO(mingcl): Uncomment this after server interfaces are merged
-        # "//src/core/ext/transport/binder/server:grpc_transport_binder_server",
+        "//src/core/ext/transport/binder/server:grpc_transport_binder_server",
         "//:grpc++",
         "//examples/protos:helloworld_cc_grpc",
     ],

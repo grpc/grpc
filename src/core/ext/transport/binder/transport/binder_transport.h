@@ -60,7 +60,7 @@ struct grpc_binder_transport {
   std::shared_ptr<grpc_binder::TransportStreamReceiver>
       transport_stream_receiver;
   grpc_core::OrphanablePtr<grpc_binder::WireReader> wire_reader;
-  std::unique_ptr<grpc_binder::WireWriter> wire_writer;
+  std::shared_ptr<grpc_binder::WireWriter> wire_writer;
 
   bool is_client;
   grpc_core::Mutex mu;

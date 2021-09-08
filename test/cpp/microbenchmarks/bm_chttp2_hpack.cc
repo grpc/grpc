@@ -55,11 +55,8 @@ static grpc_slice MakeSlice(std::vector<uint8_t> bytes) {
 static void BM_HpackEncoderInitDestroy(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  std::unique_ptr<grpc_chttp2_hpack_compressor> c(
-      new grpc_chttp2_hpack_compressor);
   for (auto _ : state) {
-    grpc_chttp2_hpack_compressor_init(c.get());
-    grpc_chttp2_hpack_compressor_destroy(c.get());
+    grpc_core::HPackCompressor c;
     grpc_core::ExecCtx::Get()->Flush();
   }
 
@@ -76,27 +73,25 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   grpc_metadata_batch_init(&b);
   b.deadline = saved_now + 30 * 1000;
 
-  std::unique_ptr<grpc_chttp2_hpack_compressor> c(
-      new grpc_chttp2_hpack_compressor);
-  grpc_chttp2_hpack_compressor_init(c.get());
+  grpc_core::HPackCompressor c;
   grpc_transport_one_way_stats stats;
   stats = {};
   grpc_slice_buffer outbuf;
   grpc_slice_buffer_init(&outbuf);
   while (state.KeepRunning()) {
-    grpc_encode_header_options hopt = {
-        static_cast<uint32_t>(state.iterations()),
-        true,
-        false,
-        static_cast<size_t>(1024),
-        &stats,
-    };
-    grpc_chttp2_encode_header(c.get(), nullptr, 0, &b, &hopt, &outbuf);
+    c.EncodeHeaders(
+        grpc_core::HPackCompressor::EncodeHeaderOptions{
+            static_cast<uint32_t>(state.iterations()),
+            true,
+            false,
+            static_cast<size_t>(1024),
+            &stats,
+        },
+        b, &outbuf);
     grpc_slice_buffer_reset_and_unref_internal(&outbuf);
     grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_metadata_batch_destroy(&b);
-  grpc_chttp2_hpack_compressor_destroy(c.get());
   grpc_slice_buffer_destroy_internal(&outbuf);
 
   std::ostringstream label;
@@ -126,23 +121,22 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
   }
 
-  std::unique_ptr<grpc_chttp2_hpack_compressor> c(
-      new grpc_chttp2_hpack_compressor);
-  grpc_chttp2_hpack_compressor_init(c.get());
+  grpc_core::HPackCompressor c;
   grpc_transport_one_way_stats stats;
   stats = {};
   grpc_slice_buffer outbuf;
   grpc_slice_buffer_init(&outbuf);
   while (state.KeepRunning()) {
     static constexpr int kEnsureMaxFrameAtLeast = 2;
-    grpc_encode_header_options hopt = {
-        static_cast<uint32_t>(state.iterations()),
-        state.range(0) != 0,
-        Fixture::kEnableTrueBinary,
-        static_cast<size_t>(state.range(1) + kEnsureMaxFrameAtLeast),
-        &stats,
-    };
-    grpc_chttp2_encode_header(c.get(), nullptr, 0, &b, &hopt, &outbuf);
+    c.EncodeHeaders(
+        grpc_core::HPackCompressor::EncodeHeaderOptions{
+            static_cast<uint32_t>(state.iterations()),
+            state.range(0) != 0,
+            Fixture::kEnableTrueBinary,
+            static_cast<size_t>(state.range(1) + kEnsureMaxFrameAtLeast),
+            &stats,
+        },
+        b, &outbuf);
     if (!logged_representative_output && state.iterations() > 3) {
       logged_representative_output = true;
       for (size_t i = 0; i < outbuf.count; i++) {
@@ -155,7 +149,6 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
     grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_metadata_batch_destroy(&b);
-  grpc_chttp2_hpack_compressor_destroy(c.get());
   grpc_slice_buffer_destroy_internal(&outbuf);
 
   std::ostringstream label;
