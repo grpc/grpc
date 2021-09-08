@@ -8070,16 +8070,6 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidRingSizeMinGreaterThanMax) {
 
 class XdsSecurityTest : public BasicTest {
  protected:
-  static void SetUpTestCase() {
-    gpr_setenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT", "true");
-    BasicTest::SetUpTestCase();
-  }
-
-  static void TearDownTestCase() {
-    BasicTest::TearDownTestCase();
-    gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT");
-  }
-
   void SetUp() override {
     BasicTest::SetUp();
     root_cert_ = ReadFile(kCaCertPath);
@@ -9078,16 +9068,6 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
  protected:
   XdsServerSecurityTest()
       : XdsEnd2endTest(1, 1, 100, true /* use_xds_enabled_server */) {}
-
-  static void SetUpTestCase() {
-    gpr_setenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT", "true");
-    XdsEnd2endTest::SetUpTestCase();
-  }
-
-  static void TearDownTestCase() {
-    XdsEnd2endTest::TearDownTestCase();
-    gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT");
-  }
 
   void SetUp() override {
     XdsEnd2endTest::SetUp();

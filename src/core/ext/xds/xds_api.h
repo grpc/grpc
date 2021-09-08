@@ -43,11 +43,6 @@
 
 namespace grpc_core {
 
-// TODO(yashykt): Check to see if xDS security is enabled. This will be
-// removed once this feature is fully integration-tested and enabled by
-// default.
-bool XdsSecurityEnabled();
-
 class XdsClient;
 
 class XdsApi {
