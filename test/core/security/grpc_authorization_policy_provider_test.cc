@@ -165,6 +165,58 @@ TEST(AuthorizationPolicyProviderTest,
   EXPECT_EQ(deny_engine->num_policies(), 1);
 }
 
+TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
+  auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
+      testing::GetFileContents(VALID_POLICY_PATH_1));
+  auto provider = FileWatcherAuthorizationPolicyProvider::Create(
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
+      nullptr);
+  ASSERT_TRUE(provider.ok());
+  auto engines = (*provider)->engines();
+  auto* allow_engine =
+      dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
+  ASSERT_NE(allow_engine, nullptr);
+  EXPECT_EQ(allow_engine->action(), Rbac::Action::kAllow);
+  EXPECT_EQ(allow_engine->num_policies(), 1);
+  auto* deny_engine =
+      dynamic_cast<GrpcAuthorizationEngine*>(engines.deny_engine.get());
+  ASSERT_NE(deny_engine, nullptr);
+  EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
+  EXPECT_EQ(deny_engine->num_policies(), 1);
+  // Skips the following policy update, and continues to use the valid policy.
+  tmp_authz_policy->RewriteFile(testing::GetFileContents(INVALID_POLICY_PATH));
+  // Wait 2 seconds for the provider's refresh thread to read the updated files.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  engines = (*provider)->engines();
+  allow_engine =
+      dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
+  ASSERT_NE(allow_engine, nullptr);
+  EXPECT_EQ(allow_engine->action(), Rbac::Action::kAllow);
+  EXPECT_EQ(allow_engine->num_policies(), 1);
+  deny_engine =
+      dynamic_cast<GrpcAuthorizationEngine*>(engines.deny_engine.get());
+  ASSERT_NE(deny_engine, nullptr);
+  EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
+  EXPECT_EQ(deny_engine->num_policies(), 1);
+  // Rewrite the file with a valid authorization policy.
+  tmp_authz_policy->RewriteFile(testing::GetFileContents(VALID_POLICY_PATH_2));
+  // Wait 2 seconds for the provider's refresh thread to read the updated files.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  engines = (*provider)->engines();
+  allow_engine =
+      dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
+  ASSERT_NE(allow_engine, nullptr);
+  EXPECT_EQ(allow_engine->action(), Rbac::Action::kAllow);
+  EXPECT_EQ(allow_engine->num_policies(), 2);
+  deny_engine =
+      dynamic_cast<GrpcAuthorizationEngine*>(engines.deny_engine.get());
+  ASSERT_NE(deny_engine, nullptr);
+  EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
+  EXPECT_EQ(deny_engine->num_policies(), 0);
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

@@ -45,7 +45,7 @@ StaticDataAuthorizationPolicyProvider::
 std::shared_ptr<FileWatcherAuthorizationPolicyProvider>
 FileWatcherAuthorizationPolicyProvider::Create(
     const std::string& authz_policy_path, unsigned int refresh_interval_sec,
-    grpc_authorization_policy_provider_file_watcher_cb cb,
+    grpc_authorization_policy_provider_file_watcher_reload_status_cb cb,
     grpc::Status* status) {
   grpc_status_code code = GRPC_STATUS_OK;
   const char* error_details;

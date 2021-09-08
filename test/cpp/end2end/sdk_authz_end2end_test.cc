@@ -83,7 +83,7 @@ class SdkAuthzEnd2EndTest : public ::testing::Test {
     grpc::Status status;
     auto provider =
         experimental::FileWatcherAuthorizationPolicyProvider::Create(
-            policy_path, refresh_interval_sec, nullptr, &status);
+            policy_path, refresh_interval_sec, /*cb=*/nullptr, &status);
     EXPECT_TRUE(status.ok());
     return provider;
   }
@@ -611,6 +611,7 @@ TEST_F(SdkAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
   grpc::Status status = SendRpc(channel, &context1, &resp1);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp1.message(), kMessage);
+  // Replace the existing policy with a new authorization policy.
   policy =
       "{"
       "  \"name\": \"authz\","
@@ -647,7 +648,7 @@ TEST_F(SdkAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
   EXPECT_TRUE(resp2.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest, FileWatcherInvalidPolicyRefresh) {
+TEST_F(SdkAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
@@ -670,6 +671,7 @@ TEST_F(SdkAuthzEnd2EndTest, FileWatcherInvalidPolicyRefresh) {
   grpc::Status status = SendRpc(channel, &context1, &resp1);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp1.message(), kMessage);
+  // Replaces existing policy with an invalid authorization policy.
   policy = "{}";
   tmp_policy.RewriteFile(policy);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
@@ -680,6 +682,77 @@ TEST_F(SdkAuthzEnd2EndTest, FileWatcherInvalidPolicyRefresh) {
   status = SendRpc(channel, &context2, &resp2);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp2.message(), kMessage);
+}
+
+TEST_F(SdkAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_echo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/Echo\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  grpc_core::testing::TmpFile tmp_policy(policy);
+  InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 1));
+  auto channel = BuildChannel();
+  ClientContext context1;
+  grpc::testing::EchoResponse resp1;
+  grpc::Status status = SendRpc(channel, &context1, &resp1);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(resp1.message(), kMessage);
+  // Replaces existing policy with an invalid authorization policy.
+  policy = "{}";
+  tmp_policy.RewriteFile(policy);
+  // Wait 2 seconds for the provider's refresh thread to read the updated files.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  ClientContext context2;
+  grpc::testing::EchoResponse resp2;
+  status = SendRpc(channel, &context2, &resp2);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(resp2.message(), kMessage);
+  // Replace the existing invalid policy with a valid authorization policy.
+  policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/foo\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_echo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/Echo\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  tmp_policy.RewriteFile(policy);
+  // Wait 2 seconds for the provider's refresh thread to read the updated files.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  ClientContext context3;
+  grpc::testing::EchoResponse resp3;
+  status = SendRpc(channel, &context3, &resp3);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_TRUE(resp3.message().empty());
 }
 
 }  // namespace
