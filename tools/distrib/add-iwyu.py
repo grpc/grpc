@@ -52,13 +52,15 @@ def set_exports(pub, cg):
     open(pub, 'w').write('\n'.join(lines) + '\n')
 
 
-CG_ROOTS = (
+CG_ROOTS_GRPC = (
     (r'sync', 'grpc/support/sync.h'),
     (r'atm', 'grpc/support/atm.h'),
 )
 
+CG_ROOTS_GRPCPP = []
 
-def fix_tree(tree):
+
+def fix_tree(tree, cg_roots):
     """Fix one include tree"""
     # Map of filename --> paths including that filename
     reverse_map = collections.defaultdict(list)
@@ -76,7 +78,7 @@ def fix_tree(tree):
         pragma = None
         # Check for our 'special' headers: if we see one of these, we just
         # hardcode where they go to because there's some complicated rules.
-        for root, target in CG_ROOTS:
+        for root, target in cg_roots:
           if filename.startswith(root):
             pragma = 'private, include <%s>' % target
             if len(paths) == 1:
@@ -96,7 +98,6 @@ def fix_tree(tree):
                     # Build the two relevant pathnames
                     cg = path + '/' + filename
                     pub = proper[0] + '/' + filename
-                    print(filename, pub, cg)
                     # And see if the public file actually includes the /impl/codegen file
                     if ('#include %s' % to_inc(cg)) in open(pub).read():
                         # Finally, if it does, we'll set that pragma
@@ -112,5 +113,5 @@ def fix_tree(tree):
             set_pragma(path + '/' + filename, pragma)
 
 
-fix_tree('include/grpc')
-fix_tree('include/grpcpp')
+fix_tree('include/grpc', CG_ROOTS_GRPC)
+fix_tree('include/grpcpp', CG_ROOTS_GRPCPP)
