@@ -1912,6 +1912,8 @@ grpc_error_handle RouteConfigParse(
 // CertificateProviderInstance is deprecated but we are still supporting it for
 // backward compatibility reasons. Note that we still parse the data into the
 // same CertificateProviderPluginInstance struct since the fields are the same.
+// TODO(yashykt): Remove this once we stop supporting the old way of fetching
+// certificate provider instances.
 grpc_error_handle CertificateProviderInstanceParse(
     const EncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance*
@@ -2077,12 +2079,12 @@ grpc_error_handle CommonTlsContextParse(
         common_tls_context_proto,
     XdsApi::CommonTlsContext* common_tls_context) {
   std::vector<grpc_error_handle> errors;
-  auto* combined_validation_context =
-      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_combined_validation_context(
-          common_tls_context_proto);
   // The validation context is derived from the oneof in
   // 'validation_context_type'. 'validation_context_sds_secret_config' is not
   // supported.
+  auto* combined_validation_context =
+      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_combined_validation_context(
+          common_tls_context_proto);
   if (combined_validation_context != nullptr) {
     auto* default_validation_context =
         envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_default_validation_context(
@@ -2098,7 +2100,8 @@ grpc_error_handle CommonTlsContextParse(
     // is empty, fall back onto
     // 'validation_context_certificate_provider_instance' inside
     // 'combined_validation_context'. Note that this way of fetching root
-    // certificates is deprecated and might be removed in the future.
+    // certificates is deprecated and will be removed in the future.
+    // TODO(yashykt): Remove this once it's no longer needed.
     auto* validation_context_certificate_provider_instance =
         envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_validation_context_certificate_provider_instance(
             combined_validation_context);
@@ -2137,8 +2140,9 @@ grpc_error_handle CommonTlsContextParse(
     if (error != GRPC_ERROR_NONE) errors.push_back(error);
   } else {
     // Fall back onto 'tls_certificate_certificate_provider_instance'. Note that
-    // this way of fetching identity certificates is deprecated and might be
+    // this way of fetching identity certificates is deprecated and will be
     // removed in the future.
+    // TODO(yashykt): Remove this once it's no longer needed.
     auto* tls_certificate_certificate_provider_instance =
         envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_certificate_provider_instance(
             common_tls_context_proto);
@@ -2404,6 +2408,11 @@ grpc_error_handle DownstreamTlsContextParse(
     errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "TLS configuration requires client certificates but no certificate "
         "provider instance specified for validation."));
+  }
+  if (!downstream_tls_context->common_tls_context.certificate_validation_context
+           .match_subject_alt_names.empty()) {
+    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "match_subject_alt_names not supported on servers"));
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("Error parsing DownstreamTlsContext",
                                        &errors);

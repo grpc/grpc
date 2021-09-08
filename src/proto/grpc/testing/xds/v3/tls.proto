@@ -153,8 +153,6 @@ message CertificateValidationContext {
   config.core.v3.TypedExtensionConfig custom_validator_config = 12;
 }
 
-message SdsSecretConfig {}
-
 message UpstreamTlsContext {
   // Common TLS context settings.
   //
