@@ -25,6 +25,8 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/slice.h>
+
 #include "src/core/ext/transport/binder/wire_format/binder_constants.h"
 #include "src/core/lib/gprpp/orphanable.h"
 
@@ -73,9 +75,9 @@ class ReadableParcel {
   virtual absl::Status ReadInt64(int64_t* data) const = 0;
   virtual absl::Status ReadBinder(std::unique_ptr<Binder>* data) const = 0;
   // TODO(waynetu): Provide better interfaces.
-  virtual absl::Status ReadByteArray(std::string* data) const = 0;
+  virtual absl::Status ReadByteArray(grpc_slice* data) const = 0;
   // FIXME(waynetu): This is just a temporary interface.
-  virtual absl::Status ReadString(char data[111]) const = 0;
+  virtual absl::Status ReadString(grpc_slice* data) const = 0;
 };
 
 class TransactionReceiver : public HasRawBinder {

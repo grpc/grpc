@@ -109,7 +109,7 @@ class WireReaderImpl : public WireReader {
   std::unique_ptr<Binder> other_end_binder_;
   absl::flat_hash_map<transaction_code_t, int32_t> expected_seq_num_
       ABSL_GUARDED_BY(mu_);
-  absl::flat_hash_map<transaction_code_t, std::string> message_buffer_
+  absl::flat_hash_map<transaction_code_t, SliceBuffer> message_buffer_
       ABSL_GUARDED_BY(mu_);
   std::unique_ptr<TransactionReceiver> tx_receiver_;
   bool is_client_;

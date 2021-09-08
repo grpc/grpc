@@ -45,7 +45,7 @@ class TransportStreamReceiverImpl : public TransportStreamReceiver {
   void NotifyRecvInitialMetadata(
       StreamIdentifier id, absl::StatusOr<Metadata> initial_metadata) override;
   void NotifyRecvMessage(StreamIdentifier id,
-                         absl::StatusOr<std::string> message) override;
+                         absl::StatusOr<SliceBuffer> message) override;
   void NotifyRecvTrailingMetadata(StreamIdentifier id,
                                   absl::StatusOr<Metadata> trailing_metadata,
                                   int status) override;
@@ -88,7 +88,7 @@ class TransportStreamReceiverImpl : public TransportStreamReceiver {
   // TODO(waynetu): Use absl::flat_hash_map.
   std::map<StreamIdentifier, std::queue<absl::StatusOr<Metadata>>>
       pending_initial_metadata_ ABSL_GUARDED_BY(m_);
-  std::map<StreamIdentifier, std::queue<absl::StatusOr<std::string>>>
+  std::map<StreamIdentifier, std::queue<absl::StatusOr<SliceBuffer>>>
       pending_message_ ABSL_GUARDED_BY(m_);
   std::map<StreamIdentifier,
            std::queue<std::pair<absl::StatusOr<Metadata>, int>>>

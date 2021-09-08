@@ -36,7 +36,7 @@ class TransportStreamReceiver {
   using InitialMetadataCallbackType =
       std::function<void(absl::StatusOr<Metadata>)>;
   using MessageDataCallbackType =
-      std::function<void(absl::StatusOr<std::string>)>;
+      std::function<void(absl::StatusOr<SliceBuffer>)>;
   using TrailingMetadataCallbackType =
       std::function<void(absl::StatusOr<Metadata>, int)>;
 
@@ -56,7 +56,7 @@ class TransportStreamReceiver {
   virtual void NotifyRecvInitialMetadata(
       StreamIdentifier id, absl::StatusOr<Metadata> initial_metadata) = 0;
   virtual void NotifyRecvMessage(StreamIdentifier id,
-                                 absl::StatusOr<std::string> message) = 0;
+                                 absl::StatusOr<SliceBuffer> message) = 0;
   virtual void NotifyRecvTrailingMetadata(
       StreamIdentifier id, absl::StatusOr<Metadata> trailing_metadata,
       int status) = 0;

@@ -106,28 +106,26 @@ absl::Status FakeReadableParcel::ReadBinder(
   return absl::OkStatus();
 }
 
-absl::Status FakeReadableParcel::ReadString(char data[111]) const {
+absl::Status FakeReadableParcel::ReadString(grpc_slice* data) const {
   if (data_position_ >= data_.size() ||
       !absl::holds_alternative<std::string>(data_[data_position_])) {
     return absl::InternalError("ReadString failed");
   }
   const std::string& s = absl::get<std::string>(data_[data_position_++]);
   if (s.size() >= 100) return absl::InternalError("ReadString failed");
-  std::memcpy(data, s.data(), s.size());
+  *data = grpc_slice_from_cpp_string(s);
   return absl::OkStatus();
 }
 
-absl::Status FakeReadableParcel::ReadByteArray(std::string* data) const {
+absl::Status FakeReadableParcel::ReadByteArray(grpc_slice* data) const {
   if (data_position_ >= data_.size() ||
       !absl::holds_alternative<std::vector<int8_t>>(data_[data_position_])) {
     return absl::InternalError("ReadByteArray failed");
   }
   const std::vector<int8_t>& byte_array =
       absl::get<std::vector<int8_t>>(data_[data_position_++]);
-  data->resize(byte_array.size());
-  for (size_t i = 0; i < byte_array.size(); ++i) {
-    (*data)[i] = byte_array[i];
-  }
+  *data = grpc_slice_from_copied_buffer(
+      reinterpret_cast<const char*>(byte_array.data()), byte_array.size());
   return absl::OkStatus();
 }
 

@@ -221,11 +221,13 @@ static void recv_message_locked(void* arg, grpc_error_handle /*error*/) {
           return absl_status_to_grpc_error(args->message.status());
         }
       }
-      grpc_slice_buffer buf;
-      grpc_slice_buffer_init(&buf);
-      grpc_slice_buffer_add(&buf, grpc_slice_from_cpp_string(*args->message));
+      grpc_slice_buffer buffer;
+      grpc_slice_buffer_init(&buffer);
+      for (grpc_slice slice : *args->message) {
+        grpc_slice_buffer_add(&buffer, slice);
+      }
 
-      gbs->sbs.Init(&buf, 0);
+      gbs->sbs.Init(&buffer, 0);
       gbs->recv_message->reset(gbs->sbs.get());
       return GRPC_ERROR_NONE;
     }();
@@ -481,7 +483,8 @@ static void perform_stream_op_locked(void* stream_op,
         op->payload->recv_message.call_failed_before_recv_message;
     GRPC_BINDER_STREAM_REF(gbs, "recv_message");
     gbt->transport_stream_receiver->RegisterRecvMessage(
-        tx_code, [tx_code, gbs, gbt](absl::StatusOr<std::string> message) {
+        tx_code,
+        [tx_code, gbs, gbt](absl::StatusOr<grpc_binder::SliceBuffer> message) {
           grpc_core::ExecCtx exec_ctx;
           if (gbs->is_closed) {
             GRPC_BINDER_STREAM_UNREF(gbs, "recv_message");

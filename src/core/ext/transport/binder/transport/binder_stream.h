@@ -30,7 +30,7 @@ struct RecvMessageArgs {
   grpc_binder_stream* gbs;
   grpc_binder_transport* gbt;
   int tx_code;
-  absl::StatusOr<std::string> message;
+  absl::StatusOr<grpc_binder::SliceBuffer> message;
 };
 
 struct RecvTrailingMetadataArgs {

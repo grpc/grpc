@@ -71,9 +71,8 @@ class ReadableParcelAndroid final : public ReadableParcel {
   absl::Status ReadInt32(int32_t* data) const override;
   absl::Status ReadInt64(int64_t* data) const override;
   absl::Status ReadBinder(std::unique_ptr<Binder>* data) const override;
-  absl::Status ReadByteArray(std::string* data) const override;
-  // FIXME(waynetu): Fix the interface.
-  absl::Status ReadString(char data[111]) const override;
+  absl::Status ReadByteArray(grpc_slice* data) const override;
+  absl::Status ReadString(grpc_slice* data) const override;
 
  private:
   AParcel* parcel_ = nullptr;

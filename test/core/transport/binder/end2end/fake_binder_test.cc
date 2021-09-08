@@ -98,10 +98,10 @@ TEST_P(FakeBinderTest, SendString) {
   std::tie(sender, tx_receiver) = NewBinderPair(
       [&](transaction_code_t tx_code, const ReadableParcel* parcel) {
         EXPECT_EQ(tx_code, kTxCode);
-        char value[111];
-        memset(value, 0, sizeof(value));
-        EXPECT_TRUE(parcel->ReadString(value).ok());
-        EXPECT_STREQ(value, kValue);
+        grpc_slice value = grpc_empty_slice();
+        EXPECT_TRUE(parcel->ReadString(&value).ok());
+        EXPECT_EQ(grpc_core::StringViewFromSlice(value), kValue);
+        grpc_slice_unref_internal(value);
         called++;
         return absl::OkStatus();
       });
@@ -124,9 +124,10 @@ TEST_P(FakeBinderTest, SendByteArray) {
   std::tie(sender, tx_receiver) = NewBinderPair(
       [&](transaction_code_t tx_code, const ReadableParcel* parcel) {
         EXPECT_EQ(tx_code, kTxCode);
-        std::string value;
+        grpc_slice value = grpc_empty_slice();
         EXPECT_TRUE(parcel->ReadByteArray(&value).ok());
-        EXPECT_EQ(value, kValue);
+        EXPECT_EQ(grpc_core::StringViewFromSlice(value), kValue);
+        grpc_slice_unref_internal(value);
         called++;
         return absl::OkStatus();
       });
@@ -157,13 +158,15 @@ TEST_P(FakeBinderTest, SendMultipleItems) {
         EXPECT_EQ(tx_code, kTxCode);
         EXPECT_TRUE(parcel->ReadInt32(&value_result).ok());
         EXPECT_EQ(value_result, kValue);
-        std::string byte_array_result;
+        grpc_slice byte_array_result = grpc_empty_slice();
         EXPECT_TRUE(parcel->ReadByteArray(&byte_array_result).ok());
-        EXPECT_EQ(byte_array_result, kByteArray);
-        char string_result[111];
-        memset(string_result, 0, sizeof(string_result));
-        EXPECT_TRUE(parcel->ReadString(string_result).ok());
-        EXPECT_STREQ(string_result, kString);
+        EXPECT_EQ(grpc_core::StringViewFromSlice(byte_array_result),
+                  kByteArray);
+        grpc_slice_unref_internal(byte_array_result);
+        grpc_slice string_result = grpc_empty_slice();
+        EXPECT_TRUE(parcel->ReadString(&string_result).ok());
+        EXPECT_EQ(grpc_core::StringViewFromSlice(string_result), kString);
+        grpc_slice_unref_internal(string_result);
         called++;
         return absl::OkStatus();
       });

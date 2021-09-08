@@ -36,8 +36,7 @@ std::pair<StreamIdentifier, int> Decode(const T& /*data*/) {
   return {};
 }
 
-template <>
-std::pair<StreamIdentifier, int> Decode<std::string>(const std::string& data) {
+std::pair<StreamIdentifier, int> DecodeString(const std::string& data) {
   assert(data.size() == sizeof(StreamIdentifier) + sizeof(int));
   StreamIdentifier id{};
   int seq_num{};
@@ -47,10 +46,16 @@ std::pair<StreamIdentifier, int> Decode<std::string>(const std::string& data) {
 }
 
 template <>
+std::pair<StreamIdentifier, int> Decode<SliceBuffer>(const SliceBuffer& data) {
+  std::string encoding = std::string(grpc_core::StringViewFromSlice(data[0]));
+  return DecodeString(encoding);
+}
+
+template <>
 std::pair<StreamIdentifier, int> Decode<Metadata>(const Metadata& data) {
   assert(data.size() == 1);
   std::string encoding = std::string(data[0].ViewKey());
-  return Decode(encoding);
+  return DecodeString(encoding);
 }
 
 template <typename T>
@@ -104,7 +109,7 @@ class MockCallback {
 };
 
 using MockInitialMetadataCallback = MockCallback<absl::StatusOr<Metadata>>;
-using MockMessageCallback = MockCallback<absl::StatusOr<std::string>>;
+using MockMessageCallback = MockCallback<absl::StatusOr<SliceBuffer>>;
 using MockTrailingMetadataCallback =
     MockCallback<absl::StatusOr<Metadata>, int>;
 
@@ -132,7 +137,10 @@ class MockOpBatch {
     }
     if (flag_ & kFlagMessageData) {
       message_callback_->ExpectCallbackInvocation();
-      receiver.NotifyRecvMessage(id_, Encode<std::string>(id_, seq_num_));
+      grpc_slice slice =
+          grpc_slice_from_cpp_string(Encode<std::string>(id_, seq_num_));
+      SliceBuffer buffer = {slice};
+      receiver.NotifyRecvMessage(id_, buffer);
     }
     if (flag_ & kFlagSuffix) {
       trailing_metadata_callback_->ExpectCallbackInvocation();

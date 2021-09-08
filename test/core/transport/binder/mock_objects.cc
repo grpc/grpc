@@ -54,6 +54,18 @@ MockBinder::MockBinder() {
           });
 }
 
+MockTransportStreamReceiver::MockTransportStreamReceiver() {
+  ON_CALL(*this, NotifyRecvMessage)
+      .WillByDefault(
+          [&](StreamIdentifier /*id*/, absl::StatusOr<SliceBuffer> buffer) {
+            if (buffer.ok()) {
+              for (grpc_slice slice : *buffer) {
+                grpc_slice_unref_internal(slice);
+              }
+            }
+          });
+}
+
 MockWireWriter::MockWireWriter() {
   ON_CALL(*this, RpcCall).WillByDefault([&](Transaction tx) {
     for (grpc_slice slice : tx.GetMessageData()) {

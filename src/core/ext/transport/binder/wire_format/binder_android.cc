@@ -279,32 +279,28 @@ absl::Status ReadableParcelAndroid::ReadBinder(
 namespace {
 
 bool byte_array_allocator(void* arrayData, int32_t length, int8_t** outBuffer) {
-  std::string tmp;
-  tmp.resize(length);
-  *reinterpret_cast<std::string*>(arrayData) = tmp;
-  *outBuffer = reinterpret_cast<int8_t*>(
-      &(*reinterpret_cast<std::string*>(arrayData))[0]);
+  grpc_slice* slice = static_cast<grpc_slice*>(arrayData);
+  *slice = GRPC_SLICE_MALLOC(length);
+  *outBuffer = reinterpret_cast<int8_t*>(GRPC_SLICE_START_PTR(*slice));
   return true;
 }
 
 bool string_allocator(void* stringData, int32_t length, char** outBuffer) {
-  if (length > 0) {
-    // TODO(mingcl): Don't fix the length of the string
-    GPR_ASSERT(length < 100);  // call should preallocate 100 bytes
-    *outBuffer = reinterpret_cast<char*>(stringData);
-  }
+  grpc_slice* slice = static_cast<grpc_slice*>(stringData);
+  *slice = GRPC_SLICE_MALLOC(length - 1);
+  *outBuffer = reinterpret_cast<char*>(GRPC_SLICE_START_PTR(*slice));
   return true;
 }
 
 }  // namespace
 
-absl::Status ReadableParcelAndroid::ReadByteArray(std::string* data) const {
+absl::Status ReadableParcelAndroid::ReadByteArray(grpc_slice* data) const {
   return AParcel_readByteArray(parcel_, data, byte_array_allocator) == STATUS_OK
              ? absl::OkStatus()
              : absl::InternalError("AParcel_readByteArray failed");
 }
 
-absl::Status ReadableParcelAndroid::ReadString(char data[111]) const {
+absl::Status ReadableParcelAndroid::ReadString(grpc_slice* data) const {
   return AParcel_readString(parcel_, data, string_allocator) == STATUS_OK
              ? absl::OkStatus()
              : absl::InternalError("AParcel_readString failed");

@@ -52,15 +52,13 @@ absl::StatusOr<Metadata> parse_metadata(const ReadableParcel* reader) {
     int count;
     RETURN_IF_ERROR(reader->ReadInt32(&count));
     gpr_log(GPR_INFO, "count = %d", count);
-    std::string key{};
+    grpc_slice key = grpc_empty_slice();
     if (count > 0) RETURN_IF_ERROR(reader->ReadByteArray(&key));
-    gpr_log(GPR_INFO, "key = %s", key.c_str());
     RETURN_IF_ERROR(reader->ReadInt32(&count));
     gpr_log(GPR_INFO, "count = %d", count);
-    std::string value{};
+    grpc_slice value = grpc_empty_slice();
     if (count > 0) RETURN_IF_ERROR(reader->ReadByteArray(&value));
-    gpr_log(GPR_INFO, "value = %s", value.c_str());
-    ret.emplace_back(std::move(key), std::move(value));
+    ret.emplace_back(key, value);
   }
   return ret;
 }
@@ -318,19 +316,21 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
   expectation++;
   gpr_log(GPR_INFO, "sequence number = %d", seq_num);
   if (flags & kFlagPrefix) {
-    char method_ref[111];
-    memset(method_ref, 0, sizeof(method_ref));
+    grpc_slice method_ref = grpc_empty_slice();
     if (!is_client_) {
-      RETURN_IF_ERROR(parcel->ReadString(method_ref));
+      RETURN_IF_ERROR(parcel->ReadString(&method_ref));
     }
     absl::StatusOr<Metadata> initial_metadata_or_error = parse_metadata(parcel);
     if (!initial_metadata_or_error.ok()) {
       return initial_metadata_or_error.status();
     }
     if (!is_client_) {
-      initial_metadata_or_error->emplace_back(":path",
-                                              std::string("/") + method_ref);
+      // Prepending the '/' character to the method name.
+      initial_metadata_or_error->emplace_back(
+          ":path", std::string("/") +
+                       std::string(grpc_core::StringViewFromSlice(method_ref)));
     }
+    grpc_slice_unref_internal(method_ref);
     transport_stream_receiver_->NotifyRecvInitialMetadata(
         code, *initial_metadata_or_error);
     *cancellation_flags &= ~kFlagPrefix;
@@ -339,26 +339,23 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
     int count;
     RETURN_IF_ERROR(parcel->ReadInt32(&count));
     gpr_log(GPR_INFO, "count = %d", count);
-    std::string msg_data{};
+    grpc_slice msg_data = grpc_empty_slice();
     if (count > 0) {
       RETURN_IF_ERROR(parcel->ReadByteArray(&msg_data));
     }
-    gpr_log(GPR_INFO, "msg_data = %s", msg_data.c_str());
-    message_buffer_[code] += msg_data;
+    message_buffer_[code].push_back(msg_data);
     if ((flags & kFlagMessageDataIsPartial) == 0) {
-      std::string s = std::move(message_buffer_[code]);
+      SliceBuffer buffer = std::move(message_buffer_[code]);
       message_buffer_.erase(code);
-      transport_stream_receiver_->NotifyRecvMessage(code, std::move(s));
+      transport_stream_receiver_->NotifyRecvMessage(code, std::move(buffer));
     }
     *cancellation_flags &= ~kFlagMessageData;
   }
   if (flags & kFlagSuffix) {
     if (flags & kFlagStatusDescription) {
       // FLAG_STATUS_DESCRIPTION set
-      char desc[111];
-      memset(desc, 0, sizeof(desc));
-      RETURN_IF_ERROR(parcel->ReadString(desc));
-      gpr_log(GPR_INFO, "description = %s", desc);
+      grpc_slice desc = grpc_empty_slice();
+      RETURN_IF_ERROR(parcel->ReadString(&desc));
     }
     Metadata trailing_metadata;
     if (is_client_) {

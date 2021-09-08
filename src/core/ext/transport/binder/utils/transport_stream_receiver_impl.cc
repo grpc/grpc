@@ -59,7 +59,7 @@ void TransportStreamReceiverImpl::RegisterRecvInitialMetadata(
 void TransportStreamReceiverImpl::RegisterRecvMessage(
     StreamIdentifier id, MessageDataCallbackType cb) {
   gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
-  absl::StatusOr<std::string> message{};
+  absl::StatusOr<SliceBuffer> message{};
   {
     grpc_core::MutexLock l(&m_);
     GPR_ASSERT(message_cbs_.count(id) == 0);
@@ -136,7 +136,7 @@ void TransportStreamReceiverImpl::NotifyRecvInitialMetadata(
 }
 
 void TransportStreamReceiverImpl::NotifyRecvMessage(
-    StreamIdentifier id, absl::StatusOr<std::string> message) {
+    StreamIdentifier id, absl::StatusOr<SliceBuffer> message) {
   gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
   MessageDataCallbackType cb;
   {
