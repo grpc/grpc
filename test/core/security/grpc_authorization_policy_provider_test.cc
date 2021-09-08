@@ -63,7 +63,7 @@ TEST(AuthorizationPolicyProviderTest,
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
-      /*on_error_cb=*/nullptr);
+      /*cb=*/nullptr);
   ASSERT_TRUE(provider.ok());
   auto engines = (*provider)->engines();
   auto* allow_engine =
