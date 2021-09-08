@@ -84,7 +84,7 @@ TEST(AuthorizationPolicyProviderTest,
       testing::GetFileContents(INVALID_POLICY_PATH));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
-      /*on_error_cb=*/nullptr);
+      /*cb=*/nullptr);
   EXPECT_EQ(provider.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(provider.status().message(), "\"name\" field is not present.");
 }
@@ -94,7 +94,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
-      /*on_error_cb=*/nullptr);
+      /*cb=*/nullptr);
   ASSERT_TRUE(provider.ok());
   auto engines = (*provider)->engines();
   auto* allow_engine =
