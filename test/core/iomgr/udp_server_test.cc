@@ -21,8 +21,6 @@
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_UDP_SERVER
 
-#include "src/core/lib/iomgr/udp_server.h"
-
 #include <netinet/in.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -43,6 +41,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/socket_factory_posix.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/udp_server.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", #x)

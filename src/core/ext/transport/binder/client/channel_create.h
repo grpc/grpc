@@ -19,13 +19,15 @@
 
 #ifdef GPR_ANDROID
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/port_platform.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/support/channel_arguments.h>
+
 #include <jni.h>
 
 #include "absl/strings/string_view.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/support/channel_arguments.h>
 
 namespace grpc {
 namespace experimental {

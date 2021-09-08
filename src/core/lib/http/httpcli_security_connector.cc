@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/http/httpcli.h"
-
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
@@ -33,6 +31,7 @@
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"

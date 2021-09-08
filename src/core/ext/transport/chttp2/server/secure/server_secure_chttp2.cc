@@ -27,7 +27,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
-
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"

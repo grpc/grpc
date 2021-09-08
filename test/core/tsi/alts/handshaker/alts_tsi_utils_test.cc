@@ -16,9 +16,10 @@
  *
  */
 
+#include "src/core/tsi/alts/handshaker/alts_tsi_utils.h"
+
 #include "upb/upb.hpp"
 
-#include "src/core/tsi/alts/handshaker/alts_tsi_utils.h"
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
 #include "test/core/util/test_config.h"
 

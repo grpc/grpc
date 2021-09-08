@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpcpp/security/authorization_policy_provider.h>
 #include <gtest/gtest.h>
 
-#include "src/core/lib/gpr/tmpfile.h"
+#include <grpcpp/security/authorization_policy_provider.h>
+
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 

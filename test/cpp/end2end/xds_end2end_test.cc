@@ -3417,16 +3417,14 @@ TEST_P(GlobalXdsClientTest, MultipleBadResources) {
         const auto response_state =
             balancers_[0]->ads_service()->lds_response_state();
         return response_state.state != AdsServiceImpl::ResponseState::NACKED ||
-               !absl::StrContains(
-                   response_state.error_message,
-                   absl::StrCat(
-                       kServerName,
-                       ": Listener has neither address nor ApiListener")) ||
-               !absl::StrContains(
-                   response_state.error_message,
-                   absl::StrCat(
-                       kServerName2,
-                       ": Listener has neither address nor ApiListener"));
+               ::testing::Matches(::testing::ContainsRegex(absl::StrCat(
+                   kServerName,
+                   ": validation error.*"
+                   "Listener has neither address nor ApiListener.*",
+                   kServerName2,
+                   ": validation error.*"
+                   "Listener has neither address nor ApiListener")))(
+                   response_state.error_message);
       }));
   ASSERT_FALSE(timed_out);
 }
@@ -7255,12 +7253,14 @@ TEST_P(CdsTest, MultipleBadResources) {
   const auto response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
-              ::testing::AllOf(
-                  ::testing::HasSubstr(absl::StrCat(
-                      kDefaultClusterName, ": DiscoveryType is not valid.")),
-                  ::testing::HasSubstr(absl::StrCat(
-                      kClusterName2, ": DiscoveryType is not valid."))));
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::ContainsRegex(absl::StrCat(kDefaultClusterName,
+                                            ": validation error.*"
+                                            "DiscoveryType is not valid.*",
+                                            kClusterName2,
+                                            ": validation error.*"
+                                            "DiscoveryType is not valid")));
 }
 
 // Tests that CDS client should send a NACK if the eds_config in CDS response
@@ -12904,7 +12904,6 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
   CheckRpcSendOk();
   for (int o = 0; o < kFetchConfigRetries; o++) {
     auto csds_response = FetchCsdsResponse();
-
     // Check if error state is propagated
     bool ok = ::testing::Value(
         csds_response.config(0).xds_config(),

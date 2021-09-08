@@ -37,7 +37,6 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/slice/slice_internal.h"
-
 #include "test/core/util/port.h"
 #include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"

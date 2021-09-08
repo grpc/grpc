@@ -14,8 +14,9 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/promise/activity.h"
+
+#include "src/core/lib/gprpp/atomic_utils.h"
 
 namespace grpc_core {
 

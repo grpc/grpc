@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SUPPORT_STATUS_H
 #define GRPCPP_SUPPORT_STATUS_H
 
-#include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/impl/codegen/status.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SUPPORT_STATUS_H

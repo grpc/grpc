@@ -21,8 +21,6 @@
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#include "src/core/lib/iomgr/tcp_posix.h"
-
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -39,6 +37,7 @@
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/sockaddr_posix.h"
+#include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/util/resource_user_util.h"

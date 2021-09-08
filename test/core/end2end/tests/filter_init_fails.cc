@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -27,9 +25,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
 enum { TIMEOUT = 200000 };
 

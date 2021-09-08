@@ -14,13 +14,16 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <grpc/grpc.h>
+#include "src/core/ext/transport/binder/server/binder_server.h"
+
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "src/core/ext/transport/binder/server/binder_server.h"
+
+#include <grpc/grpc.h>
+
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

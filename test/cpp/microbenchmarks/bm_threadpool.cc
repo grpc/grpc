@@ -16,11 +16,12 @@
  *
  */
 
-#include <benchmark/benchmark.h>
-#include <grpc/grpc.h>
-
 #include <condition_variable>
 #include <mutex>
+
+#include <benchmark/benchmark.h>
+
+#include <grpc/grpc.h>
 
 #include "src/core/lib/iomgr/executor/threadpool.h"
 #include "test/core/util/test_config.h"

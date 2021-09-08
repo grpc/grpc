@@ -19,14 +19,16 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_H
 #define GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_H
 
+// IWYU pragma: private, include <grpcpp/server_context.h>
+
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <atomic>
 #include <cassert>
 #include <map>
 #include <memory>
 #include <type_traits>
 #include <vector>
-
-#include <grpc/impl/codegen/port_platform.h>
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpcpp/impl/codegen/call.h>

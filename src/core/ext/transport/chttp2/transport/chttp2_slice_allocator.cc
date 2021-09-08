@@ -13,14 +13,15 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include <grpc/event_engine/slice_allocator.h>
+#include "src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h"
 
 #include <functional>
 
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 
-#include "src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h"
+#include <grpc/event_engine/slice_allocator.h>
+
 #include "src/core/lib/iomgr/resource_quota.h"
 
 namespace grpc_event_engine {

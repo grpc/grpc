@@ -15,13 +15,12 @@
  *
  */
 
-#include <grpcpp/completion_queue.h>
-
 #include <memory>
 
 #include <grpc/grpc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/time.h>
 

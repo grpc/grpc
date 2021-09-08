@@ -13,9 +13,12 @@
 // limitations under the License.
 
 #include "src/core/lib/gprpp/table.h"
-#include <gtest/gtest.h>
+
 #include <string>
 #include <tuple>
+
+#include <gtest/gtest.h>
+
 #include "absl/types/optional.h"
 
 namespace grpc_core {

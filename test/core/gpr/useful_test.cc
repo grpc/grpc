@@ -16,10 +16,12 @@
  *
  */
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/useful.h"
+
+#include <grpc/support/log.h>
+
 #include "test/core/util/test_config.h"
 
 int main(int argc, char** argv) {

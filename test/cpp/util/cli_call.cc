@@ -18,16 +18,16 @@
 
 #include "test/cpp/util/cli_call.h"
 
+#include <cmath>
+#include <iostream>
+#include <utility>
+
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/support/byte_buffer.h>
-
-#include <cmath>
-#include <iostream>
-#include <utility>
 
 namespace grpc {
 namespace testing {

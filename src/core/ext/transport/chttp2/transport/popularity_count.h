@@ -17,8 +17,6 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <grpc/impl/codegen/port_platform.h>
-
 namespace grpc_core {
 
 // filter tables for elems: this tables provides an approximate

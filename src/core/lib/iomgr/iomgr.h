@@ -21,10 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdlib.h>
+
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/port.h"
-
-#include <stdlib.h>
 
 /** Initializes the iomgr. */
 void grpc_iomgr_init();

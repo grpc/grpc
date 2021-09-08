@@ -21,10 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <vector>
+
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
-
-#include <vector>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"

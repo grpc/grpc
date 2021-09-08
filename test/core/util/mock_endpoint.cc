@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/iomgr/sockaddr.h"
+#include "test/core/util/mock_endpoint.h"
 
 #include <inttypes.h>
 
@@ -24,10 +24,9 @@
 
 #include "absl/strings/str_format.h"
 
-#include "test/core/util/mock_endpoint.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+
 #include "src/core/lib/iomgr/sockaddr.h"
 
 typedef struct mock_endpoint {

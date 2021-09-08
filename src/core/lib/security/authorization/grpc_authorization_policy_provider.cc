@@ -14,12 +14,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
+
 #include <grpc/grpc_security.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
-#include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
