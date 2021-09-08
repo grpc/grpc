@@ -86,8 +86,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void test_allow_authorized_request(
-    grpc_authorization_policy_provider* provider, grpc_end2end_test_fixture f) {
+static void test_allow_authorized_request(grpc_end2end_test_fixture f) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -192,8 +191,7 @@ static void test_allow_authorized_request(
   cq_verifier_destroy(cqv);
 }
 
-static void test_deny_unauthorized_request(
-    grpc_authorization_policy_provider* provider, grpc_end2end_test_fixture f) {
+static void test_deny_unauthorized_request(grpc_end2end_test_fixture f) {
   grpc_call* c;
   grpc_op ops[6];
   grpc_op* op;
@@ -291,7 +289,7 @@ static void test_static_init_allow_authorized_request(
       begin_test(config, "test_static_init_allow_authorized_request", nullptr,
                  &server_args);
   grpc_authorization_policy_provider_release(provider);
-  test_allow_authorized_request(provider, f);
+  test_allow_authorized_request(f);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -339,7 +337,7 @@ static void test_static_init_deny_unauthorized_request(
       begin_test(config, "test_static_init_deny_unauthorized_request", nullptr,
                  &server_args);
   grpc_authorization_policy_provider_release(provider);
-  test_deny_unauthorized_request(provider, f);
+  test_deny_unauthorized_request(f);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -377,7 +375,7 @@ static void test_static_init_deny_request_no_match_in_policy(
       begin_test(config, "test_static_init_deny_request_no_match_in_policy",
                  nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
-  test_deny_unauthorized_request(provider, f);
+  test_deny_unauthorized_request(f);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -416,7 +414,7 @@ static void test_file_watcher_init_allow_authorized_request(
       begin_test(config, "test_file_watcher_init_allow_authorized_request",
                  nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
-  test_allow_authorized_request(provider, f);
+  test_allow_authorized_request(f);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -465,7 +463,7 @@ static void test_file_watcher_init_deny_unauthorized_request(
       begin_test(config, "test_file_watcher_init_deny_unauthorized_request",
                  nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
-  test_deny_unauthorized_request(provider, f);
+  test_deny_unauthorized_request(f);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -504,7 +502,7 @@ static void test_file_watcher_init_deny_request_no_match_in_policy(
       config, "test_file_watcher_init_deny_request_no_match_in_policy", nullptr,
       &server_args);
   grpc_authorization_policy_provider_release(provider);
-  test_deny_unauthorized_request(provider, f);
+  test_deny_unauthorized_request(f);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -542,7 +540,7 @@ static void test_file_watcher_valid_policy_reload(
   grpc_end2end_test_fixture f = begin_test(
       config, "test_file_watcher_valid_policy_reload", nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
-  test_allow_authorized_request(provider, f);
+  test_allow_authorized_request(f);
   authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -571,7 +569,7 @@ static void test_file_watcher_valid_policy_reload(
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
-  test_deny_unauthorized_request(provider, f);
+  test_deny_unauthorized_request(f);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -610,13 +608,13 @@ static void test_file_watcher_invalid_policy_skip_reload(
       begin_test(config, "test_file_watcher_invalid_policy_skip_reload",
                  nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
-  test_allow_authorized_request(provider, f);
+  test_allow_authorized_request(f);
   authz_policy = "{}";
   tmp_policy.RewriteFile(authz_policy);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
-  test_allow_authorized_request(provider, f);
+  test_allow_authorized_request(f);
   end_test(&f);
   config.tear_down_data(&f);
 }
