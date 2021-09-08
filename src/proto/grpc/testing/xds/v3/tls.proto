@@ -238,6 +238,11 @@ message CommonTlsContext {
     CertificateProviderInstance validation_context_certificate_provider_instance = 4;
   }
 
+  message TlsParameters {}
+
+  // TLS protocol versions, cipher suites etc.
+  TlsParameters tls_params = 1;
+
   message TlsCertificate {}
 
   // :ref:`Multiple TLS certificates <arch_overview_ssl_cert_select>` can be associated with the
@@ -296,4 +301,8 @@ message CommonTlsContext {
     // CertificateValidationContext, and logical OR is applied to boolean fields.
     CombinedCertificateValidationContext combined_validation_context = 8;
   }
+
+  // Custom TLS handshaker. If empty, defaults to native TLS handshaking
+  // behavior.
+  config.core.v3.TypedExtensionConfig custom_handshaker = 13;
 }

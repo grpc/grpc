@@ -8527,6 +8527,53 @@ TEST_P(XdsSecurityTest, NacksValidationContextSdsSecretConfig) {
       ::testing::HasSubstr("validation_context_sds_secret_config unsupported"));
 }
 
+TEST_P(XdsSecurityTest, NacksTlsParams) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()->mutable_tls_params();
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("tls_params unsupported"));
+}
+
+TEST_P(XdsSecurityTest, NacksCustomHandshaker) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_custom_handshaker();
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("custom_handshaker unsupported"));
+}
+
 TEST_P(XdsSecurityTest, TestTlsConfigurationInCombinedValidationContext) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_}}};
@@ -9534,8 +9581,9 @@ TEST_P(XdsServerSecurityTest, NacksMatchSubjectAltNames) {
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr("match_subject_alt_names not supported on servers"));
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("match_subject_alt_names not supported on servers"));
 }
 
 TEST_P(XdsServerSecurityTest, UnknownIdentityCertificateProvider) {
@@ -9566,7 +9614,8 @@ TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
                   "Unrecognized certificate provider instance name: unknown"));
 }
 
-TEST_P(XdsServerSecurityTest, TestTlsNewSecurityFields) {
+TEST_P(XdsServerSecurityTest,
+       TestDeprecateTlsCertificateCertificateProviderInstanceField) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
@@ -9586,7 +9635,7 @@ TEST_P(XdsServerSecurityTest, TestTlsNewSecurityFields) {
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
   downstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_provider_instance()
+      ->mutable_tls_certificate_certificate_provider_instance()
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
   balancers_[0]->ads_service()->SetLdsResource(listener);

@@ -2164,6 +2164,16 @@ grpc_error_handle CommonTlsContextParse(
       }
     }
   }
+  if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_tls_params(
+          common_tls_context_proto)) {
+    errors.push_back(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("tls_params unsupported"));
+  }
+  if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_custom_handshaker(
+          common_tls_context_proto)) {
+    errors.push_back(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("custom_handshaker unsupported"));
+  }
   return GRPC_ERROR_CREATE_FROM_VECTOR("Error parsing CommonTlsContext",
                                        &errors);
 }
