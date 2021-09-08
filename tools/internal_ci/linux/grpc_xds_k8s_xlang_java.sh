@@ -50,6 +50,7 @@ run_test() {
   local clang="${3:?Usage: run_test tag server_lang client_lang}"
   local server_image_name="${IMAGE_REPO}/${slang}-server:${tag}"
   local client_image_name="${IMAGE_REPO}/${clang}-client:${tag}"
+  # TODO(sanjaypujare): skip test if image not found (by using gcloud_gcr_list_image_tags)
   set -x
   python -m "tests.security_test" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
@@ -102,7 +103,6 @@ main() {
   do
     for CLANG in ${CLIENT_LANG}
     do
-    local client_image_name="${IMAGE_REPO}/${CLANG}-client:${TAG}"
     for SLANG in ${SERVER_LANG}
     do
       if [ "${CLANG}" != "${SLANG}" ]; then
@@ -110,11 +110,11 @@ main() {
       fi
     done
     echo "Failed test suites: ${failed_tests}"
-    if (( failed_tests > 0 )); then
-      exit 1
-    fi
     done
   done
+  if (( failed_tests > 0 )); then
+    exit 1
+  fi
 }
 
 main "$@"
