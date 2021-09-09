@@ -158,8 +158,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/rls/rls.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/rls/rls.h )
-  s.files += %w( src/core/ext/filters/client_channel/lb_policy/rls/rls_channel.h )
-  s.files += %w( src/core/ext/filters/client_channel/lb_policy/rls/rls_channel_secure.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/subchannel_list.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc )

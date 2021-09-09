@@ -356,7 +356,6 @@ grpc_cc_library(
         "grpc_base_c",
         "grpc_common",
         "grpc_lb_policy_grpclb",
-        "grpc_lb_policy_rls",
         "grpc_trace",
     ],
 )
@@ -395,7 +394,7 @@ grpc_cc_library(
         "grpc_base_c",
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
-        "grpc_lb_policy_rls_secure",
+        "grpc_lb_policy_rls",
         "grpc_secure",
         "grpc_trace",
         "grpc_transport_chttp2_client_secure",
@@ -1967,41 +1966,9 @@ grpc_cc_library(
     name = "grpc_lb_policy_rls",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/rls/rls.cc",
-        "src/core/ext/filters/client_channel/lb_policy/rls/rls_channel.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/rls/rls.h",
-        "src/core/ext/filters/client_channel/lb_policy/rls/rls_channel.h",
-    ],
-    external_deps = [
-        "absl/strings",
-        "absl/memory",
-        "absl/hash",
-        "upb_lib",
-    ],
-    language = "c++",
-    deps = [
-        "gpr_base",
-        "gpr_codegen",
-        "grpc_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_codegen",
-        "orphanable",
-        "ref_counted",
-        "rls_upb",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_lb_policy_rls_secure",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/rls/rls.cc",
-        "src/core/ext/filters/client_channel/lb_policy/rls/rls_channel_secure.cc",
-    ],
-    hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/rls/rls.h",
-        "src/core/ext/filters/client_channel/lb_policy/rls/rls_channel.h",
     ],
     external_deps = [
         "absl/container:inlined_vector",

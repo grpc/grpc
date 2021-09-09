@@ -457,7 +457,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/rls/rls.h
-  - src/core/ext/filters/client_channel/lb_policy/rls/rls_channel.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h
@@ -985,7 +984,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   - src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
-  - src/core/ext/filters/client_channel/lb_policy/rls/rls_channel_secure.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
@@ -1702,8 +1700,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
-  - src/core/ext/filters/client_channel/lb_policy/rls/rls.h
-  - src/core/ext/filters/client_channel/lb_policy/rls/rls_channel.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy_factory.h
   - src/core/ext/filters/client_channel/lb_policy_registry.h
@@ -1774,7 +1770,6 @@ libs:
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
-  - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
   - src/core/ext/upb-generated/validate/validate.upb.h
   - src/core/lib/address_utils/parse_address.h
@@ -1960,8 +1955,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
-  - src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
-  - src/core/ext/filters/client_channel/lb_policy/rls/rls_channel.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
@@ -2043,7 +2036,6 @@ libs:
   - src/core/ext/transport/inproc/inproc_transport.cc
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
-  - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
   - src/core/lib/address_utils/parse_address.cc
@@ -2223,7 +2215,6 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
   - absl/functional:bind_front
-  - absl/hash:hash
   - absl/status:statusor
   - absl/types:variant
   - gpr
