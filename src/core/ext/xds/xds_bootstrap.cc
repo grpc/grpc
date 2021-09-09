@@ -132,16 +132,14 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
           std::move(*it->second.mutable_string_value());
     }
   }
-  if (XdsSecurityEnabled()) {
-    it = json.mutable_object()->find("certificate_providers");
-    if (it != json.mutable_object()->end()) {
-      if (it->second.type() != Json::Type::OBJECT) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "\"certificate_providers\" field is not an object"));
-      } else {
-        grpc_error_handle parse_error = ParseCertificateProviders(&it->second);
-        if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
-      }
+  it = json.mutable_object()->find("certificate_providers");
+  if (it != json.mutable_object()->end()) {
+    if (it->second.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "\"certificate_providers\" field is not an object"));
+    } else {
+      grpc_error_handle parse_error = ParseCertificateProviders(&it->second);
+      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing xds bootstrap file",
