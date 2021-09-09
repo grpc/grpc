@@ -56,7 +56,7 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
-using grpc::experimental::XdsServerBuilder;
+using grpc::XdsServerBuilder;
 using grpc::testing::Empty;
 using grpc::testing::HealthCheckServiceImpl;
 using grpc::testing::SimpleRequest;
@@ -129,7 +129,7 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
   if (secure_mode) {
-    XdsServerBuilder xds_builder;
+    grpc::XdsServerBuilder xds_builder;
     xds_builder.RegisterService(&service);
     xds_builder.AddListeningPort(absl::StrCat("0.0.0.0:", port),
                                  grpc::experimental::XdsServerCredentials(
