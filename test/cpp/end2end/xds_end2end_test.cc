@@ -1890,7 +1890,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         GetParam().use_fake_resolver() ? "fake" : "xds", ":///", server_name);
     std::shared_ptr<ChannelCredentials> channel_creds =
         GetParam().use_xds_credentials()
-            ? experimental::XdsCredentials(CreateTlsFallbackCredentials())
+            ? XdsCredentials(CreateTlsFallbackCredentials())
             : std::make_shared<SecureChannelCredentials>(
                   grpc_fake_transport_security_credentials_create());
     return ::grpc::CreateCustomChannel(uri, channel_creds, args);
@@ -2648,8 +2648,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       if (GetParam().use_xds_credentials()) {
         if (use_xds_enabled_server()) {
           // We are testing server's use of XdsServerCredentials
-          return experimental::XdsServerCredentials(
-              InsecureServerCredentials());
+          return XdsServerCredentials(InsecureServerCredentials());
         } else {
           // We are testing client's use of XdsCredentials
           std::string root_cert = ReadFile(kCaCertPath);
