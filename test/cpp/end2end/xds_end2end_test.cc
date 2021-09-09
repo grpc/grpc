@@ -8574,6 +8574,54 @@ TEST_P(XdsSecurityTest, NacksCustomHandshaker) {
               ::testing::HasSubstr("custom_handshaker unsupported"));
 }
 
+TEST_P(XdsSecurityTest, NacksTlsCertificates) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()->add_tls_certificates();
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("tls_certificates unsupported"));
+}
+
+TEST_P(XdsSecurityTest, NacksTlsCertificateSdsSecretConfigs) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()
+      ->add_tls_certificate_sds_secret_configs();
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("tls_certificate_sds_secret_configs unsupported"));
+}
+
 TEST_P(XdsSecurityTest, TestTlsConfigurationInCombinedValidationContext) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_}}};
@@ -9641,70 +9689,6 @@ TEST_P(XdsServerSecurityTest,
   balancers_[0]->ads_service()->SetLdsResource(listener);
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
-}
-
-TEST_P(XdsServerSecurityTest, NacksFieldTlsCertificates) {
-  FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_}}};
-  g_fake1_cert_data_map = &fake1_cert_map;
-  Listener listener;
-  listener.set_name(absl::StrCat(
-      ipv6_only_ ? "grpc/server?xds.resource.listening_address=[::1]:"
-                 : "grpc/server?xds.resource.listening_address=127.0.0.1:",
-      backends_[0]->port()));
-  listener.mutable_address()->mutable_socket_address()->set_address(
-      ipv6_only_ ? "[::1]" : "127.0.0.1");
-  listener.mutable_address()->mutable_socket_address()->set_port_value(
-      backends_[0]->port());
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      HttpConnectionManager());
-  auto* transport_socket = filter_chain->mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  DownstreamTlsContext downstream_tls_context;
-  downstream_tls_context.mutable_common_tls_context()->add_tls_certificates();
-  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
-      << "timed out waiting for NACK";
-  const auto response_state =
-      balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr("tls_certificates unsupported"));
-}
-
-TEST_P(XdsServerSecurityTest, NacksFieldTlsCertificateSdsSecretConfigs) {
-  FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_}}};
-  g_fake1_cert_data_map = &fake1_cert_map;
-  Listener listener;
-  listener.set_name(absl::StrCat(
-      ipv6_only_ ? "grpc/server?xds.resource.listening_address=[::1]:"
-                 : "grpc/server?xds.resource.listening_address=127.0.0.1:",
-      backends_[0]->port()));
-  listener.mutable_address()->mutable_socket_address()->set_address(
-      ipv6_only_ ? "[::1]" : "127.0.0.1");
-  listener.mutable_address()->mutable_socket_address()->set_port_value(
-      backends_[0]->port());
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      HttpConnectionManager());
-  auto* transport_socket = filter_chain->mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  DownstreamTlsContext downstream_tls_context;
-  downstream_tls_context.mutable_common_tls_context()
-      ->add_tls_certificate_sds_secret_configs();
-  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
-      << "timed out waiting for NACK";
-  const auto response_state =
-      balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(
-      response_state.error_message,
-      ::testing::HasSubstr("tls_certificate_sds_secret_configs unsupported"));
 }
 
 TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {
