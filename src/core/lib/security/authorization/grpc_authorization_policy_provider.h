@@ -59,24 +59,20 @@ class StaticDataAuthorizationPolicyProvider
 // load file contents in specified path, and upon modification update the engine
 // instances with new policy configuration. During reload if the file contents
 // are invalid or there are I/O errors, we will skip that particular update and
-// return the error status back to user via callback. The authorization
-// decisions will be made using the latest valid policy.
+// log error status. The authorization decisions will be made using the latest
+// valid policy.
 class FileWatcherAuthorizationPolicyProvider
     : public grpc_authorization_policy_provider {
  public:
   static absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
-  Create(
-      absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
-      std::function<void(grpc_status_code code, const char* error_details)> cb);
+  Create(absl::string_view authz_policy_path,
+         unsigned int refresh_interval_sec);
 
   // Use factory method "Create" to create an instance of
   // FileWatcherAuthorizationPolicyProvider.
-  FileWatcherAuthorizationPolicyProvider(
-      absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
-      std::function<void(grpc_status_code code, const char* error_details)> cb,
-      absl::Status* status);
-
-  ~FileWatcherAuthorizationPolicyProvider() override;
+  FileWatcherAuthorizationPolicyProvider(absl::string_view authz_policy_path,
+                                         unsigned int refresh_interval_sec,
+                                         absl::Status* status);
 
   void Orphan() override;
 
@@ -92,15 +88,8 @@ class FileWatcherAuthorizationPolicyProvider
   std::string authz_policy_path_;
   unsigned int refresh_interval_sec_;
 
-  Thread* refresh_thread_ = nullptr;
+  std::unique_ptr<Thread> refresh_thread_;
   gpr_event shutdown_event_;
-
-  // Tracks reload failures. Useful to determine when provider recovers from
-  // failure.
-  bool reload_failed_ = false;
-  // Callback function to execute when we get an error during policy reload. The
-  // callback is also executed when we recover from error.
-  std::function<void(grpc_status_code code, const char* error_details)> cb_;
 
   grpc_core::Mutex mu_;
   // The latest valid policy.

@@ -403,8 +403,8 @@ static void test_file_watcher_init_allow_authorized_request(
   const char* error_details;
   grpc_authorization_policy_provider* provider =
       grpc_authorization_policy_provider_file_watcher_create(
-          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, /*cb=*/nullptr,
-          &code, &error_details);
+          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
+          &error_details);
   GPR_ASSERT(GRPC_STATUS_OK == code);
   grpc_arg args[] = {
       grpc_channel_arg_pointer_create(
@@ -454,8 +454,8 @@ static void test_file_watcher_init_deny_unauthorized_request(
   const char* error_details;
   grpc_authorization_policy_provider* provider =
       grpc_authorization_policy_provider_file_watcher_create(
-          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, /*cb=*/nullptr,
-          &code, &error_details);
+          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
+          &error_details);
   GPR_ASSERT(GRPC_STATUS_OK == code);
   grpc_arg args[] = {
       grpc_channel_arg_pointer_create(
@@ -495,8 +495,8 @@ static void test_file_watcher_init_deny_request_no_match_in_policy(
   const char* error_details;
   grpc_authorization_policy_provider* provider =
       grpc_authorization_policy_provider_file_watcher_create(
-          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, /*cb=*/nullptr,
-          &code, &error_details);
+          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
+          &error_details);
   GPR_ASSERT(GRPC_STATUS_OK == code);
   grpc_arg args[] = {
       grpc_channel_arg_pointer_create(
@@ -536,8 +536,8 @@ static void test_file_watcher_valid_policy_reload(
   const char* error_details;
   grpc_authorization_policy_provider* provider =
       grpc_authorization_policy_provider_file_watcher_create(
-          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, /*cb=*/nullptr,
-          &code, &error_details);
+          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
+          &error_details);
   GPR_ASSERT(GRPC_STATUS_OK == code);
   grpc_arg args[] = {
       grpc_channel_arg_pointer_create(
@@ -606,8 +606,8 @@ static void test_file_watcher_invalid_policy_skip_reload(
   const char* error_details;
   grpc_authorization_policy_provider* provider =
       grpc_authorization_policy_provider_file_watcher_create(
-          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, /*cb=*/nullptr,
-          &code, &error_details);
+          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
+          &error_details);
   GPR_ASSERT(GRPC_STATUS_OK == code);
   grpc_arg args[] = {
       grpc_channel_arg_pointer_create(
@@ -654,8 +654,8 @@ static void test_file_watcher_recovers_from_failure(
   const char* error_details;
   grpc_authorization_policy_provider* provider =
       grpc_authorization_policy_provider_file_watcher_create(
-          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, /*cb=*/nullptr,
-          &code, &error_details);
+          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
+          &error_details);
   GPR_ASSERT(GRPC_STATUS_OK == code);
   grpc_arg args[] = {
       grpc_channel_arg_pointer_create(

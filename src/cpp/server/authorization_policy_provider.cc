@@ -45,13 +45,12 @@ StaticDataAuthorizationPolicyProvider::
 std::shared_ptr<FileWatcherAuthorizationPolicyProvider>
 FileWatcherAuthorizationPolicyProvider::Create(
     const std::string& authz_policy_path, unsigned int refresh_interval_sec,
-    grpc_authorization_policy_provider_file_watcher_reload_status_cb cb,
     grpc::Status* status) {
   grpc_status_code code = GRPC_STATUS_OK;
   const char* error_details;
   grpc_authorization_policy_provider* provider =
       grpc_authorization_policy_provider_file_watcher_create(
-          authz_policy_path.c_str(), refresh_interval_sec, cb, &code,
+          authz_policy_path.c_str(), refresh_interval_sec, &code,
           &error_details);
   if (code != GRPC_STATUS_OK) {
     *status = grpc::Status(static_cast<grpc::StatusCode>(code), error_details);

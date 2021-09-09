@@ -83,7 +83,7 @@ class SdkAuthzEnd2EndTest : public ::testing::Test {
     grpc::Status status;
     auto provider =
         experimental::FileWatcherAuthorizationPolicyProvider::Create(
-            policy_path, refresh_interval_sec, /*cb=*/nullptr, &status);
+            policy_path, refresh_interval_sec, &status);
     EXPECT_TRUE(status.ok());
     return provider;
   }

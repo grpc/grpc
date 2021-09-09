@@ -52,8 +52,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherCreateReturnsProvider) {
       grpc_core::testing::GetFileContents(VALID_POLICY_PATH_1));
   grpc::Status status;
   auto provider = experimental::FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
-      /*cb=*/nullptr, &status);
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1, &status);
   ASSERT_NE(provider, nullptr);
   EXPECT_NE(provider->c_provider(), nullptr);
   EXPECT_TRUE(status.ok());
@@ -65,34 +64,10 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherCreateReturnsErrorStatus) {
       grpc_core::testing::GetFileContents(INVALID_POLICY_PATH));
   grpc::Status status;
   auto provider = experimental::FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
-      /*cb=*/nullptr, &status);
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1, &status);
   ASSERT_EQ(provider, nullptr);
   EXPECT_EQ(status.error_code(), grpc::StatusCode::INVALID_ARGUMENT);
   EXPECT_EQ(status.error_message(), "\"name\" field is not present.");
-}
-
-TEST(AuthorizationPolicyProviderTest,
-     FileWatcherCreateInvalidPolicyRefreshVerifyCallback) {
-  auto tmp_authz_policy = absl::make_unique<grpc_core::testing::TmpFile>(
-      grpc_core::testing::GetFileContents(VALID_POLICY_PATH_1));
-  grpc::Status status;
-  auto provider = experimental::FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
-      [](grpc_status_code status, const char* error_details) {
-        EXPECT_EQ(status, GRPC_STATUS_INVALID_ARGUMENT);
-        EXPECT_EQ(strcmp(error_details, "\"name\" field is not present."), 0);
-      },
-      &status);
-  ASSERT_NE(provider, nullptr);
-  EXPECT_NE(provider->c_provider(), nullptr);
-  EXPECT_TRUE(status.ok());
-  EXPECT_TRUE(status.error_message().empty());
-  tmp_authz_policy->RewriteFile(
-      grpc_core::testing::GetFileContents(INVALID_POLICY_PATH));
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
 }
 
 }  // namespace grpc

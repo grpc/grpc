@@ -70,24 +70,21 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 
 absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
 FileWatcherAuthorizationPolicyProvider::Create(
-    absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
-    std::function<void(grpc_status_code code, const char* error_details)> cb) {
+    absl::string_view authz_policy_path, unsigned int refresh_interval_sec) {
   GPR_ASSERT(!authz_policy_path.empty());
   GPR_ASSERT(refresh_interval_sec > 0);
   absl::Status status;
   auto provider = MakeRefCounted<FileWatcherAuthorizationPolicyProvider>(
-      authz_policy_path, refresh_interval_sec, std::move(cb), &status);
+      authz_policy_path, refresh_interval_sec, &status);
   if (!status.ok()) return status;
   return provider;
 }
 
 FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
     absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
-    std::function<void(grpc_status_code code, const char* error_details)> cb,
     absl::Status* status)
     : authz_policy_path_(std::string(authz_policy_path)),
-      refresh_interval_sec_(refresh_interval_sec),
-      cb_(std::move(cb)) {
+      refresh_interval_sec_(refresh_interval_sec) {
   gpr_event_init(&shutdown_event_);
   // Initial read is done synchronously.
   *status = ForceUpdate();
@@ -111,15 +108,9 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
                 "authorization policy reload status. code=%d error_details=%s",
                 status.code(), std::string(status.message()).c_str());
       }
-      if (provider->cb_ != nullptr &&
-          (!status.ok() || provider->reload_failed_)) {
-        provider->cb_(static_cast<grpc_status_code>(status.code()),
-                      std::string(status.message()).c_str());
-      }
-      provider->reload_failed_ = !status.ok();
     }
   };
-  refresh_thread_ = new grpc_core::Thread(
+  refresh_thread_ = absl::make_unique<grpc_core::Thread>(
       "FileWatcherAuthorizationPolicyProvider_refreshing_thread", thread_lambda,
       WeakRef().release());
   refresh_thread_->Start();
@@ -153,11 +144,6 @@ void FileWatcherAuthorizationPolicyProvider::Orphan() {
   }
 }
 
-FileWatcherAuthorizationPolicyProvider::
-    ~FileWatcherAuthorizationPolicyProvider() {
-  delete refresh_thread_;
-}
-
 }  // namespace grpc_core
 
 // Wrapper APIs declared in grpc_security.h
@@ -181,11 +167,10 @@ grpc_authorization_policy_provider_static_data_create(
 grpc_authorization_policy_provider*
 grpc_authorization_policy_provider_file_watcher_create(
     const char* authz_policy_path, unsigned int refresh_interval_sec,
-    grpc_authorization_policy_provider_file_watcher_reload_status_cb cb,
     grpc_status_code* code, const char** error_details) {
   GPR_ASSERT(authz_policy_path != nullptr);
   auto provider_or = grpc_core::FileWatcherAuthorizationPolicyProvider::Create(
-      authz_policy_path, refresh_interval_sec, cb);
+      authz_policy_path, refresh_interval_sec);
   if (!provider_or.ok()) {
     *code = static_cast<grpc_status_code>(provider_or.status().code());
     *error_details =
