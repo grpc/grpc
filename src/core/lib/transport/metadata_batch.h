@@ -62,6 +62,15 @@ struct grpc_filtered_mdelem {
 
 namespace grpc_core {
 
+// MetadataMap encodes the mapping of metadata keys to metadata values.
+// Right now the API presented is the minimal one that will allow us to
+// substitute this type for grpc_metadata_batch in a relatively easy fashion. At
+// that point we'll start iterating this API into something that's ergonomic
+// again, whilst minimally holding the performance bar already set (and
+// hopefully improving some things).
+// In the meantime, we're not going to invest much time in ephemeral API
+// documentation, so if you must use one of these API's and it's not obvious
+// how, reach out to ctiller.
 class MetadataMap {
  public:
   MetadataMap();
