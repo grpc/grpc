@@ -16,10 +16,13 @@
  *
  */
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <exception>
 #include <memory>
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <gtest/gtest.h>
+
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/server.h>
@@ -28,8 +31,6 @@
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
-
-#include <gtest/gtest.h>
 
 namespace grpc {
 namespace testing {

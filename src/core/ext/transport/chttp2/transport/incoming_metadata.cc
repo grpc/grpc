@@ -22,10 +22,10 @@
 
 #include <string.h>
 
-#include "src/core/ext/transport/chttp2/transport/internal.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 
 grpc_error_handle grpc_chttp2_incoming_metadata_buffer_add(
     grpc_chttp2_incoming_metadata_buffer* buffer, grpc_mdelem elem) {

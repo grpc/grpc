@@ -62,13 +62,19 @@ export WORKLOAD_SA_EMAIL="${WORKLOAD_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.
 Minimal requirements: [VPC-native](https://cloud.google.com/traffic-director/docs/security-proxyless-setup)
 cluster with [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity) enabled. 
 ```shell
-gcloud beta container clusters create "${CLUSTER_NAME}" \
+gcloud container clusters create "${CLUSTER_NAME}" \
+ --scopes=cloud-platform \
  --zone="${ZONE}" \
  --enable-ip-alias \
  --workload-pool="${PROJECT_ID}.svc.id.goog" \
+ --enable-workload-certificates \
  --workload-metadata=GKE_METADATA \
  --tags=allow-health-checks
 ```
+
+For security tests you also need to create CAs and configure the cluster to use those CAs
+as described
+[here](https://cloud.google.com/traffic-director/docs/security-proxyless-setup#configure-cas).
 
 ##### Create the firewall rule
 Allow [health checking mechanisms](https://cloud.google.com/traffic-director/docs/set-up-proxyless-gke#creating_the_health_check_firewall_rule_and_backend_service)
@@ -95,8 +101,19 @@ gcloud iam service-accounts create "${WORKLOAD_SA_NAME}" \
 Enable the service account to [access the Traffic Director API](https://cloud.google.com/traffic-director/docs/prepare-for-envoy-setup#enable-service-account).
 ```shell
 gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
-   --member="serviceAccount:${WORKLOAD_SERVICE_ACCOUNT}" \
+   --member="serviceAccount:${WORKLOAD_SA_EMAIL}" \
    --role="roles/trafficdirector.client"
+```
+
+##### Allow access to images
+The test framework needs read access to the client and server images and the bootstrap
+generator image. You may have these images in your project but if you want to use these
+from the grpc-testing project you will have to grant the necessary access to these images
+using https://cloud.google.com/container-registry/docs/access-control#grant or a
+gsutil command. For example, to grant access to images stored in `grpc-testing` project GCR, run:
+
+```sh
+gsutil iam ch "serviceAccount:${GCE_SA}:objectViewer" gs://artifacts.grpc-testing.appspot.com/
 ```
 
 ##### Allow test driver to configure workload identity automatically

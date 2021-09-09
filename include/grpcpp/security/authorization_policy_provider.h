@@ -15,10 +15,10 @@
 #ifndef GRPCPP_SECURITY_AUTHORIZATION_POLICY_PROVIDER_H
 #define GRPCPP_SECURITY_AUTHORIZATION_POLICY_PROVIDER_H
 
+#include <memory>
+
 #include <grpc/status.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
-
-#include <memory>
 
 // TODO(yihuazhang): remove the forward declaration here and include
 // <grpc/grpc_security.h> directly once the insecure builds are cleaned up.

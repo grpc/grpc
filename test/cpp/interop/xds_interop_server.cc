@@ -16,6 +16,12 @@
  *
  */
 
+#include <sstream>
+
+#include "absl/flags/flag.h"
+#include "absl/strings/str_cat.h"
+#include "absl/synchronization/mutex.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -27,11 +33,6 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/xds_server_builder.h>
 
-#include <sstream>
-
-#include "absl/flags/flag.h"
-#include "absl/strings/str_cat.h"
-#include "absl/synchronization/mutex.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/transport/byte_stream.h"

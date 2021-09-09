@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "src/core/lib/promise/map.h"
+
 #include <gtest/gtest.h>
+
 #include "src/core/lib/promise/promise.h"
 
 namespace grpc_core {
@@ -21,6 +23,12 @@ namespace grpc_core {
 TEST(MapTest, Works) {
   Promise<int> x = Map([]() { return 42; }, [](int i) { return i / 2; });
   EXPECT_EQ(x(), Poll<int>(21));
+}
+
+TEST(MapTest, JustElem) {
+  std::tuple<int, double> t(1, 3.2);
+  EXPECT_EQ(JustElem<1>()(t), 3.2);
+  EXPECT_EQ(JustElem<0>()(t), 1);
 }
 
 }  // namespace grpc_core

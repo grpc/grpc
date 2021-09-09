@@ -16,16 +16,17 @@
  *
  */
 
-#include "rb_xds_server_credentials.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
 #include <ruby/ruby.h>
+
+#include "rb_xds_server_credentials.h"
 
 #include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
 #include "rb_server_credentials.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/log.h>
 
 /* grpc_rb_cXdsServerCredentials is the ruby class that proxies
    grpc_server_credentials. */

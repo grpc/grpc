@@ -18,11 +18,11 @@
 
 #include "src/core/lib/iomgr/error.h"
 
+#include <string.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-
-#include <string.h>
 
 #include "test/core/util/test_config.h"
 

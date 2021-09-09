@@ -16,12 +16,12 @@
 
 #include "src/core/ext/transport/binder/wire_format/binder_constants.h"
 
-#ifndef ANDROID
+#ifndef GPR_SUPPORT_BINDER_TRANSPORT
 
 const int FIRST_CALL_TRANSACTION = 0x00000001;
 const int LAST_CALL_TRANSACTION = 0x00FFFFFF;
 
-#endif  // ANDROID
+#endif  // GPR_SUPPORT_BINDER_TRANSPORT
 
 namespace grpc_binder {
 

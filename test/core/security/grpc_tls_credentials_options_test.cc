@@ -19,10 +19,11 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"

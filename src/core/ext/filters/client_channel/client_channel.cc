@@ -26,18 +26,17 @@
 
 #include <set>
 
+#include "absl/container/inlined_vector.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-
-#include "absl/container/inlined_vector.h"
-#include "absl/types/optional.h"
 
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
@@ -811,8 +810,8 @@ void ClientChannel::ExternalConnectivityWatcher::
 void ClientChannel::ExternalConnectivityWatcher::Notify(
     grpc_connectivity_state state, const absl::Status& /* status */) {
   bool done = false;
-  if (!done_.CompareExchangeStrong(&done, true, MemoryOrder::RELAXED,
-                                   MemoryOrder::RELAXED)) {
+  if (!done_.compare_exchange_strong(done, true, std::memory_order_relaxed,
+                                     std::memory_order_relaxed)) {
     return;  // Already done.
   }
   // Remove external watcher.
@@ -835,8 +834,8 @@ void ClientChannel::ExternalConnectivityWatcher::Notify(
 
 void ClientChannel::ExternalConnectivityWatcher::Cancel() {
   bool done = false;
-  if (!done_.CompareExchangeStrong(&done, true, MemoryOrder::RELAXED,
-                                   MemoryOrder::RELAXED)) {
+  if (!done_.compare_exchange_strong(done, true, std::memory_order_relaxed,
+                                     std::memory_order_relaxed)) {
     return;  // Already done.
   }
   ExecCtx::Run(DEBUG_LOCATION, on_complete_, GRPC_ERROR_CANCELLED);
@@ -1160,7 +1159,7 @@ ClientChannel::~ClientChannel() {
   // Stop backup polling.
   grpc_client_channel_stop_backup_polling(interested_parties_);
   grpc_pollset_set_destroy(interested_parties_);
-  GRPC_ERROR_UNREF(disconnect_error_.Load(MemoryOrder::RELAXED));
+  GRPC_ERROR_UNREF(disconnect_error_.load(std::memory_order_relaxed));
 }
 
 OrphanablePtr<ClientChannel::LoadBalancedCall>
@@ -1803,9 +1802,10 @@ void ClientChannel::StartTransportOpLocked(grpc_transport_op* op) {
       GRPC_ERROR_UNREF(op->disconnect_with_error);
     } else {
       // Disconnect.
-      GPR_ASSERT(disconnect_error_.Load(MemoryOrder::RELAXED) ==
+      GPR_ASSERT(disconnect_error_.load(std::memory_order_relaxed) ==
                  GRPC_ERROR_NONE);
-      disconnect_error_.Store(op->disconnect_with_error, MemoryOrder::RELEASE);
+      disconnect_error_.store(op->disconnect_with_error,
+                              std::memory_order_release);
       UpdateStateAndPickerLocked(
           GRPC_CHANNEL_SHUTDOWN, absl::Status(), "shutdown from API",
           absl::make_unique<LoadBalancingPolicy::TransientFailurePicker>(
@@ -2500,48 +2500,21 @@ class ClientChannel::LoadBalancedCall::Metadata
                GRPC_ERROR_NONE);
   }
 
-  iterator begin() const override {
-    static_assert(sizeof(grpc_linked_mdelem*) <= sizeof(intptr_t),
-                  "iterator size too large");
-    return iterator(
-        this, reinterpret_cast<intptr_t>(MaybeSkipEntry(batch_->list.head)));
-  }
-  iterator end() const override {
-    static_assert(sizeof(grpc_linked_mdelem*) <= sizeof(intptr_t),
-                  "iterator size too large");
-    return iterator(this, 0);
-  }
-
-  iterator erase(iterator it) override {
-    grpc_linked_mdelem* linked_mdelem =
-        reinterpret_cast<grpc_linked_mdelem*>(GetIteratorHandle(it));
-    intptr_t handle = reinterpret_cast<intptr_t>(linked_mdelem->next);
-    grpc_metadata_batch_remove(batch_, linked_mdelem);
-    return iterator(this, handle);
+  std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector()
+      override {
+    std::vector<std::pair<std::string, std::string>> result;
+    for (grpc_linked_mdelem* entry = batch_->list.head; entry != nullptr;
+         entry = entry->next) {
+      if (batch_->idx.named.path != entry) {
+        result.push_back(std::make_pair(
+            std::string(StringViewFromSlice(GRPC_MDKEY(entry->md))),
+            std::string(StringViewFromSlice(GRPC_MDVALUE(entry->md)))));
+      }
+    }
+    return result;
   }
 
  private:
-  grpc_linked_mdelem* MaybeSkipEntry(grpc_linked_mdelem* entry) const {
-    if (entry != nullptr && batch_->idx.named.path == entry) {
-      return entry->next;
-    }
-    return entry;
-  }
-
-  intptr_t IteratorHandleNext(intptr_t handle) const override {
-    grpc_linked_mdelem* linked_mdelem =
-        reinterpret_cast<grpc_linked_mdelem*>(handle);
-    return reinterpret_cast<intptr_t>(MaybeSkipEntry(linked_mdelem->next));
-  }
-
-  std::pair<absl::string_view, absl::string_view> IteratorHandleGet(
-      intptr_t handle) const override {
-    grpc_linked_mdelem* linked_mdelem =
-        reinterpret_cast<grpc_linked_mdelem*>(handle);
-    return std::make_pair(StringViewFromSlice(GRPC_MDKEY(linked_mdelem->md)),
-                          StringViewFromSlice(GRPC_MDVALUE(linked_mdelem->md)));
-  }
-
   LoadBalancedCall* lb_call_;
   grpc_metadata_batch* batch_;
 };

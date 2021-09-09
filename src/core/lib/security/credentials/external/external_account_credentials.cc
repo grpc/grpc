@@ -24,12 +24,11 @@
 #include "absl/time/time.h"
 
 #include "src/core/lib/http/parser.h"
-#include "src/core/lib/security/util/json_util.h"
-#include "src/core/lib/slice/b64.h"
-
 #include "src/core/lib/security/credentials/external/aws_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
+#include "src/core/lib/security/util/json_util.h"
+#include "src/core/lib/slice/b64.h"
 
 #define EXTERNAL_ACCOUNT_CREDENTIALS_GRANT_TYPE \
   "urn:ietf:params:oauth:grant-type:token-exchange"
@@ -297,7 +296,6 @@ void ExternalAccountCredentials::ExchangeToken(
   grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                     &request, body.c_str(), body.size(), ctx_->deadline,
                     &ctx_->closure, &ctx_->response);
-  grpc_resource_quota_unref_internal(resource_quota);
   grpc_http_request_destroy(&request.http);
 }
 
@@ -387,7 +385,6 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                     &request, body.c_str(), body.size(), ctx_->deadline,
                     &ctx_->closure, &ctx_->response);
-  grpc_resource_quota_unref_internal(resource_quota);
   grpc_http_request_destroy(&request.http);
 }
 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2020 gRPC authors.
+ * Copyright 2021 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
  *
  */
 
-#include "include/grpc/impl/codegen/port_platform.h"
+#include <grpc/impl/codegen/port_platform.h>
 
-#include <gtest/gtest.h>
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h"
+
 #include <random>
 #include <unordered_map>
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h"
+
+#include <gtest/gtest.h>
 
 namespace grpc_core {
 namespace testing {

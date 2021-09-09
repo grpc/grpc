@@ -19,6 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_PORT_PLATFORM_H
 #define GRPC_IMPL_CODEGEN_PORT_PLATFORM_H
 
+// IWYU pragma: private, include <grpc/support/port_platform.h>
+
 /*
  * Define GPR_BACKWARDS_COMPATIBILITY_MODE to try harder to be ABI
  * compatible with older platforms (currently only on Linux)
@@ -117,6 +119,11 @@
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
+#ifdef __ANDROID_API__
+#if (__ANDROID_API__) >= 29
+#define GPR_SUPPORT_BINDER_TRANSPORT 1
+#endif
+#endif
 // TODO(apolcyn): re-evaluate support for c-ares
 // on android after upgrading our c-ares dependency.
 // See https://github.com/grpc/grpc/issues/18038.
@@ -683,5 +690,16 @@ typedef unsigned __int64 uint64_t;
 #endif /* GRPC_USE_EVENT_ENGINE */
 
 #define GRPC_CALLBACK_API_NONEXPERIMENTAL
+
+/* clang 11 with msan miscompiles destruction of [[no_unique_address]] members
+ * of zero size - for a repro see:
+ * test/core/compiler_bugs/miscompile_with_no_unique_address_test.cc
+ */
+#ifdef __clang__
+#if __clang__ && __clang_major__ <= 11 && __has_feature(memory_sanitizer)
+#undef GPR_NO_UNIQUE_ADDRESS
+#define GPR_NO_UNIQUE_ADDRESS
+#endif
+#endif
 
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */

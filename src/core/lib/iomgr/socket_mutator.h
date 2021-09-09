@@ -21,10 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdbool.h>
+
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/sync.h>
-
-#include <stdbool.h>
 
 /** How is an fd to be used? */
 typedef enum {

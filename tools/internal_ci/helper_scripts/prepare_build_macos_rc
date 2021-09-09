@@ -35,7 +35,7 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 brew config
 
 # Add GCP credentials for BQ access
-pip install --user google-api-python-client oauth2client six==1.15.0
+pip install --user google-api-python-client oauth2client six==1.16.0
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
@@ -122,6 +122,14 @@ then
     echo "dadee1d10c1a8ed58bb64ec7409a48c9fe38599791eaaea29303ee59fb95dfeb  python-3.9.0-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.9.0-macosx10.9.pkg -target /
+  fi
+
+  # Install Python 3.10 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.10" ]; then
+    time curl -O https://www.python.org/ftp/python/3.10.0/python-3.10.0rc1-macos11.pkg
+    echo "5933d3d72438b03742d2bb3c8d6cb0e5db165d7110bbc95dac8016f5e31fae7b  python-3.10.0rc1-macos11.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.10.0rc1-macos11.pkg -target /
   fi
 fi
 

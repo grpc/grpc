@@ -107,6 +107,11 @@ class PythonArtifact:
         self.py_version = py_version
         if 'manylinux' in platform:
             self.labels.append('linux')
+        if 'linux_extra' in platform:
+            # linux_extra wheels used to be built by a separate kokoro job.
+            # Their build is now much faster, so they can be included
+            # in the regular artifact build.
+            self.labels.append('linux')
 
     def pre_build_jobspecs(self):
         return []
@@ -201,7 +206,7 @@ class RubyArtifact:
         return create_jobspec(
             self.name, ['tools/run_tests/artifacts/build_artifact_ruby.sh'],
             use_workspace=True,
-            timeout_seconds=60 * 60)
+            timeout_seconds=90 * 60)
 
 
 class CSharpExtArtifact:
@@ -247,7 +252,7 @@ class CSharpExtArtifact:
                 if self.arch == 'aarch64':
                     # for aarch64, use a dockcross manylinux image that will
                     # give us both ready to use crosscompiler and sufficient backward compatibility
-                    dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux_2_24_aarch64'
+                    dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64'
                 return create_docker_jobspec(
                     self.name, dockerfile_dir,
                     'tools/run_tests/artifacts/build_artifact_csharp.sh')
@@ -275,10 +280,15 @@ class PHPArtifact:
         return []
 
     def build_jobspec(self):
-        return create_docker_jobspec(
-            self.name,
-            'tools/dockerfile/test/php73_zts_stretch_{}'.format(self.arch),
-            'tools/run_tests/artifacts/build_artifact_php.sh')
+        if self.platform == 'linux':
+            return create_docker_jobspec(
+                self.name,
+                'tools/dockerfile/test/php73_zts_stretch_{}'.format(self.arch),
+                'tools/run_tests/artifacts/build_artifact_php.sh')
+        else:
+            return create_jobspec(
+                self.name, ['tools/run_tests/artifacts/build_artifact_php.sh'],
+                use_workspace=True)
 
 
 class ProtocArtifact:
@@ -348,50 +358,51 @@ def targets():
         CSharpExtArtifact('linux', 'android', arch_abi='armeabi-v7a'),
         CSharpExtArtifact('linux', 'android', arch_abi='x86'),
         CSharpExtArtifact('macos', 'ios'),
-        PythonArtifact('manylinux2014', 'x64', 'cp35-cp35m'),
         PythonArtifact('manylinux2014', 'x64', 'cp36-cp36m'),
         PythonArtifact('manylinux2014', 'x64', 'cp37-cp37m'),
         PythonArtifact('manylinux2014', 'x64', 'cp38-cp38'),
         PythonArtifact('manylinux2014', 'x64', 'cp39-cp39'),
-        PythonArtifact('manylinux2014', 'x86', 'cp35-cp35m'),
+        PythonArtifact('manylinux2014', 'x64', 'cp310-cp310'),
         PythonArtifact('manylinux2014', 'x86', 'cp36-cp36m'),
         PythonArtifact('manylinux2014', 'x86', 'cp37-cp37m'),
         PythonArtifact('manylinux2014', 'x86', 'cp38-cp38'),
         PythonArtifact('manylinux2014', 'x86', 'cp39-cp39'),
-        PythonArtifact('manylinux2010', 'x64', 'cp35-cp35m'),
+        PythonArtifact('manylinux2014', 'x86', 'cp310-cp310'),
         PythonArtifact('manylinux2010', 'x64', 'cp36-cp36m'),
         PythonArtifact('manylinux2010', 'x64', 'cp37-cp37m'),
         PythonArtifact('manylinux2010', 'x64', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x64', 'cp39-cp39'),
-        PythonArtifact('manylinux2010', 'x86', 'cp35-cp35m'),
         PythonArtifact('manylinux2010', 'x86', 'cp36-cp36m'),
         PythonArtifact('manylinux2010', 'x86', 'cp37-cp37m'),
         PythonArtifact('manylinux2010', 'x86', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x86', 'cp39-cp39'),
-        PythonArtifact('manylinux_2_24', 'aarch64', 'cp36-cp36m'),
-        PythonArtifact('manylinux_2_24', 'aarch64', 'cp37-cp37m'),
-        PythonArtifact('manylinux_2_24', 'aarch64', 'cp38-cp38'),
-        PythonArtifact('manylinux_2_24', 'aarch64', 'cp39-cp39'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp36-cp36m'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp37-cp37m'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp38-cp38'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp39-cp39'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp310-cp310'),
         PythonArtifact('linux_extra', 'armv7', 'cp36-cp36m'),
         PythonArtifact('linux_extra', 'armv7', 'cp37-cp37m'),
         PythonArtifact('linux_extra', 'armv7', 'cp38-cp38'),
         PythonArtifact('linux_extra', 'armv7', 'cp39-cp39'),
-        PythonArtifact('macos', 'x64', 'python3.5'),
+        PythonArtifact('linux_extra', 'armv7', 'cp310-cp310'),
         PythonArtifact('macos', 'x64', 'python3.6'),
         PythonArtifact('macos', 'x64', 'python3.7'),
         PythonArtifact('macos', 'x64', 'python3.8'),
         PythonArtifact('macos', 'x64', 'python3.9'),
-        PythonArtifact('windows', 'x86', 'Python35_32bit'),
+        PythonArtifact('macos', 'x64', 'python3.10'),
         PythonArtifact('windows', 'x86', 'Python36_32bit'),
         PythonArtifact('windows', 'x86', 'Python37_32bit'),
         PythonArtifact('windows', 'x86', 'Python38_32bit'),
         PythonArtifact('windows', 'x86', 'Python39_32bit'),
-        PythonArtifact('windows', 'x64', 'Python35'),
+        PythonArtifact('windows', 'x86', 'Python310_32bit'),
         PythonArtifact('windows', 'x64', 'Python36'),
         PythonArtifact('windows', 'x64', 'Python37'),
         PythonArtifact('windows', 'x64', 'Python38'),
         PythonArtifact('windows', 'x64', 'Python39'),
+        PythonArtifact('windows', 'x64', 'Python310'),
         RubyArtifact('linux', 'x64'),
         RubyArtifact('macos', 'x64'),
-        PHPArtifact('linux', 'x64')
+        PHPArtifact('linux', 'x64'),
+        PHPArtifact('macos', 'x64')
     ]

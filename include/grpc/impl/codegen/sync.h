@@ -18,6 +18,9 @@
 
 #ifndef GRPC_IMPL_CODEGEN_SYNC_H
 #define GRPC_IMPL_CODEGEN_SYNC_H
+
+// IWYU pragma: private, include <grpc/support/sync.h>
+
 /** Synchronization primitives for GPR.
 
    The type  gpr_mu              provides a non-reentrant mutex (lock).
@@ -44,16 +47,16 @@ extern "C" {
 /* Platform-specific type declarations of gpr_mu and gpr_cv.   */
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <grpc/impl/codegen/sync_generic.h>
+#include <grpc/impl/codegen/sync_generic.h>  // IWYU pragma: export
 
 #if defined(GPR_CUSTOM_SYNC)
-#include <grpc/impl/codegen/sync_custom.h>
+#include <grpc/impl/codegen/sync_custom.h>  // IWYU pragma: export
 #elif defined(GPR_ABSEIL_SYNC)
-#include <grpc/impl/codegen/sync_abseil.h>
+#include <grpc/impl/codegen/sync_abseil.h>  // IWYU pragma: export
 #elif defined(GPR_POSIX_SYNC)
-#include <grpc/impl/codegen/sync_posix.h>
+#include <grpc/impl/codegen/sync_posix.h>  // IWYU pragma: export
 #elif defined(GPR_WINDOWS)
-#include <grpc/impl/codegen/sync_windows.h>
+#include <grpc/impl/codegen/sync_windows.h>  // IWYU pragma: export
 #else
 #error Unable to determine platform for sync
 #endif

@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
+
 #include <grpc/grpc.h>
 #include <grpc/support/sync.h>
 
@@ -28,7 +30,6 @@
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gprpp/arena.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -126,10 +127,10 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     OrphanablePtr<ByteStream> recv_message_;
     grpc_closure recv_message_ready_;
     grpc_slice_buffer recv_message_buffer_;
-    Atomic<bool> seen_response_{false};
+    std::atomic<bool> seen_response_{false};
 
     // True if the cancel_stream batch has been started.
-    Atomic<bool> cancelled_{false};
+    std::atomic<bool> cancelled_{false};
 
     // recv_trailing_metadata
     grpc_metadata_batch recv_trailing_metadata_;

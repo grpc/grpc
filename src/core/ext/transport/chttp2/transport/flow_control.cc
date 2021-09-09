@@ -345,9 +345,8 @@ static double AdjustForMemoryPressure(grpc_resource_quota* quota,
 }
 
 double TransportFlowControl::TargetLogBdp() {
-  return AdjustForMemoryPressure(
-      grpc_resource_user_quota(grpc_endpoint_get_resource_user(t_->ep)),
-      1 + log2(bdp_estimator_.EstimateBdp()));
+  return AdjustForMemoryPressure(grpc_resource_user_quota(t_->resource_user),
+                                 1 + log2(bdp_estimator_.EstimateBdp()));
 }
 
 double TransportFlowControl::SmoothLogBdp(double value) {

@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SUPPORT_TIME_H
 #define GRPCPP_SUPPORT_TIME_H
 
-#include <grpcpp/impl/codegen/time.h>
+#include <grpcpp/impl/codegen/time.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SUPPORT_TIME_H
