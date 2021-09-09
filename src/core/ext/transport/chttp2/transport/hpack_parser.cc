@@ -1350,10 +1350,11 @@ static void force_client_rst_stream(void* sp, grpc_error_handle /*error*/) {
 static void parse_stream_compression_md(grpc_chttp2_transport* /*t*/,
                                         grpc_chttp2_stream* s,
                                         grpc_metadata_batch* initial_metadata) {
-  if (initial_metadata->idx.named.content_encoding == nullptr ||
+  if ((*initial_metadata)->legacy_index()->named.content_encoding == nullptr ||
       grpc_stream_compression_method_parse(
-          GRPC_MDVALUE(initial_metadata->idx.named.content_encoding->md), false,
-          &s->stream_decompression_method) == 0) {
+          GRPC_MDVALUE(
+              (*initial_metadata)->legacy_index()->named.content_encoding->md),
+          false, &s->stream_decompression_method) == 0) {
     s->stream_decompression_method =
         GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS;
   }
