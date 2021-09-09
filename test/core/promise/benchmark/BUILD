@@ -41,5 +41,6 @@ grpc_cc_test(
         "//:seq",
         "//:try_join",
         "//:try_seq",
+        "//test/core/util:grpc_suppressions",
     ],
 )

@@ -50,7 +50,7 @@ void FreeChannel(ChannelStack* stk) {
 CallStack* MakeCall(ChannelStack* stk) {
   char* data = new char[stk->call_stack_size];
   CallStack* call = reinterpret_cast<CallStack*>(data);
-  new (data) CallStack{{0}, stk->num_elems, {}};
+  new (data) CallStack{{1}, stk->num_elems, {}};
   data += sizeof(CallStack);
   ChannelElem* channel_elems = reinterpret_cast<ChannelElem*>(stk + 1);
   char* user_data = data + stk->num_elems * sizeof(CallElem);
@@ -64,7 +64,11 @@ CallStack* MakeCall(ChannelStack* stk) {
   return call;
 }
 
-void FreeCall(CallStack* stk) {
+static void RefCall(CallStack* stk) {
+  stk->refcount.fetch_add(1, std::memory_order_relaxed);
+}
+
+static void UnrefCall(CallStack* stk) {
   if (stk->refcount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
     CallElem* elems = reinterpret_cast<CallElem*>(stk + 1);
     for (size_t i = 0; i < stk->num_elems; i++) {
@@ -74,6 +78,8 @@ void FreeCall(CallStack* stk) {
     delete[] reinterpret_cast<char*>(stk);
   }
 }
+
+void FreeCall(CallStack* stk) { UnrefCall(stk); }
 
 void NoChannelData(ChannelElem*) {}
 void NoCallData(CallElem*) {}
@@ -85,8 +91,12 @@ static void StartOp(CallElem* elem, Op* op) {
 void CallNextOp(CallElem* elem, Op* op) { StartOp(elem + 1, op); }
 
 void RunOp(CallStack* stk, Op* op) {
-  absl::MutexLock lock(&stk->mutex);
-  StartOp(reinterpret_cast<CallElem*>(stk + 1), op);
+  RefCall(stk);
+  {
+    absl::MutexLock lock(&stk->mutex);
+    StartOp(reinterpret_cast<CallElem*>(stk + 1), op);
+  }
+  UnrefCall(stk);
 }
 
 }  // namespace filter_stack
