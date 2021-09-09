@@ -8257,27 +8257,26 @@ class XdsSecurityTest : public BasicTest {
       UpstreamTlsContext upstream_tls_context;
       if (!identity_instance_name.empty()) {
         upstream_tls_context.mutable_common_tls_context()
-            ->mutable_tls_certificate_certificate_provider_instance()
+            ->mutable_tls_certificate_provider_instance()
             ->set_instance_name(std::string(identity_instance_name));
         upstream_tls_context.mutable_common_tls_context()
-            ->mutable_tls_certificate_certificate_provider_instance()
+            ->mutable_tls_certificate_provider_instance()
             ->set_certificate_name(std::string(identity_certificate_name));
       }
       if (!root_instance_name.empty()) {
         upstream_tls_context.mutable_common_tls_context()
-            ->mutable_combined_validation_context()
-            ->mutable_validation_context_certificate_provider_instance()
+            ->mutable_validation_context()
+            ->mutable_ca_certificate_provider_instance()
             ->set_instance_name(std::string(root_instance_name));
         upstream_tls_context.mutable_common_tls_context()
-            ->mutable_combined_validation_context()
-            ->mutable_validation_context_certificate_provider_instance()
+            ->mutable_validation_context()
+            ->mutable_ca_certificate_provider_instance()
             ->set_certificate_name(std::string(root_certificate_name));
       }
       if (!san_matchers.empty()) {
         auto* validation_context =
             upstream_tls_context.mutable_common_tls_context()
-                ->mutable_combined_validation_context()
-                ->mutable_default_validation_context();
+                ->mutable_validation_context();
         for (const auto& san_matcher : san_matchers) {
           *validation_context->add_match_subject_alt_names() = san_matcher;
         }
@@ -8367,9 +8366,8 @@ TEST_P(XdsSecurityTest,
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr(
-                  "TLS configuration provided but no "
-                  "validation_context_certificate_provider_instance found."));
+              ::testing::HasSubstr("TLS configuration provided but no "
+                                   "ca_certificate_provider_instance found."));
 }
 
 TEST_P(
@@ -8380,8 +8378,7 @@ TEST_P(
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   auto* validation_context = upstream_tls_context.mutable_common_tls_context()
-                                 ->mutable_combined_validation_context()
-                                 ->mutable_default_validation_context();
+                                 ->mutable_validation_context();
   *validation_context->add_match_subject_alt_names() = server_san_exact_;
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -8390,20 +8387,19 @@ TEST_P(
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr(
-                  "TLS configuration provided but no "
-                  "validation_context_certificate_provider_instance found."));
+              ::testing::HasSubstr("TLS configuration provided but no "
+                                   "ca_certificate_provider_instance found."));
 }
 
 TEST_P(
     XdsSecurityTest,
-    TlsCertificateCertificateProviderInstanceWithoutValidationContextCertificateProviderInstance) {
+    TlsCertificateProviderInstanceWithoutValidationContextCertificateProviderInstance) {
   auto cluster = default_cluster_;
   auto* transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_certificate_provider_instance()
+      ->mutable_tls_certificate_provider_instance()
       ->set_instance_name(std::string("fake_plugin1"));
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -8412,9 +8408,8 @@ TEST_P(
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr(
-                  "TLS configuration provided but no "
-                  "validation_context_certificate_provider_instance found."));
+              ::testing::HasSubstr("TLS configuration provided but no "
+                                   "ca_certificate_provider_instance found."));
 }
 
 TEST_P(XdsSecurityTest, RegexSanMatcherDoesNotAllowIgnoreCase) {
@@ -8423,12 +8418,11 @@ TEST_P(XdsSecurityTest, RegexSanMatcherDoesNotAllowIgnoreCase) {
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
       ->set_instance_name(std::string("fake_plugin1"));
   auto* validation_context = upstream_tls_context.mutable_common_tls_context()
-                                 ->mutable_combined_validation_context()
-                                 ->mutable_default_validation_context();
+                                 ->mutable_validation_context();
   StringMatcher matcher;
   matcher.mutable_safe_regex()->mutable_google_re2();
   matcher.mutable_safe_regex()->set_regex(
@@ -8452,8 +8446,8 @@ TEST_P(XdsSecurityTest, UnknownRootCertificateProvider) {
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
       ->set_instance_name("unknown");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -8475,11 +8469,11 @@ TEST_P(XdsSecurityTest, UnknownIdentityCertificateProvider) {
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_certificate_provider_instance()
+      ->mutable_tls_certificate_provider_instance()
       ->set_instance_name("unknown");
   upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -8503,12 +8497,11 @@ TEST_P(XdsSecurityTest,
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
       ->set_instance_name("fake_plugin1");
   upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_default_validation_context()
+      ->mutable_validation_context()
       ->add_verify_certificate_spki("spki");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -8532,12 +8525,11 @@ TEST_P(XdsSecurityTest,
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
       ->set_instance_name("fake_plugin1");
   upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_default_validation_context()
+      ->mutable_validation_context()
       ->add_verify_certificate_hash("hash");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -8561,12 +8553,11 @@ TEST_P(XdsSecurityTest,
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
       ->set_instance_name("fake_plugin1");
   upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_default_validation_context()
+      ->mutable_validation_context()
       ->mutable_require_signed_certificate_timestamp()
       ->set_value(true);
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
@@ -8590,12 +8581,11 @@ TEST_P(XdsSecurityTest, NacksCertificateValidationContextWithCrl) {
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
       ->set_instance_name("fake_plugin1");
   upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_default_validation_context()
+      ->mutable_validation_context()
       ->mutable_crl();
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -8618,12 +8608,11 @@ TEST_P(XdsSecurityTest,
   transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
       ->set_instance_name("fake_plugin1");
   upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_default_validation_context()
+      ->mutable_validation_context()
       ->mutable_custom_validator_config();
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -8635,6 +8624,165 @@ TEST_P(XdsSecurityTest,
       response_state.error_message,
       ::testing::HasSubstr(
           "CertificateValidationContext: custom_validator_config unsupported"));
+}
+
+TEST_P(XdsSecurityTest, NacksValidationContextSdsSecretConfig) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_validation_context_sds_secret_config();
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("validation_context_sds_secret_config unsupported"));
+}
+
+TEST_P(XdsSecurityTest, NacksTlsParams) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()->mutable_tls_params();
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("tls_params unsupported"));
+}
+
+TEST_P(XdsSecurityTest, NacksCustomHandshaker) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_custom_handshaker();
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("custom_handshaker unsupported"));
+}
+
+TEST_P(XdsSecurityTest, NacksTlsCertificates) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()->add_tls_certificates();
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("tls_certificates unsupported"));
+}
+
+TEST_P(XdsSecurityTest, NacksTlsCertificateSdsSecretConfigs) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()
+      ->add_tls_certificate_sds_secret_configs();
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("tls_certificate_sds_secret_configs unsupported"));
+}
+
+TEST_P(XdsSecurityTest, TestTlsConfigurationInCombinedValidationContext) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_default_validation_context()
+      ->mutable_ca_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  WaitForBackend(0, WaitForBackendOptions().set_allow_failures(true));
+  Status status = SendRpc();
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+}
+
+// TODO(yashykt): Remove this test once we stop supporting old fields
+TEST_P(XdsSecurityTest,
+       TestTlsConfigurationInValidationContextCertificateProviderInstance) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  WaitForBackend(0, WaitForBackendOptions().set_allow_failures(true));
+  Status status = SendRpc();
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithNoSanMatchers) {
@@ -9261,19 +9409,19 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       transport_socket->set_name("envoy.transport_sockets.tls");
       DownstreamTlsContext downstream_tls_context;
       downstream_tls_context.mutable_common_tls_context()
-          ->mutable_tls_certificate_certificate_provider_instance()
+          ->mutable_tls_certificate_provider_instance()
           ->set_instance_name(std::string(identity_instance_name));
       downstream_tls_context.mutable_common_tls_context()
-          ->mutable_tls_certificate_certificate_provider_instance()
+          ->mutable_tls_certificate_provider_instance()
           ->set_certificate_name(std::string(identity_certificate_name));
       if (!root_instance_name.empty()) {
         downstream_tls_context.mutable_common_tls_context()
-            ->mutable_combined_validation_context()
-            ->mutable_validation_context_certificate_provider_instance()
+            ->mutable_validation_context()
+            ->mutable_ca_certificate_provider_instance()
             ->set_instance_name(std::string(root_instance_name));
         downstream_tls_context.mutable_common_tls_context()
-            ->mutable_combined_validation_context()
-            ->mutable_validation_context_certificate_provider_instance()
+            ->mutable_validation_context()
+            ->mutable_ca_certificate_provider_instance()
             ->set_certificate_name(std::string(root_certificate_name));
         downstream_tls_context.mutable_require_client_certificate()->set_value(
             require_client_certificates);
@@ -9467,7 +9615,7 @@ TEST_P(XdsServerSecurityTest, NacksRequireSNI) {
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
   downstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_certificate_provider_instance()
+      ->mutable_tls_certificate_provider_instance()
       ->set_instance_name("fake_plugin1");
   downstream_tls_context.mutable_require_sni()->set_value(true);
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
@@ -9496,7 +9644,7 @@ TEST_P(XdsServerSecurityTest, NacksOcspStaplePolicyOtherThanLenientStapling) {
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
   downstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_certificate_provider_instance()
+      ->mutable_tls_certificate_provider_instance()
       ->set_instance_name("fake_plugin1");
   downstream_tls_context.set_ocsp_staple_policy(
       envoy::extensions::transport_sockets::tls::v3::
@@ -9530,7 +9678,7 @@ TEST_P(
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
   downstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_certificate_provider_instance()
+      ->mutable_tls_certificate_provider_instance()
       ->set_instance_name("fake_plugin1");
   downstream_tls_context.mutable_require_client_certificate()->set_value(true);
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
@@ -9569,9 +9717,41 @@ TEST_P(XdsServerSecurityTest,
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr(
-                  "TLS configuration provided but no "
-                  "tls_certificate_certificate_provider_instance found."));
+              ::testing::HasSubstr("TLS configuration provided but no "
+                                   "tls_certificate_provider_instance found."));
+}
+
+TEST_P(XdsServerSecurityTest, NacksMatchSubjectAltNames) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  downstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  downstream_tls_context.mutable_common_tls_context()
+      ->mutable_validation_context()
+      ->add_match_subject_alt_names()
+      ->set_exact("*.test.google.fr");
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("match_subject_alt_names not supported on servers"));
 }
 
 TEST_P(XdsServerSecurityTest, UnknownIdentityCertificateProvider) {
@@ -9600,6 +9780,35 @@ TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr(
                   "Unrecognized certificate provider instance name: unknown"));
+}
+
+TEST_P(XdsServerSecurityTest,
+       TestDeprecateTlsCertificateCertificateProviderInstanceField) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  Listener listener;
+  listener.set_name(absl::StrCat(
+      ipv6_only_ ? "grpc/server?xds.resource.listening_address=[::1]:"
+                 : "grpc/server?xds.resource.listening_address=127.0.0.1:",
+      backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      ipv6_only_ ? "[::1]" : "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  downstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
 }
 
 TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {
@@ -10340,7 +10549,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
   downstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_certificate_provider_instance()
+      ->mutable_tls_certificate_provider_instance()
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
   balancers_[0]->ads_service()->SetLdsResource(listener);
