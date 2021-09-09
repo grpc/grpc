@@ -194,46 +194,30 @@ void TransportStreamReceiverImpl::
   }
 }
 
-void TransportStreamReceiverImpl::CancelStream(StreamIdentifier id,
-                                               absl::Status error) {
-  InitialMetadataCallbackType initial_metadata_callback = nullptr;
-  MessageDataCallbackType message_data_callback = nullptr;
-  TrailingMetadataCallbackType trailing_metadata_callback = nullptr;
-  {
-    grpc_core::MutexLock l(&m_);
-    auto initial_metadata_iter = initial_metadata_cbs_.find(id);
-    if (initial_metadata_iter != initial_metadata_cbs_.end()) {
-      initial_metadata_callback = std::move(initial_metadata_iter->second);
-      initial_metadata_cbs_.erase(initial_metadata_iter);
-    }
-    auto message_data_iter = message_cbs_.find(id);
-    if (message_data_iter != message_cbs_.end()) {
-      message_data_callback = std::move(message_data_iter->second);
-      message_cbs_.erase(message_data_iter);
-    }
-    auto trailing_metadata_iter = trailing_metadata_cbs_.find(id);
-    if (trailing_metadata_iter != trailing_metadata_cbs_.end()) {
-      trailing_metadata_callback = std::move(trailing_metadata_iter->second);
-      trailing_metadata_cbs_.erase(trailing_metadata_iter);
-    }
-  }
-  if (initial_metadata_callback != nullptr) {
-    initial_metadata_callback(error);
-  }
-  if (message_data_callback != nullptr) {
-    message_data_callback(error);
-  }
-  if (trailing_metadata_callback != nullptr) {
-    trailing_metadata_callback(error, 0);
-  }
-}
-
-void TransportStreamReceiverImpl::Clear(StreamIdentifier id) {
+void TransportStreamReceiverImpl::CancelStream(StreamIdentifier id) {
   gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
   grpc_core::MutexLock l(&m_);
-  initial_metadata_cbs_.erase(id);
-  message_cbs_.erase(id);
-  trailing_metadata_cbs_.erase(id);
+  {
+    auto iter = initial_metadata_cbs_.find(id);
+    if (iter != initial_metadata_cbs_.end()) {
+      iter->second(absl::CancelledError("Stream cancelled"));
+      initial_metadata_cbs_.erase(iter);
+    }
+  }
+  {
+    auto iter = message_cbs_.find(id);
+    if (iter != message_cbs_.end()) {
+      iter->second(absl::CancelledError("Stream cancelled"));
+      message_cbs_.erase(iter);
+    }
+  }
+  {
+    auto iter = trailing_metadata_cbs_.find(id);
+    if (iter != trailing_metadata_cbs_.end()) {
+      iter->second(absl::CancelledError("Stream cancelled"), 0);
+      trailing_metadata_cbs_.erase(iter);
+    }
+  }
   recv_message_cancelled_.erase(id);
   pending_initial_metadata_.erase(id);
   pending_message_.erase(id);

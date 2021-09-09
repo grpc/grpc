@@ -52,8 +52,7 @@ class TransportStreamReceiverImpl : public TransportStreamReceiver {
 
   void CancelRecvMessageCallbacksDueToTrailingMetadata(
       StreamIdentifier id) override;
-  void Clear(StreamIdentifier id) override;
-  void CancelStream(StreamIdentifier, absl::Status error) override;
+  void CancelStream(StreamIdentifier id) override;
 
  private:
   std::map<StreamIdentifier, InitialMetadataCallbackType> initial_metadata_cbs_;
