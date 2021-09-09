@@ -247,7 +247,7 @@ class CSharpExtArtifact:
                 if self.arch == 'aarch64':
                     # for aarch64, use a dockcross manylinux image that will
                     # give us both ready to use crosscompiler and sufficient backward compatibility
-                    dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux_2_24_aarch64'
+                    dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64'
                 return create_docker_jobspec(
                     self.name, dockerfile_dir,
                     'tools/run_tests/artifacts/build_artifact_csharp.sh')
