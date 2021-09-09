@@ -428,7 +428,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
         if (serving_status_notifier_.on_serving_status_update != nullptr) {
           serving_status_notifier_.on_serving_status_update(
               serving_status_notifier_.user_data, listening_address_.c_str(),
-              GRPC_STATUS_OK, "");
+              {GRPC_STATUS_OK, ""});
         } else {
           gpr_log(GPR_INFO,
                   "xDS Listener resource obtained; will start serving on %s",
@@ -459,7 +459,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
         if (serving_status_notifier_.on_serving_status_update != nullptr) {
           serving_status_notifier_.on_serving_status_update(
               serving_status_notifier_.user_data, listening_address_.c_str(),
-              GRPC_STATUS_UNAVAILABLE, grpc_error_std_string(error).c_str());
+              {GRPC_STATUS_UNAVAILABLE, grpc_error_std_string(error).c_str()});
         } else {
           gpr_log(
               GPR_ERROR,
@@ -486,8 +486,8 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
       if (serving_status_notifier_.on_serving_status_update != nullptr) {
         serving_status_notifier_.on_serving_status_update(
             serving_status_notifier_.user_data, listening_address_.c_str(),
-            static_cast<grpc_status_code>(status.raw_code()),
-            std::string(status.message()).c_str());
+            {static_cast<grpc_status_code>(status.raw_code()),
+             std::string(status.message()).c_str()});
       }
     }
 
