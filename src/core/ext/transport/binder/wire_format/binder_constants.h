@@ -19,7 +19,7 @@
 
 #include "absl/base/attributes.h"
 
-#if defined(ANDROID) || defined(__ANDROID__)
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
 #include <android/binder_auto_utils.h>
 #include <android/binder_ibinder.h>
@@ -33,7 +33,7 @@ using transaction_code_t = uint32_t;
 ABSL_CONST_INIT extern const int FIRST_CALL_TRANSACTION;
 ABSL_CONST_INIT extern const int LAST_CALL_TRANSACTION;
 
-#endif  // defined(ANDROID) || defined(__ANDROID__)
+#endif  // GPR_SUPPORT_BINDER_TRANSPORT
 
 namespace grpc_binder {
 

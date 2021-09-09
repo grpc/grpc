@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/bad_client/bad_client.h"
-
 #include <string.h>
 
 #include "absl/strings/str_format.h"
@@ -25,8 +23,10 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
 
 // The large-metadata headers that we're adding for this test are not

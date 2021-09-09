@@ -16,14 +16,13 @@
  *
  */
 
-#include "src/core/lib/compression/algorithm_metadata.h"
-
 #include <stdlib.h>
 #include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"

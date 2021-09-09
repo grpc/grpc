@@ -19,7 +19,6 @@
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 
 #include "absl/strings/string_view.h"
-
 #include "udpa/data/orca/v1/orca_load_report.upb.h"
 #include "upb/upb.hpp"
 

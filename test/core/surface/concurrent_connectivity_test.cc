@@ -16,16 +16,10 @@
  *
  */
 
-/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
-   using that endpoint. Because of various transitive includes in uv.h,
-   including windows.h on Windows, uv.h must be included before other system
-   headers. Therefore, sockaddr.h must always be included first */
-#include "src/core/lib/iomgr/sockaddr.h"
-
 #include <memory.h>
 #include <stdio.h>
-#include <atomic>
 
+#include <atomic>
 #include <string>
 
 #include "absl/strings/str_cat.h"
@@ -39,8 +33,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -137,7 +131,10 @@ void bad_server_thread(void* vargs) {
   grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(resolved_addr.addr);
   int port;
   grpc_tcp_server* s;
-  grpc_error_handle error = grpc_tcp_server_create(nullptr, nullptr, &s);
+  grpc_error_handle error = grpc_tcp_server_create(
+      nullptr, nullptr,
+      grpc_slice_allocator_factory_create(grpc_resource_quota_create(nullptr)),
+      &s);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->sa_family = GRPC_AF_INET;

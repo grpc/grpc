@@ -16,8 +16,6 @@
 
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 
-#include <grpc/support/log.h>
-
 #include <functional>
 #include <limits>
 #include <string>
@@ -26,6 +24,9 @@
 
 #include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
@@ -59,7 +60,7 @@ absl::StatusOr<Metadata> parse_metadata(const ReadableParcel* reader) {
     std::string value{};
     if (count > 0) RETURN_IF_ERROR(reader->ReadByteArray(&value));
     gpr_log(GPR_INFO, "value = %s", value.c_str());
-    ret.push_back({key, value});
+    ret.emplace_back(key, value);
   }
   return ret;
 }
@@ -79,7 +80,7 @@ WireReaderImpl::~WireReaderImpl() {
   }
 }
 
-std::unique_ptr<WireWriter> WireReaderImpl::SetupTransport(
+std::shared_ptr<WireWriter> WireReaderImpl::SetupTransport(
     std::unique_ptr<Binder> binder) {
   gpr_log(GPR_INFO, "Setting up transport");
   if (!is_client_) {
@@ -88,7 +89,9 @@ std::unique_ptr<WireWriter> WireReaderImpl::SetupTransport(
   } else {
     SendSetupTransport(binder.get());
     auto other_end_binder = RecvSetupTransport();
-    return absl::make_unique<WireWriterImpl>(std::move(other_end_binder));
+    wire_writer_ =
+        std::make_shared<WireWriterImpl>(std::move(other_end_binder));
+    return wire_writer_;
   }
 }
 
@@ -233,6 +236,13 @@ absl::Status WireReaderImpl::ProcessStreamingTransaction(
       transport_stream_receiver_->NotifyRecvTrailingMetadata(code, status, 0);
     }
   }
+  if ((num_incoming_bytes_ - num_acknowledged_bytes_) >= kFlowControlAckBytes) {
+    absl::Status ack_status = wire_writer_->Ack(num_incoming_bytes_);
+    if (status.ok()) {
+      status = ack_status;
+    }
+    num_acknowledged_bytes_ = num_incoming_bytes_;
+  }
   return status;
 }
 
@@ -306,7 +316,13 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
       RETURN_IF_ERROR(parcel->ReadByteArray(&msg_data));
     }
     gpr_log(GPR_INFO, "msg_data = %s", msg_data.c_str());
-    transport_stream_receiver_->NotifyRecvMessage(code, std::move(msg_data));
+    message_buffer_[code] += msg_data;
+    num_incoming_bytes_ += count;
+    if ((flags & kFlagMessageDataIsPartial) == 0) {
+      std::string s = std::move(message_buffer_[code]);
+      message_buffer_.erase(code);
+      transport_stream_receiver_->NotifyRecvMessage(code, std::move(s));
+    }
     *cancellation_flags &= ~kFlagMessageData;
   }
   if (flags & kFlagSuffix) {

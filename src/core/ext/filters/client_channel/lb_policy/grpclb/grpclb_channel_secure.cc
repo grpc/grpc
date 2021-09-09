@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
-
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
@@ -30,6 +28,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"

@@ -21,12 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/gpr_types.h>
-
 #include <stdbool.h>
 #include <stddef.h>
 
 #include <string>
+
+#include <grpc/impl/codegen/gpr_types.h>
 
 /* String utility functions */
 

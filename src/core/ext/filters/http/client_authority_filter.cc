@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/http/client_authority_filter.h"
+
 #include <assert.h>
 #include <limits.h>
 #include <string.h>
@@ -26,7 +28,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/http/client_authority_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"

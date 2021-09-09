@@ -24,13 +24,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <address_sorting/address_sorting.h>
+
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-
-#include <address_sorting/address_sorting.h>
 
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
@@ -471,13 +471,6 @@ static grpc_error_handle blocking_resolve_address_ares(
 static grpc_address_resolver_vtable ares_resolver = {
     grpc_resolve_address_ares, blocking_resolve_address_ares};
 
-#ifdef GRPC_UV
-/* TODO(murgatroid99): Remove this when we want the cares resolver to be the
- * default when using libuv */
-static bool should_use_ares(const char* resolver_env) {
-  return resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0;
-}
-#else  /* GRPC_UV */
 static bool should_use_ares(const char* resolver_env) {
   // TODO(lidiz): Remove the "g_custom_iomgr_enabled" flag once c-ares support
   // custom IO managers (e.g. gevent).
@@ -485,7 +478,6 @@ static bool should_use_ares(const char* resolver_env) {
          (resolver_env == nullptr || strlen(resolver_env) == 0 ||
           gpr_stricmp(resolver_env, "ares") == 0);
 }
-#endif /* GRPC_UV */
 
 static bool g_use_ares_dns_resolver;
 

@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/surface/validate_metadata.h"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -29,7 +31,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/surface/validate_metadata.h"
 
 #if __cplusplus > 201103l
 #define GRPC_VALIDATE_METADATA_CONSTEXPR_FN constexpr

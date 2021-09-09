@@ -20,4 +20,4 @@ cd "$(dirname "$0")/../../.."
 # All the PHP packages have been built in the artifact phase already
 # and we only collect them here to deliver them to the distribtest phase.
 mkdir -p artifacts/
-cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/php_*/* artifacts/ || true
+cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/php_pecl_package_linux_*/* artifacts/ || true

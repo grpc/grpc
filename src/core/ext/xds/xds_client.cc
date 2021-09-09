@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/xds/xds_client.h"
+
 #include <inttypes.h>
 #include <limits.h>
 #include <string.h>
@@ -35,7 +37,6 @@
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_channel_args.h"
-#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -263,13 +264,15 @@ class XdsClient::ChannelState::AdsCallState
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   void AcceptLdsUpdateLocked(std::string version, grpc_millis update_time,
-                             XdsApi::LdsUpdateMap lds_update_map)
+                             XdsApi::LdsUpdateMap lds_update_map,
+                             const std::set<std::string>& resource_names_failed)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
   void AcceptRdsUpdateLocked(std::string version, grpc_millis update_time,
                              XdsApi::RdsUpdateMap rds_update_map)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
   void AcceptCdsUpdateLocked(std::string version, grpc_millis update_time,
-                             XdsApi::CdsUpdateMap cds_update_map)
+                             XdsApi::CdsUpdateMap cds_update_map,
+                             const std::set<std::string>& resource_names_failed)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
   void AcceptEdsUpdateLocked(std::string version, grpc_millis update_time,
                              XdsApi::EdsUpdateMap eds_update_map)
@@ -904,7 +907,8 @@ XdsApi::ResourceMetadata CreateResourceMetadataAcked(
 
 void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
     std::string version, grpc_millis update_time,
-    XdsApi::LdsUpdateMap lds_update_map) {
+    XdsApi::LdsUpdateMap lds_update_map,
+    const std::set<std::string>& resource_names_failed) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] LDS update received containing %" PRIuPTR
@@ -946,6 +950,21 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
     // Notify watchers.
     for (const auto& p : listener_state.watchers) {
       p.first->OnListenerChanged(*listener_state.update);
+    }
+  }
+  // For invalid resources in the update, if they are already in the
+  // cache, pretend that they are present in the update, so that we
+  // don't incorrectly consider them deleted below.
+  for (const std::string& listener_name : resource_names_failed) {
+    auto it = xds_client()->listener_map_.find(listener_name);
+    if (it != xds_client()->listener_map_.end()) {
+      auto& resource = it->second.update;
+      if (!resource.has_value()) continue;
+      lds_update_map[listener_name];
+      if (!resource->http_connection_manager.route_config_name.empty()) {
+        rds_resource_names_seen.insert(
+            resource->http_connection_manager.route_config_name);
+      }
     }
   }
   // For any subscribed resource that is not present in the update,
@@ -1030,7 +1049,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
 
 void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
     std::string version, grpc_millis update_time,
-    XdsApi::CdsUpdateMap cds_update_map) {
+    XdsApi::CdsUpdateMap cds_update_map,
+    const std::set<std::string>& resource_names_failed) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] CDS update received containing %" PRIuPTR
@@ -1070,6 +1090,20 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
     // Notify all watchers.
     for (const auto& p : cluster_state.watchers) {
       p.first->OnClusterChanged(cluster_state.update.value());
+    }
+  }
+  // For invalid resources in the update, if they are already in the
+  // cache, pretend that they are present in the update, so that we
+  // don't incorrectly consider them deleted below.
+  for (const std::string& cluster_name : resource_names_failed) {
+    auto it = xds_client()->cluster_map_.find(cluster_name);
+    if (it != xds_client()->cluster_map_.end()) {
+      auto& resource = it->second.update;
+      if (!resource.has_value()) continue;
+      cds_update_map[cluster_name];
+      eds_resource_names_seen.insert(resource->eds_service_name.empty()
+                                         ? cluster_name
+                                         : resource->eds_service_name);
     }
   }
   // For any subscribed resource that is not present in the update,
@@ -1173,7 +1207,7 @@ void XdsClient::ChannelState::AdsCallState::RejectAdsUpdateLocked(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] %s update NACKed containing %" PRIuPTR
-            " resources",
+            " invalid resources",
             xds_client(), result.type_url.c_str(),
             result.resource_names_failed.size());
   }
@@ -1268,9 +1302,8 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
     // Update nonce.
     auto& state = state_map_[result.type_url];
     state.nonce = std::move(result.nonce);
-    // NACK or ACK the response.
+    // If we got an error, we'll NACK the update.
     if (result.parse_error != GRPC_ERROR_NONE) {
-      // NACK unacceptable update.
       gpr_log(GPR_ERROR,
               "[xds_client %p] ADS response invalid for resource type %s "
               "version %s, will NACK: nonce=%s error=%s",
@@ -1294,27 +1327,32 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
         RejectAdsUpdateLocked(update_time, result,
                               &xds_client()->endpoint_map_);
       }
-      SendMessageLocked(result.type_url);
-    } else {
+    }
+    // Process any valid resources.
+    bool have_valid_resources = false;
+    if (result.type_url == XdsApi::kLdsTypeUrl) {
+      have_valid_resources = !result.lds_update_map.empty();
+      AcceptLdsUpdateLocked(result.version, update_time,
+                            std::move(result.lds_update_map),
+                            result.resource_names_failed);
+    } else if (result.type_url == XdsApi::kRdsTypeUrl) {
+      have_valid_resources = !result.rds_update_map.empty();
+      AcceptRdsUpdateLocked(result.version, update_time,
+                            std::move(result.rds_update_map));
+    } else if (result.type_url == XdsApi::kCdsTypeUrl) {
+      have_valid_resources = !result.cds_update_map.empty();
+      AcceptCdsUpdateLocked(result.version, update_time,
+                            std::move(result.cds_update_map),
+                            result.resource_names_failed);
+    } else if (result.type_url == XdsApi::kEdsTypeUrl) {
+      have_valid_resources = !result.eds_update_map.empty();
+      AcceptEdsUpdateLocked(result.version, update_time,
+                            std::move(result.eds_update_map));
+    }
+    if (have_valid_resources) {
       seen_response_ = true;
-      // Accept the ADS response according to the type_url.
-      if (result.type_url == XdsApi::kLdsTypeUrl) {
-        AcceptLdsUpdateLocked(result.version, update_time,
-                              std::move(result.lds_update_map));
-      } else if (result.type_url == XdsApi::kRdsTypeUrl) {
-        AcceptRdsUpdateLocked(result.version, update_time,
-                              std::move(result.rds_update_map));
-      } else if (result.type_url == XdsApi::kCdsTypeUrl) {
-        AcceptCdsUpdateLocked(result.version, update_time,
-                              std::move(result.cds_update_map));
-      } else if (result.type_url == XdsApi::kEdsTypeUrl) {
-        AcceptEdsUpdateLocked(result.version, update_time,
-                              std::move(result.eds_update_map));
-      }
       xds_client()->resource_version_map_[result.type_url] =
           std::move(result.version);
-      // ACK the update.
-      SendMessageLocked(result.type_url);
       // Start load reporting if needed.
       auto& lrs_call = chand()->lrs_calld_;
       if (lrs_call != nullptr) {
@@ -1322,6 +1360,8 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
         if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
       }
     }
+    // Send ACK or NACK.
+    SendMessageLocked(result.type_url);
   }
   if (xds_client()->shutting_down_) return true;
   // Keep listening for updates.

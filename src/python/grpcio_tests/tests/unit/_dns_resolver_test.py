@@ -49,7 +49,7 @@ class DNSResolverTest(unittest.TestCase):
     def test_connect_loopback(self):
         # NOTE(https://github.com/grpc/grpc/issues/18422)
         # In short, Gevent + C-Ares = Segfault. The C-Ares driver is not
-        # supported by custom io manager like "gevent" or "libuv".
+        # supported by custom io manager like "gevent"
         with grpc.insecure_channel('loopback4.unittest.grpc.io:%d' %
                                    self._port) as channel:
             self.assertEqual(

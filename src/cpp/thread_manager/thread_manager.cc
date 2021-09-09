@@ -21,6 +21,7 @@
 #include <climits>
 
 #include <grpc/support/log.h>
+
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
@@ -58,7 +59,8 @@ ThreadManager::ThreadManager(const char* name,
       max_pollers_(max_pollers == -1 ? INT_MAX : max_pollers),
       num_threads_(0),
       max_active_threads_sofar_(0) {
-  resource_user_ = grpc_resource_user_create(resource_quota, name);
+  resource_user_ =
+      grpc_resource_user_create(resource_quota, name != nullptr ? name : "");
 }
 
 ThreadManager::~ThreadManager() {

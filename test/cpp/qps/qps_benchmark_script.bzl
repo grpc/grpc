@@ -31,10 +31,10 @@ load("//test/cpp/qps:json_run_localhost_scenarios.bzl", "JSON_RUN_LOCALHOST_SCEN
 
 def add_suffix(name):
     # NOTE(https://github.com/grpc/grpc/issues/24178): Add the suffix to the name
-    # to avoid having the target name that 89 or 90 long.
-    m = len(name) - (89 - len("//test/cpp/qps:"))
-    if m == 0 or m == 1:
-        return name + "_" * (2 - m)
+    # to avoid having the target name that 87, 88, 89 or 90 long.
+    m = len(name) - (87 - len("//test/cpp/qps:"))
+    if m >= 0 and m <= 3:
+        return name + "_" * (4 - m)
     else:
         return name
 

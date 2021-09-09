@@ -16,8 +16,6 @@
  *
  */
 
-#include <grpcpp/impl/codegen/server_context.h>
-
 #include <algorithm>
 #include <atomic>
 #include <utility>
@@ -29,6 +27,7 @@
 #include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/completion_queue.h>
+#include <grpcpp/impl/codegen/server_context.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/time.h>

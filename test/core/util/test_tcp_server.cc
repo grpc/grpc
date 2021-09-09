@@ -16,20 +16,20 @@
  *
  */
 
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
-
 #include "test/core/util/test_tcp_server.h"
+
+#include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <string.h>
 
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -66,7 +66,9 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
   resolved_addr.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
 
   grpc_error_handle error = grpc_tcp_server_create(
-      &server->shutdown_complete, nullptr, &server->tcp_server);
+      &server->shutdown_complete, nullptr,
+      grpc_slice_allocator_factory_create(grpc_resource_quota_create(nullptr)),
+      &server->tcp_server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   error =
       grpc_tcp_server_add_port(server->tcp_server, &resolved_addr, &port_added);

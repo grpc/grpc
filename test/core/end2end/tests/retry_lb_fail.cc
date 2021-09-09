@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -33,8 +31,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/static_metadata.h"
-
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 
 namespace grpc_core {
@@ -42,7 +40,7 @@ namespace {
 
 const char* kFailPolicyName = "fail_lb";
 
-Atomic<int> g_num_lb_picks;
+std::atomic<int> g_num_lb_picks;
 
 class FailPolicy : public LoadBalancingPolicy {
  public:
@@ -66,7 +64,7 @@ class FailPolicy : public LoadBalancingPolicy {
     explicit FailPicker(absl::Status status) : status_(status) {}
 
     PickResult Pick(PickArgs /*args*/) override {
-      g_num_lb_picks.FetchAdd(1);
+      g_num_lb_picks.fetch_add(1);
       return PickResult::Fail(status_);
     }
 
@@ -179,7 +177,7 @@ static void test_retry_lb_fail(grpc_end2end_test_config config) {
   grpc_call_error error;
   grpc_slice details;
 
-  grpc_core::g_num_lb_picks.Store(0, grpc_core::MemoryOrder::RELAXED);
+  grpc_core::g_num_lb_picks.store(0, std::memory_order_relaxed);
 
   grpc_arg args[] = {
       grpc_channel_arg_integer_create(
@@ -259,8 +257,7 @@ static void test_retry_lb_fail(grpc_end2end_test_config config) {
 
   cq_verifier_destroy(cqv);
 
-  int num_picks =
-      grpc_core::g_num_lb_picks.Load(grpc_core::MemoryOrder::RELAXED);
+  int num_picks = grpc_core::g_num_lb_picks.load(std::memory_order_relaxed);
   gpr_log(GPR_INFO, "NUM LB PICKS: %d", num_picks);
   GPR_ASSERT(num_picks == 2);
 

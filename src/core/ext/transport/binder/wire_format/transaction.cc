@@ -25,5 +25,6 @@ const int kFlagOutOfBandClose = 0x8;
 const int kFlagExpectSingleMessage = 0x10;
 const int kFlagStatusDescription = 0x20;
 const int kFlagMessageDataIsParcelable = 0x40;
+const int kFlagMessageDataIsPartial = 0x80;
 
 }  // namespace grpc_binder

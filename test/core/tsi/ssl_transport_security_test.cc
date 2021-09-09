@@ -18,13 +18,14 @@
 
 #include "src/core/tsi/ssl_transport_security.h"
 
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -35,6 +36,7 @@
 
 extern "C" {
 #include <openssl/crypto.h>
+#include <openssl/err.h>
 #include <openssl/pem.h>
 }
 
@@ -705,6 +707,17 @@ void ssl_tsi_test_do_round_trip_for_all_configs() {
   gpr_free(bit_array);
 }
 
+void ssl_tsi_test_do_round_trip_with_error_on_stack() {
+  gpr_log(GPR_INFO, "ssl_tsi_test_do_round_trip_with_error_on_stack");
+  // Invoke an SSL function that causes an error, and ensure the error
+  // makes it to the stack.
+  GPR_ASSERT(!EC_KEY_new_by_curve_name(NID_rsa));
+  GPR_ASSERT(ERR_peek_error() != 0);
+  tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
+  tsi_test_do_round_trip(fixture);
+  tsi_test_fixture_destroy(fixture);
+}
+
 static bool is_slow_build() {
 #if defined(GPR_ARCH_32) || defined(__APPLE__)
   return true;
@@ -1035,6 +1048,7 @@ int main(int argc, char** argv) {
     ssl_tsi_test_do_handshake_alpn_client_server_ok();
     ssl_tsi_test_do_handshake_session_cache();
     ssl_tsi_test_do_round_trip_for_all_configs();
+    ssl_tsi_test_do_round_trip_with_error_on_stack();
     ssl_tsi_test_do_round_trip_odd_buffer_size();
     ssl_tsi_test_handshaker_factory_internals();
     ssl_tsi_test_duplicate_root_certificates();

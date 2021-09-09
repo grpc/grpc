@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <map>
 #include <string>
 
@@ -29,7 +30,6 @@
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -144,7 +144,7 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
   absl::string_view lrs_server_name_;
   absl::string_view cluster_name_;
   absl::string_view eds_service_name_;
-  Atomic<uint64_t> uncategorized_drops_{0};
+  std::atomic<uint64_t> uncategorized_drops_{0};
   // Protects categorized_drops_. A mutex is necessary because the length of
   // dropped_requests can be accessed by both the picker (from data plane
   // mutex) and the load reporting thread (from the control plane combiner).
@@ -221,10 +221,10 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
   absl::string_view eds_service_name_;
   RefCountedPtr<XdsLocalityName> name_;
 
-  Atomic<uint64_t> total_successful_requests_{0};
-  Atomic<uint64_t> total_requests_in_progress_{0};
-  Atomic<uint64_t> total_error_requests_{0};
-  Atomic<uint64_t> total_issued_requests_{0};
+  std::atomic<uint64_t> total_successful_requests_{0};
+  std::atomic<uint64_t> total_requests_in_progress_{0};
+  std::atomic<uint64_t> total_error_requests_{0};
+  std::atomic<uint64_t> total_issued_requests_{0};
 
   // Protects backend_metrics_. A mutex is necessary because the length of
   // backend_metrics_ can be accessed by both the callback intercepting the

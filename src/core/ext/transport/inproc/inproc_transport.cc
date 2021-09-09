@@ -18,12 +18,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/transport/inproc/inproc_transport.h"
+
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <string.h>
-#include "src/core/ext/transport/inproc/inproc_transport.h"
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -1290,7 +1293,6 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   const grpc_channel_args* server_args = grpc_channel_args_copy_and_remove(
       server->core_server->channel_args(), args_to_remove,
       GPR_ARRAY_SIZE(args_to_remove));
-
   // Add a default authority channel argument for the client
   grpc_arg default_authority_arg;
   default_authority_arg.type = GRPC_ARG_STRING;
@@ -1311,7 +1313,7 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   if (error == GRPC_ERROR_NONE) {
     channel =
         grpc_channel_create("inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                            client_transport, nullptr, &error);
+                            client_transport, nullptr, 0, &error);
     if (error != GRPC_ERROR_NONE) {
       GPR_ASSERT(!channel);
       gpr_log(GPR_ERROR, "Failed to create client channel: %s",

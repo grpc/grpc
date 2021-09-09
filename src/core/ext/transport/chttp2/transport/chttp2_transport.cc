@@ -18,18 +18,18 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
-#include "absl/strings/str_format.h"
-
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "absl/strings/str_format.h"
+
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
@@ -204,7 +204,6 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   grpc_slice_buffer_destroy_internal(&qbuf);
 
   grpc_slice_buffer_destroy_internal(&outbuf);
-  grpc_chttp2_hpack_compressor_destroy(&hpack_compressor);
 
   grpc_error_handle error =
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Transport destroyed");
@@ -280,8 +279,7 @@ static bool read_channel_args(grpc_chttp2_transport* t,
       const int value =
           grpc_channel_arg_get_integer(&channel_args->args[i], options);
       if (value >= 0) {
-        grpc_chttp2_hpack_compressor_set_max_usable_size(
-            &t->hpack_compressor, static_cast<uint32_t>(value));
+        t->hpack_compressor.SetMaxUsableSize(value);
       }
     } else if (0 == strcmp(channel_args->args[i].key,
                            GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)) {
@@ -474,7 +472,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     grpc_slice_buffer_add(&outbuf, grpc_slice_from_copied_string(
                                        GRPC_CHTTP2_CLIENT_CONNECT_STRING));
   }
-  grpc_chttp2_hpack_compressor_init(&hpack_compressor);
   grpc_slice_buffer_init(&qbuf);
   // copy in initial settings to all setting sets
   size_t i;
@@ -538,6 +535,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
 static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
   t->destroying = 1;
+  grpc_resource_user_shutdown(t->resource_user);
+  grpc_resource_user_unref(t->resource_user);
   close_transport_locked(
       t, grpc_error_set_int(
              GRPC_ERROR_CREATE_FROM_STATIC_STRING("Transport destroyed"),
@@ -712,13 +711,10 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
   GRPC_ERROR_UNREF(read_closed_error);
   GRPC_ERROR_UNREF(write_closed_error);
   GRPC_ERROR_UNREF(byte_stream_error);
-
   flow_control.Destroy();
-
-  if (t->resource_user != nullptr) {
+  if (!t->is_client) {
     grpc_resource_user_free(t->resource_user, GRPC_RESOURCE_QUOTA_CALL_SIZE);
   }
-
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "stream");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, destroy_stream_arg, GRPC_ERROR_NONE);
 }
@@ -770,8 +766,8 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
   // Don't accept the stream if memory quota doesn't allow. Note that we should
   // simply refuse the stream here instead of canceling the stream after it's
   // accepted since the latter will create the call which costs much memory.
-  if (t->resource_user != nullptr &&
-      !grpc_resource_user_safe_alloc(t->resource_user,
+  GPR_ASSERT(t->resource_user != nullptr);
+  if (!grpc_resource_user_safe_alloc(t->resource_user,
                                      GRPC_RESOURCE_QUOTA_CALL_SIZE)) {
     gpr_log(GPR_INFO, "Memory exhausted, rejecting the stream.");
     grpc_chttp2_add_rst_stream_to_next_write(t, id, GRPC_HTTP2_REFUSED_STREAM,
@@ -1749,7 +1745,7 @@ void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id) {
 
 static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error) {
   // We want to log this irrespective of whether http tracing is enabled
-  gpr_log(GPR_INFO, "%s: Sending goaway err=%s", t->peer_string.c_str(),
+  gpr_log(GPR_DEBUG, "%s: Sending goaway err=%s", t->peer_string.c_str(),
           grpc_error_std_string(error).c_str());
   t->sent_goaway_state = GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED;
   grpc_http2_error_code http_error;
@@ -2353,8 +2349,8 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 
   size_t msg_len = GRPC_SLICE_LENGTH(slice);
   GPR_ASSERT(msg_len <= UINT32_MAX);
-  uint32_t msg_len_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)msg_len, 1);
-  message_pfx = GRPC_SLICE_MALLOC(14 + msg_len_len);
+  grpc_core::VarintWriter<1> msg_len_writer(msg_len);
+  message_pfx = GRPC_SLICE_MALLOC(14 + msg_len_writer.length());
   p = GRPC_SLICE_START_PTR(message_pfx);
   *p++ = 0x00; /* literal header, not indexed */
   *p++ = 12;   /* len(grpc-message) */
@@ -2370,8 +2366,8 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   *p++ = 'a';
   *p++ = 'g';
   *p++ = 'e';
-  GRPC_CHTTP2_WRITE_VARINT((uint32_t)msg_len, 1, 0, p, (uint32_t)msg_len_len);
-  p += msg_len_len;
+  msg_len_writer.Write(0, p);
+  p += msg_len_writer.length();
   GPR_ASSERT(p == GRPC_SLICE_END_PTR(message_pfx));
   len += static_cast<uint32_t> GRPC_SLICE_LENGTH(message_pfx);
   len += static_cast<uint32_t>(msg_len);
@@ -3161,8 +3157,8 @@ static void post_benign_reclaimer(grpc_chttp2_transport* t) {
     GRPC_CHTTP2_REF_TRANSPORT(t, "benign_reclaimer");
     GRPC_CLOSURE_INIT(&t->benign_reclaimer_locked, benign_reclaimer, t,
                       grpc_schedule_on_exec_ctx);
-    grpc_resource_user_post_reclaimer(grpc_endpoint_get_resource_user(t->ep),
-                                      false, &t->benign_reclaimer_locked);
+    grpc_resource_user_post_reclaimer(t->resource_user, false,
+                                      &t->benign_reclaimer_locked);
   }
 }
 
@@ -3172,8 +3168,8 @@ static void post_destructive_reclaimer(grpc_chttp2_transport* t) {
     GRPC_CHTTP2_REF_TRANSPORT(t, "destructive_reclaimer");
     GRPC_CLOSURE_INIT(&t->destructive_reclaimer_locked, destructive_reclaimer,
                       t, grpc_schedule_on_exec_ctx);
-    grpc_resource_user_post_reclaimer(grpc_endpoint_get_resource_user(t->ep),
-                                      true, &t->destructive_reclaimer_locked);
+    grpc_resource_user_post_reclaimer(t->resource_user, true,
+                                      &t->destructive_reclaimer_locked);
   }
 }
 
@@ -3208,8 +3204,7 @@ static void benign_reclaimer_locked(void* arg, grpc_error_handle error) {
   }
   t->benign_reclaimer_registered = false;
   if (error != GRPC_ERROR_CANCELLED) {
-    grpc_resource_user_finish_reclamation(
-        grpc_endpoint_get_resource_user(t->ep));
+    grpc_resource_user_finish_reclamation(t->resource_user);
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "benign_reclaimer");
 }
@@ -3246,8 +3241,7 @@ static void destructive_reclaimer_locked(void* arg, grpc_error_handle error) {
     }
   }
   if (error != GRPC_ERROR_CANCELLED) {
-    grpc_resource_user_finish_reclamation(
-        grpc_endpoint_get_resource_user(t->ep));
+    grpc_resource_user_finish_reclamation(t->resource_user);
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "destructive_reclaimer");
 }

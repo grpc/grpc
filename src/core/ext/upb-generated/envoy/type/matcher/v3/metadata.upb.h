@@ -61,6 +61,7 @@ UPB_INLINE bool envoy_type_matcher_v3_MetadataMatcher_has_path(const envoy_type_
 UPB_INLINE const envoy_type_matcher_v3_MetadataMatcher_PathSegment* const* envoy_type_matcher_v3_MetadataMatcher_path(const envoy_type_matcher_v3_MetadataMatcher *msg, size_t *len) { return (const envoy_type_matcher_v3_MetadataMatcher_PathSegment* const*)_upb_array_accessor(msg, UPB_SIZE(16, 32), len); }
 UPB_INLINE bool envoy_type_matcher_v3_MetadataMatcher_has_value(const envoy_type_matcher_v3_MetadataMatcher *msg) { return _upb_hasbit(msg, 1); }
 UPB_INLINE const struct envoy_type_matcher_v3_ValueMatcher* envoy_type_matcher_v3_MetadataMatcher_value(const envoy_type_matcher_v3_MetadataMatcher *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct envoy_type_matcher_v3_ValueMatcher*); }
+UPB_INLINE bool envoy_type_matcher_v3_MetadataMatcher_invert(const envoy_type_matcher_v3_MetadataMatcher *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool); }
 
 UPB_INLINE void envoy_type_matcher_v3_MetadataMatcher_set_filter(envoy_type_matcher_v3_MetadataMatcher *msg, upb_strview value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
@@ -90,6 +91,9 @@ UPB_INLINE struct envoy_type_matcher_v3_ValueMatcher* envoy_type_matcher_v3_Meta
     envoy_type_matcher_v3_MetadataMatcher_set_value(msg, sub);
   }
   return sub;
+}
+UPB_INLINE void envoy_type_matcher_v3_MetadataMatcher_set_invert(envoy_type_matcher_v3_MetadataMatcher *msg, bool value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
 }
 
 /* envoy.type.matcher.v3.MetadataMatcher.PathSegment */

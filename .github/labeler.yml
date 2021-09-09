@@ -1,0 +1,15 @@
+lang/core:
+- src/core/**
+- include/grpc/**
+- test/core/**
+- tools/codegen/core/**
+
+lang/c++:
+- src/cpp/**
+- include/grpc++/**
+- include/grpcpp/**
+- test/cpp/**
+
+area/infra:
+- .github/**
+

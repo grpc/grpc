@@ -16,14 +16,13 @@
  *
  */
 
-#include "test/core/bad_client/bad_client.h"
-
 #include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/surface/server.h"
+#include "test/core/bad_client/bad_client.h"
 
 #define PFX_STR                                                            \
   "\x00\x00\x00\x04\x01\x00\x00\x00\x00"                                   \

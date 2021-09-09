@@ -14,11 +14,11 @@ def upb_deps():
     maybe(
         http_archive,
         name = "com_google_protobuf",
-        sha256 = "b10bf4e2d1a7586f54e64a5d9e7837e5188fc75ae69e36f215eb01def4f9721b",
-        strip_prefix = "protobuf-3.15.3",
+        sha256 = "cf63d46ef743f4c30b0e36a562caf83cabed3f10e6ca49eb476913c4655394d5",
+        strip_prefix = "protobuf-3.17.3",
         urls = [
-            "https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v3.15.3.tar.gz",
-            "https://github.com/protocolbuffers/protobuf/archive/v3.15.3.tar.gz",
+            "https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v3.17.3.tar.gz",
+            "https://github.com/protocolbuffers/protobuf/archive/v3.17.3.tar.gz",
         ],
     )
 

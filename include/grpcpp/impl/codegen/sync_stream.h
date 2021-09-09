@@ -18,6 +18,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SYNC_STREAM_H
 #define GRPCPP_IMPL_CODEGEN_SYNC_STREAM_H
 
+// IWYU pragma: private, include <grpcpp/support/sync_stream.h>
+
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/client_context.h>
