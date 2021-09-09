@@ -126,19 +126,40 @@ ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py sdist
 # shellcheck disable=SC2086
 ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py bdist_wheel $WHEEL_PLAT_NAME_FLAG
 
+# run twine check before auditwheel, because auditwheel puts the repaired wheels into
+# the artifacts output dir.
+if [ "$GRPC_SKIP_TWINE_CHECK" == "" ]
+then
+  # Ensure the generated artifacts are valid.
+  # TODO(jtattermusch): avoid the need for always re-installing virtualenv and twine
+  "${PYTHON}" -m pip install virtualenv
+  "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==16.7.9 && "${PYTHON}" -m virtualenv venv; }
+  venv/bin/python -m pip install "twine<=2.0"
+  venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
+  rm -rf venv/
+fi
+
 if [ "$GRPC_RUN_AUDITWHEEL_REPAIR" != "" ]
 then
   for wheel in dist/*.whl; do
     "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr |  grep -E -w "$AUDITWHEEL_PLAT"
-    "${AUDITWHEEL}" repair "$wheel" -w "$ARTIFACT_DIR"
+    "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
     rm "$wheel"
   done
   for wheel in tools/distrib/python/grpcio_tools/dist/*.whl; do
     "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr |  grep -E -w "$AUDITWHEEL_PLAT"
-    "${AUDITWHEEL}" repair "$wheel" -w "$ARTIFACT_DIR"
+    "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
     rm "$wheel"
   done
+else
+  cp -r dist/*.whl "$ARTIFACT_DIR"
+  cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$ARTIFACT_DIR"
 fi
+
+# grpcio and grpcio-tools wheels have already been copied to artifact_dir
+# by "auditwheel repair", now copy the .tar.gz source archives as well.
+cp -r dist/*.tar.gz "$ARTIFACT_DIR"
+cp -r tools/distrib/python/grpcio_tools/dist/*.tar.gz "$ARTIFACT_DIR"
 
 # We need to use the built grpcio-tools/grpcio to compile the health proto
 # Wheels are not supported by setup_requires/dependency_links, so we
@@ -200,16 +221,3 @@ then
       sdist bdist_wheel
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 fi
-
-if [ "$GRPC_SKIP_TWINE_CHECK" == "" ]
-then
-  # Ensure the generated artifacts are valid.
-  "${PYTHON}" -m pip install virtualenv
-  "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==16.7.9 && "${PYTHON}" -m virtualenv venv; }
-  venv/bin/python -m pip install "twine<=2.0"
-  venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
-  rm -rf venv/
-fi
-
-cp -r dist/* "$ARTIFACT_DIR"
-cp -r tools/distrib/python/grpcio_tools/dist/* "$ARTIFACT_DIR"
