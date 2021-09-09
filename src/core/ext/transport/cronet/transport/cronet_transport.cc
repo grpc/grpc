@@ -767,8 +767,8 @@ static void convert_metadata_to_cronet_headers(
     char* key = grpc_slice_to_c_string(GRPC_MDSTR_GRPC_TIMEOUT);
     char* value =
         static_cast<char*>(gpr_malloc(GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE));
-    grpc_http2_encode_timeout((*metadata)->deadline() - grpc_core::ExecCtx::Get()->Now(),
-                              value);
+    grpc_http2_encode_timeout(
+        (*metadata)->deadline() - grpc_core::ExecCtx::Get()->Now(), value);
     headers[num_headers].key = key;
     headers[num_headers].value = value;
 
@@ -793,8 +793,7 @@ static void parse_grpc_header(const uint8_t* data, int* length,
 static bool header_has_authority(const grpc_metadata_batch* b) {
   bool found = false;
   (*b)->ForEach([&](grpc_mdelem elem) {
-    if (grpc_slice_eq_static_interned(GRPC_MDKEY(elem),
-                                      GRPC_MDSTR_AUTHORITY)) {
+    if (grpc_slice_eq_static_interned(GRPC_MDKEY(elem), GRPC_MDSTR_AUTHORITY)) {
       found = true;
     }
   });
