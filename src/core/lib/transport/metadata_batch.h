@@ -135,7 +135,7 @@ class MetadataMap {
                                grpc_mdelem new_mdelem);
 
   absl::optional<absl::string_view> GetValue(absl::string_view target_key,
-                                             std::string* concatenated_value);
+                                             std::string* concatenated_value) const;
 
   grpc_error_handle LinkHead(grpc_linked_mdelem* storage) GRPC_MUST_USE_RESULT;
   grpc_error_handle LinkHead(grpc_linked_mdelem* storage,

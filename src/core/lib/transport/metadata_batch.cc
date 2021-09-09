@@ -288,7 +288,7 @@ void MetadataMap::Remove(grpc_metadata_batch_callouts_index idx) {
 }
 
 absl::optional<absl::string_view> MetadataMap::GetValue(
-    absl::string_view target_key, std::string* concatenated_value) {
+    absl::string_view target_key, std::string* concatenated_value) const {
   // Find all values for the specified key.
   absl::InlinedVector<absl::string_view, 1> values;
   for (grpc_linked_mdelem* md = list_.head; md != nullptr; md = md->next) {
