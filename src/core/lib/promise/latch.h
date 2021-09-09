@@ -84,9 +84,16 @@ class Latch {
   }
 
  private:
-  T value_;
+  // The value stored (if has_value_ is true), otherwise some random value, we
+  // don't care.
+  // Why not absl::optional<>? Writing things this way lets us compress
+  // has_value_ with waiter_ and leads to some significant memory savings for
+  // some scenarios.
+  GPR_NO_UNIQUE_ADDRESS T value_;
+  // True if we have a value set, false otherwise.
   bool has_value_ = false;
 #ifndef NDEBUG
+  // Has this latch ever had waiters.
   bool has_had_waiters_ = false;
 #endif
   IntraActivityWaiter waiter_;
