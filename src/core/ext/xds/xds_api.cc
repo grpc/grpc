@@ -116,17 +116,6 @@ bool XdsAggregateAndLogicalDnsClusterEnabled() {
   return parse_succeeded && parsed_value;
 }
 
-// TODO(yashykt): Check to see if xDS security is enabled. This will be
-// removed once this feature is fully integration-tested and enabled by
-// default.
-bool XdsSecurityEnabled() {
-  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
-
 //
 // XdsApi::Route::HashPolicy
 //
@@ -2583,17 +2572,13 @@ grpc_error_handle FilterChainParse(
       }
     }
   }
-  // Get the DownstreamTlsContext for the filter chain
-  if (XdsSecurityEnabled()) {
-    auto* transport_socket =
-        envoy_config_listener_v3_FilterChain_transport_socket(
-            filter_chain_proto);
-    if (transport_socket != nullptr) {
-      grpc_error_handle error = DownstreamTlsContextParse(
-          context, transport_socket,
-          &filter_chain->filter_chain_data->downstream_tls_context);
-      if (error != GRPC_ERROR_NONE) errors.push_back(error);
-    }
+  auto* transport_socket =
+      envoy_config_listener_v3_FilterChain_transport_socket(filter_chain_proto);
+  if (transport_socket != nullptr) {
+    grpc_error_handle error = DownstreamTlsContextParse(
+        context, transport_socket,
+        &filter_chain->filter_chain_data->downstream_tls_context);
+    if (error != GRPC_ERROR_NONE) errors.push_back(error);
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("Error parsing FilterChain", &errors);
 }
@@ -3138,18 +3123,16 @@ grpc_error_handle CdsResourceParse(
     errors.push_back(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("LB policy is not supported."));
   }
-  if (XdsSecurityEnabled()) {
-    auto* transport_socket =
-        envoy_config_cluster_v3_Cluster_transport_socket(cluster);
-    if (transport_socket != nullptr) {
-      grpc_error_handle error = UpstreamTlsContextParse(
-          context, transport_socket, &cds_update->common_tls_context);
-      if (error != GRPC_ERROR_NONE) {
-        errors.push_back(
-            grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                     "Error parsing security configuration"),
-                                 error));
-      }
+  auto* transport_socket =
+      envoy_config_cluster_v3_Cluster_transport_socket(cluster);
+  if (transport_socket != nullptr) {
+    grpc_error_handle error = UpstreamTlsContextParse(
+        context, transport_socket, &cds_update->common_tls_context);
+    if (error != GRPC_ERROR_NONE) {
+      errors.push_back(
+          grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                   "Error parsing security configuration"),
+                               error));
     }
   }
   // Record LRS server name (if any).
