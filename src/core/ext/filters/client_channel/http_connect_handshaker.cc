@@ -248,10 +248,9 @@ void HttpConnectHandshaker::OnReadDone(void* arg, grpc_error_handle error) {
   // Make sure we got a 2xx response.
   if (handshaker->http_response_.status < 200 ||
       handshaker->http_response_.status >= 300) {
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("HTTP proxy returned response code ",
-                     handshaker->http_response_.status)
-            .c_str());
+                     handshaker->http_response_.status));
     handshaker->HandshakeFailedLocked(error);
     goto done;
   }

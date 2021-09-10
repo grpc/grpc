@@ -151,8 +151,8 @@ grpc_error_handle XdsBootstrap::ParseXdsServerList(Json* json) {
   for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
     Json& child = json->mutable_array()->at(i);
     if (child.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("array element ", i, " is not an object").c_str()));
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("array element ", i, " is not an object")));
     } else {
       grpc_error_handle parse_error = ParseXdsServer(&child, i);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
@@ -199,15 +199,8 @@ grpc_error_handle XdsBootstrap::ParseXdsServer(Json* json, size_t idx) {
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }
-  // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
-  // string is not static in this case.
-  if (error_list.empty()) return GRPC_ERROR_NONE;
-  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-      absl::StrCat("errors parsing index ", idx).c_str());
-  for (size_t i = 0; i < error_list.size(); ++i) {
-    error = grpc_error_add_child(error, error_list[i]);
-  }
-  return error;
+  return GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+      absl::StrCat("errors parsing index ", idx), &error_list);
 }
 
 grpc_error_handle XdsBootstrap::ParseChannelCredsArray(Json* json,
@@ -216,8 +209,8 @@ grpc_error_handle XdsBootstrap::ParseChannelCredsArray(Json* json,
   for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
     Json& child = json->mutable_array()->at(i);
     if (child.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("array element ", i, " is not an object").c_str()));
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("array element ", i, " is not an object")));
     } else {
       grpc_error_handle parse_error = ParseChannelCreds(&child, i, server);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
@@ -259,22 +252,14 @@ grpc_error_handle XdsBootstrap::ParseChannelCreds(Json* json, size_t idx,
   if (server->channel_creds_type.empty() &&
       XdsChannelCredsRegistry::IsSupported(type)) {
     if (!XdsChannelCredsRegistry::IsValidConfig(type, config)) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("invalid config for channel creds type \"", type, "\"")
-              .c_str()));
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "invalid config for channel creds type \"", type, "\"")));
     }
     server->channel_creds_type = std::move(type);
     server->channel_creds_config = std::move(config);
   }
-  // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
-  // string is not static in this case.
-  if (error_list.empty()) return GRPC_ERROR_NONE;
-  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-      absl::StrCat("errors parsing index ", idx).c_str());
-  for (size_t i = 0; i < error_list.size(); ++i) {
-    error = grpc_error_add_child(error, error_list[i]);
-  }
-  return error;
+  return GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+      absl::StrCat("errors parsing index ", idx), &error_list);
 }
 
 grpc_error_handle XdsBootstrap::ParseServerFeaturesArray(Json* json,
@@ -372,10 +357,8 @@ grpc_error_handle XdsBootstrap::ParseCertificateProviders(Json* json) {
   std::vector<grpc_error_handle> error_list;
   for (auto& certificate_provider : *(json->mutable_object())) {
     if (certificate_provider.second.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("element \"", certificate_provider.first,
-                       "\" is not an object")
-              .c_str()));
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "element \"", certificate_provider.first, "\" is not an object")));
     } else {
       grpc_error_handle parse_error = ParseCertificateProvider(
           certificate_provider.first, &certificate_provider.second);
@@ -402,8 +385,8 @@ grpc_error_handle XdsBootstrap::ParseCertificateProvider(
         CertificateProviderRegistry::LookupCertificateProviderFactory(
             plugin_name);
     if (factory == nullptr) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("Unrecognized plugin name: ", plugin_name).c_str()));
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("Unrecognized plugin name: ", plugin_name)));
     } else {
       RefCountedPtr<CertificateProviderFactory::Config> config;
       it = certificate_provider_json->mutable_object()->find("config");
@@ -428,15 +411,9 @@ grpc_error_handle XdsBootstrap::ParseCertificateProvider(
           {instance_name, {std::move(plugin_name), std::move(config)}});
     }
   }
-  // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
-  // string is not static in this case.
-  if (error_list.empty()) return GRPC_ERROR_NONE;
-  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-      absl::StrCat("errors parsing element \"", instance_name, "\"").c_str());
-  for (size_t i = 0; i < error_list.size(); ++i) {
-    error = grpc_error_add_child(error, error_list[i]);
-  }
-  return error;
+  return GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+      absl::StrCat("errors parsing element \"", instance_name, "\""),
+      &error_list);
 }
 
 std::string XdsBootstrap::ToString() const {

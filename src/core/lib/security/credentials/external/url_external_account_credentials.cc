@@ -51,10 +51,9 @@ UrlExternalAccountCredentials::UrlExternalAccountCredentials(
   }
   absl::StatusOr<URI> tmp_url = URI::Parse(it->second.string_value());
   if (!tmp_url.ok()) {
-    *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrFormat("Invalid credential source url. Error: %s",
-                        tmp_url.status().ToString())
-            .c_str());
+                        tmp_url.status().ToString()));
     return;
   }
   url_ = *tmp_url;

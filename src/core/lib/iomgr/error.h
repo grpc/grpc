@@ -33,6 +33,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 /// Opaque representation of an error.
 /// See https://github.com/grpc/grpc/blob/master/doc/core/grpc-error.md for a
@@ -165,6 +166,8 @@ void grpc_enable_error_creation();
   StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
 #define GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc) \
   StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
+#define GRPC_ERROR_CREATE_FROM_CPP_STRING(desc) \
+  StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
 #define GRPC_ERROR_CREATE_FROM_STRING_VIEW(desc) \
   StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
 
@@ -198,6 +201,8 @@ static absl::Status grpc_status_create_from_vector(
 }
 
 #define GRPC_ERROR_CREATE_FROM_VECTOR(desc, error_list) \
+  grpc_status_create_from_vector(DEBUG_LOCATION, desc, error_list)
+#define GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(desc, error_list) \
   grpc_status_create_from_vector(DEBUG_LOCATION, desc, error_list)
 
 absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
@@ -286,6 +291,9 @@ grpc_error_handle grpc_error_create(const char* file, int line,
 #define GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc)                           \
   grpc_error_create(__FILE__, __LINE__, grpc_slice_from_copied_string(desc), \
                     NULL, 0)
+#define GRPC_ERROR_CREATE_FROM_CPP_STRING(desc)                           \
+  grpc_error_create(__FILE__, __LINE__, grpc_slice_from_cpp_string(desc), \
+                    NULL, 0)
 #define GRPC_ERROR_CREATE_FROM_STRING_VIEW(desc) \
   grpc_error_create(                             \
       __FILE__, __LINE__,                        \
@@ -301,18 +309,24 @@ grpc_error_handle grpc_error_create(const char* file, int line,
                     errs, count)
 
 #define GRPC_ERROR_CREATE_FROM_VECTOR(desc, error_list) \
-  grpc_error_create_from_vector(__FILE__, __LINE__, desc, error_list)
+  grpc_error_create_from_vector(                        \
+      __FILE__, __LINE__, grpc_slice_from_static_string, desc, error_list)
+#define GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(desc, error_list) \
+  grpc_error_create_from_vector(__FILE__, __LINE__,                    \
+                                grpc_slice_from_cpp_string, desc, error_list)
 
 // Consumes all the errors in the vector and forms a referencing error from
 // them. If the vector is empty, return GRPC_ERROR_NONE.
-template <typename VectorType>
-static grpc_error_handle grpc_error_create_from_vector(const char* file,
-                                                       int line,
-                                                       const char* desc,
-                                                       VectorType* error_list) {
+template <typename VectorType, typename StringType,
+          typename SliceFromStringFunction>
+static grpc_error_handle grpc_error_create_from_vector(
+    const char* file, int line,
+    SliceFromStringFunction slice_from_string_function, StringType desc,
+    VectorType* error_list) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   if (error_list->size() != 0) {
-    error = grpc_error_create(file, line, grpc_slice_from_static_string(desc),
+    error = grpc_error_create(file, line,
+                              slice_from_string_function(std::move(desc)),
                               error_list->data(), error_list->size());
     // Remove refs to all errors in error_list.
     for (size_t i = 0; i < error_list->size(); i++) {

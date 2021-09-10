@@ -1169,9 +1169,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
         std::vector<grpc_error_handle> discovery_mechanism_errors =
             ParseDiscoveryMechanism(array[i], &discovery_mechanism);
         if (!discovery_mechanism_errors.empty()) {
-          grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("field:discovery_mechanism element: ", i, " error")
-                  .c_str());
+          grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+              absl::StrCat("field:discovery_mechanism element: ", i, " error"));
           for (grpc_error_handle discovery_mechanism_error :
                discovery_mechanism_errors) {
             error = grpc_error_add_child(error, discovery_mechanism_error);

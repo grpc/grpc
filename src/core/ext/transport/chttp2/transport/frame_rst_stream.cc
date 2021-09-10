@@ -71,10 +71,8 @@ void grpc_chttp2_add_rst_stream_to_next_write(
 grpc_error_handle grpc_chttp2_rst_stream_parser_begin_frame(
     grpc_chttp2_rst_stream_parser* parser, uint32_t length, uint8_t flags) {
   if (length != 4) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("invalid rst_stream: length=%d, flags=%02x", length,
-                        flags)
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "invalid rst_stream: length=%d, flags=%02x", length, flags));
   }
   parser->byte = 0;
   return GRPC_ERROR_NONE;
