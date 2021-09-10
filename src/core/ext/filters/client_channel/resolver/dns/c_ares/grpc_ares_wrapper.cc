@@ -609,8 +609,7 @@ static void grpc_ares_request_unref_locked(grpc_ares_request* r) {
 }
 
 void grpc_ares_complete_request_locked(grpc_ares_request* r) {
-  /* Invoke on_done callback and destroy the
-     request */
+  /* Invoke on_done callback and destroy the request */
   r->ev_driver = nullptr;
   ServerAddressList* addresses = r->addresses_out->get();
   if (addresses != nullptr) {
@@ -975,19 +974,14 @@ static bool resolve_as_ip_literal_locked(
   return out;
 }
 
-static bool target_matches_localhost_inner(const char* name, std::string* host,
-                                           std::string* port) {
+static bool target_matches_localhost(const char* name) {
+  std::string host;
+  std::string port;
   if (!grpc_core::SplitHostPort(name, host, port)) {
     gpr_log(GPR_ERROR, "Unable to split host and port for name: %s", name);
     return false;
   }
   return gpr_stricmp(host->c_str(), "localhost") == 0;
-}
-
-static bool target_matches_localhost(const char* name) {
-  std::string host;
-  std::string port;
-  return target_matches_localhost_inner(name, &host, &port);
 }
 
 #ifdef GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY

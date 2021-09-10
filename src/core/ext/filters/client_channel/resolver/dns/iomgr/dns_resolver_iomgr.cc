@@ -23,6 +23,9 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/timer.h"
 
@@ -45,41 +48,62 @@ using ::grpc_event_engine::experimental::EventEngine;
 class IomgrDnsResolver : public Resolver {
  public:
   explicit IomgrDnsResolver(ResolverArgs args);
-
-  void StartLocked() override;
-
-  void RequestReresolutionLocked() override;
-
-  void ResetBackoffLocked() override;
-
-  void ShutdownLocked() override;
+  void StartLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) override;
+  void RequestReresolutionLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) override;
+  void ResetBackoffLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) override;
+  void ShutdownLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) override;
 
  private:
   ~IomgrDnsResolver() override;
-
-  void MaybeStartResolvingLocked();
-  void StartResolvingLocked();
-
+  //////////////////////////////////////////////////////////////////////////////
+  // Callbacks execute outside the work_serializer_
+  //////////////////////////////////////////////////////////////////////////////
   static void OnNextResolution(void* arg, grpc_error_handle error);
-  void OnNextResolutionLocked(grpc_error_handle error);
-  static void OnHostnamesResolved(
+  static void OnHostnameResolved(
       IomgrDnsResolver* self,
-      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> hostnames);
-  void OnHostnamesResolvedLocked();
+      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses);
   static void OnSrvResolved(
       IomgrDnsResolver* self,
       absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>> records);
-  void OnSrvResolvedLocked();
+  static void OnBalancerResolved(
+      IomgrDnsResolver* self,
+      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses);
   static void OnTxtResolved(IomgrDnsResolver* self,
                             absl::StatusOr<std::string> txt_record);
-  void OnTxtResolvedLocked();
-  void FinishResolutionLocked();
 
-  absl::Status ParseResolvedHostnames(Result& result);
-  absl::Status ParseResolvedBalancerHostnames(Result& result);
-  absl::Status ParseResolvedServiceConfig(Result& result);
-  void SetRetryTimer();
+  //////////////////////////////////////////////////////////////////////////////
+  // All of the remaining methods must be called from within the
+  // work_serializer_
+  //////////////////////////////////////////////////////////////////////////////
+  void MaybeStartResolvingLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  void StartResolvingLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  void OnNextResolutionLocked(grpc_error_handle error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  void OnHostnamesResolvedLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  void OnBalancerResolvedLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  void OnSrvResolvedLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  void OnTxtResolvedLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  void FinishResolutionLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  absl::Status ParseResolvedHostnames(Result& result)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  absl::Status ParseResolvedBalancerHostnames(Result& result)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  absl::Status ParseResolvedServiceConfig(Result& result)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  void SetRetryTimer() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  // Whether all component resolution steps are complete, and the results can be
+  // processed.
+  bool DoneResolving() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
+  //////////////////////////////////////////////////////////////////////////////
+  // Data members
+  //////////////////////////////////////////////////////////////////////////////
   /// DNS server to use (if not system default)
   std::string dns_server_;
   /// name to resolve (usually the same as target_name)
@@ -106,6 +130,10 @@ class IomgrDnsResolver : public Resolver {
   bool resolving_srv_ = false;
   /// are we currently resolving txt records?
   bool resolving_txt_ = false;
+  /// are we currently resolving balancer addresses from the SRV response?
+  bool resolving_balancers_ = false;
+  /// number of remaining balancer hostname queries outstanding.
+  int remaining_balancer_query_count_ ABSL_GUARDED_BY(balancer_mu_);
   /// are we waiting on any of the 3 resolutions?
   bool resolution_in_progress_ = false;
   /// next resolution timer
@@ -121,20 +149,37 @@ class IomgrDnsResolver : public Resolver {
   EventEngine::DNSResolver::LookupTaskHandle host_handle_;
   EventEngine::DNSResolver::LookupTaskHandle srv_handle_;
   EventEngine::DNSResolver::LookupTaskHandle txt_handle_;
+  std::vector<EventEngine::DNSResolver::LookupTaskHandle> balancer_handles_;
   // temporary storage for resolved data
-  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> tmp_hostnames_;
+  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+      tmp_hostname_addresses_;
   absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
       tmp_srv_records_;
   absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
-      tmp_balancer_addresses_;
+      tmp_balancer_addresses_ ABSL_GUARDED_BY(balancer_mu_);
   absl::StatusOr<std::string> tmp_txt_record_;
   // pre-bound callback function for hostname resolution
   EventEngine::DNSResolver::LookupHostnameCallback on_hostnames_resolved_;
   // pre-bound callback function for srv resolution
   EventEngine::DNSResolver::LookupSRVCallback on_srv_resolved_;
+  // pre-bound callback function for balancer hostname resolution
+  EventEngine::DNSResolver::LookupHostnameCallback
+      on_balancer_hostname_resolved_;
   // pre-bound callback function for txt resolution
   EventEngine::DNSResolver::LookupTXTCallback on_txt_resolved_;
+  // All balancer callback processessing happens under this mutex.
+  Mutex balancer_mu_;
 };
+
+static bool target_matches_localhost(absl::string_view name) {
+  std::string host;
+  std::string port;
+  if (!grpc_core::SplitHostPort(name, &host, &port)) {
+    gpr_log(GPR_ERROR, "Unable to split host and port for name: %s", name);
+    return false;
+  }
+  return gpr_stricmp(host.c_str(), "localhost") == 0;
+}
 
 IomgrDnsResolver::IomgrDnsResolver(ResolverArgs args)
     : dns_server_(args.uri.authority()),
@@ -161,9 +206,11 @@ IomgrDnsResolver::IomgrDnsResolver(ResolverArgs args)
               .set_jitter(GRPC_DNS_RECONNECT_JITTER)
               .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
       on_hostnames_resolved_(
-          absl::bind_front(&IomgrDnsResolver::OnHostnamesResolved, this)),
+          absl::bind_front(&IomgrDnsResolver::OnHostnameResolved, this)),
       on_srv_resolved_(
           absl::bind_front(&IomgrDnsResolver::OnSrvResolved, this)),
+      on_balancer_hostname_resolved_(
+          absl::bind_front(&IomgrDnsResolver::OnBalancerResolved, this)),
       on_txt_resolved_(
           absl::bind_front(&IomgrDnsResolver::OnTxtResolved, this)) {
   GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this,
@@ -229,7 +276,11 @@ void IomgrDnsResolver::ShutdownLocked() {
   if (resolving_hostnames_) grpc_dns_try_cancel(host_handle_);
   if (resolving_srv_) grpc_dns_try_cancel(srv_handle_);
   if (resolving_txt_) grpc_dns_try_cancel(txt_handle_);
-  // DO NOT SUBMIT(hork): try_cancel for the balancer queries as well
+  if (resolving_balancers_) {
+    for (const auto& handle : balancer_handles_) {
+      grpc_dns_try_cancel(handle);
+    }
+  }
   // TODO(hork): ensure no other cleanup is necessary
 }
 
@@ -262,30 +313,33 @@ void IomgrDnsResolver::StartResolvingLocked() {
   // new closure API is done, find a way to track this ref with the timer
   // callback as part of the type system.
   Ref(DEBUG_LOCATION, "dns-resolving").release();
-  GPR_ASSERT(!resolving_hostnames_ && !resolving_srv_ && !resolving_txt_);
+  GPR_ASSERT(DoneResolving());
   GPR_ASSERT(!resolution_in_progress_);
   resolution_in_progress_ = true;
-  resolving_hostnames_ = true;
   Ref(DEBUG_LOCATION, "dns-resolving - hostnames").release();
+  resolving_hostnames_ = true;
   host_handle_ = grpc_dns_lookup_hostname(
       on_hostnames_resolved_, name_to_resolve_, kDefaultSecurePort,
       ToAbslTime(
           grpc_millis_to_timespec(query_timeout_ms_, GPR_CLOCK_MONOTONIC)),
       interested_parties_);
-  if (enable_srv_queries_) {
+  bool is_localhost = target_matches_localhost(name_to_resolve_);
+  if (!is_localhost && enable_srv_queries_) {
     Ref(DEBUG_LOCATION, "dns-resolving - srv records").release();
     resolving_srv_ = true;
+    std::string service_name = absl::StrCat("_grpclb._tcp.", name_to_resolve_);
     srv_handle_ =
-        grpc_dns_lookup_srv_record(on_srv_resolved_, name_to_resolve_,
+        grpc_dns_lookup_srv_record(on_srv_resolved_, service_name,
                                    ToAbslTime(grpc_millis_to_timespec(
                                        query_timeout_ms_, GPR_CLOCK_MONOTONIC)),
                                    interested_parties_);
   }
-  if (request_service_config_) {
+  if (!is_localhost && request_service_config_) {
     Ref(DEBUG_LOCATION, "dns-resolving - txt records").release();
     resolving_txt_ = true;
+    std::string config_name = absl::StrCat("_grpc_config.", name_to_resolve_);
     txt_handle_ =
-        grpc_dns_lookup_txt_record(on_txt_resolved_, name_to_resolve_,
+        grpc_dns_lookup_txt_record(on_txt_resolved_, config_name,
                                    ToAbslTime(grpc_millis_to_timespec(
                                        query_timeout_ms_, GPR_CLOCK_MONOTONIC)),
                                    interested_parties_);
@@ -298,14 +352,15 @@ void IomgrDnsResolver::StartResolvingLocked() {
       srv_handle_.key[1], txt_handle_.key[0], txt_handle_.key[1]);
 }
 
-void IomgrDnsResolver::OnHostnamesResolved(
+void IomgrDnsResolver::OnHostnameResolved(
     IomgrDnsResolver* self,
-    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> hostnames) {
+    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
   GPR_ASSERT(self->resolving_hostnames_);
   // hostname resolution won't occur again until `OnHostnamesResolvedLocked`
-  // finishes and the `tmp_hostnames_` member is cleared. It should be safe to
-  // assign to `tmp_hostnames_` in this callback, outside the work_serializer.
-  self->tmp_hostnames_ = std::move(hostnames);
+  // finishes and the `tmp_hostname_addresses_` member is cleared. It should be
+  // safe to assign to `tmp_hostname_addresses_` in this callback, outside the
+  // work_serializer.
+  self->tmp_hostname_addresses_ = std::move(addresses);
   self->work_serializer_->Run([self]() { self->OnHostnamesResolvedLocked(); },
                               DEBUG_LOCATION);
 }
@@ -319,20 +374,50 @@ void IomgrDnsResolver::OnHostnamesResolvedLocked() {
   GPR_ASSERT(resolving_hostnames_);
   resolving_hostnames_ = false;
   if (shutdown_initiated_) {
-    // DO NOT SUBMIT(hork): does any state need cleaning up?
     Unref(DEBUG_LOCATION, "OnHostnamesResolvedLocked() shutdown");
     return;
   }
-  if (!resolving_hostnames_ && !resolving_srv_ && !resolving_txt_) {
-    FinishResolutionLocked();
-  }
+  if (DoneResolving()) FinishResolutionLocked();
   Unref(DEBUG_LOCATION, "OnHostnamesResolvedLocked() complete");
 }
 
-// Handles SRV record resolution alone.
-// If all resolution steps are complete, this triggers further processing.
-// Otherwise, SRV resolution is marked as complete and the resolver waits
-// for other steps to finish.
+void IomgrDnsResolver::OnBalancerResolved(
+    IomgrDnsResolver* self,
+    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> balancers) {
+  GPR_ASSERT(self->resolving_balancers_);
+  {
+    MutexLock lock(&self->balancer_mu_);
+    if (self->tmp_balancer_addresses_.ok()) {
+      if (!balancers.ok()) {
+        self->tmp_balancer_addresses_ = balancers.status();
+      } else {
+        self->tmp_balancer_addresses_->emplace_back(*balancers);
+      }
+    }
+  }
+  self->work_serializer_->Run([self]() { self->OnBalancerResolvedLocked(); },
+                              DEBUG_LOCATION);
+}
+
+void IomgrDnsResolver::OnBalancerResolvedLocked() {
+  GPR_ASSERT(resolving_balancers_);
+  {
+    MutexLock lock(&balancer_mu_);
+    --remaining_balancer_query_count_;
+    if (shutdown_initiated_) {
+      if (remaining_balancer_query_count_ == 0) {
+        Unref(DEBUG_LOCATION,
+              "OnBalancerResolvedLocked() shutdown, final remaining balancer."
+              "query");
+      }
+      return;
+    }
+    if (remaining_balancer_query_count_ != 0) return;
+    resolving_balancers_ = false;
+  }
+  if (DoneResolving()) FinishResolutionLocked();
+}
+
 void IomgrDnsResolver::OnSrvResolved(
     IomgrDnsResolver* self,
     absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
@@ -346,19 +431,34 @@ void IomgrDnsResolver::OnSrvResolved(
                               DEBUG_LOCATION);
 }
 
+// Handles SRV record resolution.
+// If all resolution steps are complete, this triggers further processing.
+// Otherwise, SRV resolution is marked as complete and the resolver waits
+// for other steps to finish.
 void IomgrDnsResolver::OnSrvResolvedLocked() {
   GPR_ASSERT(resolving_srv_);
   if (shutdown_initiated_) {
-    // DO NOT SUBMIT(hork): does any state need cleaning up?
     Unref(DEBUG_LOCATION, "OnSrvResolvedLocked() shutdown");
     return;
   }
-  // DO NOT SUBMIT(hork): needs a 2nd resolution step for the LB addresses
   tmp_balancer_addresses_->clear();
-  resolving_srv_ = false;
-  if (!resolving_hostnames_ && !resolving_srv_ && !resolving_txt_) {
-    FinishResolutionLocked();
+  if (tmp_srv_records_.ok()) {
+    // Each SRV record will be queried concurrently and processed serially.
+    resolving_balancers_ = true;
+    remaining_balancer_query_count_ = tmp_srv_records_->size();
+    balancer_handles_.clear();
+    Ref(DEBUG_LOCATION, "dns-resolving - balancers").release();
+    for (const auto& srv_record : *tmp_srv_records_) {
+      balancer_handles_.push_back(grpc_dns_lookup_hostname(
+          on_balancer_hostname_resolved_, srv_record.host,
+          std::to_string(srv_record.port),
+          ToAbslTime(
+              grpc_millis_to_timespec(query_timeout_ms_, GPR_CLOCK_MONOTONIC)),
+          interested_parties_));
+    }
   }
+  resolving_srv_ = false;
+  if (DoneResolving()) FinishResolutionLocked();
   Unref(DEBUG_LOCATION, "OnSrvResolvedLocked() complete");
 }
 
@@ -377,22 +477,21 @@ void IomgrDnsResolver::OnTxtResolvedLocked() {
   GPR_ASSERT(resolving_txt_);
   resolving_txt_ = false;
   if (shutdown_initiated_) {
-    // DO NOT SUBMIT(hork): does any state need cleaning up?
     Unref(DEBUG_LOCATION, "OnTxtResolvedLocked() shutdown");
     return;
   }
-  if (!resolving_hostnames_ && !resolving_srv_ && !resolving_txt_) {
-    FinishResolutionLocked();
-  }
+  if (DoneResolving()) FinishResolutionLocked();
   Unref(DEBUG_LOCATION, "OnTxtResolvedLocked() complete");
 }
 
 void IomgrDnsResolver::FinishResolutionLocked() {
-  GPR_ASSERT(!resolving_hostnames_ && !resolving_srv_ && !resolving_txt_);
+  GPR_ASSERT(DoneResolving());
   GPR_ASSERT(resolution_in_progress_);
   resolution_in_progress_ = false;
   Result result;
   std::vector<std::string> error_msgs;
+  // DO NOT SUBMIT(hork): it's not an error if hostnames fail to resolve if SRV
+  // or TXT queries succeed.
   absl::Status parse_error = ParseResolvedHostnames(result);
   if (!parse_error.ok()) error_msgs.emplace_back(parse_error.ToString());
   parse_error = ParseResolvedBalancerHostnames(result);
@@ -419,13 +518,12 @@ void IomgrDnsResolver::FinishResolutionLocked() {
 }
 
 absl::Status IomgrDnsResolver::ParseResolvedHostnames(Result& result) {
-  if (!tmp_hostnames_.ok()) {
-    // DO NOT SUBMIT(hork): does any state need cleaning up?
-    return absl::UnavailableError(absl::StrCat(
-        "hostname query error: '%s'", tmp_hostnames_.status().ToString()));
+  if (!tmp_hostname_addresses_.ok()) {
+    return absl::UnavailableError(
+        absl::StrCat("hostname query error: '%s'",
+                     tmp_hostname_addresses_.status().ToString()));
   }
-  // DO NOT SUBMIT(hork): what to do on empty result set?
-  for (const auto& hostname : *tmp_hostnames_) {
+  for (const auto& hostname : *tmp_hostname_addresses_) {
     // DO NOT SUBMIT(hork): do we need attributes for the  ServerAddress?
     result.addresses.emplace_back(CreateGRPCResolvedAddress(hostname), nullptr);
   }
@@ -435,20 +533,39 @@ absl::Status IomgrDnsResolver::ParseResolvedHostnames(Result& result) {
 absl::Status IomgrDnsResolver::ParseResolvedBalancerHostnames(Result& result) {
   if (!enable_srv_queries_) return absl::OkStatus();
   if (!tmp_srv_records_.ok()) {
-    // DO NOT SUBMIT(hork): does any state need cleaning up?
     return absl::UnavailableError(absl::StrCat(
-        "srv query error: ", tmp_srv_records_.status().ToString()));
+        "SRV query error: ", tmp_srv_records_.status().ToString()));
   }
-  // DO NOT SUBMIT(hork): implement
-  // DO NOT SUBMIT(hork): what to do on empty result set?
-  // absl::InlinedVector<grpc_arg, 1> new_args;
-  // if (balancer_addresses_ != nullptr) {
-  //   new_args.push_back(
-  //       CreateGrpclbBalancerAddressesArg(balancer_addresses_.get()));
-  // }
-  // result.args = grpc_channel_args_copy_and_add(channel_args_,
-  // new_args.data(),
-  //                                              new_args.size());
+  if (!tmp_balancer_addresses_.ok()) {
+    return absl::UnavailableError(absl::StrCat(
+        "Balancer query error: ", tmp_balancer_addresses_.status().ToString()));
+  }
+  // DO NOT SUBMIT(hork): grpc_core::CreateAuthorityOverrideChannelArg(...)
+  if (!tmp_balancer_addresses_->empty()) {
+    absl::InlinedVector<grpc_arg, 1> new_args;
+    new_args.push_back(
+        CreateGrpclbBalancerAddressesArg(*tmp_balancer_addresses_));
+    result.args = grpc_channel_args_copy_and_add(channel_args_, new_args.data(),
+                                                 new_args.size());
+  }
+  return absl::OkStatus();
+}
+
+absl::Status IomgrDnsResolver::ParseResolvedServiceConfig(Result& result) {
+  if (!request_service_config_) return absl::OkStatus();
+  if (!tmp_txt_record_.ok()) {
+    return absl::UnavailableError(
+        absl::StrCat("txt query error: ", tmp_txt_record_.status().ToString()));
+  }
+  std::string service_config_string =
+      ChooseServiceConfig(*tmp_txt_record_, &result.service_config_error);
+  if (result.service_config_error == GRPC_ERROR_NONE &&
+      !service_config_string.empty()) {
+    GRPC_IOMGR_DNS_TRACE_LOG("resolver:%p selected service config choice: %s",
+                             this, service_config_string.c_str());
+    result.service_config = ServiceConfig::Create(
+        channel_args_, service_config_string, &result.service_config_error);
+  }
   return absl::OkStatus();
 }
 
@@ -468,23 +585,9 @@ void IomgrDnsResolver::SetRetryTimer() {
   grpc_timer_init(&next_resolution_timer_, next_try, &on_next_resolution_);
 }
 
-absl::Status IomgrDnsResolver::ParseResolvedServiceConfig(Result& result) {
-  if (!request_service_config_) return absl::OkStatus();
-  if (!tmp_txt_record_.ok()) {
-    // DO NOT SUBMIT(hork): does any state need cleaning up?
-    return absl::UnavailableError(
-        absl::StrCat("txt query error: ", tmp_txt_record_.status().ToString()));
-  }
-  std::string service_config_string =
-      ChooseServiceConfig(*tmp_txt_record_, &result.service_config_error);
-  if (result.service_config_error == GRPC_ERROR_NONE &&
-      !service_config_string.empty()) {
-    GRPC_IOMGR_DNS_TRACE_LOG("resolver:%p selected service config choice: %s",
-                             this, service_config_string.c_str());
-    result.service_config = ServiceConfig::Create(
-        channel_args_, service_config_string, &result.service_config_error);
-  }
-  return absl::OkStatus();
+bool IomgrDnsResolver::DoneResolving() {
+  return !resolving_hostnames_ && !resolving_srv_ && !resolving_txt_ &&
+         !resolving_balancers_;
 }
 
 class IomgrDnsResolverFactory : public ResolverFactory {
