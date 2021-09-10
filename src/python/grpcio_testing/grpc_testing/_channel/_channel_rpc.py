@@ -95,25 +95,25 @@ class _StreamStream(grpc_testing.StreamStreamChannelRpc):
         self._rpc_state.terminate(trailing_metadata, code, details)
 
 
-def unary_unary(channel_state, method_descriptor):
-    rpc_state = channel_state.take_rpc_state(method_descriptor)
+def unary_unary(channel_state, method_descriptor, timeout):
+    rpc_state = channel_state.take_rpc_state(method_descriptor, timeout)
     invocation_metadata, request = (
         rpc_state.take_invocation_metadata_and_request())
     return invocation_metadata, request, _UnaryUnary(rpc_state)
 
 
-def unary_stream(channel_state, method_descriptor):
-    rpc_state = channel_state.take_rpc_state(method_descriptor)
+def unary_stream(channel_state, method_descriptor, timeout):
+    rpc_state = channel_state.take_rpc_state(method_descriptor, timeout)
     invocation_metadata, request = (
         rpc_state.take_invocation_metadata_and_request())
     return invocation_metadata, request, _UnaryStream(rpc_state)
 
 
-def stream_unary(channel_state, method_descriptor):
-    rpc_state = channel_state.take_rpc_state(method_descriptor)
+def stream_unary(channel_state, method_descriptor, timeout):
+    rpc_state = channel_state.take_rpc_state(method_descriptor, timeout)
     return rpc_state.take_invocation_metadata(), _StreamUnary(rpc_state)
 
 
-def stream_stream(channel_state, method_descriptor):
-    rpc_state = channel_state.take_rpc_state(method_descriptor)
+def stream_stream(channel_state, method_descriptor, timeout):
+    rpc_state = channel_state.take_rpc_state(method_descriptor, timeout)
     return rpc_state.take_invocation_metadata(), _StreamStream(rpc_state)

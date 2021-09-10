@@ -71,17 +71,21 @@ class TestingChannel(grpc_testing.Channel):
     def close(self):
         self._close()
 
-    def take_unary_unary(self, method_descriptor):
-        return _channel_rpc.unary_unary(self._state, method_descriptor)
+    def take_unary_unary(self, method_descriptor, timeout=None):
+        '''Take a unary request and return a unary response.'''
+        return _channel_rpc.unary_unary(self._state, method_descriptor, timeout)
 
-    def take_unary_stream(self, method_descriptor):
-        return _channel_rpc.unary_stream(self._state, method_descriptor)
+    def take_unary_stream(self, method_descriptor, timeout=None):
+        '''Take a unary request and return a streaming response.'''
+        return _channel_rpc.unary_stream(self._state, method_descriptor, timeout)
 
-    def take_stream_unary(self, method_descriptor):
-        return _channel_rpc.stream_unary(self._state, method_descriptor)
+    def take_stream_unary(self, method_descriptor, timeout=None):
+        '''Take a streaming request and return a unary response.'''
+        return _channel_rpc.stream_unary(self._state, method_descriptor, timeout)
 
-    def take_stream_stream(self, method_descriptor):
-        return _channel_rpc.stream_stream(self._state, method_descriptor)
+    def take_stream_stream(self, method_descriptor, timeout=None):
+        '''Take a streaming request and return a streaming response.'''
+        return _channel_rpc.stream_stream(self._state, method_descriptor, timeout)
 
 
 # pylint: enable=unused-argument

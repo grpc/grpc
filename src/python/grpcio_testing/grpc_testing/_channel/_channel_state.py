@@ -34,7 +34,7 @@ class State(_common.ChannelHandler):
             self._condition.notify_all()
         return rpc_state
 
-    def take_rpc_state(self, method_descriptor):
+    def take_rpc_state(self, method_descriptor, timeout):
         method_full_rpc_name = '/{}/{}'.format(
             method_descriptor.containing_service.full_name,
             method_descriptor.name)
@@ -44,4 +44,5 @@ class State(_common.ChannelHandler):
                 if method_rpc_states:
                     return method_rpc_states.pop(0)
                 else:
-                    self._condition.wait()
+                    if not self._condition.wait(timeout=timeout):
+                        raise Exception("Timeout while waiting for rpc.")
