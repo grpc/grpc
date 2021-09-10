@@ -39,7 +39,7 @@ class GrpcAuthorizationEngine : public AuthorizationEngine {
   Rbac::Action action() { return action_; }
 
   // Required only for testing purpose.
-  int num_policies() { return policies_.size(); }
+  size_t num_policies() { return policies_.size(); }
 
   // Evaluates incoming request against RBAC policy and makes a decision to
   // whether allow/deny this request.

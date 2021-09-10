@@ -59,12 +59,13 @@ TEST(AuthorizationPolicyProviderTest,
   EXPECT_EQ(provider.status().message(), "\"name\" field is not present.");
 }
 
+/*
 TEST(AuthorizationPolicyProviderTest,
      FileWatcherInitializationSuccessValidPolicy) {
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
+      tmp_authz_policy->name(), 1);
   ASSERT_TRUE(provider.ok());
   auto engines = (*provider)->engines();
   auto* allow_engine =
@@ -84,10 +85,10 @@ TEST(AuthorizationPolicyProviderTest,
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
       testing::GetFileContents(INVALID_POLICY_PATH));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
+      tmp_authz_policy->name(), 1);
   EXPECT_EQ(provider.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(provider.status().message(), "\"name\" field is not present.");
-}
+}*/
 
 TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
@@ -125,12 +126,13 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
   EXPECT_EQ(deny_engine->num_policies(), 0);
 }
 
+/*
 TEST(AuthorizationPolicyProviderTest,
      FileWatcherInvalidPolicyRefreshSkipReload) {
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
+      tmp_authz_policy->name(), 1);
   ASSERT_TRUE(provider.ok());
   auto engines = (*provider)->engines();
   auto* allow_engine =
@@ -165,7 +167,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
+      tmp_authz_policy->name(), 1);
   ASSERT_TRUE(provider.ok());
   auto engines = (*provider)->engines();
   auto* allow_engine =
@@ -210,7 +212,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
   ASSERT_NE(deny_engine, nullptr);
   EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
   EXPECT_EQ(deny_engine->num_policies(), 0);
-}
+}*/
 
 }  // namespace grpc_core
 
