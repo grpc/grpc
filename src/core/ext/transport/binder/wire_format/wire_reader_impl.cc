@@ -71,6 +71,8 @@ WireReaderImpl::WireReaderImpl(
     std::shared_ptr<TransportStreamReceiver> transport_stream_receiver,
     bool is_client, std::function<void()> on_destruct_callback)
     : transport_stream_receiver_(std::move(transport_stream_receiver)),
+      recvd_setup_transport_(
+          !is_client),  // server should have already received SETUP_TRANSPORT
       is_client_(is_client),
       on_destruct_callback_(on_destruct_callback) {}
 
@@ -85,12 +87,21 @@ std::shared_ptr<WireWriter> WireReaderImpl::SetupTransport(
   gpr_log(GPR_INFO, "Setting up transport");
   if (!is_client_) {
     SendSetupTransport(binder.get());
-    return absl::make_unique<WireWriterImpl>(std::move(binder));
+    {
+      grpc_core::MutexLock lock(&mu_);
+      connected_ = true;
+      wire_writer_ = std::make_shared<WireWriterImpl>(std::move(binder));
+    }
+    return wire_writer_;
   } else {
     SendSetupTransport(binder.get());
     auto other_end_binder = RecvSetupTransport();
-    wire_writer_ =
-        std::make_shared<WireWriterImpl>(std::move(other_end_binder));
+    {
+      grpc_core::MutexLock lock(&mu_);
+      connected_ = true;
+      wire_writer_ =
+          std::make_shared<WireWriterImpl>(std::move(other_end_binder));
+    }
     return wire_writer_;
   }
 }
@@ -155,12 +166,20 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
     return absl::OkStatus();
   }
 
+  grpc_core::MutexLock lock(&mu_);
+
+  if (BinderTransportTxCode(code) != BinderTransportTxCode::SETUP_TRANSPORT &&
+      !connected_) {
+    return absl::InvalidArgumentError("Transports not connected yet");
+  }
+
   switch (BinderTransportTxCode(code)) {
     case BinderTransportTxCode::SETUP_TRANSPORT: {
-      if (connected_) {
-        return absl::InvalidArgumentError("Already connected");
+      if (recvd_setup_transport_) {
+        return absl::InvalidArgumentError(
+            "Already received a SETUP_TRANSPORT request");
       }
-      connected_ = true;
+      recvd_setup_transport_ = true;
       // int datasize;
       int version;
       // getDataSize not supported until 31
@@ -212,6 +231,11 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
 
 absl::Status WireReaderImpl::ProcessStreamingTransaction(
     transaction_code_t code, const ReadableParcel* parcel) {
+  grpc_core::MutexLock lock(&mu_);
+  if (!connected_) {
+    return absl::InvalidArgumentError("Transports not connected yet");
+  }
+
   // Indicate which callbacks should be cancelled. It will be initialized as the
   // flags the in-coming transaction carries, and when a particular callback is
   // completed, the corresponding bit in cancellation_flag will be set to 0 so

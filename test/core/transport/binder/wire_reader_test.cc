@@ -20,6 +20,7 @@
 // receiver are correct in all possible situations.
 #include <memory>
 #include <string>
+#include <thread>
 #include <utility>
 
 #include <gtest/gtest.h>
@@ -61,6 +62,31 @@ class WireReaderTest : public ::testing::Test {
             return absl::OkStatus();
           });
     }
+  }
+
+  void UnblockSetupTransport() {
+    // SETUP_TRANSPORT should finish before we can proceed with any other
+    // requests and streaming calls.
+    auto run_setup_transport = [&]() {
+      wire_reader_.SetupTransport(absl::make_unique<MockBinder>());
+    };
+
+    std::thread setup_transport_thr(run_setup_transport);
+
+    EXPECT_CALL(mock_readable_parcel_, ReadInt32);
+    EXPECT_CALL(mock_readable_parcel_, ReadBinder)
+        .WillOnce([&](std::unique_ptr<Binder>* binder) {
+          auto mock_binder = absl::make_unique<MockBinder>();
+          // binder that is read from the output parcel must first be
+          // initialized before it can be used.
+          EXPECT_CALL(*mock_binder, Initialize);
+          *binder = std::move(mock_binder);
+          return absl::OkStatus();
+        });
+
+    EXPECT_TRUE(
+        CallProcessTransaction(BinderTransportTxCode::SETUP_TRANSPORT).ok());
+    setup_transport_thr.join();
   }
 
   template <typename T>
@@ -117,23 +143,12 @@ TEST_F(WireReaderTest, SetupTransport) {
 
 TEST_F(WireReaderTest, ProcessTransactionControlMessageSetupTransport) {
   ::testing::InSequence sequence;
-
-  EXPECT_CALL(mock_readable_parcel_, ReadInt32);
-  EXPECT_CALL(mock_readable_parcel_, ReadBinder)
-      .WillOnce([&](std::unique_ptr<Binder>* binder) {
-        auto mock_binder = absl::make_unique<MockBinder>();
-        // binder that is read from the output parcel must first be initialized
-        // before it can be used.
-        EXPECT_CALL(*mock_binder, Initialize);
-        *binder = std::move(mock_binder);
-        return absl::OkStatus();
-      });
-
-  EXPECT_TRUE(
-      CallProcessTransaction(BinderTransportTxCode::SETUP_TRANSPORT).ok());
+  UnblockSetupTransport();
 }
 
 TEST_F(WireReaderTest, ProcessTransactionControlMessagePingResponse) {
+  ::testing::InSequence sequence;
+  UnblockSetupTransport();
   EXPECT_CALL(mock_readable_parcel_, ReadInt32);
   EXPECT_TRUE(
       CallProcessTransaction(BinderTransportTxCode::PING_RESPONSE).ok());
@@ -141,6 +156,7 @@ TEST_F(WireReaderTest, ProcessTransactionControlMessagePingResponse) {
 
 TEST_F(WireReaderTest, ProcessTransactionServerRpcDataEmptyFlagIgnored) {
   ::testing::InSequence sequence;
+  UnblockSetupTransport();
 
   // first transaction: empty flag
   ExpectReadInt32(0);
@@ -151,6 +167,7 @@ TEST_F(WireReaderTest, ProcessTransactionServerRpcDataEmptyFlagIgnored) {
 TEST_F(WireReaderTest,
        ProcessTransactionServerRpcDataFlagPrefixWithoutMetadata) {
   ::testing::InSequence sequence;
+  UnblockSetupTransport();
 
   // flag
   ExpectReadInt32(kFlagPrefix);
@@ -168,6 +185,7 @@ TEST_F(WireReaderTest,
 
 TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagPrefixWithMetadata) {
   ::testing::InSequence sequence;
+  UnblockSetupTransport();
 
   // flag
   ExpectReadInt32(kFlagPrefix);
@@ -200,6 +218,7 @@ TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagPrefixWithMetadata) {
 
 TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagMessageDataNonEmpty) {
   ::testing::InSequence sequence;
+  UnblockSetupTransport();
 
   // flag
   ExpectReadInt32(kFlagMessageData);
@@ -218,6 +237,7 @@ TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagMessageDataNonEmpty) {
 
 TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagMessageDataEmpty) {
   ::testing::InSequence sequence;
+  UnblockSetupTransport();
 
   // flag
   ExpectReadInt32(kFlagMessageData);
@@ -236,6 +256,7 @@ TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagMessageDataEmpty) {
 
 TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagSuffixWithStatus) {
   ::testing::InSequence sequence;
+  UnblockSetupTransport();
 
   constexpr int kStatus = 0x1234;
   // flag
@@ -255,6 +276,7 @@ TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagSuffixWithStatus) {
 
 TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagSuffixWithoutStatus) {
   ::testing::InSequence sequence;
+  UnblockSetupTransport();
 
   // flag
   ExpectReadInt32(kFlagSuffix);
@@ -272,6 +294,7 @@ TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagSuffixWithoutStatus) {
 
 TEST_F(WireReaderTest, InBoundFlowControl) {
   ::testing::InSequence sequence;
+  UnblockSetupTransport();
 
   // flag
   ExpectReadInt32(kFlagMessageData | kFlagMessageDataIsPartial);
