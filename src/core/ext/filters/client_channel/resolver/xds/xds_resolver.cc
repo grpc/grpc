@@ -18,8 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
 #include "re2/re2.h"
 #define XXH_INLINE_ALL
@@ -44,6 +46,36 @@ const char* kXdsClusterAttribute = "xds_cluster_name";
 
 namespace {
 
+bool ShouldEscape(unsigned char c) {
+  // Unreserved characters RFC 3986 section 2.3 Unreserved Characters.
+  if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+      (c >= '0' && c <= '9'))
+    return false;
+  switch (c) {
+    case '-':
+    case '_':
+    case '.':
+    case '~':
+      return false;
+  }
+  return true;
+}
+
+std::string PercentEncode(absl::string_view str) {
+  std::string out;
+  for (unsigned char c : str) {
+    if (ShouldEscape(c)) {
+      std::string hex = absl::BytesToHexString(absl::StrCat(c));
+      GPR_ASSERT(hex.size() == 2);
+      out.push_back('%');
+      out.append(hex);
+    } else {
+      out.push_back(c);
+    }
+  }
+  return out;
+}
+
 //
 // XdsResolver
 //
@@ -53,12 +85,15 @@ class XdsResolver : public Resolver {
   explicit XdsResolver(ResolverArgs args)
       : work_serializer_(std::move(args.work_serializer)),
         result_handler_(std::move(args.result_handler)),
-        server_name_(absl::StripPrefix(args.uri.path(), "/")),
+        uri_(args.uri),
         args_(grpc_channel_args_copy(args.args)),
         interested_parties_(args.pollset_set) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-      gpr_log(GPR_INFO, "[xds_resolver %p] created for server name %s", this,
-              server_name_.c_str());
+      gpr_log(
+          GPR_INFO,
+          "[xds_resolver %p] created for URI scheme %s path %s authority %s",
+          this, args.uri.scheme().c_str(), args.uri.path().c_str(),
+          args.uri.authority().c_str());
     }
   }
 
@@ -256,6 +291,7 @@ class XdsResolver : public Resolver {
 
   std::shared_ptr<WorkSerializer> work_serializer_;
   std::unique_ptr<ResultHandler> result_handler_;
+  URI uri_;
   std::string server_name_;
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
@@ -774,6 +810,46 @@ void XdsResolver::StartLocked() {
           args_, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
   if (parent_channelz_node != nullptr) {
     xds_client_->AddChannelzLinkage(parent_channelz_node);
+  }
+  if (uri_.scheme() == "xdstp") {
+    server_name_ = uri_.uri_text();
+  } else if (uri_.scheme() == "xds") {
+    std::string target_hostname =
+        std::string(absl::StripPrefix(uri_.path(), "/"));
+    if (!uri_.authority().empty()) {
+      auto authority_config =
+          xds_client_->bootstrap().lookup_authority(target_hostname);
+      if (authority_config == absl::nullopt) {
+        gpr_log(GPR_ERROR,
+                "Invalid target URI -- channel will remain in "
+                "TRANSIENT_FAILURE: %s",
+                grpc_error_std_string(error).c_str());
+        result_handler_->ReturnError(error);
+        return;
+      } else {
+        std::string name_template =
+            authority_config->client_listener_resource_name_template;
+        if (name_template.empty()) {
+          name_template = ("xdstp://" + uri_.authority() +
+                           "/envoy.config.listener.v3.Listener/%s");
+        }
+        server_name_ = absl::StrReplaceAll(
+            name_template, {{"%s", PercentEncode(target_hostname)}});
+      }
+    } else {
+      // args.uri.authority().empty() case
+      auto name_template =
+          xds_client_->bootstrap()
+              .client_default_listener_resource_name_template();
+      if (name_template.empty()) {
+        name_template = "%s";
+      }
+      if (absl::StartsWith(name_template, "xdstp")) {
+        target_hostname = PercentEncode(target_hostname);
+      }
+      server_name_ =
+          absl::StrReplaceAll(name_template, {{"%s", target_hostname}});
+    }
   }
   auto watcher = absl::make_unique<ListenerWatcher>(Ref());
   listener_watcher_ = watcher.get();

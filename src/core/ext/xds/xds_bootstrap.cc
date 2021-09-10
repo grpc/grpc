@@ -122,6 +122,18 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }
+  it = json.mutable_object()->find(
+      "client_default_listener_resource_name_template");
+  if (it != json.mutable_object()->end()) {
+    if (it->second.type() != Json::Type::STRING) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "\"client_default_listener_resource_name_template\" field is not a "
+          "string"));
+    } else {
+      client_default_listener_resource_name_template_ =
+          std::move(*it->second.mutable_string_value());
+    }
+  }
   it = json.mutable_object()->find("server_listener_resource_name_template");
   if (it != json.mutable_object()->end()) {
     if (it->second.type() != Json::Type::STRING) {
@@ -474,6 +486,11 @@ std::string XdsBootstrap::ToString() const {
                                  "],\n"));
   }
   parts.push_back("  }\n],\n");
+  if (!client_default_listener_resource_name_template_.empty()) {
+    parts.push_back(absl::StrFormat(
+        "client_default_listener_resource_name_template=\"%s\",\n",
+        client_default_listener_resource_name_template_));
+  }
   if (!server_listener_resource_name_template_.empty()) {
     parts.push_back(
         absl::StrFormat("server_listener_resource_name_template=\"%s\",\n",

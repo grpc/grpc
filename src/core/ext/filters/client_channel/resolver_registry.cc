@@ -56,6 +56,10 @@ class RegistryState {
       if (scheme == factories_[i]->scheme()) {
         return factories_[i].get();
       }
+      // Speical handling for xdstp
+      if (scheme == "xdstp" && factories_[i]->scheme() == "xds") {
+        return factories_[i].get();
+      }
     }
     return nullptr;
   }
