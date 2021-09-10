@@ -157,6 +157,7 @@ static void cancel_stream_locked(grpc_binder_transport* gbt,
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, gbs->recv_message_ready,
                               GRPC_ERROR_REF(error));
       gbs->recv_message_ready = nullptr;
+      gbs->recv_message->reset();
       gbs->recv_message = nullptr;
       gbs->call_failed_before_recv_message = nullptr;
     }
@@ -173,10 +174,12 @@ static void cancel_stream_locked(grpc_binder_transport* gbt,
 
 static void recv_initial_metadata_locked(void* arg,
                                          grpc_error_handle /*error*/) {
-  gpr_log(GPR_INFO, "recv_initial_metadata_locked");
   RecvInitialMetadataArgs* args = static_cast<RecvInitialMetadataArgs*>(arg);
-
   grpc_binder_stream* gbs = args->gbs;
+
+  gpr_log(GPR_INFO,
+          "recv_initial_metadata_locked is_client = %d is_closed = %d",
+          gbs->is_client, gbs->is_closed);
 
   if (!gbs->is_closed) {
     grpc_error_handle error = [&] {
@@ -200,10 +203,11 @@ static void recv_initial_metadata_locked(void* arg,
 }
 
 static void recv_message_locked(void* arg, grpc_error_handle /*error*/) {
-  gpr_log(GPR_INFO, "recv_message_locked");
   RecvMessageArgs* args = static_cast<RecvMessageArgs*>(arg);
-
   grpc_binder_stream* gbs = args->gbs;
+
+  gpr_log(GPR_INFO, "recv_message_locked is_client = %d is_closed = %d",
+          gbs->is_client, gbs->is_closed);
 
   if (!gbs->is_closed) {
     grpc_error_handle error = [&] {
@@ -246,10 +250,12 @@ static void recv_message_locked(void* arg, grpc_error_handle /*error*/) {
 
 static void recv_trailing_metadata_locked(void* arg,
                                           grpc_error_handle /*error*/) {
-  gpr_log(GPR_INFO, "recv_trailing_metadata_locked");
   RecvTrailingMetadataArgs* args = static_cast<RecvTrailingMetadataArgs*>(arg);
-
   grpc_binder_stream* gbs = args->gbs;
+
+  gpr_log(GPR_INFO,
+          "recv_trailing_metadata_locked is_client = %d is_closed = %d",
+          gbs->is_client, gbs->is_closed);
 
   if (!gbs->is_closed) {
     grpc_error_handle error = [&] {
@@ -284,10 +290,20 @@ static void recv_trailing_metadata_locked(void* arg,
       return GRPC_ERROR_NONE;
     }();
 
-    grpc_closure* cb = gbs->recv_trailing_metadata_finished;
-    gbs->recv_trailing_metadata_finished = nullptr;
-    gbs->recv_trailing_metadata = nullptr;
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
+    if (gbs->is_client || gbs->trailing_metadata_sent) {
+      grpc_closure* cb = gbs->recv_trailing_metadata_finished;
+      gbs->recv_trailing_metadata_finished = nullptr;
+      gbs->recv_trailing_metadata = nullptr;
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
+    } else {
+      // According to transport explaineer - "Server extra: This op shouldn't
+      // actually be considered complete until the server has also sent trailing
+      // metadata to provide the other side with final status"
+      //
+      // We haven't sent trailing metadata yet, so we have to delay completing
+      // the recv_trailing_metadata callback.
+      gbs->need_to_call_trailing_metadata_callback = true;
+    }
   }
   GRPC_BINDER_STREAM_UNREF(gbs, "recv_trailing_metadata");
 }
@@ -304,23 +320,29 @@ static void perform_stream_op_locked(void* stream_op,
     GPR_ASSERT(!op->send_initial_metadata && !op->send_message &&
                !op->send_trailing_metadata && !op->recv_initial_metadata &&
                !op->recv_message && !op->recv_trailing_metadata);
-    gpr_log(GPR_INFO, "cancel_stream");
-    // Send trailing metadata to inform the other end about the cancellation,
-    // regardless if we'd already done that or not.
-    grpc_binder::Transaction cancel_tx(gbs->GetTxCode(), gbs->GetThenIncSeq(),
-                                       gbt->is_client);
-    cancel_tx.SetSuffix(grpc_binder::Metadata{});
-    absl::Status status = gbt->wire_writer->RpcCall(cancel_tx);
+    gpr_log(GPR_INFO, "cancel_stream is_client = %d", gbs->is_client);
+    if (!gbs->is_client) {
+      // Send trailing metadata to inform the other end about the cancellation,
+      // regardless if we'd already done that or not.
+      grpc_binder::Transaction cancel_tx(gbs->GetTxCode(), gbs->GetThenIncSeq(),
+                                         gbt->is_client);
+      cancel_tx.SetSuffix(grpc_binder::Metadata{});
+      cancel_tx.SetStatus(1);
+      absl::Status status = gbt->wire_writer->RpcCall(cancel_tx);
+    }
     cancel_stream_locked(gbt, gbs, op->payload->cancel_stream.cancel_error);
     if (op->on_complete != nullptr) {
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete,
-                              absl_status_to_grpc_error(status));
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete, GRPC_ERROR_NONE);
     }
     GRPC_BINDER_STREAM_UNREF(gbs, "perform_stream_op");
     return;
   }
 
   if (gbs->is_closed) {
+    if (op->send_message) {
+      // Reset the send_message payload to prevent memory leaks.
+      op->payload->send_message.send_message.reset();
+    }
     if (op->recv_initial_metadata) {
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
@@ -520,6 +542,21 @@ static void perform_stream_op_locked(void* stream_op,
   absl::Status status = absl::OkStatus();
   if (tx) {
     status = gbt->wire_writer->RpcCall(*tx);
+    if (!gbs->is_client && op->send_trailing_metadata) {
+      gbs->trailing_metadata_sent = true;
+      // According to transport explaineer - "Server extra: This op shouldn't
+      // actually be considered complete until the server has also sent trailing
+      // metadata to provide the other side with final status"
+      //
+      // Because we've done sending trailing metadata here, we can safely
+      // complete the recv_trailing_metadata callback here.
+      if (gbs->need_to_call_trailing_metadata_callback) {
+        grpc_closure* cb = gbs->recv_trailing_metadata_finished;
+        gbs->recv_trailing_metadata_finished = nullptr;
+        grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
+        gbs->need_to_call_trailing_metadata_callback = false;
+      }
+    }
   }
   // Note that this should only be scheduled when all non-recv ops are
   // completed
@@ -534,9 +571,10 @@ static void perform_stream_op_locked(void* stream_op,
 static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
                               grpc_transport_stream_op_batch* op) {
   GPR_TIMER_SCOPE("perform_stream_op", 0);
-  gpr_log(GPR_INFO, "%s = %p %p %p", __func__, gt, gs, op);
   grpc_binder_transport* gbt = reinterpret_cast<grpc_binder_transport*>(gt);
   grpc_binder_stream* gbs = reinterpret_cast<grpc_binder_stream*>(gs);
+  gpr_log(GPR_INFO, "%s = %p %p %p is_client = %d", __func__, gt, gs, op,
+          gbs->is_client);
   GRPC_BINDER_STREAM_REF(gbs, "perform_stream_op");
   op->handler_private.extra_arg = gbs;
   gbt->combiner->Run(GRPC_CLOSURE_INIT(&op->handler_private.closure,
