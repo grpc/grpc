@@ -90,15 +90,13 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
     case GRPC_DTS_CLIENT_PREFIX_23:
       while (cur != end && t->deframe_state != GRPC_DTS_FH_0) {
         if (*cur != GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state]) {
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrFormat(
-                  "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
-                  "at byte %d",
-                  GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state],
-                  static_cast<int>(static_cast<uint8_t>(
-                      GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state])),
-                  *cur, static_cast<int>(*cur), t->deframe_state)
-                  .c_str());
+          return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+              "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
+              "at byte %d",
+              GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state],
+              static_cast<int>(static_cast<uint8_t>(
+                  GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state])),
+              *cur, static_cast<int>(*cur), t->deframe_state));
         }
         ++cur;
         // NOLINTNEXTLINE(bugprone-misplaced-widening-cast)
@@ -197,12 +195,11 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
                  t->incoming_frame_size >
                      t->settings[GRPC_ACKED_SETTINGS]
                                 [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]) {
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
             absl::StrFormat("Frame size %d is larger than max frame size %d",
                             t->incoming_frame_size,
                             t->settings[GRPC_ACKED_SETTINGS]
-                                       [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE])
-                .c_str());
+                                       [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]));
       }
       if (++cur == end) {
         return GRPC_ERROR_NONE;
@@ -256,27 +253,22 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
 static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t) {
   if (t->is_first_frame &&
       t->incoming_frame_type != GRPC_CHTTP2_FRAME_SETTINGS) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat(
-            "Expected SETTINGS frame as the first frame, got frame type ",
-            t->incoming_frame_type)
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Expected SETTINGS frame as the first frame, got frame type ",
+        t->incoming_frame_type));
   }
   t->is_first_frame = false;
   if (t->expect_continuation_stream_id != 0) {
     if (t->incoming_frame_type != GRPC_CHTTP2_FRAME_CONTINUATION) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrFormat("Expected CONTINUATION frame, got frame type %02x",
-                          t->incoming_frame_type)
-              .c_str());
+                          t->incoming_frame_type));
     }
     if (t->expect_continuation_stream_id != t->incoming_stream_id) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrFormat(
-              "Expected CONTINUATION frame for grpc_chttp2_stream %08x, got "
-              "grpc_chttp2_stream %08x",
-              t->expect_continuation_stream_id, t->incoming_stream_id)
-              .c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+          "Expected CONTINUATION frame for grpc_chttp2_stream %08x, got "
+          "grpc_chttp2_stream %08x",
+          t->expect_continuation_stream_id, t->incoming_stream_id));
     }
     return init_header_frame_parser(t, 1);
   }

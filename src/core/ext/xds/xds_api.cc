@@ -1328,10 +1328,8 @@ grpc_error_handle RoutePathMatchParse(
   absl::StatusOr<StringMatcher> string_matcher =
       StringMatcher::Create(type, match_string, case_sensitive);
   if (!string_matcher.ok()) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("path matcher: ", string_matcher.status().message())
-            .c_str());
-    ;
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("path matcher: ", string_matcher.status().message()));
   }
   route->matchers.path_matcher = std::move(string_matcher.value());
   return GRPC_ERROR_NONE;
@@ -1394,9 +1392,8 @@ grpc_error_handle RouteHeaderMatchersParse(
         HeaderMatcher::Create(name, type, match_string, range_start, range_end,
                               present_match, invert_match);
     if (!header_matcher.ok()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("header matcher: ", header_matcher.status().message())
-              .c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("header matcher: ", header_matcher.status().message()));
     }
     route->matchers.header_matchers.emplace_back(
         std::move(header_matcher.value()));
@@ -1476,9 +1473,8 @@ grpc_error_handle ParseTypedPerFilterConfig(
     absl::string_view filter_type =
         UpbStringToAbsl(google_protobuf_Any_type_url(any));
     if (filter_type.empty()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("no filter config specified for filter name ", key)
-              .c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("no filter config specified for filter name ", key));
     }
     bool is_optional = false;
     if (filter_type ==
@@ -1487,18 +1483,16 @@ grpc_error_handle ParseTypedPerFilterConfig(
       const auto* filter_config = envoy_config_route_v3_FilterConfig_parse(
           any_value.data, any_value.size, context.arena);
       if (filter_config == nullptr) {
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("could not parse FilterConfig wrapper for ", key)
-                .c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("could not parse FilterConfig wrapper for ", key));
       }
       is_optional =
           envoy_config_route_v3_FilterConfig_is_optional(filter_config);
       any = envoy_config_route_v3_FilterConfig_config(filter_config);
       if (any == nullptr) {
         if (is_optional) continue;
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("no filter config specified for filter name ", key)
-                .c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("no filter config specified for filter name ", key));
       }
     }
     grpc_error_handle error =
@@ -1508,18 +1502,16 @@ grpc_error_handle ParseTypedPerFilterConfig(
         XdsHttpFilterRegistry::GetFilterForType(filter_type);
     if (filter_impl == nullptr) {
       if (is_optional) continue;
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("no filter registered for config type ", filter_type)
-              .c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("no filter registered for config type ", filter_type));
     }
     absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
         filter_impl->GenerateFilterConfigOverride(
             google_protobuf_Any_value(any), context.arena);
     if (!filter_config.ok()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("filter config for type ", filter_type,
-                       " failed to parse: ", filter_config.status().ToString())
-              .c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "filter config for type ", filter_type,
+          " failed to parse: ", filter_config.status().ToString()));
     }
     (*typed_per_filter_config)[std::string(key)] = std::move(*filter_config);
   }
@@ -1569,7 +1561,7 @@ grpc_error_handle RetryPolicyParse(
   if (num_retries != nullptr) {
     uint32_t num_retries_value = google_protobuf_UInt32Value_value(num_retries);
     if (num_retries_value == 0) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction RetryPolicy num_retries set to invalid value 0."));
     } else {
       retry_to_return.num_retries = num_retries_value;
@@ -1583,7 +1575,7 @@ grpc_error_handle RetryPolicyParse(
     const google_protobuf_Duration* base_interval =
         envoy_config_route_v3_RetryPolicy_RetryBackOff_base_interval(backoff);
     if (base_interval == nullptr) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction RetryPolicy RetryBackoff missing base interval."));
     } else {
       retry_to_return.retry_back_off.base_interval =
@@ -1824,9 +1816,8 @@ grpc_error_handle RouteConfigParse(
       std::string domain_pattern = UpbStringToStdString(domains[j]);
       const MatchType match_type = DomainPatternMatchType(domain_pattern);
       if (match_type == INVALID_MATCH) {
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("Invalid domain pattern \"", domain_pattern, "\".")
-                .c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("Invalid domain pattern \"", domain_pattern, "\"."));
       }
       vhost.domains.emplace_back(std::move(domain_pattern));
     }
@@ -1932,10 +1923,9 @@ grpc_error_handle CertificateProviderInstanceParse(
   if (context.certificate_provider_definition_map->find(
           certificate_provider_plugin_instance->instance_name) ==
       context.certificate_provider_definition_map->end()) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("Unrecognized certificate provider instance name: ",
-                     certificate_provider_plugin_instance->instance_name)
-            .c_str());
+                     certificate_provider_plugin_instance->instance_name));
   }
   return GRPC_ERROR_NONE;
 }
@@ -1956,10 +1946,9 @@ grpc_error_handle CertificateProviderPluginInstanceParse(
   if (context.certificate_provider_definition_map->find(
           certificate_provider_plugin_instance->instance_name) ==
       context.certificate_provider_definition_map->end()) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("Unrecognized certificate provider instance name: ",
-                     certificate_provider_plugin_instance->instance_name)
-            .c_str());
+                     certificate_provider_plugin_instance->instance_name));
   }
   return GRPC_ERROR_NONE;
 }
@@ -2017,9 +2006,8 @@ grpc_error_handle CertificateValidationContextParse(
         StringMatcher::Create(type, matcher,
                               /*case_sensitive=*/!ignore_case);
     if (!string_matcher.ok()) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("string matcher: ", string_matcher.status().message())
-              .c_str()));
+      errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("string matcher: ", string_matcher.status().message())));
       continue;
     }
     if (type == StringMatcher::Type::kSafeRegex && ignore_case) {
@@ -2212,12 +2200,12 @@ grpc_error_handle HttpConnectionManagerParse(
           envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_name(
               http_filter));
       if (name.empty()) {
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("empty filter name at index ", i).c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("empty filter name at index ", i));
       }
       if (names_seen.find(name) != names_seen.end()) {
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("duplicate HTTP filter name: ", name).c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("duplicate HTTP filter name: ", name));
       }
       names_seen.insert(name);
       const bool is_optional =
@@ -2228,9 +2216,8 @@ grpc_error_handle HttpConnectionManagerParse(
               http_filter);
       if (any == nullptr) {
         if (is_optional) continue;
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("no filter config specified for filter name ", name)
-                .c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("no filter config specified for filter name ", name));
       }
       absl::string_view filter_type;
       grpc_error_handle error =
@@ -2240,44 +2227,38 @@ grpc_error_handle HttpConnectionManagerParse(
           XdsHttpFilterRegistry::GetFilterForType(filter_type);
       if (filter_impl == nullptr) {
         if (is_optional) continue;
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("no filter registered for config type ", filter_type)
-                .c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("no filter registered for config type ", filter_type));
       }
       if ((is_client && !filter_impl->IsSupportedOnClients()) ||
           (!is_client && !filter_impl->IsSupportedOnServers())) {
         if (is_optional) continue;
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
             absl::StrFormat("Filter %s is not supported on %s", filter_type,
-                            is_client ? "clients" : "servers")
-                .c_str());
+                            is_client ? "clients" : "servers"));
       }
       if (i < num_filters - 1) {
         // Filters before the last filter must not be terminal.
         if (filter_impl->IsTerminalFilter()) {
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          return GRPC_ERROR_CREATE_FROM_CPP_STRING(
               absl::StrCat("terminal filter for config type ", filter_type,
-                           " must be the last filter in the chain")
-                  .c_str());
+                           " must be the last filter in the chain"));
         }
       } else {
         // The last filter must be terminal.
         if (!filter_impl->IsTerminalFilter()) {
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          return GRPC_ERROR_CREATE_FROM_CPP_STRING(
               absl::StrCat("non-terminal filter for config type ", filter_type,
-                           " is the last filter in the chain")
-                  .c_str());
+                           " is the last filter in the chain"));
         }
       }
       absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
           filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
                                             context.arena);
       if (!filter_config.ok()) {
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(
-                "filter config for type ", filter_type,
-                " failed to parse: ", filter_config.status().ToString())
-                .c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+            "filter config for type ", filter_type,
+            " failed to parse: ", filter_config.status().ToString()));
       }
       http_connection_manager->http_filters.emplace_back(
           XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter{
@@ -2360,8 +2341,8 @@ grpc_error_handle DownstreamTlsContextParse(
   absl::string_view name = UpbStringToAbsl(
       envoy_config_core_v3_TransportSocket_name(transport_socket));
   if (name != "envoy.transport_sockets.tls") {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Unrecognized transport socket: ", name).c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Unrecognized transport socket: ", name));
   }
   auto* typed_config =
       envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
@@ -2548,8 +2529,8 @@ grpc_error_handle FilterChainParse(
           "type.googleapis.com/"
           "envoy.extensions.filters.network.http_connection_manager.v3."
           "HttpConnectionManager") {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("Unsupported filter type ", type_url).c_str()));
+        errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("Unsupported filter type ", type_url)));
       } else {
         const upb_strview encoded_http_connection_manager =
             google_protobuf_Any_value(typed_config);
@@ -2588,7 +2569,7 @@ grpc_error_handle AddressParse(
   const auto* socket_address =
       envoy_config_core_v3_Address_socket_address(address_proto);
   if (socket_address == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Address does not have socket_address");
   }
   if (envoy_config_core_v3_SocketAddress_protocol(socket_address) !=
@@ -2631,11 +2612,9 @@ grpc_error_handle AddFilterChainDataForSourcePort(
       port, XdsApi::LdsUpdate::FilterChainMap::FilterChainDataSharedPtr{
                 filter_chain.filter_chain_data});
   if (!insert_result.second) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat(
-            "Duplicate matching rules detected when adding filter chain: ",
-            filter_chain.filter_chain_match.ToString())
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Duplicate matching rules detected when adding filter chain: ",
+        filter_chain.filter_chain_match.ToString()));
   }
   return GRPC_ERROR_NONE;
 }
@@ -2884,8 +2863,8 @@ grpc_error_handle UpstreamTlsContextParse(
   absl::string_view name = UpbStringToAbsl(
       envoy_config_core_v3_TransportSocket_name(transport_socket));
   if (name != "envoy.transport_sockets.tls") {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Unrecognized transport socket: ", name).c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Unrecognized transport socket: ", name));
   }
   auto* typed_config =
       envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
@@ -2915,7 +2894,7 @@ grpc_error_handle UpstreamTlsContextParse(
   }
   if (common_tls_context->certificate_validation_context
           .ca_certificate_provider_instance.instance_name.empty()) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "UpstreamTlsContext: TLS configuration provided but no "
         "ca_certificate_provider_instance found.");
   }
@@ -2936,22 +2915,20 @@ grpc_error_handle CdsLogicalDnsParse(
       envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(load_assignment,
                                                                &num_localities);
   if (num_localities != 1) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("load_assignment for LOGICAL_DNS cluster must have "
                      "exactly one locality, found ",
-                     num_localities)
-            .c_str());
+                     num_localities));
   }
   size_t num_endpoints;
   const auto* const* endpoints =
       envoy_config_endpoint_v3_LocalityLbEndpoints_lb_endpoints(localities[0],
                                                                 &num_endpoints);
   if (num_endpoints != 1) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("locality for LOGICAL_DNS cluster must have "
                      "exactly one endpoint, found ",
-                     num_endpoints)
-            .c_str());
+                     num_endpoints));
   }
   const auto* endpoint =
       envoy_config_endpoint_v3_LbEndpoint_endpoint(endpoints[0]);
@@ -3389,10 +3366,9 @@ grpc_error_handle AdsResponseParse(
         UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
     bool is_v2 = false;
     if (!resource_type_selector_function(type_url, &is_v2)) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat("resource index ", i, ": Resource is not ",
-                       resource_type_string, ".")
-              .c_str()));
+                       resource_type_string, ".")));
       continue;
     }
     // Parse the resource.
@@ -3400,10 +3376,9 @@ grpc_error_handle AdsResponseParse(
     auto* resource = proto_parse_function(
         serialized_resource.data, serialized_resource.size, context.arena);
     if (resource == nullptr) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat("resource index ", i, ": Can't parse ",
-                       resource_type_string, " resource.")
-              .c_str()));
+                       resource_type_string, " resource.")));
       continue;
     }
     proto_log_function(context, resource);
@@ -3416,9 +3391,8 @@ grpc_error_handle AdsResponseParse(
     }
     // Fail on duplicate resources.
     if (update_map->find(resource_name) != update_map->end()) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("duplicate resource name \"", resource_name, "\"")
-              .c_str()));
+      errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("duplicate resource name \"", resource_name, "\"")));
       resource_names_failed->insert(resource_name);
       continue;
     }
@@ -3427,10 +3401,10 @@ grpc_error_handle AdsResponseParse(
     grpc_error_handle error =
         resource_parse_function(context, resource, is_v2, &update);
     if (error != GRPC_ERROR_NONE) {
-      errors.push_back(grpc_error_add_child(
-          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat(resource_name, ": validation error").c_str()),
-          error));
+      errors.push_back(
+          grpc_error_add_child(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+                                   resource_name, ": validation error")),
+                               error));
       resource_names_failed->insert(resource_name);
     } else {
       // Store result in update map, in both validated and serialized form.

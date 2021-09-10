@@ -203,11 +203,9 @@ static void recv_message_ready(void* user_data, grpc_error_handle error) {
       (*calld->recv_message)->length() >
           static_cast<size_t>(calld->limits.max_recv_size)) {
     grpc_error_handle new_error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrFormat("Received message larger than max (%u vs. %d)",
-                            (*calld->recv_message)->length(),
-                            calld->limits.max_recv_size)
-                .c_str()),
+        GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+            "Received message larger than max (%u vs. %d)",
+            (*calld->recv_message)->length(), calld->limits.max_recv_size)),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
     error = grpc_error_add_child(GRPC_ERROR_REF(error), new_error);
     GRPC_ERROR_UNREF(calld->error);
@@ -264,14 +262,12 @@ static void message_size_start_transport_stream_op_batch(
           static_cast<size_t>(calld->limits.max_send_size)) {
     grpc_transport_stream_op_batch_finish_with_failure(
         op,
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrFormat(
-                    "Sent message larger than max (%u vs. %d)",
-                    op->payload->send_message.send_message->length(),
-                    calld->limits.max_send_size)
-                    .c_str()),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED),
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                               "Sent message larger than max (%u vs. %d)",
+                               op->payload->send_message.send_message->length(),
+                               calld->limits.max_send_size)),
+                           GRPC_ERROR_INT_GRPC_STATUS,
+                           GRPC_STATUS_RESOURCE_EXHAUSTED),
         calld->call_combiner);
     return;
   }

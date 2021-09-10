@@ -87,11 +87,9 @@ grpc_error_handle HPackTable::SetCurrentTableSize(uint32_t bytes) {
     return GRPC_ERROR_NONE;
   }
   if (bytes > max_bytes_) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat(
-            "Attempt to make hpack table %d bytes when max is %d bytes", bytes,
-            max_bytes_)
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "Attempt to make hpack table %d bytes when max is %d bytes", bytes,
+        max_bytes_));
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "Update hpack parser table size to %d", bytes);
@@ -122,12 +120,10 @@ grpc_error_handle HPackTable::Add(grpc_mdelem md) {
                       hpack_constants::kEntryOverhead;
 
   if (current_table_bytes_ > max_bytes_) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat(
-            "HPACK max table size reduced to %d but not reflected by hpack "
-            "stream (still at %d)",
-            max_bytes_, current_table_bytes_)
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "HPACK max table size reduced to %d but not reflected by hpack "
+        "stream (still at %d)",
+        max_bytes_, current_table_bytes_));
   }
 
   // we can't add elements bigger than the max table size

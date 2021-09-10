@@ -1489,10 +1489,9 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
       if (!root_being_watched && !identity_being_watched) return;
       auto it = cert_data_map_.find(cert_name);
       if (it == cert_data_map_.end()) {
-        grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("No certificates available for cert_name \"",
-                         cert_name, "\"")
-                .c_str());
+        grpc_error_handle error =
+            GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+                "No certificates available for cert_name \"", cert_name, "\""));
         distributor_->SetErrorForCert(cert_name, GRPC_ERROR_REF(error),
                                       GRPC_ERROR_REF(error));
         GRPC_ERROR_UNREF(error);
