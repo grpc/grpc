@@ -103,6 +103,9 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
         return;
       }
       absl::Status status = provider->ForceUpdate();
+      gpr_log(GPR_ERROR,
+              "authorization policy reload status. code=%d error_details=%s",
+              status.code(), std::string(status.message()).c_str());
       if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
         gpr_log(GPR_INFO,
                 "authorization policy reload status. code=%d error_details=%s",
