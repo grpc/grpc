@@ -35,8 +35,8 @@
 
 namespace {
 
-/*constexpr const char* kRootCertName = "root_cert_name";
-constexpr const char* kRootCertContents = "root_cert_contents";*/
+// constexpr const char* kRootCertName = "root_cert_name";
+constexpr const char* kRootCertContents = "root_cert_contents";
 /*
 constexpr const char* kIdentityCertName = "identity_cert_name";
 */
@@ -63,9 +63,9 @@ TEST(
   key_cert_pair.certificate_chain = kIdentityCertContents;
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
   identity_key_cert_pairs.emplace_back(key_cert_pair);
-  /*auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
+  auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
       kRootCertContents, identity_key_cert_pairs);
-  grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
+  /*grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
   options.watch_root_certs();
   options.set_root_cert_name(kRootCertName);
   options.watch_identity_key_cert_pairs();
