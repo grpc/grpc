@@ -1680,41 +1680,37 @@ static dispatch_once_t initGlobalInterceptorFactory;
   options.interceptorFactories = @[ [[DefaultInterceptorFactory alloc] init], factory ];
 
   __block GRPCStreamingProtoCall *call = [_service
-      fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
-                                            initWithInitialMetadataCallback:nil
-                                            messageCallback:^(id message) {
-                                              XCTAssertLessThan(index, 4,
-                                                                @"More than 4 responses received.");
-                                              id expected = [RMTStreamingOutputCallResponse
-                                                  messageWithPayloadSize:responses[index]];
-                                              XCTAssertEqualObjects(message, expected);
-                                              index += 1;
-                                              if (index < 4) {
-                                                id request = [RMTStreamingOutputCallRequest
-                                                    messageWithPayloadSize:requests[index]
-                                                     requestedResponseSize:responses[index]];
-                                                [call writeMessage:request];
-                                                [call receiveNextMessage];
-                                              } else {
-                                                [call finish];
-                                              }
-                                            }
-                                            closeCallback:^(NSDictionary *trailingMetadata,
-                                                            NSError *error) {
-                                              XCTAssertNil(error,
-                                                           @"Finished with unexpected error: %@",
-                                                           error);
-                                              XCTAssertEqual(index, 4,
-                                                             @"Received %i responses instead of 4.",
-                                                             index);
-                                              [expectUserCallComplete fulfill];
-                                            }]
+      fullDuplexCallWithResponseHandler:
+          [[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+              messageCallback:^(id message) {
+                XCTAssertLessThan(index, 4, @"More than 4 responses received.");
+                id expected =
+                    [RMTStreamingOutputCallResponse messageWithPayloadSize:responses[index]];
+                XCTAssertEqualObjects(message, expected);
+                index += 1;
+                if (index < 4) {
+                  id request =
+                      [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
+                                                      requestedResponseSize:responses[index]];
+                  [call writeMessage:request];
+                  [call receiveNextMessage];
+                } else {
+                  [self waitForExpectations:@[ expectResponseCallbackComplete ]
+                                    timeout:TEST_TIMEOUT];
+                  [call finish];
+                }
+              }
+              closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+                XCTAssertEqual(index, 4, @"Received %i responses instead of 4.", index);
+                [expectUserCallComplete fulfill];
+              }]
                             callOptions:options];
   [call start];
   [call receiveNextMessage];
   [call writeMessage:request];
 
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  [self waitForExpectations:@[ expectUserCallComplete ] timeout:TEST_TIMEOUT];
   XCTAssertEqual(startCount, 1);
   XCTAssertEqual(writeDataCount, 4);
   XCTAssertEqual(finishCount, 1);
