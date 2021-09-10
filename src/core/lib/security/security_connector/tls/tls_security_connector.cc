@@ -813,21 +813,4 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
   return status;
 }
 
-<<<<<<< HEAD
-namespace internal {
-
-grpc_error_handle TlsCheckHostName(const char* peer_name,
-                                   const tsi_peer* peer) {
-  /* Check the peer name if specified. */
-  if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("Peer name ", peer_name, " is not in peer certificate"));
-  }
-  return GRPC_ERROR_NONE;
-}
-
-}  // namespace internal
-
-=======
->>>>>>> 55cbaf32a7 (custom verification proposed C core changes)
 }  // namespace grpc_core
