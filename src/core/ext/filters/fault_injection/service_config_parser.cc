@@ -134,15 +134,9 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
       }
     }
     if (!sub_error_list.empty()) {
-      // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
-      // string is not static in this case.
-      grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("failed to parse faultInjectionPolicy index ", i)
-              .c_str());
-      for (size_t i = 0; i < sub_error_list.size(); ++i) {
-        error = grpc_error_add_child(error, sub_error_list[i]);
-      }
-      error_list->push_back(error);
+      error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+          absl::StrCat("failed to parse faultInjectionPolicy index ", i),
+          &sub_error_list));
     }
     policies.push_back(std::move(fault_injection_policy));
   }

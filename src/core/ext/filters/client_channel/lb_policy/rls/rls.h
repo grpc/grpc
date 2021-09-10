@@ -46,7 +46,81 @@
 
 namespace grpc_core {
 
-class RlsLbConfig;
+/// Parsed RLS LB policy configuration.
+class RlsLbConfig : public LoadBalancingPolicy::Config {
+ public:
+  using KeyBuilder = std::map<std::string /*key*/,
+                              std::vector<std::string /*header*/>>;
+  using KeyBuilderMap = std::unordered_map<std::string /*path*/, KeyBuilder>;
+
+  struct RouteLookupConfig {
+    RouteLookupConfig() = default;
+    // FIXME: is this needed, or will the compiler generate it automatically?
+    RouteLookupConfig(RouteLookupConfig&& other)
+        : key_builder_map(std::move(other.key_builder_map)),
+          lookup_service(std::move(other.lookup_service)),
+          lookup_service_timeout(other.lookup_service_timeout),
+          max_age(other.max_age),
+          stale_age(other.stale_age),
+          cache_size_bytes(other.cache_size_bytes),
+          default_target(std::move(other.default_target)) {}
+
+    KeyBuilderMap key_builder_map;
+    std::string lookup_service;
+    grpc_millis lookup_service_timeout = 0;
+    grpc_millis max_age = 0;
+    grpc_millis stale_age = 0;
+    int64_t cache_size_bytes = 0;
+    std::string default_target;
+  };
+
+  RlsLbConfig(RouteLookupConfig route_lookup_config,
+              RefCountedPtr<LoadBalancingPolicy::Config>
+                  default_child_policy_parsed_config,
+              Json child_policy_config,
+              std::string child_policy_config_target_field_name)
+      : route_lookup_config_(std::move(route_lookup_config)),
+        default_child_policy_parsed_config_(
+            std::move(default_child_policy_parsed_config)),
+        child_policy_config_(std::move(child_policy_config)),
+        child_policy_config_target_field_name_(
+            std::move(child_policy_config_target_field_name)) {}
+
+  const char* name() const override;
+
+  const RouteLookupConfig::KeyBuilderMap& key_builder_map() const {
+    return route_lookup_config_.key_builder_map;
+  }
+  const std::string& lookup_service() const {
+    return route_lookup_config_.lookup_service;
+  }
+  grpc_millis lookup_service_timeout() const {
+    return route_lookup_config_.lookup_service_timeout;
+  }
+  grpc_millis max_age() const { return route_lookup_config_.max_age; }
+  grpc_millis stale_age() const { return route_lookup_config_.stale_age; }
+  int64_t cache_size_bytes() const {
+    return route_lookup_config_.cache_size_bytes;
+  }
+  const std::string& default_target() const {
+    return route_lookup_config_.default_target;
+  }
+  RefCountedPtr<LoadBalancingPolicy::Config>
+  default_child_policy_parsed_config() const {
+    return default_child_policy_parsed_config_;
+  }
+  const Json& child_policy_config() const { return child_policy_config_; }
+  const std::string& child_policy_config_target_field_name() const {
+    return child_policy_config_target_field_name_;
+  }
+
+ private:
+  RouteLookupConfig route_lookup_config_;
+  RefCountedPtr<LoadBalancingPolicy::Config>
+      default_child_policy_parsed_config_;
+  Json child_policy_config_;
+  std::string child_policy_config_target_field_name_;
+};
 
 class RlsLb : public LoadBalancingPolicy {
  public:
@@ -497,73 +571,6 @@ class RlsLb : public LoadBalancingPolicy {
   RefCountedPtr<ControlChannel> channel_;
   ChildPolicyMap child_policy_map_;
   RefCountedPtr<ChildPolicyOwner> default_child_policy_;
-};
-
-/// Parsed RLS LB policy configuration.
-class RlsLbConfig : public LoadBalancingPolicy::Config {
- public:
-  RlsLbConfig(RlsLb::KeyMapBuilderMap key_map_builder_map,
-              std::string lookup_service, grpc_millis lookup_service_timeout,
-              grpc_millis max_age, grpc_millis stale_age,
-              int64_t cache_size_bytes, std::string default_target,
-              Json child_policy_config,
-              RefCountedPtr<LoadBalancingPolicy::Config>
-                  default_child_policy_parsed_config,
-              std::string child_policy_config_target_field_name)
-      : key_map_builder_map_(std::move(key_map_builder_map)),
-        lookup_service_(std::move(lookup_service)),
-        lookup_service_timeout_(lookup_service_timeout),
-        max_age_(max_age),
-        stale_age_(stale_age),
-        cache_size_bytes_(cache_size_bytes),
-        default_target_(std::move(default_target)),
-        child_policy_config_(std::move(child_policy_config)),
-        default_child_policy_parsed_config_(
-            std::move(default_child_policy_parsed_config)),
-        child_policy_config_target_field_name_(
-            std::move(child_policy_config_target_field_name)) {}
-
-  const char* name() const override;
-
-  const RlsLb::KeyMapBuilderMap& key_map_builder_map() const {
-    return key_map_builder_map_;
-  }
-
-  const std::string& lookup_service() const { return lookup_service_; }
-
-  grpc_millis lookup_service_timeout() const { return lookup_service_timeout_; }
-
-  grpc_millis max_age() const { return max_age_; }
-
-  grpc_millis stale_age() const { return stale_age_; }
-
-  int64_t cache_size_bytes() const { return cache_size_bytes_; }
-
-  const std::string& default_target() const { return default_target_; }
-
-  const Json& child_policy_config() const { return child_policy_config_; }
-
-  RefCountedPtr<LoadBalancingPolicy::Config>
-  default_child_policy_parsed_config() const {
-    return default_child_policy_parsed_config_;
-  }
-
-  const std::string& child_policy_config_target_field_name() const {
-    return child_policy_config_target_field_name_;
-  }
-
- private:
-  RlsLb::KeyMapBuilderMap key_map_builder_map_;
-  std::string lookup_service_;
-  grpc_millis lookup_service_timeout_;
-  grpc_millis max_age_;
-  grpc_millis stale_age_;
-  int64_t cache_size_bytes_;
-  std::string default_target_;
-  Json child_policy_config_;
-  RefCountedPtr<LoadBalancingPolicy::Config>
-      default_child_policy_parsed_config_;
-  std::string child_policy_config_target_field_name_;
 };
 
 class RlsLbFactory : public LoadBalancingPolicyFactory {

@@ -48,6 +48,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_util.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -83,7 +84,7 @@ const grpc_millis kCacheCleanupTimerInterval = 60 * GPR_MS_PER_SEC;
 
 inline const Json* ParseFieldJsonFromJsonObject(const Json::Object& object,
                                                 const std::string& field,
-                                                grpc_error** error,
+                                                grpc_error_handle* error,
                                                 bool optional = false) {
   *error = GRPC_ERROR_NONE;
   auto it = object.find(field);
@@ -100,7 +101,7 @@ inline const Json* ParseFieldJsonFromJsonObject(const Json::Object& object,
 
 const Json::Object* ParseObjectFieldFromJsonObject(const Json::Object& object,
                                                    const std::string& field,
-                                                   grpc_error** error,
+                                                   grpc_error_handle* error,
                                                    bool optional = false) {
   *error = GRPC_ERROR_NONE;
   const Json* child_json =
@@ -119,7 +120,7 @@ const Json::Object* ParseObjectFieldFromJsonObject(const Json::Object& object,
 
 const Json::Array* ParseArrayFieldFromJsonObject(const Json::Object& object,
                                                  const std::string& field,
-                                                 grpc_error** error,
+                                                 grpc_error_handle* error,
                                                  bool optional = false) {
   *error = GRPC_ERROR_NONE;
   const Json* child_json =
@@ -138,7 +139,7 @@ const Json::Array* ParseArrayFieldFromJsonObject(const Json::Object& object,
 
 const std::string* ParseStringFieldFromJsonObject(const Json::Object& object,
                                                   const std::string& field,
-                                                  grpc_error** error,
+                                                  grpc_error_handle* error,
                                                   bool optional = false) {
   *error = GRPC_ERROR_NONE;
   const Json* child_json =
@@ -157,7 +158,7 @@ const std::string* ParseStringFieldFromJsonObject(const Json::Object& object,
 
 int64_t ParseNumberFieldFromJsonObject(const Json::Object& object,
                                        const std::string& field,
-                                       grpc_error** error,
+                                       grpc_error_handle* error,
                                        bool optional = false,
                                        int64_t optional_default = 0) {
   *error = GRPC_ERROR_NONE;
@@ -176,7 +177,7 @@ int64_t ParseNumberFieldFromJsonObject(const Json::Object& object,
 }
 
 inline grpc_millis ParseDuration(const Json::Object& duration_object,
-                                 grpc_error** error) {
+                                 grpc_error_handle* error) {
   *error = GRPC_ERROR_NONE;
   int64_t seconds =
       ParseNumberFieldFromJsonObject(duration_object, "seconds", error);
@@ -191,14 +192,14 @@ inline grpc_millis ParseDuration(const Json::Object& duration_object,
   return seconds * GPR_MS_PER_SEC + nanos / GPR_NS_PER_MS;
 }
 
-grpc_error* InsertOrUpdateChildPolicyField(Json* config,
+grpc_error_handle InsertOrUpdateChildPolicyField(Json* config,
                                            const std::string& field,
                                            const std::string& value) {
   if (config->type() != Json::Type::ARRAY) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "child policy configuration is not an array");
   }
-  absl::InlinedVector<grpc_error*, 1> error_list;
+  absl::InlinedVector<grpc_error_handle, 1> error_list;
   for (Json& child_json : *config->mutable_array()) {
     if (child_json.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -228,94 +229,6 @@ grpc_error* InsertOrUpdateChildPolicyField(Json* config,
 }
 
 }  //  namespace
-
-RlsLb::KeyMapBuilderMap RlsCreateKeyMapBuilderMap(const Json& config,
-                                                  grpc_error** error) {
-  *error = GRPC_ERROR_NONE;
-  RlsLb::KeyMapBuilderMap result;
-  grpc_error* internal_error = GRPC_ERROR_NONE;
-  if (config.type() != Json::Type::ARRAY) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "malformed RLS JSON configuration");
-    return RlsLb::KeyMapBuilderMap();
-  }
-  absl::InlinedVector<grpc_error*, 1> error_list;
-  if (config.array_value().empty()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "\"grpc_keybuilders\" field is empty"));
-  }
-  int idx = 0;
-  for (const Json& key_builder_json : config.array_value()) {
-    if (key_builder_json.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("\"grpc_keybuilders\" array element ", idx,
-                       " is not an object")
-              .c_str()));
-    }
-    const Json::Object& key_builder = key_builder_json.object_value();
-    const Json::Array* names_ptr =
-        ParseArrayFieldFromJsonObject(key_builder, "names", &internal_error);
-    if (internal_error != GRPC_ERROR_NONE) {
-      error_list.push_back(internal_error);
-    } else {
-      const Json::Array& names = *names_ptr;
-      if (names.empty()) {
-        error_list.push_back(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("\"names\" field is empty"));
-      }
-      int idx2 = 0;
-      for (const Json& name_json : names) {
-        if (name_json.type() != Json::Type::OBJECT) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("\"names\" array element ", idx2,
-                           " is not an object")
-                  .c_str()));
-          continue;
-        }
-        const Json::Object& name = name_json.object_value();
-        const std::string* service =
-            ParseStringFieldFromJsonObject(name, "service", &internal_error);
-        if (internal_error != GRPC_ERROR_NONE || service->length() == 0) {
-          error_list.push_back(internal_error);
-        }
-        const std::string* method = ParseStringFieldFromJsonObject(
-            name, "method", &internal_error, true);
-        if (internal_error != GRPC_ERROR_NONE) {
-          error_list.push_back(internal_error);
-        }
-        if (service != nullptr) {
-          std::string service_method = absl::StrCat(
-              "/", *service, "/", (method == nullptr) ? "" : *method);
-          if (result.find(service_method) != result.end()) {
-            error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrCat("duplicate name ", service_method).c_str()));
-          } else {
-            const Json* headers_json_ptr = ParseFieldJsonFromJsonObject(
-                key_builder, "headers", &internal_error, true);
-            if (internal_error != GRPC_ERROR_NONE) {
-              error_list.push_back(internal_error);
-            } else {
-              RlsLb::KeyMapBuilder builder = RlsLb::KeyMapBuilder(
-                  headers_json_ptr == nullptr ? Json() : *headers_json_ptr,
-                  &internal_error);
-              if (internal_error) {
-                error_list.push_back(internal_error);
-              } else {
-                result.insert(
-                    std::make_pair(service_method, std::move(builder)));
-              }
-            }
-          }
-        }
-        idx2++;
-      }
-    }
-    idx++;
-  }
-  *error = GRPC_ERROR_CREATE_FROM_VECTOR(
-      "errors parsing RLS key builders config", &error_list);
-  return result;
-}
 
 const RlsLb::KeyMapBuilder* RlsFindKeyMapBuilder(
     const RlsLb::KeyMapBuilderMap& key_map_builder_map,
@@ -585,7 +498,7 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
                   lb_policy_.get()));
           Json copied_child_policy_config =
               lb_policy_->config_->child_policy_config();
-          grpc_error* error = InsertOrUpdateChildPolicyField(
+          grpc_error_handle error = InsertOrUpdateChildPolicyField(
               &copied_child_policy_config,
               lb_policy_->config_->child_policy_config_target_field_name(),
               target);
@@ -643,7 +556,7 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
   lru_iterator_--;
 }
 
-void RlsLb::Cache::Entry::OnBackoffTimer(void* arg, grpc_error* error) {
+void RlsLb::Cache::Entry::OnBackoffTimer(void* arg, grpc_error_handle error) {
   RefCountedPtr<Entry> entry(static_cast<Entry*>(arg));
   entry->lb_policy_->work_serializer()->Run(
       [&entry, error]() {
@@ -725,7 +638,7 @@ void RlsLb::Cache::Shutdown() {
   grpc_timer_cancel(&cleanup_timer_);
 }
 
-void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error* error) {
+void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
   Cache* cache = static_cast<Cache*>(arg);
   cache->lb_policy_->work_serializer()->Run(
       [&cache, error]() {
@@ -828,7 +741,7 @@ void RlsLb::RlsRequest::Orphan() {
   }
 }
 
-void RlsLb::RlsRequest::StartCall(void* arg, grpc_error* error) {
+void RlsLb::RlsRequest::StartCall(void* arg, grpc_error_handle error) {
   (void)error;
   RefCountedPtr<RlsRequest> entry(reinterpret_cast<RlsRequest*>(arg));
   grpc_millis now = ExecCtx::Get()->Now();
@@ -887,14 +800,14 @@ void RlsLb::RlsRequest::StartCall(void* arg, grpc_error* error) {
   }
 }
 
-void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error* error) {
+void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error_handle error) {
   RefCountedPtr<RlsRequest> entry(static_cast<RlsRequest*>(arg));
   entry->lb_policy_->work_serializer()->Run(
       [entry, error]() { entry->OnRlsCallCompleteLocked(error); },
       DEBUG_LOCATION);
 }
 
-void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error* error) {
+void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   if (lb_policy_->is_shutdown_) return;
   bool call_failed =
       (error != GRPC_ERROR_NONE || status_recv_ != GRPC_STATUS_OK);
@@ -1133,7 +1046,7 @@ LoadBalancingPolicy::PickResult RlsLb::ChildPolicyWrapper::Pick(PickArgs args) {
 void RlsLb::ChildPolicyWrapper::UpdateLocked(
     const Json& child_policy_config, ServerAddressList addresses,
     const grpc_channel_args* channel_args) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   UpdateArgs update_args;
   update_args.config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
       child_policy_config, &error);
@@ -1326,7 +1239,7 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
       (addresses_ != old_addresses)) {
     for (auto& child : child_policy_map_) {
       Json copied_child_policy_config = config_->child_policy_config();
-      grpc_error* error = InsertOrUpdateChildPolicyField(
+      grpc_error_handle error = InsertOrUpdateChildPolicyField(
           &copied_child_policy_config,
           config_->child_policy_config_target_field_name(),
           child.second->child()->target());
@@ -1336,7 +1249,7 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
     }
     if (default_child_policy_ != nullptr) {
       Json copied_child_policy_config = config_->child_policy_config();
-      grpc_error* error = InsertOrUpdateChildPolicyField(
+      grpc_error_handle error = InsertOrUpdateChildPolicyField(
           &copied_child_policy_config,
           config_->child_policy_config_target_field_name(),
           default_child_policy_->child()->target());
@@ -1411,7 +1324,7 @@ void RlsLb::UpdatePicker() {
                GRPC_ERROR_NONE);
 }
 
-void RlsLb::UpdatePickerCallback(void* arg, grpc_error* error) {
+void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle error) {
   RefCountedPtr<RlsLb> lb_policy(static_cast<RlsLb*>(arg));
   lb_policy->work_serializer()->Run(
       [lb_policy]() {
@@ -1453,67 +1366,6 @@ void RlsLb::UpdatePickerCallback(void* arg, grpc_error* error) {
       DEBUG_LOCATION);
 }
 
-RlsLb::KeyMapBuilder::KeyMapBuilder(const Json& config, grpc_error** error) {
-  *error = GRPC_ERROR_NONE;
-  if (config.type() == Json::Type::JSON_NULL) return;
-  if (config.type() != Json::Type::ARRAY) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "\"headers\" field is not an array");
-    return;
-  }
-  absl::InlinedVector<grpc_error*, 1> error_list;
-  grpc_error* internal_error = GRPC_ERROR_NONE;
-  const Json::Array& headers = config.array_value();
-  int idx = 0;
-  for (const Json& name_matcher_json : headers) {
-    ++idx;
-    if (name_matcher_json.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("\"headers\" array element ", (idx - 1),
-                       " is not an object")
-              .c_str()));
-      continue;
-    }
-    const Json::Object& name_matcher = name_matcher_json.object_value();
-    auto required_match_json = name_matcher.find("required_match");
-    if (required_match_json != name_matcher.end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "\"required_match\" field should not be set"));
-    }
-    const std::string* key_ptr =
-        ParseStringFieldFromJsonObject(name_matcher, "key", &internal_error);
-    if (internal_error != GRPC_ERROR_NONE) {
-      error_list.push_back(internal_error);
-      continue;
-    }
-    if (pattern_.find(*key_ptr) != pattern_.end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("duplicate key \"", *key_ptr, "\"").c_str()));
-    }
-    const Json::Array* names_ptr = ParseArrayFieldFromJsonObject(
-        name_matcher, "names", &internal_error, true);
-    if (internal_error != GRPC_ERROR_NONE) {
-      error_list.push_back(internal_error);
-      continue;
-    }
-    int idx2 = 0;
-    for (const Json& name_json : *names_ptr) {
-      if (name_json.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("\"names\" array element ,", idx2,
-                         " is not a string")
-                .c_str()));
-      } else {
-        const std::string& name = name_json.string_value();
-        pattern_[*key_ptr].push_back(name);
-      }
-      idx2++;
-    }
-  }
-  *error = GRPC_ERROR_CREATE_FROM_VECTOR(
-      "errors parsing RLS key builder config", &error_list);
-}
-
 RlsLb::KeyMap RlsLb::KeyMapBuilder::BuildKeyMap(
     const MetadataInterface* initial_metadata) const {
   if (initial_metadata == nullptr) return KeyMap();
@@ -1543,145 +1395,10 @@ OrphanablePtr<LoadBalancingPolicy> RlsLbFactory::CreateLoadBalancingPolicy(
   return MakeOrphanable<RlsLb>(std::move(args));
 }
 
-RefCountedPtr<LoadBalancingPolicy::Config>
-RlsLbFactory::ParseLoadBalancingConfig(const Json& config_json,
-                                       grpc_error** error) const {
-  *error = GRPC_ERROR_NONE;
-  GPR_DEBUG_ASSERT(error != nullptr);
-  if (config_json.type() != Json::Type::OBJECT) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("RLS config is not object");
-    return nullptr;
-  }
-  RlsLb::KeyMapBuilderMap parsed_key_map_builder_map;
-  std::string parsed_lookup_service;
-  grpc_millis parsed_lookup_service_timeout;
-  grpc_millis parsed_max_age;
-  grpc_millis parsed_stale_age;
-  int64_t parsed_cache_size_bytes;
-  std::string parsed_default_target;
-  Json parsed_child_policy_config;
-  RefCountedPtr<LoadBalancingPolicy::Config>
-      parsed_default_child_policy_parsed_config;
-  std::string parsed_child_policy_config_target_field_name;
-  absl::InlinedVector<grpc_error*, 1> error_list;
-  grpc_error* internal_error = GRPC_ERROR_NONE;
-  const Json::Object& config = config_json.object_value();
-  const Json::Object* route_lookup_config_ptr = ParseObjectFieldFromJsonObject(
-      config, "routeLookupConfig", &internal_error);
-  if (internal_error != GRPC_ERROR_NONE) {
-    error_list.push_back(internal_error);
-  } else {
-    // key_map_builder_map_
-    const Json* grpc_key_builders_json_ptr = ParseFieldJsonFromJsonObject(
-        *route_lookup_config_ptr, "grpcKeybuilders", &internal_error, true);
-    if (internal_error != GRPC_ERROR_NONE) {
-      error_list.push_back(internal_error);
-    } else if (grpc_key_builders_json_ptr != nullptr) {
-      parsed_key_map_builder_map = RlsCreateKeyMapBuilderMap(
-          *grpc_key_builders_json_ptr, &internal_error);
-      if (internal_error != GRPC_ERROR_NONE) {
-        error_list.push_back(internal_error);
-      }
-    }
-    // lookup_service
-    const std::string* lookup_service = ParseStringFieldFromJsonObject(
-        *route_lookup_config_ptr, "lookupService", &internal_error);
-    if (internal_error != GRPC_ERROR_NONE) {
-      error_list.push_back(internal_error);
-    } else {
-      parsed_lookup_service = *lookup_service;
-    }
-    // lookup_service_timeout
-    const Json::Object* lookup_service_timeout_ptr =
-        ParseObjectFieldFromJsonObject(*route_lookup_config_ptr,
-                                       "lookupServiceTimeout", &internal_error,
-                                       true);
-    if (internal_error != GRPC_ERROR_NONE) {
-      error_list.push_back(internal_error);
-    } else if (lookup_service_timeout_ptr == nullptr) {
-      parsed_lookup_service_timeout = kDefaultLookupServiceTimeout;
-    } else {
-      parsed_lookup_service_timeout =
-          ParseDuration(*lookup_service_timeout_ptr, &internal_error);
-      if (internal_error != GRPC_ERROR_NONE) {
-        error_list.push_back(internal_error);
-      }
-    }
-    bool max_age_missing = false;
-    // max_age
-    const Json::Object* max_age_ptr = ParseObjectFieldFromJsonObject(
-        *route_lookup_config_ptr, "maxAge", &internal_error, true);
-    if (internal_error != GRPC_ERROR_NONE) {
-      error_list.push_back(internal_error);
-    } else if (max_age_ptr == nullptr) {
-      parsed_max_age = kDefaultLookupServiceTimeout;
-      max_age_missing = true;
-    } else {
-      parsed_max_age = ParseDuration(*max_age_ptr, &internal_error);
-      if (internal_error != GRPC_ERROR_NONE) {
-        error_list.push_back(internal_error);
-      } else if (parsed_max_age > kMaxMaxAge) {
-        parsed_max_age = kMaxMaxAge;
-      }
-    }
-    // stale_age
-    const Json::Object* stale_age_ptr = ParseObjectFieldFromJsonObject(
-        *route_lookup_config_ptr, "staleAge", &internal_error, true);
-    if (internal_error != GRPC_ERROR_NONE) {
-      error_list.push_back(internal_error);
-    } else if (stale_age_ptr == nullptr && max_age_missing) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "max_age needs to be set when stale_age is set"));
-    } else if (stale_age_ptr == nullptr && !max_age_missing) {
-      parsed_stale_age = parsed_max_age;
-    } else {
-      parsed_stale_age = ParseDuration(*stale_age_ptr, &internal_error);
-      if (internal_error != GRPC_ERROR_NONE) {
-        error_list.push_back(internal_error);
-      } else if (parsed_stale_age > parsed_max_age) {
-        parsed_stale_age = parsed_max_age;
-      }
-    }
-    // cache_size_bytes
-    parsed_cache_size_bytes = ParseNumberFieldFromJsonObject(
-        *route_lookup_config_ptr, "cacheSizeBytes", &internal_error, true,
-        kDefaultCacheSizeBytes);
-    if (internal_error != GRPC_ERROR_NONE) {
-      error_list.push_back(internal_error);
-    } else if (parsed_cache_size_bytes <= 0) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "cache_size_bytes must be greater than 0"));
-    }
-    // default target
-    const std::string* default_target_ptr = ParseStringFieldFromJsonObject(
-        *route_lookup_config_ptr, "defaultTarget", &internal_error, true);
-    if (internal_error != GRPC_ERROR_NONE) {
-      error_list.push_back(internal_error);
-    } else if (default_target_ptr != nullptr &&
-               default_target_ptr->length() > 0) {
-      parsed_default_target = *default_target_ptr;
-    }
-  }
-  // child_policy_config_target_field_name
-  const std::string* child_policy_config_target_field_name_ptr =
-      ParseStringFieldFromJsonObject(config, "childPolicyConfigTargetFieldName",
-                                     &internal_error);
-  if (internal_error != GRPC_ERROR_NONE) {
-    error_list.push_back(internal_error);
-  } else if (child_policy_config_target_field_name_ptr->length() == 0) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "child policy config target field name is empty"));
-  } else {
-    parsed_child_policy_config_target_field_name =
-        *child_policy_config_target_field_name_ptr;
-    const Json* child_policy_array_json_ptr =
-        ParseFieldJsonFromJsonObject(config, "childPolicy", &internal_error);
-    if (internal_error != GRPC_ERROR_NONE) {
-      error_list.push_back(internal_error);
-    } else if (child_policy_array_json_ptr->type() != Json::Type::ARRAY) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "\"childPolicy\" field is not an array"));
-    } else {
+namespace {
+
+
+
       // Fill in the child_policy_config_target_field_name field with default
       // target for all the child policy config and validate them
       Json new_child_policy_array_json = *child_policy_array_json_ptr;
@@ -1740,17 +1457,296 @@ RlsLbFactory::ParseLoadBalancingConfig(const Json& config_json,
           }
         }
       }
+
+
+std::string ParseJsonMethodName(size_t idx, const Json& json,
+                                grpc_error_handle* error) {
+  if (json.type() != Json::Type::OBJECT) {
+    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("field:names index:", idx, " error:type is not object"));
+    return "";
+  }
+  std::vector<grpc_error_handle> error_list;
+  // Find service name.
+  absl::string_view service_name;
+  ParseJsonObjectField(json.object_value(), "service", &service_name,
+                       &error_list);
+  // Find method name.
+  absl::string_view method_name;
+  ParseJsonObjectField(json.object_value(), "method", &method_name,
+                       &error_list, /*required=*/false);
+  // Return error, if any.
+  *error = GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+      absl::StrCat("field:names index:", idx), &error_list);
+  // Construct path.
+  return absl::StrCat("/", service_name, "/", method_name);
+}
+
+grpc_error_handle ParseGrpcKeybuilder(
+    size_t idx, const Json& json, KeyBuilderMap* key_builder_map) {
+  if (key_builder.type() != Json::Type::OBJECT) {
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("field:grpc_keybuilders index:", idx,
+                     " error:is not of type object"));
+  }
+  // Parse names.
+  std::set<std::string> names;
+  const Json::Array* names_array = nullptr;
+  ParseJsonObjectField(json.object_value(), "names", &names_array, &error_list);
+  if (names_array != nullptr) {
+    if (names_array->empty()) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:names error:list is empty"));
+    } else {
+      size_t name_idx = 0;
+      for (const Json& name_json : *names_array) {
+        grpc_error_handle child_error = GRPC_ERROR_NONE;
+        std::string name =
+            ParseJsonMethodName(++name_idx, name_json, &child_error);
+        if (child_error != GRPC_ERROR_NONE) {
+          error_list.push_back(child_error);
+        } else {
+          bool inserted = names.insert(std::move(name)).second;
+          if (!inserted) {
+            errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+                absl::StrCat("field:names error:duplicate entry for ", name)));
+          }
+        }
+      }
     }
   }
-  *error =
-      GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing RLS config", &error_list);
+  // Parse headers.
+  RlsLbConfig::KeyBuilder key_builder;
+  const Json::Array* headers_array = nullptr;
+  ParseJsonObjectField(json.object_value(), "headers", &headers_array,
+                       &error_list, /*required=*/false);
+  if (headers_array != nullptr) {
+    size_t header_idx = 0;
+    for (const Json& header_json : *headers_array) {
+      std::string key;
+      std::vector<std::string> headers;
+      grpc_error_handle child_error =
+          ParseJsonHeaders(++header_idx, header_json, &key, &headers);
+      if (child_error != GRPC_ERROR_NONE) {
+        error_list.push_back(child_error);
+      } else {
+        bool inserted =
+            key_builder.emplace(key, std::move(headers)).second;
+        if (!inserted) {
+          errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+              absl::StrCat("field:headers error:duplicate key for ", key)));
+        }
+      }
+    }
+  }
+  // Insert key_builder into key_builder_map.
+  for (std::string& name : names) {
+    bool inserted =
+        key_builder_map->emplace(name, std::move(key_builder)).second;
+    if (!inserted) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("field:grpcKeybuilders error:duplicate name: ", name)));
+    }
+  }
+  return GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+      absl::StrCat("field:grpc_keybuilders index:", idx), &error_list);
+}
+
+// FIXME: extract what we need from this and remove
+#if 0
+RlsLb::KeyMapBuilder::KeyMapBuilder(const Json& config, grpc_error_handle* error) {
+  *error = GRPC_ERROR_NONE;
+  if (config.type() == Json::Type::JSON_NULL) return;
+  if (config.type() != Json::Type::ARRAY) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "\"headers\" field is not an array");
+    return;
+  }
+  absl::InlinedVector<grpc_error_handle, 1> error_list;
+  grpc_error_handle internal_error = GRPC_ERROR_NONE;
+  const Json::Array& headers = config.array_value();
+  int idx = 0;
+  for (const Json& name_matcher_json : headers) {
+    ++idx;
+    if (name_matcher_json.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("\"headers\" array element ", (idx - 1),
+                       " is not an object")
+              .c_str()));
+      continue;
+    }
+    const Json::Object& name_matcher = name_matcher_json.object_value();
+    auto required_match_json = name_matcher.find("required_match");
+    if (required_match_json != name_matcher.end()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "\"required_match\" field should not be set"));
+    }
+    const std::string* key_ptr =
+        ParseStringFieldFromJsonObject(name_matcher, "key", &internal_error);
+    if (internal_error != GRPC_ERROR_NONE) {
+      error_list.push_back(internal_error);
+      continue;
+    }
+    if (pattern_.find(*key_ptr) != pattern_.end()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("duplicate key \"", *key_ptr, "\"").c_str()));
+    }
+    const Json::Array* names_ptr = ParseArrayFieldFromJsonObject(
+        name_matcher, "names", &internal_error, true);
+    if (internal_error != GRPC_ERROR_NONE) {
+      error_list.push_back(internal_error);
+      continue;
+    }
+    int idx2 = 0;
+    for (const Json& name_json : *names_ptr) {
+      if (name_json.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("\"names\" array element ,", idx2,
+                         " is not a string")
+                .c_str()));
+      } else {
+        const std::string& name = name_json.string_value();
+        pattern_[*key_ptr].push_back(name);
+      }
+      idx2++;
+    }
+  }
+  *error = GRPC_ERROR_CREATE_FROM_VECTOR(
+      "errors parsing RLS key builder config", &error_list);
+}
+#endif
+
+RlsLbConfig::KeyBuilderMap ParseGrpcKeybuilders(
+    const Json::Array& config, grpc_error_handle* error) {
+  KeyBuilderMap key_builder_map;
+  if (config.empty()) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "\"grpcKeybuilders\" list is empty");
+    return {};
+  }
+  std::vector<grpc_error_handle> error_list;
+  size_t idx = 0;
+  for (const Json& key_builder : config) {
+    grpc_error_handle internal_error =
+        ParseGrpcKeybuilder(idx++, key_builder, &key_builder_map);
+    if (internal_error != GRPC_ERROR_NONE) error_list.push_back(error);
+  }
+  *error = GRPC_ERROR_CREATE_FROM_VECTOR(
+      "errors parsing RLS key builders config", &error_list);
+  return key_builder_map;
+}
+
+RlsLbConfig::RouteLookupConfig ParseRouteLookupConfig(
+    const Json::Object& json, grpc_error_handle* error) {
+  std::vector<grpc_error_handle> error_list;
+  RlsLbConfig::RouteLookupConfig route_lookup_config;
+  // Parse grpcKeybuilders.
+  const Json::Array* keybuilder_list = nullptr;
+  ParseJsonObjectField(json, "grpcKeybuilders", &keybuilder_list, &error_list);
+  if (keybuilder_list != nullptr) {
+    grpc_error_handle child_error = GRPC_ERROR_NONE;
+    route_lookup_config.key_builder_map =
+        ParseGrpcKeybuilders(*key_builder_map, &child_error);
+    if (child_error != GRPC_ERROR_NONE) error_list.push_back(child_error);
+  }
+  // Parse lookupService.
+  if (ParseJsonObjectField(json, "lookupService",
+                           &route_lookup_config.lookup_service, &error_list)) {
+    if (!ResolverRegistry::IsValidTarget(route_lookup_config.lookup_servic)) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:lookupService error:must be valid gRPC target URI"));
+    }
+  }
+  // Parse lookupServiceTimeout.
+  ParseJsonObjectFieldAsDuration(json, "lookupServiceTimeout",
+                                 &route_lookup_config.lookup_service_timeout,
+                                 &error_list, /*required=*/false);
+  // Parse maxAge.
+  route_lookup_config.max_age = kMaxMaxAge;
+  bool max_age_set = ParseJsonObjectFieldAsDuration(
+      json, "maxAge", &route_lookup_config.max_age, &error_list,
+      /*required=*/false);
+  // Parse staleAge.
+  bool stale_age_set = ParseJsonObjectFieldAsDuration(
+      json, "staleAge", &route_lookup_config.stale_age, &error_list,
+      /*required=*/false);
+  // If staleAge is set, then maxAge must also be set.
+  if (stale_age_set && !max_age_set) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "field:maxAge error:must be set if staleAge is set"));
+  }
+  // Ignore staleAge if greater than or equal to maxAge.
+  if (route_lookup_config.stale_age >= route_lookup_config.max_age) {
+    route_lookup_config.stale_age = 0;
+  }
+  // Parse cacheSizeBytes.
+  route_lookup_config.cache_size_bytes = kDefaultCacheSizeBytes;
+  ParseJsonObjectField(json, "cacheSizeBytes",
+                       &route_lookup_config.cache_size_bytes, &error_list,
+                       /*required=*/false);
+  if (route_lookup_config.cache_size_bytes <= 0) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "field:cacheSizeBytes error:must be greater than 0"));
+  }
+  // Parse defaultTarget.
+  if (ParseJsonObjectField(json, "defaultTarget",
+                           &route_lookup_config.default_target, &error_list,
+                           /*required=*/false)) {
+    if (route_lookup_config.default_target.empty()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:defaultTarget error:must be non-empty if set"));
+    }
+  }
+  return route_lookup_config;
+}
+
+}  // namespace
+
+RefCountedPtr<LoadBalancingPolicy::Config>
+RlsLbFactory::ParseLoadBalancingConfig(const Json& config_json,
+                                       grpc_error_handle* error) const {
+  std::vector<grpc_error_handle> error_list;
+  // Parse routeLookupConfig.
+  RlsLbConfig::RouteLookupConfig route_lookup_config;
+  const Json::Object* route_lookup_config_json = nullptr;
+  if (ParseJsonObjectField(config_json, "routeLookupConfig",
+                           &route_lookup_config_json, &error_list)) {
+    grpc_error_handle child_error = GRPC_ERROR_NONE;
+    route_lookup_config =
+        ParseRouteLookupConfig(*route_lookup_config_json, &child_error);
+    if (child_error != GRPC_ERROR_NONE) error_list.push_back(child_error);
+  }
+  // Parse childPolicyConfigTargetFieldName.
+  std::string child_policy_config_target_field_name;
+  ParseJsonObjectField(config_json, "childPolicyConfigTargetFieldName",
+                       &child_policy_config_target_field_name, &error_list);
+  if (child_policy_config_target_field_name.empty()) {
+    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "field:childPolicyConfigTargetFieldName error:must be non-empty"));
+  }
+  // Parse childPolicy.
+  Json::Array* child_policy_list = nullptr;
+  ParseJsonObjectField(config_json, "childPolicy", &child_policy_list,
+                       &error_list);
+  // Validate child policy config.
+  Json child_policy_config;
+  if (child_policy_list != nullptr) {
+    grpc_error_handle child_error = GRPC_ERROR_NONE;
+  child_policy_config =
+        ValidateChildPolicyList(*child_policy_list, &child_error);
+    if (child_error != GRPC_ERROR_NONE) error_list.push_back(child_error);
+  }
+  // Construct default child policy if needed.
+  RefCountedPtr<LoadBalancingPolicy::Config>
+      parsed_default_child_policy_parsed_config;
+// FIXME
+  *error = GRPC_ERROR_CREATE_FROM_VECTOR(
+      "errors parsing RLS LB policy config", &error_list);
   return MakeRefCounted<RlsLbConfig>(
-      std::move(parsed_key_map_builder_map), parsed_lookup_service,
-      parsed_lookup_service_timeout, parsed_max_age, parsed_stale_age,
-      parsed_cache_size_bytes, std::move(parsed_default_target),
-      std::move(parsed_child_policy_config),
-      std::move(parsed_default_child_policy_parsed_config),
-      std::move(parsed_child_policy_config_target_field_name));
+      std::move(route_lookup_config),
+      std::move(default_child_policy_parsed_config),
+      std::move(child_policy_config),
+      std::move(child_policy_config_target_field_name));
 }
 
 }  // namespace grpc_core

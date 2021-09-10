@@ -627,14 +627,8 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
         std::vector<grpc_error_handle> child_errors =
             ParseChildConfig(p.second, &child_config);
         if (!child_errors.empty()) {
-          // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
-          // string is not static in this case.
-          grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("field:children name:", child_name).c_str());
-          for (grpc_error_handle child_error : child_errors) {
-            error = grpc_error_add_child(error, child_error);
-          }
-          error_list.push_back(error);
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+              absl::StrCat("field:children name:", child_name), &child_errors));
         } else {
           cluster_map[child_name] = std::move(child_config);
           clusters_to_be_used.insert(child_name);

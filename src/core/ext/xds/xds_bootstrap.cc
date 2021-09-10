@@ -201,15 +201,8 @@ grpc_error_handle XdsBootstrap::ParseXdsServer(Json* json, size_t idx) {
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }
-  // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
-  // string is not static in this case.
-  if (error_list.empty()) return GRPC_ERROR_NONE;
-  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-      absl::StrCat("errors parsing index ", idx).c_str());
-  for (size_t i = 0; i < error_list.size(); ++i) {
-    error = grpc_error_add_child(error, error_list[i]);
-  }
-  return error;
+  return GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+      absl::StrCat("errors parsing index ", idx), &error_list);
 }
 
 grpc_error_handle XdsBootstrap::ParseChannelCredsArray(Json* json,
@@ -268,15 +261,8 @@ grpc_error_handle XdsBootstrap::ParseChannelCreds(Json* json, size_t idx,
     server->channel_creds_type = std::move(type);
     server->channel_creds_config = std::move(config);
   }
-  // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
-  // string is not static in this case.
-  if (error_list.empty()) return GRPC_ERROR_NONE;
-  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-      absl::StrCat("errors parsing index ", idx).c_str());
-  for (size_t i = 0; i < error_list.size(); ++i) {
-    error = grpc_error_add_child(error, error_list[i]);
-  }
-  return error;
+  return GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+      absl::StrCat("errors parsing index ", idx), &error_list);
 }
 
 grpc_error_handle XdsBootstrap::ParseServerFeaturesArray(Json* json,
@@ -430,15 +416,9 @@ grpc_error_handle XdsBootstrap::ParseCertificateProvider(
           {instance_name, {std::move(plugin_name), std::move(config)}});
     }
   }
-  // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
-  // string is not static in this case.
-  if (error_list.empty()) return GRPC_ERROR_NONE;
-  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-      absl::StrCat("errors parsing element \"", instance_name, "\"").c_str());
-  for (size_t i = 0; i < error_list.size(); ++i) {
-    error = grpc_error_add_child(error, error_list[i]);
-  }
-  return error;
+  return GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+      absl::StrCat("errors parsing element \"", instance_name, "\""),
+      &error_list);
 }
 
 std::string XdsBootstrap::ToString() const {
