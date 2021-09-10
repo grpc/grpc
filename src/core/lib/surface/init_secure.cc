@@ -98,5 +98,3 @@ void grpc_register_security_filters(void) {
                                    maybe_prepend_sdk_server_authz_filter,
                                    nullptr);
 }
-
-void grpc_security_init() { grpc_core::SecurityRegisterHandshakerFactories(); }

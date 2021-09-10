@@ -105,10 +105,7 @@ class MockTransportStreamReceiver : public TransportStreamReceiver {
               (StreamIdentifier, absl::StatusOr<std::string>), (override));
   MOCK_METHOD(void, NotifyRecvTrailingMetadata,
               (StreamIdentifier, absl::StatusOr<Metadata>, int), (override));
-  MOCK_METHOD(void, CancelRecvMessageCallbacksDueToTrailingMetadata,
-              (StreamIdentifier), (override));
-  MOCK_METHOD(void, Clear, (StreamIdentifier), (override));
-  MOCK_METHOD(void, CancelStream, (StreamIdentifier, absl::Status), (override));
+  MOCK_METHOD(void, CancelStream, (StreamIdentifier), (override));
 };
 
 }  // namespace grpc_binder

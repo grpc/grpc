@@ -33,6 +33,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 /// Opaque representation of an error.
 /// See https://github.com/grpc/grpc/blob/master/doc/core/grpc-error.md for a
@@ -308,10 +309,10 @@ grpc_error_handle grpc_error_create(const char* file, int line,
                     errs, count)
 
 #define GRPC_ERROR_CREATE_FROM_VECTOR(desc, error_list) \
-  grpc_error_create_from_vector(__FILE__, __LINE__,     \
-                                grpc_slice_from_static_string, desc, error_list)
+  grpc_error_create_from_vector(                        \
+      __FILE__, __LINE__, grpc_slice_from_static_string, desc, error_list)
 #define GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(desc, error_list) \
-  grpc_error_create_from_vector(__FILE__, __LINE__,     \
+  grpc_error_create_from_vector(__FILE__, __LINE__,                    \
                                 grpc_slice_from_cpp_string, desc, error_list)
 
 // Consumes all the errors in the vector and forms a referencing error from

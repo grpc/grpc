@@ -32,7 +32,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/fork.h"
@@ -146,8 +145,6 @@ void grpc_init(void) {
     grpc_core::ExecCtx::GlobalInit();
     grpc_iomgr_init();
     gpr_timers_global_init();
-    grpc_core::HandshakerRegistry::Init();
-    grpc_security_init();
     for (int i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != nullptr) {
         g_all_of_the_plugins[i].init();
@@ -184,7 +181,6 @@ void grpc_shutdown_internal_locked(void)
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
     grpc_mdctx_global_shutdown();
-    grpc_core::HandshakerRegistry::Shutdown();
     grpc_slice_intern_shutdown();
     grpc_core::channelz::ChannelzRegistry::Shutdown();
     grpc_stats_shutdown();

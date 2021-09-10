@@ -410,12 +410,18 @@ GRPCAPI void grpc_server_register_completion_queue(grpc_server* server,
                                                    grpc_completion_queue* cq,
                                                    void* reserved);
 
+// More members might be added in later, so users should take care to memset
+// this to 0 before using it.
+typedef struct {
+  grpc_status_code code;
+  const char* error_message;
+} grpc_serving_status_update;
+
 // There might be more methods added later, so users should take care to memset
 // this to 0 before using it.
 typedef struct {
   void (*on_serving_status_update)(void* user_data, const char* uri,
-                                   grpc_status_code code,
-                                   const char* error_message);
+                                   grpc_serving_status_update update);
   void* user_data;
 } grpc_server_xds_status_notifier;
 

@@ -42,18 +42,15 @@ const char* grpc_json_get_string_property(const grpc_core::Json& json,
   auto it = json.object_value().find(prop_name);
   if (it == json.object_value().end()) {
     if (error != nullptr) {
-      *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("Property ", prop_name, " not found in JSON object.")
-              .c_str());
+      *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("Property ", prop_name, " not found in JSON object."));
     }
     return nullptr;
   }
   if (it->second.type() != grpc_core::Json::Type::STRING) {
     if (error != nullptr) {
-      *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("Property ", prop_name,
-                       " n JSON object is not a string.")
-              .c_str());
+      *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "Property ", prop_name, " n JSON object is not a string."));
     }
     return nullptr;
   }

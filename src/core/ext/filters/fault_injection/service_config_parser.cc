@@ -45,10 +45,8 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
         fault_injection_policy;
     std::vector<grpc_error_handle> sub_error_list;
     if (policies_json_array[i].type() != Json::Type::OBJECT) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("faultInjectionPolicy index ", i,
-                       " is not a JSON object")
-              .c_str()));
+      error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "faultInjectionPolicy index ", i, " is not a JSON object")));
       continue;
     }
     const Json::Object& json_object = policies_json_array[i].object_value();
