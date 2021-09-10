@@ -209,7 +209,8 @@ class ClientChannel {
 
   // Note: Does NOT return a new ref.
   grpc_error_handle disconnect_error() const {
-    return disconnect_error_.load(std::memory_order_acquire);
+    MutexLock lock(&disconnect_error_mu_);
+    return disconnect_error_;
   }
 
   // Note: All methods with "Locked" suffix must be invoked from within
@@ -348,7 +349,9 @@ class ClientChannel {
   // Fields accessed from both data plane mutex and control plane
   // work_serializer.
   //
-  std::atomic<grpc_error_handle> disconnect_error_{GRPC_ERROR_NONE};
+  mutable Mutex disconnect_error_mu_;
+  grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(disconnect_error_mu_){
+      GRPC_ERROR_NONE};
 
   //
   // Fields guarded by a mutex, since they need to be accessed
