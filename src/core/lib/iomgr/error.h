@@ -32,6 +32,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/slice/slice_internal.h"
 
@@ -397,5 +398,48 @@ inline bool grpc_log_if_error(const char* what, grpc_error_handle error,
 
 #define GRPC_LOG_IF_ERROR(what, error) \
   (grpc_log_if_error((what), (error), __FILE__, __LINE__))
+
+/// Helper class to get & set grpc_error_handle in a thread-safe fashion.
+/// This could be considered as atomic<grpc_error_handle>.
+class AtomicError {
+ public:
+  AtomicError() {
+    error_ = GRPC_ERROR_NONE;
+    lock_ = GPR_SPINLOCK_STATIC_INITIALIZER;
+  }
+  explicit AtomicError(grpc_error_handle error) {
+    error_ = GRPC_ERROR_REF(error);
+  }
+  ~AtomicError() { GRPC_ERROR_UNREF(error_); }
+
+  AtomicError(const AtomicError&) = delete;
+  AtomicError& operator=(const AtomicError&) = delete;
+
+  /// returns get() == GRPC_ERROR_NONE
+  bool ok() {
+    gpr_spinlock_lock(&lock_);
+    bool ret = error_ == GRPC_ERROR_NONE;
+    gpr_spinlock_unlock(&lock_);
+    return ret;
+  }
+
+  grpc_error_handle get() {
+    gpr_spinlock_lock(&lock_);
+    grpc_error_handle ret = error_;
+    gpr_spinlock_unlock(&lock_);
+    return ret;
+  }
+
+  void set(grpc_error_handle error) {
+    gpr_spinlock_lock(&lock_);
+    GRPC_ERROR_UNREF(error_);
+    error_ = GRPC_ERROR_REF(error);
+    gpr_spinlock_unlock(&lock_);
+  }
+
+ private:
+  grpc_error_handle error_;
+  gpr_spinlock lock_;
+};
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_H */
