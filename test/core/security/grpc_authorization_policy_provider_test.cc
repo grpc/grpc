@@ -111,6 +111,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  gpr_log(GPR_ERROR, "After timeout in test.");
   engines = (*provider)->engines();
   allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());

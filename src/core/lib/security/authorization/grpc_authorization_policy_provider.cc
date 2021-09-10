@@ -131,6 +131,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
     if (!rbac_policies_or.ok()) {
       return rbac_policies_or.status();
     }
+    gpr_log(GPR_ERROR, "Updating engines.");
     authz_policy_ = std::move(*authz_policy);
     allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
         std::move(rbac_policies_or->allow_policy));
@@ -141,6 +142,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
 }
 
 void FileWatcherAuthorizationPolicyProvider::Orphan() {
+  gpr_log(GPR_ERROR, "In orphan");
   gpr_event_set(&shutdown_event_, reinterpret_cast<void*>(1));
   if (refresh_thread_ != nullptr) {
     refresh_thread_->Join();
