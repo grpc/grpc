@@ -35,7 +35,7 @@ class ServerSetupTransportHelper {
       : wire_reader_(absl::make_unique<WireReaderImpl>(
             /*transport_stream_receiver=*/nullptr, /*is_client=*/false)) {
     std::tie(endpoint_binder_, tx_receiver_) = NewBinderPair(
-        [this](transaction_code_t tx_code, const ReadableParcel* parcel) {
+        [this](transaction_code_t tx_code, ReadableParcel* parcel) {
           return this->wire_reader_->ProcessTransaction(tx_code, parcel);
         });
   }
