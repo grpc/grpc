@@ -157,10 +157,9 @@ absl::Status WireWriterImpl::RpcCall(const Transaction& tx) {
     if (flags & kFlagSuffix) {
       RETURN_IF_ERROR(WriteTrailingMetadata(tx, parcel));
     }
+    num_outgoing_bytes_ += parcel->GetDataSize();
     RETURN_IF_ERROR(binder_->Transact(BinderTransportTxCode(tx.GetTxCode())));
     bytes_sent += size;
-    // TODO(waynetu): This should be parcel->GetDataSize().
-    num_outgoing_bytes_ += size;
   }
   return absl::OkStatus();
 }
