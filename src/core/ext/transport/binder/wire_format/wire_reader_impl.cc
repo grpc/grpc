@@ -202,9 +202,11 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
       return absl::UnimplementedError("SHUTDOWN_TRANSPORT");
     }
     case BinderTransportTxCode::ACKNOWLEDGE_BYTES: {
-      int num_bytes = -1;
-      RETURN_IF_ERROR(parcel->ReadInt32(&num_bytes));
-      gpr_log(GPR_INFO, "received acknowledge bytes = %d", num_bytes);
+      int64_t num_bytes = -1;
+      RETURN_IF_ERROR(parcel->ReadInt64(&num_bytes));
+      gpr_log(GPR_INFO, "received acknowledge bytes = %lld",
+              static_cast<long long>(num_bytes));
+      wire_writer_->OnAckReceived(num_bytes);
       break;
     }
     case BinderTransportTxCode::PING: {
@@ -259,7 +261,8 @@ absl::Status WireReaderImpl::ProcessStreamingTransaction(
     }
   }
   if ((num_incoming_bytes_ - num_acknowledged_bytes_) >= kFlowControlAckBytes) {
-    absl::Status ack_status = wire_writer_->Ack(num_incoming_bytes_);
+    GPR_ASSERT(wire_writer_);
+    absl::Status ack_status = wire_writer_->SendAck(num_incoming_bytes_);
     if (status.ok()) {
       status = ack_status;
     }
@@ -339,6 +342,7 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
     }
     gpr_log(GPR_INFO, "msg_data = %s", msg_data.c_str());
     message_buffer_[code] += msg_data;
+    // TODO(waynetu): This should be parcel->GetDataSize().
     num_incoming_bytes_ += count;
     if ((flags & kFlagMessageDataIsPartial) == 0) {
       std::string s = std::move(message_buffer_[code]);
