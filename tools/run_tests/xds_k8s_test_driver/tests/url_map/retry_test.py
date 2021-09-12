@@ -141,5 +141,72 @@ class TestRetryUpTo4AttemptsAndSucceed(xds_url_map_testcase.XdsUrlMapTestCase):
                                  tolerance=_NON_RANDOM_ERROR_TOLERANCE)
 
 
+class TestRetryOnlyOnSpecificStatuses(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def supported_clients() -> Tuple[str]:
+        return 'cpp', 'java'
+
+    @staticmethod
+    def url_map_change(
+            host_rule: HostRule,
+            path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
+        path_matcher['routeRules'] = [
+            _build_retry_route_rule(
+                retryConditions=['resource-exhausted', 'cancelled'],
+                num_retries=1)
+        ]
+        return host_rule, path_matcher
+
+    def xds_config_validate(self, xds_config: DumpedXdsConfig):
+        self.assertNumEndpoints(xds_config, 1)
+        retry_config = xds_config.rds['virtualHosts'][0]['routes'][0]['route'][
+            'retryPolicy']
+        self.assertEqual(1, retry_config['numRetries'])
+        self.assertEqual('resource-exhausted,cancelled',
+                         retry_config['retryOn'])
+
+    def rpc_distribution_validate(self, test_client: XdsTestClient):
+        rpc_distribution = self.configure_and_send(
+            test_client,
+            rpc_types=[RpcTypeUnaryCall],
+            metadata=[(RpcTypeUnaryCall, _RPC_BEHAVIOR_HEADER_NAME,
+                       'error-code-1,succeed-on-retry-attempt-1')],
+            num_rpcs=_NUM_RPCS)
+        self.assertRpcStatusCode(test_client,
+                                 expected=(ExpectedResult(
+                                     rpc_type=RpcTypeUnaryCall,
+                                     status_code=grpc.StatusCode.OK,
+                                     ratio=1),),
+                                 length=_LENGTH_OF_RPC_SENDING_SEC,
+                                 tolerance=_NON_RANDOM_ERROR_TOLERANCE)
+        rpc_distribution = self.configure_and_send(
+            test_client,
+            rpc_types=[RpcTypeUnaryCall],
+            metadata=[(RpcTypeUnaryCall, _RPC_BEHAVIOR_HEADER_NAME,
+                       'error-code-14,succeed-on-retry-attempt-1')],
+            num_rpcs=_NUM_RPCS)
+        self.assertRpcStatusCode(test_client,
+                                 expected=(ExpectedResult(
+                                     rpc_type=RpcTypeUnaryCall,
+                                     status_code=grpc.StatusCode.UNAVAILABLE,
+                                     ratio=1),),
+                                 length=_LENGTH_OF_RPC_SENDING_SEC,
+                                 tolerance=_NON_RANDOM_ERROR_TOLERANCE)
+        rpc_distribution = self.configure_and_send(
+            test_client,
+            rpc_types=[RpcTypeUnaryCall],
+            metadata=[(RpcTypeUnaryCall, _RPC_BEHAVIOR_HEADER_NAME,
+                       'error-code-8,succeed-on-retry-attempt-1')],
+            num_rpcs=_NUM_RPCS)
+        self.assertRpcStatusCode(test_client,
+                                 expected=(ExpectedResult(
+                                     rpc_type=RpcTypeUnaryCall,
+                                     status_code=grpc.StatusCode.OK,
+                                     ratio=1),),
+                                 length=_LENGTH_OF_RPC_SENDING_SEC,
+                                 tolerance=_NON_RANDOM_ERROR_TOLERANCE)
+
+
 if __name__ == '__main__':
     absltest.main()
