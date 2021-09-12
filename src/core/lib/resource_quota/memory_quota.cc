@@ -124,9 +124,13 @@ MemoryAllocator::ReserveResult MemoryAllocator::TryReserve(Request request) {
 
 void MemoryAllocator::Replenish(size_t amount) {
   absl::MutexLock lock(&memory_quota_mu_);
+  // Take the requested amount from the quota.
   memory_quota_->Take(amount);
+  // Record that we've taken it.
   taken_bytes_ += amount;
+  // Add the taken amount to the free pool.
   free_bytes_.fetch_add(amount, std::memory_order_acq_rel);
+  // See if we can add ourselves as a reclaimer.
   MaybeRegisterReclaimerLocked();
 }
 

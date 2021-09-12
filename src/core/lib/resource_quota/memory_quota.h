@@ -108,6 +108,11 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
   explicit MemoryAllocator(MemoryQuotaPtr memory_quota);
   ~MemoryAllocator();
 
+  // Rebind -  Swaps the underlying quota for this allocator, taking care to
+  // make sure memory allocated is moved to allocations against the new quota.
+  void Rebind(MemoryQuotaPtr memory_quota)
+      ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
+
   // Reserve bytes from the quota.
   // If we enter overcommit, reclamation will begin concurrently.
   // Returns the number of bytes reserved.
@@ -161,11 +166,6 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
   // Replenish at least n bytes from the quota, without blocking, possibly
   // entering overcommit.
   void Replenish(size_t n) ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
-  // Rebind - only callable via MemoryQuota::RebindMemoryAllocator because
-  // we want to separate control of the quota from the ability to allocate.
-  // Swaps the underlying quota for this allocator, taking care to make sure
-  // memory allocated is moved to allocations against the new quota.
-  void Rebind(MemoryQuotaPtr memory_quota);
   // If we have not already, register a reclamation function against the quota
   // to sweep any free memory back to that quota.
   void MaybeRegisterReclaimer() ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
@@ -188,28 +188,13 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
   bool reclaimer_armed_ ABSL_GUARDED_BY(memory_quota_mu_) = false;
 };
 
-using MemoryAllocatorPtr = OrphanablePtr<MemoryAllocator>;
-
-class MemoryAllocatorFactory final
-    : public InternallyRefCounted<MemoryAllocatorFactory> {
- public:
-  MemoryAllocatorPtr MakeMemoryAllocator();
-};
-
-using MemoryAllocatorFactoryPtr = OrphanablePtr<MemoryAllocatorFactory>;
-
 // MemoryQuota tracks the amount of memory available as part of a ResourceQuota.
 class MemoryQuota final : public InternallyRefCounted<MemoryQuota> {
  public:
   MemoryQuota();
 
-  ReclaimerPtr MakeReclaimer(ReclamationPass pass, MemoryAllocator* allocator);
-  MemoryAllocatorFactoryPtr MakeMemoryAllocatorFactory();
-
-  // Attach a memory allocator that's currently bound to a different quota to
-  // this one.
-  void RebindMemoryAllocator(MemoryAllocator* allocator) {
-    allocator->Rebind(Ref());
+  MemoryAllocatorPtr MakeMemoryAllocator() {
+    return MakeOrphanable<MemoryAllocator>(Ref());
   }
 
   // Resize the quota to new_size.
