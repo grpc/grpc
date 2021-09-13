@@ -12359,6 +12359,43 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
               ::testing::DoubleNear(kDelayRate, kErrorTolerance));
 }
 
+TEST_P(FaultInjectionTest, XdsFaultInjectionAbortAfterDelayForStreamCall) {
+  const uint32_t kFixedDelaySeconds = 1;
+  const uint32_t kRpcTimeoutMilliseconds = 100 * 1000;  // 100s should not reach
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create an EDS resource
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  abort_percentage->set_numerator(100);  // Always inject ABORT!
+  abort_percentage->set_denominator(FractionalPercent::HUNDRED);
+  http_fault.mutable_abort()->set_grpc_status(
+      static_cast<uint32_t>(StatusCode::ABORTED));
+  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
+  delay_percentage->set_numerator(100);  // Always inject DELAY!
+  delay_percentage->set_denominator(FractionalPercent::HUNDRED);
+  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
+  fixed_delay->set_seconds(kFixedDelaySeconds);
+  // Config fault injection via different setup
+  SetFilterConfig(http_fault);
+  // Send a stream RPC and check its status code
+  ClientContext context;
+  context.set_deadline(
+      grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
+  auto stream = stub_->BidiStream(&context);
+  stream->WritesDone();
+  auto status = stream->Finish();
+  EXPECT_EQ(StatusCode::ABORTED, status.error_code())
+      << status.error_message() << ", " << status.error_details() << ", "
+      << context.debug_error_string();
+}
+
 TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   const uint32_t kAbortPercentagePerHundred = 50;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
