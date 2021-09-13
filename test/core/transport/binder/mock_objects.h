@@ -47,7 +47,7 @@ class MockReadableParcel : public ReadableParcel {
   MOCK_METHOD(absl::Status, ReadBinder, (std::unique_ptr<Binder>*),
               (const, override));
   MOCK_METHOD(absl::Status, ReadByteArray, (std::string*), (const, override));
-  MOCK_METHOD(absl::Status, ReadString, (char[111]), (const, override));
+  MOCK_METHOD(absl::Status, ReadString, (std::string*), (const, override));
 
   MockReadableParcel();
 };

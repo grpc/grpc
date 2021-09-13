@@ -74,8 +74,7 @@ class ReadableParcel {
   virtual absl::Status ReadBinder(std::unique_ptr<Binder>* data) const = 0;
   // TODO(waynetu): Provide better interfaces.
   virtual absl::Status ReadByteArray(std::string* data) const = 0;
-  // FIXME(waynetu): This is just a temporary interface.
-  virtual absl::Status ReadString(char data[111]) const = 0;
+  virtual absl::Status ReadString(std::string* str) const = 0;
 };
 
 class TransactionReceiver : public HasRawBinder {

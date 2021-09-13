@@ -127,7 +127,7 @@ class FakeReadableParcel final : public ReadableParcel {
   absl::Status ReadInt64(int64_t* data) const override;
   absl::Status ReadBinder(std::unique_ptr<Binder>* data) const override;
   absl::Status ReadByteArray(std::string* data) const override;
-  absl::Status ReadString(char data[111]) const override;
+  absl::Status ReadString(std::string* str) const override;
 
  private:
   const FakeData data_;
