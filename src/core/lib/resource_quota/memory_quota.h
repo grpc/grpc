@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_RESOURCE_QUOTA_RESOURCE_QUOTA_H
-#define GRPC_CORE_LIB_RESOURCE_QUOTA_RESOURCE_QUOTA_H
+#ifndef GRPC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
+#define GRPC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 
 #include <grpc/support/port_platform.h>
 
@@ -151,7 +151,7 @@ class ReclaimerQueue {
 class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
  public:
   explicit MemoryAllocator(RefCountedPtr<MemoryQuota> memory_quota);
-  ~MemoryAllocator();
+  ~MemoryAllocator() override;
 
   void Orphan() override;
 
@@ -189,7 +189,7 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
     // allocator.
     class Wrapper final : public T {
      public:
-      Wrapper(RefCountedPtr<MemoryAllocator> allocator, Args&&... args)
+      explicit Wrapper(RefCountedPtr<MemoryAllocator> allocator, Args&&... args)
           : T(std::forward<Args>(args)...), allocator_(std::move(allocator)) {}
       ~Wrapper() override { allocator_->Release(sizeof(*this)); }
 
@@ -290,7 +290,7 @@ class MemoryQuota final : public DualRefCounted<MemoryQuota> {
   friend class MemoryAllocator;
   friend class ReclamationSweep;
 
-  void Orphan();
+  void Orphan() override;
 
   // Forcefully take some memory from the quota, potentially entering
   // overcommit.
@@ -330,4 +330,4 @@ class MemoryQuota final : public DualRefCounted<MemoryQuota> {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
