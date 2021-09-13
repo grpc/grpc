@@ -78,7 +78,7 @@ class Waker {
  private:
   class Unwakeable final : public Wakeable {
    public:
-    void Wakeup() final { abort(); }
+    void Wakeup() final {}
     void Drop() final {}
   };
 

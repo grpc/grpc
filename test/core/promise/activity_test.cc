@@ -252,6 +252,11 @@ TEST(ActivityTest, WithContext) {
   EXPECT_TRUE(done);
 }
 
+TEST(WakerTest, CanWakeupEmptyWaker) {
+  // Empty wakers should not do anything upon wakeup.
+  Waker().Wakeup();
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
