@@ -178,13 +178,8 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
             "Already received a SETUP_TRANSPORT request");
       }
       recvd_setup_transport_ = true;
-      // int datasize;
       int version;
-      // getDataSize not supported until 31
-      // gpr_log(GPR_INFO, "getDataSize = %d", AParcel_getDataSize(in,
-      // &datasize));
       RETURN_IF_ERROR(parcel->ReadInt32(&version));
-      // gpr_log(GPR_INFO, "data size = %d", datasize);
       gpr_log(GPR_INFO, "version = %d", version);
       std::unique_ptr<Binder> binder{};
       RETURN_IF_ERROR(parcel->ReadBinder(&binder));
