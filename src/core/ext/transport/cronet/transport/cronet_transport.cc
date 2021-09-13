@@ -309,13 +309,10 @@ static void read_grpc_header(stream_obj* s) {
 static grpc_error_handle make_error_with_desc(int error_code,
                                               int cronet_internal_error_code,
                                               const char* desc) {
-  std::string error_message =
-      absl::StrFormat("Cronet error code:%d, Cronet error detail:%s",
-                      cronet_internal_error_code, desc);
-  grpc_error_handle error =
-      GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_message.c_str());
-  error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, error_code);
-  return error;
+  return grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                                "Cronet error code:%d, Cronet error detail:%s",
+                                cronet_internal_error_code, desc)),
+                            GRPC_ERROR_INT_GRPC_STATUS, error_code);
 }
 
 inline op_and_state::op_and_state(stream_obj* s,

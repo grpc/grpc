@@ -1070,10 +1070,10 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
     grpc_error_handle error = GRPC_ERROR_NONE;
     if (status_code != GRPC_STATUS_OK) {
       char* peer = grpc_call_get_peer(call);
-      error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("Error received from peer ", peer).c_str()),
-          GRPC_ERROR_INT_GRPC_STATUS, static_cast<intptr_t>(status_code));
+      error = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+                                     "Error received from peer ", peer)),
+                                 GRPC_ERROR_INT_GRPC_STATUS,
+                                 static_cast<intptr_t>(status_code));
       gpr_free(peer);
     }
     if ((*b)->legacy_index()->named.grpc_message != nullptr) {

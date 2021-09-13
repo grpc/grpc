@@ -212,8 +212,8 @@ grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address* out,
     addr4->sin_family = GRPC_AF_INET;
     out->len = sizeof(grpc_sockaddr_in);
   } else {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Failed to parse address:", addr).c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Failed to parse address:", addr));
   }
   grpc_sockaddr_set_port(out, port);
   return GRPC_ERROR_NONE;

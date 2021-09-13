@@ -153,14 +153,15 @@ Pod::Spec.new do |s|
 
   s.prepare_command = <<-END_OF_COMMAND
     # Add a module map and an umbrella header
+    mkdir -p src/include/openssl
     cat > src/include/openssl/umbrella.h <<EOF
       #include "ssl.h"
       #include "crypto.h"
       #include "aes.h"
-      /* The following macros are defined by base.h. The latter is the first file included by the    
-         other headers. */    
-      #if defined(OPENSSL_ARM) || defined(OPENSSL_AARCH64)    
-      #  include "arm_arch.h"   
+      /* The following macros are defined by base.h. The latter is the first file included by the
+         other headers. */
+      #if defined(OPENSSL_ARM) || defined(OPENSSL_AARCH64)
+      #  include "arm_arch.h"
       #endif
       #include "asn1.h"
       #include "asn1_mac.h"
@@ -212,7 +213,11 @@ Pod::Spec.new do |s|
     # limit on the 'prepare_command' field length. The encoded header is generated from
     # /src/boringssl/boringssl_prefix_symbols.h. Here we decode the content and inject the header to
     # the correct location in BoringSSL.
-    base64 -D <<EOF | gunzip > src/include/openssl/boringssl_prefix_symbols.h
+    case "$(uname)" in
+      Darwin) opts="" ;;
+           *) opts="--ignore-garbage" ;;
+    esac
+    base64 --decode $opts <<EOF | gunzip > src/include/openssl/boringssl_prefix_symbols.h
       H4sICAAAAAAC/2JvcmluZ3NzbF9wcmVmaXhfc3ltYm9scy5oAKydXXPbuJZo3+dXuO683Kk6NRM77bT7
       vim20tG0Y/tISk9nXliURNk8oUiFoOy4f/0FQErEx94g94arTs10LK21KQDEF0Hgv/7r7DErszptss3Z
       6vX0j2RV1Xn5KESR7Otsm/9MnrJ0k9X/KZ7OqvLso/50sbg9W1e7Xd78v7Pt+pdfPlxepL9crN7/9iE7

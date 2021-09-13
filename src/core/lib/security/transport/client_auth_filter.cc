@@ -338,13 +338,12 @@ static void on_host_checked(void* arg, grpc_error_handle error) {
   if (error == GRPC_ERROR_NONE) {
     send_security_metadata(elem, batch);
   } else {
-    std::string error_msg = absl::StrCat(
-        "Invalid host ", grpc_core::StringViewFromSlice(calld->host),
-        " set in :authority metadata.");
     grpc_transport_stream_op_batch_finish_with_failure(
         batch,
         grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str()),
+            GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+                "Invalid host ", grpc_core::StringViewFromSlice(calld->host),
+                " set in :authority metadata.")),
             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED),
         calld->call_combiner);
   }

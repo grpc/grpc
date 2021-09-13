@@ -98,10 +98,9 @@ TEST_P(FakeBinderTest, SendString) {
   std::tie(sender, tx_receiver) = NewBinderPair(
       [&](transaction_code_t tx_code, const ReadableParcel* parcel) {
         EXPECT_EQ(tx_code, kTxCode);
-        char value[111];
-        memset(value, 0, sizeof(value));
-        EXPECT_TRUE(parcel->ReadString(value).ok());
-        EXPECT_STREQ(value, kValue);
+        std::string value;
+        EXPECT_TRUE(parcel->ReadString(&value).ok());
+        EXPECT_STREQ(value.c_str(), kValue);
         called++;
         return absl::OkStatus();
       });
@@ -160,10 +159,9 @@ TEST_P(FakeBinderTest, SendMultipleItems) {
         std::string byte_array_result;
         EXPECT_TRUE(parcel->ReadByteArray(&byte_array_result).ok());
         EXPECT_EQ(byte_array_result, kByteArray);
-        char string_result[111];
-        memset(string_result, 0, sizeof(string_result));
-        EXPECT_TRUE(parcel->ReadString(string_result).ok());
-        EXPECT_STREQ(string_result, kString);
+        std::string string_result;
+        EXPECT_TRUE(parcel->ReadString(&string_result).ok());
+        EXPECT_STREQ(string_result.c_str(), kString);
         called++;
         return absl::OkStatus();
       });
