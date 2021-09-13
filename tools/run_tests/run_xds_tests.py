@@ -2767,7 +2767,8 @@ def delete_global_forwarding_rule(gcp, forwarding_rule_to_delete=None):
 
 
 def delete_global_forwarding_rules(gcp):
-    for forwarding_rule in gcp.global_forwarding_rules:
+    forwarding_rules_to_delete = gcp.global_forwarding_rules.copy()
+    for forwarding_rule in forwarding_rules_to_delete:
         delete_global_forwarding_rule(gcp, forwarding_rule)
 
 
@@ -2798,7 +2799,8 @@ def delete_target_proxy(gcp, proxy_to_delete=None):
 
 
 def delete_target_proxies(gcp):
-    for target_proxy in gcp.target_proxies:
+    target_proxies_to_delete = gcp.target_proxies.copy()
+    for target_proxy in target_proxies_to_delete:
         delete_target_proxy(gcp, target_proxy)
 
 
@@ -2821,7 +2823,8 @@ def delete_url_map(gcp, url_map_to_delete=None):
 
 
 def delete_url_maps(gcp):
-    for url_map in gcp.url_maps:
+    url_maps_to_delete = gcp.url_maps.copy()
+    for url_map in url_maps_to_delete:
         delete_url_map(gcp, url_map)
 
 
