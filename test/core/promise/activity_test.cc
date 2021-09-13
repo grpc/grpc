@@ -238,9 +238,12 @@ TEST(ActivityTest, ForceWakeup) {
       [&run_count]() -> Poll<absl::Status> {
         ++run_count;
         switch (run_count) {
-          case 1: return Pending{};
-          case 2: return absl::OkStatus();
-          default: abort();
+          case 1:
+            return Pending{};
+          case 2:
+            return absl::OkStatus();
+          default:
+            abort();
         }
       },
       NoCallbackScheduler(),
