@@ -130,6 +130,9 @@ class ReclaimerQueue {
  private:
   Mutex mu_;
   struct Entry {
+    Entry(RefCountedPtr<MemoryAllocator> allocator,
+          ReclamationFunction reclaimer)
+        : allocator(allocator), reclaimer(reclaimer) {}
     RefCountedPtr<MemoryAllocator> allocator;
     ReclamationFunction reclaimer;
   };
@@ -278,6 +281,7 @@ class MemoryQuota final : public InternallyRefCounted<MemoryQuota> {
 
  private:
   friend class MemoryAllocator;
+  friend class ReclamationSweep;
 
   void Orphan();
 
@@ -294,7 +298,10 @@ class MemoryQuota final : public InternallyRefCounted<MemoryQuota> {
     if (free < 0) free = 0;
     double size = quota_size_.load();
     if (size < 1) return 1.0;
-    return (size - free) / size;
+    double pressure = (size - free) / size;
+    if (pressure < 0.0) pressure = 0.0;
+    if (pressure > 1.0) pressure = 1.0;
+    return pressure;
   }
 
   // The amount of memory that's free in this quota.
