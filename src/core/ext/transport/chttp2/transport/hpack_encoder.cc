@@ -32,7 +32,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_table.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_utils.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -198,55 +198,12 @@ static uint8_t* add_tiny_header_data(framer_state* st, size_t len) {
   return grpc_slice_buffer_tiny_add(st->output, len);
 }
 
-static void evict_entry(grpc_chttp2_hpack_compressor* c) {
-  c->tail_remote_index++;
-  GPR_ASSERT(c->tail_remote_index > 0);
-  GPR_ASSERT(c->table_size >=
-             c->table_elem_size[c->tail_remote_index % c->cap_table_elems]);
-  GPR_ASSERT(c->table_elems > 0);
-  c->table_size = static_cast<uint16_t>(
-      c->table_size -
-      c->table_elem_size[c->tail_remote_index % c->cap_table_elems]);
-  c->table_elems--;
-}
-
-// Reserve space in table for the new element, evict entries if needed.
-// Return the new index of the element. Return 0 to indicate not adding to
-// table.
-static uint32_t prepare_space_for_new_elem(grpc_chttp2_hpack_compressor* c,
-                                           size_t elem_size) {
-  uint32_t new_index = c->tail_remote_index + c->table_elems + 1;
-  GPR_DEBUG_ASSERT(elem_size < 65536);
-
-  // TODO(arjunroy): Re-examine semantics
-  if (elem_size > c->max_table_size) {
-    while (c->table_size > 0) {
-      evict_entry(c);
-    }
-    return 0;
-  }
-
-  /* Reserve space for this element in the remote table: if this overflows
-     the current table, drop elements until it fits, matching the decompressor
-     algorithm */
-  while (c->table_size + elem_size > c->max_table_size) {
-    evict_entry(c);
-  }
-  GPR_ASSERT(c->table_elems < c->max_table_size);
-  c->table_elem_size[new_index % c->cap_table_elems] =
-      static_cast<uint16_t>(elem_size);
-  c->table_size = static_cast<uint16_t>(c->table_size + elem_size);
-  c->table_elems++;
-
-  return new_index;
-}
-
 // Add a key to the dynamic table. Both key and value will be added to table at
 // the decoder.
 static void AddKeyWithIndex(grpc_chttp2_hpack_compressor* c,
                             grpc_slice_refcount* key_ref, uint32_t new_index,
                             uint32_t key_hash) {
-  c->key_table->Insert(
+  c->key_index->Insert(
       grpc_chttp2_hpack_compressor::KeySliceRef(key_ref, key_hash), new_index);
 }
 
@@ -255,14 +212,14 @@ static void AddElemWithIndex(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
                              uint32_t new_index, uint32_t elem_hash,
                              uint32_t key_hash) {
   GPR_DEBUG_ASSERT(GRPC_MDELEM_IS_INTERNED(elem));
-  c->elem_table->Insert(grpc_chttp2_hpack_compressor::KeyElem(elem, elem_hash),
+  c->elem_index->Insert(grpc_chttp2_hpack_compressor::KeyElem(elem, elem_hash),
                         new_index);
   AddKeyWithIndex(c, GRPC_MDKEY(elem).refcount, new_index, key_hash);
 }
 
 static void add_elem(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
                      size_t elem_size, uint32_t elem_hash, uint32_t key_hash) {
-  uint32_t new_index = prepare_space_for_new_elem(c, elem_size);
+  uint32_t new_index = c->table->AllocateIndex(elem_size);
   if (new_index != 0) {
     AddElemWithIndex(c, elem, new_index, elem_hash, key_hash);
   }
@@ -270,7 +227,7 @@ static void add_elem(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
 
 static void add_key(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
                     size_t elem_size, uint32_t key_hash) {
-  uint32_t new_index = prepare_space_for_new_elem(c, elem_size);
+  uint32_t new_index = c->table->AllocateIndex(elem_size);
   if (new_index != 0) {
     AddKeyWithIndex(c, GRPC_MDKEY(elem).refcount, new_index, key_hash);
   }
@@ -411,8 +368,8 @@ static void emit_lithdr_v(grpc_chttp2_hpack_compressor* /*c*/, grpc_mdelem elem,
 
 static void emit_advertise_table_size_change(grpc_chttp2_hpack_compressor* c,
                                              framer_state* st) {
-  uint32_t len = GRPC_CHTTP2_VARINT_LENGTH(c->max_table_size, 3);
-  GRPC_CHTTP2_WRITE_VARINT(c->max_table_size, 3, 0x20,
+  uint32_t len = GRPC_CHTTP2_VARINT_LENGTH(c->table->max_size(), 3);
+  GRPC_CHTTP2_WRITE_VARINT(c->table->max_size(), 3, 0x20,
                            add_tiny_header_data(st, len), len);
   c->advertise_table_size_change = 0;
 }
@@ -433,11 +390,6 @@ static void GPR_ATTRIBUTE_NOINLINE hpack_enc_log(grpc_mdelem elem) {
       grpc_slice_is_interned(GRPC_MDVALUE(elem)));
   gpr_free(k);
   gpr_free(v);
-}
-
-static uint32_t dynidx(grpc_chttp2_hpack_compressor* c, uint32_t elem_index) {
-  return 1 + grpc_core::HPackTable::kLastStaticEntry + c->tail_remote_index +
-         c->table_elems - elem_index;
 }
 
 struct EmitIndexedStatus {
@@ -461,12 +413,13 @@ static EmitIndexedStatus maybe_emit_indexed(grpc_chttp2_hpack_compressor* c,
                 ->hash();
   // Update filter to see if we can perhaps add this elem.
   bool can_add_to_hashtable =
-      c->filter_elems.AddElement(HASH_FRAGMENT_1(elem_hash));
+      c->filter_elems->AddElement(HASH_FRAGMENT_1(elem_hash));
   /* is this elem currently in the decoders table? */
-  auto indices_key = c->elem_table->Lookup(
+  auto indices_key = c->elem_index->Lookup(
       grpc_chttp2_hpack_compressor::KeyElem(elem, elem_hash));
-  if (indices_key.has_value() && *indices_key > c->tail_remote_index) {
-    emit_indexed(c, dynidx(c, *indices_key), st);
+  if (indices_key.has_value() &&
+      c->table->ConvertableToDynamicIndex(*indices_key)) {
+    emit_indexed(c, c->table->DynamicIndex(*indices_key), st);
     return EmitIndexedStatus(elem_hash, true, false);
   }
   /* Didn't hit either cuckoo index, so no emit. */
@@ -478,10 +431,12 @@ static void emit_maybe_add(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
                            bool should_add_elem, size_t decoder_space_usage,
                            uint32_t elem_hash, uint32_t key_hash) {
   if (should_add_elem) {
-    emit_lithdr<EmitLitHdrType::INC_IDX>(c, dynidx(c, indices_key), elem, st);
+    emit_lithdr<EmitLitHdrType::INC_IDX>(c, c->table->DynamicIndex(indices_key),
+                                         elem, st);
     add_elem(c, elem, decoder_space_usage, elem_hash, key_hash);
   } else {
-    emit_lithdr<EmitLitHdrType::NO_IDX>(c, dynidx(c, indices_key), elem, st);
+    emit_lithdr<EmitLitHdrType::NO_IDX>(c, c->table->DynamicIndex(indices_key),
+                                        elem, st);
   }
 }
 
@@ -522,7 +477,7 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
   }
   /* should this elem be in the table? */
   const size_t decoder_space_usage =
-      grpc_chttp2_get_size_in_hpack_table(elem, st->use_true_binary_metadata);
+      grpc_core::MetadataSizeInHPackTable(elem, st->use_true_binary_metadata);
   const bool decoder_space_available =
       decoder_space_usage < kMaxDecoderSpaceUsage;
   const bool should_add_elem =
@@ -530,9 +485,10 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
   const uint32_t elem_hash = ret.elem_hash;
   /* no hits for the elem... maybe there's a key? */
   const uint32_t key_hash = elem_key.refcount->Hash(elem_key);
-  auto indices_key = c->key_table->Lookup(
+  auto indices_key = c->key_index->Lookup(
       grpc_chttp2_hpack_compressor::KeySliceRef(elem_key.refcount, key_hash));
-  if (indices_key.has_value() && indices_key > c->tail_remote_index) {
+  if (indices_key.has_value() &&
+      c->table->ConvertableToDynamicIndex(*indices_key)) {
     emit_maybe_add(c, elem, st, *indices_key, should_add_elem,
                    decoder_space_usage, elem_hash, key_hash);
     return;
@@ -566,75 +522,37 @@ static void deadline_enc(grpc_chttp2_hpack_compressor* c, grpc_millis deadline,
   GRPC_MDELEM_UNREF(mdelem);
 }
 
-static uint32_t elems_for_bytes(uint32_t bytes) { return (bytes + 31) / 32; }
-
 void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor* c) {
-  memset(c, 0, sizeof(*c));
-  c->max_table_size = GRPC_CHTTP2_HPACKC_INITIAL_TABLE_SIZE;
-  c->cap_table_elems = elems_for_bytes(c->max_table_size);
-  c->max_table_elems = c->cap_table_elems;
-  c->max_usable_size = GRPC_CHTTP2_HPACKC_INITIAL_TABLE_SIZE;
-  const size_t alloc_size = sizeof(*c->table_elem_size) * c->cap_table_elems;
-  c->table_elem_size = static_cast<uint16_t*>(gpr_malloc(alloc_size));
-  c->elem_table.Init();
-  c->key_table.Init();
-  memset(c->table_elem_size, 0, alloc_size);
+  c->advertise_table_size_change = 0;
+  c->max_usable_size = grpc_core::hpack_constants::kInitialTableSize;
+  c->table.Init();
+  c->filter_elems.Init();
+  c->elem_index.Init();
+  c->key_index.Init();
 }
 
 void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor* c) {
-  c->elem_table.Destroy();
-  c->key_table.Destroy();
-  gpr_free(c->table_elem_size);
+  c->elem_index.Destroy();
+  c->filter_elems.Destroy();
+  c->key_index.Destroy();
+  c->table.Destroy();
 }
 
 void grpc_chttp2_hpack_compressor_set_max_usable_size(
     grpc_chttp2_hpack_compressor* c, uint32_t max_table_size) {
   c->max_usable_size = max_table_size;
   grpc_chttp2_hpack_compressor_set_max_table_size(
-      c, GPR_MIN(c->max_table_size, max_table_size));
-}
-
-static void rebuild_elems(grpc_chttp2_hpack_compressor* c, uint32_t new_cap) {
-  uint16_t* table_elem_size =
-      static_cast<uint16_t*>(gpr_malloc(sizeof(*table_elem_size) * new_cap));
-  uint32_t i;
-
-  memset(table_elem_size, 0, sizeof(*table_elem_size) * new_cap);
-  GPR_ASSERT(c->table_elems <= new_cap);
-
-  for (i = 0; i < c->table_elems; i++) {
-    uint32_t ofs = c->tail_remote_index + i + 1;
-    table_elem_size[ofs % new_cap] =
-        c->table_elem_size[ofs % c->cap_table_elems];
-  }
-
-  c->cap_table_elems = new_cap;
-  gpr_free(c->table_elem_size);
-  c->table_elem_size = table_elem_size;
+      c, std::min(c->table->max_size(), max_table_size));
 }
 
 void grpc_chttp2_hpack_compressor_set_max_table_size(
     grpc_chttp2_hpack_compressor* c, uint32_t max_table_size) {
-  max_table_size = GPR_MIN(max_table_size, c->max_usable_size);
-  if (max_table_size == c->max_table_size) {
-    return;
-  }
-  while (c->table_size > 0 && c->table_size > max_table_size) {
-    evict_entry(c);
-  }
-  c->max_table_size = max_table_size;
-  c->max_table_elems = elems_for_bytes(max_table_size);
-  if (c->max_table_elems > c->cap_table_elems) {
-    rebuild_elems(c, GPR_MAX(c->max_table_elems, 2 * c->cap_table_elems));
-  } else if (c->max_table_elems < c->cap_table_elems / 3) {
-    uint32_t new_cap = GPR_MAX(c->max_table_elems, 16);
-    if (new_cap != c->cap_table_elems) {
-      rebuild_elems(c, new_cap);
+  if (c->table->SetMaxSize(std::min(c->max_usable_size, max_table_size))) {
+    c->advertise_table_size_change = 1;
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+      gpr_log(GPR_INFO, "set max table size from encoder to %d",
+              max_table_size);
     }
-  }
-  c->advertise_table_size_change = 1;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    gpr_log(GPR_INFO, "set max table size from encoder to %d", max_table_size);
   }
 }
 
@@ -678,7 +596,8 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
     if (is_static &&
         (static_index =
              reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(md))
-                 ->StaticIndex()) < grpc_core::HPackTable::kLastStaticEntry) {
+                 ->StaticIndex()) <
+            grpc_core::hpack_constants::kLastStaticEntry) {
       emit_indexed(c, static_cast<uint32_t>(static_index + 1), &st);
     } else {
       hpack_enc(c, md, &st);
@@ -693,7 +612,7 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
         (static_index = reinterpret_cast<grpc_core::StaticMetadata*>(
                             GRPC_MDELEM_DATA(l->md))
                             ->StaticIndex()) <
-            grpc_core::HPackTable::kLastStaticEntry) {
+            grpc_core::hpack_constants::kLastStaticEntry) {
       emit_indexed(c, static_cast<uint32_t>(static_index + 1), &st);
     } else {
       hpack_enc(c, l->md, &st);

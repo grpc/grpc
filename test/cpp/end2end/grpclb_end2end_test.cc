@@ -24,6 +24,8 @@
 #include <string>
 #include <thread>
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -61,9 +63,6 @@
 
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 
 // TODO(dgq): Other scenarios in need of testing:
 // - Send a serverlist with faulty ip:port addresses (port > 2^16, etc).

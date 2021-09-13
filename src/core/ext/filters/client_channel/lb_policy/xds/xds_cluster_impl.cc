@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
+
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -31,7 +33,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -57,13 +58,15 @@ class CircuitBreakerCallCounterMap {
     explicit CallCounter(Key key) : key_(std::move(key)) {}
     ~CallCounter() override;
 
-    uint32_t Load() { return concurrent_requests_.Load(MemoryOrder::SEQ_CST); }
-    uint32_t Increment() { return concurrent_requests_.FetchAdd(1); }
-    void Decrement() { concurrent_requests_.FetchSub(1); }
+    uint32_t Load() {
+      return concurrent_requests_.load(std::memory_order_seq_cst);
+    }
+    uint32_t Increment() { return concurrent_requests_.fetch_add(1); }
+    void Decrement() { concurrent_requests_.fetch_sub(1); }
 
    private:
     Key key_;
-    Atomic<uint32_t> concurrent_requests_{0};
+    std::atomic<uint32_t> concurrent_requests_{0};
   };
 
   RefCountedPtr<CallCounter> GetOrCreate(const std::string& cluster,

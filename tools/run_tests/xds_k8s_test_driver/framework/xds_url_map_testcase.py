@@ -366,7 +366,8 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
     @classmethod
     def tearDownClass(cls):
         if cls.skip_reason is None:
-            cls.test_client_runner.delete_namespace()
+            # Clean up related resources for the client
+            cls.test_client_runner.cleanup(force=True, force_namespace=True)
         cls.finished_test_cases.add(cls.__name__)
         if cls.finished_test_cases == cls.test_case_names:
             # Tear down the GCP resource after all tests finished

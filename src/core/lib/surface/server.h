@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <list>
 #include <vector>
 
@@ -31,7 +32,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/transport.h"
@@ -288,7 +288,7 @@ class Server : public InternallyRefCounted<Server> {
 
     grpc_call* call_;
 
-    Atomic<CallState> state_{CallState::NOT_STARTED};
+    std::atomic<CallState> state_{CallState::NOT_STARTED};
 
     absl::optional<grpc_slice> path_;
     absl::optional<grpc_slice> host_;
@@ -366,7 +366,7 @@ class Server : public InternallyRefCounted<Server> {
   // Take a shutdown ref for a request (increment by 2) and return if shutdown
   // has already been called.
   bool ShutdownRefOnRequest() {
-    int old_value = shutdown_refs_.FetchAdd(2, MemoryOrder::ACQ_REL);
+    int old_value = shutdown_refs_.fetch_add(2, std::memory_order_acq_rel);
     return (old_value & 1) != 0;
   }
 
@@ -374,26 +374,26 @@ class Server : public InternallyRefCounted<Server> {
   // (for in-flight request) and possibly call MaybeFinishShutdown if
   // appropriate.
   void ShutdownUnrefOnRequest() ABSL_LOCKS_EXCLUDED(mu_global_) {
-    if (shutdown_refs_.FetchSub(2, MemoryOrder::ACQ_REL) == 2) {
+    if (shutdown_refs_.fetch_sub(2, std::memory_order_acq_rel) == 2) {
       MutexLock lock(&mu_global_);
       MaybeFinishShutdown();
     }
   }
   void ShutdownUnrefOnShutdownCall() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_) {
-    if (shutdown_refs_.FetchSub(1, MemoryOrder::ACQ_REL) == 1) {
+    if (shutdown_refs_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
       MaybeFinishShutdown();
     }
   }
 
   bool ShutdownCalled() const {
-    return (shutdown_refs_.Load(MemoryOrder::ACQUIRE) & 1) == 0;
+    return (shutdown_refs_.load(std::memory_order_acquire) & 1) == 0;
   }
 
   // Returns whether there are no more shutdown refs, which means that shutdown
   // has been called and all accepted requests have been published if using an
   // AllocatingRequestMatcher.
   bool ShutdownReady() const {
-    return shutdown_refs_.Load(MemoryOrder::ACQUIRE) == 0;
+    return shutdown_refs_.load(std::memory_order_acquire) == 0;
   }
 
   grpc_channel_args* const channel_args_;
@@ -430,7 +430,7 @@ class Server : public InternallyRefCounted<Server> {
   // the lowest bit will be 0 (defaults to 1) and the counter will be even. The
   // server should not notify on shutdown until the counter is 0 (shutdown is
   // called and there are no requests that are accepted but not started).
-  Atomic<int> shutdown_refs_{1};
+  std::atomic<int> shutdown_refs_{1};
   bool shutdown_published_ ABSL_GUARDED_BY(mu_global_) = false;
   std::vector<ShutdownTag> shutdown_tags_ ABSL_GUARDED_BY(mu_global_);
 

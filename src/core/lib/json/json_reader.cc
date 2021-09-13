@@ -279,10 +279,8 @@ JsonReader::Status JsonReader::Run() {
       case GRPC_JSON_READ_CHAR_EOF:
         if (IsComplete()) {
           return Status::GRPC_JSON_DONE;
-        } else {
-          return Status::GRPC_JSON_PARSE_ERROR;
         }
-        break;
+        return Status::GRPC_JSON_PARSE_ERROR;
 
       /* Processing whitespaces. */
       case ' ':
@@ -340,7 +338,6 @@ JsonReader::Status JsonReader::Run() {
               return Status::GRPC_JSON_PARSE_ERROR;
             } else if (c == '}' &&
                        stack_.back()->type() != Json::Type::OBJECT) {
-              return Status::GRPC_JSON_PARSE_ERROR;
               return Status::GRPC_JSON_PARSE_ERROR;
             } else if (c == ']' && stack_.back()->type() != Json::Type::ARRAY) {
               return Status::GRPC_JSON_PARSE_ERROR;

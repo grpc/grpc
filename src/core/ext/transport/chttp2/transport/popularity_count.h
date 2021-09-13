@@ -17,7 +17,7 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include "include/grpc/impl/codegen/port_platform.h"
+#include <grpc/impl/codegen/port_platform.h>
 
 namespace grpc_core {
 

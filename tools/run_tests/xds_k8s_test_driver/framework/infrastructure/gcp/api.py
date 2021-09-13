@@ -21,7 +21,9 @@ from absl import flags
 from google.cloud import secretmanager_v1
 from google.longrunning import operations_pb2
 from google.protobuf import json_format
+from google.protobuf import text_format
 from google.rpc import code_pb2
+from google.rpc import error_details_pb2
 from googleapiclient import discovery
 import googleapiclient.errors
 import googleapiclient.http
@@ -259,14 +261,24 @@ class OperationError(Error):
 
     def __init__(self, api_name, operation_response, message=None):
         self.api_name = api_name
-        operation = json_format.ParseDict(operation_response, Operation())
+        operation = json_format.ParseDict(
+            operation_response,
+            Operation(),
+            ignore_unknown_fields=True,
+            descriptor_pool=error_details_pb2.DESCRIPTOR.pool)
         self.name = operation.name or 'unknown'
-        self.error = operation.error
         self.code_name = code_pb2.Code.Name(operation.error.code)
+        self.error = operation.error
+        # Collect error details packed as Any without parsing concrete types.
+        self.error_details = [
+            text_format.MessageToString(any_error, as_one_line=True)
+            for any_error in self.error.details
+        ]
         if message is None:
             message = (f'{api_name} operation "{self.name}" failed. Error '
                        f'code: {self.error.code} ({self.code_name}), '
-                       f'message: {self.error.message}')
+                       f'message: {self.error.message}, '
+                       f'details: {self.error_details}')
         self.message = message
         super().__init__(message)
 

@@ -31,7 +31,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_table.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -314,61 +314,6 @@ static void test_user_data_works_for_allocated_md(void) {
   grpc_shutdown();
 }
 
-static void verify_ascii_header_size(const char* key, const char* value,
-                                     bool intern_key, bool intern_value) {
-  grpc_mdelem elem = grpc_mdelem_from_slices(
-      maybe_intern(grpc_slice_from_static_string(key), intern_key),
-      maybe_intern(grpc_slice_from_static_string(value), intern_value));
-  size_t elem_size = grpc_chttp2_get_size_in_hpack_table(elem, false);
-  size_t expected_size = 32 + strlen(key) + strlen(value);
-  GPR_ASSERT(expected_size == elem_size);
-  GRPC_MDELEM_UNREF(elem);
-}
-
-static void verify_binary_header_size(const char* key, const uint8_t* value,
-                                      size_t value_len, bool intern_key,
-                                      bool intern_value) {
-  grpc_mdelem elem = grpc_mdelem_from_slices(
-      maybe_intern(grpc_slice_from_static_string(key), intern_key),
-      maybe_intern(grpc_slice_from_static_buffer(value, value_len),
-                   intern_value));
-  GPR_ASSERT(grpc_is_binary_header(GRPC_MDKEY(elem)));
-  size_t elem_size = grpc_chttp2_get_size_in_hpack_table(elem, false);
-  grpc_slice value_slice = grpc_slice_from_copied_buffer(
-      reinterpret_cast<const char*>(value), value_len);
-  grpc_slice base64_encoded = grpc_chttp2_base64_encode(value_slice);
-  size_t expected_size = 32 + strlen(key) + GRPC_SLICE_LENGTH(base64_encoded);
-  GPR_ASSERT(expected_size == elem_size);
-  grpc_slice_unref_internal(value_slice);
-  grpc_slice_unref_internal(base64_encoded);
-  GRPC_MDELEM_UNREF(elem);
-}
-
-#define BUFFER_SIZE 64
-static void test_mdelem_sizes_in_hpack(bool intern_key, bool intern_value) {
-  gpr_log(GPR_INFO, "test_mdelem_size: intern_key=%d intern_value=%d",
-          intern_key, intern_value);
-  grpc_init();
-  grpc_core::ExecCtx exec_ctx;
-
-  uint8_t binary_value[BUFFER_SIZE] = {0};
-  for (uint8_t i = 0; i < BUFFER_SIZE; i++) {
-    binary_value[i] = i;
-  }
-
-  verify_ascii_header_size("hello", "world", intern_key, intern_value);
-  verify_ascii_header_size("hello", "worldxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-                           intern_key, intern_value);
-  verify_ascii_header_size(":scheme", "http", intern_key, intern_value);
-
-  for (uint8_t i = 0; i < BUFFER_SIZE; i++) {
-    verify_binary_header_size("hello-bin", binary_value, i, intern_key,
-                              intern_value);
-  }
-
-  grpc_shutdown();
-}
-
 static void test_copied_static_metadata(bool dup_key, bool dup_value) {
   gpr_log(GPR_INFO, "test_static_metadata: dup_key=%d dup_value=%d", dup_key,
           dup_value);
@@ -465,7 +410,6 @@ int main(int argc, char** argv) {
       test_create_many_ephemeral_metadata(k, v);
       test_identity_laws(k, v);
       test_spin_creating_the_same_thing(k, v);
-      test_mdelem_sizes_in_hpack(k, v);
       test_copied_static_metadata(k, v);
     }
   }

@@ -273,23 +273,6 @@ class CLanguage(object):
                 # see https://github.com/grpc/grpc/blob/b5b8578b3f8b4a9ce61ed6677e19d546e43c5c68/tools/run_tests/artifacts/artifact_targets.py#L253
                 self._cmake_configure_extra_args.append('-DOPENSSL_NO_ASM=ON')
 
-        if args.iomgr_platform == "uv":
-            cflags = '-DGRPC_UV -DGRPC_CUSTOM_IOMGR_THREAD_CHECK -DGRPC_CUSTOM_SOCKET '
-            try:
-                cflags += subprocess.check_output(
-                    ['pkg-config', '--cflags', 'libuv']).strip() + ' '
-            except (subprocess.CalledProcessError, OSError):
-                pass
-            try:
-                ldflags = subprocess.check_output(
-                    ['pkg-config', '--libs', 'libuv']).strip() + ' '
-            except (subprocess.CalledProcessError, OSError):
-                ldflags = '-luv '
-            self._make_options += [
-                'EXTRA_CPPFLAGS={}'.format(cflags),
-                'EXTRA_LDLIBS={}'.format(ldflags)
-            ]
-
     def test_specs(self):
         out = []
         binaries = get_c_tests(self.args.travis, self.test_lang)
@@ -301,8 +284,6 @@ class CLanguage(object):
             polling_strategies = (_POLLING_STRATEGIES.get(
                 self.platform, ['all']) if target.get('uses_polling', True) else
                                   ['none'])
-            if self.args.iomgr_platform == 'uv':
-                polling_strategies = ['all']
             for polling_strategy in polling_strategies:
                 env = {
                     'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
@@ -1464,7 +1445,7 @@ argp.add_argument(
     'Selects compiler to use. Allowed values depend on the platform and language.'
 )
 argp.add_argument('--iomgr_platform',
-                  choices=['native', 'uv', 'gevent', 'asyncio'],
+                  choices=['native', 'gevent', 'asyncio'],
                   default='native',
                   help='Selects iomgr platform to build on')
 argp.add_argument('--build_only',

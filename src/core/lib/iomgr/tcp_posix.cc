@@ -137,12 +137,12 @@ class TcpZerocopySendRecord {
   }
 
   // References: 1 reference per sendmsg(), and 1 for the tcp_write().
-  void Ref() { ref_.FetchAdd(1, MemoryOrder::RELAXED); }
+  void Ref() { ref_.fetch_add(1, std::memory_order_relaxed); }
 
   // Unref: called when we get an error queue notification for a sendmsg(), if a
   //  sendmsg() failed or when tcp_write() is done.
   bool Unref() {
-    const intptr_t prior = ref_.FetchSub(1, MemoryOrder::ACQ_REL);
+    const intptr_t prior = ref_.fetch_sub(1, std::memory_order_acq_rel);
     GPR_DEBUG_ASSERT(prior > 0);
     if (prior == 1) {
       AllSendsComplete();
@@ -160,7 +160,7 @@ class TcpZerocopySendRecord {
   void AssertEmpty() {
     GPR_DEBUG_ASSERT(buf_.count == 0);
     GPR_DEBUG_ASSERT(buf_.length == 0);
-    GPR_DEBUG_ASSERT(ref_.Load(MemoryOrder::RELAXED) == 0);
+    GPR_DEBUG_ASSERT(ref_.load(std::memory_order_relaxed) == 0);
   }
 
   // When all sendmsg() calls associated with this tcp_write() have been
@@ -168,12 +168,12 @@ class TcpZerocopySendRecord {
   // for each sendmsg()) and all reference counts have been dropped, drop our
   // reference to the underlying data since we no longer need it.
   void AllSendsComplete() {
-    GPR_DEBUG_ASSERT(ref_.Load(MemoryOrder::RELAXED) == 0);
+    GPR_DEBUG_ASSERT(ref_.load(std::memory_order_relaxed) == 0);
     grpc_slice_buffer_reset_and_unref_internal(&buf_);
   }
 
   grpc_slice_buffer buf_;
-  Atomic<intptr_t> ref_;
+  std::atomic<intptr_t> ref_{0};
   OutgoingOffset out_offset_;
 };
 
@@ -287,7 +287,7 @@ class TcpZerocopySendCtx {
 
   // Indicate that we are disposing of this zerocopy context. This indicator
   // will prevent new zerocopy writes from being issued.
-  void Shutdown() { shutdown_.Store(true, MemoryOrder::RELEASE); }
+  void Shutdown() { shutdown_.store(true, std::memory_order_release); }
 
   // Indicates that there are no inflight tcp_write() instances with zerocopy
   // enabled.
@@ -318,7 +318,7 @@ class TcpZerocopySendCtx {
   }
 
   TcpZerocopySendRecord* TryGetSendRecordLocked() {
-    if (shutdown_.Load(MemoryOrder::ACQUIRE)) {
+    if (shutdown_.load(std::memory_order_acquire)) {
       return nullptr;
     }
     if (free_send_records_size_ == 0) {
@@ -340,7 +340,7 @@ class TcpZerocopySendCtx {
   int free_send_records_size_;
   Mutex lock_;
   uint32_t last_send_ = 0;
-  Atomic<bool> shutdown_;
+  std::atomic<bool> shutdown_{false};
   bool enabled_ = false;
   size_t threshold_bytes_ = kDefaultSendBytesThreshold;
   std::unordered_map<uint32_t, TcpZerocopySendRecord*> ctx_lookup_;
@@ -1257,10 +1257,10 @@ void tcp_shutdown_buffer_list(grpc_tcp* tcp) {
   }
 }
 
-#if defined(IOV_MAX) && IOV_MAX < 1000
+#if defined(IOV_MAX) && IOV_MAX < 260
 #define MAX_WRITE_IOVEC IOV_MAX
 #else
-#define MAX_WRITE_IOVEC 1000
+#define MAX_WRITE_IOVEC 260
 #endif
 msg_iovlen_type TcpZerocopySendRecord::PopulateIovs(size_t* unwind_slice_idx,
                                                     size_t* unwind_byte_idx,
@@ -1305,13 +1305,17 @@ void TcpZerocopySendRecord::UpdateOffsetForBytesSent(size_t sending_length,
 // returns true if done, false if pending; if returning true, *error is set
 static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
                                   grpc_error_handle* error) {
-  struct msghdr msg;
-  struct iovec iov[MAX_WRITE_IOVEC];
   msg_iovlen_type iov_size;
   ssize_t sent_length = 0;
   size_t sending_length;
   size_t unwind_slice_idx;
   size_t unwind_byte_idx;
+  bool tried_sending_message;
+  msghdr msg;
+  // iov consumes a large space. Keep it as the last item on the stack to
+  // improve locality. After all, we expect only the first elements of it being
+  // populated in most cases.
+  iovec iov[MAX_WRITE_IOVEC];
   while (true) {
     sending_length = 0;
     iov_size = record->PopulateIovs(&unwind_slice_idx, &unwind_byte_idx,
@@ -1321,7 +1325,7 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
     msg.msg_iov = iov;
     msg.msg_iovlen = iov_size;
     msg.msg_flags = 0;
-    bool tried_sending_message = false;
+    tried_sending_message = false;
     // Before calling sendmsg (with or without timestamps): we
     // take a single ref on the zerocopy send record.
     tcp->tcp_zerocopy_send_ctx.NoteSend(record);

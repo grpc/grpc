@@ -14,9 +14,9 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 18.0.0
   csharp_major_version: 2
-  g_stands_for: guileless
+  g_stands_for: goat
   protobuf_version: 3.15.8
-  version: 1.40.0-dev
+  version: 1.41.0-dev
 targets:
 - name: check_epollexclusive
   build: tool

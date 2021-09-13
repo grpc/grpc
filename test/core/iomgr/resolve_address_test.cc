@@ -355,9 +355,7 @@ int main(int argc, char** argv) {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
   } else if (resolver_type != nullptr &&
              gpr_stricmp(resolver_type, "ares") == 0) {
-#ifndef GRPC_UV
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
-#endif
   } else {
     gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
     abort();

@@ -113,7 +113,8 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
             name: str,
             health_check: GcpResource,
             affinity_header: str = None,
-            protocol: Optional[BackendServiceProtocol] = None) -> GcpResource:
+            protocol: Optional[BackendServiceProtocol] = None,
+            subset_size: Optional[int] = None) -> GcpResource:
         if not isinstance(protocol, self.BackendServiceProtocol):
             raise TypeError(f'Unexpected Backend Service protocol: {protocol}')
         body = {
@@ -129,6 +130,11 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
             body['localityLbPolicy'] = 'RING_HASH'
             body['consistentHash'] = {
                 'httpHeaderName': affinity_header,
+            }
+        if subset_size:
+            body['subsetting'] = {
+                'policy': 'CONSISTENT_HASH_SUBSETTING',
+                'subsetSize': subset_size
             }
         return self._insert_resource(self.api.backendServices(), body)
 

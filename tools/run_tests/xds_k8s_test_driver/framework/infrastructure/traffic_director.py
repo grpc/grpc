@@ -177,14 +177,21 @@ class TrafficDirectorManager:
         self.health_check = None
 
     def create_backend_service(
-            self, protocol: Optional[BackendServiceProtocol] = _BackendGRPC):
+            self,
+            protocol: Optional[BackendServiceProtocol] = _BackendGRPC,
+            subset_size: Optional[int] = None,
+            affinity_header: Optional[str] = None):
         if protocol is None:
             protocol = _BackendGRPC
 
         name = self.make_resource_name(self.BACKEND_SERVICE_NAME)
         logger.info('Creating %s Backend Service "%s"', protocol.name, name)
         resource = self.compute.create_backend_service_traffic_director(
-            name, health_check=self.health_check, protocol=protocol)
+            name,
+            health_check=self.health_check,
+            protocol=protocol,
+            subset_size=subset_size,
+            affinity_header=affinity_header)
         self.backend_service = resource
         self.backend_service_protocol = protocol
 

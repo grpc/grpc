@@ -1193,7 +1193,7 @@ Server::CallData::CallData(grpc_call_element* elem,
 }
 
 Server::CallData::~CallData() {
-  GPR_ASSERT(state_.Load(MemoryOrder::RELAXED) != CallState::PENDING);
+  GPR_ASSERT(state_.load(std::memory_order_relaxed) != CallState::PENDING);
   GRPC_ERROR_UNREF(recv_initial_metadata_error_);
   if (host_.has_value()) {
     grpc_slice_unref_internal(*host_);
@@ -1206,26 +1206,26 @@ Server::CallData::~CallData() {
 }
 
 void Server::CallData::SetState(CallState state) {
-  state_.Store(state, MemoryOrder::RELAXED);
+  state_.store(state, std::memory_order_relaxed);
 }
 
 bool Server::CallData::MaybeActivate() {
   CallState expected = CallState::PENDING;
-  return state_.CompareExchangeStrong(&expected, CallState::ACTIVATED,
-                                      MemoryOrder::ACQ_REL,
-                                      MemoryOrder::RELAXED);
+  return state_.compare_exchange_strong(expected, CallState::ACTIVATED,
+                                        std::memory_order_acq_rel,
+                                        std::memory_order_relaxed);
 }
 
 void Server::CallData::FailCallCreation() {
   CallState expected_not_started = CallState::NOT_STARTED;
   CallState expected_pending = CallState::PENDING;
-  if (state_.CompareExchangeStrong(&expected_not_started, CallState::ZOMBIED,
-                                   MemoryOrder::ACQ_REL,
-                                   MemoryOrder::ACQUIRE)) {
+  if (state_.compare_exchange_strong(expected_not_started, CallState::ZOMBIED,
+                                     std::memory_order_acq_rel,
+                                     std::memory_order_acquire)) {
     KillZombie();
-  } else if (state_.CompareExchangeStrong(&expected_pending, CallState::ZOMBIED,
-                                          MemoryOrder::ACQ_REL,
-                                          MemoryOrder::RELAXED)) {
+  } else if (state_.compare_exchange_strong(
+                 expected_pending, CallState::ZOMBIED,
+                 std::memory_order_acq_rel, std::memory_order_relaxed)) {
     // Zombied call will be destroyed when it's removed from the pending
     // queue... later.
   }
@@ -1281,7 +1281,7 @@ void Server::CallData::PublishNewRpc(void* arg, grpc_error_handle error) {
   RequestMatcherInterface* rm = calld->matcher_;
   Server* server = rm->server();
   if (error != GRPC_ERROR_NONE || server->ShutdownCalled()) {
-    calld->state_.Store(CallState::ZOMBIED, MemoryOrder::RELAXED);
+    calld->state_.store(CallState::ZOMBIED, std::memory_order_relaxed);
     calld->KillZombie();
     return;
   }
@@ -1305,7 +1305,7 @@ void Server::CallData::KillZombie() {
 void Server::CallData::StartNewRpc(grpc_call_element* elem) {
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
   if (server_->ShutdownCalled()) {
-    state_.Store(CallState::ZOMBIED, MemoryOrder::RELAXED);
+    state_.store(CallState::ZOMBIED, std::memory_order_relaxed);
     KillZombie();
     return;
   }

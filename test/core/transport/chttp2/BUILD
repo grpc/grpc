@@ -123,8 +123,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "hpack_table_test",
-    srcs = ["hpack_table_test.cc"],
+    name = "hpack_parser_table_test",
+    srcs = ["hpack_parser_table_test.cc"],
     language = "C++",
     uses_polling = False,
     deps = [

@@ -14,17 +14,25 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
+
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
 
-#if defined(ANDROID) || defined(__ANDROID__)
-
 #include <grpc/support/log.h>
-
 #include <map>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/gprpp/sync.h"
+
+// TODO(mingcl): This function is introduced at API level 32 and is not
+// available in any NDK release yet. So we export it weakly so that we can use
+// it without triggering undefined reference error. Its purpose is to disable
+// header in Parcel to conform to the BinderChannel wire format.
+extern "C" {
+extern void AIBinder_Class_disableInterfaceTokenHeader(AIBinder_Class* clazz)
+    __attribute__((weak));
+}
 
 namespace grpc_binder {
 namespace {
@@ -52,12 +60,12 @@ void f_onDestroy_delete(void* data) {
   delete user_data;
 }
 
-void* f_onCreate_noop(void* args) { return nullptr; }
-void f_onDestroy_noop(void* userData) {}
+void* f_onCreate_noop(void* /*args*/) { return nullptr; }
+void f_onDestroy_noop(void* /*userData*/) {}
 
 // TODO(mingcl): Consider if thread safety is a requirement here
 binder_status_t f_onTransact(AIBinder* binder, transaction_code_t code,
-                             const AParcel* in, AParcel* out) {
+                             const AParcel* in, AParcel* /*out*/) {
   gpr_log(GPR_INFO, __func__);
   gpr_log(GPR_INFO, "tx code = %u", code);
 
@@ -93,6 +101,16 @@ TransactionReceiverAndroid::TransactionReceiverAndroid(
       /*interfaceDescriptor=*/"", f_onCreate_userdata, f_onDestroy_delete,
       f_onTransact);
 
+  if (AIBinder_Class_disableInterfaceTokenHeader) {
+    AIBinder_Class_disableInterfaceTokenHeader(aibinder_class);
+  } else {
+    // TODO(mingcl): Make this a fatal error
+    gpr_log(GPR_ERROR,
+            "AIBinder_Class_disableInterfaceTokenHeader remain unresolved. "
+            "This BinderTransport implementation contains header and is not "
+            "compatible with Java's implementation");
+  }
+
   // Pass the on-transact callback to the on-create function of the binder. The
   // on-create function equips the callback with a mutex and gives it to the
   // user data stored in the binder which can be retrieved later.
@@ -115,8 +133,9 @@ TransactionReceiverAndroid::~TransactionReceiverAndroid() {
 
 namespace {
 
-binder_status_t f_onTransact_noop(AIBinder* binder, transaction_code_t code,
-                                  const AParcel* in, AParcel* out) {
+binder_status_t f_onTransact_noop(AIBinder* /*binder*/,
+                                  transaction_code_t /*code*/,
+                                  const AParcel* /*in*/, AParcel* /*out*/) {
   return {};
 }
 
@@ -124,6 +143,17 @@ void AssociateWithNoopClass(AIBinder* binder) {
   // Need to associate class before using it
   AIBinder_Class* aibinder_class = AIBinder_Class_define(
       "", f_onCreate_noop, f_onDestroy_noop, f_onTransact_noop);
+
+  if (AIBinder_Class_disableInterfaceTokenHeader) {
+    AIBinder_Class_disableInterfaceTokenHeader(aibinder_class);
+  } else {
+    // TODO(mingcl): Make this a fatal error
+    gpr_log(GPR_ERROR,
+            "AIBinder_Class_disableInterfaceTokenHeader remain unresolved. "
+            "This BinderTransport implementation contains header and is not "
+            "compatible with Java's implementation");
+  }
+
   gpr_log(GPR_INFO, "AIBinder_associateClass = %d",
           static_cast<int>(AIBinder_associateClass(binder, aibinder_class)));
 }
@@ -220,7 +250,7 @@ bool byte_array_allocator(void* arrayData, int32_t length, int8_t** outBuffer) {
   tmp.resize(length);
   *reinterpret_cast<std::string*>(arrayData) = tmp;
   *outBuffer = reinterpret_cast<int8_t*>(
-      &((*reinterpret_cast<std::string*>(arrayData))[0]));
+      &(*reinterpret_cast<std::string*>(arrayData))[0]);
   return true;
 }
 
@@ -249,4 +279,4 @@ absl::Status ReadableParcelAndroid::ReadString(char data[111]) const {
 
 }  // namespace grpc_binder
 
-#endif  // defined(ANDROID) || defined(__ANDROID__)
+#endif  // GPR_SUPPORT_BINDER_TRANSPORT

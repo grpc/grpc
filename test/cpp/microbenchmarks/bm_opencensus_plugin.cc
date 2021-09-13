@@ -20,10 +20,10 @@
 #include <string>
 #include <thread>  // NOLINT
 
+#include <grpc/grpc.h>
+#include <grpcpp/grpcpp.h>
 #include "absl/base/call_once.h"
 #include "absl/strings/str_cat.h"
-#include "include/grpc/grpc.h"
-#include "include/grpcpp/grpcpp.h"
 #include "opencensus/stats/stats.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"

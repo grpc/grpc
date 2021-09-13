@@ -35,15 +35,10 @@ namespace grpc_core {
 // This class is never instantiated. It exists to statically ensure that all
 // TLS usage is compatible with the most restrictive implementation, allowing
 // developers to write correct code regardless of the platform they develop on.
-template <typename T, typename = typename std::enable_if<(
-                          std::is_trivially_destructible<T>::value &&
-                          sizeof(T) <= sizeof(void*) &&
-                          alignof(void*) % alignof(T) == 0)>::type>
+template <typename T>
 class TlsTypeConstrainer {
-  static_assert(std::is_trivially_destructible<T>::value &&
-                    sizeof(T) <= sizeof(void*) &&
-                    alignof(void*) % alignof(T) == 0,
-                "unsupported type for TLS");
+  static_assert(std::is_trivial<T>::value,
+                "TLS support is limited to trivial types");
 
  public:
   using Type = T;
@@ -55,6 +50,8 @@ class TlsTypeConstrainer {
 
 #include <grpc/support/log.h> /* for GPR_ASSERT */
 #include <pthread.h>
+#include <array>
+#include <cstring>
 
 namespace grpc_core {
 
@@ -91,50 +88,51 @@ class PthreadTlsImpl : TlsTypeConstrainer<T> {
   //
   // https://google.github.io/styleguide/cppguide.html#Static_and_Global_Variables
   PthreadTlsImpl()
-      : key_([]() {
-          pthread_key_t key;
-          GPR_ASSERT(0 == pthread_key_create(&key, nullptr));
-          return key;
+      : keys_([]() {
+          typename std::remove_const<decltype(PthreadTlsImpl::keys_)>::type
+              keys;
+          for (pthread_key_t& key : keys) {
+            GPR_ASSERT(0 == pthread_key_create(&key, nullptr));
+          }
+          return keys;
         }()) {}
   PthreadTlsImpl(T t) : PthreadTlsImpl() { *this = t; }
-  ~PthreadTlsImpl() { GPR_ASSERT(0 == pthread_key_delete(key_)); }
+  ~PthreadTlsImpl() {
+    for (pthread_key_t key : keys_) {
+      GPR_ASSERT(0 == pthread_key_delete(key));
+    }
+  }
 
-  operator T() const { return Cast<T>(pthread_getspecific(key_)); }
+  operator T() const {
+    T t;
+    char* dst = reinterpret_cast<char*>(&t);
+    for (pthread_key_t key : keys_) {
+      uintptr_t src = uintptr_t(pthread_getspecific(key));
+      size_t remaining = reinterpret_cast<char*>(&t + 1) - dst;
+      size_t step = std::min(sizeof(src), remaining);
+      memcpy(dst, &src, step);
+      dst += step;
+    }
+    return t;
+  }
 
   T operator=(T t) {
-    GPR_ASSERT(0 == pthread_setspecific(key_, Cast<T>(t)));
+    char* src = reinterpret_cast<char*>(&t);
+    for (pthread_key_t key : keys_) {
+      uintptr_t dst;
+      size_t remaining = reinterpret_cast<char*>(&t + 1) - src;
+      size_t step = std::min(sizeof(dst), remaining);
+      memcpy(&dst, src, step);
+      GPR_ASSERT(0 == pthread_setspecific(key, reinterpret_cast<void*>(dst)));
+      src += step;
+    }
     return t;
   }
 
  private:
-  // TODO(C++17): Replace these helpers with constexpr if statements inline.
-  template <typename V>
-  static typename std::enable_if<std::is_pointer<V>::value, V>::type Cast(
-      void* object) {
-    return static_cast<V>(object);
-  }
-
-  template <typename V>
-  static typename std::enable_if<
-      !std::is_pointer<V>::value && std::is_integral<V>::value, V>::type
-  Cast(void* object) {
-    return reinterpret_cast<uintptr_t>(object);
-  }
-
-  template <typename V>
-  static void* Cast(
-      typename std::enable_if<std::is_pointer<V>::value, V>::type t) {
-    return t;
-  }
-
-  template <typename V>
-  static void* Cast(typename std::enable_if<!std::is_pointer<V>::value &&
-                                                std::is_integral<V>::value,
-                                            V>::type t) {
-    return reinterpret_cast<void*>(uintptr_t(t));
-  }
-
-  const pthread_key_t key_;
+  const std::array<pthread_key_t,
+                   (sizeof(T) + sizeof(void*) - 1) / sizeof(void*)>
+      keys_;
 };
 
 }  // namespace grpc_core

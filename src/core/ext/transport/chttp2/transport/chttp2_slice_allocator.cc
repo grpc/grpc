@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "grpc/event_engine/slice_allocator.h"
+#include <grpc/event_engine/slice_allocator.h>
 
 #include <functional>
 
@@ -59,7 +59,7 @@ Chttp2SliceAllocatorFactory::~Chttp2SliceAllocatorFactory() {
 std::unique_ptr<SliceAllocator>
 Chttp2SliceAllocatorFactory::CreateSliceAllocator(absl::string_view peer_name) {
   return absl::make_unique<Chttp2SliceAllocator>(
-      grpc_resource_user_create(resource_quota_, peer_name.data()));
+      grpc_resource_user_create(resource_quota_, peer_name));
 }
 
 }  // namespace experimental
