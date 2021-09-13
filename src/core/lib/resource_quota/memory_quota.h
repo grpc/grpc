@@ -65,7 +65,7 @@ static constexpr size_t kNumReclamationPasses = 4;
 class MemoryRequest {
  public:
   // Request a fixed amount of memory.
-  // NOLINTNEXTLINE(runtime/explicit)
+  // NOLINTNEXTLINE(google-explicit-constructor)
   MemoryRequest(size_t n) : min_(n), max_(n) {}
   // Request a range of memory.
   MemoryRequest(size_t min, size_t max) : min_(std::min(min, max)), max_(max) {}
@@ -219,9 +219,9 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
 
   // Primitive reservation function.
   ReserveResult TryReserve(MemoryRequest request) GRPC_MUST_USE_RESULT;
-  // Replenish at least n bytes from the quota, without blocking, possibly
-  // entering overcommit.
-  void Replenish(size_t n) ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
+  // Replenish at least `amount` bytes from the quota, without blocking,
+  // possibly entering overcommit.
+  void Replenish(size_t amount) ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
   // If we have not already, register a reclamation function against the quota
   // to sweep any free memory back to that quota.
   void MaybeRegisterReclaimer() ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
@@ -294,7 +294,7 @@ class MemoryQuota final : public DualRefCounted<MemoryQuota> {
 
   // Forcefully take some memory from the quota, potentially entering
   // overcommit.
-  void Take(size_t n);
+  void Take(size_t amount);
   // Finish reclamation pass.
   void FinishReclamation(uint64_t token);
   // Return some memory to the quota.
