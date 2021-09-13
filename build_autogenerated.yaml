@@ -6620,6 +6620,39 @@ targets:
   - test/core/security/matchers_test.cc
   deps:
   - grpc_test_util
+- name: memory_quota_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/debug/trace.h
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/resource_quota/memory_quota.h
+  src:
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/resource_quota/memory_quota.cc
+  - test/core/resource_quota/memory_quota_test.cc
+  deps:
+  - absl/status:statusor
+  - absl/types:variant
+  - gpr
+  uses_polling: false
 - name: message_allocator_end2end_test
   gtest: true
   build: test
