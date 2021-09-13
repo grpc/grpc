@@ -21,7 +21,10 @@ grpc_package(name = "test/core/promise")
 grpc_cc_test(
     name = "memory_quota_test",
     srcs = ["memory_quota_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/synchronization",
+    ],
     language = "c++",
     uses_polling = False,
     deps = [

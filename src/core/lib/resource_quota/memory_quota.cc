@@ -57,6 +57,8 @@ MemoryRequest MemoryRequest::WithBlockSize(size_t block_size) const {
 // ReclaimerQueue
 //
 
+const ReclaimerQueue::Index ReclaimerQueue::kInvalidIndex;
+
 ReclaimerQueue::Index ReclaimerQueue::Insert(
     RefCountedPtr<MemoryAllocator> allocator, ReclamationFunction reclaimer) {
   MutexLock lock(&mu_);
@@ -120,10 +122,13 @@ MemoryAllocator::~MemoryAllocator() {
 }
 
 void MemoryAllocator::Orphan() {
-  absl::MutexLock lock(&memory_quota_mu_);
-  for (int i = 0; i < kNumReclamationPasses; i++) {
-    memory_quota_->reclaimers_[i].Cancel(reclamation_indices_[i], this);
+  {
+    absl::MutexLock lock(&memory_quota_mu_);
+    for (int i = 0; i < kNumReclamationPasses; i++) {
+      memory_quota_->reclaimers_[i].Cancel(reclamation_indices_[i], this);
+    }
   }
+  InternallyRefCounted<MemoryAllocator>::Unref();
 }
 
 size_t MemoryAllocator::Reserve(MemoryRequest request) {
@@ -251,6 +256,14 @@ void MemoryAllocator::Rebind(RefCountedPtr<MemoryQuota> memory_quota) {
   }
 }
 
+void MemoryAllocator::PostReclaimer(ReclamationPass pass,
+                                    ReclamationFunction fn) {
+  MutexLock lock(&memory_quota_mu_);
+  auto pass_num = static_cast<int>(pass);
+  reclamation_indices_[pass_num] =
+      memory_quota_->reclaimers_[pass_num].Insert(Ref(), std::move(fn));
+}
+
 //
 // AtomicBarrier
 //
@@ -264,48 +277,62 @@ AtomicBarrier::WaitPromise::operator()() {
   return Pending{};
 }
 
+uint64_t AtomicBarrier::NewToken() {
+  return counter_.fetch_add(1, std::memory_order_relaxed);
+}
+
+void AtomicBarrier::Notify(uint64_t token) {
+  if (counter_.compare_exchange_strong(token, token + 1,
+                                       std::memory_order_acq_rel,
+                                       std::memory_order_relaxed)) {
+    waker_.Wakeup();
+  }
+}
+
 //
 // MemoryQuota
 //
 
 MemoryQuota::MemoryQuota() {
-  auto self = Ref();
+  auto self = WeakRef();
 
-  struct Empty {};
+  auto reclamation_loop = Loop(Seq(
+      [self]() -> Poll<int> {
+        // If there's free memory we no longer need to reclaim memory!
+        if (self->free_bytes_.load(std::memory_order_acquire) > 0) {
+          return Pending{};
+        }
+        return 0;
+      },
+      [self]() {
+        // Race biases to the first thing that completes... so this will
+        // choose the highest priority/least destructive thing to do that's
+        // available.
+        return Race(self->reclaimers_[0].Next(), self->reclaimers_[1].Next(),
+                    self->reclaimers_[2].Next(), self->reclaimers_[3].Next());
+      },
+      [self](ReclamationFunction reclaimer) {
+        // One of the reclaimer queues gave us a way to get back memory.
+        // Call the reclaimer with a token that contains enough to wake us
+        // up again.
+        uint64_t token = self->barrier_.NewToken();
+        reclaimer(ReclamationSweep(self, token));
+        // Return a promise that will wait for our barrier. This will be
+        // awoken by the token above being destroyed. So, once that token is
+        // destroyed, we'll be able to proceed.
+        return self->barrier_.Wait(token);
+      },
+      []() -> LoopCtl<absl::Status> {
+        // Continue the loop!
+        return Continue{};
+      }));
+
   reclaimer_activity_ = MakeActivity(
-      Loop(Seq(
-          [self]() -> Poll<Empty> {
-            // If there's free memory we no longer need to reclaim memory!
-            if (self->free_bytes_.load(std::memory_order_acquire) > 0) {
-              return Pending{};
-            }
-            return Empty{};
-          },
-          [self]() {
-            // Race biases to the first thing that completes... so this will
-            // choose the highest priority/least destructive thing to do that's
-            // available.
-            return Race(
-                self->reclaimers_[0].Next(), self->reclaimers_[1].Next(),
-                self->reclaimers_[2].Next(), self->reclaimers_[3].Next());
-          },
-          [self](ReclamationFunction reclaimer) {
-            // One of the reclaimer queues gave us a way to get back memory.
-            // Call the reclaimer with a token that contains enough to wake us
-            // up again.
-            uint64_t token = self->barrier_.NewToken();
-            reclaimer(ReclamationSweep(self->Ref(), token));
-            // Return a promise that will wait for our barrier. This will be
-            // awoken by the token above being destroyed. So, once that token is
-            // destroyed, we'll be able to proceed.
-            return self->barrier_.Wait(token);
-          },
-          []() -> LoopCtl<absl::Status> {
-            // Continue the loop!
-            return Continue{};
-          })),
+      std::move(reclamation_loop),
       [](std::function<void()> f) { std::thread(f).detach(); },
-      [](absl::Status) { abort(); });
+      [](absl::Status status) {
+        GPR_ASSERT(status.code() == absl::StatusCode::kCancelled);
+      });
 }
 
 void MemoryQuota::SetSize(size_t new_size) {

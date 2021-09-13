@@ -22,6 +22,7 @@
 #include <queue>
 #include <vector>
 
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -84,9 +85,12 @@ class MemoryRequest {
   size_t block_size_ = 1;
 };
 
+// For each reclamation function run we construct a ReclamationSweep.
+// When this object is finally destroyed (it may be moved several times first),
+// then that reclamation is complete and we may continue the reclamation loop.
 class ReclamationSweep {
  public:
-  ReclamationSweep(RefCountedPtr<MemoryQuota> memory_quota,
+  ReclamationSweep(WeakRefCountedPtr<MemoryQuota> memory_quota,
                    uint64_t sweep_token)
       : memory_quota_(std::move(memory_quota)), sweep_token_(sweep_token) {}
   ~ReclamationSweep();
@@ -99,7 +103,7 @@ class ReclamationSweep {
   bool IsSufficient() const;
 
  private:
-  RefCountedPtr<MemoryQuota> memory_quota_;
+  WeakRefCountedPtr<MemoryQuota> memory_quota_;
   uint64_t sweep_token_;
 };
 
@@ -186,7 +190,7 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
     class Wrapper final : public T {
      public:
       Wrapper(RefCountedPtr<MemoryAllocator> allocator, Args&&... args)
-          : allocator_(std::move(allocator)), T(std::forward<Args>(args)...) {}
+          : T(std::forward<Args>(args)...), allocator_(std::move(allocator)) {}
       ~Wrapper() override { allocator_->Release(sizeof(*this)); }
 
      private:
@@ -250,6 +254,9 @@ class AtomicBarrier {
 
   class WaitPromise {
    public:
+    WaitPromise(AtomicBarrier* barrier, uint64_t token)
+        : barrier_(barrier), token_(token) {}
+
     struct Empty {};
     Poll<Empty> operator()();
 
@@ -259,7 +266,7 @@ class AtomicBarrier {
   };
 
   uint64_t NewToken();
-  WaitPromise Wait(uint64_t token);
+  WaitPromise Wait(uint64_t token) { return WaitPromise(this, token); }
   void Notify(uint64_t token);
 
  private:
@@ -268,7 +275,7 @@ class AtomicBarrier {
 };
 
 // MemoryQuota tracks the amount of memory available as part of a ResourceQuota.
-class MemoryQuota final : public InternallyRefCounted<MemoryQuota> {
+class MemoryQuota final : public DualRefCounted<MemoryQuota> {
  public:
   MemoryQuota();
 
@@ -304,8 +311,10 @@ class MemoryQuota final : public InternallyRefCounted<MemoryQuota> {
     return pressure;
   }
 
+  static constexpr ssize_t kInitialSize = std::numeric_limits<ssize_t>::max();
+
   // The amount of memory that's free in this quota.
-  std::atomic<ssize_t> free_bytes_{0};
+  std::atomic<ssize_t> free_bytes_{kInitialSize};
 
   // Reclaimer queues.
   ReclaimerQueue reclaimers_[kNumReclamationPasses];
@@ -316,7 +325,7 @@ class MemoryQuota final : public InternallyRefCounted<MemoryQuota> {
   // progress.
   AtomicBarrier barrier_;
   // The total number of bytes in this quota.
-  std::atomic<size_t> quota_size_{0};
+  std::atomic<size_t> quota_size_{kInitialSize};
 };
 
 }  // namespace grpc_core

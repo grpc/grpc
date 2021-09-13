@@ -61,19 +61,21 @@ struct SeqState {
   // The state evaluated before this state.
   using PriorState = SeqState<Traits, I - 1, Fs...>;
   // Initialization from callables.
-  explicit SeqState(std::tuple<Fs*...> fs)
+  explicit SeqState(std::tuple<Fs*...> fs) noexcept
       : next_factory(std::move(*std::get<I + 1>(fs))) {
     new (&prior) PriorState(fs);
   }
   // Move constructor - assumes we're in the initial state (move prior) as it's
   // illegal to move a promise after polling it.
   SeqState(SeqState&& other) noexcept
-      : prior(std::move(other.prior)),
-        next_factory(std::move(other.next_factory)) {}
+      : next_factory(std::move(other.next_factory)) {
+    new (&prior) PriorState(std::move(other.prior));
+  }
   // Copy constructor - assumes we're in the initial state (move prior) as it's
   // illegal to move a promise after polling it.
-  SeqState(const SeqState& other)
-      : prior(other.prior), next_factory(other.next_factory) {}
+  SeqState(const SeqState& other) noexcept : next_factory(other.next_factory) {
+    new (&prior) PriorState(other.prior);
+  }
   // Empty destructor - we instead destruct the innards in BasicSeq manually
   // depending on state.
   ~SeqState() {}
@@ -102,7 +104,7 @@ struct SeqState {
 template <template <typename> class Traits, typename... Fs>
 struct SeqState<Traits, 0, Fs...> {
   // Initialization from callables.
-  explicit SeqState(std::tuple<Fs*...> args)
+  explicit SeqState(std::tuple<Fs*...> args) noexcept
       : current_promise(std::move(*std::get<0>(args))),
         next_factory(std::move(*std::get<1>(args))) {}
   // Move constructor - it's assumed we're in this state (see above).
@@ -110,12 +112,12 @@ struct SeqState<Traits, 0, Fs...> {
       : current_promise(std::move(other.current_promise)),
         next_factory(std::move(other.next_factory)) {}
   // Copy constructor - it's assumed we're in this state (see above).
-  SeqState(const SeqState& other)
+  SeqState(const SeqState& other) noexcept
       : current_promise(other.current_promise),
         next_factory(other.next_factory) {}
   // Empty destructor - we instead destruct the innards in BasicSeq manually
   // depending on state.
-  ~SeqState(){};
+  ~SeqState() {}
   // Evaluate the current promise, next promise factory types for this state.
   // Our callable is the first element of Fs, wrapped in PromiseLike to handle
   // some common edge cases. The next factory is the second element.

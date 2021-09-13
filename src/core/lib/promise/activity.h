@@ -306,12 +306,6 @@ class PromiseActivity final
   // running on this thread, a note is taken of such and the activity is
   // repolled if it doesn't complete.
   void Wakeup() final {
-    // If there's no active activity, we can just run inline.
-    if (!Activity::have_current()) {
-      Step();
-      WakeupComplete();
-      return;
-    }
     // If there is an active activity, but hey it's us, flag that and we'll loop
     // in RunLoop (that's calling from above here!).
     if (Activity::is_current()) {
