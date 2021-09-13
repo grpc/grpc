@@ -78,7 +78,8 @@ binder_status_t f_onTransact(AIBinder* binder, transaction_code_t code,
   std::unique_ptr<ReadableParcel> output =
       absl::make_unique<ReadableParcelAndroid>(in);
   // The lock should be released "after" the callback finishes.
-  absl::Status status = (*callback)(code, output.get());
+  absl::Status status =
+      (*callback)(code, output.get(), AIBinder_getCallingUid());
   if (status.ok()) {
     return STATUS_OK;
   } else {

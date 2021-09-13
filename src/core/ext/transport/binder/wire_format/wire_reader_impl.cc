@@ -120,8 +120,9 @@ void WireReaderImpl::SendSetupTransport(Binder* binder) {
   // callback owns a Ref() when it's being invoked.
   tx_receiver_ = binder->ConstructTxReceiver(
       /*wire_reader_ref=*/Ref(),
-      [this](transaction_code_t code, ReadableParcel* readable_parcel) {
-        return this->ProcessTransaction(code, readable_parcel);
+      [this](transaction_code_t code, ReadableParcel* readable_parcel,
+             int uid) {
+        return this->ProcessTransaction(code, readable_parcel, uid);
       });
 
   gpr_log(GPR_INFO, "tx_receiver = %p", tx_receiver_->GetRawBinder());
@@ -141,7 +142,8 @@ std::unique_ptr<Binder> WireReaderImpl::RecvSetupTransport() {
 }
 
 absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
-                                                ReadableParcel* parcel) {
+                                                ReadableParcel* parcel,
+                                                int uid) {
   gpr_log(GPR_INFO, __func__);
   gpr_log(GPR_INFO, "tx code = %u", code);
   if (code >= static_cast<unsigned>(kFirstCallId)) {
@@ -166,12 +168,15 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
     return absl::InvalidArgumentError("Transports not connected yet");
   }
 
+  // TODO(mingcl): Verify security policy for every incoming call
+
   switch (BinderTransportTxCode(code)) {
     case BinderTransportTxCode::SETUP_TRANSPORT: {
       if (recvd_setup_transport_) {
         return absl::InvalidArgumentError(
             "Already received a SETUP_TRANSPORT request");
       }
+      gpr_log(GPR_ERROR, "calling uid = %d", uid);
       recvd_setup_transport_ = true;
       int version;
       RETURN_IF_ERROR(parcel->ReadInt32(&version));
