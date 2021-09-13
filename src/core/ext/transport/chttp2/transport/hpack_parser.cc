@@ -623,12 +623,10 @@ class HPackParser::Input {
                                                  uint8_t last_byte) {
     return MaybeSetErrorAndReturn(
         [value, last_byte] {
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrFormat(
-                  "integer overflow in hpack integer decoding: have 0x%08x, "
-                  "got byte 0x%02x on byte 5",
-                  value, last_byte)
-                  .c_str());
+          return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+              "integer overflow in hpack integer decoding: have 0x%08x, "
+              "got byte 0x%02x on byte 5",
+              value, last_byte));
         },
         absl::optional<uint32_t>());
   }

@@ -1141,9 +1141,8 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
       channel_args_, GRPC_ARG_KEEPALIVE_TIME_MS,
       {-1 /* default value, unset */, 1, INT_MAX});
   if (!ResolverRegistry::IsValidTarget(target_uri_.get())) {
-    std::string error_message =
-        absl::StrCat("the target uri is not valid: ", target_uri_.get());
-    *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_message.c_str());
+    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("the target uri is not valid: ", target_uri_.get()));
     return;
   }
   *error = GRPC_ERROR_NONE;
@@ -2512,6 +2511,11 @@ class ClientChannel::LoadBalancedCall::Metadata
       }
     }
     return result;
+  }
+
+  absl::optional<absl::string_view> Lookup(absl::string_view key,
+                                           std::string* buffer) const override {
+    return grpc_metadata_batch_get_value(batch_, key, buffer);
   }
 
  private:

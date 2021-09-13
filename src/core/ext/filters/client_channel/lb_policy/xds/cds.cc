@@ -584,10 +584,9 @@ grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
             .CreateOrGetCertificateProvider(root_provider_instance_name);
     if (new_root_provider == nullptr) {
       return grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          GRPC_ERROR_CREATE_FROM_CPP_STRING(
               absl::StrCat("Certificate provider instance name: \"",
-                           root_provider_instance_name, "\" not recognized.")
-                  .c_str()),
+                           root_provider_instance_name, "\" not recognized.")),
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     }
   }
@@ -624,11 +623,9 @@ grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
             .CreateOrGetCertificateProvider(identity_provider_instance_name);
     if (new_identity_provider == nullptr) {
       return grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("Certificate provider instance name: \"",
-                           identity_provider_instance_name,
-                           "\" not recognized.")
-                  .c_str()),
+          GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+              "Certificate provider instance name: \"",
+              identity_provider_instance_name, "\" not recognized.")),
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     }
   }

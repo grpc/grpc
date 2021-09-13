@@ -26,7 +26,7 @@ namespace {
 
 class BinderServerCredentialsImpl final : public ServerCredentials {
  public:
-#ifdef GPR_ANDROID
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
   int AddPortToServer(const std::string& addr, grpc_server* server) override {
     return grpc_core::AddBinderPort(
         std::string(addr), server,
@@ -40,7 +40,7 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
                       grpc_server* /*server*/) override {
     return 0;
   }
-#endif  // GPR_ANDROID
+#endif  // GPR_SUPPORT_BINDER_TRANSPORT
 
   void SetAuthMetadataProcessor(
       const std::shared_ptr<AuthMetadataProcessor>& /*processor*/) override {

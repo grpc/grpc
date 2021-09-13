@@ -45,6 +45,7 @@ class WritableParcelAndroid final : public WritableParcel {
   ~WritableParcelAndroid() override = default;
 
   int32_t GetDataPosition() const override;
+  int32_t GetDataSize() const override;
   absl::Status SetDataPosition(int32_t pos) override;
   absl::Status WriteInt32(int32_t data) override;
   absl::Status WriteInt64(int64_t data) override;
@@ -66,12 +67,12 @@ class ReadableParcelAndroid final : public ReadableParcel {
       : parcel_(const_cast<AParcel*>(parcel)) {}
   ~ReadableParcelAndroid() override = default;
 
+  int32_t GetDataSize() const override;
   absl::Status ReadInt32(int32_t* data) const override;
   absl::Status ReadInt64(int64_t* data) const override;
   absl::Status ReadBinder(std::unique_ptr<Binder>* data) const override;
   absl::Status ReadByteArray(std::string* data) const override;
-  // FIXME(waynetu): Fix the interface.
-  absl::Status ReadString(char data[111]) const override;
+  absl::Status ReadString(std::string* str) const override;
 
  private:
   AParcel* parcel_ = nullptr;

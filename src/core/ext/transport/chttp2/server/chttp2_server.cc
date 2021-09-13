@@ -753,8 +753,8 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     if (!args_result.ok()) {
       gpr_log(GPR_DEBUG, "Closing connection: %s",
               args_result.status().ToString().c_str());
-      endpoint_cleanup(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          args_result.status().ToString().c_str()));
+      endpoint_cleanup(
+          GRPC_ERROR_CREATE_FROM_CPP_STRING(args_result.status().ToString()));
       return;
     }
     grpc_error_handle error = GRPC_ERROR_NONE;
