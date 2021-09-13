@@ -3142,13 +3142,6 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
               gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick failed: %s",
                       chand_, this, fail_pick->status.ToString().c_str());
             }
-            // If we're shutting down, fail all RPCs.
-            grpc_error_handle disconnect_error = chand_->disconnect_error();
-            if (disconnect_error != GRPC_ERROR_NONE) {
-              MaybeRemoveCallFromLbQueuedCallsLocked();
-              *error = GRPC_ERROR_REF(disconnect_error);
-              return true;
-            }
             // If wait_for_ready is false, then the error indicates the RPC
             // attempt's final status.
             if ((send_initial_metadata_flags &
