@@ -2513,6 +2513,11 @@ class ClientChannel::LoadBalancedCall::Metadata
     return result;
   }
 
+  absl::optional<absl::string_view> Lookup(absl::string_view key,
+                                           std::string* buffer) const override {
+    return grpc_metadata_batch_get_value(batch_, key, buffer);
+  }
+
  private:
   LoadBalancedCall* lb_call_;
   grpc_metadata_batch* batch_;
