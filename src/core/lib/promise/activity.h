@@ -78,7 +78,7 @@ class Waker {
  private:
   class Unwakeable final : public Wakeable {
    public:
-    void Wakeup() final { abort(); }
+    void Wakeup() final {}
     void Drop() final {}
   };
 
@@ -133,6 +133,9 @@ class Activity : private Wakeable {
 #endif
     return g_current_activity_;
   }
+
+  // Force the activity to wakeup.
+  void ForceWakeup() { MakeOwningWaker().Wakeup(); }
 
   // Produce an activity-owning Waker. The produced waker will keep the activity
   // alive until it's awoken or dropped.

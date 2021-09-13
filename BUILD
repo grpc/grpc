@@ -1252,6 +1252,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "memory_quota",
+    srcs = [
+        "src/core/lib/resource_quota/memory_quota.cc"
+    ],
+    hdrs = [
+        "src/core/lib/resource_quota/memory_quota.h"
+    ],
+    deps = [
+        "gpr_base",
+        "ref_counted_ptr",
+        "poll",
+        "activity",
+        "orphanable",
+        "race","loop", "seq"
+    ]
+)
+
+grpc_cc_library(
     name = "grpc_base_c",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",

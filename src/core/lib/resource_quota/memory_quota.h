@@ -17,33 +17,48 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
+#include <cstddef>
+#include <queue>
+#include <vector>
+
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/poll.h"
+
 namespace grpc_core {
 
 class Reclaimer;
 class MemoryAllocator;
-class MemoryAllocatorFactory;
-class ThreadAllocator;
+class MemoryQuota;
 
 // Reclamation passes.
 // When memory is tight, we start trying to claim some back from memory
 // reclaimers. We do this in multiple passes: if there is a less destructive
 // operation available, we do that, otherwise we do something more destructive.
 enum class ReclamationPass {
+  // Non-empty reclamation ought to take index 0, but to simplify API we don't
+  // expose that publicly (it's an internal detail), and hence index zero is
+  // here unnamed.
+
   // Benign reclamation is intended for reclamation steps that are not
   // observable outside of gRPC (besides maybe causing an increase in CPU
   // usage).
   // Examples of such reclamation would be resizing buffers to fit the current
   // load needs, rather than whatever was the peak usage requirement.
-  kBenign,
+  kBenign = 1,
   // Idle reclamation is intended for reclamation steps that are observable
   // outside of gRPC, but do not cause application work to be lost.
   // Examples of such reclamation would be dropping channels that are not being
   // used.
-  kIdle,
+  kIdle = 2,
   // Destructive reclamation is our last resort, and is these reclamations are
   // allowed to drop work - such as cancelling in flight requests.
-  kDestructive,
+  kDestructive = 3,
 };
+static constexpr size_t kNumReclamationPasses = 4;
 
 // Reservation request - how much memory do we want to allocate?
 class MemoryRequest {
@@ -67,79 +82,106 @@ class MemoryRequest {
   size_t min_;
   size_t max_;
   size_t block_size_ = 1;
-  Intent intent_ = Intent::kDefault;
 };
 
-class Reclaimer final : public InternallyRefCounted<Reclaimer> {
+class ReclamationSweep {
  public:
-  class Token {
-   public:
-    Token(const Token&) = delete;
-    Token& operator=(const Token&) = delete;
-    Token(Token&&) = default;
-    Token& operator=(Token&&) = default;
+  ReclamationSweep(RefCountedPtr<MemoryQuota> memory_quota,
+                   uint64_t sweep_token)
+      : memory_quota_(std::move(memory_quota)), sweep_token_(sweep_token) {}
+  ~ReclamationSweep();
 
-    ~Token();
+  ReclamationSweep(const ReclamationSweep&) = delete;
+  ReclamationSweep& operator=(const ReclamationSweep&) = delete;
+  ReclamationSweep(ReclamationSweep&&) = default;
+  ReclamationSweep& operator=(ReclamationSweep&&) = default;
 
-   private:
-    Token(RefCountedPtr<MemoryQuota> memory_quota, uint64_t id);
-
-    RefCountedPtr<MemoryQuota> memory_quota_;
-    uint64_t id_;
-  };
-
-  using ReclaimFunction = std::function<void(Token)>;
-  void Arm(ReclaimFunction fn);
+  bool IsSufficient() const;
 
  private:
-#ifndef NDEBUG
-  std::atomic<bool> armed_{false};
-#endif
-  const ReclamationPass pass_;
   RefCountedPtr<MemoryQuota> memory_quota_;
+  uint64_t sweep_token_;
 };
 
-using ReclaimerPtr = OrphanablePtr<Reclaimer>;
+using ReclamationFunction = std::function<void(ReclamationSweep)>;
+
+class ReclaimerQueue {
+ public:
+  using Index = size_t;
+
+  static constexpr Index kInvalidIndex = std::numeric_limits<Index>::max();
+
+  Index Insert(RefCountedPtr<MemoryAllocator> allocator,
+               ReclamationFunction reclaimer) ABSL_LOCKS_EXCLUDED(mu_);
+  ReclamationFunction Cancel(Index index, MemoryAllocator* allocator)
+      ABSL_LOCKS_EXCLUDED(mu_);
+  Poll<ReclamationFunction> PollNext() ABSL_LOCKS_EXCLUDED(mu_);
+
+  class NextPromise {
+   public:
+    explicit NextPromise(ReclaimerQueue* queue) : queue_(queue) {}
+    Poll<ReclamationFunction> operator()() { return queue_->PollNext(); }
+
+   private:
+    ReclaimerQueue* queue_;
+  };
+  NextPromise Next() { return NextPromise(this); }
+
+ private:
+  Mutex mu_;
+  struct Entry {
+    RefCountedPtr<MemoryAllocator> allocator;
+    ReclamationFunction reclaimer;
+  };
+  std::vector<Entry> entries_ ABSL_GUARDED_BY(mu_);
+  std::vector<size_t> free_entries_ ABSL_GUARDED_BY(mu_);
+  std::queue<Index> queue_ ABSL_GUARDED_BY(mu_);
+  Waker waker_ ABSL_GUARDED_BY(mu_);
+};
 
 // MemoryAllocator grants the owner the ability to allocate memory from an
 // underlying resource quota.
 class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
  public:
-  explicit MemoryAllocator(MemoryQuotaPtr memory_quota);
+  explicit MemoryAllocator(RefCountedPtr<MemoryQuota> memory_quota);
   ~MemoryAllocator();
+
+  void Orphan() override;
 
   // Rebind -  Swaps the underlying quota for this allocator, taking care to
   // make sure memory allocated is moved to allocations against the new quota.
-  void Rebind(MemoryQuotaPtr memory_quota)
+  void Rebind(RefCountedPtr<MemoryQuota> memory_quota)
       ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
 
   // Reserve bytes from the quota.
   // If we enter overcommit, reclamation will begin concurrently.
   // Returns the number of bytes reserved.
-  size_t Reserve(Request request) ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
+  size_t Reserve(MemoryRequest request) ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
 
   // Release some bytes that were previously reserved.
   void Release(size_t n) ABSL_LOCKS_EXCLUDED(memory_quota_mu_) {
     // Add the released memory to our free bytes counter... if this increases
     // from  0 to non-zero, then we have more to do, otherwise, we're actually
     // done.
-    if (free_bytes_.fetch_add(size, std::memory_order_release) != 0) return;
+    if (free_bytes_.fetch_add(n, std::memory_order_release) != 0) return;
     MaybeRegisterReclaimer();
   }
 
+  // Post a reclaimer for some reclamation pass.
+  void PostReclaimer(ReclamationPass pass,
+                     std::function<void(ReclamationSweep)>);
+
   // Allocate a new object of type T, with constructor arguments.
-  // The returned type is wrapped, and upon destruction the reserved memory will
-  // be released to the allocator automatically.
-  // As such, T must have a virtual destructor so we can insert the necessary
-  // hook.
+  // The returned type is wrapped, and upon destruction the reserved memory
+  // will be released to the allocator automatically. As such, T must have a
+  // virtual destructor so we can insert the necessary hook.
   template <typename T, typename... Args>
-  absl::enable_if_t<std::has_virtual_destructor<T>, T*> New(Args&&... args)
-      ABSL_LOCKS_EXCLUDED(memory_quota_mu_) {
+  absl::enable_if_t<std::has_virtual_destructor<T>::value, T*> New(
+      Args&&... args) ABSL_LOCKS_EXCLUDED(memory_quota_mu_) {
     // Wrap T such that when it's destroyed, we can release memory back to the
     // allocator.
     class Wrapper final : public T {
      public:
-      template <typename... Args>
       Wrapper(RefCountedPtr<MemoryAllocator> allocator, Args&&... args)
           : allocator_(std::move(allocator)), T(std::forward<Args>(args)...) {}
       ~Wrapper() override { allocator_->Release(sizeof(*this)); }
@@ -159,10 +201,17 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
   }
 
  private:
-  void Orphan() override;
+  // Result of TryReserve.
+  // If memory was allocated, success = true and size = the number of bytes
+  // allocated. If memory was not allocated, success = false and size = the
+  // number of bytes to take from the quota.
+  struct ReserveResult {
+    bool success;
+    size_t size;
+  };
 
   // Primitive reservation function.
-  ReserveResult TryReserve(Request request) GRPC_MUST_USE_RESULT;
+  ReserveResult TryReserve(MemoryRequest request) GRPC_MUST_USE_RESULT;
   // Replenish at least n bytes from the quota, without blocking, possibly
   // entering overcommit.
   void Replenish(size_t n) ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
@@ -178,14 +227,41 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
   // pressure.
   std::atomic<size_t> free_bytes_{0};
   // Mutex guarding the backing resource quota.
-  absl::Mutex memory_quota_mu_;
+  Mutex memory_quota_mu_;
   // Backing resource quota.
   RefCountedPtr<MemoryQuota> memory_quota_ ABSL_GUARDED_BY(memory_quota_mu_);
   // Amount of memory taken from the quota by this allocator.
   size_t taken_bytes_ ABSL_GUARDED_BY(memory_quota_mu_) = 0;
-  // Have we armed the non-empty reclaimer?
-  // We do this whenever we haven't and free_bytes_ > 0.
-  bool reclaimer_armed_ ABSL_GUARDED_BY(memory_quota_mu_) = false;
+  // Indices into the various reclaimer queues, used so that we can cancel
+  // reclamation should we shutdown or get rebound.
+  ReclaimerQueue::Index
+      reclamation_indices_[kNumReclamationPasses] ABSL_GUARDED_BY(
+          memory_quota_mu_) = {ReclaimerQueue::kInvalidIndex};
+};
+
+class AtomicBarrier {
+ public:
+  AtomicBarrier() = default;
+  AtomicBarrier(const AtomicBarrier&) = delete;
+  AtomicBarrier& operator=(const AtomicBarrier&) = delete;
+
+  class WaitPromise {
+   public:
+    struct Empty {};
+    Poll<Empty> operator()();
+
+   private:
+    AtomicBarrier* barrier_;
+    uint64_t token_;
+  };
+
+  uint64_t NewToken();
+  WaitPromise Wait(uint64_t token);
+  void Notify(uint64_t token);
+
+ private:
+  std::atomic<uint64_t> counter_{0};
+  Waker waker_;
 };
 
 // MemoryQuota tracks the amount of memory available as part of a ResourceQuota.
@@ -193,7 +269,7 @@ class MemoryQuota final : public InternallyRefCounted<MemoryQuota> {
  public:
   MemoryQuota();
 
-  MemoryAllocatorPtr MakeMemoryAllocator() {
+  OrphanablePtr<MemoryAllocator> MakeMemoryAllocator() {
     return MakeOrphanable<MemoryAllocator>(Ref());
   }
 
@@ -212,28 +288,20 @@ class MemoryQuota final : public InternallyRefCounted<MemoryQuota> {
   void FinishReclamation(uint64_t token);
   // Return some memory to the quota.
   void Return(size_t amount);
-  // Given a pass, return the pipe.
-  UnboundedThreadsafePipe<Reclaimer::ReclaimFunction>* GetPipe(
-      ReclamationPass pass) {
-    switch (pass) {
-      case ReclamationPass::kBenign:
-        return &benign_reclaimers_;
-      case ReclamationPass::kIdle:
-        return &idle_reclaimers_;
-      case ReclamationPass::kDestructive:
-        return &destructive_reclaimers_;
-    }
-    GPR_UNREACHABLE_CODE(return nullptr);
+  // Instantaneous memory pressure approximation.
+  size_t InstantaneousPressure() const {
+    double free = free_bytes_.load();
+    if (free < 0) free = 0;
+    double size = quota_size_.load();
+    if (size < 1) return 1.0;
+    return (size - free) / size;
   }
 
   // The amount of memory that's free in this quota.
   std::atomic<ssize_t> free_bytes_{0};
 
   // Reclaimer queues.
-  UnboundedThreadsafePipe<Reclaimer::ReclaimFunction> non_empty_reclaimers_;
-  UnboundedThreadsafePipe<Reclaimer::ReclaimFunction> benign_reclaimers_;
-  UnboundedThreadsafePipe<Reclaimer::ReclaimFunction> idle_reclaimers_;
-  UnboundedThreadsafePipe<Reclaimer::ReclaimFunction> destructive_reclaimers_;
+  ReclaimerQueue reclaimers_[kNumReclamationPasses];
   // The reclaimer activity consumes reclaimers whenever we are in overcommit to
   // try and get back under memory limits.
   ActivityPtr reclaimer_activity_;
