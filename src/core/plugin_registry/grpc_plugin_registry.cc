@@ -165,8 +165,12 @@ void grpc_register_built_in_plugins(void) {
 
 namespace grpc_core {
 
-void BuildCoreConfiguration(CoreConfiguration::Builder*) {
-  // TODO(ctiller): Incrementally call out to plugins as we require them to register things with builder.
+extern void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder);
+extern void SecurityRegisterHandshakerFactories(CoreConfiguration::Builder* builder);
+
+void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
+  BuildClientChannelConfiguration(builder);
+  SecurityRegisterHandshakerFactories(builder);
 }
 
-}
+}  // namespace grpc_core

@@ -20,11 +20,12 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-#include <openssl/rsa.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <string>
+
+#include <openssl/rsa.h>
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -1947,10 +1948,11 @@ static void test_metadata_plugin_failure(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
-  std::string expected_error = absl::StrCat(
-      "Getting metadata from plugin failed with error: ", plugin_error_details);
   request_metadata_state* md_state = make_request_metadata_state(
-      GRPC_ERROR_CREATE_FROM_COPIED_STRING(expected_error.c_str()), nullptr, 0);
+      GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("Getting metadata from plugin failed with error: ",
+                       plugin_error_details)),
+      nullptr, 0);
 
   plugin.state = &state;
   plugin.get_metadata = plugin_get_metadata_failure;

@@ -19,6 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_PORT_PLATFORM_H
 #define GRPC_IMPL_CODEGEN_PORT_PLATFORM_H
 
+// IWYU pragma: private, include <grpc/support/port_platform.h>
+
 /*
  * Define GPR_BACKWARDS_COMPATIBILITY_MODE to try harder to be ABI
  * compatible with older platforms (currently only on Linux)
@@ -26,6 +28,13 @@
  *  - some libc calls to be gotten via dlsym
  *  - some syscalls to be made directly
  */
+
+// [[deprecated]] attribute is only available since C++14
+#if __cplusplus >= 201402L
+#define GRPC_DEPRECATED(reason) [[deprecated(reason)]]
+#else
+#define GRPC_DEPRECATED(reason)
+#endif  // __cplusplus >= 201402L
 
 /*
  * Defines GPR_ABSEIL_SYNC to use synchronization features from Abseil

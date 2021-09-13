@@ -20,11 +20,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <assert.h>
+
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-
-#include <assert.h>
 
 /* Number of mutexes to allocate for events, to avoid lock contention.
    Should be a prime. */

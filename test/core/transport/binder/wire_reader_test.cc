@@ -18,13 +18,15 @@
 // top-level metadata. The following tests verify that the interactions between
 // WireReaderImpl and both the output (readable) parcel and the transport stream
 // receiver are correct in all possible situations.
-#include <gtest/gtest.h>
-
 #include <memory>
 #include <string>
+#include <thread>
 #include <utility>
 
+#include <gtest/gtest.h>
+
 #include "absl/memory/memory.h"
+
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 #include "test/core/transport/binder/mock_objects.h"
 #include "test/core/util/test_config.h"
@@ -62,6 +64,14 @@ class WireReaderTest : public ::testing::Test {
     }
   }
 
+  void UnblockSetupTransport() {
+    // SETUP_TRANSPORT should finish before we can proceed with any other
+    // requests and streaming calls. The MockBinder will construct a
+    // MockTransactionReceiver, which will then sends SETUP_TRANSPORT request
+    // back to us.
+    wire_reader_.SetupTransport(absl::make_unique<MockBinder>());
+  }
+
   template <typename T>
   absl::Status CallProcessTransaction(T tx_code) {
     return wire_reader_.ProcessTransaction(
@@ -71,7 +81,7 @@ class WireReaderTest : public ::testing::Test {
   std::shared_ptr<StrictMock<MockTransportStreamReceiver>>
       transport_stream_receiver_;
   WireReaderImpl wire_reader_;
-  StrictMock<MockReadableParcel> mock_readable_parcel_;
+  MockReadableParcel mock_readable_parcel_;
 };
 
 MATCHER_P(StatusOrStrEq, target, "") {
@@ -116,23 +126,12 @@ TEST_F(WireReaderTest, SetupTransport) {
 
 TEST_F(WireReaderTest, ProcessTransactionControlMessageSetupTransport) {
   ::testing::InSequence sequence;
-
-  EXPECT_CALL(mock_readable_parcel_, ReadInt32);
-  EXPECT_CALL(mock_readable_parcel_, ReadBinder)
-      .WillOnce([&](std::unique_ptr<Binder>* binder) {
-        auto mock_binder = absl::make_unique<MockBinder>();
-        // binder that is read from the output parcel must first be initialized
-        // before it can be used.
-        EXPECT_CALL(*mock_binder, Initialize);
-        *binder = std::move(mock_binder);
-        return absl::OkStatus();
-      });
-
-  EXPECT_TRUE(
-      CallProcessTransaction(BinderTransportTxCode::SETUP_TRANSPORT).ok());
+  UnblockSetupTransport();
 }
 
 TEST_F(WireReaderTest, ProcessTransactionControlMessagePingResponse) {
+  ::testing::InSequence sequence;
+  UnblockSetupTransport();
   EXPECT_CALL(mock_readable_parcel_, ReadInt32);
   EXPECT_TRUE(
       CallProcessTransaction(BinderTransportTxCode::PING_RESPONSE).ok());
@@ -140,6 +139,7 @@ TEST_F(WireReaderTest, ProcessTransactionControlMessagePingResponse) {
 
 TEST_F(WireReaderTest, ProcessTransactionServerRpcDataEmptyFlagIgnored) {
   ::testing::InSequence sequence;
+  UnblockSetupTransport();
 
   // first transaction: empty flag
   ExpectReadInt32(0);
@@ -150,6 +150,7 @@ TEST_F(WireReaderTest, ProcessTransactionServerRpcDataEmptyFlagIgnored) {
 TEST_F(WireReaderTest,
        ProcessTransactionServerRpcDataFlagPrefixWithoutMetadata) {
   ::testing::InSequence sequence;
+  UnblockSetupTransport();
 
   // flag
   ExpectReadInt32(kFlagPrefix);
@@ -167,6 +168,7 @@ TEST_F(WireReaderTest,
 
 TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagPrefixWithMetadata) {
   ::testing::InSequence sequence;
+  UnblockSetupTransport();
 
   // flag
   ExpectReadInt32(kFlagPrefix);
@@ -199,6 +201,7 @@ TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagPrefixWithMetadata) {
 
 TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagMessageDataNonEmpty) {
   ::testing::InSequence sequence;
+  UnblockSetupTransport();
 
   // flag
   ExpectReadInt32(kFlagMessageData);
@@ -217,6 +220,7 @@ TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagMessageDataNonEmpty) {
 
 TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagMessageDataEmpty) {
   ::testing::InSequence sequence;
+  UnblockSetupTransport();
 
   // flag
   ExpectReadInt32(kFlagMessageData);
@@ -235,6 +239,7 @@ TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagMessageDataEmpty) {
 
 TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagSuffixWithStatus) {
   ::testing::InSequence sequence;
+  UnblockSetupTransport();
 
   constexpr int kStatus = 0x1234;
   // flag
@@ -254,6 +259,7 @@ TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagSuffixWithStatus) {
 
 TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagSuffixWithoutStatus) {
   ::testing::InSequence sequence;
+  UnblockSetupTransport();
 
   // flag
   ExpectReadInt32(kFlagSuffix);
@@ -266,6 +272,43 @@ TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagSuffixWithoutStatus) {
               NotifyRecvTrailingMetadata(kFirstCallId,
                                          StatusOrContainerEq(Metadata{}), 0));
 
+  EXPECT_TRUE(CallProcessTransaction(kFirstCallId).ok());
+}
+
+TEST_F(WireReaderTest, InBoundFlowControl) {
+  ::testing::InSequence sequence;
+  UnblockSetupTransport();
+
+  // data size
+  EXPECT_CALL(mock_readable_parcel_, GetDataSize).WillOnce(Return(1000));
+  // flag
+  ExpectReadInt32(kFlagMessageData | kFlagMessageDataIsPartial);
+  // sequence number
+  ExpectReadInt32(0);
+  // message size
+  ExpectReadInt32(1000);
+  EXPECT_CALL(mock_readable_parcel_, ReadByteArray)
+      .WillOnce(DoAll(SetArgPointee<0>(std::string(1000, 'a')),
+                      Return(absl::OkStatus())));
+
+  // Data is not completed. No callback will be triggered.
+  EXPECT_TRUE(CallProcessTransaction(kFirstCallId).ok());
+
+  EXPECT_CALL(mock_readable_parcel_, GetDataSize).WillOnce(Return(1000));
+  // flag
+  ExpectReadInt32(kFlagMessageData);
+  // sequence number
+  ExpectReadInt32(1);
+  // message size
+  ExpectReadInt32(1000);
+  EXPECT_CALL(mock_readable_parcel_, ReadByteArray)
+      .WillOnce(DoAll(SetArgPointee<0>(std::string(1000, 'b')),
+                      Return(absl::OkStatus())));
+
+  EXPECT_CALL(*transport_stream_receiver_,
+              NotifyRecvMessage(kFirstCallId,
+                                StatusOrContainerEq(std::string(1000, 'a') +
+                                                    std::string(1000, 'b'))));
   EXPECT_TRUE(CallProcessTransaction(kFirstCallId).ok());
 }
 

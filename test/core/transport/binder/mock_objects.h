@@ -27,8 +27,10 @@ namespace grpc_binder {
 class MockWritableParcel : public WritableParcel {
  public:
   MOCK_METHOD(int32_t, GetDataPosition, (), (const, override));
+  MOCK_METHOD(int32_t, GetDataSize, (), (const, override));
   MOCK_METHOD(absl::Status, SetDataPosition, (int32_t), (override));
   MOCK_METHOD(absl::Status, WriteInt32, (int32_t), (override));
+  MOCK_METHOD(absl::Status, WriteInt64, (int64_t), (override));
   MOCK_METHOD(absl::Status, WriteBinder, (HasRawBinder*), (override));
   MOCK_METHOD(absl::Status, WriteString, (absl::string_view), (override));
   MOCK_METHOD(absl::Status, WriteByteArray, (const int8_t*, int32_t),
@@ -39,11 +41,13 @@ class MockWritableParcel : public WritableParcel {
 
 class MockReadableParcel : public ReadableParcel {
  public:
+  MOCK_METHOD(int32_t, GetDataSize, (), (const, override));
   MOCK_METHOD(absl::Status, ReadInt32, (int32_t*), (const, override));
+  MOCK_METHOD(absl::Status, ReadInt64, (int64_t*), (const, override));
   MOCK_METHOD(absl::Status, ReadBinder, (std::unique_ptr<Binder>*),
               (const, override));
   MOCK_METHOD(absl::Status, ReadByteArray, (std::string*), (const, override));
-  MOCK_METHOD(absl::Status, ReadString, (char[111]), (const, override));
+  MOCK_METHOD(absl::Status, ReadString, (std::string*), (const, override));
 
   MockReadableParcel();
 };
@@ -86,6 +90,8 @@ class MockTransactionReceiver : public TransactionReceiver {
 class MockWireWriter : public WireWriter {
  public:
   MOCK_METHOD(absl::Status, RpcCall, (const Transaction&), (override));
+  MOCK_METHOD(absl::Status, SendAck, (int64_t), (override));
+  MOCK_METHOD(void, OnAckReceived, (int64_t), (override));
 };
 
 class MockTransportStreamReceiver : public TransportStreamReceiver {
@@ -102,10 +108,7 @@ class MockTransportStreamReceiver : public TransportStreamReceiver {
               (StreamIdentifier, absl::StatusOr<std::string>), (override));
   MOCK_METHOD(void, NotifyRecvTrailingMetadata,
               (StreamIdentifier, absl::StatusOr<Metadata>, int), (override));
-  MOCK_METHOD(void, CancelRecvMessageCallbacksDueToTrailingMetadata,
-              (StreamIdentifier), (override));
-  MOCK_METHOD(void, Clear, (StreamIdentifier), (override));
-  MOCK_METHOD(void, CancelStream, (StreamIdentifier, absl::Status), (override));
+  MOCK_METHOD(void, CancelStream, (StreamIdentifier), (override));
 };
 
 }  // namespace grpc_binder

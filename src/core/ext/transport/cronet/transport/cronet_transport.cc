@@ -18,12 +18,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/transport/cronet/transport/cronet_transport.h"
+
 #include <string.h>
 
 #include <string>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -33,7 +36,6 @@
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/cronet/transport/cronet_status.h"
-#include "src/core/ext/transport/cronet/transport/cronet_transport.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -47,8 +49,6 @@
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport_impl.h"
-
-#include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
 
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 #define GRPC_FLUSH_READ_SIZE 4096
@@ -309,13 +309,10 @@ static void read_grpc_header(stream_obj* s) {
 static grpc_error_handle make_error_with_desc(int error_code,
                                               int cronet_internal_error_code,
                                               const char* desc) {
-  std::string error_message =
-      absl::StrFormat("Cronet error code:%d, Cronet error detail:%s",
-                      cronet_internal_error_code, desc);
-  grpc_error_handle error =
-      GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_message.c_str());
-  error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, error_code);
-  return error;
+  return grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                                "Cronet error code:%d, Cronet error detail:%s",
+                                cronet_internal_error_code, desc)),
+                            GRPC_ERROR_INT_GRPC_STATUS, error_code);
 }
 
 inline op_and_state::op_and_state(stream_obj* s,

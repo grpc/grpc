@@ -48,10 +48,12 @@ class TlsTypeConstrainer {
 
 #if defined(GPR_PTHREAD_TLS)
 
-#include <grpc/support/log.h> /* for GPR_ASSERT */
 #include <pthread.h>
+
 #include <array>
 #include <cstring>
+
+#include <grpc/support/log.h> /* for GPR_ASSERT */
 
 namespace grpc_core {
 

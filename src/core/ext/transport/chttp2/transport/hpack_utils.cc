@@ -15,6 +15,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_utils.h"
+
 #include "src/core/lib/surface/validate_metadata.h"
 
 namespace grpc_core {

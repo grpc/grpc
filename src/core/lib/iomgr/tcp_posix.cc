@@ -22,8 +22,6 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#include "src/core/lib/iomgr/tcp_posix.h"
-
 #include <errno.h>
 #include <limits.h>
 #include <netinet/in.h>
@@ -35,6 +33,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <algorithm>
 #include <unordered_map>
 
@@ -57,6 +56,7 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"

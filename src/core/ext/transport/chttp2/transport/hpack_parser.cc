@@ -19,7 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/ext/transport/chttp2/transport/internal.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -32,6 +31,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/match.h"
@@ -623,12 +623,10 @@ class HPackParser::Input {
                                                  uint8_t last_byte) {
     return MaybeSetErrorAndReturn(
         [value, last_byte] {
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrFormat(
-                  "integer overflow in hpack integer decoding: have 0x%08x, "
-                  "got byte 0x%02x on byte 5",
-                  value, last_byte)
-                  .c_str());
+          return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+              "integer overflow in hpack integer decoding: have 0x%08x, "
+              "got byte 0x%02x on byte 5",
+              value, last_byte));
         },
         absl::optional<uint32_t>());
   }

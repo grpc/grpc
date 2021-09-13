@@ -19,7 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame_settings.h"
-#include "src/core/ext/transport/chttp2/transport/internal.h"
 
 #include <string.h>
 
@@ -30,6 +29,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/http2_errors.h"
 
@@ -225,10 +225,8 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
                     t->last_new_stream_id, sp->error_value,
                     grpc_slice_from_static_string("HTTP2 settings error"),
                     &t->qbuf);
-                return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                    absl::StrFormat("invalid value %u passed for %s",
-                                    parser->value, sp->name)
-                        .c_str());
+                return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                    "invalid value %u passed for %s", parser->value, sp->name));
             }
           }
           if (id == GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE &&

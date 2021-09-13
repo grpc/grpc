@@ -93,14 +93,14 @@ static grpc_error_handle try_split_host_port(const char* name,
   /* parse name, splitting it into host and port parts */
   grpc_core::SplitHostPort(name, host, port);
   if (host->empty()) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("unparseable host:port: '%s'", name).c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrFormat("unparseable host:port: '%s'", name));
   }
   if (port->empty()) {
     // TODO(murgatroid99): add tests for this case
     if (default_port == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrFormat("no port in name '%s'", name).c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrFormat("no port in name '%s'", name));
     }
     *port = default_port;
   }

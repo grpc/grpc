@@ -17,12 +17,12 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <grpc/support/log.h>
-
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/log.h>
 
 namespace grpc_binder {
 
@@ -33,13 +33,14 @@ ABSL_CONST_INIT extern const int kFlagOutOfBandClose;
 ABSL_CONST_INIT extern const int kFlagExpectSingleMessage;
 ABSL_CONST_INIT extern const int kFlagStatusDescription;
 ABSL_CONST_INIT extern const int kFlagMessageDataIsParcelable;
+ABSL_CONST_INIT extern const int kFlagMessageDataIsPartial;
 
 using Metadata = std::vector<std::pair<std::string, std::string>>;
 
 class Transaction {
  public:
-  Transaction(int tx_code, int seq_num, bool is_client)
-      : tx_code_(tx_code), seq_num_(seq_num), is_client_(is_client) {}
+  Transaction(int tx_code, bool is_client)
+      : tx_code_(tx_code), is_client_(is_client) {}
   // TODO(mingcl): Consider using string_view
   void SetPrefix(Metadata prefix_metadata) {
     prefix_metadata_ = prefix_metadata;
@@ -76,7 +77,6 @@ class Transaction {
   bool IsClient() const { return is_client_; }
   bool IsServer() const { return !is_client_; }
   int GetTxCode() const { return tx_code_; }
-  int GetSeqNum() const { return seq_num_; }
   int GetFlags() const { return flags_; }
 
   absl::string_view GetMethodRef() const { return method_ref_; }
@@ -87,7 +87,6 @@ class Transaction {
 
  private:
   int tx_code_;
-  int seq_num_;
   bool is_client_;
   Metadata prefix_metadata_;
   Metadata suffix_metadata_;

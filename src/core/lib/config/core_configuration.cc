@@ -23,10 +23,11 @@ std::atomic<CoreConfiguration*> CoreConfiguration::config_{nullptr};
 CoreConfiguration::Builder::Builder() = default;
 
 CoreConfiguration* CoreConfiguration::Builder::Build() {
-  return new CoreConfiguration;
+  return new CoreConfiguration(this);
 }
 
-CoreConfiguration::CoreConfiguration() = default;
+CoreConfiguration::CoreConfiguration(Builder* builder)
+    : handshaker_registry_(builder->handshaker_registry_.Build()) {}
 
 const CoreConfiguration& CoreConfiguration::BuildNewAndMaybeSet() {
   // Construct builder, pass it up to code that knows about build configuration
@@ -38,8 +39,8 @@ const CoreConfiguration& CoreConfiguration::BuildNewAndMaybeSet() {
   // here, in which case we drop the work we did and use the one that got set
   // first
   CoreConfiguration* expected = nullptr;
-  if (!config_.compare_exchange_strong(expected, p,
-                                       std::memory_order_release)) {
+  if (!config_.compare_exchange_strong(expected, p, std::memory_order_acq_rel,
+                                       std::memory_order_acquire)) {
     delete p;
     return *expected;
   }

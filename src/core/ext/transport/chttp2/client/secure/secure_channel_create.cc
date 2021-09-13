@@ -18,10 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc.h>
-
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 

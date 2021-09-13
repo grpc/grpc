@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SECURITY_AUTH_CONTEXT_H
 #define GRPCPP_IMPL_CODEGEN_SECURITY_AUTH_CONTEXT_H
 
+// IWYU pragma: private, include <grpcpp/security/auth_context.h>
+
 #include <iterator>
 #include <vector>
 

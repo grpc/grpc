@@ -12,6 +12,7 @@
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/core/v3/proxy_protocol.upb.h"
+#include "envoy/type/matcher/v3/metadata.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/metadata/v3/metadata.upb.h"
@@ -177,22 +178,23 @@ static const upb_msglayout *const envoy_config_route_v3_WeightedCluster_ClusterW
   &google_protobuf_UInt32Value_msginit,
 };
 
-static const upb_msglayout_field envoy_config_route_v3_WeightedCluster_ClusterWeight__fields[9] = {
+static const upb_msglayout_field envoy_config_route_v3_WeightedCluster_ClusterWeight__fields[10] = {
   {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(12, 24), 1, 3, 11, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(16, 32), 2, 1, 11, _UPB_MODE_SCALAR},
-  {4, UPB_SIZE(20, 40), 0, 0, 11, _UPB_MODE_ARRAY},
-  {5, UPB_SIZE(24, 48), 0, 0, 11, _UPB_MODE_ARRAY},
-  {6, UPB_SIZE(28, 56), 0, 0, 9, _UPB_MODE_ARRAY},
-  {9, UPB_SIZE(32, 64), 0, 0, 9, _UPB_MODE_ARRAY},
-  {10, UPB_SIZE(36, 72), 0, 2, 11, _UPB_MODE_MAP},
-  {11, UPB_SIZE(40, 80), UPB_SIZE(-49, -97), 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(20, 40), 1, 3, 11, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(24, 48), 2, 1, 11, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(28, 56), 0, 0, 11, _UPB_MODE_ARRAY},
+  {5, UPB_SIZE(32, 64), 0, 0, 11, _UPB_MODE_ARRAY},
+  {6, UPB_SIZE(36, 72), 0, 0, 9, _UPB_MODE_ARRAY},
+  {9, UPB_SIZE(40, 80), 0, 0, 9, _UPB_MODE_ARRAY},
+  {10, UPB_SIZE(44, 88), 0, 2, 11, _UPB_MODE_MAP},
+  {11, UPB_SIZE(48, 96), UPB_SIZE(-57, -113), 0, 9, _UPB_MODE_SCALAR},
+  {12, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_route_v3_WeightedCluster_ClusterWeight_msginit = {
   &envoy_config_route_v3_WeightedCluster_ClusterWeight_submsgs[0],
   &envoy_config_route_v3_WeightedCluster_ClusterWeight__fields[0],
-  UPB_SIZE(56, 112), 9, false, 6, 255,
+  UPB_SIZE(64, 128), 10, false, 6, 255,
 };
 
 static const upb_msglayout *const envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_submsgs[1] = {
@@ -210,34 +212,36 @@ const upb_msglayout envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPer
   UPB_SIZE(16, 32), 2, false, 2, 255,
 };
 
-static const upb_msglayout *const envoy_config_route_v3_RouteMatch_submsgs[8] = {
+static const upb_msglayout *const envoy_config_route_v3_RouteMatch_submsgs[9] = {
   &envoy_config_core_v3_RuntimeFractionalPercent_msginit,
   &envoy_config_route_v3_HeaderMatcher_msginit,
   &envoy_config_route_v3_QueryParameterMatcher_msginit,
   &envoy_config_route_v3_RouteMatch_ConnectMatcher_msginit,
   &envoy_config_route_v3_RouteMatch_GrpcRouteMatchOptions_msginit,
   &envoy_config_route_v3_RouteMatch_TlsContextMatchOptions_msginit,
+  &envoy_type_matcher_v3_MetadataMatcher_msginit,
   &envoy_type_matcher_v3_RegexMatcher_msginit,
   &google_protobuf_BoolValue_msginit,
 };
 
-static const upb_msglayout_field envoy_config_route_v3_RouteMatch__fields[10] = {
-  {1, UPB_SIZE(28, 56), UPB_SIZE(-37, -73), 0, 9, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(28, 56), UPB_SIZE(-37, -73), 0, 9, _UPB_MODE_SCALAR},
-  {4, UPB_SIZE(4, 8), 1, 7, 11, _UPB_MODE_SCALAR},
+static const upb_msglayout_field envoy_config_route_v3_RouteMatch__fields[11] = {
+  {1, UPB_SIZE(32, 64), UPB_SIZE(-41, -81), 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(32, 64), UPB_SIZE(-41, -81), 0, 9, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(4, 8), 1, 8, 11, _UPB_MODE_SCALAR},
   {6, UPB_SIZE(20, 40), 0, 1, 11, _UPB_MODE_ARRAY},
   {7, UPB_SIZE(24, 48), 0, 2, 11, _UPB_MODE_ARRAY},
   {8, UPB_SIZE(8, 16), 2, 4, 11, _UPB_MODE_SCALAR},
   {9, UPB_SIZE(12, 24), 3, 0, 11, _UPB_MODE_SCALAR},
-  {10, UPB_SIZE(28, 56), UPB_SIZE(-37, -73), 6, 11, _UPB_MODE_SCALAR},
+  {10, UPB_SIZE(32, 64), UPB_SIZE(-41, -81), 7, 11, _UPB_MODE_SCALAR},
   {11, UPB_SIZE(16, 32), 4, 5, 11, _UPB_MODE_SCALAR},
-  {12, UPB_SIZE(28, 56), UPB_SIZE(-37, -73), 3, 11, _UPB_MODE_SCALAR},
+  {12, UPB_SIZE(32, 64), UPB_SIZE(-41, -81), 3, 11, _UPB_MODE_SCALAR},
+  {13, UPB_SIZE(28, 56), 0, 6, 11, _UPB_MODE_ARRAY},
 };
 
 const upb_msglayout envoy_config_route_v3_RouteMatch_msginit = {
   &envoy_config_route_v3_RouteMatch_submsgs[0],
   &envoy_config_route_v3_RouteMatch__fields[0],
-  UPB_SIZE(40, 80), 10, false, 2, 255,
+  UPB_SIZE(48, 96), 11, false, 2, 255,
 };
 
 const upb_msglayout envoy_config_route_v3_RouteMatch_GrpcRouteMatchOptions_msginit = {

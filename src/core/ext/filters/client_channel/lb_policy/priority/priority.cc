@@ -812,17 +812,15 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
         const std::string& child_name = p.first;
         const Json& element = p.second;
         if (element.type() != Json::Type::OBJECT) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
               absl::StrCat("field:children key:", child_name,
-                           " error:should be type object")
-                  .c_str()));
+                           " error:should be type object")));
         } else {
           auto it2 = element.object_value().find("config");
           if (it2 == element.object_value().end()) {
-            error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
                 absl::StrCat("field:children key:", child_name,
-                             " error:missing 'config' field")
-                    .c_str()));
+                             " error:missing 'config' field")));
           } else {
             grpc_error_handle parse_error = GRPC_ERROR_NONE;
             auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
@@ -836,11 +834,10 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
               if (it3->second.type() == Json::Type::JSON_TRUE) {
                 ignore_resolution_requests = true;
               } else if (it3->second.type() != Json::Type::JSON_FALSE) {
-                error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
                     absl::StrCat("field:children key:", child_name,
                                  " field:ignore_reresolution_requests:should "
-                                 "be type boolean")
-                        .c_str()));
+                                 "be type boolean")));
               }
             }
             if (config == nullptr) {
@@ -872,26 +869,20 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
       for (size_t i = 0; i < array.size(); ++i) {
         const Json& element = array[i];
         if (element.type() != Json::Type::STRING) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("field:priorities element:", i,
-                           " error:should be type string")
-                  .c_str()));
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+              "field:priorities element:", i, " error:should be type string")));
         } else if (children.find(element.string_value()) == children.end()) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("field:priorities element:", i,
-                           " error:unknown child '", element.string_value(),
-                           "'")
-                  .c_str()));
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+              "field:priorities element:", i, " error:unknown child '",
+              element.string_value(), "'")));
         } else {
           priorities.emplace_back(element.string_value());
         }
       }
       if (priorities.size() != children.size()) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("field:priorities error:priorities size (",
-                         priorities.size(), ") != children size (",
-                         children.size(), ")")
-                .c_str()));
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+            "field:priorities error:priorities size (", priorities.size(),
+            ") != children size (", children.size(), ")")));
       }
     }
     if (error_list.empty()) {

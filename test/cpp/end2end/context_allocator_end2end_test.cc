@@ -16,6 +16,17 @@
  *
  */
 
+#include <algorithm>
+#include <atomic>
+#include <condition_variable>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <sstream>
+#include <thread>
+
+#include <gtest/gtest.h>
+
 #include <grpc/impl/codegen/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -25,16 +36,6 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_callback.h>
 #include <grpcpp/support/message_allocator.h>
-#include <gtest/gtest.h>
-
-#include <algorithm>
-#include <atomic>
-#include <condition_variable>
-#include <functional>
-#include <memory>
-#include <mutex>
-#include <sstream>
-#include <thread>
 
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"

@@ -18,9 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_utils.h"
-
 #include <inttypes.h>
 #include <string.h>
 
@@ -31,7 +28,9 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/iomgr_internal.h" /* for iomgr_abort_on_leaks() */
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 #define LOG2_SHARD_COUNT 5

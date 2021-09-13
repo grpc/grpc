@@ -26,18 +26,17 @@
 
 #include <set>
 
+#include "absl/container/inlined_vector.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-
-#include "absl/container/inlined_vector.h"
-#include "absl/types/optional.h"
 
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
@@ -1142,9 +1141,8 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
       channel_args_, GRPC_ARG_KEEPALIVE_TIME_MS,
       {-1 /* default value, unset */, 1, INT_MAX});
   if (!ResolverRegistry::IsValidTarget(target_uri_.get())) {
-    std::string error_message =
-        absl::StrCat("the target uri is not valid: ", target_uri_.get());
-    *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_message.c_str());
+    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("the target uri is not valid: ", target_uri_.get()));
     return;
   }
   *error = GRPC_ERROR_NONE;
@@ -2501,48 +2499,21 @@ class ClientChannel::LoadBalancedCall::Metadata
                GRPC_ERROR_NONE);
   }
 
-  iterator begin() const override {
-    static_assert(sizeof(grpc_linked_mdelem*) <= sizeof(intptr_t),
-                  "iterator size too large");
-    return iterator(
-        this, reinterpret_cast<intptr_t>(MaybeSkipEntry(batch_->list.head)));
-  }
-  iterator end() const override {
-    static_assert(sizeof(grpc_linked_mdelem*) <= sizeof(intptr_t),
-                  "iterator size too large");
-    return iterator(this, 0);
-  }
-
-  iterator erase(iterator it) override {
-    grpc_linked_mdelem* linked_mdelem =
-        reinterpret_cast<grpc_linked_mdelem*>(GetIteratorHandle(it));
-    intptr_t handle = reinterpret_cast<intptr_t>(linked_mdelem->next);
-    grpc_metadata_batch_remove(batch_, linked_mdelem);
-    return iterator(this, handle);
+  std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector()
+      override {
+    std::vector<std::pair<std::string, std::string>> result;
+    for (grpc_linked_mdelem* entry = batch_->list.head; entry != nullptr;
+         entry = entry->next) {
+      if (batch_->idx.named.path != entry) {
+        result.push_back(std::make_pair(
+            std::string(StringViewFromSlice(GRPC_MDKEY(entry->md))),
+            std::string(StringViewFromSlice(GRPC_MDVALUE(entry->md)))));
+      }
+    }
+    return result;
   }
 
  private:
-  grpc_linked_mdelem* MaybeSkipEntry(grpc_linked_mdelem* entry) const {
-    if (entry != nullptr && batch_->idx.named.path == entry) {
-      return entry->next;
-    }
-    return entry;
-  }
-
-  intptr_t IteratorHandleNext(intptr_t handle) const override {
-    grpc_linked_mdelem* linked_mdelem =
-        reinterpret_cast<grpc_linked_mdelem*>(handle);
-    return reinterpret_cast<intptr_t>(MaybeSkipEntry(linked_mdelem->next));
-  }
-
-  std::pair<absl::string_view, absl::string_view> IteratorHandleGet(
-      intptr_t handle) const override {
-    grpc_linked_mdelem* linked_mdelem =
-        reinterpret_cast<grpc_linked_mdelem*>(handle);
-    return std::make_pair(StringViewFromSlice(GRPC_MDKEY(linked_mdelem->md)),
-                          StringViewFromSlice(GRPC_MDVALUE(linked_mdelem->md)));
-  }
-
   LoadBalancedCall* lb_call_;
   grpc_metadata_batch* batch_;
 };

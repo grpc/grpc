@@ -14,8 +14,9 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_USE_EVENT_ENGINE
-#include <grpc/event_engine/event_engine.h>
 #include "absl/functional/bind_front.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/sync.h"

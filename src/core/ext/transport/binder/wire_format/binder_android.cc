@@ -16,22 +16,25 @@
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
-#include "src/core/ext/transport/binder/wire_format/binder_android.h"
-
-#include <grpc/support/log.h>
 #include <map>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+
+#include <grpc/support/log.h>
+
+#include "src/core/ext/transport/binder/wire_format/binder_android.h"
 #include "src/core/lib/gprpp/sync.h"
 
+extern "C" {
 // TODO(mingcl): This function is introduced at API level 32 and is not
 // available in any NDK release yet. So we export it weakly so that we can use
 // it without triggering undefined reference error. Its purpose is to disable
 // header in Parcel to conform to the BinderChannel wire format.
-extern "C" {
 extern void AIBinder_Class_disableInterfaceTokenHeader(AIBinder_Class* clazz)
     __attribute__((weak));
+// This is released in API level 31.
+extern int32_t AParcel_getDataSize(const AParcel* parcel) __attribute__((weak));
 }
 
 namespace grpc_binder {
@@ -83,6 +86,43 @@ binder_status_t f_onTransact(AIBinder* binder, transaction_code_t code,
     return STATUS_UNKNOWN_ERROR;
   }
 }
+
+// StdStringAllocator, ReadString, StdVectorAllocator, and ReadVector's
+// implementations are copied from android/binder_parcel_utils.h
+// We cannot include the header because it does not compile in C++11
+
+bool StdStringAllocator(void* stringData, int32_t length, char** buffer) {
+  if (length <= 0) return false;
+
+  std::string* str = static_cast<std::string*>(stringData);
+  str->resize(static_cast<size_t>(length) - 1);
+  *buffer = &(*str)[0];
+  return true;
+}
+
+binder_status_t AParcelReadString(const AParcel* parcel, std::string* str) {
+  void* stringData = static_cast<void*>(str);
+  return AParcel_readString(parcel, stringData, StdStringAllocator);
+}
+
+template <typename T>
+bool StdVectorAllocator(void* vectorData, int32_t length, T** outBuffer) {
+  if (length < 0) return false;
+
+  std::vector<T>* vec = static_cast<std::vector<T>*>(vectorData);
+  if (static_cast<size_t>(length) > vec->max_size()) return false;
+
+  vec->resize(static_cast<size_t>(length));
+  *outBuffer = vec->data();
+  return true;
+}
+
+binder_status_t AParcelReadVector(const AParcel* parcel,
+                                  std::vector<uint8_t>* vec) {
+  void* vectorData = static_cast<void*>(vec);
+  return AParcel_readByteArray(parcel, vectorData, StdVectorAllocator<int8_t>);
+}
+
 }  // namespace
 
 ndk::SpAIBinder FromJavaBinder(JNIEnv* jni_env, jobject binder) {
@@ -193,6 +233,15 @@ int32_t WritableParcelAndroid::GetDataPosition() const {
   return AParcel_getDataPosition(parcel_);
 }
 
+int32_t WritableParcelAndroid::GetDataSize() const {
+  if (AParcel_getDataSize) {
+    return AParcel_getDataSize(parcel_);
+  } else {
+    gpr_log(GPR_INFO, "[Warning] AParcel_getDataSize is not available");
+    return 0;
+  }
+}
+
 absl::Status WritableParcelAndroid::SetDataPosition(int32_t pos) {
   return AParcel_setDataPosition(parcel_, pos) == STATUS_OK
              ? absl::OkStatus()
@@ -203,6 +252,12 @@ absl::Status WritableParcelAndroid::WriteInt32(int32_t data) {
   return AParcel_writeInt32(parcel_, data) == STATUS_OK
              ? absl::OkStatus()
              : absl::InternalError("AParcel_writeInt32 failed");
+}
+
+absl::Status WritableParcelAndroid::WriteInt64(int64_t data) {
+  return AParcel_writeInt64(parcel_, data) == STATUS_OK
+             ? absl::OkStatus()
+             : absl::InternalError("AParcel_writeInt64 failed");
 }
 
 absl::Status WritableParcelAndroid::WriteBinder(HasRawBinder* binder) {
@@ -226,10 +281,25 @@ absl::Status WritableParcelAndroid::WriteByteArray(const int8_t* buffer,
              : absl::InternalError("AParcel_writeByteArray failed");
 }
 
+int32_t ReadableParcelAndroid::GetDataSize() const {
+  if (AParcel_getDataSize) {
+    return AParcel_getDataSize(parcel_);
+  } else {
+    gpr_log(GPR_INFO, "[Warning] AParcel_getDataSize is not available");
+    return -1;
+  }
+}
+
 absl::Status ReadableParcelAndroid::ReadInt32(int32_t* data) const {
   return AParcel_readInt32(parcel_, data) == STATUS_OK
              ? absl::OkStatus()
              : absl::InternalError("AParcel_readInt32 failed");
+}
+
+absl::Status ReadableParcelAndroid::ReadInt64(int64_t* data) const {
+  return AParcel_readInt64(parcel_, data) == STATUS_OK
+             ? absl::OkStatus()
+             : absl::InternalError("AParcel_readInt64 failed");
 }
 
 absl::Status ReadableParcelAndroid::ReadBinder(
@@ -243,36 +313,20 @@ absl::Status ReadableParcelAndroid::ReadBinder(
   return absl::OkStatus();
 }
 
-namespace {
-
-bool byte_array_allocator(void* arrayData, int32_t length, int8_t** outBuffer) {
-  std::string tmp;
-  tmp.resize(length);
-  *reinterpret_cast<std::string*>(arrayData) = tmp;
-  *outBuffer = reinterpret_cast<int8_t*>(
-      &(*reinterpret_cast<std::string*>(arrayData))[0]);
-  return true;
-}
-
-bool string_allocator(void* stringData, int32_t length, char** outBuffer) {
-  if (length > 0) {
-    // TODO(mingcl): Don't fix the length of the string
-    GPR_ASSERT(length < 100);  // call should preallocate 100 bytes
-    *outBuffer = reinterpret_cast<char*>(stringData);
-  }
-  return true;
-}
-
-}  // namespace
-
 absl::Status ReadableParcelAndroid::ReadByteArray(std::string* data) const {
-  return AParcel_readByteArray(parcel_, data, byte_array_allocator) == STATUS_OK
-             ? absl::OkStatus()
-             : absl::InternalError("AParcel_readByteArray failed");
+  std::vector<uint8_t> vec;
+  if (AParcelReadVector(parcel_, &vec) == STATUS_OK) {
+    data->resize(vec.size());
+    if (!vec.empty()) {
+      memcpy(&((*data)[0]), vec.data(), vec.size());
+    }
+    return absl::OkStatus();
+  }
+  return absl::InternalError("AParcel_readByteArray failed");
 }
 
-absl::Status ReadableParcelAndroid::ReadString(char data[111]) const {
-  return AParcel_readString(parcel_, data, string_allocator) == STATUS_OK
+absl::Status ReadableParcelAndroid::ReadString(std::string* str) const {
+  return AParcelReadString(parcel_, str) == STATUS_OK
              ? absl::OkStatus()
              : absl::InternalError("AParcel_readString failed");
 }

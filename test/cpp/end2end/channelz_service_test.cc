@@ -18,6 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <gtest/gtest.h>
+
+#include "absl/memory/memory.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
@@ -29,8 +33,6 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-
-#include "absl/memory/memory.h"
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -44,8 +46,6 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
-
-#include <gtest/gtest.h>
 
 using grpc::channelz::v1::Address;
 using grpc::channelz::v1::GetChannelRequest;

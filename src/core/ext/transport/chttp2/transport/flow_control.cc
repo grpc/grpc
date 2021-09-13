@@ -208,11 +208,9 @@ uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
 grpc_error_handle TransportFlowControl::ValidateRecvData(
     int64_t incoming_frame_size) {
   if (incoming_frame_size > announced_window_) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("frame of size %" PRId64
-                        " overflows local window of %" PRId64,
-                        incoming_frame_size, announced_window_)
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "frame of size %" PRId64 " overflows local window of %" PRId64,
+        incoming_frame_size, announced_window_));
   }
   return GRPC_ERROR_NONE;
 }
@@ -250,11 +248,9 @@ grpc_error_handle StreamFlowControl::RecvData(int64_t incoming_frame_size) {
               "See (for example) https://github.com/netty/netty/issues/6520.",
               incoming_frame_size, acked_stream_window, sent_stream_window);
     } else {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrFormat("frame of size %" PRId64
-                          " overflows local window of %" PRId64,
-                          incoming_frame_size, acked_stream_window)
-              .c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+          "frame of size %" PRId64 " overflows local window of %" PRId64,
+          incoming_frame_size, acked_stream_window));
     }
   }
 

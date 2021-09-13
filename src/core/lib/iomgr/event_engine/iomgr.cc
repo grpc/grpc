@@ -14,12 +14,11 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_USE_EVENT_ENGINE
-#include "src/core/lib/iomgr/event_engine/iomgr.h"
-
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/event_engine/iomgr.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -41,7 +40,6 @@ namespace {
 
 using ::grpc_event_engine::experimental::DefaultEventEngineFactory;
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::Promise;
 
 EventEngine* g_event_engine = nullptr;
 

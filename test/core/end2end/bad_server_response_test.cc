@@ -16,8 +16,6 @@
  *
  */
 
-#include "src/core/lib/iomgr/sockaddr.h"
-
 #include <string.h>
 
 #include <grpc/grpc.h>

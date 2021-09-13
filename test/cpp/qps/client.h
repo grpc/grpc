@@ -27,6 +27,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "absl/memory/memory.h"
+#include "absl/strings/match.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -34,14 +37,10 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/slice.h>
 
-#include "absl/memory/memory.h"
-#include "absl/strings/match.h"
-
-#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
-#include "src/proto/grpc/testing/payloads.pb.h"
-
 #include "src/core/lib/gpr/env.h"
 #include "src/cpp/util/core_stats.h"
+#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
+#include "src/proto/grpc/testing/payloads.pb.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/qps_worker.h"

@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/surface/call.h"
+
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
@@ -51,7 +53,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -1065,10 +1066,10 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
     grpc_error_handle error = GRPC_ERROR_NONE;
     if (status_code != GRPC_STATUS_OK) {
       char* peer = grpc_call_get_peer(call);
-      error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("Error received from peer ", peer).c_str()),
-          GRPC_ERROR_INT_GRPC_STATUS, static_cast<intptr_t>(status_code));
+      error = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+                                     "Error received from peer ", peer)),
+                                 GRPC_ERROR_INT_GRPC_STATUS,
+                                 static_cast<intptr_t>(status_code));
       gpr_free(peer);
     }
     if (b->idx.named.grpc_message != nullptr) {
