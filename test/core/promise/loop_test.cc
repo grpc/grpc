@@ -43,10 +43,8 @@ TEST(LoopTest, FactoryCountToFive) {
 }
 
 TEST(LoopTest, LoopOfSeq) {
-  auto x = Loop(Seq(
-      []() { return 42; },
-      [](int i) -> LoopCtl<int> { return i; }
-  ))();
+  auto x =
+      Loop(Seq([]() { return 42; }, [](int i) -> LoopCtl<int> { return i; }))();
   EXPECT_EQ(x, Poll<int>(42));
 }
 
