@@ -1560,13 +1560,6 @@ grpc_error_handle RetryPolicyParse(
       }
     }
   }
-  if (retry_to_return.retry_on.Empty()) {
-    // we dont have any supported retry_on status, but we will still retrun an
-    // empty policy so that the per route policy takes precedence.  Returning a
-    // policy here also helps in the future where per_try_timeout is supported.
-    *retry = retry_to_return;
-    return GRPC_ERROR_NONE;
-  }
   const google_protobuf_UInt32Value* num_retries =
       envoy_config_route_v3_RetryPolicy_num_retries(retry_policy);
   if (num_retries != nullptr) {
