@@ -19,8 +19,6 @@
 
 #ifdef GPR_ANDROID
 
-#include <grpc/support/port_platform.h>
-
 #include <jni.h>
 
 #include "absl/strings/string_view.h"
