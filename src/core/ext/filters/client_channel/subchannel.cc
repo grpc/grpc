@@ -255,9 +255,9 @@ void GetCallStatus(grpc_status_code* status, grpc_millis deadline,
   if (error != GRPC_ERROR_NONE) {
     grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
   } else {
-    if (md_batch->idx.named.grpc_status != nullptr) {
+    if ((*md_batch)->legacy_index()->named.grpc_status != nullptr) {
       *status = grpc_get_status_code_from_metadata(
-          md_batch->idx.named.grpc_status->md);
+          (*md_batch)->legacy_index()->named.grpc_status->md);
     } else {
       *status = GRPC_STATUS_UNKNOWN;
     }

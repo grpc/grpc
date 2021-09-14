@@ -295,7 +295,7 @@ static void deadline_client_start_transport_stream_op_batch(
 static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   server_call_data* calld = static_cast<server_call_data*>(elem->call_data);
-  start_timer_if_needed(elem, calld->recv_initial_metadata->deadline);
+  start_timer_if_needed(elem, (*calld->recv_initial_metadata)->deadline());
   // Invoke the next callback.
   grpc_core::Closure::Run(DEBUG_LOCATION,
                           calld->next_recv_initial_metadata_ready,

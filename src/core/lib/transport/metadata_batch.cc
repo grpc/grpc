@@ -33,6 +33,8 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
+namespace grpc_core {
+
 static void assert_valid_list(grpc_mdelem_list* list) {
 #ifndef NDEBUG
   grpc_linked_mdelem* l;
@@ -59,48 +61,44 @@ static void assert_valid_list(grpc_mdelem_list* list) {
 #endif /* NDEBUG */
 }
 
-static void assert_valid_callouts(grpc_metadata_batch* batch) {
+void MetadataMap::AssertValidCallouts() {
 #ifndef NDEBUG
-  for (grpc_linked_mdelem* l = batch->list.head; l != nullptr; l = l->next) {
+  for (grpc_linked_mdelem* l = list_.head; l != nullptr; l = l->next) {
     grpc_slice key_interned = grpc_slice_intern(GRPC_MDKEY(l->md));
     grpc_metadata_batch_callouts_index callout_idx =
         GRPC_BATCH_INDEX_OF(key_interned);
     if (callout_idx != GRPC_BATCH_CALLOUTS_COUNT) {
-      GPR_ASSERT(batch->idx.array[callout_idx] == l);
+      GPR_ASSERT(idx_.array[callout_idx] == l);
     }
     grpc_slice_unref_internal(key_interned);
   }
-#else
-  // Avoid unused-parameter warning for debug-only parameter
-  (void)batch;
 #endif
 }
 
 #ifndef NDEBUG
-void grpc_metadata_batch_assert_ok(grpc_metadata_batch* batch) {
-  assert_valid_list(&batch->list);
-}
+void MetadataMap::AssertOk() { assert_valid_list(&list_); }
 #endif /* NDEBUG */
 
-void grpc_metadata_batch_init(grpc_metadata_batch* batch) {
-  memset(batch, 0, sizeof(*batch));
-  batch->deadline = GRPC_MILLIS_INF_FUTURE;
+MetadataMap::MetadataMap() {
+  memset(&list_, 0, sizeof(list_));
+  memset(&idx_, 0, sizeof(idx_));
+  deadline_ = GRPC_MILLIS_INF_FUTURE;
 }
 
-void grpc_metadata_batch_destroy(grpc_metadata_batch* batch) {
-  grpc_linked_mdelem* l;
-  for (l = batch->list.head; l; l = l->next) {
+MetadataMap::MetadataMap(MetadataMap&& other) noexcept {
+  list_ = other.list_;
+  idx_ = other.idx_;
+  deadline_ = other.deadline_;
+  memset(&other.list_, 0, sizeof(list_));
+  memset(&other.idx_, 0, sizeof(idx_));
+  other.deadline_ = GRPC_MILLIS_INF_FUTURE;
+}
+
+MetadataMap::~MetadataMap() {
+  AssertValidCallouts();
+  for (auto* l = list_.head; l; l = l->next) {
     GRPC_MDELEM_UNREF(l->md);
   }
-}
-
-grpc_error_handle grpc_attach_md_to_error(grpc_error_handle src,
-                                          grpc_mdelem md) {
-  grpc_error_handle out = grpc_error_set_str(
-      grpc_error_set_str(src, GRPC_ERROR_STR_KEY,
-                         grpc_slice_ref_internal(GRPC_MDKEY(md))),
-      GRPC_ERROR_STR_VALUE, grpc_slice_ref_internal(GRPC_MDVALUE(md)));
-  return out;
 }
 
 static grpc_error_handle GPR_ATTRIBUTE_NOINLINE error_with_md(grpc_mdelem md) {
@@ -108,50 +106,56 @@ static grpc_error_handle GPR_ATTRIBUTE_NOINLINE error_with_md(grpc_mdelem md) {
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unallowed duplicate metadata"), md);
 }
 
-static grpc_error_handle link_callout(grpc_metadata_batch* batch,
-                                      grpc_linked_mdelem* storage,
-                                      grpc_metadata_batch_callouts_index idx) {
+absl::optional<grpc_slice> MetadataMap::Remove(grpc_slice key) {
+  for (auto* l = list_.head; l; l = l->next) {
+    if (grpc_slice_eq(GRPC_MDKEY(l->md), key)) {
+      auto out = grpc_slice_ref_internal(GRPC_MDVALUE(l->md));
+      Remove(l);
+      return out;
+    }
+  }
+  return {};
+}
+
+grpc_error_handle MetadataMap::LinkCallout(
+    grpc_linked_mdelem* storage, grpc_metadata_batch_callouts_index idx) {
+  AssertValidCallouts();
   GPR_DEBUG_ASSERT(idx >= 0 && idx < GRPC_BATCH_CALLOUTS_COUNT);
-  if (GPR_LIKELY(batch->idx.array[idx] == nullptr)) {
-    ++batch->list.default_count;
-    batch->idx.array[idx] = storage;
+  if (GPR_LIKELY(idx_.array[idx] == nullptr)) {
+    ++list_.default_count;
+    idx_.array[idx] = storage;
+    AssertValidCallouts();
     return GRPC_ERROR_NONE;
   }
+  AssertValidCallouts();
   return error_with_md(storage->md);
 }
 
-static grpc_error_handle maybe_link_callout(grpc_metadata_batch* batch,
-                                            grpc_linked_mdelem* storage)
-    GRPC_MUST_USE_RESULT;
-
-static grpc_error_handle maybe_link_callout(grpc_metadata_batch* batch,
-                                            grpc_linked_mdelem* storage) {
+grpc_error_handle MetadataMap::MaybeLinkCallout(grpc_linked_mdelem* storage) {
   grpc_metadata_batch_callouts_index idx =
       GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md));
   if (idx == GRPC_BATCH_CALLOUTS_COUNT) {
     return GRPC_ERROR_NONE;
   }
-  return link_callout(batch, storage, idx);
+  return LinkCallout(storage, idx);
 }
 
-static void maybe_unlink_callout(grpc_metadata_batch* batch,
-                                 grpc_linked_mdelem* storage) {
+void MetadataMap::MaybeUnlinkCallout(grpc_linked_mdelem* storage) {
   grpc_metadata_batch_callouts_index idx =
       GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md));
   if (idx == GRPC_BATCH_CALLOUTS_COUNT) {
     return;
   }
-  --batch->list.default_count;
-  GPR_DEBUG_ASSERT(batch->idx.array[idx] != nullptr);
-  batch->idx.array[idx] = nullptr;
+  --list_.default_count;
+  GPR_DEBUG_ASSERT(idx_.array[idx] != nullptr);
+  idx_.array[idx] = nullptr;
 }
 
-grpc_error_handle grpc_metadata_batch_add_head(grpc_metadata_batch* batch,
-                                               grpc_linked_mdelem* storage,
-                                               grpc_mdelem elem_to_add) {
+grpc_error_handle MetadataMap::AddHead(grpc_linked_mdelem* storage,
+                                       grpc_mdelem elem_to_add) {
   GPR_DEBUG_ASSERT(!GRPC_MDISNULL(elem_to_add));
   storage->md = elem_to_add;
-  return grpc_metadata_batch_link_head(batch, storage);
+  return LinkHead(storage);
 }
 
 static void link_head(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
@@ -170,43 +174,40 @@ static void link_head(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
   assert_valid_list(list);
 }
 
-grpc_error_handle grpc_metadata_batch_link_head(grpc_metadata_batch* batch,
-                                                grpc_linked_mdelem* storage) {
-  assert_valid_callouts(batch);
-  grpc_error_handle err = maybe_link_callout(batch, storage);
+grpc_error_handle MetadataMap::LinkHead(grpc_linked_mdelem* storage) {
+  AssertValidCallouts();
+  grpc_error_handle err = MaybeLinkCallout(storage);
   if (err != GRPC_ERROR_NONE) {
-    assert_valid_callouts(batch);
+    AssertValidCallouts();
     return err;
   }
-  link_head(&batch->list, storage);
-  assert_valid_callouts(batch);
+  link_head(&list_, storage);
+  AssertValidCallouts();
   return GRPC_ERROR_NONE;
 }
 
 // TODO(arjunroy): Need to revisit this and see what guarantees exist between
 // C-core and the internal-metadata subsystem. E.g. can we ensure a particular
 // metadata is never added twice, even in the presence of user supplied data?
-grpc_error_handle grpc_metadata_batch_link_head(
-    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
-    grpc_metadata_batch_callouts_index idx) {
+grpc_error_handle MetadataMap::LinkHead(
+    grpc_linked_mdelem* storage, grpc_metadata_batch_callouts_index idx) {
   GPR_DEBUG_ASSERT(GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md)) == idx);
-  assert_valid_callouts(batch);
-  grpc_error_handle err = link_callout(batch, storage, idx);
+  AssertValidCallouts();
+  grpc_error_handle err = LinkCallout(storage, idx);
   if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
-    assert_valid_callouts(batch);
+    AssertValidCallouts();
     return err;
   }
-  link_head(&batch->list, storage);
-  assert_valid_callouts(batch);
+  link_head(&list_, storage);
+  AssertValidCallouts();
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle grpc_metadata_batch_add_tail(grpc_metadata_batch* batch,
-                                               grpc_linked_mdelem* storage,
-                                               grpc_mdelem elem_to_add) {
+grpc_error_handle MetadataMap::AddTail(grpc_linked_mdelem* storage,
+                                       grpc_mdelem elem_to_add) {
   GPR_DEBUG_ASSERT(!GRPC_MDISNULL(elem_to_add));
   storage->md = elem_to_add;
-  return grpc_metadata_batch_link_tail(batch, storage);
+  return LinkTail(storage);
 }
 
 static void link_tail(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
@@ -225,31 +226,29 @@ static void link_tail(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
   assert_valid_list(list);
 }
 
-grpc_error_handle grpc_metadata_batch_link_tail(grpc_metadata_batch* batch,
-                                                grpc_linked_mdelem* storage) {
-  assert_valid_callouts(batch);
-  grpc_error_handle err = maybe_link_callout(batch, storage);
+grpc_error_handle MetadataMap::LinkTail(grpc_linked_mdelem* storage) {
+  AssertValidCallouts();
+  grpc_error_handle err = MaybeLinkCallout(storage);
   if (err != GRPC_ERROR_NONE) {
-    assert_valid_callouts(batch);
+    AssertValidCallouts();
     return err;
   }
-  link_tail(&batch->list, storage);
-  assert_valid_callouts(batch);
+  link_tail(&list_, storage);
+  AssertValidCallouts();
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle grpc_metadata_batch_link_tail(
-    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
-    grpc_metadata_batch_callouts_index idx) {
+grpc_error_handle MetadataMap::LinkTail(
+    grpc_linked_mdelem* storage, grpc_metadata_batch_callouts_index idx) {
   GPR_DEBUG_ASSERT(GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md)) == idx);
-  assert_valid_callouts(batch);
-  grpc_error_handle err = link_callout(batch, storage, idx);
+  AssertValidCallouts();
+  grpc_error_handle err = LinkCallout(storage, idx);
   if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
-    assert_valid_callouts(batch);
+    AssertValidCallouts();
     return err;
   }
-  link_tail(&batch->list, storage);
-  assert_valid_callouts(batch);
+  link_tail(&list_, storage);
+  AssertValidCallouts();
   return GRPC_ERROR_NONE;
 }
 
@@ -270,44 +269,29 @@ static void unlink_storage(grpc_mdelem_list* list,
   assert_valid_list(list);
 }
 
-void grpc_metadata_batch_remove(grpc_metadata_batch* batch,
-                                grpc_linked_mdelem* storage) {
-  assert_valid_callouts(batch);
-  maybe_unlink_callout(batch, storage);
-  unlink_storage(&batch->list, storage);
+void MetadataMap::Remove(grpc_linked_mdelem* storage) {
+  AssertValidCallouts();
+  MaybeUnlinkCallout(storage);
+  unlink_storage(&list_, storage);
   GRPC_MDELEM_UNREF(storage->md);
-  assert_valid_callouts(batch);
+  AssertValidCallouts();
 }
 
-void grpc_metadata_batch_remove(grpc_metadata_batch* batch,
-                                grpc_metadata_batch_callouts_index idx) {
-  assert_valid_callouts(batch);
-  grpc_linked_mdelem* storage = batch->idx.array[idx];
-  GPR_DEBUG_ASSERT(storage != nullptr);
-  --batch->list.default_count;
-  batch->idx.array[idx] = nullptr;
-  unlink_storage(&batch->list, storage);
-  GRPC_MDELEM_UNREF(storage->md);
-  assert_valid_callouts(batch);
+void MetadataMap::Remove(grpc_metadata_batch_callouts_index idx) {
+  AssertValidCallouts();
+  if (idx_.array[idx] == nullptr) return;
+  --list_.default_count;
+  unlink_storage(&list_, idx_.array[idx]);
+  GRPC_MDELEM_UNREF(idx_.array[idx]->md);
+  idx_.array[idx] = nullptr;
+  AssertValidCallouts();
 }
 
-void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
-                                   const grpc_slice& value) {
-  grpc_mdelem old_mdelem = storage->md;
-  grpc_mdelem new_mdelem = grpc_mdelem_from_slices(
-      grpc_slice_ref_internal(GRPC_MDKEY(old_mdelem)), value);
-  storage->md = new_mdelem;
-  GRPC_MDELEM_UNREF(old_mdelem);
-}
-
-absl::optional<absl::string_view> grpc_metadata_batch_get_value(
-    grpc_metadata_batch* batch, absl::string_view target_key,
-    std::string* concatenated_value) {
+absl::optional<absl::string_view> MetadataMap::GetValue(
+    absl::string_view target_key, std::string* concatenated_value) const {
   // Find all values for the specified key.
-  GPR_DEBUG_ASSERT(batch != nullptr);
   absl::InlinedVector<absl::string_view, 1> values;
-  for (grpc_linked_mdelem* md = batch->list.head; md != nullptr;
-       md = md->next) {
+  for (grpc_linked_mdelem* md = list_.head; md != nullptr; md = md->next) {
     absl::string_view key = grpc_core::StringViewFromSlice(GRPC_MDKEY(md->md));
     absl::string_view value =
         grpc_core::StringViewFromSlice(GRPC_MDVALUE(md->md));
@@ -324,93 +308,83 @@ absl::optional<absl::string_view> grpc_metadata_batch_get_value(
   return *concatenated_value;
 }
 
-grpc_error_handle grpc_metadata_batch_substitute(grpc_metadata_batch* batch,
-                                                 grpc_linked_mdelem* storage,
-                                                 grpc_mdelem new_mdelem) {
-  assert_valid_callouts(batch);
+grpc_error_handle MetadataMap::Substitute(grpc_linked_mdelem* storage,
+                                          grpc_mdelem new_mdelem) {
+  AssertValidCallouts();
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_mdelem old_mdelem = storage->md;
   if (!grpc_slice_eq(GRPC_MDKEY(new_mdelem), GRPC_MDKEY(old_mdelem))) {
-    maybe_unlink_callout(batch, storage);
+    MaybeUnlinkCallout(storage);
     storage->md = new_mdelem;
-    error = maybe_link_callout(batch, storage);
+    error = MaybeLinkCallout(storage);
     if (error != GRPC_ERROR_NONE) {
-      unlink_storage(&batch->list, storage);
+      unlink_storage(&list_, storage);
       GRPC_MDELEM_UNREF(storage->md);
     }
   } else {
     storage->md = new_mdelem;
   }
   GRPC_MDELEM_UNREF(old_mdelem);
-  assert_valid_callouts(batch);
+  AssertValidCallouts();
   return error;
 }
 
-void grpc_metadata_batch_clear(grpc_metadata_batch* batch) {
-  grpc_metadata_batch_destroy(batch);
-  grpc_metadata_batch_init(batch);
+void MetadataMap::Clear() {
+  this->~MetadataMap();
+  new (this) MetadataMap();
 }
 
-bool grpc_metadata_batch_is_empty(grpc_metadata_batch* batch) {
-  return batch->list.head == nullptr &&
-         batch->deadline == GRPC_MILLIS_INF_FUTURE;
-}
-
-size_t grpc_metadata_batch_size(grpc_metadata_batch* batch) {
+size_t MetadataMap::TransportSize() const {
   size_t size = 0;
-  for (grpc_linked_mdelem* elem = batch->list.head; elem != nullptr;
+  for (grpc_linked_mdelem* elem = list_.head; elem != nullptr;
        elem = elem->next) {
     size += GRPC_MDELEM_LENGTH(elem->md);
   }
   return size;
 }
 
-static void add_error(grpc_error_handle* composite, grpc_error_handle error,
-                      const char* composite_error_string) {
-  if (error == GRPC_ERROR_NONE) return;
-  if (*composite == GRPC_ERROR_NONE) {
-    *composite = GRPC_ERROR_CREATE_FROM_COPIED_STRING(composite_error_string);
+bool MetadataMap::ReplaceIfExists(grpc_slice key, grpc_slice value) {
+  AssertValidCallouts();
+  for (grpc_linked_mdelem* l = list_.head; l != nullptr; l = l->next) {
+    if (grpc_slice_eq(GRPC_MDKEY(l->md), key)) {
+      auto new_mdelem = grpc_mdelem_from_slices(grpc_slice_ref_internal(key),
+                                                grpc_slice_ref_internal(value));
+      GRPC_MDELEM_UNREF(l->md);
+      l->md = new_mdelem;
+      AssertValidCallouts();
+      return true;
+    }
   }
-  *composite = grpc_error_add_child(*composite, error);
+  AssertValidCallouts();
+  return false;
 }
 
-grpc_error_handle grpc_metadata_batch_filter(
-    grpc_metadata_batch* batch, grpc_metadata_batch_filter_func func,
-    void* user_data, const char* composite_error_string) {
-  grpc_linked_mdelem* l = batch->list.head;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  while (l) {
-    grpc_linked_mdelem* next = l->next;
-    grpc_filtered_mdelem new_mdelem = func(user_data, l->md);
-    add_error(&error, new_mdelem.error, composite_error_string);
-    if (GRPC_MDISNULL(new_mdelem.md)) {
-      grpc_metadata_batch_remove(batch, l);
-    } else if (new_mdelem.md.payload != l->md.payload) {
-      grpc_metadata_batch_substitute(batch, l, new_mdelem.md);
-    }
-    l = next;
-  }
-  return error;
+}  // namespace grpc_core
+
+void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
+                                   const grpc_slice& value) {
+  grpc_mdelem old_mdelem = storage->md;
+  grpc_mdelem new_mdelem = grpc_mdelem_from_slices(
+      grpc_slice_ref_internal(GRPC_MDKEY(old_mdelem)), value);
+  storage->md = new_mdelem;
+  GRPC_MDELEM_UNREF(old_mdelem);
 }
 
 void grpc_metadata_batch_copy(grpc_metadata_batch* src,
                               grpc_metadata_batch* dst,
                               grpc_linked_mdelem* storage) {
   grpc_metadata_batch_init(dst);
-  dst->deadline = src->deadline;
+  (*dst)->SetDeadline((*src)->deadline());
   size_t i = 0;
-  for (grpc_linked_mdelem* elem = src->list.head; elem != nullptr;
-       elem = elem->next) {
+  (*src)->ForEach([&](grpc_mdelem md) {
     // If the mdelem is not external, take a ref.
     // Otherwise, create a new copy, holding its own refs to the
     // underlying slices.
-    grpc_mdelem md;
-    if (GRPC_MDELEM_STORAGE(elem->md) != GRPC_MDELEM_STORAGE_EXTERNAL) {
-      md = GRPC_MDELEM_REF(elem->md);
+    if (GRPC_MDELEM_STORAGE(md) != GRPC_MDELEM_STORAGE_EXTERNAL) {
+      md = GRPC_MDELEM_REF(md);
     } else {
-      md = grpc_mdelem_from_slices(
-          grpc_slice_ref_internal(GRPC_MDKEY(elem->md)),
-          grpc_slice_ref_internal(GRPC_MDVALUE(elem->md)));
+      md = grpc_mdelem_from_slices(grpc_slice_ref_internal(GRPC_MDKEY(md)),
+                                   grpc_slice_ref_internal(GRPC_MDVALUE(md)));
     }
     // Error unused in non-debug builds.
     grpc_error_handle GRPC_UNUSED error =
@@ -420,11 +394,14 @@ void grpc_metadata_batch_copy(grpc_metadata_batch* src,
     // the case here, because we would not have been allowed to create
     // a source batch that had that kind of conflict.
     GPR_DEBUG_ASSERT(error == GRPC_ERROR_NONE);
-  }
+  });
 }
 
-void grpc_metadata_batch_move(grpc_metadata_batch* src,
-                              grpc_metadata_batch* dst) {
-  *dst = *src;
-  grpc_metadata_batch_init(src);
+grpc_error_handle grpc_attach_md_to_error(grpc_error_handle src,
+                                          grpc_mdelem md) {
+  grpc_error_handle out = grpc_error_set_str(
+      grpc_error_set_str(src, GRPC_ERROR_STR_KEY,
+                         grpc_slice_ref_internal(GRPC_MDKEY(md))),
+      GRPC_ERROR_STR_VALUE, grpc_slice_ref_internal(GRPC_MDVALUE(md)));
+  return out;
 }

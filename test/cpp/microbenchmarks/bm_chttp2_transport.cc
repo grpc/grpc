@@ -325,7 +325,7 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
 
   grpc_metadata_batch b;
   grpc_metadata_batch_init(&b);
-  b.deadline = GRPC_MILLIS_INF_FUTURE;
+  b->ClearDeadline();
   std::vector<grpc_mdelem> elems = Metadata::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
   for (size_t i = 0; i < elems.size(); i++) {
@@ -429,7 +429,7 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> send_stream;
   grpc_metadata_batch b;
   grpc_metadata_batch_init(&b);
-  b.deadline = GRPC_MILLIS_INF_FUTURE;
+  b->ClearDeadline();
   std::vector<grpc_mdelem> elems =
       RepresentativeClientInitialMetadata::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
@@ -573,7 +573,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   grpc_metadata_batch_init(&b);
   grpc_metadata_batch b_recv;
   grpc_metadata_batch_init(&b_recv);
-  b.deadline = GRPC_MILLIS_INF_FUTURE;
+  b->ClearDeadline();
   std::vector<grpc_mdelem> elems =
       RepresentativeClientInitialMetadata::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());

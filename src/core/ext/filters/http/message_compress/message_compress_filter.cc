@@ -191,13 +191,16 @@ bool CallData::SkipMessageCompression() {
 // channel's default setting.
 grpc_compression_algorithm FindCompressionAlgorithm(
     grpc_metadata_batch* initial_metadata, ChannelData* channeld) {
-  if (initial_metadata->idx.named.grpc_internal_encoding_request == nullptr) {
+  if ((*initial_metadata)
+          ->legacy_index()
+          ->named.grpc_internal_encoding_request == nullptr) {
     return channeld->default_compression_algorithm();
   }
   grpc_compression_algorithm compression_algorithm;
   // Parse the compression algorithm from the initial metadata.
-  grpc_mdelem md =
-      initial_metadata->idx.named.grpc_internal_encoding_request->md;
+  grpc_mdelem md = (*initial_metadata)
+                       ->legacy_index()
+                       ->named.grpc_internal_encoding_request->md;
   GPR_ASSERT(grpc_compression_algorithm_parse(GRPC_MDVALUE(md),
                                               &compression_algorithm));
   // Remove this metadata since it's an internal one (i.e., it won't be
@@ -272,7 +275,7 @@ grpc_error_handle CallData::ProcessSendInitialMetadata(
   if (error != GRPC_ERROR_NONE) return error;
   // Do not overwrite accept-encoding header if it already presents (e.g., added
   // by some proxy).
-  if (!initial_metadata->idx.named.accept_encoding) {
+  if (!(*initial_metadata)->legacy_index()->named.accept_encoding) {
     error = grpc_metadata_batch_add_tail(
         initial_metadata, &accept_stream_encoding_storage_,
         GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(

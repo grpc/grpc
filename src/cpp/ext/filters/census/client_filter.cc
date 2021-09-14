@@ -123,13 +123,15 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordReceivedMessage(
 namespace {
 
 void FilterTrailingMetadata(grpc_metadata_batch* b, uint64_t* elapsed_time) {
-  if (b->idx.named.grpc_server_stats_bin != nullptr) {
+  if ((*b)->legacy_index()->named.grpc_server_stats_bin != nullptr) {
     ServerStatsDeserialize(
-        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(
-            GRPC_MDVALUE(b->idx.named.grpc_server_stats_bin->md))),
-        GRPC_SLICE_LENGTH(GRPC_MDVALUE(b->idx.named.grpc_server_stats_bin->md)),
+        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(GRPC_MDVALUE(
+            (*b)->legacy_index()->named.grpc_server_stats_bin->md))),
+        GRPC_SLICE_LENGTH(GRPC_MDVALUE(
+            (*b)->legacy_index()->named.grpc_server_stats_bin->md)),
         elapsed_time);
-    grpc_metadata_batch_remove(b, b->idx.named.grpc_server_stats_bin);
+    grpc_metadata_batch_remove(
+        b, (*b)->legacy_index()->named.grpc_server_stats_bin);
   }
 }
 

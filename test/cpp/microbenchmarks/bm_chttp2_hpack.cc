@@ -71,7 +71,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
 
   grpc_metadata_batch b;
   grpc_metadata_batch_init(&b);
-  b.deadline = saved_now + 30 * 1000;
+  b->SetDeadline(saved_now + 30 * 1000);
 
   grpc_core::HPackCompressor c;
   grpc_transport_one_way_stats stats;
@@ -87,7 +87,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
             static_cast<size_t>(1024),
             &stats,
         },
-        b, &outbuf);
+        *b, &outbuf);
     grpc_slice_buffer_reset_and_unref_internal(&outbuf);
     grpc_core::ExecCtx::Get()->Flush();
   }
@@ -136,7 +136,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
             static_cast<size_t>(state.range(1) + kEnsureMaxFrameAtLeast),
             &stats,
         },
-        b, &outbuf);
+        *b, &outbuf);
     if (!logged_representative_output && state.iterations() > 3) {
       logged_representative_output = true;
       for (size_t i = 0; i < outbuf.count; i++) {
