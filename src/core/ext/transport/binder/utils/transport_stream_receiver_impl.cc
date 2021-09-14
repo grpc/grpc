@@ -31,10 +31,10 @@ const absl::string_view
 void TransportStreamReceiverImpl::RegisterRecvInitialMetadata(
     StreamIdentifier id, InitialMetadataCallbackType cb) {
   gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
-  GPR_ASSERT(initial_metadata_cbs_.count(id) == 0);
   absl::StatusOr<Metadata> initial_metadata{};
   {
     grpc_core::MutexLock l(&m_);
+    GPR_ASSERT(initial_metadata_cbs_.count(id) == 0);
     auto iter = pending_initial_metadata_.find(id);
     if (iter == pending_initial_metadata_.end()) {
       if (trailing_metadata_recvd_.count(id)) {
@@ -59,10 +59,10 @@ void TransportStreamReceiverImpl::RegisterRecvInitialMetadata(
 void TransportStreamReceiverImpl::RegisterRecvMessage(
     StreamIdentifier id, MessageDataCallbackType cb) {
   gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
-  GPR_ASSERT(message_cbs_.count(id) == 0);
   absl::StatusOr<std::string> message{};
   {
     grpc_core::MutexLock l(&m_);
+    GPR_ASSERT(message_cbs_.count(id) == 0);
     auto iter = pending_message_.find(id);
     if (iter == pending_message_.end()) {
       // If we'd already received trailing-metadata and there's no pending
@@ -93,10 +93,10 @@ void TransportStreamReceiverImpl::RegisterRecvMessage(
 void TransportStreamReceiverImpl::RegisterRecvTrailingMetadata(
     StreamIdentifier id, TrailingMetadataCallbackType cb) {
   gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
-  GPR_ASSERT(trailing_metadata_cbs_.count(id) == 0);
   std::pair<absl::StatusOr<Metadata>, int> trailing_metadata{};
   {
     grpc_core::MutexLock l(&m_);
+    GPR_ASSERT(trailing_metadata_cbs_.count(id) == 0);
     auto iter = pending_trailing_metadata_.find(id);
     if (iter == pending_trailing_metadata_.end()) {
       trailing_metadata_cbs_[id] = std::move(cb);

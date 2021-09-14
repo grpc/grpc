@@ -135,7 +135,8 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
     r = accept(svr_fd, reinterpret_cast<struct sockaddr *>(addr),
                reinterpret_cast<socklen_t *>(&resolved_addr.len));
   } while (r == -1 && errno == EINTR);
-  XCTAssertGreaterThanOrEqual(r, 0);
+  XCTAssertGreaterThanOrEqual(r, 0, @"connection failed with return code %@ and errno %@", @(r),
+                              @(errno));
   svr_fd_ = r;
 
   /* wait for the connection callback to finish */

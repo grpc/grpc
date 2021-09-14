@@ -231,6 +231,27 @@ TYPED_TEST(BarrierTest, WakeAfterDestruction) {
   b.Clear();
 }
 
+TEST(ActivityTest, ForceWakeup) {
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  int run_count = 0;
+  auto activity = MakeActivity(
+      [&run_count]() -> Poll<absl::Status> {
+        ++run_count;
+        switch (run_count) {
+          case 1:
+            return Pending{};
+          case 2:
+            return absl::OkStatus();
+          default:
+            abort();
+        }
+      },
+      NoCallbackScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  activity->ForceWakeup();
+}
+
 struct TestContext {
   bool* done;
 };
@@ -250,6 +271,11 @@ TEST(ActivityTest, WithContext) {
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
       TestContext{&done});
   EXPECT_TRUE(done);
+}
+
+TEST(WakerTest, CanWakeupEmptyWaker) {
+  // Empty wakers should not do anything upon wakeup.
+  Waker().Wakeup();
 }
 
 }  // namespace grpc_core

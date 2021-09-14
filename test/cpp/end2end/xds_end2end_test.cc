@@ -5894,6 +5894,39 @@ TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
 }
 
+TEST_P(LdsRdsTest,
+       XdsRetryPolicyUnsupportedStatusCodeWithVirtualHostLevelRetry) {
+  const size_t kNumRetries = 3;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy with no supported retry_on
+  // statuses.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on("5xx");
+  retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  // Construct a virtual host level retry policy with supported statuses.
+  auto* virtual_host_retry_policy =
+      new_route_config.mutable_virtual_hosts(0)->mutable_retry_policy();
+  virtual_host_retry_policy->set_retry_on(
+      "cancelled,deadline-exceeded,internal,resource-exhausted,unavailable");
+  virtual_host_retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  SetRouteConfiguration(0, new_route_config);
+  // We expect no retry.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::DEADLINE_EXCEEDED))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+}
+
 TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -12357,6 +12390,43 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   const double seen_delay_rate = static_cast<double>(num_delayed) / kNumRpcs;
   EXPECT_THAT(seen_delay_rate,
               ::testing::DoubleNear(kDelayRate, kErrorTolerance));
+}
+
+TEST_P(FaultInjectionTest, XdsFaultInjectionAbortAfterDelayForStreamCall) {
+  const uint32_t kFixedDelaySeconds = 1;
+  const uint32_t kRpcTimeoutMilliseconds = 100 * 1000;  // 100s should not reach
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create an EDS resource
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  abort_percentage->set_numerator(100);  // Always inject ABORT!
+  abort_percentage->set_denominator(FractionalPercent::HUNDRED);
+  http_fault.mutable_abort()->set_grpc_status(
+      static_cast<uint32_t>(StatusCode::ABORTED));
+  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
+  delay_percentage->set_numerator(100);  // Always inject DELAY!
+  delay_percentage->set_denominator(FractionalPercent::HUNDRED);
+  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
+  fixed_delay->set_seconds(kFixedDelaySeconds);
+  // Config fault injection via different setup
+  SetFilterConfig(http_fault);
+  // Send a stream RPC and check its status code
+  ClientContext context;
+  context.set_deadline(
+      grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
+  auto stream = stub_->BidiStream(&context);
+  stream->WritesDone();
+  auto status = stream->Finish();
+  EXPECT_EQ(StatusCode::ABORTED, status.error_code())
+      << status.error_message() << ", " << status.error_details() << ", "
+      << context.debug_error_string();
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
