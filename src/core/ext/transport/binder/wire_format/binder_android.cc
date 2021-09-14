@@ -318,6 +318,7 @@ absl::Status ReadableParcelAndroid::ReadByteArray(std::string* data) const {
   if (AParcelReadVector(parcel_, &vec) == STATUS_OK) {
     data->resize(vec.size());
     if (!vec.empty()) {
+      // TODO(mingcl): Avoid making unnecessary copy here
       memcpy(&((*data)[0]), vec.data(), vec.size());
     }
     return absl::OkStatus();
