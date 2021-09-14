@@ -469,7 +469,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     RefCountedPtr<ServiceConfig>* method_config) {
   std::vector<std::string> fields;
   // Set retry policy if any.
-  if (route.retry_policy.has_value()) {
+  if (route.retry_policy.has_value() && !route.retry_policy->retry_on.Empty()) {
     std::vector<std::string> retry_parts;
     retry_parts.push_back(absl::StrFormat(
         "\"retryPolicy\": {\n"
