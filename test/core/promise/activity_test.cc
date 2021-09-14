@@ -153,7 +153,7 @@ TYPED_TEST(BarrierTest, Barrier) {
           return absl::OkStatus();
         });
       },
-      NoCallbackScheduler(),
+      InlineCallbackScheduler{},
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   // Clearing the barrier should let the activity proceed to return a result.
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
@@ -174,7 +174,7 @@ TYPED_TEST(BarrierTest, BarrierPing) {
           return absl::OkStatus();
         });
       },
-      [&scheduler](std::function<void()> f) { scheduler.Schedule(f); },
+      InlineCallbackScheduler(),
       [&on_done1](absl::Status status) { on_done1.Call(std::move(status)); });
   auto activity2 = MakeActivity(
       [&b2] {
@@ -225,7 +225,7 @@ TYPED_TEST(BarrierTest, WakeAfterDestruction) {
             return absl::OkStatus();
           });
         },
-        NoCallbackScheduler(),
+        InlineCallbackScheduler(),
         [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   }
   b.Clear();
@@ -246,7 +246,7 @@ TEST(ActivityTest, ForceWakeup) {
             abort();
         }
       },
-      NoCallbackScheduler(),
+      InlineCallbackScheduler{},
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   activity->ForceWakeup();
