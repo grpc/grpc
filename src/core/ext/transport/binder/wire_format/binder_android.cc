@@ -215,11 +215,16 @@ absl::Status BinderAndroid::PrepareTransaction() {
 
 absl::Status BinderAndroid::Transact(BinderTransportTxCode tx_code) {
   AIBinder* binder = binder_.get();
-  return AIBinder_transact(binder, static_cast<transaction_code_t>(tx_code),
-                           &input_parcel_->parcel_, &output_parcel_->parcel_,
-                           FLAG_ONEWAY) == STATUS_OK
-             ? absl::OkStatus()
-             : absl::InternalError("AIBinder_transact failed");
+  // We only do one-way transaction and thus the output parcel is never used.
+  AParcel* unused_output_parcel;
+  absl::Status result =
+      (AIBinder_transact(binder, static_cast<transaction_code_t>(tx_code),
+                         &input_parcel_->parcel_, &unused_output_parcel,
+                         FLAG_ONEWAY) == STATUS_OK)
+          ? absl::OkStatus()
+          : absl::InternalError("AIBinder_transact failed");
+  AParcel_delete(unused_output_parcel);
+  return result;
 }
 
 std::unique_ptr<TransactionReceiver> BinderAndroid::ConstructTxReceiver(
@@ -229,10 +234,6 @@ std::unique_ptr<TransactionReceiver> BinderAndroid::ConstructTxReceiver(
                                                        transact_cb);
 }
 
-int32_t WritableParcelAndroid::GetDataPosition() const {
-  return AParcel_getDataPosition(parcel_);
-}
-
 int32_t WritableParcelAndroid::GetDataSize() const {
   if (AParcel_getDataSize) {
     return AParcel_getDataSize(parcel_);
@@ -240,12 +241,6 @@ int32_t WritableParcelAndroid::GetDataSize() const {
     gpr_log(GPR_INFO, "[Warning] AParcel_getDataSize is not available");
     return 0;
   }
-}
-
-absl::Status WritableParcelAndroid::SetDataPosition(int32_t pos) {
-  return AParcel_setDataPosition(parcel_, pos) == STATUS_OK
-             ? absl::OkStatus()
-             : absl::InternalError("AParcel_setDataPosition failed");
 }
 
 absl::Status WritableParcelAndroid::WriteInt32(int32_t data) {
@@ -286,24 +281,23 @@ int32_t ReadableParcelAndroid::GetDataSize() const {
     return AParcel_getDataSize(parcel_);
   } else {
     gpr_log(GPR_INFO, "[Warning] AParcel_getDataSize is not available");
-    return -1;
+    return 0;
   }
 }
 
-absl::Status ReadableParcelAndroid::ReadInt32(int32_t* data) const {
+absl::Status ReadableParcelAndroid::ReadInt32(int32_t* data) {
   return AParcel_readInt32(parcel_, data) == STATUS_OK
              ? absl::OkStatus()
              : absl::InternalError("AParcel_readInt32 failed");
 }
 
-absl::Status ReadableParcelAndroid::ReadInt64(int64_t* data) const {
+absl::Status ReadableParcelAndroid::ReadInt64(int64_t* data) {
   return AParcel_readInt64(parcel_, data) == STATUS_OK
              ? absl::OkStatus()
              : absl::InternalError("AParcel_readInt64 failed");
 }
 
-absl::Status ReadableParcelAndroid::ReadBinder(
-    std::unique_ptr<Binder>* data) const {
+absl::Status ReadableParcelAndroid::ReadBinder(std::unique_ptr<Binder>* data) {
   AIBinder* binder;
   if (AParcel_readStrongBinder(parcel_, &binder) != STATUS_OK) {
     *data = nullptr;
@@ -313,7 +307,7 @@ absl::Status ReadableParcelAndroid::ReadBinder(
   return absl::OkStatus();
 }
 
-absl::Status ReadableParcelAndroid::ReadByteArray(std::string* data) const {
+absl::Status ReadableParcelAndroid::ReadByteArray(std::string* data) {
   std::vector<uint8_t> vec;
   if (AParcelReadVector(parcel_, &vec) == STATUS_OK) {
     data->resize(vec.size());
@@ -325,7 +319,7 @@ absl::Status ReadableParcelAndroid::ReadByteArray(std::string* data) const {
   return absl::InternalError("AParcel_readByteArray failed");
 }
 
-absl::Status ReadableParcelAndroid::ReadString(std::string* str) const {
+absl::Status ReadableParcelAndroid::ReadString(std::string* str) {
   return AParcelReadString(parcel_, str) == STATUS_OK
              ? absl::OkStatus()
              : absl::InternalError("AParcel_readString failed");
