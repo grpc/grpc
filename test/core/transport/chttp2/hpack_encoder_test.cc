@@ -169,24 +169,15 @@ static void verify(const verify_params params, const char* expected,
   for (i = 0; i < nheaders; i++) {
     char* key = va_arg(l, char*);
     char* value = va_arg(l, char*);
-    if (i) {
-      e[i - 1].next = &e[i];
-      e[i].prev = &e[i - 1];
-    }
     grpc_slice value_slice = grpc_slice_from_static_string(value);
     if (!params.only_intern_key) {
       value_slice = grpc_slice_intern(value_slice);
     }
     e[i].md = grpc_mdelem_from_slices(
         grpc_slice_intern(grpc_slice_from_static_string(key)), value_slice);
+    GPR_ASSERT(GRPC_ERROR_NONE == b->LinkTail(&e[i]));
   }
-  e[0].prev = nullptr;
-  e[nheaders - 1].next = nullptr;
   va_end(l);
-
-  b.list.head = &e[0];
-  b.list.tail = &e[nheaders - 1];
-  b.list.count = nheaders;
 
   if (cap_to_delete == num_to_delete) {
     cap_to_delete = GPR_MAX(2 * cap_to_delete, 1000);
@@ -206,7 +197,7 @@ static void verify(const verify_params params, const char* expected,
       16384,                           /* max_frame_size */
       &stats                           /* stats */
   };
-  g_compressor->EncodeHeaders(hopt, b, &output);
+  g_compressor->EncodeHeaders(hopt, *b, &output);
   verify_frames(output, params.eof);
   merged = grpc_slice_merge(output.slices, output.count);
   grpc_slice_buffer_destroy_internal(&output);
@@ -266,9 +257,7 @@ static void verify_continuation_headers(const char* key, const char* value,
   e[0].md = elem;
   e[0].prev = nullptr;
   e[0].next = nullptr;
-  b.list.head = &e[0];
-  b.list.tail = &e[0];
-  b.list.count = 1;
+  GPR_ASSERT(GRPC_ERROR_NONE == b->LinkTail(&e[0]));
   grpc_slice_buffer_init(&output);
 
   grpc_transport_one_way_stats stats;
@@ -279,7 +268,7 @@ static void verify_continuation_headers(const char* key, const char* value,
       false,      /* use_true_binary_metadata */
       150,        /* max_frame_size */
       &stats /* stats */};
-  g_compressor->EncodeHeaders(hopt, b, &output);
+  g_compressor->EncodeHeaders(hopt, *b, &output);
   verify_frames(output, is_eof);
   grpc_slice_buffer_destroy_internal(&output);
   grpc_metadata_batch_destroy(&b);
@@ -356,9 +345,7 @@ static void verify_table_size_change_match_elem_size(const char* key,
   e[0].md = elem;
   e[0].prev = nullptr;
   e[0].next = nullptr;
-  b.list.head = &e[0];
-  b.list.tail = &e[0];
-  b.list.count = 1;
+  GPR_ASSERT(GRPC_ERROR_NONE == b->LinkTail(&e[0]));
   grpc_slice_buffer_init(&output);
 
   grpc_transport_one_way_stats stats;
@@ -369,7 +356,7 @@ static void verify_table_size_change_match_elem_size(const char* key,
       use_true_binary, /* use_true_binary_metadata */
       16384,           /* max_frame_size */
       &stats /* stats */};
-  g_compressor->EncodeHeaders(hopt, b, &output);
+  g_compressor->EncodeHeaders(hopt, *b, &output);
   verify_frames(output, false);
   grpc_slice_buffer_destroy_internal(&output);
   grpc_metadata_batch_destroy(&b);

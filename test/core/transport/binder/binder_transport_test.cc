@@ -145,16 +145,16 @@ MATCHER_P(GrpcErrorMessageContains, msg, "") {
 
 // Verify that the lower-level metadata has the same content as the gRPC
 // metadata.
-void VerifyMetadataEqual(const Metadata& md, grpc_metadata_batch grpc_md) {
-  grpc_linked_mdelem* elm = grpc_md.list.head;
-  for (size_t i = 0; i < md.size(); ++i) {
-    ASSERT_NE(elm, nullptr);
-    EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDKEY(elm->md)), md[i].first);
-    EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDVALUE(elm->md)),
+void VerifyMetadataEqual(const Metadata& md,
+                         const grpc_metadata_batch& grpc_md) {
+  size_t i = 0;
+  grpc_md->ForEach([&](grpc_mdelem mdelm) {
+    EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDKEY(mdelm)), md[i].first);
+    EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDVALUE(mdelm)),
               md[i].second);
-    elm = elm->next;
-  }
-  EXPECT_EQ(elm, nullptr);
+    i++;
+  });
+  EXPECT_EQ(md.size(), i);
 }
 
 // RAII helper classes for constructing gRPC metadata and receiving callbacks.

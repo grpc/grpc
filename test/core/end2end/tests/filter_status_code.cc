@@ -263,9 +263,10 @@ static void server_start_transport_stream_op_batch(
   if (data->call == g_server_call_stack) {
     if (op->send_initial_metadata) {
       auto* batch = op->payload->send_initial_metadata.send_initial_metadata;
-      if (batch->idx.named.status != nullptr) {
+      if ((*batch)->legacy_index()->named.status != nullptr) {
         /* Replace the HTTP status with 404 */
-        grpc_metadata_batch_substitute(batch, batch->idx.named.status,
+        grpc_metadata_batch_substitute(batch,
+                                       (*batch)->legacy_index()->named.status,
                                        GRPC_MDELEM_STATUS_404);
       }
     }

@@ -193,7 +193,8 @@ static uint32_t target_write_size(grpc_chttp2_transport* /*t*/) {
 
 // Returns true if initial_metadata contains only default headers.
 static bool is_default_initial_metadata(grpc_metadata_batch* initial_metadata) {
-  return initial_metadata->list.default_count == initial_metadata->list.count;
+  return (*initial_metadata)->default_count() ==
+         (*initial_metadata)->non_deadline_count();
 }
 
 namespace {
@@ -468,7 +469,7 @@ class StreamWriteContext {
                   [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],  // max_frame_size
               &s_->stats.outgoing                         // stats
           },
-          *s_->send_initial_metadata, &t_->outbuf);
+          **s_->send_initial_metadata, &t_->outbuf);
       grpc_chttp2_reset_ping_clock(t_);
       write_context_->IncInitialMetadataWrites();
     }
@@ -579,7 +580,7 @@ class StreamWriteContext {
               grpc_core::MetadataArray(
                   extra_headers_for_trailing_metadata_,
                   num_extra_headers_for_trailing_metadata_),
-              *s_->send_trailing_metadata),
+              **s_->send_trailing_metadata),
           &t_->outbuf);
     }
     write_context_->IncTrailingMetadataWrites();
@@ -600,15 +601,18 @@ class StreamWriteContext {
         gpr_log(GPR_INFO, "not sending initial_metadata (Trailers-Only)"));
     // When sending Trailers-Only, we need to move the :status and
     // content-type headers to the trailers.
-    if (s_->send_initial_metadata->idx.named.status != nullptr) {
+    if ((*s_->send_initial_metadata)->legacy_index()->named.status != nullptr) {
       extra_headers_for_trailing_metadata_
           [num_extra_headers_for_trailing_metadata_++] =
-              &s_->send_initial_metadata->idx.named.status->md;
+              &(*s_->send_initial_metadata)->legacy_index()->named.status->md;
     }
-    if (s_->send_initial_metadata->idx.named.content_type != nullptr) {
+    if ((*s_->send_initial_metadata)->legacy_index()->named.content_type !=
+        nullptr) {
       extra_headers_for_trailing_metadata_
           [num_extra_headers_for_trailing_metadata_++] =
-              &s_->send_initial_metadata->idx.named.content_type->md;
+              &(*s_->send_initial_metadata)
+                   ->legacy_index()
+                   ->named.content_type->md;
     }
   }
 
