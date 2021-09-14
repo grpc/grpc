@@ -324,6 +324,7 @@ void retry_cancel_with_multiple_send_batches(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {
+        grpc_core::BuildCoreConfiguration(builder);
         builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, 0,
                                                MaybeAddFilter);
       },

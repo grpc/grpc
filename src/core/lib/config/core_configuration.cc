@@ -35,24 +35,28 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
       handshaker_registry_(builder->handshaker_registry_.Build()) {}
 
 void CoreConfiguration::RegisterBuilder(std::function<void(Builder*)> builder) {
-  GPR_ASSERT(config_.load(std::memory_order_relaxed) == nullptr);
+  GPR_ASSERT(config_.load(std::memory_order_relaxed) == nullptr &&
+             "CoreConfiguration was already instantiated before builder "
+             "registration was completed");
   RegisteredBuilder* n = new RegisteredBuilder();
   n->builder = std::move(builder);
   n->next = builders_.load(std::memory_order_relaxed);
   while (!builders_.compare_exchange_weak(n->next, n, std::memory_order_acq_rel,
                                           std::memory_order_relaxed)) {
   }
-  GPR_ASSERT(config_.load(std::memory_order_relaxed) == nullptr);
+  GPR_ASSERT(config_.load(std::memory_order_relaxed) == nullptr &&
+             "CoreConfiguration was already instantiated before builder "
+             "registration was completed");
 }
 
 const CoreConfiguration& CoreConfiguration::BuildNewAndMaybeSet() {
   // Construct builder, pass it up to code that knows about build configuration
   Builder builder;
-  BuildCoreConfiguration(&builder);
   for (RegisteredBuilder* b = builders_.load(std::memory_order_acquire);
        b != nullptr; b = b->next) {
     b->builder(&builder);
   }
+  BuildCoreConfiguration(&builder);
   // Use builder to construct a confguration
   CoreConfiguration* p = builder.Build();
   // Try to set configuration global - it's possible another thread raced us

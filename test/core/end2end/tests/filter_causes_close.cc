@@ -253,6 +253,7 @@ static const grpc_channel_filter test_filter = {
 void filter_causes_close(grpc_end2end_test_config config) {
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {
+        grpc_core::BuildCoreConfiguration(builder);
         builder->channel_init()->RegisterStage(
             GRPC_SERVER_CHANNEL, 0, [](grpc_channel_stack_builder* builder) {
               return grpc_channel_stack_builder_prepend_filter(
