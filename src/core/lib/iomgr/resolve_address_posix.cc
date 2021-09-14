@@ -200,7 +200,7 @@ static void do_request_thread_lookup_hostname(void* lhrp,
         c_addrs_out->addrs[i]));
   }
   lhr->on_resolved(addrs);
-  gpr_free(lhr);
+  delete lhr;
 }
 
 static EventEngine::DNSResolver::LookupTaskHandle lookup_hostname(
@@ -208,8 +208,7 @@ static EventEngine::DNSResolver::LookupTaskHandle lookup_hostname(
         LookupHostnameCallback on_resolved,
     absl::string_view address, absl::string_view default_port,
     absl::Time /*deadline*/, grpc_pollset_set* /*interested_parties*/) {
-  lookup_hostname_request* lhr = static_cast<lookup_hostname_request*>(
-      gpr_malloc(sizeof(lookup_hostname_request)));
+  lookup_hostname_request* lhr = new lookup_hostname_request();
   GRPC_CLOSURE_INIT(&lhr->request_closure, do_request_thread_lookup_hostname,
                     lhr, nullptr);
   lhr->on_resolved = std::move(on_resolved);
