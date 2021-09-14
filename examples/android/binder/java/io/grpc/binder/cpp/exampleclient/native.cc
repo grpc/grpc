@@ -21,10 +21,11 @@
 #include "src/core/ext/transport/binder/client/channel_create.h"
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_io_grpc_binder_cpp_example_ButtonPressHandler_native_1entry(
+Java_io_grpc_binder_cpp_exampleclient_ButtonPressHandler_native_1entry(
     JNIEnv* env, jobject /*this*/, jobject application) {
   static bool first = true;
-  __android_log_print(ANDROID_LOG_INFO, "Demo", "Line number %d", __LINE__);
+  __android_log_print(ANDROID_LOG_INFO, "DemoClient", "Line number %d",
+                      __LINE__);
   if (first) {
     first = false;
     grpc::experimental::BindToOnDeviceServerService(

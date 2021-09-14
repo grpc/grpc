@@ -1,4 +1,4 @@
-package io.grpc.binder.cpp.example;
+package io.grpc.binder.cpp.exampleclient;
 
 import android.app.Application;
 
