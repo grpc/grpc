@@ -34,11 +34,7 @@ namespace {
 // MockWritableParcel here since capturing calls is expensive.
 class NoOpWritableParcel : public grpc_binder::WritableParcel {
  public:
-  int32_t GetDataPosition() const override { return 0; }
   int32_t GetDataSize() const override { return 0; }
-  absl::Status SetDataPosition(int32_t /*pos*/) override {
-    return absl::OkStatus();
-  }
   absl::Status WriteInt32(int32_t /*data*/) override {
     return absl::OkStatus();
   }
@@ -82,9 +78,6 @@ class BinderForFuzzing : public grpc_binder::Binder {
       grpc_core::RefCountedPtr<grpc_binder::WireReader> wire_reader_ref,
       grpc_binder::TransactionReceiver::OnTransactCb cb) const override;
 
-  grpc_binder::ReadableParcel* GetReadableParcel() const override {
-    return nullptr;
-  }
   grpc_binder::WritableParcel* GetWritableParcel() const override {
     return input_.get();
   }
@@ -111,7 +104,7 @@ class ReadableParcelForFuzzing : public grpc_binder::ReadableParcel {
   int32_t GetDataSize() const override {
     return data_provider_->ConsumeIntegral<int32_t>();
   }
-  absl::Status ReadInt32(int32_t* data) const override {
+  absl::Status ReadInt32(int32_t* data) override {
     if (consumed_data_size_ >= kParcelDataSizeLimit) {
       return absl::InternalError("Parcel size limit exceeds");
     }
@@ -122,7 +115,7 @@ class ReadableParcelForFuzzing : public grpc_binder::ReadableParcel {
     consumed_data_size_ += sizeof(int32_t);
     return absl::OkStatus();
   }
-  absl::Status ReadInt64(int64_t* data) const override {
+  absl::Status ReadInt64(int64_t* data) override {
     if (consumed_data_size_ >= kParcelDataSizeLimit) {
       return absl::InternalError("Parcel size limit exceeds");
     }
@@ -134,7 +127,7 @@ class ReadableParcelForFuzzing : public grpc_binder::ReadableParcel {
     return absl::OkStatus();
   }
   absl::Status ReadBinder(
-      std::unique_ptr<grpc_binder::Binder>* binder) const override {
+      std::unique_ptr<grpc_binder::Binder>* binder) override {
     if (consumed_data_size_ >= kParcelDataSizeLimit) {
       return absl::InternalError("Parcel size limit exceeds");
     }
@@ -145,7 +138,7 @@ class ReadableParcelForFuzzing : public grpc_binder::ReadableParcel {
     consumed_data_size_ += sizeof(void*);
     return absl::OkStatus();
   }
-  absl::Status ReadByteArray(std::string* data) const override {
+  absl::Status ReadByteArray(std::string* data) override {
     if (consumed_data_size_ >= kParcelDataSizeLimit) {
       return absl::InternalError("Parcel size limit exceeds");
     }
@@ -156,7 +149,7 @@ class ReadableParcelForFuzzing : public grpc_binder::ReadableParcel {
     consumed_data_size_ += data->size();
     return absl::OkStatus();
   }
-  absl::Status ReadString(std::string* data) const override {
+  absl::Status ReadString(std::string* data) override {
     if (consumed_data_size_ >= kParcelDataSizeLimit) {
       return absl::InternalError("Parcel size limit exceeds");
     }
@@ -176,7 +169,7 @@ class ReadableParcelForFuzzing : public grpc_binder::ReadableParcel {
   bool is_setup_transport_;
 
   static constexpr size_t kParcelDataSizeLimit = 1024 * 1024;
-  mutable size_t consumed_data_size_;
+  size_t consumed_data_size_;
 };
 
 std::thread* g_fuzzing_thread = nullptr;
