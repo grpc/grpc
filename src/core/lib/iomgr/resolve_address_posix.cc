@@ -38,9 +38,11 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
+#include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace {
 using ::grpc_event_engine::experimental::EventEngine;
@@ -173,50 +175,76 @@ static void posix_resolve_address(const char* name, const char* default_port,
                            grpc_core::ExecutorType::RESOLVER);
 }
 
+struct lookup_hostname_request {
+  grpc_event_engine::experimental::EventEngine::DNSResolver::
+      LookupHostnameCallback on_resolved;
+  std::string address;
+  std::string default_port;
+  grpc_closure request_closure;
+};
+
+static void do_request_thread_lookup_hostname(void* lhrp,
+                                              grpc_error_handle /*error*/) {
+  lookup_hostname_request* lhr = static_cast<lookup_hostname_request*>(lhrp);
+  grpc_resolved_addresses* c_addrs_out;
+  grpc_error_handle err = grpc_blocking_resolve_address(
+      lhr->address.c_str(), lhr->default_port.c_str(), &c_addrs_out);
+  // DO NOT SUBMIT(hork):  ExecCtx::Run?
+  if (err != GRPC_ERROR_NONE) {
+    lhr->on_resolved(grpc_error_to_absl_status(err));
+    return;
+  }
+  std::vector<EventEngine::ResolvedAddress> addrs;
+  for (size_t i = 0; i < c_addrs_out->naddrs; i++) {
+    addrs.push_back(grpc_event_engine::experimental::CreateResolvedAddress(
+        c_addrs_out->addrs[i]));
+  }
+  lhr->on_resolved(addrs);
+  gpr_free(lhr);
+}
+
 static EventEngine::DNSResolver::LookupTaskHandle lookup_hostname(
     grpc_event_engine::experimental::EventEngine::DNSResolver::
         LookupHostnameCallback on_resolved,
     absl::string_view address, absl::string_view default_port,
-    absl::Time deadline, grpc_pollset_set* /*interested_parties*/) {
-  (void)on_resolved;
-  (void)address;
-  (void)default_port;
-  (void)deadline;
-  abort();
-  // DO NOT SUBMIT(hork): implement
-  // grpc_resolved_addresses* addrs;
-  // posix_resolve_address(address, default_port, nullptr, DNS, &addrs);
+    absl::Time /*deadline*/, grpc_pollset_set* /*interested_parties*/) {
+  lookup_hostname_request* lhr = static_cast<lookup_hostname_request*>(
+      gpr_malloc(sizeof(lookup_hostname_request)));
+  GRPC_CLOSURE_INIT(&lhr->request_closure, do_request_thread_lookup_hostname,
+                    lhr, nullptr);
+  lhr->on_resolved = std::move(on_resolved);
+  lhr->address = std::string(address);
+  lhr->default_port = std::string(default_port);
+  grpc_core::Executor::Run(&lhr->request_closure, GRPC_ERROR_NONE,
+                           grpc_core::ExecutorType::RESOLVER);
+  return {-1, -1};
 }
 
 static EventEngine::DNSResolver::LookupTaskHandle lookup_srv_record(
     grpc_event_engine::experimental::EventEngine::DNSResolver::LookupSRVCallback
         on_resolved,
-    absl::string_view name, absl::Time deadline,
+    absl::string_view /*name*/, absl::Time /*deadline*/,
     grpc_pollset_set* /*interested_parties*/) {
-  // DO NOT SUBMIT(hork): implement
-  (void)on_resolved;
-  (void)name;
-  (void)deadline;
-  abort();
+  // DO NOT SUBMIT(hork): run asynchronously?
+  on_resolved(
+      absl::UnimplementedError("Posix iomgr does not support SRV queries"));
+  return {-1, -1};
 }
 
 static EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
     grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXTCallback
         on_resolved,
-    absl::string_view name, absl::Time deadline,
+    absl::string_view /*name*/, absl::Time /*deadline*/,
     grpc_pollset_set* /*interested_parties*/) {
-  // DO NOT SUBMIT(hork): implement
-  (void)on_resolved;
-  (void)name;
-  (void)deadline;
-  abort();
+  // DO NOT SUBMIT(hork): run asynchronously?
+  on_resolved(
+      absl::UnimplementedError("Posix iomgr does not support TXT queries"));
+  return {-1, -1};
 }
 
 static void try_cancel_lookup(
-    EventEngine::DNSResolver::LookupTaskHandle handle) {
-  // DO NOT SUBMIT(hork): implement
-  (void)handle;
-  abort();
+    EventEngine::DNSResolver::LookupTaskHandle /*handle*/) {
+  // Posix iomgr does not support DNS cancellation
 }
 
 grpc_address_resolver_vtable grpc_posix_resolver_vtable = {

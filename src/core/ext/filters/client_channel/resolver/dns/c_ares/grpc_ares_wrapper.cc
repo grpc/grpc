@@ -977,11 +977,11 @@ static bool resolve_as_ip_literal_locked(
 static bool target_matches_localhost(const char* name) {
   std::string host;
   std::string port;
-  if (!grpc_core::SplitHostPort(name, host, port)) {
+  if (!grpc_core::SplitHostPort(name, &host, &port)) {
     gpr_log(GPR_ERROR, "Unable to split host and port for name: %s", name);
     return false;
   }
-  return gpr_stricmp(host->c_str(), "localhost") == 0;
+  return gpr_stricmp(host.c_str(), "localhost") == 0;
 }
 
 #ifdef GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY

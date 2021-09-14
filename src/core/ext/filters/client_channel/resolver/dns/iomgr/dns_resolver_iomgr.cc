@@ -28,6 +28,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/transport/authority_override.h"
 
 grpc_core::TraceFlag grpc_trace_iomgr_resolver(false, "iomgr_resolver");
 
@@ -175,7 +176,8 @@ static bool target_matches_localhost(absl::string_view name) {
   std::string host;
   std::string port;
   if (!grpc_core::SplitHostPort(name, &host, &port)) {
-    gpr_log(GPR_ERROR, "Unable to split host and port for name: %s", name);
+    gpr_log(GPR_ERROR, "Unable to split host and port for name: %s",
+            std::string(name.data(), name.length()).c_str());
     return false;
   }
   return gpr_stricmp(host.c_str(), "localhost") == 0;
@@ -285,10 +287,13 @@ void IomgrDnsResolver::ShutdownLocked() {
 }
 
 void IomgrDnsResolver::OnNextResolution(void* arg, grpc_error_handle error) {
-  IomgrDnsResolver* r = static_cast<IomgrDnsResolver*>(arg);
+  IomgrDnsResolver* self = static_cast<IomgrDnsResolver*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
-  r->work_serializer_->Run([r, error]() { r->OnNextResolutionLocked(error); },
-                           DEBUG_LOCATION);
+  self->work_serializer_->Run(
+      [self, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(self->work_serializer_) {
+        self->OnNextResolutionLocked(error);
+      },
+      DEBUG_LOCATION);
 }
 
 void IomgrDnsResolver::OnNextResolutionLocked(grpc_error_handle error) {
@@ -361,8 +366,11 @@ void IomgrDnsResolver::OnHostnameResolved(
   // safe to assign to `tmp_hostname_addresses_` in this callback, outside the
   // work_serializer.
   self->tmp_hostname_addresses_ = std::move(addresses);
-  self->work_serializer_->Run([self]() { self->OnHostnamesResolvedLocked(); },
-                              DEBUG_LOCATION);
+  self->work_serializer_->Run(
+      [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(self->work_serializer_) {
+        self->OnHostnamesResolvedLocked();
+      },
+      DEBUG_LOCATION);
 }
 
 // Handles hostname resolution alone.
@@ -391,12 +399,17 @@ void IomgrDnsResolver::OnBalancerResolved(
       if (!balancers.ok()) {
         self->tmp_balancer_addresses_ = balancers.status();
       } else {
-        self->tmp_balancer_addresses_->emplace_back(*balancers);
+        self->tmp_balancer_addresses_->insert(
+            self->tmp_balancer_addresses_->end(), balancers->begin(),
+            balancers->end());
       }
     }
   }
-  self->work_serializer_->Run([self]() { self->OnBalancerResolvedLocked(); },
-                              DEBUG_LOCATION);
+  self->work_serializer_->Run(
+      [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(self->work_serializer_) {
+        self->OnBalancerResolvedLocked();
+      },
+      DEBUG_LOCATION);
 }
 
 void IomgrDnsResolver::OnBalancerResolvedLocked() {
@@ -427,8 +440,11 @@ void IomgrDnsResolver::OnSrvResolved(
   // the `tmp_srv_records_` member is cleared. It should be safe to assign to
   // `tmp_srv_records_` in this callback, outside the work_serializer.
   self->tmp_srv_records_ = std::move(srv_records);
-  self->work_serializer_->Run([self]() { self->OnSrvResolvedLocked(); },
-                              DEBUG_LOCATION);
+  self->work_serializer_->Run(
+      [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(self->work_serializer_) {
+        self->OnSrvResolvedLocked();
+      },
+      DEBUG_LOCATION);
 }
 
 // Handles SRV record resolution.
@@ -441,11 +457,12 @@ void IomgrDnsResolver::OnSrvResolvedLocked() {
     Unref(DEBUG_LOCATION, "OnSrvResolvedLocked() shutdown");
     return;
   }
-  tmp_balancer_addresses_->clear();
   if (tmp_srv_records_.ok()) {
     // Each SRV record will be queried concurrently and processed serially.
+    MutexLock lock(&balancer_mu_);
     resolving_balancers_ = true;
     remaining_balancer_query_count_ = tmp_srv_records_->size();
+    tmp_balancer_addresses_->clear();
     balancer_handles_.clear();
     Ref(DEBUG_LOCATION, "dns-resolving - balancers").release();
     for (const auto& srv_record : *tmp_srv_records_) {
@@ -469,8 +486,11 @@ void IomgrDnsResolver::OnTxtResolved(IomgrDnsResolver* self,
   // the `tmp_txt_record_` member is cleared. It should be safe to assign to
   // `tmp_txt_record_` in this callback, outside the work_serializer.
   self->tmp_txt_record_ = std::move(txt_record);
-  self->work_serializer_->Run([self]() { self->OnTxtResolvedLocked(); },
-                              DEBUG_LOCATION);
+  self->work_serializer_->Run(
+      [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(self->work_serializer_) {
+        self->OnTxtResolvedLocked();
+      },
+      DEBUG_LOCATION);
 }
 
 void IomgrDnsResolver::OnTxtResolvedLocked() {
@@ -523,9 +543,9 @@ absl::Status IomgrDnsResolver::ParseResolvedHostnames(Result& result) {
         absl::StrCat("hostname query error: '%s'",
                      tmp_hostname_addresses_.status().ToString()));
   }
-  for (const auto& hostname : *tmp_hostname_addresses_) {
+  for (const auto& address : *tmp_hostname_addresses_) {
     // DO NOT SUBMIT(hork): do we need attributes for the  ServerAddress?
-    result.addresses.emplace_back(CreateGRPCResolvedAddress(hostname), nullptr);
+    result.addresses.emplace_back(CreateGRPCResolvedAddress(address), nullptr);
   }
   return absl::OkStatus();
 }
@@ -536,15 +556,24 @@ absl::Status IomgrDnsResolver::ParseResolvedBalancerHostnames(Result& result) {
     return absl::UnavailableError(absl::StrCat(
         "SRV query error: ", tmp_srv_records_.status().ToString()));
   }
+  MutexLock lock(&balancer_mu_);
   if (!tmp_balancer_addresses_.ok()) {
     return absl::UnavailableError(absl::StrCat(
         "Balancer query error: ", tmp_balancer_addresses_.status().ToString()));
   }
-  // DO NOT SUBMIT(hork): grpc_core::CreateAuthorityOverrideChannelArg(...)
+  // DO NOT SUBMIT(hork): Needs the SRV query name, not original hostname!
+  auto override_arg =
+      grpc_core::CreateAuthorityOverrideChannelArg(name_to_resolve_.c_str());
+  grpc_channel_args override_args = {1, &override_arg};
   if (!tmp_balancer_addresses_->empty()) {
+    // Convert to ServerAddressList
+    ServerAddressList* server_addr_list = new ServerAddressList();
+    for (const auto& address : *tmp_balancer_addresses_) {
+      server_addr_list->emplace_back(CreateGRPCResolvedAddress(address),
+                                     &override_args);
+    }
     absl::InlinedVector<grpc_arg, 1> new_args;
-    new_args.push_back(
-        CreateGrpclbBalancerAddressesArg(*tmp_balancer_addresses_));
+    new_args.push_back(CreateGrpclbBalancerAddressesArg(server_addr_list));
     result.args = grpc_channel_args_copy_and_add(channel_args_, new_args.data(),
                                                  new_args.size());
   }
@@ -605,8 +634,8 @@ class IomgrDnsResolverFactory : public ResolverFactory {
 
 void grpc_iomgr_dns_resolver_init() {
   // TODO(hork): Enable this when the Ares DNS resolver is disabled.
-  // grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-  //     absl::make_unique<grpc_core::IomgrDnsResolverFactory>());
+  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
+      absl::make_unique<grpc_core::IomgrDnsResolverFactory>());
 }
 
 void grpc_iomgr_dns_resolver_shutdown() {}

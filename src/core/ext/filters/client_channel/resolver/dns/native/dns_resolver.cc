@@ -301,22 +301,23 @@ class NativeDnsResolverFactory : public ResolverFactory {
 }  // namespace grpc_core
 
 void grpc_resolver_dns_native_init() {
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-  if (gpr_stricmp(resolver.get(), "native") == 0) {
-    gpr_log(GPR_DEBUG, "Using native dns resolver");
-    grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-        absl::make_unique<grpc_core::NativeDnsResolverFactory>());
-  } else {
-    grpc_core::ResolverRegistry::Builder::InitRegistry();
-    grpc_core::ResolverFactory* existing_factory =
-        grpc_core::ResolverRegistry::LookupResolverFactory("dns");
-    if (existing_factory == nullptr) {
-      gpr_log(GPR_DEBUG, "Using native dns resolver");
-      grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-          absl::make_unique<grpc_core::NativeDnsResolverFactory>());
-    }
-  }
+  // DO NOT SUBMIT(hork): re-enable after testing
+  // grpc_core::UniquePtr<char> resolver =
+  //     GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  // if (gpr_stricmp(resolver.get(), "native") == 0) {
+  //   gpr_log(GPR_DEBUG, "Using native dns resolver");
+  //   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
+  //       absl::make_unique<grpc_core::NativeDnsResolverFactory>());
+  // } else {
+  //   grpc_core::ResolverRegistry::Builder::InitRegistry();
+  //   grpc_core::ResolverFactory* existing_factory =
+  //       grpc_core::ResolverRegistry::LookupResolverFactory("dns");
+  //   if (existing_factory == nullptr) {
+  //     gpr_log(GPR_DEBUG, "Using native dns resolver");
+  //     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
+  //         absl::make_unique<grpc_core::NativeDnsResolverFactory>());
+  //   }
+  // }
 }
 
 void grpc_resolver_dns_native_shutdown() {}
