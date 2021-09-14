@@ -164,7 +164,7 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
   }
 }
 
-grpc_error* tcp_server_create(
+grpc_error_handle tcp_server_create(
     grpc_closure* shutdown_complete, const grpc_channel_args* args,
     grpc_slice_allocator_factory* slice_allocator_factory,
     grpc_tcp_server** server) {
@@ -210,9 +210,9 @@ void tcp_server_start(grpc_tcp_server* server,
   GPR_ASSERT(server->listener->Start().ok());
 }
 
-grpc_error* tcp_server_add_port(grpc_tcp_server* s,
-                                const grpc_resolved_address* addr,
-                                int* out_port) {
+grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
+                                      const grpc_resolved_address* addr,
+                                      int* out_port) {
   EventEngine::ResolvedAddress ra(reinterpret_cast<const sockaddr*>(addr->addr),
                                   addr->len);
   auto port = s->listener->Bind(ra);
