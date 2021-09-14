@@ -54,17 +54,6 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
   using KeyBuilderMap = std::unordered_map<std::string /*path*/, KeyBuilder>;
 
   struct RouteLookupConfig {
-    RouteLookupConfig() = default;
-    // FIXME: is this needed, or will the compiler generate it automatically?
-    RouteLookupConfig(RouteLookupConfig&& other)
-        : key_builder_map(std::move(other.key_builder_map)),
-          lookup_service(std::move(other.lookup_service)),
-          lookup_service_timeout(other.lookup_service_timeout),
-          max_age(other.max_age),
-          stale_age(other.stale_age),
-          cache_size_bytes(other.cache_size_bytes),
-          default_target(std::move(other.default_target)) {}
-
     KeyBuilderMap key_builder_map;
     std::string lookup_service;
     grpc_millis lookup_service_timeout = 0;
@@ -75,20 +64,20 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
   };
 
   RlsLbConfig(RouteLookupConfig route_lookup_config,
-              RefCountedPtr<LoadBalancingPolicy::Config>
-                  default_child_policy_parsed_config,
               Json child_policy_config,
-              std::string child_policy_config_target_field_name)
+              std::string child_policy_config_target_field_name,
+              RefCountedPtr<LoadBalancingPolicy::Config>
+                  default_child_policy_parsed_config)
       : route_lookup_config_(std::move(route_lookup_config)),
-        default_child_policy_parsed_config_(
-            std::move(default_child_policy_parsed_config)),
         child_policy_config_(std::move(child_policy_config)),
         child_policy_config_target_field_name_(
-            std::move(child_policy_config_target_field_name)) {}
+            std::move(child_policy_config_target_field_name)),
+        default_child_policy_parsed_config_(
+            std::move(default_child_policy_parsed_config)) {}
 
   const char* name() const override;
 
-  const RouteLookupConfig::KeyBuilderMap& key_builder_map() const {
+  const KeyBuilderMap& key_builder_map() const {
     return route_lookup_config_.key_builder_map;
   }
   const std::string& lookup_service() const {
@@ -105,47 +94,25 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
   const std::string& default_target() const {
     return route_lookup_config_.default_target;
   }
-  RefCountedPtr<LoadBalancingPolicy::Config>
-  default_child_policy_parsed_config() const {
-    return default_child_policy_parsed_config_;
-  }
   const Json& child_policy_config() const { return child_policy_config_; }
   const std::string& child_policy_config_target_field_name() const {
     return child_policy_config_target_field_name_;
   }
+  RefCountedPtr<LoadBalancingPolicy::Config>
+  default_child_policy_parsed_config() const {
+    return default_child_policy_parsed_config_;
+  }
 
  private:
   RouteLookupConfig route_lookup_config_;
-  RefCountedPtr<LoadBalancingPolicy::Config>
-      default_child_policy_parsed_config_;
   Json child_policy_config_;
   std::string child_policy_config_target_field_name_;
+  RefCountedPtr<LoadBalancingPolicy::Config>
+      default_child_policy_parsed_config_;
 };
 
 class RlsLb : public LoadBalancingPolicy {
  public:
-  /// Map of key values extracted by builders from the RPC initial metadata.
-  using KeyMap = std::map<std::string, std::string>;
-
-  /// A KeyMapBuilder accepts a config that specifies how the keys should be
-  /// built, then generate key map for calls based on their initial metadata.
-  class KeyMapBuilder {
-   public:
-    KeyMapBuilder(const Json& config, grpc_error** error);
-
-    KeyMap BuildKeyMap(const MetadataInterface* initial_metadata) const;
-
-   private:
-    std::map<std::string /*key_name*/, std::vector<std::string /*header_name*/>>
-        pattern_;
-  };
-
-  /// A map from path name to a KeyMapBuilder instance that corresponds to that
-  /// path. Note that by the design of the RLS system, the method portion of a
-  /// path can be empty, which is considered to be a wildcard and matches any
-  /// method in a service.
-  using KeyMapBuilderMap = std::map<std::string /*path*/, KeyMapBuilder>;
-
   explicit RlsLb(Args args);
 
   // Implementation of LoadBalancingPolicy methods
@@ -158,10 +125,10 @@ class RlsLb : public LoadBalancingPolicy {
   // Key to access entries in the cache and the request map.
   struct RequestKey {
     std::string path;
-    KeyMap key_map;
+    std::map<std::string, std::string> key_map;
 
     bool operator==(const RequestKey& rhs) const {
-      return (path == rhs.path && key_map == rhs.key_map);
+      return path == rhs.path && key_map == rhs.key_map;
     }
 
     template <typename H>
@@ -202,6 +169,7 @@ class RlsLb : public LoadBalancingPolicy {
     RefCountedPtr<RlsLb> lb_policy_;
   };
 
+  // FIXME: make this DualRefCounted<> so that ChildPolicyOwner isn't needed
   class ChildPolicyWrapper : public InternallyRefCounted<ChildPolicyWrapper> {
    public:
     ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy, std::string target)
@@ -248,10 +216,9 @@ class RlsLb : public LoadBalancingPolicy {
     class ChildPolicyHelper : public LoadBalancingPolicy::ChannelControlHelper {
      public:
       explicit ChildPolicyHelper(RefCountedPtr<ChildPolicyWrapper> wrapper)
-          : wrapper_(wrapper) {}
+          : wrapper_(std::move(wrapper)) {}
 
       // Implementation of ChannelControlHelper interface.
-
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
           ServerAddress address, const grpc_channel_args& args) override;
       void UpdateState(grpc_connectivity_state state,
@@ -341,7 +308,6 @@ class RlsLb : public LoadBalancingPolicy {
       bool is_shutdown_ = false;
 
       // Backoff states
-
       grpc_error* status_ = GRPC_ERROR_NONE;
       std::unique_ptr<BackOff> backoff_state_ = nullptr;
       grpc_timer backoff_timer_;
@@ -351,7 +317,6 @@ class RlsLb : public LoadBalancingPolicy {
       grpc_millis backoff_expiration_time_ = GRPC_MILLIS_INF_PAST;
 
       // RLS response states
-
       std::vector<RefCountedPtr<ChildPolicyOwner>> child_policy_wrappers_;
       std::string header_data_;
       grpc_millis data_expiration_time_ = GRPC_MILLIS_INF_PAST;
@@ -511,7 +476,6 @@ class RlsLb : public LoadBalancingPolicy {
     std::unique_ptr<BackOff> backoff_state_;
 
     // RLS call related variables and states
-
     grpc_closure call_start_cb_;
     grpc_closure call_complete_cb_;
     grpc_call* call_ = nullptr;
@@ -531,11 +495,6 @@ class RlsLb : public LoadBalancingPolicy {
   using ChildPolicyMap = std::map<std::string, ChildPolicyOwner*>;
 
   void ShutdownLocked() override;
-
-  /// Find key builder map corresponding to path. The function will lookup for
-  /// both exact match and wildcard match. If the corresponding key builder is
-  /// not found, return nullptr.
-  const KeyMapBuilder* FindKeyMapBuilder(const std::string& path) const;
 
   /// The method checks if there is already an RLS call pending for the key. If
   /// not, the method further checks if a new RLS call should be throttle. If
@@ -583,17 +542,6 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const Json& config, grpc_error** error) const override;
 };
-
-/// Build a key map builder map from RLS configuration.
-RlsLb::KeyMapBuilderMap RlsCreateKeyMapBuilderMap(const Json& config,
-                                                  grpc_error** error);
-
-/// Find key builder map corresponding to a path in key_map_builder_map. The
-/// function will lookup for both exact match and wildcard match. If the
-/// corresponding key builder is not found, return nullptr.
-const RlsLb::KeyMapBuilder* RlsFindKeyMapBuilder(
-    const RlsLb::KeyMapBuilderMap& key_map_builder_map,
-    const std::string& path);
 
 }  // namespace grpc_core
 

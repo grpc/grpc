@@ -625,20 +625,10 @@ class RlsPolicyEnd2endTest : public ::testing::Test {
         "          ]"
         "        }],"
         "        \"lookupService\":\"localhost:%d\","
-        "        \"lookupServiceTimeout\":{"
-        "          \"seconds\":%d,"
-        "          \"nanoseconds\":%d"
-        "        },"
-        "        \"maxAge\":{"
-        "          \"seconds\":%d,"
-        "          \"nanoseconds\":%d"
-        "        },"
-        "        \"staleAge\":{"
-        "          \"seconds\":%d,"
-        "          \"nanoseconds\":%d"
-        "        },"
-        "        \"cacheSizeBytes\":%" PRId64
-        ","
+        "        \"lookupServiceTimeout\":\"%d.%09ds\","
+        "        \"maxAge\":\"%d.%09ds\","
+        "        \"staleAge\":\"%d.%09ds\","
+        "        \"cacheSizeBytes\":%" PRId64 ","
         "        \"defaultTarget\":\"%s\""
         "      },"
         "      \"childPolicy\":[{"
@@ -919,7 +909,7 @@ TEST_F(RlsPolicyEnd2endTest, ExpiredRlsResponse) {
   const std::string kAlternativeTarget = "test_target_2";
   StartBackends(3);
   std::string service_config =
-      BuildServiceConfig(1 /* max_age */, 1 /* stale_age */);
+      BuildServiceConfig(1 /* max_age */, 0.9 /* stale_age */);
   SetNextResolution(service_config.c_str());
   SetNextRlsResponse(GRPC_STATUS_OK);
   SetNextLbResponse(
