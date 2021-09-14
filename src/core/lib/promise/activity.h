@@ -113,6 +113,13 @@ class Activity : private Wakeable {
   // Fetch the size of the implementation of this activity.
   virtual size_t Size() = 0;
 
+  // Force wakeup from the outside.
+  // This should be rarely needed, and usages should be accompanied with a note
+  // on why it's not possible to wakeup with a Waker object.
+  // Nevertheless, it's sometimes useful for integrations with Activity to force
+  // an Activity to repoll.
+  void ForceWakeup() { MakeOwningWaker().Wakeup(); }
+
   // Wakeup the current threads activity - will force a subsequent poll after
   // the one that's running.
   static void WakeupCurrent() { current()->got_wakeup_during_run_ = true; }
