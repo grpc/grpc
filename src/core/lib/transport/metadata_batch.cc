@@ -94,6 +94,17 @@ MetadataMap::MetadataMap(MetadataMap&& other) noexcept {
   other.deadline_ = GRPC_MILLIS_INF_FUTURE;
 }
 
+MetadataMap& MetadataMap::operator=(MetadataMap&& other) noexcept {
+  Clear();
+  list_ = other.list_;
+  idx_ = other.idx_;
+  deadline_ = other.deadline_;
+  memset(&other.list_, 0, sizeof(list_));
+  memset(&other.idx_, 0, sizeof(idx_));
+  other.deadline_ = GRPC_MILLIS_INF_FUTURE;
+  return *this;
+}
+
 MetadataMap::~MetadataMap() {
   AssertValidCallouts();
   for (auto* l = list_.head; l; l = l->next) {
@@ -373,10 +384,10 @@ void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
 void grpc_metadata_batch_copy(grpc_metadata_batch* src,
                               grpc_metadata_batch* dst,
                               grpc_linked_mdelem* storage) {
-  grpc_metadata_batch_init(dst);
-  (*dst)->SetDeadline((*src)->deadline());
+  dst->Clear();
+  dst->SetDeadline(src->deadline());
   size_t i = 0;
-  (*src)->ForEach([&](grpc_mdelem md) {
+  src->ForEach([&](grpc_mdelem md) {
     // If the mdelem is not external, take a ref.
     // Otherwise, create a new copy, holding its own refs to the
     // underlying slices.

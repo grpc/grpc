@@ -342,12 +342,10 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
 static void test_grpc_metadata_batch_get_value_with_absent_key(void) {
   grpc_init();
   grpc_metadata_batch metadata;
-  grpc_metadata_batch_init(&metadata);
   std::string concatenated_value;
   absl::optional<absl::string_view> value = grpc_metadata_batch_get_value(
       &metadata, "absent_key", &concatenated_value);
   GPR_ASSERT(value == absl::nullopt);
-  grpc_metadata_batch_destroy(&metadata);
   grpc_shutdown();
 }
 
@@ -356,7 +354,6 @@ static void test_grpc_metadata_batch_get_value_returns_one_value(void) {
   const char* kKey = "some_key";
   const char* kValue = "some_value";
   grpc_metadata_batch metadata;
-  grpc_metadata_batch_init(&metadata);
   grpc_linked_mdelem storage;
   storage.md = grpc_mdelem_from_slices(
       grpc_slice_intern(grpc_slice_from_static_string(kKey)),
@@ -368,7 +365,6 @@ static void test_grpc_metadata_batch_get_value_returns_one_value(void) {
       grpc_metadata_batch_get_value(&metadata, kKey, &concatenated_value);
   GPR_ASSERT(value.has_value());
   GPR_ASSERT(value.value() == kValue);
-  grpc_metadata_batch_destroy(&metadata);
   grpc_shutdown();
 }
 
@@ -378,7 +374,6 @@ static void test_grpc_metadata_batch_get_value_returns_multiple_values(void) {
   const char* kValue1 = "value1";
   const char* kValue2 = "value2";
   grpc_metadata_batch metadata;
-  grpc_metadata_batch_init(&metadata);
   grpc_linked_mdelem storage1;
   storage1.md = grpc_mdelem_from_slices(
       grpc_slice_intern(grpc_slice_from_static_string(kKey)),
@@ -396,7 +391,6 @@ static void test_grpc_metadata_batch_get_value_returns_multiple_values(void) {
       grpc_metadata_batch_get_value(&metadata, kKey, &concatenated_value);
   GPR_ASSERT(value.has_value());
   GPR_ASSERT(value.value() == absl::StrCat(kValue1, ",", kValue2));
-  grpc_metadata_batch_destroy(&metadata);
   grpc_shutdown();
 }
 

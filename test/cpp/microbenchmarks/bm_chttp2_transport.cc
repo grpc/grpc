@@ -324,8 +324,6 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   };
 
   grpc_metadata_batch b;
-  grpc_metadata_batch_init(&b);
-  b->ClearDeadline();
   std::vector<grpc_mdelem> elems = Metadata::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
   for (size_t i = 0; i < elems.size(); i++) {
@@ -359,7 +357,6 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, start.get(), GRPC_ERROR_NONE);
   f.FlushExecCtx();
   gpr_event_wait(&bm_done, gpr_inf_future(GPR_CLOCK_REALTIME));
-  grpc_metadata_batch_destroy(&b);
   track_counters.Finish(state);
 }
 BENCHMARK_TEMPLATE(BM_StreamCreateSendInitialMetadataDestroy,
@@ -428,8 +425,6 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   memset(GRPC_SLICE_START_PTR(send_slice), 0, GRPC_SLICE_LENGTH(send_slice));
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> send_stream;
   grpc_metadata_batch b;
-  grpc_metadata_batch_init(&b);
-  b->ClearDeadline();
   std::vector<grpc_mdelem> elems =
       RepresentativeClientInitialMetadata::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
@@ -491,7 +486,6 @@ static void BM_TransportStreamSend(benchmark::State& state) {
       MakeOnceClosure([s](grpc_error_handle /*error*/) { delete s; }));
   f.FlushExecCtx();
   track_counters.Finish(state);
-  grpc_metadata_batch_destroy(&b);
   grpc_slice_unref(send_slice);
 }
 BENCHMARK(BM_TransportStreamSend)->Range(0, 128 * 1024 * 1024);
@@ -570,10 +564,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   };
 
   grpc_metadata_batch b;
-  grpc_metadata_batch_init(&b);
   grpc_metadata_batch b_recv;
-  grpc_metadata_batch_init(&b_recv);
-  b->ClearDeadline();
   std::vector<grpc_mdelem> elems =
       RepresentativeClientInitialMetadata::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
@@ -678,8 +669,6 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   done_events.emplace_back(stream_cancel_done);
   s->DestroyThen(
       MakeOnceClosure([s](grpc_error_handle /*error*/) { delete s; }));
-  grpc_metadata_batch_destroy(&b);
-  grpc_metadata_batch_destroy(&b_recv);
   f.FlushExecCtx();
   track_counters.Finish(state);
   grpc_slice_unref(incoming_data);

@@ -2502,7 +2502,7 @@ class ClientChannel::LoadBalancedCall::Metadata
   std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector()
       override {
     std::vector<std::pair<std::string, std::string>> result;
-    (*batch_)->ForEach([&](grpc_mdelem md) {
+    batch_->ForEach([&](grpc_mdelem md) {
       auto key = std::string(StringViewFromSlice(GRPC_MDKEY(md)));
       if (key != ":path") {
         result.push_back(
@@ -2537,8 +2537,7 @@ class ClientChannel::LoadBalancedCall::LbCallState
   const LoadBalancingPolicy::BackendMetricData* GetBackendMetricData()
       override {
     if (lb_call_->backend_metric_data_ == nullptr) {
-      grpc_linked_mdelem* md = (*lb_call_->recv_trailing_metadata_)
-                                   ->legacy_index()
+      grpc_linked_mdelem* md = lb_call_->recv_trailing_metadata_->legacy_index()
                                    ->named.x_endpoint_load_metrics_bin;
       if (md != nullptr) {
         lb_call_->backend_metric_data_ =
@@ -2919,8 +2918,7 @@ void ClientChannel::LoadBalancedCall::RecvTrailingMetadataReady(
                             StringViewFromSlice(message));
     } else {
       // Get status from headers.
-      const auto& fields =
-          (*self->recv_trailing_metadata_)->legacy_index()->named;
+      const auto& fields = self->recv_trailing_metadata_->legacy_index()->named;
       GPR_ASSERT(fields.grpc_status != nullptr);
       grpc_status_code code =
           grpc_get_status_code_from_metadata(fields.grpc_status->md);

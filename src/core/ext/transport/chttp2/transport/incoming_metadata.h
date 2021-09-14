@@ -24,14 +24,10 @@
 #include "src/core/lib/transport/transport.h"
 
 struct grpc_chttp2_incoming_metadata_buffer {
-  explicit grpc_chttp2_incoming_metadata_buffer(grpc_core::Arena* arena)
-      : arena(arena) {
-    grpc_metadata_batch_init(&batch);
-    batch->ClearDeadline();
-  }
-  ~grpc_chttp2_incoming_metadata_buffer() {
-    grpc_metadata_batch_destroy(&batch);
-  }
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  grpc_chttp2_incoming_metadata_buffer(grpc_core::Arena* arena)
+      : arena(arena) {}
+  ~grpc_chttp2_incoming_metadata_buffer() = default;
 
   static constexpr size_t kPreallocatedMDElem = 10;
 

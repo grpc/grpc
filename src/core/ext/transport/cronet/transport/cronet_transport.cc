@@ -719,7 +719,7 @@ static void convert_metadata_to_cronet_headers(
     TODO (makdharma): Eliminate need to traverse the LL second time for perf.
    */
   size_t num_headers = 0;
-  (*metadata)->ForEach([&](grpc_mdelem mdelem) {
+  metadata->ForEach([&](grpc_mdelem mdelem) {
     char* key = grpc_slice_to_c_string(GRPC_MDKEY(mdelem));
     char* value;
     if (grpc_is_binary_header_internal(GRPC_MDKEY(mdelem))) {
@@ -760,12 +760,12 @@ static void convert_metadata_to_cronet_headers(
     headers[num_headers].value = value;
     num_headers++;
   });
-  if ((*metadata)->deadline() != GRPC_MILLIS_INF_FUTURE) {
+  if (metadata->deadline() != GRPC_MILLIS_INF_FUTURE) {
     char* key = grpc_slice_to_c_string(GRPC_MDSTR_GRPC_TIMEOUT);
     char* value =
         static_cast<char*>(gpr_malloc(GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE));
     grpc_http2_encode_timeout(
-        (*metadata)->deadline() - grpc_core::ExecCtx::Get()->Now(), value);
+        metadata->deadline() - grpc_core::ExecCtx::Get()->Now(), value);
     headers[num_headers].key = key;
     headers[num_headers].value = value;
 
@@ -789,7 +789,7 @@ static void parse_grpc_header(const uint8_t* data, int* length,
 
 static bool header_has_authority(const grpc_metadata_batch* b) {
   bool found = false;
-  (*b)->ForEach([&](grpc_mdelem elem) {
+  b->ForEach([&](grpc_mdelem elem) {
     if (grpc_slice_eq_static_interned(GRPC_MDKEY(elem), GRPC_MDSTR_AUTHORITY)) {
       found = true;
     }
