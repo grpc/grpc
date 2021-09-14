@@ -800,8 +800,8 @@ grpc_cc_library(
         "src/core/lib/config/core_configuration.h",
     ],
     deps = [
-        "gpr_base",
         "channel_init",
+        "gpr_base",
         "handshaker_registry",
     ],
 )
@@ -1389,13 +1389,13 @@ grpc_cc_library(
         "src/core/lib/slice/slice_intern.cc",
         "src/core/lib/slice/slice_string_helpers.cc",
         "src/core/lib/surface/api_trace.cc",
+        "src/core/lib/surface/builtins.cc",
         "src/core/lib/surface/byte_buffer.cc",
         "src/core/lib/surface/byte_buffer_reader.cc",
         "src/core/lib/surface/call.cc",
         "src/core/lib/surface/call_details.cc",
         "src/core/lib/surface/call_log_batch.cc",
         "src/core/lib/surface/channel.cc",
-        "src/core/lib/surface/builtins.cc",
         "src/core/lib/surface/channel_ping.cc",
         "src/core/lib/surface/completion_queue.cc",
         "src/core/lib/surface/completion_queue_factory.cc",
@@ -1423,7 +1423,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/address_utils/parse_address.h",
         "src/core/lib/address_utils/sockaddr_utils.h",
-        "src/core/lib/surface/builtins.h",
         "src/core/lib/avl/avl.h",
         "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/call_tracer.h",
@@ -1537,6 +1536,7 @@ grpc_cc_library(
         "src/core/lib/slice/slice_string_helpers.h",
         "src/core/lib/slice/slice_utils.h",
         "src/core/lib/surface/api_trace.h",
+        "src/core/lib/surface/builtins.h",
         "src/core/lib/surface/call.h",
         "src/core/lib/surface/call_test_only.h",
         "src/core/lib/surface/channel.h",
@@ -1581,6 +1581,8 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "bitset",
+        "channel_stack_type",
+        "config",
         "dual_ref_counted",
         "gpr_base",
         "gpr_codegen",
@@ -1590,8 +1592,6 @@ grpc_cc_library(
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
-        "channel_stack_type",
-        "config"
     ],
 )
 
@@ -1606,7 +1606,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-    ]
+    ],
 )
 
 grpc_cc_library(
@@ -1619,9 +1619,9 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr_base",
         "channel_stack_type",
-    ]
+        "gpr_base",
+    ],
 )
 
 grpc_cc_library(
@@ -1770,8 +1770,9 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
-        "grpc_base_c","config"
+        "grpc_base_c",
     ],
 )
 
@@ -1785,8 +1786,9 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
-        "grpc_base_c","config"
+        "grpc_base_c",
     ],
 )
 
@@ -1800,8 +1802,9 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
-        "grpc_base_c","config"
+        "grpc_base_c",
     ],
 )
 
@@ -1815,8 +1818,10 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_stack_type",
+        "config",
         "gpr_base",
-        "grpc_base_c","config","channel_stack_type"
+        "grpc_base_c",
     ],
 )
 
@@ -1831,12 +1836,13 @@ grpc_cc_library(
     external_deps = ["absl/strings:str_format"],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
         "grpc_codegen",
         "ref_counted",
-        "ref_counted_ptr","config"
+        "ref_counted_ptr",
     ],
 )
 
@@ -1881,9 +1887,10 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base_c",
-        "grpc_message_size_filter", "config"
+        "grpc_message_size_filter",
     ],
 )
 
@@ -1897,9 +1904,10 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base_c",
-        "grpc_server_backward_compatibility","config"
+        "grpc_server_backward_compatibility",
     ],
 )
 
@@ -1964,6 +1972,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "google_api_upb",
         "gpr_base",
         "grpc_base_c",
@@ -1974,7 +1983,6 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_insecure",
         "orphanable",
         "ref_counted_ptr",
-        "config",
     ],
 )
 
@@ -2003,6 +2011,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "google_api_upb",
         "gpr_base",
         "grpc_base_c",
@@ -2014,7 +2023,6 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_secure",
         "orphanable",
         "ref_counted_ptr",
-        "config"
     ],
 )
 
@@ -3319,6 +3327,7 @@ grpc_cc_library(
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     visibility = ["@grpc:alt_grpc++_base_legacy"],
     deps = [
+        "config",
         "gpr_base",
         "grpc",
         "grpc++_codegen_base",
@@ -3330,7 +3339,7 @@ grpc_cc_library(
         "grpc_health_upb",
         "grpc_trace",
         "grpc_transport_inproc",
-        "ref_counted","config"
+        "ref_counted",
     ],
 )
 
@@ -3349,6 +3358,7 @@ grpc_cc_library(
     tags = ["avoid_dep"],
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
+        "config",
         "gpr_base",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
@@ -3361,7 +3371,6 @@ grpc_cc_library(
         "grpc_transport_inproc",
         "grpc_unsecure",
         "ref_counted",
-        "config"
     ],
 )
 

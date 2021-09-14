@@ -15,10 +15,12 @@
 #ifndef GRPC_CORE_LIB_SURFACE_BUILTINS_H
 #define GRPC_CORE_LIB_SURFACE_BUILTINS_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include "src/core/lib/config/core_configuration.h"
 
 namespace grpc_core {
 void RegisterBuiltins(CoreConfiguration::Builder* builder);
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_SURFACE_BUILTINS_H
