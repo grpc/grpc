@@ -509,6 +509,7 @@ void IomgrDnsResolver::FinishResolutionLocked() {
   GPR_ASSERT(resolution_in_progress_);
   resolution_in_progress_ = false;
   Result result;
+  result.args = grpc_channel_args_copy(channel_args_);
   std::vector<std::string> error_msgs;
   // DO NOT SUBMIT(hork): it's not an error if hostnames fail to resolve if SRV
   // or TXT queries succeed.
@@ -572,10 +573,11 @@ absl::Status IomgrDnsResolver::ParseResolvedBalancerHostnames(Result& result) {
       server_addr_list->emplace_back(CreateGRPCResolvedAddress(address),
                                      &override_args);
     }
-    absl::InlinedVector<grpc_arg, 1> new_args;
-    new_args.push_back(CreateGrpclbBalancerAddressesArg(server_addr_list));
-    result.args = grpc_channel_args_copy_and_add(channel_args_, new_args.data(),
-                                                 new_args.size());
+    grpc_arg new_arg = CreateGrpclbBalancerAddressesArg(server_addr_list);
+    const grpc_channel_args* tmp_args =
+        grpc_channel_args_copy_and_add(result.args, &new_arg, 1);
+    GPR_SWAP(const grpc_channel_args*, tmp_args, result.args);
+    grpc_channel_args_destroy(tmp_args);
   }
   return absl::OkStatus();
 }
