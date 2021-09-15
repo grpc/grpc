@@ -49,13 +49,21 @@ TEST(ErrorUtilsTest, AbslStatusToGrpcErrorDoesNotReturnSpecialVariables) {
 TEST(ErrorUtilsTest, GrpcSpecialErrorCancelledToAbslStatus) {
   absl::Status status = grpc_error_to_absl_status(GRPC_ERROR_CANCELLED);
   ASSERT_TRUE(absl::IsCancelled(status));
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+  ASSERT_EQ(status.message(), "CANCELLED");
+#else
   ASSERT_EQ(status.message(), "Cancelled");
+#endif
 }
 
 TEST(ErrorUtilsTest, GrpcSpecialErrorOOMToAbslStatus) {
   absl::Status status = grpc_error_to_absl_status(GRPC_ERROR_OOM);
   ASSERT_TRUE(absl::IsResourceExhausted(status));
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+  ASSERT_EQ(status.message(), "RESOURCE_EXHAUSTED");
+#else
   ASSERT_EQ(status.message(), "Out of memory");
+#endif
 }
 
 // ---- Ordinary statuses ----

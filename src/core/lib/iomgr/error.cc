@@ -108,6 +108,22 @@ bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
     *p = *value;
     return true;
   } else {
+    // TODO(veblush): Remove this once absl::Status migration is done
+    if (which == GRPC_ERROR_INT_GRPC_STATUS) {
+      switch (error.code()) {
+        case absl::StatusCode::kOk:
+          *p = GRPC_STATUS_OK;
+          return true;
+        case absl::StatusCode::kResourceExhausted:
+          *p = GRPC_STATUS_RESOURCE_EXHAUSTED;
+          return true;
+        case absl::StatusCode::kCancelled:
+          *p = GRPC_STATUS_CANCELLED;
+          return true;
+        default:
+          break;
+      }
+    }
     return false;
   }
 }
@@ -130,6 +146,12 @@ bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
     *s = grpc_slice_from_copied_buffer(value->c_str(), value->size());
     return true;
   } else {
+    // TODO(veblush): Remove this once absl::Status migration is done
+    if (which == GRPC_ERROR_STR_DESCRIPTION && !error.message().empty()) {
+      *s = grpc_slice_from_copied_buffer(error.message().data(),
+                                         error.message().size());
+      return true;
+    }
     return false;
   }
 }
