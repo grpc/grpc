@@ -97,9 +97,8 @@ TEST_P(FakeBinderTest, SendByteArray) {
   int called = 0;
   std::unique_ptr<Binder> sender;
   std::unique_ptr<TransactionReceiver> tx_receiver;
-  std::tie(sender, tx_receiver) =
-      NewBinderPair([&](transaction_code_t tx_code,
-                        ReadableParcel* parcel, int /*uid*/) {
+  std::tie(sender, tx_receiver) = NewBinderPair(
+      [&](transaction_code_t tx_code, ReadableParcel* parcel, int /*uid*/) {
         EXPECT_EQ(tx_code, kTxCode);
         std::string value;
         EXPECT_TRUE(parcel->ReadByteArray(&value).ok());
@@ -128,9 +127,8 @@ TEST_P(FakeBinderTest, SendMultipleItems) {
   int called = 0;
   std::unique_ptr<Binder> sender;
   std::unique_ptr<TransactionReceiver> tx_receiver;
-  std::tie(sender, tx_receiver) =
-      NewBinderPair([&](transaction_code_t tx_code,
-                        ReadableParcel* parcel, int /*uid*/) {
+  std::tie(sender, tx_receiver) = NewBinderPair(
+      [&](transaction_code_t tx_code, ReadableParcel* parcel, int /*uid*/) {
         int value_result;
         EXPECT_EQ(tx_code, kTxCode);
         EXPECT_TRUE(parcel->ReadInt32(&value_result).ok());
@@ -165,9 +163,8 @@ TEST_P(FakeBinderTest, SendBinder) {
   int called = 0;
   std::unique_ptr<Binder> sender;
   std::unique_ptr<TransactionReceiver> tx_receiver;
-  std::tie(sender, tx_receiver) =
-      NewBinderPair([&](transaction_code_t tx_code,
-                        ReadableParcel* parcel, int /*uid*/) {
+  std::tie(sender, tx_receiver) = NewBinderPair(
+      [&](transaction_code_t tx_code, ReadableParcel* parcel, int /*uid*/) {
         EXPECT_EQ(tx_code, kTxCode);
         std::unique_ptr<Binder> binder;
         EXPECT_TRUE(parcel->ReadBinder(&binder).ok());
@@ -183,8 +180,7 @@ TEST_P(FakeBinderTest, SendBinder) {
   std::unique_ptr<TransactionReceiver> tx_receiver2 =
       absl::make_unique<FakeTransactionReceiver>(
           nullptr,
-          [&](transaction_code_t tx_code, ReadableParcel* parcel,
-              int /*uid*/) {
+          [&](transaction_code_t tx_code, ReadableParcel* parcel, int /*uid*/) {
             int value;
             EXPECT_TRUE(parcel->ReadInt32(&value).ok());
             EXPECT_EQ(value, kValue);
@@ -209,9 +205,8 @@ TEST_P(FakeBinderTest, SendTransactionAfterDestruction) {
   int called = 0;
   {
     std::unique_ptr<TransactionReceiver> tx_receiver;
-    std::tie(sender, tx_receiver) =
-        NewBinderPair([&](transaction_code_t tx_code,
-                          ReadableParcel* parcel, int /*uid*/) {
+    std::tie(sender, tx_receiver) = NewBinderPair(
+        [&](transaction_code_t tx_code, ReadableParcel* parcel, int /*uid*/) {
           EXPECT_EQ(tx_code, kTxCode);
           int value;
           EXPECT_TRUE(parcel->ReadInt32(&value).ok());
@@ -283,8 +278,8 @@ TEST_P(FakeBinderTest, StressTest) {
       std::vector<std::vector<int>>* cnt = th_arg->global_cnts;
       std::tie(binder, tx_receiver) =
           NewBinderPair([tid, p, cnt, expected_tx_code](
-                            transaction_code_t tx_code,
-                            ReadableParcel* parcel, int /*uid*/) mutable {
+                            transaction_code_t tx_code, ReadableParcel* parcel,
+                            int /*uid*/) mutable {
             EXPECT_EQ(tx_code, expected_tx_code);
             int value;
             EXPECT_TRUE(parcel->ReadInt32(&value).ok());
