@@ -156,20 +156,6 @@ class RlsLb : public LoadBalancingPolicy {
     std::string header_data;
   };
 
-  /// A stateless picker that only contains a reference to the RLS lb policy
-  /// that created it. When processing a pick, it depends on the current state
-  /// of the lb policy to make a decision.
-  class Picker : public LoadBalancingPolicy::SubchannelPicker {
-   public:
-    explicit Picker(RefCountedPtr<RlsLb> lb_policy)
-        : lb_policy_(std::move(lb_policy)) {}
-
-    PickResult Pick(PickArgs args) override;
-
-   private:
-    RefCountedPtr<RlsLb> lb_policy_;
-  };
-
   class ChildPolicyWrapper : public DualRefCounted<ChildPolicyWrapper> {
    public:
     ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy, std::string target)
@@ -179,7 +165,7 @@ class RlsLb : public LoadBalancingPolicy {
 
     /// Pick subchannel for call. If the picker is not reported by the child
     /// policy (i.e. picker_ == nullptr), the pick will be failed.
-    PickResult Pick(PickArgs args);
+    PickResult Pick(PickArgs args) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
     /// Validate the configuration of the child policy with the extra target
     /// name field. If the child policy configuration does not validate, a
@@ -245,6 +231,24 @@ class RlsLb : public LoadBalancingPolicy {
     std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker_;
   };
 
+  /// A stateless picker that only contains a reference to the RLS lb policy
+  /// that created it. When processing a pick, it depends on the current state
+  /// of the lb policy to make a decision.
+  class Picker : public LoadBalancingPolicy::SubchannelPicker {
+   public:
+    explicit Picker(RefCountedPtr<RlsLb> lb_policy)
+        : lb_policy_(std::move(lb_policy)),
+          config_(lb_policy_->config_),
+          default_child_policy_(lb_policy_->default_child_policy_) {}
+
+    PickResult Pick(PickArgs args) override;
+
+   private:
+    RefCountedPtr<RlsLb> lb_policy_;
+    RefCountedPtr<RlsLbConfig> config_;
+    RefCountedPtr<ChildPolicyWrapper> default_child_policy_;
+  };
+
   /// An LRU cache with adjustable size.
   class Cache {
    public:
@@ -255,7 +259,9 @@ class RlsLb : public LoadBalancingPolicy {
       explicit Entry(RefCountedPtr<RlsLb> lb_policy);
 
       /// Pick subchannel for request based on the entry's state.
-      PickResult Pick(PickArgs args);
+      PickResult Pick(PickArgs args, RlsLbConfig* config,
+                      ChildPolicyWrapper* default_child_policy)
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
       /// If the cache entry is in backoff state, resets the backoff and, if
       /// applicable, its backoff timer. The method does not update the LB
@@ -275,7 +281,8 @@ class RlsLb : public LoadBalancingPolicy {
       /// Updates the entry upon reception of a new RLS response. This method
       /// must be called from the LB policy work serializer.
       void OnRlsResponseLocked(ResponseInfo response,
-                               std::unique_ptr<BackOff> backoff_state);
+                               std::unique_ptr<BackOff> backoff_state)
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
       /// Set the iterator to the lru_list element of the cache corresponding to
       /// this entry.
@@ -350,6 +357,8 @@ class RlsLb : public LoadBalancingPolicy {
     /// list.
     void SetRecentUsage(MapType::iterator entry);
 
+    // FIXME: can we remove the need for this by having the callbacks
+    // use a point to RlsLb as their parameter instead of to Cache?
     RlsLb* lb_policy_;
 
     int64_t size_limit_ = 0;
@@ -488,7 +497,8 @@ class RlsLb : public LoadBalancingPolicy {
   /// The method returns false if a new RLS call is throttled; otherwise it
   /// returns true.
   bool MaybeMakeRlsCall(const RequestKey& key,
-                        std::unique_ptr<BackOff>* backoff_state = nullptr);
+                        std::unique_ptr<BackOff>* backoff_state = nullptr)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   /// Update picker with the channel to trigger reprocessing of pending picks.
   /// The method will schedule the actual picker update on the execution context
@@ -501,20 +511,27 @@ class RlsLb : public LoadBalancingPolicy {
   /// The name of the server for the channel.
   std::string server_name_;
 
-  /// Mutex that protects the states of the lb policy which are shared with the
-  /// picker, including cache_, request_map_, channel_, and
-  /// default_child_policy_.
+  /// Mutex that protects the states of the LB policy that are shared with the
+  /// picker.
   Mutex mu_;
-  bool is_shutdown_ = false;
+  bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
+  Cache cache_ ABSL_GUARDED_BY(mu_);
 
-  RefCountedPtr<RlsLbConfig> config_;
+  // FIXME: hop into WorkSerializer to actually start RLS call, so that
+  // only the map itself has to be guarded by the mutex
+  RequestMap request_map_ ABSL_GUARDED_BY(mu_);
+
+  // FIXME: see if there's a way to change things such that the throttle
+  // object is covered by the mutex but the rest of the channel is not,
+  // since that's the only part that the picker needs to access
+  RefCountedPtr<ControlChannel> channel_ ABSL_GUARDED_BY(mu_);
+
+  // Accessed only from within WorkSerializer.
   ServerAddressList addresses_;
   const grpc_channel_args* channel_args_ = nullptr;
-  Cache cache_;
-  RequestMap request_map_;
-  RefCountedPtr<ControlChannel> channel_;
-  ChildPolicyMap child_policy_map_;
+  RefCountedPtr<RlsLbConfig> config_;
   RefCountedPtr<ChildPolicyWrapper> default_child_policy_;
+  ChildPolicyMap child_policy_map_;
 };
 
 class RlsLbFactory : public LoadBalancingPolicyFactory {
