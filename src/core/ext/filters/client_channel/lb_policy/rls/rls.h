@@ -169,8 +169,7 @@ class RlsLb : public LoadBalancingPolicy {
     RefCountedPtr<RlsLb> lb_policy_;
   };
 
-  // FIXME: make this DualRefCounted<> so that ChildPolicyOwner isn't needed
-  class ChildPolicyWrapper : public InternallyRefCounted<ChildPolicyWrapper> {
+  class ChildPolicyWrapper : public DualRefCounted<ChildPolicyWrapper> {
    public:
     ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy, std::string target)
         : lb_policy_(lb_policy),
@@ -215,7 +214,7 @@ class RlsLb : public LoadBalancingPolicy {
     /// with the wrapper.
     class ChildPolicyHelper : public LoadBalancingPolicy::ChannelControlHelper {
      public:
-      explicit ChildPolicyHelper(RefCountedPtr<ChildPolicyWrapper> wrapper)
+      explicit ChildPolicyHelper(WeakRefCountedPtr<ChildPolicyWrapper> wrapper)
           : wrapper_(std::move(wrapper)) {}
 
       // Implementation of ChannelControlHelper interface.
@@ -229,7 +228,7 @@ class RlsLb : public LoadBalancingPolicy {
                          absl::string_view message) override;
 
      private:
-      RefCountedPtr<ChildPolicyWrapper> wrapper_;
+      WeakRefCountedPtr<ChildPolicyWrapper> wrapper_;
     };
 
     RefCountedPtr<RlsLb> lb_policy_;
@@ -243,21 +242,6 @@ class RlsLb : public LoadBalancingPolicy {
     OrphanablePtr<ChildPolicyHandler> child_policy_;
     grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_IDLE;
     std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker_;
-  };
-
-  /// Class that allows multiple ownership of the child policy wrapper object.
-  /// The child policy wrapper is orphaned when all the owners remove their
-  /// references.
-  class ChildPolicyOwner : public RefCounted<ChildPolicyOwner> {
-   public:
-    ChildPolicyOwner(OrphanablePtr<ChildPolicyWrapper> child, RlsLb* parent);
-    ~ChildPolicyOwner();
-
-    ChildPolicyWrapper* child() const { return child_.get(); }
-
-   private:
-    RlsLb* parent_;
-    OrphanablePtr<ChildPolicyWrapper> child_;
   };
 
   /// An LRU cache with adjustable size.
@@ -317,7 +301,7 @@ class RlsLb : public LoadBalancingPolicy {
       grpc_millis backoff_expiration_time_ = GRPC_MILLIS_INF_PAST;
 
       // RLS response states
-      std::vector<RefCountedPtr<ChildPolicyOwner>> child_policy_wrappers_;
+      std::vector<RefCountedPtr<ChildPolicyWrapper>> child_policy_wrappers_;
       std::string header_data_;
       grpc_millis data_expiration_time_ = GRPC_MILLIS_INF_PAST;
       grpc_millis stale_time_ = GRPC_MILLIS_INF_PAST;
@@ -492,7 +476,7 @@ class RlsLb : public LoadBalancingPolicy {
   using RequestMap = std::unordered_map<RequestKey, OrphanablePtr<RlsRequest>,
                                         absl::Hash<RequestKey>>;
 
-  using ChildPolicyMap = std::map<std::string, ChildPolicyOwner*>;
+  using ChildPolicyMap = std::map<std::string, ChildPolicyWrapper*>;
 
   void ShutdownLocked() override;
 
@@ -529,7 +513,7 @@ class RlsLb : public LoadBalancingPolicy {
   RequestMap request_map_;
   RefCountedPtr<ControlChannel> channel_;
   ChildPolicyMap child_policy_map_;
-  RefCountedPtr<ChildPolicyOwner> default_child_policy_;
+  RefCountedPtr<ChildPolicyWrapper> default_child_policy_;
 };
 
 class RlsLbFactory : public LoadBalancingPolicyFactory {

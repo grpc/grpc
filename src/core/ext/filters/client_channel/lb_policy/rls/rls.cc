@@ -195,7 +195,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
                   "as the RLS call is throttled",
                   lb_policy_.get(), this);
         }
-        return lb_policy_->default_child_policy_->child()->Pick(
+        return lb_policy_->default_child_policy_->Pick(
             std::move(args));
       }
     } else {
@@ -252,7 +252,7 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
                   "as the RLS call is throttled",
                   lb_policy_.get(), this);
         }
-        return lb_policy_->default_child_policy_->child()->Pick(
+        return lb_policy_->default_child_policy_->Pick(
             std::move(args));
       }
     }
@@ -275,25 +275,25 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
         strcpy(copied_header_data, header_data_.c_str());
         args.initial_metadata->Add(kRlsHeaderKey, copied_header_data);
       }
-      for (RefCountedPtr<ChildPolicyOwner>& child_policy_wrapper :
+      for (RefCountedPtr<ChildPolicyWrapper>& child_policy_wrapper :
            child_policy_wrappers_) {
-        switch (child_policy_wrapper->child()->ConnectivityState()) {
+        switch (child_policy_wrapper->ConnectivityState()) {
           case GRPC_CHANNEL_READY:
             if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
               gpr_log(GPR_DEBUG,
                       "[rlslb %p] cache entry=%p: pick forwarded to child "
                       "policy %p",
-                      lb_policy_.get(), this, child_policy_wrapper->child());
+                      lb_policy_.get(), this, child_policy_wrapper.get());
             }
-            return child_policy_wrapper->child()->Pick(args);
+            return child_policy_wrapper->Pick(args);
           case GRPC_CHANNEL_IDLE:
             if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
               gpr_log(GPR_DEBUG,
                       "[rlslb %p] cache entry=%p: pick forwarded to IDLE state "
                       "child policy %p",
-                      lb_policy_.get(), this, child_policy_wrapper->child());
+                      lb_policy_.get(), this, child_policy_wrapper.get());
             }
-            return child_policy_wrapper->child()->Pick(args);
+            return child_policy_wrapper->Pick(args);
           case GRPC_CHANNEL_CONNECTING:
             gpr_log(GPR_DEBUG,
                     "[rlslb %p] cache entry=%p: pick queued due to child "
@@ -321,7 +321,7 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
                 "child policy",
                 lb_policy_.get(), this);
       }
-      return lb_policy_->default_child_policy_->child()->Pick(args);
+      return lb_policy_->default_child_policy_->Pick(args);
     }
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
@@ -379,7 +379,7 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
     } else {
       int i = 0;
       for (std::string& target : response.targets) {
-        if (target != child_policy_wrappers_[i]->child()->target()) {
+        if (target != child_policy_wrappers_[i]->target()) {
           same_targets = false;
           break;
         }
@@ -390,27 +390,25 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
       lb_policy_->UpdatePicker();
     } else {
       std::set<absl::string_view> old_targets;
-      for (RefCountedPtr<ChildPolicyOwner>& child_policy_wrapper :
+      for (RefCountedPtr<ChildPolicyWrapper>& child_policy_wrapper :
            child_policy_wrappers_) {
-        old_targets.emplace(child_policy_wrapper->child()->target());
+        old_targets.emplace(child_policy_wrapper->target());
       }
       bool update_picker = false;
-      std::vector<RefCountedPtr<ChildPolicyOwner>> new_child_policy_wrappers;
+      std::vector<RefCountedPtr<ChildPolicyWrapper>> new_child_policy_wrappers;
       new_child_policy_wrappers.reserve(response.targets.size());
       for (std::string& target : response.targets) {
         auto it = lb_policy_->child_policy_map_.find(target);
         if (it == lb_policy_->child_policy_map_.end()) {
           new_child_policy_wrappers.emplace_back(
-              MakeRefCounted<ChildPolicyOwner>(
-                  MakeOrphanable<ChildPolicyWrapper>(lb_policy_->Ref(), target),
-                  lb_policy_.get()));
+              MakeRefCounted<ChildPolicyWrapper>(lb_policy_->Ref(), target));
           Json copied_child_policy_config =
               lb_policy_->config_->child_policy_config();
           grpc_error_handle error = InsertOrUpdateChildPolicyField(
               lb_policy_->config_->child_policy_config_target_field_name(),
               target, &copied_child_policy_config);
           GPR_ASSERT(error == GRPC_ERROR_NONE);
-          new_child_policy_wrappers.back()->child()->UpdateLocked(
+          new_child_policy_wrappers.back()->UpdateLocked(
               copied_child_policy_config, lb_policy_->addresses_,
               lb_policy_->channel_args_);
         } else {
@@ -925,16 +923,6 @@ void RlsLb::ControlChannel::StateWatcher::OnConnectivityStateChange(
   }
 }
 
-RlsLb::ChildPolicyOwner::ChildPolicyOwner(
-    OrphanablePtr<ChildPolicyWrapper> child, RlsLb* parent)
-    : parent_(parent), child_(std::move(child)) {
-  parent_->child_policy_map_.emplace(child_->target(), this);
-}
-
-RlsLb::ChildPolicyOwner::~ChildPolicyOwner() {
-  parent_->child_policy_map_.erase(child_->target());
-}
-
 // ChildPolicyWrapper implementation
 LoadBalancingPolicy::PickResult RlsLb::ChildPolicyWrapper::Pick(PickArgs args) {
   if (picker_ == nullptr) {
@@ -969,7 +957,7 @@ void RlsLb::ChildPolicyWrapper::UpdateLocked(
   Args create_args;
   create_args.work_serializer = lb_policy_->work_serializer();
   create_args.channel_control_helper =
-      absl::make_unique<ChildPolicyHelper>(Ref());
+      absl::make_unique<ChildPolicyHelper>(WeakRef());
   create_args.args = channel_args;
   if (child_policy_ == nullptr) {
     child_policy_ = MakeOrphanable<ChildPolicyHandler>(std::move(create_args),
@@ -1130,11 +1118,9 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
     } else {
       auto it = child_policy_map_.find(config_->default_target());
       if (it == child_policy_map_.end()) {
-        default_child_policy_ = MakeRefCounted<ChildPolicyOwner>(
-            MakeOrphanable<ChildPolicyWrapper>(Ref(),
-                                               config_->default_target()),
-            this);
-        default_child_policy_->child()->UpdateLocked(
+        default_child_policy_ = MakeRefCounted<ChildPolicyWrapper>(
+            Ref(), config_->default_target());
+        default_child_policy_->UpdateLocked(
             config_->child_policy_config(), addresses_, channel_args_);
       } else {
         default_child_policy_ = it->second->Ref();
@@ -1148,19 +1134,19 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
       Json copied_child_policy_config = config_->child_policy_config();
       grpc_error_handle error = InsertOrUpdateChildPolicyField(
           config_->child_policy_config_target_field_name(),
-          child.second->child()->target(), &copied_child_policy_config);
+          child.second->target(), &copied_child_policy_config);
       GPR_ASSERT(error == GRPC_ERROR_NONE);
-      child.second->child()->UpdateLocked(copied_child_policy_config,
+      child.second->UpdateLocked(copied_child_policy_config,
                                           addresses_, channel_args_);
     }
     if (default_child_policy_ != nullptr) {
       Json copied_child_policy_config = config_->child_policy_config();
       grpc_error_handle error = InsertOrUpdateChildPolicyField(
           config_->child_policy_config_target_field_name(),
-          default_child_policy_->child()->target(),
+          default_child_policy_->target(),
           &copied_child_policy_config);
       GPR_ASSERT(error == GRPC_ERROR_NONE);
-      default_child_policy_->child()->UpdateLocked(copied_child_policy_config,
+      default_child_policy_->UpdateLocked(copied_child_policy_config,
                                                    addresses_, channel_args_);
     }
   }
@@ -1171,7 +1157,7 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
 void RlsLb::ExitIdleLocked() {
   std::lock_guard<std::recursive_mutex> lock(mu_);
   for (auto& child_entry : child_policy_map_) {
-    child_entry.second->child()->ExitIdleLocked();
+    child_entry.second->ExitIdleLocked();
   }
 }
 
@@ -1181,7 +1167,7 @@ void RlsLb::ResetBackoffLocked() {
   cache_.ResetAllBackoff();
   mu_.unlock();
   for (auto& child : child_policy_map_) {
-    child.second->child()->ResetBackoffLocked();
+    child.second->ResetBackoffLocked();
   }
 }
 
@@ -1239,7 +1225,7 @@ void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle error) {
         lb_policy->mu_.lock();
         for (auto& item : lb_policy->child_policy_map_) {
           grpc_connectivity_state item_state =
-              item.second->child()->ConnectivityState();
+              item.second->ConnectivityState();
           if (item_state == GRPC_CHANNEL_READY) {
             state = GRPC_CHANNEL_READY;
             break;
