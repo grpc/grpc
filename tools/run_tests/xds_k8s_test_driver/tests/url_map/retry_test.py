@@ -67,7 +67,7 @@ class TestRetryUpTo3AttemptsAndFail(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
     def supported_clients() -> Tuple[str]:
-        return 'cpp', 'java'
+        return 'cpp', 'java', 'go'
 
     @staticmethod
     def url_map_change(
@@ -106,7 +106,7 @@ class TestRetryUpTo4AttemptsAndSucceed(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
     def supported_clients() -> Tuple[str]:
-        return 'cpp', 'java'
+        return 'cpp', 'java', 'go'
 
     @staticmethod
     def url_map_change(
