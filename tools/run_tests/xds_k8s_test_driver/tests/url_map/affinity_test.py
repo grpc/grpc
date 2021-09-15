@@ -57,7 +57,7 @@ class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
     def supported_clients() -> Tuple[str]:
-        return 'cpp', 'java'
+        return 'cpp', 'java', 'go'
 
     @staticmethod
     def client_init_config(rpc: str, metadata: str):
@@ -122,7 +122,7 @@ class TestHeaderBasedAffinityMultipleHeaders(
 
     @staticmethod
     def supported_clients() -> Tuple[str]:
-        return 'cpp', 'java'
+        return 'cpp', 'java', 'go'
 
     @staticmethod
     def client_init_config(rpc: str, metadata: str):
