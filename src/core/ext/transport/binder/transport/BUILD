@@ -40,7 +40,7 @@ grpc_cc_library(
     deps = [
         "//:gpr_base",
         "//:gpr_platform",
-        "//:grpc_base_c",
+        "//:grpc_base",
         "//src/core/ext/transport/binder/utils:transport_stream_receiver",
         "//src/core/ext/transport/binder/wire_format:binder",
         "//src/core/ext/transport/binder/wire_format:wire_reader",
