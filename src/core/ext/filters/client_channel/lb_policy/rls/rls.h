@@ -357,8 +357,6 @@ class RlsLb : public LoadBalancingPolicy {
     /// list.
     void SetRecentUsage(MapType::iterator entry);
 
-    // FIXME: can we remove the need for this by having the callbacks
-    // use a point to RlsLb as their parameter instead of to Cache?
     RlsLb* lb_policy_;
 
     int64_t size_limit_ = 0;
