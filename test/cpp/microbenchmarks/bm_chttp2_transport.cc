@@ -323,9 +323,9 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
     op.payload = &op_payload;
   };
 
-  grpc_metadata_batch b;
   std::vector<grpc_mdelem> elems = Metadata::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
+  grpc_metadata_batch b;
   for (size_t i = 0; i < elems.size(); i++) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
@@ -424,10 +424,10 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   grpc_slice send_slice = grpc_slice_malloc_large(state.range(0));
   memset(GRPC_SLICE_START_PTR(send_slice), 0, GRPC_SLICE_LENGTH(send_slice));
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> send_stream;
-  grpc_metadata_batch b;
   std::vector<grpc_mdelem> elems =
       RepresentativeClientInitialMetadata::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
+  grpc_metadata_batch b;
   for (size_t i = 0; i < elems.size(); i++) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
@@ -563,11 +563,11 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
     op.payload = &op_payload;
   };
 
-  grpc_metadata_batch b;
-  grpc_metadata_batch b_recv;
   std::vector<grpc_mdelem> elems =
       RepresentativeClientInitialMetadata::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
+  grpc_metadata_batch b;
+  grpc_metadata_batch b_recv;
   for (size_t i = 0; i < elems.size(); i++) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));

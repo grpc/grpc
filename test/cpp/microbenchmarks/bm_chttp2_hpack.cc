@@ -110,9 +110,9 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   static bool logged_representative_output = false;
 
-  grpc_metadata_batch b;
   std::vector<grpc_mdelem> elems = Fixture::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
+  grpc_metadata_batch b;
   for (size_t i = 0; i < elems.size(); i++) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
