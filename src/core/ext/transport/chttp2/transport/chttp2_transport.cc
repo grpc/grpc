@@ -646,7 +646,8 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
     : t(t),
       refcount(refcount),
       reffer(this),
-      metadata_buffer{{arena}, {arena}} {
+      initial_metadata_buffer(arena),
+      trailing_metadata_buffer(arena) {
   if (server_data) {
     id = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(server_data));
     *t->accepting_stream = this;
@@ -1856,7 +1857,7 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(
             &s->unprocessed_incoming_frames_buffer);
       }
     }
-    grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[0],
+    grpc_chttp2_incoming_metadata_buffer_publish(&s->initial_metadata_buffer,
                                                  s->recv_initial_metadata);
     null_then_sched_closure(&s->recv_initial_metadata_ready);
   }
@@ -2010,7 +2011,7 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
         s->recv_trailing_metadata_finished != nullptr) {
       grpc_transport_move_stats(&s->stats, s->collecting_stats);
       s->collecting_stats = nullptr;
-      grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[1],
+      grpc_chttp2_incoming_metadata_buffer_publish(&s->trailing_metadata_buffer,
                                                    s->recv_trailing_metadata);
       null_then_sched_closure(&s->recv_trailing_metadata_finished);
     }
@@ -2104,13 +2105,13 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
     gpr_ltoa(status, status_string);
     GRPC_LOG_IF_ERROR("add_status",
                       grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-                          &s->metadata_buffer[1], GRPC_MDSTR_GRPC_STATUS,
+                          &s->trailing_metadata_buffer, GRPC_MDSTR_GRPC_STATUS,
                           grpc_core::UnmanagedMemorySlice(status_string)));
     if (!GRPC_SLICE_IS_EMPTY(slice)) {
       GRPC_LOG_IF_ERROR(
           "add_status_message",
           grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-              &s->metadata_buffer[1], GRPC_MDSTR_GRPC_MESSAGE, slice));
+              &s->trailing_metadata_buffer, GRPC_MDSTR_GRPC_MESSAGE, slice));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);

@@ -1383,14 +1383,14 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
        stream id on a header */
     if (s != nullptr) {
       if (parser->is_boundary()) {
-        if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
+        if (s->header_frames_received == 2) {
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Too many trailer frames");
         }
         /* Process stream compression md element if it exists */
         if (s->header_frames_received ==
             0) { /* Only acts on initial metadata */
-          parse_stream_compression_md(t, s, &s->metadata_buffer[0].batch);
+          parse_stream_compression_md(t, s, &s->initial_metadata_buffer.batch);
         }
         s->published_metadata[s->header_frames_received] =
             GRPC_METADATA_PUBLISHED_FROM_WIRE;
