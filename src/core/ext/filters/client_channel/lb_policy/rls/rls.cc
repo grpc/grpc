@@ -246,7 +246,7 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
       }
       for (RefCountedPtr<ChildPolicyWrapper>& child_policy_wrapper :
            child_policy_wrappers_) {
-        switch (child_policy_wrapper->ConnectivityState()) {
+        switch (child_policy_wrapper->connectivity_state()) {
           case GRPC_CHANNEL_READY:
             if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
               gpr_log(GPR_INFO,
@@ -1023,14 +1023,6 @@ void RlsLb::ChildPolicyWrapper::ResetBackoffLocked() {
   }
 }
 
-grpc_connectivity_state RlsLb::ChildPolicyWrapper::ConnectivityState() const {
-  if (was_transient_failure_) {
-    return GRPC_CHANNEL_TRANSIENT_FAILURE;
-  } else {
-    return connectivity_state_;
-  }
-}
-
 void RlsLb::ChildPolicyWrapper::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO,
@@ -1078,12 +1070,11 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
   }
   MutexLock lock(&wrapper_->lb_policy_->mu_);
   if (wrapper_->is_shutdown_) return;
-  wrapper_->connectivity_state_ = state;
-  if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    wrapper_->was_transient_failure_ = true;
-  } else if (state == GRPC_CHANNEL_READY) {
-    wrapper_->was_transient_failure_ = false;
+  if (wrapper_->connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
+      state != GRPC_CHANNEL_READY) {
+    return;
   }
+  wrapper_->connectivity_state_ = state;
   GPR_DEBUG_ASSERT(picker != nullptr);
   if (picker != nullptr) {
     wrapper_->picker_ = std::move(picker);
@@ -1270,7 +1261,7 @@ void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle error) {
           if (lb_policy->is_shutdown_) return;
           for (auto& item : lb_policy->child_policy_map_) {
             grpc_connectivity_state item_state =
-                item.second->ConnectivityState();
+                item.second->connectivity_state();
             if (item_state == GRPC_CHANNEL_READY) {
               state = GRPC_CHANNEL_READY;
               break;

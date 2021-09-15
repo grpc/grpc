@@ -190,7 +190,9 @@ class RlsLb : public LoadBalancingPolicy {
     /// TRANSIENT_FAILURE state instead of the actual state of the child policy
     /// until the child policy reports another READY state. The mutex of the
     /// RLS LB policy should be held when calling this method.
-    grpc_connectivity_state ConnectivityState() const;
+    grpc_connectivity_state connectivity_state() const {
+      return connectivity_state_;
+    }
 
     void Orphan() override;
 
@@ -223,9 +225,6 @@ class RlsLb : public LoadBalancingPolicy {
 
     bool is_shutdown_ = false;
 
-    /// Whether the child policy state has been in TRANSIENT_FAILURE since last
-    /// READY state.
-    bool was_transient_failure_ = false;
     OrphanablePtr<ChildPolicyHandler> child_policy_;
     grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_IDLE;
     std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker_;
