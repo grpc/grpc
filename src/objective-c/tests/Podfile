@@ -92,7 +92,7 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
       config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'YES'
-      if config.name.include?("Test")
+      if config.name == 'Test'
         config.build_settings['GCC_OPTIMIZATION_LEVEL'] = '0'
         config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Onone'
       end
