@@ -247,13 +247,12 @@ static void verify_continuation_headers(const char* key, const char* value,
   grpc_mdelem elem = grpc_mdelem_from_slices(
       grpc_slice_intern(grpc_slice_from_static_string(key)),
       grpc_slice_intern(grpc_slice_from_static_string(value)));
-  grpc_linked_mdelem* e =
-      static_cast<grpc_linked_mdelem*>(gpr_malloc(sizeof(*e)));
+  grpc_linked_mdelem e;
+  e.md = elem;
+  e.prev = nullptr;
+  e.next = nullptr;
   grpc_metadata_batch b;
-  e[0].md = elem;
-  e[0].prev = nullptr;
-  e[0].next = nullptr;
-  GPR_ASSERT(GRPC_ERROR_NONE == b.LinkTail(&e[0]));
+  GPR_ASSERT(GRPC_ERROR_NONE == b.LinkTail(&e));
   grpc_slice_buffer_init(&output);
 
   grpc_transport_one_way_stats stats;
@@ -267,7 +266,6 @@ static void verify_continuation_headers(const char* key, const char* value,
   g_compressor->EncodeHeaders(hopt, b, &output);
   verify_frames(output, is_eof);
   grpc_slice_buffer_destroy_internal(&output);
-  gpr_free(e);
 }
 
 static void test_continuation_headers() {
@@ -333,13 +331,12 @@ static void verify_table_size_change_match_elem_size(const char* key,
       grpc_slice_intern(grpc_slice_from_static_string(value)));
   size_t elem_size = grpc_core::MetadataSizeInHPackTable(elem, use_true_binary);
   size_t initial_table_size = g_compressor->test_only_table_size();
-  grpc_linked_mdelem* e =
-      static_cast<grpc_linked_mdelem*>(gpr_malloc(sizeof(*e)));
+  grpc_linked_mdelem e;
+  e.md = elem;
+  e.prev = nullptr;
+  e.next = nullptr;
   grpc_metadata_batch b;
-  e[0].md = elem;
-  e[0].prev = nullptr;
-  e[0].next = nullptr;
-  GPR_ASSERT(GRPC_ERROR_NONE == b.LinkTail(&e[0]));
+  GPR_ASSERT(GRPC_ERROR_NONE == b.LinkTail(&e));
   grpc_slice_buffer_init(&output);
 
   grpc_transport_one_way_stats stats;
@@ -356,7 +353,6 @@ static void verify_table_size_change_match_elem_size(const char* key,
 
   GPR_ASSERT(g_compressor->test_only_table_size() ==
              elem_size + initial_table_size);
-  gpr_free(e);
 }
 
 static void test_encode_header_size() {

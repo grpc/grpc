@@ -539,16 +539,14 @@ static void release_call(void* call, grpc_error_handle /*error*/) {
 
 static void destroy_call(void* call, grpc_error_handle /*error*/) {
   GPR_TIMER_SCOPE("destroy_call", 0);
-  size_t i;
-  int ii;
   grpc_call* c = static_cast<grpc_call*>(call);
   c->receiving_stream.reset();
   parent_call* pc = get_parent_call(c);
   if (pc != nullptr) {
     pc->~parent_call();
   }
-  for (ii = 0; ii < c->send_extra_metadata_count; ii++) {
-    GRPC_MDELEM_UNREF(c->send_extra_metadata[ii].md);
+  for (int i = 0; i < c->send_extra_metadata_count; i++) {
+    GRPC_MDELEM_UNREF(c->send_extra_metadata[i].md);
   }
   if (c->cq) {
     GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
