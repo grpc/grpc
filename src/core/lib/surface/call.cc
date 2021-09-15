@@ -540,6 +540,9 @@ static void release_call(void* call, grpc_error_handle /*error*/) {
 static void destroy_call(void* call, grpc_error_handle /*error*/) {
   GPR_TIMER_SCOPE("destroy_call", 0);
   grpc_call* c = static_cast<grpc_call*>(call);
+  for (int i = 0; i < 2; i++) {
+    c->metadata_batch[1 /* is_receiving */][i /* is_initial */].Clear();
+  }
   c->receiving_stream.reset();
   parent_call* pc = get_parent_call(c);
   if (pc != nullptr) {
