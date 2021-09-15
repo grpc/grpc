@@ -1237,9 +1237,11 @@ bool RlsLb::MaybeMakeRlsCall(const RequestKey& key,
 }
 
 void RlsLb::UpdatePicker() {
-  Ref().release();
+  // Run via the ExecCtx, since the caller may be holding the lock, and
+  // we don't want to be doing that when we hop into the WorkSerializer,
+  // in case the WorkSerializer callback happens to run inline.
   ExecCtx::Run(DEBUG_LOCATION,
-               GRPC_CLOSURE_CREATE(UpdatePickerCallback, this,
+               GRPC_CLOSURE_CREATE(UpdatePickerCallback, Ref().release(),
                                    grpc_schedule_on_exec_ctx),
                GRPC_ERROR_NONE);
 }
