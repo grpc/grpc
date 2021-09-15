@@ -705,7 +705,7 @@ static void convert_metadata_to_cronet_headers(
     bidirectional_stream_header** pp_headers, size_t* p_num_headers,
     const char** method) {
   /* Get number of header fields */
-  size_t num_headers_available = (*metadata)->count();
+  size_t num_headers_available = metadata->count();
   /* Allocate enough memory. It is freed in the on_stream_ready callback
    */
   bidirectional_stream_header* headers =
