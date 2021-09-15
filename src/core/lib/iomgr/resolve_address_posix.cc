@@ -177,30 +177,34 @@ static void posix_resolve_address(const char* name, const char* default_port,
 
 struct lookup_hostname_request {
   grpc_event_engine::experimental::EventEngine::DNSResolver::
-      LookupHostnameCallback on_resolved;
+      LookupHostnameCallback on_resolved_fn;
+  grpc_closure on_resolved;
   std::string address;
   std::string default_port;
   grpc_closure request_closure;
+  std::vector<EventEngine::ResolvedAddress> result;
 };
 
-static void do_request_thread_lookup_hostname(void* lhrp,
-                                              grpc_error_handle /*error*/) {
-  lookup_hostname_request* lhr = static_cast<lookup_hostname_request*>(lhrp);
+static void do_request_thread_lookup_hostname(void* arg,
+                                              grpc_error_handle error) {
+  auto* lhr = static_cast<lookup_hostname_request*>(arg);
+  if (error != GRPC_ERROR_NONE) {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &lhr->on_resolved, error);
+    return;
+  }
   grpc_resolved_addresses* c_addrs_out;
   grpc_error_handle err = grpc_blocking_resolve_address(
       lhr->address.c_str(), lhr->default_port.c_str(), &c_addrs_out);
-  // DO NOT SUBMIT(hork):  ExecCtx::Run?
   if (err != GRPC_ERROR_NONE) {
-    lhr->on_resolved(grpc_error_to_absl_status(err));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &lhr->on_resolved, err);
     return;
   }
-  std::vector<EventEngine::ResolvedAddress> addrs;
   for (size_t i = 0; i < c_addrs_out->naddrs; i++) {
-    addrs.push_back(grpc_event_engine::experimental::CreateResolvedAddress(
-        c_addrs_out->addrs[i]));
+    lhr->result.push_back(
+        grpc_event_engine::experimental::CreateResolvedAddress(
+            c_addrs_out->addrs[i]));
   }
-  lhr->on_resolved(addrs);
-  delete lhr;
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, &lhr->on_resolved, error);
 }
 
 static EventEngine::DNSResolver::LookupTaskHandle lookup_hostname(
@@ -211,7 +215,20 @@ static EventEngine::DNSResolver::LookupTaskHandle lookup_hostname(
   lookup_hostname_request* lhr = new lookup_hostname_request();
   GRPC_CLOSURE_INIT(&lhr->request_closure, do_request_thread_lookup_hostname,
                     lhr, nullptr);
-  lhr->on_resolved = std::move(on_resolved);
+  lhr->on_resolved_fn = std::move(on_resolved);
+  GRPC_CLOSURE_INIT(
+      &lhr->on_resolved,
+      [](void* arg, grpc_error_handle error) {
+        auto* lhr = static_cast<lookup_hostname_request*>(arg);
+        if (error != GRPC_ERROR_NONE) {
+          lhr->on_resolved_fn(grpc_error_to_absl_status(error));
+          GRPC_ERROR_UNREF(error);
+        } else {
+          lhr->on_resolved_fn(lhr->result);
+        }
+        delete lhr;
+      },
+      lhr, nullptr);
   lhr->address = std::string(address);
   lhr->default_port = std::string(default_port);
   grpc_core::Executor::Run(&lhr->request_closure, GRPC_ERROR_NONE,

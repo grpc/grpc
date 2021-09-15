@@ -511,14 +511,18 @@ void IomgrDnsResolver::FinishResolutionLocked() {
   Result result;
   result.args = grpc_channel_args_copy(channel_args_);
   std::vector<std::string> error_msgs;
-  // DO NOT SUBMIT(hork): it's not an error if hostnames fail to resolve if SRV
-  // or TXT queries succeed.
-  absl::Status parse_error = ParseResolvedHostnames(result);
-  if (!parse_error.ok()) error_msgs.emplace_back(parse_error.ToString());
-  parse_error = ParseResolvedBalancerHostnames(result);
+  absl::Status parse_error = ParseResolvedBalancerHostnames(result);
   if (!parse_error.ok()) error_msgs.emplace_back(parse_error.ToString());
   parse_error = ParseResolvedServiceConfig(result);
   if (!parse_error.ok()) error_msgs.emplace_back(parse_error.ToString());
+  parse_error = ParseResolvedHostnames(result);
+  if (!parse_error.ok()) {
+    // If SRV or TXT queries succeed, it's not an error if hostnames fail to
+    // resolve.
+    if (!error_msgs.empty() || enable_srv_queries_ || request_service_config_) {
+      error_msgs.emplace_back(parse_error.ToString());
+    }
+  }
   if (!error_msgs.empty()) {
     std::string error_msg =
         absl::StrCat("DNS query errors: ", absl::StrJoin(error_msgs, "; "));
