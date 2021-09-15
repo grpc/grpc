@@ -296,7 +296,7 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   /* Otherwise, let's retry, by queuing a read. */
   memset(&tcp->socket->read_info.overlapped, 0, sizeof(OVERLAPPED));
   status = WSARecv(tcp->socket->socket, buffers, (DWORD)tcp->read_slices->count,
-                   &bytes_read, &flags, &info->overlapped, NULL);
+                   NULL, &flags, &info->overlapped, NULL);
 
   if (status != 0) {
     int wsa_error = WSAGetLastError();
