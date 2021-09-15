@@ -1351,8 +1351,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::
     return;
   }
   // Return metadata.
-  call_attempt_->recv_initial_metadata_ = std::move(
-      *pending->batch->payload->recv_initial_metadata.recv_initial_metadata);
+  *pending->batch->payload->recv_initial_metadata.recv_initial_metadata =
+      std::move(call_attempt_->recv_initial_metadata_);
   // Propagate trailing_metadata_available.
   *pending->batch->payload->recv_initial_metadata.trailing_metadata_available =
       call_attempt_->trailing_metadata_available_;
@@ -1589,8 +1589,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::
       &call_attempt_->collect_stats_,
       pending->batch->payload->recv_trailing_metadata.collect_stats);
   // Return metadata.
-  call_attempt_->recv_trailing_metadata_ = std::move(
-      *pending->batch->payload->recv_trailing_metadata.recv_trailing_metadata);
+  *pending->batch->payload->recv_trailing_metadata.recv_trailing_metadata =
+      std::move(call_attempt_->recv_trailing_metadata_);
   // Add closure.
   closures->Add(pending->batch->payload->recv_trailing_metadata
                     .recv_trailing_metadata_ready,
