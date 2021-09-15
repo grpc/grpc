@@ -50,7 +50,7 @@ struct grpc_tls_key_log_config {
   /// Constructor.
   explicit grpc_tls_key_log_config()
       : tls_key_log_file_path(""),
-        key_logging_format(grpc_tls_key_log_format::TLS_KEY_LOG_FORMAT_NSS){};
+        key_logging_format(grpc_tls_key_log_format::GRPC_TLS_KEY_LOG_FORMAT_NSS){};
 
   /// Copy ctor.
   grpc_tls_key_log_config(const grpc_tls_key_log_config& copy) {

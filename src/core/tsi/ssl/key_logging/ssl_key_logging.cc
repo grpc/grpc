@@ -67,7 +67,7 @@ void TlsKeyLogFileWriter::AppendSessionKeys(
   if (fd_ == nullptr || session_keys_info.empty()) return;
 
   switch (tsi_tls_key_log_config.key_logging_format) {
-    case TLS_KEY_LOG_FORMAT_NSS:
+    case GRPC_TLS_KEY_LOG_FORMAT_NSS:
       // Append to key log file under lock
       bool err;
 
