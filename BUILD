@@ -1405,6 +1405,7 @@ grpc_cc_library(
         "src/core/lib/surface/completion_queue.cc",
         "src/core/lib/surface/completion_queue_factory.cc",
         "src/core/lib/surface/event_string.cc",
+        "src/core/lib/surface/lame_client.cc",
         "src/core/lib/surface/metadata_array.cc",
         "src/core/lib/surface/server.cc",
         "src/core/lib/surface/validate_metadata.cc",
@@ -1424,7 +1425,6 @@ grpc_cc_library(
         "src/core/lib/transport/transport.cc",
         "src/core/lib/transport/transport_op_string.cc",
         "src/core/lib/uri/uri_parser.cc",
-        "src/core/lib/surface/lame_client.cc",
     ],
     hdrs = [
         "src/core/lib/address_utils/parse_address.h",
