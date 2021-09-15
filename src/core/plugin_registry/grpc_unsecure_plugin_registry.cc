@@ -93,6 +93,7 @@ namespace grpc_core {
 
 extern void BuildClientChannelConfiguration(
     CoreConfiguration::Builder* builder);
+extern void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder);
 extern void RegisterClientIdleFilter(CoreConfiguration::Builder* builder);
 extern void RegisterDeadlineFilter(CoreConfiguration::Builder* builder);
 extern void RegisterGrpcLbLoadReportingFilter(
@@ -108,6 +109,7 @@ extern void RegisterWorkaroundCronetCompressionFilter(
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   BuildClientChannelConfiguration(builder);
+  RegisterClientAuthorityFilter(builder);
   RegisterClientIdleFilter(builder);
   RegisterGrpcLbLoadReportingFilter(builder);
   RegisterHttpFilters(builder);
