@@ -236,31 +236,61 @@ static EventEngine::DNSResolver::LookupTaskHandle lookup_hostname(
   return {-1, -1};
 }
 
+struct lookup_srv_request {
+  grpc_event_engine::experimental::EventEngine::DNSResolver::LookupSRVCallback
+      on_resolved_fn;
+  grpc_closure on_resolved;
+};
+
 static EventEngine::DNSResolver::LookupTaskHandle lookup_srv_record(
     grpc_event_engine::experimental::EventEngine::DNSResolver::LookupSRVCallback
         on_resolved,
     absl::string_view /*name*/, absl::Time /*deadline*/,
     grpc_pollset_set* /*interested_parties*/) {
-  // DO NOT SUBMIT(hork): run asynchronously?
-  on_resolved(
-      absl::UnimplementedError("Posix iomgr does not support SRV queries"));
+  lookup_srv_request* lhr = new lookup_srv_request();
+  lhr->on_resolved_fn = std::move(on_resolved);
+  GRPC_CLOSURE_INIT(
+      &lhr->on_resolved,
+      [](void* arg, grpc_error_handle) {
+        auto* lhr = static_cast<lookup_srv_request*>(arg);
+        lhr->on_resolved_fn(absl::UnimplementedError(
+            "Posix iomgr does not support SRV queries"));
+        delete lhr;
+      },
+      lhr, nullptr);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, &lhr->on_resolved, nullptr);
   return {-1, -1};
 }
+
+struct lookup_txt_request {
+  grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXTCallback
+      on_resolved_fn;
+  grpc_closure on_resolved;
+};
 
 static EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
     grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXTCallback
         on_resolved,
     absl::string_view /*name*/, absl::Time /*deadline*/,
     grpc_pollset_set* /*interested_parties*/) {
-  // DO NOT SUBMIT(hork): run asynchronously?
-  on_resolved(
-      absl::UnimplementedError("Posix iomgr does not support TXT queries"));
+  lookup_txt_request* lhr = new lookup_txt_request();
+  lhr->on_resolved_fn = std::move(on_resolved);
+  GRPC_CLOSURE_INIT(
+      &lhr->on_resolved,
+      [](void* arg, grpc_error_handle) {
+        auto* lhr = static_cast<lookup_txt_request*>(arg);
+        lhr->on_resolved_fn(absl::UnimplementedError(
+            "Posix iomgr does not support TXT queries"));
+        delete lhr;
+      },
+      lhr, nullptr);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, &lhr->on_resolved, nullptr);
   return {-1, -1};
 }
 
 static void try_cancel_lookup(
     EventEngine::DNSResolver::LookupTaskHandle /*handle*/) {
-  // Posix iomgr does not support DNS cancellation
+  // Noop. Posix iomgr does not support DNS cancellation.
 }
 
 grpc_address_resolver_vtable grpc_posix_resolver_vtable = {
