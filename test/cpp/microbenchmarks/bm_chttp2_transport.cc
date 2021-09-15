@@ -567,7 +567,6 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
       RepresentativeClientInitialMetadata::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
   grpc_metadata_batch b;
-  grpc_metadata_batch b_recv;
   for (size_t i = 0; i < elems.size(); i++) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
@@ -630,10 +629,11 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   });
 
   reset_op();
+  auto b_recv = absl::make_unique<grpc_metadata_batch>();
   op.send_initial_metadata = true;
   op.payload->send_initial_metadata.send_initial_metadata = &b;
   op.recv_initial_metadata = true;
-  op.payload->recv_initial_metadata.recv_initial_metadata = &b_recv;
+  op.payload->recv_initial_metadata.recv_initial_metadata = b_recv.get();
   op.payload->recv_initial_metadata.recv_initial_metadata_ready =
       do_nothing.get();
   op.on_complete = c.get();
@@ -667,8 +667,10 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   f.FlushExecCtx();
   gpr_event_wait(stream_cancel_done, gpr_inf_future(GPR_CLOCK_REALTIME));
   done_events.emplace_back(stream_cancel_done);
-  s->DestroyThen(
-      MakeOnceClosure([s](grpc_error_handle /*error*/) { delete s; }));
+  s->DestroyThen(MakeOnceClosure([s, &b_recv](grpc_error_handle /*error*/) {
+    b_recv.reset();
+    delete s;
+  }));
   f.FlushExecCtx();
   track_counters.Finish(state);
   grpc_slice_unref(incoming_data);
