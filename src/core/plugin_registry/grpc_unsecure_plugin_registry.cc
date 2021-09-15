@@ -115,6 +115,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterDeadlineFilter(builder);
   RegisterMessageSizeFilter(builder);
   RegisterWorkaroundCronetCompressionFilter(builder);
+  RegisterServiceConfigChannelArgFilter(builder);
   // Run last so it gets a consistent location.
   // TODO(ctiller): Is this actually necessary?
   RegisterBuiltins(builder);
