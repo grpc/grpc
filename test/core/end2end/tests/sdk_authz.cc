@@ -577,8 +577,7 @@ static void test_file_watcher_valid_policy_reload(
       "}";
   tmp_policy.RewriteFile(authz_policy);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   test_deny_unauthorized_request(f);
 
   end_test(&f);
@@ -625,8 +624,7 @@ static void test_file_watcher_invalid_policy_skip_reload(
   authz_policy = "{}";
   tmp_policy.RewriteFile(authz_policy);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   test_allow_authorized_request(f);
 
   end_test(&f);
@@ -672,8 +670,7 @@ static void test_file_watcher_recovers_from_failure(
   authz_policy = "{}";
   tmp_policy.RewriteFile(authz_policy);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   test_allow_authorized_request(f);
   // Recover from reload errors, by replacing invalid policy in file with a
   // valid policy.
@@ -703,8 +700,7 @@ static void test_file_watcher_recovers_from_failure(
       "}";
   tmp_policy.RewriteFile(authz_policy);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   test_deny_unauthorized_request(f);
 
   end_test(&f);

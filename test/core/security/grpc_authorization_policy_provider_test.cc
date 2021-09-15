@@ -109,8 +109,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
   // Rewrite the file with a different valid authorization policy.
   tmp_authz_policy->RewriteFile(testing::GetFileContents(VALID_POLICY_PATH_2));
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   engines = (*provider)->engines();
   allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
@@ -145,8 +144,7 @@ TEST(AuthorizationPolicyProviderTest,
   // Skips the following policy update, and continues to use the valid policy.
   tmp_authz_policy->RewriteFile(testing::GetFileContents(INVALID_POLICY_PATH));
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   engines = (*provider)->engines();
   allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
@@ -180,8 +178,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
   // Skips the following policy update, and continues to use the valid policy.
   tmp_authz_policy->RewriteFile(testing::GetFileContents(INVALID_POLICY_PATH));
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   engines = (*provider)->engines();
   allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
@@ -196,8 +193,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
   // Rewrite the file with a valid authorization policy.
   tmp_authz_policy->RewriteFile(testing::GetFileContents(VALID_POLICY_PATH_2));
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   engines = (*provider)->engines();
   allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());

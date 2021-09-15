@@ -638,8 +638,7 @@ TEST_F(SdkAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
       "}";
   tmp_policy.RewriteFile(policy);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   ClientContext context2;
   grpc::testing::EchoResponse resp2;
   status = SendRpc(channel, &context2, &resp2);
@@ -675,8 +674,7 @@ TEST_F(SdkAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
   policy = "{}";
   tmp_policy.RewriteFile(policy);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   ClientContext context2;
   grpc::testing::EchoResponse resp2;
   status = SendRpc(channel, &context2, &resp2);
@@ -711,8 +709,7 @@ TEST_F(SdkAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
   policy = "{}";
   tmp_policy.RewriteFile(policy);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   ClientContext context2;
   grpc::testing::EchoResponse resp2;
   status = SendRpc(channel, &context2, &resp2);
@@ -745,8 +742,7 @@ TEST_F(SdkAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
       "}";
   tmp_policy.RewriteFile(policy);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   ClientContext context3;
   grpc::testing::EchoResponse resp3;
   status = SendRpc(channel, &context3, &resp3);
