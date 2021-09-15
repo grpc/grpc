@@ -161,7 +161,8 @@ class RlsLb : public LoadBalancingPolicy {
   /// of the lb policy to make a decision.
   class Picker : public LoadBalancingPolicy::SubchannelPicker {
    public:
-    explicit Picker(RefCountedPtr<RlsLb> lb_policy) : lb_policy_(lb_policy) {}
+    explicit Picker(RefCountedPtr<RlsLb> lb_policy)
+        : lb_policy_(std::move(lb_policy)) {}
 
     PickResult Pick(PickArgs args) override;
 
@@ -342,7 +343,7 @@ class RlsLb : public LoadBalancingPolicy {
     static void OnCleanupTimer(void* arg, grpc_error* error);
 
     /// Evict oversized cache elements when the current size is greater than
-    /// the size limit.
+    /// the specified limit.
     void MaybeShrinkSize(int64_t bytes);
 
     /// Set an entry to be recently used and move it to the end of the LRU
@@ -446,7 +447,7 @@ class RlsLb : public LoadBalancingPolicy {
     /// Callback to be called by core when the call is completed.
     static void OnRlsCallComplete(void* arg, grpc_error* error);
 
-    /// Call completion callback running on lb policy combiner.
+    /// Call completion callback running on lb policy WorkSerializer.
     void OnRlsCallCompleteLocked(grpc_error* error);
 
     grpc_byte_buffer* MakeRequestProto();
@@ -503,7 +504,7 @@ class RlsLb : public LoadBalancingPolicy {
   /// Mutex that protects the states of the lb policy which are shared with the
   /// picker, including cache_, request_map_, channel_, and
   /// default_child_policy_.
-  std::recursive_mutex mu_;
+  Mutex mu_;
   bool is_shutdown_ = false;
 
   RefCountedPtr<RlsLbConfig> config_;

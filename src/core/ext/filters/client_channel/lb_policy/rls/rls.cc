@@ -168,7 +168,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
   }
   RequestKey key;
   key.path = std::string(args.path);
-  std::lock_guard<std::recursive_mutex> lock(lb_policy_->mu_);
+  MutexLock lock(&lb_policy_->mu_);
   if (lb_policy_->is_shutdown_) {
     return PickResult::Fail(
         absl::UnavailableError("LB policy already shut down"));
@@ -554,7 +554,7 @@ void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
         }
         if (error == GRPC_ERROR_CANCELLED || cache->lb_policy_->is_shutdown_)
           return;
-        std::lock_guard<std::recursive_mutex> lock(cache->lb_policy_->mu_);
+        MutexLock lock(&cache->lb_policy_->mu_);
         for (auto it = cache->map_.begin(); it != cache->map_.end();) {
           if (GPR_UNLIKELY(it->second->ShouldRemove())) {
             if (!it->second->CanEvict()) break;
@@ -697,7 +697,7 @@ void RlsLb::RlsRequest::StartCall(void* arg, grpc_error_handle error) {
   auto call_error = grpc_call_start_batch_and_execute(
       call, ops, static_cast<size_t>(op - ops), &entry->call_complete_cb_);
   GPR_ASSERT(call_error == GRPC_CALL_OK);
-  std::lock_guard<std::recursive_mutex> lock(entry->lb_policy_->mu_);
+  MutexLock lock(&entry->lb_policy_->mu_);
   if (entry->lb_policy_->is_shutdown_) {
     grpc_call_cancel_internal(call);
   } else {
@@ -736,7 +736,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   } else {
     res = ParseResponseProto();
   }
-  std::lock_guard<std::recursive_mutex> lock(lb_policy_->mu_);
+  MutexLock lock(&lb_policy_->mu_);
   channel_->ReportResponseLocked(call_failed);
   Cache::Entry* cache_entry = lb_policy_->cache_.FindOrInsert(key_);
   cache_entry->OnRlsResponseLocked(std::move(res), std::move(backoff_state_));
@@ -910,7 +910,7 @@ void RlsLb::ControlChannel::StateWatcher::OnConnectivityStateChange(
             channel_->lb_policy_.get(), channel_.get(), this,
             ConnectivityStateName(new_state), status.ToString().c_str());
   }
-  std::lock_guard<std::recursive_mutex> lock(channel_->lb_policy_->mu_);
+  MutexLock lock(&channel_->lb_policy_->mu_);
   if (channel_->is_shutdown_) return;
   if (new_state == GRPC_CHANNEL_READY && was_transient_failure_) {
     was_transient_failure_ = false;
@@ -1038,7 +1038,7 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
             ConnectivityStateName(state), status.ToString().c_str(),
             picker.get());
   }
-  std::lock_guard<std::recursive_mutex> lock(wrapper_->lb_policy_->mu_);
+  MutexLock lock(&wrapper_->lb_policy_->mu_);
   if (wrapper_->is_shutdown_) return;
   wrapper_->connectivity_state_ = state;
   if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
@@ -1095,77 +1095,79 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
   absl::StatusOr<URI> uri = URI::Parse(server_uri_str);
   GPR_ASSERT(uri.ok());
   server_name_ = std::string(absl::StripPrefix(uri->path(), "/"));
-  mu_.lock();
-  RefCountedPtr<RlsLbConfig> old_config = config_;
-  config_ = args.config;
-  if (old_config == nullptr ||
-      config_->lookup_service() != old_config->lookup_service()) {
-    channel_ = RefCountedPtr<ControlChannel>(
-        new ControlChannel(Ref(), config_->lookup_service(), channel_args_));
-  }
-  if (old_config == nullptr ||
-      config_->cache_size_bytes() != old_config->cache_size_bytes()) {
-    if (config_->cache_size_bytes() != 0) {
-      cache_.Resize(config_->cache_size_bytes());
-    } else {
-      cache_.Resize(kDefaultCacheSizeBytes);
+  {
+    MutexLock lock(&mu_);
+    RefCountedPtr<RlsLbConfig> old_config = config_;
+    config_ = args.config;
+    if (old_config == nullptr ||
+        config_->lookup_service() != old_config->lookup_service()) {
+      channel_ = RefCountedPtr<ControlChannel>(
+          new ControlChannel(Ref(), config_->lookup_service(), channel_args_));
     }
-  }
-  if (old_config == nullptr ||
-      config_->default_target() != old_config->default_target()) {
-    if (config_->default_target().empty()) {
-      default_child_policy_.reset();
-    } else {
-      auto it = child_policy_map_.find(config_->default_target());
-      if (it == child_policy_map_.end()) {
-        default_child_policy_ = MakeRefCounted<ChildPolicyWrapper>(
-            Ref(), config_->default_target());
-        default_child_policy_->UpdateLocked(
-            config_->child_policy_config(), addresses_, channel_args_);
+    if (old_config == nullptr ||
+        config_->cache_size_bytes() != old_config->cache_size_bytes()) {
+      if (config_->cache_size_bytes() != 0) {
+        cache_.Resize(config_->cache_size_bytes());
       } else {
-        default_child_policy_ = it->second->Ref();
+        cache_.Resize(kDefaultCacheSizeBytes);
+      }
+    }
+    if (old_config == nullptr ||
+        config_->default_target() != old_config->default_target()) {
+      if (config_->default_target().empty()) {
+        default_child_policy_.reset();
+      } else {
+        auto it = child_policy_map_.find(config_->default_target());
+        if (it == child_policy_map_.end()) {
+          default_child_policy_ = MakeRefCounted<ChildPolicyWrapper>(
+              Ref(), config_->default_target());
+          default_child_policy_->UpdateLocked(
+              config_->child_policy_config(), addresses_, channel_args_);
+        } else {
+          default_child_policy_ = it->second->Ref();
+        }
+      }
+    }
+    if (old_config == nullptr ||
+        (config_->child_policy_config() != old_config->child_policy_config()) ||
+        (addresses_ != old_addresses)) {
+      for (auto& child : child_policy_map_) {
+        Json copied_child_policy_config = config_->child_policy_config();
+        grpc_error_handle error = InsertOrUpdateChildPolicyField(
+            config_->child_policy_config_target_field_name(),
+            child.second->target(), &copied_child_policy_config);
+        GPR_ASSERT(error == GRPC_ERROR_NONE);
+        child.second->UpdateLocked(copied_child_policy_config,
+                                            addresses_, channel_args_);
+      }
+      if (default_child_policy_ != nullptr) {
+        Json copied_child_policy_config = config_->child_policy_config();
+        grpc_error_handle error = InsertOrUpdateChildPolicyField(
+            config_->child_policy_config_target_field_name(),
+            default_child_policy_->target(),
+            &copied_child_policy_config);
+        GPR_ASSERT(error == GRPC_ERROR_NONE);
+        default_child_policy_->UpdateLocked(copied_child_policy_config,
+                                                     addresses_, channel_args_);
       }
     }
   }
-  if (old_config == nullptr ||
-      (config_->child_policy_config() != old_config->child_policy_config()) ||
-      (addresses_ != old_addresses)) {
-    for (auto& child : child_policy_map_) {
-      Json copied_child_policy_config = config_->child_policy_config();
-      grpc_error_handle error = InsertOrUpdateChildPolicyField(
-          config_->child_policy_config_target_field_name(),
-          child.second->target(), &copied_child_policy_config);
-      GPR_ASSERT(error == GRPC_ERROR_NONE);
-      child.second->UpdateLocked(copied_child_policy_config,
-                                          addresses_, channel_args_);
-    }
-    if (default_child_policy_ != nullptr) {
-      Json copied_child_policy_config = config_->child_policy_config();
-      grpc_error_handle error = InsertOrUpdateChildPolicyField(
-          config_->child_policy_config_target_field_name(),
-          default_child_policy_->target(),
-          &copied_child_policy_config);
-      GPR_ASSERT(error == GRPC_ERROR_NONE);
-      default_child_policy_->UpdateLocked(copied_child_policy_config,
-                                                   addresses_, channel_args_);
-    }
-  }
-  mu_.unlock();
   UpdatePicker();
 }
 
 void RlsLb::ExitIdleLocked() {
-  std::lock_guard<std::recursive_mutex> lock(mu_);
+  MutexLock lock(&mu_);
   for (auto& child_entry : child_policy_map_) {
     child_entry.second->ExitIdleLocked();
   }
 }
 
 void RlsLb::ResetBackoffLocked() {
-  mu_.lock();
-  channel_->ResetBackoff();
-  cache_.ResetAllBackoff();
-  mu_.unlock();
+  {
+    MutexLock lock(&mu_);
+    channel_->ResetBackoff();
+    cache_.ResetAllBackoff();
+  }
   for (auto& child : child_policy_map_) {
     child.second->ResetBackoffLocked();
   }
@@ -1175,7 +1177,7 @@ void RlsLb::ShutdownLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_DEBUG, "[rlslb %p] policy shutdown", this);
   }
-  std::lock_guard<std::recursive_mutex> lock(mu_);
+  MutexLock lock(&mu_);
   is_shutdown_ = true;
   config_.reset();
   if (channel_args_ != nullptr) {
@@ -1222,27 +1224,28 @@ void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle error) {
         grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
         int num_idle = 0;
         int num_connecting = 0;
-        lb_policy->mu_.lock();
-        for (auto& item : lb_policy->child_policy_map_) {
-          grpc_connectivity_state item_state =
-              item.second->ConnectivityState();
-          if (item_state == GRPC_CHANNEL_READY) {
-            state = GRPC_CHANNEL_READY;
-            break;
-          } else if (item_state == GRPC_CHANNEL_CONNECTING) {
-            num_connecting++;
-          } else if (item_state == GRPC_CHANNEL_IDLE) {
-            num_idle++;
+        {
+          MutexLock lock(&lb_policy->mu_);
+          for (auto& item : lb_policy->child_policy_map_) {
+            grpc_connectivity_state item_state =
+                item.second->ConnectivityState();
+            if (item_state == GRPC_CHANNEL_READY) {
+              state = GRPC_CHANNEL_READY;
+              break;
+            } else if (item_state == GRPC_CHANNEL_CONNECTING) {
+              num_connecting++;
+            } else if (item_state == GRPC_CHANNEL_IDLE) {
+              num_idle++;
+            }
+          }
+          if (state != GRPC_CHANNEL_READY) {
+            if (num_connecting > 0) {
+              state = GRPC_CHANNEL_CONNECTING;
+            } else if (num_idle > 0) {
+              state = GRPC_CHANNEL_IDLE;
+            }
           }
         }
-        if (state != GRPC_CHANNEL_READY) {
-          if (num_connecting > 0) {
-            state = GRPC_CHANNEL_CONNECTING;
-          } else if (num_idle > 0) {
-            state = GRPC_CHANNEL_IDLE;
-          }
-        }
-        lb_policy->mu_.unlock();
         absl::Status status;
         if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
           status = absl::UnavailableError("no children available");
