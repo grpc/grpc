@@ -145,8 +145,7 @@ TEST(MemoryQuotaTest, ReserveRangeNoPressure) {
   for (int i = 0; i < 10000; i++) {
     auto n = memory_allocator->Reserve(
         MemoryRequest(100, 40000).WithBlockSize(1024));
-    EXPECT_GE(n, 100);
-    EXPECT_LE(n, 40000);
+    EXPECT_EQ(n, 39012);
     total += n;
   }
   memory_allocator->Release(total);
@@ -157,5 +156,6 @@ TEST(MemoryQuotaTest, ReserveRangeNoPressure) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  gpr_log_verbosity_init();
   return RUN_ALL_TESTS();
 }

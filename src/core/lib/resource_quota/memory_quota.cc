@@ -122,8 +122,9 @@ MemoryAllocator::MemoryAllocator(RefCountedPtr<MemoryQuota> memory_quota)
 }
 
 MemoryAllocator::~MemoryAllocator() {
-  Release(sizeof(MemoryQuota));
-  GPR_ASSERT(free_bytes_.load(std::memory_order_acquire) == taken_bytes_);
+  GPR_ASSERT(free_bytes_.load(std::memory_order_acquire) +
+                 sizeof(MemoryQuota) ==
+             taken_bytes_);
   memory_quota_->Return(taken_bytes_);
 }
 
@@ -168,22 +169,23 @@ MemoryAllocator::ReserveResult MemoryAllocator::TryReserve(
           scaled_size_over_min,
           RoundUp((request.max() - request.min()) * (1.0 - pressure) / 0.2,
                   request.block_size()));
-      take_request = request.min();
+      take_request = request.min() + scaled_size_over_min;
+    } else {
+      scaled_size_over_min =
+          RoundDown(scaled_size_over_min, request.block_size());
     }
   }
 
+  // How much do we want to reserve?
+  const size_t reserve = request.min() + scaled_size_over_min;
   // See how many bytes are available.
   size_t available = free_bytes_.load(std::memory_order_acquire);
   while (true) {
     // Does the current free pool satisfy the request?
-    if (available < request.min()) {
+    if (available < reserve) {
+      GPR_ASSERT(take_request >= available);
       return {false, take_request - available};
     }
-    // If so, grab as much as we need, up to what's available.
-    const size_t reserve_over_min =
-        RoundDown(std::min(available - request.min(), scaled_size_over_min),
-                  request.block_size());
-    const size_t reserve = request.min() + reserve_over_min;
     // Try to reserve the requested amount.
     // If the amount of free memory changed through this loop, then available
     // will be set to the new value and we'll repeat.
@@ -216,19 +218,16 @@ void MemoryAllocator::MaybeRegisterReclaimerLocked() {
   // If the reclaimer is already registered, then there's nothing to do.
   if (reclamation_indices_[0] != ReclaimerQueue::kInvalidIndex) return;
   // Grab references to the things we'll need
-  auto self = Ref();
-  auto memory_quota = memory_quota_;
-  reclamation_indices_[0] = memory_quota_->reclaimers_[0].Insert(
-      Ref(), [self, memory_quota](ReclamationSweep) {
+  auto self = Ref(DEBUG_LOCATION, "reclaimer");
+  reclamation_indices_[0] =
+      memory_quota_->reclaimers_[0].Insert(self, [self](ReclamationSweep) {
         MutexLock lock(&self->memory_quota_mu_);
-        // If the allocator's quota changed since this function was scheduled,
-        // there's nothing more to do here.
-        if (self->memory_quota_ != memory_quota) return;
         // Signal that we're no longer armed.
         self->reclamation_indices_[0] = ReclaimerQueue::kInvalidIndex;
         // Figure out how many bytes we can return to the quota.
         size_t return_bytes =
             self->free_bytes_.exchange(0, std::memory_order_acq_rel);
+        if (return_bytes == 0) return;
         // Subtract that from our outstanding balance.
         self->taken_bytes_ -= return_bytes;
         // And return them to the quota.
@@ -258,8 +257,8 @@ void MemoryAllocator::Rebind(RefCountedPtr<MemoryQuota> memory_quota) {
   // Reinsert active reclaimers.
   for (int i = 0; i < kNumReclamationPasses; i++) {
     if (reclaimers[i] == nullptr) continue;
-    reclamation_indices_[i] =
-        memory_quota_->reclaimers_[i].Insert(Ref(), std::move(reclaimers[i]));
+    reclamation_indices_[i] = memory_quota_->reclaimers_[i].Insert(
+        Ref(DEBUG_LOCATION, "rebind"), std::move(reclaimers[i]));
   }
 }
 
@@ -267,8 +266,8 @@ void MemoryAllocator::PostReclaimer(ReclamationPass pass,
                                     ReclamationFunction fn) {
   MutexLock lock(&memory_quota_mu_);
   auto pass_num = static_cast<int>(pass);
-  reclamation_indices_[pass_num] =
-      memory_quota_->reclaimers_[pass_num].Insert(Ref(), std::move(fn));
+  reclamation_indices_[pass_num] = memory_quota_->reclaimers_[pass_num].Insert(
+      Ref(DEBUG_LOCATION, "post_reclaimer"), std::move(fn));
 }
 
 //
