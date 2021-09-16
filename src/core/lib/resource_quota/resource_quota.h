@@ -25,7 +25,7 @@ namespace grpc_core {
 class ResourceQuota : public RefCounted<ResourceQuota> {
  public:
   ResourceQuota();
-  ~ResourceQuota();
+  ~ResourceQuota() override;
 
   ResourceQuota(const ResourceQuota&) = delete;
   ResourceQuota& operator=(const ResourceQuota&) = delete;
@@ -45,4 +45,4 @@ class ResourceQuota : public RefCounted<ResourceQuota> {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_RESOURCE_QUOTA_RESOURCE_QUOTA_H

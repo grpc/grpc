@@ -28,7 +28,7 @@ namespace grpc_core {
 class ThreadQuota : public RefCounted<ThreadQuota> {
  public:
   ThreadQuota();
-  ~ThreadQuota();
+  ~ThreadQuota() override;
 
   ThreadQuota(const ThreadQuota&) = delete;
   ThreadQuota& operator=(const ThreadQuota&) = delete;
