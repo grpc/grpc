@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_RESOURCE_QUOTA_MAKE_SLICE_H_
-#define GRPC_CORE_LIB_RESOURCE_QUOTA_MAKE_SLICE_H_
+#ifndef GRPC_CORE_LIB_RESOURCE_QUOTA_MAKE_SLICE_H
+#define GRPC_CORE_LIB_RESOURCE_QUOTA_MAKE_SLICE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -27,4 +27,4 @@ grpc_slice MakeSlice(MemoryQuota* memory_quota, MemoryRequest request);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_RESOURCE_QUOTA_MAKE_SLICE_H_
+#endif  // GRPC_CORE_LIB_RESOURCE_QUOTA_MAKE_SLICE_H
