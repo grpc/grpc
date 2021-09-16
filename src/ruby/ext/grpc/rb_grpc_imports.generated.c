@@ -189,7 +189,6 @@ grpc_tls_credentials_options_set_tls_key_log_config_type grpc_tls_credentials_op
 grpc_tls_key_logger_create_type grpc_tls_key_logger_create_import;
 grpc_tls_key_logger_destroy_type grpc_tls_key_logger_destroy_import;
 grpc_tls_key_logger_registry_init_type grpc_tls_key_logger_registry_init_import;
-grpc_tls_key_logger_registry_destroy_type grpc_tls_key_logger_registry_destroy_import;
 grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
 grpc_raw_compressed_byte_buffer_create_type grpc_raw_compressed_byte_buffer_create_import;
 grpc_byte_buffer_copy_type grpc_byte_buffer_copy_import;
@@ -482,7 +481,6 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_tls_key_logger_create_import = (grpc_tls_key_logger_create_type) GetProcAddress(library, "grpc_tls_key_logger_create");
   grpc_tls_key_logger_destroy_import = (grpc_tls_key_logger_destroy_type) GetProcAddress(library, "grpc_tls_key_logger_destroy");
   grpc_tls_key_logger_registry_init_import = (grpc_tls_key_logger_registry_init_type) GetProcAddress(library, "grpc_tls_key_logger_registry_init");
-  grpc_tls_key_logger_registry_destroy_import = (grpc_tls_key_logger_registry_destroy_type) GetProcAddress(library, "grpc_tls_key_logger_registry_destroy");
   grpc_raw_byte_buffer_create_import = (grpc_raw_byte_buffer_create_type) GetProcAddress(library, "grpc_raw_byte_buffer_create");
   grpc_raw_compressed_byte_buffer_create_import = (grpc_raw_compressed_byte_buffer_create_type) GetProcAddress(library, "grpc_raw_compressed_byte_buffer_create");
   grpc_byte_buffer_copy_import = (grpc_byte_buffer_copy_type) GetProcAddress(library, "grpc_byte_buffer_copy");

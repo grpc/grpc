@@ -166,7 +166,6 @@ EXPORTS
     grpc_tls_key_logger_create
     grpc_tls_key_logger_destroy
     grpc_tls_key_logger_registry_init
-    grpc_tls_key_logger_registry_destroy
     grpc_raw_byte_buffer_create
     grpc_raw_compressed_byte_buffer_create
     grpc_byte_buffer_copy

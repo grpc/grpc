@@ -233,7 +233,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_tls_key_logger_create);
   printf("%lx", (unsigned long) grpc_tls_key_logger_destroy);
   printf("%lx", (unsigned long) grpc_tls_key_logger_registry_init);
-  printf("%lx", (unsigned long) grpc_tls_key_logger_registry_destroy);
   printf("%lx", (unsigned long) grpc_raw_byte_buffer_create);
   printf("%lx", (unsigned long) grpc_raw_compressed_byte_buffer_create);
   printf("%lx", (unsigned long) grpc_byte_buffer_copy);
