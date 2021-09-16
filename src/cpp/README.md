@@ -26,6 +26,13 @@ We will make our best effort to support them, and we welcome patches for such pl
 | Linux                          | ARM           |                        | Best Effort |
 | iOS                            |               |                        | Best Effort |
 | Android                        |               |                        | Best Effort |
+| FreeBSD                        |               |                        | Best Effort |
+| OpenBSD                        |               |                        | Best Effort |
+| Solaris                        |               |                        | Best Effort |
+| Asylo                          |               |                        | Best Effort |
+| AIX                            |               |                        | Best Effort |
+| NaCL                           |               |                        | Best Effort |
+| Fuchsia                        |               |                        | Best Effort |
 
 ## Bazel
 
