@@ -572,7 +572,6 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
         logger.info("Creating Router %s", name)
         body = {
             "type": "PROXYLESS_GRPC",
-            "routes": [self.grpc_route.url],
             "network": "default",
         }
         resource = self.netsvc.create_router(name, body)
@@ -594,11 +593,14 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
     def create_grpc_route(self, src_host: str, src_port: int) -> GcpResource:
         host = f'{src_host}:{src_port}'
         body = {
+            "routers": [self.router.url],
             "hostnames":
                 host,
             "rules": [{
                 "action": {
                     "destination": {
+                        # TODO: Switch from service short name to service long
+                        # name.
                         "serviceName": self.backend_service.name
                     }
                 }

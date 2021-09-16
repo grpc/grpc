@@ -60,6 +60,7 @@ class Router:
     name: str
     url: str
     type: str
+    scope: Optional[str]
     network: Optional[str]
     routes: Optional[List[str]]
 
@@ -69,6 +70,7 @@ class Router:
             name=name,
             url=d["name"],
             type=d["type"],
+            scope=d.get("scope"),
             network=d.get("network"),
             routes=list(d["routes"]) if "routes" in d else None,
         )
@@ -136,6 +138,7 @@ class GrpcRoute:
 
     @dataclasses.dataclass(frozen=True)
     class RouteAction:
+        # TODO: Make destination repeated.
         destination: Optional['Destination']
         drop: Optional[int]
 
@@ -149,6 +152,7 @@ class GrpcRoute:
 
     @dataclasses.dataclass(frozen=True)
     class RouteRule:
+        # TODO: Make match repeated.
         match: Optional['RouteMatch']
         action: 'RouteAction'
 
@@ -164,6 +168,7 @@ class GrpcRoute:
     url: str
     hostnames: Tuple[str]
     rules: Tuple['RouteRule']
+    routers: Optional[Tuple[str]]
 
     @classmethod
     def from_response(cls, name: str, d: Dict[str, Any]) -> 'RouteRule':
@@ -172,6 +177,7 @@ class GrpcRoute:
             url=d["name"],
             hostnames=tuple(d["hostnames"]),
             rules=tuple(d["rules"]),
+            routers=None if d.get("routers") is None else tuple(d["routers"]),
         )
 
 
