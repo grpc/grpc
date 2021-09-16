@@ -48,7 +48,7 @@ size_t RoundDown(size_t size, size_t block_size) {
 }  // namespace
 
 MemoryRequest MemoryRequest::WithBlockSize(size_t block_size) const {
-  MemoryRequest r(RoundUp(min_, block_size), RoundDown(max_, block_size));
+  MemoryRequest r(*this);
   r.block_size_ = block_size;
   return r;
 }
@@ -150,13 +150,13 @@ size_t MemoryAllocator::Reserve(MemoryRequest request) {
 MemoryAllocator::ReserveResult MemoryAllocator::TryReserve(
     MemoryRequest request) {
   // How much memory should we request? (see the scaling below)
-  size_t scaled_request = request.max();
+  size_t scaled_size_over_min = request.max() - request.min();
   // If we don't get what we want, how much should we request from the quota?
   // We actually ask for more than what we need to avoid needing to ask again.
   size_t take_request = 2 * request.max();
   // Scale the request down according to memory pressure if we have that
   // flexibility.
-  if (request.min() != request.max()) {
+  if (scaled_size_over_min != 0) {
     double pressure;
     {
       absl::MutexLock lock(&memory_quota_mu_);
@@ -164,11 +164,10 @@ MemoryAllocator::ReserveResult MemoryAllocator::TryReserve(
     }
     // Reduce allocation size proportional to the pressure > 80% usage.
     if (pressure > 0.8) {
-      scaled_request =
-          std::min(request.max(),
-                   RoundUp(request.min() + (request.max() - request.min()) *
-                                               (1.0 - pressure) / 0.2,
-                           request.block_size()));
+      scaled_size_over_min = std::min(
+          scaled_size_over_min,
+          RoundUp((request.max() - request.min()) * (1.0 - pressure) / 0.2,
+                  request.block_size()));
       take_request = request.min();
     }
   }
@@ -177,12 +176,14 @@ MemoryAllocator::ReserveResult MemoryAllocator::TryReserve(
   size_t available = free_bytes_.load(std::memory_order_acquire);
   while (true) {
     // Does the current free pool satisfy the request?
-    const size_t rounded_available = RoundDown(available, request.block_size());
-    if (rounded_available < request.min()) {
+    if (available < request.min()) {
       return {false, take_request - available};
     }
     // If so, grab as much as we need, up to what's available.
-    const size_t reserve = std::min(rounded_available, scaled_request);
+    const size_t reserve_over_min =
+        RoundDown(std::min(available - request.min(), scaled_size_over_min),
+                  request.block_size());
+    const size_t reserve = request.min() + reserve_over_min;
     // Try to reserve the requested amount.
     // If the amount of free memory changed through this loop, then available
     // will be set to the new value and we'll repeat.

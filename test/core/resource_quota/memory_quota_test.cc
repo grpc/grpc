@@ -51,8 +51,8 @@ TEST(MemoryRequestTest, MinMax) {
 
 TEST(MemoryRequestTest, MinMaxWithBlockSize) {
   auto request = MemoryRequest(361, 2099).WithBlockSize(1024);
-  EXPECT_EQ(request.min(), 1024);
-  EXPECT_EQ(request.max(), 2048);
+  EXPECT_EQ(request.min(), 361);
+  EXPECT_EQ(request.max(), 2099);
   EXPECT_EQ(request.block_size(), 1024);
 }
 
@@ -136,6 +136,20 @@ TEST(MemoryQuotaTest, BasicRebind) {
   auto object2 = memory_allocator->MakeUnique<Sized<2048>>();
   notification.WaitForNotification();
   EXPECT_EQ(object.get(), nullptr);
+}
+
+TEST(MemoryQuotaTest, ReserveRangeNoPressure) {
+  RefCountedPtr<MemoryQuota> memory_quota = MakeRefCounted<MemoryQuota>();
+  auto memory_allocator = memory_quota->MakeMemoryAllocator();
+  size_t total = 0;
+  for (int i = 0; i < 10000; i++) {
+    auto n = memory_allocator->Reserve(
+        MemoryRequest(100, 40000).WithBlockSize(1024));
+    EXPECT_GE(n, 100);
+    EXPECT_LE(n, 40000);
+    total += n;
+  }
+  memory_allocator->Release(total);
 }
 
 }  // namespace testing
