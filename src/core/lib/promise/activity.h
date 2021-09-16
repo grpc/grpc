@@ -141,9 +141,6 @@ class Activity : private Wakeable {
     return g_current_activity_;
   }
 
-  // Force the activity to wakeup.
-  void ForceWakeup() { MakeOwningWaker().Wakeup(); }
-
   // Produce an activity-owning Waker. The produced waker will keep the activity
   // alive until it's awoken or dropped.
   Waker MakeOwningWaker() {
