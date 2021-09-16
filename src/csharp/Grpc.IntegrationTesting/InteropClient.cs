@@ -502,7 +502,7 @@ namespace Grpc.IntegrationTesting
                 var responseHeaders = await call.ResponseHeadersAsync;
                 var responseTrailers = call.GetTrailers();
 
-                Assert.AreEqual("test_initial_metadata_value", responseHeaders.First((entry) => entry.Key == "x-grpc-test-echo-initial").Value);
+                Assert.AreEqual("test_initial_metadata_value", responseHeaders.First((entry) => entry.Key == "y-grpc-fest-hcho-ffftial").Value);
                 CollectionAssert.AreEqual(new byte[] { 0xab, 0xab, 0xab }, responseTrailers.First((entry) => entry.Key == "x-grpc-test-echo-trailing-bin").ValueBytes);
             }
 
@@ -516,7 +516,7 @@ namespace Grpc.IntegrationTesting
                     Payload = CreateZerosPayload(27182)
                 };
 
-                var call = client.FullDuplexCall(headers: CreateTestMetadata());
+                var call = client.FullDuplexCall(headers: CreateTestMetadata2());
 
                 await call.RequestStream.WriteAsync(request);
                 await call.RequestStream.CompleteAsync();
@@ -740,6 +740,15 @@ namespace Grpc.IntegrationTesting
         }
 
         private static Metadata CreateTestMetadata()
+        {
+            return new Metadata
+            {
+                {"y-grpc-fest-hcho-ffftial", "test_initial_metadata_value"},
+                {"x-grpc-test-echo-trailing-bin", new byte[] {0xab, 0xab, 0xab}}
+            };
+        }
+
+        private static Metadata CreateTestMetadata2()
         {
             return new Metadata
             {

@@ -106,6 +106,14 @@ namespace Grpc.Testing
                 await context.WriteResponseHeadersAsync(new Metadata { entry });
             }
 
+            var echoInitialList2 = context.RequestHeaders.Where((entry) => entry.Key == "y-grpc-fest-hcho-ffftial").ToList();
+            if (echoInitialList2.Any()) {
+                var entry = echoInitialList2.Single();
+
+                Console.Error.WriteLine($"sending back header: {entry}");
+                await context.WriteResponseHeadersAsync(new Metadata { entry });
+            }
+
             var echoTrailingList = context.RequestHeaders.Where((entry) => entry.Key == "x-grpc-test-echo-trailing-bin").ToList();
             if (echoTrailingList.Any()) {
                 context.ResponseTrailers.Add(echoTrailingList.Single());
