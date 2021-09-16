@@ -11,11 +11,19 @@ Therefore, gRPC supports several major build systems, which should satisfy most 
 
 ## Supported Platforms
 
-* Supported: These platforms are officially supported. We test our code on these
-platform and have automated continuous integration tests for them.
+* Officially Supported: These platforms are officially supported. We test our
+  code on these platform and have automated continuous integration tests for
+  them.
 
-* Best Effort: We do not have continous integration tests for these, but we are fairly confident that gRPC C++ would work on them.
-We will make our best effort to support them, and we welcome patches for such platforms, but we might need to declare bankruptcy on some issues.
+* Best Effort: We do not have continous integration tests for these, but we are
+  fairly confident that gRPC C++ would work on them. We will make our best
+  effort to support them, and we welcome patches for such platforms, but we
+  might need to declare bankruptcy on some issues.
+
+* Community Supported: These platforms are supported by contributions from the
+  open source community, there is no official support for them. Breakages on
+  these platforms may go unnoticed, and the community is responsible for all
+  maintenance. Unmaintained code for these platforms may be deleted.
 
 | Operating System | Architectures | Versions | Support Level |
 |------------------|---------------|----------|---------------|
