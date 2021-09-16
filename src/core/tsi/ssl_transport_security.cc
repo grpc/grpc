@@ -1024,10 +1024,6 @@ void tsi_ssl_session_cache_unref(tsi_ssl_session_cache* cache) {
 
 void tsi_tls_key_logger_registry_init() { tsi::TlsKeyLoggerRegistry::Init(); }
 
-/*void tsi_tls_key_logger_registry_destroy() {
-  tsi::TlsKeyLoggerRegistry::Shutdown();
-}*/
-
 /* --- tsi_frame_protector methods implementation. ---*/
 
 static tsi_result ssl_protector_protect(tsi_frame_protector* self,
