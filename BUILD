@@ -1282,8 +1282,8 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_base",
-        "ref_counted"
-    ]
+        "ref_counted",
+    ],
 )
 
 grpc_cc_library(
@@ -1296,10 +1296,10 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_base",
+        "memory_quota",
         "ref_counted",
         "thread_quota",
-        "memory_quota",
-    ]
+    ],
 )
 
 grpc_cc_library(
