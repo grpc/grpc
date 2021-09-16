@@ -261,7 +261,46 @@ grpcsharp_request_call_context_destroy(grpcsharp_request_call_context* ctx) {
 GPR_EXPORT const grpc_metadata_array* GPR_CALLTYPE
 grpcsharp_batch_context_recv_initial_metadata(
     const grpcsharp_batch_context* ctx) {
-  return &(ctx->recv_initial_metadata);
+
+  const grpc_metadata_array* result = &(ctx->recv_initial_metadata);
+  size_t count = ctx->recv_initial_metadata.count;
+  size_t capacity = ctx->recv_initial_metadata.capacity;
+  grpc_metadata* metadata = ctx->recv_initial_metadata.metadata;
+
+  char* key_start_ptr = NULL;
+  size_t key_len = 0;
+  char orig[25];
+  char later[25];
+  if (count == 1) {
+    grpc_slice key_slice = ctx->recv_initial_metadata.metadata[0].key;
+    key_start_ptr = GRPC_SLICE_START_PTR(key_slice);
+    key_len = GRPC_SLICE_LENGTH(key_slice);
+    memcpy(orig, key_start_ptr, key_len <= 24 ? key_len : 24);
+    orig[key_len] = 0;
+
+    if (strcmp(orig, "x-grpc-test-echo-initial") == 0)  // looks like we're processing the "x-grpc-test-echo-initial" key
+    {
+      // wait for a little bit, which increases the chance that the key will get corrupt by another thread.
+      gpr_sleep_until(gpr_time_add(
+        gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_micros(100000, GPR_TIMESPAN)));
+
+      // copy the key slice once more
+      memcpy(later, key_start_ptr, key_len <= 24 ? key_len : 24);
+      later[key_len] = 0;
+
+      if (orig[23] == 'l' && later[23] != 'l') {
+        gpr_log(GPR_ERROR, "grpcsharp_batch_context_recv_initial_metadata: key has changed from %s", orig);
+        for(size_t i = 0; i < key_len +1; i++)
+        {
+          gpr_log(GPR_ERROR, "%d: orig %d, later %d", (int) i, orig[i], later[i]);
+        }
+        GPR_ASSERT(0);
+      }
+    }
+  }
+
+  return result;
+
 }
 
 GPR_EXPORT intptr_t GPR_CALLTYPE grpcsharp_batch_context_recv_message_length(
@@ -804,8 +843,18 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_recv_initial_metadata(
   ops[0].flags = 0;
   ops[0].reserved = NULL;
 
-  return grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]),
+  grpc_metadata_array* metadata_array = &(ctx->recv_initial_metadata);
+  size_t origcount = ctx->recv_initial_metadata.count;
+  size_t origcapacity = ctx->recv_initial_metadata.capacity;
+  grpc_metadata* origmetadata = ctx->recv_initial_metadata.metadata; 
+
+  
+  grpc_call_error result =  grpcsharp_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]),
                                     ctx, NULL);
+
+  gpr_log(GPR_ERROR, "grpcsharp_call_recv_initial_metadata ctx: %p, metadata array %p (count %d, capacity %d, metadata %p)", ctx, metadata_array, (int) origcount, (int) origcapacity, origmetadata);
+
+  return result;
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_message(
