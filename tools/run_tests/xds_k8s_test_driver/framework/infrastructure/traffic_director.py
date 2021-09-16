@@ -570,9 +570,11 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
     def create_router(self) -> GcpResource:
         name = self.make_resource_name(self.ROUTER_NAME)
         logger.info("Creating Router %s", name)
+        # TODO: Do something configurable for scope.
         body = {
             "type": "PROXYLESS_GRPC",
-            "network": "default",
+            # "network": "default",
+            "scope": "fooscope",
         }
         resource = self.netsvc.create_router(name, body)
         self.router = self.netsvc.get_router(name)
