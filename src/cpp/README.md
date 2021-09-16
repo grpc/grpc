@@ -19,20 +19,20 @@ We will make our best effort to support them, and we welcome patches for such pl
 
 | Operating System | Architectures | Versions | Support Level |
 |------------------|---------------|----------|---------------|
-| Linux - Debian, Ubuntu, CentOS | x86, x64      | clang 3.4+, GCC 4.9+   | Supported |
-| Windows 10+                    | x86, x64      | Visual Studio 2015+    | Supported |
-| MacOS                          | x86, x64      | XCode 7.2+             | Supported |
-| Linux - Others                 | x86, x64      | clang 3.4+, GCC 4.9+   | Best Effort |
-| Linux                          | ARM           |                        | Best Effort |
-| iOS                            |               |                        | Best Effort |
-| Android                        |               |                        | Best Effort |
-| FreeBSD                        |               |                        | Best Effort |
-| OpenBSD                        |               |                        | Best Effort |
-| Solaris                        |               |                        | Best Effort |
-| Asylo                          |               |                        | Best Effort |
-| AIX                            |               |                        | Best Effort |
-| NaCL                           |               |                        | Best Effort |
-| Fuchsia                        |               |                        | Best Effort |
+| Linux - Debian, Ubuntu, CentOS | x86, x64      | clang 3.4+, GCC 4.9+   | Officially Supported |
+| Windows 10+                    | x86, x64      | Visual Studio 2015+    | Officially Supported |
+| MacOS                          | x86, x64      | XCode 7.2+             | Officially Supported |
+| Linux - Others                 | x86, x64      | clang 3.4+, GCC 4.9+   | Best Effort          |
+| Linux                          | ARM           |                        | Best Effort          |
+| iOS                            |               |                        | Best Effort          |
+| Android                        |               |                        | Best Effort          |
+| Asylo                          |               |                        | Best Effort          |
+| FreeBSD                        |               |                        | Community Supported  |
+| OpenBSD                        |               |                        | Community Supported  |
+| AIX                            |               |                        | Community Supported  |
+| Solaris                        |               |                        | Community Supported  |
+| NaCL                           |               |                        | Community Supported  |
+| Fuchsia                        |               |                        | Community Supported  |
 
 ## Bazel
 
