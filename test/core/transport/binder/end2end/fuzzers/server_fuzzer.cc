@@ -79,9 +79,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     }
 
   done:
-    if (grpc_binder::fuzzing::g_fuzzing_thread) {
-      grpc_binder::fuzzing::g_fuzzing_thread->join();
-    }
+    grpc_binder::fuzzing::JoinFuzzingThread();
     if (call1 != nullptr) grpc_call_unref(call1);
     grpc_call_details_destroy(&call_details1);
     grpc_metadata_array_destroy(&request_metadata1);
@@ -118,10 +116,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     }
     grpc_server_destroy(server);
     grpc_completion_queue_destroy(cq);
-  }
-  if (grpc_binder::fuzzing::g_fuzzing_thread) {
-    delete grpc_binder::fuzzing::g_fuzzing_thread;
-    grpc_binder::fuzzing::g_fuzzing_thread = nullptr;
   }
   grpc_shutdown();
   return 0;

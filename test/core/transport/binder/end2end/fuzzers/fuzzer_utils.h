@@ -99,7 +99,8 @@ class ReadableParcelForFuzzing : public ReadableParcel {
   ReadableParcelForFuzzing(FuzzedDataProvider* data_provider,
                            bool is_setup_transport)
       : data_provider_(data_provider),
-        is_setup_transport_(is_setup_transport) {}
+        is_setup_transport_(is_setup_transport),
+        consumed_data_size_(0) {}
 
   int32_t GetDataSize() const override;
   absl::Status ReadInt32(int32_t* data) override;
@@ -119,7 +120,7 @@ class ReadableParcelForFuzzing : public ReadableParcel {
   size_t consumed_data_size_;
 };
 
-extern std::thread* g_fuzzing_thread;
+void JoinFuzzingThread();
 
 void FuzzingLoop(const uint8_t* data, size_t size,
                  grpc_core::RefCountedPtr<WireReader> wire_reader_ref,

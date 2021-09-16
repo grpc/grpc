@@ -17,7 +17,25 @@
 namespace grpc_binder {
 namespace fuzzing {
 
+namespace {
+
 std::thread* g_fuzzing_thread = nullptr;
+
+template <typename... Args>
+void CreateFuzzingThread(Args&&... args) {
+  GPR_ASSERT(g_fuzzing_thread == nullptr);
+  g_fuzzing_thread = new std::thread(std::forward<Args>(args)...);
+}
+
+}  // namespace
+
+void JoinFuzzingThread() {
+  if (g_fuzzing_thread) {
+    g_fuzzing_thread->join();
+    delete g_fuzzing_thread;
+    g_fuzzing_thread = nullptr;
+  }
+}
 
 int32_t ReadableParcelForFuzzing::GetDataSize() const {
   return data_provider_->ConsumeIntegral<int32_t>();
@@ -84,32 +102,27 @@ absl::Status ReadableParcelForFuzzing::ReadString(std::string* data) {
   return absl::OkStatus();
 }
 
-void FuzzingLoop(const uint8_t* data, size_t size,
-                 grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
-                 TransactionReceiver::OnTransactCb callback) {
+void FuzzingLoop(
+    const uint8_t* data, size_t size,
+    grpc_core::RefCountedPtr<grpc_binder::WireReader> wire_reader_ref,
+    grpc_binder::TransactionReceiver::OnTransactCb callback) {
   FuzzedDataProvider data_provider(data, size);
   {
     // Send SETUP_TRANSPORT request.
-    std::unique_ptr<ReadableParcel> parcel =
+    std::unique_ptr<grpc_binder::ReadableParcel> parcel =
         absl::make_unique<ReadableParcelForFuzzing>(
             &data_provider,
             /*is_setup_transport=*/true);
-    callback(
-        static_cast<transaction_code_t>(BinderTransportTxCode::SETUP_TRANSPORT),
-        parcel.get())
+    callback(static_cast<transaction_code_t>(
+                 grpc_binder::BinderTransportTxCode::SETUP_TRANSPORT),
+             parcel.get())
         .IgnoreError();
   }
   while (data_provider.remaining_bytes() > 0) {
-    gpr_log(GPR_INFO, "Fuzzing");
-    bool streaming_call = data_provider.ConsumeBool();
     transaction_code_t tx_code =
-        streaming_call
-            ? data_provider.ConsumeIntegralInRange<transaction_code_t>(
-                  0, static_cast<transaction_code_t>(
-                         BinderTransportTxCode::PING_RESPONSE))
-            : data_provider.ConsumeIntegralInRange<transaction_code_t>(
-                  0, LAST_CALL_TRANSACTION);
-    std::unique_ptr<ReadableParcel> parcel =
+        data_provider.ConsumeIntegralInRange<transaction_code_t>(
+            0, LAST_CALL_TRANSACTION);
+    std::unique_ptr<grpc_binder::ReadableParcel> parcel =
         absl::make_unique<ReadableParcelForFuzzing>(
             &data_provider,
             /*is_setup_transport=*/false);
@@ -123,9 +136,8 @@ TranasctionReceiverForFuzzing::TranasctionReceiverForFuzzing(
     grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
     TransactionReceiver::OnTransactCb cb) {
   gpr_log(GPR_INFO, "Construct TranasctionReceiverForFuzzing");
-  GPR_ASSERT(g_fuzzing_thread == nullptr);
-  g_fuzzing_thread = new std::thread(FuzzingLoop, data, size,
-                                     std::move(wire_reader_ref), std::move(cb));
+  CreateFuzzingThread(FuzzingLoop, data, size, std::move(wire_reader_ref),
+                      std::move(cb));
 }
 
 std::unique_ptr<TransactionReceiver> BinderForFuzzing::ConstructTxReceiver(
