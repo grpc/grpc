@@ -75,6 +75,9 @@ class MemoryRequest {
   // one element of an array.
   MemoryRequest WithBlockSize(size_t block_size) const;
 
+  // Increase the size by amount
+  MemoryRequest Increase(size_t amount) const;
+
   size_t min() const { return min_; }
   size_t max() const { return max_; }
   size_t block_size() const { return block_size_; }

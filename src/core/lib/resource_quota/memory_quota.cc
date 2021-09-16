@@ -53,6 +53,12 @@ MemoryRequest MemoryRequest::WithBlockSize(size_t block_size) const {
   return r;
 }
 
+MemoryRequest MemoryRequest::Increase(size_t amount) const {
+  MemoryRequest r(min_ + amount, max_ + amount);
+  r.block_size_ = block_size_;
+  return r;
+}
+
 //
 // ReclaimerQueue
 //
