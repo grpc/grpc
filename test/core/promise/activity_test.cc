@@ -278,6 +278,56 @@ TEST(ActivityTest, WithContext) {
   EXPECT_TRUE(done);
 }
 
+TEST(ActivityTest, CanCancelDuringExecution) {
+  ActivityPtr activity;
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  int run_count = 0;
+
+  activity = MakeActivity(
+      [&activity, &run_count]() -> Poll<absl::Status> {
+        ++run_count;
+        switch (run_count) {
+          case 1:
+            return Pending{};
+          case 2:
+            activity.reset();
+            return Pending{};
+          default:
+            abort();
+        }
+      },
+      InlineCallbackScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+
+  EXPECT_CALL(on_done, Call(absl::CancelledError()));
+  activity->ForceWakeup();
+}
+
+TEST(ActivityTest, CanCancelDuringSuccessfulExecution) {
+  ActivityPtr activity;
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  int run_count = 0;
+
+  activity = MakeActivity(
+      [&activity, &run_count]() -> Poll<absl::Status> {
+        ++run_count;
+        switch (run_count) {
+          case 1:
+            return Pending{};
+          case 2:
+            activity.reset();
+            return absl::OkStatus();
+          default:
+            abort();
+        }
+      },
+      InlineCallbackScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  activity->ForceWakeup();
+}
+
 TEST(WakerTest, CanWakeupEmptyWaker) {
   // Empty wakers should not do anything upon wakeup.
   Waker().Wakeup();
