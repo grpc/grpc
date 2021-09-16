@@ -187,7 +187,7 @@ void FuzzingLoop(
             /*is_setup_transport=*/true);
     callback(static_cast<transaction_code_t>(
                  grpc_binder::BinderTransportTxCode::SETUP_TRANSPORT),
-             parcel.get())
+             parcel.get(), /*uid=*/0)
         .IgnoreError();
   }
   while (data_provider.remaining_bytes() > 0) {
@@ -198,7 +198,7 @@ void FuzzingLoop(
         absl::make_unique<ReadableParcelForFuzzing>(
             &data_provider,
             /*is_setup_transport=*/false);
-    callback(tx_code, parcel.get()).IgnoreError();
+    callback(tx_code, parcel.get(), /*uid=*/0).IgnoreError();
   }
   wire_reader_ref = nullptr;
 }
