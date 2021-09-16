@@ -288,7 +288,7 @@ grpcsharp_batch_context_recv_initial_metadata(
       memcpy(later, key_start_ptr, key_len <= 24 ? key_len : 24);
       later[key_len] = 0;
 
-      if (orig[23] == 'l' && later[23] != 'l') {
+      if (strcmp(later, "x-grpc-test-echo-initial") != 0) {
         gpr_log(GPR_ERROR, "grpcsharp_batch_context_recv_initial_metadata: key has changed from %s", orig);
         for(size_t i = 0; i < key_len +1; i++)
         {
