@@ -21,8 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc_security_constants.h>
 #include "absl/strings/string_view.h"
+
+#include <grpc/grpc_security_constants.h>
+
 #include "src/core/tsi/transport_security_interface.h"
 
 extern "C" {
@@ -83,9 +85,6 @@ typedef struct tsi_tls_key_logger tsi_tls_key_logger;
 
 /* Initialize a registry to hold created Tls Key loggers */
 void tsi_tls_key_logger_registry_init();
-
-/* Destroy the Tls key logger registry and Unref all allocated Key loggers. */
-void tsi_tls_key_logger_registry_destroy();
 
 /* --- tsi_ssl_client_handshaker_factory object ---
 

@@ -24,8 +24,13 @@
 #include <string>
 #include <thread>
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -55,7 +60,6 @@
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
-
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/orca_load_report_for_test.pb.h"
 #include "test/core/util/port.h"
@@ -63,9 +67,6 @@
 #include "test/core/util/test_config.h"
 #include "test/core/util/test_lb_policies.h"
 #include "test/cpp/end2end/test_service_impl.h"
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -82,6 +83,7 @@ namespace {
 gpr_atm g_connection_delay_ms;
 
 void tcp_client_connect_with_delay(grpc_closure* closure, grpc_endpoint** ep,
+                                   grpc_slice_allocator* slice_allocator,
                                    grpc_pollset_set* interested_parties,
                                    const grpc_channel_args* channel_args,
                                    const grpc_resolved_address* addr,
@@ -90,8 +92,8 @@ void tcp_client_connect_with_delay(grpc_closure* closure, grpc_endpoint** ep,
   if (delay_ms > 0) {
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
   }
-  default_client_impl->connect(closure, ep, interested_parties, channel_args,
-                               addr, deadline + delay_ms);
+  default_client_impl->connect(closure, ep, slice_allocator, interested_parties,
+                               channel_args, addr, deadline + delay_ms);
 }
 
 grpc_tcp_client_vtable delayed_connect = {tcp_client_connect_with_delay};
@@ -355,32 +357,33 @@ class ClientLbEnd2endTest : public ::testing::Test {
   }
 
   struct ServerData {
-    int port_;
+    const int port_;
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
     std::unique_ptr<std::thread> thread_;
-    bool server_ready_ = false;
-    bool started_ = false;
 
-    explicit ServerData(int port = 0) {
-      port_ = port > 0 ? port : grpc_pick_unused_port_or_die();
-    }
+    grpc::internal::Mutex mu_;
+    grpc::internal::CondVar cond_;
+    bool server_ready_ ABSL_GUARDED_BY(mu_) = false;
+    bool started_ ABSL_GUARDED_BY(mu_) = false;
+
+    explicit ServerData(int port = 0)
+        : port_(port > 0 ? port : grpc_pick_unused_port_or_die()) {}
 
     void Start(const std::string& server_host) {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
+      grpc::internal::MutexLock lock(&mu_);
       started_ = true;
-      grpc::internal::Mutex mu;
-      grpc::internal::MutexLock lock(&mu);
-      grpc::internal::CondVar cond;
       thread_ = absl::make_unique<std::thread>(
-          std::bind(&ServerData::Serve, this, server_host, &mu, &cond));
-      grpc::internal::WaitUntil(&cond, &mu, [this] { return server_ready_; });
+          std::bind(&ServerData::Serve, this, server_host));
+      while (!server_ready_) {
+        cond_.Wait(&mu_);
+      }
       server_ready_ = false;
       gpr_log(GPR_INFO, "server startup complete");
     }
 
-    void Serve(const std::string& server_host, grpc::internal::Mutex* mu,
-               grpc::internal::CondVar* cond) {
+    void Serve(const std::string& server_host) {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
@@ -389,12 +392,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
       builder.AddListeningPort(server_address.str(), std::move(creds));
       builder.RegisterService(&service_);
       server_ = builder.BuildAndStart();
-      grpc::internal::MutexLock lock(mu);
+      grpc::internal::MutexLock lock(&mu_);
       server_ready_ = true;
-      cond->Signal();
+      cond_.Signal();
     }
 
     void Shutdown() {
+      grpc::internal::MutexLock lock(&mu_);
       if (!started_) return;
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
       thread_->join();
@@ -1679,9 +1683,24 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
 
   static void TearDownTestCase() { grpc_shutdown(); }
 
-  const std::vector<grpc_core::PickArgsSeen>& args_seen_list() {
+  std::vector<grpc_core::PickArgsSeen> args_seen_list() {
     grpc::internal::MutexLock lock(&mu_);
     return args_seen_list_;
+  }
+
+  static std::string ArgsSeenListString(
+      const std::vector<grpc_core::PickArgsSeen>& args_seen_list) {
+    std::vector<std::string> entries;
+    for (const auto& args_seen : args_seen_list) {
+      std::vector<std::string> metadata;
+      for (const auto& p : args_seen.metadata) {
+        metadata.push_back(absl::StrCat(p.first, "=", p.second));
+      }
+      entries.push_back(absl::StrFormat("{path=\"%s\", metadata=[%s]}",
+                                        args_seen.path,
+                                        absl::StrJoin(metadata, ", ")));
+    }
+    return absl::StrCat("[", absl::StrJoin(entries, ", "), "]");
   }
 
  private:
@@ -1705,29 +1724,26 @@ TEST_F(ClientLbPickArgsTest, Basic) {
   auto channel = BuildChannel("test_pick_args_lb", response_generator);
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts());
-  CheckRpcSendOk(stub, DEBUG_LOCATION, /*wait_for_ready=*/true);
+  // Proactively connect the channel, so that the LB policy will always
+  // be connected before it sees the pick.  Otherwise, the test would be
+  // flaky because sometimes the pick would be seen twice (once in
+  // CONNECTING and again in READY) and other times only once (in READY).
+  ASSERT_TRUE(channel->WaitForConnected(gpr_inf_future(GPR_CLOCK_MONOTONIC)));
   // Check LB policy name for the channel.
   EXPECT_EQ("test_pick_args_lb", channel->GetLoadBalancingPolicyName());
-  // There will be two entries, one for the pick tried in state
-  // CONNECTING and another for the pick tried in state READY.
-  EXPECT_THAT(args_seen_list(),
-              ::testing::ElementsAre(
-                  ::testing::AllOf(
-                      ::testing::Field(&grpc_core::PickArgsSeen::path,
-                                       "/grpc.testing.EchoTestService/Echo"),
-                      ::testing::Field(&grpc_core::PickArgsSeen::metadata,
-                                       ::testing::UnorderedElementsAre(
-                                           ::testing::Pair("foo", "1"),
-                                           ::testing::Pair("bar", "2"),
-                                           ::testing::Pair("baz", "3")))),
-                  ::testing::AllOf(
-                      ::testing::Field(&grpc_core::PickArgsSeen::path,
-                                       "/grpc.testing.EchoTestService/Echo"),
-                      ::testing::Field(&grpc_core::PickArgsSeen::metadata,
-                                       ::testing::UnorderedElementsAre(
-                                           ::testing::Pair("foo", "1"),
-                                           ::testing::Pair("bar", "2"),
-                                           ::testing::Pair("baz", "3"))))));
+  // Now send an RPC and check that the picker sees the expected data.
+  CheckRpcSendOk(stub, DEBUG_LOCATION, /*wait_for_ready=*/true);
+  auto pick_args_seen_list = args_seen_list();
+  EXPECT_THAT(pick_args_seen_list,
+              ::testing::ElementsAre(::testing::AllOf(
+                  ::testing::Field(&grpc_core::PickArgsSeen::path,
+                                   "/grpc.testing.EchoTestService/Echo"),
+                  ::testing::Field(&grpc_core::PickArgsSeen::metadata,
+                                   ::testing::UnorderedElementsAre(
+                                       ::testing::Pair("foo", "1"),
+                                       ::testing::Pair("bar", "2"),
+                                       ::testing::Pair("baz", "3"))))))
+      << ArgsSeenListString(pick_args_seen_list);
 }
 
 class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {

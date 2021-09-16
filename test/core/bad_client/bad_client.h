@@ -19,9 +19,9 @@
 #ifndef GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
 #define GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
 
-#include <grpc/grpc.h>
-
 #include <stdbool.h>
+
+#include <grpc/grpc.h>
 
 #include "test/core/util/test_config.h"
 
@@ -38,7 +38,6 @@ typedef bool (*grpc_bad_client_client_stream_validator)(
     grpc_slice_buffer* incoming, void* arg);
 
 struct grpc_bad_client_arg {
-  int source_line;
   grpc_bad_client_client_stream_validator client_validator;
   void* client_validator_arg;
   const char* client_payload;
@@ -69,10 +68,10 @@ void grpc_run_bad_client_test(
 #define COMBINE1(X, Y) X##Y
 #define COMBINE(X, Y) COMBINE1(X, Y)
 
-#define GRPC_RUN_BAD_CLIENT_TEST(server_validator, client_validator, payload, \
-                                 flags)                                       \
-  grpc_bad_client_arg COMBINE(bca, __LINE__) = {                              \
-      __LINE__, client_validator, nullptr, payload, sizeof(payload) - 1};     \
+#define GRPC_RUN_BAD_CLIENT_TEST(server_validator, client_validator, payload,  \
+                                 flags)                                        \
+  grpc_bad_client_arg COMBINE(bca, __LINE__) = {client_validator, nullptr,     \
+                                                payload, sizeof(payload) - 1}; \
   grpc_run_bad_client_test(server_validator, &COMBINE(bca, __LINE__), 1, flags)
 
 /* Helper validator functions */

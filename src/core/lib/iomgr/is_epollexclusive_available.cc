@@ -18,18 +18,18 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include "src/core/lib/iomgr/is_epollexclusive_available.h"
 
-#ifdef GRPC_LINUX_EPOLL_CREATE1
+#include "src/core/lib/iomgr/port.h"
 
-#include <grpc/support/log.h>
+#ifdef GRPC_LINUX_EPOLL_CREATE1
 
 #include <errno.h>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/sys_epoll_wrapper.h"
 

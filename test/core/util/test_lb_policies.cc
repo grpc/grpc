@@ -77,19 +77,6 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
 };
 
 //
-// CopyMetadataToVector()
-//
-
-MetadataVector CopyMetadataToVector(
-    LoadBalancingPolicy::MetadataInterface* metadata) {
-  MetadataVector result;
-  for (const auto& p : *metadata) {
-    result.push_back({std::string(p.first), std::string(p.second)});
-  }
-  return result;
-}
-
-//
 // TestPickArgsLb
 //
 
@@ -119,7 +106,7 @@ class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
       // Report args seen.
       PickArgsSeen args_seen;
       args_seen.path = std::string(args.path);
-      args_seen.metadata = CopyMetadataToVector(args.initial_metadata);
+      args_seen.metadata = args.initial_metadata->TestOnlyCopyToVector();
       cb_(args_seen);
       // Do pick.
       return delegate_picker_->Pick(args);
@@ -229,10 +216,10 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       // Do pick.
       PickResult result = delegate_picker_->Pick(args);
       // Intercept trailing metadata.
-      if (result.type == PickResult::PICK_COMPLETE &&
-          result.subchannel != nullptr) {
+      auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+      if (complete_pick != nullptr) {
         new (args.call_state->Alloc(sizeof(TrailingMetadataHandler)))
-            TrailingMetadataHandler(&result, cb_);
+            TrailingMetadataHandler(complete_pick, cb_);
       }
       return result;
     }
@@ -277,24 +264,23 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
 
   class TrailingMetadataHandler {
    public:
-    TrailingMetadataHandler(PickResult* result,
+    TrailingMetadataHandler(PickResult::Complete* result,
                             InterceptRecvTrailingMetadataCallback cb)
         : cb_(std::move(cb)) {
-      result->recv_trailing_metadata_ready = [this](grpc_error_handle error,
+      result->recv_trailing_metadata_ready = [this](absl::Status /*status*/,
                                                     MetadataInterface* metadata,
                                                     CallState* call_state) {
-        RecordRecvTrailingMetadata(error, metadata, call_state);
+        RecordRecvTrailingMetadata(metadata, call_state);
       };
     }
 
    private:
-    void RecordRecvTrailingMetadata(grpc_error_handle /*error*/,
-                                    MetadataInterface* recv_trailing_metadata,
+    void RecordRecvTrailingMetadata(MetadataInterface* recv_trailing_metadata,
                                     CallState* call_state) {
       TrailingMetadataArgsSeen args_seen;
       args_seen.backend_metric_data = call_state->GetBackendMetricData();
       GPR_ASSERT(recv_trailing_metadata != nullptr);
-      args_seen.metadata = CopyMetadataToVector(recv_trailing_metadata);
+      args_seen.metadata = recv_trailing_metadata->TestOnlyCopyToVector();
       cb_(args_seen);
       this->~TrailingMetadataHandler();
     }

@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpcpp/impl/codegen/core_codegen.h>
+#include <grpc/support/port_platform.h>
 
 #include <stdlib.h>
 
@@ -27,8 +27,8 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
+#include <grpcpp/impl/codegen/core_codegen.h>
 #include <grpcpp/support/config.h>
 
 #include "src/core/lib/profiling/timers.h"

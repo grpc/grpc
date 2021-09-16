@@ -31,8 +31,9 @@
 namespace tsi {
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
-std::map<std::string, TlsKeyLogFileWriter*> g_tls_key_log_file_writer_map;
-grpc_core::Mutex* g_tls_key_logger_registry_mu = nullptr;
+grpc_core::Mutex* g_tls_key_logger_registry_mu;
+std::map<std::string, TlsKeyLogFileWriter*> g_tls_key_log_file_writer_map
+  ABSL_GUARDED_BY(g_tls_key_logger_registry_mu);
 static std::atomic<bool> g_tls_key_logger_registry_initialized(false);
 #endif
 
@@ -56,6 +57,10 @@ TlsKeyLogFileWriter::TlsKeyLogFileWriter(
 
 TlsKeyLogFileWriter::~TlsKeyLogFileWriter() {
   if (fd_ != nullptr) fclose(fd_);
+  {
+    grpc_core::MutexLock lock(g_tls_key_logger_registry_mu);
+    g_tls_key_log_file_writer_map.erase(tls_key_log_file_path_);
+  }
 }
 
 void TlsKeyLogFileWriter::AppendSessionKeys(
@@ -111,27 +116,23 @@ TlsKeyLoggerRegistry::CreateTlsKeyLogger(
   // file path.
   auto it = g_tls_key_log_file_writer_map.find(
       tsi_tls_key_log_config.tls_key_log_file_path);
+
   if (it == g_tls_key_log_file_writer_map.end()) {
     // Create a new TlsKeyLogFileWriter instance
-
-    // Sets Ref count of new_tls_key_log_file_writer to 1 to make sure the
-    // g_tls_key_log_file_writer_map is an owner.Relevant TlsKeyLogger objects
-    // which share this TlsKeyLogFileWriter instance also become owners.
     auto new_tls_key_log_file_writer =
         grpc_core::MakeRefCounted<TlsKeyLogFileWriter>(
-                                  tsi_tls_key_log_config.tls_key_log_file_path)
-                                  .release();
+                                  tsi_tls_key_log_config.tls_key_log_file_path);
 
     g_tls_key_log_file_writer_map.insert(
         std::pair<std::string, TlsKeyLogFileWriter*>(
             tsi_tls_key_log_config.tls_key_log_file_path,
-            new_tls_key_log_file_writer));
+            new_tls_key_log_file_writer.get()));
 
-    // The key logger also becomes an owner of the key log file writer
+    // The key logger becomes an owner of the key log file writer
     // instance.
     auto new_tls_key_logger =
         grpc_core::MakeRefCounted<TlsKeyLogger>(
-            tsi_tls_key_log_config, new_tls_key_log_file_writer->Ref());
+            tsi_tls_key_log_config, std::move(new_tls_key_log_file_writer));
     return new_tls_key_logger;
   }
 
@@ -148,22 +149,8 @@ TlsKeyLoggerRegistry::CreateTlsKeyLogger(
 void TlsKeyLoggerRegistry::Init() {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
   if (!g_tls_key_logger_registry_initialized.exchange(true)) {
-    g_tls_key_log_file_writer_map.clear();
+    // g_tls_key_log_file_writer_map.clear();
     g_tls_key_logger_registry_mu = new grpc_core::Mutex();
-  }
-#endif
-}
-
-void TlsKeyLoggerRegistry::Shutdown() {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
-  if (g_tls_key_logger_registry_initialized.exchange(false)) {
-    // The map calls Unref on all allotted tls key loggers
-    for (auto it = g_tls_key_log_file_writer_map.begin();
-         it != g_tls_key_log_file_writer_map.end(); it++) {
-      it->second->Unref();
-    }
-    g_tls_key_log_file_writer_map.clear();
-    delete g_tls_key_logger_registry_mu;
   }
 #endif
 }

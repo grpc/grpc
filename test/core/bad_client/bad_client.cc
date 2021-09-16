@@ -35,6 +35,7 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/util/resource_user_util.h"
 
 #define MIN_HTTP2_FRAME_SIZE 9
 
@@ -65,8 +66,10 @@ static void set_done_write(void* arg, grpc_error_handle /*error*/) {
 static void server_setup_transport(void* ts, grpc_transport* transport) {
   thd_args* a = static_cast<thd_args*>(ts);
   grpc_core::ExecCtx exec_ctx;
-  a->server->core_server->SetupTransport(
-      transport, nullptr, a->server->core_server->channel_args(), nullptr);
+  a->server->core_server->SetupTransport(transport,
+                                         /*accepting_pollset=*/nullptr,
+                                         a->server->core_server->channel_args(),
+                                         /*socket_node=*/nullptr);
 }
 
 /* Sets the read_done event */
@@ -96,11 +99,11 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
     hex = gpr_dump(arg->client_payload, arg->client_payload_length,
                    GPR_DUMP_HEX | GPR_DUMP_ASCII);
     /* Add a debug log */
-    gpr_log(GPR_INFO, "TEST[line=%d]: %s", arg->source_line, hex);
+    gpr_log(GPR_INFO, "TEST: %s", hex);
     gpr_free(hex);
   } else {
-    gpr_log(GPR_INFO, "TEST[line=%d]: (%" PRIdPTR " byte long string)",
-            arg->source_line, arg->client_payload_length);
+    gpr_log(GPR_INFO, "TEST: (%" PRIdPTR " byte long string)",
+            arg->client_payload_length);
   }
 
   grpc_slice slice = grpc_slice_from_copied_buffer(arg->client_payload,
@@ -196,21 +199,19 @@ void grpc_run_bad_client_test(
   /* Init grpc */
   grpc_init();
 
-  /* Create endpoints */
   sfd = grpc_iomgr_create_endpoint_pair("fixture", nullptr);
-
   /* Create server, completion events */
   a.server = grpc_server_create(nullptr, nullptr);
   a.cq = grpc_completion_queue_create_for_next(nullptr);
   client_cq = grpc_completion_queue_create_for_next(nullptr);
-
   grpc_server_register_completion_queue(a.server, a.cq, nullptr);
   a.registered_method =
       grpc_server_register_method(a.server, GRPC_BAD_CLIENT_REGISTERED_METHOD,
                                   GRPC_BAD_CLIENT_REGISTERED_HOST,
                                   GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   grpc_server_start(a.server);
-  transport = grpc_create_chttp2_transport(nullptr, sfd.server, false);
+  transport = grpc_create_chttp2_transport(
+      nullptr, sfd.server, false, grpc_resource_user_create_unlimited());
   server_setup_transport(&a, transport);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
@@ -237,7 +238,6 @@ void grpc_run_bad_client_test(
   /* Shutdown. */
   shutdown_client(&sfd.client);
   server_validator_thd.Join();
-
   shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   grpc_server_shutdown_and_notify(a.server, shutdown_cq, nullptr);
   GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, nullptr,
@@ -272,7 +272,7 @@ bool client_connection_preface_validator(grpc_slice_buffer* incoming,
   "\x00\x00\x00\x04\x00\x00\x00\x00\x00"
 
 grpc_bad_client_arg connection_preface_arg = {
-    -1, client_connection_preface_validator, nullptr,
+    client_connection_preface_validator, nullptr,
     CONNECTION_PREFACE_FROM_CLIENT, sizeof(CONNECTION_PREFACE_FROM_CLIENT) - 1};
 
 bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* /*arg*/) {

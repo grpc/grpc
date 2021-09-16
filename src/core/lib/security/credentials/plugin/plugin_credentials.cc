@@ -87,10 +87,8 @@ static grpc_error_handle process_plugin_result(
     size_t num_md, grpc_status_code status, const char* error_details) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   if (status != GRPC_STATUS_OK) {
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Getting metadata from plugin failed with error: ",
-                     error_details)
-            .c_str());
+    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Getting metadata from plugin failed with error: ", error_details));
   } else {
     bool seen_illegal_header = false;
     for (size_t i = 0; i < num_md; ++i) {

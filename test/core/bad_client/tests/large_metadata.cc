@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/bad_client/bad_client.h"
-
 #include <string.h>
 
 #include "absl/strings/str_format.h"
@@ -25,8 +23,10 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
 
 // The large-metadata headers that we're adding for this test are not
@@ -38,7 +38,7 @@
 #define PFX_TOO_MUCH_METADATA_FROM_CLIENT_REQUEST         \
   "\x00\x00\x00\x04\x01\x00\x00\x00\x00"                  \
   "\x00"                                                  \
-  "\x1aM\x01\x05\x00\x00\x00\x01"                         \
+  "5{\x01\x05\x00\x00\x00\x01"                            \
   "\x10\x05:path\x08/foo/bar"                             \
   "\x10\x07:scheme\x04http"                               \
   "\x10\x07:method\x04POST"                               \

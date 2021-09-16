@@ -23,9 +23,9 @@
 
 #include <string.h>
 
-#include <grpc/support/alloc.h>
-
 #include "absl/container/inlined_vector.h"
+
+#include <grpc/support/alloc.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"

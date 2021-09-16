@@ -20,6 +20,8 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/config/core_configuration.h"
+
 void grpc_http_filters_init(void);
 void grpc_http_filters_shutdown(void);
 void grpc_chttp2_plugin_init(void);
@@ -160,3 +162,15 @@ void grpc_register_built_in_plugins(void) {
                        grpc_core::GoogleCloud2ProdResolverShutdown);
 #endif
 }
+
+namespace grpc_core {
+
+extern void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder);
+extern void SecurityRegisterHandshakerFactories(CoreConfiguration::Builder* builder);
+
+void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
+  BuildClientChannelConfiguration(builder);
+  SecurityRegisterHandshakerFactories(builder);
+}
+
+}  // namespace grpc_core

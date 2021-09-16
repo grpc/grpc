@@ -16,6 +16,8 @@
  *
  */
 
+#include "test/cpp/qps/driver.h"
+
 #include <cinttypes>
 #include <deque>
 #include <list>
@@ -37,7 +39,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/qps/client.h"
-#include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/qps/stats.h"

@@ -159,9 +159,9 @@ RetryServiceConfigParser::ParseGlobalParams(const grpc_channel_args* /*args*/,
 namespace {
 
 grpc_error_handle ParseRetryPolicy(
-    const Json& json, int* max_attempts, grpc_millis* initial_backoff,
-    grpc_millis* max_backoff, float* backoff_multiplier,
-    StatusCodeSet* retryable_status_codes,
+    const grpc_channel_args* args, const Json& json, int* max_attempts,
+    grpc_millis* initial_backoff, grpc_millis* max_backoff,
+    float* backoff_multiplier, StatusCodeSet* retryable_status_codes,
     absl::optional<grpc_millis>* per_attempt_recv_timeout) {
   if (json.type() != Json::Type::OBJECT) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -251,28 +251,38 @@ grpc_error_handle ParseRetryPolicy(
     }
   }
   // Parse perAttemptRecvTimeout.
-  it = json.object_value().find("perAttemptRecvTimeout");
-  if (it != json.object_value().end()) {
-    grpc_millis per_attempt_recv_timeout_value;
-    if (!ParseDurationFromJson(it->second, &per_attempt_recv_timeout_value)) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:perAttemptRecvTimeout error:type must be STRING of the "
-          "form given by google.proto.Duration."));
-    } else {
-      *per_attempt_recv_timeout = per_attempt_recv_timeout_value;
-      // TODO(roth): As part of implementing hedging, relax this check such
-      // that we allow a value of 0 if a hedging policy is specified.
-      if (per_attempt_recv_timeout_value == 0) {
+  if (grpc_channel_args_find_bool(args, GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING,
+                                  false)) {
+    it = json.object_value().find("perAttemptRecvTimeout");
+    if (it != json.object_value().end()) {
+      grpc_millis per_attempt_recv_timeout_value;
+      if (!ParseDurationFromJson(it->second, &per_attempt_recv_timeout_value)) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:perAttemptRecvTimeout error:must be greater than 0"));
+            "field:perAttemptRecvTimeout error:type must be STRING of the "
+            "form given by google.proto.Duration."));
+      } else {
+        *per_attempt_recv_timeout = per_attempt_recv_timeout_value;
+        // TODO(roth): As part of implementing hedging, relax this check such
+        // that we allow a value of 0 if a hedging policy is specified.
+        if (per_attempt_recv_timeout_value == 0) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:perAttemptRecvTimeout error:must be greater than 0"));
+        }
       }
+    } else if (retryable_status_codes->Empty()) {
+      // If perAttemptRecvTimeout not present, retryableStatusCodes must be
+      // non-empty.
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:retryableStatusCodes error:must be non-empty if "
+          "perAttemptRecvTimeout not present"));
     }
-  } else if (retryable_status_codes->Empty()) {
-    // If perAttemptRecvTimeout not present, retryableStatusCodes must be
-    // non-empty.
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:retryableStatusCodes error:must be non-empty if "
-        "perAttemptRecvTimeout not present"));
+  } else {
+    // Hedging not enabled, so the error message for
+    // retryableStatusCodes unset should be different.
+    if (retryable_status_codes->Empty()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:retryableStatusCodes error:must be non-empty"));
+    }
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("retryPolicy", &error_list);
 }
@@ -280,9 +290,9 @@ grpc_error_handle ParseRetryPolicy(
 }  // namespace
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-RetryServiceConfigParser::ParsePerMethodParams(
-    const grpc_channel_args* /*args*/, const Json& json,
-    grpc_error_handle* error) {
+RetryServiceConfigParser::ParsePerMethodParams(const grpc_channel_args* args,
+                                               const Json& json,
+                                               grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   // Parse retry policy.
   auto it = json.object_value().find("retryPolicy");
@@ -293,7 +303,7 @@ RetryServiceConfigParser::ParsePerMethodParams(
   float backoff_multiplier = 0;
   StatusCodeSet retryable_status_codes;
   absl::optional<grpc_millis> per_attempt_recv_timeout;
-  *error = ParseRetryPolicy(it->second, &max_attempts, &initial_backoff,
+  *error = ParseRetryPolicy(args, it->second, &max_attempts, &initial_backoff,
                             &max_backoff, &backoff_multiplier,
                             &retryable_status_codes, &per_attempt_recv_timeout);
   if (*error != GRPC_ERROR_NONE) return nullptr;

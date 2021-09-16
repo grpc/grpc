@@ -19,9 +19,11 @@
 /* This benchmark exists to ensure that the benchmark integration is
  * working */
 
-#include <benchmark/benchmark.h>
 #include <string.h>
+
 #include <sstream>
+
+#include <benchmark/benchmark.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -43,6 +45,7 @@
 #include "src/core/lib/transport/transport_impl.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
@@ -701,7 +704,9 @@ class IsolatedCallFixture : public TrackCounters {
         nullptr));
     {
       grpc_core::ExecCtx exec_ctx;
-      channel_ = grpc_channel_create_with_builder(builder, GRPC_CLIENT_CHANNEL);
+      channel_ = grpc_channel_create_with_builder(
+          builder, GRPC_CLIENT_CHANNEL, grpc_resource_user_create_unlimited(),
+          0);
     }
     cq_ = grpc_completion_queue_create_for_next(nullptr);
   }

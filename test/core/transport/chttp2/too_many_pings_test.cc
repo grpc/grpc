@@ -18,12 +18,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <gmock/gmock.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <functional>
 #include <set>
 #include <thread>
+
+#include <gmock/gmock.h>
 
 #include "absl/strings/str_cat.h"
 
@@ -35,7 +37,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/server_builder.h>
 
@@ -51,12 +52,10 @@
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/channel.h"
-
+#include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-#include "test/core/end2end/cq_verifier.h"
 
 namespace {
 

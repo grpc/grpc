@@ -18,6 +18,7 @@ from dataclasses import dataclass
 import datetime
 import json
 import os
+import re
 import sys
 import time
 from typing import Any, Iterable, Mapping, Optional, Tuple, Union
@@ -44,7 +45,9 @@ QPS = flags.DEFINE_integer('qps', default=25, help='The QPS client is sending')
 
 # Test configs
 _URL_MAP_PROPAGATE_TIMEOUT_SEC = 600
-_URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC = 2
+# With the per-run IAM change, the first xDS response has a several minutes
+# delay. We want to increase the interval, reduce the log spam.
+_URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC = 15
 URL_MAP_TESTCASE_FILE_SUFFIX = '_test.py'
 _CLIENT_CONFIGURE_WAIT_SEC = 2
 
@@ -59,11 +62,19 @@ JsonType = Any
 RpcTypeUnaryCall = 'UNARY_CALL'
 RpcTypeEmptyCall = 'EMPTY_CALL'
 
+# All client languages
+_CLIENT_LANGUAGES = ('cpp', 'java', 'go', 'python')
+_SERVER_LANGUAGES = _CLIENT_LANGUAGES
+
 
 def _split_camel(s: str, delimiter: str = '-') -> str:
     """Turn camel case name to snake-case-like name."""
     return ''.join(delimiter + c.lower() if c.isupper() else c
                    for c in s).lstrip(delimiter)
+
+
+def _get_lang(image_name: str) -> str:
+    return re.search(r'/(\w+)-(client|server):', image_name).group(1)
 
 
 class DumpedXdsConfig(dict):
@@ -142,6 +153,7 @@ class RpcDistributionStats:
         self.empty_call_default_service_rpc_count = 0
         self.unary_call_alternative_service_rpc_count = 0
         self.empty_call_alternative_service_rpc_count = 0
+        self.raw = json_lb_stats
 
         if 'rpcsByPeer' in json_lb_stats:
             self.num_peers = len(json_lb_stats['rpcsByPeer'])
@@ -219,6 +231,24 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
     - xds_config_validate: Validates if the client received legit xDS configs
     - rpc_distribution_validate: Validates if the routing behavior is correct
     """
+
+    @staticmethod
+    def supported_clients() -> Tuple[str]:
+        """Declare supported languages of clients.
+
+        Returns:
+          A tuple of strings contains the supported languages for this test.
+        """
+        return _CLIENT_LANGUAGES
+
+    @staticmethod
+    def supported_servers() -> Tuple[str]:
+        """Declare supported languages of servers.
+
+        Returns:
+          A tuple of strings contains the supported languages for this test.
+        """
+        return _SERVER_LANGUAGES
 
     @staticmethod
     def client_init_config(rpc: str, metadata: str) -> Tuple[str, str]:
@@ -301,12 +331,32 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             # Create the GCP resource once before the first test start
             GcpResourceManager().setup(cls.test_case_classes)
         cls.started_test_cases.add(cls.__name__)
-        # TODO(lidiz) concurrency is possible, pending multiple-instance change
-        GcpResourceManager().test_client_runner.cleanup(force=True)
+
+        # NOTE(lidiz) a manual skip mechanism is needed because absl/flags
+        # cannot be used in the built-in test-skipping decorators. See the
+        # official FAQs:
+        # https://abseil.io/docs/python/guides/flags#faqs
+        client_lang = _get_lang(GcpResourceManager().client_image)
+        server_lang = _get_lang(GcpResourceManager().server_image)
+        if client_lang not in cls.supported_clients():
+            cls.skip_reason = (f'Unsupported client language {client_lang} '
+                               f'not in {cls.supported_clients()}')
+            return
+        elif server_lang not in cls.supported_servers():
+            cls.skip_reason = (f'Unsupported server language {server_lang} '
+                               f'not in {cls.supported_servers()}')
+            return
+        else:
+            cls.skip_reason = None
+
+        # Create the test case's own client runner with it's own namespace,
+        # enables concurrent running with other test cases.
+        cls.test_client_runner = GcpResourceManager().create_test_client_runner(
+        )
         # Start the client, and allow the test to override the initial RPC config.
         rpc, metadata = cls.client_init_config(rpc="UnaryCall,EmptyCall",
                                                metadata="")
-        cls.test_client = GcpResourceManager().test_client_runner.run(
+        cls.test_client = cls.test_client_runner.run(
             server_target=f'xds:///{cls.hostname()}',
             rpc=rpc,
             metadata=metadata,
@@ -315,7 +365,9 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        GcpResourceManager().test_client_runner.cleanup(force=True)
+        if cls.skip_reason is None:
+            # Clean up related resources for the client
+            cls.test_client_runner.cleanup(force=True, force_namespace=True)
         cls.finished_test_cases.add(cls.__name__)
         if cls.finished_test_cases == cls.test_case_names:
             # Tear down the GCP resource after all tests finished
@@ -330,17 +382,8 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         self.assertIsNotNone(config)
         # Found client config, test it.
         self._xds_json_config = json_format.MessageToDict(config)
-        try:
-            self.xds_config_validate(DumpedXdsConfig(self._xds_json_config))
-        except Exception as e:
-            # Log the exception for debugging purposes.
-            if type(self._last_xds_config_exception) != type(e) or str(
-                    self._last_xds_config_exception) != str(e):
-                # Suppress repetitive exception logs
-                logging.exception(e)
-                self._last_xds_config_exception = e
-            raise
-        return
+        # Execute the child class provided validation logic
+        self.xds_config_validate(DumpedXdsConfig(self._xds_json_config))
 
     def run(self, result: unittest.TestResult = None) -> None:
         """Abort this test case if CSDS check is failed.
@@ -354,7 +397,9 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             super().run(result)
 
     def test_client_config(self):
-        self._last_xds_config_exception = None
+        if self.skip_reason:
+            logging.info('Skipping: %s', self.skip_reason)
+            self.skipTest(self.skip_reason)
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(
                 seconds=_URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC),
@@ -370,6 +415,9 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
                     self._xds_json_config))
 
     def test_rpc_distribution(self):
+        if self.skip_reason:
+            logging.info('Skipping: %s', self.skip_reason)
+            self.skipTest(self.skip_reason)
         self.rpc_distribution_validate(self.test_client)
 
     @staticmethod

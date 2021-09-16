@@ -18,12 +18,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/transport/inproc/inproc_transport.h"
+
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <string.h>
-#include "src/core/ext/transport/inproc/inproc_transport.h"
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -282,15 +285,14 @@ struct inproc_stream {
 
 void log_metadata(const grpc_metadata_batch* md_batch, bool is_client,
                   bool is_initial) {
-  for (grpc_linked_mdelem* md = md_batch->list.head; md != nullptr;
-       md = md->next) {
-    char* key = grpc_slice_to_c_string(GRPC_MDKEY(md->md));
-    char* value = grpc_slice_to_c_string(GRPC_MDVALUE(md->md));
+  (*md_batch)->ForEach([=](grpc_mdelem md) {
+    char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
+    char* value = grpc_slice_to_c_string(GRPC_MDVALUE(md));
     gpr_log(GPR_INFO, "INPROC:%s:%s: %s: %s", is_initial ? "HDR" : "TRL",
             is_client ? "CLI" : "SVR", key, value);
     gpr_free(key);
     gpr_free(value);
-  }
+  });
 }
 
 grpc_error_handle fill_in_metadata(inproc_stream* s,
@@ -308,16 +310,15 @@ grpc_error_handle fill_in_metadata(inproc_stream* s,
     *markfilled = true;
   }
   grpc_error_handle error = GRPC_ERROR_NONE;
-  for (grpc_linked_mdelem* elem = metadata->list.head;
-       (elem != nullptr) && (error == GRPC_ERROR_NONE); elem = elem->next) {
+  (*metadata)->ForEach([&](grpc_mdelem md) {
+    if (error != GRPC_ERROR_NONE) return;
     grpc_linked_mdelem* nelem =
         static_cast<grpc_linked_mdelem*>(s->arena->Alloc(sizeof(*nelem)));
-    nelem->md =
-        grpc_mdelem_from_slices(grpc_slice_intern(GRPC_MDKEY(elem->md)),
-                                grpc_slice_intern(GRPC_MDVALUE(elem->md)));
+    nelem->md = grpc_mdelem_from_slices(grpc_slice_intern(GRPC_MDKEY(md)),
+                                        grpc_slice_intern(GRPC_MDVALUE(md)));
 
     error = grpc_metadata_batch_link_tail(out_md, nelem);
-  }
+  });
   return error;
 }
 
@@ -706,8 +707,9 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
               .recv_initial_metadata,
           s->recv_initial_md_op->payload->recv_initial_metadata.recv_flags,
           nullptr);
-      s->recv_initial_md_op->payload->recv_initial_metadata
-          .recv_initial_metadata->deadline = s->deadline;
+      (*s->recv_initial_md_op->payload->recv_initial_metadata
+            .recv_initial_metadata)
+          ->SetDeadline(s->deadline);
       if (s->recv_initial_md_op->payload->recv_initial_metadata
               .trailing_metadata_available != nullptr) {
         *s->recv_initial_md_op->payload->recv_initial_metadata
@@ -1030,8 +1032,9 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
         if (s->t->is_client) {
           grpc_millis* dl =
               (other == nullptr) ? &s->write_buffer_deadline : &other->deadline;
-          *dl = GPR_MIN(*dl, op->payload->send_initial_metadata
-                                 .send_initial_metadata->deadline);
+          *dl = GPR_MIN(
+              *dl, (*op->payload->send_initial_metadata.send_initial_metadata)
+                       ->deadline());
           s->initial_md_sent = true;
         }
       }
@@ -1290,7 +1293,6 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   const grpc_channel_args* server_args = grpc_channel_args_copy_and_remove(
       server->core_server->channel_args(), args_to_remove,
       GPR_ARRAY_SIZE(args_to_remove));
-
   // Add a default authority channel argument for the client
   grpc_arg default_authority_arg;
   default_authority_arg.type = GRPC_ARG_STRING;
@@ -1311,7 +1313,7 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   if (error == GRPC_ERROR_NONE) {
     channel =
         grpc_channel_create("inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                            client_transport, nullptr, &error);
+                            client_transport, nullptr, 0, &error);
     if (error != GRPC_ERROR_NONE) {
       GPR_ASSERT(!channel);
       gpr_log(GPR_ERROR, "Failed to create client channel: %s",

@@ -16,6 +16,8 @@
  *
  */
 
+#include "src/core/lib/channel/channelz.h"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -23,22 +25,17 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_trace.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
-
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
-
-#include <grpc/support/string_util.h>
-#include <stdlib.h>
-#include <string.h>
 
 namespace grpc_core {
 namespace channelz {

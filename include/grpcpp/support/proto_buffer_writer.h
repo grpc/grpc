@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SUPPORT_PROTO_BUFFER_WRITER_H
 #define GRPCPP_SUPPORT_PROTO_BUFFER_WRITER_H
 
-#include <grpcpp/impl/codegen/proto_buffer_writer.h>
+#include <grpcpp/impl/codegen/proto_buffer_writer.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SUPPORT_PROTO_BUFFER_WRITER_H

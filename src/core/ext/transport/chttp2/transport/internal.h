@@ -345,7 +345,7 @@ struct grpc_chttp2_transport {
   /** data to write now */
   grpc_slice_buffer outbuf;
   /** hpack encoding */
-  grpc_chttp2_hpack_compressor hpack_compressor;
+  grpc_core::HPackCompressor hpack_compressor;
   /** is this a client? */
   bool is_client;
 
@@ -555,7 +555,7 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch* recv_initial_metadata;
   grpc_closure* recv_initial_metadata_ready = nullptr;
   bool* trailing_metadata_available = nullptr;
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
+  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message = nullptr;
   bool* call_failed_before_recv_message = nullptr;
   grpc_closure* recv_message_ready = nullptr;
   grpc_metadata_batch* recv_trailing_metadata;

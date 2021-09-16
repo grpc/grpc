@@ -20,6 +20,8 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/config/core_configuration.h"
+
 void grpc_http_filters_init(void);
 void grpc_http_filters_shutdown(void);
 void grpc_chttp2_plugin_init(void);
@@ -112,4 +114,14 @@ void grpc_register_built_in_plugins(void) {
                        grpc_client_authority_filter_shutdown);
   grpc_register_plugin(grpc_workaround_cronet_compression_filter_init,
                        grpc_workaround_cronet_compression_filter_shutdown);
+}
+
+namespace grpc_core {
+
+extern void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder);
+
+void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
+  BuildClientChannelConfiguration(builder);
+}
+
 }

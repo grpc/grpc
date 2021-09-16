@@ -21,9 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc_security.h>
-
 #include "absl/container/inlined_vector.h"
+
+#include <grpc/grpc_security.h>
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -129,9 +129,12 @@ struct grpc_tls_credentials_options
   // Returns the constructed tls key logger. This function is only
   // used internally.
   grpc_core::RefCountedPtr<tsi::TlsKeyLogger> get_tls_key_logger() {
+    char * tls_key_logging_enabled = gpr_getenv(GRPC_TLS_KEY_LOGGING_ENV_VAR);
     if (tls_key_logger_.get() == nullptr &&
       !tls_key_log_config_.tls_key_log_file_path.empty() &&
-      strcmp(gpr_getenv(GRPC_TLS_KEY_LOGGING_ENV_VAR), "true") == 0) {
+      strcmp(tls_key_logging_enabled, "true") == 0) {
+      // Initialize key logger registry here.
+      grpc_tls_key_logger_registry_init();
       // Tls key logging is assumed to be enabled if the specified log file is
       // non-empty and GRPC_TLS_KEY_LOGGING_ENABLED environment variable is set
       // to true.
@@ -139,7 +142,9 @@ struct grpc_tls_credentials_options
               tls_key_log_config_.tls_key_log_file_path.c_str());
       tls_key_logger_ = tsi::TlsKeyLoggerRegistry::CreateTlsKeyLogger(
         tls_key_log_config_);
+      GPR_DEBUG_ASSERT(tls_key_logger_ != nullptr);
     }
+    gpr_free(tls_key_logging_enabled);
     return tls_key_logger_;
   }
 

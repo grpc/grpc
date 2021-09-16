@@ -20,7 +20,7 @@ modules.
 import datetime
 import functools
 import logging
-from typing import Iterable, List, Optional, Tuple
+from typing import Iterable, List, Optional
 
 from framework.helpers import retryers
 from framework.infrastructure import gcp
@@ -244,7 +244,8 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
                  service_account_template='service-account.yaml',
                  reuse_namespace=False,
                  namespace_template=None,
-                 debug_use_port_forwarding=False):
+                 debug_use_port_forwarding=False,
+                 enable_workload_identity=True):
         super().__init__(k8s_namespace, namespace_template, reuse_namespace)
 
         # Settings
@@ -257,10 +258,18 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         self.network = network
         self.deployment_template = deployment_template
         self.debug_use_port_forwarding = debug_use_port_forwarding
+        self.enable_workload_identity = enable_workload_identity
         # Service account settings:
         # Kubernetes service account
-        self.service_account_name = service_account_name or deployment_name
-        self.service_account_template = service_account_template
+        if self.enable_workload_identity:
+            self.service_account_name = service_account_name or deployment_name
+            self.service_account_template = service_account_template
+        else:
+            self.service_account_name = None
+            self.service_account_template = None
+        # GCP.
+        self.gcp_project = gcp_project
+        self.gcp_ui_url = gcp_api_manager.gcp_ui_url
         # GCP service account to map to Kubernetes service account
         self.gcp_service_account = gcp_service_account
         # GCP IAM API used to grant allow workload service accounts permission
@@ -272,6 +281,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         self.service_account: Optional[k8s.V1ServiceAccount] = None
         self.port_forwarder = None
 
+    # TODO(sergiitk): make rpc UnaryCall enum or get it from proto
     def run(self,
             *,
             server_target,
@@ -280,22 +290,32 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
             metadata='',
             secure_mode=False,
             print_response=False) -> XdsTestClient:
+        logger.info(
+            'Deploying xDS test client "%s" to k8s namespace %s: '
+            'server_target=%s rpc=%s qps=%s metadata=%r secure_mode=%s '
+            'print_response=%s', self.deployment_name, self.k8s_namespace.name,
+            server_target, rpc, qps, metadata, secure_mode, print_response)
+        self._logs_explorer_link(deployment_name=self.deployment_name,
+                                 namespace_name=self.k8s_namespace.name,
+                                 gcp_project=self.gcp_project,
+                                 gcp_ui_url=self.gcp_ui_url)
+
         super().run()
-        # TODO(sergiitk): make rpc UnaryCall enum or get it from proto
 
-        # Allow Kubernetes service account to use the GCP service account
-        # identity.
-        self._grant_workload_identity_user(
-            gcp_iam=self.gcp_iam,
-            gcp_service_account=self.gcp_service_account,
-            service_account_name=self.service_account_name)
+        if self.enable_workload_identity:
+            # Allow Kubernetes service account to use the GCP service account
+            # identity.
+            self._grant_workload_identity_user(
+                gcp_iam=self.gcp_iam,
+                gcp_service_account=self.gcp_service_account,
+                service_account_name=self.service_account_name)
 
-        # Create service account
-        self.service_account = self._create_service_account(
-            self.service_account_template,
-            service_account_name=self.service_account_name,
-            namespace_name=self.k8s_namespace.name,
-            gcp_service_account=self.gcp_service_account)
+            # Create service account
+            self.service_account = self._create_service_account(
+                self.service_account_template,
+                service_account_name=self.service_account_name,
+                namespace_name=self.k8s_namespace.name,
+                gcp_service_account=self.gcp_service_account)
 
         # Always create a new deployment
         self.deployment = self._create_deployment(
@@ -343,7 +363,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         if self.deployment or force:
             self._delete_deployment(self.deployment_name)
             self.deployment = None
-        if self.service_account or force:
+        if self.enable_workload_identity and (self.service_account or force):
             self._revoke_workload_identity_user(
                 gcp_iam=self.gcp_iam,
                 gcp_service_account=self.gcp_service_account,

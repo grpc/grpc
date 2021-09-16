@@ -15,12 +15,12 @@
  *
  */
 
-#include <grpcpp/server.h>
-
 #include <cstdlib>
 #include <sstream>
 #include <type_traits>
 #include <utility>
+
+#include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -39,10 +39,9 @@
 #include <grpcpp/impl/server_initializer.h>
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/time.h>
-
-#include "absl/memory/memory.h"
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -1110,9 +1109,9 @@ void Server::UnrefAndWaitLocked() {
     shutdown_done_ = true;
     return;  // no need to wait on CV since done condition already set
   }
-  grpc::internal::WaitUntil(
-      &shutdown_done_cv_, &mu_,
-      [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { return shutdown_done_; });
+  while (!shutdown_done_) {
+    shutdown_done_cv_.Wait(&mu_);
+  }
 }
 
 void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {

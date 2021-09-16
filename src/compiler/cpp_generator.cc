@@ -16,10 +16,9 @@
  *
  */
 
-#include <map>
-
 #include "src/compiler/cpp_generator.h"
 
+#include <map>
 #include <sstream>
 
 namespace grpc_cpp_generator {

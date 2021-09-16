@@ -21,8 +21,6 @@
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
-#include "src/core/lib/iomgr/socket_utils_posix.h"
-
 #include <errno.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
@@ -34,6 +32,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/util/test_config.h"
 
 struct test_socket_mutator {

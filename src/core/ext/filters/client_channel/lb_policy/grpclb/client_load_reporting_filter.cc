@@ -101,20 +101,15 @@ static void clr_start_transport_stream_op_batch(
   // Handle send_initial_metadata.
   if (batch->send_initial_metadata) {
     // Grab client stats object from metadata.
-    grpc_linked_mdelem* client_stats_md =
-        batch->payload->send_initial_metadata.send_initial_metadata->list.head;
-    for (; client_stats_md != nullptr;
-         client_stats_md = client_stats_md->next) {
-      if (GRPC_SLICE_START_PTR(GRPC_MDKEY(client_stats_md->md)) ==
-          static_cast<const void*>(grpc_core::kGrpcLbClientStatsMetadataKey)) {
-        break;
-      }
-    }
-    if (client_stats_md != nullptr) {
+    auto client_stats_md =
+        (*batch->payload->send_initial_metadata.send_initial_metadata)
+            ->Remove(grpc_slice_from_static_string(
+                grpc_core::kGrpcLbClientStatsMetadataKey));
+    if (client_stats_md.has_value()) {
       grpc_core::GrpcLbClientStats* client_stats =
           const_cast<grpc_core::GrpcLbClientStats*>(
               reinterpret_cast<const grpc_core::GrpcLbClientStats*>(
-                  GRPC_SLICE_START_PTR(GRPC_MDVALUE(client_stats_md->md))));
+                  GRPC_SLICE_START_PTR(*client_stats_md)));
       if (client_stats != nullptr) {
         calld->client_stats.reset(client_stats);
         // Intercept completion.
@@ -123,10 +118,6 @@ static void clr_start_transport_stream_op_batch(
                           calld, grpc_schedule_on_exec_ctx);
         batch->on_complete = &calld->on_complete_for_send;
       }
-      // Remove metadata so it doesn't go out on the wire.
-      grpc_metadata_batch_remove(
-          batch->payload->send_initial_metadata.send_initial_metadata,
-          client_stats_md);
     }
   }
   // Intercept completion of recv_initial_metadata.

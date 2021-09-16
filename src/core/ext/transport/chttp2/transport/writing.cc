@@ -18,14 +18,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/ext/transport/chttp2/transport/context_list.h"
-#include "src/core/ext/transport/chttp2/transport/internal.h"
-
 #include <limits.h>
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/context_list.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/profiling/timers.h"
@@ -194,7 +193,8 @@ static uint32_t target_write_size(grpc_chttp2_transport* /*t*/) {
 
 // Returns true if initial_metadata contains only default headers.
 static bool is_default_initial_metadata(grpc_metadata_batch* initial_metadata) {
-  return initial_metadata->list.default_count == initial_metadata->list.count;
+  return (*initial_metadata)->default_count() ==
+         (*initial_metadata)->non_deadline_count();
 }
 
 namespace {
@@ -259,8 +259,7 @@ class WriteContext {
   }
 
   void EnactHpackSettings() {
-    grpc_chttp2_hpack_compressor_set_max_table_size(
-        &t_->hpack_compressor,
+    t_->hpack_compressor.SetMaxTableSize(
         t_->settings[GRPC_PEER_SETTINGS]
                     [GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
   }
@@ -457,18 +456,20 @@ class StreamWriteContext {
         is_default_initial_metadata(s_->send_initial_metadata)) {
       ConvertInitialMetadataToTrailingMetadata();
     } else {
-      grpc_encode_header_options hopt = {
-          s_->id,  // stream_id
-          false,   // is_eof
-          t_->settings[GRPC_PEER_SETTINGS]
+      t_->hpack_compressor.EncodeHeaders(
+          grpc_core::HPackCompressor::EncodeHeaderOptions{
+              s_->id,  // stream_id
+              false,   // is_eof
+              t_->settings
+                      [GRPC_PEER_SETTINGS]
                       [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
-              0,  // use_true_binary_metadata
-          t_->settings[GRPC_PEER_SETTINGS]
-                      [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],  // max_frame_size
-          &s_->stats.outgoing                                 // stats
-      };
-      grpc_chttp2_encode_header(&t_->hpack_compressor, nullptr, 0,
-                                s_->send_initial_metadata, &hopt, &t_->outbuf);
+                  0,  // use_true_binary_metadata
+              t_->settings
+                  [GRPC_PEER_SETTINGS]
+                  [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],  // max_frame_size
+              &s_->stats.outgoing                         // stats
+          },
+          **s_->send_initial_metadata, &t_->outbuf);
       grpc_chttp2_reset_ping_clock(t_);
       write_context_->IncInitialMetadataWrites();
     }
@@ -565,18 +566,22 @@ class StreamWriteContext {
       grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, 0, true,
                               &s_->stats.outgoing, &t_->outbuf);
     } else {
-      grpc_encode_header_options hopt = {
-          s_->id, true,
-          t_->settings[GRPC_PEER_SETTINGS]
+      t_->hpack_compressor.EncodeHeaders(
+          grpc_core::HPackCompressor::EncodeHeaderOptions{
+              s_->id, true,
+              t_->settings
+                      [GRPC_PEER_SETTINGS]
                       [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
-              0,
-
-          t_->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-          &s_->stats.outgoing};
-      grpc_chttp2_encode_header(&t_->hpack_compressor,
-                                extra_headers_for_trailing_metadata_,
-                                num_extra_headers_for_trailing_metadata_,
-                                s_->send_trailing_metadata, &hopt, &t_->outbuf);
+                  0,
+              t_->settings[GRPC_PEER_SETTINGS]
+                          [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+              &s_->stats.outgoing},
+          grpc_core::ConcatMetadata(
+              grpc_core::MetadataArray(
+                  extra_headers_for_trailing_metadata_,
+                  num_extra_headers_for_trailing_metadata_),
+              **s_->send_trailing_metadata),
+          &t_->outbuf);
     }
     write_context_->IncTrailingMetadataWrites();
     grpc_chttp2_reset_ping_clock(t_);
@@ -596,15 +601,18 @@ class StreamWriteContext {
         gpr_log(GPR_INFO, "not sending initial_metadata (Trailers-Only)"));
     // When sending Trailers-Only, we need to move the :status and
     // content-type headers to the trailers.
-    if (s_->send_initial_metadata->idx.named.status != nullptr) {
+    if ((*s_->send_initial_metadata)->legacy_index()->named.status != nullptr) {
       extra_headers_for_trailing_metadata_
           [num_extra_headers_for_trailing_metadata_++] =
-              &s_->send_initial_metadata->idx.named.status->md;
+              &(*s_->send_initial_metadata)->legacy_index()->named.status->md;
     }
-    if (s_->send_initial_metadata->idx.named.content_type != nullptr) {
+    if ((*s_->send_initial_metadata)->legacy_index()->named.content_type !=
+        nullptr) {
       extra_headers_for_trailing_metadata_
           [num_extra_headers_for_trailing_metadata_++] =
-              &s_->send_initial_metadata->idx.named.content_type->md;
+              &(*s_->send_initial_metadata)
+                   ->legacy_index()
+                   ->named.content_type->md;
     }
   }
 

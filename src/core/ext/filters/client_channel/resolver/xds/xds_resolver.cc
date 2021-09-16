@@ -242,7 +242,6 @@ class XdsResolver : public Resolver {
     RouteTable route_table_;
     std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
     std::vector<const grpc_channel_filter*> filters_;
-    bool retry_enabled_ = false;
   };
 
   void OnListenerUpdate(XdsApi::LdsUpdate listener);
@@ -470,8 +469,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     RefCountedPtr<ServiceConfig>* method_config) {
   std::vector<std::string> fields;
   // Set retry policy if any.
-  if (route.retry_policy.has_value()) {
-    retry_enabled_ = true;
+  if (route.retry_policy.has_value() && !route.retry_policy->retry_on.Empty()) {
     std::vector<std::string> retry_parts;
     retry_parts.push_back(absl::StrFormat(
         "\"retryPolicy\": {\n"
@@ -540,11 +538,9 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     auto method_config_field =
         filter_impl->GenerateServiceConfig(http_filter.config, config_override);
     if (!method_config_field.ok()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("failed to generate method config for HTTP filter ",
-                       http_filter.name, ": ",
-                       method_config_field.status().ToString())
-              .c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "failed to generate method config for HTTP filter ", http_filter.name,
+          ": ", method_config_field.status().ToString()));
     }
     per_filter_configs[method_config_field->service_config_field_name]
         .push_back(method_config_field->element);
@@ -575,18 +571,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
 
 grpc_channel_args* XdsResolver::XdsConfigSelector::ModifyChannelArgs(
     grpc_channel_args* args) {
-  // The max number of args to add is 1 so far; when more args need to be added
-  // we will increase the size of args_to_add accordingly;
-  absl::InlinedVector<grpc_arg, 1> args_to_add;
-  if (retry_enabled_) {
-    args_to_add.emplace_back(grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1));
-  }
-  if (args_to_add.empty()) return args;
-  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
-      args, args_to_add.data(), args_to_add.size());
-  grpc_channel_args_destroy(args);
-  return new_args;
+  return args;
 }
 
 void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
@@ -861,10 +846,9 @@ void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
   XdsApi::RdsUpdate::VirtualHost* vhost =
       rds_update.FindVirtualHostForDomain(server_name_);
   if (vhost == nullptr) {
-    OnError(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    OnError(GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("could not find VirtualHost for ", server_name_,
-                     " in RouteConfiguration")
-            .c_str()));
+                     " in RouteConfiguration")));
     return;
   }
   // Save the virtual host in the resolver.

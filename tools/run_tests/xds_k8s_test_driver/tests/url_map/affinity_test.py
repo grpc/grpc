@@ -53,10 +53,11 @@ _TEST_METADATA = (
 _ChannelzChannelState = grpc_channelz.ChannelState
 
 
-@absltest.skipUnless('cpp-client' in xds_k8s_flags.CLIENT_IMAGE.value or \
-                     'java-client' in xds_k8s_flags.CLIENT_IMAGE.value,
-                     'Affinity is currently only implemented in C++ and Java.')
 class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def supported_clients() -> Tuple[str]:
+        return 'cpp', 'java'
 
     @staticmethod
     def client_init_config(rpc: str, metadata: str):
@@ -102,11 +103,120 @@ class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
             test_client.find_subchannels_with_state(_ChannelzChannelState.IDLE),
             2,
         )
+        # Send 150 RPCs without headers. RPCs without headers will pick random
+        # backends. After this, we expect to see all backends to be connected.
+        rpc_distribution = self.configure_and_send(
+            test_client,
+            rpc_types=[RpcTypeEmptyCall, RpcTypeUnaryCall],
+            num_rpcs=_NUM_RPCS)
+        self.assertEqual(3, rpc_distribution.num_peers)
+        self.assertLen(
+            test_client.find_subchannels_with_state(
+                _ChannelzChannelState.READY),
+            3,
+        )
+
+
+class TestHeaderBasedAffinityMultipleHeaders(
+        xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def supported_clients() -> Tuple[str]:
+        return 'cpp', 'java'
+
+    @staticmethod
+    def client_init_config(rpc: str, metadata: str):
+        # Config the init RPCs to send with the same set of metadata. Without
+        # this, the init RPCs will not have headers, and will pick random
+        # backends (behavior of RING_HASH). This is necessary to only one
+        # sub-channel is picked and used from the beginning, thus the channel
+        # will only create this one sub-channel.
+        return 'EmptyCall', 'EmptyCall:%s:%s' % (_TEST_METADATA_KEY,
+                                                 _TEST_METADATA_VALUE_EMPTY)
+
+    @staticmethod
+    def url_map_change(
+            host_rule: HostRule,
+            path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
+        # Update default service to the affinity service.
+        path_matcher["defaultService"] = GcpResourceManager(
+        ).affinity_backend_service()
+        return host_rule, path_matcher
+
+    def xds_config_validate(self, xds_config: DumpedXdsConfig):
+        # 3 endpoints in the affinity backend service.
+        self.assertNumEndpoints(xds_config, 3)
+        self.assertEqual(
+            xds_config.rds['virtualHosts'][0]['routes'][0]['route']
+            ['hashPolicy'][0]['header']['headerName'], _TEST_METADATA_KEY)
+        self.assertEqual(xds_config.cds[0]['lbPolicy'], 'RING_HASH')
+
+    def rpc_distribution_validate(self, test_client: XdsTestClient):
+        rpc_distribution = self.configure_and_send(test_client,
+                                                   rpc_types=[RpcTypeEmptyCall],
+                                                   metadata=_TEST_METADATA,
+                                                   num_rpcs=_NUM_RPCS)
+        # Only one backend should receive traffic, even though there are 3
+        # backends.
+        self.assertEqual(1, rpc_distribution.num_peers)
+        self.assertLen(
+            test_client.find_subchannels_with_state(
+                _ChannelzChannelState.READY),
+            1,
+        )
+        self.assertLen(
+            test_client.find_subchannels_with_state(_ChannelzChannelState.IDLE),
+            2,
+        )
+        empty_call_peer = list(rpc_distribution.raw['rpcsByMethod']['EmptyCall']
+                               ['rpcsByPeer'].keys())[0]
+        # Send RPCs with a different metadata value, try different values to
+        # verify that the client will pick a different backend.
+        #
+        # EmptyCalls will be sent with the same metadata as before, and
+        # UnaryCalls will be sent with headers from ["0".."29"]. We check the
+        # endpoint picked for UnaryCall, and stop as soon as one different from
+        # the EmptyCall peer is picked.
+        #
+        # Note that there's a small chance all the headers would still pick the
+        # same backend used by EmptyCall. But there will be over a thousand
+        # nodes on the ring (default min size is 1024), and the probability of
+        # picking the same backend should be fairly small.
+        different_peer_picked = False
+        for i in range(30):
+            new_metadata = (
+                (RpcTypeEmptyCall, _TEST_METADATA_KEY,
+                 _TEST_METADATA_VALUE_EMPTY),
+                (RpcTypeUnaryCall, _TEST_METADATA_KEY, str(i)),
+            )
+            rpc_distribution = self.configure_and_send(
+                test_client,
+                rpc_types=[RpcTypeEmptyCall, RpcTypeUnaryCall],
+                metadata=new_metadata,
+                num_rpcs=_NUM_RPCS)
+            unary_call_peer = list(rpc_distribution.raw['rpcsByMethod']
+                                   ['UnaryCall']['rpcsByPeer'].keys())[0]
+            if unary_call_peer != empty_call_peer:
+                different_peer_picked = True
+                break
+        self.assertTrue(
+            different_peer_picked,
+            "the same endpoint was picked for all the headers, expect a different endpoint to be picked"
+        )
+        self.assertLen(
+            test_client.find_subchannels_with_state(
+                _ChannelzChannelState.READY),
+            2,
+        )
+        self.assertLen(
+            test_client.find_subchannels_with_state(_ChannelzChannelState.IDLE),
+            1,
+        )
 
 
 # TODO: add more test cases
 # 1. based on the basic test, turn down the backend in use, then verify that all
 #    RPCs are sent to another backend
-# 2. based on the basic test, send more RPCs with other metadata, then verify
-#    that they can pick another backend, and there are total of two READY
-#    sub-channels
+
+if __name__ == '__main__':
+    absltest.main()

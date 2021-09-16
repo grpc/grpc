@@ -20,6 +20,7 @@
 #define GRPC_TEST_CPP_UTIL_SERVICE_DESCRIBER_H
 
 #include <grpcpp/support/config.h>
+
 #include "test/cpp/util/config_grpc_cli.h"
 
 namespace grpc {

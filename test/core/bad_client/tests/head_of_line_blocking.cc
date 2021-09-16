@@ -16,14 +16,13 @@
  *
  */
 
-#include "test/core/bad_client/bad_client.h"
-
 #include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/surface/server.h"
+#include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
 
 static const char prefix[] =
@@ -131,7 +130,7 @@ int main(int argc, char** argv) {
     addbuf(hdr, sizeof(hdr));
     addbuf(msg, FRAME_SIZE);
   }
-  grpc_bad_client_arg bca = {__LINE__, nullptr, nullptr, g_buffer, g_count};
+  grpc_bad_client_arg bca = {nullptr, nullptr, g_buffer, g_count};
   grpc_run_bad_client_test(verifier, &bca, 1, 0);
   gpr_free(g_buffer);
   grpc_shutdown();

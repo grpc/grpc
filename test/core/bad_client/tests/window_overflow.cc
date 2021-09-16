@@ -16,14 +16,13 @@
  *
  */
 
-#include "test/core/bad_client/bad_client.h"
-
 #include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/surface/server.h"
+#include "test/core/bad_client/bad_client.h"
 
 #define PFX_STR                                                            \
   "\x00\x00\x00\x04\x01\x00\x00\x00\x00"                                   \
@@ -94,7 +93,7 @@ int main(int argc, char** argv) {
   }
   grpc_bad_client_arg bca[2];
   bca[0] = connection_preface_arg;
-  bca[1] = {__LINE__, rst_stream_client_validator, nullptr, g_buffer, g_count};
+  bca[1] = {rst_stream_client_validator, nullptr, g_buffer, g_count};
   grpc_run_bad_client_test(verifier, bca, 2, GRPC_BAD_CLIENT_LARGE_REQUEST);
   gpr_free(g_buffer);
   grpc_shutdown();

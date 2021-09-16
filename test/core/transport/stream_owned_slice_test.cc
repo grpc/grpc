@@ -16,12 +16,11 @@
  *
  */
 
-#include "src/core/lib/transport/transport.h"
-
-#include "test/core/util/test_config.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+
+#include "src/core/lib/transport/transport.h"
+#include "test/core/util/test_config.h"
 
 static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 

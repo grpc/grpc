@@ -207,7 +207,3 @@ void grpc_tls_key_logger_destroy(grpc_tls_key_logger* key_logger) {
 void grpc_tls_key_logger_registry_init() {
   tsi_tls_key_logger_registry_init();
 }
-
-void grpc_tls_key_logger_registry_destroy() {
-  tsi_tls_key_logger_registry_destroy();
-}

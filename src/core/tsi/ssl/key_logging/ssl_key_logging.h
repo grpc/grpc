@@ -119,7 +119,7 @@ class TlsKeyLogger : public grpc_core::RefCounted<TlsKeyLogger> {
   /// logging format and the log file path.
   explicit TlsKeyLogger(
       const TsiTlsKeyLoggerConfig& tsi_tls_key_logger_config,
-      grpc_core::RefCountedPtr<TlsKeyLogFileWriter> tls_key_log_file_writer)
+      grpc_core::RefCountedPtr<TlsKeyLogFileWriter>&& tls_key_log_file_writer)
       : tls_key_log_file_writer_(std::move(tls_key_log_file_writer)),
         tsi_tls_key_log_config_(tsi_tls_key_logger_config){};
 
@@ -156,8 +156,6 @@ class TlsKeyLoggerRegistry {
   /// Initializes the TlsKeyLoggerRegistry.
   static void Init();
 
-  /// Cleans up some allocations made during the initialization process.
-  static void Shutdown();
 };
 
 }  // namespace tsi
