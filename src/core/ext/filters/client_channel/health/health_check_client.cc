@@ -558,9 +558,11 @@ void HealthCheckClient::CallState::RecvTrailingMetadataReady(
     grpc_error_get_status(error, GRPC_MILLIS_INF_FUTURE, &status,
                           nullptr /* slice */, nullptr /* http_error */,
                           nullptr /* error_string */);
-  } else if (self->recv_trailing_metadata_.idx.named.grpc_status != nullptr) {
+  } else if ((*self->recv_trailing_metadata_)
+                 .legacy_index()
+                 ->named.grpc_status != nullptr) {
     status = grpc_get_status_code_from_metadata(
-        self->recv_trailing_metadata_.idx.named.grpc_status->md);
+        (*self->recv_trailing_metadata_).legacy_index()->named.grpc_status->md);
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
     gpr_log(GPR_INFO,

@@ -2685,11 +2685,10 @@ def get_url_map(gcp, url_map_name, record_error=True):
         result = gcp.compute.urlMaps().get(project=gcp.project,
                                            urlMap=url_map_name).execute()
         url_map = GcpResource(url_map_name, result['selfLink'])
+        gcp.url_maps.append(url_map)
     except Exception as e:
         if record_error:
             gcp.errors.append(e)
-        url_map = GcpResource(url_map_name, None)
-    gcp.url_maps.append(url_map)
 
 
 def get_target_proxy(gcp, target_proxy_name, record_error=True):
@@ -2703,11 +2702,10 @@ def get_target_proxy(gcp, target_proxy_name, record_error=True):
                 project=gcp.project,
                 targetHttpProxy=target_proxy_name).execute()
         target_proxy = GcpResource(target_proxy_name, result['selfLink'])
+        gcp.target_proxies.append(target_proxy)
     except Exception as e:
         if record_error:
             gcp.errors.append(e)
-        target_proxy = GcpResource(target_proxy_name, None)
-    gcp.target_proxies.append(target_proxy)
 
 
 def get_global_forwarding_rule(gcp, forwarding_rule_name, record_error=True):
@@ -2716,11 +2714,10 @@ def get_global_forwarding_rule(gcp, forwarding_rule_name, record_error=True):
             project=gcp.project, forwardingRule=forwarding_rule_name).execute()
         global_forwarding_rule = GcpResource(forwarding_rule_name,
                                              result['selfLink'])
+        gcp.global_forwarding_rules.append(global_forwarding_rule)
     except Exception as e:
         if record_error:
             gcp.errors.append(e)
-        global_forwarding_rule = GcpResource(forwarding_rule_name, None)
-    gcp.global_forwarding_rules.append(global_forwarding_rule)
 
 
 def get_instance_template(gcp, template_name):
@@ -2770,7 +2767,8 @@ def delete_global_forwarding_rule(gcp, forwarding_rule_to_delete=None):
 
 
 def delete_global_forwarding_rules(gcp):
-    for forwarding_rule in gcp.global_forwarding_rules:
+    forwarding_rules_to_delete = gcp.global_forwarding_rules.copy()
+    for forwarding_rule in forwarding_rules_to_delete:
         delete_global_forwarding_rule(gcp, forwarding_rule)
 
 
@@ -2801,7 +2799,8 @@ def delete_target_proxy(gcp, proxy_to_delete=None):
 
 
 def delete_target_proxies(gcp):
-    for target_proxy in gcp.target_proxies:
+    target_proxies_to_delete = gcp.target_proxies.copy()
+    for target_proxy in target_proxies_to_delete:
         delete_target_proxy(gcp, target_proxy)
 
 
@@ -2824,7 +2823,8 @@ def delete_url_map(gcp, url_map_to_delete=None):
 
 
 def delete_url_maps(gcp):
-    for url_map in gcp.url_maps:
+    url_maps_to_delete = gcp.url_maps.copy()
+    for url_map in url_maps_to_delete:
         delete_url_map(gcp, url_map)
 
 

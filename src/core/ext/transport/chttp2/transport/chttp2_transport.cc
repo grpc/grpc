@@ -1252,9 +1252,10 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
 }
 
 static bool contains_non_ok_status(grpc_metadata_batch* batch) {
-  if (batch->idx.named.grpc_status != nullptr) {
-    return !grpc_mdelem_static_value_eq(batch->idx.named.grpc_status->md,
-                                        GRPC_MDELEM_GRPC_STATUS_0);
+  if ((*batch)->legacy_index()->named.grpc_status != nullptr) {
+    return !grpc_mdelem_static_value_eq(
+        (*batch)->legacy_index()->named.grpc_status->md,
+        GRPC_MDELEM_GRPC_STATUS_0);
   }
   return false;
 }
@@ -1349,15 +1350,14 @@ static void complete_fetch_locked(void* gs, grpc_error_handle error) {
 
 static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
                          bool is_client, bool is_initial) {
-  for (grpc_linked_mdelem* md = md_batch->list.head; md != nullptr;
-       md = md->next) {
-    char* key = grpc_slice_to_c_string(GRPC_MDKEY(md->md));
-    char* value = grpc_slice_to_c_string(GRPC_MDVALUE(md->md));
+  (*md_batch)->ForEach([=](grpc_mdelem md) {
+    char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
+    char* value = grpc_slice_to_c_string(GRPC_MDVALUE(md));
     gpr_log(GPR_INFO, "HTTP:%d:%s:%s: %s: %s", id, is_initial ? "HDR" : "TRL",
             is_client ? "CLI" : "SVR", key, value);
     gpr_free(key);
     gpr_free(value);
-  }
+  });
 }
 
 static void perform_stream_op_locked(void* stream_op,
@@ -1411,12 +1411,14 @@ static void perform_stream_op_locked(void* stream_op,
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
 
     // Identify stream compression
-    if (op_payload->send_initial_metadata.send_initial_metadata->idx.named
-                .content_encoding == nullptr ||
+    if ((*op_payload->send_initial_metadata.send_initial_metadata)
+                ->legacy_index()
+                ->named.content_encoding == nullptr ||
         grpc_stream_compression_method_parse(
             GRPC_MDVALUE(
-                op_payload->send_initial_metadata.send_initial_metadata->idx
-                    .named.content_encoding->md),
+                (*op_payload->send_initial_metadata.send_initial_metadata)
+                    ->legacy_index()
+                    ->named.content_encoding->md),
             true, &s->stream_compression_method) == 0) {
       s->stream_compression_method = GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
     }
@@ -1430,7 +1432,8 @@ static void perform_stream_op_locked(void* stream_op,
     s->send_initial_metadata =
         op_payload->send_initial_metadata.send_initial_metadata;
     if (t->is_client) {
-      s->deadline = GPR_MIN(s->deadline, s->send_initial_metadata->deadline);
+      s->deadline =
+          GPR_MIN(s->deadline, (*s->send_initial_metadata)->deadline());
     }
     if (contains_non_ok_status(s->send_initial_metadata)) {
       s->seen_error = true;
@@ -1624,12 +1627,14 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
   if (!t->is_client) {
     if (op->send_initial_metadata) {
       grpc_millis deadline =
-          op->payload->send_initial_metadata.send_initial_metadata->deadline;
+          (*op->payload->send_initial_metadata.send_initial_metadata)
+              ->deadline();
       GPR_ASSERT(deadline == GRPC_MILLIS_INF_FUTURE);
     }
     if (op->send_trailing_metadata) {
       grpc_millis deadline =
-          op->payload->send_trailing_metadata.send_trailing_metadata->deadline;
+          (*op->payload->send_trailing_metadata.send_trailing_metadata)
+              ->deadline();
       GPR_ASSERT(deadline == GRPC_MILLIS_INF_FUTURE);
     }
   }
@@ -2104,16 +2109,13 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
     gpr_ltoa(status, status_string);
     GRPC_LOG_IF_ERROR("add_status",
                       grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-                          &s->metadata_buffer[1],
-                          grpc_mdelem_from_slices(
-                              GRPC_MDSTR_GRPC_STATUS,
-                              grpc_core::UnmanagedMemorySlice(status_string))));
+                          &s->metadata_buffer[1], GRPC_MDSTR_GRPC_STATUS,
+                          grpc_core::UnmanagedMemorySlice(status_string)));
     if (!GRPC_SLICE_IS_EMPTY(slice)) {
       GRPC_LOG_IF_ERROR(
           "add_status_message",
           grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-              &s->metadata_buffer[1],
-              grpc_mdelem_create(GRPC_MDSTR_GRPC_MESSAGE, slice, nullptr)));
+              &s->metadata_buffer[1], GRPC_MDSTR_GRPC_MESSAGE, slice));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);

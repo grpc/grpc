@@ -93,8 +93,9 @@ void blocking_handle_async_resolve_done(void* arg, grpc_error_handle error) {
   static_cast<Promise<grpc_error_handle>*>(arg)->Set(std::move(error));
 }
 
-grpc_error* blocking_resolve_address(const char* name, const char* default_port,
-                                     grpc_resolved_addresses** addresses) {
+grpc_error_handle blocking_resolve_address(
+    const char* name, const char* default_port,
+    grpc_resolved_addresses** addresses) {
   grpc_closure on_done;
   Promise<grpc_error_handle> evt;
   GRPC_CLOSURE_INIT(&on_done, blocking_handle_async_resolve_done, &evt,

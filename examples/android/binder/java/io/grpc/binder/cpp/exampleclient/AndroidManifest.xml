@@ -1,6 +1,5 @@
-<!-- TODO(mingcl): Rename this app to exampleclient -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="io.grpc.binder.cpp.example"
+    package="io.grpc.binder.cpp.exampleclient"
     android:versionCode="1"
     android:versionName="1.0" >
 
@@ -13,10 +12,10 @@
    </queries>
 
   <application
-      android:label="gRPC BinderTransport Cpp">
+      android:label="gRPC BinderTransport Client Cpp">
     <activity
         android:name=".MainActivity"
-        android:label="gRPC BinderTransport Cpp" >
+        android:label="gRPC BinderTransport Client Cpp" >
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />

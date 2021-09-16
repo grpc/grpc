@@ -96,8 +96,9 @@ class BinderServerTest : public ::testing::Test {
   static void TearDownTestSuite() { grpc_shutdown(); }
 };
 
-#ifndef GPR_ANDROID
-TEST(BinderServerCredentialsTest, FailedInNonAndroidEnvironments) {
+#ifndef GPR_SUPPORT_BINDER_TRANSPORT
+TEST(BinderServerCredentialsTest,
+     FailedInEnvironmentsNotSupportingBinderTransport) {
   grpc::ServerBuilder server_builder;
   grpc::testing::TestServiceImpl service;
   server_builder.RegisterService(&service);
@@ -105,7 +106,7 @@ TEST(BinderServerCredentialsTest, FailedInNonAndroidEnvironments) {
       "binder://fail", grpc::experimental::BinderServerCredentials());
   EXPECT_EQ(server_builder.BuildAndStart(), nullptr);
 }
-#endif  // !GPR_ANDROID
+#endif  // !GPR_SUPPORT_BINDER_TRANSPORT
 
 TEST_F(BinderServerTest, BuildAndStart) {
   grpc::ServerBuilder server_builder;

@@ -78,7 +78,6 @@ struct call_data {
   // State for handling send_initial_metadata ops.
   grpc_linked_mdelem method;
   grpc_linked_mdelem scheme;
-  grpc_linked_mdelem authority;
   grpc_linked_mdelem te_trailers;
   grpc_linked_mdelem content_type;
   grpc_linked_mdelem user_agent;
@@ -113,18 +112,18 @@ struct channel_data {
 
 static grpc_error_handle client_filter_incoming_metadata(
     grpc_metadata_batch* b) {
-  if (b->idx.named.status != nullptr) {
+  if ((*b)->legacy_index()->named.status != nullptr) {
     /* If both gRPC status and HTTP status are provided in the response, we
      * should prefer the gRPC status code, as mentioned in
      * https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md.
      */
-    if (b->idx.named.grpc_status != nullptr ||
-        grpc_mdelem_static_value_eq(b->idx.named.status->md,
+    if ((*b)->legacy_index()->named.grpc_status != nullptr ||
+        grpc_mdelem_static_value_eq((*b)->legacy_index()->named.status->md,
                                     GRPC_MDELEM_STATUS_200)) {
       grpc_metadata_batch_remove(b, GRPC_BATCH_STATUS);
     } else {
-      char* val = grpc_dump_slice(GRPC_MDVALUE(b->idx.named.status->md),
-                                  GPR_DUMP_ASCII);
+      char* val = grpc_dump_slice(
+          GRPC_MDVALUE((*b)->legacy_index()->named.status->md), GPR_DUMP_ASCII);
       std::string msg =
           absl::StrCat("Received http2 header with status: ", val);
       grpc_error_handle e = grpc_error_set_str(
@@ -142,29 +141,33 @@ static grpc_error_handle client_filter_incoming_metadata(
     }
   }
 
-  if (b->idx.named.grpc_message != nullptr) {
+  if ((*b)->legacy_index()->named.grpc_message != nullptr) {
     grpc_slice pct_decoded_msg = grpc_core::PermissivePercentDecodeSlice(
-        GRPC_MDVALUE(b->idx.named.grpc_message->md));
-    if (grpc_slice_is_equivalent(pct_decoded_msg,
-                                 GRPC_MDVALUE(b->idx.named.grpc_message->md))) {
+        GRPC_MDVALUE((*b)->legacy_index()->named.grpc_message->md));
+    if (grpc_slice_is_equivalent(
+            pct_decoded_msg,
+            GRPC_MDVALUE((*b)->legacy_index()->named.grpc_message->md))) {
       grpc_slice_unref_internal(pct_decoded_msg);
     } else {
-      grpc_metadata_batch_set_value(b->idx.named.grpc_message, pct_decoded_msg);
+      grpc_metadata_batch_set_value((*b)->legacy_index()->named.grpc_message,
+                                    pct_decoded_msg);
     }
   }
 
-  if (b->idx.named.content_type != nullptr) {
+  if ((*b)->legacy_index()->named.content_type != nullptr) {
     if (!grpc_mdelem_static_value_eq(
-            b->idx.named.content_type->md,
+            (*b)->legacy_index()->named.content_type->md,
             GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
-      if (grpc_slice_buf_start_eq(GRPC_MDVALUE(b->idx.named.content_type->md),
-                                  EXPECTED_CONTENT_TYPE,
-                                  EXPECTED_CONTENT_TYPE_LENGTH) &&
+      if (grpc_slice_buf_start_eq(
+              GRPC_MDVALUE((*b)->legacy_index()->named.content_type->md),
+              EXPECTED_CONTENT_TYPE, EXPECTED_CONTENT_TYPE_LENGTH) &&
           (GRPC_SLICE_START_PTR(GRPC_MDVALUE(
-               b->idx.named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
+               (*b)->legacy_index()
+                   ->named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
                '+' ||
            GRPC_SLICE_START_PTR(GRPC_MDVALUE(
-               b->idx.named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
+               (*b)->legacy_index()
+                   ->named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
                ';')) {
         /* Although the C implementation doesn't (currently) generate them,
            any custom +-suffix is explicitly valid. */
@@ -174,8 +177,9 @@ static grpc_error_handle client_filter_incoming_metadata(
       } else {
         /* TODO(klempner): We're currently allowing this, but we shouldn't
            see it without a proxy so log for now. */
-        char* val = grpc_dump_slice(GRPC_MDVALUE(b->idx.named.content_type->md),
-                                    GPR_DUMP_ASCII);
+        char* val = grpc_dump_slice(
+            GRPC_MDVALUE((*b)->legacy_index()->named.content_type->md),
+            GPR_DUMP_ASCII);
         gpr_log(GPR_INFO, "Unexpected content-type '%s'", val);
         gpr_free(val);
       }
@@ -315,9 +319,10 @@ static char* slice_buffer_to_string(grpc_slice_buffer* slice_buffer) {
 static grpc_error_handle update_path_for_get(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  grpc_slice path_slice =
-      GRPC_MDVALUE(batch->payload->send_initial_metadata.send_initial_metadata
-                       ->idx.named.path->md);
+  grpc_slice path_slice = GRPC_MDVALUE(
+      (*batch->payload->send_initial_metadata.send_initial_metadata)
+          ->legacy_index()
+          ->named.path->md);
   /* sum up individual component's lengths and allocate enough memory to
    * hold combined path+query */
   size_t estimated_len = GRPC_SLICE_LENGTH(path_slice);
@@ -350,15 +355,13 @@ static grpc_error_handle update_path_for_get(
       grpc_mdelem_from_slices(GRPC_MDSTR_PATH, path_with_query_slice);
   grpc_metadata_batch* b =
       batch->payload->send_initial_metadata.send_initial_metadata;
-  return grpc_metadata_batch_substitute(b, b->idx.named.path,
+  return grpc_metadata_batch_substitute(b, (*b)->legacy_index()->named.path,
                                         mdelem_path_and_query);
 }
 
 static void remove_if_present(grpc_metadata_batch* batch,
                               grpc_metadata_batch_callouts_index idx) {
-  if (batch->idx.array[idx] != nullptr) {
-    grpc_metadata_batch_remove(batch, idx);
-  }
+  grpc_metadata_batch_remove(batch, idx);
 }
 
 static void http_client_start_transport_stream_op_batch(

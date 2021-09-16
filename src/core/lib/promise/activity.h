@@ -113,6 +113,13 @@ class Activity : private Wakeable {
   // Fetch the size of the implementation of this activity.
   virtual size_t Size() = 0;
 
+  // Force wakeup from the outside.
+  // This should be rarely needed, and usages should be accompanied with a note
+  // on why it's not possible to wakeup with a Waker object.
+  // Nevertheless, it's sometimes useful for integrations with Activity to force
+  // an Activity to repoll.
+  void ForceWakeup() { MakeOwningWaker().Wakeup(); }
+
   // Wakeup the current threads activity - will force a subsequent poll after
   // the one that's running.
   static void WakeupCurrent() { current()->got_wakeup_during_run_ = true; }
@@ -422,11 +429,20 @@ ActivityPtr MakeActivity(Factory promise_factory,
 }
 
 // A callback scheduler that simply crashes
+// Useful for very limited tests
 struct NoCallbackScheduler {
   template <typename F>
   void operator()(F) {
     abort();
   }
+};
+
+// A callback scheduler that simply runs the callback
+// Useful for unit testing, probably not so much for real systems due to lock
+// ordering problems
+class InlineCallbackScheduler {
+ public:
+  void operator()(std::function<void()> f) { f(); }
 };
 
 }  // namespace grpc_core

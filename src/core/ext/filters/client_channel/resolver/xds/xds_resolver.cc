@@ -469,7 +469,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     RefCountedPtr<ServiceConfig>* method_config) {
   std::vector<std::string> fields;
   // Set retry policy if any.
-  if (route.retry_policy.has_value()) {
+  if (route.retry_policy.has_value() && !route.retry_policy->retry_on.Empty()) {
     std::vector<std::string> retry_parts;
     retry_parts.push_back(absl::StrFormat(
         "\"retryPolicy\": {\n"
@@ -538,11 +538,9 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     auto method_config_field =
         filter_impl->GenerateServiceConfig(http_filter.config, config_override);
     if (!method_config_field.ok()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("failed to generate method config for HTTP filter ",
-                       http_filter.name, ": ",
-                       method_config_field.status().ToString())
-              .c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "failed to generate method config for HTTP filter ", http_filter.name,
+          ": ", method_config_field.status().ToString()));
     }
     per_filter_configs[method_config_field->service_config_field_name]
         .push_back(method_config_field->element);
@@ -848,10 +846,9 @@ void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
   XdsApi::RdsUpdate::VirtualHost* vhost =
       rds_update.FindVirtualHostForDomain(server_name_);
   if (vhost == nullptr) {
-    OnError(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    OnError(GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("could not find VirtualHost for ", server_name_,
-                     " in RouteConfiguration")
-            .c_str()));
+                     " in RouteConfiguration")));
     return;
   }
   // Save the virtual host in the resolver.

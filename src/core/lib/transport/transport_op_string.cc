@@ -51,15 +51,16 @@ static void put_metadata(grpc_mdelem md, std::vector<std::string>* out) {
   gpr_free(dump);
 }
 
-static void put_metadata_list(grpc_metadata_batch md,
+static void put_metadata_list(const grpc_metadata_batch& md,
                               std::vector<std::string>* out) {
-  grpc_linked_mdelem* m;
-  for (m = md.list.head; m != nullptr; m = m->next) {
-    if (m != md.list.head) out->push_back(", ");
-    put_metadata(m->md, out);
-  }
-  if (md.deadline != GRPC_MILLIS_INF_FUTURE) {
-    out->push_back(absl::StrFormat(" deadline=%" PRId64, md.deadline));
+  bool first = true;
+  md->ForEach([&](grpc_mdelem elem) {
+    if (!first) out->push_back(", ");
+    first = false;
+    put_metadata(elem, out);
+  });
+  if (md->deadline() != GRPC_MILLIS_INF_FUTURE) {
+    out->push_back(absl::StrFormat(" deadline=%" PRId64, md->deadline()));
   }
 }
 
