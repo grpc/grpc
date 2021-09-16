@@ -113,7 +113,7 @@ CLIENT_PORT = flags.DEFINE_integer(
 TESTING_VERSION = flags.DEFINE_string(
     "testing_version",
     default="master",
-    help="The testing gRPC version branch name.")
+    help="The testing gRPC version branch name. Like master, v1.41.x, v1.37.x")
 
 flags.adopt_module_key_flags(highlighter)
 

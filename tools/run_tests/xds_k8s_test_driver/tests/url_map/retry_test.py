@@ -68,8 +68,10 @@ class TestRetryUpTo3AttemptsAndFail(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
     def is_supported(config: TestConfig) -> bool:
-        if config.client_lang in ['cpp', 'java', 'go']:
+        if config.client_lang in ['cpp', 'java']:
             return config.version_ge('v1.40.x')
+        elif config.client_lang == 'go':
+            return config.version_ge('v1.41.x')
         return False
 
     @staticmethod

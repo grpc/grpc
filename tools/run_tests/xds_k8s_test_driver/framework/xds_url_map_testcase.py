@@ -200,7 +200,7 @@ class TestConfig:
         "master" is always considered latest. E.g., master >= v1.41.x >= v1.40.x
         >= v1.9.x.
         """
-        if version == 'master':
+        if self.version == 'master':
             return True
         return packaging.version.parse(
             self.version) >= packaging.version.parse(another)
@@ -252,13 +252,10 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
     @staticmethod
     def is_supported(config: TestConfig) -> bool:
-        """Allow the test case to declare whether it support the given config.
-
-        The config includes client_lang, server_lang, version.
+        """Allow the test case to decide whether it supports the given config.
 
         Returns:
-          A tuple of strings contains the supported versions for this test or
-            a callable function that accepts a version string returns bool.
+          A bool indicates if the given config is supported.
         """
         return True
 
