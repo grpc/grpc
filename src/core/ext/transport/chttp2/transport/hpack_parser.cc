@@ -623,12 +623,10 @@ class HPackParser::Input {
                                                  uint8_t last_byte) {
     return MaybeSetErrorAndReturn(
         [value, last_byte] {
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrFormat(
-                  "integer overflow in hpack integer decoding: have 0x%08x, "
-                  "got byte 0x%02x on byte 5",
-                  value, last_byte)
-                  .c_str());
+          return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+              "integer overflow in hpack integer decoding: have 0x%08x, "
+              "got byte 0x%02x on byte 5",
+              value, last_byte));
         },
         absl::optional<uint32_t>());
   }
@@ -1350,10 +1348,11 @@ static void force_client_rst_stream(void* sp, grpc_error_handle /*error*/) {
 static void parse_stream_compression_md(grpc_chttp2_transport* /*t*/,
                                         grpc_chttp2_stream* s,
                                         grpc_metadata_batch* initial_metadata) {
-  if (initial_metadata->idx.named.content_encoding == nullptr ||
+  if ((*initial_metadata)->legacy_index()->named.content_encoding == nullptr ||
       grpc_stream_compression_method_parse(
-          GRPC_MDVALUE(initial_metadata->idx.named.content_encoding->md), false,
-          &s->stream_decompression_method) == 0) {
+          GRPC_MDVALUE(
+              (*initial_metadata)->legacy_index()->named.content_encoding->md),
+          false, &s->stream_decompression_method) == 0) {
     s->stream_decompression_method =
         GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS;
   }

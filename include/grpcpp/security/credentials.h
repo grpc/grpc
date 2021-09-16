@@ -55,10 +55,16 @@ std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
 
-/// Builds XDS Credentials.
+GRPC_DEPRECATED(
+    "Use grpc::XdsCredentials instead. The experimental version will be "
+    "deleted after the 1.41 release.")
 std::shared_ptr<ChannelCredentials> XdsCredentials(
     const std::shared_ptr<ChannelCredentials>& fallback_creds);
 }  // namespace experimental
+
+/// Builds XDS Credentials.
+std::shared_ptr<ChannelCredentials> XdsCredentials(
+    const std::shared_ptr<ChannelCredentials>& fallback_creds);
 
 /// A channel credentials object encapsulates all the state needed by a client
 /// to authenticate with a server for a given channel.
@@ -80,7 +86,7 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
   // AsSecureCredentials(). Once we are able to remove insecure builds from gRPC
   // (and also internal dependencies on the indirect method of creating a
   // channel through credentials), we would be able to remove this.
-  friend std::shared_ptr<ChannelCredentials> grpc::experimental::XdsCredentials(
+  friend std::shared_ptr<ChannelCredentials> grpc::XdsCredentials(
       const std::shared_ptr<ChannelCredentials>& fallback_creds);
 
   virtual SecureChannelCredentials* AsSecureCredentials() = 0;

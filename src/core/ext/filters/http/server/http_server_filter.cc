@@ -104,15 +104,17 @@ struct channel_data {
 }  // namespace
 
 static grpc_error_handle hs_filter_outgoing_metadata(grpc_metadata_batch* b) {
-  if (b->idx.named.grpc_message != nullptr) {
+  if ((*b)->legacy_index()->named.grpc_message != nullptr) {
     grpc_slice pct_encoded_msg = grpc_core::PercentEncodeSlice(
-        GRPC_MDVALUE(b->idx.named.grpc_message->md),
+        GRPC_MDVALUE((*b)->legacy_index()->named.grpc_message->md),
         grpc_core::PercentEncodingType::Compatible);
-    if (grpc_slice_is_equivalent(pct_encoded_msg,
-                                 GRPC_MDVALUE(b->idx.named.grpc_message->md))) {
+    if (grpc_slice_is_equivalent(
+            pct_encoded_msg,
+            GRPC_MDVALUE((*b)->legacy_index()->named.grpc_message->md))) {
       grpc_slice_unref_internal(pct_encoded_msg);
     } else {
-      grpc_metadata_batch_set_value(b->idx.named.grpc_message, pct_encoded_msg);
+      grpc_metadata_batch_set_value((*b)->legacy_index()->named.grpc_message,
+                                    pct_encoded_msg);
     }
   }
   return GRPC_ERROR_NONE;
@@ -159,18 +161,19 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
   grpc_error_handle error = GRPC_ERROR_NONE;
   static const char* error_name = "Failed processing incoming headers";
 
-  if (b->idx.named.method != nullptr) {
-    if (md_strict_equal(b->idx.named.method->md, GRPC_MDELEM_METHOD_POST)) {
+  if ((*b)->legacy_index()->named.method != nullptr) {
+    if (md_strict_equal((*b)->legacy_index()->named.method->md,
+                        GRPC_MDELEM_METHOD_POST)) {
       *calld->recv_initial_metadata_flags &=
           ~(GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |
             GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
-    } else if (md_strict_equal(b->idx.named.method->md,
+    } else if (md_strict_equal((*b)->legacy_index()->named.method->md,
                                GRPC_MDELEM_METHOD_PUT)) {
       *calld->recv_initial_metadata_flags &=
           ~GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
       *calld->recv_initial_metadata_flags |=
           GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
-    } else if (md_strict_equal(b->idx.named.method->md,
+    } else if (md_strict_equal((*b)->legacy_index()->named.method->md,
                                GRPC_MDELEM_METHOD_GET)) {
       *calld->recv_initial_metadata_flags |=
           GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
@@ -180,7 +183,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
       hs_add_error(error_name, &error,
                    grpc_attach_md_to_error(
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
-                       b->idx.named.method->md));
+                       (*b)->legacy_index()->named.method->md));
     }
     grpc_metadata_batch_remove(b, GRPC_BATCH_METHOD);
   } else {
@@ -191,13 +194,13 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
             GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":method")));
   }
 
-  if (b->idx.named.te != nullptr) {
-    if (!grpc_mdelem_static_value_eq(b->idx.named.te->md,
+  if ((*b)->legacy_index()->named.te != nullptr) {
+    if (!grpc_mdelem_static_value_eq((*b)->legacy_index()->named.te->md,
                                      GRPC_MDELEM_TE_TRAILERS)) {
       hs_add_error(error_name, &error,
                    grpc_attach_md_to_error(
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
-                       b->idx.named.te->md));
+                       (*b)->legacy_index()->named.te->md));
     }
     grpc_metadata_batch_remove(b, GRPC_BATCH_TE);
   } else {
@@ -207,15 +210,17 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
                      GRPC_ERROR_STR_KEY, grpc_slice_from_static_string("te")));
   }
 
-  if (b->idx.named.scheme != nullptr) {
-    if (!md_strict_equal(b->idx.named.scheme->md, GRPC_MDELEM_SCHEME_HTTP) &&
-        !md_strict_equal(b->idx.named.scheme->md, GRPC_MDELEM_SCHEME_HTTPS) &&
-        !grpc_mdelem_static_value_eq(b->idx.named.scheme->md,
+  if ((*b)->legacy_index()->named.scheme != nullptr) {
+    if (!md_strict_equal((*b)->legacy_index()->named.scheme->md,
+                         GRPC_MDELEM_SCHEME_HTTP) &&
+        !md_strict_equal((*b)->legacy_index()->named.scheme->md,
+                         GRPC_MDELEM_SCHEME_HTTPS) &&
+        !grpc_mdelem_static_value_eq((*b)->legacy_index()->named.scheme->md,
                                      GRPC_MDELEM_SCHEME_GRPC)) {
       hs_add_error(error_name, &error,
                    grpc_attach_md_to_error(
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
-                       b->idx.named.scheme->md));
+                       (*b)->legacy_index()->named.scheme->md));
     }
     grpc_metadata_batch_remove(b, GRPC_BATCH_SCHEME);
   } else {
@@ -226,18 +231,20 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
             GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":scheme")));
   }
 
-  if (b->idx.named.content_type != nullptr) {
+  if ((*b)->legacy_index()->named.content_type != nullptr) {
     if (!grpc_mdelem_static_value_eq(
-            b->idx.named.content_type->md,
+            (*b)->legacy_index()->named.content_type->md,
             GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
-      if (grpc_slice_buf_start_eq(GRPC_MDVALUE(b->idx.named.content_type->md),
-                                  EXPECTED_CONTENT_TYPE,
-                                  EXPECTED_CONTENT_TYPE_LENGTH) &&
+      if (grpc_slice_buf_start_eq(
+              GRPC_MDVALUE((*b)->legacy_index()->named.content_type->md),
+              EXPECTED_CONTENT_TYPE, EXPECTED_CONTENT_TYPE_LENGTH) &&
           (GRPC_SLICE_START_PTR(GRPC_MDVALUE(
-               b->idx.named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
+               (*b)->legacy_index()
+                   ->named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
                '+' ||
            GRPC_SLICE_START_PTR(GRPC_MDVALUE(
-               b->idx.named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
+               (*b)->legacy_index()
+                   ->named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
                ';')) {
         /* Although the C implementation doesn't (currently) generate them,
            any custom +-suffix is explicitly valid. */
@@ -247,8 +254,9 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
       } else {
         /* TODO(klempner): We're currently allowing this, but we shouldn't
            see it without a proxy so log for now. */
-        char* val = grpc_dump_slice(GRPC_MDVALUE(b->idx.named.content_type->md),
-                                    GPR_DUMP_ASCII);
+        char* val = grpc_dump_slice(
+            GRPC_MDVALUE((*b)->legacy_index()->named.content_type->md),
+            GPR_DUMP_ASCII);
         gpr_log(GPR_INFO, "Unexpected content-type '%s'", val);
         gpr_free(val);
       }
@@ -256,7 +264,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
     grpc_metadata_batch_remove(b, GRPC_BATCH_CONTENT_TYPE);
   }
 
-  if (b->idx.named.path == nullptr) {
+  if ((*b)->legacy_index()->named.path == nullptr) {
     hs_add_error(
         error_name, &error,
         grpc_error_set_str(
@@ -267,7 +275,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
     /* We have a cacheable request made with GET verb. The path contains the
      * query parameter which is base64 encoded request payload. */
     const char k_query_separator = '?';
-    grpc_slice path_slice = GRPC_MDVALUE(b->idx.named.path->md);
+    grpc_slice path_slice = GRPC_MDVALUE((*b)->legacy_index()->named.path->md);
     uint8_t* path_ptr = GRPC_SLICE_START_PTR(path_slice);
     size_t path_length = GRPC_SLICE_LENGTH(path_slice);
     /* offset of the character '?' */
@@ -283,7 +291,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
       grpc_mdelem mdelem_path_without_query = grpc_mdelem_from_slices(
           GRPC_MDSTR_PATH, grpc_slice_sub(path_slice, 0, offset));
 
-      grpc_metadata_batch_substitute(b, b->idx.named.path,
+      grpc_metadata_batch_substitute(b, (*b)->legacy_index()->named.path,
                                      mdelem_path_without_query);
 
       /* decode payload from query and add to the slice buffer to be returned */
@@ -304,8 +312,9 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
     }
   }
 
-  if (b->idx.named.host != nullptr && b->idx.named.authority == nullptr) {
-    grpc_linked_mdelem* el = b->idx.named.host;
+  if ((*b)->legacy_index()->named.host != nullptr &&
+      (*b)->legacy_index()->named.authority == nullptr) {
+    grpc_linked_mdelem* el = (*b)->legacy_index()->named.host;
     grpc_mdelem md = GRPC_MDELEM_REF(el->md);
     grpc_metadata_batch_remove(b, el);
     hs_add_error(
@@ -318,7 +327,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
     GRPC_MDELEM_UNREF(md);
   }
 
-  if (b->idx.named.authority == nullptr) {
+  if ((*b)->legacy_index()->named.authority == nullptr) {
     hs_add_error(
         error_name, &error,
         grpc_error_set_str(
@@ -327,7 +336,8 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
   }
 
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  if (!chand->surface_user_agent && b->idx.named.user_agent != nullptr) {
+  if (!chand->surface_user_agent &&
+      (*b)->legacy_index()->named.user_agent != nullptr) {
     grpc_metadata_batch_remove(b, GRPC_BATCH_USER_AGENT);
   }
 

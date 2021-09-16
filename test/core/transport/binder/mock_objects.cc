@@ -33,7 +33,6 @@ MockReadableParcel::MockReadableParcel() {
 }
 
 MockWritableParcel::MockWritableParcel() {
-  ON_CALL(*this, SetDataPosition).WillByDefault(Return(absl::OkStatus()));
   ON_CALL(*this, WriteInt32).WillByDefault(Return(absl::OkStatus()));
   ON_CALL(*this, WriteBinder).WillByDefault(Return(absl::OkStatus()));
   ON_CALL(*this, WriteString).WillByDefault(Return(absl::OkStatus()));
@@ -44,7 +43,6 @@ MockBinder::MockBinder() {
   ON_CALL(*this, PrepareTransaction).WillByDefault(Return(absl::OkStatus()));
   ON_CALL(*this, Transact).WillByDefault(Return(absl::OkStatus()));
   ON_CALL(*this, GetWritableParcel).WillByDefault(Return(&mock_input_));
-  ON_CALL(*this, GetReadableParcel).WillByDefault(Return(&mock_output_));
   ON_CALL(*this, ConstructTxReceiver)
       .WillByDefault(
           [this](grpc_core::RefCountedPtr<WireReader> /*wire_reader_ref*/,

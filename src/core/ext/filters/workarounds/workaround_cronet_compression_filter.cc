@@ -46,8 +46,8 @@ struct call_data {
 // Find the user agent metadata element in the batch
 static bool get_user_agent_mdelem(const grpc_metadata_batch* batch,
                                   grpc_mdelem* md) {
-  if (batch->idx.named.user_agent != nullptr) {
-    *md = batch->idx.named.user_agent->md;
+  if ((*batch)->legacy_index()->named.user_agent != nullptr) {
+    *md = (*batch)->legacy_index()->named.user_agent->md;
     return true;
   }
   return false;

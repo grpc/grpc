@@ -19,6 +19,8 @@
 
 #include <atomic>
 
+#include "src/core/lib/channel/handshaker_registry.h"
+
 namespace grpc_core {
 
 // Global singleton that stores library configuration - factories, etc...
@@ -32,8 +34,14 @@ class CoreConfiguration {
   // their configuration and assemble the published CoreConfiguration.
   class Builder {
    public:
+    HandshakerRegistry::Builder* handshaker_registry() {
+      return &handshaker_registry_;
+    }
+
    private:
     friend class CoreConfiguration;
+
+    HandshakerRegistry::Builder handshaker_registry_;
 
     Builder();
     CoreConfiguration* Build();
@@ -50,14 +58,38 @@ class CoreConfiguration {
     return BuildNewAndMaybeSet();
   }
 
+  // Build a special core configuration.
+  // Requires no concurrent Get() be called.
+  // Doesn't call the regular BuildCoreConfiguration function, instead calls
+  // `build`.
+  // BuildFunc is a callable that takes a Builder* and returns void.
+  // We use a template instead of std::function<void(Builder*)> to avoid
+  // including std::function in this widely used header, and to ensure no code
+  // is generated in programs that do not use this function.
+  // This is sometimes useful for testing.
+  template <typename BuildFunc>
+  static void BuildSpecialConfiguration(BuildFunc build) {
+    // Build bespoke configuration
+    Builder builder;
+    build(&builder);
+    CoreConfiguration* p = builder.Build();
+    // Swap in final configuration, deleting anything that was already present.
+    delete config_.exchange(p, std::memory_order_release);
+  }
+
   // Drop the core configuration. Users must ensure no other threads are
   // accessing the configuration.
+  // Clears any dynamically registered builders.
   static void Reset();
 
   // Accessors
 
+  const HandshakerRegistry& handshaker_registry() const {
+    return handshaker_registry_;
+  }
+
  private:
-  CoreConfiguration();
+  explicit CoreConfiguration(Builder* builder);
 
   // Create a new CoreConfiguration, and either set it or throw it away.
   // We allow multiple CoreConfiguration's to be created in parallel.
@@ -65,6 +97,8 @@ class CoreConfiguration {
 
   // The configuration
   static std::atomic<CoreConfiguration*> config_;
+
+  HandshakerRegistry handshaker_registry_;
 };
 
 extern void BuildCoreConfiguration(CoreConfiguration::Builder* builder);

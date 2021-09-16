@@ -236,7 +236,7 @@ class RingHash : public LoadBalancingPolicy {
       }
 
      private:
-      static void RunInExecCtx(void* arg, grpc_error* /*error*/) {
+      static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
         auto* self = static_cast<SubchannelConnectionAttempter*>(arg);
         self->ring_hash_lb_->work_serializer()->Run(
             [self]() {
@@ -730,7 +730,7 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kRingHash; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error** error) const override {
+      const Json& json, grpc_error_handle* error) const override {
     size_t min_ring_size;
     size_t max_ring_size;
     std::vector<grpc_error_handle> error_list;

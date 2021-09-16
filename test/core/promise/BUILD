@@ -121,6 +121,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:loop",
+        "//:seq",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -212,6 +213,23 @@ grpc_cc_test(
     deps = [
         "//:observable",
         "//:promise",
+        "//:seq",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "for_each_test",
+    srcs = ["for_each_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:for_each",
+        "//:join",
+        "//:map",
+        "//:observable",
+        "//:pipe",
         "//:seq",
         "//test/core/util:grpc_suppressions",
     ],

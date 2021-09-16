@@ -163,7 +163,7 @@ RefCountedPtr<DynamicFilters> DynamicFilters::Create(
     // Channel stack creation failed with requested filters.
     // Create with lame filter instead.
     grpc_error_handle error = p.second;
-    grpc_arg error_arg = MakeLameClientErrorArg(error);
+    grpc_arg error_arg = MakeLameClientErrorArg(&error);
     grpc_channel_args* new_args =
         grpc_channel_args_copy_and_add(args, &error_arg, 1);
     GRPC_ERROR_UNREF(error);

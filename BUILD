@@ -801,6 +801,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_platform",
+        "handshaker_registry",
     ],
 )
 
@@ -1174,6 +1175,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "for_each",
+    external_deps = [
+        "absl/status",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    public_hdrs = ["src/core/lib/promise/for_each.h"],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_factory",
+    ],
+)
+
+grpc_cc_library(
     name = "ref_counted",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
@@ -1210,6 +1226,32 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "handshaker_factory",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/channel/handshaker_factory.h",
+    ],
+    deps = [
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "handshaker_registry",
+    srcs = [
+        "src/core/lib/channel/handshaker_registry.cc",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/channel/handshaker_registry.h",
+    ],
+    deps = [
+        "gpr_base",
+        "handshaker_factory",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base_c",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -1224,7 +1266,6 @@ grpc_cc_library(
         "src/core/lib/channel/channelz_registry.cc",
         "src/core/lib/channel/connected_channel.cc",
         "src/core/lib/channel/handshaker.cc",
-        "src/core/lib/channel/handshaker_registry.cc",
         "src/core/lib/channel/status_util.cc",
         "src/core/lib/compression/compression.cc",
         "src/core/lib/compression/compression_args.cc",
@@ -1394,8 +1435,6 @@ grpc_cc_library(
         "src/core/lib/channel/connected_channel.h",
         "src/core/lib/channel/context.h",
         "src/core/lib/channel/handshaker.h",
-        "src/core/lib/channel/handshaker_factory.h",
-        "src/core/lib/channel/handshaker_registry.h",
         "src/core/lib/channel/status_util.h",
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/compression_args.h",
@@ -1678,6 +1717,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:client_channel"],
     deps = [
+        "config",
         "debug_location",
         "gpr_base",
         "grpc_base_c",
@@ -1685,6 +1725,7 @@ grpc_cc_library(
         "grpc_deadline_filter",
         "grpc_health_upb",
         "grpc_trace",
+        "handshaker_registry",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
@@ -2668,6 +2709,7 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "alts_util",
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_base_c",
@@ -2972,6 +3014,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
@@ -3025,6 +3068,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_codegen",

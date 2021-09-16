@@ -56,8 +56,9 @@ void client_authority_start_transport_stream_op_batch(
   // Handle send_initial_metadata.
   // If the initial metadata doesn't already contain :authority, add it.
   if (batch->send_initial_metadata &&
-      batch->payload->send_initial_metadata.send_initial_metadata->idx.named
-              .authority == nullptr) {
+      (*batch->payload->send_initial_metadata.send_initial_metadata)
+              ->legacy_index()
+              ->named.authority == nullptr) {
     grpc_error_handle error = grpc_metadata_batch_add_head(
         batch->payload->send_initial_metadata.send_initial_metadata,
         &calld->authority_storage,

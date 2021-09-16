@@ -146,7 +146,7 @@ struct grpc_call {
         stream_op_payload(context) {
     for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 2; j++) {
-        metadata_batch[i][j].deadline = GRPC_MILLIS_INF_FUTURE;
+        metadata_batch[i][j]->ClearDeadline();
       }
     }
   }
@@ -1000,52 +1000,56 @@ static grpc_stream_compression_algorithm decode_stream_compression(
 
 static void publish_app_metadata(grpc_call* call, grpc_metadata_batch* b,
                                  int is_trailing) {
-  if (b->list.count == 0) return;
+  if ((*b)->non_deadline_count() == 0) return;
   if (!call->is_client && is_trailing) return;
   if (is_trailing && call->buffered_metadata[1] == nullptr) return;
   GPR_TIMER_SCOPE("publish_app_metadata", 0);
   grpc_metadata_array* dest;
   grpc_metadata* mdusr;
   dest = call->buffered_metadata[is_trailing];
-  if (dest->count + b->list.count > dest->capacity) {
-    dest->capacity =
-        GPR_MAX(dest->capacity + b->list.count, dest->capacity * 3 / 2);
+  if (dest->count + (*b)->non_deadline_count() > dest->capacity) {
+    dest->capacity = GPR_MAX(dest->capacity + (*b)->non_deadline_count(),
+                             dest->capacity * 3 / 2);
     dest->metadata = static_cast<grpc_metadata*>(
         gpr_realloc(dest->metadata, sizeof(grpc_metadata) * dest->capacity));
   }
-  for (grpc_linked_mdelem* l = b->list.head; l != nullptr; l = l->next) {
+  (*b)->ForEach([&](grpc_mdelem md) {
     mdusr = &dest->metadata[dest->count++];
     /* we pass back borrowed slices that are valid whilst the call is valid */
-    mdusr->key = GRPC_MDKEY(l->md);
-    mdusr->value = GRPC_MDVALUE(l->md);
-  }
+    mdusr->key = GRPC_MDKEY(md);
+    mdusr->value = GRPC_MDVALUE(md);
+  });
 }
 
 static void recv_initial_filter(grpc_call* call, grpc_metadata_batch* b) {
-  if (b->idx.named.content_encoding != nullptr) {
+  if ((*b)->legacy_index()->named.content_encoding != nullptr) {
     GPR_TIMER_SCOPE("incoming_stream_compression_algorithm", 0);
     set_incoming_stream_compression_algorithm(
-        call, decode_stream_compression(b->idx.named.content_encoding->md));
+        call, decode_stream_compression(
+                  (*b)->legacy_index()->named.content_encoding->md));
     grpc_metadata_batch_remove(b, GRPC_BATCH_CONTENT_ENCODING);
   }
-  if (b->idx.named.grpc_encoding != nullptr) {
+  if ((*b)->legacy_index()->named.grpc_encoding != nullptr) {
     GPR_TIMER_SCOPE("incoming_message_compression_algorithm", 0);
     set_incoming_message_compression_algorithm(
-        call, decode_message_compression(b->idx.named.grpc_encoding->md));
+        call, decode_message_compression(
+                  (*b)->legacy_index()->named.grpc_encoding->md));
     grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_ENCODING);
   }
   uint32_t message_encodings_accepted_by_peer = 1u;
   uint32_t stream_encodings_accepted_by_peer = 1u;
-  if (b->idx.named.grpc_accept_encoding != nullptr) {
+  if ((*b)->legacy_index()->named.grpc_accept_encoding != nullptr) {
     GPR_TIMER_SCOPE("encodings_accepted_by_peer", 0);
-    set_encodings_accepted_by_peer(call, b->idx.named.grpc_accept_encoding->md,
-                                   &message_encodings_accepted_by_peer, false);
+    set_encodings_accepted_by_peer(
+        call, (*b)->legacy_index()->named.grpc_accept_encoding->md,
+        &message_encodings_accepted_by_peer, false);
     grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_ACCEPT_ENCODING);
   }
-  if (b->idx.named.accept_encoding != nullptr) {
+  if ((*b)->legacy_index()->named.accept_encoding != nullptr) {
     GPR_TIMER_SCOPE("stream_encodings_accepted_by_peer", 0);
-    set_encodings_accepted_by_peer(call, b->idx.named.accept_encoding->md,
-                                   &stream_encodings_accepted_by_peer, true);
+    set_encodings_accepted_by_peer(
+        call, (*b)->legacy_index()->named.accept_encoding->md,
+        &stream_encodings_accepted_by_peer, true);
     grpc_metadata_batch_remove(b, GRPC_BATCH_ACCEPT_ENCODING);
   }
   call->encodings_accepted_by_peer =
@@ -1060,22 +1064,23 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
   grpc_call* call = static_cast<grpc_call*>(args);
   if (batch_error != GRPC_ERROR_NONE) {
     set_final_status(call, batch_error);
-  } else if (b->idx.named.grpc_status != nullptr) {
-    grpc_status_code status_code =
-        grpc_get_status_code_from_metadata(b->idx.named.grpc_status->md);
+  } else if ((*b)->legacy_index()->named.grpc_status != nullptr) {
+    grpc_status_code status_code = grpc_get_status_code_from_metadata(
+        (*b)->legacy_index()->named.grpc_status->md);
     grpc_error_handle error = GRPC_ERROR_NONE;
     if (status_code != GRPC_STATUS_OK) {
       char* peer = grpc_call_get_peer(call);
-      error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("Error received from peer ", peer).c_str()),
-          GRPC_ERROR_INT_GRPC_STATUS, static_cast<intptr_t>(status_code));
+      error = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+                                     "Error received from peer ", peer)),
+                                 GRPC_ERROR_INT_GRPC_STATUS,
+                                 static_cast<intptr_t>(status_code));
       gpr_free(peer);
     }
-    if (b->idx.named.grpc_message != nullptr) {
+    if ((*b)->legacy_index()->named.grpc_message != nullptr) {
       error = grpc_error_set_str(
           error, GRPC_ERROR_STR_GRPC_MESSAGE,
-          grpc_slice_ref_internal(GRPC_MDVALUE(b->idx.named.grpc_message->md)));
+          grpc_slice_ref_internal(
+              GRPC_MDVALUE((*b)->legacy_index()->named.grpc_message->md)));
       grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_MESSAGE);
     } else if (error != GRPC_ERROR_NONE) {
       error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
@@ -1483,8 +1488,9 @@ static void receiving_initial_metadata_ready(void* bctlp,
     GPR_TIMER_SCOPE("validate_filtered_metadata", 0);
     validate_filtered_metadata(bctl);
 
-    if (md->deadline != GRPC_MILLIS_INF_FUTURE && !call->is_client) {
-      call->send_deadline = md->deadline;
+    grpc_millis deadline = (*md)->deadline();
+    if (deadline != GRPC_MILLIS_INF_FUTURE && !call->is_client) {
+      call->send_deadline = deadline;
     }
   } else {
     if (reinterpret_cast<grpc_error_handle>(
@@ -1670,7 +1676,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         }
         /* TODO(ctiller): just make these the same variable? */
         if (call->is_client) {
-          call->metadata_batch[0][0].deadline = call->send_deadline;
+          call->metadata_batch[0][0]->SetDeadline(call->send_deadline);
         }
         stream_op_payload->send_initial_metadata.send_initial_metadata =
             &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */];
@@ -2025,12 +2031,12 @@ grpc_compression_algorithm grpc_call_compression_for_level(
 bool grpc_call_is_trailers_only(const grpc_call* call) {
   bool result = call->is_trailers_only;
   GPR_DEBUG_ASSERT(
-      !result || call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */]
-                         .list.count == 0);
+      !result ||
+      call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */]->empty());
   return result;
 }
 
-bool grpc_call_failed_before_recv_message(const grpc_call* c) {
+int grpc_call_failed_before_recv_message(const grpc_call* c) {
   return c->call_failed_before_recv_message;
 }
 
