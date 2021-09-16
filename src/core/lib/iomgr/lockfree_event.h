@@ -62,8 +62,13 @@ class LockfreeEvent {
   void SetReady();
 
  private:
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+  // absl::Status: 2nd bit from LSB can be used
+  enum State { kClosureNotReady = 0, kClosureReady = 1, kShutdownBit = 2 };
+#else
+  // grpc_status LSB can be used
   enum State { kClosureNotReady = 0, kClosureReady = 2, kShutdownBit = 1 };
-
+#endif
   gpr_atm state_;
 };
 
