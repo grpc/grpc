@@ -21,6 +21,7 @@
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/security/authorization/matchers.h"
+#include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 #include "test/core/util/evaluate_args_test_util.h"
 
 namespace grpc_core {
@@ -341,7 +342,7 @@ TEST_F(AuthorizationMatchersTest,
 
 TEST_F(AuthorizationMatchersTest, AuthenticatedMatcherSuccessfulUriSanMatches) {
   args_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-                                 GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+                                 GRPC_TLS_TRANSPORT_SECURITY_TYPE);
   args_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME,
                                  "spiffe://foo.abc");
   args_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME,
@@ -357,7 +358,7 @@ TEST_F(AuthorizationMatchersTest, AuthenticatedMatcherSuccessfulUriSanMatches) {
 
 TEST_F(AuthorizationMatchersTest, AuthenticatedMatcherFailedUriSanMatches) {
   args_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-                                 GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+                                 GRPC_TLS_TRANSPORT_SECURITY_TYPE);
   args_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME,
                                  "spiffe://bar.abc");
   EvaluateArgs args = args_.MakeEvaluateArgs();
