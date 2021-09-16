@@ -1273,6 +1273,36 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "thread_quota",
+    srcs = [
+        "src/core/lib/resource_quota/thread_quota.cc",
+    ],
+    hdrs = [
+        "src/core/lib/resource_quota/thread_quota.h",
+    ],
+    deps = [
+        "gpr_base",
+        "ref_counted"
+    ]
+)
+
+grpc_cc_library(
+    name = "resource_quota",
+    srcs = [
+        "src/core/lib/resource_quota/resource_quota.cc",
+    ],
+    hdrs = [
+        "src/core/lib/resource_quota/resource_quota.h",
+    ],
+    deps = [
+        "gpr_base",
+        "ref_counted",
+        "thread_quota",
+        "memory_quota",
+    ]
+)
+
+grpc_cc_library(
     name = "grpc_base_c",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",

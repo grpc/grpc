@@ -32,3 +32,31 @@ grpc_cc_test(
         "//test/core/util:grpc_suppressions",
     ],
 )
+
+grpc_cc_test(
+    name = "thread_quota_test",
+    srcs = ["thread_quota_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:thread_quota",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "resource_quota_test",
+    srcs = ["resource_quota_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:resource_quota",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
