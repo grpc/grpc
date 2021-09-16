@@ -24,6 +24,13 @@
 
 namespace grpc_core {
 
+// Maximum number of bytes an allocator will request from a quota in one step.
+// Larger allocations than this will require multiple allocation requests.
+static constexpr size_t kMaxReplenishBytes = 1024 * 1024;
+
+// Minimum number of bytes an allocator will request from a quota in one step.
+static constexpr size_t kMinReplenishBytes = 4096;
+
 //
 // Reclaimer
 //
@@ -46,18 +53,6 @@ size_t RoundDown(size_t size, size_t block_size) {
   return size / block_size * block_size;
 }
 }  // namespace
-
-MemoryRequest MemoryRequest::WithBlockSize(size_t block_size) const {
-  MemoryRequest r(*this);
-  r.block_size_ = block_size;
-  return r;
-}
-
-MemoryRequest MemoryRequest::Increase(size_t amount) const {
-  MemoryRequest r(min_ + amount, max_ + amount);
-  r.block_size_ = block_size_;
-  return r;
-}
 
 //
 // ReclaimerQueue
@@ -142,19 +137,15 @@ size_t MemoryAllocator::Reserve(MemoryRequest request) {
   while (true) {
     // Attempt to reserve memory from our pool.
     auto reservation = TryReserve(request);
-    if (reservation.success) return reservation.size;
+    if (reservation.has_value()) return *reservation;
     // If that failed, grab more from the quota and retry.
-    Replenish(reservation.size);
+    Replenish();
   }
 }
 
-MemoryAllocator::ReserveResult MemoryAllocator::TryReserve(
-    MemoryRequest request) {
+absl::optional<size_t> MemoryAllocator::TryReserve(MemoryRequest request) {
   // How much memory should we request? (see the scaling below)
   size_t scaled_size_over_min = request.max() - request.min();
-  // If we don't get what we want, how much should we request from the quota?
-  // We actually ask for more than what we need to avoid needing to ask again.
-  size_t take_request = 2 * request.max();
   // Scale the request down according to memory pressure if we have that
   // flexibility.
   if (scaled_size_over_min != 0) {
@@ -169,7 +160,6 @@ MemoryAllocator::ReserveResult MemoryAllocator::TryReserve(
           scaled_size_over_min,
           RoundUp((request.max() - request.min()) * (1.0 - pressure) / 0.2,
                   request.block_size()));
-      take_request = request.min() + scaled_size_over_min;
     } else {
       scaled_size_over_min =
           RoundDown(scaled_size_over_min, request.block_size());
@@ -183,8 +173,7 @@ MemoryAllocator::ReserveResult MemoryAllocator::TryReserve(
   while (true) {
     // Does the current free pool satisfy the request?
     if (available < reserve) {
-      GPR_ASSERT(take_request >= available);
-      return {false, take_request - available};
+      return {};
     }
     // Try to reserve the requested amount.
     // If the amount of free memory changed through this loop, then available
@@ -192,13 +181,16 @@ MemoryAllocator::ReserveResult MemoryAllocator::TryReserve(
     if (free_bytes_.compare_exchange_weak(available, available - reserve,
                                           std::memory_order_acq_rel,
                                           std::memory_order_release)) {
-      return {true, reserve};
+      return reserve;
     }
   }
 }
 
-void MemoryAllocator::Replenish(size_t amount) {
+void MemoryAllocator::Replenish() {
   MutexLock lock(&memory_quota_mu_);
+  // How much memory should we ask for?
+  size_t amount =
+      GPR_CLAMP(taken_bytes_ / 3, kMinReplenishBytes, kMaxReplenishBytes);
   // Take the requested amount from the quota.
   memory_quota_->Take(amount);
   // Record that we've taken it.
