@@ -2099,6 +2099,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     int num_failure = 0;
     int num_drops = 0;
     int num_total = 0;
+    gpr_log(GPR_INFO, "========= WAITING FOR All BACKEND %lu TO %lu ==========",
+            static_cast<unsigned long>(start_index),
+            static_cast<unsigned long>(stop_index));
     while (!SeenAllBackends(start_index, stop_index, rpc_options.service)) {
       SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_drops,
                       rpc_options);
