@@ -176,7 +176,7 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
         return absl::InvalidArgumentError(
             "Already received a SETUP_TRANSPORT request");
       }
-      gpr_log(GPR_ERROR, "calling uid = %d", uid);
+      gpr_log(GPR_INFO, "calling uid = %d", uid);
       recvd_setup_transport_ = true;
       int version;
       RETURN_IF_ERROR(parcel->ReadInt32(&version));
