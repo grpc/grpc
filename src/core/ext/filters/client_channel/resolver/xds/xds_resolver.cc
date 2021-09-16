@@ -34,7 +34,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
@@ -243,7 +242,6 @@ class XdsResolver : public Resolver {
     RouteTable route_table_;
     std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
     std::vector<const grpc_channel_filter*> filters_;
-    grpc_error_handle filter_error_ = GRPC_ERROR_NONE;
   };
 
   void OnListenerUpdate(XdsApi::LdsUpdate listener);
@@ -422,16 +420,8 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     }
   }
   // Populate filter list.
-  bool found_router = false;
   for (const auto& http_filter :
        resolver_->current_listener_.http_connection_manager.http_filters) {
-    // Stop at the router filter.  It's a no-op for us, and we ignore
-    // anything that may come after it, for compatibility with Envoy.
-    if (http_filter.config.config_proto_type_name ==
-        kXdsHttpRouterFilterConfigName) {
-      found_router = true;
-      break;
-    }
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the XdsApi code.
     const XdsHttpFilterImpl* filter_impl =
@@ -439,16 +429,9 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
             http_filter.config.config_proto_type_name);
     GPR_ASSERT(filter_impl != nullptr);
     // Add C-core filter to list.
-    filters_.push_back(filter_impl->channel_filter());
-  }
-  // For compatibility with Envoy, if the router filter is not
-  // configured, we fail all RPCs.
-  if (!found_router) {
-    filter_error_ =
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                               "no xDS HTTP router filter configured"),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-    filters_.push_back(&grpc_lame_filter);
+    if (filter_impl->channel_filter() != nullptr) {
+      filters_.push_back(filter_impl->channel_filter());
+    }
   }
 }
 
@@ -459,7 +442,6 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
   }
   clusters_.clear();
   resolver_->MaybeRemoveUnusedClusters();
-  GRPC_ERROR_UNREF(filter_error_);
 }
 
 const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
@@ -486,6 +468,42 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     const XdsApi::Route::ClusterWeight* cluster_weight,
     RefCountedPtr<ServiceConfig>* method_config) {
   std::vector<std::string> fields;
+  // Set retry policy if any.
+  if (route.retry_policy.has_value() && !route.retry_policy->retry_on.Empty()) {
+    std::vector<std::string> retry_parts;
+    retry_parts.push_back(absl::StrFormat(
+        "\"retryPolicy\": {\n"
+        "      \"maxAttempts\": %d,\n"
+        "      \"initialBackoff\": \"%d.%09ds\",\n"
+        "      \"maxBackoff\": \"%d.%09ds\",\n"
+        "      \"backoffMultiplier\": 2,\n",
+        route.retry_policy->num_retries + 1,
+        route.retry_policy->retry_back_off.base_interval.seconds,
+        route.retry_policy->retry_back_off.base_interval.nanos,
+        route.retry_policy->retry_back_off.max_interval.seconds,
+        route.retry_policy->retry_back_off.max_interval.nanos));
+    std::vector<std::string> code_parts;
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_CANCELLED)) {
+      code_parts.push_back("        \"CANCELLED\"");
+    }
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_DEADLINE_EXCEEDED)) {
+      code_parts.push_back("        \"DEADLINE_EXCEEDED\"");
+    }
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_INTERNAL)) {
+      code_parts.push_back("        \"INTERNAL\"");
+    }
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_RESOURCE_EXHAUSTED)) {
+      code_parts.push_back("        \"RESOURCE_EXHAUSTED\"");
+    }
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_UNAVAILABLE)) {
+      code_parts.push_back("        \"UNAVAILABLE\"");
+    }
+    retry_parts.push_back(
+        absl::StrFormat("      \"retryableStatusCodes\": [\n %s ]\n",
+                        absl::StrJoin(code_parts, ",\n")));
+    retry_parts.push_back(absl::StrFormat("    }"));
+    fields.emplace_back(absl::StrJoin(retry_parts, ""));
+  }
   // Set timeout.
   if (route.max_stream_duration.has_value() &&
       (route.max_stream_duration->seconds != 0 ||
@@ -499,18 +517,15 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
   grpc_channel_args* args = grpc_channel_args_copy(resolver_->args_);
   for (const auto& http_filter :
        resolver_->current_listener_.http_connection_manager.http_filters) {
-    // Stop at the router filter.  It's a no-op for us, and we ignore
-    // anything that may come after it, for compatibility with Envoy.
-    if (http_filter.config.config_proto_type_name ==
-        kXdsHttpRouterFilterConfigName) {
-      break;
-    }
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the XdsApi code.
     const XdsHttpFilterImpl* filter_impl =
         XdsHttpFilterRegistry::GetFilterForType(
             http_filter.config.config_proto_type_name);
     GPR_ASSERT(filter_impl != nullptr);
+    // If there is not actually any C-core filter associated with this
+    // xDS filter, then it won't need any config, so skip it.
+    if (filter_impl->channel_filter() == nullptr) continue;
     // Allow filter to add channel args that may affect service config
     // parsing.
     args = filter_impl->ModifyChannelArgs(args);
@@ -523,11 +538,9 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     auto method_config_field =
         filter_impl->GenerateServiceConfig(http_filter.config, config_override);
     if (!method_config_field.ok()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("failed to generate method config for HTTP filter ",
-                       http_filter.name, ": ",
-                       method_config_field.status().ToString())
-              .c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "failed to generate method config for HTTP filter ", http_filter.name,
+          ": ", method_config_field.status().ToString()));
     }
     per_filter_configs[method_config_field->service_config_field_name]
         .push_back(method_config_field->element);
@@ -558,12 +571,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
 
 grpc_channel_args* XdsResolver::XdsConfigSelector::ModifyChannelArgs(
     grpc_channel_args* args) {
-  if (filter_error_ == GRPC_ERROR_NONE) return args;
-  grpc_arg error_arg = MakeLameClientErrorArg(filter_error_);
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(args, &error_arg, 1);
-  grpc_channel_args_destroy(args);
-  return new_args;
+  return args;
 }
 
 void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
@@ -838,10 +846,9 @@ void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
   XdsApi::RdsUpdate::VirtualHost* vhost =
       rds_update.FindVirtualHostForDomain(server_name_);
   if (vhost == nullptr) {
-    OnError(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    OnError(GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("could not find VirtualHost for ", server_name_,
-                     " in RouteConfiguration")
-            .c_str()));
+                     " in RouteConfiguration")));
     return;
   }
   // Save the virtual host in the resolver.

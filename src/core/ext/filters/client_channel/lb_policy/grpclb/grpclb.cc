@@ -51,14 +51,9 @@
 /// \see https://github.com/grpc/grpc/blob/master/doc/load-balancing.md for the
 /// high level design and details.
 
-// With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
-// using that endpoint. Because of various transitive includes in uv.h,
-// including windows.h on Windows, uv.h must be included before other system
-// headers. Therefore, sockaddr.h must always be included first.
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 
 #include <inttypes.h>
 #include <limits.h>
@@ -69,7 +64,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/strip.h"
-
 #include "upb/upb.hpp"
 
 #include <grpc/byte_buffer_reader.h>
@@ -81,7 +75,6 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
@@ -101,6 +94,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -606,7 +600,6 @@ const char* GrpcLb::Serverlist::ShouldDrop() {
 //
 
 GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
-  PickResult result;
   // Check if we should drop the call.
   const char* drop_token =
       serverlist_ == nullptr ? nullptr : serverlist_->ShouldDrop();
@@ -619,16 +612,16 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
     if (client_stats_ != nullptr) {
       client_stats_->AddCallDropped(drop_token);
     }
-    result.type = PickResult::PICK_COMPLETE;
-    return result;
+    return PickResult::Drop(
+        absl::UnavailableError("drop directed by grpclb balancer"));
   }
   // Forward pick to child policy.
-  result = child_picker_->Pick(args);
+  PickResult result = child_picker_->Pick(args);
   // If pick succeeded, add LB token to initial metadata.
-  if (result.type == PickResult::PICK_COMPLETE &&
-      result.subchannel != nullptr) {
+  auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+  if (complete_pick != nullptr) {
     const SubchannelWrapper* subchannel_wrapper =
-        static_cast<SubchannelWrapper*>(result.subchannel.get());
+        static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
     // Encode client stats object into metadata for use by
     // client_load_reporting filter.
     GrpcLbClientStats* client_stats = subchannel_wrapper->client_stats();
@@ -654,7 +647,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       args.initial_metadata->Add(kGrpcLbLbTokenMetadataKey, lb_token);
     }
     // Unwrap subchannel to pass up to the channel.
-    result.subchannel = subchannel_wrapper->wrapped_subchannel();
+    complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
   }
   return result;
 }

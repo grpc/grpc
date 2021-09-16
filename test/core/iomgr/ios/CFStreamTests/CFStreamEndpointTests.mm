@@ -30,6 +30,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 static const int kConnectTimeout = 5;
@@ -125,7 +126,8 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   /* connect to it */
   XCTAssertEqual(getsockname(svr_fd, (struct sockaddr *)addr, (socklen_t *)&resolved_addr.len), 0);
   init_event_closure(&done, &connected);
-  grpc_tcp_client_connect(&done, &ep_, nullptr, nullptr, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_tcp_client_connect(&done, &ep_, grpc_slice_allocator_create_unlimited(), nullptr, nullptr,
+                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
 
   /* await the connection */
   do {
@@ -133,7 +135,8 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
     r = accept(svr_fd, reinterpret_cast<struct sockaddr *>(addr),
                reinterpret_cast<socklen_t *>(&resolved_addr.len));
   } while (r == -1 && errno == EINTR);
-  XCTAssertGreaterThanOrEqual(r, 0);
+  XCTAssertGreaterThanOrEqual(r, 0, @"connection failed with return code %@ and errno %@", @(r),
+                              @(errno));
   svr_fd_ = r;
 
   /* wait for the connection callback to finish */

@@ -16,6 +16,8 @@
  *
  */
 
+#include "src/compiler/python_generator.h"
+
 #include <algorithm>
 #include <cassert>
 #include <cctype>
@@ -33,7 +35,6 @@
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
 #include "src/compiler/protobuf_plugin.h"
-#include "src/compiler/python_generator.h"
 #include "src/compiler/python_generator_helpers.h"
 #include "src/compiler/python_private_generator.h"
 

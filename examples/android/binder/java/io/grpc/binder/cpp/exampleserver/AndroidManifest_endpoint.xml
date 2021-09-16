@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="io.grpc.binder.cpp.exampleserver">
+  <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="30"/>
+  <application>
+    <service
+        android:name=".ExportedEndpointService"
+        android:exported="true"/>
+  </application>
+</manifest>

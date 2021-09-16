@@ -46,6 +46,11 @@ UPB_INLINE const upb_msgdef *envoy_extensions_filters_network_http_connection_ma
   return upb_symtab_lookupmsg(s, "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.UpgradeConfig");
 }
 
+UPB_INLINE const upb_msgdef *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_extensions_filters_network_http_connection_manager_v3_http_connection_manager_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.PathNormalizationOptions");
+}
+
 UPB_INLINE const upb_msgdef *envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_extensions_filters_network_http_connection_manager_v3_http_connection_manager_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.extensions.filters.network.http_connection_manager.v3.LocalReplyConfig");
@@ -104,6 +109,11 @@ UPB_INLINE const upb_msgdef *envoy_extensions_filters_network_http_connection_ma
 UPB_INLINE const upb_msgdef *envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_extensions_filters_network_http_connection_manager_v3_http_connection_manager_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.extensions.filters.network.http_connection_manager.v3.RequestIDExtension");
+}
+
+UPB_INLINE const upb_msgdef *envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_extensions_filters_network_http_connection_manager_v3_http_connection_manager_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.extensions.filters.network.http_connection_manager.v3.EnvoyMobileHttpConnectionManager");
 }
 
 #ifdef __cplusplus

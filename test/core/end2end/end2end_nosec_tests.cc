@@ -127,6 +127,8 @@ extern void retry(grpc_end2end_test_config config);
 extern void retry_pre_init(void);
 extern void retry_cancel_during_delay(grpc_end2end_test_config config);
 extern void retry_cancel_during_delay_pre_init(void);
+extern void retry_cancel_with_multiple_send_batches(grpc_end2end_test_config config);
+extern void retry_cancel_with_multiple_send_batches_pre_init(void);
 extern void retry_cancellation(grpc_end2end_test_config config);
 extern void retry_cancellation_pre_init(void);
 extern void retry_disabled(grpc_end2end_test_config config);
@@ -139,6 +141,8 @@ extern void retry_exceeds_buffer_size_in_subsequent_batch(grpc_end2end_test_conf
 extern void retry_exceeds_buffer_size_in_subsequent_batch_pre_init(void);
 extern void retry_lb_drop(grpc_end2end_test_config config);
 extern void retry_lb_drop_pre_init(void);
+extern void retry_lb_fail(grpc_end2end_test_config config);
+extern void retry_lb_fail_pre_init(void);
 extern void retry_non_retriable_status(grpc_end2end_test_config config);
 extern void retry_non_retriable_status_pre_init(void);
 extern void retry_non_retriable_status_before_recv_trailing_metadata_started(grpc_end2end_test_config config);
@@ -153,6 +157,8 @@ extern void retry_recv_message(grpc_end2end_test_config config);
 extern void retry_recv_message_pre_init(void);
 extern void retry_recv_trailing_metadata_error(grpc_end2end_test_config config);
 extern void retry_recv_trailing_metadata_error_pre_init(void);
+extern void retry_send_initial_metadata_refs(grpc_end2end_test_config config);
+extern void retry_send_initial_metadata_refs_pre_init(void);
 extern void retry_send_op_fails(grpc_end2end_test_config config);
 extern void retry_send_op_fails_pre_init(void);
 extern void retry_server_pushback_delay(grpc_end2end_test_config config);
@@ -254,12 +260,14 @@ void grpc_end2end_tests_pre_init(void) {
   resource_quota_server_pre_init();
   retry_pre_init();
   retry_cancel_during_delay_pre_init();
+  retry_cancel_with_multiple_send_batches_pre_init();
   retry_cancellation_pre_init();
   retry_disabled_pre_init();
   retry_exceeds_buffer_size_in_delay_pre_init();
   retry_exceeds_buffer_size_in_initial_batch_pre_init();
   retry_exceeds_buffer_size_in_subsequent_batch_pre_init();
   retry_lb_drop_pre_init();
+  retry_lb_fail_pre_init();
   retry_non_retriable_status_pre_init();
   retry_non_retriable_status_before_recv_trailing_metadata_started_pre_init();
   retry_per_attempt_recv_timeout_pre_init();
@@ -267,6 +275,7 @@ void grpc_end2end_tests_pre_init(void) {
   retry_recv_initial_metadata_pre_init();
   retry_recv_message_pre_init();
   retry_recv_trailing_metadata_error_pre_init();
+  retry_send_initial_metadata_refs_pre_init();
   retry_send_op_fails_pre_init();
   retry_server_pushback_delay_pre_init();
   retry_server_pushback_disabled_pre_init();
@@ -350,12 +359,14 @@ void grpc_end2end_tests(int argc, char **argv,
     resource_quota_server(config);
     retry(config);
     retry_cancel_during_delay(config);
+    retry_cancel_with_multiple_send_batches(config);
     retry_cancellation(config);
     retry_disabled(config);
     retry_exceeds_buffer_size_in_delay(config);
     retry_exceeds_buffer_size_in_initial_batch(config);
     retry_exceeds_buffer_size_in_subsequent_batch(config);
     retry_lb_drop(config);
+    retry_lb_fail(config);
     retry_non_retriable_status(config);
     retry_non_retriable_status_before_recv_trailing_metadata_started(config);
     retry_per_attempt_recv_timeout(config);
@@ -363,6 +374,7 @@ void grpc_end2end_tests(int argc, char **argv,
     retry_recv_initial_metadata(config);
     retry_recv_message(config);
     retry_recv_trailing_metadata_error(config);
+    retry_send_initial_metadata_refs(config);
     retry_send_op_fails(config);
     retry_server_pushback_delay(config);
     retry_server_pushback_disabled(config);
@@ -587,6 +599,10 @@ void grpc_end2end_tests(int argc, char **argv,
       retry_cancel_during_delay(config);
       continue;
     }
+    if (0 == strcmp("retry_cancel_with_multiple_send_batches", argv[i])) {
+      retry_cancel_with_multiple_send_batches(config);
+      continue;
+    }
     if (0 == strcmp("retry_cancellation", argv[i])) {
       retry_cancellation(config);
       continue;
@@ -609,6 +625,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("retry_lb_drop", argv[i])) {
       retry_lb_drop(config);
+      continue;
+    }
+    if (0 == strcmp("retry_lb_fail", argv[i])) {
+      retry_lb_fail(config);
       continue;
     }
     if (0 == strcmp("retry_non_retriable_status", argv[i])) {
@@ -637,6 +657,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("retry_recv_trailing_metadata_error", argv[i])) {
       retry_recv_trailing_metadata_error(config);
+      continue;
+    }
+    if (0 == strcmp("retry_send_initial_metadata_refs", argv[i])) {
+      retry_send_initial_metadata_refs(config);
       continue;
     }
     if (0 == strcmp("retry_send_op_fails", argv[i])) {

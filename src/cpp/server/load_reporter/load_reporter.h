@@ -26,15 +26,15 @@
 #include <deque>
 #include <vector>
 
+#include "opencensus/stats/stats.h"
+#include "opencensus/tags/tag_key.h"
+
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/cpp/server/load_reporter/load_data_store.h"
 #include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
-
-#include "opencensus/stats/stats.h"
-#include "opencensus/tags/tag_key.h"
 
 namespace grpc {
 namespace load_reporter {

@@ -21,10 +21,6 @@
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_WINSOCK_SOCKET
 
-#include "src/core/lib/iomgr/sockaddr.h"
-
-#include "src/core/lib/iomgr/resolve_address.h"
-
 #include <inttypes.h>
 #include <string.h>
 #include <sys/types.h>
@@ -46,6 +42,8 @@
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
 struct request {
   char* name;
@@ -69,14 +67,14 @@ static grpc_error_handle windows_blocking_resolve_address(
   std::string port;
   grpc_core::SplitHostPort(name, &host, &port);
   if (host.empty()) {
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("unparseable host:port: '%s'", name).c_str());
+    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrFormat("unparseable host:port: '%s'", name));
     goto done;
   }
   if (port.empty()) {
     if (default_port == NULL) {
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrFormat("no port in name '%s'", name).c_str());
+      error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrFormat("no port in name '%s'", name));
       goto done;
     }
     port = default_port;

@@ -18,10 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/internal_errqueue.h"
 
 #include <grpc/impl/codegen/log.h>
-#include "src/core/lib/iomgr/internal_errqueue.h"
+
+#include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 

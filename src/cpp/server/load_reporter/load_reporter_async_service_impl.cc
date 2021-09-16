@@ -18,11 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/cpp/server/load_reporter/load_reporter_async_service_impl.h"
+
 #include <inttypes.h>
 
 #include "absl/memory/memory.h"
-
-#include "src/cpp/server/load_reporter/load_reporter_async_service_impl.h"
 
 namespace grpc {
 namespace load_reporter {

@@ -90,6 +90,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "bitset_test",
+    srcs = ["bitset_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:bitset",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
     name = "match_test",
     srcs = ["match_test.cc"],
     external_deps = ["gtest"],
@@ -109,6 +121,21 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:overload",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "table_test",
+    srcs = ["table_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/types:optional",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:table",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -242,5 +269,17 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "capture_test",
+    srcs = ["capture_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:capture",
+        "//test/core/util:grpc_suppressions",
     ],
 )

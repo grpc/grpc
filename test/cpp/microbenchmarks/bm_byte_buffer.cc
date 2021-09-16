@@ -21,6 +21,7 @@
 #include <memory>
 
 #include <benchmark/benchmark.h>
+
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/byte_buffer.h>
 

@@ -18,10 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-
-#include <string.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"

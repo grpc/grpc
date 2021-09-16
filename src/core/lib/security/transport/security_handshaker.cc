@@ -22,6 +22,7 @@
 
 #include <stdbool.h>
 #include <string.h>
+
 #include <limits>
 
 #include <grpc/slice_buffer.h>
@@ -31,7 +32,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/handshaker.h"
-#include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
@@ -593,11 +594,11 @@ RefCountedPtr<Handshaker> SecurityHandshakerCreate(
   }
 }
 
-void SecurityRegisterHandshakerFactories() {
-  HandshakerRegistry::RegisterHandshakerFactory(
+void SecurityRegisterHandshakerFactories(CoreConfiguration::Builder* builder) {
+  builder->handshaker_registry()->RegisterHandshakerFactory(
       false /* at_start */, HANDSHAKER_CLIENT,
       absl::make_unique<ClientSecurityHandshakerFactory>());
-  HandshakerRegistry::RegisterHandshakerFactory(
+  builder->handshaker_registry()->RegisterHandshakerFactory(
       false /* at_start */, HANDSHAKER_SERVER,
       absl::make_unique<ServerSecurityHandshakerFactory>());
 }

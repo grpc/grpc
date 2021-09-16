@@ -18,10 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/slice_buffer.h>
-
 #include <string.h>
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 

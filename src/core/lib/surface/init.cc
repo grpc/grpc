@@ -32,7 +32,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/fork.h"
@@ -64,20 +63,18 @@ extern void grpc_register_built_in_plugins(void);
 
 static gpr_once g_basic_init = GPR_ONCE_INIT;
 static grpc_core::Mutex* g_init_mu;
-static int g_initializations;
+static int g_initializations ABSL_GUARDED_BY(g_init_mu) = 0;
 static grpc_core::CondVar* g_shutting_down_cv;
-static bool g_shutting_down;
+static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 
 static void do_basic_init(void) {
   gpr_log_verbosity_init();
   g_init_mu = new grpc_core::Mutex();
   g_shutting_down_cv = new grpc_core::CondVar();
-  g_shutting_down = false;
   grpc_register_built_in_plugins();
   grpc_cq_global_init();
   grpc_core::grpc_executor_global_init();
   gpr_time_init();
-  g_initializations = 0;
 }
 
 static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
@@ -147,8 +144,6 @@ void grpc_init(void) {
     grpc_core::ExecCtx::GlobalInit();
     grpc_iomgr_init();
     gpr_timers_global_init();
-    grpc_core::HandshakerRegistry::Init();
-    grpc_security_init();
     for (int i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != nullptr) {
         g_all_of_the_plugins[i].init();
@@ -167,7 +162,8 @@ void grpc_init(void) {
   GRPC_API_TRACE("grpc_init(void)", 0, ());
 }
 
-void grpc_shutdown_internal_locked(void) {
+void grpc_shutdown_internal_locked(void)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(g_init_mu) {
   int i;
   {
     grpc_core::ExecCtx exec_ctx(0);
@@ -184,7 +180,6 @@ void grpc_shutdown_internal_locked(void) {
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
     grpc_mdctx_global_shutdown();
-    grpc_core::HandshakerRegistry::Shutdown();
     grpc_slice_intern_shutdown();
     grpc_core::channelz::ChannelzRegistry::Shutdown();
     grpc_stats_shutdown();

@@ -19,6 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_SLICE_H
 #define GRPC_IMPL_CODEGEN_SLICE_H
 
+// IWYU pragma: private, include <grpc/slice.h>
+
 #include <grpc/impl/codegen/port_platform.h>
 
 #include <stddef.h>

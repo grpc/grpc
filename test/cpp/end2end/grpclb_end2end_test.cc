@@ -24,6 +24,9 @@
 #include <string>
 #include <thread>
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -52,17 +55,13 @@
 #include "src/core/lib/transport/authority_override.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
-
+#include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
-
-#include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include "test/cpp/util/test_config.h"
 
 // TODO(dgq): Other scenarios in need of testing:
 // - Send a serverlist with faulty ip:port addresses (port > 2^16, etc).
@@ -274,8 +273,9 @@ class BalancerServiceImpl : public BalancerService {
       }
       {
         grpc::internal::MutexLock lock(&mu_);
-        grpc::internal::WaitUntil(&serverlist_cond_, &mu_,
-                                  [this] { return serverlist_done_; });
+        while (!serverlist_done_) {
+          serverlist_cond_.Wait(&mu_);
+        }
       }
 
       if (client_load_reporting_interval_seconds_ > 0) {
@@ -304,7 +304,7 @@ class BalancerServiceImpl : public BalancerService {
           // below from firing before its corresponding wait is executed.
           grpc::internal::MutexLock lock(&mu_);
           load_report_queue_.emplace_back(std::move(load_report));
-          if (load_report_cond_ != nullptr) load_report_cond_->Signal();
+          load_report_cond_.Signal();
         }
       }
     }
@@ -332,12 +332,10 @@ class BalancerServiceImpl : public BalancerService {
 
   ClientStats WaitForLoadReport() {
     grpc::internal::MutexLock lock(&mu_);
-    grpc::internal::CondVar cv;
     if (load_report_queue_.empty()) {
-      load_report_cond_ = &cv;
-      grpc::internal::WaitUntil(load_report_cond_, &mu_,
-                                [this] { return !load_report_queue_.empty(); });
-      load_report_cond_ = nullptr;
+      while (load_report_queue_.empty()) {
+        load_report_cond_.Wait(&mu_);
+      }
     }
     ClientStats load_report = std::move(load_report_queue_.front());
     load_report_queue_.pop_front();
@@ -376,9 +374,9 @@ class BalancerServiceImpl : public BalancerService {
 
   grpc::internal::Mutex mu_;
   grpc::internal::CondVar serverlist_cond_;
-  bool serverlist_done_ = false;
-  grpc::internal::CondVar* load_report_cond_ = nullptr;
-  std::deque<ClientStats> load_report_queue_;
+  bool serverlist_done_ ABSL_GUARDED_BY(mu_) = false;
+  grpc::internal::CondVar load_report_cond_;
+  std::deque<ClientStats> load_report_queue_ ABSL_GUARDED_BY(mu_);
 };
 
 class GrpclbEnd2endTest : public ::testing::Test {
@@ -495,7 +493,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     if (status.ok()) {
       ++*num_ok;
     } else {
-      if (status.error_message() == "Call dropped by load balancing policy") {
+      if (status.error_message() == "drop directed by grpclb balancer") {
         ++*num_drops;
       } else {
         ++*num_failure;
@@ -959,7 +957,7 @@ TEST_F(SingleBalancerTest, SecureNaming) {
 }
 
 TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE("threadsafe");
   // Make sure that we blow up (via abort() from the security connector) when
   // the name from the balancer doesn't match expectations.
   ASSERT_DEATH_IF_SUPPORTED(
@@ -1781,7 +1779,7 @@ TEST_F(SingleBalancerTest, Drop) {
     EchoResponse response;
     const Status status = SendRpc(&response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        status.error_message() == "drop directed by grpclb balancer") {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -1813,7 +1811,7 @@ TEST_F(SingleBalancerTest, DropAllFirst) {
       0);
   const Status status = SendRpc(nullptr, 1000, true);
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+  EXPECT_EQ(status.error_message(), "drop directed by grpclb balancer");
 }
 
 TEST_F(SingleBalancerTest, DropAll) {
@@ -1838,7 +1836,7 @@ TEST_F(SingleBalancerTest, DropAll) {
     status = SendRpc(nullptr, 1000, true);
   } while (status.ok());
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+  EXPECT_EQ(status.error_message(), "drop directed by grpclb balancer");
 }
 
 class SingleBalancerWithClientLoadReportingTest : public GrpclbEnd2endTest {
@@ -1970,7 +1968,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
     EchoResponse response;
     const Status status = SendRpc(&response);
     if (!status.ok() &&
-        status.error_message() == "Call dropped by load balancing policy") {
+        status.error_message() == "drop directed by grpclb balancer") {
       ++num_drops;
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()

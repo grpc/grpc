@@ -19,6 +19,7 @@
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 
 #include <grpc/support/log.h>
+
 #include "test/core/util/test_config.h"
 
 static void test_alpn_success(void) {

@@ -31,12 +31,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from datetime import datetime
+from datetime import timedelta
 import json
 import logging
 import pprint
-import urllib2
 
-from datetime import datetime, timedelta
+import urllib2
 
 logging.basicConfig(format='%(asctime)s %(message)s')
 

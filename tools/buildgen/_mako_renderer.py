@@ -26,11 +26,11 @@ import shutil
 import sys
 from typing import List
 
-import yaml
 from mako import exceptions
 from mako.lookup import TemplateLookup
 from mako.runtime import Context
 from mako.template import Template
+import yaml
 
 PROJECT_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
                             "..")

@@ -18,15 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <inttypes.h>
 
 #include <string>
 
 #include "absl/strings/str_cat.h"
-
-#include "src/core/lib/iomgr/timer.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
@@ -38,7 +34,9 @@
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/time_averaged_stats.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_heap.h"
 
 #define INVALID_HEAP_INDEX 0xffffffffu
@@ -212,19 +210,11 @@ static void validate_non_pending_timer(grpc_timer* t) {
 
 #endif
 
-#if GPR_ARCH_64
-/* NOTE: TODO(sreek) - Currently the thread local storage support in grpc is
-   for intptr_t which means on 32-bit machines it is not wide enough to hold
-   grpc_millis which is 64-bit. Adding thread local support for 64 bit values
-   is a lot of work for very little gain. So we are currently restricting this
-   optimization to only 64 bit machines */
-
 /* Thread local variable that stores the deadline of the next timer the thread
  * has last-seen. This is an optimization to prevent the thread from checking
  * shared_mutables.min_timer (which requires acquiring shared_mutables.mu lock,
  * an expensive operation) */
-GPR_TLS_DECL(g_last_seen_min_timer);
-#endif
+static GPR_THREAD_LOCAL(grpc_millis) g_last_seen_min_timer;
 
 struct shared_mutables {
   /* The deadline of the next timer due across all timer shards */
@@ -269,10 +259,7 @@ static void timer_list_init() {
   gpr_mu_init(&g_shared_mutables.mu);
   g_shared_mutables.min_timer = grpc_core::ExecCtx::Get()->Now();
 
-#if GPR_ARCH_64
-  gpr_tls_init(&g_last_seen_min_timer);
-  gpr_tls_set(&g_last_seen_min_timer, 0);
-#endif
+  g_last_seen_min_timer = 0;
 
   for (i = 0; i < g_num_shards; i++) {
     timer_shard* shard = &g_shards[i];
@@ -301,11 +288,6 @@ static void timer_list_shutdown() {
     grpc_timer_heap_destroy(&shard->heap);
   }
   gpr_mu_destroy(&g_shared_mutables.mu);
-
-#if GPR_ARCH_64
-  gpr_tls_destroy(&g_last_seen_min_timer);
-#endif
-
   gpr_free(g_shards);
   gpr_free(g_shard_queue);
   g_shared_mutables.initialized = false;
@@ -452,10 +434,8 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
 }
 
 static void timer_consume_kick(void) {
-#if GPR_ARCH_64
   /* Force re-evaluation of last seen min */
-  gpr_tls_set(&g_last_seen_min_timer, 0);
-#endif
+  g_last_seen_min_timer = 0;
 }
 
 static void timer_cancel(grpc_timer* timer) {
@@ -592,7 +572,6 @@ static grpc_timer_check_result run_some_expired_timers(
   // safe since we know that both are pointer types and 64-bit wide
   grpc_millis min_timer = static_cast<grpc_millis>(
       gpr_atm_no_barrier_load((gpr_atm*)(&g_shared_mutables.min_timer)));
-  gpr_tls_set(&g_last_seen_min_timer, min_timer);
 #else
   // On 32-bit systems, gpr_atm_no_barrier_load does not work on 64-bit types
   // (like grpc_millis). So all reads and writes to g_shared_mutables.min_timer
@@ -601,6 +580,8 @@ static grpc_timer_check_result run_some_expired_timers(
   grpc_millis min_timer = g_shared_mutables.min_timer;
   gpr_mu_unlock(&g_shared_mutables.mu);
 #endif
+  g_last_seen_min_timer = min_timer;
+
   if (now < min_timer) {
     if (next != nullptr) *next = GPR_MIN(*next, min_timer);
     return GRPC_TIMERS_CHECKED_AND_EMPTY;
@@ -676,20 +657,9 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
   // prelude
   grpc_millis now = grpc_core::ExecCtx::Get()->Now();
 
-#if GPR_ARCH_64
   /* fetch from a thread-local first: this avoids contention on a globally
      mutable cacheline in the common case */
-  grpc_millis min_timer = gpr_tls_get(&g_last_seen_min_timer);
-#else
-  // On 32-bit systems, we currently do not have thread local support for 64-bit
-  // types. In this case, directly read from g_shared_mutables.min_timer.
-  // Also, note that on 32-bit systems, gpr_atm_no_barrier_store does not work
-  // on 64-bit types (like grpc_millis). So all reads and writes to
-  // g_shared_mutables.min_timer are done under g_shared_mutables.mu
-  gpr_mu_lock(&g_shared_mutables.mu);
-  grpc_millis min_timer = g_shared_mutables.min_timer;
-  gpr_mu_unlock(&g_shared_mutables.mu);
-#endif
+  grpc_millis min_timer = g_last_seen_min_timer;
 
   if (now < min_timer) {
     if (next != nullptr) {

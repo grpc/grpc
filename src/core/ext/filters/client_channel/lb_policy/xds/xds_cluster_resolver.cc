@@ -1027,15 +1027,12 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
             "config -- "
             "will put channel in TRANSIENT_FAILURE: %s",
             this, grpc_error_std_string(error).c_str());
-    error = grpc_error_set_int(
-        grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                 "xds_cluster_resolver LB policy: error "
-                                 "parsing generated child policy config"),
-                             error),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
+    absl::Status status = absl::InternalError(
+        "xds_cluster_resolver LB policy: error parsing generated child policy "
+        "config");
     channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
-        absl::make_unique<TransientFailurePicker>(error));
+        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+        absl::make_unique<TransientFailurePicker>(status));
     return nullptr;
   }
   return config;
@@ -1172,9 +1169,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
         std::vector<grpc_error_handle> discovery_mechanism_errors =
             ParseDiscoveryMechanism(array[i], &discovery_mechanism);
         if (!discovery_mechanism_errors.empty()) {
-          grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("field:discovery_mechanism element: ", i, " error")
-                  .c_str());
+          grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+              absl::StrCat("field:discovery_mechanism element: ", i, " error"));
           for (grpc_error_handle discovery_mechanism_error :
                discovery_mechanism_errors) {
             error = grpc_error_add_child(error, discovery_mechanism_error);

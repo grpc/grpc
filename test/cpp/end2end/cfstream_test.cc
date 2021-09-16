@@ -16,13 +16,13 @@
  *
  */
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <algorithm>
 #include <memory>
 #include <mutex>
 #include <random>
 #include <thread>
+
+#include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -36,11 +36,10 @@
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gpr/env.h"
-
+#include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"

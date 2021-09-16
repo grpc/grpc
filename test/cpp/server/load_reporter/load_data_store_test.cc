@@ -18,13 +18,15 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include "src/cpp/server/load_reporter/load_data_store.h"
+
 #include <set>
 #include <vector>
 
-#include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
-#include "src/cpp/server/load_reporter/load_data_store.h"
+#include <grpc/grpc.h>
+
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

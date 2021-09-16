@@ -7,9 +7,23 @@ Note that a gRPC client will simply ignore the configuration of a feature it
 does not support. The gRPC client does not generate a log
 to indicate that some configuration was ignored. It is impractical to generate
 a log and keep it up-to-date because xDS has a large number of APIs that gRPC
-does not support and the APIs keep evolving too. We recommend reading the
+does not support and the APIs keep evolving too. In the case where an xDS
+field corresponding to a feature is supported but the value configured for
+that field is not supported, a gRPC client will NACK such a configuration.
+We recommend reading the
 [first gRFC](https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md)
 on xDS support in gRPC to understand the design philosophy.
+
+Not all cluster load balancing policies are supported. A gRPC client will
+NACK the configuration that contains unsupported cluster load balancing
+policy. This will cause all cluster configurations to be rejected by the
+client because the xDS protocol currently requires rejecting all resources in
+a given response, rather than being able to reject only an individual resource
+from the response. Due to this limitation, you must ensure that all clients
+support the required cluster load balancing policy before configuring that
+policy for a service. For example, if you change the ROUND_ROBIN policy to
+RING_HASH, you must ensure that all the clients are upgraded to a version that
+supports RING_HASH.
 
 The EDS policy will *not* support
 [overprovisioning](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/overprovisioning),
@@ -48,3 +62,5 @@ Support for [xDS v3 APIs](https://www.envoyproxy.io/docs/envoy/latest/api-v3/api
 [Circuit Breaking](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/circuit_breaker.proto):<ul><li>Only max_requests is supported.</li></ul> | [A32](https://github.com/grpc/proposal/blob/master/A32-xds-circuit-breaking.md) | v1.37.1 (N/A for PHP) | v1.37.1 | v1.37.0 | |
 [Fault Injection](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/fault/v3/fault.proto):<br> Only the following fields are supported:<ul><li>delay</li><li>abort</li><li>max_active_faults</li><li>headers</li></ul> | [A33](https://github.com/grpc/proposal/blob/master/A33-Fault-Injection.md) | v1.37.1  | v1.37.1 | v1.37.0 | |
 [Client Status Discovery Service](https://github.com/envoyproxy/envoy/blob/main/api/envoy/service/status/v3/csds.proto) | [A40](https://github.com/grpc/proposal/blob/master/A40-csds-support.md) | v1.37.1 (C++)<br>v1.38.0 (Python)  | v1.37.1 | v1.37.0 | |
+[Ring hash](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/load_balancers#ring-hash) load balancing policy:<br> Only the following [policy specifiers](https://github.com/envoyproxy/envoy/blob/2443032526cf6e50d63d35770df9473dd0460fc0/api/envoy/config/route/v3/route_components.proto#L706) are supported:<ul><li>header</li><li>filter_state with key `io.grpc.channel_id`</li></ul>Only [`XX_HASH`](https://github.com/envoyproxy/envoy/blob/2443032526cf6e50d63d35770df9473dd0460fc0/api/envoy/config/cluster/v3/cluster.proto#L383) function is supported. | [A42](https://github.com/grpc/proposal/blob/master/A42-xds-ring-hash-lb-policy.md) | v1.40.0 | v1.40.1 | |
+[Retry](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-retrypolicy):<br>Only the following fields are supported:<ul><li>retry_on for the following conditions: cancelled, deadline-exceeded, internal, resource-exhausted, and unavailable.</li><li>num_retries</li><li>retry_back_off</li></ul> | [A44](https://github.com/grpc/proposal/blob/master/A44-xds-retry.md) | v1.40.0 | v1.40.1 | | |

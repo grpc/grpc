@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -40,8 +42,6 @@
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-
-#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 
 namespace grpc_core {
 

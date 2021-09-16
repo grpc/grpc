@@ -21,11 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/log.h>
+#include <string.h>
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
-#include <string.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -231,6 +231,7 @@ inline int grpc_slice_refcount::Eq(const grpc_slice& a, const grpc_slice& b) {
       GPR_DEBUG_ASSERT(
           (GRPC_STATIC_METADATA_INDEX(a) == GRPC_STATIC_METADATA_INDEX(b)) ==
           (a.refcount == b.refcount));
+      ABSL_FALLTHROUGH_INTENDED;
     case Type::INTERNED:
       return a.refcount == b.refcount;
     case Type::NOP:
