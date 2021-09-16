@@ -80,6 +80,7 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
   memory_quota->SetSize(4096);
   auto memory_allocator = memory_quota->MakeMemoryAllocator();
   auto object = memory_allocator->MakeUnique<Sized<2048>>();
+
   absl::Notification notification;
   memory_allocator->PostReclaimer(ReclamationPass::kDestructive,
                                   [&notification, &object](ReclamationSweep) {
@@ -88,6 +89,53 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
                                   });
   auto object2 = memory_allocator->MakeUnique<Sized<2048>>();
   notification.WaitForNotification();
+  EXPECT_EQ(object.get(), nullptr);
+
+  absl::Notification notification2;
+  memory_allocator->PostReclaimer(ReclamationPass::kDestructive,
+                                  [&notification2, &object2](ReclamationSweep) {
+                                    object2.reset();
+                                    notification2.Notify();
+                                  });
+  auto object3 = memory_allocator->MakeUnique<Sized<2048>>();
+  notification2.WaitForNotification();
+  EXPECT_EQ(object2.get(), nullptr);
+}
+
+TEST(MemoryQuotaTest, BasicRebind) {
+  RefCountedPtr<MemoryQuota> memory_quota = MakeRefCounted<MemoryQuota>();
+  memory_quota->SetSize(4096);
+  RefCountedPtr<MemoryQuota> memory_quota2 = MakeRefCounted<MemoryQuota>();
+  memory_quota2->SetSize(4096);
+
+  auto memory_allocator = memory_quota2->MakeMemoryAllocator();
+  auto object = memory_allocator->MakeUnique<Sized<2048>>();
+
+  memory_allocator->Rebind(memory_quota);
+  auto memory_allocator2 = memory_quota2->MakeMemoryAllocator();
+
+  memory_allocator2->PostReclaimer(ReclamationPass::kDestructive,
+                                   [](ReclamationSweep) {
+                                     // Taken memory should be reassigned to
+                                     // memory_quota, so this should never be
+                                     // reached.
+                                     abort();
+                                   });
+
+  absl::Notification notification;
+  memory_allocator->PostReclaimer(ReclamationPass::kDestructive,
+                                  [&object, &notification](ReclamationSweep) {
+                                    // The new memory allocator should reclaim
+                                    // the object allocated against the previous
+                                    // quota because that's now part of this
+                                    // quota.
+                                    object.reset();
+                                    notification.Notify();
+                                  });
+
+  auto object2 = memory_allocator->MakeUnique<Sized<2048>>();
+  notification.WaitForNotification();
+  EXPECT_EQ(object.get(), nullptr);
 }
 
 }  // namespace testing
