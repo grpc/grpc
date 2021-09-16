@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_H_
-#define GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_H_
+#ifndef GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_H
+#define GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -118,4 +118,4 @@ inline void grpc_slice_unref_internal(const grpc_slice& slice) {
   }
 }
 
-#endif /* GRPC_CORE_LIB_SLICE_INTERNAL_H */
+#endif /* GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_H */

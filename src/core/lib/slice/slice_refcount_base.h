@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_BASE_H_
-#define GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_BASE_H_
+#ifndef GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_BASE_H
+#define GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_BASE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -170,4 +170,4 @@ struct StaticSliceRefcount {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_BASE_H
