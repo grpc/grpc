@@ -593,6 +593,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         private void HandleFinished(bool success, ClientSideStatus receivedStatus)
         {
+            Console.Error.WriteLine($"Handle Finished {receivedStatus}");
             // NOTE: because this event is a result of batch containing GRPC_OP_RECV_STATUS_ON_CLIENT,
             // success will be always set to true.
 
@@ -602,6 +603,7 @@ namespace Grpc.Core.Internal
             bool origCancelRequested;
             lock (myLock)
             {
+                Console.Error.WriteLine($"readingDone was {readingDone}");
                 finished = true;
                 finishedStatus = receivedStatus;
                 if (isStreamingWriteCompletionDelayed)
@@ -611,6 +613,7 @@ namespace Grpc.Core.Internal
                 }
 
                 releasedResources = ReleaseResourcesIfPossible();
+                Console.Error.WriteLine("Resources released");
                 origCancelRequested = cancelRequested;
             }
 
@@ -618,6 +621,8 @@ namespace Grpc.Core.Internal
             {
                 OnAfterReleaseResourcesUnlocked();
             }
+
+            
 
             if (delayedStreamingWriteTcs != null)
             {
