@@ -77,7 +77,11 @@ void LockfreeEvent::DestroyEvent() {
   do {
     curr = gpr_atm_no_barrier_load(&state_);
     if (curr & kShutdownBit) {
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+      internal::StatusFreePtr(curr & ~kShutdownBit);
+#else
       GRPC_ERROR_UNREF((grpc_error_handle)(curr & ~kShutdownBit));
+#endif
     } else {
       GPR_ASSERT(curr == kClosureNotReady || curr == kClosureReady);
     }
@@ -139,8 +143,13 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
            contains a pointer to the shutdown-error). If the fd is shutdown,
            schedule the closure with the shutdown error */
         if ((curr & kShutdownBit) > 0) {
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+          grpc_error_handle shutdown_err =
+              internal::StatusGetFromPtr(curr & ~kShutdownBit);
+#else
           grpc_error_handle shutdown_err =
               reinterpret_cast<grpc_error_handle>(curr & ~kShutdownBit);
+#endif
           ExecCtx::Run(DEBUG_LOCATION, closure,
                        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                            "FD Shutdown", &shutdown_err, 1));
@@ -160,7 +169,18 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
 }
 
 bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+  intptr_t status_ptr = internal::StatusAllocPtr(shutdown_error);
+  if ((status_ptr & kShutdownBit) > 0) {
+    /* absl::Status shouldn't have kShutdownBit, could be a code bug. */
+    gpr_log(GPR_ERROR,
+            "LockfreeEvent::SetShutdown got an error which has kShutdownBit");
+    abort();
+  }
+  gpr_atm new_state = status_ptr | kShutdownBit;
+#else
   gpr_atm new_state = reinterpret_cast<gpr_atm>(shutdown_error) | kShutdownBit;
+#endif
 
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
@@ -184,7 +204,11 @@ bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {
 
         /* If fd is already shutdown, we are done */
         if ((curr & kShutdownBit) > 0) {
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+          internal::StatusFreePtr(status_ptr);
+#else
           GRPC_ERROR_UNREF(shutdown_error);
+#endif
           return false;
         }
 

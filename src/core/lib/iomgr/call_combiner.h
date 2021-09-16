@@ -109,9 +109,10 @@ class CallCombiner {
   gpr_atm size_ = 0;  // size_t, num closures in queue or currently executing
   MultiProducerSingleConsumerQueue queue_;
   // Either 0 (if not cancelled and no cancellation closure set),
-  // a grpc_closure* (if the lowest bit is 0),
-  // or a grpc_error_handle (if the lowest bit is 1).
+  // a grpc_closure* (if kErrorBit is 0),
+  // or a grpc_error_handle (if kErrorBit is 1).
   gpr_atm cancel_state_ = 0;
+
 #ifdef GRPC_TSAN_ENABLED
   // A fake ref-counted lock that is kept alive after the destruction of
   // grpc_call_combiner, when we are running the original closure.
