@@ -195,9 +195,7 @@ namespace Grpc.Core.Internal
         {
             if (call != null)
             {
-                Console.Error.WriteLine("Disposing call");
                 call.Dispose();
-                Console.Error.WriteLine("Call disposed");
             }
             disposed = true;
             OnAfterReleaseResourcesLocked();
@@ -330,7 +328,6 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected void HandleReadFinished(bool success, IBufferReader receivedMessageReader)
         {
-            Console.Error.WriteLine("HandleReadFinished");
             // if success == false, the message reader will report null payload. It that case we will
             // treat this completion as the last read an rely on C core to handle the failed
             // read (e.g. deliver approriate statusCode on the clientside).
@@ -345,7 +342,6 @@ namespace Grpc.Core.Internal
                 origTcs = streamingReadTcs;
                 if (!receivedMessageReader.TotalLength.HasValue)
                 {
-                    Console.Error.WriteLine("HandleReadFinished: Last message was read");
                     // This was the last read.
                     readingDone = true;
                 }
