@@ -73,8 +73,8 @@ struct SeqState {
   }
   // Copy constructor - assumes we're in the initial state (move prior) as it's
   // illegal to move a promise after polling it.
-  SeqState(const SeqState& other) noexcept : next_factory(other.next_factory) {
-    new (&prior) PriorState(other.prior);
+  SeqState(const SeqState& other) : next_factory(other.next_factory) {
+    new (&prior) PriorState(std::move(other.prior));
   }
   // Empty destructor - we instead destruct the innards in BasicSeq manually
   // depending on state.
@@ -153,9 +153,9 @@ absl::enable_if_t<I <= J, SeqState<Traits, I, Fs...>*> GetSeqState(
 }
 
 template <template <typename> class Traits, char I, typename... Fs, typename T>
-auto CallNext(SeqState<Traits, I, Fs...>* state, T&& arg) -> decltype(
-    SeqState<Traits, I, Fs...>::Types::PromiseResultTraits::CallFactory(
-        &state->next_factory, std::forward<T>(arg))) {
+auto CallNext(SeqState<Traits, I, Fs...>* state, T&& arg)
+    -> decltype(SeqState<Traits, I, Fs...>::Types::PromiseResultTraits::
+                    CallFactory(&state->next_factory, std::forward<T>(arg))) {
   return SeqState<Traits, I, Fs...>::Types::PromiseResultTraits::CallFactory(
       &state->next_factory, std::forward<T>(arg));
 }

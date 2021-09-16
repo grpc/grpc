@@ -6590,10 +6590,14 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/seq.h
   src:
   - test/core/promise/loop_test.cc
   deps:

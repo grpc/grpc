@@ -172,6 +172,20 @@ static void cancel_stream_locked(grpc_binder_transport* gbt,
   GRPC_ERROR_UNREF(error);
 }
 
+static bool ContainsAuthorityAndPath(const grpc_binder::Metadata& metadata) {
+  bool has_authority = false;
+  bool has_path = false;
+  for (const auto& kv : metadata) {
+    if (kv.first == grpc_core::StringViewFromSlice(GRPC_MDSTR_AUTHORITY)) {
+      has_authority = true;
+    }
+    if (kv.first == grpc_core::StringViewFromSlice(GRPC_MDSTR_PATH)) {
+      has_path = true;
+    }
+  }
+  return has_authority && has_path;
+}
+
 static void recv_initial_metadata_locked(void* arg,
                                          grpc_error_handle /*error*/) {
   RecvInitialMetadataArgs* args = static_cast<RecvInitialMetadataArgs*>(arg);
@@ -188,6 +202,13 @@ static void recv_initial_metadata_locked(void* arg,
       if (!args->initial_metadata.ok()) {
         gpr_log(GPR_ERROR, "Failed to parse initial metadata");
         return absl_status_to_grpc_error(args->initial_metadata.status());
+      }
+      if (!gbs->is_client) {
+        // For server, we expect :authority and :path in initial metadata.
+        if (!ContainsAuthorityAndPath(*args->initial_metadata)) {
+          return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+              "Missing :authority or :path in initial metadata");
+        }
       }
       AssignMetadata(gbs->recv_initial_metadata, gbs->arena,
                      *args->initial_metadata);
