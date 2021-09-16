@@ -1432,6 +1432,7 @@ grpc_cc_library(
         "src/core/lib/json/json_reader.cc",
         "src/core/lib/json/json_util.cc",
         "src/core/lib/json/json_writer.cc",
+        "src/core/lib/resource_quota/make_slice.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice.cc",
@@ -1470,7 +1471,6 @@ grpc_cc_library(
         "src/core/lib/transport/transport.cc",
         "src/core/lib/transport/transport_op_string.cc",
         "src/core/lib/uri/uri_parser.cc",
-        "src/core/lib/resource_quota/make_slice.cc",
     ],
     hdrs = [
         "src/core/lib/address_utils/parse_address.h",
@@ -1582,6 +1582,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/work_serializer.h",
         "src/core/lib/json/json.h",
         "src/core/lib/json/json_util.h",
+        "src/core/lib/resource_quota/make_slice.h",
         "src/core/lib/slice/b64.h",
         "src/core/lib/slice/percent_encoding.h",
         "src/core/lib/slice/slice_internal.h",
@@ -1616,7 +1617,6 @@ grpc_cc_library(
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
         "src/core/lib/uri/uri_parser.h",
-        "src/core/lib/resource_quota/make_slice.h",
     ],
     external_deps = [
         "absl/container:flat_hash_map",
@@ -1641,10 +1641,10 @@ grpc_cc_library(
         "gpr_tls",
         "grpc_codegen",
         "grpc_trace",
+        "memory_quota",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
-        "memory_quota",
     ],
 )
 

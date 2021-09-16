@@ -504,6 +504,9 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\matchers\\matchers.cc " +
     "src\\core\\lib\\profiling\\basic_timers.cc " +
     "src\\core\\lib\\profiling\\stap_timers.cc " +
+    "src\\core\\lib\\promise\\activity.cc " +
+    "src\\core\\lib\\resource_quota\\make_slice.cc " +
+    "src\\core\\lib\\resource_quota\\memory_quota.cc " +
     "src\\core\\lib\\security\\authorization\\authorization_policy_provider_vtable.cc " +
     "src\\core\\lib\\security\\authorization\\evaluate_args.cc " +
     "src\\core\\lib\\security\\authorization\\sdk_server_authz_filter.cc " +
@@ -1294,6 +1297,8 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\json");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\matchers");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\profiling");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\promise");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\resource_quota");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\authorization");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\context");
