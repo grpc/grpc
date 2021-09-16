@@ -282,7 +282,7 @@ grpcsharp_batch_context_recv_initial_metadata(
     {
       // wait for a little bit, which increases the chance that the key will get corrupt by another thread.
       gpr_sleep_until(gpr_time_add(
-        gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_micros(100000, GPR_TIMESPAN)));
+        gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_micros(1000* 1000, GPR_TIMESPAN)));
 
       // copy the key slice once more
       memcpy(later, key_start_ptr, key_len <= 24 ? key_len : 24);
