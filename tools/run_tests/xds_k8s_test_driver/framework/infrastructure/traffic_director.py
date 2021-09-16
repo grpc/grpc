@@ -635,8 +635,8 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
         self.grpc_route = None
 
     def cleanup(self, *, force=False):
-        self.delete_router(force=force)
         self.delete_grpc_route(force=force)
+        self.delete_router(force=force)
         super().cleanup(force=force)
 
 
