@@ -38,12 +38,6 @@ static dispatch_once_t gInitGRPCCoreInsecureFactory;
   return gGRPCCoreSecureFactory;
 }
 
-+ (void)load {
-  [[GRPCTransportRegistry sharedInstance]
-      registerTransportWithID:GRPCDefaultTransportImplList.core_secure
-                      factory:[self sharedInstance]];
-}
-
 - (GRPCTransport *)createTransportWithManager:(GRPCTransportManager *)transportManager {
   return [[GRPCCall2Internal alloc] initWithTransportManager:transportManager];
 }
@@ -75,12 +69,6 @@ static dispatch_once_t gInitGRPCCoreInsecureFactory;
     gGRPCCoreInsecureFactory = [[GRPCCoreInsecureFactory alloc] init];
   });
   return gGRPCCoreInsecureFactory;
-}
-
-+ (void)load {
-  [[GRPCTransportRegistry sharedInstance]
-      registerTransportWithID:GRPCDefaultTransportImplList.core_insecure
-                      factory:[self sharedInstance]];
 }
 
 - (GRPCTransport *)createTransportWithManager:(GRPCTransportManager *)transportManager {

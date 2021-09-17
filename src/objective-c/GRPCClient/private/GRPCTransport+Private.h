@@ -33,6 +33,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (id<GRPCTransportFactory>)getTransportFactoryWithID:(GRPCTransportID)transportID;
 
+/**
+ * Returns true if there exists a registered transport factory associated with the specified transport ID.
+ */
+- (BOOL)isRegisteredForTransportID:(GRPCTransportID)transportID;
+
 @end
 
 /**

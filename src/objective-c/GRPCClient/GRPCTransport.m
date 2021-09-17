@@ -110,6 +110,11 @@ NSUInteger TransportIDHash(GRPCTransportID transportID) {
   return transportFactory;
 }
 
+- (BOOL)isRegisteredForTransportID:(GRPCTransportID)transportID {
+  NSString *nsTransportID = [NSString stringWithUTF8String:transportID];
+  return [_registry objectForKey:nsTransportID] != nil;
+}
+
 @end
 
 @implementation GRPCTransport

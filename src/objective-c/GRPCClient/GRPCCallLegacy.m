@@ -24,6 +24,7 @@
 
 #import "private/GRPCCore/GRPCChannelPool.h"
 #import "private/GRPCCore/GRPCCompletionQueue.h"
+#import "private/GRPCCore/GRPCCoreTransportFactoryLoader.h"
 #import "private/GRPCCore/GRPCHost.h"
 #import "private/GRPCCore/GRPCWrappedCall.h"
 #import "private/GRPCCore/NSData+GRPC.h"
@@ -134,6 +135,7 @@ static NSString *const kBearerPrefix = @"Bearer ";
   if (self == [GRPCCall self]) {
     grpc_init();
     callFlags = [NSMutableDictionary dictionary];
+    [[GRPCCoreTransportFactoryLoader sharedInstance] loadCoreFactories];
   }
 }
 

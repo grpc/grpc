@@ -23,6 +23,7 @@
 #import "GRPCInterceptor.h"
 
 #import "GRPCTransport.h"
+#import "private/GRPCCore/GRPCCoreTransportFactoryLoader.h"
 #import "private/GRPCTransport+Private.h"
 
 /**
@@ -138,6 +139,12 @@
    * call options when the user provided a NULL call options object.
    */
   GRPCCallOptions *_actualCallOptions;
+}
+
++ (void)initialize {
+  if (self == [GRPCCall2 self]) {
+    [[GRPCCoreTransportFactoryLoader sharedInstance] loadCoreFactories];
+  }
 }
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions

@@ -85,7 +85,6 @@ grpc_objc_library(
 grpc_objc_library(
     name = "grpc_objc_interface",
     srcs = [
-        "GRPCClient/GRPCCall.m",
         "GRPCClient/GRPCCall+Interceptor.m",
         "GRPCClient/GRPCCallOptions.m",
         "GRPCClient/GRPCInterceptor.m",
@@ -114,6 +113,7 @@ grpc_objc_library(
 grpc_objc_library(
     name = "grpc_objc_client",
     srcs = [
+        "GRPCClient/GRPCCall.m",
         "GRPCClient/GRPCCall+ChannelArg.m",
         "GRPCClient/GRPCCall+ChannelCredentials.m",
         "GRPCClient/GRPCCall+Cronet.m",
