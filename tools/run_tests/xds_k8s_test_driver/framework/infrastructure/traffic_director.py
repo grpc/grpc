@@ -552,7 +552,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
                  project: str,
                  *,
                  resource_prefix: str,
-                 router_scope: str,
+                 config_scope: str,
                  resource_suffix: Optional[str] = None,
                  network: str = 'default'):
         super().__init__(gcp_api_manager,
@@ -561,7 +561,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
                          resource_suffix=resource_suffix,
                          network=network)
 
-        self.router_scope = router_scope
+        self.config_scope = config_scope
 
         # API
         self.netsvc = _NetworkServicesV1Alpha1(gcp_api_manager, project)
@@ -575,7 +575,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
         logger.info("Creating Router %s", name)
         body = {
             "type": "PROXYLESS_GRPC",
-            "scope": self.router_scope,
+            "scope": self.config_scope,
         }
         resource = self.netsvc.create_router(name, body)
         self.router = self.netsvc.get_router(name)

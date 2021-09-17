@@ -37,7 +37,7 @@ NETWORK = flags.DEFINE_string("network",
                               default="default",
                               help="GCP Network ID")
 ROUTER_SCOPE = flags.DEFINE_string(
-    "router_scope",
+    "config_scope",
     default=None,
     help="Scope specified in router if using AppNet APIs")
 # Mirrors --xds-server-uri argument of Traffic Director gRPC Bootstrap
