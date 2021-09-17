@@ -83,8 +83,7 @@ class TlsCustomVerificationCheckRequest {
 // to an instance of that class.
 class CertificateVerifier {
  public:
-  explicit CertificateVerifier(grpc_tls_certificate_verifier* v)
-      : verifier_(v) {}
+  explicit CertificateVerifier(grpc_tls_certificate_verifier* v);
 
   ~CertificateVerifier();
 
