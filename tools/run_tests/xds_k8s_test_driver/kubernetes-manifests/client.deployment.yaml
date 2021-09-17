@@ -63,7 +63,7 @@ spec:
             - "--xds-server-uri=${xds_server_uri}"
             % endif
             % if router_scope:
-            - "--router-scope-experimental=${router_scope_experimental}"
+            - "--router-scope-experimental=${router_scope}"
             % endif
           resources:
             limits:
