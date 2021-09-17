@@ -482,10 +482,6 @@ static void perform_stream_op_locked(void* stream_op,
         tx_code, [tx_code, gbs,
                   gbt](absl::StatusOr<grpc_binder::Metadata> initial_metadata) {
           grpc_core::ExecCtx exec_ctx;
-          if (gbs->is_closed) {
-            GRPC_BINDER_STREAM_UNREF(gbs, "recv_initial_metadata");
-            return;
-          }
           gbs->recv_initial_metadata_args.tx_code = tx_code;
           gbs->recv_initial_metadata_args.initial_metadata =
               std::move(initial_metadata);
@@ -506,10 +502,6 @@ static void perform_stream_op_locked(void* stream_op,
     gbt->transport_stream_receiver->RegisterRecvMessage(
         tx_code, [tx_code, gbs, gbt](absl::StatusOr<std::string> message) {
           grpc_core::ExecCtx exec_ctx;
-          if (gbs->is_closed) {
-            GRPC_BINDER_STREAM_UNREF(gbs, "recv_message");
-            return;
-          }
           gbs->recv_message_args.tx_code = tx_code;
           gbs->recv_message_args.message = std::move(message);
           gbt->combiner->Run(
@@ -530,10 +522,6 @@ static void perform_stream_op_locked(void* stream_op,
                      absl::StatusOr<grpc_binder::Metadata> trailing_metadata,
                      int status) {
           grpc_core::ExecCtx exec_ctx;
-          if (gbs->is_closed) {
-            GRPC_BINDER_STREAM_UNREF(gbs, "recv_trailing_metadata");
-            return;
-          }
           gbs->recv_trailing_metadata_args.tx_code = tx_code;
           gbs->recv_trailing_metadata_args.trailing_metadata =
               std::move(trailing_metadata);
