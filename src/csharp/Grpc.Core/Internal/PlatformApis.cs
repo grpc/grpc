@@ -78,14 +78,14 @@ namespace Grpc.Core.Internal
             clrVersion = TryGetClrVersion();
 
             // Detect mono runtime
-            isMono = Type.GetType("Mono.Runtime") != null;
+            isMono = GetTypeSafe("Mono.Runtime") != null;
 
             // Unity
             unityApplicationPlatform = TryGetUnityApplicationPlatform();
 
             // Xamarin
-            isXamarinIOS = Type.GetType(XamarinIOSObjectClassName) != null;
-            isXamarinAndroid = Type.GetType(XamarinAndroidObjectClassName) != null;
+            isXamarinIOS = GetTypeSafe(XamarinIOSObjectClassName) != null;
+            isXamarinAndroid = GetTypeSafe(XamarinAndroidObjectClassName) != null;
             isXamarin = isXamarinIOS || isXamarinAndroid;
         }
 
@@ -249,5 +249,18 @@ namespace Grpc.Core.Internal
             // it will result in compilation error.
 #endif
         }
+
+        private static Type GetTypeSafe(string typeName)
+        {
+            try
+            {
+                return Type.GetType(typeName);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
     }
 }
