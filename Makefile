@@ -454,7 +454,7 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 18.0.0
+CORE_VERSION = 18.1.0
 CPP_VERSION = 1.42.0-dev
 CSHARP_VERSION = 2.42.0-dev
 
