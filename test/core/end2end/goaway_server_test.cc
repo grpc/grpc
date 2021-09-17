@@ -106,13 +106,11 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms,
-    std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
+    char** service_config_json, int query_timeout_ms) {
   if (0 != strcmp(addr, "test")) {
     return iomgr_dns_lookup_ares_locked(
         dns_server, addr, default_port, interested_parties, on_done, addresses,
-        balancer_addresses, service_config_json, query_timeout_ms,
-        std::move(work_serializer));
+        balancer_addresses, service_config_json, query_timeout_ms);
   }
 
   grpc_error_handle error = GRPC_ERROR_NONE;

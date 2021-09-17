@@ -35,15 +35,12 @@ constexpr int kMinResolutionPeriodMs = 1000;
 extern grpc_address_resolver_vtable* grpc_resolve_address_impl;
 static grpc_address_resolver_vtable* default_resolve_address;
 
-static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
-
 static grpc_ares_request* (*g_default_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms,
-    std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
+    char** service_config_json, int query_timeout_ms);
 
 // Counter incremented by test_resolve_address_impl indicating the number of
 // times a system-level resolution has happened.
@@ -101,12 +98,10 @@ static grpc_ares_request* test_dns_lookup_ares_locked(
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms,
-    std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
+    char** service_config_json, int query_timeout_ms) {
   grpc_ares_request* result = g_default_dns_lookup_ares_locked(
       dns_server, name, default_port, g_iomgr_args.pollset_set, on_done,
-      addresses, balancer_addresses, service_config_json, query_timeout_ms,
-      std::move(work_serializer));
+      addresses, balancer_addresses, service_config_json, query_timeout_ms);
   ++g_resolution_count;
   static grpc_millis last_resolution_time = 0;
   grpc_millis now =
@@ -287,7 +282,7 @@ static void on_first_resolution(OnResolutionCallbackArg* cb_arg) {
   gpr_mu_unlock(g_iomgr_args.mu);
 }
 
-static void start_test_under_work_serializer(void* arg) {
+static void start_test(void* arg) {
   OnResolutionCallbackArg* res_cb_arg =
       static_cast<OnResolutionCallbackArg*>(arg);
   res_cb_arg->result_handler = new ResultHandler();
@@ -303,7 +298,6 @@ static void start_test_under_work_serializer(void* arg) {
   }
   grpc_core::ResolverArgs args;
   args.uri = std::move(*uri);
-  args.work_serializer = *g_work_serializer;
   args.result_handler = std::unique_ptr<grpc_core::Resolver::ResultHandler>(
       res_cb_arg->result_handler);
   g_resolution_count = 0;
@@ -325,10 +319,7 @@ static void test_cooldown() {
   iomgr_args_init(&g_iomgr_args);
   OnResolutionCallbackArg* res_cb_arg = new OnResolutionCallbackArg();
   res_cb_arg->uri_str = "dns:127.0.0.1";
-
-  (*g_work_serializer)
-      ->Run([res_cb_arg]() { start_test_under_work_serializer(res_cb_arg); },
-            DEBUG_LOCATION);
+  start_test(res_cb_arg);
   grpc_core::ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&g_iomgr_args);
   iomgr_args_finish(&g_iomgr_args);
@@ -337,9 +328,6 @@ static void test_cooldown() {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-
-  auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
-  g_work_serializer = &work_serializer;
 
   g_default_dns_lookup_ares_locked = grpc_dns_lookup_ares_locked;
   grpc_dns_lookup_ares_locked = test_dns_lookup_ares_locked;

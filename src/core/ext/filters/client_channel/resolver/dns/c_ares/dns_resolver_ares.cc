@@ -433,7 +433,7 @@ void AresDnsResolver::StartResolvingLocked() {
       interested_parties_, &on_resolved_, &addresses_,
       enable_srv_queries_ ? &balancer_addresses_ : nullptr,
       request_service_config_ ? &service_config_json_ : nullptr,
-      query_timeout_ms_, work_serializer_);
+      query_timeout_ms_);
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
   GRPC_CARES_TRACE_LOG("resolver:%p Started resolving. pending_request_:%p",
                        this, pending_request_);

@@ -24,7 +24,6 @@
 #include <ares.h>
 
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 
 namespace grpc_core {
 
@@ -60,13 +59,13 @@ class GrpcPolledFdFactory {
   /* Creates a new wrapped fd for the current platform */
   virtual GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* driver_pollset_set,
-      std::shared_ptr<grpc_core::WorkSerializer> work_serializer) = 0;
+      grpc_core::Mutex* mu) = 0;
   /* Optionally configures the ares channel after creation */
   virtual void ConfigureAresChannelLocked(ares_channel channel) = 0;
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
+    grpc_core::Mutex* mu);
 
 }  // namespace grpc_core
 
