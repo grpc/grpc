@@ -156,6 +156,9 @@ class Activity : private Wakeable {
   Waker MakeNonOwningWaker() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  protected:
+  // Action received during a run, in priority order.
+  // If more than one action is received during a run, we use max() to resolve
+  // which one to report (so Cancel overrides Wakeup).
   enum class ActionDuringRun : uint8_t {
     kNone,    // No action occured during run.
     kWakeup,  // A wakeup occured during run.
@@ -178,7 +181,7 @@ class Activity : private Wakeable {
   static bool have_current() { return g_current_activity_ != nullptr; }
   // Check if we got an internal wakeup since the last time this function was
   // called.
-  ActionDuringRun got_action_during_run() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  ActionDuringRun GotActionDuringRun() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return absl::exchange(action_during_run_, ActionDuringRun::kNone);
   }
 
@@ -413,7 +416,7 @@ class PromiseActivity final
         return IntoStatus(status);
       }
       // Continue looping til no wakeups occur.
-      switch (got_action_during_run()) {
+      switch (GotActionDuringRun()) {
         case ActionDuringRun::kNone:
           return {};
         case ActionDuringRun::kWakeup:
@@ -422,7 +425,7 @@ class PromiseActivity final
           MarkDone();
           return absl::CancelledError();
       }
-    };
+    }
   }
 
   using Promise = typename Factory::Promise;
