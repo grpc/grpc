@@ -402,7 +402,8 @@ class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
             project=self.project,
             resource_prefix=self.resource_prefix,
             resource_suffix=self.resource_suffix,
-            network=self.network)
+            network=self.network,
+            router_scope=self.router_scope)
 
 
 class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
