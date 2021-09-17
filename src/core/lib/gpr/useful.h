@@ -79,7 +79,7 @@ inline constexpr uint32_t BitCount(uint32_t i) {
 template <typename T>
 int icmp(const T& a, const T& b) {
   if (a < b) return -1;
-  if (a > b) return 1;
+  if (b < a) return 1;
   return 0;
 }
 
