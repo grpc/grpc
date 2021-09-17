@@ -261,7 +261,6 @@ class OperationError(Error):
 
     def __init__(self, api_name, operation_response, message=None):
         self.api_name = api_name
-        print(operation_response)
         operation = json_format.ParseDict(
             operation_response,
             Operation(),
