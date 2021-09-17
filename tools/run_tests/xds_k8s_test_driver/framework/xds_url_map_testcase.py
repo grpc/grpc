@@ -17,7 +17,6 @@ import abc
 from dataclasses import dataclass
 import datetime
 import json
-import packaging
 import os
 import re
 import sys
@@ -30,6 +29,7 @@ from absl import logging
 from absl.testing import absltest
 from google.protobuf import json_format
 import grpc
+import packaging
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_test_resources
