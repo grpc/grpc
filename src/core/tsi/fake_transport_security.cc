@@ -417,7 +417,7 @@ static tsi_result fake_zero_copy_grpc_protector_protect(
   while (unprotected_slices->length > 0) {
     size_t frame_length =
         std::min(impl->max_frame_size,
-                unprotected_slices->length + TSI_FAKE_FRAME_HEADER_SIZE);
+                 unprotected_slices->length + TSI_FAKE_FRAME_HEADER_SIZE);
     grpc_slice slice = GRPC_SLICE_MALLOC(TSI_FAKE_FRAME_HEADER_SIZE);
     store32_little_endian(static_cast<uint32_t>(frame_length),
                           GRPC_SLICE_START_PTR(slice));

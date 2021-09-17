@@ -395,10 +395,11 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     // get bandwidth estimate and update max_frame accordingly.
     double bw_dbl = bdp_estimator_.EstimateBandwidth();
     // we target the max of BDP or bandwidth in microseconds.
-    int32_t frame_size = static_cast<int32_t>(
-        Clamp(std::max((int32_t)Clamp(bw_dbl, 0.0, double(INT_MAX)) / 1000,
-                       (int32_t)target_initial_window_size_),
-              16384, 16777215));
+    int32_t frame_size = static_cast<int32_t>(Clamp(
+        std::max(
+            static_cast<int32_t>(Clamp(bw_dbl, 0.0, double(INT_MAX))) / 1000,
+            static_cast<int32_t>(target_initial_window_size_)),
+        16384, 16777215));
     action.set_send_max_frame_size_update(
         DeltaUrgency(static_cast<int64_t>(frame_size),
                      GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE),
