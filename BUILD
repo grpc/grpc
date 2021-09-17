@@ -111,7 +111,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "granola"  # @unused
 
-core_version = "18.0.0"  # @unused
+core_version = "18.1.0"  # @unused
 
 version = "1.42.0-dev"  # @unused
 
