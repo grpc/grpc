@@ -602,8 +602,6 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
             "rules": [{
                 "action": {
                     "destination": {
-                        # TODO: Switch from service short name to service long
-                        # name.
                         "serviceName": self.backend_service.name
                     }
                 }
