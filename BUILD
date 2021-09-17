@@ -625,8 +625,8 @@ grpc_cc_library(
     hdrs = ["src/core/lib/gpr/useful.h"],
     language = "c++",
     deps = [
-        "gpr_platform"
-    ]
+        "gpr_platform",
+    ],
 )
 
 grpc_cc_library(
@@ -728,7 +728,7 @@ grpc_cc_library(
         "gpr_codegen",
         "gpr_tls",
         "grpc_codegen",
-        "useful"
+        "useful",
     ],
 )
 
@@ -1599,7 +1599,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
-        "useful"
+        "useful",
     ],
 )
 
@@ -1739,7 +1739,7 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "udpa_orca_upb",
-        "useful"
+        "useful",
     ],
 )
 
@@ -1916,7 +1916,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
-        "useful"
+        "useful",
     ],
 )
 
@@ -2560,7 +2560,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
-        "useful"
+        "useful",
     ],
 )
 
@@ -2734,7 +2734,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "tsi",
         "tsi_interface",
-        "useful"
+        "useful",
     ],
 )
 
@@ -2998,7 +2998,7 @@ grpc_cc_library(
         "hpack_encoder_table",
         "match",
         "popularity_count",
-        "useful"
+        "useful",
     ],
 )
 
@@ -3013,7 +3013,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "useful"
+        "useful",
     ],
 )
 
@@ -3208,7 +3208,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "tsi_interface",
-        "useful"
+        "useful",
     ],
 )
 
@@ -3286,7 +3286,7 @@ grpc_cc_library(
         "grpc_base_c",
         "grpc_transport_chttp2_client_insecure",
         "tsi_interface",
-        "useful"
+        "useful",
     ],
 )
 
@@ -3347,7 +3347,7 @@ grpc_cc_library(
         "grpc_transport_inproc",
         "grpc_unsecure",
         "ref_counted",
-        "useful"
+        "useful",
     ],
 )
 

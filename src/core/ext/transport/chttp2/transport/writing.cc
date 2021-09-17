@@ -180,9 +180,9 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
         static_cast<uint32_t>(std::max(
             int64_t(0),
             s->flow_control->remote_window_delta() +
-                (int64_t)
+                static_cast<int64_t>(
                     t->settings[GRPC_PEER_SETTINGS]
-                               [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE])),
+                               [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]))),
         s->flow_control->remote_window_delta());
   }
 }
@@ -330,8 +330,9 @@ class DataSendContext {
     return static_cast<uint32_t>(std::max(
         int64_t(0),
         s_->flow_control->remote_window_delta() +
-            (int64_t)t_->settings[GRPC_PEER_SETTINGS]
-                                 [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]));
+            static_cast<int64_t>(
+                t_->settings[GRPC_PEER_SETTINGS]
+                            [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE])));
   }
 
   uint32_t max_outgoing() const {

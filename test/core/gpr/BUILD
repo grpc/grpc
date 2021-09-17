@@ -148,6 +148,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "useful_test",
     srcs = ["useful_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_polling = False,
     deps = [
@@ -155,5 +156,4 @@ grpc_cc_test(
         "//:useful",
         "//test/core/util:grpc_suppressions",
     ],
-    external_deps = ["gtest"],
 )

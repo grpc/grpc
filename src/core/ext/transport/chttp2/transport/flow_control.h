@@ -275,7 +275,7 @@ class TransportFlowControl final : public TransportFlowControlBase {
   // logic behind this decision.
   int64_t target_window() const override {
     return static_cast<uint32_t>(
-        std::min((int64_t)((1u << 31) - 1),
+        std::min(static_cast<int64_t>((1u << 31) - 1),
                  announced_stream_total_over_incoming_window_ +
                      target_initial_window_size_));
   }

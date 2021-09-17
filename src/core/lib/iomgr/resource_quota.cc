@@ -305,11 +305,12 @@ static void rq_step_sched(grpc_resource_quota* resource_quota) {
 static void rq_update_estimate(grpc_resource_quota* resource_quota) {
   gpr_atm memory_usage_estimation = MEMORY_USAGE_ESTIMATION_MAX;
   if (resource_quota->size != 0) {
-    memory_usage_estimation =
-        grpc_core::Clamp((gpr_atm)((1.0 - ((double)resource_quota->free_pool) /
-                                              ((double)resource_quota->size)) *
-                                   MEMORY_USAGE_ESTIMATION_MAX),
-                         gpr_atm(0), gpr_atm(MEMORY_USAGE_ESTIMATION_MAX));
+    memory_usage_estimation = grpc_core::Clamp(
+        static_cast<gpr_atm>(
+            (1.0 - (static_cast<double>(resource_quota->free_pool)) /
+                       (static_cast<double>(resource_quota->size))) *
+            MEMORY_USAGE_ESTIMATION_MAX),
+        gpr_atm(0), gpr_atm(MEMORY_USAGE_ESTIMATION_MAX));
   }
   gpr_atm_no_barrier_store(&resource_quota->memory_usage_estimation,
                            memory_usage_estimation);
