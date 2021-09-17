@@ -85,6 +85,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         # GCP
         cls.project: str = xds_flags.PROJECT.value
         cls.network: str = xds_flags.NETWORK.value
+        cls.router_scope: str = xds_flags.ROUTER_SCOPE.value
         cls.gcp_service_account: str = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
         cls.td_bootstrap_image = xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value
         cls.xds_server_uri = xds_flags.XDS_SERVER_URI.value
@@ -362,6 +363,7 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             gcp_service_account=self.gcp_service_account,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
+            router_scope=self.router_scope,
             debug_use_port_forwarding=self.debug_use_port_forwarding,
             enable_workload_identity=self.enable_workload_identity,
             stats_port=self.client_port,
