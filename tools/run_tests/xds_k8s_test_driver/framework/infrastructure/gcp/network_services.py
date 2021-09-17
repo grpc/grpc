@@ -138,7 +138,6 @@ class GrpcRoute:
 
     @dataclasses.dataclass(frozen=True)
     class RouteAction:
-        # TODO: Make destination repeated.
         destination: Optional['Destination']
         drop: Optional[int]
 
@@ -152,7 +151,6 @@ class GrpcRoute:
 
     @dataclasses.dataclass(frozen=True)
     class RouteRule:
-        # TODO: Make match repeated.
         match: Optional['RouteMatch']
         action: 'RouteAction'
 
