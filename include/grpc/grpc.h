@@ -340,6 +340,10 @@ GRPCAPI grpc_call_error grpc_call_cancel_with_status(grpc_call* call,
                                                      const char* description,
                                                      void* reserved);
 
+/* Returns whether or not the call's receive message operation failed because of
+ * an error (as opposed to a graceful end-of-stream) */
+GRPCAPI int grpc_call_failed_before_recv_message(const grpc_call* c);
+
 /** Ref a call.
     THREAD SAFETY: grpc_call_ref is thread-compatible */
 GRPCAPI void grpc_call_ref(grpc_call* call);

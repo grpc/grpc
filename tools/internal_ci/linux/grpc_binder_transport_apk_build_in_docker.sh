@@ -35,7 +35,7 @@ echo $ANDROID_NDK_HOME
 bazel build --define=use_strict_warning=true \
   --fat_apk_cpu=x86_64,arm64-v8a \
   --extra_toolchains=@rules_python//python:autodetecting_toolchain_nonstrict \
-  //examples/android/binder/java/io/grpc/binder/cpp/example:app \
+  //examples/android/binder/java/io/grpc/binder/cpp/exampleclient:app \
   //examples/android/binder/java/io/grpc/binder/cpp/exampleserver:app
 
 # Make sure the Java code that will be invoked by binder transport

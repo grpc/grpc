@@ -25,13 +25,13 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.41.0-dev")
+set(PACKAGE_VERSION       "1.42.0-dev")
 set(gRPC_CORE_VERSION     "18.0.0")
 set(gRPC_CORE_SOVERSION   "18")
-set(gRPC_CPP_VERSION      "1.41.0-dev")
-set(gRPC_CPP_SOVERSION    "1.41")
-set(gRPC_CSHARP_VERSION   "2.41.0-dev")
-set(gRPC_CSHARP_SOVERSION "2.41")
+set(gRPC_CPP_VERSION      "1.42.0-dev")
+set(gRPC_CPP_SOVERSION    "1.42")
+set(gRPC_CSHARP_VERSION   "2.42.0-dev")
+set(gRPC_CSHARP_SOVERSION "2.42")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -251,7 +251,7 @@ endif()
 if (gRPC_XDS_USER_AGENT_IS_CSHARP)
   # The value of the defines needs to contain quotes.
   # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
-  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.41.0-dev\"")
+  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.42.0-dev\"")
 endif()
 
 include(cmake/abseil-cpp.cmake)
@@ -531,9 +531,6 @@ protobuf_generate_grpc_cpp(
 )
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/tls.proto
-)
-protobuf_generate_grpc_cpp(
-  test/core/transport/binder/end2end/echo.proto
 )
 protobuf_generate_grpc_cpp(
   test/core/tsi/alts/fake_handshaker/handshaker.proto
@@ -8369,10 +8366,6 @@ add_executable(binder_server_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/echo.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/echo.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/echo.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/echo.grpc.pb.h
   src/core/ext/transport/binder/client/channel_create_impl.cc
   src/core/ext/transport/binder/server/binder_server.cc
   src/core/ext/transport/binder/server/binder_server_credentials.cc
@@ -8384,7 +8377,6 @@ add_executable(binder_server_test
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
   test/core/transport/binder/end2end/binder_server_test.cc
-  test/core/transport/binder/end2end/echo_service.cc
   test/core/transport/binder/end2end/fake_binder.cc
   test/cpp/end2end/test_service_impl.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -10651,57 +10643,28 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(end2end_binder_transport_test
-  ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/echo.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/echo.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/echo.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
   src/core/ext/transport/binder/transport/binder_transport.cc
   src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
   src/core/ext/transport/binder/wire_format/binder_constants.cc
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/cpp/client/channel_cc.cc
-  src/cpp/client/client_callback.cc
-  src/cpp/client/client_context.cc
-  src/cpp/client/client_interceptor.cc
-  src/cpp/client/create_channel.cc
-  src/cpp/client/create_channel_internal.cc
-  src/cpp/client/create_channel_posix.cc
-  src/cpp/client/credentials_cc.cc
-  src/cpp/codegen/codegen_init.cc
-  src/cpp/common/alarm.cc
-  src/cpp/common/channel_arguments.cc
-  src/cpp/common/channel_filter.cc
-  src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
-  src/cpp/common/resource_quota_cc.cc
-  src/cpp/common/rpc_method.cc
-  src/cpp/common/validate_service_config.cc
-  src/cpp/common/version_cc.cc
-  src/cpp/server/async_generic_service.cc
-  src/cpp/server/channel_argument_option.cc
-  src/cpp/server/create_default_thread_pool.cc
-  src/cpp/server/dynamic_thread_pool.cc
-  src/cpp/server/external_connection_acceptor_impl.cc
-  src/cpp/server/health/default_health_check_service.cc
-  src/cpp/server/health/health_check_service.cc
-  src/cpp/server/health/health_check_service_server_builder_option.cc
-  src/cpp/server/server_builder.cc
-  src/cpp/server/server_callback.cc
-  src/cpp/server/server_cc.cc
-  src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
-  src/cpp/server/server_posix.cc
-  src/cpp/thread_manager/thread_manager.cc
-  src/cpp/util/byte_buffer_cc.cc
-  src/cpp/util/status.cc
-  src/cpp/util/string_ref.cc
-  src/cpp/util/time_cc.cc
-  test/core/transport/binder/end2end/echo_service.cc
   test/core/transport/binder/end2end/end2end_binder_transport_test.cc
   test/core/transport/binder/end2end/fake_binder.cc
   test/core/transport/binder/end2end/testing_channel_create.cc
+  test/cpp/end2end/test_service_impl.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -10729,7 +10692,7 @@ target_link_libraries(end2end_binder_transport_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::random_random
-  grpc_test_util
+  grpc++_test_util
 )
 
 

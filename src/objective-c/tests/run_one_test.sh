@@ -85,6 +85,7 @@ xcodebuild \
     HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
     HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
+    GCC_OPTIMIZATION_LEVEL=s \
     test \
     | ./verbose_time.sh \
     | egrep -v "$XCODEBUILD_FILTER" \
