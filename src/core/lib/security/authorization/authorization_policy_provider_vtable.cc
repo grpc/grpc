@@ -33,7 +33,7 @@ void ProviderArgDestroy(void* p) {
   provider->Unref();
 }
 
-int ProviderArgCmp(void* p, void* q) { return grpc_core::icmp(p, q); }
+int ProviderArgCmp(void* p, void* q) { return grpc_core::QsortCompare(p, q); }
 
 }  // namespace
 

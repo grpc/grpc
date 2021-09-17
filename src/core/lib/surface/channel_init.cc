@@ -70,9 +70,9 @@ static int compare_slots(const void* a, const void* b) {
   const stage_slot* sa = static_cast<const stage_slot*>(a);
   const stage_slot* sb = static_cast<const stage_slot*>(b);
 
-  int c = grpc_core::icmp(sa->priority, sb->priority);
+  int c = grpc_core::QsortCompare(sa->priority, sb->priority);
   if (c != 0) return c;
-  return grpc_core::icmp(sa->insertion_order, sb->insertion_order);
+  return grpc_core::QsortCompare(sa->insertion_order, sb->insertion_order);
 }
 
 void grpc_channel_init_finalize(void) {

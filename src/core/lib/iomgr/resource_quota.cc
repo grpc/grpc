@@ -763,7 +763,7 @@ static void rq_destroy(void* rq) {
   grpc_resource_quota_unref_internal(static_cast<grpc_resource_quota*>(rq));
 }
 
-static int rq_cmp(void* a, void* b) { return grpc_core::icmp(a, b); }
+static int rq_cmp(void* a, void* b) { return grpc_core::QsortCompare(a, b); }
 
 const grpc_arg_pointer_vtable* grpc_resource_quota_arg_vtable(void) {
   static const grpc_arg_pointer_vtable vtable = {rq_copy, rq_destroy, rq_cmp};

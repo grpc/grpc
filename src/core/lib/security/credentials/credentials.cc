@@ -60,7 +60,7 @@ static void* credentials_pointer_arg_copy(void* p) {
 }
 
 static int credentials_pointer_cmp(void* a, void* b) {
-  return grpc_core::icmp(a, b);
+  return grpc_core::QsortCompare(a, b);
 }
 
 static const grpc_arg_pointer_vtable credentials_pointer_vtable = {
@@ -129,7 +129,7 @@ static void* server_credentials_pointer_arg_copy(void* p) {
 }
 
 static int server_credentials_pointer_cmp(void* a, void* b) {
-  return grpc_core::icmp(a, b);
+  return grpc_core::QsortCompare(a, b);
 }
 
 static const grpc_arg_pointer_vtable cred_ptr_vtable = {

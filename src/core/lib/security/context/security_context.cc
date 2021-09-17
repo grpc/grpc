@@ -290,7 +290,7 @@ static void* auth_context_pointer_arg_copy(void* p) {
 }
 
 static int auth_context_pointer_cmp(void* a, void* b) {
-  return grpc_core::icmp(a, b);
+  return grpc_core::QsortCompare(a, b);
 }
 
 static const grpc_arg_pointer_vtable auth_context_pointer_vtable = {

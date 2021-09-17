@@ -76,8 +76,12 @@ inline constexpr uint32_t BitCount(uint32_t i) {
           255);
 }
 
+// This function uses operator< to implement a qsort-style comparison, whereby:
+// if a is smaller than b, a number smaller than 0 is returned.
+// if a is bigger than b, a number greater than 0 is returned.
+// if a is neither smaller nor bigger than b, 0 is returned.
 template <typename T>
-int icmp(const T& a, const T& b) {
+int QsortCompare(const T& a, const T& b) {
   if (a < b) return -1;
   if (b < a) return 1;
   return 0;

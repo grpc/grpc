@@ -2541,7 +2541,7 @@ void XdsClientArgDestroy(void* p) {
   xds_client->Unref(DEBUG_LOCATION, "channel arg");
 }
 
-int XdsClientArgCmp(void* p, void* q) { return grpc_core::icmp(p, q); }
+int XdsClientArgCmp(void* p, void* q) { return QsortCompare(p, q); }
 
 const grpc_arg_pointer_vtable kXdsClientArgVtable = {
     XdsClientArgCopy, XdsClientArgDestroy, XdsClientArgCmp};

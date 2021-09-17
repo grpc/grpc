@@ -378,7 +378,7 @@ void XdsCertificateProviderArgDestroy(void* p) {
 }
 
 int XdsCertificateProviderArgCmp(void* p, void* q) {
-  return grpc_core::icmp(p, q);
+  return QsortCompare(p, q);
 }
 
 const grpc_arg_pointer_vtable kChannelArgVtable = {

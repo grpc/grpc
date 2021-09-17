@@ -265,7 +265,7 @@ class GrpcLb : public LoadBalancingPolicy {
           static_cast<const TokenAndClientStatsAttribute*>(other_base);
       int r = lb_token_.compare(other->lb_token_);
       if (r != 0) return r;
-      return grpc_core::icmp(client_stats_.get(), other->client_stats_.get());
+      return QsortCompare(client_stats_.get(), other->client_stats_.get());
     }
 
     std::string ToString() const override {

@@ -187,7 +187,9 @@ void channelz_node_destroy(void* p) {
       static_cast<grpc_core::channelz::ChannelNode*>(p);
   node->Unref();
 }
-int channelz_node_cmp(void* p1, void* p2) { return grpc_core::icmp(p1, p2); }
+int channelz_node_cmp(void* p1, void* p2) {
+  return grpc_core::QsortCompare(p1, p2);
+}
 const grpc_arg_pointer_vtable channelz_node_arg_vtable = {
     channelz_node_copy, channelz_node_destroy, channelz_node_cmp};
 

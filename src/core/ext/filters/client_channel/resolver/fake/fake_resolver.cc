@@ -325,7 +325,7 @@ void ResponseGeneratorChannelArgDestroy(void* p) {
 }
 
 int ResponseGeneratorChannelArgCmp(void* a, void* b) {
-  return grpc_core::icmp(a, b);
+  return QsortCompare(a, b);
 }
 
 }  // namespace
