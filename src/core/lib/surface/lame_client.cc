@@ -132,7 +132,7 @@ void ErrorDestroy(void* p) {
   grpc_error_handle error = static_cast<grpc_error_handle>(p);
   GRPC_ERROR_UNREF(error);
 }
-int ErrorCompare(void* p, void* q) { return GPR_ICMP(p, q); }
+int ErrorCompare(void* p, void* q) { return grpc_core::icmp(p, q); }
 const grpc_arg_pointer_vtable kLameFilterErrorArgVtable = {
     ErrorCopy, ErrorDestroy, ErrorCompare};
 

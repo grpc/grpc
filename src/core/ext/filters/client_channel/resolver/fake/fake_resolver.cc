@@ -324,7 +324,9 @@ void ResponseGeneratorChannelArgDestroy(void* p) {
   generator->Unref();
 }
 
-int ResponseGeneratorChannelArgCmp(void* a, void* b) { return GPR_ICMP(a, b); }
+int ResponseGeneratorChannelArgCmp(void* a, void* b) {
+  return grpc_core::icmp(a, b);
+}
 
 }  // namespace
 

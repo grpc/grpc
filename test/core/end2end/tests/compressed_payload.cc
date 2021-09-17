@@ -399,13 +399,17 @@ static void request_with_payload_template_inner(
   CQ_EXPECT_COMPLETION(cqv, tag(100), true);
   cq_verify(cqv);
 
-  GPR_ASSERT(GPR_BITCOUNT(grpc_call_test_only_get_encodings_accepted_by_peer(
-                 s)) == GRPC_COMPRESS_ALGORITHMS_COUNT);
-  GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
+  GPR_ASSERT(grpc_core::BitCount(
+                 grpc_call_test_only_get_encodings_accepted_by_peer(s)) ==
+             GRPC_COMPRESS_ALGORITHMS_COUNT);
+  GPR_ASSERT(
+      grpc_core::GetBit(grpc_call_test_only_get_encodings_accepted_by_peer(s),
                         GRPC_COMPRESS_NONE) != 0);
-  GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
+  GPR_ASSERT(
+      grpc_core::GetBit(grpc_call_test_only_get_encodings_accepted_by_peer(s),
                         GRPC_COMPRESS_DEFLATE) != 0);
-  GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
+  GPR_ASSERT(
+      grpc_core::GetBit(grpc_call_test_only_get_encodings_accepted_by_peer(s),
                         GRPC_COMPRESS_GZIP) != 0);
   memset(ops, 0, sizeof(ops));
   op = ops;

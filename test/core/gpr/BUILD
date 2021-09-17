@@ -151,7 +151,9 @@ grpc_cc_test(
     language = "C++",
     uses_polling = False,
     deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
+        "//:gpr_platform",
+        "//:useful",
+        "//test/core/util:grpc_suppressions",
     ],
+    external_deps = ["gtest"],
 )
