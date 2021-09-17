@@ -148,19 +148,16 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
     fragment = PercentDecode(remaining);
   }
   return URI(std::move(scheme), std::move(authority), std::move(path),
-             std::move(query_param_pairs), std::move(fragment),
-             std::string(uri_text));
+             std::move(query_param_pairs), std::move(fragment));
 }
 
 URI::URI(std::string scheme, std::string authority, std::string path,
-         std::vector<QueryParam> query_parameter_pairs, std::string fragment,
-         std::string uri_text)
+         std::vector<QueryParam> query_parameter_pairs, std::string fragment)
     : scheme_(std::move(scheme)),
       authority_(std::move(authority)),
       path_(std::move(path)),
       query_parameter_pairs_(std::move(query_parameter_pairs)),
-      fragment_(std::move(fragment)),
-      uri_text_(std::move(uri_text)) {
+      fragment_(std::move(fragment)) {
   for (const auto& kv : query_parameter_pairs_) {
     query_parameter_map_[kv.key] = kv.value;
   }
@@ -171,8 +168,7 @@ URI::URI(const URI& other)
       authority_(other.authority_),
       path_(other.path_),
       query_parameter_pairs_(other.query_parameter_pairs_),
-      fragment_(other.fragment_),
-      uri_text_(other.uri_text_) {
+      fragment_(other.fragment_) {
   for (const auto& kv : query_parameter_pairs_) {
     query_parameter_map_[kv.key] = kv.value;
   }
@@ -187,7 +183,6 @@ URI& URI::operator=(const URI& other) {
   path_ = other.path_;
   query_parameter_pairs_ = other.query_parameter_pairs_;
   fragment_ = other.fragment_;
-  uri_text_ = other.uri_text_;
   for (const auto& kv : query_parameter_pairs_) {
     query_parameter_map_[kv.key] = kv.value;
   }

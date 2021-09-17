@@ -809,9 +809,7 @@ void XdsResolver::StartLocked() {
   if (parent_channelz_node != nullptr) {
     xds_client_->AddChannelzLinkage(parent_channelz_node);
   }
-  if (uri_.scheme() == "xdstp") {
-    server_name_ = uri_.uri_text();
-  } else if (uri_.scheme() == "xds") {
+  if (uri_.scheme() == "xds") {
     std::string target_hostname =
         std::string(absl::StripPrefix(uri_.path(), "/"));
     if (!uri_.authority().empty()) {

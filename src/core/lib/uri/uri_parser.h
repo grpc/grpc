@@ -47,8 +47,7 @@ class URI {
   static absl::StatusOr<URI> Parse(absl::string_view uri_text);
   // Explicit construction by individual URI components
   URI(std::string scheme, std::string authority, std::string path,
-      std::vector<QueryParam> query_parameter_pairs, std::string fragment,
-      std::string uri_text);
+      std::vector<QueryParam> query_parameter_pairs, std::string fragment);
   URI() = default;
   // Copy construction and assignment
   URI(const URI& other);
@@ -75,8 +74,6 @@ class URI {
   }
   const std::string& fragment() const { return fragment_; }
 
-  const std::string& uri_text() const { return uri_text_; }
-
  private:
   std::string scheme_;
   std::string authority_;
@@ -84,7 +81,6 @@ class URI {
   std::map<absl::string_view, absl::string_view> query_parameter_map_;
   std::vector<QueryParam> query_parameter_pairs_;
   std::string fragment_;
-  std::string uri_text_;
 };
 }  // namespace grpc_core
 
