@@ -70,22 +70,15 @@ class MemoryRequest {
   // Request a range of memory.
   MemoryRequest(size_t min, size_t max) : min_(std::min(min, max)), max_(max) {}
 
-  // Set the block size for allocations.
-  // This allows us to ensure some granularity of allocations - say enough for
-  // one element of an array.
-  MemoryRequest WithBlockSize(size_t block_size) const;
-
   // Increase the size by amount
   MemoryRequest Increase(size_t amount) const;
 
   size_t min() const { return min_; }
   size_t max() const { return max_; }
-  size_t block_size() const { return block_size_; }
 
  private:
   size_t min_;
   size_t max_;
-  size_t block_size_ = 1;
 };
 
 // For each reclamation function run we construct a ReclamationSweep.

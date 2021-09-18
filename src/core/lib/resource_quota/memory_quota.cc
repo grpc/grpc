@@ -46,25 +46,8 @@ ReclamationSweep::~ReclamationSweep() {
 // MemoryRequest
 //
 
-namespace {
-size_t RoundUp(size_t size, size_t block_size) {
-  return (size + block_size - 1) / block_size * block_size;
-}
-size_t RoundDown(size_t size, size_t block_size) {
-  return size / block_size * block_size;
-}
-}  // namespace
-
-MemoryRequest MemoryRequest::WithBlockSize(size_t block_size) const {
-  MemoryRequest r(*this);
-  r.block_size_ = block_size;
-  return r;
-}
-
 MemoryRequest MemoryRequest::Increase(size_t amount) const {
-  MemoryRequest r(min_ + amount, max_ + amount);
-  r.block_size_ = block_size_;
-  return r;
+  return MemoryRequest(min_ + amount, max_ + amount);
 }
 
 //
@@ -169,13 +152,10 @@ absl::optional<size_t> MemoryAllocator::TryReserve(MemoryRequest request) {
     }
     // Reduce allocation size proportional to the pressure > 80% usage.
     if (pressure > 0.8) {
-      scaled_size_over_min = std::min(
-          scaled_size_over_min,
-          RoundUp((request.max() - request.min()) * (1.0 - pressure) / 0.2,
-                  request.block_size()));
-    } else {
       scaled_size_over_min =
-          RoundDown(scaled_size_over_min, request.block_size());
+          std::min(scaled_size_over_min,
+                   static_cast<size_t>((request.max() - request.min()) *
+                                       (1.0 - pressure) / 0.2));
     }
   }
 

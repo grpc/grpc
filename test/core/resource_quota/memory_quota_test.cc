@@ -39,21 +39,12 @@ TEST(MemoryRequestTest, ConversionFromSize) {
   MemoryRequest request = 3;
   EXPECT_EQ(request.min(), 3);
   EXPECT_EQ(request.max(), 3);
-  EXPECT_EQ(request.block_size(), 1);
 }
 
 TEST(MemoryRequestTest, MinMax) {
   MemoryRequest request(3, 7);
   EXPECT_EQ(request.min(), 3);
   EXPECT_EQ(request.max(), 7);
-  EXPECT_EQ(request.block_size(), 1);
-}
-
-TEST(MemoryRequestTest, MinMaxWithBlockSize) {
-  auto request = MemoryRequest(361, 2099).WithBlockSize(1024);
-  EXPECT_EQ(request.min(), 361);
-  EXPECT_EQ(request.max(), 2099);
-  EXPECT_EQ(request.block_size(), 1024);
 }
 
 //
@@ -143,9 +134,8 @@ TEST(MemoryQuotaTest, ReserveRangeNoPressure) {
   auto memory_allocator = memory_quota->MakeMemoryAllocator();
   size_t total = 0;
   for (int i = 0; i < 10000; i++) {
-    auto n = memory_allocator->Reserve(
-        MemoryRequest(100, 40000).WithBlockSize(1024));
-    EXPECT_EQ(n, 39012);
+    auto n = memory_allocator->Reserve(MemoryRequest(100, 40000));
+    EXPECT_EQ(n, 40000);
     total += n;
   }
   memory_allocator->Release(total);
