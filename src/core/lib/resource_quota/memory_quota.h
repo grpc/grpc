@@ -211,20 +211,10 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
   }
 
  private:
-  // Result of TryReserve.
-  // If memory was allocated, success = true and size = the number of bytes
-  // allocated. If memory was not allocated, success = false and size = the
-  // number of bytes to take from the quota.
-  struct ReserveResult {
-    bool success;
-    size_t size;
-  };
-
   // Primitive reservation function.
-  ReserveResult TryReserve(MemoryRequest request) GRPC_MUST_USE_RESULT;
-  // Replenish at least `amount` bytes from the quota, without blocking,
-  // possibly entering overcommit.
-  void Replenish(size_t amount) ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
+  absl::optional<size_t> TryReserve(MemoryRequest request) GRPC_MUST_USE_RESULT;
+  // Replenish bytes from the quota, without blocking, possibly entering overcommit.
+  void Replenish() ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
   // If we have not already, register a reclamation function against the quota
   // to sweep any free memory back to that quota.
   void MaybeRegisterReclaimer() ABSL_LOCKS_EXCLUDED(memory_quota_mu_);

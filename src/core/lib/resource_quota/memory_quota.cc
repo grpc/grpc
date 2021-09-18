@@ -24,6 +24,14 @@
 
 namespace grpc_core {
 
+// TODO(ctiller): once useful.h changes go in, this will be a compile error, and
+// we can just remove it.
+size_t Clamp(size_t value, size_t min, size_t max) {
+  if (value < min) return min;
+  if (value > max) return max;
+  return value;
+}
+
 //
 // Reclaimer
 //
@@ -142,19 +150,16 @@ size_t MemoryAllocator::Reserve(MemoryRequest request) {
   while (true) {
     // Attempt to reserve memory from our pool.
     auto reservation = TryReserve(request);
-    if (reservation.success) return reservation.size;
+    if (reservation.has_value()) return *reservation;
     // If that failed, grab more from the quota and retry.
-    Replenish(reservation.size);
+    Replenish();
   }
 }
 
-MemoryAllocator::ReserveResult MemoryAllocator::TryReserve(
+absl::optional<size_t> MemoryAllocator::TryReserve(
     MemoryRequest request) {
   // How much memory should we request? (see the scaling below)
   size_t scaled_size_over_min = request.max() - request.min();
-  // If we don't get what we want, how much should we request from the quota?
-  // We actually ask for more than what we need to avoid needing to ask again.
-  size_t take_request = 2 * request.max();
   // Scale the request down according to memory pressure if we have that
   // flexibility.
   if (scaled_size_over_min != 0) {
@@ -169,7 +174,6 @@ MemoryAllocator::ReserveResult MemoryAllocator::TryReserve(
           scaled_size_over_min,
           RoundUp((request.max() - request.min()) * (1.0 - pressure) / 0.2,
                   request.block_size()));
-      take_request = request.min() + scaled_size_over_min;
     } else {
       scaled_size_over_min =
           RoundDown(scaled_size_over_min, request.block_size());
@@ -183,8 +187,7 @@ MemoryAllocator::ReserveResult MemoryAllocator::TryReserve(
   while (true) {
     // Does the current free pool satisfy the request?
     if (available < reserve) {
-      GPR_ASSERT(take_request >= available);
-      return {false, take_request - available};
+      return {};
     }
     // Try to reserve the requested amount.
     // If the amount of free memory changed through this loop, then available
@@ -192,14 +195,16 @@ MemoryAllocator::ReserveResult MemoryAllocator::TryReserve(
     if (free_bytes_.compare_exchange_weak(available, available - reserve,
                                           std::memory_order_acq_rel,
                                           std::memory_order_release)) {
-      return {true, reserve};
+      return reserve;
     }
   }
 }
 
-void MemoryAllocator::Replenish(size_t amount) {
+void MemoryAllocator::Replenish() {
   MutexLock lock(&memory_quota_mu_);
+  auto amount = Clamp(taken_bytes_/3, 1024, 1024*1024);
   // Take the requested amount from the quota.
+  gpr_log(GPR_DEBUG, "%p: take %" PRIdMAX " bytes from quota", this, amount);
   memory_quota_->Take(amount);
   // Record that we've taken it.
   taken_bytes_ += amount;
