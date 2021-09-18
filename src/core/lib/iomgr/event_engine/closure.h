@@ -24,8 +24,13 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure,
-                                            grpc_error_handle error);
+/// Creates callbacks that take an error status argument.
+std::function<void(absl::Status)> GrpcClosureToCallbackWithStatus(
+    grpc_closure* closure, grpc_error_handle error = GRPC_ERROR_NONE);
+
+/// Creates callbacks that *do not* take an error status argument. See
+/// \a EventEngine::Run and \a EventEngine::RunAt
+std::function<void()> GrpcClosureToCallback(grpc_closure* closure);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

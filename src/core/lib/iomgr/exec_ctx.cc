@@ -52,7 +52,8 @@ static void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
 static void exec_ctx_sched(grpc_closure* closure, grpc_error_handle error) {
 #if defined(GRPC_USE_EVENT_ENGINE) && \
     defined(GRPC_EVENT_ENGINE_REPLACE_EXEC_CTX)
-  grpc_iomgr_event_engine()->Run(GrpcClosureToCallback(closure, error), {});
+  grpc_iomgr_event_engine()->Run(
+      GrpcClosureToCallbackWithStatus(closure, error), {});
 #else
   grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(), closure,
                            error);

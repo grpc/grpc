@@ -32,12 +32,15 @@ void timer_init(grpc_timer* timer, grpc_millis deadline,
   timer->ee_task_handle = grpc_iomgr_event_engine()->RunAt(
       grpc_core::ToAbslTime(
           grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
-      GrpcClosureToCallback(closure, GRPC_ERROR_NONE), {});
+      GrpcClosureToCallback(closure));
 }
 
 void timer_cancel(grpc_timer* timer) {
   auto handle = timer->ee_task_handle;
-  grpc_iomgr_event_engine()->TryCancel(handle);
+  if (!grpc_iomgr_event_engine()->Cancel(handle)) {
+    // TODO(hork): This likely needs to be handled by the caller. An iomgr API
+    // change is needed here, `bool timer_cancel(...)`.
+  }
 }
 
 /* Internal API */
