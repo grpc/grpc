@@ -30,7 +30,7 @@ namespace grpc_core {
 template <typename T>
 T Clamp(T val, T min, T max) {
   if (val < min) return min;
-  if (val > max) return max;
+  if (max < val) return max;
   return val;
 }
 
@@ -89,7 +89,9 @@ int QsortCompare(const T& a, const T& b) {
 
 template <typename T>
 constexpr size_t HashPointer(T* p, size_t range) {
-  return ((((size_t)p) >> 4) ^ (((size_t)p) >> 9) ^ (((size_t)p) >> 14)) %
+  return (((reinterpret_cast<size_t>(p)) >> 4) ^
+          ((reinterpret_cast<size_t>(p)) >> 9) ^
+          ((reinterpret_cast<size_t>(p)) >> 14)) %
          range;
 }
 
