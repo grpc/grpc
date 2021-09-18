@@ -111,7 +111,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "goat"  # @unused
 
-core_version = "18.0.0"  # @unused
+core_version = "19.0.0"  # @unused
 
 version = "1.41.0-pre2"  # @unused
 
