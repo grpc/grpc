@@ -156,8 +156,7 @@ size_t MemoryAllocator::Reserve(MemoryRequest request) {
   }
 }
 
-absl::optional<size_t> MemoryAllocator::TryReserve(
-    MemoryRequest request) {
+absl::optional<size_t> MemoryAllocator::TryReserve(MemoryRequest request) {
   // How much memory should we request? (see the scaling below)
   size_t scaled_size_over_min = request.max() - request.min();
   // Scale the request down according to memory pressure if we have that
@@ -202,7 +201,7 @@ absl::optional<size_t> MemoryAllocator::TryReserve(
 
 void MemoryAllocator::Replenish() {
   MutexLock lock(&memory_quota_mu_);
-  auto amount = Clamp(taken_bytes_/3, 1024, 1024*1024);
+  auto amount = Clamp(taken_bytes_ / 3, 1024, 1024 * 1024);
   // Take the requested amount from the quota.
   gpr_log(GPR_DEBUG, "%p: take %" PRIdMAX " bytes from quota", this, amount);
   memory_quota_->Take(amount);
