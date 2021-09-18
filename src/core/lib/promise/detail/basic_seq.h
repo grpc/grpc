@@ -61,7 +61,7 @@ struct SeqState {
   // The state evaluated before this state.
   using PriorState = SeqState<Traits, I - 1, Fs...>;
   // Initialization from callables.
-  explicit SeqState(std::tuple<Fs*...> fs) noexcept
+  explicit SeqState(std::tuple<Fs*...> fs)
       : next_factory(std::move(*std::get<I + 1>(fs))) {
     new (&prior) PriorState(fs);
   }
@@ -104,7 +104,7 @@ struct SeqState {
 template <template <typename> class Traits, typename... Fs>
 struct SeqState<Traits, 0, Fs...> {
   // Initialization from callables.
-  explicit SeqState(std::tuple<Fs*...> args) noexcept
+  explicit SeqState(std::tuple<Fs*...> args)
       : current_promise(std::move(*std::get<0>(args))),
         next_factory(std::move(*std::get<1>(args))) {}
   // Move constructor - it's assumed we're in this state (see above).
@@ -112,7 +112,7 @@ struct SeqState<Traits, 0, Fs...> {
       : current_promise(std::move(other.current_promise)),
         next_factory(std::move(other.next_factory)) {}
   // Copy constructor - it's assumed we're in this state (see above).
-  SeqState(const SeqState& other) noexcept
+  SeqState(const SeqState& other)
       : current_promise(other.current_promise),
         next_factory(other.next_factory) {}
   // Empty destructor - we instead destruct the innards in BasicSeq manually
