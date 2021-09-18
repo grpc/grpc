@@ -16,7 +16,10 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/promise", visibility = "grpc")
+grpc_package(
+    name = "test/core/promise",
+    visibility = "grpc",
+)
 
 grpc_cc_library(
     name = "poll",
@@ -47,9 +50,9 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["map.h"],
     deps = [
-        "//:gpr_platform",
         "poll",
         "promise_like",
+        "//:gpr_platform",
     ],
 )
 
@@ -63,9 +66,9 @@ grpc_cc_library(
         "promise.h",
     ],
     deps = [
-        "//:gpr_platform",
         "poll",
         "promise_like",
+        "//:gpr_platform",
     ],
 )
 
@@ -76,8 +79,8 @@ grpc_cc_library(
         "detail/promise_like.h",
     ],
     deps = [
-        "//:gpr_platform",
         "poll",
+        "//:gpr_platform",
     ],
 )
 
@@ -88,9 +91,9 @@ grpc_cc_library(
         "detail/promise_factory.h",
     ],
     deps = [
-        "//:gpr_platform",
         "poll",
         "promise_like",
+        "//:gpr_platform",
     ],
 )
 
@@ -102,9 +105,9 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["if.h"],
     deps = [
-        "//:gpr_platform",
         "poll",
         "promise_factory",
+        "//:gpr_platform",
     ],
 )
 
@@ -126,8 +129,8 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["race.h"],
     deps = [
-        "//:gpr_platform",
         "poll",
+        "//:gpr_platform",
     ],
 )
 
@@ -138,9 +141,9 @@ grpc_cc_library(
         "loop.h",
     ],
     deps = [
-        "//:gpr_platform",
         "poll",
         "promise_factory",
+        "//:gpr_platform",
     ],
 )
 
@@ -160,11 +163,11 @@ grpc_cc_library(
         "detail/basic_join.h",
     ],
     deps = [
+        "poll",
+        "promise_factory",
         "//:bitset",
         "//:construct_destruct",
         "//:gpr_platform",
-        "poll",
-        "promise_factory",
     ],
 )
 
@@ -188,8 +191,8 @@ grpc_cc_library(
     ],
     deps = [
         "basic_join",
-        "//:gpr_platform",
         "promise_status",
+        "//:gpr_platform",
     ],
 )
 
@@ -200,11 +203,11 @@ grpc_cc_library(
         "detail/basic_seq.h",
     ],
     deps = [
-        "//:construct_destruct",
-        "//:gpr_platform",
         "poll",
         "promise_factory",
         "switch",
+        "//:construct_destruct",
+        "//:gpr_platform",
     ],
 )
 
@@ -228,8 +231,8 @@ grpc_cc_library(
     ],
     deps = [
         "basic_seq",
-        "//:gpr_platform",
         "promise_status",
+        "//:gpr_platform",
     ],
 )
 
@@ -243,14 +246,14 @@ grpc_cc_library(
         "activity.h",
     ],
     deps = [
-        "//:atomic_utils",
-        "//:construct_destruct",
         "context",
-        "//:gpr_base",
-        "//:gpr_codegen",
         "poll",
         "promise_factory",
         "promise_status",
+        "//:atomic_utils",
+        "//:construct_destruct",
+        "//:gpr_base",
+        "//:gpr_codegen",
     ],
 )
 
@@ -292,8 +295,8 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
-        "//:gpr_platform",
         "intra_activity_waiter",
+        "//:gpr_platform",
     ],
 )
 
@@ -305,8 +308,8 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
-        "//:gpr_platform",
         "wait_set",
+        "//:gpr_platform",
     ],
 )
 
@@ -321,8 +324,8 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
-        "//:gpr_platform",
         "intra_activity_waiter",
+        "//:gpr_platform",
     ],
 )
 
@@ -335,10 +338,8 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["for_each.h"],
     deps = [
-        "//:gpr_platform",
         "poll",
         "promise_factory",
+        "//:gpr_platform",
     ],
 )
-
-
