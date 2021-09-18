@@ -306,6 +306,7 @@ void AtomicBarrier::Notify(uint64_t token) {
 MemoryQuota::MemoryQuota() {
   auto self = WeakRef();
 
+  // Reclamation loop: basically - `while (free_bytes_ < 0) reclaim_memory();`, but run asynchronously.
   auto reclamation_loop = Loop(Seq(
       [self]() -> Poll<int> {
         // If there's free memory we no longer need to reclaim memory!
@@ -325,7 +326,7 @@ MemoryQuota::MemoryQuota() {
         // One of the reclaimer queues gave us a way to get back memory.
         // Call the reclaimer with a token that contains enough to wake us
         // up again.
-        uint64_t token = self->barrier_.NewToken();
+        const uint64_t token = self->barrier_.NewToken();
         reclaimer(ReclamationSweep(self, token));
         // Return a promise that will wait for our barrier. This will be
         // awoken by the token above being destroyed. So, once that token is
