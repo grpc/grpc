@@ -286,7 +286,7 @@ void AtomicBarrier::Notify(uint64_t token) {
 MemoryQuota::MemoryQuota() {
   auto self = WeakRef();
 
-  // Reclamation loop: 
+  // Reclamation loop:
   // basically, wait until we are in overcommit (free_bytes_ < 0), and then:
   // while (free_bytes_ < 0) reclaim_memory()
   // ... and repeat
