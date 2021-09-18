@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <algorithm>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
