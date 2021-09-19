@@ -351,12 +351,12 @@ grpc_cc_library(
     tags = ["avoid_dep"],
     visibility = ["@grpc:public"],
     deps = [
-        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_common",
         "grpc_lb_policy_grpclb",
         "grpc_trace",
+        "//src/core/lib/config",
     ],
 )
 
@@ -389,7 +389,6 @@ grpc_cc_library(
         "@grpc:public",
     ],
     deps = [
-        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_common",
@@ -398,6 +397,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_secure",
+        "//src/core/lib/config",
     ],
 )
 
@@ -787,21 +787,6 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc_codegen",
-    ],
-)
-
-grpc_cc_library(
-    name = "config",
-    srcs = [
-        "src/core/lib/config/core_configuration.cc",
-    ],
-    language = "c++",
-    public_hdrs = [
-        "src/core/lib/config/core_configuration.h",
-    ],
-    deps = [
-        "gpr_platform",
-        "handshaker_registry",
     ],
 )
 
@@ -1394,7 +1379,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:client_channel"],
     deps = [
-        "config",
         "debug_location",
         "gpr_base",
         "grpc_base_c",
@@ -1407,6 +1391,7 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "udpa_orca_upb",
+        "//src/core/lib/config",
     ],
 )
 
@@ -2386,7 +2371,6 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "alts_util",
-        "config",
         "gpr_base",
         "grpc_base",
         "grpc_base_c",
@@ -2399,6 +2383,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "tsi",
         "tsi_interface",
+        "//src/core/lib/config",
     ],
 )
 
@@ -2691,11 +2676,11 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
         "grpc_transport_chttp2",
+        "//src/core/lib/config",
     ],
 )
 
@@ -2745,7 +2730,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_codegen",
@@ -2753,6 +2737,7 @@ grpc_cc_library(
         "grpc_transport_chttp2",
         "ref_counted",
         "ref_counted_ptr",
+        "//src/core/lib/config",
     ],
 )
 

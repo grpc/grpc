@@ -12,20 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/config")
+grpc_package(
+    name = "src/core/lib/config",
+    visibility = "grpc",
+)
 
-grpc_cc_test(
-    name = "core_configuration_test",
-    srcs = ["core_configuration_test.cc"],
-    external_deps = ["gtest"],
+grpc_cc_library(
+    name = "config",
+    srcs = [
+        "core_configuration.cc",
+    ],
+    hdrs = [
+        "core_configuration.h",
+    ],
     language = "c++",
-    uses_polling = False,
     deps = [
-        "//src/core/lib/config",
-        "//test/core/util:grpc_suppressions",
+        "//:gpr_platform",
+        "//:handshaker_registry",
     ],
 )
