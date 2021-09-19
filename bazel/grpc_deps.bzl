@@ -14,6 +14,7 @@
 """Load dependencies needed to compile and test the grpc library as a 3rd-party consumer."""
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@com_github_grpc_grpc//bazel:grpc_python_deps.bzl", "grpc_python_deps")
 
 def grpc_deps():
@@ -518,4 +519,12 @@ def grpc_test_only_deps():
                 "https://github.com/twisted/constantly/archive/15.1.0.zip",
             ],
             build_file = "@com_github_grpc_grpc//third_party:constantly.BUILD",
+        )
+
+    if "com_google_libprotobuf-mutator" not in native.existing_rules():
+        new_git_repository(
+            name = "com_google_libprotobuf-mutator",
+            commit = "ffd86a32874e5c08a143019aad1aaf0907294c9f",
+            build_file = "@com_github_grpc_grpc//third_party:libprotobuf-mutator.BUILD",
+            remote = "https://github.com/google/libprotobuf-mutator",
         )
