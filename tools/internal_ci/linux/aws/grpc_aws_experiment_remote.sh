@@ -26,4 +26,5 @@ cd grpc
 python tools/run_tests/start_port_server.py
 
 # build with bazel
-tools/bazel build --config=opt //test/...
+tools/bazel build --config=opt //test/... //src/core/...
+

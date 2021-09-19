@@ -25,5 +25,5 @@ git clone /var/local/jenkins/grpc /var/local/git/grpc
 ${name}')
 cd /var/local/git/grpc
 
-bazel test //test/...
+bazel test //test/... //src/core/...
 bazel test //test/cpp/end2end:admin_services_end2end_test --define=grpc_no_xds=true

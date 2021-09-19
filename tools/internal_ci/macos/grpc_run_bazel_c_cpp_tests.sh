@@ -42,7 +42,7 @@ tools/bazel \
   --workspace_status_command=tools/remote_build/workspace_status_kokoro.sh \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
   $BAZEL_FLAGS \
-  -- //test/... || FAILED="true"
+  -- //test/... //src/core/... || FAILED="true"
 
 if [ "$UPLOAD_TEST_RESULTS" != "" ]
 then
