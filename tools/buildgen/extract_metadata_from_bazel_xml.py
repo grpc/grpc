@@ -593,10 +593,9 @@ def _generate_build_extra_metadata_for_tests(
         if cmdline_args:
             test_dict['args'] = list(cmdline_args)
 
-        if test.startswith('test/cpp'):
+        if test.startswith('test/cpp') or test.startswith('src/cpp'):
             test_dict['language'] = 'c++'
-
-        elif test.startswith('test/core'):
+        elif test.startswith('test/core') or test.startswith('src/core'):
             test_dict['language'] = 'c'
         else:
             raise Exception('wrong test' + test)
@@ -979,6 +978,7 @@ _BUILD_EXTRA_METADATA = {
 # so we run multiple bazel queries and merge the results.
 _BAZEL_DEPS_QUERIES = [
     'deps("//test/...")',
+    'deps("//src/core/...")',
     'deps("//:all")',
     'deps("//src/compiler/...")',
     'deps("//src/proto/...")',
