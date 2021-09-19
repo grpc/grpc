@@ -810,8 +810,7 @@ void XdsResolver::StartLocked() {
     xds_client_->AddChannelzLinkage(parent_channelz_node);
   }
   if (uri_.scheme() == "xds") {
-    std::string target_hostname =
-        std::string(absl::StripPrefix(uri_.path(), "/"));
+    std::string target_hostname(absl::StripPrefix(uri_.path(), "/"));
     if (!uri_.authority().empty()) {
       auto authority_config =
           xds_client_->bootstrap().lookup_authority(target_hostname);
@@ -822,25 +821,24 @@ void XdsResolver::StartLocked() {
                 grpc_error_std_string(error).c_str());
         result_handler_->ReturnError(error);
         return;
-      } else {
-        std::string name_template =
-            authority_config->client_listener_resource_name_template;
-        if (name_template.empty()) {
-          name_template = ("xdstp://" + uri_.authority() +
-                           "/envoy.config.listener.v3.Listener/%s");
-        }
-        server_name_ = absl::StrReplaceAll(
-            name_template, {{"%s", PercentEncode(target_hostname)}});
       }
+      std::string name_template =
+          authority_config->client_listener_resource_name_template;
+      if (name_template.empty()) {
+        name_template = absl::StrCat("xdstp://", uri_.authority(),
+                                     "/envoy.config.listener.v3.Listener/%s");
+      }
+      server_name_ = absl::StrReplaceAll(
+          name_template, {{"%s", PercentEncode(target_hostname)}});
     } else {
       // args.uri.authority().empty() case
-      auto name_template =
+      std::string name_template =
           xds_client_->bootstrap()
               .client_default_listener_resource_name_template();
       if (name_template.empty()) {
         name_template = "%s";
       }
-      if (absl::StartsWith(name_template, "xdstp")) {
+      if (absl::StartsWith(name_template, "xdstp:")) {
         target_hostname = PercentEncode(target_hostname);
       }
       server_name_ =
