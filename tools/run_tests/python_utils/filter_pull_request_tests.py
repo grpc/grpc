@@ -73,6 +73,7 @@ _ALLOWLIST_DICT = {
     '^include/grpc\+\+/': [_CPP_TEST_SUITE],
     '^include/grpcpp/': [_CPP_TEST_SUITE],
     '^summerofcode/': [],
+    '^src/core/': [_CORE_TEST_SUITE],
     '^src/cpp/': [_CPP_TEST_SUITE],
     '^src/csharp/': [_CSHARP_TEST_SUITE],
     '^src/objective\-c/': [_OBJC_TEST_SUITE],
