@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include "src/core/lib/promise/detail/promise_factory.h"
 
 #include <gtest/gtest.h>
