@@ -17,16 +17,20 @@ set -ex
 
 dst=$1
 shift
-$(dirname $0)/gource.sh \
-  --disable-progress    \
-  --stop-at-end         \
-  --output-ppm-stream - \
-  $@ |                  \
-avconv                  \
-  -y                    \
-  -r 60                 \
-  -f image2pipe         \
-  -vcodec ppm           \
-  -i -                  \
-  -vcodec libx264       \
+xvfb-run -a -s             \
+  "-screen 0 1920x1080x24" \
+$(dirname $0)/gource.sh    \
+  -1920x1080               \
+  -f                       \
+  -r 60                    \
+  --stop-at-end            \
+  --output-ppm-stream -    \
+  $@ |                     \
+ffmpeg                     \
+  -y                       \
+  -r 60                    \
+  -f image2pipe            \
+  -vcodec ppm              \
+  -i -                     \
+  -vcodec libx264          \
   $dst

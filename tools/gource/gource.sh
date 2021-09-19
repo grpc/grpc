@@ -19,7 +19,7 @@ gource                          \
   --max-file-lag 0.05           \
   --max-files 0                 \
   -e 0.01                       \
-  --hide filenames,dirnames,mouse,progress     \
+  --hide filenames,mouse,progress     \
   --disable-auto-rotate         \
   --file-filter '/grpc/doc/ref' \
   $*
