@@ -7725,7 +7725,7 @@ add_executable(activity_test
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
   src/core/lib/promise/activity.cc
-  test/core/promise/activity_test.cc
+  src/core/lib/promise/activity_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -10378,7 +10378,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(context_test
-  test/core/promise/context_test.cc
+  src/core/lib/promise/context_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -11283,7 +11283,7 @@ add_executable(for_each_test
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
   src/core/lib/promise/activity.cc
-  test/core/promise/for_each_test.cc
+  src/core/lib/promise/for_each_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -12449,7 +12449,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(if_test
-  test/core/promise/if_test.cc
+  src/core/lib/promise/if_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -12731,7 +12731,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(join_test
-  test/core/promise/join_test.cc
+  src/core/lib/promise/join_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -12895,7 +12895,7 @@ add_executable(latch_test
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
   src/core/lib/promise/activity.cc
-  test/core/promise/latch_test.cc
+  src/core/lib/promise/latch_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -13089,7 +13089,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(loop_test
-  test/core/promise/loop_test.cc
+  src/core/lib/promise/loop_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -13516,7 +13516,7 @@ add_executable(observable_test
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
   src/core/lib/promise/activity.cc
-  test/core/promise/observable_test.cc
+  src/core/lib/promise/observable_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -13762,7 +13762,7 @@ add_executable(pipe_test
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
   src/core/lib/promise/activity.cc
-  test/core/promise/pipe_test.cc
+  src/core/lib/promise/pipe_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -13809,7 +13809,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(poll_test
-  test/core/promise/poll_test.cc
+  src/core/lib/promise/poll_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -13926,7 +13926,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(promise_factory_test
-  test/core/promise/promise_factory_test.cc
+  src/core/lib/promise/promise_factory_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -13964,7 +13964,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(promise_map_test
-  test/core/promise/map_test.cc
+  src/core/lib/promise/map_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -14000,7 +14000,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(promise_test
-  test/core/promise/promise_test.cc
+  src/core/lib/promise/promise_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -14282,7 +14282,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(race_test
-  test/core/promise/race_test.cc
+  src/core/lib/promise/race_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -14640,7 +14640,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(seq_test
-  test/core/promise/seq_test.cc
+  src/core/lib/promise/seq_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -16220,7 +16220,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(try_join_test
-  test/core/promise/try_join_test.cc
+  src/core/lib/promise/try_join_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -16257,7 +16257,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(try_seq_test
-  test/core/promise/try_seq_test.cc
+  src/core/lib/promise/try_seq_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )

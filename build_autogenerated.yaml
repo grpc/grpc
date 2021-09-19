@@ -4307,7 +4307,7 @@ targets:
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   - src/core/lib/promise/activity.cc
-  - test/core/promise/activity_test.cc
+  - src/core/lib/promise/activity_test.cc
   deps:
   - absl/base:base
   - absl/base:core_headers
@@ -5322,7 +5322,7 @@ targets:
   - src/core/lib/gpr/tls.h
   - src/core/lib/promise/context.h
   src:
-  - test/core/promise/context_test.cc
+  - src/core/lib/promise/context_test.cc
   deps: []
   uses_polling: false
 - name: core_configuration_test
@@ -5806,7 +5806,7 @@ targets:
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   - src/core/lib/promise/activity.cc
-  - test/core/promise/for_each_test.cc
+  - src/core/lib/promise/for_each_test.cc
   deps:
   - absl/base:base
   - absl/base:core_headers
@@ -6220,7 +6220,7 @@ targets:
   - src/core/lib/promise/if.h
   - src/core/lib/promise/poll.h
   src:
-  - test/core/promise/if_test.cc
+  - src/core/lib/promise/if_test.cc
   deps:
   - absl/status:statusor
   - absl/types:variant
@@ -6318,7 +6318,7 @@ targets:
   - src/core/lib/promise/join.h
   - src/core/lib/promise/poll.h
   src:
-  - test/core/promise/join_test.cc
+  - src/core/lib/promise/join_test.cc
   deps:
   - absl/types:variant
   uses_polling: false
@@ -6477,7 +6477,7 @@ targets:
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   - src/core/lib/promise/activity.cc
-  - test/core/promise/latch_test.cc
+  - src/core/lib/promise/latch_test.cc
   deps:
   - absl/base:base
   - absl/base:core_headers
@@ -6554,7 +6554,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
   src:
-  - test/core/promise/loop_test.cc
+  - src/core/lib/promise/loop_test.cc
   deps:
   - absl/types:variant
   uses_polling: false
@@ -6796,7 +6796,7 @@ targets:
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   - src/core/lib/promise/activity.cc
-  - test/core/promise/observable_test.cc
+  - src/core/lib/promise/observable_test.cc
   deps:
   - absl/base:base
   - absl/base:core_headers
@@ -7001,7 +7001,7 @@ targets:
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   - src/core/lib/promise/activity.cc
-  - test/core/promise/pipe_test.cc
+  - src/core/lib/promise/pipe_test.cc
   deps:
   - absl/base:base
   - absl/base:core_headers
@@ -7024,7 +7024,7 @@ targets:
   headers:
   - src/core/lib/promise/poll.h
   src:
-  - test/core/promise/poll_test.cc
+  - src/core/lib/promise/poll_test.cc
   deps:
   - absl/types:variant
   uses_polling: false
@@ -7062,7 +7062,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
   src:
-  - test/core/promise/promise_factory_test.cc
+  - src/core/lib/promise/promise_factory_test.cc
   deps:
   - absl/functional:bind_front
   - absl/types:optional
@@ -7079,7 +7079,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
   src:
-  - test/core/promise/map_test.cc
+  - src/core/lib/promise/map_test.cc
   deps:
   - absl/types:optional
   - absl/types:variant
@@ -7093,7 +7093,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
   src:
-  - test/core/promise/promise_test.cc
+  - src/core/lib/promise/promise_test.cc
   deps:
   - absl/types:optional
   - absl/types:variant
@@ -7216,7 +7216,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   src:
-  - test/core/promise/race_test.cc
+  - src/core/lib/promise/race_test.cc
   deps:
   - absl/types:variant
   uses_polling: false
@@ -7342,7 +7342,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
   src:
-  - test/core/promise/seq_test.cc
+  - src/core/lib/promise/seq_test.cc
   deps:
   - absl/types:variant
   uses_polling: false
@@ -7861,7 +7861,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/try_join.h
   src:
-  - test/core/promise/try_join_test.cc
+  - src/core/lib/promise/try_join_test.cc
   deps:
   - absl/status:status
   - absl/status:statusor
@@ -7881,7 +7881,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/try_seq.h
   src:
-  - test/core/promise/try_seq_test.cc
+  - src/core/lib/promise/try_seq_test.cc
   deps:
   - absl/status:status
   - absl/status:statusor
