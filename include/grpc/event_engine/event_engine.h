@@ -81,9 +81,6 @@ class EventEngine {
   /// caller is responsible for all necessary cleanup.
   class Closure {
    public:
-    // Closure's are an interface, and thus non-copyable.
-    Closure(const Closure&) = delete;
-    Closure& operator=(const Closure&) = delete;
     // Polymorphic type => virtual destructor
     virtual ~Closure() = default;
     // Run the contained code.

@@ -35,7 +35,7 @@ extern grpc_core::TraceFlag grpc_tcp_trace;
 namespace {
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::GrpcClosureToCallbackWithStatus;
+using ::grpc_event_engine::experimental::GrpcClosureToStatusCallback;
 using ::grpc_event_engine::experimental::SliceAllocator;
 using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 using ::grpc_event_engine::experimental::SliceBuffer;
@@ -192,8 +192,8 @@ grpc_error_handle tcp_server_create(
             exec_ctx.Flush();
             grpc_pollset_ee_broadcast_event();
           },
-          GrpcClosureToCallbackWithStatus(shutdown_complete, GRPC_ERROR_NONE),
-          endpoint_config, std::move(ee_slice_allocator_factory));
+          GrpcClosureToStatusCallback(shutdown_complete), endpoint_config,
+          std::move(ee_slice_allocator_factory));
   if (!listener.ok()) {
     return absl_status_to_grpc_error(listener.status());
   }

@@ -19,6 +19,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine/closure.h"
 #include "src/core/lib/iomgr/event_engine/iomgr.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/init.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -33,13 +34,14 @@ void timer_init(grpc_timer* timer, grpc_millis deadline,
       grpc_core::ToAbslTime(
           grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
       GrpcClosureToCallback(closure));
+  timer->closure = closure;
 }
 
 void timer_cancel(grpc_timer* timer) {
   auto handle = timer->ee_task_handle;
   if (!grpc_iomgr_event_engine()->Cancel(handle)) {
-    // TODO(hork): This likely needs to be handled by the caller. An iomgr API
-    // change is needed here, `bool timer_cancel(...)`.
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure,
+                            GRPC_ERROR_CANCELLED);
   }
 }
 
