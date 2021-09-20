@@ -114,7 +114,7 @@ class MetadataMap {
       if (GRPC_MDISNULL(new_mdelem.md)) {
         Remove(l);
       } else if (new_mdelem.md.payload != l->md.payload) {
-        Substitute(l, new_mdelem.md);
+        add_error(Substitute(l, new_mdelem.md));
       }
       l = next;
     }
