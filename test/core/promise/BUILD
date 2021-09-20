@@ -263,6 +263,6 @@ grpc_proto_fuzzer(
         "//test/core/util:grpc_test_util",
         "//:promise",
         "//:seq","//:map",
-        "//:join","//:race",
+        "//:join","//:race","//:activity"
     ],
 )

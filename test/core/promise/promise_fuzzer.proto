@@ -35,14 +35,31 @@ message PromiseFactory {
     }
 }
 
+message Never {}
+
 message Promise {
     oneof promise_type {
         Seq seq = 1;
         Join join = 2;
         Race race = 3;
+        Never never = 4;
+        int32 sleep_first_n = 5;
+    }
+}
+
+message Cancel {}
+
+message Wakeup {}
+
+message Action {
+    oneof action_type {
+        Wakeup wakeup = 1;
+        Cancel cancel = 2;
+        int32 run_todo = 3;
     }
 }
 
 message Msg {
     Promise promise = 1;
+    repeated Action actions = 2;
 }

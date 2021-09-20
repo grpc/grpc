@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/promise.h"
@@ -162,6 +163,16 @@ static Promise<IntHdl> MakePromise(const promise_fuzzer::Promise& p) {
                       MakePromise(p.race().promises(5)));
       }
       break;
+    case promise_fuzzer::Promise::kNever:
+      return Never<IntHdl>();
+    case promise_fuzzer::Promise::kSleepFirstN: {
+      int n = p.sleep_first_n();
+      return [n]() mutable -> Poll<IntHdl> {
+        if (n <= 0) return std::make_shared<int>(0);
+        n--;
+        return Pending{};
+      };
+    }
     case promise_fuzzer::Promise::PromiseTypeCase::PROMISE_TYPE_NOT_SET:
       break;
   }
@@ -173,6 +184,44 @@ DEFINE_PROTO_FUZZER(const promise_fuzzer::Msg& msg) {
   if (!msg.has_promise()) {
     return;
   }
-  auto promise = grpc_core::MakePromise(msg.promise());
-  promise();
+  int num_todos = 0;
+  std::map<int, std::function<void()>> todo_map;
+  bool done = false;
+  auto activity = grpc_core::MakeActivity(
+      [msg] {
+        return Seq(grpc_core::MakePromise(msg.promise()),
+                   [] { return absl::OkStatus(); });
+      },
+      [&todo_map, &num_todos](std::function<void()> f) {
+        todo_map.emplace(num_todos++, std::move(f));
+      },
+      [&done](absl::Status status) { done = true; });
+  for (size_t i = 0;
+       !done && activity.get() != nullptr && i < msg.actions_size(); i++) {
+    const auto& action = msg.actions(i);
+    switch (action.action_type_case()) {
+      case promise_fuzzer::Action::kWakeup:
+        activity->ForceWakeup();
+        break;
+      case promise_fuzzer::Action::kCancel:
+        activity.reset();
+        break;
+      case promise_fuzzer::Action::kRunTodo: {
+        auto it = todo_map.find(action.run_todo());
+        if (it == todo_map.end()) break;
+        it->second();
+        todo_map.erase(it);
+        break;
+      }
+      case promise_fuzzer::Action::ACTION_TYPE_NOT_SET:
+        break;
+    }
+  }
+  activity.reset();
+  while (!todo_map.empty()) {
+    auto it = todo_map.begin();
+    auto f = std::move(it->second);
+    todo_map.erase(it);
+    f();
+  }
 }
