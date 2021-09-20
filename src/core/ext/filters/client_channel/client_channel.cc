@@ -254,7 +254,7 @@ namespace {
 // Channel arg pointer vtable for GRPC_ARG_CLIENT_CHANNEL.
 void* ClientChannelArgCopy(void* p) { return p; }
 void ClientChannelArgDestroy(void* /*p*/) {}
-int ClientChannelArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
+int ClientChannelArgCmp(void* p, void* q) { return QsortCompare(p, q); }
 const grpc_arg_pointer_vtable kClientChannelArgPointerVtable = {
     ClientChannelArgCopy, ClientChannelArgDestroy, ClientChannelArgCmp};
 
@@ -268,7 +268,7 @@ void ServiceConfigObjArgDestroy(void* p) {
   auto* service_config = static_cast<ServiceConfig*>(p);
   service_config->Unref();
 }
-int ServiceConfigObjArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
+int ServiceConfigObjArgCmp(void* p, void* q) { return QsortCompare(p, q); }
 const grpc_arg_pointer_vtable kServiceConfigObjArgPointerVtable = {
     ServiceConfigObjArgCopy, ServiceConfigObjArgDestroy,
     ServiceConfigObjArgCmp};
@@ -719,8 +719,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     // in chand_->pending_subchannel_updates_.  So we don't want to add
     // entries there that will never be processed, since that would
     // leave dangling refs to the channel and prevent its destruction.
-    grpc_error_handle disconnect_error = chand_->disconnect_error();
-    if (disconnect_error != GRPC_ERROR_NONE) return;
+    if (chand_->disconnect_error_ != GRPC_ERROR_NONE) return;
     // Not shutting down, so do the update.
     if (connected_subchannel_ != connected_subchannel) {
       connected_subchannel_ = std::move(connected_subchannel);
@@ -985,9 +984,8 @@ class ClientChannel::ClientChannelControlHelper
       std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return;  // Shutting down.
-    grpc_error_handle disconnect_error = chand_->disconnect_error();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-      const char* extra = disconnect_error == GRPC_ERROR_NONE
+      const char* extra = chand_->disconnect_error_ == GRPC_ERROR_NONE
                               ? ""
                               : " (ignoring -- channel shutting down)";
       gpr_log(GPR_INFO, "chand=%p: update: state=%s status=(%s) picker=%p%s",
@@ -995,7 +993,7 @@ class ClientChannel::ClientChannelControlHelper
               picker.get(), extra);
     }
     // Do update only if not shutting down.
-    if (disconnect_error == GRPC_ERROR_NONE) {
+    if (chand_->disconnect_error_ == GRPC_ERROR_NONE) {
       chand_->UpdateStateAndPickerLocked(state, status, "helper",
                                          std::move(picker));
     }
@@ -1086,8 +1084,7 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
       interested_parties_(grpc_pollset_set_create()),
       work_serializer_(std::make_shared<WorkSerializer>()),
       state_tracker_("client_channel", GRPC_CHANNEL_IDLE),
-      subchannel_pool_(GetSubchannelPool(args->channel_args)),
-      disconnect_error_(GRPC_ERROR_NONE) {
+      subchannel_pool_(GetSubchannelPool(args->channel_args)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p: creating client_channel for channel stack %p",
             this, owning_stack_);
@@ -1158,7 +1155,7 @@ ClientChannel::~ClientChannel() {
   // Stop backup polling.
   grpc_client_channel_stop_backup_polling(interested_parties_);
   grpc_pollset_set_destroy(interested_parties_);
-  GRPC_ERROR_UNREF(disconnect_error_.load(std::memory_order_relaxed));
+  GRPC_ERROR_UNREF(disconnect_error_);
 }
 
 OrphanablePtr<ClientChannel::LoadBalancedCall>
@@ -1793,7 +1790,7 @@ void ClientChannel::StartTransportOpLocked(grpc_transport_op* op) {
     if (grpc_error_get_int(op->disconnect_with_error,
                            GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, &value) &&
         static_cast<grpc_connectivity_state>(value) == GRPC_CHANNEL_IDLE) {
-      if (disconnect_error() == GRPC_ERROR_NONE) {
+      if (disconnect_error_ == GRPC_ERROR_NONE) {
         // Enter IDLE state.
         UpdateStateAndPickerLocked(GRPC_CHANNEL_IDLE, absl::Status(),
                                    "channel entering IDLE", nullptr);
@@ -1801,10 +1798,8 @@ void ClientChannel::StartTransportOpLocked(grpc_transport_op* op) {
       GRPC_ERROR_UNREF(op->disconnect_with_error);
     } else {
       // Disconnect.
-      GPR_ASSERT(disconnect_error_.load(std::memory_order_relaxed) ==
-                 GRPC_ERROR_NONE);
-      disconnect_error_.store(op->disconnect_with_error,
-                              std::memory_order_release);
+      GPR_ASSERT(disconnect_error_ == GRPC_ERROR_NONE);
+      disconnect_error_ = op->disconnect_with_error;
       UpdateStateAndPickerLocked(
           GRPC_CHANNEL_SHUTDOWN, absl::Status(), "shutdown from API",
           absl::make_unique<LoadBalancingPolicy::TransientFailurePicker>(
@@ -3146,13 +3141,6 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
             if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
               gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick failed: %s",
                       chand_, this, fail_pick->status.ToString().c_str());
-            }
-            // If we're shutting down, fail all RPCs.
-            grpc_error_handle disconnect_error = chand_->disconnect_error();
-            if (disconnect_error != GRPC_ERROR_NONE) {
-              MaybeRemoveCallFromLbQueuedCallsLocked();
-              *error = GRPC_ERROR_REF(disconnect_error);
-              return true;
             }
             // If wait_for_ready is false, then the error indicates the RPC
             // attempt's final status.

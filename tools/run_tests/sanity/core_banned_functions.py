@@ -50,6 +50,8 @@ BANNED_EXCEPT = {
     'grpc_closure_sched(': ['src/core/lib/iomgr/closure.cc'],
     'grpc_closure_run(': ['src/core/lib/iomgr/closure.cc'],
     'grpc_closure_list_sched(': ['src/core/lib/iomgr/closure.cc'],
+    'grpc_error*': ['src/core/lib/iomgr/error.cc'],
+    'grpc_error_string': ['src/core/lib/iomgr/error.cc'],
 }
 
 errors = 0

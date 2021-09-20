@@ -119,6 +119,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_channel_destroy);
   printf("%lx", (unsigned long) grpc_call_cancel);
   printf("%lx", (unsigned long) grpc_call_cancel_with_status);
+  printf("%lx", (unsigned long) grpc_call_failed_before_recv_message);
   printf("%lx", (unsigned long) grpc_call_ref);
   printf("%lx", (unsigned long) grpc_call_unref);
   printf("%lx", (unsigned long) grpc_server_request_call);

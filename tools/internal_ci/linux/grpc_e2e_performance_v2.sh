@@ -32,7 +32,7 @@ gcloud container clusters get-credentials benchmarks-prod2 \
 # Set up environment variables.
 LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
 # BEGIN differentiate experimental configuration from master configuration.
-if [[ "${KOKORO_BUILD_INITIATOR}" == kokoro ]]; then
+if [[ "${KOKORO_BUILD_INITIATOR%%-*}" == kokoro ]]; then
     LOAD_TEST_PREFIX=kokoro-test
 fi
 BIGQUERY_TABLE_8CORE=e2e_benchmarks.experimental_results
@@ -58,7 +58,7 @@ WORKER_POOL_8CORE=workers-8core-ci
 WORKER_POOL_32CORE=workers-32core-ci
 
 # Update go version.
-TEST_INFRA_GOVERSION=go1.17
+TEST_INFRA_GOVERSION=go1.17.1
 go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
 "${TEST_INFRA_GOVERSION}" download
 

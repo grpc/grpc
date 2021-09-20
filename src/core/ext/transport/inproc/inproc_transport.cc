@@ -170,7 +170,7 @@ struct inproc_stream {
         fill_in_metadata(this, &cs->write_buffer_initial_md,
                          cs->write_buffer_initial_md_flags, &to_read_initial_md,
                          &to_read_initial_md_flags, &to_read_initial_md_filled);
-        deadline = GPR_MIN(deadline, cs->write_buffer_deadline);
+        deadline = std::min(deadline, cs->write_buffer_deadline);
         grpc_metadata_batch_clear(&cs->write_buffer_initial_md);
         cs->write_buffer_initial_md_filled = false;
       }
@@ -1019,8 +1019,8 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
         if (s->t->is_client) {
           grpc_millis* dl =
               (other == nullptr) ? &s->write_buffer_deadline : &other->deadline;
-          *dl = GPR_MIN(*dl, op->payload->send_initial_metadata
-                                 .send_initial_metadata->deadline());
+          *dl = std::min(*dl, op->payload->send_initial_metadata
+                                  .send_initial_metadata->deadline());
           s->initial_md_sent = true;
         }
       }
