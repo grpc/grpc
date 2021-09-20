@@ -153,7 +153,7 @@ void CallData::OnRecvInitialMetadataReady(void* arg, grpc_error_handle error) {
   CallData* calld = static_cast<CallData*>(arg);
   if (error == GRPC_ERROR_NONE) {
     grpc_linked_mdelem* grpc_encoding =
-        calld->recv_initial_metadata_->idx.named.grpc_encoding;
+        (*calld->recv_initial_metadata_)->legacy_index()->named.grpc_encoding;
     if (grpc_encoding != nullptr) {
       calld->algorithm_ = DecodeMessageCompressionAlgorithm(grpc_encoding->md);
     }

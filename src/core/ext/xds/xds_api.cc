@@ -1552,10 +1552,6 @@ grpc_error_handle RetryPolicyParse(
       }
     }
   }
-  // TODO(donnadionne): when we add support for per_try_timeout, we will need to
-  // return a policy if per_try_timeout is set even if retry_on specified no
-  // supported policies.
-  if (retry_to_return.retry_on.Empty()) return GRPC_ERROR_NONE;
   const google_protobuf_UInt32Value* num_retries =
       envoy_config_route_v3_RetryPolicy_num_retries(retry_policy);
   if (num_retries != nullptr) {

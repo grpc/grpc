@@ -2099,6 +2099,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     int num_failure = 0;
     int num_drops = 0;
     int num_total = 0;
+    gpr_log(GPR_INFO, "========= WAITING FOR All BACKEND %lu TO %lu ==========",
+            static_cast<unsigned long>(start_index),
+            static_cast<unsigned long>(stop_index));
     while (!SeenAllBackends(start_index, stop_index, rpc_options.service)) {
       SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_drops,
                       rpc_options);
@@ -5884,6 +5887,39 @@ TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
   auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
   retry_policy->set_retry_on("5xx");
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  SetRouteConfiguration(0, new_route_config);
+  // We expect no retry.
+  CheckRpcSendFailure(
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(RpcOptions().set_server_expected_error(
+              StatusCode::DEADLINE_EXCEEDED))
+          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+}
+
+TEST_P(LdsRdsTest,
+       XdsRetryPolicyUnsupportedStatusCodeWithVirtualHostLevelRetry) {
+  const size_t kNumRetries = 3;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy with no supported retry_on
+  // statuses.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on("5xx");
+  retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  // Construct a virtual host level retry policy with supported statuses.
+  auto* virtual_host_retry_policy =
+      new_route_config.mutable_virtual_hosts(0)->mutable_retry_policy();
+  virtual_host_retry_policy->set_retry_on(
+      "cancelled,deadline-exceeded,internal,resource-exhausted,unavailable");
+  virtual_host_retry_policy->mutable_num_retries()->set_value(kNumRetries);
   SetRouteConfiguration(0, new_route_config);
   // We expect no retry.
   CheckRpcSendFailure(

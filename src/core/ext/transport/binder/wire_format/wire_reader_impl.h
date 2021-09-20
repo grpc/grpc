@@ -67,7 +67,7 @@ class WireReaderImpl : public WireReader {
       std::unique_ptr<Binder> binder) override;
 
   absl::Status ProcessTransaction(transaction_code_t code,
-                                  const ReadableParcel* parcel);
+                                  ReadableParcel* parcel, int uid);
 
   /// Send SETUP_TRANSPORT request through \p binder.
   ///
@@ -93,9 +93,9 @@ class WireReaderImpl : public WireReader {
 
  private:
   absl::Status ProcessStreamingTransaction(transaction_code_t code,
-                                           const ReadableParcel* parcel);
+                                           ReadableParcel* parcel);
   absl::Status ProcessStreamingTransactionImpl(transaction_code_t code,
-                                               const ReadableParcel* parcel,
+                                               ReadableParcel* parcel,
                                                int* cancellation_flags)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
