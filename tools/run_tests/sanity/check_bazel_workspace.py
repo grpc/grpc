@@ -50,7 +50,8 @@ _GRPC_DEP_NAMES = [
     _TWISTED_CONSTANTLY_DEP_NAME, 'io_bazel_rules_go',
     'build_bazel_rules_apple', 'build_bazel_apple_support', 'libuv',
     'com_googlesource_code_re2', 'bazel_gazelle', 'opencensus_proto',
-    'com_envoyproxy_protoc_gen_validate', 'com_google_googleapis'
+    'com_envoyproxy_protoc_gen_validate', 'com_google_googleapis',
+    'com_google_libprotobuf-mutator'
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -74,6 +75,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
     'opencensus_proto',
     'com_envoyproxy_protoc_gen_validate',
     'com_google_googleapis',
+    'com_google_libprotobuf-mutator'
 ]
 
 
@@ -116,6 +118,9 @@ class BazelEvalState(object):
             return
         self.names_and_urls[args['name']] = args['remote']
 
+    def new_git_repository(self, **args):
+        self.git_repository(**args)
+
     def grpc_python_deps(self):
         pass
 
@@ -135,6 +140,7 @@ build_rules = {
     'http_archive': lambda **args: eval_state.http_archive(**args),
     'load': lambda a, b: None,
     'git_repository': lambda **args: eval_state.git_repository(**args),
+    'new_git_repository': lambda **args: eval_state.new_git_repository(**args),
     'grpc_python_deps': lambda: None,
 }
 exec((bazel_file), build_rules)
@@ -179,6 +185,7 @@ for name in _GRPC_DEP_NAMES:
         'http_archive': lambda **args: state.http_archive(**args),
         'load': lambda a, b: None,
         'git_repository': lambda **args: state.git_repository(**args),
+        'new_git_repository': lambda **args: state.new_git_repository(**args),
         'grpc_python_deps': lambda *args, **kwargs: None,
     }
     exec((bazel_file), rules)
