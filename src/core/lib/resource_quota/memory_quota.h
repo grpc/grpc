@@ -70,15 +70,6 @@ class MemoryRequest {
   // Request a range of memory.
   MemoryRequest(size_t min, size_t max) : min_(std::min(min, max)), max_(max) {}
 
-  // Set the block size for allocations.
-  // This allows us to ensure some granularity of allocations - say enough for
-  // one element of an array.
-  MemoryRequest WithBlockSize(size_t block_size) const {
-    MemoryRequest r(*this);
-    r.block_size_ = block_size;
-    return r;
-  }
-
   // Increase the size by amount
   MemoryRequest Increase(size_t amount) const {
     MemoryRequest r(min_ + amount, max_ + amount);
@@ -88,12 +79,10 @@ class MemoryRequest {
 
   size_t min() const { return min_; }
   size_t max() const { return max_; }
-  size_t block_size() const { return block_size_; }
 
  private:
   size_t min_;
   size_t max_;
-  size_t block_size_ = 1;
 };
 
 // For each reclamation function run we construct a ReclamationSweep.
@@ -221,8 +210,8 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
  private:
   // Primitive reservation function.
   absl::optional<size_t> TryReserve(MemoryRequest request) GRPC_MUST_USE_RESULT;
-  // Replenish at least `amount` bytes from the quota, without blocking,
-  // possibly entering overcommit.
+  // Replenish bytes from the quota, without blocking, possibly entering
+  // overcommit.
   void Replenish() ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
   // If we have not already, register a reclamation function against the quota
   // to sweep any free memory back to that quota.

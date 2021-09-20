@@ -18,6 +18,7 @@
 
 #include <thread>
 
+#include "src/core/lib/gprpp/useful.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
@@ -45,14 +46,9 @@ ReclamationSweep::~ReclamationSweep() {
 // MemoryRequest
 //
 
-namespace {
-size_t RoundUp(size_t size, size_t block_size) {
-  return (size + block_size - 1) / block_size * block_size;
+MemoryRequest MemoryRequest::Increase(size_t amount) const {
+  return MemoryRequest(min_ + amount, max_ + amount);
 }
-size_t RoundDown(size_t size, size_t block_size) {
-  return size / block_size * block_size;
-}
-}  // namespace
 
 //
 // ReclaimerQueue
@@ -156,13 +152,10 @@ absl::optional<size_t> MemoryAllocator::TryReserve(MemoryRequest request) {
     }
     // Reduce allocation size proportional to the pressure > 80% usage.
     if (pressure > 0.8) {
-      scaled_size_over_min = std::min(
-          scaled_size_over_min,
-          RoundUp((request.max() - request.min()) * (1.0 - pressure) / 0.2,
-                  request.block_size()));
-    } else {
       scaled_size_over_min =
-          RoundDown(scaled_size_over_min, request.block_size());
+          std::min(scaled_size_over_min,
+                   static_cast<size_t>((request.max() - request.min()) *
+                                       (1.0 - pressure) / 0.2));
     }
   }
 
@@ -188,10 +181,11 @@ absl::optional<size_t> MemoryAllocator::TryReserve(MemoryRequest request) {
 
 void MemoryAllocator::Replenish() {
   MutexLock lock(&memory_quota_mu_);
-  // How much memory should we ask for?
-  size_t amount =
-      GPR_CLAMP(taken_bytes_ / 3, kMinReplenishBytes, kMaxReplenishBytes);
+  // Attempt a fairly low rate exponential growth request size, bounded between
+  // some reasonable limits declared at top of file.
+  auto amount = Clamp(taken_bytes_ / 3, kMinReplenishBytes, kMaxReplenishBytes);
   // Take the requested amount from the quota.
+  gpr_log(GPR_DEBUG, "%p: take %" PRIdMAX " bytes from quota", this, amount);
   memory_quota_->Take(amount);
   // Record that we've taken it.
   taken_bytes_ += amount;
@@ -294,6 +288,10 @@ void AtomicBarrier::Notify(uint64_t token) {
 MemoryQuota::MemoryQuota() {
   auto self = WeakRef();
 
+  // Reclamation loop:
+  // basically, wait until we are in overcommit (free_bytes_ < 0), and then:
+  // while (free_bytes_ < 0) reclaim_memory()
+  // ... and repeat
   auto reclamation_loop = Loop(Seq(
       [self]() -> Poll<int> {
         // If there's free memory we no longer need to reclaim memory!
@@ -313,7 +311,7 @@ MemoryQuota::MemoryQuota() {
         // One of the reclaimer queues gave us a way to get back memory.
         // Call the reclaimer with a token that contains enough to wake us
         // up again.
-        uint64_t token = self->barrier_.NewToken();
+        const uint64_t token = self->barrier_.NewToken();
         reclaimer(ReclamationSweep(self, token));
         // Return a promise that will wait for our barrier. This will be
         // awoken by the token above being destroyed. So, once that token is
