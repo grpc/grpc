@@ -105,7 +105,7 @@ TEST(ActivityTest, ImmediatelyCompleteWithSuccess) {
   MakeActivity(
       [] { return [] { return absl::OkStatus(); }; }, NoCallbackScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
-  abort(); // DO NOT SUBMIT: verifying tests fail
+  abort();  // DO NOT SUBMIT: verifying tests fail
 }
 
 TEST(ActivityTest, ImmediatelyCompleteWithFailure) {
