@@ -13,12 +13,42 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
 def grpc_fuzzer(name, corpus, srcs = [], deps = [], data = [], size = "large", **kwargs):
     grpc_cc_test(
         name = name,
         srcs = srcs,
         deps = deps + ["//test/core/util:fuzzer_corpus_test"],
+        data = data + native.glob([corpus + "/**"]),
+        external_deps = [
+            "gtest",
+        ],
+        size = size,
+        args = ["--directory=" + native.package_name() + "/" + corpus],
+        **kwargs
+    )
+
+def grpc_proto_fuzzer(name, corpus, proto, srcs = [], deps = [], data = [], size = "large", **kwargs):
+    proto_library(
+        name = name + "-proto",
+        srcs = [proto]
+    )
+
+    cc_proto_library(
+        name = name + "-cc_proto",
+        deps = [name + "-proto"]
+    )
+
+    grpc_cc_test(
+        name = name,
+        srcs = srcs,
+        deps = deps + [
+            "//test/core/util:fuzzer_corpus_test",
+            "@com_google_libprotobuf-mutator//:libprotobuf-mutator",
+            name + "-cc_proto",
+        ],
         data = data + native.glob([corpus + "/**"]),
         external_deps = [
             "gtest",

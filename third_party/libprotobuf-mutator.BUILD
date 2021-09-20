@@ -24,5 +24,7 @@ cc_library(
     deps = [
         "@com_google_protobuf//:protobuf",
         "@com_google_googletest//:gtest",
-    ]
+    ],
+    visibility = ["//visibility:public"],
+    includes = ["."]
 )
