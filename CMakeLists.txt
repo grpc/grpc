@@ -533,6 +533,9 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/tls.proto
 )
 protobuf_generate_grpc_cpp(
+  test/core/promise/promise_fuzzer.proto
+)
+protobuf_generate_grpc_cpp(
   test/core/tsi/alts/fake_handshaker/handshaker.proto
 )
 protobuf_generate_grpc_cpp(
@@ -930,6 +933,9 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx popularity_count_test)
   add_dependencies(buildtests_cxx port_sharing_end2end_test)
   add_dependencies(buildtests_cxx promise_factory_test)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx promise_fuzzer)
+  endif()
   add_dependencies(buildtests_cxx promise_map_test)
   add_dependencies(buildtests_cxx promise_test)
   add_dependencies(buildtests_cxx proto_server_reflection_test)
@@ -13960,6 +13966,50 @@ target_link_libraries(promise_factory_test
 )
 
 
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(promise_fuzzer
+    ${_gRPC_PROTO_GENS_DIR}/test/core/promise/promise_fuzzer.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/promise/promise_fuzzer.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/promise/promise_fuzzer.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/test/core/promise/promise_fuzzer.grpc.pb.h
+    test/core/promise/promise_fuzzer.cc
+    test/core/util/fuzzer_corpus_test.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+
+  target_include_directories(promise_fuzzer
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(promise_fuzzer
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    absl::flags
+    grpc_test_util
+    grpc++_test_config
+  )
+
+
+endif()
 endif()
 if(gRPC_BUILD_TESTS)
 

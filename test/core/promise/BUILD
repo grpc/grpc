@@ -254,10 +254,10 @@ grpc_cc_test(
 
 grpc_proto_fuzzer(
     name = "promise_fuzzer",
-    proto = "promise_fuzzer.proto",
     srcs = ["promise_fuzzer.cc"],
     corpus = "promise_fuzzer",
     language = "C++",
+    proto = "promise_fuzzer.proto",
     tags = ["no_windows"],
     deps = [
         "//test/core/util:grpc_test_util",
