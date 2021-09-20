@@ -628,8 +628,8 @@ static void cq_check_tag(grpc_completion_queue* cq, void* tag, bool lock_cq) {
   for (int i = 0; i < static_cast<int>(cq->outstanding_tag_count); i++) {
     if (cq->outstanding_tags[i] == tag) {
       cq->outstanding_tag_count--;
-      GPR_SWAP(void*, cq->outstanding_tags[i],
-               cq->outstanding_tags[cq->outstanding_tag_count]);
+      std::swap(cq->outstanding_tags[i],
+                cq->outstanding_tags[cq->outstanding_tag_count]);
       found = 1;
       break;
     }
@@ -665,7 +665,8 @@ bool grpc_cq_begin_op(grpc_completion_queue* cq, void* tag) {
 #ifndef NDEBUG
   gpr_mu_lock(cq->mu);
   if (cq->outstanding_tag_count == cq->outstanding_tag_capacity) {
-    cq->outstanding_tag_capacity = GPR_MAX(4, 2 * cq->outstanding_tag_capacity);
+    cq->outstanding_tag_capacity =
+        std::max(size_t(4), 2 * cq->outstanding_tag_capacity);
     cq->outstanding_tags = static_cast<void**>(gpr_realloc(
         cq->outstanding_tags,
         sizeof(*cq->outstanding_tags) * cq->outstanding_tag_capacity));
@@ -1143,7 +1144,7 @@ static void del_plucker(grpc_completion_queue* cq, void* tag,
   for (int i = 0; i < cqd->num_pluckers; i++) {
     if (cqd->pluckers[i].tag == tag && cqd->pluckers[i].worker == worker) {
       cqd->num_pluckers--;
-      GPR_SWAP(plucker, cqd->pluckers[i], cqd->pluckers[cqd->num_pluckers]);
+      std::swap(cqd->pluckers[i], cqd->pluckers[cqd->num_pluckers]);
       return;
     }
   }

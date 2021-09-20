@@ -53,7 +53,8 @@ void grpc_channel_init_register_stage(grpc_channel_stack_type type,
                                       void* stage_arg) {
   GPR_ASSERT(!g_finalized);
   if (g_slots[type].cap_slots == g_slots[type].num_slots) {
-    g_slots[type].cap_slots = GPR_MAX(8, 3 * g_slots[type].cap_slots / 2);
+    g_slots[type].cap_slots =
+        std::max(size_t(8), 3 * g_slots[type].cap_slots / 2);
     g_slots[type].slots = static_cast<stage_slot*>(
         gpr_realloc(g_slots[type].slots,
                     g_slots[type].cap_slots * sizeof(*g_slots[type].slots)));
@@ -69,9 +70,9 @@ static int compare_slots(const void* a, const void* b) {
   const stage_slot* sa = static_cast<const stage_slot*>(a);
   const stage_slot* sb = static_cast<const stage_slot*>(b);
 
-  int c = GPR_ICMP(sa->priority, sb->priority);
+  int c = grpc_core::QsortCompare(sa->priority, sb->priority);
   if (c != 0) return c;
-  return GPR_ICMP(sa->insertion_order, sb->insertion_order);
+  return grpc_core::QsortCompare(sa->insertion_order, sb->insertion_order);
 }
 
 void grpc_channel_init_finalize(void) {

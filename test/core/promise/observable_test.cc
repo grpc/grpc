@@ -65,7 +65,7 @@ TEST(ObservableTest, CanPushAndGet) {
           return i == 42 ? absl::OkStatus() : absl::UnknownError("expected 42");
         });
       },
-      NoCallbackScheduler(),
+      InlineCallbackScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   observable.Push(42);
@@ -88,7 +88,7 @@ TEST(ObservableTest, CanNext) {
                             : absl::UnknownError("expected 1");
             });
       },
-      NoCallbackScheduler(),
+      InlineCallbackScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   observable.Push(42);
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
@@ -112,7 +112,7 @@ TEST(ObservableTest, CanWatch) {
               }
             });
       },
-      NoCallbackScheduler(),
+      InlineCallbackScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   observable.Push(1);
   observable.Push(2);

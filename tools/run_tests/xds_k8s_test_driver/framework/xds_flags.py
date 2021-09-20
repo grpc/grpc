@@ -109,6 +109,12 @@ CLIENT_PORT = flags.DEFINE_integer(
         "XdsStats, XdsUpdateClientConfigure, and ProtoReflection (optional).\n"
         "Doesn't have to be within --firewall_allowed_ports."))
 
+# Testing metadata
+TESTING_VERSION = flags.DEFINE_string(
+    "testing_version",
+    default="master",
+    help="The testing gRPC version branch name. Like master, v1.41.x, v1.37.x")
+
 flags.adopt_module_key_flags(highlighter)
 
 flags.mark_flags_as_required([
