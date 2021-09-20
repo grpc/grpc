@@ -576,7 +576,7 @@ static void finish_estimate(grpc_tcp* tcp) {
      value */
   if (tcp->bytes_read_this_round > tcp->target_length * 0.8) {
     tcp->target_length =
-        GPR_MAX(2 * tcp->target_length, tcp->bytes_read_this_round);
+        std::max(2 * tcp->target_length, tcp->bytes_read_this_round);
   } else {
     tcp->target_length =
         0.99 * tcp->target_length + 0.01 * tcp->bytes_read_this_round;
@@ -1722,8 +1722,8 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   if (tcp_min_read_chunk_size > tcp_max_read_chunk_size) {
     tcp_min_read_chunk_size = tcp_max_read_chunk_size;
   }
-  tcp_read_chunk_size = GPR_CLAMP(tcp_read_chunk_size, tcp_min_read_chunk_size,
-                                  tcp_max_read_chunk_size);
+  tcp_read_chunk_size = grpc_core::Clamp(
+      tcp_read_chunk_size, tcp_min_read_chunk_size, tcp_max_read_chunk_size);
 
   grpc_tcp* tcp = new grpc_tcp(tcp_tx_zerocopy_max_simult_sends,
                                tcp_tx_zerocopy_send_bytes_thresh);
