@@ -26,6 +26,7 @@ build:asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 build:asan --action_env=LSAN_OPTIONS=suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
 
 build:fuzzer_asan --strip=never
+build:fuzzer_asan --define=grpc_build_fuzzers=true
 build:fuzzer_asan --copt=-fsanitize=fuzzer,address
 build:fuzzer_asan --copt=-fsanitize-coverage=edge
 build:fuzzer_asan --copt=-fsanitize-coverage=trace-cmp

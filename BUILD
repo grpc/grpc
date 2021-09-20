@@ -58,6 +58,12 @@ config_setting(
     values = {"apple_platform_type": "ios"},
 )
 
+# Fuzzers can be built as fuzzers or as tests
+config_setting(
+    name = "grpc_build_fuzzers",
+    values = {"define": "grpc_build_fuzzers=true"},
+)
+
 selects.config_setting_group(
     name = "grpc_no_xds",
     match_any = [
