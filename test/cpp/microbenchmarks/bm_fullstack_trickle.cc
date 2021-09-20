@@ -306,9 +306,10 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
       }
     };
     gpr_timespec warmup_start = gpr_now(GPR_CLOCK_MONOTONIC);
-    for (int i = 0; i < GPR_MAX(absl::GetFlag(FLAGS_warmup_iterations),
-                                absl::GetFlag(FLAGS_warmup_megabytes) * 1024 *
-                                    1024 / (14 + state.range(0)));
+    for (int i = 0;
+         i < std::max(int64_t(absl::GetFlag(FLAGS_warmup_iterations)),
+                      absl::GetFlag(FLAGS_warmup_megabytes) * 1024 * 1024 /
+                          (14 + state.range(0)));
          i++) {
       inner_loop(true);
       if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), warmup_start),
@@ -420,9 +421,9 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
                         fixture->cq(), fixture->cq(), tag(slot));
   };
   gpr_timespec warmup_start = gpr_now(GPR_CLOCK_MONOTONIC);
-  for (int i = 0; i < GPR_MAX(absl::GetFlag(FLAGS_warmup_iterations),
-                              absl::GetFlag(FLAGS_warmup_megabytes) * 1024 *
-                                  1024 / (14 + state.range(0)));
+  for (int i = 0; i < std::max(int64_t(absl::GetFlag(FLAGS_warmup_iterations)),
+                               absl::GetFlag(FLAGS_warmup_megabytes) * 1024 *
+                                   1024 / (14 + state.range(0)));
        i++) {
     inner_loop(true);
     if (gpr_time_cmp(

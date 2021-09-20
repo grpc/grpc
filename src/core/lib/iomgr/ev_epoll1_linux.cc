@@ -195,7 +195,7 @@ struct grpc_pollset_worker {
     (worker)->kick_state_mutator = __LINE__; \
   } while (false)
 
-#define MAX_NEIGHBORHOODS 1024
+#define MAX_NEIGHBORHOODS 1024u
 
 typedef struct pollset_neighborhood {
   union {
@@ -525,7 +525,8 @@ static grpc_error_handle pollset_global_init(void) {
                 &ev) != 0) {
     return GRPC_OS_ERROR(errno, "epoll_ctl");
   }
-  g_num_neighborhoods = GPR_CLAMP(gpr_cpu_num_cores(), 1, MAX_NEIGHBORHOODS);
+  g_num_neighborhoods =
+      grpc_core::Clamp(gpr_cpu_num_cores(), 1u, MAX_NEIGHBORHOODS);
   g_neighborhoods = static_cast<pollset_neighborhood*>(
       gpr_zalloc(sizeof(*g_neighborhoods) * g_num_neighborhoods));
   for (size_t i = 0; i < g_num_neighborhoods; i++) {

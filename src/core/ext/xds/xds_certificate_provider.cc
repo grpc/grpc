@@ -23,8 +23,6 @@
 #include "absl/functional/bind_front.h"
 #include "absl/strings/str_cat.h"
 
-#include "src/core/lib/gpr/useful.h"
-
 namespace grpc_core {
 
 namespace {
@@ -379,7 +377,9 @@ void XdsCertificateProviderArgDestroy(void* p) {
   xds_certificate_provider->Unref();
 }
 
-int XdsCertificateProviderArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
+int XdsCertificateProviderArgCmp(void* p, void* q) {
+  return QsortCompare(p, q);
+}
 
 const grpc_arg_pointer_vtable kChannelArgVtable = {
     XdsCertificateProviderArgCopy, XdsCertificateProviderArgDestroy,

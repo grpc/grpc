@@ -254,7 +254,7 @@ namespace {
 // Channel arg pointer vtable for GRPC_ARG_CLIENT_CHANNEL.
 void* ClientChannelArgCopy(void* p) { return p; }
 void ClientChannelArgDestroy(void* /*p*/) {}
-int ClientChannelArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
+int ClientChannelArgCmp(void* p, void* q) { return QsortCompare(p, q); }
 const grpc_arg_pointer_vtable kClientChannelArgPointerVtable = {
     ClientChannelArgCopy, ClientChannelArgDestroy, ClientChannelArgCmp};
 
@@ -268,7 +268,7 @@ void ServiceConfigObjArgDestroy(void* p) {
   auto* service_config = static_cast<ServiceConfig*>(p);
   service_config->Unref();
 }
-int ServiceConfigObjArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
+int ServiceConfigObjArgCmp(void* p, void* q) { return QsortCompare(p, q); }
 const grpc_arg_pointer_vtable kServiceConfigObjArgPointerVtable = {
     ServiceConfigObjArgCopy, ServiceConfigObjArgDestroy,
     ServiceConfigObjArgCmp};

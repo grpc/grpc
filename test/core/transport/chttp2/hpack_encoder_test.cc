@@ -180,7 +180,7 @@ static void verify(const verify_params params, const char* expected,
   va_end(l);
 
   if (cap_to_delete == num_to_delete) {
-    cap_to_delete = GPR_MAX(2 * cap_to_delete, 1000);
+    cap_to_delete = std::max(2 * cap_to_delete, size_t(1000));
     to_delete = static_cast<void**>(
         gpr_realloc(to_delete, sizeof(*to_delete) * cap_to_delete));
   }
