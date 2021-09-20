@@ -409,7 +409,8 @@ inline void grpc_mdelem_unref(grpc_mdelem gmd) {
   (GRPC_SLICE_LENGTH(GRPC_MDKEY((e))) + GRPC_SLICE_LENGTH(GRPC_MDVALUE((e))) + \
    32)
 
-#define GRPC_MDSTR_KV_HASH(k_hash, v_hash) (GPR_ROTL((k_hash), 2) ^ (v_hash))
+#define GRPC_MDSTR_KV_HASH(k_hash, v_hash) \
+  (::grpc_core::RotateLeft(size_t(k_hash), size_t(2)) ^ (v_hash))
 
 void grpc_mdctx_global_init(void);
 void grpc_mdctx_global_shutdown();

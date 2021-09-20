@@ -39,7 +39,7 @@ static void ensure_iovec_buf_size(alts_grpc_record_protocol* rp,
     return;
   }
   /* At least double the iovec buffer size.  */
-  rp->iovec_buf_length = GPR_MAX(sb->count, 2 * rp->iovec_buf_length);
+  rp->iovec_buf_length = std::max(sb->count, 2 * rp->iovec_buf_length);
   rp->iovec_buf = static_cast<iovec_t*>(
       gpr_realloc(rp->iovec_buf, rp->iovec_buf_length * sizeof(iovec_t)));
 }

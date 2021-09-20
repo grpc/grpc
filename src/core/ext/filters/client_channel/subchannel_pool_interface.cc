@@ -86,7 +86,7 @@ void arg_destroy(void* p) {
   subchannel_pool->Unref();
 }
 
-int arg_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+int arg_cmp(void* a, void* b) { return QsortCompare(a, b); }
 
 const grpc_arg_pointer_vtable subchannel_pool_arg_vtable = {
     arg_copy, arg_destroy, arg_cmp};

@@ -4203,15 +4203,6 @@ targets:
   - linux
   - posix
   - mac
-- name: useful_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/useful_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: varint_test
   build: test
   language: c
@@ -8042,6 +8033,16 @@ targets:
   - test/core/uri/uri_parser_test.cc
   deps:
   - grpc_test_util
+- name: useful_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gpr/useful.h
+  src:
+  - test/core/gpr/useful_test.cc
+  deps: []
+  uses_polling: false
 - name: window_overflow_bad_client_test
   gtest: true
   build: test

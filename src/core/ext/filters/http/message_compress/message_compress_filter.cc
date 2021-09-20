@@ -55,8 +55,8 @@ class ChannelData {
         grpc_channel_args_get_channel_default_compression_algorithm(
             args->channel_args);
     // Make sure the default is enabled.
-    if (!GPR_BITGET(enabled_compression_algorithms_bitset_,
-                    default_compression_algorithm_)) {
+    if (!grpc_core::GetBit(enabled_compression_algorithms_bitset_,
+                           default_compression_algorithm_)) {
       const char* name;
       GPR_ASSERT(grpc_compression_algorithm_name(default_compression_algorithm_,
                                                  &name) == 1);
@@ -108,7 +108,8 @@ class CallData {
     ChannelData* channeld = static_cast<ChannelData*>(elem->channel_data);
     // The call's message compression algorithm is set to channel's default
     // setting. It can be overridden later by initial metadata.
-    if (GPR_LIKELY(GPR_BITGET(channeld->enabled_compression_algorithms_bitset(),
+    if (GPR_LIKELY(
+            grpc_core::GetBit(channeld->enabled_compression_algorithms_bitset(),
                               channeld->default_compression_algorithm()))) {
       message_compression_algorithm_ =
           grpc_compression_algorithm_to_message_compression_algorithm(
@@ -211,7 +212,8 @@ grpc_compression_algorithm FindCompressionAlgorithm(
   // enabled.
   // TODO(juanlishen): Maybe use channel default or abort() if the algorithm
   // from the initial metadata is disabled.
-  if (GPR_LIKELY(GPR_BITGET(channeld->enabled_compression_algorithms_bitset(),
+  if (GPR_LIKELY(
+          grpc_core::GetBit(channeld->enabled_compression_algorithms_bitset(),
                             compression_algorithm))) {
     return compression_algorithm;
   }
