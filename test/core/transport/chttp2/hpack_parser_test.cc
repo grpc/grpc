@@ -67,7 +67,8 @@ static void test_vector(grpc_core::HPackParser* parser,
     grpc_core::ExecCtx exec_ctx;
     auto err = parser->Parse(slices[i], i == nslices - 1);
     if (err != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "Unexpected parse error: %s", grpc_error_string(err));
+      gpr_log(GPR_ERROR, "Unexpected parse error: %s",
+              grpc_error_std_string(err).c_str());
       abort();
     }
   }

@@ -58,6 +58,12 @@ config_setting(
     values = {"apple_platform_type": "ios"},
 )
 
+# Fuzzers can be built as fuzzers or as tests
+config_setting(
+    name = "grpc_build_fuzzers",
+    values = {"define": "grpc_build_fuzzers=true"},
+)
+
 selects.config_setting_group(
     name = "grpc_no_xds",
     match_any = [
@@ -109,11 +115,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "goat"  # @unused
+g_stands_for = "granola"  # @unused
 
-core_version = "18.0.0"  # @unused
+core_version = "19.1.0"  # @unused
 
-version = "1.41.0-dev"  # @unused
+version = "1.42.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
