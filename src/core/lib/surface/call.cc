@@ -999,7 +999,7 @@ static void publish_app_metadata(grpc_call* call, grpc_metadata_batch* b,
   grpc_metadata* mdusr;
   dest = call->buffered_metadata[is_trailing];
   if (dest->count + b->non_deadline_count() > dest->capacity) {
-    dest->capacity = std::max(dest->capacity + (*b)->non_deadline_count(),
+    dest->capacity = std::max(dest->capacity + b->non_deadline_count(),
                               dest->capacity * 3 / 2);
     dest->metadata = static_cast<grpc_metadata*>(
         gpr_realloc(dest->metadata, sizeof(grpc_metadata) * dest->capacity));
