@@ -324,9 +324,7 @@ void ResponseGeneratorChannelArgDestroy(void* p) {
   generator->Unref();
 }
 
-int ResponseGeneratorChannelArgCmp(void* a, void* b) {
-  return QsortCompare(a, b);
-}
+int ResponseGeneratorChannelArgCmp(void* a, void* b) { return GPR_ICMP(a, b); }
 
 }  // namespace
 

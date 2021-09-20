@@ -265,7 +265,7 @@ class GrpcLb : public LoadBalancingPolicy {
           static_cast<const TokenAndClientStatsAttribute*>(other_base);
       int r = lb_token_.compare(other->lb_token_);
       if (r != 0) return r;
-      return QsortCompare(client_stats_.get(), other->client_stats_.get());
+      return GPR_ICMP(client_stats_.get(), other->client_stats_.get());
     }
 
     std::string ToString() const override {
@@ -1054,8 +1054,8 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
     switch (response.type) {
       case response.INITIAL: {
         if (response.client_stats_report_interval != 0) {
-          client_stats_report_interval_ = std::max(
-              int64_t(GPR_MS_PER_SEC), response.client_stats_report_interval);
+          client_stats_report_interval_ =
+              GPR_MAX(GPR_MS_PER_SEC, response.client_stats_report_interval);
           if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
             gpr_log(GPR_INFO,
                     "[grpclb %p] lb_calld=%p: Received initial LB response "
