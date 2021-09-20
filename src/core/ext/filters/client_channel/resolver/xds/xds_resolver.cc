@@ -813,8 +813,8 @@ void XdsResolver::StartLocked() {
     std::string target_hostname(absl::StripPrefix(uri_.path(), "/"));
     if (!uri_.authority().empty()) {
       auto authority_config =
-          xds_client_->bootstrap().lookup_authority(target_hostname);
-      if (authority_config == absl::nullopt) {
+          xds_client_->bootstrap().LookupAuthority(target_hostname);
+      if (authority_config == nullptr) {
         gpr_log(GPR_ERROR,
                 "Invalid target URI -- channel will remain in "
                 "TRANSIENT_FAILURE: %s",
