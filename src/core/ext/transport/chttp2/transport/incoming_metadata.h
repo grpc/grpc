@@ -24,7 +24,6 @@
 #include "src/core/lib/transport/transport.h"
 
 struct grpc_chttp2_incoming_metadata_buffer {
-  // NOLINTNEXTLINE(google-explicit-constructor)
   grpc_chttp2_incoming_metadata_buffer(grpc_core::Arena* arena)
       : arena(arena) {}
   ~grpc_chttp2_incoming_metadata_buffer() = default;

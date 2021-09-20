@@ -300,8 +300,8 @@ static uint8_t get_placement(grpc_error_handle* err, size_t size) {
   GPR_ASSERT(*err);
   uint8_t slots = static_cast<uint8_t>(size / sizeof(intptr_t));
   if ((*err)->arena_size + slots > (*err)->arena_capacity) {
-    (*err)->arena_capacity = static_cast<uint8_t>(
-        std::min(UINT8_MAX - 1, (3 * (*err)->arena_capacity / 2)));
+    (*err)->arena_capacity = static_cast<uint8_t> GPR_MIN(
+        UINT8_MAX - 1, (3 * (*err)->arena_capacity / 2));
     if ((*err)->arena_size + slots > (*err)->arena_capacity) {
       return UINT8_MAX;
     }
@@ -646,7 +646,7 @@ struct kv_pairs {
 };
 static void append_chr(char c, char** s, size_t* sz, size_t* cap) {
   if (*sz == *cap) {
-    *cap = std::max(size_t(8), 3 * *cap / 2);
+    *cap = GPR_MAX(8, 3 * *cap / 2);
     *s = static_cast<char*>(gpr_realloc(*s, *cap));
   }
   (*s)[(*sz)++] = c;
@@ -698,7 +698,7 @@ static void append_esc_str(const uint8_t* str, size_t len, char** s, size_t* sz,
 
 static void append_kv(kv_pairs* kvs, char* key, char* value) {
   if (kvs->num_kvs == kvs->cap_kvs) {
-    kvs->cap_kvs = std::max(3 * kvs->cap_kvs / 2, size_t(4));
+    kvs->cap_kvs = GPR_MAX(3 * kvs->cap_kvs / 2, 4);
     kvs->kvs = static_cast<kv_pair*>(
         gpr_realloc(kvs->kvs, sizeof(*kvs->kvs) * kvs->cap_kvs));
   }

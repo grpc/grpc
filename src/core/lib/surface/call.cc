@@ -401,7 +401,7 @@ grpc_error_handle grpc_call_create(const grpc_call_create_args* args,
     GPR_ASSERT(!args->parent->is_client);
 
     if (args->propagation_mask & GRPC_PROPAGATE_DEADLINE) {
-      send_deadline = std::min(send_deadline, args->parent->send_deadline);
+      send_deadline = GPR_MIN(send_deadline, args->parent->send_deadline);
     }
     /* for now GRPC_PROPAGATE_TRACING_CONTEXT *MUST* be passed with
      * GRPC_PROPAGATE_STATS_CONTEXT */
@@ -839,7 +839,7 @@ static void set_encodings_accepted_by_peer(grpc_call* /*call*/,
   grpc_slice_split_without_space(accept_encoding_slice, ",",
                                  &accept_encoding_parts);
 
-  grpc_core::SetBit(encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
+  GPR_BITSET(encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
   for (i = 0; i < accept_encoding_parts.count; i++) {
     int r;
     grpc_slice accept_encoding_entry_slice = accept_encoding_parts.slices[i];
@@ -853,7 +853,7 @@ static void set_encodings_accepted_by_peer(grpc_call* /*call*/,
           reinterpret_cast<grpc_stream_compression_algorithm*>(&algorithm));
     }
     if (r) {
-      grpc_core::SetBit(encodings_accepted_by_peer, algorithm);
+      GPR_BITSET(encodings_accepted_by_peer, algorithm);
     } else {
       char* accept_encoding_entry_str =
           grpc_slice_to_c_string(accept_encoding_entry_slice);
@@ -1452,8 +1452,8 @@ static void validate_filtered_metadata(batch_control* bctl) {
     }
     /* GRPC_COMPRESS_NONE is always set. */
     GPR_DEBUG_ASSERT(call->encodings_accepted_by_peer != 0);
-    if (GPR_UNLIKELY(!grpc_core::GetBit(call->encodings_accepted_by_peer,
-                                        compression_algorithm))) {
+    if (GPR_UNLIKELY(!GPR_BITGET(call->encodings_accepted_by_peer,
+                                 compression_algorithm))) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
         handle_compression_algorithm_not_accepted(call, compression_algorithm);
       }

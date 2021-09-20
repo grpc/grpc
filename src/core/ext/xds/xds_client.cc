@@ -646,8 +646,7 @@ void XdsClient::ChannelState::RetryableCall<T>::StartRetryTimerLocked() {
   if (shutting_down_) return;
   const grpc_millis next_attempt_time = backoff_.NextAttemptTime();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    grpc_millis timeout =
-        std::max(next_attempt_time - ExecCtx::Get()->Now(), grpc_millis(0));
+    grpc_millis timeout = GPR_MAX(next_attempt_time - ExecCtx::Get()->Now(), 0);
     gpr_log(GPR_INFO,
             "[xds_client %p] Failed to connect to xds server (chand: %p) "
             "retry timer will fire in %" PRId64 "ms.",
@@ -2541,7 +2540,7 @@ void XdsClientArgDestroy(void* p) {
   xds_client->Unref(DEBUG_LOCATION, "channel arg");
 }
 
-int XdsClientArgCmp(void* p, void* q) { return QsortCompare(p, q); }
+int XdsClientArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
 
 const grpc_arg_pointer_vtable kXdsClientArgVtable = {
     XdsClientArgCopy, XdsClientArgDestroy, XdsClientArgCmp};

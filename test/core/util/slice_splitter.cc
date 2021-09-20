@@ -20,8 +20,6 @@
 
 #include <string.h>
 
-#include <algorithm>
-
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/gpr/useful.h"
@@ -116,7 +114,7 @@ grpc_slice grpc_slice_merge(grpc_slice* slices, size_t nslices) {
 
   for (i = 0; i < nslices; i++) {
     if (GRPC_SLICE_LENGTH(slices[i]) + length > capacity) {
-      capacity = std::max(capacity * 2, GRPC_SLICE_LENGTH(slices[i]) + length);
+      capacity = GPR_MAX(capacity * 2, GRPC_SLICE_LENGTH(slices[i]) + length);
       out = static_cast<uint8_t*>(gpr_realloc(out, capacity));
     }
     memcpy(out + length, GRPC_SLICE_START_PTR(slices[i]),
