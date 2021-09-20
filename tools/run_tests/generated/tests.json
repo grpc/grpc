@@ -5995,6 +5995,7 @@
   },
   {
     "args": [
+      "test/core/promise/promise_fuzzer",
       "--directory=test/core/promise/promise_fuzzer"
     ],
     "benchmark": false,
