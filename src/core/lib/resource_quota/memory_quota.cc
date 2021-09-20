@@ -114,7 +114,7 @@ MemoryAllocator::~MemoryAllocator() {
 void MemoryAllocator::Orphan() {
   {
     absl::MutexLock lock(&memory_quota_mu_);
-    for (int i = 0; i < kNumReclamationPasses; i++) {
+    for (size_t i = 0; i < kNumReclamationPasses; i++) {
       memory_quota_->reclaimers_[i].Cancel(reclamation_indices_[i], this);
     }
   }
@@ -220,7 +220,7 @@ void MemoryAllocator::Rebind(RefCountedPtr<MemoryQuota> memory_quota) {
   memory_quota_->Return(taken_bytes_);
   // Fetch back any reclaimers that are queued.
   ReclamationFunction reclaimers[kNumReclamationPasses];
-  for (int i = 0; i < kNumReclamationPasses; i++) {
+  for (size_t i = 0; i < kNumReclamationPasses; i++) {
     reclaimers[i] = memory_quota_->reclaimers_[i].Cancel(
         absl::exchange(reclamation_indices_[i], ReclaimerQueue::kInvalidIndex),
         this);
@@ -233,7 +233,7 @@ void MemoryAllocator::Rebind(RefCountedPtr<MemoryQuota> memory_quota) {
   // And let the new quota know how much we're already using.
   memory_quota_->Take(taken_bytes_);
   // Reinsert active reclaimers.
-  for (int i = 0; i < kNumReclamationPasses; i++) {
+  for (size_t i = 0; i < kNumReclamationPasses; i++) {
     if (reclaimers[i] == nullptr) continue;
     reclamation_indices_[i] = memory_quota_->reclaimers_[i].Insert(
         Ref(DEBUG_LOCATION, "rebind"), std::move(reclaimers[i]));
