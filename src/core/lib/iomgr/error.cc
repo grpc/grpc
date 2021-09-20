@@ -577,11 +577,11 @@ struct special_error_status_map {
 const special_error_status_map error_status_map[] = {
     {GRPC_STATUS_OK, "", 0},                // GRPC_ERROR_NONE
     {GRPC_STATUS_INVALID_ARGUMENT, "", 0},  // GRPC_ERROR_RESERVED_1
-    {GRPC_STATUS_RESOURCE_EXHAUSTED, "Out of memory",
-     strlen("Out of memory")},              // GRPC_ERROR_OOM
+    {GRPC_STATUS_RESOURCE_EXHAUSTED, "RESOURCE_EXHAUSTED",
+     strlen("RESOURCE_EXHAUSTED")},         // GRPC_ERROR_OOM
     {GRPC_STATUS_INVALID_ARGUMENT, "", 0},  // GRPC_ERROR_RESERVED_2
-    {GRPC_STATUS_CANCELLED, "Cancelled",
-     strlen("Cancelled")},  // GRPC_ERROR_CANCELLED
+    {GRPC_STATUS_CANCELLED, "CANCELLED",
+     strlen("CANCELLED")},  // GRPC_ERROR_CANCELLED
 };
 
 bool grpc_error_get_int(grpc_error_handle err, grpc_error_ints which,
@@ -653,9 +653,9 @@ grpc_error_handle grpc_error_add_child(grpc_error_handle src,
   }
 }
 
-static const char* no_error_string = "\"No Error\"";
-static const char* oom_error_string = "\"Out of memory\"";
-static const char* cancelled_error_string = "\"Cancelled\"";
+static const char* no_error_string = "\"OK\"";
+static const char* oom_error_string = "\"RESOURCE_EXHAUSTED\"";
+static const char* cancelled_error_string = "\"CANCELLED\"";
 
 struct kv_pair {
   char* key;
