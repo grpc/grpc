@@ -262,4 +262,5 @@ grpc_proto_fuzzer(
     deps = [
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
