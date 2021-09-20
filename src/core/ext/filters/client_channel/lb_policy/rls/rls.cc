@@ -679,8 +679,7 @@ void RlsLb::RlsRequest::StartCall(void* arg, grpc_error_handle error) {
   grpc_op* op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
-              GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
+  op->flags = 0;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
