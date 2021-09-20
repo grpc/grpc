@@ -196,8 +196,8 @@ DEFINE_PROTO_FUZZER(const promise_fuzzer::Msg& msg) {
         todo_map.emplace(num_todos++, std::move(f));
       },
       [&done](absl::Status status) { done = true; });
-  for (size_t i = 0;
-       !done && activity.get() != nullptr && i < msg.actions_size(); i++) {
+  for (size_t i = 0; !done && activity != nullptr && i < msg.actions_size();
+       i++) {
     const auto& action = msg.actions(i);
     switch (action.action_type_case()) {
       case promise_fuzzer::Action::kWakeup:
