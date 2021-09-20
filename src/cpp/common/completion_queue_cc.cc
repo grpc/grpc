@@ -52,7 +52,8 @@ struct CallbackAlternativeCQ {
     refs++;
     if (refs == 1) {
       cq = new CompletionQueue;
-      int num_nexting_threads = GPR_CLAMP(gpr_cpu_num_cores() / 2, 2, 16);
+      int num_nexting_threads =
+          grpc_core::Clamp(gpr_cpu_num_cores() / 2, 2u, 16u);
       nexting_threads = new std::vector<grpc_core::Thread>;
       for (int i = 0; i < num_nexting_threads; i++) {
         nexting_threads->emplace_back(

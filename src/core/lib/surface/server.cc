@@ -1248,7 +1248,7 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
   grpc_call_set_completion_queue(call_, rc->cq_bound_to_call);
   *rc->call = call_;
   cq_new_ = server_->cqs_[cq_idx];
-  GPR_SWAP(grpc_metadata_array, *rc->initial_metadata, initial_metadata_);
+  std::swap(*rc->initial_metadata, initial_metadata_);
   switch (rc->type) {
     case RequestedCall::Type::BATCH_CALL:
       GPR_ASSERT(host_.has_value());

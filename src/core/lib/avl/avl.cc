@@ -23,10 +23,10 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <algorithm>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-
-#include "src/core/lib/gpr/useful.h"
 
 grpc_avl grpc_avl_create(const grpc_avl_vtable* vtable) {
   grpc_avl out;
@@ -63,8 +63,8 @@ static long node_height(grpc_avl_node* node) {
 #ifndef NDEBUG
 static long calculate_height(grpc_avl_node* node) {
   return node == nullptr ? 0
-                         : 1 + GPR_MAX(calculate_height(node->left),
-                                       calculate_height(node->right));
+                         : 1 + std::max(calculate_height(node->left),
+                                        calculate_height(node->right));
 }
 
 static grpc_avl_node* assert_invariants(grpc_avl_node* n) {
@@ -87,7 +87,7 @@ grpc_avl_node* new_node(void* key, void* value, grpc_avl_node* left,
   node->value = value;
   node->left = assert_invariants(left);
   node->right = assert_invariants(right);
-  node->height = 1 + GPR_MAX(node_height(left), node_height(right));
+  node->height = 1 + std::max(node_height(left), node_height(right));
   return node;
 }
 

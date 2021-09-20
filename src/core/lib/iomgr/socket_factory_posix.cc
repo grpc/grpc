@@ -47,11 +47,11 @@ int grpc_socket_factory_bind(grpc_socket_factory* factory, int sockfd,
 
 int grpc_socket_factory_compare(grpc_socket_factory* a,
                                 grpc_socket_factory* b) {
-  int c = GPR_ICMP(a, b);
+  int c = grpc_core::QsortCompare(a, b);
   if (c != 0) {
     grpc_socket_factory* sma = a;
     grpc_socket_factory* smb = b;
-    c = GPR_ICMP(sma->vtable, smb->vtable);
+    c = grpc_core::QsortCompare(sma->vtable, smb->vtable);
     if (c == 0) {
       c = sma->vtable->compare(sma, smb);
     }

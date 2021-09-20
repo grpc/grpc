@@ -39,7 +39,7 @@ double generate_uniform_random_number(uint32_t* rng_state) {
 double generate_uniform_random_number_between(uint32_t* rng_state, double a,
                                               double b) {
   if (a == b) return a;
-  if (a > b) GPR_SWAP(double, a, b);  // make sure a < b
+  if (a > b) std::swap(a, b);  // make sure a < b
   const double range = b - a;
   return a + generate_uniform_random_number(rng_state) * range;
 }

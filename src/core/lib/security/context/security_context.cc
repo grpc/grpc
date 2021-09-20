@@ -223,7 +223,7 @@ grpc_auth_property_iterator grpc_auth_context_peer_identity(
 void grpc_auth_context::ensure_capacity() {
   if (properties_.count == properties_.capacity) {
     properties_.capacity =
-        GPR_MAX(properties_.capacity + 8, properties_.capacity * 2);
+        std::max(properties_.capacity + 8, properties_.capacity * 2);
     properties_.array = static_cast<grpc_auth_property*>(gpr_realloc(
         properties_.array, properties_.capacity * sizeof(grpc_auth_property)));
   }
@@ -289,7 +289,9 @@ static void* auth_context_pointer_arg_copy(void* p) {
              : ctx->Ref(DEBUG_LOCATION, "auth_context_pointer_arg").release();
 }
 
-static int auth_context_pointer_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+static int auth_context_pointer_cmp(void* a, void* b) {
+  return grpc_core::QsortCompare(a, b);
+}
 
 static const grpc_arg_pointer_vtable auth_context_pointer_vtable = {
     auth_context_pointer_arg_copy, auth_context_pointer_arg_destroy,

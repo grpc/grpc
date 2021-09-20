@@ -621,9 +621,17 @@ grpc_cc_library(
     external_deps = [
         "absl/synchronization",
     ],
-    language = "c++",
     deps = [
         "gpr_codegen",
+    ],
+)
+
+grpc_cc_library(
+    name = "useful",
+    hdrs = ["src/core/lib/gpr/useful.h"],
+    language = "c++",
+    deps = [
+        "gpr_platform",
     ],
 )
 
@@ -685,7 +693,6 @@ grpc_cc_library(
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tmpfile.h",
-        "src/core/lib/gpr/useful.h",
         "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/examine_stack.h",
         "src/core/lib/gprpp/fork.h",
@@ -727,6 +734,7 @@ grpc_cc_library(
         "gpr_codegen",
         "gpr_tls",
         "grpc_codegen",
+        "useful",
     ],
 )
 
@@ -1597,6 +1605,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+        "useful",
     ],
 )
 
@@ -1736,6 +1745,7 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "udpa_orca_upb",
+        "useful",
     ],
 )
 
@@ -1912,6 +1922,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
+        "useful",
     ],
 )
 
@@ -2555,6 +2566,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
+        "useful",
     ],
 )
 
@@ -2728,6 +2740,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "tsi",
         "tsi_interface",
+        "useful",
     ],
 )
 
@@ -2991,6 +3004,7 @@ grpc_cc_library(
         "hpack_encoder_table",
         "match",
         "popularity_count",
+        "useful",
     ],
 )
 
@@ -3005,6 +3019,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
+        "useful",
     ],
 )
 
@@ -3199,6 +3214,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "tsi_interface",
+        "useful",
     ],
 )
 
@@ -3276,6 +3292,7 @@ grpc_cc_library(
         "grpc_base_c",
         "grpc_transport_chttp2_client_insecure",
         "tsi_interface",
+        "useful",
     ],
 )
 
@@ -3305,6 +3322,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_inproc",
         "ref_counted",
+        "useful",
     ],
 )
 
@@ -3335,6 +3353,7 @@ grpc_cc_library(
         "grpc_transport_inproc",
         "grpc_unsecure",
         "ref_counted",
+        "useful",
     ],
 )
 

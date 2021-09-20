@@ -580,7 +580,7 @@ void run_tests(void) {
   write_test(100000, 1, true);
   write_test(100, 137, true);
 
-  for (i = 1; i < 1000; i = GPR_MAX(i + 1, i * 5 / 4)) {
+  for (i = 1; i < 1000; i = std::max(i + 1, i * 5 / 4)) {
     write_test(40320, i, false);
     write_test(40320, i, true);
   }
