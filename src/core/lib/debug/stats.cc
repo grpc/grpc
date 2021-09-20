@@ -38,7 +38,7 @@ grpc_stats_data* grpc_stats_per_cpu_storage = nullptr;
 static size_t g_num_cores;
 
 void grpc_stats_init(void) {
-  g_num_cores = GPR_MAX(1, gpr_cpu_num_cores());
+  g_num_cores = std::max(1u, gpr_cpu_num_cores());
   grpc_stats_per_cpu_storage = static_cast<grpc_stats_data*>(
       gpr_zalloc(sizeof(grpc_stats_data) * g_num_cores));
 }

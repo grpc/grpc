@@ -221,7 +221,7 @@ static grpc_error_handle add_header(grpc_http_parser* parser) {
 
   if (*hdr_count == parser->hdr_capacity) {
     parser->hdr_capacity =
-        GPR_MAX(parser->hdr_capacity + 1, parser->hdr_capacity * 3 / 2);
+        std::max(parser->hdr_capacity + 1, parser->hdr_capacity * 3 / 2);
     *hdrs = static_cast<grpc_http_header*>(
         gpr_realloc(*hdrs, parser->hdr_capacity * sizeof(**hdrs)));
   }
@@ -280,7 +280,7 @@ static grpc_error_handle addbyte_body(grpc_http_parser* parser, uint8_t byte) {
   }
 
   if (*body_length == parser->body_capacity) {
-    parser->body_capacity = GPR_MAX(8, parser->body_capacity * 3 / 2);
+    parser->body_capacity = std::max(size_t(8), parser->body_capacity * 3 / 2);
     *body = static_cast<char*>(gpr_realloc(*body, parser->body_capacity));
   }
   (*body)[*body_length] = static_cast<char>(byte);

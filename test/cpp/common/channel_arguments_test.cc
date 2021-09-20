@@ -53,7 +53,7 @@ bool test_mutator_mutate_fd(int fd, grpc_socket_mutator* mutator) {
 }
 
 int test_mutator_compare(grpc_socket_mutator* a, grpc_socket_mutator* b) {
-  return GPR_ICMP(a, b);
+  return grpc_core::QsortCompare(a, b);
 }
 
 void test_mutator_destroy(grpc_socket_mutator* mutator) {

@@ -150,7 +150,7 @@ static int test_socket_factory_bind(grpc_socket_factory* factory, int sockfd,
 
 static int test_socket_factory_compare(grpc_socket_factory* a,
                                        grpc_socket_factory* b) {
-  return GPR_ICMP(a, b);
+  return grpc_core::QsortCompare(a, b);
 }
 
 static void test_socket_factory_destroy(grpc_socket_factory* factory) {
