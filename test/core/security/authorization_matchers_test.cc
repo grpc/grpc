@@ -19,9 +19,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <grpc/grpc_security_constants.h>
+
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/security/authorization/matchers.h"
-#include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 #include "test/core/util/evaluate_args_test_util.h"
 
 namespace grpc_core {
