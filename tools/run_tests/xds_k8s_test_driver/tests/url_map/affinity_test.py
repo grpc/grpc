@@ -31,6 +31,7 @@ GcpResourceManager = xds_url_map_testcase.GcpResourceManager
 DumpedXdsConfig = xds_url_map_testcase.DumpedXdsConfig
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 RpcTypeEmptyCall = xds_url_map_testcase.RpcTypeEmptyCall
+TestConfig = xds_url_map_testcase.TestConfig
 XdsTestClient = client_app.XdsTestClient
 
 logger = logging.getLogger(__name__)
@@ -56,8 +57,12 @@ _ChannelzChannelState = grpc_channelz.ChannelState
 class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
-    def supported_clients() -> Tuple[str]:
-        return 'cpp', 'java'
+    def is_supported(config: TestConfig) -> bool:
+        if config.client_lang in ['cpp', 'java']:
+            return config.version_ge('v1.40.x')
+        if config.client_lang in ['go']:
+            return config.version_ge('v1.41.x')
+        return False
 
     @staticmethod
     def client_init_config(rpc: str, metadata: str):
@@ -121,8 +126,12 @@ class TestHeaderBasedAffinityMultipleHeaders(
         xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
-    def supported_clients() -> Tuple[str]:
-        return 'cpp', 'java'
+    def is_supported(config: TestConfig) -> bool:
+        if config.client_lang in ['cpp', 'java']:
+            return config.version_ge('v1.40.x')
+        if config.client_lang in ['go']:
+            return config.version_ge('v1.41.x')
+        return False
 
     @staticmethod
     def client_init_config(rpc: str, metadata: str):

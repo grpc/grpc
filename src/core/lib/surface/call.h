@@ -125,12 +125,6 @@ grpc_compression_algorithm grpc_call_compression_for_level(
                     Move to surface API if requested by other languages. */
 bool grpc_call_is_trailers_only(const grpc_call* call);
 
-/* Returns whether or not the call's receive message operation failed because of
- * an error (as opposed to a graceful end-of-stream) */
-/* TODO(markdroth): This is currently available only to the C++ API.
-                    Move to surface API if requested by other languages. */
-bool grpc_call_failed_before_recv_message(const grpc_call* c);
-
 extern grpc_core::TraceFlag grpc_call_error_trace;
 extern grpc_core::TraceFlag grpc_compression_trace;
 

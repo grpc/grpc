@@ -46,7 +46,7 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   struct Less {
     bool operator()(const XdsLocalityName* lhs,
                     const XdsLocalityName* rhs) const {
-      if (lhs == nullptr || rhs == nullptr) return GPR_ICMP(lhs, rhs);
+      if (lhs == nullptr || rhs == nullptr) return QsortCompare(lhs, rhs);
       return lhs->Compare(*rhs) < 0;
     }
 
