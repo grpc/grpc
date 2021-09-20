@@ -7069,6 +7069,25 @@ targets:
   - absl/types:variant
   - absl/utility:utility
   uses_polling: false
+- name: promise_fuzzer
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/promise/promise_fuzzer.proto
+  - test/core/promise/promise_fuzzer.cc
+  - test/core/util/fuzzer_corpus_test.cc
+  deps:
+  - absl/flags:flag
+  - grpc_test_util
+  - grpc++_test_config
+  args:
+  - --directory=test/core/promise/promise_fuzzer
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: promise_map_test
   gtest: true
   build: test

@@ -39,12 +39,12 @@ def grpc_fuzzer(name, corpus, srcs = [], deps = [], data = [], size = "large", *
 def grpc_proto_fuzzer(name, corpus, proto, srcs = [], deps = [], data = [], size = "large", **kwargs):
     proto_library(
         name = name + "-proto",
-        srcs = [proto]
+        srcs = [proto],
     )
 
     cc_proto_library(
         name = name + "-cc_proto",
-        deps = [name + "-proto"]
+        deps = [name + "-proto"],
     )
 
     grpc_cc_test(
