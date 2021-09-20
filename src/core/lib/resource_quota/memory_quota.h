@@ -72,9 +72,7 @@ class MemoryRequest {
 
   // Increase the size by amount
   MemoryRequest Increase(size_t amount) const {
-    MemoryRequest r(min_ + amount, max_ + amount);
-    r.block_size_ = block_size_;
-    return r;
+    return MemoryRequest(min_ + amount, max_ + amount);
   }
 
   size_t min() const { return min_; }

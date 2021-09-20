@@ -1282,6 +1282,7 @@ grpc_cc_library(
         "poll",
         "race",
         "ref_counted_ptr",
+        "useful",
         "seq",
     ],
 )

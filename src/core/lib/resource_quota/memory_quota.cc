@@ -18,7 +18,7 @@
 
 #include <thread>
 
-#include "src/core/lib/gprpp/useful.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
@@ -40,14 +40,6 @@ ReclamationSweep::~ReclamationSweep() {
   if (memory_quota_ != nullptr) {
     memory_quota_->FinishReclamation(sweep_token_);
   }
-}
-
-//
-// MemoryRequest
-//
-
-MemoryRequest MemoryRequest::Increase(size_t amount) const {
-  return MemoryRequest(min_ + amount, max_ + amount);
 }
 
 //
