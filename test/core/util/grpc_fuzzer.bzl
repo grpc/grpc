@@ -51,15 +51,20 @@ def grpc_proto_fuzzer(name, corpus, proto, srcs = [], deps = [], data = [], size
         name = name,
         srcs = srcs,
         deps = deps + [
-            "//test/core/util:fuzzer_corpus_test",
             "@com_google_libprotobuf-mutator//:libprotobuf-mutator",
             name + "-cc_proto",
-        ],
+        ] + select({
+            "//:grpc_build_fuzzers": [],
+            "//conditions:default": ["//test/core/util:fuzzer_corpus_test"],
+        }),
         data = data + native.glob([corpus + "/**"]),
         external_deps = [
             "gtest",
         ],
         size = size,
-        args = ["--directory=" + native.package_name() + "/" + corpus],
+        args = select({
+            "//:grpc_build_fuzzers": [native.package_name() + "/" + corpus],
+            "//conditions:default": ["--directory=" + native.package_name() + "/" + corpus],
+        }),
         **kwargs
     )
