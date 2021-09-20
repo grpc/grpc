@@ -95,29 +95,23 @@ CertificateVerifier::CertificateVerifier(grpc_tls_certificate_verifier* v)
 }
 
 CertificateVerifier::~CertificateVerifier() {
-  gpr_log(GPR_ERROR, "CertificateVerifier::~CertificateVerifier() is called");
   grpc_tls_certificate_verifier_release(verifier_);
 }
 
 bool CertificateVerifier::Verify(TlsCustomVerificationCheckRequest* request,
                                  std::function<void(grpc::Status)> callback,
                                  grpc::Status* sync_status) {
-  gpr_log(GPR_ERROR, "CertificateVerifier::Verify() is called");
   GPR_ASSERT(request != nullptr);
   GPR_ASSERT(request->c_request() != nullptr);
   {
     internal::MutexLock lock(&mu_);
     request_map_.emplace(request->c_request(), std::move(callback));
   }
-  gpr_log(GPR_ERROR, "CertificateVerifier::Verify() request is created");
   grpc_status_code status_code = GRPC_STATUS_OK;
   char* error_details = nullptr;
   bool is_done = grpc_tls_certificate_verifier_verify(
       verifier_, request->c_request(), &AsyncCheckDone, this, &status_code,
       &error_details);
-  gpr_log(GPR_ERROR,
-          "CertificateVerifier::Verify() "
-          "grpc_tls_certificate_verifier_verify(...)");
   if (is_done) {
     if (status_code != GRPC_STATUS_OK) {
       *sync_status = grpc::Status(static_cast<grpc::StatusCode>(status_code),
@@ -127,7 +121,6 @@ bool CertificateVerifier::Verify(TlsCustomVerificationCheckRequest* request,
     request_map_.erase(request->c_request());
   }
   gpr_free(error_details);
-  gpr_log(GPR_ERROR, "CertificateVerifier::Verify() is_done is decided");
   return is_done;
 }
 
@@ -140,7 +133,6 @@ void CertificateVerifier::Cancel(TlsCustomVerificationCheckRequest* request) {
 void CertificateVerifier::AsyncCheckDone(
     grpc_tls_custom_verification_check_request* request, void* callback_arg,
     grpc_status_code status, const char* error_details) {
-  gpr_log(GPR_ERROR, "CertificateVerifier::AsyncCheckDone is called");
   auto* self = static_cast<CertificateVerifier*>(callback_arg);
   std::function<void(grpc::Status)> callback;
   {
@@ -151,7 +143,6 @@ void CertificateVerifier::AsyncCheckDone(
       self->request_map_.erase(it);
     }
   }
-  gpr_log(GPR_ERROR, "CertificateVerifier::AsyncCheckDone callback got");
   if (callback != nullptr) {
     grpc::Status return_status;
     if (status != GRPC_STATUS_OK) {
@@ -160,13 +151,9 @@ void CertificateVerifier::AsyncCheckDone(
     }
     callback(return_status);
   }
-  gpr_log(GPR_ERROR, "CertificateVerifier::AsyncCheckDone callback invoked");
 }
 
 ExternalCertificateVerifier::ExternalCertificateVerifier() {
-  gpr_log(
-      GPR_ERROR,
-      "ExternalCertificateVerifier::ExternalCertificateVerifier() is called");
   base_ = new grpc_tls_certificate_verifier_external();
   base_->user_data = this;
   base_->verify = VerifyInCoreExternalVerifier;
@@ -174,20 +161,12 @@ ExternalCertificateVerifier::ExternalCertificateVerifier() {
   base_->destruct = DestructInCoreExternalVerifier;
 }
 
-ExternalCertificateVerifier::~ExternalCertificateVerifier() {
-  gpr_log(
-      GPR_ERROR,
-      "ExternalCertificateVerifier::~ExternalCertificateVerifier() is called");
-  delete base_;
-}
+ExternalCertificateVerifier::~ExternalCertificateVerifier() { delete base_; }
 
 int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
     void* user_data, grpc_tls_custom_verification_check_request* request,
     grpc_tls_on_custom_verification_check_done_cb callback, void* callback_arg,
     grpc_status_code* sync_status, char** sync_error_details) {
-  gpr_log(
-      GPR_ERROR,
-      "ExternalCertificateVerifier::VerifyInCoreExternalVerifier() is called");
   auto* self = static_cast<ExternalCertificateVerifier*>(user_data);
   TlsCustomVerificationCheckRequest* cpp_request = nullptr;
   {
@@ -197,9 +176,6 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
     GPR_ASSERT(pair.second);
     cpp_request = &pair.first->second.cpp_request;
   }
-  gpr_log(GPR_ERROR,
-          "ExternalCertificateVerifier::VerifyInCoreExternalVerifier() "
-          "cpp_request is created");
   grpc::Status sync_current_verifier_status;
   bool is_done = self->Verify(
       cpp_request,
@@ -222,9 +198,6 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
         }
       },
       &sync_current_verifier_status);
-  gpr_log(GPR_ERROR,
-          "ExternalCertificateVerifier::VerifyInCoreExternalVerifier() "
-          "self->Verify() is finished");
   if (is_done) {
     if (!sync_current_verifier_status.ok()) {
       *sync_status = static_cast<grpc_status_code>(
@@ -235,9 +208,6 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
     internal::MutexLock lock(&self->mu_);
     self->request_map_.erase(request);
   }
-  gpr_log(GPR_ERROR,
-          "ExternalCertificateVerifier::VerifyInCoreExternalVerifier() is_done "
-          "is determined");
   return is_done;
 }
 
