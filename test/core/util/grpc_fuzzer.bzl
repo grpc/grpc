@@ -18,12 +18,18 @@ def grpc_fuzzer(name, corpus, srcs = [], deps = [], data = [], size = "large", *
     grpc_cc_test(
         name = name,
         srcs = srcs,
-        deps = deps + ["//test/core/util:fuzzer_corpus_test"],
+        deps = deps + select({
+            "//:grpc_build_fuzzers": [],
+            "//conditions:default": ["//test/core/util:fuzzer_corpus_test"],
+        }),
         data = data + native.glob([corpus + "/**"]),
         external_deps = [
             "gtest",
         ],
         size = size,
-        args = ["--directory=" + native.package_name() + "/" + corpus],
+        args = select({
+            "//:grpc_build_fuzzers": [native.package_name() + "/" + corpus],
+            "//conditions:default": ["--directory=" + native.package_name() + "/" + corpus],
+        }),
         **kwargs
     )
