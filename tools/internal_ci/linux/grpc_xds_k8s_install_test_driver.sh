@@ -18,11 +18,12 @@ set -eo pipefail
 # Constants
 readonly PYTHON_VERSION="3.6"
 # Test driver
-readonly TEST_DRIVER_REPO_NAME="grpc"
-readonly TEST_DRIVER_REPO_URL="https://github.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc.git"
-readonly TEST_DRIVER_BRANCH="${TEST_DRIVER_BRANCH:-master}"
 readonly TEST_DRIVER_PATH="tools/run_tests/xds_k8s_test_driver"
 readonly TEST_DRIVER_PROTOS_PATH="src/proto/grpc/testing"
+# GKE Cluster.
+readonly GKE_CLUSTER_NAME="interop-test-psm-sec-testing-api"
+readonly GKE_CLUSTER_ZONE="us-west1-b"
+export CLOUDSDK_API_ENDPOINT_OVERRIDES_CONTAINER="https://test-container.sandbox.googleapis.com/"
 
 #######################################
 # Run command end report its exit code. Doesn't exit on non-zero exit code.
@@ -49,7 +50,7 @@ run_ignore_exit_code() {
 #   Git source dir
 #######################################
 parse_src_repo_git_info() {
-  local src_dir="${SRC_DIR:?SRC_DIR must be set}"
+  local src_dir="${1:?SRC_DIR must be set}"
   readonly GIT_ORIGIN_URL=$(git -C "${src_dir}" remote get-url origin)
   readonly GIT_COMMIT=$(git -C "${src_dir}" rev-parse HEAD)
   readonly GIT_COMMIT_SHORT=$(git -C "${src_dir}" rev-parse --short HEAD)
@@ -211,8 +212,7 @@ test_driver_compile_protos() {
 #   Writes the output to stdout, stderr
 #######################################
 test_driver_install() {
-  readonly TEST_DRIVER_REPO_DIR="${1:?Usage test_driver_install TEST_DRIVER_REPO_DIR}"
-  readonly TEST_DRIVER_FULL_DIR="${TEST_DRIVER_REPO_DIR}/${TEST_DRIVER_PATH}"
+  readonly TEST_DRIVER_FULL_DIR="${TEST_DRIVER_REPO_DIR:?TEST_DRIVER_REPO_DIR must be set}/${TEST_DRIVER_PATH}"
   test_driver_get_source
   test_driver_pip_install
   test_driver_compile_protos
@@ -317,8 +317,7 @@ kokoro_setup_test_driver() {
   local github_root="${KOKORO_ARTIFACTS_DIR}/github"
   readonly SRC_DIR="${github_root}/${src_repository_name}"
   local test_driver_repo_dir
-  test_driver_repo_dir="${TEST_DRIVER_REPO_DIR:-$(mktemp -d)/${TEST_DRIVER_REPO_NAME}}"
-  parse_src_repo_git_info SRC_DIR
+  parse_src_repo_git_info "${SRC_DIR}"
   kokoro_write_sponge_properties
   kokoro_setup_python_virtual_environment
 
@@ -358,12 +357,12 @@ kokoro_setup_test_driver() {
 local_setup_test_driver() {
   local script_dir="${1:?Usage: local_setup_test_driver SCRIPT_DIR}"
   readonly SRC_DIR="$(git -C "${script_dir}" rev-parse --show-toplevel)"
-  parse_src_repo_git_info SRC_DIR
   readonly KUBE_CONTEXT="${KUBE_CONTEXT:-$(kubectl config current-context)}"
   readonly SECONDARY_KUBE_CONTEXT="${SECONDARY_KUBE_CONTEXT}"
   local test_driver_repo_dir
-  test_driver_repo_dir="${TEST_DRIVER_REPO_DIR:-$(mktemp -d)/${TEST_DRIVER_REPO_NAME}}"
-  test_driver_install "${test_driver_repo_dir}"
+  #test_driver_repo_dir="${TEST_DRIVER_REPO_DIR:-$(mktemp -d)/${TEST_DRIVER_REPO_NAME}}"
+  parse_src_repo_git_info "${SRC_DIR}"
+  test_driver_install "${TEST_DRIVER_REPO_DIR}"
   # shellcheck disable=SC2034  # Used in the main script
   readonly TEST_DRIVER_FLAGFILE="config/local-dev.cfg"
   # Test out
