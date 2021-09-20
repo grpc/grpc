@@ -261,5 +261,8 @@ grpc_proto_fuzzer(
     tags = ["no_windows"],
     deps = [
         "//test/core/util:grpc_test_util",
+        "//:promise",
+        "//:seq","//:map",
+        "//:join","//:race",
     ],
 )

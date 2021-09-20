@@ -16,5 +16,33 @@ syntax = "proto3";
 
 package promise_fuzzer;
 
+message Seq {
+    Promise first = 1;
+    repeated PromiseFactory promise_factories = 2;
+}
+
+message Join {
+    repeated Promise promises = 1;
+}
+
+message Race {
+    repeated Promise promises = 1;
+}
+
+message PromiseFactory {
+    oneof promise_factory_type {
+        Promise promise = 1;
+    }
+}
+
+message Promise {
+    oneof promise_type {
+        Seq seq = 1;
+        Join join = 2;
+        Race race = 3;
+    }
+}
+
 message Msg {
+    Promise promise = 1;
 }
