@@ -60,9 +60,7 @@ grpc_channel_security_connector::~grpc_channel_security_connector() {}
 
 int grpc_security_connector_cmp(const grpc_security_connector* sc,
                                 const grpc_security_connector* other) {
-  if (sc == nullptr || other == nullptr) {
-    return grpc_core::QsortCompare(sc, other);
-  }
+  if (sc == nullptr || other == nullptr) return GPR_ICMP(sc, other);
   return sc->cmp(other);
 }
 
@@ -72,10 +70,9 @@ int grpc_channel_security_connector::channel_security_connector_cmp(
       static_cast<const grpc_channel_security_connector*>(other);
   GPR_ASSERT(channel_creds() != nullptr);
   GPR_ASSERT(other_sc->channel_creds() != nullptr);
-  int c = grpc_core::QsortCompare(channel_creds(), other_sc->channel_creds());
+  int c = GPR_ICMP(channel_creds(), other_sc->channel_creds());
   if (c != 0) return c;
-  return grpc_core::QsortCompare(request_metadata_creds(),
-                                 other_sc->request_metadata_creds());
+  return GPR_ICMP(request_metadata_creds(), other_sc->request_metadata_creds());
 }
 
 int grpc_server_security_connector::server_security_connector_cmp(
@@ -84,7 +81,7 @@ int grpc_server_security_connector::server_security_connector_cmp(
       static_cast<const grpc_server_security_connector*>(other);
   GPR_ASSERT(server_creds() != nullptr);
   GPR_ASSERT(other_sc->server_creds() != nullptr);
-  return grpc_core::QsortCompare(server_creds(), other_sc->server_creds());
+  return GPR_ICMP(server_creds(), other_sc->server_creds());
 }
 
 static void connector_arg_destroy(void* p) {

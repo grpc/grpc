@@ -1064,7 +1064,7 @@ static void queue_setting_update(grpc_chttp2_transport* t,
                                  grpc_chttp2_setting_id id, uint32_t value) {
   const grpc_chttp2_setting_parameters* sp =
       &grpc_chttp2_settings_parameters[id];
-  uint32_t use_value = grpc_core::Clamp(value, sp->min_value, sp->max_value);
+  uint32_t use_value = GPR_CLAMP(value, sp->min_value, sp->max_value);
   if (use_value != value) {
     gpr_log(GPR_INFO, "Requested parameter %s clamped from %d to %d", sp->name,
             value, use_value);
@@ -1433,7 +1433,7 @@ static void perform_stream_op_locked(void* stream_op,
         op_payload->send_initial_metadata.send_initial_metadata;
     if (t->is_client) {
       s->deadline =
-          std::min(s->deadline, (*s->send_initial_metadata)->deadline());
+          GPR_MIN(s->deadline, (*s->send_initial_metadata)->deadline());
     }
     if (contains_non_ok_status(s->send_initial_metadata)) {
       s->seen_error = true;
@@ -1978,8 +1978,7 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
           GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS) {
         grpc_slice_buffer_move_first(
             &s->frame_storage,
-            std::min(s->frame_storage.length,
-                     size_t(GRPC_HEADER_SIZE_IN_BYTES)),
+            GPR_MIN(s->frame_storage.length, GRPC_HEADER_SIZE_IN_BYTES),
             &s->unprocessed_incoming_frames_buffer);
         if (s->unprocessed_incoming_frames_buffer.length > 0) {
           s->unprocessed_incoming_frames_decompressed = true;
@@ -2520,7 +2519,7 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
                              GRPC_ERROR_INT_OCCURRED_DURING_WRITE,
                              t->write_state);
   }
-  std::swap(err, error);
+  GPR_SWAP(grpc_error_handle, err, error);
   GRPC_ERROR_UNREF(err);
   if (t->closed_with_error == GRPC_ERROR_NONE) {
     GPR_TIMER_SCOPE("reading_action.parse", 0);

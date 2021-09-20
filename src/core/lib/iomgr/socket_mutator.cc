@@ -56,11 +56,11 @@ bool grpc_socket_mutator_mutate_fd(grpc_socket_mutator* mutator, int fd,
 
 int grpc_socket_mutator_compare(grpc_socket_mutator* a,
                                 grpc_socket_mutator* b) {
-  int c = grpc_core::QsortCompare(a, b);
+  int c = GPR_ICMP(a, b);
   if (c != 0) {
     grpc_socket_mutator* sma = a;
     grpc_socket_mutator* smb = b;
-    c = grpc_core::QsortCompare(sma->vtable, smb->vtable);
+    c = GPR_ICMP(sma->vtable, smb->vtable);
     if (c == 0) {
       c = sma->vtable->compare(sma, smb);
     }
