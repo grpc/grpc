@@ -144,9 +144,7 @@ class ExternalCertificateVerifier {
   static std::shared_ptr<CertificateVerifier> Create(Args&&... args) {
     grpc::internal::GrpcLibraryInitializer g_gli_initializer;
     g_gli_initializer.summon();
-    gpr_log(GPR_ERROR, "ExternalCertificateVerifier::Create() is called");
     auto* external_verifier = new Subclass(std::forward<Args>(args)...);
-    gpr_log(GPR_ERROR, "In Create(): external_verifier is created");
     return std::make_shared<CertificateVerifier>(
         grpc_tls_certificate_verifier_external_create(
             external_verifier->base_));
