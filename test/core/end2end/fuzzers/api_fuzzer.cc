@@ -379,8 +379,9 @@ grpc_ares_request* my_dns_lookup_ares_locked(
     const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
-    bool /*check_grpclb*/, char** /*service_config_json*/,
-    int /*query_timeout*/, grpc_core::Combiner* /*combiner*/) {
+    std::unique_ptr<grpc_core::ServerAddressList>* /*balancer_addresses*/,
+    char** /*service_config_json*/,
+    int /*query_timeout*/, std::shared_ptr<grpc_core::WorkSerializer> /*combiner*/) {
   addr_req* r = static_cast<addr_req*>(gpr_malloc(sizeof(*r)));
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
@@ -399,7 +400,7 @@ static void my_cancel_ares_request_locked(grpc_ares_request* request) {
 ////////////////////////////////////////////////////////////////////////////////
 // client connection
 
-static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
+static void sched_connect(grpc_closure* closure, grpc_slice_allocator* slice_allocator, grpc_endpoint** ep,
                           gpr_timespec deadline);
 
 typedef struct {
@@ -429,7 +430,7 @@ static void do_connect(void* arg, grpc_error* error) {
 
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_NONE);
   } else {
-    sched_connect(fc->closure, fc->ep, fc->deadline);
+    sched_connect(fc->closure, fc->slice_allocator, fc->ep, fc->deadline);
   }
   gpr_free(fc);
 }
@@ -461,7 +462,7 @@ static void my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
                                   const grpc_channel_args* /*channel_args*/,
                                   const grpc_resolved_address* /*addr*/,
                                   grpc_millis deadline) {
-  sched_connect(closure, ep,
+  sched_connect(closure, slice_allocator, ep,
                 grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
 }
 
