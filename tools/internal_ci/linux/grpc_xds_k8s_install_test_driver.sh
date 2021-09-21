@@ -23,7 +23,6 @@ readonly TEST_DRIVER_PROTOS_PATH="src/proto/grpc/testing"
 # GKE Cluster.
 readonly GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
 readonly GKE_CLUSTER_ZONE="us-central1-a"
-export CLOUDSDK_API_ENDPOINT_OVERRIDES_CONTAINER="https://test-container.sandbox.googleapis.com/"
 
 #######################################
 # Run command end report its exit code. Doesn't exit on non-zero exit code.
