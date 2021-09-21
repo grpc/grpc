@@ -23,8 +23,8 @@
 
 #include <stdbool.h>
 
-#include "absl/types/optional.h"
 #include "absl/strings/str_join.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -321,7 +321,8 @@ MetadataMap<Traits...>::MetadataMap(MetadataMap&& other) noexcept {
 }
 
 template <typename... Traits>
-MetadataMap<Traits...>& MetadataMap<Traits...>::operator=(MetadataMap&& other) noexcept {
+MetadataMap<Traits...>& MetadataMap<Traits...>::operator=(
+    MetadataMap&& other) noexcept {
   Clear();
   list_ = other.list_;
   idx_ = other.idx_;
