@@ -205,6 +205,12 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
     return std::unique_ptr<T>(New<T>(std::forward<Args>(args)...));
   }
 
+  // Allocate a slice, using MemoryRequest to size the number of returned bytes.
+  // For a variable length request, check the returned slice length to verify
+  // how much memory was allocated.
+  // Takes care of reserving memory for any relevant control structures also.
+  grpc_slice MakeSlice(MemoryRequest request);
+
  private:
   // Primitive reservation function.
   absl::optional<size_t> TryReserve(MemoryRequest request) GRPC_MUST_USE_RESULT;
