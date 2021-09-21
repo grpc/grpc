@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <memory>
 #include <queue>
 #include <vector>
 
@@ -210,6 +211,36 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
   // how much memory was allocated.
   // Takes care of reserving memory for any relevant control structures also.
   grpc_slice MakeSlice(MemoryRequest request);
+
+  // A C++ allocator for containers of T.
+  template <typename T>
+  class Container {
+   public:
+    // Construct the allocator: \a underlying_allocator is borrowed, and must
+    // outlive this object.
+    explicit Container(MemoryAllocator* underlying_allocator)
+        : underlying_allocator_(allocator) {}
+
+    MemoryAllocator* underlying_allocator() const {
+      return underlying_allocator_;
+    }
+
+    using value_type = T;
+    template <typename U>
+    Container(const Container<U>& other)
+        : underlying_allocator_(other.underlying_allocator()) {}
+    T* allocate(size_t n) {
+      underlying_allocator_->Reserve(n * sizeof(T));
+      return static_cast<T*>(::operator new(n * sizeof(T)));
+    }
+    void deallocate(T* p, size_t n) {
+      ::operator delete(p);
+      underlying_allocator_->Release(n * sizeof(T));
+    }
+
+   private:
+    MemoryAllocator* underlying_allocator_;
+  };
 
  private:
   // Primitive reservation function.

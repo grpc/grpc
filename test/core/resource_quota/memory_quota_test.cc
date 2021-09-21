@@ -141,6 +141,26 @@ TEST(MemoryQuotaTest, ReserveRangeNoPressure) {
   memory_allocator->Release(total);
 }
 
+TEST(MemoryQuotaTest, MakeSlice) {
+  RefCountedPtr<MemoryQuota> memory_quota = MakeRefCounted<MemoryQuota>();
+  auto memory_allocator = memory_quota->MakeMemoryAllocator();
+  std::vector<grpc_slice> slices;
+  for (int i = 1; i < 1000; i++) {
+    int min = i;
+    int max = 10 * i - 9;
+    slices.push_back(memory_allocator->MakeSlice(MemoryRequest(min, max)));
+  }
+}
+
+TEST(MemoryQuotaTest, ContainerAllocator) {
+  RefCountedPtr<MemoryQuota> memory_quota = MakeRefCounted<MemoryQuota>();
+  auto memory_allocator = memory_quota->MakeMemoryAllocator();
+  std::vector<int, MemoryAllocator::Container<int>> vec;
+  for (int i = 0; i < 100000; i++) {
+    vec.push_back(i);
+  }
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
