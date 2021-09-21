@@ -1071,8 +1071,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/promise/poll.h )
   s.files += %w( src/core/lib/promise/race.h )
   s.files += %w( src/core/lib/promise/seq.h )
-  s.files += %w( src/core/lib/resource_quota/make_slice.cc )
-  s.files += %w( src/core/lib/resource_quota/make_slice.h )
   s.files += %w( src/core/lib/resource_quota/memory_quota.cc )
   s.files += %w( src/core/lib/resource_quota/memory_quota.h )
   s.files += %w( src/core/lib/security/authorization/authorization_engine.h )

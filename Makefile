@@ -1486,7 +1486,6 @@ LIBGRPC_SRC = \
     src/core/lib/json/json_writer.cc \
     src/core/lib/matchers/matchers.cc \
     src/core/lib/promise/activity.cc \
-    src/core/lib/resource_quota/make_slice.cc \
     src/core/lib/resource_quota/memory_quota.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
@@ -1971,7 +1970,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
     src/core/lib/promise/activity.cc \
-    src/core/lib/resource_quota/make_slice.cc \
     src/core/lib/resource_quota/memory_quota.cc \
     src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc \
     src/core/lib/slice/b64.cc \
