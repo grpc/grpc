@@ -39,7 +39,7 @@ grpc_error_handle grpc_chttp2_incoming_metadata_buffer_add(
         buffer->arena->Alloc(sizeof(grpc_linked_mdelem)));
   }
   storage->md = elem;
-  return grpc_metadata_batch_link_tail(&buffer->batch, storage);
+  return buffer->batch.LinkTail(storage);
 }
 
 grpc_error_handle grpc_chttp2_incoming_metadata_buffer_replace_or_add(
