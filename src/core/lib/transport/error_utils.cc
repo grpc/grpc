@@ -22,6 +22,7 @@
 
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error_internal.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/status_conversion.h"
@@ -33,7 +34,14 @@ static grpc_error_handle recursively_find_error_with_field(
   if (grpc_error_get_int(error, which, &unused)) {
     return error;
   }
-  if (grpc_error_is_special(error)) return nullptr;
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+  std::vector<absl::Status> children = grpc_core::StatusGetChildren(error);
+  for (auto child : children) {
+    grpc_error_handle result = recursively_find_error_with_field(child, which);
+    if (result != GRPC_ERROR_NONE) return result;
+  }
+#else
+  if (grpc_error_is_special(error)) return GRPC_ERROR_NONE;
   // Otherwise, search through its children.
   uint8_t slot = error->first_err;
   while (slot != UINT8_MAX) {
@@ -44,7 +52,8 @@ static grpc_error_handle recursively_find_error_with_field(
     if (result) return result;
     slot = lerr->next;
   }
-  return nullptr;
+#endif
+  return GRPC_ERROR_NONE;
 }
 
 void grpc_error_get_status(grpc_error_handle error, grpc_millis deadline,
@@ -119,7 +128,12 @@ void grpc_error_get_status(grpc_error_handle error, grpc_millis deadline,
   if (slice != nullptr) {
     if (!grpc_error_get_str(found_error, GRPC_ERROR_STR_GRPC_MESSAGE, slice)) {
       if (!grpc_error_get_str(found_error, GRPC_ERROR_STR_DESCRIPTION, slice)) {
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+        *slice =
+            grpc_slice_from_copied_string(grpc_error_std_string(error).c_str());
+#else
         *slice = grpc_slice_from_static_string("unknown error");
+#endif
       }
     }
   }
@@ -153,6 +167,14 @@ bool grpc_error_has_clear_grpc_status(grpc_error_handle error) {
   if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &unused)) {
     return true;
   }
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+  std::vector<absl::Status> children = grpc_core::StatusGetChildren(error);
+  for (auto child : children) {
+    if (grpc_error_has_clear_grpc_status(child)) {
+      return true;
+    }
+  }
+#else
   uint8_t slot = error->first_err;
   while (slot != UINT8_MAX) {
     grpc_linked_error* lerr =
@@ -162,5 +184,6 @@ bool grpc_error_has_clear_grpc_status(grpc_error_handle error) {
     }
     slot = lerr->next;
   }
+#endif
   return false;
 }
