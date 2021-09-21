@@ -936,14 +936,14 @@ static int prepare_application_metadata(grpc_call* call, int count,
     } else {
       for (i = 0; i < call->send_extra_metadata_count; i++) {
         GRPC_LOG_IF_ERROR("prepare_application_metadata",
-                          batch->LinkTail( &call->send_extra_metadata[i]));
+                          batch->LinkTail(&call->send_extra_metadata[i]));
       }
     }
   }
   for (i = 0; i < total_count; i++) {
     grpc_metadata* md = get_md_elem(metadata, additional_metadata, i, count);
     grpc_linked_mdelem* l = linked_from_md(md);
-    grpc_error_handle error = batch->LinkTail( l);
+    grpc_error_handle error = batch->LinkTail(l);
     if (error != GRPC_ERROR_NONE) {
       GRPC_MDELEM_UNREF(l->md);
     }
