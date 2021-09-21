@@ -212,6 +212,7 @@ test_driver_compile_protos() {
 #######################################
 test_driver_install() {
   readonly TEST_DRIVER_FULL_DIR="${TEST_DRIVER_REPO_DIR:?TEST_DRIVER_REPO_DIR must be set}/${TEST_DRIVER_PATH}"
+  TEST_DRIVER_REPO_DIR_USE_EXISTING=1
   test_driver_get_source
   test_driver_pip_install
   test_driver_compile_protos
