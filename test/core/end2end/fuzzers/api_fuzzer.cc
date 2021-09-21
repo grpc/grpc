@@ -341,7 +341,7 @@ static void finish_resolve(void* arg, grpc_error* error) {
       addrs->addrs[0].len = 0;
       *r->addrs = addrs;
     } else if (r->addresses != nullptr) {
-      *r->addresses = grpc_core::MakeUnique<grpc_core::ServerAddressList>();
+      *r->addresses = absl::make_unique<grpc_core::ServerAddressList>();
       grpc_resolved_address dummy_resolved_address;
       memset(&dummy_resolved_address, 0, sizeof(dummy_resolved_address));
       dummy_resolved_address.len = 0;
