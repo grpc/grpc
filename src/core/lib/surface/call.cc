@@ -1016,14 +1016,14 @@ static void recv_initial_filter(grpc_call* call, grpc_metadata_batch* b) {
     set_incoming_stream_compression_algorithm(
         call, decode_stream_compression(
                   b->legacy_index()->named.content_encoding->md));
-    grpc_metadata_batch_remove(b, GRPC_BATCH_CONTENT_ENCODING);
+    b->Remove(GRPC_BATCH_CONTENT_ENCODING);
   }
   if (b->legacy_index()->named.grpc_encoding != nullptr) {
     GPR_TIMER_SCOPE("incoming_message_compression_algorithm", 0);
     set_incoming_message_compression_algorithm(
         call,
         decode_message_compression(b->legacy_index()->named.grpc_encoding->md));
-    grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_ENCODING);
+    b->Remove(GRPC_BATCH_GRPC_ENCODING);
   }
   uint32_t message_encodings_accepted_by_peer = 1u;
   uint32_t stream_encodings_accepted_by_peer = 1u;
@@ -1032,14 +1032,14 @@ static void recv_initial_filter(grpc_call* call, grpc_metadata_batch* b) {
     set_encodings_accepted_by_peer(
         call, b->legacy_index()->named.grpc_accept_encoding->md,
         &message_encodings_accepted_by_peer, false);
-    grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_ACCEPT_ENCODING);
+    b->Remove(GRPC_BATCH_GRPC_ACCEPT_ENCODING);
   }
   if (b->legacy_index()->named.accept_encoding != nullptr) {
     GPR_TIMER_SCOPE("stream_encodings_accepted_by_peer", 0);
     set_encodings_accepted_by_peer(call,
                                    b->legacy_index()->named.accept_encoding->md,
                                    &stream_encodings_accepted_by_peer, true);
-    grpc_metadata_batch_remove(b, GRPC_BATCH_ACCEPT_ENCODING);
+    b->Remove(GRPC_BATCH_ACCEPT_ENCODING);
   }
   call->encodings_accepted_by_peer =
       grpc_compression_bitset_from_message_stream_compression_bitset(
@@ -1070,13 +1070,13 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
           error, GRPC_ERROR_STR_GRPC_MESSAGE,
           grpc_slice_ref_internal(
               GRPC_MDVALUE(b->legacy_index()->named.grpc_message->md)));
-      grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_MESSAGE);
+      b->Remove(GRPC_BATCH_GRPC_MESSAGE);
     } else if (error != GRPC_ERROR_NONE) {
       error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
                                  grpc_empty_slice());
     }
     set_final_status(call, GRPC_ERROR_REF(error));
-    grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_STATUS);
+    b->Remove(GRPC_BATCH_GRPC_STATUS);
     GRPC_ERROR_UNREF(error);
   } else if (!call->is_client) {
     set_final_status(call, GRPC_ERROR_NONE);

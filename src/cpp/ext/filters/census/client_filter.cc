@@ -130,8 +130,7 @@ void FilterTrailingMetadata(grpc_metadata_batch* b, uint64_t* elapsed_time) {
         GRPC_SLICE_LENGTH(
             GRPC_MDVALUE(b->legacy_index()->named.grpc_server_stats_bin->md)),
         elapsed_time);
-    grpc_metadata_batch_remove(b,
-                               b->legacy_index()->named.grpc_server_stats_bin);
+    b->Remove(b->legacy_index()->named.grpc_server_stats_bin);
   }
 }
 

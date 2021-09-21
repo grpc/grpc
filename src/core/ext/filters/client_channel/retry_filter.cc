@@ -1917,8 +1917,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::
                            call_attempt_->send_initial_metadata_storage_);
   if (GPR_UNLIKELY(call_attempt_->send_initial_metadata_.legacy_index()
                        ->named.grpc_previous_rpc_attempts != nullptr)) {
-    grpc_metadata_batch_remove(&call_attempt_->send_initial_metadata_,
-                               GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
+    call_attempt_->send_initial_metadata_.Remove(
+        GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
   }
   if (GPR_UNLIKELY(calld->num_attempts_completed_ > 0)) {
     grpc_mdelem retry_md = grpc_mdelem_create(
