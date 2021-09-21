@@ -1,10 +1,10 @@
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <iostream>
 #include <list>
 #include <string>
 #include <utility>
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/rls/rls.h"

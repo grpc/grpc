@@ -40,6 +40,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -49,8 +50,14 @@ namespace grpc_core {
 /// Parsed RLS LB policy configuration.
 class RlsLbConfig : public LoadBalancingPolicy::Config {
  public:
-  using KeyBuilder = std::map<std::string /*key*/,
-                              std::vector<std::string /*header*/>>;
+  struct KeyBuilder {
+    std::map<std::string /*key*/, std::vector<std::string /*header*/>>
+        header_keys;
+    std::string host_key;
+    std::string service_key;
+    std::string method_key;
+    std::map<std::string /*key*/, std::string /*value*/> constant_keys;
+  };
   using KeyBuilderMap = std::unordered_map<std::string /*path*/, KeyBuilder>;
 
   struct RouteLookupConfig {
@@ -63,8 +70,7 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
     std::string default_target;
   };
 
-  RlsLbConfig(RouteLookupConfig route_lookup_config,
-              Json child_policy_config,
+  RlsLbConfig(RouteLookupConfig route_lookup_config, Json child_policy_config,
               std::string child_policy_config_target_field_name,
               RefCountedPtr<LoadBalancingPolicy::Config>
                   default_child_policy_parsed_config)
@@ -124,11 +130,10 @@ class RlsLb : public LoadBalancingPolicy {
  private:
   // Key to access entries in the cache and the request map.
   struct RequestKey {
-    std::string path;
     std::map<std::string, std::string> key_map;
 
     bool operator==(const RequestKey& rhs) const {
-      return path == rhs.path && key_map == rhs.key_map;
+      return key_map == rhs.key_map;
     }
 
     template <typename H>
@@ -138,13 +143,13 @@ class RlsLb : public LoadBalancingPolicy {
         h = H::combine(std::move(h), string_hasher(kv.first),
                        string_hasher(kv.second));
       }
-      return H::combine(std::move(h), string_hasher(key.path));
+      return h;
     }
 
     size_t Size() const {
-      size_t size = path.length() + sizeof(RequestKey);
+      size_t size = sizeof(RequestKey);
       for (auto& kv : key_map) {
-        size += (kv.first.length() + kv.second.length());
+        size += kv.first.length() + kv.second.length();
       }
       return size;
     }

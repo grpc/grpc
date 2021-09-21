@@ -62,11 +62,17 @@ namespace {
 
 const char* kTestKey = "testKey";
 const char* kTestUrl = "test.google.fr";
-const char* kTestRequestPath = "/grpc.testing.EchoTestService/Echo";
 const char* kServerHost = "localhost";
 const char* kRequestMessage = "Live long and prosper.";
 const char* kTarget = "test_target";
 const char* kDefaultTarget = "test_default_target";
+const char* kHostKey = "host_key";
+const char* kServiceKey = "service_key";
+const char* kServiceValue = "grpc.testing.EchoTestService";
+const char* kMethodKey = "method_key";
+const char* kMethodValue = "Echo";
+const char* kConstantKey = "constant_key";
+const char* kConstantValue = "constant_value";
 
 template <typename ServiceType>
 class CountedService : public ServiceType {
@@ -328,8 +334,6 @@ class BalancerServiceImpl : public BalancerService {
 class RlsServiceImpl : public RlsService {
  public:
   struct Request {
-    std::string server;
-    std::string path;
     std::map<std::string, std::string> key_map;
   };
 
@@ -344,6 +348,8 @@ class RlsServiceImpl : public RlsService {
       ::grpc::ServerContext* context,
       const ::grpc::lookup::v1::RouteLookupRequest* request,
       ::grpc::lookup::v1::RouteLookupResponse* response) override {
+    gpr_log(GPR_INFO, "Received RLS request: %s",
+            request->DebugString().c_str());
     IncreaseRequestCount();
     Response res;
     {
@@ -361,13 +367,9 @@ class RlsServiceImpl : public RlsService {
     }
     bool make_response = true;
     if (res.request_match.has_value()) {
-      const std::string& server = request->server();
-      const std::string& path = request->path();
       std::map<std::string, std::string> key_map(request->key_map().begin(),
                                                  request->key_map().end());
-      if (server != res.request_match->server ||
-          path != res.request_match->path ||
-          key_map != res.request_match->key_map) {
+      if (key_map != res.request_match->key_map) {
         make_response = false;
       }
     }
@@ -376,13 +378,11 @@ class RlsServiceImpl : public RlsService {
       if (res.status == GRPC_STATUS_OK) {
         *response = std::move(res.response);
         return {};
-      } else {
-        return {StatusCode(res.status),
-                std::string("predefined response error code")};
       }
-    } else {
-      return {FAILED_PRECONDITION, std::string("unmatched request key")};
+      return {StatusCode(res.status),
+              std::string("predefined response error code")};
     }
+    return {FAILED_PRECONDITION, std::string("unmatched request key")};
   }
 
   void Start() {}
@@ -622,13 +622,22 @@ class RlsPolicyEnd2endTest : public ::testing::Test {
         "                \"key1\",\"key2\",\"key3\""
         "              ]"
         "            }"
-        "          ]"
+        "          ],"
+        "          \"extraKeys\":{"
+        "            \"host\":\"host_key\","
+        "            \"service\":\"service_key\","
+        "            \"method\":\"method_key\""
+        "          },"
+        "          \"constantKeys\":{"
+        "            \"constant_key\":\"constant_value\""
+        "          }"
         "        }],"
         "        \"lookupService\":\"localhost:%d\","
         "        \"lookupServiceTimeout\":\"%d.%09ds\","
         "        \"maxAge\":\"%d.%09ds\","
         "        \"staleAge\":\"%d.%09ds\","
-        "        \"cacheSizeBytes\":%" PRId64 ","
+        "        \"cacheSizeBytes\":%" PRId64
+        ","
         "        \"defaultTarget\":\"%s\""
         "      },"
         "      \"childPolicy\":[{"
@@ -793,10 +802,14 @@ TEST_F(RlsPolicyEnd2endTest, RlsGrpcLbWithoutKeyMapMatch) {
   StartBackends(2);
   std::string service_config = BuildServiceConfig();
   SetNextResolution(service_config.c_str());
-  SetNextRlsResponse(
-      GRPC_STATUS_OK, "", 0,
-      RlsServiceImpl::Request{
-          kTestUrl, kTestRequestPath, {{"testKey", "testValue"}}});
+  SetNextRlsResponse(GRPC_STATUS_OK, "", 0,
+                     RlsServiceImpl::Request{{
+                         {kTestKey, "testValue"},
+                         {kHostKey, kTestUrl},
+                         {kServiceKey, kServiceValue},
+                         {kMethodKey, kMethodValue},
+                         {kConstantKey, kConstantValue},
+                     }});
   SetNextLbResponse({{kTarget, 0}, {kDefaultTarget, 1}});
 
   auto stub = BuildStub();
@@ -809,10 +822,14 @@ TEST_F(RlsPolicyEnd2endTest, RlsGrpcLbWithKeyMapMatch) {
   StartBackends(2);
   std::string service_config = BuildServiceConfig();
   SetNextResolution(service_config.c_str());
-  SetNextRlsResponse(
-      GRPC_STATUS_OK, "", 0,
-      RlsServiceImpl::Request{
-          kTestUrl, kTestRequestPath, {{kTestKey, "testValue"}}});
+  SetNextRlsResponse(GRPC_STATUS_OK, "", 0,
+                     RlsServiceImpl::Request{{
+                         {kTestKey, "testValue"},
+                         {kHostKey, kTestUrl},
+                         {kServiceKey, kServiceValue},
+                         {kMethodKey, kMethodValue},
+                         {kConstantKey, kConstantValue},
+                     }});
   SetNextLbResponse({{kTarget, 0}, {kDefaultTarget, 1}});
 
   auto stub = BuildStub();

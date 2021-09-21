@@ -78,8 +78,7 @@ inline bool ExtractJsonBool(const Json& json, const std::string& field_name,
 // OutputType can be std::string or absl::string_view.
 template <typename OutputType, typename ErrorVectorType>
 inline bool ExtractJsonString(const Json& json, const std::string& field_name,
-                              OutputType* output,
-                              ErrorVectorType* error_list) {
+                              OutputType* output, ErrorVectorType* error_list) {
   if (json.type() != Json::Type::STRING) {
     *output = "";
     error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
