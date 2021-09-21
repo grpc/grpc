@@ -41,7 +41,7 @@ TEST(ErrorUtilsTest, GrpcSpecialErrorNoneToAbslStatus) {
 // ---- Asymmetry of conversions of "Special" errors ----
 TEST(ErrorUtilsTest, AbslStatusToGrpcErrorDoesNotReturnSpecialVariables) {
   grpc_error_handle error =
-      absl_status_to_grpc_error(absl::CancelledError("CANCELLED"));
+      absl_status_to_grpc_error(absl::CancelledError("Cancelled"));
   ASSERT_NE(error, GRPC_ERROR_CANCELLED);
   GRPC_ERROR_UNREF(error);
 }
@@ -49,13 +49,13 @@ TEST(ErrorUtilsTest, AbslStatusToGrpcErrorDoesNotReturnSpecialVariables) {
 TEST(ErrorUtilsTest, GrpcSpecialErrorCancelledToAbslStatus) {
   absl::Status status = grpc_error_to_absl_status(GRPC_ERROR_CANCELLED);
   ASSERT_TRUE(absl::IsCancelled(status));
-  ASSERT_EQ(status.message(), "CANCELLED");
+  ASSERT_EQ(status.message(), "Cancelled");
 }
 
 TEST(ErrorUtilsTest, GrpcSpecialErrorOOMToAbslStatus) {
   absl::Status status = grpc_error_to_absl_status(GRPC_ERROR_OOM);
   ASSERT_TRUE(absl::IsResourceExhausted(status));
-  ASSERT_EQ(status.message(), "RESOURCE_EXHAUSTED");
+  ASSERT_EQ(status.message(), "Out of memory");
 }
 
 // ---- Ordinary statuses ----
