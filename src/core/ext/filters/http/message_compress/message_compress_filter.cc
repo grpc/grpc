@@ -204,8 +204,7 @@ grpc_compression_algorithm FindCompressionAlgorithm(
                                               &compression_algorithm));
   // Remove this metadata since it's an internal one (i.e., it won't be
   // transmitted out).
-  grpc_metadata_batch_remove(initial_metadata,
-                             GRPC_BATCH_GRPC_INTERNAL_ENCODING_REQUEST);
+  initial_metadata->Remove(GRPC_BATCH_GRPC_INTERNAL_ENCODING_REQUEST);
   // Check if that algorithm is enabled. Note that GRPC_COMPRESS_NONE is always
   // enabled.
   // TODO(juanlishen): Maybe use channel default or abort() if the algorithm
