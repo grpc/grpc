@@ -170,7 +170,7 @@ struct inproc_stream {
         fill_in_metadata(this, &cs->write_buffer_initial_md,
                          cs->write_buffer_initial_md_flags, &to_read_initial_md,
                          &to_read_initial_md_flags, &to_read_initial_md_filled);
-        deadline = GPR_MIN(deadline, cs->write_buffer_deadline);
+        deadline = std::min(deadline, cs->write_buffer_deadline);
         grpc_metadata_batch_clear(&cs->write_buffer_initial_md);
         cs->write_buffer_initial_md_filled = false;
       }
