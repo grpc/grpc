@@ -36,6 +36,7 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/metadata.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/fuzzer_util.h"
@@ -416,11 +417,11 @@ static void do_connect(void* arg, grpc_error* error) {
   } else if (g_server != nullptr) {
     grpc_endpoint* client;
     grpc_endpoint* server;
-    grpc_passthru_endpoint_create(&client, &server, g_resource_quota, nullptr);
+    grpc_passthru_endpoint_create(&client, &server, nullptr);
     *fc->ep = client;
 
     grpc_transport* transport =
-        grpc_create_chttp2_transport(nullptr, server, false);
+        grpc_create_chttp2_transport(nullptr, server, false, grpc_resource_user_create(g_resource_quota, "transport-user"));
     grpc_server_setup_transport(g_server, transport, nullptr, nullptr, nullptr);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
 
@@ -600,7 +601,7 @@ static call_state* maybe_delete_call_state(call_state* call) {
 
 static void add_to_free(call_state* call, void* p) {
   if (call->num_to_free == call->cap_to_free) {
-    call->cap_to_free = GPR_MAX(8, 2 * call->cap_to_free);
+    call->cap_to_free = std::max(size_t(8), 2 * call->cap_to_free);
     call->to_free = static_cast<void**>(
         gpr_realloc(call->to_free, sizeof(*call->to_free) * call->cap_to_free));
   }
@@ -609,7 +610,7 @@ static void add_to_free(call_state* call, void* p) {
 
 static grpc_slice* add_slice_to_unref(call_state* call, grpc_slice s) {
   if (call->num_slices_to_unref == call->cap_slices_to_unref) {
-    call->cap_slices_to_unref = GPR_MAX(8, 2 * call->cap_slices_to_unref);
+    call->cap_slices_to_unref = std::max(size_t(8), 2 * call->cap_slices_to_unref);
     call->slices_to_unref = static_cast<grpc_slice**>(gpr_realloc(
         call->slices_to_unref,
         sizeof(*call->slices_to_unref) * call->cap_slices_to_unref));
@@ -630,7 +631,6 @@ static void read_metadata(input_stream* inp, size_t* count,
     for (size_t i = 0; i < *count; i++) {
       (*metadata)[i].key = read_string_like_slice(inp);
       (*metadata)[i].value = read_buffer_like_slice(inp);
-      (*metadata)[i].flags = grpc_fuzzer_get_next_uint32(inp);
       add_slice_to_unref(cs, (*metadata)[i].key);
       add_slice_to_unref(cs, (*metadata)[i].value);
     }
