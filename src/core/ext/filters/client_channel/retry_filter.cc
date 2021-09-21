@@ -2391,8 +2391,8 @@ RetryFilter::CallData::PendingBatch* RetryFilter::CallData::PendingBatchesAdd(
   // gRPC clients do not send trailing metadata.
   if (batch->send_initial_metadata) {
     pending_send_initial_metadata_ = true;
-    bytes_buffered_for_retry_ += grpc_metadata_batch_size(
-        batch->payload->send_initial_metadata.send_initial_metadata);
+    bytes_buffered_for_retry_ += batch->payload->send_initial_metadata
+                                     .send_initial_metadata->TransportSize();
   }
   if (batch->send_message) {
     pending_send_message_ = true;
