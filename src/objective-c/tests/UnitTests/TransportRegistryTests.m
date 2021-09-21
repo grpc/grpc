@@ -20,6 +20,7 @@
 
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCTransport.h>
+#import "src/objective-c/GRPCClient/private/GRPCCore/GRPCCoreTransportFactoryLoader.h"
 #import "src/objective-c/GRPCClient/private/GRPCTransport+Private.h"
 
 @interface TransportRegistryTests : XCTestCase
@@ -28,13 +29,21 @@
 
 @implementation TransportRegistryTests
 
++ (void)setUp {
+  [[GRPCCoreTransportFactoryLoader sharedInstance] loadCoreFactories];
+}
+
 - (void)testDefaultImplementationsExist {
-  id<GRPCTransportFactory> secureTransportFactory = [[GRPCTransportRegistry sharedInstance]
-      getTransportFactoryWithID:GRPCDefaultTransportImplList.core_secure];
-  id<GRPCTransportFactory> insecureTransportFactory = [[GRPCTransportRegistry sharedInstance]
-      getTransportFactoryWithID:GRPCDefaultTransportImplList.core_insecure];
+  GRPCTransportRegistry *registry = [GRPCTransportRegistry sharedInstance];
+  id<GRPCTransportFactory> secureTransportFactory =
+      [registry getTransportFactoryWithID:GRPCDefaultTransportImplList.core_secure];
+  id<GRPCTransportFactory> insecureTransportFactory =
+      [registry getTransportFactoryWithID:GRPCDefaultTransportImplList.core_insecure];
+
   XCTAssertNotNil(secureTransportFactory);
+  XCTAssertTrue([registry isRegisteredForTransportID:GRPCDefaultTransportImplList.core_secure]);
   XCTAssertNotNil(insecureTransportFactory);
+  XCTAssertTrue([registry isRegisteredForTransportID:GRPCDefaultTransportImplList.core_insecure]);
   XCTAssertNotEqual(secureTransportFactory, insecureTransportFactory);
 }
 
