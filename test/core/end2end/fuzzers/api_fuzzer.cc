@@ -35,8 +35,8 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/metadata.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/fuzzer_util.h"
@@ -196,9 +196,10 @@ static const char* read_cred_artifact(cred_artifact_ctx* ctx, input_stream* inp,
                                       size_t num_builtins) {
   uint8_t b = grpc_fuzzer_get_next_byte(inp);
   if (b == 0) return nullptr;
-  if (b == 1)
+  if (b == 1) {
     return ctx->release[ctx->num_release++] =
                grpc_fuzzer_get_next_string(inp, nullptr);
+  }
   if (b >= num_builtins + 1) {
     end(inp);
     return nullptr;
@@ -380,8 +381,8 @@ grpc_ares_request* my_dns_lookup_ares_locked(
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* /*balancer_addresses*/,
-    char** /*service_config_json*/,
-    int /*query_timeout*/, std::shared_ptr<grpc_core::WorkSerializer> /*combiner*/) {
+    char** /*service_config_json*/, int /*query_timeout*/,
+    std::shared_ptr<grpc_core::WorkSerializer> /*combiner*/) {
   addr_req* r = static_cast<addr_req*>(gpr_malloc(sizeof(*r)));
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
@@ -400,8 +401,9 @@ static void my_cancel_ares_request_locked(grpc_ares_request* request) {
 ////////////////////////////////////////////////////////////////////////////////
 // client connection
 
-static void sched_connect(grpc_closure* closure, grpc_slice_allocator* slice_allocator, grpc_endpoint** ep,
-                          gpr_timespec deadline);
+static void sched_connect(grpc_closure* closure,
+                          grpc_slice_allocator* slice_allocator,
+                          grpc_endpoint** ep, gpr_timespec deadline);
 
 typedef struct {
   grpc_timer timer;
@@ -423,8 +425,9 @@ static void do_connect(void* arg, grpc_error* error) {
     grpc_passthru_endpoint_create(&client, &server, nullptr);
     *fc->ep = client;
 
-    grpc_transport* transport =
-        grpc_create_chttp2_transport(nullptr, server, false, grpc_resource_user_create(g_resource_quota, "transport-user"));
+    grpc_transport* transport = grpc_create_chttp2_transport(
+        nullptr, server, false,
+        grpc_resource_user_create(g_resource_quota, "transport-user"));
     g_server->core_server->SetupTransport(transport, nullptr, nullptr, nullptr);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
@@ -435,8 +438,9 @@ static void do_connect(void* arg, grpc_error* error) {
   gpr_free(fc);
 }
 
-static void sched_connect(grpc_closure* closure, grpc_slice_allocator* slice_allocator, grpc_endpoint** ep,
-                          gpr_timespec deadline) {
+static void sched_connect(grpc_closure* closure,
+                          grpc_slice_allocator* slice_allocator,
+                          grpc_endpoint** ep, gpr_timespec deadline) {
   if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) < 0) {
     *ep = nullptr;
     grpc_slice_allocator_destroy(slice_allocator);
@@ -616,7 +620,8 @@ static void add_to_free(call_state* call, void* p) {
 
 static grpc_slice* add_slice_to_unref(call_state* call, grpc_slice s) {
   if (call->num_slices_to_unref == call->cap_slices_to_unref) {
-    call->cap_slices_to_unref = std::max(size_t(8), 2 * call->cap_slices_to_unref);
+    call->cap_slices_to_unref =
+        std::max(size_t(8), 2 * call->cap_slices_to_unref);
     call->slices_to_unref = static_cast<grpc_slice**>(gpr_realloc(
         call->slices_to_unref,
         sizeof(*call->slices_to_unref) * call->cap_slices_to_unref));
