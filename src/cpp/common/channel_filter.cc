@@ -34,7 +34,7 @@ grpc_linked_mdelem* MetadataBatch::AddMetadata(const string& key,
   storage->md = grpc_mdelem_from_slices(SliceFromCopiedString(key),
                                         SliceFromCopiedString(value));
   GRPC_LOG_IF_ERROR("MetadataBatch::AddMetadata",
-                    grpc_metadata_batch_link_head(batch_, storage));
+                    batch_->LinkHead( storage));
   return storage;
 }
 

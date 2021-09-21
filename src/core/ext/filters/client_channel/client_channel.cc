@@ -2490,7 +2490,7 @@ class ClientChannel::LoadBalancedCall::Metadata
     linked_mdelem->md = grpc_mdelem_from_slices(
         ExternallyManagedSlice(key.data(), key.size()),
         ExternallyManagedSlice(value.data(), value.size()));
-    GPR_ASSERT(grpc_metadata_batch_link_tail(batch_, linked_mdelem) ==
+    GPR_ASSERT(batch_->LinkTail( linked_mdelem) ==
                GRPC_ERROR_NONE);
   }
 
