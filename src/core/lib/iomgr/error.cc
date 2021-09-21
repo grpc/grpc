@@ -65,7 +65,7 @@ absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
   return s;
 }
 
-std::string grpc_error_std_string(const absl::Status& error) {
+std::string grpc_error_std_string(absl::Status error) {
   return grpc_core::StatusToString(error);
 }
 
@@ -87,9 +87,9 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
   char* utf8_message = gpr_format_message(err);
   absl::Status s =
       StatusCreate(absl::StatusCode::kUnknown, "WSA Error", location, {});
-  StatusSetInt(&s, StatusIntProperty::WSA_ERROR, err);
-  StatusSetStr(&s, StatusStrProperty::OS_ERROR, utf8_message);
-  StatusSetStr(&s, StatusStrProperty::SYSCALL, call_name);
+  StatusSetInt(&s, grpc_core::StatusIntProperty::WSA_ERROR, err);
+  StatusSetStr(&s, grpc_core::StatusStrProperty::OS_ERROR, utf8_message);
+  StatusSetStr(&s, grpc_core::StatusStrProperty::SYSCALL, call_name);
 }
 #endif
 

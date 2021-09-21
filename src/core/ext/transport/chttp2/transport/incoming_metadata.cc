@@ -45,7 +45,7 @@ grpc_error_handle grpc_chttp2_incoming_metadata_buffer_add(
 grpc_error_handle grpc_chttp2_incoming_metadata_buffer_replace_or_add(
     grpc_chttp2_incoming_metadata_buffer* buffer, grpc_slice key,
     grpc_slice value) {
-  if (buffer->batch->ReplaceIfExists(key, value)) return GRPC_ERROR_NONE;
+  if (buffer->batch.ReplaceIfExists(key, value)) return GRPC_ERROR_NONE;
   return grpc_chttp2_incoming_metadata_buffer_add(
       buffer, grpc_mdelem_from_slices(grpc_slice_ref_internal(key),
                                       grpc_slice_ref_internal(value)));
@@ -53,10 +53,10 @@ grpc_error_handle grpc_chttp2_incoming_metadata_buffer_replace_or_add(
 
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
     grpc_chttp2_incoming_metadata_buffer* buffer, grpc_millis deadline) {
-  buffer->batch->SetDeadline(deadline);
+  buffer->batch.SetDeadline(deadline);
 }
 
 void grpc_chttp2_incoming_metadata_buffer_publish(
     grpc_chttp2_incoming_metadata_buffer* buffer, grpc_metadata_batch* batch) {
-  grpc_metadata_batch_move(&buffer->batch, batch);
+  *batch = std::move(buffer->batch);
 }
