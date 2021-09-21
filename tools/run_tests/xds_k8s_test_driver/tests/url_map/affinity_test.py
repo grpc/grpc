@@ -58,7 +58,7 @@ class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
     def is_supported(config: TestConfig) -> bool:
-        if config.client_lang in ['cpp', 'java', 'python']:
+        if config.client_lang in ['cpp', 'java']:
             return config.version_ge('v1.40.x')
         if config.client_lang in ['go']:
             return config.version_ge('v1.41.x')
@@ -115,9 +115,11 @@ class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
             rpc_types=[RpcTypeEmptyCall, RpcTypeUnaryCall],
             num_rpcs=_NUM_RPCS)
         self.assertEqual(3, rpc_distribution.num_peers)
-        rpcs_by_peer = rpc_distribution.raw["rpcsByPeer"]
-        for peer in rpcs_by_peer:
-            self.assertBetween(rpcs_by_peer[peer] / _NUM_RPCS, 1 / 4, 1 / 2)
+        self.assertLen(
+            test_client.find_subchannels_with_state(
+                _ChannelzChannelState.READY),
+            3,
+        )
 
 
 class TestHeaderBasedAffinityMultipleHeaders(
@@ -125,7 +127,7 @@ class TestHeaderBasedAffinityMultipleHeaders(
 
     @staticmethod
     def is_supported(config: TestConfig) -> bool:
-        if config.client_lang in ['cpp', 'java', 'python']:
+        if config.client_lang in ['cpp', 'java']:
             return config.version_ge('v1.40.x')
         if config.client_lang in ['go']:
             return config.version_ge('v1.41.x')
@@ -203,13 +205,21 @@ class TestHeaderBasedAffinityMultipleHeaders(
                 num_rpcs=_NUM_RPCS)
             unary_call_peer = list(rpc_distribution.raw['rpcsByMethod']
                                    ['UnaryCall']['rpcsByPeer'].keys())[0]
-            self.assertEqual(2, rpc_distribution.num_peers)
             if unary_call_peer != empty_call_peer:
                 different_peer_picked = True
                 break
         self.assertTrue(
             different_peer_picked,
             "the same endpoint was picked for all the headers, expect a different endpoint to be picked"
+        )
+        self.assertLen(
+            test_client.find_subchannels_with_state(
+                _ChannelzChannelState.READY),
+            2,
+        )
+        self.assertLen(
+            test_client.find_subchannels_with_state(_ChannelzChannelState.IDLE),
+            1,
         )
 
 
