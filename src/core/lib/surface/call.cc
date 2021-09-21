@@ -1935,7 +1935,7 @@ done_with_error:
   /* reverse any mutations that occurred */
   if (stream_op->send_initial_metadata) {
     call->sent_initial_metadata = false;
-    grpc_metadata_batch_clear(&call->metadata_batch[0][0]);
+    call->metadata_batch[0][0].Clear();
   }
   if (stream_op->send_message) {
     call->sending_message = false;
@@ -1943,7 +1943,7 @@ done_with_error:
   }
   if (stream_op->send_trailing_metadata) {
     call->sent_final_op = false;
-    grpc_metadata_batch_clear(&call->metadata_batch[0][1]);
+    call->metadata_batch[0][1].Clear();
   }
   if (stream_op->recv_initial_metadata) {
     call->received_initial_metadata = false;

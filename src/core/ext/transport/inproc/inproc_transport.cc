@@ -171,14 +171,14 @@ struct inproc_stream {
                          cs->write_buffer_initial_md_flags, &to_read_initial_md,
                          &to_read_initial_md_flags, &to_read_initial_md_filled);
         deadline = std::min(deadline, cs->write_buffer_deadline);
-        grpc_metadata_batch_clear(&cs->write_buffer_initial_md);
+        cs->write_buffer_initial_md.Clear();
         cs->write_buffer_initial_md_filled = false;
       }
       if (cs->write_buffer_trailing_md_filled) {
         fill_in_metadata(this, &cs->write_buffer_trailing_md, 0,
                          &to_read_trailing_md, nullptr,
                          &to_read_trailing_md_filled);
-        grpc_metadata_batch_clear(&cs->write_buffer_trailing_md);
+        cs->write_buffer_trailing_md.Clear();
         cs->write_buffer_trailing_md_filled = false;
       }
       if (cs->write_buffer_cancel_error != GRPC_ERROR_NONE) {
@@ -703,7 +703,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
              .trailing_metadata_available =
             (other != nullptr && other->send_trailing_md_op != nullptr);
       }
-      grpc_metadata_batch_clear(&s->to_read_initial_md);
+      s->to_read_initial_md.Clear();
       s->to_read_initial_md_filled = false;
       INPROC_LOG(GPR_INFO,
                  "op_state_machine %p scheduling initial-metadata-ready %s", s,
@@ -740,7 +740,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
                    "op_state_machine %p already implicitly received trailing "
                    "metadata, so ignoring new trailing metadata from client",
                    s);
-        grpc_metadata_batch_clear(&s->to_read_trailing_md);
+        s->to_read_trailing_md.Clear();
         s->to_read_trailing_md_filled = false;
         s->trailing_md_recvd_implicit_only = false;
       } else {
@@ -787,7 +787,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
                            s->recv_trailing_md_op->payload
                                ->recv_trailing_metadata.recv_trailing_metadata,
                            nullptr, nullptr);
-      grpc_metadata_batch_clear(&s->to_read_trailing_md);
+      s->to_read_trailing_md.Clear();
       s->to_read_trailing_md_filled = false;
 
       // We should schedule the recv_trailing_md_op completion if
