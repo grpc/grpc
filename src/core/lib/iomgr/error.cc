@@ -87,9 +87,9 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
   char* utf8_message = gpr_format_message(err);
   absl::Status s =
       StatusCreate(absl::StatusCode::kUnknown, "WSA Error", location, {});
-  StatusSetInt(&s, grpc_core::StatusIntProperty::kWsaError, err);
-  StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError, utf8_message);
-  StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall, call_name);
+  StatusSetInt(&s, grpc_core::StatusIntProperty::WSA_ERROR, err);
+  StatusSetStr(&s, grpc_core::StatusStrProperty::OS_ERROR, utf8_message);
+  StatusSetStr(&s, grpc_core::StatusStrProperty::SYSCALL, call_name);
 }
 #endif
 
@@ -108,22 +108,6 @@ bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
     *p = *value;
     return true;
   } else {
-    // TODO(veblush): Remove this once absl::Status migration is done
-    if (which == GRPC_ERROR_INT_GRPC_STATUS) {
-      switch (error.code()) {
-        case absl::StatusCode::kOk:
-          *p = GRPC_STATUS_OK;
-          return true;
-        case absl::StatusCode::kResourceExhausted:
-          *p = GRPC_STATUS_RESOURCE_EXHAUSTED;
-          return true;
-        case absl::StatusCode::kCancelled:
-          *p = GRPC_STATUS_CANCELLED;
-          return true;
-        default:
-          break;
-      }
-    }
     return false;
   }
 }
@@ -146,12 +130,6 @@ bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
     *s = grpc_slice_from_copied_buffer(value->c_str(), value->size());
     return true;
   } else {
-    // TODO(veblush): Remove this once absl::Status migration is done
-    if (which == GRPC_ERROR_STR_DESCRIPTION && !error.message().empty()) {
-      *s = grpc_slice_from_copied_buffer(error.message().data(),
-                                         error.message().size());
-      return true;
-    }
     return false;
   }
 }
@@ -577,11 +555,11 @@ struct special_error_status_map {
 const special_error_status_map error_status_map[] = {
     {GRPC_STATUS_OK, "", 0},                // GRPC_ERROR_NONE
     {GRPC_STATUS_INVALID_ARGUMENT, "", 0},  // GRPC_ERROR_RESERVED_1
-    {GRPC_STATUS_RESOURCE_EXHAUSTED, "RESOURCE_EXHAUSTED",
-     strlen("RESOURCE_EXHAUSTED")},         // GRPC_ERROR_OOM
+    {GRPC_STATUS_RESOURCE_EXHAUSTED, "Out of memory",
+     strlen("Out of memory")},              // GRPC_ERROR_OOM
     {GRPC_STATUS_INVALID_ARGUMENT, "", 0},  // GRPC_ERROR_RESERVED_2
-    {GRPC_STATUS_CANCELLED, "CANCELLED",
-     strlen("CANCELLED")},  // GRPC_ERROR_CANCELLED
+    {GRPC_STATUS_CANCELLED, "Cancelled",
+     strlen("Cancelled")},  // GRPC_ERROR_CANCELLED
 };
 
 bool grpc_error_get_int(grpc_error_handle err, grpc_error_ints which,
@@ -653,9 +631,9 @@ grpc_error_handle grpc_error_add_child(grpc_error_handle src,
   }
 }
 
-static const char* no_error_string = "\"OK\"";
-static const char* oom_error_string = "\"RESOURCE_EXHAUSTED\"";
-static const char* cancelled_error_string = "\"CANCELLED\"";
+static const char* no_error_string = "\"No Error\"";
+static const char* oom_error_string = "\"Out of memory\"";
+static const char* cancelled_error_string = "\"Cancelled\"";
 
 struct kv_pair {
   char* key;

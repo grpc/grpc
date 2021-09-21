@@ -157,7 +157,7 @@ void grpc_enable_error_creation();
 #ifdef GRPC_ERROR_IS_ABSEIL_STATUS
 
 #define GRPC_ERROR_NONE absl::OkStatus()
-#define GRPC_ERROR_OOM absl::Status(absl::ResourceExhaustedError(""))
+#define GRPC_ERROR_OOM absl::Status(absl::ResourceExhaustedError)
 #define GRPC_ERROR_CANCELLED absl::CancelledError()
 
 #define GRPC_ERROR_REF(err) (err)
