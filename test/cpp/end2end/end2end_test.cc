@@ -1630,7 +1630,7 @@ TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
   Status s = stub_->Echo(&context, request, &response);
   cancel_thread.join();
   EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
-  EXPECT_EQ(s.error_message(), "Cancelled");
+  EXPECT_EQ(s.error_message(), "CANCELLED");
 }
 
 // Server cancels rpc after 1ms
