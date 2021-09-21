@@ -347,7 +347,7 @@ void CallData::DecideWhetherToInjectFaults(
                 *fi_policy_);
       }
     };
-    (*initial_metadata)->ForEach([&](grpc_mdelem md) {
+    initial_metadata->ForEach([&](grpc_mdelem md) {
       absl::string_view key = StringViewFromSlice(GRPC_MDKEY(md));
       // Only perform string comparison if:
       //   1. Needs to check this header;

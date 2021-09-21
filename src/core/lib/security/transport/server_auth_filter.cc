@@ -98,7 +98,7 @@ static grpc_metadata_array metadata_batch_to_md_array(
     const grpc_metadata_batch* batch) {
   grpc_metadata_array result;
   grpc_metadata_array_init(&result);
-  (*batch)->ForEach([&](grpc_mdelem md) {
+  batch->ForEach([&](grpc_mdelem md) {
     grpc_metadata* usr_md = nullptr;
     grpc_slice key = GRPC_MDKEY(md);
     grpc_slice value = GRPC_MDVALUE(md);

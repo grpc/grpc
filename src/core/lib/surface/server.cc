@@ -1382,24 +1382,21 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
   grpc_millis op_deadline;
   if (error == GRPC_ERROR_NONE) {
     GPR_DEBUG_ASSERT(
-        (*calld->recv_initial_metadata_)->legacy_index()->named.path !=
-        nullptr);
+        calld->recv_initial_metadata_->legacy_index()->named.path != nullptr);
     GPR_DEBUG_ASSERT(
-        (*calld->recv_initial_metadata_)->legacy_index()->named.authority !=
+        calld->recv_initial_metadata_->legacy_index()->named.authority !=
         nullptr);
     calld->path_.emplace(grpc_slice_ref_internal(GRPC_MDVALUE(
-        (*calld->recv_initial_metadata_)->legacy_index()->named.path->md)));
-    calld->host_.emplace(
-        grpc_slice_ref_internal(GRPC_MDVALUE((*calld->recv_initial_metadata_)
-                                                 ->legacy_index()
-                                                 ->named.authority->md)));
+        calld->recv_initial_metadata_->legacy_index()->named.path->md)));
+    calld->host_.emplace(grpc_slice_ref_internal(GRPC_MDVALUE(
+        calld->recv_initial_metadata_->legacy_index()->named.authority->md)));
     grpc_metadata_batch_remove(calld->recv_initial_metadata_, GRPC_BATCH_PATH);
     grpc_metadata_batch_remove(calld->recv_initial_metadata_,
                                GRPC_BATCH_AUTHORITY);
   } else {
     GRPC_ERROR_REF(error);
   }
-  op_deadline = (*calld->recv_initial_metadata_)->deadline();
+  op_deadline = calld->recv_initial_metadata_->deadline();
   if (op_deadline != GRPC_MILLIS_INF_FUTURE) {
     calld->deadline_ = op_deadline;
   }

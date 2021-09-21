@@ -196,42 +196,35 @@ class MetadataMap {
 
 }  // namespace grpc_core
 
-using grpc_metadata_batch =
-    grpc_core::ManualConstructor<grpc_core::MetadataMap>;
+using grpc_metadata_batch = grpc_core::MetadataMap;
 
-inline void grpc_metadata_batch_init(grpc_metadata_batch* batch) {
-  batch->Init();
-}
-inline void grpc_metadata_batch_destroy(grpc_metadata_batch* batch) {
-  batch->Destroy();
-}
 inline void grpc_metadata_batch_clear(grpc_metadata_batch* batch) {
-  (*batch)->Clear();
+  batch->Clear();
 }
 inline bool grpc_metadata_batch_is_empty(grpc_metadata_batch* batch) {
-  return (*batch)->empty();
+  return batch->empty();
 }
 
 /* Returns the transport size of the batch. */
 inline size_t grpc_metadata_batch_size(grpc_metadata_batch* batch) {
-  return (*batch)->TransportSize();
+  return batch->TransportSize();
 }
 
 /** Remove \a storage from the batch, unreffing the mdelem contained */
 inline void grpc_metadata_batch_remove(grpc_metadata_batch* batch,
                                        grpc_linked_mdelem* storage) {
-  (*batch)->Remove(storage);
+  batch->Remove(storage);
 }
 inline void grpc_metadata_batch_remove(grpc_metadata_batch* batch,
                                        grpc_metadata_batch_callouts_index idx) {
-  (*batch)->Remove(idx);
+  batch->Remove(idx);
 }
 
 /** Substitute a new mdelem for an old value */
 inline grpc_error_handle grpc_metadata_batch_substitute(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
     grpc_mdelem new_mdelem) {
-  return (*batch)->Substitute(storage, new_mdelem);
+  return batch->Substitute(storage, new_mdelem);
 }
 
 void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
@@ -247,7 +240,7 @@ void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
 inline absl::optional<absl::string_view> grpc_metadata_batch_get_value(
     grpc_metadata_batch* batch, absl::string_view target_key,
     std::string* concatenated_value) {
-  return (*batch)->GetValue(target_key, concatenated_value);
+  return batch->GetValue(target_key, concatenated_value);
 }
 
 /** Add \a storage to the beginning of \a batch. storage->md is
@@ -257,13 +250,13 @@ inline absl::optional<absl::string_view> grpc_metadata_batch_get_value(
     for the lifetime of the call. */
 inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_link_head(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage) {
-  return (*batch)->LinkHead(storage);
+  return batch->LinkHead(storage);
 }
 
 inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_link_head(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
     grpc_metadata_batch_callouts_index idx) {
-  return (*batch)->LinkHead(storage, idx);
+  return batch->LinkHead(storage, idx);
 }
 
 /** Add \a storage to the end of \a batch. storage->md is
@@ -273,13 +266,13 @@ inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_link_head(
     for the lifetime of the call. */
 inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_link_tail(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage) {
-  return (*batch)->LinkTail(storage);
+  return batch->LinkTail(storage);
 }
 
 inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_link_tail(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
     grpc_metadata_batch_callouts_index idx) {
-  return (*batch)->LinkTail(storage, idx);
+  return batch->LinkTail(storage, idx);
 }
 
 /** Add \a elem_to_add as the first element in \a batch, using
@@ -291,7 +284,7 @@ inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_link_tail(
 inline grpc_error_handle grpc_metadata_batch_add_head(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
     grpc_mdelem elem_to_add) {
-  return (*batch)->AddHead(storage, elem_to_add);
+  return batch->AddHead(storage, elem_to_add);
 }
 
 // TODO(arjunroy, roth): Remove redundant methods.
@@ -319,7 +312,7 @@ inline grpc_error_handle GRPC_MUST_USE_RESULT grpc_metadata_batch_add_head(
 inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_add_tail(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
     grpc_mdelem elem_to_add) {
-  return (*batch)->AddTail(storage, elem_to_add);
+  return batch->AddTail(storage, elem_to_add);
 }
 
 inline grpc_error_handle GRPC_MUST_USE_RESULT grpc_metadata_batch_add_tail(
@@ -344,13 +337,12 @@ typedef grpc_filtered_mdelem (*grpc_metadata_batch_filter_func)(
 inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_filter(
     grpc_metadata_batch* batch, grpc_metadata_batch_filter_func func,
     void* user_data, const char* composite_error_string) {
-  return (*batch)->Filter(
-      [=](grpc_mdelem elem) { return func(user_data, elem); },
-      composite_error_string);
+  return batch->Filter([=](grpc_mdelem elem) { return func(user_data, elem); },
+                       composite_error_string);
 }
 
 inline void grpc_metadata_batch_assert_ok(grpc_metadata_batch* batch) {
-  (*batch)->AssertOk();
+  batch->AssertOk();
 }
 
 /// Copies \a src to \a dst.  \a storage must point to an array of
@@ -365,10 +357,5 @@ inline void grpc_metadata_batch_assert_ok(grpc_metadata_batch* batch) {
 void grpc_metadata_batch_copy(grpc_metadata_batch* src,
                               grpc_metadata_batch* dst,
                               grpc_linked_mdelem* storage);
-
-inline void grpc_metadata_batch_move(grpc_metadata_batch* src,
-                                     grpc_metadata_batch* dst) {
-  dst->Init(std::move(**src));
-}
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H */
