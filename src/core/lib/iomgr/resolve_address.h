@@ -39,7 +39,18 @@
 
 struct grpc_resolved_address {
   char addr[GRPC_MAX_SOCKADDR_SIZE];
-  socklen_t len;
+  socklen_t len = 0;
+
+  grpc_resolved_address() = default;
+  grpc_resolved_address(const grpc_resolved_address& other)
+      : len(other.len) {
+    memcpy(addr, other.addr, len);
+  }
+  grpc_resolved_address& operator=(const grpc_resolved_address& other) {
+    len = other.len;
+    memcpy(addr, other.addr, len);
+    return *this;
+  }
 };
 struct grpc_resolved_addresses {
   size_t naddrs;
