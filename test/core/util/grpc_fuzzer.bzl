@@ -51,7 +51,7 @@ def grpc_proto_fuzzer(name, corpus, proto, srcs = [], deps = [], data = [], size
         name = name,
         srcs = srcs,
         deps = deps + [
-            "@com_google_libprotobuf-mutator//:libprotobuf-mutator",
+            "@com_google_libprotobuf_mutator//:libprotobuf_mutator",
             name + "-cc_proto",
         ] + select({
             "//:grpc_build_fuzzers": [],

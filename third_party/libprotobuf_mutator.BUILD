@@ -15,7 +15,7 @@
 licenses(["notice"])
 
 cc_library(
-    name = "libprotobuf-mutator",
+    name = "libprotobuf_mutator",
     srcs = glob(
         ["src/*.cc", "src/libfuzzer/*.cc"], 
         exclude = ["src/*_test.cc", "src/libfuzzer/*_test.cc"]
