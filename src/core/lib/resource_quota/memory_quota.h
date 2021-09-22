@@ -229,7 +229,7 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
 
     using value_type = T;
     template <typename U>
-    Container(const Container<U>& other)
+    explicit Container(const Container<U>& other)
         : underlying_allocator_(other.underlying_allocator()) {}
     T* allocate(size_t n) {
       underlying_allocator_->Reserve(n * sizeof(T));
@@ -277,7 +277,7 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
 template <typename T>
 class Vector : public std::vector<T, MemoryAllocator::Container<T>> {
  public:
-  Vector(MemoryAllocator* allocator)
+  explicit Vector(MemoryAllocator* allocator)
       : std::vector<T, MemoryAllocator::Container<T>>(
             MemoryAllocator::Container<T>(allocator)) {}
 };
