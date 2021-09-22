@@ -29,7 +29,7 @@
 
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/iomgr_internal.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_combiner_trace(false, "combiner");
 
@@ -199,7 +199,7 @@ bool grpc_combiner_continue_exec_ctx() {
   // 3. the current thread is not a worker for any background poller
   // 4. the DEFAULT executor is threaded
   if (contended && grpc_core::ExecCtx::Get()->IsReadyToFinish() &&
-      !grpc_iomgr_is_any_background_poller_thread() &&
+      !grpc_iomgr_platform_is_any_background_poller_thread() &&
       grpc_core::Executor::IsThreadedDefault()) {
     // this execution context wants to move on: schedule remaining work to be
     // picked up on the executor

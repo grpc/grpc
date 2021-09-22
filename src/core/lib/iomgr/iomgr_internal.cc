@@ -22,8 +22,6 @@
 
 #include <stddef.h>
 
-#include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/iomgr/timer_manager.h"
 
 static grpc_iomgr_platform_vtable* iomgr_platform_vtable = nullptr;
 
