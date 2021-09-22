@@ -1,5 +1,4 @@
 //
-//
 // Copyright 2020 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,6 +32,8 @@
 #include <unordered_map>
 
 #include "absl/hash/hash.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
@@ -152,6 +153,12 @@ class RlsLb : public LoadBalancingPolicy {
         size += kv.first.length() + kv.second.length();
       }
       return size;
+    }
+
+    std::string ToString() const {
+      return absl::StrCat("{",
+                          absl::StrJoin(key_map, ",", absl::PairFormatter("=")),
+                          "}");
     }
   };
 

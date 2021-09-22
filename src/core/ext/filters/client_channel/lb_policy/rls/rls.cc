@@ -158,9 +158,14 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
     gpr_log(GPR_INFO, "[rlslb %p] picker=%p: picker pick", lb_policy_.get(),
             this);
   }
-  RequestKey key;
-  key.key_map = BuildKeyMap(config_->key_builder_map(), args.path,
-                            lb_policy_->server_name_, args.initial_metadata);
+  RequestKey key = {
+      BuildKeyMap(config_->key_builder_map(), args.path,
+                  lb_policy_->server_name_, args.initial_metadata)
+  };
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+    gpr_log(GPR_INFO, "[rlslb %p] picker=%p: request keys: %s",
+            lb_policy_.get(), this, key.ToString().c_str());
+  }
   MutexLock lock(&lb_policy_->mu_);
   if (lb_policy_->is_shutdown_) {
     return PickResult::Fail(
@@ -656,8 +661,8 @@ RlsLb::RlsRequest::RlsRequest(RefCountedPtr<RlsLb> lb_policy, RequestKey key,
       backoff_state_(std::move(backoff_state)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO,
-            "[rlslb %p] request_map_entry=%p: request map entry created",
-            lb_policy_.get(), this);
+            "[rlslb %p] rls_request=%p: RLS request created for key %s",
+            lb_policy_.get(), this, key_.ToString().c_str());
   }
   GRPC_CLOSURE_INIT(&call_complete_cb_, OnRlsCallComplete, this, nullptr);
   ExecCtx::Run(
@@ -668,7 +673,7 @@ RlsLb::RlsRequest::RlsRequest(RefCountedPtr<RlsLb> lb_policy, RequestKey key,
 
 RlsLb::RlsRequest::~RlsRequest() {
   if (call_ != nullptr) {
-    GRPC_CALL_INTERNAL_UNREF(call_, "request map destroyed");
+    GRPC_CALL_INTERNAL_UNREF(call_, "~RlsRequest");
   }
   grpc_byte_buffer_destroy(send_message_);
   grpc_byte_buffer_destroy(recv_message_);
@@ -679,18 +684,15 @@ RlsLb::RlsRequest::~RlsRequest() {
 
 void RlsLb::RlsRequest::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-    gpr_log(GPR_INFO,
-            "[rlslb %p] request_map_entry=%p: request map entry shutdown",
+    gpr_log(GPR_INFO, "[rlslb %p] rls_request=%p: RLS request shutdown",
             lb_policy_.get(), this);
   }
   if (call_ != nullptr) {
     grpc_call_cancel_internal(call_);
-    call_ = nullptr;
   }
 }
 
-void RlsLb::RlsRequest::StartCall(void* arg, grpc_error_handle error) {
-  (void)error;
+void RlsLb::RlsRequest::StartCall(void* arg, grpc_error_handle /*error*/) {
   RefCountedPtr<RlsRequest> entry(reinterpret_cast<RlsRequest*>(arg));
   grpc_millis now = ExecCtx::Get()->Now();
   grpc_call* call = grpc_channel_create_pollset_set_call(
@@ -739,6 +741,7 @@ void RlsLb::RlsRequest::StartCall(void* arg, grpc_error_handle error) {
   auto call_error = grpc_call_start_batch_and_execute(
       call, ops, static_cast<size_t>(op - ops), &entry->call_complete_cb_);
   GPR_ASSERT(call_error == GRPC_CALL_OK);
+  // FIXME: why does this require the lock?
   MutexLock lock(&entry->lb_policy_->mu_);
   if (entry->lb_policy_->is_shutdown_) {
     grpc_call_cancel_internal(call);
@@ -762,7 +765,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   bool call_failed = error != GRPC_ERROR_NONE || status_recv_ != GRPC_STATUS_OK;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO,
-            "[rlslb %p] request_map_entry=%p, error=%s, status=%d: RLS call "
+            "[rlslb %p] rls_request=%p, error=%s, status=%d: RLS call "
             "response received",
             lb_policy_.get(), this, grpc_error_std_string(error).c_str(),
             status_recv_);
