@@ -418,6 +418,7 @@ static void do_connect(void* arg, grpc_error* error) {
     *fc->ep = nullptr;
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_REF(error));
   } else if (g_server != nullptr) {
+    grpc_slice_allocator_destroy(fc->slice_allocator);
     grpc_endpoint* client;
     grpc_endpoint* server;
     grpc_passthru_endpoint_create(&client, &server, nullptr);
