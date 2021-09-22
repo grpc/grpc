@@ -2491,6 +2491,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/dns/iomgr/dns_resolver_iomgr.cc",
     ],
     external_deps = [
+        "absl/container:flat_hash_map",
         "absl/functional:bind_front",
         "absl/strings",
         "absl/strings:str_format",

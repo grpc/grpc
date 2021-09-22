@@ -449,8 +449,8 @@ void grpc_resolver_dns_ares_init() {
       default_resolver = grpc_resolve_address_impl;
     }
     grpc_set_resolver_impl(&ares_resolver);
-    grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-        absl::make_unique<grpc_core::AresDnsResolverFactory>());
+    // grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
+    //     absl::make_unique<grpc_core::AresDnsResolverFactory>());
   } else {
     g_use_ares_dns_resolver = false;
   }

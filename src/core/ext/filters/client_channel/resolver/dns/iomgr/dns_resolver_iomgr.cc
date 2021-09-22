@@ -15,6 +15,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/event_engine/event_engine.h>
+#include "absl/container/flat_hash_map.h"
 #include "absl/functional/bind_front.h"
 #include "absl/strings/str_join.h"
 
@@ -70,7 +71,7 @@ class IomgrDnsResolver : public Resolver {
       IomgrDnsResolver* self,
       absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>> records);
   static void OnBalancerResolved(
-      IomgrDnsResolver* self,
+      IomgrDnsResolver* self, absl::string_view balancer_name,
       absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses);
   static void OnTxtResolved(IomgrDnsResolver* self,
                             absl::StatusOr<std::string> txt_record);
@@ -144,9 +145,9 @@ class IomgrDnsResolver : public Resolver {
   grpc_millis last_resolution_timestamp_ = -1;
   /// retry backoff state
   BackOff backoff_;
-  // has shutdown been initiated
+  /// has shutdown been initiated
   bool shutdown_initiated_ = false;
-  // task handles for lookup cancellation
+  /// task handles for lookup cancellation
   EventEngine::DNSResolver::LookupTaskHandle host_handle_;
   EventEngine::DNSResolver::LookupTaskHandle srv_handle_;
   EventEngine::DNSResolver::LookupTaskHandle txt_handle_;
@@ -156,19 +157,21 @@ class IomgrDnsResolver : public Resolver {
       tmp_hostname_addresses_;
   absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
       tmp_srv_records_;
-  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+  /// Temporary map of balancer hostname->resolved addresses, used for balancer
+  /// lookup after the SRV query returns. The balancer hostname needs to be
+  /// retained for authority override. The balancer hostname string_view points
+  /// to the hosts in SRVRecords.
+  absl::StatusOr<absl::flat_hash_map<absl::string_view,
+                                     std::vector<EventEngine::ResolvedAddress>>>
       tmp_balancer_addresses_ ABSL_GUARDED_BY(balancer_mu_);
   absl::StatusOr<std::string> tmp_txt_record_;
-  // pre-bound callback function for hostname resolution
+  /// pre-bound callback function for hostname resolution
   EventEngine::DNSResolver::LookupHostnameCallback on_hostnames_resolved_;
-  // pre-bound callback function for srv resolution
+  /// pre-bound callback function for srv resolution
   EventEngine::DNSResolver::LookupSRVCallback on_srv_resolved_;
-  // pre-bound callback function for balancer hostname resolution
-  EventEngine::DNSResolver::LookupHostnameCallback
-      on_balancer_hostname_resolved_;
-  // pre-bound callback function for txt resolution
+  /// pre-bound callback function for txt resolution
   EventEngine::DNSResolver::LookupTXTCallback on_txt_resolved_;
-  // All balancer callback processessing happens under this mutex.
+  /// All balancer callback processessing happens under this mutex.
   Mutex balancer_mu_;
 };
 
@@ -211,8 +214,6 @@ IomgrDnsResolver::IomgrDnsResolver(ResolverArgs args)
           absl::bind_front(&IomgrDnsResolver::OnHostnameResolved, this)),
       on_srv_resolved_(
           absl::bind_front(&IomgrDnsResolver::OnSrvResolved, this)),
-      on_balancer_hostname_resolved_(
-          absl::bind_front(&IomgrDnsResolver::OnBalancerResolved, this)),
       on_txt_resolved_(
           absl::bind_front(&IomgrDnsResolver::OnTxtResolved, this)) {
   GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this,
@@ -390,7 +391,7 @@ void IomgrDnsResolver::OnHostnamesResolvedLocked() {
 }
 
 void IomgrDnsResolver::OnBalancerResolved(
-    IomgrDnsResolver* self,
+    IomgrDnsResolver* self, absl::string_view balancer_name,
     absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> balancers) {
   GPR_ASSERT(self->resolving_balancers_);
   {
@@ -399,9 +400,9 @@ void IomgrDnsResolver::OnBalancerResolved(
       if (!balancers.ok()) {
         self->tmp_balancer_addresses_ = balancers.status();
       } else {
-        self->tmp_balancer_addresses_->insert(
-            self->tmp_balancer_addresses_->end(), balancers->begin(),
-            balancers->end());
+        (*self->tmp_balancer_addresses_)[balancer_name].insert(
+            (*self->tmp_balancer_addresses_)[balancer_name].end(),
+            balancers->begin(), balancers->end());
       }
     }
   }
@@ -467,8 +468,9 @@ void IomgrDnsResolver::OnSrvResolvedLocked() {
     Ref(DEBUG_LOCATION, "dns-resolving - balancers").release();
     for (const auto& srv_record : *tmp_srv_records_) {
       balancer_handles_.push_back(grpc_dns_lookup_hostname(
-          on_balancer_hostname_resolved_, srv_record.host,
-          std::to_string(srv_record.port),
+          absl::bind_front(&IomgrDnsResolver::OnBalancerResolved, this,
+                           srv_record.host),
+          srv_record.host, std::to_string(srv_record.port),
           ToAbslTime(
               grpc_millis_to_timespec(query_timeout_ms_, GPR_CLOCK_MONOTONIC)),
           interested_parties_));
@@ -566,16 +568,19 @@ absl::Status IomgrDnsResolver::ParseResolvedBalancerHostnames(Result& result) {
     return absl::UnavailableError(absl::StrCat(
         "Balancer query error: ", tmp_balancer_addresses_.status().ToString()));
   }
-  // DO NOT SUBMIT(hork): Needs the SRV query name, not original hostname!
-  auto override_arg =
-      grpc_core::CreateAuthorityOverrideChannelArg(name_to_resolve_.c_str());
-  grpc_channel_args override_args = {1, &override_arg};
   if (!tmp_balancer_addresses_->empty()) {
     // Convert to ServerAddressList
+    gpr_log(GPR_DEBUG, "DO NOT SUBMIT - balancer addresses found");
+    abort();
     ServerAddressList* server_addr_list = new ServerAddressList();
-    for (const auto& address : *tmp_balancer_addresses_) {
-      server_addr_list->emplace_back(CreateGRPCResolvedAddress(address),
-                                     &override_args);
+    for (const auto& pair : *tmp_balancer_addresses_) {
+      auto override_arg =
+          grpc_core::CreateAuthorityOverrideChannelArg(pair.first.data());
+      grpc_channel_args override_args = {1, &override_arg};
+      for (const auto& address : pair.second) {
+        server_addr_list->emplace_back(CreateGRPCResolvedAddress(address),
+                                       &override_args);
+      }
     }
     grpc_arg new_arg = CreateGrpclbBalancerAddressesArg(server_addr_list);
     const grpc_channel_args* tmp_args =
