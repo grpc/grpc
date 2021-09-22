@@ -322,8 +322,8 @@ static uint8_t get_placement(grpc_error_handle* err, size_t size) {
   GPR_ASSERT(*err);
   uint8_t slots = static_cast<uint8_t>(size / sizeof(intptr_t));
   if ((*err)->arena_size + slots > (*err)->arena_capacity) {
-    (*err)->arena_capacity = static_cast<uint8_t>(
-        std::min(UINT8_MAX - 1, (3 * (*err)->arena_capacity / 2)));
+    (*err)->arena_capacity = static_cast<uint8_t>(std::min(
+        size_t(UINT8_MAX - 1), size_t(3 * (*err)->arena_capacity / 2)));
     if ((*err)->arena_size + slots > (*err)->arena_capacity) {
       return UINT8_MAX;
     }
