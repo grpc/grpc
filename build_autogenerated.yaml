@@ -7083,12 +7083,13 @@ targets:
   - grpc_test_util
   - grpc++_test_config
   args:
-  - test/core/promise/promise_fuzzer
-  - --directory=test/core/promise/promise_fuzzer
+  - test/core/promise/promise_fuzzer_corpus
+  - --directory=test/core/promise/promise_fuzzer_corpus
   platforms:
   - linux
   - posix
   - mac
+  uses_polling: false
 - name: promise_map_test
   gtest: true
   build: test

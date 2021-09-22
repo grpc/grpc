@@ -5995,8 +5995,8 @@
   },
   {
     "args": [
-      "test/core/promise/promise_fuzzer",
-      "--directory=test/core/promise/promise_fuzzer"
+      "test/core/promise/promise_fuzzer_corpus",
+      "--directory=test/core/promise/promise_fuzzer_corpus"
     ],
     "benchmark": false,
     "ci_platforms": [
@@ -6016,7 +6016,7 @@
       "mac",
       "posix"
     ],
-    "uses_polling": true
+    "uses_polling": false
   },
   {
     "args": [],
