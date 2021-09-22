@@ -856,7 +856,6 @@ libs:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/resource_quota/make_slice.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
@@ -1409,7 +1408,6 @@ libs:
   - src/core/lib/json/json_writer.cc
   - src/core/lib/matchers/matchers.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/resource_quota/make_slice.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/security/authorization/evaluate_args.cc
@@ -1915,7 +1913,6 @@ libs:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/resource_quota/make_slice.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
@@ -2193,7 +2190,6 @@ libs:
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/resource_quota/make_slice.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc
   - src/core/lib/slice/b64.cc

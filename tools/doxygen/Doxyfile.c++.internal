@@ -2004,8 +2004,6 @@ src/core/lib/promise/loop.h \
 src/core/lib/promise/poll.h \
 src/core/lib/promise/race.h \
 src/core/lib/promise/seq.h \
-src/core/lib/resource_quota/make_slice.cc \
-src/core/lib/resource_quota/make_slice.h \
 src/core/lib/resource_quota/memory_quota.cc \
 src/core/lib/resource_quota/memory_quota.h \
 src/core/lib/security/authorization/authorization_engine.h \
