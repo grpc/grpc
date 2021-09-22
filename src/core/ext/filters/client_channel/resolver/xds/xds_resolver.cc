@@ -46,54 +46,29 @@ const char* kXdsClusterAttribute = "xds_cluster_name";
 
 namespace {
 
-bool ShouldEscape(unsigned char c) {
-  // Unreserved characters RFC 3986 section 2.3 Unreserved Characters.
-  if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
-      (c >= '0' && c <= '9'))
-    return false;
-  switch (c) {
-    case '-':
-    case '_':
-    case '.':
-    case '~':
-      return false;
-  }
-  return true;
-}
-
-std::string PercentEncode(absl::string_view str) {
-  std::string out;
-  for (unsigned char c : str) {
-    if (ShouldEscape(c)) {
-      std::string hex = absl::BytesToHexString(absl::StrCat(c));
-      GPR_ASSERT(hex.size() == 2);
-      out.push_back('%');
-      out.append(hex);
-    } else {
-      out.push_back(c);
-    }
-  }
-  return out;
-}
-
 //
 // XdsResolver
 //
 
 class XdsResolver : public Resolver {
  public:
-  explicit XdsResolver(ResolverArgs args)
+  explicit XdsResolver(ResolverArgs args, RefCountedPtr<XdsClient> xds_client,
+                       std::string lds_resource_name, std::string authority)
       : work_serializer_(std::move(args.work_serializer)),
         result_handler_(std::move(args.result_handler)),
-        uri_(args.uri),
+        server_name_(lds_resource_name),
+        lds_resource_name_(std::move(lds_resource_name)),
+        authority_(std::move(authority)),
         args_(grpc_channel_args_copy(args.args)),
-        interested_parties_(args.pollset_set) {
+        interested_parties_(args.pollset_set),
+        xds_client_(std::move(xds_client)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-      gpr_log(
-          GPR_INFO,
-          "[xds_resolver %p] created for URI scheme %s path %s authority %s",
-          this, args.uri.scheme().c_str(), args.uri.path().c_str(),
-          args.uri.authority().c_str());
+      gpr_log(GPR_INFO,
+              "[xds_resolver %p] created for URI scheme %s path %s authority "
+              "%s server name %s lds resource name %s authority %s",
+              this, args.uri.scheme().c_str(), args.uri.path().c_str(),
+              args.uri.authority().c_str(), server_name_.c_str(),
+              lds_resource_name_.c_str(), authority_.c_str());
     }
   }
 
@@ -291,8 +266,9 @@ class XdsResolver : public Resolver {
 
   std::shared_ptr<WorkSerializer> work_serializer_;
   std::unique_ptr<ResultHandler> result_handler_;
-  URI uri_;
   std::string server_name_;
+  std::string lds_resource_name_;
+  std::string authority_;
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
 
@@ -791,16 +767,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
 //
 
 void XdsResolver::StartLocked() {
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  xds_client_ = XdsClient::GetOrCreate(args_, &error);
-  if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR,
-            "Failed to create xds client -- channel will remain in "
-            "TRANSIENT_FAILURE: %s",
-            grpc_error_std_string(error).c_str());
-    result_handler_->ReturnError(error);
-    return;
-  }
+  GPR_ASSERT(xds_client_ != nullptr);
   grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
                                    interested_parties_);
   channelz::ChannelNode* parent_channelz_node =
@@ -808,42 +775,6 @@ void XdsResolver::StartLocked() {
           args_, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
   if (parent_channelz_node != nullptr) {
     xds_client_->AddChannelzLinkage(parent_channelz_node);
-  }
-  if (uri_.scheme() == "xds") {
-    std::string target_hostname(absl::StripPrefix(uri_.path(), "/"));
-    if (!uri_.authority().empty()) {
-      auto authority_config =
-          xds_client_->bootstrap().LookupAuthority(target_hostname);
-      if (authority_config == nullptr) {
-        gpr_log(GPR_ERROR,
-                "Invalid target URI -- channel will remain in "
-                "TRANSIENT_FAILURE: %s",
-                grpc_error_std_string(error).c_str());
-        result_handler_->ReturnError(error);
-        return;
-      }
-      std::string name_template =
-          authority_config->client_listener_resource_name_template;
-      if (name_template.empty()) {
-        name_template = absl::StrCat("xdstp://", uri_.authority(),
-                                     "/envoy.config.listener.v3.Listener/%s");
-      }
-      server_name_ = absl::StrReplaceAll(
-          name_template, {{"%s", PercentEncode(target_hostname)}});
-    } else {
-      // args.uri.authority().empty() case
-      std::string name_template =
-          xds_client_->bootstrap()
-              .client_default_listener_resource_name_template();
-      if (name_template.empty()) {
-        name_template = "%s";
-      }
-      if (absl::StartsWith(name_template, "xdstp:")) {
-        target_hostname = PercentEncode(target_hostname);
-      }
-      server_name_ =
-          absl::StrReplaceAll(name_template, {{"%s", target_hostname}});
-    }
   }
   auto watcher = absl::make_unique<ListenerWatcher>(Ref());
   listener_watcher_ = watcher.get();
@@ -1047,7 +978,55 @@ class XdsResolverFactory : public ResolverFactory {
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     if (!IsValidUri(args.uri)) return nullptr;
-    return MakeOrphanable<XdsResolver>(std::move(args));
+    grpc_error_handle error = GRPC_ERROR_NONE;
+    RefCountedPtr<XdsClient> xds_client =
+        XdsClient::GetOrCreate(args.args, &error);
+    if (error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR,
+              "cannot get or create XdsClient to instantiate "
+              "xds_cluster_resolver LB policy: %s",
+              grpc_error_std_string(error).c_str());
+      GRPC_ERROR_UNREF(error);
+      return nullptr;
+    }
+    std::string lds_resource_name;
+    std::string authority;
+    if (args.uri.scheme() == "xds") {
+      std::string target_hostname(absl::StripPrefix(args.uri.path(), "/"));
+      if (!args.uri.authority().empty()) {
+        auto authority_config =
+            xds_client->bootstrap().LookupAuthority(target_hostname);
+        if (authority_config == nullptr) {
+          gpr_log(GPR_ERROR,
+                  "Invalid target URI -- authority not found for %s.",
+                  target_hostname.c_str());
+          return nullptr;
+        }
+        std::string name_template =
+            authority_config->client_listener_resource_name_template;
+        if (name_template.empty()) {
+          name_template = absl::StrCat("xdstp://", args.uri.authority(),
+                                       "/envoy.config.listener.v3.Listener/%s");
+        }
+        lds_resource_name = absl::StrReplaceAll(
+            name_template, {{"%s", PercentEncode(target_hostname)}});
+      } else {
+        // args.uri.authority().empty() case
+        std::string name_template =
+            xds_client->bootstrap()
+                .client_default_listener_resource_name_template();
+        if (name_template.empty()) {
+          name_template = "%s";
+        }
+        if (absl::StartsWith(name_template, "xdstp:")) {
+          target_hostname = PercentEncode(target_hostname);
+        }
+        lds_resource_name =
+            absl::StrReplaceAll(name_template, {{"%s", target_hostname}});
+      }
+    }
+    return MakeOrphanable<XdsResolver>(std::move(args), std::move(xds_client),
+                                       lds_resource_name, authority);
   }
 
   const char* scheme() const override { return "xds"; }

@@ -32,6 +32,10 @@
 
 namespace grpc_core {
 
+bool ShouldEscape(unsigned char c);
+
+std::string PercentEncode(absl::string_view str);
+
 class URI {
  public:
   struct QueryParam {

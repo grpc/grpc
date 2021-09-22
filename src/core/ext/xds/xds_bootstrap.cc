@@ -158,13 +158,14 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
                                          &error_list);
 }
 
-XdsBootstrap::Authority* XdsBootstrap::LookupAuthority(const std::string& name) const {
-    auto it = authorities_.find(name);
-    if (it != authorities_.end()) {
-      return it->second;
-    }
-    return nullptr;
+XdsBootstrap::Authority* XdsBootstrap::LookupAuthority(
+    const std::string& name) const {
+  auto it = authorities_.find(name);
+  if (it != authorities_.end()) {
+    return it->second;
   }
+  return nullptr;
+}
 
 grpc_error_handle XdsBootstrap::ParseXdsServerList(Json* json) {
   std::vector<grpc_error_handle> error_list;

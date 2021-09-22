@@ -34,6 +34,37 @@
 #include "src/core/lib/gpr/string.h"
 
 namespace grpc_core {
+
+bool ShouldEscape(unsigned char c) {
+  // Unreserved characters RFC 3986 section 2.3 Unreserved Characters.
+  if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+      (c >= '0' && c <= '9'))
+    return false;
+  switch (c) {
+    case '-':
+    case '_':
+    case '.':
+    case '~':
+      return false;
+  }
+  return true;
+}
+
+std::string PercentEncode(absl::string_view str) {
+  std::string out;
+  for (unsigned char c : str) {
+    if (ShouldEscape(c)) {
+      std::string hex = absl::BytesToHexString(absl::StrCat(c));
+      GPR_ASSERT(hex.size() == 2);
+      out.push_back('%');
+      out.append(hex);
+    } else {
+      out.push_back(c);
+    }
+  }
+  return out;
+}
+
 namespace {
 
 // Similar to `grpc_permissive_percent_decode_slice`, this %-decodes all valid
