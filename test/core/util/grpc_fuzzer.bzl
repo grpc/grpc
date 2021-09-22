@@ -17,6 +17,7 @@ load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
 def grpc_fuzzer(name, corpus, srcs = [], deps = [], data = [], size = "large", **kwargs):
+    CORPUS_DIR = native.package_name() + "/" + corpus
     grpc_cc_test(
         name = name,
         srcs = srcs,
@@ -30,21 +31,25 @@ def grpc_fuzzer(name, corpus, srcs = [], deps = [], data = [], size = "large", *
         ],
         size = size,
         args = select({
-            "//:grpc_build_fuzzers": [native.package_name() + "/" + corpus],
-            "//conditions:default": ["--directory=" + native.package_name() + "/" + corpus],
+            "//:grpc_build_fuzzers": [CORPUS_DIR],
+            "//conditions:default": ["--directory=" + CORPUS_DIR],
         }),
         **kwargs
     )
 
 def grpc_proto_fuzzer(name, corpus, proto, srcs = [], deps = [], data = [], size = "large", **kwargs):
+    PROTO_LIBRARY = "_%s_proto" % name
+    CC_PROTO_LIBRARY = "_%s_cc_proto" % name
+    CORPUS_DIR = native.package_name() + "/" + corpus
+    
     proto_library(
-        name = name + "-proto",
+        name = PROTO_LIBRARY,
         srcs = [proto],
     )
 
     cc_proto_library(
-        name = name + "-cc_proto",
-        deps = [name + "-proto"],
+        name = CC_PROTO_LIBRARY,
+        deps = [PROTO_LIBRARY],
     )
 
     grpc_cc_test(
@@ -52,7 +57,7 @@ def grpc_proto_fuzzer(name, corpus, proto, srcs = [], deps = [], data = [], size
         srcs = srcs,
         deps = deps + [
             "@com_google_libprotobuf_mutator//:libprotobuf_mutator",
-            name + "-cc_proto",
+            CC_PROTO_LIBRARY,
         ] + select({
             "//:grpc_build_fuzzers": [],
             "//conditions:default": ["//test/core/util:fuzzer_corpus_test"],
@@ -63,8 +68,8 @@ def grpc_proto_fuzzer(name, corpus, proto, srcs = [], deps = [], data = [], size
         ],
         size = size,
         args = select({
-            "//:grpc_build_fuzzers": [native.package_name() + "/" + corpus],
-            "//conditions:default": ["--directory=" + native.package_name() + "/" + corpus],
+            "//:grpc_build_fuzzers": [CORPUS_DIR],
+            "//conditions:default": ["--directory=" + CORPUS_DIR],
         }),
         **kwargs
     )
