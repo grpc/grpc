@@ -468,6 +468,7 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
   - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h
+  - src/core/ext/filters/client_channel/resolver/dns/service_config_parser.h
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
   - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h
   - src/core/ext/filters/client_channel/resolver_factory.h
@@ -1000,7 +1001,9 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
   - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc
+  - src/core/ext/filters/client_channel/resolver/dns/iomgr/dns_resolver_iomgr.cc
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
+  - src/core/ext/filters/client_channel/resolver/dns/service_config_parser.cc
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   - src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc
   - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
@@ -1705,6 +1708,7 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
   - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h
+  - src/core/ext/filters/client_channel/resolver/dns/service_config_parser.h
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
   - src/core/ext/filters/client_channel/resolver_factory.h
   - src/core/ext/filters/client_channel/resolver_registry.h
@@ -1965,7 +1969,9 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
   - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc
+  - src/core/ext/filters/client_channel/resolver/dns/iomgr/dns_resolver_iomgr.cc
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
+  - src/core/ext/filters/client_channel/resolver/dns/service_config_parser.cc
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   - src/core/ext/filters/client_channel/resolver_registry.cc
