@@ -166,7 +166,7 @@ absl::optional<size_t> MemoryAllocator::TryReserve(MemoryRequest request) {
     // will be set to the new value and we'll repeat.
     if (free_bytes_.compare_exchange_weak(available, available - reserve,
                                           std::memory_order_acq_rel,
-                                          std::memory_order_release)) {
+                                          std::memory_order_acquire)) {
       return reserve;
     }
   }

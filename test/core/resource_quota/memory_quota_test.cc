@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/synchronization/notification.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 namespace testing {
@@ -149,6 +150,9 @@ TEST(MemoryQuotaTest, MakeSlice) {
     int min = i;
     int max = 10 * i - 9;
     slices.push_back(memory_allocator->MakeSlice(MemoryRequest(min, max)));
+  }
+  for (grpc_slice slice : slices) {
+    grpc_slice_unref_internal(slice);
   }
 }
 
