@@ -20,9 +20,9 @@ readonly PYTHON_VERSION="3.6"
 # Test driver
 readonly TEST_DRIVER_PATH="tools/run_tests/xds_k8s_test_driver"
 readonly TEST_DRIVER_PROTOS_PATH="src/proto/grpc/testing"
-# GKE Cluster.
-readonly GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
-readonly GKE_CLUSTER_ZONE="us-central1-a"
+# Default GKE Cluster.
+GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
+GKE_CLUSTER_ZONE="us-central1-a"
 
 #######################################
 # Run command end report its exit code. Doesn't exit on non-zero exit code.
