@@ -101,7 +101,7 @@ class ReclamationSweep {
   ReclamationSweep(ReclamationSweep&&) = default;
   ReclamationSweep& operator=(ReclamationSweep&&) = default;
 
-  // Has enough work been done that we 
+  // Has enough work been done that we
   bool IsSufficient() const;
 
  private:
@@ -120,18 +120,21 @@ class ReclaimerQueue {
   static constexpr Index kInvalidIndex = std::numeric_limits<Index>::max();
 
   // Insert a new element at the back of the queue.
-  // Associates the reclamation function with an allocator, and keeps that allocator alive, so that we can use the pointer as an ABA guard.
+  // Associates the reclamation function with an allocator, and keeps that
+  // allocator alive, so that we can use the pointer as an ABA guard.
   Index Insert(RefCountedPtr<MemoryAllocator> allocator,
                ReclamationFunction reclaimer) ABSL_LOCKS_EXCLUDED(mu_);
-  // Cancel a reclamation function - returns the function if cancelled successfully, or nullptr if the reclamation was already begun and could not be cancelled.
-  // allocator must be the same as was passed to Insert.
+  // Cancel a reclamation function - returns the function if cancelled
+  // successfully, or nullptr if the reclamation was already begun and could not
+  // be cancelled. allocator must be the same as was passed to Insert.
   ReclamationFunction Cancel(Index index, MemoryAllocator* allocator)
       ABSL_LOCKS_EXCLUDED(mu_);
-  // Poll to see if an entry is available: returns Pending if not, or the removed reclamation function if so.
+  // Poll to see if an entry is available: returns Pending if not, or the
+  // removed reclamation function if so.
   Poll<ReclamationFunction> PollNext() ABSL_LOCKS_EXCLUDED(mu_);
 
-  // This callable is the promise backing Next - it resolves when there is an entry available.
-  // This really just redirects to calling PollNext().
+  // This callable is the promise backing Next - it resolves when there is an
+  // entry available. This really just redirects to calling PollNext().
   class NextPromise {
    public:
     explicit NextPromise(ReclaimerQueue* queue) : queue_(queue) {}
