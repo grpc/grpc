@@ -870,7 +870,8 @@ void UriToSockaddr(const char* uri_str, grpc_resolved_address* addr) {
   absl::StatusOr<URI> uri = URI::Parse(uri_str);
   if (!uri.ok()) {
     gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
-    GPR_ASSERT(uri.ok());
+    memset(addr, 0, sizeof(*addr));
+    return;
   }
   if (!grpc_parse_uri(*uri, addr)) memset(addr, 0, sizeof(*addr));
 }
