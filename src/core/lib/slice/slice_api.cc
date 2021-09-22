@@ -37,4 +37,3 @@ void grpc_slice_unref(grpc_slice slice) {
     grpc_slice_unref_internal(slice);
   }
 }
-
