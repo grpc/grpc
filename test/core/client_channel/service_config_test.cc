@@ -44,7 +44,11 @@ namespace testing {
 #define GRPC_ARG_DISABLE_PARSING "disable_parsing"
 
 // A regular expression to enter referenced or child errors.
-#define CHILD_ERROR_TAG ".*(referenced_errors|children).*"
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+#define CHILD_ERROR_TAG ".*children.*"
+#else
+#define CHILD_ERROR_TAG ".*referenced_errors.*"
+#endif
 
 class TestParsedConfig1 : public ServiceConfigParser::ParsedConfig {
  public:
