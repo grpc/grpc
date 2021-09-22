@@ -1253,6 +1253,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/percent_encoding.cc',
                       'src/core/lib/slice/percent_encoding.h',
                       'src/core/lib/slice/slice.cc',
+                      'src/core/lib/slice/slice_api.cc',
                       'src/core/lib/slice/slice_buffer.cc',
                       'src/core/lib/slice/slice_intern.cc',
                       'src/core/lib/slice/slice_internal.h',
