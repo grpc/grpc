@@ -460,7 +460,9 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     if (subchannel_node != nullptr) {
       auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
       if (it == chand_->subchannel_refcount_map_.end()) {
-        chand_->channelz_node_->AddChildSubchannel(subchannel_node->uuid());
+        if (chand_->channelz_node_ != nullptr) {
+          chand_->channelz_node_->AddChildSubchannel(subchannel_node->uuid());
+        }
         it = chand_->subchannel_refcount_map_.emplace(subchannel_.get(), 0)
                  .first;
       }
@@ -482,7 +484,9 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
       GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
       --it->second;
       if (it->second == 0) {
-        chand_->channelz_node_->RemoveChildSubchannel(subchannel_node->uuid());
+        if (chand_->channelz_node_ != nullptr) {
+          chand_->channelz_node_->RemoveChildSubchannel(subchannel_node->uuid());
+        }
         chand_->subchannel_refcount_map_.erase(it);
       }
     }
