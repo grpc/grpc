@@ -1287,6 +1287,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "error",
+    hdrs = [
+        "src/core/lib/iomgr/error.h",
+        "src/core/lib/iomgr/error_internal.h",
+    ],
+    srcs = [
+        "src/core/lib/iomgr/error.cc",
+    ],
+    deps = [
+        "gpr",
+        "slice_refcount",
+        "grpc_codegen",
+        "useful",
+        "grpc_trace"
+    ]
+)
+
+grpc_cc_library(
     name = "grpc_base_c",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -1327,7 +1345,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/endpoint_pair_event_engine.cc",
         "src/core/lib/iomgr/endpoint_pair_posix.cc",
         "src/core/lib/iomgr/endpoint_pair_windows.cc",
-        "src/core/lib/iomgr/error.cc",
         "src/core/lib/iomgr/error_cfstream.cc",
         "src/core/lib/iomgr/ev_apple.cc",
         "src/core/lib/iomgr/ev_epoll1_linux.cc",
@@ -1495,9 +1512,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/endpoint.h",
         "src/core/lib/iomgr/endpoint_cfstream.h",
         "src/core/lib/iomgr/endpoint_pair.h",
-        "src/core/lib/iomgr/error.h",
         "src/core/lib/iomgr/error_cfstream.h",
-        "src/core/lib/iomgr/error_internal.h",
         "src/core/lib/iomgr/ev_apple.h",
         "src/core/lib/iomgr/ev_epoll1_linux.h",
         "src/core/lib/iomgr/ev_epollex_linux.h",
@@ -1627,6 +1642,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice_refcount",
         "useful",
+        "error",
     ],
 )
 

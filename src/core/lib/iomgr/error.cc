@@ -22,7 +22,7 @@
 #include <inttypes.h>
 #include <string.h>
 
-#include <grpc/status.h>
+#include <grpc/impl/codegen/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -34,8 +34,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error_internal.h"
-#include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,
                                                         "error_refcount");
@@ -439,7 +438,6 @@ grpc_error_handle grpc_error_create(const char* file, int line,
                                     const grpc_slice& desc,
                                     grpc_error_handle* referencing,
                                     size_t num_referencing) {
-  GPR_TIMER_SCOPE("grpc_error_create", 0);
   uint8_t initial_arena_capacity = static_cast<uint8_t>(
       DEFAULT_ERROR_CAPACITY +
       static_cast<uint8_t>(num_referencing * SLOTS_PER_LINKED_ERROR) +
@@ -511,7 +509,6 @@ static void ref_errs(grpc_error_handle err) {
 }
 
 static grpc_error_handle copy_error_and_unref(grpc_error_handle in) {
-  GPR_TIMER_SCOPE("copy_error_and_unref", 0);
   grpc_error_handle out;
   if (grpc_error_is_special(in)) {
     out = GRPC_ERROR_CREATE_FROM_STATIC_STRING("unknown");
@@ -563,7 +560,6 @@ static grpc_error_handle copy_error_and_unref(grpc_error_handle in) {
 
 grpc_error_handle grpc_error_set_int(grpc_error_handle src,
                                      grpc_error_ints which, intptr_t value) {
-  GPR_TIMER_SCOPE("grpc_error_set_int", 0);
   grpc_error_handle new_err = copy_error_and_unref(src);
   internal_set_int(&new_err, which, value);
   return new_err;
@@ -586,7 +582,6 @@ const special_error_status_map error_status_map[] = {
 
 bool grpc_error_get_int(grpc_error_handle err, grpc_error_ints which,
                         intptr_t* p) {
-  GPR_TIMER_SCOPE("grpc_error_get_int", 0);
   if (grpc_error_is_special(err)) {
     if (which != GRPC_ERROR_INT_GRPC_STATUS) return false;
     *p = error_status_map[reinterpret_cast<size_t>(err)].code;
@@ -603,7 +598,6 @@ bool grpc_error_get_int(grpc_error_handle err, grpc_error_ints which,
 grpc_error_handle grpc_error_set_str(grpc_error_handle src,
                                      grpc_error_strs which,
                                      const grpc_slice& str) {
-  GPR_TIMER_SCOPE("grpc_error_set_str", 0);
   grpc_error_handle new_err = copy_error_and_unref(src);
   internal_set_str(&new_err, which, str);
   return new_err;
@@ -632,7 +626,6 @@ bool grpc_error_get_str(grpc_error_handle err, grpc_error_strs which,
 
 grpc_error_handle grpc_error_add_child(grpc_error_handle src,
                                        grpc_error_handle child) {
-  GPR_TIMER_SCOPE("grpc_error_add_child", 0);
   if (src != GRPC_ERROR_NONE) {
     if (child == GRPC_ERROR_NONE) {
       /* \a child is empty. Simply return the ref to \a src */
@@ -864,7 +857,6 @@ static char* finish_kvs(kv_pairs* kvs) {
 }
 
 const char* grpc_error_string(grpc_error_handle err) {
-  GPR_TIMER_SCOPE("grpc_error_string", 0);
   if (err == GRPC_ERROR_NONE) return no_error_string;
   if (err == GRPC_ERROR_OOM) return oom_error_string;
   if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;
