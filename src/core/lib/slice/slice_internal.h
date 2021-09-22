@@ -32,7 +32,6 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/slice/slice_utils.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb);
 void grpc_slice_buffer_partial_unref_internal(grpc_slice_buffer* sb,

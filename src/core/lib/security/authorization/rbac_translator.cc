@@ -21,6 +21,7 @@
 #include "absl/strings/strip.h"
 
 #include "src/core/lib/matchers/matchers.h"
+#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
 
