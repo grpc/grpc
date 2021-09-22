@@ -1338,6 +1338,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "exec_ctx",
+    hdrs = [
+        "src/core/lib/iomgr/exec_ctx.h",
+        "src/core/lib/iomgr/combiner.h",
+    ],
+    srcs = [
+        "src/core/lib/iomgr/exec_ctx.cc",
+        "src/core/lib/iomgr/combiner.cc",
+    ],
+    deps = [
+        "gpr_base",
+        "closure",
+        "error"
+    ]
+)
+
+grpc_cc_library(
     name = "grpc_base_c",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -1371,7 +1388,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/buffer_list.cc",
         "src/core/lib/iomgr/call_combiner.cc",
         "src/core/lib/iomgr/cfstream_handle.cc",
-        "src/core/lib/iomgr/combiner.cc",
         "src/core/lib/iomgr/dualstack_socket_posix.cc",
         "src/core/lib/iomgr/endpoint.cc",
         "src/core/lib/iomgr/endpoint_cfstream.cc",
@@ -1393,7 +1409,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/event_engine/resolver.cc",
         "src/core/lib/iomgr/event_engine/tcp.cc",
         "src/core/lib/iomgr/event_engine/timer.cc",
-        "src/core/lib/iomgr/exec_ctx.cc",
         "src/core/lib/iomgr/executor.cc",
         "src/core/lib/iomgr/executor/mpmcqueue.cc",
         "src/core/lib/iomgr/executor/threadpool.cc",
@@ -1540,7 +1555,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/buffer_list.h",
         "src/core/lib/iomgr/call_combiner.h",
         "src/core/lib/iomgr/cfstream_handle.h",
-        "src/core/lib/iomgr/combiner.h",
         "src/core/lib/iomgr/dynamic_annotations.h",
         "src/core/lib/iomgr/endpoint.h",
         "src/core/lib/iomgr/endpoint_cfstream.h",
@@ -1557,7 +1571,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/event_engine/pollset.h",
         "src/core/lib/iomgr/event_engine/promise.h",
         "src/core/lib/iomgr/event_engine/resolved_address_internal.h",
-        "src/core/lib/iomgr/exec_ctx.h",
         "src/core/lib/iomgr/executor.h",
         "src/core/lib/iomgr/executor/mpmcqueue.h",
         "src/core/lib/iomgr/executor/threadpool.h",
@@ -1654,6 +1667,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/error_internal.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
+        "src/core/lib/iomgr/exec_ctx.h",
     ],
     external_deps = [
         "absl/container:flat_hash_map",
