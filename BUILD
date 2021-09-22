@@ -1327,6 +1327,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "closure",
+    hdrs = [
+        "src/core/lib/iomgr/closure.h",
+    ],
+    deps = [
+        "gpr",
+        "error",
+    ]
+)
+
+grpc_cc_library(
     name = "grpc_base_c",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -1529,7 +1540,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/buffer_list.h",
         "src/core/lib/iomgr/call_combiner.h",
         "src/core/lib/iomgr/cfstream_handle.h",
-        "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/combiner.h",
         "src/core/lib/iomgr/dynamic_annotations.h",
         "src/core/lib/iomgr/endpoint.h",
@@ -1639,6 +1649,7 @@ grpc_cc_library(
     # re-export these headers from here for now, and when LSC's have completed
     # to clean this up, we'll remove these.
     [
+        "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/error.h",
         "src/core/lib/iomgr/error_internal.h",
         "src/core/lib/slice/slice_internal.h",
