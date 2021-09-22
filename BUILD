@@ -1332,32 +1332,32 @@ grpc_cc_library(
         "src/core/lib/iomgr/closure.h",
     ],
     deps = [
-        "gpr",
         "error",
-    ]
+        "gpr",
+    ],
 )
 
 grpc_cc_library(
     name = "exec_ctx",
-    hdrs = [
-        "src/core/lib/iomgr/exec_ctx.h",
-        "src/core/lib/iomgr/combiner.h",
-        "src/core/lib/iomgr/executor.h",
-        "src/core/lib/iomgr/iomgr_internal.h",
-    ],
     srcs = [
-        "src/core/lib/iomgr/exec_ctx.cc",
         "src/core/lib/iomgr/combiner.cc",
+        "src/core/lib/iomgr/exec_ctx.cc",
         "src/core/lib/iomgr/executor.cc",
         "src/core/lib/iomgr/iomgr_internal.cc",
     ],
+    hdrs = [
+        "src/core/lib/iomgr/combiner.h",
+        "src/core/lib/iomgr/exec_ctx.h",
+        "src/core/lib/iomgr/executor.h",
+        "src/core/lib/iomgr/iomgr_internal.h",
+    ],
     deps = [
-        "gpr_base",
         "closure",
         "error",
+        "gpr_base",
         "gpr_tls",
         "useful",
-    ]
+    ],
 )
 
 grpc_cc_library(
@@ -1691,8 +1691,10 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "bitset",
+        "closure",
         "dual_ref_counted",
         "error",
+        "exec_ctx",
         "gpr_base",
         "gpr_codegen",
         "gpr_tls",
@@ -1703,7 +1705,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_refcount",
-        "useful","closure","exec_ctx",
+        "useful",
     ],
 )
 
