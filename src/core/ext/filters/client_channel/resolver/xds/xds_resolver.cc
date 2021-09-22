@@ -976,11 +976,24 @@ class XdsResolverFactory : public ResolverFactory {
     return true;
   }
 
+  std::string GetDefaultAuthority(const URI& uri) const override {
+    // Obtain the authority to use for the data plane connections, which is
+    // also used to select the right VirtualHost from the RouteConfiguration.
+    // We need to take the part of the URI path following the last
+    // "/" character or the entire path if the path contains no "/" character.
+    std::vector<std::string> v = absl::StrSplit(uri.path(), '/');
+    GPR_ASSERT(!v.empty());
+    return v[v.size() - 1];
+  }
+
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     if (!IsValidUri(args.uri)) return nullptr;
     grpc_error_handle error = GRPC_ERROR_NONE;
     RefCountedPtr<XdsClient> xds_client =
         XdsClient::GetOrCreate(args.args, &error);
+    gpr_log(GPR_INFO, "donna in CreateResolver scheme %s path %s authority %s",
+            args.uri.scheme().c_str(), args.uri.path().c_str(),
+            args.uri.authority().c_str());
     if (error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR,
               "cannot get or create XdsClient to instantiate "
@@ -1024,7 +1037,11 @@ class XdsResolverFactory : public ResolverFactory {
         lds_resource_name =
             absl::StrReplaceAll(name_template, {{"%s", target_hostname}});
       }
+      authority = GetDefaultAuthority(args.uri);
     }
+    gpr_log(GPR_INFO,
+            "donna constructued lds_resource_name %s and authority %s",
+            lds_resource_name.c_str(), authority.c_str());
     return MakeOrphanable<XdsResolver>(std::move(args), std::move(xds_client),
                                        lds_resource_name, authority);
   }

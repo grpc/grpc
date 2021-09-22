@@ -3365,7 +3365,7 @@ TEST_P(XdsResolverOnlyTest, ClusterChangeAfterAdsCallFails) {
 using GlobalXdsClientTest = BasicTest;
 
 TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
-  const char* kNewServerName = "new-server.example.com";
+  const char* kNewServerName = "xds.example.com/new-server.example.com";
   Listener listener = default_listener_;
   listener.set_name(kNewServerName);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
