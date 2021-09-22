@@ -4874,22 +4874,6 @@ targets:
   platforms:
   - linux
   - posix
-- name: bm_threadpool
-  build: test
-  run: false
-  language: c++
-  headers: []
-  src:
-  - test/cpp/microbenchmarks/bm_threadpool.cc
-  deps:
-  - benchmark_helpers
-  benchmark: true
-  defaults: benchmark
-  platforms:
-  - linux
-  - posix
-  - mac
-  uses_polling: false
 - name: bm_timer
   build: test
   language: c++
