@@ -41,7 +41,7 @@ def grpc_proto_fuzzer(name, corpus, proto, srcs = [], deps = [], data = [], size
     PROTO_LIBRARY = "_%s_proto" % name
     CC_PROTO_LIBRARY = "_%s_cc_proto" % name
     CORPUS_DIR = native.package_name() + "/" + corpus
-    
+
     proto_library(
         name = PROTO_LIBRARY,
         srcs = [proto],
