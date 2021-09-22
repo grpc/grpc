@@ -18,4 +18,4 @@
 bool squelch = true;
 bool leak_check = true;
 
-DEFINE_PROTO_FUZZER(const promise_fuzzer::Msg& msg) {}
+DEFINE_PROTO_FUZZER(const promise_fuzzer::Msg&) {}
