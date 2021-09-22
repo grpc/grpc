@@ -101,6 +101,7 @@ class ReclamationSweep {
   ReclamationSweep(ReclamationSweep&&) = default;
   ReclamationSweep& operator=(ReclamationSweep&&) = default;
 
+  // Has enough work been done that we 
   bool IsSufficient() const;
 
  private:
@@ -114,36 +115,56 @@ class ReclaimerQueue {
  public:
   using Index = size_t;
 
+  // An invalid index usable as an empty value.
+  // This value will not be returned from Insert ever.
   static constexpr Index kInvalidIndex = std::numeric_limits<Index>::max();
 
+  // Insert a new element at the back of the queue.
+  // Associates the reclamation function with an allocator, and keeps that allocator alive, so that we can use the pointer as an ABA guard.
   Index Insert(RefCountedPtr<MemoryAllocator> allocator,
                ReclamationFunction reclaimer) ABSL_LOCKS_EXCLUDED(mu_);
+  // Cancel a reclamation function - returns the function if cancelled successfully, or nullptr if the reclamation was already begun and could not be cancelled.
+  // allocator must be the same as was passed to Insert.
   ReclamationFunction Cancel(Index index, MemoryAllocator* allocator)
       ABSL_LOCKS_EXCLUDED(mu_);
+  // Poll to see if an entry is available: returns Pending if not, or the removed reclamation function if so.
   Poll<ReclamationFunction> PollNext() ABSL_LOCKS_EXCLUDED(mu_);
 
+  // This callable is the promise backing Next - it resolves when there is an entry available.
+  // This really just redirects to calling PollNext().
   class NextPromise {
    public:
     explicit NextPromise(ReclaimerQueue* queue) : queue_(queue) {}
     Poll<ReclamationFunction> operator()() { return queue_->PollNext(); }
 
    private:
+    // Borrowed ReclaimerQueue backing this promise.
     ReclaimerQueue* queue_;
   };
   NextPromise Next() { return NextPromise(this); }
 
  private:
-  Mutex mu_;
+  // One entry in the reclaimer queue
   struct Entry {
     Entry(RefCountedPtr<MemoryAllocator> allocator,
           ReclamationFunction reclaimer)
         : allocator(allocator), reclaimer(reclaimer) {}
+    // The allocator we'd be reclaiming for.
     RefCountedPtr<MemoryAllocator> allocator;
+    // The reclamation function to call.
     ReclamationFunction reclaimer;
   };
+  // Guarding mutex.
+  Mutex mu_;
+  // Entries in the queue (or empty entries waiting to be queued).
+  // We actually queue indices into this vector - and do this so that
+  // we can use the memory allocator pointer as an ABA protection.
   std::vector<Entry> entries_ ABSL_GUARDED_BY(mu_);
+  // Which entries in entries_ are not allocated right now.
   std::vector<size_t> free_entries_ ABSL_GUARDED_BY(mu_);
+  // Allocated entries waiting to be consumed.
   std::queue<Index> queue_ ABSL_GUARDED_BY(mu_);
+  // Potentially one activity can be waiting for new entries on the queue.
   Waker waker_ ABSL_GUARDED_BY(mu_);
 };
 
