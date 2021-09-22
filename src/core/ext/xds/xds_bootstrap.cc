@@ -30,6 +30,7 @@
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/ext/xds/xds_api.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -37,6 +38,16 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
+
+// TODO(donnadionne): check to see if federation is enabled, this will be
+// removed once federation is fully integrated and enabled by default.
+bool XdsFederationEnabled() {
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_FEDERATION");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
 
 //
 // XdsChannelCredsRegistry
@@ -124,7 +135,7 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
   }
   it = json.mutable_object()->find(
       "client_default_listener_resource_name_template");
-  if (it != json.mutable_object()->end()) {
+  if (XdsFederationEnabled() && it != json.mutable_object()->end()) {
     if (it->second.type() != Json::Type::STRING) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "\"client_default_listener_resource_name_template\" field is not a "
