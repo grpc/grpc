@@ -42,8 +42,7 @@ struct grpc_resolved_address {
   socklen_t len = 0;
 
   grpc_resolved_address() = default;
-  grpc_resolved_address(const grpc_resolved_address& other)
-      : len(other.len) {
+  grpc_resolved_address(const grpc_resolved_address& other) : len(other.len) {
     memcpy(addr, other.addr, len);
   }
   grpc_resolved_address& operator=(const grpc_resolved_address& other) {

@@ -664,8 +664,8 @@ Subchannel::Subchannel(SubchannelKey key,
   address_for_connect_ = key_.address();
   grpc_resolved_address* new_address = nullptr;
   grpc_channel_args* new_args = nullptr;
-  if (ProxyMapperRegistry::MapAddress(address_for_connect_, args,
-                                      &new_address, &new_args)) {
+  if (ProxyMapperRegistry::MapAddress(address_for_connect_, args, &new_address,
+                                      &new_args)) {
     GPR_ASSERT(new_address != nullptr);
     address_for_connect_ = *new_address;
     gpr_free(new_address);
@@ -679,8 +679,8 @@ Subchannel::Subchannel(SubchannelKey key,
   const bool channelz_enabled = grpc_channel_args_find_bool(
       args_, GRPC_ARG_ENABLE_CHANNELZ, GRPC_ENABLE_CHANNELZ_DEFAULT);
   if (channelz_enabled) {
-    const size_t channel_tracer_max_memory = static_cast<size_t>(
-        grpc_channel_args_find_integer(
+    const size_t channel_tracer_max_memory =
+        static_cast<size_t>(grpc_channel_args_find_integer(
             args_, GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE,
             {GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0,
              INT_MAX}));
