@@ -101,8 +101,11 @@ class ReclamationSweep {
   ReclamationSweep(ReclamationSweep&&) = default;
   ReclamationSweep& operator=(ReclamationSweep&&) = default;
 
-  // Has enough work been done that we would not be called upon again immediately to do reclamation work if we stopped and requeued.
-  // Reclaimers with a variable amount of work to do can use this to ascertain when they can stop more efficiently than going through the reclaimer queue once per work item.
+  // Has enough work been done that we would not be called upon again
+  // immediately to do reclamation work if we stopped and requeued. Reclaimers
+  // with a variable amount of work to do can use this to ascertain when they
+  // can stop more efficiently than going through the reclaimer queue once per
+  // work item.
   bool IsSufficient() const;
 
  private:
@@ -299,7 +302,8 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
           memory_quota_mu_) = {ReclaimerQueue::kInvalidIndex};
 };
 
-// Wrapper type around std::vector to make initialization against a MemoryAllocator based container allocator easy.
+// Wrapper type around std::vector to make initialization against a
+// MemoryAllocator based container allocator easy.
 template <typename T>
 class Vector : public std::vector<T, MemoryAllocator::Container<T>> {
  public:
