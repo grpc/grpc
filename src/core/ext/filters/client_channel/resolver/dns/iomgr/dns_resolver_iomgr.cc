@@ -25,6 +25,7 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
