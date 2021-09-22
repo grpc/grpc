@@ -485,7 +485,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
       --it->second;
       if (it->second == 0) {
         if (chand_->channelz_node_ != nullptr) {
-          chand_->channelz_node_->RemoveChildSubchannel(subchannel_node->uuid());
+          chand_->channelz_node_->RemoveChildSubchannel(
+              subchannel_node->uuid());
         }
         chand_->subchannel_refcount_map_.erase(it);
       }
