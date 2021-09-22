@@ -117,7 +117,7 @@ void TransportStreamReceiverImpl::RegisterRecvTrailingMetadata(
 void TransportStreamReceiverImpl::NotifyRecvInitialMetadata(
     StreamIdentifier id, absl::StatusOr<Metadata> initial_metadata) {
   gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
-  if (!is_client_ && accept_stream_callback_) {
+  if (!is_client_ && accept_stream_callback_ && initial_metadata.ok()) {
     accept_stream_callback_();
   }
   InitialMetadataCallbackType cb;
