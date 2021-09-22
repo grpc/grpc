@@ -80,9 +80,9 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   grpc_tcp_client_connect(
       &connected_, ep,
       grpc_slice_allocator_create(resource_quota_,
-                                  grpc_sockaddr_to_string(&args.address, false),
+                                  grpc_sockaddr_to_string(args.address, false),
                                   args.channel_args),
-      args.interested_parties, args.channel_args, &args.address, args.deadline);
+      args.interested_parties, args.channel_args, args.address, args.deadline);
 }
 
 void Chttp2Connector::Shutdown(grpc_error_handle error) {

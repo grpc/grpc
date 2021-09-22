@@ -329,7 +329,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
   const SubchannelKey key_;
   // Actual address to connect to.  May be different than the address in
   // key_ if overridden by proxy mapper.
-  std::unique_ptr<grpc_resolved_address> address_for_connect_;
+  grpc_resolved_address address_for_connect_;
   // Channel args.
   grpc_channel_args* args_;
   // pollset_set tracking who's interested in a connection being setup.

@@ -661,14 +661,14 @@ Subchannel::Subchannel(SubchannelKey key,
                     grpc_schedule_on_exec_ctx);
   // Check proxy mapper to determine address to connect to and channel
   // args to use.
-  address_for_connect_ = absl::make_unique<grpc_resolved_address>();
-  *address_for_connect_ = key_.address();
+  address_for_connect_ = key_.address();
   grpc_resolved_address* new_address = nullptr;
   grpc_channel_args* new_args = nullptr;
-  if (ProxyMapperRegistry::MapAddress(*address_for_connect_, args,
+  if (ProxyMapperRegistry::MapAddress(address_for_connect_, args,
                                       &new_address, &new_args)) {
     GPR_ASSERT(new_address != nullptr);
-    address_for_connect_.reset(new_address);
+    address_for_connect_ = *new_address;
+    gpr_free(new_address);
   }
   if (new_args != nullptr) {
     args_ = new_args;
@@ -937,6 +937,7 @@ void Subchannel::OnRetryAlarm(void* arg, grpc_error_handle error) {
 
 void Subchannel::ContinueConnectingLocked() {
   SubchannelConnector::Args args;
+  args.address = &address_for_connect_;
   args.interested_parties = pollset_set_;
   const grpc_millis min_deadline =
       min_connect_timeout_ms_ + ExecCtx::Get()->Now();
