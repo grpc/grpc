@@ -1413,8 +1413,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/event_engine/timer.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
-    src/core/lib/iomgr/executor/mpmcqueue.cc \
-    src/core/lib/iomgr/executor/threadpool.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -1898,8 +1896,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/event_engine/timer.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
-    src/core/lib/iomgr/executor/mpmcqueue.cc \
-    src/core/lib/iomgr/executor/threadpool.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
