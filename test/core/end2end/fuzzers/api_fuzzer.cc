@@ -344,10 +344,10 @@ static void finish_resolve(void* arg, grpc_error* error) {
       *r->addrs = addrs;
     } else if (r->addresses != nullptr) {
       *r->addresses = absl::make_unique<grpc_core::ServerAddressList>();
-      grpc_resolved_address dummy_resolved_address;
-      memset(&dummy_resolved_address, 0, sizeof(dummy_resolved_address));
-      dummy_resolved_address.len = 0;
-      (*r->addresses)->emplace_back(dummy_resolved_address, nullptr);
+      grpc_resolved_address fake_resolved_address;
+      memset(&fake_resolved_address, 0, sizeof(fake_resolved_address));
+      fake_resolved_address.len = 0;
+      (*r->addresses)->emplace_back(fake_resolved_address, nullptr);
     }
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, GRPC_ERROR_NONE);
   } else {
