@@ -259,8 +259,8 @@ grpc_proto_fuzzer(
     language = "C++",
     proto = "promise_fuzzer.proto",
     tags = ["no_windows"],
+    uses_polling = False,
     deps = [
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
