@@ -1,20 +1,15 @@
-/*
- *
- * Copyright 2021 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2021 gRPC authors.
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+// http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include "src/core/tsi/ssl_transport_security.h"
 
@@ -25,6 +20,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -38,16 +36,16 @@ extern "C" {
 #include <openssl/pem.h>
 }
 
-#define SSL_TSI_TEST_REVOKED_KEY_CERT_PAIRS_NUM 1
-#define SSL_TSI_TEST_VALID_KEY_CERT_PAIRS_NUM 1
-#define SSL_TSI_TEST_CRL_SUPPORTED_CREDENTIALS_DIR \
-  "src/core/tsi/test_creds/crl_supported/"
+static const int kSslTsiTestRevokedKeyCertPairsNum = 1;
+static const int kSslTsiTestValidKeyCertPairsNum = 1;
+const char* const kSslTsiTestCrlSupportedCredentialsDir =
+    "test/core/tsi/test_creds/";
 
 // Indicates the TLS version used for the test.
 static tsi_tls_version test_tls_version = tsi_tls_version::TSI_TLS1_3;
 
 // Credentials created under the root
-// SSL_TSI_TEST_CRL_SUPPORTED_CREDENTIALS_DIR/crl_supported/ca.pem
+// kSslTsiTestCrlSupportedCredentialsDir/ca.pem
 // The CA root is also configured with KeyUsage cRLSign that the CA root in
 // tsi_test_creds does not contain
 typedef struct ssl_key_cert_lib {
@@ -235,10 +233,8 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
   /* Create ssl_key_cert_lib-> */
   ssl_key_cert_lib* key_cert_lib =
       static_cast<ssl_key_cert_lib*>(gpr_zalloc(sizeof(*key_cert_lib)));
-  key_cert_lib->revoked_num_key_cert_pairs =
-      SSL_TSI_TEST_REVOKED_KEY_CERT_PAIRS_NUM;
-  key_cert_lib->valid_num_key_cert_pairs =
-      SSL_TSI_TEST_VALID_KEY_CERT_PAIRS_NUM;
+  key_cert_lib->revoked_num_key_cert_pairs = kSslTsiTestRevokedKeyCertPairsNum;
+  key_cert_lib->valid_num_key_cert_pairs = kSslTsiTestValidKeyCertPairsNum;
   key_cert_lib->revoked_pem_key_cert_pairs =
       static_cast<tsi_ssl_pem_key_cert_pair*>(
           gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair) *
@@ -248,52 +244,54 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
           gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair) *
                      key_cert_lib->valid_num_key_cert_pairs));
   key_cert_lib->revoked_pem_key_cert_pairs[0].private_key =
-      load_file(SSL_TSI_TEST_CRL_SUPPORTED_CREDENTIALS_DIR, "revoked.key");
+      load_file(kSslTsiTestCrlSupportedCredentialsDir, "revoked.key");
   key_cert_lib->revoked_pem_key_cert_pairs[0].cert_chain =
-      load_file(SSL_TSI_TEST_CRL_SUPPORTED_CREDENTIALS_DIR, "revoked.pem");
+      load_file(kSslTsiTestCrlSupportedCredentialsDir, "revoked.pem");
   key_cert_lib->valid_pem_key_cert_pairs[0].private_key =
-      load_file(SSL_TSI_TEST_CRL_SUPPORTED_CREDENTIALS_DIR, "valid.key");
+      load_file(kSslTsiTestCrlSupportedCredentialsDir, "valid.key");
   key_cert_lib->valid_pem_key_cert_pairs[0].cert_chain =
-      load_file(SSL_TSI_TEST_CRL_SUPPORTED_CREDENTIALS_DIR, "valid.pem");
+      load_file(kSslTsiTestCrlSupportedCredentialsDir, "valid.pem");
   key_cert_lib->root_cert =
-      load_file(SSL_TSI_TEST_CRL_SUPPORTED_CREDENTIALS_DIR, "ca.pem");
+      load_file(kSslTsiTestCrlSupportedCredentialsDir, "ca.pem");
   key_cert_lib->root_store =
       tsi_ssl_root_certs_store_create(key_cert_lib->root_cert);
-  key_cert_lib->crl_directory = SSL_TSI_TEST_CRL_SUPPORTED_CREDENTIALS_DIR;
+  key_cert_lib->crl_directory = kSslTsiTestCrlSupportedCredentialsDir;
   GPR_ASSERT(key_cert_lib->root_store != nullptr);
   ssl_fixture->key_cert_lib = key_cert_lib;
   return &ssl_fixture->base;
 }
 
-void ssl_tsi_test_do_handshake_with_revoked_server_cert() {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_with_revoked_server_cert");
-  tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
-  ssl_tsi_test_fixture* ssl_fixture =
-      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
-  ssl_fixture->key_cert_lib->use_revoked_server_cert = true;
-  tsi_test_do_handshake(fixture);
-  tsi_test_fixture_destroy(fixture);
+class CrlSslTransportSecurityTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    fixture_ = ssl_tsi_test_fixture_create();
+    ssl_fixture_ = reinterpret_cast<ssl_tsi_test_fixture*>(fixture_);
+  }
+
+  void TearDown() override { tsi_test_fixture_destroy(fixture_); }
+
+  tsi_test_fixture* fixture_;
+  ssl_tsi_test_fixture* ssl_fixture_;
+};
+
+TEST_F(CrlSslTransportSecurityTest,
+       ssl_tsi_test_do_handshake_with_revoked_server_cert) {
+  ssl_fixture_->key_cert_lib->use_revoked_server_cert = true;
+  tsi_test_do_handshake(fixture_);
+}
+TEST_F(CrlSslTransportSecurityTest,
+       ssl_tsi_test_do_handshake_with_revoked_client_cert) {
+  ssl_fixture_->key_cert_lib->use_revoked_client_cert = true;
+  tsi_test_do_handshake(fixture_);
 }
 
-void ssl_tsi_test_do_handshake_with_revoked_client_cert() {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_with_revoked_client_cert");
-  tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
-  ssl_tsi_test_fixture* ssl_fixture =
-      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
-  ssl_fixture->key_cert_lib->use_revoked_client_cert = true;
-  tsi_test_do_handshake(fixture);
-  tsi_test_fixture_destroy(fixture);
-}
-
-void ssl_tsi_test_do_handshake_with_crl_checking_and_valid_traffic() {
-  gpr_log(GPR_INFO,
-          "ssl_tsi_test_do_handshake_with_crl_checking_and_valid_traffic");
-  tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
-  tsi_test_do_handshake(fixture);
-  tsi_test_fixture_destroy(fixture);
+TEST_F(CrlSslTransportSecurityTest,
+       ssl_tsi_test_do_handshake_with_valid_certs) {
+  tsi_test_do_handshake(fixture_);
 }
 
 int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   const size_t number_tls_versions = 2;
@@ -304,9 +302,10 @@ int main(int argc, char** argv) {
     test_tls_version = tls_versions[i];
     // Run all the tests using that TLS version for both the client and
     // server.
-    ssl_tsi_test_do_handshake_with_revoked_server_cert();
-    ssl_tsi_test_do_handshake_with_revoked_client_cert();
-    ssl_tsi_test_do_handshake_with_crl_checking_and_valid_traffic();
+    int test_result = RUN_ALL_TESTS();
+    if (test_result != 0) {
+      return test_result;
+    };
   }
   grpc_shutdown();
   return 0;

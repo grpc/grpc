@@ -178,7 +178,7 @@ struct grpc_tls_credentials_options
   // gRPC will enforce CRLs on all handshakes from all hashed CRL files inside
   // of the crl_directory. If not set, an empty string will be used, which will
   // not enable CRL checking. Only supported for OpenSSL version > 1.1.
-  void set_crl_directory(std::string path) { crl_directory_ = path; }
+  void set_crl_directory(std::string path) { crl_directory_ = std::move(path); }
 
  private:
   grpc_ssl_client_certificate_request_type cert_request_type_ =
