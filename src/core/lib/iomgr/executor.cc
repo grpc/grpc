@@ -92,7 +92,7 @@ TraceFlag executor_trace(false, "executor");
 Executor::Executor(const char* name) : name_(name) {
   adding_thread_lock_ = GPR_SPINLOCK_STATIC_INITIALIZER;
   gpr_atm_rel_store(&num_threads_, 0);
-  max_threads_ = GPR_MAX(1, 2 * gpr_cpu_num_cores());
+  max_threads_ = std::max(1u, 2 * gpr_cpu_num_cores());
 }
 
 void Executor::Init() { SetThreading(true); }
@@ -285,8 +285,8 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
 
     ThreadState* ts = g_this_thread_state;
     if (ts == nullptr) {
-      ts = &thd_state_[GPR_HASH_POINTER(grpc_core::ExecCtx::Get(),
-                                        cur_thread_count)];
+      ts = &thd_state_[grpc_core::HashPointer(grpc_core::ExecCtx::Get(),
+                                              cur_thread_count)];
     } else {
       GRPC_STATS_INC_EXECUTOR_SCHEDULED_TO_SELF();
     }

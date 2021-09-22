@@ -621,9 +621,17 @@ grpc_cc_library(
     external_deps = [
         "absl/synchronization",
     ],
-    language = "c++",
     deps = [
         "gpr_codegen",
+    ],
+)
+
+grpc_cc_library(
+    name = "useful",
+    hdrs = ["src/core/lib/gpr/useful.h"],
+    language = "c++",
+    deps = [
+        "gpr_platform",
     ],
 )
 
@@ -685,7 +693,6 @@ grpc_cc_library(
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tmpfile.h",
-        "src/core/lib/gpr/useful.h",
         "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/examine_stack.h",
         "src/core/lib/gprpp/fork.h",
@@ -727,6 +734,7 @@ grpc_cc_library(
         "gpr_codegen",
         "gpr_tls",
         "grpc_codegen",
+        "useful",
     ],
 )
 
@@ -1258,6 +1266,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "slice_refcount",
+    srcs = [
+        "src/core/lib/slice/slice_refcount.cc",
+        "src/core/lib/slice/static_slice.cc",
+    ],
+    hdrs = [
+        "src/core/lib/slice/slice_refcount.h",
+        "src/core/lib/slice/slice_refcount_base.h",
+        "src/core/lib/slice/slice_utils.h",
+        "src/core/lib/slice/static_slice.h",
+    ],
+    public_hdrs = [
+        "include/grpc/slice.h",
+    ],
+    deps = [
+        "gpr_base",
+        "ref_counted",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base_c",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -1540,7 +1569,6 @@ grpc_cc_library(
         "src/core/lib/slice/percent_encoding.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
-        "src/core/lib/slice/slice_utils.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/call.h",
         "src/core/lib/surface/call_test_only.h",
@@ -1597,6 +1625,8 @@ grpc_cc_library(
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+        "slice_refcount",
+        "useful",
     ],
 )
 
@@ -1736,6 +1766,7 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "udpa_orca_upb",
+        "useful",
     ],
 )
 
@@ -1912,6 +1943,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
+        "useful",
     ],
 )
 
@@ -2054,6 +2086,7 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_secure",
         "orphanable",
         "ref_counted_ptr",
+        "slice_refcount",
         "udpa_type_upb",
         "udpa_type_upbdefs",
     ],
@@ -2555,6 +2588,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
+        "useful",
     ],
 )
 
@@ -2726,8 +2760,10 @@ grpc_cc_library(
         "grpc_transport_chttp2_alpn",
         "ref_counted",
         "ref_counted_ptr",
+        "slice_refcount",
         "tsi",
         "tsi_interface",
+        "useful",
     ],
 )
 
@@ -2991,6 +3027,8 @@ grpc_cc_library(
         "hpack_encoder_table",
         "match",
         "popularity_count",
+        "slice_refcount",
+        "useful",
     ],
 )
 
@@ -3005,6 +3043,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
+        "useful",
     ],
 )
 
@@ -3199,6 +3238,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "tsi_interface",
+        "useful",
     ],
 )
 
@@ -3276,6 +3316,7 @@ grpc_cc_library(
         "grpc_base_c",
         "grpc_transport_chttp2_client_insecure",
         "tsi_interface",
+        "useful",
     ],
 )
 
@@ -3305,6 +3346,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_inproc",
         "ref_counted",
+        "useful",
     ],
 )
 
@@ -3335,6 +3377,7 @@ grpc_cc_library(
         "grpc_transport_inproc",
         "grpc_unsecure",
         "ref_counted",
+        "useful",
     ],
 )
 
