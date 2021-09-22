@@ -275,34 +275,37 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
       }
       for (RefCountedPtr<ChildPolicyWrapper>& child_policy_wrapper :
            child_policy_wrappers_) {
-        switch (child_policy_wrapper->connectivity_state()) {
-          case GRPC_CHANNEL_READY:
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-              gpr_log(GPR_INFO,
-                      "[rlslb %p] cache entry=%p: pick forwarded to child "
-                      "policy %p",
-                      lb_policy_.get(), this, child_policy_wrapper.get());
-            }
-            return child_policy_wrapper->Pick(args);
-          case GRPC_CHANNEL_IDLE:
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-              gpr_log(GPR_INFO,
-                      "[rlslb %p] cache entry=%p: pick forwarded to IDLE state "
-                      "child policy %p",
-                      lb_policy_.get(), this, child_policy_wrapper.get());
-            }
-            return child_policy_wrapper->Pick(args);
-          case GRPC_CHANNEL_CONNECTING:
+        if (child_policy_wrapper->connectivity_state() ==
+            GRPC_CHANNEL_TRANSIENT_FAILURE) {
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
             gpr_log(GPR_INFO,
-                    "[rlslb %p] cache entry=%p: pick queued due to child "
-                    "policy in CONNECTING state",
-                    lb_policy_.get(), this);
-            return PickResult::Queue();
-          default:
-            continue;
+                    "[rlslb %p] cache entry=%p: target %s in state "
+                    "TRANSIENT_FAILURE, skipping",
+                    lb_policy_.get(), this,
+                    child_policy_wrapper->target().c_str());
+          }
+          continue;
         }
+        // Child policy not in TRANSIENT_FAILURE, so delegate.
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+          gpr_log(GPR_INFO,
+                  "[rlslb %p] cache entry=%p: target %s in state %s, "
+                  "delegating",
+                  lb_policy_.get(), this,
+                  child_policy_wrapper->target().c_str(),
+                  ConnectivityStateName(
+                      child_policy_wrapper->connectivity_state()));
+        }
+        return child_policy_wrapper->Pick(args);
       }
-      return PickResult::Fail(absl::UnavailableError("RLS request in backoff"));
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+        gpr_log(GPR_INFO,
+                "[rlslb %p] cache entry=%p: no healthy target found, "
+                "failing request",
+                lb_policy_.get(), this);
+      }
+      return PickResult::Fail(
+          absl::UnavailableError("all RLS targets unreachable"));
     }
   } else if (now <= backoff_time_) {
     if (config->default_target().empty()) {
