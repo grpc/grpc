@@ -1283,6 +1283,7 @@ grpc_cc_library(
         "race",
         "ref_counted_ptr",
         "seq",
+        "slice_refcount",
         "useful",
     ],
 )
@@ -1674,7 +1675,6 @@ grpc_cc_library(
         "gpr_tls",
         "grpc_codegen",
         "grpc_trace",
-        "memory_quota",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",

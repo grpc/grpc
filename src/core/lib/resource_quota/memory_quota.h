@@ -23,6 +23,8 @@
 #include <queue>
 #include <vector>
 
+#include <grpc/slice.h>
+
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -219,7 +221,7 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
     // Construct the allocator: \a underlying_allocator is borrowed, and must
     // outlive this object.
     explicit Container(MemoryAllocator* underlying_allocator)
-        : underlying_allocator_(allocator) {}
+        : underlying_allocator_(underlying_allocator) {}
 
     MemoryAllocator* underlying_allocator() const {
       return underlying_allocator_;
@@ -270,6 +272,14 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
   ReclaimerQueue::Index
       reclamation_indices_[kNumReclamationPasses] ABSL_GUARDED_BY(
           memory_quota_mu_) = {ReclaimerQueue::kInvalidIndex};
+};
+
+template <typename T>
+class Vector : public std::vector<T, MemoryAllocator::Container<T>> {
+ public:
+  Vector(MemoryAllocator* allocator)
+      : std::vector<T, MemoryAllocator::Container<T>>(
+            MemoryAllocator::Container<T>(allocator)) {}
 };
 
 class AtomicBarrier {

@@ -155,7 +155,7 @@ TEST(MemoryQuotaTest, MakeSlice) {
 TEST(MemoryQuotaTest, ContainerAllocator) {
   RefCountedPtr<MemoryQuota> memory_quota = MakeRefCounted<MemoryQuota>();
   auto memory_allocator = memory_quota->MakeMemoryAllocator();
-  std::vector<int, MemoryAllocator::Container<int>> vec;
+  Vector<int> vec(memory_allocator.get());
   for (int i = 0; i < 100000; i++) {
     vec.push_back(i);
   }

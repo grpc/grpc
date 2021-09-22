@@ -22,6 +22,7 @@
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 
@@ -280,9 +281,9 @@ class SliceRefCount {
 }  // namespace
 
 grpc_slice MemoryAllocator::MakeSlice(MemoryRequest request) {
-  auto size = allocator->Reserve(request.Increase(sizeof(SliceRefCount)));
+  auto size = Reserve(request.Increase(sizeof(SliceRefCount)));
   void* p = gpr_malloc(size);
-  new (p) SliceRefCount(std::move(allocator), size);
+  new (p) SliceRefCount(Ref(), size);
   grpc_slice slice;
   slice.refcount = static_cast<SliceRefCount*>(p)->base_refcount();
   slice.data.refcounted.bytes =
