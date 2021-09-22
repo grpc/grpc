@@ -299,6 +299,7 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
           memory_quota_mu_) = {ReclaimerQueue::kInvalidIndex};
 };
 
+// Wrapper type around std::vector to make initialization against a MemoryAllocator based container allocator easy.
 template <typename T>
 class Vector : public std::vector<T, MemoryAllocator::Container<T>> {
  public:
