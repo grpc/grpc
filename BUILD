@@ -1318,6 +1318,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "slice_refcount",
+    srcs = [
+        "src/core/lib/slice/slice_refcount.cc",
+        "src/core/lib/slice/static_slice.cc",
+    ],
+    hdrs = [
+        "src/core/lib/slice/slice_refcount.h",
+        "src/core/lib/slice/slice_refcount_base.h",
+        "src/core/lib/slice/slice_utils.h",
+        "src/core/lib/slice/static_slice.h",
+    ],
+    public_hdrs = [
+        "include/grpc/slice.h",
+    ],
+    deps = [
+        "gpr_base",
+        "ref_counted",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base_c",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -1600,7 +1621,6 @@ grpc_cc_library(
         "src/core/lib/slice/percent_encoding.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
-        "src/core/lib/slice/slice_utils.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/call.h",
         "src/core/lib/surface/call_test_only.h",
@@ -1658,6 +1678,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+        "slice_refcount",
         "useful",
     ],
 )
@@ -2118,6 +2139,7 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_secure",
         "orphanable",
         "ref_counted_ptr",
+        "slice_refcount",
         "udpa_type_upb",
         "udpa_type_upbdefs",
     ],
@@ -2791,6 +2813,7 @@ grpc_cc_library(
         "grpc_transport_chttp2_alpn",
         "ref_counted",
         "ref_counted_ptr",
+        "slice_refcount",
         "tsi",
         "tsi_interface",
         "useful",
@@ -3057,6 +3080,7 @@ grpc_cc_library(
         "hpack_encoder_table",
         "match",
         "popularity_count",
+        "slice_refcount",
         "useful",
     ],
 )
