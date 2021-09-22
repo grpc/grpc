@@ -1997,8 +1997,6 @@ add_library(grpc
   src/core/lib/json/json_util.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/matchers/matchers.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/sdk_server_authz_filter.cc
@@ -2635,8 +2633,6 @@ add_library(grpc_unsecure
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_util.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -13181,6 +13177,8 @@ add_executable(memory_quota_test
   src/core/lib/debug/trace.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/slice/slice_refcount.cc
+  src/core/lib/slice/static_slice.cc
   test/core/resource_quota/memory_quota_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -15765,6 +15763,8 @@ add_executable(test_core_resource_quota_resource_quota_test
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
+  src/core/lib/slice/slice_refcount.cc
+  src/core/lib/slice/static_slice.cc
   test/core/resource_quota/resource_quota_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
