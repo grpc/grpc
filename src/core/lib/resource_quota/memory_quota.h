@@ -101,7 +101,8 @@ class ReclamationSweep {
   ReclamationSweep(ReclamationSweep&&) = default;
   ReclamationSweep& operator=(ReclamationSweep&&) = default;
 
-  // Has enough work been done that we
+  // Has enough work been done that we would not be called upon again immediately to do reclamation work if we stopped and requeued.
+  // Reclaimers with a variable amount of work to do can use this to ascertain when they can stop more efficiently than going through the reclaimer queue once per work item.
   bool IsSufficient() const;
 
  private:
