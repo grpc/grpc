@@ -53,15 +53,18 @@ class WrappedInternalSliceAllocator : public SliceAllocator {
   absl::Status Allocate(size_t size, SliceBuffer* dest,
                         SliceAllocator::AllocateCallback cb) override {
     // TODO(nnoble): requires the SliceBuffer definition.
-    grpc_slice_allocator_allocate(
-        slice_allocator_, size, 1, grpc_slice_allocator_intent::kReadBuffer,
-        dest->RawSliceBuffer(),
-        [](void* arg, grpc_error_handle error) {
-          auto cb = static_cast<SliceAllocator::AllocateCallback*>(arg);
-          (*cb)(grpc_error_to_absl_status(error));
-          delete cb;
-        },
-        new SliceAllocator::AllocateCallback(cb));
+    if (grpc_slice_allocator_allocate(
+            slice_allocator_, size, 1, grpc_slice_allocator_intent::kReadBuffer,
+            dest->RawSliceBuffer(),
+            [](void* arg, grpc_error_handle error) {
+              auto cb = static_cast<SliceAllocator::AllocateCallback*>(arg);
+              (*cb)(grpc_error_to_absl_status(error));
+              delete cb;
+            },
+            new SliceAllocator::AllocateCallback(cb))) {
+      // Allocated inline, the allocate callback CB will not be called async
+      cb(absl::OkStatus());
+    }
     return absl::OkStatus();
   }
 

@@ -35,39 +35,37 @@ void pollset_global_shutdown(void) {
   gpr_cv_destroy(&g_cv);
   gpr_mu_destroy(&g_mu);
 }
-void pollset_init(grpc_pollset* pollset, gpr_mu** mu) { *mu = &g_mu; }
-void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
+void pollset_init(grpc_pollset* /* pollset */, gpr_mu** mu) { *mu = &g_mu; }
+void pollset_shutdown(grpc_pollset* /* pollset */, grpc_closure* closure) {
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
 }
-void pollset_destroy(grpc_pollset* pollset) {}
-grpc_error_handle pollset_work(grpc_pollset* pollset,
-                               grpc_pollset_worker** worker,
+void pollset_destroy(grpc_pollset* /* pollset */) {}
+grpc_error_handle pollset_work(grpc_pollset* /* pollset */,
+                               grpc_pollset_worker** /* worker */,
                                grpc_millis deadline) {
-  (void)worker;
   gpr_cv_wait(&g_cv, &g_mu,
               grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME));
   return GRPC_ERROR_NONE;
 }
-grpc_error_handle pollset_kick(grpc_pollset* pollset,
-                               grpc_pollset_worker* specific_worker) {
-  (void)pollset;
-  (void)specific_worker;
+grpc_error_handle pollset_kick(grpc_pollset* /* pollset */,
+                               grpc_pollset_worker* /* specific_worker */) {
   return GRPC_ERROR_NONE;
 }
 size_t pollset_size(void) { return 1; }
 
 // --- pollset_set vtable API ---
 grpc_pollset_set* pollset_set_create(void) { return nullptr; }
-void pollset_set_destroy(grpc_pollset_set* pollset_set) {}
-void pollset_set_add_pollset(grpc_pollset_set* pollset_set,
-                             grpc_pollset* pollset) {}
+void pollset_set_destroy(grpc_pollset_set* /*pollset_set*/) {}
+void pollset_set_add_pollset(grpc_pollset_set* /*pollset_set*/
+                             ,
+                             grpc_pollset* /*pollset*/) {}
 
-void pollset_set_del_pollset(grpc_pollset_set* pollset_set,
-                             grpc_pollset* pollset) {}
-void pollset_set_add_pollset_set(grpc_pollset_set* bag,
-                                 grpc_pollset_set* item) {}
-void pollset_set_del_pollset_set(grpc_pollset_set* bag,
-                                 grpc_pollset_set* item) {}
+void pollset_set_del_pollset(grpc_pollset_set* /*pollset_set*/,
+                             grpc_pollset* /*pollset*/) {}
+void pollset_set_add_pollset_set(grpc_pollset_set* /*bag*/,
+                                 grpc_pollset_set* /*item*/) {}
+void pollset_set_del_pollset_set(grpc_pollset_set* /*bag*/,
+                                 grpc_pollset_set* /*item*/) {}
 
 }  // namespace
 
