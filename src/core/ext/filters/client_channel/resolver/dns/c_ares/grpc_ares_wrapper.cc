@@ -536,10 +536,8 @@ grpc_error_handle grpc_ares_ev_driver_create_locked(
   grpc_ares_test_only_inject_config((*ev_driver)->channel);
   GRPC_CARES_TRACE_LOG("request:%p grpc_ares_ev_driver_create_locked", request);
   if (status != ARES_SUCCESS) {
-    grpc_error_handle err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Failed to init ares channel. C-ares error: ",
-                     ares_strerror(status))
-            .c_str());
+    grpc_error_handle err = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Failed to init ares channel. C-ares error: ", ares_strerror(status)));
     gpr_free(*ev_driver);
     return err;
   }
@@ -721,7 +719,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
     GRPC_CARES_TRACE_LOG("request:%p on_hostbyname_done_locked: %s", r,
                          error_msg.c_str());
     grpc_error_handle error =
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
+        GRPC_ERROR_CREATE_FROM_CPP_STRING(std::move(error_msg));
     r->error = grpc_error_add_child(error, r->error);
   }
   destroy_hostbyname_request_locked(hr);
@@ -766,7 +764,7 @@ static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
     GRPC_CARES_TRACE_LOG("request:%p on_srv_query_done_locked: %s", r,
                          error_msg.c_str());
     grpc_error_handle error =
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
+        GRPC_ERROR_CREATE_FROM_CPP_STRING(std::move(error_msg));
     r->error = grpc_error_add_child(error, r->error);
   }
   delete q;
@@ -823,9 +821,9 @@ fail:
   std::string error_msg =
       absl::StrFormat("C-ares status is not ARES_SUCCESS qtype=TXT name=%s: %s",
                       q->name(), ares_strerror(status));
-  error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
   GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked %s", r,
                        error_msg.c_str());
+  error = GRPC_ERROR_CREATE_FROM_CPP_STRING(std::move(error_msg));
   r->error = grpc_error_add_child(error, r->error);
 }
 
@@ -887,10 +885,8 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
     int status =
         ares_set_servers_ports(r->ev_driver->channel, &r->dns_server_addr);
     if (status != ARES_SUCCESS) {
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("C-ares status is not ARES_SUCCESS: ",
-                       ares_strerror(status))
-              .c_str());
+      error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "C-ares status is not ARES_SUCCESS: ", ares_strerror(status)));
       goto error_cleanup;
     }
   }
@@ -1128,9 +1124,8 @@ void (*grpc_cancel_ares_request_locked)(grpc_ares_request* r) =
 grpc_error_handle grpc_ares_init(void) {
   int status = ares_library_init(ARES_LIB_INIT_ALL);
   if (status != ARES_SUCCESS) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("ares_library_init failed: ", ares_strerror(status))
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("ares_library_init failed: ", ares_strerror(status)));
   }
   return GRPC_ERROR_NONE;
 }

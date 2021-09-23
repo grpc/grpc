@@ -58,7 +58,6 @@ void grpc_client_channel_init(void) {
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, append_filter,
       const_cast<grpc_channel_filter*>(
           &grpc_core::ClientChannel::kFilterVtable));
-  grpc_http_connect_register_handshaker_factory();
   grpc_client_channel_global_init_backup_polling();
 }
 
@@ -71,3 +70,11 @@ void grpc_client_channel_shutdown(void) {
   grpc_core::LoadBalancingPolicyRegistry::Builder::ShutdownRegistry();
   grpc_core::ServiceConfigParser::Shutdown();
 }
+
+namespace grpc_core {
+
+void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder) {
+  RegisterHttpConnectHandshaker(builder);
+}
+
+}  // namespace grpc_core

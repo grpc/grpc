@@ -18,6 +18,8 @@ licenses(["notice"])
 
 grpc_package(name = "test/core/promise")
 
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+
 grpc_cc_test(
     name = "poll_test",
     srcs = ["poll_test.cc"],
@@ -121,6 +123,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:loop",
+        "//:seq",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -218,6 +221,23 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "for_each_test",
+    srcs = ["for_each_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:for_each",
+        "//:join",
+        "//:map",
+        "//:observable",
+        "//:pipe",
+        "//:seq",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
     name = "pipe_test",
     srcs = ["pipe_test.cc"],
     external_deps = ["gtest"],
@@ -229,5 +249,18 @@ grpc_cc_test(
         "//:promise",
         "//:seq",
         "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_proto_fuzzer(
+    name = "promise_fuzzer",
+    srcs = ["promise_fuzzer.cc"],
+    corpus = "promise_fuzzer_corpus",
+    language = "C++",
+    proto = "promise_fuzzer.proto",
+    tags = ["no_windows"],
+    uses_polling = False,
+    deps = [
+        "//test/core/util:grpc_test_util",
     ],
 )

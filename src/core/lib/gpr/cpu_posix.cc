@@ -77,7 +77,7 @@ unsigned gpr_cpu_current_cpu(void) {
     pthread_setspecific(thread_id_key, thread_id);
   }
 
-  return (unsigned)GPR_HASH_POINTER(thread_id, gpr_cpu_num_cores());
+  return (unsigned)grpc_core::HashPointer(thread_id, gpr_cpu_num_cores());
 }
 
 #endif /* GPR_CPU_POSIX */

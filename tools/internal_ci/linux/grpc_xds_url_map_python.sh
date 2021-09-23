@@ -101,6 +101,7 @@ run_test() {
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
+    --testing_version=$(echo "$KOKORO_JOB_NAME" | sed -E 's|^grpc/core/([^/]+)/.*|\1|') \
     --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
     --flagfile="config/url-map.cfg"
   set +x

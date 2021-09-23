@@ -145,8 +145,8 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
     }
     if ((err = grpc_tcp_server_add_addr(s, &addr, port_index, fd_index, &dsmode,
                                         &new_sp)) != GRPC_ERROR_NONE) {
-      grpc_error_handle root_err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("Failed to add listener: ", addr_str).c_str());
+      grpc_error_handle root_err = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("Failed to add listener: ", addr_str));
       err = grpc_error_add_child(root_err, err);
       break;
     } else {

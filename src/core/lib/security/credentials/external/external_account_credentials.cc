@@ -232,10 +232,9 @@ void ExternalAccountCredentials::ExchangeToken(
     absl::string_view subject_token) {
   absl::StatusOr<URI> uri = URI::Parse(options_.token_url);
   if (!uri.ok()) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrFormat("Invalid token url: %s. Error: %s", options_.token_url,
-                        uri.status().ToString())
-            .c_str()));
+                        uri.status().ToString())));
     return;
   }
   grpc_httpcli_request request;
@@ -344,20 +343,17 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   auto it = json.object_value().find("access_token");
   if (it == json.object_value().end() ||
       it->second.type() != Json::Type::STRING) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("Missing or invalid access_token in %s.", response_body)
-            .c_str()));
+    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "Missing or invalid access_token in %s.", response_body)));
     return;
   }
   std::string access_token = it->second.string_value();
   absl::StatusOr<URI> uri =
       URI::Parse(options_.service_account_impersonation_url);
   if (!uri.ok()) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat(
-            "Invalid service account impersonation url: %s. Error: %s",
-            options_.service_account_impersonation_url, uri.status().ToString())
-            .c_str()));
+    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "Invalid service account impersonation url: %s. Error: %s",
+        options_.service_account_impersonation_url, uri.status().ToString())));
     return;
   }
   grpc_httpcli_request request;
@@ -413,18 +409,16 @@ void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
   auto it = json.object_value().find("accessToken");
   if (it == json.object_value().end() ||
       it->second.type() != Json::Type::STRING) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("Missing or invalid accessToken in %s.", response_body)
-            .c_str()));
+    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "Missing or invalid accessToken in %s.", response_body)));
     return;
   }
   std::string access_token = it->second.string_value();
   it = json.object_value().find("expireTime");
   if (it == json.object_value().end() ||
       it->second.type() != Json::Type::STRING) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("Missing or invalid expireTime in %s.", response_body)
-            .c_str()));
+    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "Missing or invalid expireTime in %s.", response_body)));
     return;
   }
   std::string expire_time = it->second.string_value();

@@ -30,11 +30,14 @@ RUN apk update && apk add \
   make \
   perl \
   strace \
-  python2-dev \
-  py2-pip \
+  python3-dev \
+  py3-pip \
   unzip \
   wget \
   zip
+
+RUN ln -s /usr/bin/pip3 /usr/bin/pip
+RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # Install Python packages from PyPI
 RUN pip install --upgrade pip==19.3.1
