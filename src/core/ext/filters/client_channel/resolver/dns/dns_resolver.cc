@@ -32,13 +32,13 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/authority_override.h"
 
-grpc_core::TraceFlag grpc_trace_iomgr_resolver(false, "iomgr_resolver");
+grpc_core::TraceFlag grpc_trace_dns_resolver(false, "dns_resolver");
 
-#define GRPC_IOMGR_DNS_TRACE_LOG(format, ...)                      \
-  do {                                                             \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_iomgr_resolver)) {      \
-      gpr_log(GPR_DEBUG, "(iomgr resolver) " format, __VA_ARGS__); \
-    }                                                              \
+#define GRPC_DNS_TRACE_LOG(format, ...)                          \
+  do {                                                           \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_dns_resolver)) {      \
+      gpr_log(GPR_DEBUG, "(dns resolver) " format, __VA_ARGS__); \
+    }                                                            \
   } while (0)
 
 namespace grpc_core {
@@ -240,7 +240,7 @@ void IomgrDnsResolver::StartLocked() {
     if (ms_until_next_resolution > 0) {
       const grpc_millis last_resolution_ago =
           grpc_core::ExecCtx::Get()->Now() - last_resolution_timestamp_;
-      GRPC_IOMGR_DNS_TRACE_LOG(
+      GRPC_DNS_TRACE_LOG(
           "resolver:%p In cooldown from last resolution (from %" PRId64
           " ms ago). Will resolve again in %" PRId64 " ms",
           this, last_resolution_ago, ms_until_next_resolution);
@@ -320,7 +320,7 @@ void IomgrDnsResolver::OnNextResolution(void* arg, grpc_error_handle error) {
 }
 
 void IomgrDnsResolver::OnNextResolutionLocked(grpc_error_handle error) {
-  GRPC_IOMGR_DNS_TRACE_LOG(
+  GRPC_DNS_TRACE_LOG(
       "resolver:%p re-resolution timer fired. error: %s. "
       "shutdown_initiated_: "
       "%d",
@@ -328,7 +328,7 @@ void IomgrDnsResolver::OnNextResolutionLocked(grpc_error_handle error) {
   have_next_resolution_timer_ = false;
   if (error == GRPC_ERROR_NONE && !shutdown_initiated_) {
     if (!resolution_in_progress_) {
-      GRPC_IOMGR_DNS_TRACE_LOG(
+      GRPC_DNS_TRACE_LOG(
           "resolver:%p start resolving due to re-resolution timer", this);
       StartResolvingLocked();
     }
@@ -373,7 +373,7 @@ void IomgrDnsResolver::StartResolvingLocked() {
                                    interested_parties_, dns_server_);
   }
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
-  GRPC_IOMGR_DNS_TRACE_LOG(
+  GRPC_DNS_TRACE_LOG(
       "resolver:%p Started resolving. handles: host(%" PRIdPTR ",%" PRIdPTR
       "), srv(%" PRIdPTR ",%" PRIdPTR "), txt(%" PRIdPTR ",%" PRIdPTR ")",
       this, host_handle_.key[0], host_handle_.key[1], srv_handle_.key[0],
@@ -552,9 +552,8 @@ void IomgrDnsResolver::FinishResolutionLocked() {
   if (!error_msgs.empty()) {
     std::string error_msg =
         absl::StrCat("DNS query errors: ", absl::StrJoin(error_msgs, "; "));
-    GRPC_IOMGR_DNS_TRACE_LOG(
-        "resolver:%p dns resolution failed (will retry): %s", this,
-        error_msg.c_str());
+    GRPC_DNS_TRACE_LOG("resolver:%p dns resolution failed (will retry): %s",
+                       this, error_msg.c_str());
     result_handler_->ReturnError(grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_STRING_VIEW(error_msg),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
@@ -620,8 +619,8 @@ absl::Status IomgrDnsResolver::ParseResolvedServiceConfig(Result& result) {
       ChooseServiceConfig(*tmp_txt_record_, &result.service_config_error);
   if (result.service_config_error == GRPC_ERROR_NONE &&
       !service_config_string.empty()) {
-    GRPC_IOMGR_DNS_TRACE_LOG("resolver:%p selected service config choice: %s",
-                             this, service_config_string.c_str());
+    GRPC_DNS_TRACE_LOG("resolver:%p selected service config choice: %s", this,
+                       service_config_string.c_str());
     result.service_config = ServiceConfig::Create(
         channel_args_, service_config_string, &result.service_config_error);
   }
@@ -639,8 +638,8 @@ void IomgrDnsResolver::SetRetryTimer() {
   // new closure API is done, find a way to track this ref with the timer
   // callback as part of the type system.
   Ref(DEBUG_LOCATION, "retry-timer").release();
-  GRPC_IOMGR_DNS_TRACE_LOG("resolver:%p retrying in %" PRId64 " milliseconds",
-                           this, timeout);
+  GRPC_DNS_TRACE_LOG("resolver:%p retrying in %" PRId64 " milliseconds", this,
+                     timeout);
   grpc_timer_init(&next_resolution_timer_, next_try, &on_next_resolution_);
 }
 
@@ -663,10 +662,10 @@ class IomgrDnsResolverFactory : public ResolverFactory {
 }  // namespace
 }  // namespace grpc_core
 
-void grpc_iomgr_dns_resolver_init() {
+void grpc_dns_resolver_init() {
   // TODO(hork): Enable this when the Ares DNS resolver is disabled.
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
       absl::make_unique<grpc_core::IomgrDnsResolverFactory>());
 }
 
-void grpc_iomgr_dns_resolver_shutdown() {}
+void grpc_dns_resolver_shutdown() {}

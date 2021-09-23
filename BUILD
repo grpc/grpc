@@ -1735,8 +1735,8 @@ grpc_cc_library(
         "grpc_client_idle_filter",
         "grpc_max_age_filter",
         "grpc_message_size_filter",
+        "grpc_resolver_dns",
         "grpc_resolver_dns_ares",
-        "grpc_resolver_iomgr",
         "grpc_resolver_fake",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
@@ -2606,6 +2606,7 @@ grpc_cc_library(
     ],
 )
 
+# TODO(hork): delete
 grpc_cc_library(
     name = "grpc_resolver_dns_native",
     srcs = [
@@ -2623,6 +2624,7 @@ grpc_cc_library(
     ],
 )
 
+# TODO(hork): delete
 grpc_cc_library(
     name = "grpc_resolver_dns_ares",
     srcs = [
@@ -2658,9 +2660,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_resolver_iomgr",
+    name = "grpc_resolver_dns",
     srcs = [
-        "src/core/ext/filters/client_channel/resolver/dns/iomgr/dns_resolver_iomgr.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/dns_resolver.cc",
     ],
     external_deps = [
         "absl/container:flat_hash_map",

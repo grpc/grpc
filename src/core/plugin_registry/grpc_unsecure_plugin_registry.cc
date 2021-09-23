@@ -34,8 +34,8 @@ void grpc_inproc_plugin_init(void);
 void grpc_inproc_plugin_shutdown(void);
 void grpc_resolver_dns_ares_init(void);
 void grpc_resolver_dns_ares_shutdown(void);
-void grpc_iomgr_dns_resolver_init(void);
-void grpc_iomgr_dns_resolver_shutdown(void);
+void grpc_dns_resolver_init(void);
+void grpc_dns_resolver_shutdown(void);
 // TODO(hork): delete native resolver when iomgr resolver is enabled.
 void grpc_resolver_dns_native_init(void);
 void grpc_resolver_dns_native_shutdown(void);
