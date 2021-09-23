@@ -102,8 +102,8 @@ static void clr_start_transport_stream_op_batch(
   if (batch->send_initial_metadata) {
     // Grab client stats object from metadata.
     auto client_stats_md =
-        (*batch->payload->send_initial_metadata.send_initial_metadata)
-            ->Remove(grpc_slice_from_static_string(
+        batch->payload->send_initial_metadata.send_initial_metadata->Remove(
+            grpc_slice_from_static_string(
                 grpc_core::kGrpcLbClientStatsMetadataKey));
     if (client_stats_md.has_value()) {
       grpc_core::GrpcLbClientStats* client_stats =
