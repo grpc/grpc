@@ -790,8 +790,6 @@ libs:
   - src/core/lib/iomgr/event_engine/resolved_address_internal.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
-  - src/core/lib/iomgr/executor/mpmcqueue.h
-  - src/core/lib/iomgr/executor/threadpool.h
   - src/core/lib/iomgr/gethostname.h
   - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
@@ -1326,8 +1324,6 @@ libs:
   - src/core/lib/iomgr/event_engine/timer.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
-  - src/core/lib/iomgr/executor/mpmcqueue.cc
-  - src/core/lib/iomgr/executor/threadpool.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/gethostname_fallback.cc
@@ -1840,8 +1836,6 @@ libs:
   - src/core/lib/iomgr/event_engine/resolved_address_internal.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
-  - src/core/lib/iomgr/executor/mpmcqueue.h
-  - src/core/lib/iomgr/executor/threadpool.h
   - src/core/lib/iomgr/gethostname.h
   - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
@@ -2101,8 +2095,6 @@ libs:
   - src/core/lib/iomgr/event_engine/timer.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
-  - src/core/lib/iomgr/executor/mpmcqueue.cc
-  - src/core/lib/iomgr/executor/threadpool.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/gethostname_fallback.cc
@@ -3682,15 +3674,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: mpmcqueue_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/mpmcqueue_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: mpscq_test
   build: test
   language: c
@@ -4107,15 +4090,6 @@ targets:
   headers: []
   src:
   - test/core/gprpp/thd_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: threadpool_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/threadpool_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -4902,22 +4876,6 @@ targets:
   platforms:
   - linux
   - posix
-- name: bm_threadpool
-  build: test
-  run: false
-  language: c++
-  headers: []
-  src:
-  - test/cpp/microbenchmarks/bm_threadpool.cc
-  deps:
-  - benchmark_helpers
-  benchmark: true
-  defaults: benchmark
-  platforms:
-  - linux
-  - posix
-  - mac
-  uses_polling: false
 - name: bm_timer
   build: test
   language: c++
