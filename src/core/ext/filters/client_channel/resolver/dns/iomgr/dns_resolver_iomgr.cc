@@ -14,10 +14,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/event_engine/event_engine.h>
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/bind_front.h"
 #include "absl/strings/str_join.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/service_config_parser.h"
@@ -25,7 +26,6 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
@@ -586,7 +586,7 @@ absl::Status IomgrDnsResolver::ParseResolvedBalancerHostnames(Result& result) {
     grpc_arg new_arg = CreateGrpclbBalancerAddressesArg(server_addr_list);
     const grpc_channel_args* tmp_args =
         grpc_channel_args_copy_and_add(result.args, &new_arg, 1);
-    GPR_SWAP(const grpc_channel_args*, tmp_args, result.args);
+    std::swap<const grpc_channel_args*>(tmp_args, result.args);
     grpc_channel_args_destroy(tmp_args);
   }
   return absl::OkStatus();
