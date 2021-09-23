@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H
-#define GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H
+#ifndef GRPC_CORE_LIB_SLICE_SLICE_SPLIT_H
+#define GRPC_CORE_LIB_SLICE_SLICE_SPLIT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -37,4 +37,4 @@ void grpc_slice_split(grpc_slice str, const char* sep, grpc_slice_buffer* dst);
 void grpc_slice_split_without_space(grpc_slice str, const char* sep,
                                     grpc_slice_buffer* dst);
 
-#endif /* GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H */
+#endif /* GRPC_CORE_LIB_SLICE_SLICE_SPLIT_H */

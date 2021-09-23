@@ -1545,6 +1545,7 @@ LIBGRPC_SRC = \
     src/core/lib/slice/slice_buffer.cc \
     src/core/lib/slice/slice_intern.cc \
     src/core/lib/slice/slice_refcount.cc \
+    src/core/lib/slice/slice_split.cc \
     src/core/lib/slice/slice_string_helpers.cc \
     src/core/lib/slice/static_slice.cc \
     src/core/lib/surface/api_trace.cc \
@@ -1974,6 +1975,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/slice/slice_buffer.cc \
     src/core/lib/slice/slice_intern.cc \
     src/core/lib/slice/slice_refcount.cc \
+    src/core/lib/slice/slice_split.cc \
     src/core/lib/slice/slice_string_helpers.cc \
     src/core/lib/slice/static_slice.cc \
     src/core/lib/surface/api_trace.cc \
