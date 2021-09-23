@@ -35,10 +35,11 @@ namespace {
 
 constexpr static intptr_t kErrorBit =
 #ifdef GRPC_ERROR_IS_ABSEIL_STATUS
-    // absl::Status: 2nd bit from LSB can be used
+    // absl::Status: 2nd bit from LSB can be used.
+    // (1st bit is reserved for absl::Status inline bit.)
     2;
 #else
-    // grpc_status LSB can be used
+    // grpc_error LSB can be used
     1;
 #endif
 
@@ -253,7 +254,7 @@ void CallCombiner::Cancel(grpc_error_handle error) {
 #ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   intptr_t status_ptr = internal::StatusAllocPtr(error);
   if ((status_ptr & kErrorBit) > 0) {
-    /* absl::Status shouldn't have kErrorBit, could be a code bug. */
+    // absl::Status shouldn't have kErrorBit, could be a code bug.
     gpr_log(GPR_ERROR, "CallCombiner::Cancel got an error which has kErrorBit");
     abort();
   }

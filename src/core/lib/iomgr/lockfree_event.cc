@@ -172,7 +172,7 @@ bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {
 #ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   intptr_t status_ptr = internal::StatusAllocPtr(shutdown_error);
   if ((status_ptr & kShutdownBit) > 0) {
-    /* absl::Status shouldn't have kShutdownBit, could be a code bug. */
+    // absl::Status shouldn't have kShutdownBit, could be a code bug.
     gpr_log(GPR_ERROR,
             "LockfreeEvent::SetShutdown got an error which has kShutdownBit");
     abort();
