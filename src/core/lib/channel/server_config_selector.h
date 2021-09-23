@@ -19,8 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/service_config.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/channel/service_config.h"
 
 namespace grpc_core {
 
@@ -28,6 +28,7 @@ namespace grpc_core {
 // filter per call.
 class ServerConfigSelector {
  public:
+  virtual ~ServerConfigSelector() = default;
   struct CallConfig {
     grpc_error_handle error = GRPC_ERROR_NONE;
     const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;

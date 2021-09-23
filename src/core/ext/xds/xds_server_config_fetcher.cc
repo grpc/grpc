@@ -695,21 +695,6 @@ void XdsServerConfigFetcher::CancelRdsWatchInternalLocked(
   }
 }
 
-// std::string XdsServerConfigFetcher::AddFakeRdsUpdate(
-//     XdsApi::RdsUpdate rds_update) {
-//   RdsWatcherState state;
-//   state.rds_update = std::move(rds_update);
-//   state.listener_refs = 1;
-//   std::string resource_name;
-//   {
-//     MutexLock lock(&rds_mu_);
-//     resource_name =
-//         absl::StrCat("grpc.fake_rds_data.", fake_rds_name_counter++);
-//     rds_watchers_.emplace(resource_name, std::move(state));
-//   }
-//   return resource_name;
-// }
-
 }  // namespace grpc_core
 
 grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
