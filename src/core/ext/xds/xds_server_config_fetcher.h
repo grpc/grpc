@@ -145,7 +145,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
       ListenerWatcher* parent_;
     };
 
-    void OnFatalError(absl::Status status);
+    void OnFatalError(absl::Status status) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
     void UpdateFilterChainMatchManagerLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);

@@ -361,7 +361,7 @@ XdsServerConfigFetcher::ListenerWatcher::RdsUpdateWatcher::RdsUpdateWatcher(
     : resource_name_(resource_name), parent_(parent) {}
 
 void XdsServerConfigFetcher::ListenerWatcher::RdsUpdateWatcher::OnRdsUpdate(
-    absl::StatusOr<XdsApi::RdsUpdate> rds_update) {
+    absl::StatusOr<XdsApi::RdsUpdate> /* rds_update */) {
   {
     MutexLock lock(&parent_->mu_);
     for (auto it = parent_->pending_rds_updates_.begin();
@@ -455,6 +455,9 @@ void XdsServerConfigFetcher::ListenerWatcher::OnListenerChanged(
             server_config_fetcher_, std::move(listener.filter_chain_map),
             std::move(listener.default_filter_chain),
             std::move(resource_names));
+    if (pending_rds_updates_.empty()) {
+      UpdateFilterChainMatchManagerLocked();
+    }
   }
 }
 
@@ -485,7 +488,6 @@ void XdsServerConfigFetcher::ListenerWatcher::OnError(grpc_error_handle error) {
 
 void XdsServerConfigFetcher::ListenerWatcher::OnFatalError(
     absl::Status status) {
-  MutexLock lock(&mu_);
   pending_filter_chain_match_manager_.reset();
   gpr_log(GPR_ERROR,
           "ListenerWatcher:%p Encountered fatal error %s; not serving on %s",
@@ -505,6 +507,7 @@ void XdsServerConfigFetcher::ListenerWatcher::OnFatalError(
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::OnResourceDoesNotExist() {
+  MutexLock lock(&mu_);
   OnFatalError(absl::NotFoundError("Requested listener does not exist"));
 }
 
