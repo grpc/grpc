@@ -1413,8 +1413,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/event_engine/timer.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
-    src/core/lib/iomgr/executor/mpmcqueue.cc \
-    src/core/lib/iomgr/executor/threadpool.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -1543,9 +1541,12 @@ LIBGRPC_SRC = \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
+    src/core/lib/slice/slice_api.cc \
     src/core/lib/slice/slice_buffer.cc \
     src/core/lib/slice/slice_intern.cc \
+    src/core/lib/slice/slice_refcount.cc \
     src/core/lib/slice/slice_string_helpers.cc \
+    src/core/lib/slice/static_slice.cc \
     src/core/lib/surface/api_trace.cc \
     src/core/lib/surface/byte_buffer.cc \
     src/core/lib/surface/byte_buffer_reader.cc \
@@ -1896,8 +1897,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/event_engine/timer.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
-    src/core/lib/iomgr/executor/mpmcqueue.cc \
-    src/core/lib/iomgr/executor/threadpool.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -1971,9 +1970,12 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
+    src/core/lib/slice/slice_api.cc \
     src/core/lib/slice/slice_buffer.cc \
     src/core/lib/slice/slice_intern.cc \
+    src/core/lib/slice/slice_refcount.cc \
     src/core/lib/slice/slice_string_helpers.cc \
+    src/core/lib/slice/static_slice.cc \
     src/core/lib/surface/api_trace.cc \
     src/core/lib/surface/byte_buffer.cc \
     src/core/lib/surface/byte_buffer_reader.cc \

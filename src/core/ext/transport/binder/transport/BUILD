@@ -41,6 +41,7 @@ grpc_cc_library(
         "//:gpr_base",
         "//:gpr_platform",
         "//:grpc_base_c",
+        "//:slice_refcount",
         "//src/core/ext/transport/binder/utils:transport_stream_receiver",
         "//src/core/ext/transport/binder/wire_format:binder",
         "//src/core/ext/transport/binder/wire_format:wire_reader",

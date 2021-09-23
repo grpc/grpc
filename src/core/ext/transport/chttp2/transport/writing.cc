@@ -194,8 +194,8 @@ static uint32_t target_write_size(grpc_chttp2_transport* /*t*/) {
 
 // Returns true if initial_metadata contains only default headers.
 static bool is_default_initial_metadata(grpc_metadata_batch* initial_metadata) {
-  return (*initial_metadata)->default_count() ==
-         (*initial_metadata)->non_deadline_count();
+  return initial_metadata->default_count() ==
+         initial_metadata->non_deadline_count();
 }
 
 namespace {
@@ -350,7 +350,7 @@ class DataSendContext {
     is_last_frame_ = send_bytes == s_->flow_controlled_buffer.length &&
                      s_->fetching_send_message == nullptr &&
                      s_->send_trailing_metadata != nullptr &&
-                     grpc_metadata_batch_is_empty(s_->send_trailing_metadata);
+                     s_->send_trailing_metadata->empty();
     grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, send_bytes,
                             is_last_frame_, &s_->stats.outgoing, &t_->outbuf);
     s_->flow_control->SentData(send_bytes);
@@ -385,7 +385,7 @@ class DataSendContext {
     }
     is_last_frame_ = is_last_data_frame &&
                      s_->send_trailing_metadata != nullptr &&
-                     grpc_metadata_batch_is_empty(s_->send_trailing_metadata);
+                     s_->send_trailing_metadata->empty();
     grpc_chttp2_encode_data(s_->id, &s_->compressed_data_buffer, send_bytes,
                             is_last_frame_, &s_->stats.outgoing, &t_->outbuf);
     s_->flow_control->SentData(send_bytes);
@@ -473,7 +473,7 @@ class StreamWriteContext {
                   [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],  // max_frame_size
               &s_->stats.outgoing                         // stats
           },
-          **s_->send_initial_metadata, &t_->outbuf);
+          *s_->send_initial_metadata, &t_->outbuf);
       grpc_chttp2_reset_ping_clock(t_);
       write_context_->IncInitialMetadataWrites();
     }
@@ -566,7 +566,7 @@ class StreamWriteContext {
     if (compressed_data_buffer_len() != 0) return;
 
     GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "sending trailing_metadata"));
-    if (grpc_metadata_batch_is_empty(s_->send_trailing_metadata)) {
+    if (s_->send_trailing_metadata->empty()) {
       grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, 0, true,
                               &s_->stats.outgoing, &t_->outbuf);
     } else {
@@ -584,7 +584,7 @@ class StreamWriteContext {
               grpc_core::MetadataArray(
                   extra_headers_for_trailing_metadata_,
                   num_extra_headers_for_trailing_metadata_),
-              **s_->send_trailing_metadata),
+              *s_->send_trailing_metadata),
           &t_->outbuf);
     }
     write_context_->IncTrailingMetadataWrites();
@@ -605,17 +605,16 @@ class StreamWriteContext {
         gpr_log(GPR_INFO, "not sending initial_metadata (Trailers-Only)"));
     // When sending Trailers-Only, we need to move the :status and
     // content-type headers to the trailers.
-    if ((*s_->send_initial_metadata)->legacy_index()->named.status != nullptr) {
+    if (s_->send_initial_metadata->legacy_index()->named.status != nullptr) {
       extra_headers_for_trailing_metadata_
           [num_extra_headers_for_trailing_metadata_++] =
-              &(*s_->send_initial_metadata)->legacy_index()->named.status->md;
+              &s_->send_initial_metadata->legacy_index()->named.status->md;
     }
-    if ((*s_->send_initial_metadata)->legacy_index()->named.content_type !=
+    if (s_->send_initial_metadata->legacy_index()->named.content_type !=
         nullptr) {
       extra_headers_for_trailing_metadata_
           [num_extra_headers_for_trailing_metadata_++] =
-              &(*s_->send_initial_metadata)
-                   ->legacy_index()
+              &s_->send_initial_metadata->legacy_index()
                    ->named.content_type->md;
     }
   }

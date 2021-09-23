@@ -134,7 +134,6 @@ void grpc_init(void) {
     grpc_core::Fork::GlobalInit();
     grpc_fork_handlers_auto_register();
     grpc_stats_init();
-    grpc_init_static_metadata_ctx();
     grpc_slice_intern_init();
     grpc_mdctx_global_init();
     grpc_channel_init_init();
@@ -189,8 +188,6 @@ void grpc_shutdown_internal_locked(void)
   grpc_core::ApplicationCallbackExecCtx::GlobalShutdown();
   g_shutting_down = false;
   g_shutting_down_cv->SignalAll();
-  // Absolute last action will be to delete static metadata context.
-  grpc_destroy_static_metadata_ctx();
 }
 
 void grpc_shutdown_internal(void* /*ignored*/) {
