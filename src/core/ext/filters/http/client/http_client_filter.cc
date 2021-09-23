@@ -131,11 +131,10 @@ static grpc_error_handle client_filter_incoming_metadata(
               grpc_error_set_str(
                   GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "Received http2 :status header with non-200 OK status"),
-                  GRPC_ERROR_STR_VALUE, grpc_slice_from_copied_string(val)),
+                  GRPC_ERROR_STR_VALUE, val),
               GRPC_ERROR_INT_GRPC_STATUS,
               grpc_http2_status_to_grpc_status(atoi(val))),
-          GRPC_ERROR_STR_GRPC_MESSAGE,
-          grpc_slice_from_cpp_string(std::move(msg)));
+          GRPC_ERROR_STR_GRPC_MESSAGE, msg);
       gpr_free(val);
       return e;
     }
