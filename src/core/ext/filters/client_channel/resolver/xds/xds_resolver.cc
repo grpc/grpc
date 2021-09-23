@@ -597,8 +597,7 @@ absl::optional<absl::string_view> GetHeaderValue(
   } else if (header_name == "content-type") {
     return "application/grpc";
   }
-  return initial_metadata->GetValue( header_name,
-                                       concatenated_value);
+  return initial_metadata->GetValue(header_name, concatenated_value);
 }
 
 bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
