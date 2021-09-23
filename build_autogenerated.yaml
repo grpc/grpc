@@ -3324,17 +3324,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: error_test
-  build: test
-  language: c
-  headers:
-  - test/core/iomgr/endpoint_tests.h
-  src:
-  - test/core/iomgr/endpoint_tests.cc
-  - test/core/iomgr/error_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: ev_epollex_linux_test
   build: test
   language: c
@@ -4121,14 +4110,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: test_core_security_credentials_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/credentials_test.cc
-  deps:
-  - grpc_test_util
 - name: test_core_slice_slice_test
   build: test
   language: c
@@ -5592,6 +5573,18 @@ targets:
   deps:
   - grpc++_error_details
   - grpc_test_util
+- name: error_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/iomgr/endpoint_tests.h
+  src:
+  - test/core/iomgr/endpoint_tests.cc
+  - test/core/iomgr/error_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: error_utils_test
   gtest: true
   build: test
@@ -7583,6 +7576,15 @@ targets:
   - absl/types:optional
   - absl/utility:utility
   uses_polling: false
+- name: test_core_security_credentials_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/credentials_test.cc
+  deps:
+  - grpc_test_util
 - name: test_cpp_client_credentials_test
   gtest: true
   build: test
