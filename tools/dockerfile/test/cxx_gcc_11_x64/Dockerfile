@@ -14,7 +14,7 @@
 
 FROM gcc:11
 
-RUN apt-get update && apt-get install -y curl git golang wget zip
+RUN apt-get update && apt-get install -y curl git golang time wget zip
 #====================
 # Python dependencies
 

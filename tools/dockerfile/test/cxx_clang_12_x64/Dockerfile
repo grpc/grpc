@@ -14,7 +14,7 @@
 
 FROM silkeh/clang:12
 
-RUN apt-get update && apt-get install -y build-essential curl git golang wget zip
+RUN apt-get update && apt-get install -y build-essential curl git golang time wget zip
 #====================
 # Python dependencies
 

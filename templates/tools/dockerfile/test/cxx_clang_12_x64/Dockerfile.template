@@ -16,7 +16,7 @@
   
   FROM silkeh/clang:12
   
-  RUN apt-get update && apt-get install -y build-essential curl git golang wget zip
+  RUN apt-get update && apt-get install -y build-essential curl git golang time wget zip
   <%include file="../../python_deps.include"/>
   RUN pip install PyYAML==5.4.1
   RUN apt-get install python-is-python2
