@@ -179,8 +179,7 @@ static EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
   abort();
 }
 
-static void try_cancel_lookup(
-    EventEngine::DNSResolver::LookupTaskHandle handle) {
+static bool cancel_lookup(EventEngine::DNSResolver::LookupTaskHandle handle) {
   (void)handle;
   abort();
 }
@@ -188,7 +187,7 @@ static void try_cancel_lookup(
 static grpc_address_resolver_vtable custom_resolver_vtable = {
     resolve_address_impl, blocking_resolve_address_impl,
     lookup_hostname,      lookup_srv_record,
-    lookup_txt_record,    try_cancel_lookup};
+    lookup_txt_record,    cancel_lookup};
 
 void grpc_custom_resolve_callback(grpc_custom_resolver* r,
                                   grpc_resolved_addresses* result,

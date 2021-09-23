@@ -139,7 +139,7 @@ EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
   abort();
 }
 
-void try_cancel_lookup(EventEngine::DNSResolver::LookupTaskHandle handle) {
+bool cancel_lookup(EventEngine::DNSResolver::LookupTaskHandle handle) {
   (void)handle;
   abort();
 }
@@ -148,6 +148,6 @@ void try_cancel_lookup(EventEngine::DNSResolver::LookupTaskHandle handle) {
 
 grpc_address_resolver_vtable grpc_event_engine_resolver_vtable{
     resolve_address,   blocking_resolve_address, lookup_hostname,
-    lookup_srv_record, lookup_txt_record,        try_cancel_lookup};
+    lookup_srv_record, lookup_txt_record,        cancel_lookup};
 
 #endif  // GRPC_USE_EVENT_ENGINE

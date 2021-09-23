@@ -284,13 +284,14 @@ static EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
   return {-1, -1};
 }
 
-static void try_cancel_lookup(
+static bool cancel_lookup(
     EventEngine::DNSResolver::LookupTaskHandle /*handle*/) {
   // Noop. Posix iomgr does not support DNS cancellation.
+  return false;
 }
 
 grpc_address_resolver_vtable grpc_posix_resolver_vtable = {
     posix_resolve_address, posix_blocking_resolve_address,
     lookup_hostname,       lookup_srv_record,
-    lookup_txt_record,     try_cancel_lookup};
+    lookup_txt_record,     cancel_lookup};
 #endif

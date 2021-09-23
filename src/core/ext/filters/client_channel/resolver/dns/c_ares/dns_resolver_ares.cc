@@ -400,8 +400,7 @@ static EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
   abort();
 }
 
-static void try_cancel_lookup(
-    EventEngine::DNSResolver::LookupTaskHandle handle) {
+static bool cancel_lookup(EventEngine::DNSResolver::LookupTaskHandle handle) {
   (void)handle;
   abort();
 }
@@ -419,7 +418,7 @@ static grpc_error_handle blocking_resolve_address_ares(
 static grpc_address_resolver_vtable ares_resolver = {
     grpc_resolve_address_ares, blocking_resolve_address_ares,
     lookup_hostname,           lookup_srv_record,
-    lookup_txt_record,         try_cancel_lookup};
+    lookup_txt_record,         cancel_lookup};
 
 static bool should_use_ares(const char* resolver_env) {
   // TODO(lidiz): Remove the "g_custom_iomgr_enabled" flag once c-ares support

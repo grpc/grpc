@@ -82,8 +82,8 @@ typedef struct grpc_address_resolver_vtable {
                        LookupTXTCallback on_resolved,
                    absl::string_view name, absl::Time deadline,
                    grpc_pollset_set* interested_parties);
-  void (*try_cancel_lookup)(grpc_event_engine::experimental::EventEngine::
-                                DNSResolver::LookupTaskHandle handle);
+  bool (*cancel_lookup)(grpc_event_engine::experimental::EventEngine::
+                            DNSResolver::LookupTaskHandle handle);
 } grpc_address_resolver_vtable;
 
 void grpc_set_resolver_impl(grpc_address_resolver_vtable* vtable);
@@ -149,11 +149,10 @@ grpc_dns_lookup_txt_record(
 
 /// Cancel an asynchronous lookup operation.
 ///
-/// Note that this is a "best effort" cancellation. No guarantee is made that
-/// the lookup will be cancelled, the lookup could be in any stage. In all
-/// cases, the \a on_resolved callback will be run exactly once from either
-/// cancellation or from its activation.
-void grpc_dns_try_cancel(
+/// If cancellation cannot succeed for any reason, this function returns false,
+/// and the callback will be executed as originally scheduled. If cancellation
+/// is successful, this function returns true, and the callback will not be run.
+bool grpc_dns_cancel(
     grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
         handle);
 

@@ -276,12 +276,34 @@ void IomgrDnsResolver::ShutdownLocked() {
   if (have_next_resolution_timer_) {
     grpc_timer_cancel(&next_resolution_timer_);
   }
-  if (resolving_hostnames_) grpc_dns_try_cancel(host_handle_);
-  if (resolving_srv_) grpc_dns_try_cancel(srv_handle_);
-  if (resolving_txt_) grpc_dns_try_cancel(txt_handle_);
+  if (resolving_hostnames_) {
+    if (grpc_dns_cancel(host_handle_)) {
+      Unref(DEBUG_LOCATION,
+            "Unreffing for cancelled hostname resolution on shutdown");
+    }
+  }
+  if (resolving_srv_) {
+    if (grpc_dns_cancel(srv_handle_)) {
+      Unref(DEBUG_LOCATION,
+            "Unreffing for cancelled SRV resolution on shutdown");
+    }
+  }
+  if (resolving_txt_) {
+    if (grpc_dns_cancel(txt_handle_)) {
+      Unref(DEBUG_LOCATION,
+            "Unreffing for cancelled TXT resolution on shutdown");
+    }
+  }
   if (resolving_balancers_) {
+    bool needs_unreffing = false;
     for (const auto& handle : balancer_handles_) {
-      grpc_dns_try_cancel(handle);
+      if (grpc_dns_cancel(handle)) {
+        needs_unreffing = true;
+      }
+    }
+    if (needs_unreffing) {
+      Unref(DEBUG_LOCATION,
+            "Unreffing for one or more cancelled balancer queries on shutdown");
     }
   }
   // TODO(hork): ensure no other cleanup is necessary
@@ -299,7 +321,8 @@ void IomgrDnsResolver::OnNextResolution(void* arg, grpc_error_handle error) {
 
 void IomgrDnsResolver::OnNextResolutionLocked(grpc_error_handle error) {
   GRPC_IOMGR_DNS_TRACE_LOG(
-      "resolver:%p re-resolution timer fired. error: %s. shutdown_initiated_: "
+      "resolver:%p re-resolution timer fired. error: %s. "
+      "shutdown_initiated_: "
       "%d",
       this, grpc_error_std_string(error).c_str(), shutdown_initiated_);
   have_next_resolution_timer_ = false;
@@ -362,9 +385,9 @@ void IomgrDnsResolver::OnHostnameResolved(
     absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
   GPR_ASSERT(self->resolving_hostnames_);
   // hostname resolution won't occur again until `OnHostnamesResolvedLocked`
-  // finishes and the `tmp_hostname_addresses_` member is cleared. It should be
-  // safe to assign to `tmp_hostname_addresses_` in this callback, outside the
-  // work_serializer.
+  // finishes and the `tmp_hostname_addresses_` member is cleared. It should
+  // be safe to assign to `tmp_hostname_addresses_` in this callback,
+  // outside the work_serializer.
   self->tmp_hostname_addresses_ = std::move(addresses);
   self->work_serializer_->Run(
       [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(self->work_serializer_) {
@@ -374,10 +397,10 @@ void IomgrDnsResolver::OnHostnameResolved(
 }
 
 // Handles hostname resolution alone.
-// Hostname resolution may fail if querying for SRV or TXT records, which is ok.
-// If all resolution steps are complete, this triggers further processing.
-// Otherwise, hostname resolution is marked as complete and the resolver waits
-// for other steps to finish.
+// Hostname resolution may fail if querying for SRV or TXT records, which is
+// ok. If all resolution steps are complete, this triggers further
+// processing. Otherwise, hostname resolution is marked as complete and the
+// resolver waits for other steps to finish.
 void IomgrDnsResolver::OnHostnamesResolvedLocked() {
   GPR_ASSERT(resolving_hostnames_);
   resolving_hostnames_ = false;
@@ -436,9 +459,10 @@ void IomgrDnsResolver::OnSrvResolved(
     absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
         srv_records) {
   GPR_ASSERT(self->resolving_srv_);
-  // srv resolution won't occur again until `OnSrvResolvedLocked` finishes and
-  // the `tmp_srv_records_` member is cleared. It should be safe to assign to
-  // `tmp_srv_records_` in this callback, outside the work_serializer.
+  // srv resolution won't occur again until `OnSrvResolvedLocked` finishes
+  // and the `tmp_srv_records_` member is cleared. It should be safe to
+  // assign to `tmp_srv_records_` in this callback, outside the
+  // work_serializer.
   self->tmp_srv_records_ = std::move(srv_records);
   self->work_serializer_->Run(
       [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(self->work_serializer_) {
@@ -483,9 +507,10 @@ void IomgrDnsResolver::OnSrvResolvedLocked() {
 void IomgrDnsResolver::OnTxtResolved(IomgrDnsResolver* self,
                                      absl::StatusOr<std::string> txt_record) {
   GPR_ASSERT(self->resolving_txt_);
-  // txt resolution won't occur again until `OnTxtResolvedLocked` finishes and
-  // the `tmp_txt_record_` member is cleared. It should be safe to assign to
-  // `tmp_txt_record_` in this callback, outside the work_serializer.
+  // txt resolution won't occur again until `OnTxtResolvedLocked` finishes
+  // and the `tmp_txt_record_` member is cleared. It should be safe to
+  // assign to `tmp_txt_record_` in this callback, outside the
+  // work_serializer.
   self->tmp_txt_record_ = std::move(txt_record);
   self->work_serializer_->Run(
       [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(self->work_serializer_) {

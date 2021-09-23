@@ -85,8 +85,8 @@ grpc_dns_lookup_txt_record(
                                                deadline, interested_parties);
 }
 
-void grpc_dns_try_cancel(
+bool grpc_dns_cancel(
     grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
         handle) {
-  return grpc_resolve_address_impl->try_cancel_lookup(handle);
+  return grpc_resolve_address_impl->cancel_lookup(handle);
 }
