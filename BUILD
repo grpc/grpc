@@ -1738,7 +1738,6 @@ grpc_cc_library(
         "grpc_resolver_dns",
         "grpc_resolver_dns_ares",
         "grpc_resolver_fake",
-        "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
         "grpc_transport_chttp2_client_insecure",
         "grpc_transport_chttp2_server_insecure",
@@ -2603,24 +2602,6 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base_c",
-    ],
-)
-
-# TODO(hork): delete
-grpc_cc_library(
-    name = "grpc_resolver_dns_native",
-    srcs = [
-        "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc",
-    ],
-    external_deps = [
-        "absl/strings",
-    ],
-    language = "c++",
-    deps = [
-        "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_resolver_common",
     ],
 )
 

@@ -48,9 +48,6 @@ void grpc_resolver_dns_ares_init(void);
 void grpc_resolver_dns_ares_shutdown(void);
 void grpc_dns_resolver_init(void);
 void grpc_dns_resolver_shutdown(void);
-// TODO(hork): delete native resolver when iomgr resolver is enabled.
-void grpc_resolver_dns_native_init(void);
-void grpc_resolver_dns_native_shutdown(void);
 void grpc_resolver_sockaddr_init(void);
 void grpc_resolver_sockaddr_shutdown(void);
 void grpc_client_idle_filter_init(void);
@@ -127,8 +124,6 @@ void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_resolver_dns_ares_init,
                        grpc_resolver_dns_ares_shutdown);
   grpc_register_plugin(grpc_dns_resolver_init, grpc_dns_resolver_shutdown);
-  grpc_register_plugin(grpc_resolver_dns_native_init,
-                       grpc_resolver_dns_native_shutdown);
   grpc_register_plugin(grpc_resolver_sockaddr_init,
                        grpc_resolver_sockaddr_shutdown);
   grpc_register_plugin(grpc_client_idle_filter_init,
