@@ -76,6 +76,14 @@ inline constexpr uint32_t BitCount(uint32_t i) {
           255);
 }
 
+inline constexpr uint32_t BitCount(uint64_t i) {
+  return BitCount(uint32_t(i)) + BitCount(uint32_t(i >> 32));
+}
+
+inline constexpr uint32_t BitCount(uint16_t i) { return BitCount(uint32_t(i)); }
+
+inline constexpr uint32_t BitCount(uint8_t i) { return BitCount(uint32_t(i)); }
+
 // This function uses operator< to implement a qsort-style comparison, whereby:
 // if a is smaller than b, a number smaller than 0 is returned.
 // if a is bigger than b, a number greater than 0 is returned.
