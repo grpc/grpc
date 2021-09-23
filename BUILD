@@ -1271,11 +1271,6 @@ grpc_cc_library(
     ],
 )
 
-alias(
-    name = "grpc_base_c",
-    actual = "grpc_base",
-)
-
 grpc_cc_library(
     name = "slice_refcount",
     srcs = [
