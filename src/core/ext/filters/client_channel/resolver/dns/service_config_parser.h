@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_SERVICE_CONFIG_PARSER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_SERVICE_CONFIG_PARSER_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/iomgr/error.h"
@@ -25,4 +27,4 @@ std::string ChooseServiceConfig(absl::string_view service_config_choice_json,
                                 grpc_error_handle* error);
 
 }  // namespace grpc_core
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_SERVICE_CONFIG_H
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_SERVICE_CONFIG_PARSER_H

@@ -1580,8 +1580,8 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_event_engine.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
+  src/core/ext/filters/client_channel/resolver/dns/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc
-  src/core/ext/filters/client_channel/resolver/dns/iomgr/dns_resolver_iomgr.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/dns/service_config_parser.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
@@ -2414,8 +2414,8 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_event_engine.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
+  src/core/ext/filters/client_channel/resolver/dns/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc
-  src/core/ext/filters/client_channel/resolver/dns/iomgr/dns_resolver_iomgr.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/dns/service_config_parser.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc

@@ -23,9 +23,9 @@
 
 #include <stddef.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <grpc/event_engine/event_engine.h>
+
+#include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_WINSOCK_SOCKET
 #include <ws2tcpip.h>
