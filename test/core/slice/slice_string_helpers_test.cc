@@ -60,7 +60,7 @@ static void test_dump_slice(void) {
                     GPR_DUMP_HEX | GPR_DUMP_ASCII, "01 '.'");
 }
 
-int main(int argc, char** argv) {
+int main(int, char**) {
   test_dump_slice();
   return 0;
 }

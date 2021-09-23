@@ -275,7 +275,7 @@ void test_string_view_from_slice() {
   GPR_ASSERT(std::string(sv) == kStr);
 }
 
-int main(int argc, char** argv) {
+int main(int, char**) {
   unsigned length;
   test_slice_malloc_returns_something_sensible();
   test_slice_new_returns_something_sensible();
