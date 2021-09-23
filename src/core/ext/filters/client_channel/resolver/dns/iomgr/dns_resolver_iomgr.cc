@@ -570,9 +570,7 @@ void IomgrDnsResolver::FinishResolutionLocked() {
 
 absl::Status IomgrDnsResolver::ParseResolvedHostnames(Result& result) {
   if (!tmp_hostname_addresses_.ok()) {
-    return absl::UnavailableError(
-        absl::StrCat("hostname query error: '%s'",
-                     tmp_hostname_addresses_.status().ToString()));
+    return tmp_hostname_addresses_.status();
   }
   for (const auto& address : *tmp_hostname_addresses_) {
     // DO NOT SUBMIT(hork): do we need attributes for the  ServerAddress?
@@ -584,13 +582,11 @@ absl::Status IomgrDnsResolver::ParseResolvedHostnames(Result& result) {
 absl::Status IomgrDnsResolver::ParseResolvedBalancerHostnames(Result& result) {
   if (!enable_srv_queries_) return absl::OkStatus();
   if (!tmp_srv_records_.ok()) {
-    return absl::UnavailableError(absl::StrCat(
-        "SRV query error: ", tmp_srv_records_.status().ToString()));
+    return tmp_srv_records_.status();
   }
   MutexLock lock(&balancer_mu_);
   if (!tmp_balancer_addresses_.ok()) {
-    return absl::UnavailableError(absl::StrCat(
-        "Balancer query error: ", tmp_balancer_addresses_.status().ToString()));
+    return tmp_balancer_addresses_.status();
   }
   if (!tmp_balancer_addresses_->empty()) {
     // Convert to ServerAddressList
@@ -618,8 +614,7 @@ absl::Status IomgrDnsResolver::ParseResolvedBalancerHostnames(Result& result) {
 absl::Status IomgrDnsResolver::ParseResolvedServiceConfig(Result& result) {
   if (!request_service_config_) return absl::OkStatus();
   if (!tmp_txt_record_.ok()) {
-    return absl::UnavailableError(
-        absl::StrCat("txt query error: ", tmp_txt_record_.status().ToString()));
+    return tmp_txt_record_.status();
   }
   std::string service_config_string =
       ChooseServiceConfig(*tmp_txt_record_, &result.service_config_error);
