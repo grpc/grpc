@@ -130,7 +130,7 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
         try:
             if platform_string() == 'windows' or not sys.stdout.isatty():
                 if explanatory_text:
-                    logging.info(explanatory_text.decode('utf8'))
+                    logging.info(explanatory_text)
                 logging.info('%s: %s', tag, msg)
             else:
                 sys.stdout.write(
@@ -240,7 +240,7 @@ class JobResult(object):
 
 def read_from_start(f):
     f.seek(0)
-    return f.read().decode("ascii")
+    return f.read().decode("utf8")
 
 
 class Job(object):
