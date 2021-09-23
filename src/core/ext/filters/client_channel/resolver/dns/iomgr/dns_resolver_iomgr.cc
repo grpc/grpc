@@ -329,8 +329,7 @@ void IomgrDnsResolver::StartResolvingLocked() {
       ToAbslTime(
           grpc_millis_to_timespec(query_timeout_ms_, GPR_CLOCK_MONOTONIC)),
       interested_parties_);
-  bool is_localhost = target_matches_localhost(name_to_resolve_);
-  if (!is_localhost && enable_srv_queries_) {
+  if (enable_srv_queries_) {
     Ref(DEBUG_LOCATION, "dns-resolving - srv records").release();
     resolving_srv_ = true;
     std::string service_name = absl::StrCat("_grpclb._tcp.", name_to_resolve_);
@@ -340,7 +339,7 @@ void IomgrDnsResolver::StartResolvingLocked() {
                                        query_timeout_ms_, GPR_CLOCK_MONOTONIC)),
                                    interested_parties_);
   }
-  if (!is_localhost && request_service_config_) {
+  if (request_service_config_) {
     Ref(DEBUG_LOCATION, "dns-resolving - txt records").release();
     resolving_txt_ = true;
     std::string config_name = absl::StrCat("_grpc_config.", name_to_resolve_);
