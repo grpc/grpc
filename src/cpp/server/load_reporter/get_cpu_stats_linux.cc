@@ -21,6 +21,7 @@
 #ifdef GPR_LINUX
 
 #include <inttypes.h>
+
 #include <cstdio>
 
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
