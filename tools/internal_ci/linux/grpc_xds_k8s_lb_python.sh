@@ -142,6 +142,12 @@ main() {
   # shellcheck source="${TEST_DRIVER_REPO_DIR}/${TEST_DRIVER_INSTALL_LIB_PATH}"
   source "${TEST_DRIVER_REPO_DIR}/${TEST_DRIVER_INSTALL_LIB_PATH}"
 
+  # GKE Cluster
+  GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
+  GKE_CLUSTER_ZONE="us-central1-a"
+  SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-west1-b"
+  SECONDARY_GKE_CLUSTER_ZONE="us-west1-b"
+
   set -x
   if [[ -n "${KOKORO_ARTIFACTS_DIR}" ]]; then
     kokoro_setup_test_driver "${GITHUB_REPOSITORY_NAME}"
@@ -149,12 +155,6 @@ main() {
     local_setup_test_driver "${script_dir}"
   fi
   build_docker_images_if_needed
-
-  # GKE Cluster
-  GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
-  GKE_CLUSTER_ZONE="us-central1-a"
-  SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-west1-b"
-  SECONDARY_GKE_CLUSTER_ZONE="us-west1-b"
 
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
