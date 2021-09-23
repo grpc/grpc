@@ -267,6 +267,12 @@ class EventEngine {
 
     virtual ~DNSResolver() = default;
 
+    /// Override the Resolver's default DNS Servers to query.
+    ///
+    /// Each \a names_server must be a rfc3986-compliant URI authority. The
+    /// implementation may determine how to best query the set of DNS servers
+    /// provided (e.g., round robin, primary-first).
+    virtual void SetNameServers(std::vector<std::string> name_servers) = 0;
     /// Asynchronously resolve an address.
     ///
     /// \a default_port may be a non-numeric named service port, and will only

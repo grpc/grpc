@@ -351,7 +351,7 @@ void IomgrDnsResolver::StartResolvingLocked() {
       on_hostnames_resolved_, name_to_resolve_, kDefaultSecurePort,
       ToAbslTime(
           grpc_millis_to_timespec(query_timeout_ms_, GPR_CLOCK_MONOTONIC)),
-      interested_parties_);
+      interested_parties_, dns_server_);
   if (enable_srv_queries_) {
     Ref(DEBUG_LOCATION, "dns-resolving - srv records").release();
     resolving_srv_ = true;
@@ -360,7 +360,7 @@ void IomgrDnsResolver::StartResolvingLocked() {
         grpc_dns_lookup_srv_record(on_srv_resolved_, service_name,
                                    ToAbslTime(grpc_millis_to_timespec(
                                        query_timeout_ms_, GPR_CLOCK_MONOTONIC)),
-                                   interested_parties_);
+                                   interested_parties_, dns_server_);
   }
   if (request_service_config_) {
     Ref(DEBUG_LOCATION, "dns-resolving - txt records").release();
@@ -370,7 +370,7 @@ void IomgrDnsResolver::StartResolvingLocked() {
         grpc_dns_lookup_txt_record(on_txt_resolved_, config_name,
                                    ToAbslTime(grpc_millis_to_timespec(
                                        query_timeout_ms_, GPR_CLOCK_MONOTONIC)),
-                                   interested_parties_);
+                                   interested_parties_, dns_server_);
   }
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
   GRPC_IOMGR_DNS_TRACE_LOG(
@@ -496,7 +496,7 @@ void IomgrDnsResolver::OnSrvResolvedLocked() {
           srv_record.host, std::to_string(srv_record.port),
           ToAbslTime(
               grpc_millis_to_timespec(query_timeout_ms_, GPR_CLOCK_MONOTONIC)),
-          interested_parties_));
+          interested_parties_, dns_server_));
     }
   }
   resolving_srv_ = false;

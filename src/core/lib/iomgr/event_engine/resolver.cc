@@ -76,7 +76,7 @@ class DnsRequest {
 };
 
 void resolve_address(const char* addr, const char* default_port,
-                     grpc_pollset_set* /* interested_parties */,
+                     /*interested_parties=*/grpc_pollset_set*,
                      grpc_closure* on_done,
                      grpc_resolved_addresses** addresses) {
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
@@ -106,41 +106,35 @@ grpc_error_handle blocking_resolve_address(
   return evt.Get();
 }
 
-EventEngine::DNSResolver::LookupTaskHandle lookup_hostname(
-    EventEngine::DNSResolver::LookupHostnameCallback on_resolved,
-    absl::string_view address, absl::string_view default_port,
-    absl::Time deadline, grpc_pollset_set* /*interested_parties*/) {
-  (void)on_resolved;
-  (void)address;
-  (void)default_port;
-  (void)deadline;
+static EventEngine::DNSResolver::LookupTaskHandle lookup_hostname(
+    grpc_event_engine::experimental::EventEngine::DNSResolver::
+        /*on_resolved=*/LookupHostnameCallback,
+    /*address=*/absl::string_view, /*default_port=*/absl::string_view,
+    /*deadline=*/absl::Time, /*interested_parties=*/grpc_pollset_set*,
+    /*name_server=*/absl::string_view) {
   abort();
 }
 
-EventEngine::DNSResolver::LookupTaskHandle lookup_srv_record(
-    grpc_event_engine::experimental::EventEngine::DNSResolver::LookupSRVCallback
-        on_resolved,
-    absl::string_view name, absl::Time deadline,
-    grpc_pollset_set* /*interested_parties*/) {
-  (void)on_resolved;
-  (void)name;
-  (void)deadline;
+static EventEngine::DNSResolver::LookupTaskHandle lookup_srv_record(
+    /*on_resolved=*/grpc_event_engine::experimental::EventEngine::DNSResolver::
+        LookupSRVCallback,
+    /*name=*/absl::string_view,
+    /*deadline=*/absl::Time, /*interested_parties=*/grpc_pollset_set*,
+    /*name_server=*/absl::string_view) {
   abort();
 }
 
-EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
-    grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXTCallback
-        on_resolved,
-    absl::string_view name, absl::Time deadline,
-    grpc_pollset_set* /*interested_parties*/) {
-  (void)on_resolved;
-  (void)name;
-  (void)deadline;
+static EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
+    /*on_resolved=*/grpc_event_engine::experimental::EventEngine::DNSResolver::
+        LookupTXTCallback,
+    /*name=*/absl::string_view,
+    /*deadline=*/absl::Time, /*interested_parties=*/grpc_pollset_set*,
+    /*name_server=*/absl::string_view) {
   abort();
 }
 
-bool cancel_lookup(EventEngine::DNSResolver::LookupTaskHandle handle) {
-  (void)handle;
+static bool cancel_lookup(
+    /*handle=*/EventEngine::DNSResolver::LookupTaskHandle) {
   abort();
 }
 

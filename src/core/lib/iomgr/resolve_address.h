@@ -71,17 +71,20 @@ typedef struct grpc_address_resolver_vtable {
                             DNSResolver::LookupHostnameCallback on_resolved,
                         absl::string_view address,
                         absl::string_view default_port, absl::Time deadline,
-                        grpc_pollset_set* interested_parties);
+                        grpc_pollset_set* interested_parties,
+                        absl::string_view name_server);
   grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle (
       *lookup_srv)(grpc_event_engine::experimental::EventEngine::DNSResolver::
                        LookupSRVCallback on_resolved,
                    absl::string_view name, absl::Time deadline,
-                   grpc_pollset_set* interested_parties);
+                   grpc_pollset_set* interested_parties,
+                   absl::string_view name_server);
   grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle (
       *lookup_txt)(grpc_event_engine::experimental::EventEngine::DNSResolver::
                        LookupTXTCallback on_resolved,
                    absl::string_view name, absl::Time deadline,
-                   grpc_pollset_set* interested_parties);
+                   grpc_pollset_set* interested_parties,
+                   absl::string_view name_server);
   bool (*cancel_lookup)(grpc_event_engine::experimental::EventEngine::
                             DNSResolver::LookupTaskHandle handle);
 } grpc_address_resolver_vtable;
@@ -117,7 +120,8 @@ grpc_dns_lookup_hostname(grpc_event_engine::experimental::EventEngine::
                              DNSResolver::LookupHostnameCallback on_resolved,
                          absl::string_view address,
                          absl::string_view default_port, absl::Time deadline,
-                         grpc_pollset_set* interested_parties);
+                         grpc_pollset_set* interested_parties,
+                         absl::string_view name_server);
 
 /// Asynchronously perform an SRV record lookup.
 ///
@@ -131,7 +135,7 @@ grpc_dns_lookup_srv_record(
     grpc_event_engine::experimental::EventEngine::DNSResolver::LookupSRVCallback
         on_resolved,
     absl::string_view name, absl::Time deadline,
-    grpc_pollset_set* interested_parties);
+    grpc_pollset_set* interested_parties, absl::string_view name_server);
 
 /// Asynchronously perform a TXT record lookup.
 ///
@@ -142,7 +146,7 @@ grpc_dns_lookup_txt_record(
     grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXTCallback
         on_resolved,
     absl::string_view name, absl::Time deadline,
-    grpc_pollset_set* interested_parties);
+    grpc_pollset_set* interested_parties, absl::string_view name_server);
 
 /// Cancel an asynchronous lookup operation.
 ///

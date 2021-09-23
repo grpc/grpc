@@ -207,7 +207,8 @@ static EventEngine::DNSResolver::LookupTaskHandle lookup_hostname(
     grpc_event_engine::experimental::EventEngine::DNSResolver::
         LookupHostnameCallback on_resolved,
     absl::string_view address, absl::string_view default_port,
-    absl::Time /*deadline*/, grpc_pollset_set* /*interested_parties*/) {
+    /*deadline=*/absl::Time, /*interested_parties=*/grpc_pollset_set*,
+    /*name_server=*/absl::string_view) {
   lookup_hostname_request* lhr = new lookup_hostname_request();
   GRPC_CLOSURE_INIT(&lhr->request_closure, do_request_thread_lookup_hostname,
                     lhr, nullptr);
@@ -241,8 +242,9 @@ struct lookup_srv_request {
 static EventEngine::DNSResolver::LookupTaskHandle lookup_srv_record(
     grpc_event_engine::experimental::EventEngine::DNSResolver::LookupSRVCallback
         on_resolved,
-    absl::string_view /*name*/, absl::Time /*deadline*/,
-    grpc_pollset_set* /*interested_parties*/) {
+    /*name=*/absl::string_view, /*deadline=*/absl::Time,
+    /*interested_parties=*/grpc_pollset_set*,
+    /*name_server=*/absl::string_view) {
   lookup_srv_request* lhr = new lookup_srv_request();
   lhr->on_resolved_fn = std::move(on_resolved);
   GRPC_CLOSURE_INIT(
@@ -267,8 +269,9 @@ struct lookup_txt_request {
 static EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
     grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXTCallback
         on_resolved,
-    absl::string_view /*name*/, absl::Time /*deadline*/,
-    grpc_pollset_set* /*interested_parties*/) {
+    /*name=*/absl::string_view, /*deadline=*/absl::Time,
+    /*interested_parties=*/grpc_pollset_set*,
+    /*name_server=*/absl::string_view) {
   lookup_txt_request* lhr = new lookup_txt_request();
   lhr->on_resolved_fn = std::move(on_resolved);
   GRPC_CLOSURE_INIT(

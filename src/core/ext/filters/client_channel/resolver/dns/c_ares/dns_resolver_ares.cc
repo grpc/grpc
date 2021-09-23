@@ -368,40 +368,33 @@ class AresDnsResolverFactory : public ResolverFactory {
 
 static EventEngine::DNSResolver::LookupTaskHandle lookup_hostname(
     grpc_event_engine::experimental::EventEngine::DNSResolver::
-        LookupHostnameCallback on_resolved,
-    absl::string_view address, absl::string_view default_port,
-    absl::Time deadline, grpc_pollset_set* /*interested_parties*/) {
-  (void)on_resolved;
-  (void)address;
-  (void)default_port;
-  (void)deadline;
+        /*on_resolved=*/LookupHostnameCallback,
+    /*address=*/absl::string_view, /*default_port=*/absl::string_view,
+    /*deadline=*/absl::Time, /*interested_parties=*/grpc_pollset_set*,
+    /*name_server=*/absl::string_view) {
   abort();
 }
 
 static EventEngine::DNSResolver::LookupTaskHandle lookup_srv_record(
-    grpc_event_engine::experimental::EventEngine::DNSResolver::LookupSRVCallback
-        on_resolved,
-    absl::string_view name, absl::Time deadline,
-    grpc_pollset_set* /*interested_parties*/) {
-  (void)on_resolved;
-  (void)name;
-  (void)deadline;
+    /*on_resolved=*/grpc_event_engine::experimental::EventEngine::DNSResolver::
+        LookupSRVCallback,
+    /*name=*/absl::string_view,
+    /*deadline=*/absl::Time, /*interested_parties=*/grpc_pollset_set*,
+    /*name_server=*/absl::string_view) {
   abort();
 }
 
 static EventEngine::DNSResolver::LookupTaskHandle lookup_txt_record(
-    grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXTCallback
-        on_resolved,
-    absl::string_view name, absl::Time deadline,
-    grpc_pollset_set* /*interested_parties*/) {
-  (void)on_resolved;
-  (void)name;
-  (void)deadline;
+    /*on_resolved=*/grpc_event_engine::experimental::EventEngine::DNSResolver::
+        LookupTXTCallback,
+    /*name=*/absl::string_view,
+    /*deadline=*/absl::Time, /*interested_parties=*/grpc_pollset_set*,
+    /*name_server=*/absl::string_view) {
   abort();
 }
 
-static bool cancel_lookup(EventEngine::DNSResolver::LookupTaskHandle handle) {
-  (void)handle;
+static bool cancel_lookup(
+    /*handle=*/EventEngine::DNSResolver::LookupTaskHandle) {
   abort();
 }
 

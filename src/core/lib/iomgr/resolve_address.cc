@@ -59,10 +59,11 @@ grpc_dns_lookup_hostname(grpc_event_engine::experimental::EventEngine::
                              DNSResolver::LookupHostnameCallback on_resolved,
                          absl::string_view address,
                          absl::string_view default_port, absl::Time deadline,
-                         grpc_pollset_set* interested_parties) {
+                         grpc_pollset_set* interested_parties,
+                         absl::string_view name_server) {
   return grpc_resolve_address_impl->lookup_hostname(
       std::move(on_resolved), address, default_port, deadline,
-      interested_parties);
+      interested_parties, name_server);
 }
 
 grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
@@ -70,9 +71,9 @@ grpc_dns_lookup_srv_record(
     grpc_event_engine::experimental::EventEngine::DNSResolver::LookupSRVCallback
         on_resolved,
     absl::string_view name, absl::Time deadline,
-    grpc_pollset_set* interested_parties) {
-  return grpc_resolve_address_impl->lookup_srv(std::move(on_resolved), name,
-                                               deadline, interested_parties);
+    grpc_pollset_set* interested_parties, absl::string_view name_server) {
+  return grpc_resolve_address_impl->lookup_srv(
+      std::move(on_resolved), name, deadline, interested_parties, name_server);
 }
 
 grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
@@ -80,9 +81,9 @@ grpc_dns_lookup_txt_record(
     grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXTCallback
         on_resolved,
     absl::string_view name, absl::Time deadline,
-    grpc_pollset_set* interested_parties) {
-  return grpc_resolve_address_impl->lookup_txt(std::move(on_resolved), name,
-                                               deadline, interested_parties);
+    grpc_pollset_set* interested_parties, absl::string_view name_server) {
+  return grpc_resolve_address_impl->lookup_txt(
+      std::move(on_resolved), name, deadline, interested_parties, name_server);
 }
 
 bool grpc_dns_cancel(
