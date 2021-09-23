@@ -500,8 +500,7 @@ static grpc_endpoint_vtable vtable = {win_read,
 grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
                                grpc_channel_args* channel_args,
                                absl::string_view peer_string) {
-  grpc_tcp* tcp = new grpc_tcp;
-  memset(tcp, 0, sizeof(grpc_tcp));
+  grpc_tcp* tcp = new grpc_tcp {};
   tcp->base.vtable = &vtable;
   tcp->socket = socket;
   gpr_mu_init(&tcp->mu);
