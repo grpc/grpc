@@ -267,7 +267,7 @@ def _create_portability_test_jobs(extra_args=[],
     # portability C and C++ on x64
     for compiler in [
             'gcc4.9', 'gcc5.3', 'gcc8.3', 'gcc8.3_openssl102', 'gcc11',
-            'gcc_musl', 'clang3.7', 'clang12'
+            'gcc_musl', 'clang4', 'clang12'
     ]:
         test_jobs += _generate_jobs(languages=['c', 'c++'],
                                     configs=['dbg'],

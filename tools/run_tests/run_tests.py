@@ -474,8 +474,8 @@ class CLanguage(object):
             return ('gcc_11', [])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
-        elif compiler == 'clang3.7':
-            return ('clang_3.7', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang4':
+            return ('clang_4', self._clang_cmake_configure_extra_args())
         elif compiler == 'clang12':
             return ('clang_12', self._clang_cmake_configure_extra_args())
         else:
@@ -1417,7 +1417,7 @@ argp.add_argument(
         'gcc8.3_openssl102',
         'gcc11',
         'gcc_musl',
-        'clang3.7',
+        'clang4',
         'clang12',
         'python2.7',
         'python3.5',
