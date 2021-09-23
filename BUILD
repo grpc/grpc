@@ -1693,8 +1693,8 @@ grpc_cc_library(
     deps = [
         "bitset",
         "channel_stack_type",
-        "config",
         "closure",
+        "config",
         "dual_ref_counted",
         "error",
         "exec_ctx",
