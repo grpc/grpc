@@ -18,6 +18,8 @@ licenses(["notice"])
 
 grpc_package(name = "test/core/promise")
 
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+
 grpc_cc_test(
     name = "poll_test",
     srcs = ["poll_test.cc"],
@@ -247,5 +249,18 @@ grpc_cc_test(
         "//src/core/lib/promise:pipe",
         "//src/core/lib/promise:seq",
         "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_proto_fuzzer(
+    name = "promise_fuzzer",
+    srcs = ["promise_fuzzer.cc"],
+    corpus = "promise_fuzzer_corpus",
+    language = "C++",
+    proto = "promise_fuzzer.proto",
+    tags = ["no_windows"],
+    uses_polling = False,
+    deps = [
+        "//test/core/util:grpc_test_util",
     ],
 )
