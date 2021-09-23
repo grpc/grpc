@@ -29,7 +29,7 @@ class ExecCtxWakeupScheduler {
   void ScheduleWakeup(ActivityType* activity) {
     GRPC_CLOSURE_INIT(
         &closure_,
-        [](void* arg, grpc_error_handle hdl) {
+        [](void* arg, grpc_error_handle) {
           static_cast<ActivityType*>(arg)->RunScheduledWakeup();
         },
         activity, grpc_schedule_on_exec_ctx);
