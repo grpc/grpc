@@ -7351,7 +7351,6 @@ targets:
   src:
   - src/proto/grpc/lb/v1/load_balancer.proto
   - src/proto/grpc/lookup/v1/rls.proto
-  - src/proto/grpc/lookup/v1/rls_config.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto

@@ -398,9 +398,6 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/lookup/v1/rls.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/lookup/v1/rls_config.proto
-)
-protobuf_generate_grpc_cpp(
   src/proto/grpc/reflection/v1alpha/reflection.proto
 )
 protobuf_generate_grpc_cpp(
@@ -14607,10 +14604,6 @@ add_executable(rls_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h

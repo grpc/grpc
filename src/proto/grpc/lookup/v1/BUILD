@@ -22,12 +22,6 @@ grpc_package(
 )
 
 grpc_proto_library(
-    name = "rls_config_proto",
-    srcs = ["rls_config.proto"],
-    well_known_protos = True,
-)
-
-grpc_proto_library(
     name = "rls_proto",
     srcs = ["rls.proto"],
     well_known_protos = True,

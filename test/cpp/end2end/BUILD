@@ -482,7 +482,6 @@ grpc_cc_test(
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
-        "//src/proto/grpc/lookup/v1:rls_config_proto",
         "//src/proto/grpc/lookup/v1:rls_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//src/proto/grpc/lb/v1:load_balancer_proto",
