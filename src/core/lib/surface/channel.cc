@@ -229,13 +229,12 @@ void CreateChannelzNode(grpc_channel_stack_builder* builder) {
 
 }  // namespace
 
-grpc_channel* grpc_channel_create(const char* target,
-                                  const grpc_channel_args* input_args,
-                                  grpc_channel_stack_type channel_stack_type,
-                                  grpc_transport* optional_transport,
-                                  grpc_resource_user* resource_user,
-                                  size_t preallocated_bytes,
-                                  grpc_error_handle* error) {
+grpc_channel* grpc_channel_create(
+    const char* target, const grpc_channel_args* input_args,
+    grpc_channel_stack_type channel_stack_type,
+    grpc_transport* optional_transport, grpc_resource_user* resource_user,
+    size_t preallocated_bytes, grpc_error_handle* error,
+    std::vector<const grpc_channel_filter*> filters) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,
@@ -269,7 +268,17 @@ grpc_channel* grpc_channel_create(const char* target,
   grpc_channel_args_destroy(args);
   grpc_channel_stack_builder_set_target(builder, target);
   grpc_channel_stack_builder_set_transport(builder, optional_transport);
-  if (!grpc_channel_init_create_stack(builder, channel_stack_type)) {
+  auto append_filters = [&] {
+    // TODO(yashykt): Maybe append filters after the census filter
+    for (const grpc_channel_filter* filter : filters) {
+      if (!grpc_channel_stack_builder_prepend_filter(builder, filter, nullptr,
+                                                     nullptr))
+        return false;
+    }
+    return true;
+  };
+  if (!grpc_channel_init_create_stack(builder, channel_stack_type) ||
+      !append_filters()) {
     grpc_channel_stack_builder_destroy(builder);
     if (resource_user != nullptr) {
       if (preallocated_bytes > 0) {

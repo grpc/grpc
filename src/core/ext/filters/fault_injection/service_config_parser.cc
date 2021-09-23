@@ -23,9 +23,9 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/service_config.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/json/json_util.h"

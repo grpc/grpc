@@ -362,6 +362,7 @@ grpc_cc_library(
         "grpc_base_c",
         "grpc_common",
         "grpc_lb_policy_grpclb",
+        "grpc_service_config",
         "grpc_trace",
     ],
 )
@@ -401,6 +402,7 @@ grpc_cc_library(
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
         "grpc_secure",
+        "grpc_service_config",
         "grpc_trace",
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_secure",
@@ -1266,6 +1268,30 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_service_config",
+    srcs = [
+        "src/core/lib/channel/service_config.cc",
+        "src/core/lib/channel/service_config_parser.cc",
+    ],
+    hdrs = [
+        "src/core/lib/channel/service_config.h",
+        "src/core/lib/channel/server_config_call_data.h",
+        "src/core/lib/channel/service_config_parser.h",
+    ],
+    external_deps = [
+        "absl/container:inlined_vector",
+        "absl/strings",
+    ],
+    deps = [
+        "config",
+        "debug_location",
+        "gpr_base",
+        "grpc_base_c",
+        "grpc_trace",
+    ],
+)        
+
+grpc_cc_library(
     name = "slice_refcount",
     srcs = [
         "src/core/lib/slice/slice_refcount.cc",
@@ -1470,6 +1496,7 @@ grpc_cc_library(
         "src/core/lib/channel/connected_channel.h",
         "src/core/lib/channel/context.h",
         "src/core/lib/channel/handshaker.h",
+        "src/core/lib/channel/server_config_selector.h",
         "src/core/lib/channel/status_util.h",
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/compression_args.h",
@@ -1701,9 +1728,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_service_config.cc",
         "src/core/ext/filters/client_channel/retry_throttle.cc",
         "src/core/ext/filters/client_channel/server_address.cc",
-        "src/core/ext/filters/client_channel/service_config.cc",
         "src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc",
-        "src/core/ext/filters/client_channel/service_config_parser.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.cc",
     ],
@@ -1735,9 +1760,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_service_config.h",
         "src/core/ext/filters/client_channel/retry_throttle.h",
         "src/core/ext/filters/client_channel/server_address.h",
-        "src/core/ext/filters/client_channel/service_config.h",
         "src/core/ext/filters/client_channel/service_config_call_data.h",
-        "src/core/ext/filters/client_channel/service_config_parser.h",
         "src/core/ext/filters/client_channel/subchannel.h",
         "src/core/ext/filters/client_channel/subchannel_interface.h",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.h",
@@ -1760,6 +1783,7 @@ grpc_cc_library(
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
         "grpc_health_upb",
+        "grpc_service_config",
         "grpc_trace",
         "handshaker_registry",
         "orphanable",
@@ -1842,6 +1866,7 @@ grpc_cc_library(
         "grpc_base_c",
         "grpc_client_channel",
         "grpc_codegen",
+        "grpc_service_config",
         "ref_counted",
         "ref_counted_ptr",
     ],
@@ -1863,6 +1888,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
+        "grpc_service_config",
     ],
 )
 
@@ -2083,6 +2109,7 @@ grpc_cc_library(
         "grpc_lb_xds_channel_args",
         "grpc_matchers",
         "grpc_secure",
+        "grpc_service_config",
         "grpc_transport_chttp2_client_secure",
         "orphanable",
         "ref_counted_ptr",
@@ -2096,6 +2123,11 @@ grpc_cc_library(
     name = "grpc_xds_server_config_fetcher",
     srcs = [
         "src/core/ext/xds/xds_server_config_fetcher.cc",
+        "src/core/ext/xds/xds_server_config_selector.cc",
+    ],
+    hdrs = [
+        "src/core/ext/xds/xds_server_config_fetcher.h",
+        "src/core/ext/xds/xds_server_config_selector.h",
     ],
     external_deps = [
         "absl/strings",
@@ -2104,6 +2136,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base_c",
+        "grpc_service_config",
         "grpc_xds_client",
     ],
 )
@@ -2140,6 +2173,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
+        "grpc_service_config",
         "grpc_xds_client",
         "orphanable",
         "ref_counted_ptr",
@@ -2556,6 +2590,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_grpclb_balancer_addresses",
         "grpc_resolver_dns_selection",
+        "grpc_service_config",
     ],
 )
 
@@ -3343,6 +3378,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_codegen",
         "grpc_health_upb",
+        "grpc_service_config",
         "grpc_trace",
         "grpc_transport_inproc",
         "ref_counted",
@@ -3373,6 +3409,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_codegen",
         "grpc_health_upb",
+        "grpc_service_config",
         "grpc_trace",
         "grpc_transport_inproc",
         "grpc_unsecure",

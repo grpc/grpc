@@ -27,9 +27,9 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/service_config.h"
+#include "src/core/lib/channel/service_config_parser.h"
 #include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

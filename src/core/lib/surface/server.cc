@@ -601,7 +601,8 @@ grpc_error_handle Server::SetupTransport(
     grpc_transport* transport, grpc_pollset* accepting_pollset,
     const grpc_channel_args* args,
     const RefCountedPtr<grpc_core::channelz::SocketNode>& socket_node,
-    grpc_resource_user* resource_user, size_t preallocated_bytes) {
+    grpc_resource_user* resource_user, size_t preallocated_bytes,
+    std::vector<const grpc_channel_filter*> filters) {
   // Create channel.
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_channel* channel =

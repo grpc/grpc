@@ -32,6 +32,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/channel/service_config_parser.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/fork.h"
@@ -143,6 +144,7 @@ void grpc_init(void) {
     grpc_core::ExecCtx::GlobalInit();
     grpc_iomgr_init();
     gpr_timers_global_init();
+    grpc_core::ServiceConfigParser::Init();
     for (int i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != nullptr) {
         g_all_of_the_plugins[i].init();
@@ -175,6 +177,7 @@ void grpc_shutdown_internal_locked(void)
         }
       }
     }
+    grpc_core::ServiceConfigParser::Shutdown();
     grpc_iomgr_shutdown();
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();

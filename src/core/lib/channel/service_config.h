@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_H
+#ifndef GRPC_CORE_LIB_CHANNEL_SERVICE_CONFIG_H
+#define GRPC_CORE_LIB_CHANNEL_SERVICE_CONFIG_H
 
 #include <grpc/support/port_platform.h>
 
@@ -26,7 +26,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/service_config_parser.h"
+#include "src/core/lib/channel/service_config_parser.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
@@ -124,4 +124,4 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_H */
+#endif /* GRPC_CORE_LIB_CHANNEL_SERVICE_CONFIG_H */

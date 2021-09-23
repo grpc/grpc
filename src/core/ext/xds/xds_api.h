@@ -82,31 +82,6 @@ class XdsApi {
       std::string ToString() const;
     };
 
-    struct HashPolicy {
-      enum Type { HEADER, CHANNEL_ID };
-      Type type;
-      bool terminal = false;
-      // Fields used for type HEADER.
-      std::string header_name;
-      std::unique_ptr<RE2> regex = nullptr;
-      std::string regex_substitution;
-
-      HashPolicy() {}
-
-      // Copyable.
-      HashPolicy(const HashPolicy& other);
-      HashPolicy& operator=(const HashPolicy& other);
-
-      // Moveable.
-      HashPolicy(HashPolicy&& other) noexcept;
-      HashPolicy& operator=(HashPolicy&& other) noexcept;
-
-      bool operator==(const HashPolicy& other) const;
-      std::string ToString() const;
-    };
-    Matchers matchers;
-    std::vector<HashPolicy> hash_policies;
-
     struct RetryPolicy {
       internal::StatusCodeSet retry_on;
       uint32_t num_retries;
@@ -130,37 +105,77 @@ class XdsApi {
       }
       std::string ToString() const;
     };
-    absl::optional<RetryPolicy> retry_policy;
 
-    // Action for this route.
-    // TODO(roth): When we can use absl::variant<>, consider using that
-    // here, to enforce the fact that only one of the two fields can be set.
-    std::string cluster_name;
-    struct ClusterWeight {
-      std::string name;
-      uint32_t weight;
-      TypedPerFilterConfig typed_per_filter_config;
+    Matchers matchers;
 
-      bool operator==(const ClusterWeight& other) const {
-        return name == other.name && weight == other.weight &&
-               typed_per_filter_config == other.typed_per_filter_config;
+    struct RouteAction {
+      struct HashPolicy {
+        enum Type { HEADER, CHANNEL_ID };
+        Type type;
+        bool terminal = false;
+        // Fields used for type HEADER.
+        std::string header_name;
+        std::unique_ptr<RE2> regex = nullptr;
+        std::string regex_substitution;
+
+        HashPolicy() {}
+
+        // Copyable.
+        HashPolicy(const HashPolicy& other);
+        HashPolicy& operator=(const HashPolicy& other);
+
+        // Moveable.
+        HashPolicy(HashPolicy&& other) noexcept;
+        HashPolicy& operator=(HashPolicy&& other) noexcept;
+
+        bool operator==(const HashPolicy& other) const;
+        std::string ToString() const;
+      };
+
+      struct ClusterWeight {
+        std::string name;
+        uint32_t weight;
+        TypedPerFilterConfig typed_per_filter_config;
+
+        bool operator==(const ClusterWeight& other) const {
+          return name == other.name && weight == other.weight &&
+                 typed_per_filter_config == other.typed_per_filter_config;
+        }
+        std::string ToString() const;
+      };
+
+      std::vector<HashPolicy> hash_policies;
+      absl::optional<RetryPolicy> retry_policy;
+
+      // Action for this route.
+      // TODO(roth): When we can use absl::variant<>, consider using that
+      // here, to enforce the fact that only one of the two fields can be set.
+      std::string cluster_name;
+      std::vector<ClusterWeight> weighted_clusters;
+      // Storing the timeout duration from route action:
+      // RouteAction.max_stream_duration.grpc_timeout_header_max or
+      // RouteAction.max_stream_duration.max_stream_duration if the former is
+      // not set.
+      absl::optional<Duration> max_stream_duration;
+
+      bool operator==(const RouteAction& other) const {
+        return hash_policies == other.hash_policies &&
+               retry_policy == other.retry_policy &&
+               cluster_name == other.cluster_name &&
+               weighted_clusters == other.weighted_clusters &&
+               max_stream_duration == other.max_stream_duration;
       }
       std::string ToString() const;
     };
-    std::vector<ClusterWeight> weighted_clusters;
-    // Storing the timeout duration from route action:
-    // RouteAction.max_stream_duration.grpc_timeout_header_max or
-    // RouteAction.max_stream_duration.max_stream_duration if the former is
-    // not set.
-    absl::optional<Duration> max_stream_duration;
+    enum class ActionType { kRouteAction = 0, kNonForwardingAction };
 
+    ActionType action_type;
+    absl::optional<RouteAction> route;
     TypedPerFilterConfig typed_per_filter_config;
 
     bool operator==(const Route& other) const {
-      return matchers == other.matchers && cluster_name == other.cluster_name &&
-             retry_policy == other.retry_policy &&
-             weighted_clusters == other.weighted_clusters &&
-             max_stream_duration == other.max_stream_duration &&
+      return matchers == other.matchers && action_type == other.action_type &&
+             route == other.route &&
              typed_per_filter_config == other.typed_per_filter_config;
     }
     std::string ToString() const;
@@ -178,13 +193,67 @@ class XdsApi {
       }
     };
 
+    enum MatchType {
+      EXACT_MATCH,
+      SUFFIX_MATCH,
+      PREFIX_MATCH,
+      UNIVERSE_MATCH,
+      INVALID_MATCH,
+    };
+
     std::vector<VirtualHost> virtual_hosts;
 
     bool operator==(const RdsUpdate& other) const {
       return virtual_hosts == other.virtual_hosts;
     }
     std::string ToString() const;
-    VirtualHost* FindVirtualHostForDomain(const std::string& domain);
+
+    // Returns true if match succeeds.
+    static bool DomainMatch(MatchType match_type,
+                            absl::string_view domain_pattern_in,
+                            absl::string_view expected_host_name_in);
+    static MatchType DomainPatternMatchType(absl::string_view domain_pattern);
+    template <typename VirtualHost>
+    static VirtualHost* FindVirtualHostForDomain(
+        std::vector<VirtualHost>* virtual_hosts, absl::string_view domain) {
+      // Find the best matched virtual host.
+      // The search order for 4 groups of domain patterns:
+      //   1. Exact match.
+      //   2. Suffix match (e.g., "*ABC").
+      //   3. Prefix match (e.g., "ABC*").
+      //   4. Universe match (i.e., "*").
+      // Within each group, longest match wins.
+      // If the same best matched domain pattern appears in multiple virtual
+      // hosts, the first matched virtual host wins.
+      VirtualHost* target_vhost = nullptr;
+      MatchType best_match_type = INVALID_MATCH;
+      size_t longest_match = 0;
+      // Check each domain pattern in each virtual host to determine the best
+      // matched virtual host.
+      for (VirtualHost& vhost : *virtual_hosts) {
+        for (const std::string& domain_pattern : vhost.domains) {
+          // Check the match type first. Skip the pattern if it's not better
+          // than current match.
+          const MatchType match_type = DomainPatternMatchType(domain_pattern);
+          // This should be caught by RouteConfigParse().
+          GPR_ASSERT(match_type != INVALID_MATCH);
+          if (match_type > best_match_type) continue;
+          if (match_type == best_match_type &&
+              domain_pattern.size() <= longest_match) {
+            continue;
+          }
+          // Skip if match fails.
+          if (!DomainMatch(match_type, domain_pattern, domain)) continue;
+          // Choose this match.
+          target_vhost = &vhost;
+          best_match_type = match_type;
+          longest_match = domain_pattern.size();
+          if (best_match_type == EXACT_MATCH) break;
+        }
+        if (best_match_type == EXACT_MATCH) break;
+      }
+      return target_vhost;
+    }
   };
 
   struct CommonTlsContext {

@@ -131,7 +131,8 @@ class Server : public InternallyRefCounted<Server> {
       const grpc_channel_args* args,
       const RefCountedPtr<channelz::SocketNode>& socket_node,
       grpc_resource_user* resource_user = nullptr,
-      size_t preallocated_bytes = 0);
+      size_t preallocated_bytes = 0,
+      std::vector<const grpc_channel_filter*> filters = {});
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
@@ -457,11 +458,17 @@ struct grpc_server {
 // approaches here.
 struct grpc_server_config_fetcher {
  public:
+  struct ConnectionConfiguration {
+    grpc_channel_args* args;
+    std::vector<const grpc_channel_filter*> filters;
+  };
+
   class ConnectionManager : public grpc_core::RefCounted<ConnectionManager> {
    public:
     // Ownership of \a args is transfered.
-    virtual absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(
-        grpc_channel_args* args, grpc_endpoint* tcp) = 0;
+    virtual absl::StatusOr<ConnectionConfiguration>
+    UpdateChannelArgsForConnection(grpc_channel_args* args,
+                                   grpc_endpoint* tcp) = 0;
   };
 
   class WatcherInterface {
@@ -481,7 +488,6 @@ struct grpc_server_config_fetcher {
 
   // Ownership of \a args is transferred.
   virtual void StartWatch(std::string listening_address,
-                          grpc_channel_args* args,
                           std::unique_ptr<WatcherInterface> watcher) = 0;
   virtual void CancelWatch(WatcherInterface* watcher) = 0;
   virtual grpc_pollset_set* interested_parties() = 0;

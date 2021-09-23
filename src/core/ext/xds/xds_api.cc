@@ -116,10 +116,10 @@ bool XdsAggregateAndLogicalDnsClusterEnabled() {
 }
 
 //
-// XdsApi::Route::HashPolicy
+// XdsApi::Route::RouteAction::HashPolicy
 //
 
-XdsApi::Route::HashPolicy::HashPolicy(const HashPolicy& other)
+XdsApi::Route::RouteAction::HashPolicy::HashPolicy(const HashPolicy& other)
     : type(other.type),
       header_name(other.header_name),
       regex_substitution(other.regex_substitution) {
@@ -129,8 +129,8 @@ XdsApi::Route::HashPolicy::HashPolicy(const HashPolicy& other)
   }
 }
 
-XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
-    const HashPolicy& other) {
+XdsApi::Route::RouteAction::HashPolicy&
+XdsApi::Route::RouteAction::HashPolicy::operator=(const HashPolicy& other) {
   type = other.type;
   header_name = other.header_name;
   if (other.regex != nullptr) {
@@ -141,14 +141,14 @@ XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
   return *this;
 }
 
-XdsApi::Route::HashPolicy::HashPolicy(HashPolicy&& other) noexcept
+XdsApi::Route::RouteAction::HashPolicy::HashPolicy(HashPolicy&& other) noexcept
     : type(other.type),
       header_name(std::move(other.header_name)),
       regex(std::move(other.regex)),
       regex_substitution(std::move(other.regex_substitution)) {}
 
-XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
-    HashPolicy&& other) noexcept {
+XdsApi::Route::RouteAction::HashPolicy&
+XdsApi::Route::RouteAction::HashPolicy::operator=(HashPolicy&& other) noexcept {
   type = other.type;
   header_name = std::move(other.header_name);
   regex = std::move(other.regex);
@@ -156,7 +156,7 @@ XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
   return *this;
 }
 
-bool XdsApi::Route::HashPolicy::HashPolicy::operator==(
+bool XdsApi::Route::RouteAction::HashPolicy::HashPolicy::operator==(
     const HashPolicy& other) const {
   if (type != other.type) return false;
   if (type == Type::HEADER) {
@@ -172,7 +172,7 @@ bool XdsApi::Route::HashPolicy::HashPolicy::operator==(
   return true;
 }
 
-std::string XdsApi::Route::HashPolicy::ToString() const {
+std::string XdsApi::Route::RouteAction::HashPolicy::ToString() const {
   std::vector<std::string> contents;
   switch (type) {
     case Type::HEADER:
@@ -208,12 +208,8 @@ std::string XdsApi::Route::RetryPolicy::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(absl::StrFormat("num_retries=%d", num_retries));
   contents.push_back(retry_back_off.ToString());
-  return absl::StrJoin(contents, ",");
+  return absl::StrCat("{", absl::StrJoin(contents, ","), "}");
 }
-
-//
-// XdsApi::Route
-//
 
 std::string XdsApi::Route::Matchers::ToString() const {
   std::vector<std::string> contents;
@@ -229,7 +225,7 @@ std::string XdsApi::Route::Matchers::ToString() const {
   return absl::StrJoin(contents, "\n");
 }
 
-std::string XdsApi::Route::ClusterWeight::ToString() const {
+std::string XdsApi::Route::RouteAction::ClusterWeight::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(absl::StrCat("cluster=", name));
   contents.push_back(absl::StrCat("weight=", weight));
@@ -246,15 +242,17 @@ std::string XdsApi::Route::ClusterWeight::ToString() const {
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
-std::string XdsApi::Route::ToString() const {
+//
+// XdsApi::Route::RouteAction
+//
+
+std::string XdsApi::Route::RouteAction::ToString() const {
   std::vector<std::string> contents;
-  contents.push_back(matchers.ToString());
   for (const HashPolicy& hash_policy : hash_policies) {
     contents.push_back(absl::StrCat("hash_policy=", hash_policy.ToString()));
   }
   if (retry_policy.has_value()) {
-    contents.push_back(
-        absl::StrCat("retry_policy={", retry_policy->ToString(), "}"));
+    contents.push_back(absl::StrCat("retry_policy=", retry_policy->ToString()));
   }
   if (!cluster_name.empty()) {
     contents.push_back(absl::StrFormat("Cluster name: %s", cluster_name));
@@ -264,6 +262,21 @@ std::string XdsApi::Route::ToString() const {
   }
   if (max_stream_duration.has_value()) {
     contents.push_back(max_stream_duration->ToString());
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+}
+
+//
+// XdsApi::Route
+//
+
+std::string XdsApi::Route::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(matchers.ToString());
+  if (route.has_value()) {
+    contents.push_back(absl::StrCat("route=", route->ToString()));
+  } else if (action_type == ActionType::kNonForwardingAction) {
+    contents.push_back("non_forwarding_action={}");
   }
   if (!typed_per_filter_config.empty()) {
     contents.push_back("typed_per_filter_config={");
@@ -309,23 +322,13 @@ std::string XdsApi::RdsUpdate::ToString() const {
   return absl::StrJoin(vhosts, "");
 }
 
-namespace {
-
-// Better match type has smaller value.
-enum MatchType {
-  EXACT_MATCH,
-  SUFFIX_MATCH,
-  PREFIX_MATCH,
-  UNIVERSE_MATCH,
-  INVALID_MATCH,
-};
-
 // Returns true if match succeeds.
-bool DomainMatch(MatchType match_type, const std::string& domain_pattern_in,
-                 const std::string& expected_host_name_in) {
+bool XdsApi::RdsUpdate::DomainMatch(MatchType match_type,
+                                    absl::string_view domain_pattern_in,
+                                    absl::string_view expected_host_name_in) {
   // Normalize the args to lower-case. Domain matching is case-insensitive.
-  std::string domain_pattern = domain_pattern_in;
-  std::string expected_host_name = expected_host_name_in;
+  std::string domain_pattern = std::string(domain_pattern_in);
+  std::string expected_host_name = std::string(expected_host_name_in);
   std::transform(domain_pattern.begin(), domain_pattern.end(),
                  domain_pattern.begin(),
                  [](unsigned char c) { return std::tolower(c); });
@@ -355,56 +358,14 @@ bool DomainMatch(MatchType match_type, const std::string& domain_pattern_in,
   }
 }
 
-MatchType DomainPatternMatchType(const std::string& domain_pattern) {
+XdsApi::RdsUpdate::MatchType XdsApi::RdsUpdate::DomainPatternMatchType(
+    absl::string_view domain_pattern) {
   if (domain_pattern.empty()) return INVALID_MATCH;
   if (domain_pattern.find('*') == std::string::npos) return EXACT_MATCH;
   if (domain_pattern == "*") return UNIVERSE_MATCH;
   if (domain_pattern[0] == '*') return SUFFIX_MATCH;
   if (domain_pattern[domain_pattern.size() - 1] == '*') return PREFIX_MATCH;
   return INVALID_MATCH;
-}
-
-}  // namespace
-
-XdsApi::RdsUpdate::VirtualHost* XdsApi::RdsUpdate::FindVirtualHostForDomain(
-    const std::string& domain) {
-  // Find the best matched virtual host.
-  // The search order for 4 groups of domain patterns:
-  //   1. Exact match.
-  //   2. Suffix match (e.g., "*ABC").
-  //   3. Prefix match (e.g., "ABC*").
-  //   4. Universe match (i.e., "*").
-  // Within each group, longest match wins.
-  // If the same best matched domain pattern appears in multiple virtual hosts,
-  // the first matched virtual host wins.
-  VirtualHost* target_vhost = nullptr;
-  MatchType best_match_type = INVALID_MATCH;
-  size_t longest_match = 0;
-  // Check each domain pattern in each virtual host to determine the best
-  // matched virtual host.
-  for (VirtualHost& vhost : virtual_hosts) {
-    for (const std::string& domain_pattern : vhost.domains) {
-      // Check the match type first. Skip the pattern if it's not better than
-      // current match.
-      const MatchType match_type = DomainPatternMatchType(domain_pattern);
-      // This should be caught by RouteConfigParse().
-      GPR_ASSERT(match_type != INVALID_MATCH);
-      if (match_type > best_match_type) continue;
-      if (match_type == best_match_type &&
-          domain_pattern.size() <= longest_match) {
-        continue;
-      }
-      // Skip if match fails.
-      if (!DomainMatch(match_type, domain_pattern, domain)) continue;
-      // Choose this match.
-      target_vhost = &vhost;
-      best_match_type = match_type;
-      longest_match = domain_pattern.size();
-      if (best_match_type == EXACT_MATCH) break;
-    }
-    if (best_match_type == EXACT_MATCH) break;
-  }
-  return target_vhost;
 }
 
 //
@@ -1609,7 +1570,8 @@ grpc_error_handle RetryPolicyParse(
 
 grpc_error_handle RouteActionParse(const EncodingContext& context,
                                    const envoy_config_route_v3_Route* route_msg,
-                                   XdsApi::Route* route, bool* ignore_route) {
+                                   XdsApi::Route::RouteAction* route,
+                                   bool* ignore_route) {
   if (!envoy_config_route_v3_Route_has_route(route_msg)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "No RouteAction found in route.");
@@ -1642,7 +1604,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
     for (size_t j = 0; j < clusters_size; ++j) {
       const envoy_config_route_v3_WeightedCluster_ClusterWeight*
           cluster_weight = clusters[j];
-      XdsApi::Route::ClusterWeight cluster;
+      XdsApi::Route::RouteAction::ClusterWeight cluster;
       cluster.name = UpbStringToStdString(
           envoy_config_route_v3_WeightedCluster_ClusterWeight_name(
               cluster_weight));
@@ -1711,7 +1673,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
   for (size_t i = 0; i < size; ++i) {
     const envoy_config_route_v3_RouteAction_HashPolicy* hash_policy =
         hash_policies[i];
-    XdsApi::Route::HashPolicy policy;
+    XdsApi::Route::RouteAction::HashPolicy policy;
     policy.terminal =
         envoy_config_route_v3_RouteAction_HashPolicy_terminal(hash_policy);
     const envoy_config_route_v3_RouteAction_HashPolicy_Header* header;
@@ -1719,7 +1681,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
         filter_state;
     if ((header = envoy_config_route_v3_RouteAction_HashPolicy_header(
              hash_policy)) != nullptr) {
-      policy.type = XdsApi::Route::HashPolicy::Type::HEADER;
+      policy.type = XdsApi::Route::RouteAction::HashPolicy::Type::HEADER;
       policy.header_name = UpbStringToStdString(
           envoy_config_route_v3_RouteAction_HashPolicy_Header_header_name(
               header));
@@ -1763,7 +1725,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
           envoy_config_route_v3_RouteAction_HashPolicy_FilterState_key(
               filter_state));
       if (key == "io.grpc.channel_id") {
-        policy.type = XdsApi::Route::HashPolicy::Type::CHANNEL_ID;
+        policy.type = XdsApi::Route::RouteAction::HashPolicy::Type::CHANNEL_ID;
       } else {
         gpr_log(GPR_DEBUG,
                 "RouteAction HashPolicy contains policy specifier "
@@ -1790,6 +1752,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
   return GRPC_ERROR_NONE;
 }
 
+// TODO(): Should this be updated to return a vector of errors.
 grpc_error_handle RouteConfigParse(
     const EncodingContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config,
@@ -1809,8 +1772,9 @@ grpc_error_handle RouteConfigParse(
         virtual_hosts[i], &domain_size);
     for (size_t j = 0; j < domain_size; ++j) {
       std::string domain_pattern = UpbStringToStdString(domains[j]);
-      const MatchType match_type = DomainPatternMatchType(domain_pattern);
-      if (match_type == INVALID_MATCH) {
+      const XdsApi::RdsUpdate::MatchType match_type =
+          XdsApi::RdsUpdate::DomainPatternMatchType(domain_pattern);
+      if (match_type == XdsApi::RdsUpdate::INVALID_MATCH) {
         return GRPC_ERROR_CREATE_FROM_CPP_STRING(
             absl::StrCat("Invalid domain pattern \"", domain_pattern, "\"."));
       }
@@ -1871,11 +1835,23 @@ grpc_error_handle RouteConfigParse(
       if (error != GRPC_ERROR_NONE) return error;
       error = RouteRuntimeFractionParse(match, &route);
       if (error != GRPC_ERROR_NONE) return error;
-      error = RouteActionParse(context, routes[j], &route, &ignore_route);
+      if (envoy_config_route_v3_Route_has_route(routes[j])) {
+        route.action_type = XdsApi::Route::ActionType::kRouteAction;
+        route.route = XdsApi::Route::RouteAction();
+        error = RouteActionParse(context, routes[j], &route.route.value(),
+                                 &ignore_route);
+        if (error != GRPC_ERROR_NONE) return error;
+      } else if (envoy_config_route_v3_Route_has_non_forwarding_action(
+                     routes[j])) {
+        route.action_type = XdsApi::Route::ActionType::kNonForwardingAction;
+      } else {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid action specified");
+      }
       if (error != GRPC_ERROR_NONE) return error;
       if (ignore_route) continue;
-      if (route.retry_policy == absl::nullopt && retry_policy != nullptr) {
-        route.retry_policy = virtual_host_retry_policy;
+      if (route.route->retry_policy == absl::nullopt &&
+          retry_policy != nullptr) {
+        route.route->retry_policy = virtual_host_retry_policy;
       }
       if (context.use_v3) {
         grpc_error_handle error = ParseTypedPerFilterConfig<

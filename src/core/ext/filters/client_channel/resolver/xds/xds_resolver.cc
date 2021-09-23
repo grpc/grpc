@@ -235,7 +235,7 @@ class XdsResolver : public Resolver {
     void MaybeAddCluster(const std::string& name);
     grpc_error_handle CreateMethodConfig(
         const XdsApi::Route& route,
-        const XdsApi::Route::ClusterWeight* cluster_weight,
+        const XdsApi::Route::RouteAction::ClusterWeight* cluster_weight,
         RefCountedPtr<ServiceConfig>* method_config);
 
     RefCountedPtr<XdsResolver> resolver_;
@@ -394,18 +394,19 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     route_entry.route = route;
     // If the route doesn't specify a timeout, set its timeout to the global
     // one.
-    if (!route.max_stream_duration.has_value()) {
-      route_entry.route.max_stream_duration =
+    if (!route.route->max_stream_duration.has_value()) {
+      route_entry.route.route->max_stream_duration =
           resolver_->current_listener_.http_connection_manager
               .http_max_stream_duration;
     }
-    if (route.weighted_clusters.empty()) {
+    if (route.route->weighted_clusters.empty()) {
       *error = CreateMethodConfig(route_entry.route, nullptr,
                                   &route_entry.method_config);
-      MaybeAddCluster(route.cluster_name);
+      MaybeAddCluster(route.route->cluster_name);
     } else {
       uint32_t end = 0;
-      for (const auto& weighted_cluster : route_entry.route.weighted_clusters) {
+      for (const auto& weighted_cluster :
+           route_entry.route.route->weighted_clusters) {
         Route::ClusterWeightState cluster_weight_state;
         *error = CreateMethodConfig(route_entry.route, &weighted_cluster,
                                     &cluster_weight_state.method_config);
@@ -447,7 +448,7 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
 const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
     const std::string& instance_name,
     const XdsApi::RdsUpdate::VirtualHost& vhost, const XdsApi::Route& route,
-    const XdsApi::Route::ClusterWeight* cluster_weight) {
+    const XdsApi::Route::RouteAction::ClusterWeight* cluster_weight) {
   // Check ClusterWeight, if any.
   if (cluster_weight != nullptr) {
     auto it = cluster_weight->typed_per_filter_config.find(instance_name);
@@ -465,11 +466,12 @@ const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
 
 grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     const XdsApi::Route& route,
-    const XdsApi::Route::ClusterWeight* cluster_weight,
+    const XdsApi::Route::RouteAction::ClusterWeight* cluster_weight,
     RefCountedPtr<ServiceConfig>* method_config) {
   std::vector<std::string> fields;
   // Set retry policy if any.
-  if (route.retry_policy.has_value() && !route.retry_policy->retry_on.Empty()) {
+  if (route.route->retry_policy.has_value() &&
+      !route.route->retry_policy->retry_on.Empty()) {
     std::vector<std::string> retry_parts;
     retry_parts.push_back(absl::StrFormat(
         "\"retryPolicy\": {\n"
@@ -477,25 +479,27 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
         "      \"initialBackoff\": \"%d.%09ds\",\n"
         "      \"maxBackoff\": \"%d.%09ds\",\n"
         "      \"backoffMultiplier\": 2,\n",
-        route.retry_policy->num_retries + 1,
-        route.retry_policy->retry_back_off.base_interval.seconds,
-        route.retry_policy->retry_back_off.base_interval.nanos,
-        route.retry_policy->retry_back_off.max_interval.seconds,
-        route.retry_policy->retry_back_off.max_interval.nanos));
+        route.route->retry_policy->num_retries + 1,
+        route.route->retry_policy->retry_back_off.base_interval.seconds,
+        route.route->retry_policy->retry_back_off.base_interval.nanos,
+        route.route->retry_policy->retry_back_off.max_interval.seconds,
+        route.route->retry_policy->retry_back_off.max_interval.nanos));
     std::vector<std::string> code_parts;
-    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_CANCELLED)) {
+    if (route.route->retry_policy->retry_on.Contains(GRPC_STATUS_CANCELLED)) {
       code_parts.push_back("        \"CANCELLED\"");
     }
-    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_DEADLINE_EXCEEDED)) {
+    if (route.route->retry_policy->retry_on.Contains(
+            GRPC_STATUS_DEADLINE_EXCEEDED)) {
       code_parts.push_back("        \"DEADLINE_EXCEEDED\"");
     }
-    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_INTERNAL)) {
+    if (route.route->retry_policy->retry_on.Contains(GRPC_STATUS_INTERNAL)) {
       code_parts.push_back("        \"INTERNAL\"");
     }
-    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_RESOURCE_EXHAUSTED)) {
+    if (route.route->retry_policy->retry_on.Contains(
+            GRPC_STATUS_RESOURCE_EXHAUSTED)) {
       code_parts.push_back("        \"RESOURCE_EXHAUSTED\"");
     }
-    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_UNAVAILABLE)) {
+    if (route.route->retry_policy->retry_on.Contains(GRPC_STATUS_UNAVAILABLE)) {
       code_parts.push_back("        \"UNAVAILABLE\"");
     }
     retry_parts.push_back(
@@ -505,12 +509,13 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     fields.emplace_back(absl::StrJoin(retry_parts, ""));
   }
   // Set timeout.
-  if (route.max_stream_duration.has_value() &&
-      (route.max_stream_duration->seconds != 0 ||
-       route.max_stream_duration->nanos != 0)) {
-    fields.emplace_back(absl::StrFormat("    \"timeout\": \"%d.%09ds\"",
-                                        route.max_stream_duration->seconds,
-                                        route.max_stream_duration->nanos));
+  if (route.route->max_stream_duration.has_value() &&
+      (route.route->max_stream_duration->seconds != 0 ||
+       route.route->max_stream_duration->nanos != 0)) {
+    fields.emplace_back(
+        absl::StrFormat("    \"timeout\": \"%d.%09ds\"",
+                        route.route->max_stream_duration->seconds,
+                        route.route->max_stream_duration->nanos));
   }
   // Handle xDS HTTP filters.
   std::map<std::string, std::vector<std::string>> per_filter_configs;
@@ -614,9 +619,9 @@ bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
 }
 
 absl::optional<uint64_t> HeaderHashHelper(
-    const XdsApi::Route::HashPolicy& policy,
+    const XdsApi::Route::RouteAction::HashPolicy& policy,
     grpc_metadata_batch* initial_metadata) {
-  GPR_ASSERT(policy.type == XdsApi::Route::HashPolicy::HEADER);
+  GPR_ASSERT(policy.type == XdsApi::Route::RouteAction::HashPolicy::HEADER);
   std::string value_buffer;
   absl::optional<absl::string_view> header_value =
       GetHeaderValue(initial_metadata, policy.header_name, &value_buffer);
@@ -662,8 +667,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     // Found a route match
     absl::string_view cluster_name;
     RefCountedPtr<ServiceConfig> method_config;
-    if (entry.route.weighted_clusters.empty()) {
-      cluster_name = entry.route.cluster_name;
+    if (entry.route.route->weighted_clusters.empty()) {
+      cluster_name = entry.route.route->cluster_name;
       method_config = entry.method_config;
     } else {
       const uint32_t key =
@@ -695,13 +700,13 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     GPR_ASSERT(it != clusters_.end());
     // Generate a hash.
     absl::optional<uint64_t> hash;
-    for (const auto& hash_policy : entry.route.hash_policies) {
+    for (const auto& hash_policy : entry.route.route->hash_policies) {
       absl::optional<uint64_t> new_hash;
       switch (hash_policy.type) {
-        case XdsApi::Route::HashPolicy::HEADER:
+        case XdsApi::Route::RouteAction::HashPolicy::HEADER:
           new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
           break;
-        case XdsApi::Route::HashPolicy::CHANNEL_ID:
+        case XdsApi::Route::RouteAction::HashPolicy::CHANNEL_ID:
           new_hash = static_cast<uint64_t>(
               reinterpret_cast<uintptr_t>(resolver_.get()));
           break;
@@ -844,7 +849,8 @@ void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
   }
   // Find the relevant VirtualHost from the RouteConfiguration.
   XdsApi::RdsUpdate::VirtualHost* vhost =
-      rds_update.FindVirtualHostForDomain(server_name_);
+      XdsApi::RdsUpdate::FindVirtualHostForDomain(&rds_update.virtual_hosts,
+                                                  server_name_);
   if (vhost == nullptr) {
     OnError(GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("could not find VirtualHost for ", server_name_,

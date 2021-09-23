@@ -187,12 +187,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/server_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/server_address.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_call_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_parser.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_interface.h" role="src" />
@@ -711,6 +707,9 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_server_config_fetcher.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_server_config_fetcher.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_server_config_selector.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_server_config_selector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/parse_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/parse_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/sockaddr_utils.cc" role="src" />
@@ -740,6 +739,12 @@
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/server_config_call_data.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/server_config_selector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/service_config.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/service_config.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/service_config_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/algorithm_metadata.h" role="src" />

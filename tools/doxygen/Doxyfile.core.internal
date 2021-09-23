@@ -971,12 +971,8 @@ src/core/ext/filters/client_channel/retry_throttle.cc \
 src/core/ext/filters/client_channel/retry_throttle.h \
 src/core/ext/filters/client_channel/server_address.cc \
 src/core/ext/filters/client_channel/server_address.h \
-src/core/ext/filters/client_channel/service_config.cc \
-src/core/ext/filters/client_channel/service_config.h \
 src/core/ext/filters/client_channel/service_config_call_data.h \
 src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
-src/core/ext/filters/client_channel/service_config_parser.cc \
-src/core/ext/filters/client_channel/service_config_parser.h \
 src/core/ext/filters/client_channel/subchannel.cc \
 src/core/ext/filters/client_channel/subchannel.h \
 src/core/ext/filters/client_channel/subchannel_interface.h \
@@ -1499,6 +1495,9 @@ src/core/ext/xds/xds_http_fault_filter.h \
 src/core/ext/xds/xds_http_filters.cc \
 src/core/ext/xds/xds_http_filters.h \
 src/core/ext/xds/xds_server_config_fetcher.cc \
+src/core/ext/xds/xds_server_config_fetcher.h \
+src/core/ext/xds/xds_server_config_selector.cc \
+src/core/ext/xds/xds_server_config_selector.h \
 src/core/lib/README.md \
 src/core/lib/address_utils/parse_address.cc \
 src/core/lib/address_utils/parse_address.h \
@@ -1530,6 +1529,12 @@ src/core/lib/channel/handshaker.h \
 src/core/lib/channel/handshaker_factory.h \
 src/core/lib/channel/handshaker_registry.cc \
 src/core/lib/channel/handshaker_registry.h \
+src/core/lib/channel/server_config_call_data.h \
+src/core/lib/channel/server_config_selector.h \
+src/core/lib/channel/service_config.cc \
+src/core/lib/channel/service_config.h \
+src/core/lib/channel/service_config_parser.cc \
+src/core/lib/channel/service_config_parser.h \
 src/core/lib/channel/status_util.cc \
 src/core/lib/channel/status_util.h \
 src/core/lib/compression/algorithm_metadata.h \

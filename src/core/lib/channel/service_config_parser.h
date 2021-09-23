@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_PARSER_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_PARSER_H
+#ifndef GRPC_CORE_LIB_CHANNEL_SERVICE_CONFIG_PARSER_H
+#define GRPC_CORE_LIB_CHANNEL_SERVICE_CONFIG_PARSER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -92,4 +92,4 @@ class ServiceConfigParser {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_PARSER_H */
+#endif /* GRPC_CORE_LIB_CHANNEL_SERVICE_CONFIG_PARSER_H */
