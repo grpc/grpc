@@ -404,8 +404,8 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_secure",
-        "//src/core/lib/config",
         "slice",
+        "//src/core/lib/config",
     ],
 )
 
@@ -2791,8 +2791,8 @@ grpc_cc_library(
         "grpc_base_c",
         "grpc_client_channel",
         "grpc_transport_chttp2",
-        "//src/core/lib/config",
         "slice",
+        "//src/core/lib/config",
     ],
 )
 
@@ -2851,8 +2851,8 @@ grpc_cc_library(
         "grpc_transport_chttp2",
         "ref_counted",
         "ref_counted_ptr",
-        "//src/core/lib/config",
         "slice",
+        "//src/core/lib/config",
     ],
 )
 
