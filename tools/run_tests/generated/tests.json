@@ -6294,7 +6294,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "rls_key_builder_test",
+    "name": "rls_lb_config_parser_test",
     "platforms": [
       "linux",
       "mac",

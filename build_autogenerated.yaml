@@ -7360,13 +7360,13 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: rls_key_builder_test
+- name: rls_lb_config_parser_test
   gtest: true
   build: test
   language: c++
   headers: []
   src:
-  - test/core/client_channel/rls_key_builder_test.cc
+  - test/core/client_channel/rls_lb_config_parser_test.cc
   deps:
   - grpc_test_util
 - name: sdk_authz_end2end_test

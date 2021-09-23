@@ -154,10 +154,6 @@ std::map<std::string, std::string> BuildKeyMap(
 }  //  namespace
 
 LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-    gpr_log(GPR_INFO, "[rlslb %p] picker=%p: picker pick", lb_policy_.get(),
-            this);
-  }
   RequestKey key = {
       BuildKeyMap(config_->key_builder_map(), args.path,
                   lb_policy_->server_name_, args.initial_metadata)
@@ -345,12 +341,12 @@ void RlsLb::Cache::Entry::ResetBackoff() {
 
 bool RlsLb::Cache::Entry::ShouldRemove() const {
   grpc_millis now = ExecCtx::Get()->Now();
-  return (data_expiration_time_ < now && backoff_expiration_time_ < now);
+  return data_expiration_time_ < now && backoff_expiration_time_ < now;
 }
 
 bool RlsLb::Cache::Entry::CanEvict() const {
   grpc_millis now = ExecCtx::Get()->Now();
-  return (min_expiration_time_ < now);
+  return min_expiration_time_ < now;
 }
 
 void RlsLb::Cache::Entry::Orphan() {
@@ -767,11 +763,12 @@ void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error_handle error) {
 void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   bool call_failed = error != GRPC_ERROR_NONE || status_recv_ != GRPC_STATUS_OK;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+    std::string status_message(StringViewFromSlice(status_details_recv_));
     gpr_log(GPR_INFO,
-            "[rlslb %p] rls_request=%p, error=%s, status=%d: RLS call "
+            "[rlslb %p] rls_request=%p, error=%s, status={%d, %s} RLS call "
             "response received",
             lb_policy_.get(), this, grpc_error_std_string(error).c_str(),
-            status_recv_);
+            status_recv_, status_message.c_str());
   }
   ResponseInfo res;
   if (call_failed) {
@@ -865,7 +862,7 @@ RlsLb::ControlChannel::ControlChannel(RefCountedPtr<RlsLb> lb_policy,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO,
             "[rlslb %p] ControlChannel=%p, channel=%p: control channel created",
-            lb_policy.get(), this, channel_);
+            lb_policy_.get(), this, channel_);
   }
   if (channel_ != nullptr) {
     ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
@@ -999,6 +996,13 @@ LoadBalancingPolicy::PickResult RlsLb::ChildPolicyWrapper::Pick(PickArgs args) {
 void RlsLb::ChildPolicyWrapper::UpdateLocked(
     const Json& child_policy_config, ServerAddressList addresses,
     const grpc_channel_args* channel_args) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+    gpr_log(
+        GPR_INFO,
+        "[rlslb %p] child_policy_wrapper=%s (%p): applying update, config: %s",
+        lb_policy_.get(), target_.c_str(), this,
+        child_policy_config.Dump().c_str());
+  }
   grpc_error_handle error = GRPC_ERROR_NONE;
   UpdateArgs update_args;
   update_args.config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
@@ -1006,10 +1010,15 @@ void RlsLb::ChildPolicyWrapper::UpdateLocked(
   GPR_DEBUG_ASSERT(error == GRPC_ERROR_NONE);
   // returned RLS target fails the validation
   if (error != GRPC_ERROR_NONE) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+      gpr_log(GPR_INFO,
+              "[rlslb %p] child_policy_wrapper=%p: config failed to parse: %s",
+              lb_policy_.get(), this, grpc_error_std_string(error).c_str());
+    }
     picker_ = std::unique_ptr<LoadBalancingPolicy::SubchannelPicker>(
         new TransientFailurePicker(grpc_error_to_absl_status(error)));
     GRPC_ERROR_UNREF(error);
-    child_policy_ = nullptr;
+    child_policy_.reset();
     return;
   }
   Args create_args;
@@ -1333,7 +1342,8 @@ grpc_error_handle ParseJsonHeaders(size_t idx, const Json& json,
                                    std::vector<std::string>* headers) {
   if (json.type() != Json::Type::OBJECT) {
     return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("field:headers index:", idx, " error:type is not object"));
+        absl::StrCat("field:headers index:", idx,
+                     " error:type should be OBJECT"));
   }
   std::vector<grpc_error_handle> error_list;
   // requiredMatch must not be present.
@@ -1342,7 +1352,11 @@ grpc_error_handle ParseJsonHeaders(size_t idx, const Json& json,
         "field:requiredMatch error:must not be present"));
   }
   // Find key.
-  ParseJsonObjectField(json.object_value(), "key", key, &error_list);
+  if (ParseJsonObjectField(json.object_value(), "key", key, &error_list) &&
+      key->empty()) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "field:key error:must be non-empty"));
+  }
   // Find headers.
   const Json::Array* headers_json = nullptr;
   ParseJsonObjectField(json.object_value(), "names", &headers_json,
@@ -1350,13 +1364,13 @@ grpc_error_handle ParseJsonHeaders(size_t idx, const Json& json,
   if (headers_json != nullptr) {
     if (headers_json->empty()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:names error:must not be empty"));
+          "field:names error:list is empty"));
     } else {
       size_t name_idx = 0;
       for (const Json& name_json : *headers_json) {
         if (name_json.type() != Json::Type::STRING) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-              "field:names index:", name_idx, " error:must be type string")));
+              "field:names index:", name_idx, " error:type should be STRING")));
         } else if (name_json.string_value().empty()) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
               absl::StrCat("field:names index:", name_idx,
@@ -1376,7 +1390,8 @@ std::string ParseJsonMethodName(size_t idx, const Json& json,
                                 grpc_error_handle* error) {
   if (json.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("field:names index:", idx, " error:type is not object"));
+        absl::StrCat("field:names index:", idx,
+                     " error:type should be OBJECT"));
     return "";
   }
   std::vector<grpc_error_handle> error_list;
@@ -1399,14 +1414,14 @@ grpc_error_handle ParseGrpcKeybuilder(
     size_t idx, const Json& json, RlsLbConfig::KeyBuilderMap* key_builder_map) {
   if (json.type() != Json::Type::OBJECT) {
     return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-        "field:grpc_keybuilders index:", idx, " error:is not of type object"));
+        "field:grpc_keybuilders index:", idx, " error:type should be OBJECT"));
   }
   std::vector<grpc_error_handle> error_list;
   // Parse names.
   std::set<std::string> names;
   const Json::Array* names_array = nullptr;
-  ParseJsonObjectField(json.object_value(), "names", &names_array, &error_list);
-  if (names_array != nullptr) {
+  if (ParseJsonObjectField(json.object_value(), "names", &names_array,
+                           &error_list)) {
     if (names_array->empty()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:names error:list is empty"));
@@ -1415,7 +1430,7 @@ grpc_error_handle ParseGrpcKeybuilder(
       for (const Json& name_json : *names_array) {
         grpc_error_handle child_error = GRPC_ERROR_NONE;
         std::string name =
-            ParseJsonMethodName(++name_idx, name_json, &child_error);
+            ParseJsonMethodName(name_idx++, name_json, &child_error);
         if (child_error != GRPC_ERROR_NONE) {
           error_list.push_back(child_error);
         } else {
@@ -1451,7 +1466,7 @@ grpc_error_handle ParseGrpcKeybuilder(
       std::string key;
       std::vector<std::string> headers;
       grpc_error_handle child_error =
-          ParseJsonHeaders(++header_idx, header_json, &key, &headers);
+          ParseJsonHeaders(header_idx++, header_json, &key, &headers);
       if (child_error != GRPC_ERROR_NONE) {
         error_list.push_back(child_error);
       } else {
@@ -1465,20 +1480,37 @@ grpc_error_handle ParseGrpcKeybuilder(
   ParseJsonObjectField(json.object_value(), "extraKeys", &extra_keys,
                        &error_list, /*required=*/false);
   if (extra_keys != nullptr) {
-    ParseJsonObjectField(*extra_keys, "host", &key_builder.host_key,
-                         &error_list, /*required=*/false);
+    std::vector<grpc_error_handle> extra_keys_errors;
+    if (ParseJsonObjectField(*extra_keys, "host", &key_builder.host_key,
+                             &extra_keys_errors, /*required=*/false) &&
+        key_builder.host_key.empty()) {
+      extra_keys_errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:host error:must be non-empty"));
+    }
     if (!key_builder.host_key.empty()) {
       duplicate_key_check_func(key_builder.host_key);
     }
-    ParseJsonObjectField(*extra_keys, "service", &key_builder.service_key,
-                         &error_list, /*required=*/false);
+    if (ParseJsonObjectField(*extra_keys, "service", &key_builder.service_key,
+                             &extra_keys_errors, /*required=*/false) &&
+        key_builder.service_key.empty()) {
+      extra_keys_errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:service error:must be non-empty"));
+    }
     if (!key_builder.service_key.empty()) {
       duplicate_key_check_func(key_builder.service_key);
     }
-    ParseJsonObjectField(*extra_keys, "method", &key_builder.method_key,
-                         &error_list, /*required=*/false);
+    if (ParseJsonObjectField(*extra_keys, "method", &key_builder.method_key,
+                             &extra_keys_errors, /*required=*/false) &&
+        key_builder.method_key.empty()) {
+      extra_keys_errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:method error:must be non-empty"));
+    }
     if (!key_builder.method_key.empty()) {
       duplicate_key_check_func(key_builder.method_key);
+    }
+    if (!extra_keys_errors.empty()) {
+      error_list.push_back(
+          GRPC_ERROR_CREATE_FROM_VECTOR("field:extraKeys", &extra_keys_errors));
     }
   }
   // Parse constantKeys.
@@ -1486,20 +1518,33 @@ grpc_error_handle ParseGrpcKeybuilder(
   ParseJsonObjectField(json.object_value(), "constantKeys", &constant_keys,
                        &error_list, /*required=*/false);
   if (constant_keys != nullptr) {
+    std::vector<grpc_error_handle> constant_keys_errors;
     for (const auto& p : *constant_keys) {
       const std::string& key = p.first;
       const Json& value = p.second;
+      if (key.empty()) {
+        constant_keys_errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "error:keys must be non-empty"));
+      }
       duplicate_key_check_func(key);
       ExtractJsonString(value, key, &key_builder.constant_keys[key],
-                        &error_list);
+                        &constant_keys_errors);
+    }
+    if (!constant_keys_errors.empty()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
+          "field:constantKeys", &constant_keys_errors));
     }
   }
   // Insert key_builder into key_builder_map.
   for (const std::string& name : names) {
-    key_builder_map->emplace(name, key_builder);
+    bool inserted = key_builder_map->emplace(name, key_builder).second;
+    if (!inserted) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("field:names error:duplicate entry for ", name)));
+    }
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
-      absl::StrCat("field:grpc_keybuilders index:", idx), &error_list);
+      absl::StrCat("index:", idx), &error_list);
 }
 
 RlsLbConfig::KeyBuilderMap ParseGrpcKeybuilders(
@@ -1507,7 +1552,7 @@ RlsLbConfig::KeyBuilderMap ParseGrpcKeybuilders(
   RlsLbConfig::KeyBuilderMap key_builder_map;
   if (key_builder_list.empty()) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "\"grpcKeybuilders\" list is empty");
+        "field:grpcKeybuilders error:list is empty");
     return {};
   }
   std::vector<grpc_error_handle> error_list;
@@ -1517,8 +1562,7 @@ RlsLbConfig::KeyBuilderMap ParseGrpcKeybuilders(
         ParseGrpcKeybuilder(idx++, key_builder, &key_builder_map);
     if (child_error != GRPC_ERROR_NONE) error_list.push_back(child_error);
   }
-  *error = GRPC_ERROR_CREATE_FROM_VECTOR(
-      "errors parsing RLS key builders config", &error_list);
+  *error = GRPC_ERROR_CREATE_FROM_VECTOR("field:grpcKeybuilders", &error_list);
   return key_builder_map;
 }
 
@@ -1558,6 +1602,7 @@ RlsLbConfig::RouteLookupConfig ParseRouteLookupConfig(
     route_lookup_config.max_age = kMaxMaxAge;
   }
   // Parse staleAge.
+  route_lookup_config.stale_age = kMaxMaxAge;
   bool stale_age_set = ParseJsonObjectFieldAsDuration(
       json, "staleAge", &route_lookup_config.stale_age, &error_list,
       /*required=*/false);
@@ -1568,7 +1613,7 @@ RlsLbConfig::RouteLookupConfig ParseRouteLookupConfig(
   }
   // Ignore staleAge if greater than or equal to maxAge.
   if (route_lookup_config.stale_age >= route_lookup_config.max_age) {
-    route_lookup_config.stale_age = 0;
+    route_lookup_config.stale_age = route_lookup_config.max_age;
   }
   // Parse cacheSizeBytes.
   route_lookup_config.cache_size_bytes = kDefaultCacheSizeBytes;
@@ -1588,6 +1633,8 @@ RlsLbConfig::RouteLookupConfig ParseRouteLookupConfig(
           "field:defaultTarget error:must be non-empty if set"));
     }
   }
+  *error =
+      GRPC_ERROR_CREATE_FROM_VECTOR("field:routeLookupConfig", &error_list);
   return route_lookup_config;
 }
 
@@ -1649,12 +1696,13 @@ RlsLbFactory::ParseLoadBalancingConfig(const Json& config_json,
   }
   // Parse childPolicyConfigTargetFieldName.
   std::string child_policy_config_target_field_name;
-  ParseJsonObjectField(config_json.object_value(),
-                       "childPolicyConfigTargetFieldName",
-                       &child_policy_config_target_field_name, &error_list);
-  if (child_policy_config_target_field_name.empty()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:childPolicyConfigTargetFieldName error:must be non-empty"));
+  if (ParseJsonObjectField(
+          config_json.object_value(), "childPolicyConfigTargetFieldName",
+          &child_policy_config_target_field_name, &error_list)) {
+    if (child_policy_config_target_field_name.empty()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:childPolicyConfigTargetFieldName error:must be non-empty"));
+    }
   }
   // Parse childPolicy.
   Json child_policy_config;
@@ -1662,16 +1710,19 @@ RlsLbFactory::ParseLoadBalancingConfig(const Json& config_json,
   auto it = config_json.object_value().find("childPolicy");
   if (it == config_json.object_value().end()) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:childPolicy error:field not present"));
+        "field:childPolicy error:does not exist."));
   } else if (it->second.type() != Json::Type::ARRAY) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:childPolicy error:not of type array"));
+        "field:childPolicy error:type should be ARRAY"));
   } else {
     grpc_error_handle child_error = ValidateChildPolicyList(
         it->second, child_policy_config_target_field_name,
         route_lookup_config.default_target, &child_policy_config,
         &default_child_policy_parsed_config);
-    if (child_error != GRPC_ERROR_NONE) error_list.push_back(child_error);
+    if (child_error != GRPC_ERROR_NONE) {
+      error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "field:childPolicy", &child_error, 1));
+    }
   }
   // Return result.
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing RLS LB policy config",

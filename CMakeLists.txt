@@ -952,7 +952,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx retry_throttle_test)
   add_dependencies(buildtests_cxx rls_end2end_test)
-  add_dependencies(buildtests_cxx rls_key_builder_test)
+  add_dependencies(buildtests_cxx rls_lb_config_parser_test)
   add_dependencies(buildtests_cxx sdk_authz_end2end_test)
   add_dependencies(buildtests_cxx secure_auth_context_test)
   add_dependencies(buildtests_cxx seq_test)
@@ -14656,13 +14656,13 @@ target_link_libraries(rls_end2end_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(rls_key_builder_test
-  test/core/client_channel/rls_key_builder_test.cc
+add_executable(rls_lb_config_parser_test
+  test/core/client_channel/rls_lb_config_parser_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(rls_key_builder_test
+target_include_directories(rls_lb_config_parser_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14681,7 +14681,7 @@ target_include_directories(rls_key_builder_test
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(rls_key_builder_test
+target_link_libraries(rls_lb_config_parser_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
