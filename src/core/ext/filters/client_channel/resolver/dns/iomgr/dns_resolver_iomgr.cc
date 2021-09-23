@@ -46,7 +46,6 @@ namespace grpc_core {
 namespace {
 using ::grpc_event_engine::experimental::CreateGRPCResolvedAddress;
 using ::grpc_event_engine::experimental::EventEngine;
-}  // namespace
 
 class IomgrDnsResolver : public Resolver {
  public:
@@ -642,6 +641,7 @@ class IomgrDnsResolverFactory : public ResolverFactory {
   const char* scheme() const override { return "dns"; }
 };
 
+}  // namespace
 }  // namespace grpc_core
 
 void grpc_iomgr_dns_resolver_init() {

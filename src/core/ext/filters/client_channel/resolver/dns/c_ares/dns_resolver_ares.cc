@@ -50,9 +50,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 
-namespace {
 using ::grpc_event_engine::experimental::EventEngine;
-}  // namespace
 
 namespace grpc_core {
 

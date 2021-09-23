@@ -45,9 +45,7 @@ struct grpc_custom_resolver {
 
 static grpc_custom_resolver_vtable* resolve_address_vtable = nullptr;
 
-namespace {
 using ::grpc_event_engine::experimental::EventEngine;
-}  // namespace
 
 static int retry_named_port_failure(grpc_custom_resolver* r,
                                     grpc_resolved_addresses** res) {

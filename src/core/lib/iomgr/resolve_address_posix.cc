@@ -42,9 +42,7 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/transport/error_utils.h"
 
-namespace {
 using ::grpc_event_engine::experimental::EventEngine;
-}  // namespace
 
 static grpc_error_handle posix_blocking_resolve_address(
     const char* name, const char* default_port,

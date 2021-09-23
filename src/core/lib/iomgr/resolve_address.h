@@ -129,7 +129,6 @@ grpc_dns_lookup_hostname(grpc_event_engine::experimental::EventEngine::
 ///
 /// It is *not* an error if there are no results for an SRV query. An empty
 /// result may be given to the callback in that case.
-// DO NOT SUBMIT(hork): clarify the above description of "no results found"
 grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
 grpc_dns_lookup_srv_record(
     grpc_event_engine::experimental::EventEngine::DNSResolver::LookupSRVCallback

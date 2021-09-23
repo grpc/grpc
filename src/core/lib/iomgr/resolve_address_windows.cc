@@ -45,9 +45,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
-namespace {
 using ::grpc_event_engine::experimental::EventEngine;
-}  // namespace
 
 struct request {
   char* name;
