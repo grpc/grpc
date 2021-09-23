@@ -2039,6 +2039,7 @@ add_library(grpc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_api.cc
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_refcount.cc
@@ -2621,6 +2622,7 @@ add_library(grpc_unsecure
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_api.cc
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_refcount.cc
