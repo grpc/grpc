@@ -1692,12 +1692,9 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "bitset",
-<<<<<<< HEAD
         "channel_stack_type",
         "config",
-=======
         "closure",
->>>>>>> 7ecd9d6b4022be7a0474c50502a3ccecae5842e0
         "dual_ref_counted",
         "error",
         "exec_ctx",
@@ -1914,12 +1911,8 @@ grpc_cc_library(
     deps = [
         "config",
         "gpr_base",
-<<<<<<< HEAD
         "grpc_base",
-=======
-        "grpc_base_c",
         "slice",
->>>>>>> 7ecd9d6b4022be7a0474c50502a3ccecae5842e0
     ],
 )
 
@@ -1936,12 +1929,8 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "gpr_base",
-<<<<<<< HEAD
         "grpc_base",
-=======
-        "grpc_base_c",
         "slice",
->>>>>>> 7ecd9d6b4022be7a0474c50502a3ccecae5842e0
     ],
 )
 
@@ -2094,11 +2083,8 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-<<<<<<< HEAD
         "config",
-=======
         "error",
->>>>>>> 7ecd9d6b4022be7a0474c50502a3ccecae5842e0
         "google_api_upb",
         "gpr_base",
         "grpc_base",
@@ -2138,11 +2124,8 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-<<<<<<< HEAD
         "config",
-=======
         "error",
->>>>>>> 7ecd9d6b4022be7a0474c50502a3ccecae5842e0
         "google_api_upb",
         "gpr_base",
         "grpc_base",
@@ -3388,12 +3371,8 @@ grpc_cc_library(
     visibility = ["@grpc:alts_frame_protector"],
     deps = [
         "gpr_base",
-<<<<<<< HEAD
         "grpc_base",
-=======
-        "grpc_base_c",
         "slice",
->>>>>>> 7ecd9d6b4022be7a0474c50502a3ccecae5842e0
         "tsi_interface",
         "useful",
     ],
