@@ -57,7 +57,7 @@ TEST(ForEachTest, SendThriceWithPipe) {
                         })),
             JustElem<1>());
       },
-      NoCallbackScheduler(),
+      NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   Mock::VerifyAndClearExpectations(&on_done);
   EXPECT_EQ(num_received, 3);
