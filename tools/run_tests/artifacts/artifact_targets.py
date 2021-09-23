@@ -107,6 +107,11 @@ class PythonArtifact:
         self.py_version = py_version
         if 'manylinux' in platform:
             self.labels.append('linux')
+        if 'linux_extra' in platform:
+            # linux_extra wheels used to be built by a separate kokoro job.
+            # Their build is now much faster, so they can be included
+            # in the regular artifact build.
+            self.labels.append('linux')
 
     def pre_build_jobspecs(self):
         return []
@@ -247,7 +252,7 @@ class CSharpExtArtifact:
                 if self.arch == 'aarch64':
                     # for aarch64, use a dockcross manylinux image that will
                     # give us both ready to use crosscompiler and sufficient backward compatibility
-                    dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux_2_24_aarch64'
+                    dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64'
                 return create_docker_jobspec(
                     self.name, dockerfile_dir,
                     'tools/run_tests/artifacts/build_artifact_csharp.sh')
@@ -371,11 +376,11 @@ def targets():
         PythonArtifact('manylinux2010', 'x86', 'cp37-cp37m'),
         PythonArtifact('manylinux2010', 'x86', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x86', 'cp39-cp39'),
-        PythonArtifact('manylinux_2_24', 'aarch64', 'cp36-cp36m'),
-        PythonArtifact('manylinux_2_24', 'aarch64', 'cp37-cp37m'),
-        PythonArtifact('manylinux_2_24', 'aarch64', 'cp38-cp38'),
-        PythonArtifact('manylinux_2_24', 'aarch64', 'cp39-cp39'),
-        PythonArtifact('manylinux_2_24', 'aarch64', 'cp310-cp310'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp36-cp36m'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp37-cp37m'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp38-cp38'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp39-cp39'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp310-cp310'),
         PythonArtifact('linux_extra', 'armv7', 'cp36-cp36m'),
         PythonArtifact('linux_extra', 'armv7', 'cp37-cp37m'),
         PythonArtifact('linux_extra', 'armv7', 'cp38-cp38'),

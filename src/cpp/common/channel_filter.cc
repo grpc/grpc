@@ -16,12 +16,13 @@
  *
  */
 
-#include <string.h>
-
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/cpp/common/channel_filter.h"
 
+#include <string.h>
+
 #include <grpcpp/impl/codegen/slice.h>
+
+#include "src/core/lib/channel/channel_stack.h"
 
 namespace grpc {
 
@@ -32,8 +33,7 @@ grpc_linked_mdelem* MetadataBatch::AddMetadata(const string& key,
   grpc_linked_mdelem* storage = new grpc_linked_mdelem;
   storage->md = grpc_mdelem_from_slices(SliceFromCopiedString(key),
                                         SliceFromCopiedString(value));
-  GRPC_LOG_IF_ERROR("MetadataBatch::AddMetadata",
-                    grpc_metadata_batch_link_head(batch_, storage));
+  GRPC_LOG_IF_ERROR("MetadataBatch::AddMetadata", batch_->LinkHead(storage));
   return storage;
 }
 

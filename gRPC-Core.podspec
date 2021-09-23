@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.41.0-dev'
+  version = '1.42.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -1019,10 +1019,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.cc',
                       'src/core/lib/iomgr/executor.h',
-                      'src/core/lib/iomgr/executor/mpmcqueue.cc',
-                      'src/core/lib/iomgr/executor/mpmcqueue.h',
-                      'src/core/lib/iomgr/executor/threadpool.cc',
-                      'src/core/lib/iomgr/executor/threadpool.h',
                       'src/core/lib/iomgr/fork_posix.cc',
                       'src/core/lib/iomgr/fork_windows.cc',
                       'src/core/lib/iomgr/gethostname.h',
@@ -1256,12 +1252,18 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/percent_encoding.cc',
                       'src/core/lib/slice/percent_encoding.h',
                       'src/core/lib/slice/slice.cc',
+                      'src/core/lib/slice/slice_api.cc',
                       'src/core/lib/slice/slice_buffer.cc',
                       'src/core/lib/slice/slice_intern.cc',
                       'src/core/lib/slice/slice_internal.h',
+                      'src/core/lib/slice/slice_refcount.cc',
+                      'src/core/lib/slice/slice_refcount.h',
+                      'src/core/lib/slice/slice_refcount_base.h',
                       'src/core/lib/slice/slice_string_helpers.cc',
                       'src/core/lib/slice/slice_string_helpers.h',
                       'src/core/lib/slice/slice_utils.h',
+                      'src/core/lib/slice/static_slice.cc',
+                      'src/core/lib/slice/static_slice.h',
                       'src/core/lib/surface/api_trace.cc',
                       'src/core/lib/surface/api_trace.h',
                       'src/core/lib/surface/byte_buffer.cc',
@@ -1855,8 +1857,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/event_engine/resolved_address_internal.h',
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
-                              'src/core/lib/iomgr/executor/mpmcqueue.h',
-                              'src/core/lib/iomgr/executor/threadpool.h',
                               'src/core/lib/iomgr/gethostname.h',
                               'src/core/lib/iomgr/grpc_if_nametoindex.h',
                               'src/core/lib/iomgr/internal_errqueue.h',
@@ -1961,8 +1961,11 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/b64.h',
                               'src/core/lib/slice/percent_encoding.h',
                               'src/core/lib/slice/slice_internal.h',
+                              'src/core/lib/slice/slice_refcount.h',
+                              'src/core/lib/slice/slice_refcount_base.h',
                               'src/core/lib/slice/slice_string_helpers.h',
                               'src/core/lib/slice/slice_utils.h',
+                              'src/core/lib/slice/static_slice.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/call.h',
                               'src/core/lib/surface/call_test_only.h',

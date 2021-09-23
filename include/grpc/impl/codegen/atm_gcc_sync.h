@@ -19,6 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_ATM_GCC_SYNC_H
 #define GRPC_IMPL_CODEGEN_ATM_GCC_SYNC_H
 
+// IWYU pragma: private, include <grpc/support/atm.h>
+
 /* variant of atm_platform.h for gcc and gcc-like compiers with __sync_*
    interface */
 #include <grpc/impl/codegen/port_platform.h>

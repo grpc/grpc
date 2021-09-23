@@ -20,10 +20,11 @@
 #define GRPC_INTERNAL_COMPILER_OBJECTIVE_C_GENERATOR_HELPERS_H
 
 #include <map>
-#include "src/compiler/config.h"
-#include "src/compiler/generator_helpers.h"
 
 #include <google/protobuf/compiler/objectivec/objectivec_helpers.h>
+
+#include "src/compiler/config.h"
+#include "src/compiler/generator_helpers.h"
 
 namespace grpc_objective_c_generator {
 

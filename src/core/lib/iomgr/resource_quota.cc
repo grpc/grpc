@@ -305,11 +305,12 @@ static void rq_step_sched(grpc_resource_quota* resource_quota) {
 static void rq_update_estimate(grpc_resource_quota* resource_quota) {
   gpr_atm memory_usage_estimation = MEMORY_USAGE_ESTIMATION_MAX;
   if (resource_quota->size != 0) {
-    memory_usage_estimation =
-        GPR_CLAMP((gpr_atm)((1.0 - ((double)resource_quota->free_pool) /
-                                       ((double)resource_quota->size)) *
-                            MEMORY_USAGE_ESTIMATION_MAX),
-                  0, MEMORY_USAGE_ESTIMATION_MAX);
+    memory_usage_estimation = grpc_core::Clamp(
+        static_cast<gpr_atm>(
+            (1.0 - (static_cast<double>(resource_quota->free_pool)) /
+                       (static_cast<double>(resource_quota->size))) *
+            MEMORY_USAGE_ESTIMATION_MAX),
+        gpr_atm(0), gpr_atm(MEMORY_USAGE_ESTIMATION_MAX));
   }
   gpr_atm_no_barrier_store(&resource_quota->memory_usage_estimation,
                            memory_usage_estimation);
@@ -729,7 +730,7 @@ void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
   a->resource_quota = grpc_resource_quota_ref_internal(resource_quota);
   a->size = static_cast<int64_t>(size);
   gpr_atm_no_barrier_store(&resource_quota->last_size,
-                           (gpr_atm)GPR_MIN((size_t)GPR_ATM_MAX, size));
+                           (gpr_atm)std::min((size_t)GPR_ATM_MAX, size));
   GRPC_CLOSURE_INIT(&a->closure, rq_resize, a, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, &a->closure, GRPC_ERROR_NONE);
 }
@@ -762,7 +763,7 @@ static void rq_destroy(void* rq) {
   grpc_resource_quota_unref_internal(static_cast<grpc_resource_quota*>(rq));
 }
 
-static int rq_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+static int rq_cmp(void* a, void* b) { return grpc_core::QsortCompare(a, b); }
 
 const grpc_arg_pointer_vtable* grpc_resource_quota_arg_vtable(void) {
   static const grpc_arg_pointer_vtable vtable = {rq_copy, rq_destroy, rq_cmp};
@@ -1035,10 +1036,11 @@ static size_t grpc_slice_allocator_adjust_allocation_length(
   size_t target =
       requested_length * (pressure > 0.8 ? (1.0 - pressure) / 0.2 : 1.0);
   // Target will be some multiple of 8 bytes, rounded up
-  target = ((static_cast<size_t> GPR_CLAMP(target, slice_allocator->min_length,
-                                           slice_allocator->max_length)) +
-            255) &
-           ~static_cast<size_t>(255);
+  target =
+      (static_cast<size_t>(grpc_core::Clamp(target, slice_allocator->min_length,
+                                            slice_allocator->max_length)) +
+       255) &
+      ~static_cast<size_t>(255);
   // Don't use more than 1/16th of the overall resource quota for a single
   // read alloc
   size_t rqmax = grpc_resource_quota_peek_size(

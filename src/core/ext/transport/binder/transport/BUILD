@@ -33,13 +33,15 @@ grpc_cc_library(
         "binder_transport.h",
     ],
     external_deps = [
-        "absl/strings",
+        "absl/container:flat_hash_map",
         "absl/memory",
+        "absl/strings",
     ],
     deps = [
         "//:gpr_base",
         "//:gpr_platform",
         "//:grpc_base_c",
+        "//:slice_refcount",
         "//src/core/ext/transport/binder/utils:transport_stream_receiver",
         "//src/core/ext/transport/binder/wire_format:binder",
         "//src/core/ext/transport/binder/wire_format:wire_reader",

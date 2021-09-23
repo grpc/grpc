@@ -19,11 +19,13 @@
 #ifndef GRPC_IMPL_CODEGEN_SYNC_POSIX_H
 #define GRPC_IMPL_CODEGEN_SYNC_POSIX_H
 
+// IWYU pragma: private, include <grpc/support/sync.h>
+
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <grpc/impl/codegen/sync_generic.h>
-
 #include <pthread.h>
+
+#include <grpc/impl/codegen/sync_generic.h>
 
 #ifdef GRPC_ASAN_ENABLED
 /* The member |leak_checker| is used to check whether there is a memory leak

@@ -13,7 +13,10 @@
 // limitations under the License.
 
 #include "src/core/lib/promise/loop.h"
+
 #include <gtest/gtest.h>
+
+#include "src/core/lib/promise/seq.h"
 
 namespace grpc_core {
 
@@ -37,6 +40,12 @@ TEST(LoopTest, FactoryCountToFive) {
     };
   })();
   EXPECT_EQ(i, 5);
+}
+
+TEST(LoopTest, LoopOfSeq) {
+  auto x =
+      Loop(Seq([]() { return 42; }, [](int i) -> LoopCtl<int> { return i; }))();
+  EXPECT_EQ(x, Poll<int>(42));
 }
 
 }  // namespace grpc_core

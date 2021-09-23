@@ -278,9 +278,9 @@ tsi_result alts_zero_copy_grpc_protector_create(
       size_t max_protected_frame_size_to_set = kDefaultFrameLength;
       if (max_protected_frame_size != nullptr) {
         *max_protected_frame_size =
-            GPR_MIN(*max_protected_frame_size, kMaxFrameLength);
+            std::min(*max_protected_frame_size, kMaxFrameLength);
         *max_protected_frame_size =
-            GPR_MAX(*max_protected_frame_size, kMinFrameLength);
+            std::max(*max_protected_frame_size, kMinFrameLength);
         max_protected_frame_size_to_set = *max_protected_frame_size;
       }
       impl->max_protected_frame_size = max_protected_frame_size_to_set;

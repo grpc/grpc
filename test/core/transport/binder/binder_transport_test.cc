@@ -18,14 +18,18 @@
 // transform into the correct sequence of binder transactions.
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 
-#include <grpc/grpc.h>
-#include <gtest/gtest.h>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include <gtest/gtest.h>
+
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
+#include "absl/synchronization/notification.h"
+
+#include <grpc/grpc.h>
+
 #include "src/core/ext/transport/binder/transport/binder_stream.h"
 #include "test/core/transport/binder/mock_objects.h"
 #include "test/core/util/test_config.h"
@@ -49,9 +53,11 @@ class BinderTransportTest : public ::testing::Test {
   }
 
   ~BinderTransportTest() override {
-    auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
-    delete gbt;
+    grpc_core::ExecCtx exec_ctx;
+    grpc_transport_destroy(transport_);
+    grpc_core::ExecCtx::Get()->Flush();
     for (grpc_binder_stream* gbs : stream_buffer_) {
+      gbs->~grpc_binder_stream();
       gpr_free(gbs);
     }
     arena_->Destroy();
@@ -95,12 +101,15 @@ void MockCallback(void* arg, grpc_error_handle error);
 
 class MockGrpcClosure {
  public:
-  MockGrpcClosure() {
+  explicit MockGrpcClosure(absl::Notification* notification = nullptr)
+      : notification_(notification) {
     GRPC_CLOSURE_INIT(&closure_, MockCallback, this, nullptr);
   }
 
   grpc_closure* GetGrpcClosure() { return &closure_; }
   MOCK_METHOD(void, Callback, (grpc_error_handle), ());
+
+  absl::Notification* notification_;
 
  private:
   grpc_closure closure_;
@@ -109,6 +118,9 @@ class MockGrpcClosure {
 void MockCallback(void* arg, grpc_error_handle error) {
   MockGrpcClosure* mock_closure = static_cast<MockGrpcClosure*>(arg);
   mock_closure->Callback(error);
+  if (mock_closure->notification_) {
+    mock_closure->notification_->Notify();
+  }
 }
 
 // Matches with transactions having the desired flag, method_ref,
@@ -133,16 +145,16 @@ MATCHER_P(GrpcErrorMessageContains, msg, "") {
 
 // Verify that the lower-level metadata has the same content as the gRPC
 // metadata.
-void VerifyMetadataEqual(const Metadata& md, grpc_metadata_batch grpc_md) {
-  grpc_linked_mdelem* elm = grpc_md.list.head;
-  for (size_t i = 0; i < md.size(); ++i) {
-    ASSERT_NE(elm, nullptr);
-    EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDKEY(elm->md)), md[i].first);
-    EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDVALUE(elm->md)),
+void VerifyMetadataEqual(const Metadata& md,
+                         const grpc_metadata_batch& grpc_md) {
+  size_t i = 0;
+  grpc_md.ForEach([&](grpc_mdelem mdelm) {
+    EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDKEY(mdelm)), md[i].first);
+    EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDVALUE(mdelm)),
               md[i].second);
-    elm = elm->next;
-  }
-  EXPECT_EQ(elm, nullptr);
+    i++;
+  });
+  EXPECT_EQ(md.size(), i);
 }
 
 // RAII helper classes for constructing gRPC metadata and receiving callbacks.
@@ -151,7 +163,6 @@ struct MakeSendInitialMetadata {
                           const std::string& method_ref,
                           grpc_transport_stream_op_batch* op)
       : storage(initial_metadata.size()) {
-    grpc_metadata_batch_init(&grpc_initial_metadata);
     size_t i = 0;
     for (const auto& md : initial_metadata) {
       const std::string& key = md.first;
@@ -175,9 +186,7 @@ struct MakeSendInitialMetadata {
     op->payload->send_initial_metadata.send_initial_metadata =
         &grpc_initial_metadata;
   }
-  ~MakeSendInitialMetadata() {
-    grpc_metadata_batch_destroy(&grpc_initial_metadata);
-  }
+  ~MakeSendInitialMetadata() {}
 
   std::vector<grpc_linked_mdelem> storage;
   grpc_linked_mdelem method_ref_storage;
@@ -206,7 +215,6 @@ struct MakeSendTrailingMetadata {
   explicit MakeSendTrailingMetadata(const Metadata& trailing_metadata,
                                     grpc_transport_stream_op_batch* op) {
     EXPECT_TRUE(trailing_metadata.empty());
-    grpc_metadata_batch_init(&grpc_trailing_metadata);
 
     op->send_trailing_metadata = true;
     op->payload->send_trailing_metadata.send_trailing_metadata =
@@ -218,8 +226,8 @@ struct MakeSendTrailingMetadata {
 
 struct MakeRecvInitialMetadata {
   explicit MakeRecvInitialMetadata(grpc_transport_stream_op_batch* op,
-                                   Expectation* call_before = nullptr) {
-    grpc_metadata_batch_init(&grpc_initial_metadata);
+                                   Expectation* call_before = nullptr)
+      : ready(&notification) {
     op->recv_initial_metadata = true;
     op->payload->recv_initial_metadata.recv_initial_metadata =
         &grpc_initial_metadata;
@@ -232,17 +240,17 @@ struct MakeRecvInitialMetadata {
     }
   }
 
-  ~MakeRecvInitialMetadata() {
-    grpc_metadata_batch_destroy(&grpc_initial_metadata);
-  }
+  ~MakeRecvInitialMetadata() {}
 
   MockGrpcClosure ready;
   grpc_metadata_batch grpc_initial_metadata;
+  absl::Notification notification;
 };
 
 struct MakeRecvMessage {
   explicit MakeRecvMessage(grpc_transport_stream_op_batch* op,
-                           Expectation* call_before = nullptr) {
+                           Expectation* call_before = nullptr)
+      : ready(&notification) {
     op->recv_message = true;
     op->payload->recv_message.recv_message = &grpc_message;
     op->payload->recv_message.recv_message_ready = ready.GetGrpcClosure();
@@ -254,13 +262,14 @@ struct MakeRecvMessage {
   }
 
   MockGrpcClosure ready;
+  absl::Notification notification;
   grpc_core::OrphanablePtr<grpc_core::ByteStream> grpc_message;
 };
 
 struct MakeRecvTrailingMetadata {
   explicit MakeRecvTrailingMetadata(grpc_transport_stream_op_batch* op,
-                                    Expectation* call_before = nullptr) {
-    grpc_metadata_batch_init(&grpc_trailing_metadata);
+                                    Expectation* call_before = nullptr)
+      : ready(&notification) {
     op->recv_trailing_metadata = true;
     op->payload->recv_trailing_metadata.recv_trailing_metadata =
         &grpc_trailing_metadata;
@@ -273,12 +282,11 @@ struct MakeRecvTrailingMetadata {
     }
   }
 
-  ~MakeRecvTrailingMetadata() {
-    grpc_metadata_batch_destroy(&grpc_trailing_metadata);
-  }
+  ~MakeRecvTrailingMetadata() {}
 
   MockGrpcClosure ready;
   grpc_metadata_batch grpc_trailing_metadata;
+  absl::Notification notification;
 };
 
 const Metadata kDefaultMetadata = {
@@ -314,69 +322,12 @@ TEST_F(BinderTransportTest, TransactionIdIncrement) {
   grpc_binder_stream* gbs0 = InitNewBinderStream();
   EXPECT_EQ(gbs0->t, GetBinderTransport());
   EXPECT_EQ(gbs0->tx_code, kFirstCallId);
-  EXPECT_EQ(gbs0->seq, 0);
   grpc_binder_stream* gbs1 = InitNewBinderStream();
   EXPECT_EQ(gbs1->t, GetBinderTransport());
   EXPECT_EQ(gbs1->tx_code, kFirstCallId + 1);
-  EXPECT_EQ(gbs1->seq, 0);
   grpc_binder_stream* gbs2 = InitNewBinderStream();
   EXPECT_EQ(gbs2->t, GetBinderTransport());
   EXPECT_EQ(gbs2->tx_code, kFirstCallId + 2);
-  EXPECT_EQ(gbs2->seq, 0);
-}
-
-TEST_F(BinderTransportTest, SeqNumIncrement) {
-  grpc_binder_stream* gbs = InitNewBinderStream();
-  EXPECT_EQ(gbs->t, GetBinderTransport());
-  EXPECT_EQ(gbs->tx_code, kFirstCallId);
-  // A simple batch that contains only "send_initial_metadata"
-  grpc_transport_stream_op_batch op{};
-  grpc_transport_stream_op_batch_payload payload(nullptr);
-  op.payload = &payload;
-  MakeSendInitialMetadata send_initial_metadata(kDefaultMetadata, "", &op);
-  EXPECT_EQ(gbs->seq, 0);
-  PerformStreamOp(gbs, &op);
-  EXPECT_EQ(gbs->tx_code, kFirstCallId);
-  EXPECT_EQ(gbs->seq, 1);
-  PerformStreamOp(gbs, &op);
-  EXPECT_EQ(gbs->tx_code, kFirstCallId);
-  EXPECT_EQ(gbs->seq, 2);
-}
-
-TEST_F(BinderTransportTest, SeqNumNotIncrementWithoutSend) {
-  {
-    grpc_binder_stream* gbs = InitNewBinderStream();
-    EXPECT_EQ(gbs->t, GetBinderTransport());
-    EXPECT_EQ(gbs->tx_code, kFirstCallId);
-    // No-op batch.
-    grpc_transport_stream_op_batch op{};
-    EXPECT_EQ(gbs->seq, 0);
-    PerformStreamOp(gbs, &op);
-    EXPECT_EQ(gbs->tx_code, kFirstCallId);
-    EXPECT_EQ(gbs->seq, 0);
-  }
-  {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_binder_stream* gbs = InitNewBinderStream();
-    EXPECT_EQ(gbs->t, GetBinderTransport());
-    EXPECT_EQ(gbs->tx_code, kFirstCallId + 1);
-    // Batch with only receiving operations.
-    grpc_transport_stream_op_batch op{};
-    grpc_transport_stream_op_batch_payload payload(nullptr);
-    op.payload = &payload;
-    MakeRecvInitialMetadata recv_initial_metadata(&op);
-    EXPECT_EQ(gbs->seq, 0);
-    PerformStreamOp(gbs, &op);
-    EXPECT_EQ(gbs->tx_code, kFirstCallId + 1);
-    EXPECT_EQ(gbs->seq, 0);
-
-    // Just to trigger the callback.
-    auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
-    gbt->transport_stream_receiver->NotifyRecvInitialMetadata(gbs->tx_code,
-                                                              kDefaultMetadata);
-    PerformStreamOp(gbs, &op);
-    exec_ctx.Flush();
-  }
 }
 
 TEST_F(BinderTransportTest, PerformSendInitialMetadata) {
@@ -396,7 +347,7 @@ TEST_F(BinderTransportTest, PerformSendInitialMetadata) {
   EXPECT_CALL(mock_on_complete, Callback);
 
   PerformStreamOp(gbs, &op);
-  exec_ctx.Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 }
 
 TEST_F(BinderTransportTest, PerformSendInitialMetadataMethodRef) {
@@ -419,7 +370,7 @@ TEST_F(BinderTransportTest, PerformSendInitialMetadataMethodRef) {
   EXPECT_CALL(mock_on_complete, Callback);
 
   PerformStreamOp(gbs, &op);
-  exec_ctx.Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 }
 
 TEST_F(BinderTransportTest, PerformSendMessage) {
@@ -441,7 +392,7 @@ TEST_F(BinderTransportTest, PerformSendMessage) {
   EXPECT_CALL(mock_on_complete, Callback);
 
   PerformStreamOp(gbs, &op);
-  exec_ctx.Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 }
 
 TEST_F(BinderTransportTest, PerformSendTrailingMetadata) {
@@ -464,7 +415,7 @@ TEST_F(BinderTransportTest, PerformSendTrailingMetadata) {
   EXPECT_CALL(mock_on_complete, Callback);
 
   PerformStreamOp(gbs, &op);
-  exec_ctx.Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 }
 
 TEST_F(BinderTransportTest, PerformSendAll) {
@@ -499,7 +450,7 @@ TEST_F(BinderTransportTest, PerformSendAll) {
   EXPECT_CALL(mock_on_complete, Callback);
 
   PerformStreamOp(gbs, &op);
-  exec_ctx.Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 }
 
 TEST_F(BinderTransportTest, PerformRecvInitialMetadata) {
@@ -516,7 +467,8 @@ TEST_F(BinderTransportTest, PerformRecvInitialMetadata) {
   gbt->transport_stream_receiver->NotifyRecvInitialMetadata(gbs->tx_code,
                                                             kInitialMetadata);
   PerformStreamOp(gbs, &op);
-  exec_ctx.Flush();
+  grpc_core::ExecCtx::Get()->Flush();
+  recv_initial_metadata.notification.WaitForNotification();
 
   VerifyMetadataEqual(kInitialMetadata,
                       recv_initial_metadata.grpc_initial_metadata);
@@ -537,7 +489,8 @@ TEST_F(BinderTransportTest, PerformRecvInitialMetadataWithMethodRef) {
   gbt->transport_stream_receiver->NotifyRecvInitialMetadata(
       gbs->tx_code, kInitialMetadataWithMethodRef);
   PerformStreamOp(gbs, &op);
-  exec_ctx.Flush();
+  grpc_core::ExecCtx::Get()->Flush();
+  recv_initial_metadata.notification.WaitForNotification();
 
   VerifyMetadataEqual(kInitialMetadataWithMethodRef,
                       recv_initial_metadata.grpc_initial_metadata);
@@ -557,7 +510,9 @@ TEST_F(BinderTransportTest, PerformRecvMessage) {
   gbt->transport_stream_receiver->NotifyRecvMessage(gbs->tx_code, kMessage);
 
   PerformStreamOp(gbs, &op);
-  exec_ctx.Flush();
+  grpc_core::ExecCtx::Get()->Flush();
+  recv_message.notification.WaitForNotification();
+
   EXPECT_TRUE(recv_message.grpc_message->Next(SIZE_MAX, nullptr));
   grpc_slice slice;
   recv_message.grpc_message->Pull(&slice);
@@ -582,7 +537,9 @@ TEST_F(BinderTransportTest, PerformRecvTrailingMetadata) {
   gbt->transport_stream_receiver->NotifyRecvTrailingMetadata(
       gbs->tx_code, kTrailingMetadata, kStatus);
   PerformStreamOp(gbs, &op);
-  exec_ctx.Flush();
+  grpc_core::ExecCtx::Get()->Flush();
+  recv_trailing_metadata.notification.WaitForNotification();
+
   VerifyMetadataEqual(AppendStatus(kTrailingMetadata, kStatus),
                       recv_trailing_metadata.grpc_trailing_metadata);
 }
@@ -612,7 +569,8 @@ TEST_F(BinderTransportTest, PerformRecvAll) {
   gbt->transport_stream_receiver->NotifyRecvTrailingMetadata(
       gbs->tx_code, trailing_metadata, kStatus);
   PerformStreamOp(gbs, &op);
-  exec_ctx.Flush();
+  grpc_core::ExecCtx::Get()->Flush();
+  recv_trailing_metadata.notification.WaitForNotification();
 
   VerifyMetadataEqual(kInitialMetadataWithMethodRef,
                       recv_initial_metadata.grpc_initial_metadata);
@@ -672,7 +630,7 @@ TEST_F(BinderTransportTest, PerformAllOps) {
 
   // Flush the execution context to force on_complete to run before recv
   // callbacks get scheduled.
-  exec_ctx.Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 
   auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
   const Metadata kRecvInitialMetadata =
@@ -686,7 +644,11 @@ TEST_F(BinderTransportTest, PerformAllOps) {
   gbt->transport_stream_receiver->NotifyRecvTrailingMetadata(
       gbs->tx_code, kRecvTrailingMetadata, kStatus);
 
-  exec_ctx.Flush();
+  grpc_core::ExecCtx::Get()->Flush();
+  recv_initial_metadata.notification.WaitForNotification();
+  recv_message.notification.WaitForNotification();
+  recv_trailing_metadata.notification.WaitForNotification();
+
   VerifyMetadataEqual(kRecvInitialMetadata,
                       recv_initial_metadata.grpc_initial_metadata);
   VerifyMetadataEqual(AppendStatus(kRecvTrailingMetadata, kStatus),
@@ -730,7 +692,7 @@ TEST_F(BinderTransportTest, WireWriterRpcCallErrorPropagates) {
 
   PerformStreamOp(gbs, &op1);
   PerformStreamOp(gbs, &op2);
-  exec_ctx.Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 }
 
 }  // namespace grpc_binder

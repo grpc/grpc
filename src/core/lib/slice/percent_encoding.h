@@ -30,8 +30,9 @@
 
 #include <stdbool.h>
 
-#include <grpc/slice.h>
 #include "absl/types/optional.h"
+
+#include <grpc/slice.h>
 
 namespace grpc_core {
 

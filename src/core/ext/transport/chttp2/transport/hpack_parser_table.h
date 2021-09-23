@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/slice.h>
+
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
@@ -67,7 +68,7 @@ class HPackTable {
     // reading the core static metadata table here; at that point we'd need our
     // own singleton static metadata in the correct order.
     if (index <= hpack_constants::kLastStaticEntry) {
-      return grpc_static_mdelem_manifested()[index - 1];
+      return g_static_mdelem_manifested[index - 1];
     } else {
       return LookupDynamic<take_ref>(index);
     }
@@ -119,7 +120,7 @@ class HPackTable {
 inline uintptr_t grpc_chttp2_get_static_hpack_table_index(grpc_mdelem md) {
   uintptr_t index =
       reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(md)) -
-      grpc_static_mdelem_table();
+      grpc_core::g_static_mdelem_table;
   if (index < grpc_core::hpack_constants::kLastStaticEntry) {
     return index + 1;  // Hpack static metadata element indices start at 1
   }

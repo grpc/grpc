@@ -18,12 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/ext/filters/census/grpc_plugin.h"
-
 #include "absl/time/time.h"
 #include "opencensus/stats/internal/aggregation_window.h"
 #include "opencensus/stats/internal/set_aggregation_window.h"
 #include "opencensus/stats/stats.h"
+
+#include "src/cpp/ext/filters/census/grpc_plugin.h"
 
 namespace grpc {
 

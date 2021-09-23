@@ -18,6 +18,8 @@
 
 #include "test/core/util/fuzzer_util.h"
 
+#include <algorithm>
+
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/gpr/useful.h"
@@ -39,7 +41,7 @@ char* grpc_fuzzer_get_next_string(input_stream* inp, bool* special) {
   char c;
   do {
     if (cap == sz) {
-      cap = GPR_MAX(3 * cap / 2, cap + 8);
+      cap = std::max(3 * cap / 2, cap + 8);
       str = static_cast<char*>(gpr_realloc(str, cap));
     }
     c = static_cast<char>(grpc_fuzzer_get_next_byte(inp));

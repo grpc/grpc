@@ -21,10 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/status.h>
-
 #include <stdbool.h>
 #include <string.h>
+
+#include <grpc/status.h>
 
 /// If \a status_str is a valid status string, sets \a status to the
 /// corresponding status value and returns true.

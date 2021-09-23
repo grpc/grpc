@@ -19,9 +19,11 @@
 /* This benchmark exists to ensure that the benchmark integration is
  * working */
 
-#include <benchmark/benchmark.h>
 #include <string.h>
+
 #include <sstream>
+
+#include <benchmark/benchmark.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -465,10 +467,10 @@ class SendEmptyMetadata {
   class Op {
    public:
     Op(SendEmptyMetadata* p, grpc_call_stack* /*s*/) {
-      grpc_metadata_batch_init(&batch_);
+      batch_.Clear();
       p->op_payload_.send_initial_metadata.send_initial_metadata = &batch_;
     }
-    void Finish() { grpc_metadata_batch_destroy(&batch_); }
+    void Finish() {}
 
    private:
     grpc_metadata_batch batch_;

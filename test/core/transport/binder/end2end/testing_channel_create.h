@@ -15,8 +15,9 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_BINDER_END2END_TESTING_CHANNEL_CREATE_H
 #define GRPC_TEST_CORE_TRANSPORT_BINDER_END2END_TESTING_CHANNEL_CREATE_H
 
-#include <grpcpp/grpcpp.h>
 #include <utility>
+
+#include <grpcpp/grpcpp.h>
 
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/lib/surface/server.h"

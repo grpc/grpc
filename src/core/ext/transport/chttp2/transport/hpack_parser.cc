@@ -19,7 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/ext/transport/chttp2/transport/internal.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -32,6 +31,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/match.h"
@@ -623,12 +623,10 @@ class HPackParser::Input {
                                                  uint8_t last_byte) {
     return MaybeSetErrorAndReturn(
         [value, last_byte] {
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrFormat(
-                  "integer overflow in hpack integer decoding: have 0x%08x, "
-                  "got byte 0x%02x on byte 5",
-                  value, last_byte)
-                  .c_str());
+          return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+              "integer overflow in hpack integer decoding: have 0x%08x, "
+              "got byte 0x%02x on byte 5",
+              value, last_byte));
         },
         absl::optional<uint32_t>());
   }
@@ -1350,10 +1348,11 @@ static void force_client_rst_stream(void* sp, grpc_error_handle /*error*/) {
 static void parse_stream_compression_md(grpc_chttp2_transport* /*t*/,
                                         grpc_chttp2_stream* s,
                                         grpc_metadata_batch* initial_metadata) {
-  if (initial_metadata->idx.named.content_encoding == nullptr ||
+  if (initial_metadata->legacy_index()->named.content_encoding == nullptr ||
       grpc_stream_compression_method_parse(
-          GRPC_MDVALUE(initial_metadata->idx.named.content_encoding->md), false,
-          &s->stream_decompression_method) == 0) {
+          GRPC_MDVALUE(
+              initial_metadata->legacy_index()->named.content_encoding->md),
+          false, &s->stream_decompression_method) == 0) {
     s->stream_decompression_method =
         GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS;
   }
@@ -1384,14 +1383,14 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
        stream id on a header */
     if (s != nullptr) {
       if (parser->is_boundary()) {
-        if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
+        if (s->header_frames_received == 2) {
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Too many trailer frames");
         }
         /* Process stream compression md element if it exists */
         if (s->header_frames_received ==
             0) { /* Only acts on initial metadata */
-          parse_stream_compression_md(t, s, &s->metadata_buffer[0].batch);
+          parse_stream_compression_md(t, s, &s->initial_metadata_buffer.batch);
         }
         s->published_metadata[s->header_frames_received] =
             GRPC_METADATA_PUBLISHED_FROM_WIRE;

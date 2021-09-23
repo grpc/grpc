@@ -14,13 +14,16 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <grpc/grpc.h>
+#include "src/core/ext/transport/binder/server/binder_server.h"
+
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "src/core/ext/transport/binder/server/binder_server.h"
+
+#include <grpc/grpc.h>
+
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -95,10 +98,9 @@ class BinderServerListener : public Server::ListenerInterface {
 
   void Start(Server* /*server*/,
              const std::vector<grpc_pollset*>* /*pollsets*/) override {
-    tx_receiver_ = factory_([this](transaction_code_t code,
-                                   const grpc_binder::ReadableParcel* parcel) {
-      return OnSetupTransport(code, parcel);
-    });
+    tx_receiver_ = factory_(
+        [this](transaction_code_t code, grpc_binder::ReadableParcel* parcel,
+               int uid) { return OnSetupTransport(code, parcel, uid); });
     endpoint_binder_ = tx_receiver_->GetRawBinder();
     grpc_add_endpoint_binder(addr_, endpoint_binder_);
   }
@@ -124,12 +126,14 @@ class BinderServerListener : public Server::ListenerInterface {
 
  private:
   absl::Status OnSetupTransport(transaction_code_t code,
-                                const grpc_binder::ReadableParcel* parcel) {
+                                grpc_binder::ReadableParcel* parcel, int uid) {
     grpc_core::ExecCtx exec_ctx;
     if (grpc_binder::BinderTransportTxCode(code) !=
         grpc_binder::BinderTransportTxCode::SETUP_TRANSPORT) {
       return absl::InvalidArgumentError("Not a SETUP_TRANSPORT request");
     }
+    // TODO(mingcl): Verify security policy here
+    gpr_log(GPR_ERROR, "calling uid = %d", uid);
     int version;
     absl::Status status = parcel->ReadInt32(&version);
     if (!status.ok()) {

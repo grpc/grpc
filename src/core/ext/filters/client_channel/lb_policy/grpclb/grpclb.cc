@@ -53,8 +53,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 
 #include <inttypes.h>
 #include <limits.h>
@@ -65,7 +64,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/strip.h"
-
 #include "upb/upb.hpp"
 
 #include <grpc/byte_buffer_reader.h>
@@ -77,7 +75,6 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
@@ -97,6 +94,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -267,7 +265,7 @@ class GrpcLb : public LoadBalancingPolicy {
           static_cast<const TokenAndClientStatsAttribute*>(other_base);
       int r = lb_token_.compare(other->lb_token_);
       if (r != 0) return r;
-      return GPR_ICMP(client_stats_.get(), other->client_stats_.get());
+      return QsortCompare(client_stats_.get(), other->client_stats_.get());
     }
 
     std::string ToString() const override {
@@ -1056,8 +1054,8 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
     switch (response.type) {
       case response.INITIAL: {
         if (response.client_stats_report_interval != 0) {
-          client_stats_report_interval_ =
-              GPR_MAX(GPR_MS_PER_SEC, response.client_stats_report_interval);
+          client_stats_report_interval_ = std::max(
+              int64_t(GPR_MS_PER_SEC), response.client_stats_report_interval);
           if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
             gpr_log(GPR_INFO,
                     "[grpclb %p] lb_calld=%p: Received initial LB response "

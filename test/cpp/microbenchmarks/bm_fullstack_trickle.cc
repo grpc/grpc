@@ -18,12 +18,13 @@
 
 /* Benchmark gRPC end2end in various configurations */
 
-#include <benchmark/benchmark.h>
-
 #include <fstream>
+
+#include <benchmark/benchmark.h>
 
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -305,9 +306,10 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
       }
     };
     gpr_timespec warmup_start = gpr_now(GPR_CLOCK_MONOTONIC);
-    for (int i = 0; i < GPR_MAX(absl::GetFlag(FLAGS_warmup_iterations),
-                                absl::GetFlag(FLAGS_warmup_megabytes) * 1024 *
-                                    1024 / (14 + state.range(0)));
+    for (int i = 0;
+         i < std::max(int64_t(absl::GetFlag(FLAGS_warmup_iterations)),
+                      absl::GetFlag(FLAGS_warmup_megabytes) * 1024 * 1024 /
+                          (14 + state.range(0)));
          i++) {
       inner_loop(true);
       if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), warmup_start),
@@ -419,9 +421,9 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
                         fixture->cq(), fixture->cq(), tag(slot));
   };
   gpr_timespec warmup_start = gpr_now(GPR_CLOCK_MONOTONIC);
-  for (int i = 0; i < GPR_MAX(absl::GetFlag(FLAGS_warmup_iterations),
-                              absl::GetFlag(FLAGS_warmup_megabytes) * 1024 *
-                                  1024 / (14 + state.range(0)));
+  for (int i = 0; i < std::max(int64_t(absl::GetFlag(FLAGS_warmup_iterations)),
+                               absl::GetFlag(FLAGS_warmup_megabytes) * 1024 *
+                                   1024 / (14 + state.range(0)));
        i++) {
     inner_loop(true);
     if (gpr_time_cmp(

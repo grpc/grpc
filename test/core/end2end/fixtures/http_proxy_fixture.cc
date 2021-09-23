@@ -18,8 +18,6 @@
 
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
 
-#include "src/core/lib/iomgr/sockaddr.h"
-
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
@@ -45,6 +43,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -490,10 +489,8 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   }
   // Make sure we got a CONNECT request.
   if (strcmp(conn->http_request.method, "CONNECT") != 0) {
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("HTTP proxy got request method ",
-                     conn->http_request.method)
-            .c_str());
+    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "HTTP proxy got request method ", conn->http_request.method));
     proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request",
                             GRPC_ERROR_REF(error));
     GRPC_ERROR_UNREF(error);

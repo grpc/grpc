@@ -63,6 +63,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/variant.h"
+
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -81,9 +82,7 @@ using FakeData = std::vector<
 // MoveData().
 class FakeWritableParcel final : public WritableParcel {
  public:
-  FakeWritableParcel();
-  int32_t GetDataPosition() const override;
-  absl::Status SetDataPosition(int32_t pos) override;
+  int32_t GetDataSize() const override;
   absl::Status WriteInt32(int32_t data) override;
   absl::Status WriteInt64(int64_t data) override;
   absl::Status WriteBinder(HasRawBinder* binder) override;
@@ -94,7 +93,7 @@ class FakeWritableParcel final : public WritableParcel {
 
  private:
   FakeData data_;
-  size_t data_position_ = 0;
+  int32_t data_size_ = 0;
 };
 
 // A fake readable parcel.
@@ -103,16 +102,33 @@ class FakeWritableParcel final : public WritableParcel {
 // methods to retrieve those data in the receiving end.
 class FakeReadableParcel final : public ReadableParcel {
  public:
-  explicit FakeReadableParcel(FakeData data) : data_(std::move(data)) {}
-  absl::Status ReadInt32(int32_t* data) const override;
-  absl::Status ReadInt64(int64_t* data) const override;
-  absl::Status ReadBinder(std::unique_ptr<Binder>* data) const override;
-  absl::Status ReadByteArray(std::string* data) const override;
-  absl::Status ReadString(char data[111]) const override;
+  explicit FakeReadableParcel(FakeData data) : data_(std::move(data)) {
+    for (auto& d : data_) {
+      if (absl::holds_alternative<int32_t>(d)) {
+        data_size_ += sizeof(int32_t);
+      } else if (absl::holds_alternative<int64_t>(d)) {
+        data_size_ += sizeof(int64_t);
+      } else if (absl::holds_alternative<void*>(d)) {
+        data_size_ += sizeof(void*);
+      } else if (absl::holds_alternative<std::string>(d)) {
+        data_size_ += absl::get<std::string>(d).size();
+      } else {
+        data_size_ += absl::get<std::vector<int8_t>>(d).size();
+      }
+    }
+  }
+
+  int32_t GetDataSize() const override;
+  absl::Status ReadInt32(int32_t* data) override;
+  absl::Status ReadInt64(int64_t* data) override;
+  absl::Status ReadBinder(std::unique_ptr<Binder>* data) override;
+  absl::Status ReadByteArray(std::string* data) override;
+  absl::Status ReadString(std::string* str) override;
 
  private:
   const FakeData data_;
-  mutable size_t data_position_ = 0;
+  size_t data_position_ = 0;
+  int32_t data_size_ = 0;
 };
 
 class FakeBinder;
@@ -166,9 +182,9 @@ class PersistentFakeTransactionReceiver {
       TransactionReceiver::OnTransactCb cb,
       std::unique_ptr<FakeBinderTunnel> tunnel);
 
-  absl::Status Receive(BinderTransportTxCode tx_code,
-                       const ReadableParcel* parcel) {
-    return callback_(static_cast<transaction_code_t>(tx_code), parcel);
+  absl::Status Receive(BinderTransportTxCode tx_code, ReadableParcel* parcel) {
+    return callback_(static_cast<transaction_code_t>(tx_code), parcel,
+                     /*uid=*/0);
   }
 
  private:
@@ -195,7 +211,6 @@ class FakeBinder final : public Binder {
   absl::Status Transact(BinderTransportTxCode tx_code) override;
 
   WritableParcel* GetWritableParcel() const override { return input_.get(); }
-  ReadableParcel* GetReadableParcel() const override { return output_.get(); }
 
   std::unique_ptr<TransactionReceiver> ConstructTxReceiver(
       grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
@@ -206,7 +221,6 @@ class FakeBinder final : public Binder {
  private:
   FakeEndpoint* endpoint_;
   std::unique_ptr<FakeWritableParcel> input_;
-  std::unique_ptr<FakeReadableParcel> output_;
 };
 
 // A transaction processor.

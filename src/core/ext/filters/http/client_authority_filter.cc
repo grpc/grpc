@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/http/client_authority_filter.h"
+
 #include <assert.h>
 #include <limits.h>
 #include <string.h>
@@ -26,7 +28,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/http/client_authority_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -55,8 +56,9 @@ void client_authority_start_transport_stream_op_batch(
   // Handle send_initial_metadata.
   // If the initial metadata doesn't already contain :authority, add it.
   if (batch->send_initial_metadata &&
-      batch->payload->send_initial_metadata.send_initial_metadata->idx.named
-              .authority == nullptr) {
+      batch->payload->send_initial_metadata.send_initial_metadata
+              ->legacy_index()
+              ->named.authority == nullptr) {
     grpc_error_handle error = grpc_metadata_batch_add_head(
         batch->payload->send_initial_metadata.send_initial_metadata,
         &calld->authority_storage,

@@ -18,17 +18,17 @@
 
 #include "src/core/lib/iomgr/error.h"
 
+#include <string.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-
-#include <string.h>
 
 #include "test/core/util/test_config.h"
 
 static void test_set_get_int() {
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test");
-  GPR_ASSERT(error);
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
   intptr_t i = 0;
   GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_FILE_LINE, &i));
   GPR_ASSERT(i);  // line set will never be 0
@@ -110,7 +110,7 @@ static void test_create_referencing() {
       GRPC_ERROR_STR_GRPC_MESSAGE, grpc_slice_from_static_string("message"));
   grpc_error_handle parent =
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Parent", &child, 1);
-  GPR_ASSERT(parent);
+  GPR_ASSERT(parent != GRPC_ERROR_NONE);
 
   GRPC_ERROR_UNREF(child);
   GRPC_ERROR_UNREF(parent);
@@ -130,7 +130,7 @@ static void test_create_referencing_many() {
 
   grpc_error_handle parent =
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Parent", children, 3);
-  GPR_ASSERT(parent);
+  GPR_ASSERT(parent != GRPC_ERROR_NONE);
 
   for (size_t i = 0; i < 3; ++i) {
     GRPC_ERROR_UNREF(children[i]);
@@ -188,6 +188,8 @@ static void test_os_error() {
 }
 
 static void test_overflow() {
+  // absl::Status doesn't have a limit so there is no overflow
+#ifndef GRPC_ERROR_IS_ABSEIL_STATUS
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Overflow");
 
   for (size_t i = 0; i < 150; ++i) {
@@ -211,7 +213,7 @@ static void test_overflow() {
   GPR_ASSERT(i == 10);
 
   GRPC_ERROR_UNREF(error);
-  ;
+#endif
 }
 
 int main(int argc, char** argv) {

@@ -14,8 +14,9 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_USE_EVENT_ENGINE
-#include <grpc/event_engine/event_engine.h>
 #include "absl/functional/bind_front.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -78,13 +79,15 @@ void resolve_address(const char* addr, const char* default_port,
                      grpc_pollset_set* /* interested_parties */,
                      grpc_closure* on_done,
                      grpc_resolved_addresses** addresses) {
-  auto dns_resolver = grpc_iomgr_event_engine()->GetDNSResolver();
-  if (!dns_resolver.ok()) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done,
-                            absl_status_to_grpc_error(dns_resolver.status()));
+  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
+      grpc_iomgr_event_engine()->GetDNSResolver();
+  if (dns_resolver == nullptr) {
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, on_done,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to get DNS Resolver."));
     return;
   }
-  new DnsRequest(std::move(*dns_resolver), addr, default_port, on_done,
+  new DnsRequest(std::move(dns_resolver), addr, default_port, on_done,
                  addresses);
 }
 
@@ -92,8 +95,9 @@ void blocking_handle_async_resolve_done(void* arg, grpc_error_handle error) {
   static_cast<Promise<grpc_error_handle>*>(arg)->Set(std::move(error));
 }
 
-grpc_error* blocking_resolve_address(const char* name, const char* default_port,
-                                     grpc_resolved_addresses** addresses) {
+grpc_error_handle blocking_resolve_address(
+    const char* name, const char* default_port,
+    grpc_resolved_addresses** addresses) {
   grpc_closure on_done;
   Promise<grpc_error_handle> evt;
   GRPC_CLOSURE_INIT(&on_done, blocking_handle_async_resolve_done, &evt,

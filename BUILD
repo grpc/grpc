@@ -58,6 +58,12 @@ config_setting(
     values = {"apple_platform_type": "ios"},
 )
 
+# Fuzzers can be built as fuzzers or as tests
+config_setting(
+    name = "grpc_build_fuzzers",
+    values = {"define": "grpc_build_fuzzers=true"},
+)
+
 selects.config_setting_group(
     name = "grpc_no_xds",
     match_any = [
@@ -109,11 +115,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "goat"  # @unused
+g_stands_for = "granola"  # @unused
 
-core_version = "18.0.0"  # @unused
+core_version = "19.1.0"  # @unused
 
-version = "1.41.0-dev"  # @unused
+version = "1.42.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -357,6 +363,7 @@ grpc_cc_library(
         "grpc_common",
         "grpc_lb_policy_grpclb",
         "grpc_trace",
+        "slice",
     ],
 )
 
@@ -398,6 +405,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_secure",
+        "slice",
     ],
 )
 
@@ -434,6 +442,7 @@ grpc_cc_library(
     ],
     deps = [
         "grpc++_internals",
+        "slice",
     ],
 )
 
@@ -467,6 +476,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
+        "error",
         "gpr_base",
         "grpc",
         "grpc++_base",
@@ -477,6 +487,7 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_secure",
         "ref_counted_ptr",
+        "slice",
     ],
 )
 
@@ -615,9 +626,17 @@ grpc_cc_library(
     external_deps = [
         "absl/synchronization",
     ],
-    language = "c++",
     deps = [
         "gpr_codegen",
+    ],
+)
+
+grpc_cc_library(
+    name = "useful",
+    hdrs = ["src/core/lib/gpr/useful.h"],
+    language = "c++",
+    deps = [
+        "gpr_platform",
     ],
 )
 
@@ -679,7 +698,6 @@ grpc_cc_library(
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tmpfile.h",
-        "src/core/lib/gpr/useful.h",
         "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/examine_stack.h",
         "src/core/lib/gprpp/fork.h",
@@ -721,6 +739,7 @@ grpc_cc_library(
         "gpr_codegen",
         "gpr_tls",
         "grpc_codegen",
+        "useful",
     ],
 )
 
@@ -801,6 +820,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_platform",
+        "handshaker_registry",
     ],
 )
 
@@ -1174,6 +1194,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "for_each",
+    external_deps = [
+        "absl/status",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    public_hdrs = ["src/core/lib/promise/for_each.h"],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_factory",
+    ],
+)
+
+grpc_cc_library(
     name = "ref_counted",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
@@ -1210,6 +1245,122 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "handshaker_factory",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/channel/handshaker_factory.h",
+    ],
+    deps = [
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "handshaker_registry",
+    srcs = [
+        "src/core/lib/channel/handshaker_registry.cc",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/channel/handshaker_registry.h",
+    ],
+    deps = [
+        "gpr_base",
+        "handshaker_factory",
+    ],
+)
+
+grpc_cc_library(
+    name = "slice_refcount",
+    srcs = [
+        "src/core/lib/slice/slice_refcount.cc",
+        "src/core/lib/slice/static_slice.cc",
+    ],
+    hdrs = [
+        "src/core/lib/slice/slice_refcount.h",
+        "src/core/lib/slice/slice_refcount_base.h",
+        "src/core/lib/slice/slice_utils.h",
+        "src/core/lib/slice/static_slice.h",
+    ],
+    public_hdrs = [
+        "include/grpc/slice.h",
+    ],
+    deps = [
+        "gpr_base",
+        "ref_counted",
+    ],
+)
+
+grpc_cc_library(
+    name = "slice",
+    srcs = [
+        "src/core/lib/slice/slice.cc",
+        "src/core/lib/slice/slice_string_helpers.cc",
+    ],
+    hdrs = [
+        "src/core/lib/slice/slice_internal.h",
+        "src/core/lib/slice/slice_string_helpers.h",
+    ],
+    deps = [
+        "gpr_base",
+        "ref_counted",
+        "slice_refcount",
+    ],
+)
+
+grpc_cc_library(
+    name = "error",
+    srcs = [
+        "src/core/lib/iomgr/error.cc",
+    ],
+    hdrs = [
+        "src/core/lib/iomgr/error.h",
+        "src/core/lib/iomgr/error_internal.h",
+    ],
+    deps = [
+        "gpr",
+        "grpc_codegen",
+        "grpc_trace",
+        "slice",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "closure",
+    hdrs = [
+        "src/core/lib/iomgr/closure.h",
+    ],
+    deps = [
+        "error",
+        "gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "exec_ctx",
+    srcs = [
+        "src/core/lib/iomgr/combiner.cc",
+        "src/core/lib/iomgr/exec_ctx.cc",
+        "src/core/lib/iomgr/executor.cc",
+        "src/core/lib/iomgr/iomgr_internal.cc",
+    ],
+    hdrs = [
+        "src/core/lib/iomgr/combiner.h",
+        "src/core/lib/iomgr/exec_ctx.h",
+        "src/core/lib/iomgr/executor.h",
+        "src/core/lib/iomgr/iomgr_internal.h",
+    ],
+    deps = [
+        "closure",
+        "error",
+        "gpr_base",
+        "gpr_tls",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base_c",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -1224,7 +1375,6 @@ grpc_cc_library(
         "src/core/lib/channel/channelz_registry.cc",
         "src/core/lib/channel/connected_channel.cc",
         "src/core/lib/channel/handshaker.cc",
-        "src/core/lib/channel/handshaker_registry.cc",
         "src/core/lib/channel/status_util.cc",
         "src/core/lib/compression/compression.cc",
         "src/core/lib/compression/compression_args.cc",
@@ -1244,14 +1394,12 @@ grpc_cc_library(
         "src/core/lib/iomgr/buffer_list.cc",
         "src/core/lib/iomgr/call_combiner.cc",
         "src/core/lib/iomgr/cfstream_handle.cc",
-        "src/core/lib/iomgr/combiner.cc",
         "src/core/lib/iomgr/dualstack_socket_posix.cc",
         "src/core/lib/iomgr/endpoint.cc",
         "src/core/lib/iomgr/endpoint_cfstream.cc",
         "src/core/lib/iomgr/endpoint_pair_event_engine.cc",
         "src/core/lib/iomgr/endpoint_pair_posix.cc",
         "src/core/lib/iomgr/endpoint_pair_windows.cc",
-        "src/core/lib/iomgr/error.cc",
         "src/core/lib/iomgr/error_cfstream.cc",
         "src/core/lib/iomgr/ev_apple.cc",
         "src/core/lib/iomgr/ev_epoll1_linux.cc",
@@ -1267,10 +1415,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/event_engine/resolver.cc",
         "src/core/lib/iomgr/event_engine/tcp.cc",
         "src/core/lib/iomgr/event_engine/timer.cc",
-        "src/core/lib/iomgr/exec_ctx.cc",
-        "src/core/lib/iomgr/executor.cc",
-        "src/core/lib/iomgr/executor/mpmcqueue.cc",
-        "src/core/lib/iomgr/executor/threadpool.cc",
         "src/core/lib/iomgr/fork_posix.cc",
         "src/core/lib/iomgr/fork_windows.cc",
         "src/core/lib/iomgr/gethostname_fallback.cc",
@@ -1282,7 +1426,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/iocp_windows.cc",
         "src/core/lib/iomgr/iomgr.cc",
         "src/core/lib/iomgr/iomgr_custom.cc",
-        "src/core/lib/iomgr/iomgr_internal.cc",
         "src/core/lib/iomgr/iomgr_posix.cc",
         "src/core/lib/iomgr/iomgr_posix_cfstream.cc",
         "src/core/lib/iomgr/iomgr_windows.cc",
@@ -1342,10 +1485,9 @@ grpc_cc_library(
         "src/core/lib/json/json_writer.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
-        "src/core/lib/slice/slice.cc",
+        "src/core/lib/slice/slice_api.cc",
         "src/core/lib/slice/slice_buffer.cc",
         "src/core/lib/slice/slice_intern.cc",
-        "src/core/lib/slice/slice_string_helpers.cc",
         "src/core/lib/surface/api_trace.cc",
         "src/core/lib/surface/byte_buffer.cc",
         "src/core/lib/surface/byte_buffer_reader.cc",
@@ -1380,6 +1522,8 @@ grpc_cc_library(
         "src/core/lib/uri/uri_parser.cc",
     ],
     hdrs = [
+        "src/core/lib/transport/error_utils.h",
+        "src/core/lib/transport/http2_errors.h",
         "src/core/lib/address_utils/parse_address.h",
         "src/core/lib/address_utils/sockaddr_utils.h",
         "src/core/lib/avl/avl.h",
@@ -1394,8 +1538,6 @@ grpc_cc_library(
         "src/core/lib/channel/connected_channel.h",
         "src/core/lib/channel/context.h",
         "src/core/lib/channel/handshaker.h",
-        "src/core/lib/channel/handshaker_factory.h",
-        "src/core/lib/channel/handshaker_registry.h",
         "src/core/lib/channel/status_util.h",
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/compression_args.h",
@@ -1415,15 +1557,11 @@ grpc_cc_library(
         "src/core/lib/iomgr/buffer_list.h",
         "src/core/lib/iomgr/call_combiner.h",
         "src/core/lib/iomgr/cfstream_handle.h",
-        "src/core/lib/iomgr/closure.h",
-        "src/core/lib/iomgr/combiner.h",
         "src/core/lib/iomgr/dynamic_annotations.h",
         "src/core/lib/iomgr/endpoint.h",
         "src/core/lib/iomgr/endpoint_cfstream.h",
         "src/core/lib/iomgr/endpoint_pair.h",
-        "src/core/lib/iomgr/error.h",
         "src/core/lib/iomgr/error_cfstream.h",
-        "src/core/lib/iomgr/error_internal.h",
         "src/core/lib/iomgr/ev_apple.h",
         "src/core/lib/iomgr/ev_epoll1_linux.h",
         "src/core/lib/iomgr/ev_epollex_linux.h",
@@ -1435,17 +1573,12 @@ grpc_cc_library(
         "src/core/lib/iomgr/event_engine/pollset.h",
         "src/core/lib/iomgr/event_engine/promise.h",
         "src/core/lib/iomgr/event_engine/resolved_address_internal.h",
-        "src/core/lib/iomgr/exec_ctx.h",
-        "src/core/lib/iomgr/executor.h",
-        "src/core/lib/iomgr/executor/mpmcqueue.h",
-        "src/core/lib/iomgr/executor/threadpool.h",
         "src/core/lib/iomgr/gethostname.h",
         "src/core/lib/iomgr/grpc_if_nametoindex.h",
         "src/core/lib/iomgr/internal_errqueue.h",
         "src/core/lib/iomgr/iocp_windows.h",
         "src/core/lib/iomgr/iomgr.h",
         "src/core/lib/iomgr/iomgr_custom.h",
-        "src/core/lib/iomgr/iomgr_internal.h",
         "src/core/lib/iomgr/is_epollexclusive_available.h",
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
@@ -1493,9 +1626,6 @@ grpc_cc_library(
         "src/core/lib/json/json_util.h",
         "src/core/lib/slice/b64.h",
         "src/core/lib/slice/percent_encoding.h",
-        "src/core/lib/slice/slice_internal.h",
-        "src/core/lib/slice/slice_string_helpers.h",
-        "src/core/lib/slice/slice_utils.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/call.h",
         "src/core/lib/surface/call_test_only.h",
@@ -1513,8 +1643,6 @@ grpc_cc_library(
         "src/core/lib/transport/bdp_estimator.h",
         "src/core/lib/transport/byte_stream.h",
         "src/core/lib/transport/connectivity_state.h",
-        "src/core/lib/transport/error_utils.h",
-        "src/core/lib/transport/http2_errors.h",
         "src/core/lib/transport/metadata.h",
         "src/core/lib/transport/metadata_batch.h",
         "src/core/lib/transport/pid_controller.h",
@@ -1525,6 +1653,22 @@ grpc_cc_library(
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
         "src/core/lib/uri/uri_parser.h",
+    ] +
+    # TODO(ctiller): remove these
+    # These headers used to be vended by this target, but they have been split
+    # out into separate targets now. In order to transition downstream code, we
+    # re-export these headers from here for now, and when LSC's have completed
+    # to clean this up, we'll remove these.
+    [
+        "src/core/lib/iomgr/closure.h",
+        "src/core/lib/iomgr/error.h",
+        "src/core/lib/iomgr/error_internal.h",
+        "src/core/lib/slice/slice_internal.h",
+        "src/core/lib/slice/slice_string_helpers.h",
+        "src/core/lib/iomgr/exec_ctx.h",
+        "src/core/lib/iomgr/executor.h",
+        "src/core/lib/iomgr/combiner.h",
+        "src/core/lib/iomgr/iomgr_internal.h",
     ],
     external_deps = [
         "absl/container:flat_hash_map",
@@ -1543,7 +1687,10 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "bitset",
+        "closure",
         "dual_ref_counted",
+        "error",
+        "exec_ctx",
         "gpr_base",
         "gpr_codegen",
         "gpr_tls",
@@ -1552,6 +1699,9 @@ grpc_cc_library(
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+        "slice",
+        "slice_refcount",
+        "useful",
     ],
 )
 
@@ -1679,17 +1829,22 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:client_channel"],
     deps = [
+        "config",
         "debug_location",
+        "error",
         "gpr_base",
         "grpc_base_c",
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
         "grpc_health_upb",
         "grpc_trace",
+        "handshaker_registry",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+        "slice",
         "udpa_orca_upb",
+        "useful",
     ],
 )
 
@@ -1732,6 +1887,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base_c",
+        "slice",
     ],
 )
 
@@ -1747,6 +1903,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base_c",
+        "slice",
     ],
 )
 
@@ -1814,6 +1971,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "grpc_message_size_filter",
+        "slice",
     ],
 )
 
@@ -1866,6 +2024,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
+        "useful",
     ],
 )
 
@@ -1894,6 +2053,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "error",
         "google_api_upb",
         "gpr_base",
         "grpc_base_c",
@@ -1904,6 +2064,7 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_insecure",
         "orphanable",
         "ref_counted_ptr",
+        "slice",
     ],
 )
 
@@ -1932,6 +2093,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "error",
         "google_api_upb",
         "gpr_base",
         "grpc_base_c",
@@ -1943,6 +2105,7 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_secure",
         "orphanable",
         "ref_counted_ptr",
+        "slice",
     ],
 )
 
@@ -1995,6 +2158,7 @@ grpc_cc_library(
         "envoy_core_upb",
         "envoy_core_upbdefs",
         "envoy_type_upb",
+        "error",
         "google_api_upb",
         "gpr_base",
         "gpr_codegen",
@@ -2008,6 +2172,8 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_secure",
         "orphanable",
         "ref_counted_ptr",
+        "slice",
+        "slice_refcount",
         "udpa_type_upb",
         "udpa_type_upbdefs",
     ],
@@ -2042,9 +2208,11 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "error",
         "gpr_base",
         "grpc_base_c",
         "grpc_xds_client",
+        "slice",
     ],
 )
 
@@ -2298,10 +2466,12 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "error",
         "gpr",
         "grpc++_base",
         "grpc_base_c",
         "grpc_secure",
+        "slice",
     ],
     alwayslink = 1,
 )
@@ -2355,6 +2525,7 @@ grpc_cc_library(
         "gpr_codegen",
         "lb_server_load_reporting_filter",
         "lb_server_load_reporting_service_server_builder_plugin",
+        "slice",
     ],
 )
 
@@ -2477,6 +2648,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "error",
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
@@ -2520,6 +2692,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
+        "slice",
     ],
 )
 
@@ -2536,6 +2709,8 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
+        "slice",
+        "useful",
     ],
 )
 
@@ -2696,6 +2871,8 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "alts_util",
+        "config",
+        "error",
         "gpr_base",
         "grpc_base",
         "grpc_base_c",
@@ -2706,8 +2883,11 @@ grpc_cc_library(
         "grpc_transport_chttp2_alpn",
         "ref_counted",
         "ref_counted_ptr",
+        "slice",
+        "slice_refcount",
         "tsi",
         "tsi_interface",
+        "useful",
     ],
 )
 
@@ -2797,6 +2977,7 @@ grpc_cc_library(
         "grpc_matchers",
         "grpc_rbac_engine",
         "grpc_secure",
+        "useful",
     ],
 )
 
@@ -2971,6 +3152,9 @@ grpc_cc_library(
         "hpack_encoder_table",
         "match",
         "popularity_count",
+        "slice",
+        "slice_refcount",
+        "useful",
     ],
 )
 
@@ -2985,6 +3169,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
+        "useful",
     ],
 )
 
@@ -3000,10 +3185,12 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
         "grpc_transport_chttp2",
+        "slice",
     ],
 )
 
@@ -3030,12 +3217,14 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "error",
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
         "grpc_secure",
         "grpc_transport_chttp2",
         "grpc_transport_chttp2_client_connector",
+        "slice",
     ],
 )
 
@@ -3053,6 +3242,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base_c",
         "grpc_codegen",
@@ -3060,6 +3250,7 @@ grpc_cc_library(
         "grpc_transport_chttp2",
         "ref_counted",
         "ref_counted_ptr",
+        "slice",
     ],
 )
 
@@ -3114,6 +3305,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "grpc_trace",
+        "slice",
     ],
 )
 
@@ -3176,7 +3368,9 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base_c",
+        "slice",
         "tsi_interface",
+        "useful",
     ],
 )
 
@@ -3253,7 +3447,9 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "grpc_transport_chttp2_client_insecure",
+        "slice",
         "tsi_interface",
+        "useful",
     ],
 )
 
@@ -3283,6 +3479,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_inproc",
         "ref_counted",
+        "useful",
     ],
 )
 
@@ -3313,6 +3510,7 @@ grpc_cc_library(
         "grpc_transport_inproc",
         "grpc_unsecure",
         "ref_counted",
+        "useful",
     ],
 )
 

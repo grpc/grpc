@@ -16,8 +16,6 @@
  *
  */
 
-#include "src/core/lib/iomgr/sockaddr.h"
-
 #include <memory.h>
 #include <stdio.h>
 
@@ -35,8 +33,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

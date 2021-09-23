@@ -154,10 +154,8 @@ grpc_error_handle ParseLoadBalancingConfigHelper(
     }
     policies_tried.push_back(it->first);
   }
-  return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-      absl::StrCat("No known policies in list: ",
-                   absl::StrJoin(policies_tried, " "))
-          .c_str());
+  return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+      "No known policies in list: ", absl::StrJoin(policies_tried, " ")));
 }
 
 }  // namespace
@@ -176,9 +174,8 @@ LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
   LoadBalancingPolicyFactory* factory =
       g_state->GetLoadBalancingPolicyFactory(policy->first.c_str());
   if (factory == nullptr) {
-    *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("Factory not found for policy \"%s\"", policy->first)
-            .c_str());
+    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrFormat("Factory not found for policy \"%s\"", policy->first));
     return nullptr;
   }
   // Parse load balancing config via factory.

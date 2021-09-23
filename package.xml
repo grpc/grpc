@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.41.0dev</release>
-  <api>1.41.0dev</api>
+  <release>1.42.0dev</release>
+  <api>1.42.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.41.0 update
+- gRPC Core 1.42.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -912,10 +912,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/executor.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/executor.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/executor/mpmcqueue.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/executor/mpmcqueue.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/executor/threadpool.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/executor/threadpool.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/fork_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/fork_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/gethostname.h" role="src" />
@@ -1149,12 +1145,18 @@
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_intern.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount_base.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/static_slice.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/static_slice.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer.cc" role="src" />

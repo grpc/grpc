@@ -18,11 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
-
 #include "src/core/lib/iomgr/iomgr_internal.h"
-#include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/iomgr/timer_manager.h"
+
+#include <stddef.h>
 
 static grpc_iomgr_platform_vtable* iomgr_platform_vtable = nullptr;
 

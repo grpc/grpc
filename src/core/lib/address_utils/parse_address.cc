@@ -87,10 +87,8 @@ grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
       reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
   const size_t maxlen = sizeof(un->sun_path) - 1;
   if (path.size() > maxlen) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Path name should not have more than ", maxlen,
-                     " characters")
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Path name should not have more than ", maxlen, " characters"));
   }
   un->sun_family = AF_UNIX;
   path.copy(un->sun_path, path.size());
@@ -105,10 +103,8 @@ grpc_error_handle UnixAbstractSockaddrPopulate(
       reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
   const size_t maxlen = sizeof(un->sun_path) - 1;
   if (path.size() > maxlen) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Path name should not have more than ", maxlen,
-                     " characters")
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Path name should not have more than ", maxlen, " characters"));
   }
   un->sun_family = AF_UNIX;
   un->sun_path[0] = '\0';

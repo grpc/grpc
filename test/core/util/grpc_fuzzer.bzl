@@ -13,17 +13,63 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
 def grpc_fuzzer(name, corpus, srcs = [], deps = [], data = [], size = "large", **kwargs):
+    CORPUS_DIR = native.package_name() + "/" + corpus
     grpc_cc_test(
         name = name,
         srcs = srcs,
-        deps = deps + ["//test/core/util:fuzzer_corpus_test"],
+        deps = deps + select({
+            "//:grpc_build_fuzzers": [],
+            "//conditions:default": ["//test/core/util:fuzzer_corpus_test"],
+        }),
         data = data + native.glob([corpus + "/**"]),
         external_deps = [
             "gtest",
         ],
         size = size,
-        args = ["--directory=" + native.package_name() + "/" + corpus],
+        args = select({
+            "//:grpc_build_fuzzers": [CORPUS_DIR],
+            "//conditions:default": ["--directory=" + CORPUS_DIR],
+        }),
+        **kwargs
+    )
+
+def grpc_proto_fuzzer(name, corpus, proto, srcs = [], deps = [], data = [], size = "large", **kwargs):
+    PROTO_LIBRARY = "_%s_proto" % name
+    CC_PROTO_LIBRARY = "_%s_cc_proto" % name
+    CORPUS_DIR = native.package_name() + "/" + corpus
+
+    proto_library(
+        name = PROTO_LIBRARY,
+        srcs = [proto],
+    )
+
+    cc_proto_library(
+        name = CC_PROTO_LIBRARY,
+        deps = [PROTO_LIBRARY],
+    )
+
+    grpc_cc_test(
+        name = name,
+        srcs = srcs,
+        deps = deps + [
+            "@com_google_libprotobuf_mutator//:libprotobuf_mutator",
+            CC_PROTO_LIBRARY,
+        ] + select({
+            "//:grpc_build_fuzzers": [],
+            "//conditions:default": ["//test/core/util:fuzzer_corpus_test"],
+        }),
+        data = data + native.glob([corpus + "/**"]),
+        external_deps = [
+            "gtest",
+        ],
+        size = size,
+        args = select({
+            "//:grpc_build_fuzzers": [CORPUS_DIR],
+            "//conditions:default": ["--directory=" + CORPUS_DIR],
+        }),
         **kwargs
     )

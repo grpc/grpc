@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/surface/lame_client.h"
+
 #include <string.h>
 
 #include <atomic>
@@ -31,7 +33,6 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/static_metadata.h"
 
@@ -44,9 +45,9 @@ namespace {
 struct ChannelData {
   explicit ChannelData(grpc_channel_element_args* args)
       : state_tracker("lame_channel", GRPC_CHANNEL_SHUTDOWN) {
-    grpc_error_handle err = grpc_channel_args_find_pointer<grpc_error>(
+    grpc_error_handle* err = grpc_channel_args_find_pointer<grpc_error_handle>(
         args->channel_args, GRPC_ARG_LAME_FILTER_ERROR);
-    if (err != nullptr) error = GRPC_ERROR_REF(err);
+    if (err != nullptr) error = GRPC_ERROR_REF(*err);
   }
 
   ~ChannelData() { GRPC_ERROR_UNREF(error); }
@@ -124,20 +125,28 @@ static void lame_destroy_channel_elem(grpc_channel_element* elem) {
 
 // Channel arg vtable for a grpc_error_handle.
 void* ErrorCopy(void* p) {
-  grpc_error_handle error = static_cast<grpc_error_handle>(p);
-  return GRPC_ERROR_REF(error);
+  grpc_error_handle* new_error = nullptr;
+  if (p != nullptr) {
+    grpc_error_handle* error = static_cast<grpc_error_handle*>(p);
+    new_error = new grpc_error_handle();
+    *new_error = GRPC_ERROR_REF(*error);
+  }
+  return new_error;
 }
 void ErrorDestroy(void* p) {
-  grpc_error_handle error = static_cast<grpc_error_handle>(p);
-  GRPC_ERROR_UNREF(error);
+  if (p != nullptr) {
+    grpc_error_handle* error = static_cast<grpc_error_handle*>(p);
+    GRPC_ERROR_UNREF(*error);
+    delete error;
+  }
 }
-int ErrorCompare(void* p, void* q) { return GPR_ICMP(p, q); }
+int ErrorCompare(void* p, void* q) { return grpc_core::QsortCompare(p, q); }
 const grpc_arg_pointer_vtable kLameFilterErrorArgVtable = {
     ErrorCopy, ErrorDestroy, ErrorCompare};
 
 }  // namespace
 
-grpc_arg MakeLameClientErrorArg(grpc_error_handle error) {
+grpc_arg MakeLameClientErrorArg(grpc_error_handle* error) {
   return grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_LAME_FILTER_ERROR), error,
       &kLameFilterErrorArgVtable);
@@ -175,7 +184,7 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
           GRPC_ERROR_INT_GRPC_STATUS, error_code),
       GRPC_ERROR_STR_GRPC_MESSAGE,
       grpc_slice_from_static_string(error_message));
-  grpc_arg error_arg = grpc_core::MakeLameClientErrorArg(error);
+  grpc_arg error_arg = grpc_core::MakeLameClientErrorArg(&error);
   grpc_channel_args args = {1, &error_arg};
   grpc_channel* channel = grpc_channel_create(
       target, &args, GRPC_CLIENT_LAME_CHANNEL, nullptr, nullptr, 0, nullptr);

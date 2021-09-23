@@ -14,12 +14,11 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_USE_EVENT_ENGINE
-#include "src/core/lib/iomgr/event_engine/iomgr.h"
-
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/event_engine/iomgr.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -61,7 +60,7 @@ bool iomgr_platform_is_any_background_poller_thread(void) {
 }
 
 bool iomgr_platform_add_closure_to_background_poller(
-    grpc_closure* /* closure */, grpc_error* /* error */) {
+    grpc_closure* /* closure */, grpc_error_handle /* error */) {
   return false;
 }
 

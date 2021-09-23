@@ -21,9 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/atm.h>
-
 #include "absl/container/inlined_vector.h"
+
+#include <grpc/support/atm.h>
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"

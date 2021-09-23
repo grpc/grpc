@@ -17,11 +17,13 @@
 #include <android/binder_ibinder_jni.h>
 #include <android/binder_interface_utils.h>
 #include <android/log.h>
-#include <grpcpp/grpcpp.h>
 #include <jni.h>
 
 #include "examples/protos/helloworld.grpc.pb.h"
 #include "examples/protos/helloworld.pb.h"
+
+#include <grpcpp/grpcpp.h>
+
 #include "src/core/ext/transport/binder/server/binder_server.h"
 #include "src/core/ext/transport/binder/server/binder_server_credentials.h"
 

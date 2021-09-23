@@ -791,8 +791,6 @@ libs:
   - src/core/lib/iomgr/event_engine/resolved_address_internal.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
-  - src/core/lib/iomgr/executor/mpmcqueue.h
-  - src/core/lib/iomgr/executor/threadpool.h
   - src/core/lib/iomgr/gethostname.h
   - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
@@ -896,8 +894,11 @@ libs:
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
+  - src/core/lib/slice/static_slice.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
@@ -1326,8 +1327,6 @@ libs:
   - src/core/lib/iomgr/event_engine/timer.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
-  - src/core/lib/iomgr/executor/mpmcqueue.cc
-  - src/core/lib/iomgr/executor/threadpool.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/gethostname_fallback.cc
@@ -1456,9 +1455,12 @@ libs:
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_intern.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/slice/static_slice.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
@@ -1838,8 +1840,6 @@ libs:
   - src/core/lib/iomgr/event_engine/resolved_address_internal.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
-  - src/core/lib/iomgr/executor/mpmcqueue.h
-  - src/core/lib/iomgr/executor/threadpool.h
   - src/core/lib/iomgr/gethostname.h
   - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
@@ -1895,8 +1895,11 @@ libs:
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
+  - src/core/lib/slice/static_slice.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
@@ -2098,8 +2101,6 @@ libs:
   - src/core/lib/iomgr/event_engine/timer.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
-  - src/core/lib/iomgr/executor/mpmcqueue.cc
-  - src/core/lib/iomgr/executor/threadpool.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/gethostname_fallback.cc
@@ -2173,9 +2174,12 @@ libs:
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_intern.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/slice/static_slice.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
@@ -3676,15 +3680,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: mpmcqueue_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/mpmcqueue_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: mpscq_test
   build: test
   language: c
@@ -4104,15 +4099,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: threadpool_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/threadpool_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: time_averaged_stats_test
   build: test
   language: c
@@ -4177,15 +4163,6 @@ targets:
   - linux
   - posix
   - mac
-- name: useful_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/useful_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: varint_test
   build: test
   language: c
@@ -4416,20 +4393,6 @@ targets:
   platforms:
   - linux
   - posix
-- name: alts_credentials_fuzzer
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/security/alts_credentials_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/security/corpus/alts_credentials_corpus
-  maxlen: 2048
 - name: alts_util_test
   gtest: true
   build: test
@@ -4578,14 +4541,12 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - test/core/transport/binder/end2end/echo_service.h
   - test/core/transport/binder/end2end/fake_binder.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - test/core/transport/binder/end2end/echo.proto
   - src/core/ext/transport/binder/client/channel_create_impl.cc
   - src/core/ext/transport/binder/server/binder_server.cc
   - src/core/ext/transport/binder/server/binder_server_credentials.cc
@@ -4597,7 +4558,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
   - test/core/transport/binder/end2end/binder_server_test.cc
-  - test/core/transport/binder/end2end/echo_service.cc
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -4922,22 +4882,6 @@ targets:
   platforms:
   - linux
   - posix
-- name: bm_threadpool
-  build: test
-  run: false
-  language: c++
-  headers: []
-  src:
-  - test/cpp/microbenchmarks/bm_threadpool.cc
-  deps:
-  - benchmark_helpers
-  benchmark: true
-  defaults: benchmark
-  platforms:
-  - linux
-  - posix
-  - mac
-  uses_polling: false
 - name: bm_timer
   build: test
   language: c++
@@ -5201,21 +5145,6 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
-- name: client_fuzzer
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/end2end/fuzzers/client_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/end2end/fuzzers/client_fuzzer_corpus
-  dict: test/core/end2end/fuzzers/hpack.dictionary
-  maxlen: 2048
 - name: client_interceptors_end2end_test
   gtest: true
   build: test
@@ -5339,11 +5268,121 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-generated/google/api/annotations.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
+  - src/core/ext/upb-generated/google/api/http.upb.h
+  - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
+  - src/core/ext/upb-generated/google/rpc/status.upb.h
+  - src/core/lib/channel/handshaker_factory.h
+  - src/core/lib/channel/handshaker_registry.h
   - src/core/lib/config/core_configuration.h
+  - src/core/lib/gpr/alloc.h
+  - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
+  - src/core/lib/gpr/string.h
+  - src/core/lib/gpr/string_windows.h
+  - src/core/lib/gpr/time_precise.h
+  - src/core/lib/gpr/tls.h
+  - src/core/lib/gpr/tmpfile.h
+  - src/core/lib/gpr/useful.h
+  - src/core/lib/gprpp/arena.h
+  - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/examine_stack.h
+  - src/core/lib/gprpp/fork.h
+  - src/core/lib/gprpp/global_config.h
+  - src/core/lib/gprpp/global_config_custom.h
+  - src/core/lib/gprpp/global_config_env.h
+  - src/core/lib/gprpp/global_config_generic.h
+  - src/core/lib/gprpp/host_port.h
+  - src/core/lib/gprpp/manual_constructor.h
+  - src/core/lib/gprpp/memory.h
+  - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/stat.h
+  - src/core/lib/gprpp/status_helper.h
+  - src/core/lib/gprpp/sync.h
+  - src/core/lib/gprpp/thd.h
+  - src/core/lib/gprpp/time_util.h
+  - src/core/lib/profiling/timers.h
   src:
+  - src/core/ext/upb-generated/google/api/annotations.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
+  - src/core/ext/upb-generated/google/api/http.upb.c
+  - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  - src/core/ext/upb-generated/google/rpc/status.upb.c
+  - src/core/lib/channel/handshaker_registry.cc
   - src/core/lib/config/core_configuration.cc
+  - src/core/lib/gpr/alloc.cc
+  - src/core/lib/gpr/atm.cc
+  - src/core/lib/gpr/cpu_iphone.cc
+  - src/core/lib/gpr/cpu_linux.cc
+  - src/core/lib/gpr/cpu_posix.cc
+  - src/core/lib/gpr/cpu_windows.cc
+  - src/core/lib/gpr/env_linux.cc
+  - src/core/lib/gpr/env_posix.cc
+  - src/core/lib/gpr/env_windows.cc
+  - src/core/lib/gpr/log.cc
+  - src/core/lib/gpr/log_android.cc
+  - src/core/lib/gpr/log_linux.cc
+  - src/core/lib/gpr/log_posix.cc
+  - src/core/lib/gpr/log_windows.cc
+  - src/core/lib/gpr/murmur_hash.cc
+  - src/core/lib/gpr/string.cc
+  - src/core/lib/gpr/string_posix.cc
+  - src/core/lib/gpr/string_util_windows.cc
+  - src/core/lib/gpr/string_windows.cc
+  - src/core/lib/gpr/sync.cc
+  - src/core/lib/gpr/sync_abseil.cc
+  - src/core/lib/gpr/sync_posix.cc
+  - src/core/lib/gpr/sync_windows.cc
+  - src/core/lib/gpr/time.cc
+  - src/core/lib/gpr/time_posix.cc
+  - src/core/lib/gpr/time_precise.cc
+  - src/core/lib/gpr/time_windows.cc
+  - src/core/lib/gpr/tmpfile_msys.cc
+  - src/core/lib/gpr/tmpfile_posix.cc
+  - src/core/lib/gpr/tmpfile_windows.cc
+  - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/arena.cc
+  - src/core/lib/gprpp/examine_stack.cc
+  - src/core/lib/gprpp/fork.cc
+  - src/core/lib/gprpp/global_config_env.cc
+  - src/core/lib/gprpp/host_port.cc
+  - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/stat_posix.cc
+  - src/core/lib/gprpp/stat_windows.cc
+  - src/core/lib/gprpp/status_helper.cc
+  - src/core/lib/gprpp/thd_posix.cc
+  - src/core/lib/gprpp/thd_windows.cc
+  - src/core/lib/gprpp/time_util.cc
+  - src/core/lib/profiling/basic_timers.cc
+  - src/core/lib/profiling/stap_timers.cc
   - test/core/config/core_configuration_test.cc
-  deps: []
+  deps:
+  - absl/base:base
+  - absl/base:core_headers
+  - absl/memory:memory
+  - absl/status:status
+  - absl/strings:cord
+  - absl/strings:str_format
+  - absl/strings:strings
+  - absl/synchronization:synchronization
+  - absl/time:time
+  - absl/types:optional
+  - upb
   uses_polling: false
 - name: delegating_channel_test
   gtest: true
@@ -5405,68 +5444,26 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/cpp/client/create_channel_internal.h
-  - src/cpp/common/channel_filter.h
-  - src/cpp/server/dynamic_thread_pool.h
-  - src/cpp/server/external_connection_acceptor_impl.h
-  - src/cpp/server/health/default_health_check_service.h
-  - src/cpp/server/thread_pool_interface.h
-  - src/cpp/thread_manager/thread_manager.h
-  - test/core/transport/binder/end2end/echo_service.h
   - test/core/transport/binder/end2end/fake_binder.h
   - test/core/transport/binder/end2end/testing_channel_create.h
+  - test/cpp/end2end/test_service_impl.h
   src:
-  - test/core/transport/binder/end2end/echo.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
   - src/core/ext/transport/binder/transport/binder_transport.cc
   - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
   - src/core/ext/transport/binder/wire_format/binder_constants.cc
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/cpp/client/channel_cc.cc
-  - src/cpp/client/client_callback.cc
-  - src/cpp/client/client_context.cc
-  - src/cpp/client/client_interceptor.cc
-  - src/cpp/client/create_channel.cc
-  - src/cpp/client/create_channel_internal.cc
-  - src/cpp/client/create_channel_posix.cc
-  - src/cpp/client/credentials_cc.cc
-  - src/cpp/codegen/codegen_init.cc
-  - src/cpp/common/alarm.cc
-  - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
-  - src/cpp/common/completion_queue_cc.cc
-  - src/cpp/common/core_codegen.cc
-  - src/cpp/common/resource_quota_cc.cc
-  - src/cpp/common/rpc_method.cc
-  - src/cpp/common/validate_service_config.cc
-  - src/cpp/common/version_cc.cc
-  - src/cpp/server/async_generic_service.cc
-  - src/cpp/server/channel_argument_option.cc
-  - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
-  - src/cpp/server/external_connection_acceptor_impl.cc
-  - src/cpp/server/health/default_health_check_service.cc
-  - src/cpp/server/health/health_check_service.cc
-  - src/cpp/server/health/health_check_service_server_builder_option.cc
-  - src/cpp/server/server_builder.cc
-  - src/cpp/server/server_callback.cc
-  - src/cpp/server/server_cc.cc
-  - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
-  - src/cpp/server/server_posix.cc
-  - src/cpp/thread_manager/thread_manager.cc
-  - src/cpp/util/byte_buffer_cc.cc
-  - src/cpp/util/status.cc
-  - src/cpp/util/string_ref.cc
-  - src/cpp/util/time_cc.cc
-  - test/core/transport/binder/end2end/echo_service.cc
   - test/core/transport/binder/end2end/end2end_binder_transport_test.cc
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/core/transport/binder/end2end/testing_channel_create.cc
+  - test/cpp/end2end/test_service_impl.cc
   deps:
   - absl/random:random
-  - grpc_test_util
+  - grpc++_test_util
 - name: end2end_test
   gtest: true
   build: test
@@ -5625,6 +5622,145 @@ targets:
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
   - grpc_test_util
+- name: for_each_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/upb-generated/google/api/annotations.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
+  - src/core/ext/upb-generated/google/api/http.upb.h
+  - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
+  - src/core/ext/upb-generated/google/rpc/status.upb.h
+  - src/core/lib/gpr/alloc.h
+  - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
+  - src/core/lib/gpr/string.h
+  - src/core/lib/gpr/string_windows.h
+  - src/core/lib/gpr/time_precise.h
+  - src/core/lib/gpr/tls.h
+  - src/core/lib/gpr/tmpfile.h
+  - src/core/lib/gpr/useful.h
+  - src/core/lib/gprpp/arena.h
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/examine_stack.h
+  - src/core/lib/gprpp/fork.h
+  - src/core/lib/gprpp/global_config.h
+  - src/core/lib/gprpp/global_config_custom.h
+  - src/core/lib/gprpp/global_config_env.h
+  - src/core/lib/gprpp/global_config_generic.h
+  - src/core/lib/gprpp/host_port.h
+  - src/core/lib/gprpp/manual_constructor.h
+  - src/core/lib/gprpp/memory.h
+  - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/stat.h
+  - src/core/lib/gprpp/status_helper.h
+  - src/core/lib/gprpp/sync.h
+  - src/core/lib/gprpp/thd.h
+  - src/core/lib/gprpp/time_util.h
+  - src/core/lib/profiling/timers.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_join.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
+  - src/core/lib/promise/for_each.h
+  - src/core/lib/promise/intra_activity_waiter.h
+  - src/core/lib/promise/join.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/observable.h
+  - src/core/lib/promise/pipe.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/promise/wait_set.h
+  src:
+  - src/core/ext/upb-generated/google/api/annotations.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
+  - src/core/ext/upb-generated/google/api/http.upb.c
+  - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  - src/core/ext/upb-generated/google/rpc/status.upb.c
+  - src/core/lib/gpr/alloc.cc
+  - src/core/lib/gpr/atm.cc
+  - src/core/lib/gpr/cpu_iphone.cc
+  - src/core/lib/gpr/cpu_linux.cc
+  - src/core/lib/gpr/cpu_posix.cc
+  - src/core/lib/gpr/cpu_windows.cc
+  - src/core/lib/gpr/env_linux.cc
+  - src/core/lib/gpr/env_posix.cc
+  - src/core/lib/gpr/env_windows.cc
+  - src/core/lib/gpr/log.cc
+  - src/core/lib/gpr/log_android.cc
+  - src/core/lib/gpr/log_linux.cc
+  - src/core/lib/gpr/log_posix.cc
+  - src/core/lib/gpr/log_windows.cc
+  - src/core/lib/gpr/murmur_hash.cc
+  - src/core/lib/gpr/string.cc
+  - src/core/lib/gpr/string_posix.cc
+  - src/core/lib/gpr/string_util_windows.cc
+  - src/core/lib/gpr/string_windows.cc
+  - src/core/lib/gpr/sync.cc
+  - src/core/lib/gpr/sync_abseil.cc
+  - src/core/lib/gpr/sync_posix.cc
+  - src/core/lib/gpr/sync_windows.cc
+  - src/core/lib/gpr/time.cc
+  - src/core/lib/gpr/time_posix.cc
+  - src/core/lib/gpr/time_precise.cc
+  - src/core/lib/gpr/time_windows.cc
+  - src/core/lib/gpr/tmpfile_msys.cc
+  - src/core/lib/gpr/tmpfile_posix.cc
+  - src/core/lib/gpr/tmpfile_windows.cc
+  - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/arena.cc
+  - src/core/lib/gprpp/examine_stack.cc
+  - src/core/lib/gprpp/fork.cc
+  - src/core/lib/gprpp/global_config_env.cc
+  - src/core/lib/gprpp/host_port.cc
+  - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/stat_posix.cc
+  - src/core/lib/gprpp/stat_windows.cc
+  - src/core/lib/gprpp/status_helper.cc
+  - src/core/lib/gprpp/thd_posix.cc
+  - src/core/lib/gprpp/thd_windows.cc
+  - src/core/lib/gprpp/time_util.cc
+  - src/core/lib/profiling/basic_timers.cc
+  - src/core/lib/profiling/stap_timers.cc
+  - src/core/lib/promise/activity.cc
+  - test/core/promise/for_each_test.cc
+  deps:
+  - absl/base:base
+  - absl/base:core_headers
+  - absl/container:flat_hash_set
+  - absl/memory:memory
+  - absl/status:status
+  - absl/status:statusor
+  - absl/strings:cord
+  - absl/strings:str_format
+  - absl/strings:strings
+  - absl/synchronization:synchronization
+  - absl/time:time
+  - absl/types:optional
+  - absl/types:variant
+  - upb
+  uses_polling: false
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -5941,21 +6077,6 @@ targets:
   - test/core/transport/chttp2/hpack_encoder_index_test.cc
   deps:
   - absl/types:optional
-- name: hpack_parser_fuzzer_test
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/transport/chttp2/hpack_parser_fuzzer_test.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/transport/chttp2/hpack_parser_corpus
-  dict: test/core/end2end/fuzzers/hpack.dictionary
-  maxlen: 512
 - name: http2_client
   build: test
   run: false
@@ -5969,34 +6090,6 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
-- name: http_request_fuzzer_test
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/http/request_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/http/request_corpus
-  maxlen: 2048
-- name: http_response_fuzzer_test
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/http/response_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/http/response_corpus
-  maxlen: 2048
 - name: hybrid_end2end_test
   gtest: true
   build: test
@@ -6124,20 +6217,6 @@ targets:
   deps:
   - absl/types:variant
   uses_polling: false
-- name: json_fuzzer_test
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/json/fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/json/corpus
-  maxlen: 512
 - name: json_test
   gtest: true
   build: test
@@ -6347,10 +6426,14 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/seq.h
   src:
   - test/core/promise/loop_test.cc
   deps:
@@ -6427,34 +6510,6 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
-- name: nanopb_fuzzer_response_test
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/nanopb/fuzzer_response.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/nanopb/corpus_response
-  maxlen: 128
-- name: nanopb_fuzzer_serverlist_test
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/nanopb/fuzzer_serverlist.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/nanopb/corpus_serverlist
-  maxlen: 128
 - name: nonblocking_test
   gtest: true
   build: test
@@ -6643,34 +6698,6 @@ targets:
   - test/core/gprpp/overload_test.cc
   deps: []
   uses_polling: false
-- name: percent_decode_fuzzer
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/slice/percent_decode_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/slice/percent_decode_corpus
-  maxlen: 32
-- name: percent_encode_fuzzer
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/slice/percent_encode_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/slice/percent_encode_corpus
-  maxlen: 32
 - name: pid_controller_test
   gtest: true
   build: test
@@ -7224,21 +7251,6 @@ targets:
   - test/cpp/end2end/server_early_return_test.cc
   deps:
   - grpc++_test_util
-- name: server_fuzzer
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/end2end/fuzzers/server_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/end2end/fuzzers/server_fuzzer_corpus
-  dict: test/core/end2end/fuzzers/hpack.dictionary
-  maxlen: 2048
 - name: server_interceptors_end2end_test
   gtest: true
   build: test
@@ -7354,20 +7366,6 @@ targets:
   - test/core/address_utils/sockaddr_utils_test.cc
   deps:
   - grpc_test_util
-- name: ssl_server_fuzzer
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/security/ssl_server_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/security/corpus/ssl_server_corpus
-  maxlen: 2048
 - name: stack_tracer_test
   gtest: true
   build: test
@@ -7698,20 +7696,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
-- name: uri_fuzzer_test
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/uri/uri_fuzzer_test.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/uri/uri_corpus
-  maxlen: 128
 - name: uri_parser_test
   gtest: true
   build: test
@@ -7721,6 +7705,16 @@ targets:
   - test/core/uri/uri_parser_test.cc
   deps:
   - grpc_test_util
+- name: useful_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gpr/useful.h
+  src:
+  - test/core/gpr/useful_test.cc
+  deps: []
+  uses_polling: false
 - name: window_overflow_bad_client_test
   gtest: true
   build: test

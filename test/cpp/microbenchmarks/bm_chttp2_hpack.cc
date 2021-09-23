@@ -18,12 +18,15 @@
 
 /* Microbenchmarks around CHTTP2 HPACK operations */
 
-#include <benchmark/benchmark.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <string.h>
+
 #include <memory>
 #include <sstream>
+
+#include <benchmark/benchmark.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
@@ -32,7 +35,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
-
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
@@ -68,8 +70,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   grpc_millis saved_now = grpc_core::ExecCtx::Get()->Now();
 
   grpc_metadata_batch b;
-  grpc_metadata_batch_init(&b);
-  b.deadline = saved_now + 30 * 1000;
+  b.SetDeadline(saved_now + 30 * 1000);
 
   grpc_core::HPackCompressor c;
   grpc_transport_one_way_stats stats;
@@ -89,7 +90,6 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
     grpc_slice_buffer_reset_and_unref_internal(&outbuf);
     grpc_core::ExecCtx::Get()->Flush();
   }
-  grpc_metadata_batch_destroy(&b);
   grpc_slice_buffer_destroy_internal(&outbuf);
 
   std::ostringstream label;
@@ -110,10 +110,9 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   static bool logged_representative_output = false;
 
-  grpc_metadata_batch b;
-  grpc_metadata_batch_init(&b);
   std::vector<grpc_mdelem> elems = Fixture::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
+  grpc_metadata_batch b;
   for (size_t i = 0; i < elems.size(); i++) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
@@ -146,7 +145,6 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
     grpc_slice_buffer_reset_and_unref_internal(&outbuf);
     grpc_core::ExecCtx::Get()->Flush();
   }
-  grpc_metadata_batch_destroy(&b);
   grpc_slice_buffer_destroy_internal(&outbuf);
 
   std::ostringstream label;
