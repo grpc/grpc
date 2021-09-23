@@ -240,7 +240,7 @@ class JobResult(object):
 
 def read_from_start(f):
     f.seek(0)
-    return f.read()
+    return f.read().decode("ascii")
 
 
 class Job(object):
