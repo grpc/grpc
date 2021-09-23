@@ -315,6 +315,19 @@ grpc_cc_test(
     deps = [":helpers"],
 )
 
+grpc_cc_test(
+    name = "bm_threadpool",
+    size = "large",
+    srcs = ["bm_threadpool.cc"],
+    tags = [
+        "manual",
+        "no_windows",
+        "notap",
+    ],
+    uses_polling = False,
+    deps = [":helpers"],
+)
+
 grpc_cc_library(
     name = "bm_callback_test_service_impl",
     testonly = 1,
