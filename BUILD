@@ -868,7 +868,7 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/bitset.h"],
     deps = [
         "gpr_platform",
-        "useful"
+        "useful",
     ],
 )
 
