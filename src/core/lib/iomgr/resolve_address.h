@@ -112,9 +112,6 @@ grpc_error_handle grpc_blocking_resolve_address(
 ///
 /// When the lookup is complete, the \a on_resolved callback will be invoked
 /// with a status indicating the success or failure of the lookup.
-///
-/// It is an error if no addresses are resolved. A NOT_FOUND error should be
-/// given to the callback.
 grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
 grpc_dns_lookup_hostname(grpc_event_engine::experimental::EventEngine::
                              DNSResolver::LookupHostnameCallback on_resolved,
@@ -138,8 +135,8 @@ grpc_dns_lookup_srv_record(
 
 /// Asynchronously perform a TXT record lookup.
 ///
-/// \a on_resolve has the same meaning and expectations as \a
-/// LookupHostname's \a on_resolve callback.
+/// \a on_resolve has the same meaning and expectations as \a LookupHostname's
+/// \a on_resolve callback.
 grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
 grpc_dns_lookup_txt_record(
     grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXTCallback
