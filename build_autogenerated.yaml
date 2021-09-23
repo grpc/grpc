@@ -790,8 +790,6 @@ libs:
   - src/core/lib/iomgr/event_engine/resolved_address_internal.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
-  - src/core/lib/iomgr/executor/mpmcqueue.h
-  - src/core/lib/iomgr/executor/threadpool.h
   - src/core/lib/iomgr/gethostname.h
   - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
@@ -895,8 +893,11 @@ libs:
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
+  - src/core/lib/slice/static_slice.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
@@ -1324,8 +1325,6 @@ libs:
   - src/core/lib/iomgr/event_engine/timer.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
-  - src/core/lib/iomgr/executor/mpmcqueue.cc
-  - src/core/lib/iomgr/executor/threadpool.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/gethostname_fallback.cc
@@ -1454,9 +1453,12 @@ libs:
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_intern.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/slice/static_slice.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
@@ -1836,8 +1838,6 @@ libs:
   - src/core/lib/iomgr/event_engine/resolved_address_internal.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
-  - src/core/lib/iomgr/executor/mpmcqueue.h
-  - src/core/lib/iomgr/executor/threadpool.h
   - src/core/lib/iomgr/gethostname.h
   - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
@@ -1893,8 +1893,11 @@ libs:
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
+  - src/core/lib/slice/static_slice.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
@@ -2095,8 +2098,6 @@ libs:
   - src/core/lib/iomgr/event_engine/timer.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
-  - src/core/lib/iomgr/executor/mpmcqueue.cc
-  - src/core/lib/iomgr/executor/threadpool.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/gethostname_fallback.cc
@@ -2170,9 +2171,12 @@ libs:
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_intern.cc
+  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/slice/static_slice.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
@@ -3674,15 +3678,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: mpmcqueue_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/mpmcqueue_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: mpscq_test
   build: test
   language: c
@@ -4102,15 +4097,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: threadpool_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/threadpool_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: time_averaged_stats_test
   build: test
   language: c
@@ -4405,20 +4391,6 @@ targets:
   platforms:
   - linux
   - posix
-- name: alts_credentials_fuzzer
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/security/alts_credentials_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/security/corpus/alts_credentials_corpus
-  maxlen: 2048
 - name: alts_util_test
   gtest: true
   build: test
@@ -4908,22 +4880,6 @@ targets:
   platforms:
   - linux
   - posix
-- name: bm_threadpool
-  build: test
-  run: false
-  language: c++
-  headers: []
-  src:
-  - test/cpp/microbenchmarks/bm_threadpool.cc
-  deps:
-  - benchmark_helpers
-  benchmark: true
-  defaults: benchmark
-  platforms:
-  - linux
-  - posix
-  - mac
-  uses_polling: false
 - name: bm_timer
   build: test
   language: c++
@@ -5187,21 +5143,6 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
-- name: client_fuzzer
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/end2end/fuzzers/client_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/end2end/fuzzers/client_fuzzer_corpus
-  dict: test/core/end2end/fuzzers/hpack.dictionary
-  maxlen: 2048
 - name: client_interceptors_end2end_test
   gtest: true
   build: test
@@ -6138,21 +6079,6 @@ targets:
   - test/core/transport/chttp2/hpack_encoder_index_test.cc
   deps:
   - absl/types:optional
-- name: hpack_parser_fuzzer_test
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/transport/chttp2/hpack_parser_fuzzer_test.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/transport/chttp2/hpack_parser_corpus
-  dict: test/core/end2end/fuzzers/hpack.dictionary
-  maxlen: 512
 - name: http2_client
   build: test
   run: false
@@ -6166,34 +6092,6 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
-- name: http_request_fuzzer_test
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/http/request_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/http/request_corpus
-  maxlen: 2048
-- name: http_response_fuzzer_test
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/http/response_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/http/response_corpus
-  maxlen: 2048
 - name: hybrid_end2end_test
   gtest: true
   build: test
@@ -6321,20 +6219,6 @@ targets:
   deps:
   - absl/types:variant
   uses_polling: false
-- name: json_fuzzer_test
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/json/fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/json/corpus
-  maxlen: 512
 - name: json_test
   gtest: true
   build: test
@@ -6628,34 +6512,6 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
-- name: nanopb_fuzzer_response_test
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/nanopb/fuzzer_response.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/nanopb/corpus_response
-  maxlen: 128
-- name: nanopb_fuzzer_serverlist_test
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/nanopb/fuzzer_serverlist.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/nanopb/corpus_serverlist
-  maxlen: 128
 - name: nonblocking_test
   gtest: true
   build: test
@@ -6844,34 +6700,6 @@ targets:
   - test/core/gprpp/overload_test.cc
   deps: []
   uses_polling: false
-- name: percent_decode_fuzzer
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/slice/percent_decode_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/slice/percent_decode_corpus
-  maxlen: 32
-- name: percent_encode_fuzzer
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/slice/percent_encode_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/slice/percent_encode_corpus
-  maxlen: 32
 - name: pid_controller_test
   gtest: true
   build: test
@@ -7425,21 +7253,6 @@ targets:
   - test/cpp/end2end/server_early_return_test.cc
   deps:
   - grpc++_test_util
-- name: server_fuzzer
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/end2end/fuzzers/server_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/end2end/fuzzers/server_fuzzer_corpus
-  dict: test/core/end2end/fuzzers/hpack.dictionary
-  maxlen: 2048
 - name: server_interceptors_end2end_test
   gtest: true
   build: test
@@ -7555,20 +7368,6 @@ targets:
   - test/core/address_utils/sockaddr_utils_test.cc
   deps:
   - grpc_test_util
-- name: ssl_server_fuzzer
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/security/ssl_server_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/security/corpus/ssl_server_corpus
-  maxlen: 2048
 - name: stack_tracer_test
   gtest: true
   build: test
@@ -7899,20 +7698,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
-- name: uri_fuzzer_test
-  build: fuzzer
-  language: c++
-  headers: []
-  src:
-  - test/core/uri/uri_fuzzer_test.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  corpus_dirs:
-  - test/core/uri/uri_corpus
-  maxlen: 128
 - name: uri_parser_test
   gtest: true
   build: test

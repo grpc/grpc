@@ -23,7 +23,8 @@
 
 #include <stdbool.h>
 
-#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 
 typedef struct grpc_iomgr_object {
   char* name;
