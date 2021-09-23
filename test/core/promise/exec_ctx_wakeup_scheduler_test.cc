@@ -14,7 +14,6 @@
 
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "src/core/lib/promise/activity.h"
