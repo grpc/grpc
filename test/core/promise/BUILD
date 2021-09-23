@@ -264,3 +264,16 @@ grpc_proto_fuzzer(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "exec_ctx_wakeup_scheduler_test",
+    srcs = ["exec_ctx_wakeup_scheduler_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:activity",
+        "//:exec_ctx_wakeup_scheduler",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
