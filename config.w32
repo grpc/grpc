@@ -430,8 +430,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\event_engine\\timer.cc " +
     "src\\core\\lib\\iomgr\\exec_ctx.cc " +
     "src\\core\\lib\\iomgr\\executor.cc " +
-    "src\\core\\lib\\iomgr\\executor\\mpmcqueue.cc " +
-    "src\\core\\lib\\iomgr\\executor\\threadpool.cc " +
     "src\\core\\lib\\iomgr\\fork_posix.cc " +
     "src\\core\\lib\\iomgr\\fork_windows.cc " +
     "src\\core\\lib\\iomgr\\gethostname_fallback.cc " +
@@ -562,6 +560,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\slice\\b64.cc " +
     "src\\core\\lib\\slice\\percent_encoding.cc " +
     "src\\core\\lib\\slice\\slice.cc " +
+    "src\\core\\lib\\slice\\slice_api.cc " +
     "src\\core\\lib\\slice\\slice_buffer.cc " +
     "src\\core\\lib\\slice\\slice_intern.cc " +
     "src\\core\\lib\\slice\\slice_refcount.cc " +
@@ -1292,7 +1291,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\http");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\event_engine");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\executor");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\json");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\matchers");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\profiling");
