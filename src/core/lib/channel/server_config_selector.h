@@ -19,14 +19,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/channel/service_config.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
 // Similar to ConfigSelector on the client-side. Invoked by the config selector
 // filter per call.
-class ServerConfigSelector {
+class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
  public:
   virtual ~ServerConfigSelector() = default;
   struct CallConfig {

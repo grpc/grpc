@@ -24,6 +24,7 @@
 
 #include "src/core/lib/channel/server_config_call_data.h"
 #include "src/core/lib/channel/server_config_selector.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 namespace {
@@ -70,7 +71,7 @@ namespace {
 class XdsServerConfigSelector : public ServerConfigSelector {
  public:
   virtual ~XdsServerConfigSelector() = default;
-  static absl::StatusOr<XdsServerConfigSelector> Create(
+  static absl::StatusOr<RefCountedPtr<XdsServerConfigSelector>> Create(
       absl::StatusOr<XdsApi::RdsUpdate> rds_update,
       const std::vector<XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter>&
           http_filters);
@@ -96,7 +97,8 @@ class ChannelData {
                                 grpc_channel_element_args* args);
   static void Destroy(grpc_channel_element* elem);
 
-  absl::StatusOr<XdsServerConfigSelector>& config_selector() {
+  absl::StatusOr<RefCountedPtr<XdsServerConfigSelector>> config_selector() {
+    MutexLock lock(&mu_);
     return config_selector_;
   }
 
@@ -118,7 +120,8 @@ class ChannelData {
   RefCountedPtr<XdsServerConfigSelectorArg> config_selector_arg_;
   RdsUpdateWatcher* watcher_ = nullptr;
   Mutex mu_;
-  absl::StatusOr<XdsServerConfigSelector> config_selector_;
+  absl::StatusOr<RefCountedPtr<XdsServerConfigSelector>> config_selector_
+      ABSL_GUARDED_BY(mu_);
 };
 
 class CallData {
@@ -133,6 +136,7 @@ class CallData {
 
  private:
   CallData(grpc_call_element* elem, const grpc_call_element_args& args);
+  ~CallData();
   static void RecvInitialMetadataReady(void* user_data,
                                        grpc_error_handle error);
   static void RecvTrailingMetadataReady(void* user_data,
@@ -157,17 +161,18 @@ class CallData {
 
 // XdsServerConfigSelector
 
-absl::StatusOr<XdsServerConfigSelector> XdsServerConfigSelector::Create(
+absl::StatusOr<RefCountedPtr<XdsServerConfigSelector>>
+XdsServerConfigSelector::Create(
     absl::StatusOr<XdsApi::RdsUpdate> rds_update,
     const std::vector<XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter>&
         http_filters) {
   if (!rds_update.ok()) {
     return rds_update.status();
   }
-  XdsServerConfigSelector config_selector;
+  auto config_selector = MakeRefCounted<XdsServerConfigSelector>();
   for (const auto& vhost : rds_update->virtual_hosts) {
-    config_selector.virtual_hosts_.push_back(VirtualHost());
-    auto& virtual_host = config_selector.virtual_hosts_.back();
+    config_selector->virtual_hosts_.push_back(VirtualHost());
+    auto& virtual_host = config_selector->virtual_hosts_.back();
     virtual_host.domains = vhost.domains;
     for (const auto& route : vhost.routes) {
       virtual_host.routes.push_back(VirtualHost::Route());
@@ -335,6 +340,7 @@ ServerConfigSelector::CallConfig XdsServerConfigSelector::GetCallConfig(
 
 void ChannelData::RdsUpdateWatcher::OnRdsUpdate(
     absl::StatusOr<XdsApi::RdsUpdate> rds_update) {
+  MutexLock lock(&chand_->mu_);
   chand_->config_selector_ = XdsServerConfigSelector::Create(
       rds_update, chand_->config_selector_arg_->http_filters);
 }
@@ -353,7 +359,7 @@ void ChannelData::Destroy(grpc_channel_element* elem) {
   chand->~ChannelData();
 }
 
-ChannelData::ChannelData(grpc_channel_element* elem,
+ChannelData::ChannelData(grpc_channel_element* /* elem */,
                          grpc_channel_element_args* args) {
   config_selector_arg_ =
       XdsServerConfigSelectorArg::GetFromChannelArgs(*args->channel_args);
@@ -428,21 +434,28 @@ CallData::CallData(grpc_call_element* elem, const grpc_call_element_args& args)
                     elem, grpc_schedule_on_exec_ctx);
 }
 
+CallData::~CallData() { GRPC_ERROR_UNREF(error_); }
+
 void CallData::RecvInitialMetadataReady(void* user_data,
                                         grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   if (error == GRPC_ERROR_NONE) {
-    auto call_config =
-        chand->config_selector()->GetCallConfig(calld->recv_initial_metadata_);
-    if (call_config.error != GRPC_ERROR_NONE) {
-      calld->error_ = call_config.error;
-      error = call_config.error;  // Does not take a ref
+    auto config_selector = chand->config_selector();
+    if (config_selector.ok()) {
+      auto call_config =
+          config_selector.value()->GetCallConfig(calld->recv_initial_metadata_);
+      if (call_config.error != GRPC_ERROR_NONE) {
+        calld->error_ = call_config.error;
+        error = call_config.error;  // Does not take a ref
+      } else {
+        calld->arena_->New<ServerConfigCallData>(
+            std::move(call_config.service_config), call_config.method_configs,
+            calld->call_context_);
+      }
     } else {
-      calld->arena_->New<ServerConfigCallData>(
-          std::move(call_config.service_config), call_config.method_configs,
-          calld->call_context_);
+      calld->error_ = absl_status_to_grpc_error(config_selector.status());
     }
   }
   calld->MaybeResumeRecvTrailingMetadataReady();

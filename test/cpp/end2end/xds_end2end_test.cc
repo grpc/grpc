@@ -4331,7 +4331,7 @@ TEST_P(LdsRdsTest, RouteHasNoRouteAction) {
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr("No RouteAction found in route."));
+              ::testing::HasSubstr("Invalid action specified"));
 }
 
 TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
