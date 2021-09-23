@@ -272,8 +272,9 @@ grpc_channel* grpc_channel_create(
     // TODO(yashykt): Maybe append filters after the census filter
     for (const grpc_channel_filter* filter : filters) {
       if (!grpc_channel_stack_builder_prepend_filter(builder, filter, nullptr,
-                                                     nullptr))
+                                                     nullptr)) {
         return false;
+      }
     }
     return true;
   };

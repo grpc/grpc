@@ -605,9 +605,9 @@ grpc_error_handle Server::SetupTransport(
     std::vector<const grpc_channel_filter*> filters) {
   // Create channel.
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_channel* channel =
-      grpc_channel_create(nullptr, args, GRPC_SERVER_CHANNEL, transport,
-                          resource_user, preallocated_bytes, &error);
+  grpc_channel* channel = grpc_channel_create(
+      nullptr, args, GRPC_SERVER_CHANNEL, transport, resource_user,
+      preallocated_bytes, &error, std::move(filters));
   if (channel == nullptr) {
     return error;
   }

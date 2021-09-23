@@ -175,9 +175,9 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
         : resource_name_(resource_name),
           server_config_fetcher_(server_config_fetcher) {}
 
-    void OnRouteConfigChanged(XdsApi::RdsUpdate route_config);
-    void OnError(grpc_error_handle error);
-    void OnResourceDoesNotExist();
+    void OnRouteConfigChanged(XdsApi::RdsUpdate route_config) override;
+    void OnError(grpc_error_handle error) override;
+    void OnResourceDoesNotExist() override;
 
    private:
     std::string resource_name_;

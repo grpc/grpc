@@ -17,7 +17,10 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_SERVER_CONFIG_SELECTOR_H
 #define GRPC_CORE_LIB_CHANNEL_SERVER_CONFIG_SELECTOR_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/service_config.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 

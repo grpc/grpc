@@ -1274,8 +1274,8 @@ grpc_cc_library(
         "src/core/lib/channel/service_config_parser.cc",
     ],
     hdrs = [
-        "src/core/lib/channel/service_config.h",
         "src/core/lib/channel/server_config_call_data.h",
+        "src/core/lib/channel/service_config.h",
         "src/core/lib/channel/service_config_parser.h",
     ],
     external_deps = [
@@ -1289,7 +1289,7 @@ grpc_cc_library(
         "grpc_base_c",
         "grpc_trace",
     ],
-)        
+)
 
 grpc_cc_library(
     name = "slice_refcount",
