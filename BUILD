@@ -1281,6 +1281,7 @@ grpc_cc_library(
     deps = [
         "activity",
         "dual_ref_counted",
+        "exec_ctx_wakeup_scheduler",
         "gpr_base",
         "loop",
         "orphanable",
