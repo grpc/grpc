@@ -236,13 +236,25 @@ DEFINE_PROTO_FUZZER(const promise_fuzzer::Msg& msg) {
   }
   FuzzingWakeupScheduler scheduler;
   bool done = false;
+  absl::optional<absl::Status> expected_status;
   auto activity = MakeActivity(
       [msg] {
         return Seq(MakePromise(msg.promise()),
                    [] { return absl::OkStatus(); });
       },
       UseFuzzingWakeupScheduler(&scheduler),
-      [&done](absl::Status status) { done = true; });
+      [&done, &expected_status](absl::Status status) { 
+        if (expected_status.has_value()) {
+          ASSERT_EQ(status, *expected_status);
+        }
+        done = true; 
+      });
+  scheduler.SetExpectedActivity(activity.get());
+  auto expect_cancelled = [&done, &expected_status]() {
+    if (!done && !expected_status.has_value()) {
+      expected_status = absl::CancelledError();
+    }
+  };
   for (size_t i = 0; !done && activity != nullptr && i < msg.actions_size();
        i++) {
     const auto& action = msg.actions(i);
@@ -251,6 +263,7 @@ DEFINE_PROTO_FUZZER(const promise_fuzzer::Msg& msg) {
         activity->ForceWakeup();
         break;
       case promise_fuzzer::Action::kCancel:
+        expect_cancelled();
         activity.reset();
         break;
       case promise_fuzzer::Action::kFlushWakeup:
@@ -260,6 +273,9 @@ DEFINE_PROTO_FUZZER(const promise_fuzzer::Msg& msg) {
         break;
     }
   }
+  expect_cancelled();
   activity.reset();
+  scheduler.Wakeup();
+  ASSERT_TRUE(done);
 }
 
