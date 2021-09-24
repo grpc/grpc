@@ -58,7 +58,7 @@ class Fuzzer {
           // Mark ourselves done.
           done_ = true;
         });
-    for (size_t i = 0; !done_ && activity_ != nullptr && i < msg.actions_size();
+    for (int i = 0; !done_ && activity_ != nullptr && i < msg.actions_size();
          i++) {
       // Do some things
       const auto& action = msg.actions(i);
