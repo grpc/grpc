@@ -1122,6 +1122,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "exec_ctx_wakeup_scheduler",
+    hdrs = [
+        "src/core/lib/promise/exec_ctx_wakeup_scheduler.h",
+    ],
+    language = "c++",
+    deps = [
+        "exec_ctx",
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "wait_set",
     external_deps = [
         "absl/container:flat_hash_set",
@@ -1469,6 +1481,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/event_engine/resolver.cc",
         "src/core/lib/iomgr/event_engine/tcp.cc",
         "src/core/lib/iomgr/event_engine/timer.cc",
+        "src/core/lib/iomgr/executor/mpmcqueue.cc",
+        "src/core/lib/iomgr/executor/threadpool.cc",
         "src/core/lib/iomgr/fork_posix.cc",
         "src/core/lib/iomgr/fork_windows.cc",
         "src/core/lib/iomgr/gethostname_fallback.cc",
@@ -1542,6 +1556,7 @@ grpc_cc_library(
         "src/core/lib/slice/slice_api.cc",
         "src/core/lib/slice/slice_buffer.cc",
         "src/core/lib/slice/slice_intern.cc",
+        "src/core/lib/slice/slice_split.cc",
         "src/core/lib/surface/api_trace.cc",
         "src/core/lib/surface/byte_buffer.cc",
         "src/core/lib/surface/byte_buffer_reader.cc",
@@ -1593,6 +1608,7 @@ grpc_cc_library(
         "src/core/lib/channel/context.h",
         "src/core/lib/channel/handshaker.h",
         "src/core/lib/channel/status_util.h",
+        "src/core/lib/slice/slice_split.h",
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/compression_args.h",
         "src/core/lib/compression/compression_internal.h",
@@ -1627,6 +1643,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/event_engine/pollset.h",
         "src/core/lib/iomgr/event_engine/promise.h",
         "src/core/lib/iomgr/event_engine/resolved_address_internal.h",
+        "src/core/lib/iomgr/executor/mpmcqueue.h",
+        "src/core/lib/iomgr/executor/threadpool.h",
         "src/core/lib/iomgr/gethostname.h",
         "src/core/lib/iomgr/grpc_if_nametoindex.h",
         "src/core/lib/iomgr/internal_errqueue.h",

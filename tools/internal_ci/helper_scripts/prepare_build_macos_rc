@@ -58,16 +58,26 @@ then
   done
   [[ "$gpg_recv_keys_success" == 1 ]] || exit 1
   rvm get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
+  # stop echoing bash commands temporarily to prevent rvm from polluting the logs
+  set +x
   source $HOME/.rvm/scripts/rvm
+
   for RUBY_VERSION in 2.5.0 2.7.0 3.0.0; do
+    echo "Installing ruby-${RUBY_VERSION}"
     time rvm install "ruby-${RUBY_VERSION}"
     time gem install bundler -v 1.17.3 --no-document
     time gem install rake-compiler --no-document
   done;
+  echo "Setting default ruby version."
   rvm use 2.5.0 --default
+  echo "Installing cocoapods."
   time gem install cocoapods --version 1.3.1 --no-document
+  echo "Updating osx-ssl-certs."
   rvm osx-ssl-certs status all
   rvm osx-ssl-certs update all
+
+  # restore echo
+  set -x
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_OBJC}" == "true" ]
