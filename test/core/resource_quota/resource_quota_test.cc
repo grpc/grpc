@@ -28,6 +28,9 @@ TEST(ResourceQuotaTest, Works) {
 }  // namespace testing
 }  // namespace grpc_core
 
+// Hook needed to run ExecCtx outside of iomgr.
+void grpc_set_default_iomgr_platform() {}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
