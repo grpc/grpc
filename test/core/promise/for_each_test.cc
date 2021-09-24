@@ -22,6 +22,7 @@
 #include "src/core/lib/promise/observable.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/seq.h"
+#include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::Mock;
 using testing::MockFunction;
