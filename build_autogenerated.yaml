@@ -4590,6 +4590,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/bitset.h
   src:
   - test/core/gprpp/bitset_test.cc
@@ -6199,6 +6200,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/promise/detail/basic_join.h
@@ -7481,6 +7483,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/table.h
   src:
@@ -7642,6 +7645,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/promise/detail/basic_join.h
