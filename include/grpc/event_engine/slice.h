@@ -109,8 +109,6 @@ class Slice final {
   grpc_slice c_slice() const { return grpc_slice_ref(slice_); }
 
  private:
-  friend class ByteBuffer;
-
   grpc_slice slice_;
 };
 

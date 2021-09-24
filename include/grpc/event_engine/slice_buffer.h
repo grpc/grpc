@@ -39,7 +39,9 @@ namespace experimental {
 /// collapse the grpc_slice_buffer structure straight into this class.
 ///
 /// The SliceBuffer API is basically a replica of the grpc_slice_buffer's,
-/// and its documentation will move here once we remove the C structure.
+/// and its documentation will move here once we remove the C structure,
+/// which should happen before the Event Engine's API is no longer
+/// an experimental API.
 class SliceBuffer final {
  public:
   SliceBuffer(grpc_slice_buffer* sb) : sb_(sb) {}
@@ -54,7 +56,9 @@ class SliceBuffer final {
   // Note that an hypothetical iterator cannot use a temporary slice, as it
   // might do an inline copy of the data, which would end up being a stack
   // temporary. So the equivalent iterator class for this needs to be an
-  // almost-slice, but not quite, and requires careful design.
+  // almost-slice, but not quite, and requires careful design. Basically,
+  // ignore the fact doing copies of slices is cheap, and make sure they are
+  // references inside the slice buffer instead.
   void Enumerate(std::function<void(uint8_t*, size_t, size_t)> cb) {
     const size_t cnt = Count();
     for (size_t i = 0; i < cnt; i++) {
@@ -116,7 +120,9 @@ class SliceBuffer final {
 
   size_t Length() { return sb_->length; }
 
-  grpc_slice_buffer* RawSliceBuffer() { return sb_; }
+  // This is not a stable API, and will be removed in the future once
+  // the C-based slice buffer goes away.
+  grpc_slice_buffer* c_slice_buffer() { return sb_; }
 
  private:
   grpc_slice_buffer* sb_ = nullptr;
