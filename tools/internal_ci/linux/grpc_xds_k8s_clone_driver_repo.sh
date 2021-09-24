@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -eo pipefail
+
 # Test driver
 readonly TEST_DRIVER_REPO_URL="https://github.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc.git"
 readonly TEST_DRIVER_BRANCH="${TEST_DRIVER_BRANCH:-master}"
