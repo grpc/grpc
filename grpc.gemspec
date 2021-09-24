@@ -188,7 +188,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/dns_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h )
-  s.files += %w( src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/service_config_parser.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/service_config_parser.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc )

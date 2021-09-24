@@ -275,7 +275,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/dns/dns_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h',
-                      'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/service_config_parser.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/service_config_parser.h',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
