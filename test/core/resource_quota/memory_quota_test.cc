@@ -18,6 +18,9 @@
 
 #include "absl/synchronization/notification.h"
 
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/slice_refcount.h"
+
 namespace grpc_core {
 namespace testing {
 
@@ -67,33 +70,31 @@ TEST(MemoryQuotaTest, CreateObjectFromAllocator) {
 }
 
 TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
+  ExecCtx exec_ctx;
+
   RefCountedPtr<MemoryQuota> memory_quota = MakeRefCounted<MemoryQuota>();
   memory_quota->SetSize(4096);
   auto memory_allocator = memory_quota->MakeMemoryAllocator();
   auto object = memory_allocator->MakeUnique<Sized<2048>>();
 
-  absl::Notification notification;
-  memory_allocator->PostReclaimer(ReclamationPass::kDestructive,
-                                  [&notification, &object](ReclamationSweep) {
-                                    object.reset();
-                                    notification.Notify();
-                                  });
+  memory_allocator->PostReclaimer(
+      ReclamationPass::kDestructive,
+      [&object](ReclamationSweep) { object.reset(); });
   auto object2 = memory_allocator->MakeUnique<Sized<2048>>();
-  notification.WaitForNotification();
+  exec_ctx.Flush();
   EXPECT_EQ(object.get(), nullptr);
 
-  absl::Notification notification2;
-  memory_allocator->PostReclaimer(ReclamationPass::kDestructive,
-                                  [&notification2, &object2](ReclamationSweep) {
-                                    object2.reset();
-                                    notification2.Notify();
-                                  });
+  memory_allocator->PostReclaimer(
+      ReclamationPass::kDestructive,
+      [&object2](ReclamationSweep) { object2.reset(); });
   auto object3 = memory_allocator->MakeUnique<Sized<2048>>();
-  notification2.WaitForNotification();
+  exec_ctx.Flush();
   EXPECT_EQ(object2.get(), nullptr);
 }
 
 TEST(MemoryQuotaTest, BasicRebind) {
+  ExecCtx exec_ctx;
+
   RefCountedPtr<MemoryQuota> memory_quota = MakeRefCounted<MemoryQuota>();
   memory_quota->SetSize(4096);
   RefCountedPtr<MemoryQuota> memory_quota2 = MakeRefCounted<MemoryQuota>();
@@ -113,19 +114,17 @@ TEST(MemoryQuotaTest, BasicRebind) {
                                      abort();
                                    });
 
-  absl::Notification notification;
   memory_allocator->PostReclaimer(ReclamationPass::kDestructive,
-                                  [&object, &notification](ReclamationSweep) {
+                                  [&object](ReclamationSweep) {
                                     // The new memory allocator should reclaim
                                     // the object allocated against the previous
                                     // quota because that's now part of this
                                     // quota.
                                     object.reset();
-                                    notification.Notify();
                                   });
 
   auto object2 = memory_allocator->MakeUnique<Sized<2048>>();
-  notification.WaitForNotification();
+  exec_ctx.Flush();
   EXPECT_EQ(object.get(), nullptr);
 }
 
@@ -150,6 +149,9 @@ TEST(MemoryQuotaTest, MakeSlice) {
     int max = 10 * i - 9;
     slices.push_back(memory_allocator->MakeSlice(MemoryRequest(min, max)));
   }
+  for (grpc_slice slice : slices) {
+    grpc_slice_unref_internal(slice);
+  }
 }
 
 TEST(MemoryQuotaTest, ContainerAllocator) {
@@ -163,6 +165,9 @@ TEST(MemoryQuotaTest, ContainerAllocator) {
 
 }  // namespace testing
 }  // namespace grpc_core
+
+// Hook needed to run ExecCtx outside of iomgr.
+void grpc_set_default_iomgr_platform() {}
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
