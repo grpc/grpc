@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"
@@ -39,26 +37,19 @@ class Fuzzer {
     if (!msg.has_promise()) {
       return;
     }
-    bool done = false;
-    absl::optional<absl::Status> expected_status;
     activity_ = MakeActivity(
         [msg, this] {
           return Seq(MakePromise(msg.promise()),
                      [] { return absl::OkStatus(); });
         },
         Scheduler{this},
-        [&done, &expected_status](absl::Status status) {
-          if (expected_status.has_value()) {
-            ASSERT_EQ(status, *expected_status);
+        [this](absl::Status status) {
+          if (expected_status_.has_value()) {
+            GPR_ASSERT(status == *expected_status_);
           }
-          done = true;
+          done_ = true;
         });
-    auto expect_cancelled = [&done, &expected_status]() {
-      if (!done && !expected_status.has_value()) {
-        expected_status = absl::CancelledError();
-      }
-    };
-    for (size_t i = 0; !done && activity_ != nullptr && i < msg.actions_size();
+    for (size_t i = 0; !done_ && activity_ != nullptr && i < msg.actions_size();
          i++) {
       const auto& action = msg.actions(i);
       switch (action.action_type_case()) {
@@ -66,7 +57,7 @@ class Fuzzer {
           activity_->ForceWakeup();
           break;
         case promise_fuzzer::Action::kCancel:
-          expect_cancelled();
+          ExpectCancelled();
           activity_.reset();
           break;
         case promise_fuzzer::Action::kFlushWakeup:
@@ -76,10 +67,10 @@ class Fuzzer {
           break;
       }
     }
-    expect_cancelled();
+    ExpectCancelled();
     activity_.reset();
     if (wakeup_ != nullptr) absl::exchange(wakeup_, nullptr)();
-    ASSERT_TRUE(done);
+    GPR_ASSERT(done_);
   }
 
  private:
@@ -88,11 +79,17 @@ class Fuzzer {
     // Schedule a wakeup
     template <typename ActivityType>
     void ScheduleWakeup(ActivityType* activity) {
-      ASSERT_EQ(activity, fuzzer->activity_.get());
-      ASSERT_EQ(fuzzer->wakeup_, nullptr);
+      GPR_ASSERT(activity == fuzzer->activity_.get());
+      GPR_ASSERT(fuzzer->wakeup_ == nullptr);
       fuzzer->wakeup_ = [activity]() { activity->RunScheduledWakeup(); };
     }
   };
+
+  void ExpectCancelled() {
+    if (!done_ && !expected_status_.has_value()) {
+      expected_status_ = absl::CancelledError();
+    }
+  }
 
   PromiseFactory<IntHdl> MakePromiseFactory(
       const promise_fuzzer::PromiseFactory& p) {
@@ -234,6 +231,11 @@ class Fuzzer {
           return Pending{};
         };
       }
+      case promise_fuzzer::Promise::kCancelFromInside:
+        return [this]() -> Poll<IntHdl> {
+          this->activity_.reset();
+          return Pending{};
+        };
       case promise_fuzzer::Promise::PromiseTypeCase::PROMISE_TYPE_NOT_SET:
         break;
     }
@@ -242,6 +244,8 @@ class Fuzzer {
 
   ActivityPtr activity_;
   std::function<void()> wakeup_;
+  absl::optional<absl::Status> expected_status_;
+  bool done_ = false;
 };
 }  // namespace
 

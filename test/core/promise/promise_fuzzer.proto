@@ -44,6 +44,7 @@ message Promise {
         Race race = 3;
         Never never = 4;
         int32 sleep_first_n = 5;
+        Cancel cancel_from_inside = 6;
     }
 }
 
