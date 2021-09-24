@@ -1339,6 +1339,40 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "closure",
+    hdrs = [
+        "src/core/lib/iomgr/closure.h",
+    ],
+    deps = [
+        "error",
+        "gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "exec_ctx",
+    srcs = [
+        "src/core/lib/iomgr/combiner.cc",
+        "src/core/lib/iomgr/exec_ctx.cc",
+        "src/core/lib/iomgr/executor.cc",
+        "src/core/lib/iomgr/iomgr_internal.cc",
+    ],
+    hdrs = [
+        "src/core/lib/iomgr/combiner.h",
+        "src/core/lib/iomgr/exec_ctx.h",
+        "src/core/lib/iomgr/executor.h",
+        "src/core/lib/iomgr/iomgr_internal.h",
+    ],
+    deps = [
+        "closure",
+        "error",
+        "gpr_base",
+        "gpr_tls",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base_c",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -1372,7 +1406,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/buffer_list.cc",
         "src/core/lib/iomgr/call_combiner.cc",
         "src/core/lib/iomgr/cfstream_handle.cc",
-        "src/core/lib/iomgr/combiner.cc",
         "src/core/lib/iomgr/dualstack_socket_posix.cc",
         "src/core/lib/iomgr/endpoint.cc",
         "src/core/lib/iomgr/endpoint_cfstream.cc",
@@ -1394,8 +1427,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/event_engine/resolver.cc",
         "src/core/lib/iomgr/event_engine/tcp.cc",
         "src/core/lib/iomgr/event_engine/timer.cc",
-        "src/core/lib/iomgr/exec_ctx.cc",
-        "src/core/lib/iomgr/executor.cc",
+        "src/core/lib/iomgr/executor/mpmcqueue.cc",
+        "src/core/lib/iomgr/executor/threadpool.cc",
         "src/core/lib/iomgr/fork_posix.cc",
         "src/core/lib/iomgr/fork_windows.cc",
         "src/core/lib/iomgr/gethostname_fallback.cc",
@@ -1407,7 +1440,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/iocp_windows.cc",
         "src/core/lib/iomgr/iomgr.cc",
         "src/core/lib/iomgr/iomgr_custom.cc",
-        "src/core/lib/iomgr/iomgr_internal.cc",
         "src/core/lib/iomgr/iomgr_posix.cc",
         "src/core/lib/iomgr/iomgr_posix_cfstream.cc",
         "src/core/lib/iomgr/iomgr_windows.cc",
@@ -1470,6 +1502,7 @@ grpc_cc_library(
         "src/core/lib/slice/slice_api.cc",
         "src/core/lib/slice/slice_buffer.cc",
         "src/core/lib/slice/slice_intern.cc",
+        "src/core/lib/slice/slice_split.cc",
         "src/core/lib/surface/api_trace.cc",
         "src/core/lib/surface/byte_buffer.cc",
         "src/core/lib/surface/byte_buffer_reader.cc",
@@ -1521,6 +1554,7 @@ grpc_cc_library(
         "src/core/lib/channel/context.h",
         "src/core/lib/channel/handshaker.h",
         "src/core/lib/channel/status_util.h",
+        "src/core/lib/slice/slice_split.h",
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/compression_args.h",
         "src/core/lib/compression/compression_internal.h",
@@ -1539,8 +1573,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/buffer_list.h",
         "src/core/lib/iomgr/call_combiner.h",
         "src/core/lib/iomgr/cfstream_handle.h",
-        "src/core/lib/iomgr/closure.h",
-        "src/core/lib/iomgr/combiner.h",
         "src/core/lib/iomgr/dynamic_annotations.h",
         "src/core/lib/iomgr/endpoint.h",
         "src/core/lib/iomgr/endpoint_cfstream.h",
@@ -1557,15 +1589,14 @@ grpc_cc_library(
         "src/core/lib/iomgr/event_engine/pollset.h",
         "src/core/lib/iomgr/event_engine/promise.h",
         "src/core/lib/iomgr/event_engine/resolved_address_internal.h",
-        "src/core/lib/iomgr/exec_ctx.h",
-        "src/core/lib/iomgr/executor.h",
+        "src/core/lib/iomgr/executor/mpmcqueue.h",
+        "src/core/lib/iomgr/executor/threadpool.h",
         "src/core/lib/iomgr/gethostname.h",
         "src/core/lib/iomgr/grpc_if_nametoindex.h",
         "src/core/lib/iomgr/internal_errqueue.h",
         "src/core/lib/iomgr/iocp_windows.h",
         "src/core/lib/iomgr/iomgr.h",
         "src/core/lib/iomgr/iomgr_custom.h",
-        "src/core/lib/iomgr/iomgr_internal.h",
         "src/core/lib/iomgr/is_epollexclusive_available.h",
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
@@ -1647,10 +1678,15 @@ grpc_cc_library(
     # re-export these headers from here for now, and when LSC's have completed
     # to clean this up, we'll remove these.
     [
+        "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/error.h",
         "src/core/lib/iomgr/error_internal.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
+        "src/core/lib/iomgr/exec_ctx.h",
+        "src/core/lib/iomgr/executor.h",
+        "src/core/lib/iomgr/combiner.h",
+        "src/core/lib/iomgr/iomgr_internal.h",
     ],
     external_deps = [
         "absl/container:flat_hash_map",
@@ -1669,8 +1705,10 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "bitset",
+        "closure",
         "dual_ref_counted",
         "error",
+        "exec_ctx",
         "gpr_base",
         "gpr_codegen",
         "gpr_tls",

@@ -156,6 +156,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "mpmcqueue_test",
+    srcs = ["mpmcqueue_test.cc"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "resolve_address_using_ares_resolver_posix_test",
     srcs = ["resolve_address_posix_test.cc"],
     args = [
@@ -280,6 +292,18 @@ grpc_cc_test(
     srcs = ["tcp_server_posix_test.cc"],
     language = "C++",
     tags = ["no_windows"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "threadpool_test",
+    srcs = ["threadpool_test.cc"],
+    language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
