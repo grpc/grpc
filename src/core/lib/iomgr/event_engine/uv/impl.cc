@@ -157,7 +157,7 @@ class LibuvWrapperBase {
 /// be the LibuvListener class.
 ////////////////////////////////////////////////////////////////////////////////
 class LibuvListenerWrapper final : public LibuvWrapperBase {
-  private:
+ private:
   friend class LibuvListener;
 
   // When LibUV is finally done with the listener, this destructor will be
@@ -166,9 +166,7 @@ class LibuvListenerWrapper final : public LibuvWrapperBase {
   virtual ~LibuvListenerWrapper() { on_shutdown_(absl::OkStatus()); };
 
   LibuvListenerWrapper(
-      Listener::AcceptCallback
-          on_accept,
-      Callback on_shutdown,
+      Listener::AcceptCallback on_accept, Callback on_shutdown,
       const grpc_event_engine::experimental::EndpointConfig& args,
       std::unique_ptr<grpc_event_engine::experimental::SliceAllocatorFactory>
           slice_allocator_factory)
@@ -186,8 +184,7 @@ class LibuvListenerWrapper final : public LibuvWrapperBase {
   // delf-delete from the base class.
   void Close(LibuvEventEngine* engine);
 
-  Listener::AcceptCallback
-      on_accept_;
+  Listener::AcceptCallback on_accept_;
   Callback on_shutdown_;
   grpc_event_engine::experimental::EndpointConfig args_;
   std::unique_ptr<grpc_event_engine::experimental::SliceAllocatorFactory>
@@ -231,8 +228,7 @@ class LibuvEndpointWrapper final : public LibuvWrapperBase {
 /// of the need to implement the DNSResolver class in EventEngine. Maybe the
 /// cares implementation will change this into a more fleshed out class.
 ////////////////////////////////////////////////////////////////////////////////
-class LibuvDNSResolver final
-    : public DNSResolver {
+class LibuvDNSResolver final : public DNSResolver {
  public:
   virtual ~LibuvDNSResolver() override = default;
 
@@ -270,12 +266,10 @@ class LibuvDNSResolver final
 /// It is a proxy class, and its main reason of existence is to transform its
 /// destruction into scheduling a LibUV close() call of the underlying socket.
 ////////////////////////////////////////////////////////////////////////////////
-class LibuvListener final
-    : public Listener {
+class LibuvListener final : public Listener {
  public:
   LibuvListener(
-      Listener::AcceptCallback on_accept,
-      Callback on_shutdown,
+      Listener::AcceptCallback on_accept, Callback on_shutdown,
       const grpc_event_engine::experimental::EndpointConfig& args,
       std::unique_ptr<grpc_event_engine::experimental::SliceAllocatorFactory>
           slice_allocator_factory);
@@ -293,9 +287,7 @@ class LibuvListener final
     return reinterpret_cast<LibuvEventEngine*>(uv_tcp_->GetLoop()->data);
   }
 
-  virtual absl::StatusOr<int> Bind(
-      const ResolvedAddress& addr)
-      override;
+  virtual absl::StatusOr<int> Bind(const ResolvedAddress& addr) override;
 
   virtual absl::Status Start() override;
 
@@ -314,8 +306,7 @@ class LibuvListener final
 /// It's separate from the LibuvEndpointWrapper in order to transform its
 /// destruction into scheduling a LibUV close() call of the underlying socket.
 ////////////////////////////////////////////////////////////////////////////////
-class LibuvEndpoint final
-    : public Endpoint {
+class LibuvEndpoint final : public Endpoint {
  public:
   LibuvEndpoint(const grpc_event_engine::experimental::EndpointConfig& args,
                 std::unique_ptr<grpc_event_engine::experimental::SliceAllocator>
@@ -327,12 +318,8 @@ class LibuvEndpoint final
     connect_.data = this;
   }
 
-  absl::Status Connect(
-      LibuvEventEngine* engine,
-      OnConnectCallback
-          on_connect,
-      const ResolvedAddress&
-          addr);
+  absl::Status Connect(LibuvEventEngine* engine, OnConnectCallback on_connect,
+                       const ResolvedAddress& addr);
 
   void RegisterInLibuvThread(LibuvEventEngine* engine) {
     uv_tcp_->RegisterInLibuvThread(engine);
@@ -374,15 +361,13 @@ class LibuvEndpoint final
   // called from the libuv loop thread. Returns 0 if successful.
   int PopulateAddressesInLibuvThread() {
     auto populate =
-        [this](
-            std::function<int(const uv_tcp_t*, struct sockaddr*, int*)> f,
-            ResolvedAddress* a) {
+        [this](std::function<int(const uv_tcp_t*, struct sockaddr*, int*)> f,
+               ResolvedAddress* a) {
           int namelen;
           sockaddr_storage addr;
           int ret =
               f(&uv_tcp_->tcp_, reinterpret_cast<sockaddr*>(&addr), &namelen);
-          *a = ResolvedAddress(
-              reinterpret_cast<sockaddr*>(&addr), namelen);
+          *a = ResolvedAddress(reinterpret_cast<sockaddr*>(&addr), namelen);
           return ret;
         };
     int r = 0;
@@ -403,20 +388,17 @@ class LibuvEndpoint final
       Callback on_writable,
       grpc_event_engine::experimental::SliceBuffer* data) override;
 
-  virtual const ResolvedAddress&
-  GetPeerAddress() const override {
+  virtual const ResolvedAddress& GetPeerAddress() const override {
     return uv_tcp_->peer_address_;
   };
 
-  virtual const ResolvedAddress&
-  GetLocalAddress() const override {
+  virtual const ResolvedAddress& GetLocalAddress() const override {
     return uv_tcp_->local_address_;
   };
 
   LibuvEndpointWrapper* uv_tcp_ = nullptr;
   uv_connect_t connect_;
-  OnConnectCallback on_connect_ =
-      nullptr;
+  OnConnectCallback on_connect_ = nullptr;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -470,8 +452,8 @@ class LibuvEventEngine final
   void RunInLibuvThread(SchedulingRequest::functor&& f) {
     SchedulingRequest* request = new SchedulingRequest(std::move(f));
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_ERROR, "LibuvEventEngine@%p::RunInLibuvThread, created %p", this,
-              request);
+      gpr_log(GPR_ERROR, "LibuvEventEngine@%p::RunInLibuvThread, created %p",
+              this, request);
     }
     queue_.Push(request);
     uv_async_send(&kicker_);
@@ -571,7 +553,8 @@ class LibuvEventEngine final
       std::unique_ptr<grpc_event_engine::experimental::SliceAllocatorFactory>
           slice_allocator_factory) override {
     std::unique_ptr<LibuvListener> ret = absl::make_unique<LibuvListener>(
-        std::move(on_accept), std::move(on_shutdown), args, std::move(slice_allocator_factory));
+        std::move(on_accept), std::move(on_shutdown), args,
+        std::move(slice_allocator_factory));
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::CreateListener, created %p",
               this, ret.get());
@@ -579,7 +562,9 @@ class LibuvEventEngine final
     // Scheduling should have a guarantee on ordering. We don't need to wait
     // until this is finished to return. Any subsequent call on the returned
     // listener will schedule more work after this one.
-    RunInLibuvThread([&ret](LibuvEventEngine* engine) { ret->RegisterInLibuvThread(engine); });
+    RunInLibuvThread([&ret](LibuvEventEngine* engine) {
+      ret->RegisterInLibuvThread(engine);
+    });
     return ret;
   }
 
@@ -598,9 +583,8 @@ class LibuvEventEngine final
 
   virtual ~LibuvEventEngine() override {}
 
-  virtual absl::StatusOr<std::unique_ptr<
-      DNSResolver>>
-  GetDNSResolver() override {
+  virtual absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver()
+      override {
     return absl::make_unique<LibuvDNSResolver>(this);
   }
 
@@ -692,8 +676,7 @@ class LibuvEventEngine final
 ////////////////////////////////////////////////////////////////////////////////
 class LibuvTask {
  public:
-  LibuvTask(LibuvEventEngine* engine,
-            Callback&& fn)
+  LibuvTask(LibuvEventEngine* engine, Callback&& fn)
       : fn_(std::move(fn)), key_(engine->task_key_.fetch_add(1)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "LibuvTask@%p, created: key = %" PRIiPTR, this, key_);
@@ -762,8 +745,7 @@ class LibuvTask {
 class LibuvLookupTask {
  public:
   LibuvLookupTask(LibuvEventEngine* engine,
-                  DNSResolver::
-                      LookupHostnameCallback on_resolve,
+                  DNSResolver::LookupHostnameCallback on_resolve,
                   absl::string_view address, absl::string_view default_port)
       : key_(engine->lookup_task_key_.fetch_add(1)),
         on_resolve_(std::move(on_resolve)) {
@@ -837,8 +819,7 @@ class LibuvLookupTask {
   uv_timer_t timer_;
   bool deadline_exceeded_ = false;
   const intptr_t key_;
-  DNSResolver::
-      LookupHostnameCallback on_resolve_;
+  DNSResolver::LookupHostnameCallback on_resolve_;
 
   // Unlike other callbacks in this code, this one is guaranteed to only be
   // called once by libuv.
@@ -865,8 +846,7 @@ class LibuvLookupTask {
           absl::UnknownError("uv_getaddrinfo failed with an unknown error"));
     } else {
       struct addrinfo* p;
-      std::vector<ResolvedAddress>
-          ret;
+      std::vector<ResolvedAddress> ret;
 
       for (p = res; p != nullptr; p = p->ai_next) {
         ret.emplace_back(p->ai_addr, p->ai_addrlen);
@@ -880,10 +860,9 @@ class LibuvLookupTask {
 
 // Some implementation details require circular dependencies between classes, so
 // we're implementing them here instead.
-absl::Status LibuvEndpoint::Connect(
-    LibuvEventEngine* engine,
-    OnConnectCallback on_connect,
-    const ResolvedAddress& addr) {
+absl::Status LibuvEndpoint::Connect(LibuvEventEngine* engine,
+                                    OnConnectCallback on_connect,
+                                    const ResolvedAddress& addr) {
   on_connect_ = std::move(on_connect);
   engine->RunInLibuvThread([addr, this](LibuvEventEngine* engine) {
     uv_tcp_->RegisterInLibuvThread(engine);
@@ -938,20 +917,18 @@ LibuvEndpointWrapper::LibuvEndpointWrapper(
 }
 
 LibuvListener::LibuvListener(
-    Listener::AcceptCallback on_accept,
-    Callback on_shutdown,
+    Listener::AcceptCallback on_accept, Callback on_shutdown,
     const grpc_event_engine::experimental::EndpointConfig& args,
     std::unique_ptr<grpc_event_engine::experimental::SliceAllocatorFactory>
         slice_allocator_factory)
     : uv_tcp_(new LibuvListenerWrapper(on_accept, on_shutdown, args,
-                                      std::move(slice_allocator_factory))) {
+                                       std::move(slice_allocator_factory))) {
   uv_tcp_->tcp_.data = uv_tcp_;
 }
 
 LibuvListener::~LibuvListener() { uv_tcp_->Close(GetEventEngine()); }
 
-absl::StatusOr<int> LibuvListener::Bind(
-    const ResolvedAddress& addr) {
+absl::StatusOr<int> LibuvListener::Bind(const ResolvedAddress& addr) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     grpc_resolved_address grpcaddr;
     grpcaddr.len = addr.size();
@@ -960,7 +937,8 @@ absl::StatusOr<int> LibuvListener::Bind(
             grpc_sockaddr_to_uri(&grpcaddr).c_str());
   }
   grpc_event_engine::experimental::Promise<absl::StatusOr<int>> p;
-  GetEventEngine()->RunInLibuvThread([this, &p, &addr](LibuvEventEngine* engine) {
+  GetEventEngine()->RunInLibuvThread([this, &p,
+                                      &addr](LibuvEventEngine* engine) {
     // Most of this code is boilerplate to get the bound port back out.
     int r = uv_tcp_bind(&uv_tcp_->tcp_, addr.address(), 0 /* flags */);
     switch (r) {
@@ -1115,11 +1093,9 @@ void LibuvEventEngine::TryCancel(TaskHandle handle) {
   });
 }
 
-DNSResolver::LookupTaskHandle
-LibuvDNSResolver::LookupHostname(LookupHostnameCallback on_resolve,
-                                 absl::string_view address,
-                                 absl::string_view default_port,
-                                 absl::Time deadline) {
+DNSResolver::LookupTaskHandle LibuvDNSResolver::LookupHostname(
+    LookupHostnameCallback on_resolve, absl::string_view address,
+    absl::string_view default_port, absl::Time deadline) {
   LibuvLookupTask* task = new LibuvLookupTask(engine_, std::move(on_resolve),
                                               address, default_port);
   engine_->RunInLibuvThread([task, deadline](LibuvEventEngine* engine) {
@@ -1131,9 +1107,7 @@ LibuvDNSResolver::LookupHostname(LookupHostnameCallback on_resolve,
   return {task->Key()};
 }
 
-void LibuvDNSResolver::TryCancelLookup(
-    DNSResolver::LookupTaskHandle
-        task) {
+void LibuvDNSResolver::TryCancelLookup(DNSResolver::LookupTaskHandle task) {
   engine_->RunInLibuvThread([task](LibuvEventEngine* engine) {
     auto it = engine->lookup_task_map_.find(task.keys[0]);
     if (it == engine->lookup_task_map_.end()) return;
@@ -1173,9 +1147,8 @@ LibuvEndpoint::~LibuvEndpoint() {
   });
 }
 
-void LibuvEndpoint::Write(
-    Callback on_writable,
-    grpc_event_engine::experimental::SliceBuffer* data) {
+void LibuvEndpoint::Write(Callback on_writable,
+                          grpc_event_engine::experimental::SliceBuffer* data) {
   LibuvEndpointWrapper* tcp = uv_tcp_;
   GPR_ASSERT(tcp->write_bufs_ == nullptr);
   // LibUV obviously doesn't understand the concept of grpc slices, and has its
@@ -1221,9 +1194,8 @@ void LibuvEndpoint::Write(
   });
 }
 
-void LibuvEndpoint::Read(
-    Callback on_read,
-    grpc_event_engine::experimental::SliceBuffer* buffer) {
+void LibuvEndpoint::Read(Callback on_read,
+                         grpc_event_engine::experimental::SliceBuffer* buffer) {
   buffer->Clear();
   LibuvEndpointWrapper* tcp = uv_tcp_;
   // The read case is a tiny bit of a square peg round hole situation,
@@ -1249,63 +1221,66 @@ void LibuvEndpoint::Read(
   tcp->slice_allocator_->Allocate(
       kReadBufferSize, tcp->read_sb_, [this, tcp](absl::Status status) {
         gpr_log(GPR_DEBUG, "allocate cb status: %s", status.ToString().c_str());
-        this->GetEventEngine()->RunInLibuvThread([tcp](LibuvEventEngine* engine) {
-          uv_read_start(
-              reinterpret_cast<uv_stream_t*>(&tcp->tcp_),
-              // The allocator callback from libuv to us asking for memory to
-              // write to to complete the read operation.
-              [](uv_handle_t* handle, size_t /* suggested_size */,
-                 uv_buf_t* buf) {
-                LibuvEndpointWrapper* tcp =
-                    reinterpret_cast<LibuvEndpointWrapper*>(handle->data);
-                // TODO(nnoble): Rework this with iterators when we have them.
-                tcp->read_sb_->Enumerate(
-                    [buf](uint8_t* start, size_t len, size_t idx) {
-                      if (idx == 0) {
-                        buf->base = reinterpret_cast<char*>(start);
-                        buf->len = len;
-                      }
-                    });
-              },
-              // The actual read callback from libuv.
-              [](uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
-                LibuvEndpointWrapper* tcp =
-                    reinterpret_cast<LibuvEndpointWrapper*>(stream->data);
-                uv_read_stop(stream);
-                auto on_read = std::move(tcp->on_read_);
-                if (nread < 0 && nread != UV_EOF) {
-                  on_read(absl::UnknownError(absl::StrFormat(
-                      "uv_read_start gave us an error: %i", nread)));
-                  return;
-                }
-                if (nread == UV_EOF) {
-                  tcp->read_sb_->TrimEnd(tcp->read_sb_->Length());
-                  // This is unfortunate, but returning OK means there's more to
-                  // read and gets us into an infinite loop.
-                  on_read(absl::ResourceExhaustedError("EOF"));
-                  return;
-                };
-                if (nread < tcp->read_sb_->Length()) {
-                  tcp->read_sb_->TrimEnd(tcp->read_sb_->Length() - nread);
-                }
-                if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-                  std::string prefix =
-                      absl::StrFormat("LibuvEndpoint@%p::Read", tcp);
-                  tcp->read_sb_->Enumerate(
-                      [nread](uint8_t* start, size_t len, size_t idx) {
-                        hexdump("arst", start, nread);
-                      });
-                }
-                on_read(absl::OkStatus());
-              });
-        });
+        this->GetEventEngine()->RunInLibuvThread(
+            [tcp](LibuvEventEngine* engine) {
+              uv_read_start(
+                  reinterpret_cast<uv_stream_t*>(&tcp->tcp_),
+                  // The allocator callback from libuv to us asking for memory
+                  // to write to to complete the read operation.
+                  [](uv_handle_t* handle, size_t /* suggested_size */,
+                     uv_buf_t* buf) {
+                    LibuvEndpointWrapper* tcp =
+                        reinterpret_cast<LibuvEndpointWrapper*>(handle->data);
+                    // TODO(nnoble): Rework this with iterators when we have
+                    // them.
+                    tcp->read_sb_->Enumerate(
+                        [buf](uint8_t* start, size_t len, size_t idx) {
+                          if (idx == 0) {
+                            buf->base = reinterpret_cast<char*>(start);
+                            buf->len = len;
+                          }
+                        });
+                  },
+                  // The actual read callback from libuv.
+                  [](uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
+                    LibuvEndpointWrapper* tcp =
+                        reinterpret_cast<LibuvEndpointWrapper*>(stream->data);
+                    uv_read_stop(stream);
+                    auto on_read = std::move(tcp->on_read_);
+                    if (nread < 0 && nread != UV_EOF) {
+                      on_read(absl::UnknownError(absl::StrFormat(
+                          "uv_read_start gave us an error: %i", nread)));
+                      return;
+                    }
+                    if (nread == UV_EOF) {
+                      tcp->read_sb_->TrimEnd(tcp->read_sb_->Length());
+                      // This is unfortunate, but returning OK means there's
+                      // more to read and gets us into an infinite loop.
+                      on_read(absl::ResourceExhaustedError("EOF"));
+                      return;
+                    };
+                    if (nread < tcp->read_sb_->Length()) {
+                      tcp->read_sb_->TrimEnd(tcp->read_sb_->Length() - nread);
+                    }
+                    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+                      std::string prefix =
+                          absl::StrFormat("LibuvEndpoint@%p::Read", tcp);
+                      tcp->read_sb_->Enumerate(
+                          [nread](uint8_t* start, size_t len, size_t idx) {
+                            hexdump("arst", start, nread);
+                          });
+                    }
+                    on_read(absl::OkStatus());
+                  });
+            });
       });
 }
 
 void LibuvListenerWrapper::Close(LibuvEventEngine* engine) {
   // We don't have any other handle to close, so this is a straight call to
   // CloseInLibuvThread.
-  engine->RunInLibuvThread([this](LibuvEventEngine* engine) { CloseInLibuvThread(0); });
+  engine->RunInLibuvThread(
+      [this](LibuvEventEngine* engine) { CloseInLibuvThread(0); });
 }
 
 }  // namespace
