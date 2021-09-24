@@ -695,8 +695,11 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
               .recv_initial_metadata,
           s->recv_initial_md_op->payload->recv_initial_metadata.recv_flags,
           nullptr);
-      s->recv_initial_md_op->payload->recv_initial_metadata
-          .recv_initial_metadata->SetDeadline(s->deadline);
+      if (s->deadline != GRPC_MILLIS_INF_FUTURE) {
+        s->recv_initial_md_op->payload->recv_initial_metadata
+            .recv_initial_metadata->Set(grpc_core::GrpcTimeoutMetadata(),
+                                        s->deadline);
+      }
       if (s->recv_initial_md_op->payload->recv_initial_metadata
               .trailing_metadata_available != nullptr) {
         *s->recv_initial_md_op->payload->recv_initial_metadata
@@ -1017,8 +1020,10 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
         if (s->t->is_client) {
           grpc_millis* dl =
               (other == nullptr) ? &s->write_buffer_deadline : &other->deadline;
-          *dl = std::min(*dl, op->payload->send_initial_metadata
-                                  .send_initial_metadata->deadline());
+          *dl = std::min(
+              *dl, op->payload->send_initial_metadata.send_initial_metadata
+                       ->get(grpc_core::GrpcTimeoutMetadata())
+                       .value_or(GRPC_MILLIS_INF_FUTURE));
           s->initial_md_sent = true;
         }
       }

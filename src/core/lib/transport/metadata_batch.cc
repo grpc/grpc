@@ -45,7 +45,9 @@ void grpc_metadata_batch_copy(grpc_metadata_batch* src,
                               grpc_metadata_batch* dst,
                               grpc_linked_mdelem* storage) {
   dst->Clear();
-  dst->SetDeadline(src->deadline());
+  if (auto* p = src->get_pointer(grpc_core::GrpcTimeoutMetadata())) {
+    dst->Set(grpc_core::GrpcTimeoutMetadata(), *p);
+  }
   size_t i = 0;
   src->ForEach([&](grpc_mdelem md) {
     // If the mdelem is not external, take a ref.

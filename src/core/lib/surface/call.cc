@@ -1469,9 +1469,10 @@ static void receiving_initial_metadata_ready(void* bctlp,
     GPR_TIMER_SCOPE("validate_filtered_metadata", 0);
     validate_filtered_metadata(bctl);
 
-    grpc_millis deadline = md->deadline();
-    if (deadline != GRPC_MILLIS_INF_FUTURE && !call->is_client) {
-      call->send_deadline = deadline;
+    absl::optional<grpc_millis> deadline =
+        md->get(grpc_core::GrpcTimeoutMetadata());
+    if (deadline.has_value() && !call->is_client) {
+      call->send_deadline = *deadline;
     }
   } else {
     if (bctl->batch_error.ok()) {
@@ -1652,8 +1653,9 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           goto done_with_error;
         }
         /* TODO(ctiller): just make these the same variable? */
-        if (call->is_client) {
-          call->metadata_batch[0][0].SetDeadline(call->send_deadline);
+        if (call->is_client && call->send_deadline != GRPC_MILLIS_INF_FUTURE) {
+          call->metadata_batch[0][0].Set(grpc_core::GrpcTimeoutMetadata(),
+                                         call->send_deadline);
         }
         stream_op_payload->send_initial_metadata.send_initial_metadata =
             &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */];

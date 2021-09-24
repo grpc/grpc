@@ -1431,7 +1431,10 @@ static void perform_stream_op_locked(void* stream_op,
     s->send_initial_metadata =
         op_payload->send_initial_metadata.send_initial_metadata;
     if (t->is_client) {
-      s->deadline = std::min(s->deadline, s->send_initial_metadata->deadline());
+      s->deadline = std::min(
+          s->deadline,
+          s->send_initial_metadata->get(grpc_core::GrpcTimeoutMetadata())
+              .value_or(GRPC_MILLIS_INF_FUTURE));
     }
     if (contains_non_ok_status(s->send_initial_metadata)) {
       s->seen_error = true;
@@ -1623,14 +1626,14 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 
   if (!t->is_client) {
     if (op->send_initial_metadata) {
-      grpc_millis deadline =
-          op->payload->send_initial_metadata.send_initial_metadata->deadline();
-      GPR_ASSERT(deadline == GRPC_MILLIS_INF_FUTURE);
+      GPR_ASSERT(!op->payload->send_initial_metadata.send_initial_metadata
+                      ->get(grpc_core::GrpcTimeoutMetadata())
+                      .has_value());
     }
     if (op->send_trailing_metadata) {
-      grpc_millis deadline = op->payload->send_trailing_metadata
-                                 .send_trailing_metadata->deadline();
-      GPR_ASSERT(deadline == GRPC_MILLIS_INF_FUTURE);
+      GPR_ASSERT(!op->payload->send_trailing_metadata.send_trailing_metadata
+                      ->get(grpc_core::GrpcTimeoutMetadata())
+                      .has_value());
     }
   }
 

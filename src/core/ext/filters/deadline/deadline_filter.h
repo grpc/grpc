@@ -61,7 +61,7 @@ struct grpc_deadline_state {
 //
 // Note: Must be called while holding the call combiner.
 void grpc_deadline_state_reset(grpc_call_element* elem,
-                               grpc_millis new_deadline);
+                               absl::optional<grpc_millis> new_deadline);
 
 // To be called from the client-side filter's start_transport_stream_op_batch()
 // method.  Ensures that the deadline timer is cancelled when the call
