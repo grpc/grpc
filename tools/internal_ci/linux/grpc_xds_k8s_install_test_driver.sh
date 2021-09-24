@@ -20,9 +20,63 @@ readonly PYTHON_VERSION="3.6"
 # Test driver
 readonly TEST_DRIVER_PATH="tools/run_tests/xds_k8s_test_driver"
 readonly TEST_DRIVER_PROTOS_PATH="src/proto/grpc/testing"
-# Default GKE Cluster.
-GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
-GKE_CLUSTER_ZONE="us-central1-a"
+
+# GKE cluster identifiers.
+readonly GKE_CLUSTER_PSM_LB="psm-lb"
+readonly GKE_CLUSTER_PSM_SECURITY="psm-security"
+
+#######################################
+# Determines the cluster name and zone based on the given cluster identifier.
+# Globals:
+#   GKE_CLUSTER_NAME: Set to reflect the cluster name to use
+#   GKE_CLUSTER_ZONE: Set to reflect the cluster zone to use.
+# Arguments:
+#   The cluster identifier
+# Outputs:
+#   Writes the output to stdout, stderr
+#######################################
+activate_gke_cluster() {
+  case $1 in
+    GKE_CLUSTER_PSM_LB)
+      GKE_CLUSTER_NAME="interop-test-psm-lb-v1-us-central1-a"
+      GKE_CLUSTER_ZONE="us-central1-a"
+      ;;
+    GKE_CLUSTER_PSM_SECURITY)
+      GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
+      GKE_CLUSTER_ZONE="us-central1-a"
+      ;;
+    *)
+      echo "Unknown GKE cluster: ${1}"
+      exit 1
+      ;;
+  esac
+  echo "Activated GKE cluster: GKE_CLUSTER_NAME=${GKE_CLUSTER_NAME} GKE_CLUSTER_ZONE=${GKE_CLUSTER_ZONE}"
+}
+
+#######################################
+# Determines the secondary cluster name and zone based on the given cluster
+# identifier.
+# Globals:
+#   GKE_CLUSTER_NAME: Set to reflect the cluster name to use
+#   GKE_CLUSTER_ZONE: Set to reflect the cluster zone to use.
+# Arguments:
+#   The cluster identifier
+# Outputs:
+#   Writes the output to stdout, stderr
+#######################################
+activate_secondary_gke_cluster() {
+  case $1 in
+    GKE_CLUSTER_PSM_LB)
+      GKE_CLUSTER_NAME="interop-test-psm-lb-v1-us-central1-a"
+      GKE_CLUSTER_ZONE="us-central1-a"
+      ;;
+    *)
+      echo "Unknown secondary GKE cluster: ${1}"
+      exit 1
+      ;;
+  esac
+  echo "Activated secondary GKE cluster: GKE_CLUSTER_NAME=${GKE_CLUSTER_NAME} GKE_CLUSTER_ZONE=${GKE_CLUSTER_ZONE}"
+}
 
 #######################################
 # Run command end report its exit code. Doesn't exit on non-zero exit code.
