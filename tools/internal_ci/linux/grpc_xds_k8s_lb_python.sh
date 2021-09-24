@@ -134,8 +134,8 @@ main() {
   source "${script_dir}/grpc_xds_k8s_clone_driver_repo.sh"
   clone_test_driver
 
-  activate_gke_cluster GKE_CLUSTER_PSM_LB
-  activate_secondary_gke_cluster GKE_CLUSTER_PSM_LB
+  activate_gke_cluster GKE_CLUSTER_PSM_SECURITY
+  activate_secondary_gke_cluster GKE_CLUSTER_PSM_SECURITY
 
   set -x
   if [[ -n "${KOKORO_ARTIFACTS_DIR}" ]]; then
