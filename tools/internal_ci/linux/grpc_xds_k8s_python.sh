@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex -o igncr || set -ex
+set -eo pipefail
 
 # Constants
 readonly GITHUB_REPOSITORY_NAME="grpc"
@@ -23,10 +23,6 @@ readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/python-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"
 readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
 readonly LANGUAGE_NAME="Python"
-# Test driver
-readonly TEST_DRIVER_REPO_URL="https://github.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc.git"
-readonly TEST_DRIVER_BRANCH="${TEST_DRIVER_BRANCH:-master}"
-readonly TEST_DRIVER_INSTALL_LIB_PATH="tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh"
 
 #######################################
 # Builds test app Docker images and pushes them to GCR
@@ -158,9 +154,7 @@ main() {
   source "${script_dir}/grpc_xds_k8s_clone_driver_repo.sh"
   clone_test_driver
 
-  # Source the test driver script and perform the driver installation
-  # shellcheck source="${TEST_DRIVER_REPO_DIR}/${TEST_DRIVER_INSTALL_LIB_PATH}"
-  source "${TEST_DRIVER_REPO_DIR}/${TEST_DRIVER_INSTALL_LIB_PATH}"
+  activate_gke_cluster GKE_CLUSTER_PSM_SECURITY
 
   set -x
   if [[ -n "${KOKORO_ARTIFACTS_DIR}" ]]; then

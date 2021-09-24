@@ -138,15 +138,8 @@ main() {
   source "${script_dir}/grpc_xds_k8s_clone_driver_repo.sh"
   clone_test_driver
 
-  # Source the test driver script and perform the driver installation
-  # shellcheck source="${TEST_DRIVER_REPO_DIR}/${TEST_DRIVER_INSTALL_LIB_PATH}"
-  source "${TEST_DRIVER_REPO_DIR}/${TEST_DRIVER_INSTALL_LIB_PATH}"
-
-  # GKE Cluster
-  GKE_CLUSTER_NAME="interop-test-psm-lb-v1-us-central1-a"
-  GKE_CLUSTER_ZONE="us-central1-a"
-  SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-lb-v1-us-west1-b"
-  SECONDARY_GKE_CLUSTER_ZONE="us-west1-b"
+  activate_gke_cluster GKE_CLUSTER_PSM_LB
+  activate_secondary_gke_cluster GKE_CLUSTER_PSM_LB
 
   set -x
   if [[ -n "${KOKORO_ARTIFACTS_DIR}" ]]; then

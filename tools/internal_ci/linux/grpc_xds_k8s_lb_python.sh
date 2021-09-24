@@ -23,10 +23,6 @@ readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/python-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"
 readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
 readonly LANGUAGE_NAME="Python"
-# Test driver
-readonly TEST_DRIVER_REPO_URL="https://github.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc.git"
-readonly TEST_DRIVER_BRANCH="${TEST_DRIVER_BRANCH:-master}"
-readonly TEST_DRIVER_INSTALL_LIB_PATH="tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh"
 
 #######################################
 # Builds test app Docker images and pushes them to GCR
@@ -138,15 +134,8 @@ main() {
   source "${script_dir}/grpc_xds_k8s_clone_driver_repo.sh"
   clone_test_driver
 
-  # Source the test driver script and perform the driver installation
-  # shellcheck source="${TEST_DRIVER_REPO_DIR}/${TEST_DRIVER_INSTALL_LIB_PATH}"
-  source "${TEST_DRIVER_REPO_DIR}/${TEST_DRIVER_INSTALL_LIB_PATH}"
-
-  # GKE Cluster
-  GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
-  GKE_CLUSTER_ZONE="us-central1-a"
-  SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-west1-b"
-  SECONDARY_GKE_CLUSTER_ZONE="us-west1-b"
+  activate_gke_cluster GKE_CLUSTER_PSM_LB
+  activate_secondary_gke_cluster GKE_CLUSTER_PSM_LB
 
   set -x
   if [[ -n "${KOKORO_ARTIFACTS_DIR}" ]]; then

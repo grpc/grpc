@@ -22,10 +22,6 @@ readonly IMAGE_REPO="gcr.io/grpc-testing/xds-interop"
 readonly SERVER_LANG="cpp go java"
 readonly CLIENT_LANG="cpp go java"
 readonly VERSION_TAG="v1.40.x"
-# Test driver
-readonly TEST_DRIVER_REPO_URL="https://github.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc.git"
-readonly TEST_DRIVER_BRANCH="${TEST_DRIVER_BRANCH:-master}"
-readonly TEST_DRIVER_INSTALL_LIB_PATH="tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh"
 
 #######################################
 # Executes the test case
@@ -91,10 +87,8 @@ main() {
   source "${script_dir}/grpc_xds_k8s_clone_driver_repo.sh"
   clone_test_driver
 
-  # Source the test driver script and perform the driver installation
-  # shellcheck source="${TEST_DRIVER_REPO_DIR}/${TEST_DRIVER_INSTALL_LIB_PATH}"
-  source "${TEST_DRIVER_REPO_DIR}/${TEST_DRIVER_INSTALL_LIB_PATH}"
-  
+  activate_gke_cluster GKE_CLUSTER_PSM_SECURITY
+
   set -x
   if [[ -n "${KOKORO_ARTIFACTS_DIR}" ]]; then
     kokoro_setup_test_driver "${GITHUB_REPOSITORY_NAME}"

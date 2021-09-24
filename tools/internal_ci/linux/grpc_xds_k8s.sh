@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex -o igncr || set -ex
+set -eo pipefail
 
 # Constants
 readonly GITHUB_REPOSITORY_NAME="grpc"
