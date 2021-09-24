@@ -50,6 +50,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_split.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/surface/api_trace.h"

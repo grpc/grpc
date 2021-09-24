@@ -1862,6 +1862,10 @@ src/core/lib/iomgr/exec_ctx.cc \
 src/core/lib/iomgr/exec_ctx.h \
 src/core/lib/iomgr/executor.cc \
 src/core/lib/iomgr/executor.h \
+src/core/lib/iomgr/executor/mpmcqueue.cc \
+src/core/lib/iomgr/executor/mpmcqueue.h \
+src/core/lib/iomgr/executor/threadpool.cc \
+src/core/lib/iomgr/executor/threadpool.h \
 src/core/lib/iomgr/fork_posix.cc \
 src/core/lib/iomgr/fork_windows.cc \
 src/core/lib/iomgr/gethostname.h \
@@ -2102,6 +2106,8 @@ src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_refcount.cc \
 src/core/lib/slice/slice_refcount.h \
 src/core/lib/slice/slice_refcount_base.h \
+src/core/lib/slice/slice_split.cc \
+src/core/lib/slice/slice_split.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/slice/slice_utils.h \
