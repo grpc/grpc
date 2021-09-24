@@ -25,6 +25,9 @@ bool squelch = true;
 bool leak_check = true;
 
 namespace grpc_core {
+// Return type for infallible promises.
+// We choose this so that it's easy to construct, and will trigger asan failures
+// if misused, and is copyable.
 using IntHdl = std::shared_ptr<int>;
 
 template <typename T>
@@ -34,9 +37,11 @@ namespace {
 class Fuzzer {
  public:
   void Run(const promise_fuzzer::Msg& msg) {
+    // If there's no promise we can't construct and activity and... we're done.
     if (!msg.has_promise()) {
       return;
     }
+    // Construct activity.
     activity_ = MakeActivity(
         [msg, this] {
           return Seq(MakePromise(msg.promise()),
@@ -44,22 +49,30 @@ class Fuzzer {
         },
         Scheduler{this},
         [this](absl::Status status) {
+          // Must only be called once
+          GPR_ASSERT(!done_);
+          // If we became certain of the eventual status, verify it.
           if (expected_status_.has_value()) {
             GPR_ASSERT(status == *expected_status_);
           }
+          // Mark ourselves done.
           done_ = true;
         });
     for (size_t i = 0; !done_ && activity_ != nullptr && i < msg.actions_size();
          i++) {
+      // Do some things
       const auto& action = msg.actions(i);
       switch (action.action_type_case()) {
+        // Force a wakeup
         case promise_fuzzer::Action::kForceWakeup:
           activity_->ForceWakeup();
           break;
+        // Cancel from the outside
         case promise_fuzzer::Action::kCancel:
           ExpectCancelled();
           activity_.reset();
           break;
+        // Flush any pending wakeups
         case promise_fuzzer::Action::kFlushWakeup:
           if (wakeup_ != nullptr) absl::exchange(wakeup_, nullptr)();
           break;
@@ -74,6 +87,7 @@ class Fuzzer {
   }
 
  private:
+  // Schedule wakeups against the fuzzer
   struct Scheduler {
     Fuzzer* fuzzer;
     // Schedule a wakeup
@@ -85,12 +99,15 @@ class Fuzzer {
     }
   };
 
+  // We know that if not already finished, the status when finished will be
+  // cancelled.
   void ExpectCancelled() {
     if (!done_ && !expected_status_.has_value()) {
       expected_status_ = absl::CancelledError();
     }
   }
 
+  // Construct a promise factory from a protobuf
   PromiseFactory<IntHdl> MakePromiseFactory(
       const promise_fuzzer::PromiseFactory& p) {
     switch (p.promise_factory_type_case()) {
@@ -104,6 +121,7 @@ class Fuzzer {
     };
   }
 
+  // Construct a promise from a protobuf
   Promise<IntHdl> MakePromise(const promise_fuzzer::Promise& p) {
     switch (p.promise_type_case()) {
       case promise_fuzzer::Promise::kSeq:
@@ -242,9 +260,14 @@ class Fuzzer {
     return [] { return std::make_shared<int>(42); };
   }
 
+  // Activity under test
   ActivityPtr activity_;
+  // Scheduled wakeup (may be nullptr if no wakeup scheduled)
   std::function<void()> wakeup_;
+  // If we are certain of the final status, then that. Otherwise, nullopt if we
+  // don't know.
   absl::optional<absl::Status> expected_status_;
+  // Has on_done been called?
   bool done_ = false;
 };
 }  // namespace
