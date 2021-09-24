@@ -13,6 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Test driver
+readonly TEST_DRIVER_REPO_URL="https://github.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc.git"
+readonly TEST_DRIVER_BRANCH="${TEST_DRIVER_BRANCH:-master}"
+readonly TEST_DRIVER_INSTALL_LIB_PATH="tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh"
+
 #######################################
 # Ensure the source code of the test driver is present at TEST_DRIVER_REPO_DIR.
 #
@@ -40,4 +45,8 @@ clone_test_driver() {
     echo "Cloning driver to ${TEST_DRIVER_REPO_URL} branch ${TEST_DRIVER_BRANCH} to ${TEST_DRIVER_REPO_DIR}"
     git clone -b "${TEST_DRIVER_BRANCH}" --depth=1 "${TEST_DRIVER_REPO_URL}" "${TEST_DRIVER_REPO_DIR}"
   fi
+
+  # Source the test driver script.
+  # shellcheck source="${TEST_DRIVER_REPO_DIR}/${TEST_DRIVER_INSTALL_LIB_PATH}"
+  source "${TEST_DRIVER_REPO_DIR}/${TEST_DRIVER_INSTALL_LIB_PATH}"
 }

@@ -17,9 +17,6 @@ set -ex -o igncr || set -ex
 
 # Constants
 readonly GITHUB_REPOSITORY_NAME="grpc"
-# GKE Cluster
-readonly GKE_CLUSTER_NAME="interop-test-psm-basic"
-readonly GKE_CLUSTER_ZONE="us-central1-c"
 ## xDS test client Docker images
 readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"
@@ -120,8 +117,14 @@ run_test() {
 main() {
   local script_dir
   script_dir="$(dirname "$0")"
-  # shellcheck source=tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh
-  source "${script_dir}/grpc_xds_k8s_install_test_driver.sh"
+
+  # Clone the test driver from the master branch using an external script.
+  # shellcheck source=tools/internal_ci/linux/grpc_xds_k8s_clone_driver_repo.sh
+  source "${script_dir}/grpc_xds_k8s_clone_driver_repo.sh"
+  clone_test_driver
+
+  activate_gke_cluster GKE_CLUSTER_PSM_SECURITY
+
   set -x
   if [[ -n "${KOKORO_ARTIFACTS_DIR}" ]]; then
     kokoro_setup_test_driver "${GITHUB_REPOSITORY_NAME}"
