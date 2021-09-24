@@ -646,8 +646,8 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
     : t(t),
       refcount(refcount),
       reffer(this),
-      metadata_buffer{grpc_chttp2_incoming_metadata_buffer(arena),
-                      grpc_chttp2_incoming_metadata_buffer(arena)} {
+      initial_metadata_buffer(arena),
+      trailing_metadata_buffer(arena) {
   if (server_data) {
     id = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(server_data));
     *t->accepting_stream = this;
@@ -1064,7 +1064,7 @@ static void queue_setting_update(grpc_chttp2_transport* t,
                                  grpc_chttp2_setting_id id, uint32_t value) {
   const grpc_chttp2_setting_parameters* sp =
       &grpc_chttp2_settings_parameters[id];
-  uint32_t use_value = GPR_CLAMP(value, sp->min_value, sp->max_value);
+  uint32_t use_value = grpc_core::Clamp(value, sp->min_value, sp->max_value);
   if (use_value != value) {
     gpr_log(GPR_INFO, "Requested parameter %s clamped from %d to %d", sp->name,
             value, use_value);
@@ -1252,9 +1252,9 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
 }
 
 static bool contains_non_ok_status(grpc_metadata_batch* batch) {
-  if ((*batch)->legacy_index()->named.grpc_status != nullptr) {
+  if (batch->legacy_index()->named.grpc_status != nullptr) {
     return !grpc_mdelem_static_value_eq(
-        (*batch)->legacy_index()->named.grpc_status->md,
+        batch->legacy_index()->named.grpc_status->md,
         GRPC_MDELEM_GRPC_STATUS_0);
   }
   return false;
@@ -1350,7 +1350,7 @@ static void complete_fetch_locked(void* gs, grpc_error_handle error) {
 
 static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
                          bool is_client, bool is_initial) {
-  (*md_batch)->ForEach([=](grpc_mdelem md) {
+  md_batch->ForEach([=](grpc_mdelem md) {
     char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
     char* value = grpc_slice_to_c_string(GRPC_MDVALUE(md));
     gpr_log(GPR_INFO, "HTTP:%d:%s:%s: %s: %s", id, is_initial ? "HDR" : "TRL",
@@ -1411,12 +1411,11 @@ static void perform_stream_op_locked(void* stream_op,
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
 
     // Identify stream compression
-    if ((*op_payload->send_initial_metadata.send_initial_metadata)
-                ->legacy_index()
+    if (op_payload->send_initial_metadata.send_initial_metadata->legacy_index()
                 ->named.content_encoding == nullptr ||
         grpc_stream_compression_method_parse(
             GRPC_MDVALUE(
-                (*op_payload->send_initial_metadata.send_initial_metadata)
+                op_payload->send_initial_metadata.send_initial_metadata
                     ->legacy_index()
                     ->named.content_encoding->md),
             true, &s->stream_compression_method) == 0) {
@@ -1432,8 +1431,7 @@ static void perform_stream_op_locked(void* stream_op,
     s->send_initial_metadata =
         op_payload->send_initial_metadata.send_initial_metadata;
     if (t->is_client) {
-      s->deadline =
-          GPR_MIN(s->deadline, (*s->send_initial_metadata)->deadline());
+      s->deadline = std::min(s->deadline, s->send_initial_metadata->deadline());
     }
     if (contains_non_ok_status(s->send_initial_metadata)) {
       s->seen_error = true;
@@ -1539,8 +1537,7 @@ static void perform_stream_op_locked(void* stream_op,
       s->sent_trailing_metadata_op = nullptr;
       grpc_chttp2_complete_closure_step(
           t, s, &s->send_trailing_metadata_finished,
-          grpc_metadata_batch_is_empty(
-              op->payload->send_trailing_metadata.send_trailing_metadata)
+          op->payload->send_trailing_metadata.send_trailing_metadata->empty()
               ? GRPC_ERROR_NONE
               : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                     "Attempt to send trailing metadata after "
@@ -1627,14 +1624,12 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
   if (!t->is_client) {
     if (op->send_initial_metadata) {
       grpc_millis deadline =
-          (*op->payload->send_initial_metadata.send_initial_metadata)
-              ->deadline();
+          op->payload->send_initial_metadata.send_initial_metadata->deadline();
       GPR_ASSERT(deadline == GRPC_MILLIS_INF_FUTURE);
     }
     if (op->send_trailing_metadata) {
-      grpc_millis deadline =
-          (*op->payload->send_trailing_metadata.send_trailing_metadata)
-              ->deadline();
+      grpc_millis deadline = op->payload->send_trailing_metadata
+                                 .send_trailing_metadata->deadline();
       GPR_ASSERT(deadline == GRPC_MILLIS_INF_FUTURE);
     }
   }
@@ -1861,7 +1856,7 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(
             &s->unprocessed_incoming_frames_buffer);
       }
     }
-    grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[0],
+    grpc_chttp2_incoming_metadata_buffer_publish(&s->initial_metadata_buffer,
                                                  s->recv_initial_metadata);
     null_then_sched_closure(&s->recv_initial_metadata_ready);
   }
@@ -1978,7 +1973,8 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
           GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS) {
         grpc_slice_buffer_move_first(
             &s->frame_storage,
-            GPR_MIN(s->frame_storage.length, GRPC_HEADER_SIZE_IN_BYTES),
+            std::min(s->frame_storage.length,
+                     size_t(GRPC_HEADER_SIZE_IN_BYTES)),
             &s->unprocessed_incoming_frames_buffer);
         if (s->unprocessed_incoming_frames_buffer.length > 0) {
           s->unprocessed_incoming_frames_decompressed = true;
@@ -2015,7 +2011,7 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
         s->recv_trailing_metadata_finished != nullptr) {
       grpc_transport_move_stats(&s->stats, s->collecting_stats);
       s->collecting_stats = nullptr;
-      grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[1],
+      grpc_chttp2_incoming_metadata_buffer_publish(&s->trailing_metadata_buffer,
                                                    s->recv_trailing_metadata);
       null_then_sched_closure(&s->recv_trailing_metadata_finished);
     }
@@ -2109,13 +2105,13 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
     gpr_ltoa(status, status_string);
     GRPC_LOG_IF_ERROR("add_status",
                       grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-                          &s->metadata_buffer[1], GRPC_MDSTR_GRPC_STATUS,
+                          &s->trailing_metadata_buffer, GRPC_MDSTR_GRPC_STATUS,
                           grpc_core::UnmanagedMemorySlice(status_string)));
     if (!GRPC_SLICE_IS_EMPTY(slice)) {
       GRPC_LOG_IF_ERROR(
           "add_status_message",
           grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-              &s->metadata_buffer[1], GRPC_MDSTR_GRPC_MESSAGE, slice));
+              &s->trailing_metadata_buffer, GRPC_MDSTR_GRPC_MESSAGE, slice));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
@@ -2519,7 +2515,7 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
                              GRPC_ERROR_INT_OCCURRED_DURING_WRITE,
                              t->write_state);
   }
-  GPR_SWAP(grpc_error_handle, err, error);
+  std::swap(err, error);
   GRPC_ERROR_UNREF(err);
   if (t->closed_with_error == GRPC_ERROR_NONE) {
     GPR_TIMER_SCOPE("reading_action.parse", 0);

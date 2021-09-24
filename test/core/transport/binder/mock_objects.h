@@ -77,7 +77,8 @@ class MockTransactionReceiver : public TransactionReceiver {
   explicit MockTransactionReceiver(OnTransactCb transact_cb,
                                    BinderTransportTxCode code,
                                    ReadableParcel* output) {
-    transact_cb(static_cast<transaction_code_t>(code), output).IgnoreError();
+    transact_cb(static_cast<transaction_code_t>(code), output, /*uid=*/0)
+        .IgnoreError();
   }
 
   MOCK_METHOD(void*, GetRawBinder, (), (override));

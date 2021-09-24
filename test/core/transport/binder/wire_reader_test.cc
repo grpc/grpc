@@ -75,7 +75,8 @@ class WireReaderTest : public ::testing::Test {
   template <typename T>
   absl::Status CallProcessTransaction(T tx_code) {
     return wire_reader_.ProcessTransaction(
-        static_cast<transaction_code_t>(tx_code), &mock_readable_parcel_);
+        static_cast<transaction_code_t>(tx_code), &mock_readable_parcel_,
+        /*uid=*/0);
   }
 
   std::shared_ptr<StrictMock<MockTransportStreamReceiver>>

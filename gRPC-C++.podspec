@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.41.0-dev'
+  version = '1.42.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -707,8 +707,12 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/b64.h',
                       'src/core/lib/slice/percent_encoding.h',
                       'src/core/lib/slice/slice_internal.h',
+                      'src/core/lib/slice/slice_refcount.h',
+                      'src/core/lib/slice/slice_refcount_base.h',
+                      'src/core/lib/slice/slice_split.h',
                       'src/core/lib/slice/slice_string_helpers.h',
                       'src/core/lib/slice/slice_utils.h',
+                      'src/core/lib/slice/static_slice.h',
                       'src/core/lib/surface/api_trace.h',
                       'src/core/lib/surface/call.h',
                       'src/core/lib/surface/call_test_only.h',
@@ -1374,8 +1378,12 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/b64.h',
                               'src/core/lib/slice/percent_encoding.h',
                               'src/core/lib/slice/slice_internal.h',
+                              'src/core/lib/slice/slice_refcount.h',
+                              'src/core/lib/slice/slice_refcount_base.h',
+                              'src/core/lib/slice/slice_split.h',
                               'src/core/lib/slice/slice_string_helpers.h',
                               'src/core/lib/slice/slice_utils.h',
+                              'src/core/lib/slice/static_slice.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/call.h',
                               'src/core/lib/surface/call_test_only.h',

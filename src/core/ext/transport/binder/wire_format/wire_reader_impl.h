@@ -67,7 +67,7 @@ class WireReaderImpl : public WireReader {
       std::unique_ptr<Binder> binder) override;
 
   absl::Status ProcessTransaction(transaction_code_t code,
-                                  ReadableParcel* parcel);
+                                  ReadableParcel* parcel, int uid);
 
   /// Send SETUP_TRANSPORT request through \p binder.
   ///

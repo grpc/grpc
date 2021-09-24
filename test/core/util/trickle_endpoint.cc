@@ -182,7 +182,7 @@ size_t grpc_trickle_endpoint_trickle(grpc_endpoint* ep) {
     // gpr_log(GPR_DEBUG, "%lf elapsed --> %" PRIdPTR " bytes", elapsed, bytes);
     if (bytes > 0) {
       grpc_slice_buffer_move_first(&te->write_buffer,
-                                   GPR_MIN(bytes, te->write_buffer.length),
+                                   std::min(bytes, te->write_buffer.length),
                                    &te->writing_buffer);
       te->writing = true;
       te->last_write = now;

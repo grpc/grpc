@@ -332,7 +332,7 @@ XDS_K8S_CONFIG=./path-to-flagfile.cfg ./run.sh bin/run_td_setup.py --resource_su
 # Client: all services always on port 8079
 kubectl port-forward deployment.apps/psm-grpc-client 8079
 
-# Server regular mode: all grpc services on port 8079
+# Server regular mode: all grpc services on port 8080
 kubectl port-forward deployment.apps/psm-grpc-server 8080
 # OR
 # Server secure mode: TestServiceImpl is on 8080, 

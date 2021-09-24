@@ -347,7 +347,7 @@ void CallData::DecideWhetherToInjectFaults(
                 *fi_policy_);
       }
     };
-    (*initial_metadata)->ForEach([&](grpc_mdelem md) {
+    initial_metadata->ForEach([&](grpc_mdelem md) {
       absl::string_view key = StringViewFromSlice(GRPC_MDKEY(md));
       // Only perform string comparison if:
       //   1. Needs to check this header;
@@ -364,22 +364,22 @@ void CallData::DecideWhetherToInjectFaults(
           key == fi_policy_->abort_percentage_header) {
         maybe_copy_policy_func();
         copied_policy->abort_percentage_numerator =
-            GPR_MIN(GetMetadatumValueUnsignedInt(md),
-                    fi_policy_->abort_percentage_numerator);
+            std::min(GetMetadatumValueUnsignedInt(md),
+                     fi_policy_->abort_percentage_numerator);
       }
       if (!fi_policy_->delay_header.empty() &&
           (copied_policy == nullptr || copied_policy->delay == 0) &&
           key == fi_policy_->delay_header) {
         maybe_copy_policy_func();
-        copied_policy->delay =
-            static_cast<grpc_millis>(GPR_MAX(GetMetadatumValueInt64(md), 0));
+        copied_policy->delay = static_cast<grpc_millis>(
+            std::max(GetMetadatumValueInt64(md), int64_t(0)));
       }
       if (!fi_policy_->delay_percentage_header.empty() &&
           key == fi_policy_->delay_percentage_header) {
         maybe_copy_policy_func();
         copied_policy->delay_percentage_numerator =
-            GPR_MIN(GetMetadatumValueUnsignedInt(md),
-                    fi_policy_->delay_percentage_numerator);
+            std::min(GetMetadatumValueUnsignedInt(md),
+                     fi_policy_->delay_percentage_numerator);
       }
     });
     if (copied_policy != nullptr) fi_policy_ = copied_policy;
