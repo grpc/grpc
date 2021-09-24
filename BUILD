@@ -1122,6 +1122,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "exec_ctx_wakeup_scheduler",
+    hdrs = [
+        "src/core/lib/promise/exec_ctx_wakeup_scheduler.h",
+    ],
+    language = "c++",
+    deps = [
+        "exec_ctx",
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "wait_set",
     external_deps = [
         "absl/container:flat_hash_set",
