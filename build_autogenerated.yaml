@@ -4304,6 +4304,7 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/wait_set.h
+  - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/api/annotations.upb.c
   - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
@@ -5821,6 +5822,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/wait_set.h
+  - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/api/annotations.upb.c
   - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
@@ -6435,6 +6437,7 @@ targets:
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
+  - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/api/annotations.upb.c
   - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
@@ -6726,6 +6729,7 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/wait_set.h
+  - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/api/annotations.upb.c
   - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
@@ -6903,6 +6907,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
+  - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/api/annotations.upb.c
   - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
