@@ -22,8 +22,8 @@
 
 #include "absl/strings/str_join.h"
 
-#include "src/core/lib/channel/server_config_call_data.h"
-#include "src/core/lib/channel/server_config_selector.h"
+#include "src/core/ext/service_config/server_config_call_data.h"
+#include "src/core/ext/service_config/server_config_selector.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {

@@ -214,8 +214,8 @@ class XdsApi {
                             absl::string_view expected_host_name_in);
     static MatchType DomainPatternMatchType(absl::string_view domain_pattern);
     template <typename T>
-    static T* FindVirtualHostForDomain(
-        std::vector<T>* virtual_hosts, absl::string_view domain) {
+    static T* FindVirtualHostForDomain(std::vector<T>* virtual_hosts,
+                                       absl::string_view domain) {
       // Find the best matched virtual host.
       // The search order for 4 groups of domain patterns:
       //   1. Exact match.

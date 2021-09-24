@@ -1270,13 +1270,14 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_service_config",
     srcs = [
-        "src/core/lib/channel/service_config.cc",
-        "src/core/lib/channel/service_config_parser.cc",
+        "src/core/ext/service_config/service_config.cc",
+        "src/core/ext/service_config/service_config_parser.cc",
     ],
     hdrs = [
-        "src/core/lib/channel/server_config_call_data.h",
-        "src/core/lib/channel/service_config.h",
-        "src/core/lib/channel/service_config_parser.h",
+        "src/core/ext/service_config/server_config_call_data.h",
+        "src/core/ext/service_config/server_config_selector.h",
+        "src/core/ext/service_config/service_config.h",
+        "src/core/ext/service_config/service_config_parser.h",
     ],
     external_deps = [
         "absl/container:inlined_vector",
@@ -1496,7 +1497,6 @@ grpc_cc_library(
         "src/core/lib/channel/connected_channel.h",
         "src/core/lib/channel/context.h",
         "src/core/lib/channel/handshaker.h",
-        "src/core/lib/channel/server_config_selector.h",
         "src/core/lib/channel/status_util.h",
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/compression_args.h",

@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_CHANNEL_SERVER_CONFIG_SELECTOR_H
-#define GRPC_CORE_LIB_CHANNEL_SERVER_CONFIG_SELECTOR_H
+#ifndef GRPC_CORE_EXT_SERVICE_CONFIG_SERVER_CONFIG_SELECTOR_H
+#define GRPC_CORE_EXT_SERVICE_CONFIG_SERVER_CONFIG_SELECTOR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -39,4 +39,4 @@ class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_CHANNEL_SERVER_CONFIG_SELECTOR_H
+#endif  // GRPC_CORE_EXT_SERVICE_CONFIG_SERVER_CONFIG_SELECTOR_H
