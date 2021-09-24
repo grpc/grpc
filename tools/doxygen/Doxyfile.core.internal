@@ -1635,6 +1635,7 @@ src/core/lib/gprpp/stat_windows.cc \
 src/core/lib/gprpp/status_helper.cc \
 src/core/lib/gprpp/status_helper.h \
 src/core/lib/gprpp/sync.h \
+src/core/lib/gprpp/table.h \
 src/core/lib/gprpp/thd.h \
 src/core/lib/gprpp/thd_posix.cc \
 src/core/lib/gprpp/thd_windows.cc \

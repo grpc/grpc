@@ -761,6 +761,7 @@ libs:
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/gprpp/table.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
@@ -1527,6 +1528,7 @@ libs:
   - absl/functional:bind_front
   - absl/status:statusor
   - absl/types:variant
+  - absl/utility:utility
   - gpr
   - libssl
   - address_sorting
@@ -1807,6 +1809,7 @@ libs:
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/gprpp/table.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
@@ -2216,6 +2219,7 @@ libs:
   - absl/functional:bind_front
   - absl/status:statusor
   - absl/types:variant
+  - absl/utility:utility
   - gpr
   - address_sorting
   baselib: true
