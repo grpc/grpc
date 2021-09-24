@@ -19,6 +19,8 @@
 #ifndef GRPC_EVENT_ENGINE_SLICE_H
 #define GRPC_EVENT_ENGINE_SLICE_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <string>
 #include <utility>
 

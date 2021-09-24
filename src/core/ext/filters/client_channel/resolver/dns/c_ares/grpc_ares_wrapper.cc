@@ -551,7 +551,8 @@ grpc_error_handle grpc_ares_ev_driver_create_locked(
   (*ev_driver)->request = request;
   (*ev_driver)->polled_fd_factory =
       grpc_core::NewGrpcPolledFdFactory((*ev_driver)->work_serializer);
-  (*ev_driver)->polled_fd_factory->ConfigureAresChannelLocked((*ev_driver)->channel);
+  (*ev_driver)
+      ->polled_fd_factory->ConfigureAresChannelLocked((*ev_driver)->channel);
   (*ev_driver)->query_timeout_ms = query_timeout_ms;
   return GRPC_ERROR_NONE;
 }

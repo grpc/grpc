@@ -19,6 +19,8 @@
 #ifndef GRPC_EVENT_ENGINE_SLICE_BUFFER_H
 #define GRPC_EVENT_ENGINE_SLICE_BUFFER_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <functional>
 
 #include <grpc/event_engine/slice.h>
@@ -44,9 +46,11 @@ namespace experimental {
 /// an experimental API.
 class SliceBuffer final {
  public:
-  SliceBuffer(grpc_slice_buffer* sb) : sb_(sb) {}
+  explicit SliceBuffer(grpc_slice_buffer* sb) : sb_(sb) {}
   SliceBuffer(const SliceBuffer& other) : sb_(other.sb_) {}
-  SliceBuffer(SliceBuffer&& other) : sb_(other.sb_) { other.sb_ = nullptr; }
+  SliceBuffer(SliceBuffer&& other) noexcept : sb_(other.sb_) {
+    other.sb_ = nullptr;
+  }
 
   // This easier to write than an iterator, and essentially does the same, in a
   // less flexible manner. We probably want to eventually write a proper
