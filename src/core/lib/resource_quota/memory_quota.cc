@@ -19,6 +19,7 @@
 #include <thread>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
@@ -359,12 +360,11 @@ MemoryQuota::MemoryQuota() {
         return Continue{};
       }));
 
-  reclaimer_activity_ = MakeActivity(
-      std::move(reclamation_loop),
-      [](std::function<void()> f) { std::thread(f).detach(); },
-      [](absl::Status status) {
-        GPR_ASSERT(status.code() == absl::StatusCode::kCancelled);
-      });
+  reclaimer_activity_ =
+      MakeActivity(std::move(reclamation_loop), ExecCtxWakeupScheduler(),
+                   [](absl::Status status) {
+                     GPR_ASSERT(status.code() == absl::StatusCode::kCancelled);
+                   });
 }
 
 void MemoryQuota::SetSize(size_t new_size) {
