@@ -29,6 +29,8 @@ struct grpc_slice_buffer;
 namespace grpc_event_engine {
 namespace experimental {
 
+class SliceBuffer;
+
 class SliceAllocator {
  public:
   using AllocateCallback = std::function<void(absl::Status)>;

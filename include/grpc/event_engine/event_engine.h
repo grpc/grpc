@@ -31,6 +31,8 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+class SliceBuffer;
+
 ////////////////////////////////////////////////////////////////////////////////
 /// The EventEngine encapsulates all platform-specific behaviors related to low
 /// level network I/O, timers, asynchronous execution, and DNS resolution.
