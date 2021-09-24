@@ -31,7 +31,7 @@ namespace grpc_core {
 using IntHdl = std::shared_ptr<int>;
 
 template <typename T>
-using PromiseFactory = std::function<Promise<T>()>;
+using PromiseFactory = std::function<Promise<T>(T)>;
 
 namespace {
 class Fuzzer {
@@ -76,6 +76,23 @@ class Fuzzer {
         case promise_fuzzer::Action::kFlushWakeup:
           if (wakeup_ != nullptr) absl::exchange(wakeup_, nullptr)();
           break;
+        // Drop some wakeups (external system closed?)
+        case promise_fuzzer::Action::kDropWaker: {
+          int n = action.drop_waker();
+          auto v = std::move(wakers_[n]);
+          wakers_.erase(n);
+          break;
+        }
+        // Wakeup some wakeups
+        case promise_fuzzer::Action::kAwakeWaker: {
+          int n = action.awake_waker();
+          auto v = std::move(wakers_[n]);
+          wakers_.erase(n);
+          for (auto& w : v) {
+            w.Wakeup();
+          }
+          break;
+        }
         case promise_fuzzer::Action::ACTION_TYPE_NOT_SET:
           break;
       }
@@ -112,11 +129,13 @@ class Fuzzer {
       const promise_fuzzer::PromiseFactory& p) {
     switch (p.promise_factory_type_case()) {
       case promise_fuzzer::PromiseFactory::kPromise:
-        return [p, this]() { return MakePromise(p.promise()); };
+        return [p, this](IntHdl) { return MakePromise(p.promise()); };
+      case promise_fuzzer::PromiseFactory::kLast:
+        return [](IntHdl h) { return [h]() { return h; }; };
       case promise_fuzzer::PromiseFactory::PROMISE_FACTORY_TYPE_NOT_SET:
         break;
     }
-    return [] {
+    return [](IntHdl) {
       return []() -> Poll<IntHdl> { return std::make_shared<int>(42); };
     };
   }
@@ -254,6 +273,21 @@ class Fuzzer {
           this->activity_.reset();
           return Pending{};
         };
+      case promise_fuzzer::Promise::kWaitOnceOnWaker: {
+        bool called = false;
+        auto config = p.wait_once_on_waker();
+        return [this, config, called]() mutable -> Poll<IntHdl> {
+          if (!called) {
+            if (config.owning()) {
+              wakers_[config.waker()].push_back(Activity::current()->MakeOwningWaker());
+            } else {
+              wakers_[config.waker()].push_back(Activity::current()->MakeNonOwningWaker());
+            }
+            return Pending();
+          }
+          return std::make_shared<int>(3);
+        };
+      }
       case promise_fuzzer::Promise::PromiseTypeCase::PROMISE_TYPE_NOT_SET:
         break;
     }
@@ -269,6 +303,8 @@ class Fuzzer {
   absl::optional<absl::Status> expected_status_;
   // Has on_done been called?
   bool done_ = false;
+  // Wakers that may be scheduled
+  std::map<int, std::vector<Waker>> wakers_;
 };
 }  // namespace
 
