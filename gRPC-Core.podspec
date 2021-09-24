@@ -193,6 +193,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
     ss.dependency 'abseil/types/variant', abseil_version
+    ss.dependency 'abseil/utility/utility', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
 
     ss.source_files = 'src/core/ext/filters/census/grpc_context.cc',
@@ -950,6 +951,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/status_helper.cc',
                       'src/core/lib/gprpp/status_helper.h',
                       'src/core/lib/gprpp/sync.h',
+                      'src/core/lib/gprpp/table.h',
                       'src/core/lib/gprpp/thd.h',
                       'src/core/lib/gprpp/thd_posix.cc',
                       'src/core/lib/gprpp/thd_windows.cc',
@@ -1822,6 +1824,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/stat.h',
                               'src/core/lib/gprpp/status_helper.h',
                               'src/core/lib/gprpp/sync.h',
+                              'src/core/lib/gprpp/table.h',
                               'src/core/lib/gprpp/thd.h',
                               'src/core/lib/gprpp/time_util.h',
                               'src/core/lib/http/format_request.h',

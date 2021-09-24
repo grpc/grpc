@@ -843,6 +843,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/status_helper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/status_helper.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/sync.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_windows.cc" role="src" />
