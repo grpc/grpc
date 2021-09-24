@@ -47,9 +47,9 @@ namespace {
 using ::grpc_event_engine::experimental::CreateGRPCResolvedAddress;
 using ::grpc_event_engine::experimental::EventEngine;
 
-class IomgrDnsResolver : public Resolver {
+class DnsResolver : public Resolver {
  public:
-  explicit IomgrDnsResolver(ResolverArgs args);
+  explicit DnsResolver(ResolverArgs args);
   void StartLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) override;
   void RequestReresolutionLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) override;
@@ -59,21 +59,21 @@ class IomgrDnsResolver : public Resolver {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) override;
 
  private:
-  ~IomgrDnsResolver() override;
+  ~DnsResolver() override;
   //////////////////////////////////////////////////////////////////////////////
   // Callbacks execute outside the work_serializer_
   //////////////////////////////////////////////////////////////////////////////
   static void OnNextResolution(void* arg, grpc_error_handle error);
   static void OnHostnameResolved(
-      IomgrDnsResolver* self,
+      DnsResolver* self,
       absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses);
   static void OnSrvResolved(
-      IomgrDnsResolver* self,
+      DnsResolver* self,
       absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>> records);
   static void OnBalancerResolved(
-      IomgrDnsResolver* self, absl::string_view balancer_name,
+      DnsResolver* self, absl::string_view balancer_name,
       absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses);
-  static void OnTxtResolved(IomgrDnsResolver* self,
+  static void OnTxtResolved(DnsResolver* self,
                             absl::StatusOr<std::string> txt_record);
 
   //////////////////////////////////////////////////////////////////////////////
@@ -186,7 +186,7 @@ static bool target_matches_localhost(absl::string_view name) {
   return gpr_stricmp(host.c_str(), "localhost") == 0;
 }
 
-IomgrDnsResolver::IomgrDnsResolver(ResolverArgs args)
+DnsResolver::DnsResolver(ResolverArgs args)
     : dns_server_(args.uri.authority()),
       name_to_resolve_(absl::StripPrefix(args.uri.path(), "/")),
       channel_args_(grpc_channel_args_copy(args.args)),
@@ -211,20 +211,16 @@ IomgrDnsResolver::IomgrDnsResolver(ResolverArgs args)
               .set_jitter(GRPC_DNS_RECONNECT_JITTER)
               .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
       on_hostnames_resolved_(
-          absl::bind_front(&IomgrDnsResolver::OnHostnameResolved, this)),
-      on_srv_resolved_(
-          absl::bind_front(&IomgrDnsResolver::OnSrvResolved, this)),
-      on_txt_resolved_(
-          absl::bind_front(&IomgrDnsResolver::OnTxtResolved, this)) {
+          absl::bind_front(&DnsResolver::OnHostnameResolved, this)),
+      on_srv_resolved_(absl::bind_front(&DnsResolver::OnSrvResolved, this)),
+      on_txt_resolved_(absl::bind_front(&DnsResolver::OnTxtResolved, this)) {
   GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this,
                     grpc_schedule_on_exec_ctx);
 }
 
-IomgrDnsResolver::~IomgrDnsResolver() {
-  grpc_channel_args_destroy(channel_args_);
-}
+DnsResolver::~DnsResolver() { grpc_channel_args_destroy(channel_args_); }
 
-void IomgrDnsResolver::StartLocked() {
+void DnsResolver::StartLocked() {
   // If there is an existing timer, the time it fires is the earliest time we
   // can start the next resolution.
   if (have_next_resolution_timer_) return;
@@ -258,20 +254,20 @@ void IomgrDnsResolver::StartLocked() {
   StartResolvingLocked();
 }
 
-void IomgrDnsResolver::RequestReresolutionLocked() {
+void DnsResolver::RequestReresolutionLocked() {
   if (!resolution_in_progress_) {
     StartLocked();
   }
 }
 
-void IomgrDnsResolver::ResetBackoffLocked() {
+void DnsResolver::ResetBackoffLocked() {
   if (have_next_resolution_timer_) {
     grpc_timer_cancel(&next_resolution_timer_);
   }
   backoff_.Reset();
 }
 
-void IomgrDnsResolver::ShutdownLocked() {
+void DnsResolver::ShutdownLocked() {
   shutdown_initiated_ = true;
   if (have_next_resolution_timer_) {
     grpc_timer_cancel(&next_resolution_timer_);
@@ -309,8 +305,8 @@ void IomgrDnsResolver::ShutdownLocked() {
   // TODO(hork): ensure no other cleanup is necessary
 }
 
-void IomgrDnsResolver::OnNextResolution(void* arg, grpc_error_handle error) {
-  IomgrDnsResolver* self = static_cast<IomgrDnsResolver*>(arg);
+void DnsResolver::OnNextResolution(void* arg, grpc_error_handle error) {
+  DnsResolver* self = static_cast<DnsResolver*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   self->work_serializer_->Run(
       [self, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(self->work_serializer_) {
@@ -319,7 +315,7 @@ void IomgrDnsResolver::OnNextResolution(void* arg, grpc_error_handle error) {
       DEBUG_LOCATION);
 }
 
-void IomgrDnsResolver::OnNextResolutionLocked(grpc_error_handle error) {
+void DnsResolver::OnNextResolutionLocked(grpc_error_handle error) {
   GRPC_DNS_TRACE_LOG(
       "resolver:%p re-resolution timer fired. error: %s. "
       "shutdown_initiated_: "
@@ -337,7 +333,7 @@ void IomgrDnsResolver::OnNextResolutionLocked(grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
-void IomgrDnsResolver::StartResolvingLocked() {
+void DnsResolver::StartResolvingLocked() {
   // TODO(roth): We currently deal with this ref manually.  Once the
   // new closure API is done, find a way to track this ref with the timer
   // callback as part of the type system.
@@ -380,8 +376,8 @@ void IomgrDnsResolver::StartResolvingLocked() {
       srv_handle_.key[1], txt_handle_.key[0], txt_handle_.key[1]);
 }
 
-void IomgrDnsResolver::OnHostnameResolved(
-    IomgrDnsResolver* self,
+void DnsResolver::OnHostnameResolved(
+    DnsResolver* self,
     absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
   GPR_ASSERT(self->resolving_hostnames_);
   // hostname resolution won't occur again until `OnHostnamesResolvedLocked`
@@ -401,7 +397,7 @@ void IomgrDnsResolver::OnHostnameResolved(
 // ok. If all resolution steps are complete, this triggers further
 // processing. Otherwise, hostname resolution is marked as complete and the
 // resolver waits for other steps to finish.
-void IomgrDnsResolver::OnHostnamesResolvedLocked() {
+void DnsResolver::OnHostnamesResolvedLocked() {
   GPR_ASSERT(resolving_hostnames_);
   resolving_hostnames_ = false;
   if (shutdown_initiated_) {
@@ -412,8 +408,8 @@ void IomgrDnsResolver::OnHostnamesResolvedLocked() {
   Unref(DEBUG_LOCATION, "OnHostnamesResolvedLocked() complete");
 }
 
-void IomgrDnsResolver::OnBalancerResolved(
-    IomgrDnsResolver* self, absl::string_view balancer_name,
+void DnsResolver::OnBalancerResolved(
+    DnsResolver* self, absl::string_view balancer_name,
     absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> balancers) {
   GPR_ASSERT(self->resolving_balancers_);
   {
@@ -435,7 +431,7 @@ void IomgrDnsResolver::OnBalancerResolved(
       DEBUG_LOCATION);
 }
 
-void IomgrDnsResolver::OnBalancerResolvedLocked() {
+void DnsResolver::OnBalancerResolvedLocked() {
   GPR_ASSERT(resolving_balancers_);
   {
     MutexLock lock(&balancer_mu_);
@@ -454,8 +450,8 @@ void IomgrDnsResolver::OnBalancerResolvedLocked() {
   if (DoneResolving()) FinishResolutionLocked();
 }
 
-void IomgrDnsResolver::OnSrvResolved(
-    IomgrDnsResolver* self,
+void DnsResolver::OnSrvResolved(
+    DnsResolver* self,
     absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
         srv_records) {
   GPR_ASSERT(self->resolving_srv_);
@@ -475,7 +471,7 @@ void IomgrDnsResolver::OnSrvResolved(
 // If all resolution steps are complete, this triggers further processing.
 // Otherwise, SRV resolution is marked as complete and the resolver waits
 // for other steps to finish.
-void IomgrDnsResolver::OnSrvResolvedLocked() {
+void DnsResolver::OnSrvResolvedLocked() {
   GPR_ASSERT(resolving_srv_);
   if (shutdown_initiated_) {
     Unref(DEBUG_LOCATION, "OnSrvResolvedLocked() shutdown");
@@ -491,7 +487,7 @@ void IomgrDnsResolver::OnSrvResolvedLocked() {
     Ref(DEBUG_LOCATION, "dns-resolving - balancers").release();
     for (const auto& srv_record : *tmp_srv_records_) {
       balancer_handles_.push_back(grpc_dns_lookup_hostname(
-          absl::bind_front(&IomgrDnsResolver::OnBalancerResolved, this,
+          absl::bind_front(&DnsResolver::OnBalancerResolved, this,
                            srv_record.host),
           srv_record.host, std::to_string(srv_record.port),
           ToAbslTime(
@@ -504,8 +500,8 @@ void IomgrDnsResolver::OnSrvResolvedLocked() {
   Unref(DEBUG_LOCATION, "OnSrvResolvedLocked() complete");
 }
 
-void IomgrDnsResolver::OnTxtResolved(IomgrDnsResolver* self,
-                                     absl::StatusOr<std::string> txt_record) {
+void DnsResolver::OnTxtResolved(DnsResolver* self,
+                                absl::StatusOr<std::string> txt_record) {
   GPR_ASSERT(self->resolving_txt_);
   // txt resolution won't occur again until `OnTxtResolvedLocked` finishes
   // and the `tmp_txt_record_` member is cleared. It should be safe to
@@ -519,7 +515,7 @@ void IomgrDnsResolver::OnTxtResolved(IomgrDnsResolver* self,
       DEBUG_LOCATION);
 }
 
-void IomgrDnsResolver::OnTxtResolvedLocked() {
+void DnsResolver::OnTxtResolvedLocked() {
   GPR_ASSERT(resolving_txt_);
   resolving_txt_ = false;
   if (shutdown_initiated_) {
@@ -530,7 +526,7 @@ void IomgrDnsResolver::OnTxtResolvedLocked() {
   Unref(DEBUG_LOCATION, "OnTxtResolvedLocked() complete");
 }
 
-void IomgrDnsResolver::FinishResolutionLocked() {
+void DnsResolver::FinishResolutionLocked() {
   GPR_ASSERT(DoneResolving());
   GPR_ASSERT(resolution_in_progress_);
   resolution_in_progress_ = false;
@@ -567,7 +563,7 @@ void IomgrDnsResolver::FinishResolutionLocked() {
   backoff_.Reset();
 }
 
-absl::Status IomgrDnsResolver::ParseResolvedHostnames(Result& result) {
+absl::Status DnsResolver::ParseResolvedHostnames(Result& result) {
   if (!tmp_hostname_addresses_.ok()) {
     return tmp_hostname_addresses_.status();
   }
@@ -578,7 +574,7 @@ absl::Status IomgrDnsResolver::ParseResolvedHostnames(Result& result) {
   return absl::OkStatus();
 }
 
-absl::Status IomgrDnsResolver::ParseResolvedBalancerHostnames(Result& result) {
+absl::Status DnsResolver::ParseResolvedBalancerHostnames(Result& result) {
   if (!enable_srv_queries_) return absl::OkStatus();
   if (!tmp_srv_records_.ok()) {
     return tmp_srv_records_.status();
@@ -610,7 +606,7 @@ absl::Status IomgrDnsResolver::ParseResolvedBalancerHostnames(Result& result) {
   return absl::OkStatus();
 }
 
-absl::Status IomgrDnsResolver::ParseResolvedServiceConfig(Result& result) {
+absl::Status DnsResolver::ParseResolvedServiceConfig(Result& result) {
   if (!request_service_config_) return absl::OkStatus();
   if (!tmp_txt_record_.ok()) {
     return tmp_txt_record_.status();
@@ -627,7 +623,7 @@ absl::Status IomgrDnsResolver::ParseResolvedServiceConfig(Result& result) {
   return absl::OkStatus();
 }
 
-void IomgrDnsResolver::SetRetryTimer() {
+void DnsResolver::SetRetryTimer() {
   // Set retry timer
   ExecCtx::Get()->InvalidateNow();
   grpc_millis next_try = backoff_.NextAttemptTime();
@@ -643,17 +639,17 @@ void IomgrDnsResolver::SetRetryTimer() {
   grpc_timer_init(&next_resolution_timer_, next_try, &on_next_resolution_);
 }
 
-bool IomgrDnsResolver::DoneResolving() {
+bool DnsResolver::DoneResolving() {
   return !resolving_hostnames_ && !resolving_srv_ && !resolving_txt_ &&
          !resolving_balancers_;
 }
 
-class IomgrDnsResolverFactory : public ResolverFactory {
+class DnsResolverFactory : public ResolverFactory {
  public:
   bool IsValidUri(const URI& /*uri*/) const override { return true; }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    return MakeOrphanable<IomgrDnsResolver>(std::move(args));
+    return MakeOrphanable<DnsResolver>(std::move(args));
   }
 
   const char* scheme() const override { return "dns"; }
@@ -665,7 +661,7 @@ class IomgrDnsResolverFactory : public ResolverFactory {
 void grpc_dns_resolver_init() {
   // TODO(hork): Enable this when the Ares DNS resolver is disabled.
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      absl::make_unique<grpc_core::IomgrDnsResolverFactory>());
+      absl::make_unique<grpc_core::DnsResolverFactory>());
 }
 
 void grpc_dns_resolver_shutdown() {}
