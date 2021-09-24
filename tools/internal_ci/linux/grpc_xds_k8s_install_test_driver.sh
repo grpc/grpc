@@ -67,12 +67,12 @@ activate_gke_cluster() {
 activate_secondary_gke_cluster() {
   case $1 in
     GKE_CLUSTER_PSM_LB)
-      GKE_CLUSTER_NAME="interop-test-psm-lb-v1-us-west1-b"
-      GKE_CLUSTER_ZONE="us-west1-b"
+      SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-lb-v1-us-west1-b"
+      SECONDARY_GKE_CLUSTER_ZONE="us-west1-b"
       ;;
     GKE_CLUSTER_PSM_SECURITY)
-      GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-west1-b"
-      GKE_CLUSTER_ZONE="us-west1-b"
+      SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-west1-b"
+      SECONDARY_GKE_CLUSTER_ZONE="us-west1-b"
       ;;
     *)
       echo "Unknown secondary GKE cluster: ${1}"
