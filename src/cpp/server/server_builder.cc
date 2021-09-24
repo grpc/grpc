@@ -167,9 +167,9 @@ ServerBuilder& ServerBuilder::SetSyncServerOption(
 ServerBuilder& ServerBuilder::SetCompressionAlgorithmSupportStatus(
     grpc_compression_algorithm algorithm, bool enabled) {
   if (enabled) {
-    GPR_BITSET(&enabled_compression_algorithms_bitset_, algorithm);
+    grpc_core::SetBit(&enabled_compression_algorithms_bitset_, algorithm);
   } else {
-    GPR_BITCLEAR(&enabled_compression_algorithms_bitset_, algorithm);
+    grpc_core::ClearBit(&enabled_compression_algorithms_bitset_, algorithm);
   }
   return *this;
 }

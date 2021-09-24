@@ -77,7 +77,7 @@ std::string BaseNode::RenderJsonString() {
 //
 
 CallCountingHelper::CallCountingHelper() {
-  num_cores_ = GPR_MAX(1, gpr_cpu_num_cores());
+  num_cores_ = std::max(1u, gpr_cpu_num_cores());
   per_cpu_counter_data_storage_.reserve(num_cores_);
   for (size_t i = 0; i < num_cores_; ++i) {
     per_cpu_counter_data_storage_.emplace_back();
@@ -398,7 +398,7 @@ void SecurityArgDestroy(void* p) {
   xds_certificate_provider->Unref();
 }
 
-int SecurityArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
+int SecurityArgCmp(void* p, void* q) { return grpc_core::QsortCompare(p, q); }
 
 const grpc_arg_pointer_vtable kChannelArgVtable = {
     SecurityArgCopy, SecurityArgDestroy, SecurityArgCmp};

@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2016 gRPC authors.
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,12 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-set -ex
+licenses(["notice"])
 
-cd $(dirname $0)/../..
-make CONFIG=$config $1 -j3
-mkdir -p fuzzer_output
-export ASAN_OPTIONS=handle_abort=1
-. tools/fuzzer/runners/$1.sh
+cc_library(
+    name = "libprotobuf_mutator",
+    srcs = glob(
+        ["src/*.cc", "src/libfuzzer/*.cc"], 
+        exclude = ["src/*_test.cc", "src/libfuzzer/*_test.cc"]
+    ),
+    hdrs = glob(["src/*.h", "port/*.h", "src/libfuzzer/*.h"]),
+    deps = [
+        "@com_google_protobuf//:protobuf",
+        "@com_google_googletest//:gtest",
+    ],
+    visibility = ["//visibility:public"],
+    includes = ["."]
+)

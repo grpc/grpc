@@ -21,6 +21,8 @@
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/promise/promise_fuzzer.pb.h"
 
+#include <gtest/gtest.h>
+
 bool squelch = true;
 bool leak_check = true;
 
@@ -178,50 +180,86 @@ static Promise<IntHdl> MakePromise(const promise_fuzzer::Promise& p) {
   }
   return [] { return std::make_shared<int>(42); };
 }
+
+// Backing type for wakeup scheduling
+// This should be placed on the stack, and a UseFuzzingWakeupScheduler passed to
+// the activity.
+// This organization lets us manipulate scheduling from the fuzzer main loop
+// whilst giving the activity the interface it expects.
+class FuzzingWakeupScheduler {
+ public:
+  ~FuzzingWakeupScheduler() { Wakeup(); }
+
+  // Flush pending wakeup if it exists
+  void Wakeup() {
+    if (wakeup_ != nullptr) absl::exchange(wakeup_, nullptr)();
+  }
+
+  // Schedule a wakeup
+  template <typename ActivityType>
+  void ScheduleWakeup(ActivityType* activity) {
+    ASSERT_EQ(activity, expected_activity_);
+    ASSERT_EQ(wakeup_, nullptr);
+    wakeup_ = [activity]() { activity->RunScheduledWakeup(); };
+  }
+
+  // Set the expected activity
+  void SetExpectedActivity(Activity* activity) {
+    expected_activity_ = activity;
+  }
+
+ private:
+  Activity* expected_activity_ = nullptr;
+  std::function<void()> wakeup_;
+};
+
+// Activity uses this to actually schedule wakeups
+class UseFuzzingWakeupScheduler {
+ public:
+  UseFuzzingWakeupScheduler(FuzzingWakeupScheduler* scheduler) : scheduler_(scheduler) {}
+
+  template <typename ActivityType>
+  void ScheduleWakeup(ActivityType* activity) {
+    scheduler_->ScheduleWakeup(activity);
+  }
+
+ private:
+  FuzzingWakeupScheduler* const scheduler_;
+};
 }  // namespace grpc_core
+
+using namespace grpc_core;
 
 DEFINE_PROTO_FUZZER(const promise_fuzzer::Msg& msg) {
   if (!msg.has_promise()) {
     return;
   }
-  int num_todos = 0;
-  std::map<int, std::function<void()>> todo_map;
+  FuzzingWakeupScheduler scheduler;
   bool done = false;
-  auto activity = grpc_core::MakeActivity(
+  auto activity = MakeActivity(
       [msg] {
-        return Seq(grpc_core::MakePromise(msg.promise()),
+        return Seq(MakePromise(msg.promise()),
                    [] { return absl::OkStatus(); });
       },
-      [&todo_map, &num_todos](std::function<void()> f) {
-        todo_map.emplace(num_todos++, std::move(f));
-      },
+      UseFuzzingWakeupScheduler(&scheduler),
       [&done](absl::Status status) { done = true; });
   for (size_t i = 0; !done && activity != nullptr && i < msg.actions_size();
        i++) {
     const auto& action = msg.actions(i);
     switch (action.action_type_case()) {
-      case promise_fuzzer::Action::kWakeup:
+      case promise_fuzzer::Action::kForceWakeup:
         activity->ForceWakeup();
         break;
       case promise_fuzzer::Action::kCancel:
         activity.reset();
         break;
-      case promise_fuzzer::Action::kRunTodo: {
-        auto it = todo_map.find(action.run_todo());
-        if (it == todo_map.end()) break;
-        it->second();
-        todo_map.erase(it);
+      case promise_fuzzer::Action::kFlushWakeup:
+        scheduler.Wakeup();
         break;
-      }
       case promise_fuzzer::Action::ACTION_TYPE_NOT_SET:
         break;
     }
   }
   activity.reset();
-  while (!todo_map.empty()) {
-    auto it = todo_map.begin();
-    auto f = std::move(it->second);
-    todo_map.erase(it);
-    f();
-  }
 }
+

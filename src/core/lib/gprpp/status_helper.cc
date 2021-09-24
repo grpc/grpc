@@ -131,8 +131,9 @@ void EncodeUInt32ToBytes(uint32_t v, char* buf) {
 }
 
 uint32_t DecodeUInt32FromBytes(const char* buf) {
-  return buf[0] | (uint32_t(buf[1]) << 8) | (uint32_t(buf[2]) << 16) |
-         (uint32_t(buf[3]) << 24);
+  const unsigned char* ubuf = reinterpret_cast<const unsigned char*>(buf);
+  return ubuf[0] | (uint32_t(ubuf[1]) << 8) | (uint32_t(ubuf[2]) << 16) |
+         (uint32_t(ubuf[3]) << 24);
 }
 
 std::vector<absl::Status> ParseChildren(absl::Cord children) {

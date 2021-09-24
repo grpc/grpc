@@ -53,9 +53,9 @@ message Wakeup {}
 
 message Action {
     oneof action_type {
-        Wakeup wakeup = 1;
+        Wakeup force_wakeup = 1;
         Cancel cancel = 2;
-        int32 run_todo = 3;
+        Wakeup flush_wakeup = 3;
     }
 }
 
