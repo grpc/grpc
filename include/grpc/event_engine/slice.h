@@ -115,4 +115,4 @@ class Slice final {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPCPP_IMPL_CODEGEN_SLICE_H
+#endif  // GRPC_EVENT_ENGINE_SLICE_H
