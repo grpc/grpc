@@ -451,7 +451,7 @@ class RlsLb : public LoadBalancingPolicy {
     RlsRequest(RefCountedPtr<RlsLb> lb_policy, RlsLb::RequestKey key,
                RefCountedPtr<ControlChannel> channel,
                std::unique_ptr<BackOff> backoff_state);
-    ~RlsRequest();
+    ~RlsRequest() override;
 
     /// Shutdown the entry. Cancel the RLS call on the fly if applicable. After
     /// shutdown, further call responses are no longer reported to the lb
