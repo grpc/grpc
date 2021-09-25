@@ -212,10 +212,11 @@ namespace {
 
 std::unique_ptr<BackOff> MakeCacheEntryBackoff() {
   return absl::make_unique<BackOff>(
-      BackOff::Options().set_initial_backoff(kCacheBackoffInitial)
-                        .set_multiplier(kCacheBackoffMultiplier)
-                        .set_jitter(kCacheBackoffJitter)
-                        .set_max_backoff(kCacheBackoffMax));
+      BackOff::Options()
+          .set_initial_backoff(kCacheBackoffInitial)
+          .set_multiplier(kCacheBackoffMultiplier)
+          .set_jitter(kCacheBackoffJitter)
+          .set_max_backoff(kCacheBackoffMax));
 }
 
 }  // namespace
