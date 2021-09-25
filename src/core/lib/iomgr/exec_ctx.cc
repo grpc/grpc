@@ -36,6 +36,14 @@ static void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
             closure->run ? "run" : "scheduled", closure->file_initiated,
             closure->line_initiated);
   }
+  if (closure->called) {
+    gpr_log(GPR_ERROR, "double-call closure %p: created [%s:%d]: %s [%s:%d]",
+            closure, closure->file_created, closure->line_created,
+            closure->run ? "run" : "scheduled", closure->file_initiated,
+            closure->line_initiated);
+    abort();
+  }
+  closure->called = true;
 #endif
   closure->cb(closure->cb_arg, error);
 #ifndef NDEBUG

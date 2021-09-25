@@ -119,6 +119,13 @@ size_t Executor::RunClosures(const char* executor_name,
     EXECUTOR_TRACE("(%s) run %p [created by %s:%d]", executor_name, c,
                    c->file_created, c->line_created);
     c->scheduled = false;
+    if (c->called) {
+      gpr_log(GPR_ERROR, "double-call closure %p: created [%s:%d]: %s [%s:%d]",
+              c, c->file_created, c->line_created, c->run ? "run" : "scheduled",
+              c->file_initiated, c->line_initiated);
+      abort();
+    }
+    c->called = true;
 #else
     EXECUTOR_TRACE("(%s) run %p", executor_name, c);
 #endif

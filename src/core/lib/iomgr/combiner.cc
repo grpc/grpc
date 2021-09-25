@@ -224,9 +224,18 @@ bool grpc_combiner_continue_exec_ctx() {
     grpc_error_handle cl_err = cl->error_data.error;
 #ifndef NDEBUG
     cl->scheduled = false;
+    if (cl->called) {
+      gpr_log(GPR_ERROR, "double-call closure %p: created [%s:%d]: %s [%s:%d]",
+              cl, cl->file_created, cl->line_created,
+              cl->run ? "run" : "scheduled", cl->file_initiated,
+              cl->line_initiated);
+      abort();
+    }
+    cl->called = true;
 #endif
     cl->cb(cl->cb_arg, cl_err);
     GRPC_ERROR_UNREF(cl_err);
+
   } else {
     grpc_closure* c = lock->final_list.head;
     GPR_ASSERT(c != nullptr);
@@ -239,6 +248,14 @@ bool grpc_combiner_continue_exec_ctx() {
       grpc_error_handle error = c->error_data.error;
 #ifndef NDEBUG
       c->scheduled = false;
+      if (c->called) {
+        gpr_log(GPR_ERROR,
+                "double-call closure %p: created [%s:%d]: %s [%s:%d]", c,
+                c->file_created, c->line_created, c->run ? "run" : "scheduled",
+                c->file_initiated, c->line_initiated);
+        abort();
+      }
+      c->called = true;
 #endif
       c->cb(c->cb_arg, error);
       GRPC_ERROR_UNREF(error);

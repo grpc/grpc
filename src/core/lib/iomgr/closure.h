@@ -85,6 +85,7 @@ struct grpc_closure {
   int line_created;
   const char* file_initiated;
   int line_initiated;
+  bool called;  // whether closure is called
 #endif
 };
 
@@ -106,6 +107,7 @@ inline grpc_closure* grpc_closure_init(grpc_closure* closure,
   closure->run = false;
   closure->file_created = file;
   closure->line_created = line;
+  closure->called = false;
 #endif
   return closure;
 }
@@ -240,6 +242,14 @@ class Closure {
               closure, closure->file_created, closure->line_created,
               location.file(), location.line());
     }
+    if (closure->called) {
+      gpr_log(GPR_ERROR, "double-call closure %p: created [%s:%d]: %s [%s:%d]",
+              closure, closure->file_created, closure->line_created,
+              closure->run ? "run" : "scheduled", closure->file_initiated,
+              closure->line_initiated);
+      abort();
+    }
+    closure->called = true;
     GPR_ASSERT(closure->cb != nullptr);
 #endif
     closure->cb(closure->cb_arg, error);
