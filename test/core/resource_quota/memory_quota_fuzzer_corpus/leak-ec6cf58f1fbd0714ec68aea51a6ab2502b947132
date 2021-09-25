@@ -1,0 +1,26 @@
+actions {
+  quota: 1
+  create_quota {
+  }
+}
+actions {
+  quota: 1
+  allocator: 1
+  create_allocator {
+  }
+}
+actions {
+  quota: 1
+  set_quota_size: 0
+}
+actions {
+  allocator: 1
+  delete_allocator {
+  }
+}
+actions {
+  quota: 1
+  allocator: 1
+  create_allocator {
+  }
+}
