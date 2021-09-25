@@ -38,7 +38,6 @@
 #include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -48,8 +47,6 @@
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
-#include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
-#include "src/proto/grpc/lb/v1/load_balancer.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
