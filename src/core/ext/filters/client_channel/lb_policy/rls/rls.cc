@@ -49,9 +49,9 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
+#include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h"
 #include "src/core/lib/backoff/backoff.h"
@@ -586,7 +586,8 @@ class RlsLb : public LoadBalancingPolicy {
   // FIXME: hop into WorkSerializer to actually start RLS call, so that
   // only the map itself has to be guarded by the mutex?
   std::unordered_map<RequestKey, OrphanablePtr<RlsRequest>,
-                     absl::Hash<RequestKey>> request_map_ ABSL_GUARDED_BY(mu_);
+                     absl::Hash<RequestKey>>
+      request_map_ ABSL_GUARDED_BY(mu_);
 
   // FIXME: see if there's a way to change things such that the throttle
   // object is covered by the mutex but the rest of the channel is not,
@@ -947,9 +948,8 @@ void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
       [cache, error]() {
         RefCountedPtr<RlsLb> lb_policy(cache->lb_policy_);
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-          gpr_log(
-              GPR_INFO, "[rlslb %p] cache cleanup timer fired (%s)",
-              cache->lb_policy_, grpc_error_std_string(error).c_str());
+          gpr_log(GPR_INFO, "[rlslb %p] cache cleanup timer fired (%s)",
+                  cache->lb_policy_, grpc_error_std_string(error).c_str());
         }
         if (error == GRPC_ERROR_CANCELLED) return;
         MutexLock lock(&lb_policy->mu_);
@@ -1066,8 +1066,8 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
           absl::UnavailableError("child policy does not exist"));
     }
     if (!header_data_.empty()) {
-      char* copied_header_data = static_cast<char*>(
-          args.call_state->Alloc(header_data_.length() + 1));
+      char* copied_header_data =
+          static_cast<char*>(args.call_state->Alloc(header_data_.length() + 1));
       strcpy(copied_header_data, header_data_.c_str());
       args.initial_metadata->Add(kRlsHeaderKey, copied_header_data);
     }
@@ -1086,13 +1086,12 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
       }
       // Child policy not in TRANSIENT_FAILURE, so delegate.
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-        gpr_log(GPR_INFO,
-                "[rlslb %p] cache entry=%p: target %s in state %s; "
-                "delegating",
-                lb_policy_.get(), this,
-                child_policy_wrapper->target().c_str(),
-                ConnectivityStateName(
-                    child_policy_wrapper->connectivity_state()));
+        gpr_log(
+            GPR_INFO,
+            "[rlslb %p] cache entry=%p: target %s in state %s; "
+            "delegating",
+            lb_policy_.get(), this, child_policy_wrapper->target().c_str(),
+            ConnectivityStateName(child_policy_wrapper->connectivity_state()));
       }
       return child_policy_wrapper->Pick(args);
     }
@@ -1346,8 +1345,8 @@ void RlsLb::RlsChannel::StateWatcher::OnConnectivityStateChange(
 //
 
 RlsLb::RlsChannel::Throttle::Throttle(int window_size_seconds,
-                                          double ratio_for_successes,
-                                          int paddings) {
+                                      double ratio_for_successes,
+                                      int paddings) {
   GPR_DEBUG_ASSERT(window_size_seconds >= 0);
   GPR_DEBUG_ASSERT(ratio_for_successes >= 0);
   GPR_DEBUG_ASSERT(paddings >= 0);
@@ -1395,8 +1394,7 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy,
   channel_ =
       grpc_secure_channel_create(creds, target.c_str(), nullptr, nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-    gpr_log(GPR_INFO,
-            "[rlslb %p] RlsChannel=%p: created channel %p for %s",
+    gpr_log(GPR_INFO, "[rlslb %p] RlsChannel=%p: created channel %p for %s",
             lb_policy_.get(), this, channel_, target.c_str());
   }
   if (channel_ != nullptr) {
