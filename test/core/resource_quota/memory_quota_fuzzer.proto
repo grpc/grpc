@@ -1,0 +1,77 @@
+// Copyright 2021 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package memory_quota_fuzzer;
+
+message Empty {}
+
+message Reclaimer {
+    enum Pass {
+        BENIGN = 0;
+        IDLE = 1;
+        DESTRUCTIVE = 2;
+    }
+    bool synchronous = 1;
+    Pass pass = 2;
+    Msg msg = 3;
+}
+
+message Action {
+    enum Thing {
+        THING1 = 0;
+        THING2 = 1;
+        THING3 = 2;
+        THING5 = 3;
+        THING8 = 4;
+        THING13 = 5;
+        THING21 = 6;
+        THING34 = 7;
+        THING55 = 8;
+        THING89 = 9;
+        THING144 = 10;
+        THING233 = 11;
+        THING377 = 12;
+        THING610 = 13;
+        THING987 = 14;
+        THING1597 = 15;
+        THING2584 = 16;
+        THING4181 = 17;
+        THING6765 = 18;
+        THING10946 = 19;
+        THING17711 = 20;
+        THING28657 = 21;
+        THING46368 = 22;
+        THING75025 = 23;
+    };
+    int32 quota = 1;
+    int32 allocator = 2;
+    int32 thing = 3;
+    oneof action_type {
+        Empty flush_exec_ctx = 7;
+        Empty create_quota = 10;
+        Empty delete_quota = 11;
+        Empty create_allocator = 12;
+        Empty delete_allocator = 13;
+        uint64 set_quota_size = 14;
+        Empty rebind_quota = 15;
+        Thing create_thing = 16;
+        Reclaimer post_reclaimer = 17;
+    }
+}
+
+message Msg {
+    repeated Action actions = 2;
+}

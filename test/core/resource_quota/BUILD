@@ -18,6 +18,8 @@ licenses(["notice"])
 
 grpc_package(name = "test/core/promise")
 
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+
 grpc_cc_test(
     name = "memory_quota_test",
     srcs = ["memory_quota_test.cc"],
@@ -58,5 +60,19 @@ grpc_cc_test(
     deps = [
         "//:resource_quota",
         "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_proto_fuzzer(
+    name = "memory_quota_fuzzer",
+    srcs = ["memory_quota_fuzzer.cc"],
+    corpus = "memory_quota_fuzzer_corpus",
+    language = "C++",
+    proto = "memory_quota_fuzzer.proto",
+    tags = ["no_windows"],
+    uses_polling = False,
+    deps = [
+        "//:memory_quota",
+        "//test/core/util:grpc_test_util",
     ],
 )

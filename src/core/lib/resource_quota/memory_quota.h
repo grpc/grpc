@@ -124,10 +124,14 @@ class ReclaimerQueue {
   static constexpr Index kInvalidIndex = std::numeric_limits<Index>::max();
 
   // Insert a new element at the back of the queue.
+  // If there is already an element from allocator at *index, then it is
+  // replaced with the new reclaimer and *index is unchanged. If there is not,
+  // then *index is set to the index of the newly queued entry.
   // Associates the reclamation function with an allocator, and keeps that
   // allocator alive, so that we can use the pointer as an ABA guard.
-  Index Insert(RefCountedPtr<MemoryAllocator> allocator,
-               ReclamationFunction reclaimer) ABSL_LOCKS_EXCLUDED(mu_);
+  void Insert(RefCountedPtr<MemoryAllocator> allocator,
+              ReclamationFunction reclaimer, Index* index)
+      ABSL_LOCKS_EXCLUDED(mu_);
   // Cancel a reclamation function - returns the function if cancelled
   // successfully, or nullptr if the reclamation was already begun and could not
   // be cancelled. allocator must be the same as was passed to Insert.
