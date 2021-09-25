@@ -18,6 +18,7 @@ import hashlib
 import logging
 import time
 from typing import List, Optional, Tuple
+import urllib.parse
 
 from absl import flags
 from absl.testing import absltest
@@ -189,6 +190,22 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
             retryer(self._cleanup)
         except retryers.RetryError:
             logger.exception('Got error during teardown')
+
+        cluster_name = self.k8s_api_manager.context.split('_')[-1]
+        client_query = urllib.parse.quote(
+            f'resource.type="k8s_container" '
+            f'resource.labels.cluster_name="{cluster_name}" '
+            f'resource.labels.namespace_name="{self.client_namespace}"')
+        server_query = urllib.parse.quote(
+            f'resource.type="k8s_container" '
+            f'resource.labels.cluster_name="{cluster_name}" '
+            f'resource.labels.namespace_name="{self.server_namespace}"')
+        # Reference pantheon directly as the query is lost in the redirect from
+        # console.cloud.google.com
+        logger.info('Client logs: https://pantheon.corp.google.com/logs/query;'
+                    f'query={client_query}?project={self.project}')
+        logger.info('Server logs: https://pantheon.corp.google.com/logs/query;'
+                    f'query={server_query}?project={self.project}')
 
     def _cleanup(self):
         self.td.cleanup(force=self.force_cleanup)
