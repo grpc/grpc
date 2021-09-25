@@ -65,6 +65,17 @@ std::unique_ptr<BaseThing> MakeThing(MemoryAllocator* a,
     CASE(28657);
     CASE(46368);
     CASE(75025);
+    CASE(121393);
+    CASE(196418);
+    CASE(317811);
+    CASE(514229);
+    CASE(832040);
+    CASE(1346269);
+    CASE(2178309);
+    CASE(3524578);
+    CASE(5702887);
+    CASE(9227465);
+    CASE(14930352);
     default:
       return nullptr;
   }
