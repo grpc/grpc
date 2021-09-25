@@ -69,7 +69,7 @@ namespace {
 const char* kRls = "rls";
 const char kGrpc[] = "grpc";
 const char* kRlsRequestPath = "/grpc.lookup.v1.RouteLookupService/RouteLookup";
-const char* kDummyTargetFieldValue = "dummy_target_field_value";
+const char* kFakeTargetFieldValue = "fake_target_field_value";
 const char* kRlsHeaderKey = "X-Google-RLS-Data";
 
 const grpc_millis kDefaultLookupServiceTimeout = 10000;
@@ -1647,7 +1647,7 @@ grpc_error_handle ValidateChildPolicyList(
   // Add target to each entry in the config proto.
   *child_policy_config = child_policy_list;
   std::string target =
-      default_target.empty() ? kDummyTargetFieldValue : default_target;
+      default_target.empty() ? kFakeTargetFieldValue : default_target;
   grpc_error_handle error = InsertOrUpdateChildPolicyField(
       child_policy_config_target_field_name, target, child_policy_config);
   if (error != GRPC_ERROR_NONE) return error;
