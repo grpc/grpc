@@ -124,10 +124,14 @@ class ReclaimerQueue {
   static constexpr Index kInvalidIndex = std::numeric_limits<Index>::max();
 
   // Insert a new element at the back of the queue.
+  // If there is already an element from allocator at *index, then it is
+  // replaced with the new reclaimer and *index is unchanged. If there is not,
+  // then *index is set to the index of the newly queued entry.
   // Associates the reclamation function with an allocator, and keeps that
   // allocator alive, so that we can use the pointer as an ABA guard.
-  Index Insert(RefCountedPtr<MemoryAllocator> allocator,
-               ReclamationFunction reclaimer) ABSL_LOCKS_EXCLUDED(mu_);
+  void Insert(RefCountedPtr<MemoryAllocator> allocator,
+              ReclamationFunction reclaimer, Index* index)
+      ABSL_LOCKS_EXCLUDED(mu_);
   // Cancel a reclamation function - returns the function if cancelled
   // successfully, or nullptr if the reclamation was already begun and could not
   // be cancelled. allocator must be the same as was passed to Insert.
@@ -226,7 +230,8 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
       const RefCountedPtr<MemoryAllocator> allocator_;
     };
     Reserve(sizeof(Wrapper));
-    return new Wrapper(Ref(), std::forward<Args>(args)...);
+    return new Wrapper(Ref(DEBUG_LOCATION, "Wrapper"),
+                       std::forward<Args>(args)...);
   }
 
   // Construct a unique ptr immediately.
@@ -299,7 +304,9 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
   // reclamation should we shutdown or get rebound.
   ReclaimerQueue::Index
       reclamation_indices_[kNumReclamationPasses] ABSL_GUARDED_BY(
-          memory_quota_mu_) = {ReclaimerQueue::kInvalidIndex};
+          memory_quota_mu_) = {
+          ReclaimerQueue::kInvalidIndex, ReclaimerQueue::kInvalidIndex,
+          ReclaimerQueue::kInvalidIndex, ReclaimerQueue::kInvalidIndex};
 };
 
 // Wrapper type around std::vector to make initialization against a
@@ -346,7 +353,8 @@ class MemoryQuota final : public DualRefCounted<MemoryQuota> {
   MemoryQuota();
 
   OrphanablePtr<MemoryAllocator> MakeMemoryAllocator() {
-    return MakeOrphanable<MemoryAllocator>(Ref());
+    return MakeOrphanable<MemoryAllocator>(
+        Ref(DEBUG_LOCATION, "MakeMemoryAllocator"));
   }
 
   // Resize the quota to new_size.
