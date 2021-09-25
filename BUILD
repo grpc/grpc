@@ -2008,9 +2008,6 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/rls/rls.cc",
     ],
-    hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/rls/rls.h",
-    ],
     external_deps = [
         "absl/container:inlined_vector",
         "absl/hash",
@@ -2020,6 +2017,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "dual_ref_counted",
         "gpr_base",
         "gpr_codegen",
         "grpc_base",
