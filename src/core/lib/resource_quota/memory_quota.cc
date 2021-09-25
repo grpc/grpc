@@ -104,7 +104,7 @@ Poll<ReclamationFunction> ReclaimerQueue::PollNext() {
 //
 
 MemoryAllocator::MemoryAllocator(RefCountedPtr<MemoryQuota> memory_quota)
-    : memory_quota_(memory_quota) {
+    : InternallyRefCounted("MemoryAllocator"), memory_quota_(memory_quota) {
   Reserve(sizeof(MemoryQuota));
 }
 
@@ -116,10 +116,12 @@ MemoryAllocator::~MemoryAllocator() {
 }
 
 void MemoryAllocator::Orphan() {
+  ReclamationFunction old_reclaimers[kNumReclamationPasses];
   {
     absl::MutexLock lock(&memory_quota_mu_);
     for (size_t i = 0; i < kNumReclamationPasses; i++) {
-      memory_quota_->reclaimers_[i].Cancel(reclamation_indices_[i], this);
+      old_reclaimers[i] =
+          memory_quota_->reclaimers_[i].Cancel(reclamation_indices_[i], this);
     }
   }
   InternallyRefCounted<MemoryAllocator>::Unref();
@@ -201,15 +203,17 @@ void MemoryAllocator::MaybeRegisterReclaimerLocked() {
   if (reclamation_indices_[0] != ReclaimerQueue::kInvalidIndex) return;
   // Grab references to the things we'll need
   auto self = Ref(DEBUG_LOCATION, "reclaimer");
+  gpr_log(GPR_DEBUG, "%p: register reclaimer; idx=%" PRIdMAX, this,
+          reclamation_indices_[0]);
   memory_quota_->reclaimers_[0].Insert(
       self,
       [self](ReclamationSweep) {
         MutexLock lock(&self->memory_quota_mu_);
-        // Signal that we're no longer armed.
-        self->reclamation_indices_[0] = ReclaimerQueue::kInvalidIndex;
         // Figure out how many bytes we can return to the quota.
         size_t return_bytes =
             self->free_bytes_.exchange(0, std::memory_order_acq_rel);
+        gpr_log(GPR_DEBUG, "%p: sweep reclaimer - return %" PRIdMAX, self.get(),
+                return_bytes);
         if (return_bytes == 0) return;
         // Subtract that from our outstanding balance.
         self->taken_bytes_ -= return_bytes;
@@ -227,9 +231,8 @@ void MemoryAllocator::Rebind(RefCountedPtr<MemoryQuota> memory_quota) {
   // Fetch back any reclaimers that are queued.
   ReclamationFunction reclaimers[kNumReclamationPasses];
   for (size_t i = 0; i < kNumReclamationPasses; i++) {
-    reclaimers[i] = memory_quota_->reclaimers_[i].Cancel(
-        absl::exchange(reclamation_indices_[i], ReclaimerQueue::kInvalidIndex),
-        this);
+    reclaimers[i] =
+        memory_quota_->reclaimers_[i].Cancel(reclamation_indices_[i], this);
   }
   // Switch to the new memory quota, leaving the old one in memory_quota so that
   // when we unref it, we are outside of lock.
@@ -291,7 +294,7 @@ class SliceRefCount {
 grpc_slice MemoryAllocator::MakeSlice(MemoryRequest request) {
   auto size = Reserve(request.Increase(sizeof(SliceRefCount)));
   void* p = gpr_malloc(size);
-  new (p) SliceRefCount(Ref(), size);
+  new (p) SliceRefCount(Ref(DEBUG_LOCATION, "slice"), size);
   grpc_slice slice;
   slice.refcount = static_cast<SliceRefCount*>(p)->base_refcount();
   slice.data.refcounted.bytes =
@@ -329,7 +332,7 @@ void AtomicBarrier::Notify(uint64_t token) {
 // MemoryQuota
 //
 
-MemoryQuota::MemoryQuota() {
+MemoryQuota::MemoryQuota() : DualRefCounted("MemoryQuota") {
   auto self = WeakRef();
 
   // Reclamation loop:

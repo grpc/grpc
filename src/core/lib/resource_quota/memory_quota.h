@@ -230,7 +230,8 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
       const RefCountedPtr<MemoryAllocator> allocator_;
     };
     Reserve(sizeof(Wrapper));
-    return new Wrapper(Ref(), std::forward<Args>(args)...);
+    return new Wrapper(Ref(DEBUG_LOCATION, "Wrapper"),
+                       std::forward<Args>(args)...);
   }
 
   // Construct a unique ptr immediately.
@@ -303,7 +304,9 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
   // reclamation should we shutdown or get rebound.
   ReclaimerQueue::Index
       reclamation_indices_[kNumReclamationPasses] ABSL_GUARDED_BY(
-          memory_quota_mu_) = {ReclaimerQueue::kInvalidIndex};
+          memory_quota_mu_) = {
+          ReclaimerQueue::kInvalidIndex, ReclaimerQueue::kInvalidIndex,
+          ReclaimerQueue::kInvalidIndex, ReclaimerQueue::kInvalidIndex};
 };
 
 // Wrapper type around std::vector to make initialization against a
@@ -350,7 +353,8 @@ class MemoryQuota final : public DualRefCounted<MemoryQuota> {
   MemoryQuota();
 
   OrphanablePtr<MemoryAllocator> MakeMemoryAllocator() {
-    return MakeOrphanable<MemoryAllocator>(Ref());
+    return MakeOrphanable<MemoryAllocator>(
+        Ref(DEBUG_LOCATION, "MakeMemoryAllocator"));
   }
 
   // Resize the quota to new_size.

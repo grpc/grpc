@@ -197,6 +197,11 @@ class Fuzzer {
 
 }  // namespace grpc_core
 
+static void dont_log(gpr_log_func_args* /*args*/) {}
+
 DEFINE_PROTO_FUZZER(const memory_quota_fuzzer::Msg& msg) {
+  if (squelch) gpr_set_log_function(dont_log);
+  gpr_log_verbosity_init();
+  grpc_tracer_init();
   grpc_core::Fuzzer().Run(msg);
 }

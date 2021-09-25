@@ -363,6 +363,8 @@ class PromiseActivity final
     if (!wakeup_scheduled_.exchange(true, std::memory_order_relaxed)) {
       // Can't safely run, so ask to run later.
       wakeup_scheduler_.ScheduleWakeup(this);
+    } else {
+      WakeupComplete();
     }
   }
 
