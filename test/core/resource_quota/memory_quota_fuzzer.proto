@@ -29,47 +29,15 @@ message Reclaimer {
     Msg msg = 3;
 }
 
+message AllocationRequest {
+    uint32 min = 1;
+    uint32 max = 2;
+}
+
 message Action {
-    enum Thing {
-        THING1 = 0;
-        THING2 = 1;
-        THING3 = 2;
-        THING5 = 3;
-        THING8 = 4;
-        THING13 = 5;
-        THING21 = 6;
-        THING34 = 7;
-        THING55 = 8;
-        THING89 = 9;
-        THING144 = 10;
-        THING233 = 11;
-        THING377 = 12;
-        THING610 = 13;
-        THING987 = 14;
-        THING1597 = 15;
-        THING2584 = 16;
-        THING4181 = 17;
-        THING6765 = 18;
-        THING10946 = 19;
-        THING17711 = 20;
-        THING28657 = 21;
-        THING46368 = 22;
-        THING75025 = 23;
-        THING121393 = 24;
-        THING196418 = 25;
-        THING317811 = 26;
-        THING514229 = 27;
-        THING832040 = 28;
-        THING1346269 = 29;
-        THING2178309 = 30;
-        THING3524578 = 31;
-        THING5702887 = 32;
-        THING9227465 = 33;
-        THING14930352 = 34;
-    };
     int32 quota = 1;
     int32 allocator = 2;
-    int32 thing = 3;
+    int32 allocation = 3;
     oneof action_type {
         Empty flush_exec_ctx = 7;
         Empty create_quota = 10;
@@ -78,8 +46,9 @@ message Action {
         Empty delete_allocator = 13;
         uint64 set_quota_size = 14;
         Empty rebind_quota = 15;
-        Thing create_thing = 16;
-        Reclaimer post_reclaimer = 17;
+        AllocationRequest create_allocation = 16;
+        Empty delete_allocation = 17;
+        Reclaimer post_reclaimer = 18;
     }
 }
 
