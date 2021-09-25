@@ -131,7 +131,7 @@ class RlsServiceImpl : public RlsService {
   };
 
   ::grpc::Status RouteLookup(
-      ::grpc::ServerContext* context,
+      ::grpc::ServerContext* /*context*/,
       const ::grpc::lookup::v1::RouteLookupRequest* request,
       ::grpc::lookup::v1::RouteLookupResponse* response) override {
     gpr_log(GPR_INFO, "RLS: Received request: %s",
