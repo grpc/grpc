@@ -835,7 +835,7 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
     return result;
   }
   result.targets.reserve(len);
-  for (int i = 0; i < len; i++) {
+  for (size_t i = 0; i < len; i++) {
     result.targets.emplace_back(targets_strview[i].data,
                                 targets_strview[i].size);
   }
