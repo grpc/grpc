@@ -230,11 +230,6 @@ class FakeResolverResponseGeneratorWrapper {
       : response_generator_(grpc_core::MakeRefCounted<
                             grpc_core::FakeResolverResponseGenerator>()) {}
 
-  FakeResolverResponseGeneratorWrapper(
-      FakeResolverResponseGeneratorWrapper&& other) {
-    response_generator_ = std::move(other.response_generator_);
-  }
-
   void SetNextResolution(absl::string_view service_config_json) {
     grpc_core::ExecCtx exec_ctx;
     response_generator_->SetResponse(BuildFakeResults(service_config_json));
@@ -308,10 +303,6 @@ class RlsEnd2endTest : public ::testing::Test {
       backends_.emplace_back(new ServerThread<MyTestServiceImpl>("backend"));
       backends_.back()->Start(kServerHost);
     }
-  }
-
-  FakeResolverResponseGeneratorWrapper BuildResolverResponseGenerator() {
-    return FakeResolverResponseGeneratorWrapper();
   }
 
   std::unique_ptr<grpc::testing::EchoTestService::Stub> BuildStub() {
