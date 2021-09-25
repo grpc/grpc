@@ -70,7 +70,7 @@ static void adjust_downwards(grpc_timer** first, uint32_t i, uint32_t length,
 #define SHRINK_FULLNESS_FACTOR 2
 
 static void maybe_shrink(grpc_timer_heap* heap) {
-  if (heap->timer_count >= 8 &&
+  if (heap->timer_count >= SHRINK_MIN_ELEMS &&
       heap->timer_count <= heap->timer_capacity / SHRINK_FULLNESS_FACTOR / 2) {
     heap->timer_capacity = heap->timer_count * SHRINK_FULLNESS_FACTOR;
     heap->timers = static_cast<grpc_timer**>(
