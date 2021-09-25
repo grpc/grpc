@@ -145,14 +145,13 @@ TEST_F(RlsConfigParsingTest, InvalidChildPolicyConfig) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto service_config = ServiceConfig::Create(
       /*args=*/nullptr, service_config_json, &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex(
-          "errors parsing RLS LB policy config.*referenced_errors.*"
-          "field:childPolicy.*referenced_errors.*"
-          "GrpcLb Parser.*referenced_errors.*"
-          "field:childPolicy.*referenced_errors.*"
-          "type should be array"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "errors parsing RLS LB policy config.*referenced_errors.*"
+                  "field:childPolicy.*referenced_errors.*"
+                  "GrpcLb Parser.*referenced_errors.*"
+                  "field:childPolicy.*referenced_errors.*"
+                  "type should be array"));
 }
 
 //
@@ -172,13 +171,12 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigRequiredFieldsMissing) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto service_config = ServiceConfig::Create(
       /*args=*/nullptr, service_config_json, &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex(
-          "errors parsing RLS LB policy config.*referenced_errors.*"
-          "field:routeLookupConfig.*referenced_errors.*"
-          "field:grpcKeybuilders error:does not exist.*"
-          "field:lookupService error:does not exist"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "errors parsing RLS LB policy config.*referenced_errors.*"
+                  "field:routeLookupConfig.*referenced_errors.*"
+                  "field:grpcKeybuilders error:does not exist.*"
+                  "field:lookupService error:does not exist"));
 }
 
 TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsWrongTypes) {
@@ -202,17 +200,16 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsWrongTypes) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto service_config = ServiceConfig::Create(
       /*args=*/nullptr, service_config_json, &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex(
-          "errors parsing RLS LB policy config.*referenced_errors.*"
-          "field:routeLookupConfig.*referenced_errors.*"
-          "field:grpcKeybuilders error:type should be ARRAY.*"
-          "field:lookupService error:type should be STRING.*"
-          "field:maxAge error:type should be STRING.*"
-          "field:staleAge error:type should be STRING.*"
-          "field:cacheSizeBytes error:type should be NUMBER.*"
-          "field:defaultTarget error:type should be STRING"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "errors parsing RLS LB policy config.*referenced_errors.*"
+                  "field:routeLookupConfig.*referenced_errors.*"
+                  "field:grpcKeybuilders error:type should be ARRAY.*"
+                  "field:lookupService error:type should be STRING.*"
+                  "field:maxAge error:type should be STRING.*"
+                  "field:staleAge error:type should be STRING.*"
+                  "field:cacheSizeBytes error:type should be NUMBER.*"
+                  "field:defaultTarget error:type should be STRING"));
 }
 
 TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
@@ -229,12 +226,11 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto service_config = ServiceConfig::Create(
       /*args=*/nullptr, service_config_json, &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex(
-          "errors parsing RLS LB policy config.*referenced_errors.*"
-          "field:routeLookupConfig.*referenced_errors.*"
-          "field:lookupService error:must be valid gRPC target URI"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "errors parsing RLS LB policy config.*referenced_errors.*"
+                  "field:routeLookupConfig.*referenced_errors.*"
+                  "field:lookupService error:must be valid gRPC target URI"));
 }
 
 //
@@ -258,14 +254,13 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderRequiredFieldsMissing) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto service_config = ServiceConfig::Create(
       /*args=*/nullptr, service_config_json, &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex(
-          "errors parsing RLS LB policy config.*referenced_errors.*"
-          "field:routeLookupConfig.*referenced_errors.*"
-          "field:grpcKeybuilders.*referenced_errors.*"
-          "index:0.*referenced_errors.*"
-          "field:names error:does not exist"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "errors parsing RLS LB policy config.*referenced_errors.*"
+                  "field:routeLookupConfig.*referenced_errors.*"
+                  "field:grpcKeybuilders.*referenced_errors.*"
+                  "index:0.*referenced_errors.*"
+                  "field:names error:does not exist"));
 }
 
 TEST_F(RlsConfigParsingTest, GrpcKeybuilderWrongFieldTypes) {
@@ -289,17 +284,16 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderWrongFieldTypes) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto service_config = ServiceConfig::Create(
       /*args=*/nullptr, service_config_json, &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex(
-          "errors parsing RLS LB policy config.*referenced_errors.*"
-          "field:routeLookupConfig.*referenced_errors.*"
-          "field:grpcKeybuilders.*referenced_errors.*"
-          "index:0.*referenced_errors.*"
-          "field:names error:type should be ARRAY.*"
-          "field:headers error:type should be ARRAY.*"
-          "field:extraKeys error:type should be OBJECT.*"
-          "field:constantKeys error:type should be OBJECT"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "errors parsing RLS LB policy config.*referenced_errors.*"
+                  "field:routeLookupConfig.*referenced_errors.*"
+                  "field:grpcKeybuilders.*referenced_errors.*"
+                  "index:0.*referenced_errors.*"
+                  "field:names error:type should be ARRAY.*"
+                  "field:headers error:type should be ARRAY.*"
+                  "field:extraKeys error:type should be OBJECT.*"
+                  "field:constantKeys error:type should be OBJECT"));
 }
 
 TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidValues) {
@@ -328,20 +322,19 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidValues) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto service_config = ServiceConfig::Create(
       /*args=*/nullptr, service_config_json, &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex(
-          "errors parsing RLS LB policy config.*referenced_errors.*"
-          "field:routeLookupConfig.*referenced_errors.*"
-          "field:grpcKeybuilders.*referenced_errors.*"
-          "index:0.*referenced_errors.*"
-          "field:names error:list is empty.*"
-          "field:extraKeys.*referenced_errors.*"
-          "field:host error:type should be STRING.*"
-          "field:service error:type should be STRING.*"
-          "field:method error:type should be STRING.*"
-          "field:constantKeys.*referenced_errors.*"
-          "field:key error:type should be STRING"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "errors parsing RLS LB policy config.*referenced_errors.*"
+                  "field:routeLookupConfig.*referenced_errors.*"
+                  "field:grpcKeybuilders.*referenced_errors.*"
+                  "index:0.*referenced_errors.*"
+                  "field:names error:list is empty.*"
+                  "field:extraKeys.*referenced_errors.*"
+                  "field:host error:type should be STRING.*"
+                  "field:service error:type should be STRING.*"
+                  "field:method error:type should be STRING.*"
+                  "field:constantKeys.*referenced_errors.*"
+                  "field:key error:type should be STRING"));
 }
 
 TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidHeaders) {
@@ -381,28 +374,27 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidHeaders) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto service_config = ServiceConfig::Create(
       /*args=*/nullptr, service_config_json, &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex(
-          "errors parsing RLS LB policy config.*referenced_errors.*"
-          "field:routeLookupConfig.*referenced_errors.*"
-          "field:grpcKeybuilders.*referenced_errors.*"
-          "index:0.*referenced_errors.*"
-          "field:headers index:0 error:type should be OBJECT.*"
-          "field:headers index:1.*referenced_errors.*"
-          "field:key error:type should be STRING.*"
-          "field:names error:type should be ARRAY.*"
-          "field:headers index:2.*referenced_errors.*"
-          "field:key error:does not exist.*"
-          "field:names error:list is empty.*"
-          "field:headers index:3.*referenced_errors.*"
-          "field:key error:must be non-empty.*"
-          "field:names index:0 error:type should be STRING.*"
-          "field:names index:1 error:header name must be non-empty.*"
-          "field:extraKeys.*referenced_errors.*"
-          "field:host error:must be non-empty.*"
-          "field:constantKeys.*referenced_errors.*"
-          "error:keys must be non-empty"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "errors parsing RLS LB policy config.*referenced_errors.*"
+                  "field:routeLookupConfig.*referenced_errors.*"
+                  "field:grpcKeybuilders.*referenced_errors.*"
+                  "index:0.*referenced_errors.*"
+                  "field:headers index:0 error:type should be OBJECT.*"
+                  "field:headers index:1.*referenced_errors.*"
+                  "field:key error:type should be STRING.*"
+                  "field:names error:type should be ARRAY.*"
+                  "field:headers index:2.*referenced_errors.*"
+                  "field:key error:does not exist.*"
+                  "field:names error:list is empty.*"
+                  "field:headers index:3.*referenced_errors.*"
+                  "field:key error:must be non-empty.*"
+                  "field:names index:0 error:type should be STRING.*"
+                  "field:names index:1 error:header name must be non-empty.*"
+                  "field:extraKeys.*referenced_errors.*"
+                  "field:host error:must be non-empty.*"
+                  "field:constantKeys.*referenced_errors.*"
+                  "error:keys must be non-empty"));
 }
 
 TEST_F(RlsConfigParsingTest, GrpcKeybuilderNameWrongFieldTypes) {
@@ -429,17 +421,16 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderNameWrongFieldTypes) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto service_config = ServiceConfig::Create(
       /*args=*/nullptr, service_config_json, &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex(
-          "errors parsing RLS LB policy config.*referenced_errors.*"
-          "field:routeLookupConfig.*referenced_errors.*"
-          "field:grpcKeybuilders.*referenced_errors.*"
-          "index:0.*referenced_errors.*"
-          "field:names index:0 error:type should be OBJECT.*"
-          "field:names index:1.*referenced_errors.*"
-          "field:service error:type should be STRING.*"
-          "field:method error:type should be STRING"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "errors parsing RLS LB policy config.*referenced_errors.*"
+                  "field:routeLookupConfig.*referenced_errors.*"
+                  "field:grpcKeybuilders.*referenced_errors.*"
+                  "index:0.*referenced_errors.*"
+                  "field:names index:0 error:type should be OBJECT.*"
+                  "field:names index:1.*referenced_errors.*"
+                  "field:service error:type should be STRING.*"
+                  "field:method error:type should be STRING"));
 }
 
 TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInSameKeyBuilder) {
@@ -469,14 +460,13 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInSameKeyBuilder) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto service_config = ServiceConfig::Create(
       /*args=*/nullptr, service_config_json, &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex(
-          "errors parsing RLS LB policy config.*referenced_errors.*"
-          "field:routeLookupConfig.*referenced_errors.*"
-          "field:grpcKeybuilders.*referenced_errors.*"
-          "index:0.*referenced_errors.*"
-          "field:names error:duplicate entry for /foo/bar"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "errors parsing RLS LB policy config.*referenced_errors.*"
+                  "field:routeLookupConfig.*referenced_errors.*"
+                  "field:grpcKeybuilders.*referenced_errors.*"
+                  "index:0.*referenced_errors.*"
+                  "field:names error:duplicate entry for /foo/bar"));
 }
 
 TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInDifferentKeyBuilders) {
@@ -510,14 +500,13 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInDifferentKeyBuilders) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto service_config = ServiceConfig::Create(
       /*args=*/nullptr, service_config_json, &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex(
-          "errors parsing RLS LB policy config.*referenced_errors.*"
-          "field:routeLookupConfig.*referenced_errors.*"
-          "field:grpcKeybuilders.*referenced_errors.*"
-          "index:1.*referenced_errors.*"
-          "field:names error:duplicate entry for /foo/bar"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "errors parsing RLS LB policy config.*referenced_errors.*"
+                  "field:routeLookupConfig.*referenced_errors.*"
+                  "field:grpcKeybuilders.*referenced_errors.*"
+                  "index:1.*referenced_errors.*"
+                  "field:names error:duplicate entry for /foo/bar"));
 }
 
 }  // namespace

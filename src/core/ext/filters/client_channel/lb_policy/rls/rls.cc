@@ -154,10 +154,9 @@ std::map<std::string, std::string> BuildKeyMap(
 }  //  namespace
 
 LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
-  RequestKey key = {
-      BuildKeyMap(config_->key_builder_map(), args.path,
-                  lb_policy_->server_name_, args.initial_metadata)
-  };
+  RequestKey key = {BuildKeyMap(config_->key_builder_map(), args.path,
+                                lb_policy_->server_name_,
+                                args.initial_metadata)};
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] picker=%p: request keys: %s",
             lb_policy_.get(), this, key.ToString().c_str());
@@ -1341,9 +1340,8 @@ grpc_error_handle ParseJsonHeaders(size_t idx, const Json& json,
                                    std::string* key,
                                    std::vector<std::string>* headers) {
   if (json.type() != Json::Type::OBJECT) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("field:headers index:", idx,
-                     " error:type should be OBJECT"));
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "field:headers index:", idx, " error:type should be OBJECT"));
   }
   std::vector<grpc_error_handle> error_list;
   // requiredMatch must not be present.
@@ -1389,9 +1387,8 @@ grpc_error_handle ParseJsonHeaders(size_t idx, const Json& json,
 std::string ParseJsonMethodName(size_t idx, const Json& json,
                                 grpc_error_handle* error) {
   if (json.type() != Json::Type::OBJECT) {
-    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("field:names index:", idx,
-                     " error:type should be OBJECT"));
+    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "field:names index:", idx, " error:type should be OBJECT"));
     return "";
   }
   std::vector<grpc_error_handle> error_list;
@@ -1445,16 +1442,16 @@ grpc_error_handle ParseGrpcKeybuilder(
   }
   // Helper function to check for duplicate keys.
   std::set<std::string> all_keys;
-  auto duplicate_key_check_func =
-      [&all_keys, &error_list](const std::string& key) {
-        auto it = all_keys.find(key);
-        if (it != all_keys.end()) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-              absl::StrCat("key \"", key, "\" listed multiple times")));
-        } else {
-          all_keys.insert(key);
-        }
-      };
+  auto duplicate_key_check_func = [&all_keys,
+                                   &error_list](const std::string& key) {
+    auto it = all_keys.find(key);
+    if (it != all_keys.end()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("key \"", key, "\" listed multiple times")));
+    } else {
+      all_keys.insert(key);
+    }
+  };
   // Parse headers.
   RlsLbConfig::KeyBuilder key_builder;
   const Json::Array* headers_array = nullptr;

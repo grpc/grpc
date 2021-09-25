@@ -156,9 +156,8 @@ class RlsLb : public LoadBalancingPolicy {
     }
 
     std::string ToString() const {
-      return absl::StrCat("{",
-                          absl::StrJoin(key_map, ",", absl::PairFormatter("=")),
-                          "}");
+      return absl::StrCat(
+          "{", absl::StrJoin(key_map, ",", absl::PairFormatter("=")), "}");
     }
   };
 
@@ -238,8 +237,8 @@ class RlsLb : public LoadBalancingPolicy {
     bool is_shutdown_ = false;
 
     OrphanablePtr<ChildPolicyHandler> child_policy_;
-    grpc_connectivity_state connectivity_state_
-        ABSL_GUARDED_BY(&RlsLb::mu_) = GRPC_CHANNEL_IDLE;
+    grpc_connectivity_state connectivity_state_ ABSL_GUARDED_BY(&RlsLb::mu_) =
+        GRPC_CHANNEL_IDLE;
     std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker_;
   };
 

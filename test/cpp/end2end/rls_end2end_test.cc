@@ -240,8 +240,7 @@ class FakeResolverResponseGeneratorWrapper {
 
   void SetNextResolution(absl::string_view service_config_json) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetResponse(
-        BuildFakeResults(service_config_json));
+    response_generator_->SetResponse(BuildFakeResults(service_config_json));
   }
 
   grpc_core::FakeResolverResponseGenerator* Get() const {
@@ -373,9 +372,9 @@ class RlsEnd2endTest : public ::testing::Test {
                       const RpcOptions& rpc_options = RpcOptions()) {
     EchoResponse response;
     Status status = SendRpc(rpc_options, &response);
-    ASSERT_TRUE(status.ok())
-        << location.file() << ":" << location.line() << ": RPC failed: "
-        << status.error_code() << ": " << status.error_message();
+    ASSERT_TRUE(status.ok()) << location.file() << ":" << location.line()
+                             << ": RPC failed: " << status.error_code() << ": "
+                             << status.error_message();
     EXPECT_EQ(response.message(), kRequestMessage)
         << location.file() << ":" << location.line();
   }
@@ -383,8 +382,7 @@ class RlsEnd2endTest : public ::testing::Test {
   void CheckRpcSendFailure(const grpc_core::DebugLocation& location,
                            const RpcOptions& rpc_options = RpcOptions()) {
     Status status = SendRpc(rpc_options);
-    ASSERT_FALSE(status.ok())
-        << location.file() << ":" << location.line();
+    ASSERT_FALSE(status.ok()) << location.file() << ":" << location.line();
   }
 
   class ServiceConfigBuilder {
@@ -426,48 +424,41 @@ class RlsEnd2endTest : public ::testing::Test {
       // First build parts of routeLookupConfig.
       std::vector<std::string> route_lookup_config_parts;
       route_lookup_config_parts.push_back(absl::StrFormat(
-          "        \"lookupService\":\"localhost:%d\"",
-          rls_server_port_));
+          "        \"lookupService\":\"localhost:%d\"", rls_server_port_));
       if (lookup_service_timeout_ > 0) {
         route_lookup_config_parts.push_back(absl::StrFormat(
             "        \"lookupServiceTimeout\":\"%d.%09ds\"",
-            lookup_service_timeout_ / 1000,
-            lookup_service_timeout_ % 1000));
+            lookup_service_timeout_ / 1000, lookup_service_timeout_ % 1000));
       }
       if (!default_target_.empty()) {
         route_lookup_config_parts.push_back(absl::StrFormat(
-            "        \"defaultTarget\":\"%s\"",
-            default_target_));
+            "        \"defaultTarget\":\"%s\"", default_target_));
       }
       if (max_age_ > 0) {
-        route_lookup_config_parts.push_back(absl::StrFormat(
-            "        \"maxAge\":\"%d.%09ds\"",
-            max_age_ / 1000,
-            max_age_ % 1000));
+        route_lookup_config_parts.push_back(
+            absl::StrFormat("        \"maxAge\":\"%d.%09ds\"", max_age_ / 1000,
+                            max_age_ % 1000));
       }
       if (stale_age_ > 0) {
-        route_lookup_config_parts.push_back(absl::StrFormat(
-            "        \"staleAge\":\"%d.%09ds\"",
-            stale_age_ / 1000,
-            stale_age_ % 1000));
+        route_lookup_config_parts.push_back(
+            absl::StrFormat("        \"staleAge\":\"%d.%09ds\"",
+                            stale_age_ / 1000, stale_age_ % 1000));
       }
       if (cache_size_bytes_ > 0) {
         route_lookup_config_parts.push_back(absl::StrFormat(
-            "        \"cacheSizeBytes\":%" PRId64,
-            cache_size_bytes_));
+            "        \"cacheSizeBytes\":%" PRId64, cache_size_bytes_));
       }
       if (!key_builders_.empty()) {
-        route_lookup_config_parts.push_back(absl::StrFormat(
-            "        \"grpcKeybuilders\":[%s]",
-            absl::StrJoin(key_builders_, ",")));
+        route_lookup_config_parts.push_back(
+            absl::StrFormat("        \"grpcKeybuilders\":[%s]",
+                            absl::StrJoin(key_builders_, ",")));
       }
       // Now build parts of RLS LB policy config.
       std::vector<std::string> rls_config_parts;
       if (!route_lookup_config_parts.empty()) {
         rls_config_parts.push_back(absl::StrCat(
             "      \"routeLookupConfig\":{",
-            absl::StrJoin(route_lookup_config_parts, ","),
-            "      }"));
+            absl::StrJoin(route_lookup_config_parts, ","), "      }"));
       }
       rls_config_parts.push_back(
           "      \"childPolicy\":[{"
@@ -574,36 +565,31 @@ TEST_F(RlsEnd2endTest, Basic) {
   StartBackends(1);
   SetNextResolution(
       MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\","
-              "  \"method\":\"%s\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\""
-              "    ]"
-              "  }"
-              "]",
-              kServiceValue,
-              kMethodValue,
-              kTestKey))
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
       RlsServiceImpl::Response(
           {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
   // No RLS header seen by the backend, since the RLS response didn't set any.
-  EXPECT_THAT(backends_[0]->service_.rls_data(),
-              ::testing::ElementsAre());
+  EXPECT_THAT(backends_[0]->service_.rls_data(), ::testing::ElementsAre());
 }
 
 TEST_F(RlsEnd2endTest, DuplicateHeadersAreMerged) {
@@ -611,22 +597,19 @@ TEST_F(RlsEnd2endTest, DuplicateHeadersAreMerged) {
   StartBackends(1);
   SetNextResolution(
       MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\","
-              "  \"method\":\"%s\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\""
-              "    ]"
-              "  }"
-              "]",
-              kServiceValue,
-              kMethodValue,
-              kTestKey))
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{
@@ -646,30 +629,26 @@ TEST_F(RlsEnd2endTest, SecondHeaderUsed) {
   StartBackends(1);
   SetNextResolution(
       MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\","
-              "  \"method\":\"%s\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\", \"key2\""
-              "    ]"
-              "  }"
-              "]",
-              kServiceValue,
-              kMethodValue,
-              kTestKey))
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\", \"key2\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
       RlsServiceImpl::Response(
           {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key2", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key2", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
@@ -679,32 +658,28 @@ TEST_F(RlsEnd2endTest, MultipleHeaderKeys) {
   const char* kTestKey2 = "test_key_2";
   const char* kTestValue2 = "test_value_2";
   StartBackends(1);
-  SetNextResolution(
-      MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\","
-              "  \"method\":\"%s\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\""
-              "    ]"
-              "  },"
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key2\""
-              "    ]"
-              "  }"
-              "]",
-              kServiceValue,
-              kMethodValue,
-              kTestKey,
-              kTestKey2))
-          .Build());
+  SetNextResolution(MakeServiceConfigBuilder()
+                        .AddKeyBuilder(absl::StrFormat(
+                            "\"names\":[{"
+                            "  \"service\":\"%s\","
+                            "  \"method\":\"%s\""
+                            "}],"
+                            "\"headers\":["
+                            "  {"
+                            "    \"key\":\"%s\","
+                            "    \"names\":["
+                            "      \"key1\""
+                            "    ]"
+                            "  },"
+                            "  {"
+                            "    \"key\":\"%s\","
+                            "    \"names\":["
+                            "      \"key2\""
+                            "    ]"
+                            "  }"
+                            "]",
+                            kServiceValue, kMethodValue, kTestKey, kTestKey2))
+                        .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{
           {kTestKey, kTestValue},
@@ -719,30 +694,26 @@ TEST_F(RlsEnd2endTest, MultipleHeaderKeys) {
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
   // No RLS header seen by the backend, since the RLS response didn't set any.
-  EXPECT_THAT(backends_[0]->service_.rls_data(),
-              ::testing::ElementsAre());
+  EXPECT_THAT(backends_[0]->service_.rls_data(), ::testing::ElementsAre());
 }
 
 TEST_F(RlsEnd2endTest, NoHeaderMatch) {
   StartBackends(1);
   SetNextResolution(
       MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\","
-              "  \"method\":\"%s\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\""
-              "    ]"
-              "  }"
-              "]",
-              kServiceValue,
-              kMethodValue,
-              kTestKey))
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{},
@@ -757,30 +728,26 @@ TEST_F(RlsEnd2endTest, NoHeaderMatch) {
 
 TEST_F(RlsEnd2endTest, WildcardMethod) {
   StartBackends(1);
-  SetNextResolution(
-      MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\""
-              "    ]"
-              "  }"
-              "]",
-              kServiceValue,
-              kTestKey))
-          .Build());
+  SetNextResolution(MakeServiceConfigBuilder()
+                        .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                                       "  \"service\":\"%s\""
+                                                       "}],"
+                                                       "\"headers\":["
+                                                       "  {"
+                                                       "    \"key\":\"%s\","
+                                                       "    \"names\":["
+                                                       "      \"key1\""
+                                                       "    ]"
+                                                       "  }"
+                                                       "]",
+                                                       kServiceValue, kTestKey))
+                        .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
       RlsServiceImpl::Response(
           {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
@@ -790,21 +757,19 @@ TEST_F(RlsEnd2endTest, NoKeyBuilderForMethod) {
   StartBackends(1);
   SetNextResolution(
       MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\","
-              "  \"method\":\"some_other_method\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\""
-              "    ]"
-              "  }"
-              "]",
-              kServiceValue,
-              kTestKey))
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"some_other_method\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{},
@@ -821,31 +786,26 @@ TEST_F(RlsEnd2endTest, HeaderData) {
   StartBackends(1);
   SetNextResolution(
       MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\","
-              "  \"method\":\"%s\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\""
-              "    ]"
-              "  }"
-              "]",
-              kServiceValue,
-              kMethodValue,
-              kTestKey))
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
       RlsServiceImpl::Response(
-          {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)},
-          kHeaderData));
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+          {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}, kHeaderData));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
@@ -857,35 +817,29 @@ TEST_F(RlsEnd2endTest, ExtraKeysAndConstantKeys) {
   StartBackends(1);
   SetNextResolution(
       MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\","
-              "  \"method\":\"%s\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\",\"key2\",\"key3\""
-              "    ]"
-              "  }"
-              "],"
-              "\"extraKeys\":{"
-              "  \"host\":\"%s\","
-              "  \"service\":\"%s\","
-              "  \"method\":\"%s\""
-              "},"
-              "\"constantKeys\":{"
-              "  \"%s\":\"%s\""
-              "}",
-              kServiceValue,
-              kMethodValue,
-              kTestKey,
-              kHostKey,
-              kServiceKey,
-              kMethodKey,
-              kConstantKey,
-              kConstantValue))
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\",\"key2\",\"key3\""
+                                         "    ]"
+                                         "  }"
+                                         "],"
+                                         "\"extraKeys\":{"
+                                         "  \"host\":\"%s\","
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "},"
+                                         "\"constantKeys\":{"
+                                         "  \"%s\":\"%s\""
+                                         "}",
+                                         kServiceValue, kMethodValue, kTestKey,
+                                         kHostKey, kServiceKey, kMethodKey,
+                                         kConstantKey, kConstantValue))
           .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{
@@ -897,9 +851,8 @@ TEST_F(RlsEnd2endTest, ExtraKeysAndConstantKeys) {
       },
       RlsServiceImpl::Response(
           {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
@@ -909,32 +862,27 @@ TEST_F(RlsEnd2endTest, FailedRlsRequestWithoutDefaultTarget) {
   StartBackends(1);
   SetNextResolution(
       MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\","
-              "  \"method\":\"%s\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\""
-              "    ]"
-              "  }"
-              "]",
-              kServiceValue,
-              kMethodValue,
-              kTestKey))
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
           .Build());
   // Send an RPC before we give the RLS server a response.
   // The RLS request will fail, and thus so will the data plane RPC.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_THAT(rls_server_->service_.GetUnmatchedRequests(),
-              ::testing::ElementsAre(
-                  ::testing::ElementsAre(
-                      ::testing::Pair(kTestKey, kTestValue))));
+              ::testing::ElementsAre(::testing::ElementsAre(
+                  ::testing::Pair(kTestKey, kTestValue))));
   // Now give the RLS server the right response.
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
@@ -942,9 +890,8 @@ TEST_F(RlsEnd2endTest, FailedRlsRequestWithoutDefaultTarget) {
           {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
   // Sleep long enough for backoff to elapse, then try another RPC.
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 2);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
@@ -954,34 +901,29 @@ TEST_F(RlsEnd2endTest, FailedRlsRequestWithDefaultTarget) {
   StartBackends(1);
   SetNextResolution(
       MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\","
-              "  \"method\":\"%s\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\""
-              "    ]"
-              "  }"
-              "]",
-              kServiceValue,
-              kMethodValue,
-              kTestKey))
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
           .set_default_target(
               absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_))
           .Build());
   // Don't give the RLS server a response, so the RLS request will fail.
   // The data plane RPC should be sent to the default target.
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_THAT(rls_server_->service_.GetUnmatchedRequests(),
-              ::testing::ElementsAre(
-                  ::testing::ElementsAre(
-                      ::testing::Pair(kTestKey, kTestValue))));
+              ::testing::ElementsAre(::testing::ElementsAre(
+                  ::testing::Pair(kTestKey, kTestValue))));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 0);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
@@ -991,22 +933,19 @@ TEST_F(RlsEnd2endTest, RlsRequestTimeout) {
   StartBackends(2);
   SetNextResolution(
       MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\","
-              "  \"method\":\"%s\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\""
-              "    ]"
-              "  }"
-              "]",
-              kServiceValue,
-              kMethodValue,
-              kTestKey))
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
           .set_default_target(
               absl::StrCat("ipv4:127.0.0.1:", backends_[1]->port_))
           .set_lookup_service_timeout(2000)
@@ -1018,9 +957,8 @@ TEST_F(RlsEnd2endTest, RlsRequestTimeout) {
           {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)},
           /*response_delay=*/3000));
   // The data plane RPC should be sent to the default target.
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_timeout_ms(4000).set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION, RpcOptions().set_timeout_ms(4000).set_metadata(
+                                     {{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 0);
   EXPECT_EQ(backends_[1]->service_.request_count(), 1);
@@ -1030,34 +968,29 @@ TEST_F(RlsEnd2endTest, UpdateConfig) {
   StartBackends(2);
   auto service_config_builder =
       MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\","
-              "  \"method\":\"%s\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\""
-              "    ]"
-              "  }"
-              "]",
-              kServiceValue,
-              kMethodValue,
-              kTestKey))
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
           .set_default_target(
               absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_));
   SetNextResolution(service_config_builder.Build());
   // Don't give the RLS server a response, so the RLS request will fail.
   // The data plane RPC should be sent to the default target.
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_THAT(rls_server_->service_.GetUnmatchedRequests(),
-              ::testing::ElementsAre(
-                  ::testing::ElementsAre(
-                      ::testing::Pair(kTestKey, kTestValue))));
+              ::testing::ElementsAre(::testing::ElementsAre(
+                  ::testing::Pair(kTestKey, kTestValue))));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 0);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
@@ -1069,9 +1002,8 @@ TEST_F(RlsEnd2endTest, UpdateConfig) {
   // Send another RPC, which should go to the new default target.
   // The RLS server will *not* see another request, because the cache
   // entry is still in backoff.
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 0);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
@@ -1082,34 +1014,29 @@ TEST_F(RlsEnd2endTest, CachedResponse) {
   StartBackends(1);
   SetNextResolution(
       MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\","
-              "  \"method\":\"%s\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\""
-              "    ]"
-              "  }"
-              "]",
-              kServiceValue,
-              kMethodValue,
-              kTestKey))
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
       RlsServiceImpl::Response(
           {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
   // Send two RPCs.
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   // The RLS server should have seen only one request.
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
@@ -1120,22 +1047,19 @@ TEST_F(RlsEnd2endTest, StaleCacheEntry) {
   StartBackends(1);
   SetNextResolution(
       MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\","
-              "  \"method\":\"%s\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\""
-              "    ]"
-              "  }"
-              "]",
-              kServiceValue,
-              kMethodValue,
-              kTestKey))
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
           .set_max_age(5000)
           .set_stale_age(1000)
           .Build());
@@ -1144,9 +1068,8 @@ TEST_F(RlsEnd2endTest, StaleCacheEntry) {
       RlsServiceImpl::Response(
           {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
   // Send one RPC.  RLS server gets a request, and RPC goes to backend.
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
@@ -1154,9 +1077,8 @@ TEST_F(RlsEnd2endTest, StaleCacheEntry) {
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
   // Send another RPC.  This should use the stale value but should
   // dispatch a second RLS request.
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(backends_[0]->service_.request_count(), 2);
   // Wait for RLS server to receive the second request.
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
@@ -1168,22 +1090,19 @@ TEST_F(RlsEnd2endTest, ExpiredCacheEntry) {
   StartBackends(1);
   SetNextResolution(
       MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\","
-              "  \"method\":\"%s\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\""
-              "    ]"
-              "  }"
-              "]",
-              kServiceValue,
-              kMethodValue,
-              kTestKey))
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
           .set_max_age(1000)
           .set_lookup_service_timeout(1000)
           .Build());
@@ -1192,9 +1111,8 @@ TEST_F(RlsEnd2endTest, ExpiredCacheEntry) {
       RlsServiceImpl::Response(
           {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
   // Send one RPC.  RLS server gets a request, and RPC goes to backend.
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
@@ -1205,9 +1123,8 @@ TEST_F(RlsEnd2endTest, ExpiredCacheEntry) {
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
   // Send another RPC.  This should trigger a second RLS request, but
   // that fails, so the RPC fails.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 2);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
@@ -1218,22 +1135,20 @@ TEST_F(RlsEnd2endTest, CacheSizeLimit) {
   StartBackends(2);
   SetNextResolution(
       MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\","
-              "  \"method\":\"%s\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\""
-              "    ]"
-              "  }"
-              "]",
-              kServiceValue,
-              kMethodValue,
-              kTestKey))
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue,
+                                         kTestKey))
           .set_cache_size_bytes(1)  // Not even big enough for one entry.
           .Build());
   // Set RLS responses for both kTestValue and kTestValue2.
@@ -1247,18 +1162,16 @@ TEST_F(RlsEnd2endTest, CacheSizeLimit) {
           {absl::StrCat("ipv4:127.0.0.1:", backends_[1]->port_)}));
   // Send an RPC for kTestValue.
   // RLS server gets a request, and RPC goes to backend.
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
   EXPECT_EQ(backends_[1]->service_.request_count(), 0);
   // A second RPC for kTestValue should not generate another RLS
   // request, because the cache entry is held by min_eviction_time.
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 2);
@@ -1268,26 +1181,23 @@ TEST_F(RlsEnd2endTest, CacheSizeLimit) {
   // Send a request for kTestValue2.
   // RLS server gets a request, and RPC goes to backend.
   // This causes the entry for kTestValue to be evicted.
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue2}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue2}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 2);
   EXPECT_EQ(rls_server_->service_.response_count(), 2);
   EXPECT_EQ(backends_[0]->service_.request_count(), 2);
   EXPECT_EQ(backends_[1]->service_.request_count(), 1);
   // Send another RPC for kTestValue.
   // This should now trigger a new RLS request.
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 3);
   EXPECT_EQ(rls_server_->service_.response_count(), 3);
   EXPECT_EQ(backends_[0]->service_.request_count(), 3);
   EXPECT_EQ(backends_[1]->service_.request_count(), 1);
   // Another RPC for kTestValue2 should still work due to min_eviction_time.
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue2}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue2}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 3);
   EXPECT_EQ(rls_server_->service_.response_count(), 3);
   EXPECT_EQ(backends_[0]->service_.request_count(), 3);
@@ -1298,22 +1208,19 @@ TEST_F(RlsEnd2endTest, MultipleTargets) {
   StartBackends(1);
   SetNextResolution(
       MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat(
-              "\"names\":[{"
-              "  \"service\":\"%s\","
-              "  \"method\":\"%s\""
-              "}],"
-              "\"headers\":["
-              "  {"
-              "    \"key\":\"%s\","
-              "    \"names\":["
-              "      \"key1\""
-              "    ]"
-              "  }"
-              "]",
-              kServiceValue,
-              kMethodValue,
-              kTestKey))
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
@@ -1321,9 +1228,8 @@ TEST_F(RlsEnd2endTest, MultipleTargets) {
           // First target will not respond.
           {absl::StrCat("ipv4:127.0.0.1:", grpc_pick_unused_port_or_die()),
            absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
-  CheckRpcSendOk(
-      DEBUG_LOCATION,
-      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
