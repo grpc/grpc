@@ -259,10 +259,6 @@ class FakeResolverResponseGeneratorWrapper {
 
 class RlsEnd2endTest : public ::testing::Test {
  protected:
-  RlsEnd2endTest()
-      : creds_(new SecureChannelCredentials(
-            grpc_fake_transport_security_credentials_create())) {}
-
   static void SetUpTestCase() {
     GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
     grpc_init();
@@ -279,12 +275,15 @@ class RlsEnd2endTest : public ::testing::Test {
     ChannelArguments args;
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     resolver_response_generator_->Get());
+    auto creds = std::make_shared<SecureChannelCredentials>(
+        grpc_fake_transport_security_credentials_create());
     channel_ = ::grpc::CreateCustomChannel(
-        absl::StrCat("fake:///", kTestUrl).c_str(), creds_, args);
+        absl::StrCat("fake:///", kTestUrl).c_str(), std::move(creds), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
   void TearDown() override {
+    stub_.reset();
     channel_.reset();
     resolver_response_generator_.reset();
     ShutdownBackends();
@@ -300,13 +299,10 @@ class RlsEnd2endTest : public ::testing::Test {
   void StartBackends(size_t num_servers) {
     backends_.clear();
     for (size_t i = 0; i < num_servers; ++i) {
-      backends_.emplace_back(new ServerThread<MyTestServiceImpl>("backend"));
+      backends_.push_back(
+          absl::make_unique<ServerThread<MyTestServiceImpl>>("backend"));
       backends_.back()->Start(kServerHost);
     }
-  }
-
-  std::unique_ptr<grpc::testing::EchoTestService::Stub> BuildStub() {
-    return grpc::testing::EchoTestService::NewStub(channel_);
   }
 
   struct RpcOptions {
@@ -514,9 +510,9 @@ class RlsEnd2endTest : public ::testing::Test {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
-      std::shared_ptr<ServerCredentials> creds(new SecureServerCredentials(
-          grpc_fake_transport_security_server_credentials_create()));
-      builder.AddListeningPort(server_address.str(), creds);
+      auto creds = std::make_shared<SecureServerCredentials>(
+          grpc_fake_transport_security_server_credentials_create());
+      builder.AddListeningPort(server_address.str(), std::move(creds));
       builder.RegisterService(&service_);
       server_ = builder.BuildAndStart();
       cond->Signal();
@@ -540,7 +536,6 @@ class RlsEnd2endTest : public ::testing::Test {
     bool running_ = false;
   };
 
-  std::shared_ptr<ChannelCredentials> creds_;
   std::vector<std::unique_ptr<ServerThread<MyTestServiceImpl>>> backends_;
   std::unique_ptr<ServerThread<RlsServiceImpl>> rls_server_;
   std::unique_ptr<FakeResolverResponseGeneratorWrapper>

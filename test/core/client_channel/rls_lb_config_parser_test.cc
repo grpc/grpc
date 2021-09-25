@@ -83,6 +83,7 @@ TEST_F(RlsConfigParsingTest, TopLevelRequiredFieldsMissing) {
           "field:routeLookupConfig error:does not exist.*"
           "field:childPolicyConfigTargetFieldName error:does not exist.*"
           "field:childPolicy error:does not exist"));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, TopLevelFieldsWrongTypes) {
@@ -106,6 +107,7 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsWrongTypes) {
           "field:routeLookupConfig error:type should be OBJECT.*"
           "field:childPolicyConfigTargetFieldName error:type should be STRING.*"
           "field:childPolicy error:type should be ARRAY"));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, TopLevelFieldsInvalidValues) {
@@ -130,6 +132,7 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsInvalidValues) {
           "field:childPolicyConfigTargetFieldName error:must be non-empty.*"
           "field:childPolicy.*referenced_errors.*"
           "No known policies in list: unknown"));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, InvalidChildPolicyConfig) {
@@ -154,6 +157,7 @@ TEST_F(RlsConfigParsingTest, InvalidChildPolicyConfig) {
                   "GrpcLb Parser.*referenced_errors.*"
                   "field:childPolicy.*referenced_errors.*"
                   "type should be array"));
+  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -179,6 +183,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigRequiredFieldsMissing) {
                   "field:routeLookupConfig.*referenced_errors.*"
                   "field:grpcKeybuilders error:does not exist.*"
                   "field:lookupService error:does not exist"));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsWrongTypes) {
@@ -212,6 +217,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsWrongTypes) {
                   "field:staleAge error:type should be STRING.*"
                   "field:cacheSizeBytes error:type should be NUMBER.*"
                   "field:defaultTarget error:type should be STRING"));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
@@ -233,6 +239,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
                   "errors parsing RLS LB policy config.*referenced_errors.*"
                   "field:routeLookupConfig.*referenced_errors.*"
                   "field:lookupService error:must be valid gRPC target URI"));
+  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -263,6 +270,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderRequiredFieldsMissing) {
                   "field:grpcKeybuilders.*referenced_errors.*"
                   "index:0.*referenced_errors.*"
                   "field:names error:does not exist"));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, GrpcKeybuilderWrongFieldTypes) {
@@ -296,6 +304,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderWrongFieldTypes) {
                   "field:headers error:type should be ARRAY.*"
                   "field:extraKeys error:type should be OBJECT.*"
                   "field:constantKeys error:type should be OBJECT"));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidValues) {
@@ -337,6 +346,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidValues) {
                   "field:method error:type should be STRING.*"
                   "field:constantKeys.*referenced_errors.*"
                   "field:key error:type should be STRING"));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidHeaders) {
@@ -397,6 +407,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidHeaders) {
                   "field:host error:must be non-empty.*"
                   "field:constantKeys.*referenced_errors.*"
                   "error:keys must be non-empty"));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, GrpcKeybuilderNameWrongFieldTypes) {
@@ -433,6 +444,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderNameWrongFieldTypes) {
                   "field:names index:1.*referenced_errors.*"
                   "field:service error:type should be STRING.*"
                   "field:method error:type should be STRING"));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInSameKeyBuilder) {
@@ -469,6 +481,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInSameKeyBuilder) {
                   "field:grpcKeybuilders.*referenced_errors.*"
                   "index:0.*referenced_errors.*"
                   "field:names error:duplicate entry for /foo/bar"));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInDifferentKeyBuilders) {
@@ -509,6 +522,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInDifferentKeyBuilders) {
                   "field:grpcKeybuilders.*referenced_errors.*"
                   "index:1.*referenced_errors.*"
                   "field:names error:duplicate entry for /foo/bar"));
+  GRPC_ERROR_UNREF(error);
 }
 
 }  // namespace
