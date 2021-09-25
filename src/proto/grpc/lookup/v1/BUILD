@@ -26,4 +26,3 @@ grpc_proto_library(
     srcs = ["rls.proto"],
     well_known_protos = True,
 )
-

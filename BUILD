@@ -1995,12 +1995,12 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h",
     ],
-    language = "c++",
     external_deps = [
         "upb_lib",
         "upb_lib_descriptor",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
+    language = "c++",
 )
 
 grpc_cc_library(
