@@ -1552,7 +1552,7 @@ RlsLbConfig::KeyBuilderMap ParseGrpcKeybuilders(
   if (key_builder_list.empty()) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:grpcKeybuilders error:list is empty");
-    return {};
+    return key_builder_map;
   }
   std::vector<grpc_error_handle> error_list;
   size_t idx = 0;
