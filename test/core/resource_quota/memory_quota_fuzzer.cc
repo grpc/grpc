@@ -39,7 +39,7 @@ std::unique_ptr<BaseThing> MakeThing(MemoryAllocator* a,
                                      memory_quota_fuzzer::Action::Thing size) {
 #define CASE(n)                               \
   case memory_quota_fuzzer::Action::THING##n: \
-    return a->MakeUnique<Thing<n>>()
+    return a->MakeUnique<Thing<(n)>>()
   switch (size) {
     CASE(1);
     CASE(2);
