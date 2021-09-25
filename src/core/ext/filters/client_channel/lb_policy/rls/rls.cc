@@ -186,7 +186,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
                   "as the RLS call is throttled",
                   lb_policy_.get(), this);
         }
-        return default_child_policy_->Pick(std::move(args));
+        return default_child_policy_->Pick(args);
       }
     } else {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
@@ -210,15 +210,22 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
 // RlsLb::Cache::Entry
 //
 
+namespace {
+
+std::unique_ptr<BackOff> MakeCacheEntryBackoff() {
+  return absl::make_unique<BackOff>(
+      BackOff::Options().set_initial_backoff(kCacheBackoffInitial)
+                        .set_multiplier(kCacheBackoffMultiplier)
+                        .set_jitter(kCacheBackoffJitter)
+                        .set_max_backoff(kCacheBackoffMax));
+}
+
+}  // namespace
+
 RlsLb::Cache::Entry::Entry(RefCountedPtr<RlsLb> lb_policy)
     : lb_policy_(std::move(lb_policy)),
+      backoff_state_(MakeCacheEntryBackoff()),
       min_expiration_time_(ExecCtx::Get()->Now() + kMinExpirationTime) {
-  BackOff::Options backoff_options;
-  backoff_options.set_initial_backoff(kCacheBackoffInitial)
-      .set_multiplier(kCacheBackoffMultiplier)
-      .set_jitter(kCacheBackoffJitter)
-      .set_max_backoff(kCacheBackoffMax);
-  backoff_state_ = std::unique_ptr<BackOff>(new BackOff(backoff_options));
   GRPC_CLOSURE_INIT(&backoff_timer_callback_, OnBackoffTimer, this, nullptr);
 }
 
@@ -246,7 +253,7 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
                   "as the RLS call is throttled",
                   lb_policy_.get(), this);
         }
-        return default_child_policy->Pick(std::move(args));
+        return default_child_policy->Pick(args);
       }
     }
   }
@@ -471,12 +478,7 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
     if (backoff_state != nullptr) {
       backoff_state_ = std::move(backoff_state);
     } else {
-      BackOff::Options backoff_options;
-      backoff_options.set_initial_backoff(kCacheBackoffInitial)
-          .set_multiplier(kCacheBackoffMultiplier)
-          .set_jitter(kCacheBackoffJitter)
-          .set_max_backoff(kCacheBackoffMax);
-      backoff_state_ = std::unique_ptr<BackOff>(new BackOff(backoff_options));
+      backoff_state_ = MakeCacheEntryBackoff();
     }
     backoff_time_ = backoff_state_->NextAttemptTime();
     grpc_millis now = ExecCtx::Get()->Now();
@@ -921,10 +923,10 @@ RlsLb::ControlChannel::Throttle::Throttle(int window_size_seconds,
 
 bool RlsLb::ControlChannel::Throttle::ShouldThrottle() {
   grpc_millis now = ExecCtx::Get()->Now();
-  while (requests_.size() > 0 && now - requests_.front() > window_size_) {
+  while (!requests_.empty() && now - requests_.front() > window_size_) {
     requests_.pop_front();
   }
-  while (successes_.size() > 0 && now - successes_.front() > window_size_) {
+  while (!successes_.empty() && now - successes_.front() > window_size_) {
     successes_.pop_front();
   }
   int successes = successes_.size();
@@ -1315,7 +1317,8 @@ void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle error) {
         if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
           status = absl::UnavailableError("no children available");
         }
-        lb_policy->channel_control_helper()->UpdateState(
+        auto* policy = lb_policy.get();
+        policy->channel_control_helper()->UpdateState(
             state, status, absl::make_unique<Picker>(std::move(lb_policy)));
       },
       DEBUG_LOCATION);
@@ -1431,7 +1434,7 @@ grpc_error_handle ParseGrpcKeybuilder(
         if (child_error != GRPC_ERROR_NONE) {
           error_list.push_back(child_error);
         } else {
-          bool inserted = names.insert(std::move(name)).second;
+          bool inserted = names.insert(name).second;
           if (!inserted) {
             error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
                 absl::StrCat("field:names error:duplicate entry for ", name)));

@@ -17,6 +17,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <grpc/grpc.h>
+
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "test/core/util/test_config.h"
 

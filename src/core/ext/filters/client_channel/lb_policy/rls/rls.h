@@ -325,7 +325,7 @@ class RlsLb : public LoadBalancingPolicy {
       grpc_millis data_expiration_time_ = GRPC_MILLIS_INF_PAST;
       grpc_millis stale_time_ = GRPC_MILLIS_INF_PAST;
 
-      grpc_millis min_expiration_time_ = GRPC_MILLIS_INF_PAST;
+      grpc_millis min_expiration_time_;
       Cache::Iterator lru_iterator_;
     };
 
@@ -401,8 +401,8 @@ class RlsLb : public LoadBalancingPolicy {
    private:
     class Throttle {
      public:
-      Throttle(int window_size_seconds = 0, double ratio_for_successes = 0,
-               int paddings = 0);
+      explicit Throttle(int window_size_seconds = 0,
+                        double ratio_for_successes = 0, int paddings = 0);
 
       bool ShouldThrottle();
 
