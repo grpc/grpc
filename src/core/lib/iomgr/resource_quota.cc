@@ -280,6 +280,8 @@ static bool rq_reclaim(grpc_resource_quota* resource_quota, bool destructive);
 static void rq_step(void* rq, grpc_error_handle /*error*/) {
   grpc_resource_quota* resource_quota = static_cast<grpc_resource_quota*>(rq);
   resource_quota->step_scheduled = false;
+  GRPC_CLOSURE_INIT(&resource_quota->rq_step_closure, rq_step, resource_quota,
+                    nullptr);
   do {
     if (rq_alloc(resource_quota)) goto done;
   } while (rq_reclaim_from_per_user_free_pool(resource_quota));
