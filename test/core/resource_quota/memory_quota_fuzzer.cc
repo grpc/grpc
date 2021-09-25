@@ -26,50 +26,6 @@ bool leak_check = true;
 namespace grpc_core {
 
 namespace {
-struct BaseThing {
-  virtual ~BaseThing() {}
-};
-
-template <int N>
-struct Thing : public BaseThing {
-  char data[N];
-};
-
-std::unique_ptr<BaseThing> MakeThing(MemoryAllocator* a,
-                                     memory_quota_fuzzer::Action::Thing size) {
-#define CASE(n)                               \
-  case memory_quota_fuzzer::Action::THING##n: \
-    return a->MakeUnique<Thing<n>>()
-  switch (size) {
-    CASE(1);
-    CASE(2);
-    CASE(3);
-    CASE(5);
-    CASE(8);
-    CASE(13);
-    CASE(21);
-    CASE(34);
-    CASE(55);
-    CASE(89);
-    CASE(144);
-    CASE(233);
-    CASE(377);
-    CASE(610);
-    CASE(987);
-    CASE(1597);
-    CASE(2584);
-    CASE(4181);
-    CASE(6765);
-    CASE(10946);
-    CASE(17711);
-    CASE(28657);
-    CASE(46368);
-    CASE(75025);
-    default:
-      return nullptr;
-  }
-}
-
 ReclamationPass MapReclamationPass(memory_quota_fuzzer::Reclaimer::Pass pass) {
   switch (pass) {
     case memory_quota_fuzzer::Reclaimer::BENIGN:
@@ -90,7 +46,7 @@ class Fuzzer {
     RunMsg(msg);
     memory_quotas_.clear();
     memory_allocators_.clear();
-    things_.clear();
+    allocations_.clear();
   }
 
  private:
@@ -131,11 +87,19 @@ class Fuzzer {
                                     [q](MemoryAllocator* a) { a->Rebind(q); });
                     });
           break;
-        case memory_quota_fuzzer::Action::kCreateThing:
-          WithAllocator(action.allocator(), [this, action](MemoryAllocator* a) {
-            things_.emplace(action.thing(),
-                            MakeThing(a, action.create_thing()));
-          });
+        case memory_quota_fuzzer::Action::kCreateAllocation: {
+          auto min = action.create_allocation().min();
+          auto max = action.create_allocation().max();
+          if (min > max) break;
+          MemoryRequest req(min, max);
+          WithAllocator(
+              action.allocator(), [this, action, req](MemoryAllocator* a) {
+                auto alloc = a->MakeReservation(req);
+                allocations_.emplace(action.allocation(), std::move(alloc));
+              });
+        } break;
+        case memory_quota_fuzzer::Action::kDeleteAllocation:
+          allocations_.erase(action.allocation());
           break;
         case memory_quota_fuzzer::Action::kPostReclaimer: {
           std::function<void(ReclamationSweep)> reclaimer;
@@ -190,7 +154,7 @@ class Fuzzer {
 
   std::map<int, RefCountedPtr<MemoryQuota>> memory_quotas_;
   std::map<int, OrphanablePtr<MemoryAllocator>> memory_allocators_;
-  std::map<int, std::unique_ptr<BaseThing>> things_;
+  std::map<int, MemoryAllocator::Reservation> allocations_;
 };
 
 }  // namespace

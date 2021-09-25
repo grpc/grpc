@@ -207,6 +207,33 @@ class MemoryAllocator final : public InternallyRefCounted<MemoryAllocator> {
     MaybeRegisterReclaimer();
   }
 
+  // An automatic releasing reservation of memory.
+  class Reservation {
+   public:
+    Reservation() = default;
+    Reservation(const Reservation&) = delete;
+    Reservation& operator=(const Reservation&) = delete;
+    Reservation(Reservation&&) = default;
+    Reservation& operator=(Reservation&&) = default;
+    ~Reservation() {
+      if (allocator_ != nullptr) allocator_->Release(size_);
+    }
+
+   private:
+    friend class MemoryAllocator;
+    Reservation(RefCountedPtr<MemoryAllocator> allocator, size_t size)
+        : allocator_(allocator), size_(size) {}
+
+    RefCountedPtr<MemoryAllocator> allocator_ = nullptr;
+    size_t size_ = 0;
+  };
+
+  // Reserve bytes from the quota and automatically release them when
+  // Reservation is destroyed.
+  Reservation MakeReservation(MemoryRequest request) {
+    return Reservation(Ref(DEBUG_LOCATION, "Reservation"), Reserve(request));
+  }
+
   // Post a reclaimer for some reclamation pass.
   void PostReclaimer(ReclamationPass pass,
                      std::function<void(ReclamationSweep)>);
