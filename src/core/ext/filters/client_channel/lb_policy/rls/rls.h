@@ -28,7 +28,6 @@
 #include <deque>
 #include <list>
 #include <map>
-#include <mutex>
 #include <unordered_map>
 
 #include "absl/hash/hash.h"
