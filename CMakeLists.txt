@@ -645,6 +645,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c lame_client_test)
   add_dependencies(buildtests_c load_file_test)
   add_dependencies(buildtests_c manual_constructor_test)
+  add_dependencies(buildtests_c memory_quota_stress_test)
   add_dependencies(buildtests_c message_compress_test)
   add_dependencies(buildtests_c metadata_test)
   add_dependencies(buildtests_c minimal_stack_is_minimal_test)
@@ -6140,6 +6141,47 @@ target_include_directories(manual_constructor_test
 target_link_libraries(manual_constructor_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(memory_quota_stress_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/iomgr/combiner.cc
+  src/core/lib/iomgr/error.cc
+  src/core/lib/iomgr/exec_ctx.cc
+  src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/promise/activity.cc
+  src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
+  src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/slice/static_slice.cc
+  test/core/resource_quota/memory_quota_stress_test.cc
+)
+
+target_include_directories(memory_quota_stress_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+
+target_link_libraries(memory_quota_stress_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::statusor
+  absl::variant
+  gpr
 )
 
 
