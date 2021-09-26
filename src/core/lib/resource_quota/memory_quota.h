@@ -413,10 +413,12 @@ class MemoryQuota final : public DualRefCounted<MemoryQuota> {
     return pressure;
   }
 
-  static constexpr ssize_t kInitialSize = std::numeric_limits<ssize_t>::max();
+  static constexpr intptr_t kInitialSize = std::numeric_limits<intptr_t>::max();
 
   // The amount of memory that's free in this quota.
-  std::atomic<ssize_t> free_bytes_{kInitialSize};
+  // We use intptr_t as a reasonable proxy for ssize_t that's portable.
+  // We allow arbitrary overcommit and so this must allow negative values.
+  std::atomic<intptr_t> free_bytes_{kInitialSize};
 
   // Reclaimer queues.
   ReclaimerQueue reclaimers_[kNumReclamationPasses];
