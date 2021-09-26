@@ -40,6 +40,7 @@ class StressTest {
     std::vector<std::thread> threads;
 
     // A few threads constantly rebinding allocators to different quotas.
+    threads.reserve(2);
     for (int i = 0; i < 2; i++) threads.push_back(Run(Rebinder));
     // And another few threads constantly resizing quotas.
     for (int i = 0; i < 2; i++) threads.push_back(Run(Resizer));
