@@ -22,6 +22,7 @@
 #include <memory>
 #include <queue>
 #include <vector>
+#include <limits>
 
 #include <grpc/slice.h>
 
