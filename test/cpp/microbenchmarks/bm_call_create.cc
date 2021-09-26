@@ -324,6 +324,7 @@ static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
  public:
   grpc_core::RefCountedPtr<grpc_core::Subchannel> CreateSubchannel(
+      const grpc_resolved_address& /*address*/,
       const grpc_channel_args* /*args*/) override {
     return nullptr;
   }
