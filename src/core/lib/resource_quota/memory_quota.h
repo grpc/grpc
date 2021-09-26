@@ -19,10 +19,10 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <limits>
 #include <memory>
 #include <queue>
 #include <vector>
-#include <limits>
 
 #include <grpc/slice.h>
 
