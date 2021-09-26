@@ -16,8 +16,6 @@
 
 #include "src/core/lib/resource_quota/memory_quota.h"
 
-#include <thread>
-
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
