@@ -116,7 +116,7 @@ MemoryAllocator::~MemoryAllocator() {
 void MemoryAllocator::Orphan() {
   ReclamationFunction old_reclaimers[kNumReclamationPasses];
   {
-    absl::MutexLock lock(&memory_quota_mu_);
+    MutexLock lock(&memory_quota_mu_);
     for (size_t i = 0; i < kNumReclamationPasses; i++) {
       old_reclaimers[i] =
           memory_quota_->reclaimers_[i].Cancel(reclamation_indices_[i], this);
@@ -143,7 +143,7 @@ absl::optional<size_t> MemoryAllocator::TryReserve(MemoryRequest request) {
   if (scaled_size_over_min != 0) {
     double pressure;
     {
-      absl::MutexLock lock(&memory_quota_mu_);
+      MutexLock lock(&memory_quota_mu_);
       pressure = memory_quota_->InstantaneousPressure();
     }
     // Reduce allocation size proportional to the pressure > 80% usage.
