@@ -347,34 +347,6 @@ class Vector : public std::vector<T, MemoryAllocator::Container<T>> {
             MemoryAllocator::Container<T>(allocator)) {}
 };
 
-class AtomicBarrier {
- public:
-  AtomicBarrier() = default;
-  AtomicBarrier(const AtomicBarrier&) = delete;
-  AtomicBarrier& operator=(const AtomicBarrier&) = delete;
-
-  class WaitPromise {
-   public:
-    WaitPromise(AtomicBarrier* barrier, uint64_t token)
-        : barrier_(barrier), token_(token) {}
-
-    struct Empty {};
-    Poll<Empty> operator()();
-
-   private:
-    AtomicBarrier* barrier_;
-    uint64_t token_;
-  };
-
-  uint64_t NewToken();
-  WaitPromise Wait(uint64_t token) { return WaitPromise(this, token); }
-  void Notify(uint64_t token);
-
- private:
-  std::atomic<uint64_t> counter_{0};
-  Waker waker_;
-};
-
 // MemoryQuota tracks the amount of memory available as part of a ResourceQuota.
 class MemoryQuota final : public DualRefCounted<MemoryQuota> {
  public:
@@ -391,6 +363,7 @@ class MemoryQuota final : public DualRefCounted<MemoryQuota> {
  private:
   friend class MemoryAllocator;
   friend class ReclamationSweep;
+  class WaitForSweepPromise;
 
   void Orphan() override;
 
@@ -402,16 +375,7 @@ class MemoryQuota final : public DualRefCounted<MemoryQuota> {
   // Return some memory to the quota.
   void Return(size_t amount);
   // Instantaneous memory pressure approximation.
-  size_t InstantaneousPressure() const {
-    double free = free_bytes_.load();
-    if (free < 0) free = 0;
-    double size = quota_size_.load();
-    if (size < 1) return 1.0;
-    double pressure = (size - free) / size;
-    if (pressure < 0.0) pressure = 0.0;
-    if (pressure > 1.0) pressure = 1.0;
-    return pressure;
-  }
+  size_t InstantaneousPressure() const;
 
   static constexpr intptr_t kInitialSize = std::numeric_limits<intptr_t>::max();
 
@@ -419,17 +383,21 @@ class MemoryQuota final : public DualRefCounted<MemoryQuota> {
   // We use intptr_t as a reasonable proxy for ssize_t that's portable.
   // We allow arbitrary overcommit and so this must allow negative values.
   std::atomic<intptr_t> free_bytes_{kInitialSize};
+  // The total number of bytes in this quota.
+  std::atomic<size_t> quota_size_{kInitialSize};
 
   // Reclaimer queues.
   ReclaimerQueue reclaimers_[kNumReclamationPasses];
   // The reclaimer activity consumes reclaimers whenever we are in overcommit to
   // try and get back under memory limits.
   ActivityPtr reclaimer_activity_;
-  // A barrier that blocks the reclaimer activity whilst a reclamation is in
-  // progress.
-  AtomicBarrier barrier_;
-  // The total number of bytes in this quota.
-  std::atomic<size_t> quota_size_{kInitialSize};
+  // Each time we do a reclamation sweep, we increment this counter and give it
+  // to the sweep in question. In this way, should we choose to cancel a sweep
+  // we can do so and not get confused when the sweep reports back that it's
+  // completed.
+  // We also increment this counter on completion of a sweep, as an indicator
+  // that the wait has ended.
+  std::atomic<uint64_t> reclamation_counter_{0};
 };
 
 }  // namespace grpc_core

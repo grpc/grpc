@@ -302,33 +302,29 @@ grpc_slice MemoryAllocator::MakeSlice(MemoryRequest request) {
 }
 
 //
-// AtomicBarrier
-//
-
-Poll<AtomicBarrier::WaitPromise::Empty>
-AtomicBarrier::WaitPromise::operator()() {
-  if (barrier_->counter_.load(std::memory_order_acquire) != token_) {
-    return Empty{};
-  }
-  barrier_->waker_ = Activity::current()->MakeNonOwningWaker();
-  return Pending{};
-}
-
-uint64_t AtomicBarrier::NewToken() {
-  return counter_.fetch_add(1, std::memory_order_relaxed);
-}
-
-void AtomicBarrier::Notify(uint64_t token) {
-  if (counter_.compare_exchange_strong(token, token + 1,
-                                       std::memory_order_acq_rel,
-                                       std::memory_order_relaxed)) {
-    waker_.Wakeup();
-  }
-}
-
-//
 // MemoryQuota
 //
+
+class MemoryQuota::WaitForSweepPromise {
+ public:
+  WaitForSweepPromise(WeakRefCountedPtr<MemoryQuota> memory_quota,
+                      uint64_t token)
+      : memory_quota_(memory_quota), token_(token) {}
+
+  struct Empty {};
+  Poll<Empty> operator()() {
+    if (memory_quota_->reclamation_counter_.load(std::memory_order_relaxed) !=
+        token_) {
+      return Empty{};
+    } else {
+      return Pending{};
+    }
+  }
+
+ private:
+  WeakRefCountedPtr<MemoryQuota> memory_quota_;
+  uint64_t token_;
+};
 
 MemoryQuota::MemoryQuota() : DualRefCounted("MemoryQuota") {
   auto self = WeakRef();
@@ -356,12 +352,14 @@ MemoryQuota::MemoryQuota() : DualRefCounted("MemoryQuota") {
         // One of the reclaimer queues gave us a way to get back memory.
         // Call the reclaimer with a token that contains enough to wake us
         // up again.
-        const uint64_t token = self->barrier_.NewToken();
+        const uint64_t token =
+            self->reclamation_counter_.fetch_add(1, std::memory_order_relaxed) +
+            1;
         reclaimer(ReclamationSweep(self, token));
         // Return a promise that will wait for our barrier. This will be
         // awoken by the token above being destroyed. So, once that token is
         // destroyed, we'll be able to proceed.
-        return self->barrier_.Wait(token);
+        return WaitForSweepPromise(self, token);
       },
       []() -> LoopCtl<absl::Status> {
         // Continue the loop!
@@ -400,10 +398,29 @@ void MemoryQuota::Take(size_t amount) {
 
 void MemoryQuota::Orphan() { reclaimer_activity_.reset(); }
 
-void MemoryQuota::FinishReclamation(uint64_t token) { barrier_.Notify(token); }
+void MemoryQuota::FinishReclamation(uint64_t token) {
+  uint64_t current = reclamation_counter_.load(std::memory_order_relaxed);
+  if (current != token) return;
+  if (reclamation_counter_.compare_exchange_strong(current, current + 1,
+                                                   std::memory_order_relaxed,
+                                                   std::memory_order_relaxed)) {
+    reclaimer_activity_->ForceWakeup();
+  }
+}
 
 void MemoryQuota::Return(size_t amount) {
   free_bytes_.fetch_add(amount, std::memory_order_relaxed);
+}
+
+size_t MemoryQuota::InstantaneousPressure() const {
+  double free = free_bytes_.load();
+  if (free < 0) free = 0;
+  double size = quota_size_.load();
+  if (size < 1) return 1.0;
+  double pressure = (size - free) / size;
+  if (pressure < 0.0) pressure = 0.0;
+  if (pressure > 1.0) pressure = 1.0;
+  return pressure;
 }
 
 }  // namespace grpc_core
