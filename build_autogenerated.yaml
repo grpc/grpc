@@ -3714,6 +3714,9 @@ targets:
   - absl/status:statusor
   - absl/types:variant
   - gpr
+  platforms:
+  - linux
+  - posix
   uses_polling: false
 - name: message_compress_test
   build: test
