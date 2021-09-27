@@ -26,7 +26,6 @@ grpc_fuzzer(
     srcs = ["api_fuzzer.cc"],
     corpus = "api_fuzzer_corpus",
     language = "C++",
-    shard_count = 50,
     tags = ["no_windows"],
     deps = [
         "//:gpr",
