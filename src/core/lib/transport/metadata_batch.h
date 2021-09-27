@@ -86,12 +86,12 @@ struct GrpcTimeoutMetadata {
 // again, whilst minimally holding the performance bar already set (and
 // hopefully improving some things).
 // In the meantime, we're not going to invest much time in ephemeral API
-// documentation, so if you must use one of these API's and it's not obvious
+// documentation, so if you must use one of these APIs and it's not obvious
 // how, reach out to ctiller.
 //
 // MetadataMap takes a list of traits. Each of these trait objects defines
 // one metadata field that is used by core, and so should have more specialized
-// handling than just using the generic API's.
+// handling than just using the generic APIs.
 //
 // Each trait object has the following signature:
 // // Traits for the grpc-xyz metadata field:
@@ -161,7 +161,7 @@ class MetadataMap {
   }
 
   //
-  // All API's below this point are subject to change.
+  // All APIs below this point are subject to change.
   //
 
   template <typename F>
@@ -244,7 +244,7 @@ class MetadataMap {
 #endif
 
   // TODO(ctiller): the following explicit deadline handling methods are
-  // deprecated in terms of the traits based API's.
+  // deprecated in terms of the traits based APIs.
   grpc_millis deadline() const {
     return get(GrpcTimeoutMetadata()).value_or(GRPC_MILLIS_INF_FUTURE);
   };
