@@ -24,6 +24,7 @@ readonly TEST_DRIVER_PROTOS_PATH="src/proto/grpc/testing"
 # GKE cluster identifiers.
 readonly GKE_CLUSTER_PSM_LB="psm-lb"
 readonly GKE_CLUSTER_PSM_SECURITY="psm-security"
+readonly GKE_CLUSTER_PSM_BASIC="psm-basic"
 
 #######################################
 # Determines the cluster name and zone based on the given cluster identifier.
@@ -45,6 +46,10 @@ activate_gke_cluster() {
       GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
       GKE_CLUSTER_ZONE="us-central1-a"
       ;;
+    GKE_CLUSTER_PSM_BASIC)
+      GKE_CLUSTER_NAME="interop-test-psm-basic"
+      GKE_CLUSTER_ZONE="us-central1-c"
+      ;;      
     *)
       echo "Unknown GKE cluster: ${1}"
       exit 1
