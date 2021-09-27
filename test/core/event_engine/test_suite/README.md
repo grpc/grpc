@@ -1,7 +1,7 @@
 A reusable test suite for EventEngine implementations.
 
 To exercise a custom EventEngine, simply link against `:event_engine_test_suite`
-and provide a definition of `EventEnigneTest::NewEventEventEngine`. For a class
+and provide a definition of `EventEngineTest::NewEventEvent`. For a class
 called `MyCustomEventEngine`, it will look something like:
 
 ```
