@@ -449,6 +449,15 @@ class RlsLb : public LoadBalancingPolicy {
     // Shuts down the channel.
     void Orphan() override;
 
+    // Checks if there is already an RLS call pending for the key. If
+    // not, the method further checks if a new RLS call should be throttle. If
+    // not, an RLS call is made.
+    //
+    // Returns false if a new RLS call is throttled; otherwise it returns true.
+    bool MaybeMakeRlsCall(const RequestKey& key,
+                          std::unique_ptr<BackOff>* backoff_state = nullptr)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
+
     // Reports the result of an RLS call to the throttle.
     void ReportResponseLocked(bool response_succeeded);
 
@@ -560,15 +569,6 @@ class RlsLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  // Checks if there is already an RLS call pending for the key. If
-  // not, the method further checks if a new RLS call should be throttle. If
-  // not, an RLS call is made.
-  //
-  // Returns false if a new RLS call is throttled; otherwise it returns true.
-  bool MaybeMakeRlsCall(const RequestKey& key,
-                        std::unique_ptr<BackOff>* backoff_state = nullptr)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
   // Returns a new picker to the channel to trigger reprocessing of
   // pending picks.  Schedules the actual picker update on the ExecCtx
   // to be run later, so it's safe to invoke this while holding the lock.
@@ -589,11 +589,11 @@ class RlsLb : public LoadBalancingPolicy {
   std::unordered_map<RequestKey, OrphanablePtr<RlsRequest>,
                      absl::Hash<RequestKey>>
       request_map_ ABSL_GUARDED_BY(mu_);
-
-  // FIXME: see if there's a way to change things such that the throttle
-  // object is covered by the mutex but the rest of the channel is not,
-  // since that's the only part that the picker needs to access
-  RefCountedPtr<RlsChannel> rls_channel_ ABSL_GUARDED_BY(mu_);
+  // The channel on which RLS requests are sent.
+  // Note that this channel may be swapped out when the RLS policy gets
+  // an update.  However, when that happens, any existing entries in
+  // request_map_ will continue to use the previous channel.
+  OrphanablePtr<RlsChannel> rls_channel_ ABSL_GUARDED_BY(mu_);
 
   // Accessed only from within WorkSerializer.
   ServerAddressList addresses_;
@@ -839,7 +839,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
   Cache::Entry* entry = lb_policy_->cache_.Find(key);
   if (entry == nullptr) {
     // Cache entry not found.  Attempt RLS request.
-    bool call_throttled = !lb_policy_->MaybeMakeRlsCall(key);
+    bool call_throttled = !lb_policy_->rls_channel_->MaybeMakeRlsCall(key);
     if (call_throttled) {
       // RLS request throttled.
       // If default target is set, use that; otherwise, fail the pick.
@@ -1035,8 +1035,8 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
     ChildPolicyWrapper* default_child_policy) {
   grpc_millis now = ExecCtx::Get()->Now();
   if (stale_time_ < now && backoff_time_ < now) {
-    bool call_throttled =
-        !lb_policy_->MaybeMakeRlsCall(*lru_iterator_, &backoff_state_);
+    bool call_throttled = !lb_policy_->rls_channel_->MaybeMakeRlsCall(
+        *lru_iterator_, &backoff_state_);
     if (call_throttled && data_expiration_time_ < now) {
       if (config->default_target().empty()) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
@@ -1433,6 +1433,23 @@ void RlsLb::RlsChannel::Orphan() {
   Unref(DEBUG_LOCATION, "Orphan");
 }
 
+bool RlsLb::RlsChannel::MaybeMakeRlsCall(
+    const RequestKey& key, std::unique_ptr<BackOff>* backoff_state) {
+  auto it = lb_policy_->request_map_.find(key);
+  if (it == lb_policy_->request_map_.end()) {
+    if (lb_policy_->rls_channel_->ShouldThrottle()) {
+      return false;
+    }
+    lb_policy_->request_map_.emplace(
+        key,
+        MakeOrphanable<RlsRequest>(
+            lb_policy_->Ref(DEBUG_LOCATION, "RlsRequest"), key,
+            lb_policy_->rls_channel_->Ref(DEBUG_LOCATION, "RlsRequest"),
+            backoff_state == nullptr ? nullptr : std::move(*backoff_state)));
+  }
+  return true;
+}
+
 void RlsLb::RlsChannel::ReportResponseLocked(bool response_succeeded) {
   throttle_.RegisterResponse(response_succeeded);
 }
@@ -1482,11 +1499,11 @@ void RlsLb::RlsRequest::Orphan() {
 }
 
 void RlsLb::RlsRequest::StartCall(void* arg, grpc_error_handle /*error*/) {
-  auto* rls_request = static_cast<RlsRequest*>(arg);
-  rls_request->lb_policy_->work_serializer()->Run(
-      [rls_request]() {
-        RefCountedPtr<RlsRequest> request(rls_request);
+  auto* request = static_cast<RlsRequest*>(arg);
+  request->lb_policy_->work_serializer()->Run(
+      [request]() {
         request->StartCallLocked();
+        request->Unref(DEBUG_LOCATION, "StartCall");
       },
       DEBUG_LOCATION);
 }
@@ -1535,12 +1552,12 @@ void RlsLb::RlsRequest::StartCallLocked() {
 }
 
 void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error_handle error) {
-  auto* rls_request = static_cast<RlsRequest*>(arg);
+  auto* request = static_cast<RlsRequest*>(arg);
   GRPC_ERROR_REF(error);
-  rls_request->lb_policy_->work_serializer()->Run(
-      [rls_request, error]() {
-        RefCountedPtr<RlsRequest> request(rls_request);
+  request->lb_policy_->work_serializer()->Run(
+      [request, error]() {
         request->OnRlsCallCompleteLocked(error);
+        request->Unref(DEBUG_LOCATION, "OnRlsCallComplete");
       },
       DEBUG_LOCATION);
 }
@@ -1673,7 +1690,7 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
     config_ = args.config;
     if (old_config == nullptr ||
         config_->lookup_service() != old_config->lookup_service()) {
-      rls_channel_ = MakeRefCounted<RlsChannel>(
+      rls_channel_ = MakeOrphanable<RlsChannel>(
           Ref(DEBUG_LOCATION, "RlsChannel"), config_->lookup_service(),
           channel_args_);
     }
@@ -1753,7 +1770,7 @@ void RlsLb::ShutdownLocked() {
   }
   MutexLock lock(&mu_);
   is_shutdown_ = true;
-  config_.reset();
+  config_.reset(DEBUG_LOCATION, "ShutdownLocked");
   if (channel_args_ != nullptr) {
     grpc_channel_args_destroy(channel_args_);
   }
@@ -1761,22 +1778,6 @@ void RlsLb::ShutdownLocked() {
   request_map_.clear();
   rls_channel_.reset();
   default_child_policy_.reset();
-}
-
-bool RlsLb::MaybeMakeRlsCall(const RequestKey& key,
-                             std::unique_ptr<BackOff>* backoff_state) {
-  auto it = request_map_.find(key);
-  if (it == request_map_.end()) {
-    if (rls_channel_->ShouldThrottle()) {
-      return false;
-    }
-    request_map_.emplace(
-        key,
-        MakeOrphanable<RlsRequest>(
-            Ref(DEBUG_LOCATION, "RlsRequest"), key, rls_channel_,
-            backoff_state == nullptr ? nullptr : std::move(*backoff_state)));
-  }
-  return true;
 }
 
 void RlsLb::UpdatePicker() {

@@ -259,13 +259,13 @@ class FakeResolverResponseGeneratorWrapper {
 
 class RlsEnd2endTest : public ::testing::Test {
  protected:
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
     grpc_init();
     grpc_core::RegisterFixedAddressLoadBalancingPolicy();
   }
 
-  static void TearDownTestCase() { grpc_shutdown_blocking(); }
+  static void TearDownTestSuite() { grpc_shutdown_blocking(); }
 
   void SetUp() override {
     rls_server_ = absl::make_unique<ServerThread<RlsServiceImpl>>("rls");
@@ -277,15 +277,12 @@ class RlsEnd2endTest : public ::testing::Test {
                     resolver_response_generator_->Get());
     auto creds = std::make_shared<SecureChannelCredentials>(
         grpc_fake_transport_security_credentials_create());
-    channel_ = ::grpc::CreateCustomChannel(
+    auto channel = ::grpc::CreateCustomChannel(
         absl::StrCat("fake:///", kTestUrl).c_str(), std::move(creds), args);
-    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
+    stub_ = grpc::testing::EchoTestService::NewStub(std::move(channel));
   }
 
   void TearDown() override {
-    stub_.reset();
-    channel_.reset();
-    resolver_response_generator_.reset();
     ShutdownBackends();
     rls_server_->Shutdown();
   }
@@ -540,7 +537,6 @@ class RlsEnd2endTest : public ::testing::Test {
   std::unique_ptr<ServerThread<RlsServiceImpl>> rls_server_;
   std::unique_ptr<FakeResolverResponseGeneratorWrapper>
       resolver_response_generator_;
-  std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
 };
 
