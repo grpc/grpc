@@ -11,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-load("//bazel:python_rules.bzl", "py2and3_test")
-load("//bazel:gevent_test.bzl", "py_grpc_gevent_test")
+load("//bazel:python_rules.bzl", "py2and3_test", "py_grpc_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -105,13 +104,8 @@ py_library(
     srcs = ["_from_grpc_import_star.py"],
 )
 
-py_grpc_gevent_test(
-    name = "_server_test",
-    srcs = ["_server_test.py"],
-)
-
 [
-    py2and3_test(
+    py_grpc_test(
         name = test_file_name[:-3],
         size = "small",
         srcs = [test_file_name],
@@ -139,7 +133,7 @@ py_grpc_gevent_test(
     for test_file_name in GRPCIO_TESTS_UNIT
 ]
 
-py2and3_test(
+py_grpc_test(
     name = "_dynamic_stubs_test",
     size = "small",
     srcs = ["_dynamic_stubs_test.py"],
@@ -154,5 +148,6 @@ py2and3_test(
         "//src/python/grpcio_tests/tests/testing",
         "//tools/distrib/python/grpcio_tools:grpc_tools",
         "@six",
+        ":test_common",
     ],
 )

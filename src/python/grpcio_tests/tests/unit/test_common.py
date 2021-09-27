@@ -132,3 +132,14 @@ class WaitGroup(object):
         while self.count > 0:
             self.cv.wait()
         self.cv.release()
+
+def running_under_gevent():
+    try:
+        import gevent.socket
+        from gevent import monkey
+    except ImportError:
+        return False
+    else:
+        import socket
+        is_gevent = socket.socket is gevent.socket.socket
+        return is_gevent

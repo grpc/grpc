@@ -13,6 +13,7 @@
 # limitations under the License.
 """Generates and compiles Python gRPC stubs from proto_library rules."""
 
+load("//bazel:gevent_test.bzl", "py_grpc_gevent_test")
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load(
     "//bazel:protobuf.bzl",
@@ -301,3 +302,9 @@ def py2and3_test(
         tests = names,
         **suite_kwargs
     )
+
+def py_grpc_test(**kwargs):
+    """Runs a test in multiple different ways.
+    """
+    py2and3_test(**kwargs)
+    py_grpc_gevent_test(**kwargs)

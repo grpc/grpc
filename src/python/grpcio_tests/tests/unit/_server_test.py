@@ -18,6 +18,10 @@ import unittest
 
 import grpc
 
+import sys
+
+print("From the tests: {}".format(sys.path))
+
 from tests.unit import resources
 
 

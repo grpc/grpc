@@ -18,9 +18,8 @@ import sys
 import os
 import pkgutil
 
-# import zope
-# print(zope.__path__)
-# from zope.event import subscribers
+import zope
+from zope.event import subscribers
 
 class SingleLoader(object):
     def __init__(self, pattern):
@@ -28,7 +27,7 @@ class SingleLoader(object):
         self.suite = unittest.TestSuite()
         self._loader = unittest.TestLoader()
         tests = []
-        for importer, module_name, is_package in pkgutil.walk_packages(["."]):
+        for importer, module_name, is_package in pkgutil.walk_packages([os.path.dirname(os.path.relpath(__file__))]):
             if self._pattern in module_name:
                 module = importer.find_module(module_name).load_module(module_name)
                 tests.append(self._loader.loadTestsFromModule(module))
@@ -40,17 +39,16 @@ class SingleLoader(object):
     def loadTestsFromNames(self, names, module=None):
         return self.suite
 
-loader = SingleLoader(sys.argv[1])
-runner = unittest.TextTestRunner()
-
-import gevent
 from gevent import monkey
 
 monkey.patch_all()
 
 import grpc.experimental.gevent
 grpc.experimental.gevent.init_gevent()
+import gevent
 
+loader = SingleLoader(sys.argv[1])
+runner = unittest.TextTestRunner()
 
 result = gevent.spawn(runner.run, loader.suite)
 result.join()

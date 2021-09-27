@@ -1,0 +1,22 @@
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("//bazel:python_rules.bzl", "py2and3_test")
+
+package(default_visibility = ["//visibility:public"])
+
+py2and3_test(
+    name = "_fork_interop_test",
+    srcs = [
+        "_fork_interop_test.py",
+        "methods.py"
+    ],
+    deps = [
+      "//src/proto/grpc/testing:empty_py_pb2",
+      "//src/proto/grpc/testing:py_messages_proto",
+      "//src/proto/grpc/testing:test_py_pb2_grpc",
+      "//src/python/grpcio_tests/tests/interop:service",
+      "//src/python/grpcio_tests/tests/unit:test_common",
+    ],
+    main = "_fork_interop_test.py",
+    imports = ["../.."],
+)
+
