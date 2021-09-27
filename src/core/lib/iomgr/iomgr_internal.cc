@@ -51,4 +51,3 @@ bool grpc_iomgr_platform_add_closure_to_background_poller(
   return iomgr_platform_vtable->add_closure_to_background_poller(closure,
                                                                  error);
 }
-
