@@ -954,6 +954,7 @@ class ClientChannel::ClientChannelControlHelper
     };
     // Add channel args needed for the subchannel.
     absl::InlinedVector<grpc_arg, 3> args_to_add = {
+        Subchannel::CreateSubchannelAddressArg(&address.address()),
         SubchannelPoolInterface::CreateChannelArg(
             chand_->subchannel_pool_.get()),
     };
@@ -965,10 +966,10 @@ class ClientChannel::ClientChannelControlHelper
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
         &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove),
         args_to_add.data(), args_to_add.size());
+    gpr_free(args_to_add[0].value.string);
     // Create subchannel.
     RefCountedPtr<Subchannel> subchannel =
-        chand_->client_channel_factory_->CreateSubchannel(address.address(),
-                                                          new_args);
+        chand_->client_channel_factory_->CreateSubchannel(new_args);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) return nullptr;
     // Make sure the subchannel has updated keepalive time.
