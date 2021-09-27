@@ -312,6 +312,6 @@ class Fuzzer {
 
 }  // namespace grpc_core
 
-using namespace grpc_core;
-
-DEFINE_PROTO_FUZZER(const promise_fuzzer::Msg& msg) { Fuzzer().Run(msg); }
+DEFINE_PROTO_FUZZER(const promise_fuzzer::Msg& msg) {
+  grpc_core::Fuzzer().Run(msg);
+}
