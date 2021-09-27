@@ -23,7 +23,14 @@ SUPPORTED_VERSIONS=(
   "4.0.0"
 )
 
+FAILED_VERSIONS=""
 for VERSION in "${SUPPORTED_VERSIONS[@]}"; do
-    echo "Running bazel distribtest with bazel version $VERSION"
-    ./test_single_bazel_version.sh "$VERSION"
+    echo "Running bazel distribtest with bazel version ${VERSION}"
+    ./test_single_bazel_version.sh "${VERSION}" || FAILED_VERSIONS="${FAILED_VERSIONS}${VERSION} "
 done
+
+if [ "$FAILED_VERSIONS" != "" ]
+then
+  echo "Bazel distribtest failed: Failed to build with bazel versions ${FAILED_VERSIONS}"
+  exit 1
+fi
