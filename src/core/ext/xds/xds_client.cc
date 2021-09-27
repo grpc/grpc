@@ -554,7 +554,7 @@ void XdsClient::ChannelState::StopLrsCall() { lrs_calld_.reset(); }
 void XdsClient::ChannelState::StartConnectivityWatchLocked() {
   gpr_log(GPR_INFO, "donna channel_ is already init to %p", channel_);
   channel_ =
-      CreateXdsChannel(xds_client_->args_, xds_client_->bootstrap().server());
+      CreateXdsChannel(xds_client_->args_, server_);
   gpr_log(GPR_INFO, "donna channel_ is after CreateXdsChannel %p", channel_);
   GPR_ASSERT(channel_ != nullptr);
   ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
