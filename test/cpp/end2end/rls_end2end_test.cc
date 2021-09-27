@@ -17,8 +17,6 @@
 // FIXME: add tests:
 // - cache eviction via cleanup timer (based on age)
 
-// FIXME: make safe for IPv6
-
 #include <deque>
 #include <map>
 #include <thread>
@@ -50,6 +48,7 @@
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/test_lb_policies.h"
@@ -268,6 +267,11 @@ class RlsEnd2endTest : public ::testing::Test {
   static void TearDownTestSuite() { grpc_shutdown_blocking(); }
 
   void SetUp() override {
+    bool localhost_resolves_to_ipv4 = false;
+    bool localhost_resolves_to_ipv6 = false;
+    grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
+                                 &localhost_resolves_to_ipv6);
+    ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
     rls_server_ = absl::make_unique<ServerThread<RlsServiceImpl>>("rls");
     rls_server_->Start(kServerHost);
     resolver_response_generator_ =
@@ -300,6 +304,11 @@ class RlsEnd2endTest : public ::testing::Test {
           absl::make_unique<ServerThread<MyTestServiceImpl>>("backend"));
       backends_.back()->Start(kServerHost);
     }
+  }
+
+  std::string TargetStringForPort(int port) {
+    if (ipv6_only_) return absl::StrCat("ipv6:[::1]:", port);
+    return absl::StrCat("ipv4:127.0.0.1:", port);
   }
 
   struct RpcOptions {
@@ -533,6 +542,7 @@ class RlsEnd2endTest : public ::testing::Test {
     bool running_ = false;
   };
 
+  bool ipv6_only_;
   std::vector<std::unique_ptr<ServerThread<MyTestServiceImpl>>> backends_;
   std::unique_ptr<ServerThread<RlsServiceImpl>> rls_server_;
   std::unique_ptr<FakeResolverResponseGeneratorWrapper>
@@ -560,8 +570,7 @@ TEST_F(RlsEnd2endTest, Basic) {
           .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
-      RlsServiceImpl::Response(
-          {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
@@ -593,8 +602,7 @@ TEST_F(RlsEnd2endTest, DuplicateHeadersAreMerged) {
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{
           {kTestKey, absl::StrCat(kTestValue, ",", kTestValue2)}},
-      RlsServiceImpl::Response(
-          {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   // Same header present twice in the request.  Values should be merged.
   CheckRpcSendOk(
       DEBUG_LOCATION,
@@ -624,8 +632,7 @@ TEST_F(RlsEnd2endTest, SecondHeaderUsed) {
           .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
-      RlsServiceImpl::Response(
-          {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key2", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
@@ -664,8 +671,7 @@ TEST_F(RlsEnd2endTest, MultipleHeaderKeys) {
           {kTestKey, kTestValue},
           {kTestKey2, kTestValue2},
       },
-      RlsServiceImpl::Response(
-          {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(
       DEBUG_LOCATION,
       RpcOptions().set_metadata({{"key1", kTestValue}, {"key2", kTestValue2}}));
@@ -696,8 +702,7 @@ TEST_F(RlsEnd2endTest, NoHeaderMatch) {
           .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{},
-      RlsServiceImpl::Response(
-          {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   // Request does not have header "key1", so kTestKey will not be added.
   CheckRpcSendOk(DEBUG_LOCATION);
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
@@ -723,8 +728,7 @@ TEST_F(RlsEnd2endTest, WildcardMethod) {
                         .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
-      RlsServiceImpl::Response(
-          {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
@@ -752,8 +756,7 @@ TEST_F(RlsEnd2endTest, NoKeyBuilderForMethod) {
           .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{},
-      RlsServiceImpl::Response(
-          {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION);
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
@@ -781,8 +784,8 @@ TEST_F(RlsEnd2endTest, HeaderData) {
           .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
-      RlsServiceImpl::Response(
-          {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}, kHeaderData));
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)},
+                               kHeaderData));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
@@ -828,8 +831,7 @@ TEST_F(RlsEnd2endTest, ExtraKeysAndConstantKeys) {
           {kMethodKey, kMethodValue},
           {kConstantKey, kConstantValue},
       },
-      RlsServiceImpl::Response(
-          {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
@@ -865,8 +867,7 @@ TEST_F(RlsEnd2endTest, FailedRlsRequestWithoutDefaultTarget) {
   // Now give the RLS server the right response.
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
-      RlsServiceImpl::Response(
-          {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   // Sleep long enough for backoff to elapse, then try another RPC.
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   CheckRpcSendOk(DEBUG_LOCATION,
@@ -893,8 +894,7 @@ TEST_F(RlsEnd2endTest, FailedRlsRequestWithDefaultTarget) {
                                          "  }"
                                          "]",
                                          kServiceValue, kMethodValue, kTestKey))
-          .set_default_target(
-              absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_))
+          .set_default_target(TargetStringForPort(backends_[0]->port_))
           .Build());
   // Don't give the RLS server a response, so the RLS request will fail.
   // The data plane RPC should be sent to the default target.
@@ -925,16 +925,14 @@ TEST_F(RlsEnd2endTest, RlsRequestTimeout) {
                                          "  }"
                                          "]",
                                          kServiceValue, kMethodValue, kTestKey))
-          .set_default_target(
-              absl::StrCat("ipv4:127.0.0.1:", backends_[1]->port_))
+          .set_default_target(TargetStringForPort(backends_[1]->port_))
           .set_lookup_service_timeout(2000)
           .Build());
   // RLS server will send a response, but it's longer than the timeout.
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
-      RlsServiceImpl::Response(
-          {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)},
-          /*delay=*/3000));
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)},
+                               /*delay=*/3000));
   // The data plane RPC should be sent to the default target.
   CheckRpcSendOk(DEBUG_LOCATION, RpcOptions().set_timeout_ms(4000).set_metadata(
                                      {{"key1", kTestValue}}));
@@ -960,8 +958,7 @@ TEST_F(RlsEnd2endTest, UpdateConfig) {
                                          "  }"
                                          "]",
                                          kServiceValue, kMethodValue, kTestKey))
-          .set_default_target(
-              absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_));
+          .set_default_target(TargetStringForPort(backends_[0]->port_));
   SetNextResolution(service_config_builder.Build());
   // Don't give the RLS server a response, so the RLS request will fail.
   // The data plane RPC should be sent to the default target.
@@ -976,7 +973,7 @@ TEST_F(RlsEnd2endTest, UpdateConfig) {
   EXPECT_EQ(backends_[1]->service_.request_count(), 0);
   // Now update the config to point to a new default target.
   service_config_builder.set_default_target(
-      absl::StrCat("ipv4:127.0.0.1:", backends_[1]->port_));
+      TargetStringForPort(backends_[1]->port_));
   SetNextResolution(service_config_builder.Build());
   // Send another RPC, which should go to the new default target.
   // The RLS server will *not* see another request, because the cache
@@ -1009,8 +1006,7 @@ TEST_F(RlsEnd2endTest, CachedResponse) {
           .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
-      RlsServiceImpl::Response(
-          {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   // Send two RPCs.
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
@@ -1044,8 +1040,7 @@ TEST_F(RlsEnd2endTest, StaleCacheEntry) {
           .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
-      RlsServiceImpl::Response(
-          {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   // Send one RPC.  RLS server gets a request, and RPC goes to backend.
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
@@ -1087,8 +1082,7 @@ TEST_F(RlsEnd2endTest, ExpiredCacheEntry) {
           .Build());
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
-      RlsServiceImpl::Response(
-          {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   // Send one RPC.  RLS server gets a request, and RPC goes to backend.
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
@@ -1133,12 +1127,10 @@ TEST_F(RlsEnd2endTest, CacheSizeLimit) {
   // Set RLS responses for both kTestValue and kTestValue2.
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
-      RlsServiceImpl::Response(
-          {absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   rls_server_->service_.SetResponse(
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue2}},
-      RlsServiceImpl::Response(
-          {absl::StrCat("ipv4:127.0.0.1:", backends_[1]->port_)}));
+      RlsServiceImpl::Response({TargetStringForPort(backends_[1]->port_)}));
   // Send an RPC for kTestValue.
   // RLS server gets a request, and RPC goes to backend.
   CheckRpcSendOk(DEBUG_LOCATION,
@@ -1205,8 +1197,8 @@ TEST_F(RlsEnd2endTest, MultipleTargets) {
       RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
       RlsServiceImpl::Response(
           // First target will not respond.
-          {absl::StrCat("ipv4:127.0.0.1:", grpc_pick_unused_port_or_die()),
-           absl::StrCat("ipv4:127.0.0.1:", backends_[0]->port_)}));
+          {TargetStringForPort(grpc_pick_unused_port_or_die()),
+           TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
