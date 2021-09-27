@@ -3,10 +3,10 @@
 For design of the tests, see https://grpc.io/docs/guides/benchmarking.
 
 This document contains documentation of on how to run gRPC end-to-end
-benchmarks using the gRPC OSS benchmark framework (recommended) or 
-how to run them manually.
+benchmarks using the gRPC OSS benchmarks framework (recommended) or 
+how to run them manually (for experts only).
 
-For scripts related to the GKE-based performance test suite (in development),
+For scripts related to the GKE-based performance test suite,
 see [gRPC OSS benchmarks](#grpc-oss-benchmarks).
 
 ## Approach 1: Use gRPC OSS benchmarks framework (Recommended)
