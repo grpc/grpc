@@ -102,6 +102,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
+  void StartConnectivityWatchLocked();
+
   // TODO(roth): When we add federation, there will be multiple channels
   // inside the XdsClient, and the set of channels may change over time,
   // but not every channel may use every one of the child channels, so
@@ -335,6 +337,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_ ABSL_GUARDED_BY(mu_);
+  std::map<std::string, OrphanablePtr<ChannelState>> channels_
+      ABSL_GUARDED_BY(mu_);
 
   // One entry for each watched LDS resource.
   std::map<std::string /*listener_name*/, ListenerState> listener_map_

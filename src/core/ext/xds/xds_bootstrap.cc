@@ -196,6 +196,8 @@ grpc_error_handle XdsBootstrap::ParseXdsServerList(Json* json) {
 
 grpc_error_handle XdsBootstrap::ParseXdsServer(Json* json, size_t idx) {
   std::vector<grpc_error_handle> error_list;
+  gpr_log(GPR_INFO, "donna servers %d and authorities %d", servers_.size(),
+          authorities_.size());
   servers_.emplace_back();
   XdsServer& server = servers_[servers_.size() - 1];
   auto it = json->mutable_object()->find("server_uri");

@@ -2018,6 +2018,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:bind_front",
+        "absl/debugging:stacktrace",
+        "absl/debugging:symbolize",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
@@ -2566,6 +2568,8 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
     ],
     external_deps = [
+        "absl/debugging:stacktrace",
+        "absl/debugging:symbolize",
         "xxhash",
         "re2",
         "absl/strings",

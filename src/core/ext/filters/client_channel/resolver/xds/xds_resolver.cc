@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/debugging/stacktrace.h"
+#include "absl/debugging/symbolize.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
@@ -53,12 +55,14 @@ namespace {
 class XdsResolver : public Resolver {
  public:
   explicit XdsResolver(ResolverArgs args, RefCountedPtr<XdsClient> xds_client,
-                       std::string lds_resource_name, std::string authority)
+                       std::string lds_resource_name, std::string authority,
+                       const XdsBootstrap::XdsServer xds_server)
       : work_serializer_(std::move(args.work_serializer)),
         result_handler_(std::move(args.result_handler)),
         server_name_(lds_resource_name),
         lds_resource_name_(std::move(lds_resource_name)),
         authority_(std::move(authority)),
+        xds_server_(std::move(xds_server)),
         args_(grpc_channel_args_copy(args.args)),
         interested_parties_(args.pollset_set),
         xds_client_(std::move(xds_client)) {
@@ -273,6 +277,7 @@ class XdsResolver : public Resolver {
   grpc_pollset_set* interested_parties_;
 
   RefCountedPtr<XdsClient> xds_client_;
+  const XdsBootstrap::XdsServer xds_server_;
 
   XdsClient::ListenerWatcherInterface* listener_watcher_ = nullptr;
   // This will not contain the RouteConfiguration, even if it comes with the
@@ -767,7 +772,20 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
 //
 
 void XdsResolver::StartLocked() {
+  void* trace[256];
+  int n = absl::GetStackTrace(trace, 256, 0);
+  for (int i = 0; i <= n; ++i) {
+    char tmp[1024];
+    const char* symbol = "(unknown)";
+    if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
+      symbol = tmp;
+    }
+    gpr_log(GPR_ERROR, "XdsResolver::StartLocked donna stack %p %s", trace[i],
+            symbol);
+  }
   GPR_ASSERT(xds_client_ != nullptr);
+  // newly inserted here: will Create connection with XDS server here
+  // xds_client_->StartConnectivityWatchLocked();
   grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
                                    interested_parties_);
   channelz::ChannelNode* parent_channelz_node =
@@ -1004,6 +1022,7 @@ class XdsResolverFactory : public ResolverFactory {
     }
     std::string lds_resource_name;
     std::string authority;
+    XdsBootstrap::XdsServer xds_server = xds_client->bootstrap().server();
     if (args.uri.scheme() == "xds") {
       std::string target_hostname(absl::StripPrefix(args.uri.path(), "/"));
       if (!args.uri.authority().empty()) {
@@ -1023,6 +1042,9 @@ class XdsResolverFactory : public ResolverFactory {
         }
         lds_resource_name = absl::StrReplaceAll(
             name_template, {{"%s", PercentEncode(target_hostname)}});
+        if (!authority_config->xds_servers.empty()) {
+          xds_server = authority_config->xds_servers[0];
+        }
       } else {
         // args.uri.authority().empty() case
         std::string name_template =
@@ -1043,7 +1065,8 @@ class XdsResolverFactory : public ResolverFactory {
             "donna constructued lds_resource_name %s and authority %s",
             lds_resource_name.c_str(), authority.c_str());
     return MakeOrphanable<XdsResolver>(std::move(args), std::move(xds_client),
-                                       lds_resource_name, authority);
+                                       lds_resource_name, authority,
+                                       std::move(xds_server));
   }
 
   const char* scheme() const override { return "xds"; }
