@@ -675,9 +675,7 @@ class PythonLanguage(object):
 
     def _python_manager_name(self):
         """Choose the docker image to use based on python version."""
-        if self.args.compiler in [
-                'python2.7', 'python3.5', 'python3.6', 'python3.7', 'python3.8'
-        ]:
+        if self.args.compiler in ['python3.6', 'python3.7', 'python3.8']:
             return 'stretch_' + self.args.compiler[len('python'):]
         elif self.args.compiler == 'python_alpine':
             return 'alpine'
@@ -729,16 +727,6 @@ class PythonLanguage(object):
                                         builder_prefix_arguments,
                                         venv_relative_python, toolchain, runner,
                                         test_command, args.iomgr_platform)
-        python27_config = _python_config_generator(name='py27',
-                                                   major='2',
-                                                   minor='7',
-                                                   bits=bits,
-                                                   config_vars=config_vars)
-        python35_config = _python_config_generator(name='py35',
-                                                   major='3',
-                                                   minor='5',
-                                                   bits=bits,
-                                                   config_vars=config_vars)
         python36_config = _python_config_generator(name='py36',
                                                    major='3',
                                                    minor='6',
@@ -791,14 +779,9 @@ class PythonLanguage(object):
                     return (python38_config,)
                 else:
                     return (
-                        python35_config,
                         python37_config,
                         python38_config,
                     )
-        elif args.compiler == 'python2.7':
-            return (python27_config,)
-        elif args.compiler == 'python3.5':
-            return (python35_config,)
         elif args.compiler == 'python3.6':
             return (python36_config,)
         elif args.compiler == 'python3.7':
@@ -815,8 +798,6 @@ class PythonLanguage(object):
             return (python38_config,)
         elif args.compiler == 'all_the_cpythons':
             return (
-                python27_config,
-                python35_config,
                 python36_config,
                 python37_config,
                 python38_config,
