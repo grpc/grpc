@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 # Copyright 2017 gRPC authors.
 #
@@ -17,12 +17,12 @@
 # Convert google-benchmark json output to something that can be uploaded to
 # BigQuery
 
-import sys
-import json
 import csv
-import bm_json
 import json
 import subprocess
+import sys
+
+import bm_json
 
 columns = []
 
@@ -41,7 +41,7 @@ SANITIZE = {
 }
 
 if sys.argv[1] == '--schema':
-    print ',\n'.join('%s:%s' % (k, t.upper()) for k, t in columns)
+    print(',\n'.join('%s:%s' % (k, t.upper()) for k, t in columns))
     sys.exit(0)
 
 with open(sys.argv[1]) as f:

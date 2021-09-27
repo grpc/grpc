@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# make sure that the client doesn't hang when process ended abruptly
+# make sure that the client doesn't freeze when process ended abruptly
 
 require_relative './end2end_common'
 
@@ -23,21 +23,22 @@ def main
   server_runner = ServerRunner.new(EchoServerImpl)
   server_port = server_runner.run
   STDERR.puts 'start client'
-  _, client_pid = start_client('channel_state_client.rb', server_port)
+  client_controller = ClientController.new(
+    'channel_state_client.rb', server_port)
   # sleep to allow time for the client to get into
   # the middle of a "watch connectivity state" call
   sleep 3
-  Process.kill('SIGTERM', client_pid)
+  Process.kill('SIGTERM', client_controller.client_pid)
 
   begin
-    Timeout.timeout(10) { Process.wait(client_pid) }
+    Timeout.timeout(10) { Process.wait(client_controller.client_pid) }
   rescue Timeout::Error
-    STDERR.puts "timeout wait for client pid #{client_pid}"
-    Process.kill('SIGKILL', client_pid)
-    Process.wait(client_pid)
+    STDERR.puts "timeout wait for client pid #{client_controller.client_pid}"
+    Process.kill('SIGKILL', client_controller.client_pid)
+    Process.wait(client_controller.client_pid)
     STDERR.puts 'killed client child'
     raise 'Timed out waiting for client process. ' \
-           'It likely hangs when ended abruptly'
+           'It likely freezes when ended abruptly'
   end
 
   # The interrupt in the child process should cause it to

@@ -21,9 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/buffer_list.h"
-
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/iomgr/buffer_list.h"
 
 namespace grpc_core {
 /** A list of RPC Contexts */
@@ -36,7 +35,8 @@ class ContextList {
   /* Executes a function \a fn with each context in the list and \a ts. It also
    * frees up the entire list after this operation. It is intended as a callback
    * and hence does not take a ref on \a error */
-  static void Execute(void* arg, grpc_core::Timestamps* ts, grpc_error* error);
+  static void Execute(void* arg, grpc_core::Timestamps* ts,
+                      grpc_error_handle error);
 
  private:
   void* trace_context_ = nullptr;
@@ -44,9 +44,8 @@ class ContextList {
   size_t byte_offset_ = 0;
 };
 
-void grpc_http2_set_write_timestamps_callback(void (*fn)(void*,
-                                                         grpc_core::Timestamps*,
-                                                         grpc_error* error));
+void grpc_http2_set_write_timestamps_callback(
+    void (*fn)(void*, grpc_core::Timestamps*, grpc_error_handle error));
 void grpc_http2_set_fn_get_copied_context(void* (*fn)(void*));
 } /* namespace grpc_core */
 

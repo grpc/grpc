@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -30,11 +28,12 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 typedef struct inproc_fixture_data {
-  bool dummy;  // reserved for future expansion. Struct can't be empty
+  bool phony;  // reserved for future expansion. Struct can't be empty
 } inproc_fixture_data;
 
 static grpc_end2end_test_fixture inproc_create_fixture(

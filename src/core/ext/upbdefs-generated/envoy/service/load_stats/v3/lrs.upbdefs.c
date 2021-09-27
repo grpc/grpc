@@ -14,7 +14,6 @@ extern upb_def_init envoy_config_endpoint_v3_load_report_proto_upbdefinit;
 extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
 extern const upb_msglayout envoy_service_load_stats_v3_LoadStatsRequest_msginit;
 extern const upb_msglayout envoy_service_load_stats_v3_LoadStatsResponse_msginit;
 
@@ -23,7 +22,7 @@ static const upb_msglayout *layouts[2] = {
   &envoy_service_load_stats_v3_LoadStatsResponse_msginit,
 };
 
-static const char descriptor[983] = {'\n', '%', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 'l', 'o', 'a', 'd', '_', 's', 't', 'a', 't', 
+static const char descriptor[958] = {'\n', '%', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 'l', 'o', 'a', 'd', '_', 's', 't', 'a', 't', 
 's', '/', 'v', '3', '/', 'l', 'r', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\033', 'e', 'n', 'v', 'o', 'y', '.', 's', 'e', 'r', 
 'v', 'i', 'c', 'e', '.', 'l', 'o', 'a', 'd', '_', 's', 't', 'a', 't', 's', '.', 'v', '3', '\032', '\037', 'e', 'n', 'v', 'o', 'y', 
 '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'b', 'a', 's', 'e', '.', 'p', 'r', 'o', 't', 
@@ -32,8 +31,7 @@ static const char descriptor[983] = {'\n', '%', 'e', 'n', 'v', 'o', 'y', '/', 's
 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 'u', 'r', 'a', 't', 'i', 'o', 'n', '.', 'p', 'r', 'o', 
 't', 'o', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 't', 'a', 't', 
 'u', 's', '.', 'p', 'r', 'o', 't', 'o', '\032', '!', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 
-'s', '/', 'v', 'e', 'r', 's', 'i', 'o', 'n', 'i', 'n', 'g', '.', 'p', 'r', 'o', 't', 'o', '\032', '\027', 'v', 'a', 'l', 'i', 'd', 
-'a', 't', 'e', '/', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '.', 'p', 'r', 'o', 't', 'o', '\"', '\304', '\001', '\n', '\020', 'L', 'o', 
+'s', '/', 'v', 'e', 'r', 's', 'i', 'o', 'n', 'i', 'n', 'g', '.', 'p', 'r', 'o', 't', 'o', '\"', '\304', '\001', '\n', '\020', 'L', 'o', 
 'a', 'd', 'S', 't', 'a', 't', 's', 'R', 'e', 'q', 'u', 'e', 's', 't', '\022', '.', '\n', '\004', 'n', 'o', 'd', 'e', '\030', '\001', ' ', 
 '\001', '(', '\013', '2', '\032', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', 
 '3', '.', 'N', 'o', 'd', 'e', 'R', '\004', 'n', 'o', 'd', 'e', '\022', 'K', '\n', '\r', 'c', 'l', 'u', 's', 't', 'e', 'r', '_', 's', 
@@ -65,13 +63,12 @@ static const char descriptor[983] = {'\n', '%', 'e', 'n', 'v', 'o', 'y', '/', 's
 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[7] = {
+static upb_def_init *deps[6] = {
   &envoy_config_core_v3_base_proto_upbdefinit,
   &envoy_config_endpoint_v3_load_report_proto_upbdefinit,
   &google_protobuf_duration_proto_upbdefinit,
   &udpa_annotations_status_proto_upbdefinit,
   &udpa_annotations_versioning_proto_upbdefinit,
-  &validate_validate_proto_upbdefinit,
   NULL
 };
 
@@ -79,5 +76,5 @@ upb_def_init envoy_service_load_stats_v3_lrs_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/service/load_stats/v3/lrs.proto",
-  UPB_STRVIEW_INIT(descriptor, 983)
+  UPB_STRVIEW_INIT(descriptor, 958)
 };

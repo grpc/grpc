@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CALL_OP_SET_INTERFACE_H
 #define GRPCPP_IMPL_CODEGEN_CALL_OP_SET_INTERFACE_H
 
+// IWYU pragma: private
+
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 
 namespace grpc {

@@ -16,17 +16,6 @@
  *
  */
 
-#include <grpc/impl/codegen/log.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-#include <grpcpp/server_context.h>
-#include <grpcpp/support/client_callback.h>
-#include <grpcpp/support/message_allocator.h>
-#include <gtest/gtest.h>
-
 #include <algorithm>
 #include <atomic>
 #include <condition_variable>
@@ -36,6 +25,18 @@
 #include <sstream>
 #include <thread>
 
+#include <gtest/gtest.h>
+
+#include <grpc/impl/codegen/log.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+#include <grpcpp/support/client_callback.h>
+#include <grpcpp/support/message_allocator.h>
+
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -43,26 +44,11 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-// MAYBE_SKIP_TEST is a macro to determine if this particular test configuration
-// should be skipped based on a decision made at SetUp time. In particular, any
-// callback tests can only be run if the iomgr can run in the background or if
-// the transport is in-process.
-#define MAYBE_SKIP_TEST \
-  do {                  \
-    if (do_not_test_) { \
-      return;           \
-    }                   \
-  } while (0)
-
 namespace grpc {
 namespace testing {
 namespace {
 
 enum class Protocol { INPROC, TCP };
-
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-using experimental::GenericCallbackServerContext;
-#endif
 
 class TestScenario {
  public:
@@ -95,15 +81,7 @@ class ContextAllocatorEnd2endTestBase
 
   ~ContextAllocatorEnd2endTestBase() override = default;
 
-  void SetUp() override {
-    GetParam().Log();
-    if (GetParam().protocol == Protocol::TCP) {
-      if (!grpc_iomgr_run_in_background()) {
-        do_not_test_ = true;
-        return;
-      }
-    }
-  }
+  void SetUp() override { GetParam().Log(); }
 
   void CreateServer(std::unique_ptr<grpc::ContextAllocator> context_allocator) {
     ServerBuilder builder;
@@ -115,7 +93,7 @@ class ContextAllocatorEnd2endTestBase
       server_address_ << "localhost:" << picked_port_;
       builder.AddListeningPort(server_address_.str(), server_creds);
     }
-    builder.experimental().SetContextAllocator(std::move(context_allocator));
+    builder.SetContextAllocator(std::move(context_allocator));
     builder.RegisterService(&callback_service_);
 
     server_ = builder.BuildAndStart();
@@ -168,7 +146,7 @@ class ContextAllocatorEnd2endTestBase
       std::mutex mu;
       std::condition_variable cv;
       bool done = false;
-      stub_->experimental_async()->Echo(
+      stub_->async()->Echo(
           &cli_ctx, &request, &response,
           [&request, &response, &done, &mu, &cv, val](Status s) {
             GPR_ASSERT(s.ok());
@@ -185,7 +163,6 @@ class ContextAllocatorEnd2endTestBase
     }
   }
 
-  bool do_not_test_{false};
   int picked_port_{0};
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<EchoTestService::Stub> stub_;
@@ -197,7 +174,6 @@ class ContextAllocatorEnd2endTestBase
 class DefaultContextAllocatorTest : public ContextAllocatorEnd2endTestBase {};
 
 TEST_P(DefaultContextAllocatorTest, SimpleRpc) {
-  MAYBE_SKIP_TEST;
   const int kRpcCount = 10;
   CreateServer(nullptr);
   ResetStub();
@@ -239,7 +215,6 @@ class NullContextAllocatorTest : public ContextAllocatorEnd2endTestBase {
 };
 
 TEST_P(NullContextAllocatorTest, UnaryRpc) {
-  MAYBE_SKIP_TEST;
   const int kRpcCount = 10;
   std::atomic<int> allocation_count{0};
   std::atomic<int> deallocation_count{0};
@@ -290,7 +265,6 @@ class SimpleContextAllocatorTest : public ContextAllocatorEnd2endTestBase {
 };
 
 TEST_P(SimpleContextAllocatorTest, UnaryRpc) {
-  MAYBE_SKIP_TEST;
   const int kRpcCount = 10;
   std::atomic<int> allocation_count{0};
   std::atomic<int> deallocation_count{0};

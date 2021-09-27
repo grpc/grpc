@@ -25,6 +25,7 @@
 
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
+
 #include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
 
 namespace grpc {
@@ -82,13 +83,13 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
       grpc::reflection::v1alpha::ServerReflectionResponse>
       ClientStream;
 
-  const protobuf::FileDescriptorProto ParseFileDescriptorProtoResponse(
+  protobuf::FileDescriptorProto ParseFileDescriptorProtoResponse(
       const std::string& byte_fd_proto);
 
   void AddFileFromResponse(
       const grpc::reflection::v1alpha::FileDescriptorResponse& response);
 
-  const std::shared_ptr<ClientStream> GetStream();
+  std::shared_ptr<ClientStream> GetStream();
 
   bool DoOneRequest(
       const grpc::reflection::v1alpha::ServerReflectionRequest& request,

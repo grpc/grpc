@@ -22,22 +22,15 @@
 
 #ifdef GPR_WINDOWS
 
-#include "src/core/lib/gprpp/thd.h"
+#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd_id.h>
-#include <string.h>
 
+#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/memory.h"
-
-#if defined(_MSC_VER)
-#define thread_local __declspec(thread)
-#elif defined(__GNUC__)
-#define thread_local __thread
-#else
-#error "Unknown compiler - please file a bug report"
-#endif
+#include "src/core/lib/gprpp/thd.h"
 
 namespace {
 class ThreadInternalsWindows;
@@ -49,7 +42,7 @@ struct thd_info {
   bool joinable;           /* whether it is joinable */
 };
 
-thread_local struct thd_info* g_thd_info;
+GPR_THREAD_LOCAL(struct thd_info*) g_thd_info;
 
 class ThreadInternalsWindows
     : public grpc_core::internal::ThreadInternalsInterface {

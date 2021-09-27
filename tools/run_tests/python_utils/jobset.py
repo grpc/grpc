@@ -13,6 +13,7 @@
 # limitations under the License.
 """Run a group of subprocesses and then finish."""
 
+import errno
 import logging
 import multiprocessing
 import os
@@ -23,7 +24,6 @@ import subprocess
 import sys
 import tempfile
 import time
-import errno
 
 # cpu cost measurement
 measure_cpu_costs = False
@@ -130,7 +130,7 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
         try:
             if platform_string() == 'windows' or not sys.stdout.isatty():
                 if explanatory_text:
-                    logging.info(explanatory_text)
+                    logging.info(explanatory_text.decode('utf8'))
                 logging.info('%s: %s', tag, msg)
             else:
                 sys.stdout.write(
@@ -277,7 +277,10 @@ class Job(object):
                 os.makedirs(logfile_dir)
             self._logfile = open(self._spec.logfilename, 'w+')
         else:
-            self._logfile = tempfile.TemporaryFile()
+            # macOS: a series of quick os.unlink invocation might cause OS
+            # error during the creation of temporary file. By using
+            # NamedTemporaryFile, we defer the removal of file and directory.
+            self._logfile = tempfile.NamedTemporaryFile()
         env = dict(os.environ)
         env.update(self._spec.environ)
         env.update(self._add_env)

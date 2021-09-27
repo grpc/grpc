@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include "src/core/lib/gprpp/stat.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -27,7 +29,6 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
-#include "src/core/lib/gprpp/stat.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
 

@@ -15,11 +15,13 @@
 # limitations under the License.
 
 from __future__ import print_function
+
 import json
+import os
 import pipes
 import shutil
 import sys
-import os
+
 import yaml
 
 run_tests_root = os.path.abspath(

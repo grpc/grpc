@@ -16,11 +16,6 @@
  *
  */
 
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-#include <grpcpp/server_context.h>
-
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -36,6 +31,14 @@
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/str_split.h"
+
+#include <grpcpp/ext/admin_services.h>
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/testing/empty.pb.h"
@@ -59,6 +62,9 @@ ABSL_FLAG(std::string, rpc, "UnaryCall",
 ABSL_FLAG(std::string, metadata, "", "metadata to send with the RPC.");
 ABSL_FLAG(std::string, expect_status, "OK",
           "RPC status for the test RPC to be considered successful");
+ABSL_FLAG(
+    bool, secure_mode, false,
+    "If true, XdsCredentials are used, InsecureChannelCredentials otherwise");
 
 using grpc::Channel;
 using grpc::ClientAsyncResponseReader;
@@ -460,9 +466,16 @@ class XdsUpdateClientConfigureServiceImpl
 void RunTestLoop(std::chrono::duration<double> duration_per_query,
                  StatsWatchers* stats_watchers,
                  RpcConfigurationsQueue* rpc_configs_queue) {
-  TestClient client(grpc::CreateChannel(absl::GetFlag(FLAGS_server),
-                                        grpc::InsecureChannelCredentials()),
-                    stats_watchers);
+  grpc::ChannelArguments channel_args;
+  channel_args.SetInt(GRPC_ARG_ENABLE_RETRIES, 1);
+  TestClient client(
+      grpc::CreateCustomChannel(absl::GetFlag(FLAGS_server),
+                                absl::GetFlag(FLAGS_secure_mode)
+                                    ? grpc::experimental::XdsCredentials(
+                                          grpc::InsecureChannelCredentials())
+                                    : grpc::InsecureChannelCredentials(),
+                                channel_args),
+      stats_watchers);
   std::chrono::time_point<std::chrono::system_clock> start =
       std::chrono::system_clock::now();
   std::chrono::duration<double> elapsed;
@@ -494,7 +507,7 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
       }
     }
   }
-  thread.join();
+  GPR_UNREACHABLE_CODE(thread.join());
 }
 
 void RunServer(const int port, StatsWatchers* stats_watchers,
@@ -506,9 +519,11 @@ void RunServer(const int port, StatsWatchers* stats_watchers,
   LoadBalancerStatsServiceImpl stats_service(stats_watchers);
   XdsUpdateClientConfigureServiceImpl client_config_service(rpc_configs_queue);
 
+  grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
   builder.RegisterService(&stats_service);
   builder.RegisterService(&client_config_service);
+  grpc::AddAdminServices(&builder);
   builder.AddListeningPort(server_address.str(),
                            grpc::InsecureServerCredentials());
   std::unique_ptr<Server> server(builder.BuildAndStart());

@@ -61,7 +61,7 @@ class ServerTest extends \PHPUnit\Framework\TestCase
              ]);
 
         $deadline = Grpc\Timeval::infFuture();
-        $call = new Grpc\Call($channel, 'dummy_method', $deadline);
+        $call = new Grpc\Call($channel, 'phony_method', $deadline);
 
         $event = $call->startBatch([Grpc\OP_SEND_INITIAL_METADATA => [],
                                     Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
@@ -70,7 +70,7 @@ class ServerTest extends \PHPUnit\Framework\TestCase
         $c = $this->server->requestCall();
         $this->assertObjectHasAttribute('call', $c);
         $this->assertObjectHasAttribute('method', $c);
-        $this->assertSame('dummy_method', $c->method);
+        $this->assertSame('phony_method', $c->method);
         $this->assertObjectHasAttribute('host', $c);
         $this->assertTrue(is_string($c->host));
         $this->assertObjectHasAttribute('absolute_deadline', $c);

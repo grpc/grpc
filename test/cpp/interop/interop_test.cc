@@ -17,8 +17,6 @@
  */
 
 #include <assert.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +30,10 @@
 
 #include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/util/port.h"

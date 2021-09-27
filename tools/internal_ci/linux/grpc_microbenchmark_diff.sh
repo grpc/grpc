@@ -31,7 +31,7 @@ tools/internal_ci/linux/run_if_c_cpp_modified.sh tools/profiling/microbenchmarks
   -d "origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH" \
   -b $BENCHMARKS_TO_RUN || FAILED="true"
 
-# kill port_server.py to prevent the build from hanging
+# kill port_server.py to prevent the build from freezing
 ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
 
 if [ "$FAILED" != "" ]

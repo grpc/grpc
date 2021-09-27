@@ -77,6 +77,13 @@
               % endfor
           }
 
+          public NativeMethods(DllImportsFromSharedLib_arm64 unusedInstance)
+          {
+              % for method in get_native_methods():
+              this.${method['name']} = DllImportsFromSharedLib_arm64.${method['name']};
+              % endfor
+          }
+
           public NativeMethods(DllImportsFromSharedLib_x86_dll unusedInstance)
           {
               % for method in get_native_methods():
@@ -146,6 +153,19 @@
           internal class DllImportsFromSharedLib_x64
           {
               private const string ImportName = "grpc_csharp_ext.x64";
+              % for method in get_native_methods():
+              
+              [DllImport(ImportName)]
+              public static extern ${method['returntype']} ${method['name']}(${method['params']});
+              % endfor
+          }
+
+          /// <summary>
+          /// grpc_csharp_ext used as a shared library (with arm64 suffix)
+          /// </summary>
+          internal class DllImportsFromSharedLib_arm64
+          {
+              private const string ImportName = "grpc_csharp_ext.arm64";
               % for method in get_native_methods():
               
               [DllImport(ImportName)]

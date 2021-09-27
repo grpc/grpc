@@ -21,18 +21,17 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/status.h>
-
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-
 #include "opencensus/context/context.h"
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/trace/context_util.h"
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/trace_params.h"
+
+#include <grpc/status.h>
 
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/cpp/common/channel_filter.h"
@@ -64,6 +63,11 @@ class CensusContext {
             name, parent_ctxt)),
         tags_({}) {}
 
+  void AddSpanAttribute(absl::string_view key,
+                        opencensus::trace::AttributeValueRef attribute) {
+    span_.AddAttribute(key, attribute);
+  }
+
   const ::opencensus::trace::Span& Span() const { return span_; }
   const ::opencensus::tags::TagMap& tags() const { return tags_; }
 
@@ -75,8 +79,8 @@ class CensusContext {
   ::opencensus::tags::TagMap tags_;
 };
 
-// Serializes the outgoing trace context. Field IDs are 1 byte followed by
-// field data. A 1 byte version ID is always encoded first.
+// Serializes the outgoing trace context. tracing_buf must be
+// opencensus::trace::propagation::kGrpcTraceBinHeaderLen bytes long.
 size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,
                              char* tracing_buf, size_t tracing_buf_size);
 

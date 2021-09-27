@@ -19,6 +19,7 @@
 /* Benchmark arenas */
 
 #include <benchmark/benchmark.h>
+
 #include "src/core/lib/gprpp/arena.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"

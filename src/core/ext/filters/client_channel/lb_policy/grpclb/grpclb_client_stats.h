@@ -21,9 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/atm.h>
-
 #include "absl/container/inlined_vector.h"
+
+#include <grpc/support/atm.h>
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -66,7 +66,8 @@ class GrpcLbClientStats : public RefCounted<GrpcLbClientStats> {
   gpr_atm num_calls_finished_with_client_failed_to_send_ = 0;
   gpr_atm num_calls_finished_known_received_ = 0;
   Mutex drop_count_mu_;  // Guards drop_token_counts_.
-  std::unique_ptr<DroppedCallCounts> drop_token_counts_;
+  std::unique_ptr<DroppedCallCounts> drop_token_counts_
+      ABSL_GUARDED_BY(drop_count_mu_);
 };
 
 }  // namespace grpc_core

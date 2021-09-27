@@ -22,7 +22,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 
 grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
-                                         grpc_resource_quota* resource_quota);
+                                         grpc_slice_allocator* slice_allocator);
 void grpc_mock_endpoint_put_read(grpc_endpoint* ep, grpc_slice slice);
 
 #endif

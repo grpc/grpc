@@ -229,6 +229,8 @@ grpc_cc_binary(
     ],
     deps = [
         "//:grpc++",
+        "//:grpc++_reflection",
+        "//:grpcpp_admin",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
@@ -239,6 +241,7 @@ grpc_cc_binary(
 
 grpc_cc_binary(
     name = "xds_interop_server",
+    testonly = True,
     srcs = [
         "xds_interop_server.cc",
     ],
@@ -247,10 +250,13 @@ grpc_cc_binary(
     ],
     deps = [
         "//:grpc++",
+        "//:grpc++_reflection",
+        "//:grpcpp_admin",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/end2end:test_health_check_service_impl",
         "//test/cpp/util:test_config",
     ],
 )

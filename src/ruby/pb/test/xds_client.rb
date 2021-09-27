@@ -40,15 +40,11 @@ require_relative '../src/proto/grpc/testing/messages_pb'
 require_relative '../src/proto/grpc/testing/test_services_pb'
 
 class RpcConfig
-  def init(rpcs_to_send, metadata_to_send)
+  attr_reader :rpcs_to_send, :metadata_to_send, :timeout_sec
+  def init(rpcs_to_send, metadata_to_send, timeout_sec = 0)
     @rpcs_to_send = rpcs_to_send
     @metadata_to_send = metadata_to_send
-  end
-  def rpcs_to_send
-    @rpcs_to_send
-  end
-  def metadata_to_send
-    @metadata_to_send
+    @timeout_sec = timeout_sec
   end
 end
 
@@ -67,10 +63,13 @@ $shutdown = false
 $rpc_config = RpcConfig.new
 $rpc_config.init([:UNARY_CALL], {})
 # These stats are shared across threads
+$thread_results = Array.new
+$thread_results_mu = Mutex.new
 $accumulated_stats_mu = Mutex.new
 $num_rpcs_started_by_method = {}
 $num_rpcs_succeeded_by_method = {}
 $num_rpcs_failed_by_method = {}
+$accumulated_method_stats = {}
 
 # RubyLogger defines a logger for gRPC based on the standard ruby logger.
 module RubyLogger
@@ -98,13 +97,26 @@ def create_stub(opts)
   )
 end
 
+class StatsPerMethod
+  attr_reader :rpcs_started, :result
+  def initialize()
+    @rpcs_started = 0
+    @result = Hash.new(0)
+  end
+  def increment_rpcs_started()
+    @rpcs_started += 1
+  end
+  def add_result(status_code)
+    @result[status_code] += 1
+  end
+end
+
 class ConfigureTarget < Grpc::Testing::XdsUpdateClientConfigureService::Service
   include Grpc::Testing
 
   def configure(req, _call)
-    rpcs_to_send = req['types'];
     metadata_to_send = {}
-    req['metadata'].each do |m|
+    req.metadata.each do |m|
       rpc = m.type
       if !metadata_to_send.key?(rpc)
         metadata_to_send[rpc] = {}
@@ -113,13 +125,10 @@ class ConfigureTarget < Grpc::Testing::XdsUpdateClientConfigureService::Service
       metadata_value = m.value
       metadata_to_send[rpc][metadata_key] = metadata_value
     end
-    GRPC.logger.info("Configuring new rpcs_to_send and metadata_to_send...")
-    GRPC.logger.info(rpcs_to_send)
-    GRPC.logger.info(metadata_to_send)
     new_rpc_config = RpcConfig.new
-    new_rpc_config.init(rpcs_to_send, metadata_to_send)
+    new_rpc_config.init(req['types'], metadata_to_send, req['timeout_sec'])
     $rpc_config = new_rpc_config
-    ClientConfigureResponse.new();
+    ClientConfigureResponse.new()
   end
 end
 
@@ -159,62 +168,49 @@ class TestTarget < Grpc::Testing::LoadBalancerStatsService::Service
       rpcs_by_method: rpcs_by_method,
       rpcs_by_peer: watcher['rpcs_by_peer'],
       num_failures: watcher['no_remote_peer'] + watcher['rpcs_needed']
-    );
+    )
   end
 
   def get_client_accumulated_stats(req, _call)
     $accumulated_stats_mu.synchronize do
+      all_stats_per_method = $accumulated_method_stats.map { |rpc, stats_per_method|
+        [rpc,
+         LoadBalancerAccumulatedStatsResponse::MethodStats.new(
+          rpcs_started: stats_per_method.rpcs_started,
+          result: stats_per_method.result
+         )]
+      }.to_h
       LoadBalancerAccumulatedStatsResponse.new(
         num_rpcs_started_by_method: $num_rpcs_started_by_method,
         num_rpcs_succeeded_by_method: $num_rpcs_succeeded_by_method,
-        num_rpcs_failed_by_method: $num_rpcs_failed_by_method
+        num_rpcs_failed_by_method: $num_rpcs_failed_by_method,
+        stats_per_method: all_stats_per_method,
       )
     end
   end
 end
 
-# execute 1 RPC and return remote hostname
-def execute_rpc(op, fail_on_failed_rpcs, rpc_stats_key)
-  remote_peer = ""
-  begin
-    op.execute
-    if op.metadata.key?('hostname')
-      remote_peer = op.metadata['hostname']
-    end
-  rescue GRPC::BadStatus => e
-    if fail_on_failed_rpcs
-      raise e
-    end
-  end
-  $accumulated_stats_mu.synchronize do
-    if remote_peer.empty?
-      $num_rpcs_failed_by_method[rpc_stats_key] += 1
-    else
-      $num_rpcs_succeeded_by_method[rpc_stats_key] += 1
-    end
-  end
-  remote_peer
-end
-
-def execute_rpc_in_thread(op, rpc_stats_key)
+def execute_rpc_in_thread(op, rpc)
   Thread.new {
+    rpc_stats_key = rpc.to_s
+    remote_peer = ""
     begin
       op.execute
-      # The following should _not_ happen with the current spec
-      # because we are only executing RPCs in a thread if we expect it
-      # to be kept open, or deadline_exceeded, or dropped by the load
-      # balancing policy. These RPCs should not complete successfully.
-      # Doing this for consistency
+      if op.metadata.key?('hostname')
+        remote_peer = op.metadata['hostname']
+      end
       $accumulated_stats_mu.synchronize do
         $num_rpcs_succeeded_by_method[rpc_stats_key] += 1
+        $accumulated_method_stats[rpc_stats_key].add_result(0)
       end
     rescue GRPC::BadStatus => e
-      # Normal execution arrives here,
-      # either because of deadline_exceeded or "call dropped by load
-      # balancing policy"
       $accumulated_stats_mu.synchronize do
         $num_rpcs_failed_by_method[rpc_stats_key] += 1
+        $accumulated_method_stats[rpc_stats_key].add_result(e.code)
       end
+    end
+    $thread_results_mu.synchronize do
+      $thread_results << [rpc, remote_peer]
     end
   }
 end
@@ -238,7 +234,8 @@ def run_test_loop(stub, target_seconds_between_rpcs, fail_on_failed_rpcs)
       target_next_start += target_seconds_between_rpcs
       sleep(sleep_seconds)
     end
-    deadline = GRPC::Core::TimeConsts::from_relative_time(30) # 30 seconds
+    deadline_sec = $rpc_config.timeout_sec > 0 ? $rpc_config.timeout_sec : 30
+    deadline = GRPC::Core::TimeConsts::from_relative_time(deadline_sec)
     results = {}
     $rpc_config.rpcs_to_send.each do |rpc|
       # rpc is in the form of :UNARY_CALL or :EMPTY_CALL here
@@ -246,10 +243,7 @@ def run_test_loop(stub, target_seconds_between_rpcs, fail_on_failed_rpcs)
                    $rpc_config.metadata_to_send[rpc] : {}
       $accumulated_stats_mu.synchronize do
         $num_rpcs_started_by_method[rpc.to_s] += 1
-        num_started = $num_rpcs_started_by_method[rpc.to_s]
-        if num_started % 100 == 0
-          GRPC.logger.info("Started #{num_started} of #{rpc}")
-        end
+        $accumulated_method_stats[rpc.to_s].increment_rpcs_started()
       end
       if rpc == :UNARY_CALL
         op = stub.unary_call(simple_req,
@@ -264,17 +258,15 @@ def run_test_loop(stub, target_seconds_between_rpcs, fail_on_failed_rpcs)
       else
         raise "Unsupported rpc #{rpc}"
       end
-      rpc_stats_key = rpc.to_s
-      if metadata.key?('rpc-behavior') and
-        (metadata['rpc-behavior'] == 'keep-open')
-        num_open_threads = keep_open_threads.size
-        if num_open_threads % 50 == 0
-          GRPC.logger.info("number of keep_open_threads = #{num_open_threads}")
-        end
-        keep_open_threads << execute_rpc_in_thread(op, rpc_stats_key)
-      else
-        results[rpc] = execute_rpc(op, fail_on_failed_rpcs, rpc_stats_key)
+      keep_open_threads << execute_rpc_in_thread(op, rpc)
+    end
+    # collect results from threads
+    $thread_results_mu.synchronize do
+      $thread_results.each do |r|
+        rpc_name, remote_peer = r
+        results[rpc_name] = remote_peer
       end
+      $thread_results = Array.new
     end
     $watchers_mutex.synchronize do
       $watchers.each do |watcher|
@@ -364,6 +356,7 @@ def main
     $num_rpcs_started_by_method[rpc.to_s] = 0
     $num_rpcs_succeeded_by_method[rpc.to_s] = 0
     $num_rpcs_failed_by_method[rpc.to_s] = 0
+    $accumulated_method_stats[rpc.to_s] = StatsPerMethod.new
   end
 
   # The client just sends rpcs continuously in a regular interval

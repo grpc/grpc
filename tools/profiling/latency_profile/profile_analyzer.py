@@ -16,12 +16,13 @@
 import argparse
 import collections
 import hashlib
-import itertools
 import json
 import math
 import sys
-import tabulate
 import time
+
+from six.moves import zip
+import tabulate
 
 SELF_TIME = object()
 TIME_FROM_SCOPE_START = object()
@@ -107,8 +108,8 @@ class CallStackBuilder(object):
 
     def add(self, line):
         line_type = line['type']
-        self.signature.update(line_type)
-        self.signature.update(line['tag'])
+        self.signature.update(line_type.encode('UTF-8'))
+        self.signature.update(line['tag'].encode('UTF-8'))
         if line_type == '{':
             self.stk.append(ScopeBuilder(self, line))
             return False
@@ -143,15 +144,15 @@ class CallStack(object):
         assert self.signature == call_stack_builder.signature
         self.count += 1
         assert len(self.lines) == len(call_stack_builder.lines)
-        for lsum, line in itertools.izip(self.lines, call_stack_builder.lines):
+        for lsum, line in zip(self.lines, call_stack_builder.lines):
             assert lsum.tag == line.tag
             assert lsum.times.keys() == line.times.keys()
-            for k, lst in lsum.times.iteritems():
+            for k, lst in lsum.times.items():
                 lst.append(line.times[k])
 
     def finish(self):
         for line in self.lines:
-            for lst in line.times.itervalues():
+            for lst in line.times.values():
                 lst.sort()
 
 
@@ -247,18 +248,18 @@ if args.out != '-':
     out = open(args.out, 'w')
 
 if args.fmt == 'html':
-    print >> out, '<html>'
-    print >> out, '<head>'
-    print >> out, '<title>Profile Report</title>'
-    print >> out, '</head>'
+    out.write('<html>')
+    out.write('<head>')
+    out.write('<title>Profile Report</title>')
+    out.write('</head>')
 
 accounted_for = 0
 for cs in call_stacks:
-    print >> out, '\n'
+    out.write('\n')
     if args.fmt in BANNER:
-        print >> out, BANNER[args.fmt] % {
+        out.write(BANNER[args.fmt] % {
             'count': cs.count,
-        }
+        })
     header, _ = zip(*FORMAT)
     table = []
     for line in cs.lines:
@@ -266,10 +267,10 @@ for cs in call_stacks:
         for _, fn in FORMAT:
             fields.append(fn(line))
         table.append(fields)
-    print >> out, tabulate.tabulate(table, header, tablefmt=args.fmt)
+    out.write(tabulate.tabulate(table, header, tablefmt=args.fmt))
     accounted_for += cs.count
     if accounted_for > .99 * total_stacks:
         break
 
 if args.fmt == 'html':
-    print '</html>'
+    print('</html>')

@@ -35,11 +35,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -60,7 +60,7 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void log_resolved_addrs(const char* label, const char* hostname) {
   grpc_resolved_addresses* res = nullptr;
-  grpc_error* error = grpc_blocking_resolve_address(hostname, "80", &res);
+  grpc_error_handle error = grpc_blocking_resolve_address(hostname, "80", &res);
   if (error != GRPC_ERROR_NONE || res == nullptr) {
     GRPC_LOG_IF_ERROR(hostname, error);
     return;
@@ -277,7 +277,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
 
 int external_dns_works(const char* host) {
   grpc_resolved_addresses* res = nullptr;
-  grpc_error* error = grpc_blocking_resolve_address(host, "80", &res);
+  grpc_error_handle error = grpc_blocking_resolve_address(host, "80", &res);
   GRPC_ERROR_UNREF(error);
   if (res != nullptr) {
     grpc_resolved_addresses_destroy(res);

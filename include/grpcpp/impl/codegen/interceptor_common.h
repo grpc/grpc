@@ -19,16 +19,17 @@
 #ifndef GRPCPP_IMPL_CODEGEN_INTERCEPTOR_COMMON_H
 #define GRPCPP_IMPL_CODEGEN_INTERCEPTOR_COMMON_H
 
+// IWYU pragma: private
+
 #include <array>
 #include <functional>
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/call_op_set_interface.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/intercepted_channel.h>
 #include <grpcpp/impl/codegen/server_interceptor.h>
-
-#include <grpc/impl/codegen/grpc_types.h>
 
 namespace grpc {
 namespace internal {
@@ -223,18 +224,11 @@ class InterceptorBatchMethodsImpl
   bool InterceptorsListEmpty() {
     auto* client_rpc_info = call_->client_rpc_info();
     if (client_rpc_info != nullptr) {
-      if (client_rpc_info->interceptors_.empty()) {
-        return true;
-      } else {
-        return false;
-      }
+      return client_rpc_info->interceptors_.empty();
     }
 
     auto* server_rpc_info = call_->server_rpc_info();
-    if (server_rpc_info == nullptr || server_rpc_info->interceptors_.empty()) {
-      return true;
-    }
-    return false;
+    return server_rpc_info == nullptr || server_rpc_info->interceptors_.empty();
   }
 
   // This should be used only by subclasses of CallOpSetInterface. SetCall and
@@ -419,11 +413,7 @@ class CancelInterceptorBatchMethods
  public:
   bool QueryInterceptionHookPoint(
       experimental::InterceptionHookPoints type) override {
-    if (type == experimental::InterceptionHookPoints::PRE_SEND_CANCEL) {
-      return true;
-    } else {
-      return false;
-    }
+    return type == experimental::InterceptionHookPoints::PRE_SEND_CANCEL;
   }
 
   void Proceed() override {

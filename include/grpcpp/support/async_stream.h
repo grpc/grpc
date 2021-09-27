@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SUPPORT_ASYNC_STREAM_H
 #define GRPCPP_SUPPORT_ASYNC_STREAM_H
 
-#include <grpcpp/impl/codegen/async_stream.h>
+#include <grpcpp/impl/codegen/async_stream.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SUPPORT_ASYNC_STREAM_H

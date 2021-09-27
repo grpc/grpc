@@ -21,10 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdlib.h>
+
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/port.h"
-
-#include <stdlib.h>
 
 /** Initializes the iomgr. */
 void grpc_iomgr_init();
@@ -52,7 +52,7 @@ bool grpc_iomgr_is_any_background_poller_thread();
  * that the closure may or may not run yet when this function returns, and the
  * closure should not be blocking or long-running. */
 bool grpc_iomgr_add_closure_to_background_poller(grpc_closure* closure,
-                                                 grpc_error* error);
+                                                 grpc_error_handle error);
 
 /* Exposed only for testing */
 size_t grpc_iomgr_count_objects_for_testing();

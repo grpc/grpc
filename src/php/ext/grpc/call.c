@@ -294,7 +294,7 @@ PHP_METHOD(Call, startBatch) {
   grpc_status_code status;
   grpc_slice recv_status_details = grpc_empty_slice();
   grpc_slice send_status_details = grpc_empty_slice();
-  grpc_byte_buffer *message;
+  grpc_byte_buffer *message = NULL;
   int cancelled;
   grpc_call_error error;
 
@@ -313,6 +313,11 @@ PHP_METHOD(Call, startBatch) {
                          "start_batch expects an array", 1 TSRMLS_CC);
     goto cleanup;
   }
+
+  // c-core may call rand(). If we don't call srand() here, all the
+  // random numbers being returned would be the same.
+  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
+  srand(now.tv_nsec);
 
   array_hash = Z_ARRVAL_P(array);
 

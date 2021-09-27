@@ -18,11 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/cpp/server/load_reporter/load_reporter_async_service_impl.h"
+
 #include <inttypes.h>
 
 #include "absl/memory/memory.h"
-
-#include "src/cpp/server/load_reporter/load_reporter_async_service_impl.h"
 
 namespace grpc {
 namespace load_reporter {
@@ -171,7 +171,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
   {
     grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
-      lock.Unlock();
+      lock.Release();
       Shutdown(std::move(self), "OnRequestDelivered");
       return;
     }
@@ -229,7 +229,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
       {
         grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
         if (service_->shutdown_) {
-          lock.Unlock();
+          lock.Release();
           Shutdown(std::move(self), "OnReadDone");
           return;
         }
@@ -261,7 +261,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
   {
     grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
-      lock.Unlock();
+      lock.Release();
       Shutdown(std::move(self), "ScheduleNextReport");
       return;
     }
@@ -301,7 +301,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
   {
     grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
-      lock.Unlock();
+      lock.Release();
       Shutdown(std::move(self), "SendReport");
       return;
     }

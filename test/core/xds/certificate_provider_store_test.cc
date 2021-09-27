@@ -16,13 +16,13 @@
 //
 //
 
+#include "src/core/ext/xds/certificate_provider_store.h"
+
 #include <thread>
 
 #include <gmock/gmock.h>
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
-#include "src/core/ext/xds/certificate_provider_store.h"
-
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -58,7 +58,7 @@ class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
 
   RefCountedPtr<CertificateProviderFactory::Config>
   CreateCertificateProviderConfig(const Json& /*config_json*/,
-                                  grpc_error** /*error*/) override {
+                                  grpc_error_handle* /*error*/) override {
     return MakeRefCounted<Config>();
   }
 
@@ -81,7 +81,7 @@ class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
 
   RefCountedPtr<CertificateProviderFactory::Config>
   CreateCertificateProviderConfig(const Json& /*config_json*/,
-                                  grpc_error** /*error*/) override {
+                                  grpc_error_handle* /*error*/) override {
     return MakeRefCounted<Config>();
   }
 

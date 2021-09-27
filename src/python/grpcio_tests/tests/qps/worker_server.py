@@ -12,18 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from concurrent import futures
 import multiprocessing
 import random
 import threading
 import time
 
-from concurrent import futures
 import grpc
-from src.proto.grpc.testing import control_pb2
-from src.proto.grpc.testing import benchmark_service_pb2_grpc
-from src.proto.grpc.testing import worker_service_pb2_grpc
-from src.proto.grpc.testing import stats_pb2
 
+from src.proto.grpc.testing import benchmark_service_pb2_grpc
+from src.proto.grpc.testing import control_pb2
+from src.proto.grpc.testing import stats_pb2
+from src.proto.grpc.testing import worker_service_pb2_grpc
 from tests.qps import benchmark_client
 from tests.qps import benchmark_server
 from tests.qps import client_runner

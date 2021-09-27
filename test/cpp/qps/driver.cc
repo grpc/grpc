@@ -16,6 +16,8 @@
  *
  */
 
+#include "test/cpp/qps/driver.h"
+
 #include <cinttypes>
 #include <deque>
 #include <list>
@@ -37,7 +39,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/qps/client.h"
-#include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/qps/stats.h"
@@ -634,9 +635,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   ReceiveFinalStatusFromServer(servers, *result);
   ShutdownServers(servers, *result);
 
-  if (g_inproc_servers != nullptr) {
-    delete g_inproc_servers;
-  }
+  delete g_inproc_servers;
 
   merged_latencies.FillProto(result->mutable_latencies());
   for (std::unordered_map<int, int64_t>::iterator it = merged_statuses.begin();
@@ -664,10 +663,10 @@ bool RunQuit(
         workers[i],
         GetCredType(workers[i], per_worker_credential_types, credential_type),
         nullptr /* call creds */, {} /* interceptor creators */));
-    Void dummy;
+    Void phony;
     grpc::ClientContext ctx;
     ctx.set_wait_for_ready(true);
-    Status s = stub->QuitWorker(&ctx, dummy, &dummy);
+    Status s = stub->QuitWorker(&ctx, phony, &phony);
     if (!s.ok()) {
       gpr_log(GPR_ERROR, "Worker %zu could not be properly quit because %s", i,
               s.error_message().c_str());

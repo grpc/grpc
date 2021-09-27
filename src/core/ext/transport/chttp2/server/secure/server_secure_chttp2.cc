@@ -27,7 +27,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
-
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
@@ -40,7 +39,7 @@
 namespace {
 
 grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
-                                           grpc_error** error) {
+                                           grpc_error_handle* error) {
   grpc_server_credentials* server_credentials =
       grpc_find_server_credentials_in_args(args);
   if (server_credentials == nullptr) {
@@ -50,10 +49,9 @@ grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
   }
   auto security_connector = server_credentials->create_security_connector(args);
   if (security_connector == nullptr) {
-    *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("Unable to create secure server with credentials of type ",
-                     server_credentials->type())
-            .c_str());
+                     server_credentials->type()));
     return args;
   }
   grpc_arg arg_to_add =
@@ -69,7 +67,7 @@ grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
 int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
                                       grpc_server_credentials* creds) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_error* err = GRPC_ERROR_NONE;
+  grpc_error_handle err = GRPC_ERROR_NONE;
   grpc_core::RefCountedPtr<grpc_server_security_connector> sc;
   int port_num = 0;
   grpc_channel_args* args = nullptr;
@@ -101,11 +99,9 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
   } else {
     sc = creds->create_security_connector(nullptr);
     if (sc == nullptr) {
-      err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat(
-              "Unable to create secure server with credentials of type ",
-              creds->type())
-              .c_str());
+      err = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "Unable to create secure server with credentials of type ",
+          creds->type()));
       goto done;
     }
     grpc_arg args_to_add[2];
@@ -121,8 +117,7 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
 done:
   sc.reset(DEBUG_LOCATION, "server");
   if (err != GRPC_ERROR_NONE) {
-    const char* msg = grpc_error_string(err);
-    gpr_log(GPR_ERROR, "%s", msg);
+    gpr_log(GPR_ERROR, "%s", grpc_error_std_string(err).c_str());
 
     GRPC_ERROR_UNREF(err);
   }

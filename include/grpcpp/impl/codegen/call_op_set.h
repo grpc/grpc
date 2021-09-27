@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CALL_OP_SET_H
 #define GRPCPP_IMPL_CODEGEN_CALL_OP_SET_H
 
+// IWYU pragma: private
+
 #include <cstring>
 #include <map>
 #include <memory>
@@ -878,6 +880,9 @@ class CallOpSet : public CallOpSetInterface,
         interceptor_methods_(InterceptorBatchMethodsImpl()) {}
 
   CallOpSet& operator=(const CallOpSet& other) {
+    if (&other == this) {
+      return *this;
+    }
     core_cq_tag_ = this;
     return_tag_ = this;
     call_ = other.call_;

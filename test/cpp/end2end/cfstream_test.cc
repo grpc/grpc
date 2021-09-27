@@ -16,13 +16,13 @@
  *
  */
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <algorithm>
 #include <memory>
 #include <mutex>
 #include <random>
 #include <thread>
+
+#include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -36,11 +36,10 @@
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gpr/env.h"
-
+#include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -190,9 +189,9 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     } else {
       GPR_ASSERT(ret == grpc::CompletionQueue::TIMEOUT);
       // This can happen if we hit the Apple CFStream bug which results in the
-      // read stream hanging. We are ignoring hangs and timeouts, but these
+      // read stream freezing. We are ignoring hangs and timeouts, but these
       // tests are still useful as they can catch memory memory corruptions,
-      // crashes and other bugs that don't result in test hang/timeout.
+      // crashes and other bugs that don't result in test freeze/timeout.
       return false;
     }
   }

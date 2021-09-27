@@ -20,6 +20,8 @@
 #include <memory>
 #include <thread>
 
+#include "absl/memory/memory.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -31,8 +33,6 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-
-#include "absl/memory/memory.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/gpr/tls.h"
@@ -1495,9 +1495,9 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
 
     cli_cq.Shutdown();
-    void* dummy_tag;
-    bool dummy_ok;
-    while (cli_cq.Next(&dummy_tag, &dummy_ok)) {
+    void* phony_tag;
+    bool phony_ok;
+    while (cli_cq.Next(&phony_tag, &phony_ok)) {
     }
   }
 
@@ -1644,9 +1644,9 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
 
     cli_cq.Shutdown();
-    void* dummy_tag;
-    bool dummy_ok;
-    while (cli_cq.Next(&dummy_tag, &dummy_ok)) {
+    void* phony_tag;
+    bool phony_ok;
+    while (cli_cq.Next(&phony_tag, &phony_ok)) {
     }
   }
 

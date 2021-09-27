@@ -22,7 +22,7 @@ We use tenacity as a general-purpose retrying library.
 """
 import datetime
 import logging
-from typing import Any, List, Optional
+from typing import Any, Optional, Sequence
 
 import tenacity
 
@@ -30,14 +30,18 @@ retryers_logger = logging.getLogger(__name__)
 # Type aliases
 timedelta = datetime.timedelta
 Retrying = tenacity.Retrying
+RetryError = tenacity.RetryError
 _after_log = tenacity.after_log
 _before_sleep_log = tenacity.before_sleep_log
 _retry_if_exception_type = tenacity.retry_if_exception_type
+_stop_after_attempt = tenacity.stop_after_attempt
 _stop_after_delay = tenacity.stop_after_delay
+_stop_any = tenacity.stop_any
 _wait_exponential = tenacity.wait_exponential
+_wait_fixed = tenacity.wait_fixed
 
 
-def _retry_on_exceptions(retry_on_exceptions: Optional[List[Any]] = None):
+def _retry_on_exceptions(retry_on_exceptions: Optional[Sequence[Any]] = None):
     # Retry on all exceptions by default
     if retry_on_exceptions is None:
         retry_on_exceptions = (Exception,)
@@ -49,7 +53,7 @@ def exponential_retryer_with_timeout(
         wait_min: timedelta,
         wait_max: timedelta,
         timeout: timedelta,
-        retry_on_exceptions: Optional[List[Any]] = None,
+        retry_on_exceptions: Optional[Sequence[Any]] = None,
         logger: Optional[logging.Logger] = None,
         log_level: Optional[int] = logging.DEBUG) -> Retrying:
     if logger is None:
@@ -60,4 +64,29 @@ def exponential_retryer_with_timeout(
                     wait=_wait_exponential(min=wait_min.total_seconds(),
                                            max=wait_max.total_seconds()),
                     stop=_stop_after_delay(timeout.total_seconds()),
+                    before_sleep=_before_sleep_log(logger, log_level))
+
+
+def constant_retryer(*,
+                     wait_fixed: timedelta,
+                     attempts: int = 0,
+                     timeout: timedelta = None,
+                     retry_on_exceptions: Optional[Sequence[Any]] = None,
+                     logger: Optional[logging.Logger] = None,
+                     log_level: Optional[int] = logging.DEBUG) -> Retrying:
+    if logger is None:
+        logger = retryers_logger
+    if log_level is None:
+        log_level = logging.DEBUG
+    if attempts < 1 and timeout is None:
+        raise ValueError('The number of attempts or the timeout must be set')
+    stops = []
+    if attempts > 0:
+        stops.append(_stop_after_attempt(attempts))
+    if timeout is not None:
+        stops.append(_stop_after_delay(timeout.total_seconds()))
+
+    return Retrying(retry=_retry_on_exceptions(retry_on_exceptions),
+                    wait=_wait_fixed(wait_fixed.total_seconds()),
+                    stop=_stop_any(*stops),
                     before_sleep=_before_sleep_log(logger, log_level))

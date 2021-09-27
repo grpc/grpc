@@ -13,20 +13,20 @@
 # limitations under the License.
 """Tests metadata flags feature by testing wait-for-ready semantics"""
 
-import time
-import weakref
-import unittest
-import threading
 import logging
 import socket
-from six.moves import queue
+import threading
+import time
+import unittest
+import weakref
 
 import grpc
+from six.moves import queue
 
 from tests.unit import test_common
-from tests.unit.framework.common import test_constants
 import tests.unit.framework.common
 from tests.unit.framework.common import get_socket
+from tests.unit.framework.common import test_constants
 
 _UNARY_UNARY = '/test/UnaryUnary'
 _UNARY_STREAM = '/test/UnaryStream'
@@ -100,8 +100,8 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return None
 
 
-def create_dummy_channel():
-    """Creating dummy channels is a workaround for retries"""
+def create_phony_channel():
+    """Creating phony channels is a workaround for retries"""
     host, port, sock = get_socket(sock_options=(socket.SO_REUSEADDR,))
     sock.close()
     return grpc.insecure_channel('{}:{}'.format(host, port))
@@ -188,12 +188,12 @@ class MetadataFlagsTest(unittest.TestCase):
 
     def test_call_wait_for_ready_default(self):
         for perform_call in _ALL_CALL_CASES:
-            with create_dummy_channel() as channel:
+            with create_phony_channel() as channel:
                 self.check_connection_does_failfast(perform_call, channel)
 
     def test_call_wait_for_ready_disabled(self):
         for perform_call in _ALL_CALL_CASES:
-            with create_dummy_channel() as channel:
+            with create_phony_channel() as channel:
                 self.check_connection_does_failfast(perform_call,
                                                     channel,
                                                     wait_for_ready=False)

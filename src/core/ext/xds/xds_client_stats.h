@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <map>
 #include <string>
 
@@ -29,7 +30,6 @@
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -46,7 +46,7 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   struct Less {
     bool operator()(const XdsLocalityName* lhs,
                     const XdsLocalityName* rhs) const {
-      if (lhs == nullptr || rhs == nullptr) return GPR_ICMP(lhs, rhs);
+      if (lhs == nullptr || rhs == nullptr) return QsortCompare(lhs, rhs);
       return lhs->Compare(*rhs) < 0;
     }
 
@@ -56,10 +56,10 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
     }
   };
 
-  XdsLocalityName(std::string region, std::string zone, std::string subzone)
+  XdsLocalityName(std::string region, std::string zone, std::string sub_zone)
       : region_(std::move(region)),
         zone_(std::move(zone)),
-        sub_zone_(std::move(subzone)) {}
+        sub_zone_(std::move(sub_zone)) {}
 
   bool operator==(const XdsLocalityName& other) const {
     return region_ == other.region_ && zone_ == other.zone_ &&
@@ -144,12 +144,12 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
   absl::string_view lrs_server_name_;
   absl::string_view cluster_name_;
   absl::string_view eds_service_name_;
-  Atomic<uint64_t> uncategorized_drops_{0};
+  std::atomic<uint64_t> uncategorized_drops_{0};
   // Protects categorized_drops_. A mutex is necessary because the length of
   // dropped_requests can be accessed by both the picker (from data plane
   // mutex) and the load reporting thread (from the control plane combiner).
   Mutex mu_;
-  CategorizedDropsMap categorized_drops_;
+  CategorizedDropsMap categorized_drops_ ABSL_GUARDED_BY(mu_);
 };
 
 // Locality stats for an xds cluster.
@@ -221,17 +221,18 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
   absl::string_view eds_service_name_;
   RefCountedPtr<XdsLocalityName> name_;
 
-  Atomic<uint64_t> total_successful_requests_{0};
-  Atomic<uint64_t> total_requests_in_progress_{0};
-  Atomic<uint64_t> total_error_requests_{0};
-  Atomic<uint64_t> total_issued_requests_{0};
+  std::atomic<uint64_t> total_successful_requests_{0};
+  std::atomic<uint64_t> total_requests_in_progress_{0};
+  std::atomic<uint64_t> total_error_requests_{0};
+  std::atomic<uint64_t> total_issued_requests_{0};
 
   // Protects backend_metrics_. A mutex is necessary because the length of
   // backend_metrics_ can be accessed by both the callback intercepting the
   // call's recv_trailing_metadata (not from the control plane work serializer)
   // and the load reporting thread (from the control plane work serializer).
   Mutex backend_metrics_mu_;
-  std::map<std::string, BackendMetric> backend_metrics_;
+  std::map<std::string, BackendMetric> backend_metrics_
+      ABSL_GUARDED_BY(backend_metrics_mu_);
 };
 
 }  // namespace grpc_core

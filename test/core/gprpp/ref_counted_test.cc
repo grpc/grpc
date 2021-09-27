@@ -51,7 +51,7 @@ TEST(RefCounted, ExtraRef) {
   foo->Unref();
 }
 
-class Value : public RefCounted<Value, PolymorphicRefCount, false> {
+class Value : public RefCounted<Value, PolymorphicRefCount, kUnrefNoDelete> {
  public:
   Value(int value, std::set<std::unique_ptr<Value>>* registry) : value_(value) {
     registry->emplace(this);
@@ -102,6 +102,26 @@ TEST(RefCounted, NoDeleteUponUnref) {
   v1.reset();
   GarbageCollectRegistry(&registry);
   EXPECT_THAT(registry, ::testing::UnorderedElementsAre());
+}
+
+class ValueInExternalAllocation
+    : public RefCounted<ValueInExternalAllocation, PolymorphicRefCount,
+                        kUnrefCallDtor> {
+ public:
+  explicit ValueInExternalAllocation(int value) : value_(value) {}
+
+  int value() const { return value_; }
+
+ private:
+  int value_;
+};
+
+TEST(RefCounted, CallDtorUponUnref) {
+  std::aligned_storage<sizeof(ValueInExternalAllocation),
+                       alignof(ValueInExternalAllocation)>::type storage;
+  RefCountedPtr<ValueInExternalAllocation> value(
+      new (&storage) ValueInExternalAllocation(5));
+  EXPECT_EQ(value->value(), 5);
 }
 
 class FooNonPolymorphic

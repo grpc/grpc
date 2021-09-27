@@ -46,6 +46,11 @@ UPB_INLINE const upb_msgdef *envoy_config_listener_v3_Listener_ConnectionBalance
   return upb_symtab_lookupmsg(s, "envoy.config.listener.v3.Listener.ConnectionBalanceConfig.ExactBalance");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_listener_v3_Listener_InternalListenerConfig_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_listener_v3_listener_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.listener.v3.Listener.InternalListenerConfig");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

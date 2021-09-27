@@ -16,19 +16,22 @@
  *
  */
 
-#include <gmock/gmock.h>
-#include <grpc/byte_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <string>
 
+#include <gmock/gmock.h>
+
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+
+#include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
@@ -96,7 +99,7 @@ void ArgsInit(ArgsStruct* args) {
   args->channel_args = nullptr;
 }
 
-void DoNothing(void* /*arg*/, grpc_error* /*error*/) {}
+void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 void ArgsFinish(ArgsStruct* args) {
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
@@ -146,7 +149,7 @@ class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
     GPR_ASSERT(false);
   }
 
-  void ReturnError(grpc_error* /*error*/) override { GPR_ASSERT(false); }
+  void ReturnError(grpc_error_handle /*error*/) override { GPR_ASSERT(false); }
 
  private:
   ArgsStruct* args_;

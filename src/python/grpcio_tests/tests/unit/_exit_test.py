@@ -14,20 +14,21 @@
 """Tests clean exit of server/client on Python Interpreter exit/sigint.
 
 The tests in this module spawn a subprocess for each test case, the
-test is considered successful if it doesn't hang/timeout.
+test is considered successful if it doesn't freeze/timeout.
 """
 
 import atexit
+import datetime
+import logging
 import os
 import signal
-import six
 import subprocess
 import sys
 import threading
-import datetime
 import time
 import unittest
-import logging
+
+import six
 
 from tests.unit import _exit_scenarios
 

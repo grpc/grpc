@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
-
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -207,10 +206,11 @@ static void test_jwt_issuer_email_domain(void) {
 
 static void test_claims_success(void) {
   grpc_jwt_claims* claims;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(claims_without_time_constraint, &error);
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s", grpc_error_string(error));
+    gpr_log(GPR_ERROR, "JSON parse error: %s",
+            grpc_error_std_string(error).c_str());
   }
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(json.type() == Json::Type::OBJECT);
@@ -229,10 +229,11 @@ static void test_claims_success(void) {
 
 static void test_expired_claims_failure(void) {
   grpc_jwt_claims* claims;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(expired_claims, &error);
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s", grpc_error_string(error));
+    gpr_log(GPR_ERROR, "JSON parse error: %s",
+            grpc_error_std_string(error).c_str());
   }
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(json.type() == Json::Type::OBJECT);
@@ -257,10 +258,11 @@ static void test_expired_claims_failure(void) {
 }
 
 static void test_invalid_claims_failure(void) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(invalid_claims, &error);
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s", grpc_error_string(error));
+    gpr_log(GPR_ERROR, "JSON parse error: %s",
+            grpc_error_std_string(error).c_str());
   }
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(json.type() == Json::Type::OBJECT);
@@ -270,10 +272,11 @@ static void test_invalid_claims_failure(void) {
 
 static void test_bad_audience_claims_failure(void) {
   grpc_jwt_claims* claims;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(claims_without_time_constraint, &error);
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s", grpc_error_string(error));
+    gpr_log(GPR_ERROR, "JSON parse error: %s",
+            grpc_error_std_string(error).c_str());
   }
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(json.type() == Json::Type::OBJECT);
@@ -287,10 +290,11 @@ static void test_bad_audience_claims_failure(void) {
 
 static void test_bad_subject_claims_failure(void) {
   grpc_jwt_claims* claims;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(claims_with_bad_subject, &error);
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s", grpc_error_string(error));
+    gpr_log(GPR_ERROR, "JSON parse error: %s",
+            grpc_error_std_string(error).c_str());
   }
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(json.type() == Json::Type::OBJECT);

@@ -18,14 +18,18 @@ import contextlib
 import enum
 import logging
 import sys
-import six
 
-from grpc._cython import cygrpc as _cygrpc
 from grpc import _compression
+from grpc._cython import cygrpc as _cygrpc
+from grpc._runtime_protos import protos
+from grpc._runtime_protos import protos_and_services
+from grpc._runtime_protos import services
+import six
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 try:
+    # pylint: disable=ungrouped-imports
     from grpc._grpcio_metadata import __version__
 except ImportError:
     __version__ = "dev0"
@@ -406,8 +410,6 @@ class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
 class ClientCallDetails(six.with_metaclass(abc.ABCMeta)):
     """Describes an RPC to be invoked.
 
-    This is an EXPERIMENTAL API.
-
     Attributes:
       method: The method name of the RPC.
       timeout: An optional duration of time in seconds to allow for the RPC.
@@ -422,10 +424,7 @@ class ClientCallDetails(six.with_metaclass(abc.ABCMeta)):
 
 
 class UnaryUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
-    """Affords intercepting unary-unary invocations.
-
-    This is an EXPERIMENTAL API.
-    """
+    """Affords intercepting unary-unary invocations."""
 
     @abc.abstractmethod
     def intercept_unary_unary(self, continuation, client_call_details, request):
@@ -459,10 +458,7 @@ class UnaryUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
 
 
 class UnaryStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
-    """Affords intercepting unary-stream invocations.
-
-    This is an EXPERIMENTAL API.
-    """
+    """Affords intercepting unary-stream invocations."""
 
     @abc.abstractmethod
     def intercept_unary_stream(self, continuation, client_call_details,
@@ -489,16 +485,14 @@ class UnaryStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
             An object that is both a Call for the RPC and an iterator of
             response values. Drawing response values from the returned
             Call-iterator may raise RpcError indicating termination of
-            the RPC with non-OK status.
+            the RPC with non-OK status. This object *should* also fulfill the
+            Future interface, though it may not.
         """
         raise NotImplementedError()
 
 
 class StreamUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
-    """Affords intercepting stream-unary invocations.
-
-    This is an EXPERIMENTAL API.
-    """
+    """Affords intercepting stream-unary invocations."""
 
     @abc.abstractmethod
     def intercept_stream_unary(self, continuation, client_call_details,
@@ -532,10 +526,7 @@ class StreamUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
 
 
 class StreamStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
-    """Affords intercepting stream-stream invocations.
-
-    This is an EXPERIMENTAL API.
-    """
+    """Affords intercepting stream-stream invocations."""
 
     @abc.abstractmethod
     def intercept_stream_stream(self, continuation, client_call_details,
@@ -562,7 +553,8 @@ class StreamStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
           An object that is both a Call for the RPC and an iterator of
           response values. Drawing response values from the returned
           Call-iterator may raise RpcError indicating termination of
-          the RPC with non-OK status.
+          the RPC with non-OK status. This object *should* also fulfill the
+          Future interface, though it may not.
         """
         raise NotImplementedError()
 
@@ -797,10 +789,10 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
         Returns:
-            An object that is both a Call for the RPC and an iterator of
-            response values. Drawing response values from the returned
-            Call-iterator may raise RpcError indicating termination of the
-            RPC with non-OK status.
+            An object that is a Call for the RPC, an iterator of response
+            values, and a Future for the RPC. Drawing response values from the
+            returned Call-iterator may raise RpcError indicating termination of
+            the RPC with non-OK status.
         """
         raise NotImplementedError()
 
@@ -936,10 +928,10 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
         Returns:
-            An object that is both a Call for the RPC and an iterator of
-            response values. Drawing response values from the returned
-            Call-iterator may raise RpcError indicating termination of the
-            RPC with non-OK status.
+            An object that is a Call for the RPC, an iterator of response
+            values, and a Future for the RPC. Drawing response values from the
+            returned Call-iterator may raise RpcError indicating termination of
+            the RPC with non-OK status.
         """
         raise NotImplementedError()
 
@@ -1186,6 +1178,16 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         """
         raise NotImplementedError()
 
+    def trailing_metadata(self):
+        """Access value to be used as trailing metadata upon RPC completion.
+
+        This is an EXPERIMENTAL API.
+
+        Returns:
+          The trailing :term:`metadata` for the RPC.
+        """
+        raise NotImplementedError()
+
     @abc.abstractmethod
     def abort(self, code, details):
         """Raises an exception to terminate the RPC with a non-OK status.
@@ -1246,6 +1248,26 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         Args:
           details: A UTF-8-encodable string to be sent to the client upon
             termination of the RPC.
+        """
+        raise NotImplementedError()
+
+    def code(self):
+        """Accesses the value to be used as status code upon RPC completion.
+
+        This is an EXPERIMENTAL API.
+
+        Returns:
+          The StatusCode value for the RPC.
+        """
+        raise NotImplementedError()
+
+    def details(self):
+        """Accesses the value to be used as detail string upon RPC completion.
+
+        This is an EXPERIMENTAL API.
+
+        Returns:
+          The details string of the RPC.
         """
         raise NotImplementedError()
 
@@ -1349,10 +1371,7 @@ class ServiceRpcHandler(six.with_metaclass(abc.ABCMeta, GenericRpcHandler)):
 
 
 class ServerInterceptor(six.with_metaclass(abc.ABCMeta)):
-    """Affords intercepting incoming RPCs on the service-side.
-
-    This is an EXPERIMENTAL API.
-    """
+    """Affords intercepting incoming RPCs on the service-side."""
 
     @abc.abstractmethod
     def intercept_service(self, continuation, handler_call_details):
@@ -1607,6 +1626,21 @@ def ssl_channel_credentials(root_certificates=None,
                                       certificate_chain))
 
 
+def xds_channel_credentials(fallback_credentials=None):
+    """Creates a ChannelCredentials for use with xDS. This is an EXPERIMENTAL
+      API.
+
+    Args:
+      fallback_credentials: Credentials to use in case it is not possible to
+        establish a secure connection via xDS. If no fallback_credentials
+        argument is supplied, a default SSLChannelCredentials is used.
+    """
+    fallback_credentials = ssl_channel_credentials(
+    ) if fallback_credentials is None else fallback_credentials
+    return ChannelCredentials(
+        _cygrpc.XDSChannelCredentials(fallback_credentials._credentials))
+
+
 def metadata_call_credentials(metadata_plugin, name=None):
     """Construct CallCredentials from an AuthMetadataPlugin.
 
@@ -1704,6 +1738,29 @@ def ssl_server_credentials(private_key_certificate_chain_pairs,
                 _cygrpc.SslPemKeyCertPair(key, pem)
                 for key, pem in private_key_certificate_chain_pairs
             ], require_client_auth))
+
+
+def xds_server_credentials(fallback_credentials):
+    """Creates a ServerCredentials for use with xDS. This is an EXPERIMENTAL
+      API.
+
+    Args:
+      fallback_credentials: Credentials to use in case it is not possible to
+        establish a secure connection via xDS. No default value is provided.
+    """
+    return ServerCredentials(
+        _cygrpc.xds_server_credentials(fallback_credentials._credentials))
+
+
+def insecure_server_credentials():
+    """Creates a credentials object directing the server to use no credentials.
+      This is an EXPERIMENTAL API.
+
+    This object cannot be used directly in a call to `add_secure_port`.
+    Instead, it should be used to construct other credentials objects, e.g.
+    with xds_server_credentials.
+    """
+    return ServerCredentials(_cygrpc.insecure_server_credentials())
 
 
 def ssl_server_certificate_configuration(private_key_certificate_chain_pairs,
@@ -1951,8 +2008,6 @@ def secure_channel(target, credentials, options=None, compression=None):
 def intercept_channel(channel, *interceptors):
     """Intercepts a channel through a set of interceptors.
 
-    This is an EXPERIMENTAL API.
-
     Args:
       channel: A Channel.
       interceptors: Zero or more objects of type
@@ -1981,7 +2036,8 @@ def server(thread_pool,
            interceptors=None,
            options=None,
            maximum_concurrent_rpcs=None,
-           compression=None):
+           compression=None,
+           xds=False):
     """Creates a Server with which RPCs can be serviced.
 
     Args:
@@ -2002,6 +2058,8 @@ def server(thread_pool,
       compression: An element of grpc.compression, e.g.
         grpc.compression.Gzip. This compression algorithm will be used for the
         lifetime of the server unless overridden. This is an EXPERIMENTAL option.
+      xds: If set to true, retrieves server configuration via xDS. This is an
+        EXPERIMENTAL option.
 
     Returns:
       A Server object.
@@ -2011,7 +2069,7 @@ def server(thread_pool,
                                  () if handlers is None else handlers,
                                  () if interceptors is None else interceptors,
                                  () if options is None else options,
-                                 maximum_concurrent_rpcs, compression)
+                                 maximum_concurrent_rpcs, compression, xds)
 
 
 @contextlib.contextmanager
@@ -2037,8 +2095,6 @@ class Compression(enum.IntEnum):
     Deflate = _compression.Deflate
     Gzip = _compression.Gzip
 
-
-from grpc._runtime_protos import protos, services, protos_and_services  # pylint: disable=wrong-import-position
 
 ###################################  __all__  #################################
 
@@ -2088,6 +2144,7 @@ __all__ = (
     'access_token_call_credentials',
     'composite_call_credentials',
     'composite_channel_credentials',
+    'compute_engine_channel_credentials',
     'local_channel_credentials',
     'local_server_credentials',
     'alts_channel_credentials',
@@ -2103,6 +2160,9 @@ __all__ = (
     'protos',
     'services',
     'protos_and_services',
+    'xds_channel_credentials',
+    'xds_server_credentials',
+    'insecure_server_credentials',
 )
 
 ############################### Extension Shims ################################

@@ -18,6 +18,13 @@ if(re2_FOUND)
   return()
 endif()
 
+# As per https://github.com/grpc/grpc/issues/25434, idempotence is necessary
+# because CMake fails when another target with the same name already exists.
+if(TARGET re2::re2)
+  message(STATUS "Found RE2 via pkg-config already?")
+  return()
+endif()
+
 find_package(PkgConfig REQUIRED)
 # TODO(junyer): Use the IMPORTED_TARGET option whenever CMake 3.6 (or newer)
 # becomes the minimum required: that will take care of the add_library() and

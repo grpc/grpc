@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 # Copyright 2017 gRPC authors.
 #
@@ -14,8 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from scipy import stats
 import math
+
+from scipy import stats
 
 _DEFAULT_THRESHOLD = 1e-10
 
@@ -63,5 +64,5 @@ def speedup(new, old, threshold=_DEFAULT_THRESHOLD):
 if __name__ == "__main__":
     new = [0.0, 0.0, 0.0, 0.0]
     old = [2.96608e-06, 3.35076e-06, 3.45384e-06, 3.34407e-06]
-    print speedup(new, old, 1e-5)
-    print speedup(old, new, 1e-5)
+    print(speedup(new, old, 1e-5))
+    print(speedup(old, new, 1e-5))

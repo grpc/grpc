@@ -50,6 +50,7 @@ EXPORTS
     grpc_channel_destroy
     grpc_call_cancel
     grpc_call_cancel_with_status
+    grpc_call_failed_before_recv_message
     grpc_call_ref
     grpc_call_unref
     grpc_server_request_call
@@ -75,6 +76,7 @@ EXPORTS
     grpc_resource_quota_unref
     grpc_resource_quota_resize
     grpc_resource_quota_set_max_threads
+    grpc_dump_xds_configs
     grpc_resource_quota_arg_vtable
     grpc_channelz_get_top_channels
     grpc_channelz_get_servers
@@ -83,6 +85,7 @@ EXPORTS
     grpc_channelz_get_channel
     grpc_channelz_get_subchannel
     grpc_channelz_get_socket
+    grpc_authorization_policy_provider_arg_vtable
     grpc_insecure_channel_create_from_fd
     grpc_server_add_insecure_channel_from_fd
     grpc_auth_property_iterator_next
@@ -158,6 +161,8 @@ EXPORTS
     grpc_tls_server_authorization_check_config_release
     grpc_xds_credentials_create
     grpc_xds_server_credentials_create
+    grpc_authorization_policy_provider_static_data_create
+    grpc_authorization_policy_provider_release
     grpc_raw_byte_buffer_create
     grpc_raw_compressed_byte_buffer_create
     grpc_byte_buffer_copy

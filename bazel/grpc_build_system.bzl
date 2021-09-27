@@ -49,6 +49,8 @@ def _get_external_deps(external_deps):
     for dep in external_deps:
         if dep == "address_sorting":
             ret += ["//third_party/address_sorting"]
+        elif dep == "xxhash":
+            ret += ["//third_party/xxhash"]
         elif dep == "cares":
             ret += select({
                 "//:grpc_no_ares": [],
@@ -61,6 +63,44 @@ def _get_external_deps(external_deps):
         else:
             ret += ["//external:" + dep]
     return ret
+
+def _update_visibility(visibility):
+    if visibility == None:
+        return None
+
+    # Visibility rules prefixed with '@grpc_' are used to flag different visibility rule
+    # classes upstream.
+    PUBLIC = ["//visibility:public"]
+    PRIVATE = ["//:__subpackages__"]
+    VISIBILITY_TARGETS = {
+        "alt_gpr_base_legacy": PRIVATE,
+        "alt_grpc++_base_legacy": PRIVATE,
+        "alt_grpc_base_legacy": PRIVATE,
+        "alt_grpc++_base_unsecure_legacy": PRIVATE,
+        "alts_frame_protector": PRIVATE,
+        "channelz": PRIVATE,
+        "client_channel": PRIVATE,
+        "debug_location": PRIVATE,
+        "endpoint_tests": PRIVATE,
+        "grpclb": PRIVATE,
+        "grpc_opencensus_plugin": PUBLIC,
+        "grpc_resolver_fake": PRIVATE,
+        "grpc++_test": PRIVATE,
+        "public": PUBLIC,
+        "ref_counted_ptr": PRIVATE,
+        "trace": PRIVATE,
+        "tsi_interface": PRIVATE,
+        "tsi": PRIVATE,
+        "xds": PRIVATE,
+    }
+    final_visibility = []
+    for rule in visibility:
+        if rule.startswith("@grpc:"):
+            for replacement in VISIBILITY_TARGETS[rule[len("@grpc:"):]]:
+                final_visibility.append(replacement)
+        else:
+            final_visibility.append(rule)
+    return [x for x in final_visibility]
 
 def grpc_cc_library(
         name,
@@ -78,7 +118,9 @@ def grpc_cc_library(
         alwayslink = 0,
         data = [],
         use_cfstream = False,
-        tags = []):
+        tags = [],
+        linkstatic = False):
+    visibility = _update_visibility(visibility)
     copts = []
     if use_cfstream:
         copts = if_mac(["-DGRPC_CFSTREAM"])
@@ -122,6 +164,7 @@ def grpc_cc_library(
         alwayslink = alwayslink,
         data = data,
         tags = tags,
+        linkstatic = linkstatic,
     )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
@@ -176,8 +219,8 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None):
-    copts = if_mac(["-DGRPC_CFSTREAM"])
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = []):
+    copts = copts + if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
 

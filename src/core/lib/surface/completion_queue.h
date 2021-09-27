@@ -77,7 +77,8 @@ bool grpc_cq_begin_op(grpc_completion_queue* cq, void* tag);
 
 /* Queue a GRPC_OP_COMPLETED operation; tag must correspond to the tag passed to
    grpc_cq_begin_op */
-void grpc_cq_end_op(grpc_completion_queue* cq, void* tag, grpc_error* error,
+void grpc_cq_end_op(grpc_completion_queue* cq, void* tag,
+                    grpc_error_handle error,
                     void (*done)(void* done_arg, grpc_cq_completion* storage),
                     void* done_arg, grpc_cq_completion* storage,
                     bool internal = false);
@@ -92,6 +93,6 @@ int grpc_get_cq_poll_num(grpc_completion_queue* cq);
 
 grpc_completion_queue* grpc_completion_queue_create_internal(
     grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type,
-    grpc_experimental_completion_queue_functor* shutdown_callback);
+    grpc_completion_queue_functor* shutdown_callback);
 
 #endif /* GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H */

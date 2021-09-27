@@ -20,7 +20,6 @@ namespace Grpc;
 
 /**
  * Default call invoker in the gRPC stub.
- * THIS IS AN EXPERIMENTAL API.
  */
 class DefaultCallInvoker implements CallInvoker
 {

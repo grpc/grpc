@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <gmock/gmock.h>
-
 #include "src/core/ext/xds/certificate_provider_registry.h"
+
+#include <gmock/gmock.h>
 
 #include "test/core/util/test_config.h"
 
@@ -33,7 +33,7 @@ class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
   const char* name() const override { return "fake1"; }
 
   RefCountedPtr<Config> CreateCertificateProviderConfig(
-      const Json& /*config_json*/, grpc_error** /*error*/) override {
+      const Json& /*config_json*/, grpc_error_handle* /*error*/) override {
     return nullptr;
   }
 
@@ -48,7 +48,7 @@ class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
   const char* name() const override { return "fake2"; }
 
   RefCountedPtr<Config> CreateCertificateProviderConfig(
-      const Json& /*config_json*/, grpc_error** /*error*/) override {
+      const Json& /*config_json*/, grpc_error_handle* /*error*/) override {
     return nullptr;
   }
 

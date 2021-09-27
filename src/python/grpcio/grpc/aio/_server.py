@@ -17,12 +17,13 @@ from concurrent.futures import Executor
 from typing import Any, Optional, Sequence
 
 import grpc
-from grpc import _common, _compression
+from grpc import _common
+from grpc import _compression
 from grpc._cython import cygrpc
 
 from . import _base_server
-from ._typing import ChannelArgumentType
 from ._interceptor import ServerInterceptor
+from ._typing import ChannelArgumentType
 
 
 def _augment_channel_arguments(base_options: ChannelArgumentType,

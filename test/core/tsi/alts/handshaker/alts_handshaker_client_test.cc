@@ -16,11 +16,12 @@
  *
  */
 
+#include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
+
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
 
-#include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
@@ -138,10 +139,7 @@ static grpc_gcp_HandshakerReq* deserialize_handshaker_req(
 }
 
 static bool is_recv_status_op(const grpc_op* op, size_t nops) {
-  if (nops == 1 && op->op == GRPC_OP_RECV_STATUS_ON_CLIENT) {
-    return true;
-  }
-  return false;
+  return nops == 1 && op->op == GRPC_OP_RECV_STATUS_ON_CLIENT;
 }
 
 /**

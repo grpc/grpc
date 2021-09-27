@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <ares.h>
+
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 
@@ -42,7 +43,7 @@ class GrpcPolledFd {
   virtual bool IsFdStillReadableLocked() = 0;
   /* Called once and only once. Must cause cancellation of any pending
    * read/write callbacks. */
-  virtual void ShutdownLocked(grpc_error* error) = 0;
+  virtual void ShutdownLocked(grpc_error_handle error) = 0;
   /* Get the underlying ares_socket_t that this was created from */
   virtual ares_socket_t GetWrappedAresSocketLocked() = 0;
   /* A unique name, for logging */

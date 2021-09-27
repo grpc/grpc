@@ -23,7 +23,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/config/core_configuration.h"
 
 namespace grpc_core {
 
@@ -36,13 +36,14 @@ class ServiceConfigChannelArgChannelData {
     const char* service_config_str = grpc_channel_args_find_string(
         args->channel_args, GRPC_ARG_SERVICE_CONFIG);
     if (service_config_str != nullptr) {
-      grpc_error* service_config_error = GRPC_ERROR_NONE;
+      grpc_error_handle service_config_error = GRPC_ERROR_NONE;
       auto service_config = ServiceConfig::Create(
           args->channel_args, service_config_str, &service_config_error);
       if (service_config_error == GRPC_ERROR_NONE) {
         service_config_ = std::move(service_config);
       } else {
-        gpr_log(GPR_ERROR, "%s", grpc_error_string(service_config_error));
+        gpr_log(GPR_ERROR, "%s",
+                grpc_error_std_string(service_config_error).c_str());
       }
       GRPC_ERROR_UNREF(service_config_error);
     }
@@ -73,7 +74,7 @@ class ServiceConfigChannelArgCallData {
   }
 };
 
-grpc_error* ServiceConfigChannelArgInitCallElem(
+grpc_error_handle ServiceConfigChannelArgInitCallElem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   ServiceConfigChannelArgCallData* calld =
       static_cast<ServiceConfigChannelArgCallData*>(elem->call_data);
@@ -89,7 +90,7 @@ void ServiceConfigChannelArgDestroyCallElem(
   calld->~ServiceConfigChannelArgCallData();
 }
 
-grpc_error* ServiceConfigChannelArgInitChannelElem(
+grpc_error_handle ServiceConfigChannelArgInitChannelElem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   ServiceConfigChannelArgChannelData* chand =
       static_cast<ServiceConfigChannelArgChannelData*>(elem->channel_data);
@@ -116,27 +117,23 @@ const grpc_channel_filter ServiceConfigChannelArgFilter = {
     grpc_channel_next_get_info,
     "service_config_channel_arg"};
 
-bool maybe_add_service_config_channel_arg_filter(
-    grpc_channel_stack_builder* builder, void* /* arg */) {
-  const grpc_channel_args* channel_args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
-  if (grpc_channel_args_want_minimal_stack(channel_args) ||
-      grpc_channel_args_find_string(channel_args, GRPC_ARG_SERVICE_CONFIG) ==
-          nullptr) {
-    return true;
-  }
-  return grpc_channel_stack_builder_prepend_filter(
-      builder, &ServiceConfigChannelArgFilter, nullptr, nullptr);
-}
-
 }  // namespace
 
-}  // namespace grpc_core
-
-void grpc_service_config_channel_arg_filter_init(void) {
-  grpc_channel_init_register_stage(
+void RegisterServiceConfigChannelArgFilter(
+    CoreConfiguration::Builder* builder) {
+  builder->channel_init()->RegisterStage(
       GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      grpc_core::maybe_add_service_config_channel_arg_filter, nullptr);
+      [](grpc_channel_stack_builder* builder) {
+        const grpc_channel_args* channel_args =
+            grpc_channel_stack_builder_get_channel_arguments(builder);
+        if (grpc_channel_args_want_minimal_stack(channel_args) ||
+            grpc_channel_args_find_string(channel_args,
+                                          GRPC_ARG_SERVICE_CONFIG) == nullptr) {
+          return true;
+        }
+        return grpc_channel_stack_builder_prepend_filter(
+            builder, &ServiceConfigChannelArgFilter, nullptr, nullptr);
+      });
 }
 
-void grpc_service_config_channel_arg_filter_shutdown(void) {}
+}  // namespace grpc_core

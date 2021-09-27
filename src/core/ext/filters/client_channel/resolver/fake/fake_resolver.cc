@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -30,18 +32,16 @@
 
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-
-#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 
 namespace grpc_core {
 
@@ -313,48 +313,42 @@ void FakeResolverResponseGenerator::SetFakeResolver(
 
 namespace {
 
-static void* response_generator_arg_copy(void* p) {
-  FakeResolverResponseGenerator* generator =
-      static_cast<FakeResolverResponseGenerator*>(p);
-  // TODO(roth): We currently deal with this ref manually.  Once the
-  // new channel args code is converted to C++, find a way to track this ref
-  // in a cleaner way.
-  RefCountedPtr<FakeResolverResponseGenerator> copy = generator->Ref();
-  copy.release();
+void* ResponseGeneratorChannelArgCopy(void* p) {
+  auto* generator = static_cast<FakeResolverResponseGenerator*>(p);
+  generator->Ref().release();
   return p;
 }
 
-static void response_generator_arg_destroy(void* p) {
-  FakeResolverResponseGenerator* generator =
-      static_cast<FakeResolverResponseGenerator*>(p);
+void ResponseGeneratorChannelArgDestroy(void* p) {
+  auto* generator = static_cast<FakeResolverResponseGenerator*>(p);
   generator->Unref();
 }
 
-static int response_generator_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
-
-static const grpc_arg_pointer_vtable response_generator_arg_vtable = {
-    response_generator_arg_copy, response_generator_arg_destroy,
-    response_generator_cmp};
+int ResponseGeneratorChannelArgCmp(void* a, void* b) {
+  return QsortCompare(a, b);
+}
 
 }  // namespace
 
+const grpc_arg_pointer_vtable
+    FakeResolverResponseGenerator::kChannelArgPointerVtable = {
+        ResponseGeneratorChannelArgCopy, ResponseGeneratorChannelArgDestroy,
+        ResponseGeneratorChannelArgCmp};
+
 grpc_arg FakeResolverResponseGenerator::MakeChannelArg(
     FakeResolverResponseGenerator* generator) {
-  grpc_arg arg;
-  arg.type = GRPC_ARG_POINTER;
-  arg.key = const_cast<char*>(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR);
-  arg.value.pointer.p = generator;
-  arg.value.pointer.vtable = &response_generator_arg_vtable;
-  return arg;
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR), generator,
+      &kChannelArgPointerVtable);
 }
 
 RefCountedPtr<FakeResolverResponseGenerator>
 FakeResolverResponseGenerator::GetFromArgs(const grpc_channel_args* args) {
-  const grpc_arg* arg =
-      grpc_channel_args_find(args, GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR);
-  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return nullptr;
-  return static_cast<FakeResolverResponseGenerator*>(arg->value.pointer.p)
-      ->Ref();
+  auto* response_generator =
+      grpc_channel_args_find_pointer<FakeResolverResponseGenerator>(
+          args, GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR);
+  if (response_generator == nullptr) return nullptr;
+  return response_generator->Ref();
 }
 
 //

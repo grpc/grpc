@@ -34,9 +34,12 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser;
 
 extern bool g_flow_control_enabled;
 
+/// Creates a CHTTP2 Transport. This takes ownership of a \a resource_user ref
+/// from the caller; if the caller still needs the resource_user after creating
+/// a transport, the caller must take another ref.
 grpc_transport* grpc_create_chttp2_transport(
     const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client,
-    grpc_resource_user* resource_user = nullptr);
+    grpc_resource_user* resource_user);
 
 grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode>
 grpc_chttp2_transport_get_socket_node(grpc_transport* transport);
@@ -47,6 +50,17 @@ grpc_chttp2_transport_get_socket_node(grpc_transport* transport);
 /// HTTP/2 settings are received from the peer.
 void grpc_chttp2_transport_start_reading(
     grpc_transport* transport, grpc_slice_buffer* read_buffer,
-    grpc_closure* notify_on_receive_settings);
+    grpc_closure* notify_on_receive_settings, grpc_closure* notify_on_close);
+
+namespace grpc_core {
+typedef void (*TestOnlyGlobalHttp2TransportInitCallback)();
+typedef void (*TestOnlyGlobalHttp2TransportDestructCallback)();
+
+void TestOnlySetGlobalHttp2TransportInitCallback(
+    TestOnlyGlobalHttp2TransportInitCallback callback);
+
+void TestOnlySetGlobalHttp2TransportDestructCallback(
+    TestOnlyGlobalHttp2TransportDestructCallback callback);
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H */

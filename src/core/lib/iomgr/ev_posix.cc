@@ -22,8 +22,6 @@
 
 #ifdef GRPC_POSIX_SOCKET_EV
 
-#include "src/core/lib/iomgr/ev_posix.h"
-
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -36,6 +34,7 @@
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
+#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 
 GPR_GLOBAL_CONFIG_DEFINE_STRING(
@@ -89,7 +88,7 @@ namespace {
 
 grpc_poll_function_type real_poll_function;
 
-int dummy_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
+int phony_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
   if (timeout == 0) {
     return real_poll_function(fds, nfds, 0);
   } else {
@@ -103,10 +102,10 @@ const grpc_event_engine_vtable* init_non_polling(bool explicit_request) {
   if (!explicit_request) {
     return nullptr;
   }
-  // return the simplest engine as a dummy but also override the poller
+  // return the simplest engine as a phony but also override the poller
   auto ret = grpc_init_poll_posix(explicit_request);
   real_poll_function = grpc_poll_function;
-  grpc_poll_function = dummy_poll;
+  grpc_poll_function = phony_poll;
 
   return ret;
 }
@@ -270,7 +269,7 @@ void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
   g_event_engine->fd_orphan(fd, on_done, release_fd, reason);
 }
 
-void grpc_fd_shutdown(grpc_fd* fd, grpc_error* why) {
+void grpc_fd_shutdown(grpc_fd* fd, grpc_error_handle why) {
   GRPC_POLLING_API_TRACE("fd_shutdown(%d)", grpc_fd_wrapped_fd(fd));
   GRPC_FD_TRACE("fd_shutdown(%d)", grpc_fd_wrapped_fd(fd));
   g_event_engine->fd_shutdown(fd, why);
@@ -315,19 +314,20 @@ static void pollset_destroy(grpc_pollset* pollset) {
   g_event_engine->pollset_destroy(pollset);
 }
 
-static grpc_error* pollset_work(grpc_pollset* pollset,
-                                grpc_pollset_worker** worker,
-                                grpc_millis deadline) {
+static grpc_error_handle pollset_work(grpc_pollset* pollset,
+                                      grpc_pollset_worker** worker,
+                                      grpc_millis deadline) {
   GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRId64 ") begin", pollset,
                          deadline);
-  grpc_error* err = g_event_engine->pollset_work(pollset, worker, deadline);
+  grpc_error_handle err =
+      g_event_engine->pollset_work(pollset, worker, deadline);
   GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRId64 ") end", pollset,
                          deadline);
   return err;
 }
 
-static grpc_error* pollset_kick(grpc_pollset* pollset,
-                                grpc_pollset_worker* specific_worker) {
+static grpc_error_handle pollset_kick(grpc_pollset* pollset,
+                                      grpc_pollset_worker* specific_worker) {
   GRPC_POLLING_API_TRACE("pollset_kick(%p, %p)", pollset, specific_worker);
   return g_event_engine->pollset_kick(pollset, specific_worker);
 }
@@ -406,7 +406,7 @@ bool grpc_is_any_background_poller_thread(void) {
 }
 
 bool grpc_add_closure_to_background_poller(grpc_closure* closure,
-                                           grpc_error* error) {
+                                           grpc_error_handle error) {
   return g_event_engine->add_closure_to_background_poller(closure, error);
 }
 

@@ -25,14 +25,14 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
-
-#include "absl/memory/memory.h"
 
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/client.h"
@@ -176,10 +176,10 @@ class CallbackUnaryClient final : public CallbackClient {
       if (ctx_[vector_idx]->alarm_ == nullptr) {
         ctx_[vector_idx]->alarm_ = absl::make_unique<Alarm>();
       }
-      ctx_[vector_idx]->alarm_->experimental().Set(
-          next_issue_time, [this, t, vector_idx](bool /*ok*/) {
-            IssueUnaryCallbackRpc(t, vector_idx);
-          });
+      ctx_[vector_idx]->alarm_->Set(next_issue_time,
+                                    [this, t, vector_idx](bool /*ok*/) {
+                                      IssueUnaryCallbackRpc(t, vector_idx);
+                                    });
     } else {
       IssueUnaryCallbackRpc(t, vector_idx);
     }
@@ -188,7 +188,7 @@ class CallbackUnaryClient final : public CallbackClient {
   void IssueUnaryCallbackRpc(Thread* t, size_t vector_idx) {
     GPR_TIMER_SCOPE("CallbackUnaryClient::ThreadFunc", 0);
     double start = UsageTimer::Now();
-    ctx_[vector_idx]->stub_->experimental_async()->UnaryCall(
+    ctx_[vector_idx]->stub_->async()->UnaryCall(
         (&ctx_[vector_idx]->context_), &request_, &ctx_[vector_idx]->response_,
         [this, t, start, vector_idx](grpc::Status s) {
           // Update Histogram with data from the callback run
@@ -251,8 +251,7 @@ class CallbackStreamingPingPongClient : public CallbackStreamingClient {
 };
 
 class CallbackStreamingPingPongReactor final
-    : public grpc::experimental::ClientBidiReactor<SimpleRequest,
-                                                   SimpleResponse> {
+    : public grpc::ClientBidiReactor<SimpleRequest, SimpleResponse> {
  public:
   CallbackStreamingPingPongReactor(
       CallbackStreamingPingPongClient* client,
@@ -260,7 +259,7 @@ class CallbackStreamingPingPongReactor final
       : client_(client), ctx_(std::move(ctx)), messages_issued_(0) {}
 
   void StartNewRpc() {
-    ctx_->stub_->experimental_async()->StreamingCall(&(ctx_->context_), this);
+    ctx_->stub_->async()->StreamingCall(&(ctx_->context_), this);
     write_time_ = UsageTimer::Now();
     StartWrite(client_->request());
     writes_done_started_.clear();
@@ -296,7 +295,7 @@ class CallbackStreamingPingPongReactor final
       gpr_timespec next_issue_time = client_->NextRPCIssueTime();
       // Start an alarm callback to run the internal callback after
       // next_issue_time
-      ctx_->alarm_->experimental().Set(next_issue_time, [this](bool /*ok*/) {
+      ctx_->alarm_->Set(next_issue_time, [this](bool /*ok*/) {
         write_time_ = UsageTimer::Now();
         StartWrite(client_->request());
       });
@@ -323,8 +322,8 @@ class CallbackStreamingPingPongReactor final
       if (ctx_->alarm_ == nullptr) {
         ctx_->alarm_ = absl::make_unique<Alarm>();
       }
-      ctx_->alarm_->experimental().Set(next_issue_time,
-                                       [this](bool /*ok*/) { StartNewRpc(); });
+      ctx_->alarm_->Set(next_issue_time,
+                        [this](bool /*ok*/) { StartNewRpc(); });
     } else {
       StartNewRpc();
     }

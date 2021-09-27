@@ -101,9 +101,9 @@ UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_RefreshRate_getmsgd
   return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.RefreshRate");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_PrefetchPolicy_getmsgdef(upb_symtab *s) {
+UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_PreconnectPolicy_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.PrefetchPolicy");
+  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.PreconnectPolicy");
 }
 
 UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEntry_getmsgdef(upb_symtab *s) {

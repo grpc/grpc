@@ -87,6 +87,7 @@ void grpc_tls_server_authorization_check_config::Cancel(
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 
 grpc_tls_credentials_options* grpc_tls_credentials_options_create() {
+  grpc_core::ExecCtx exec_ctx;
   return new grpc_tls_credentials_options();
 }
 
@@ -109,6 +110,7 @@ void grpc_tls_credentials_options_set_certificate_provider(
     grpc_tls_certificate_provider* provider) {
   GPR_ASSERT(options != nullptr);
   GPR_ASSERT(provider != nullptr);
+  grpc_core::ExecCtx exec_ctx;
   options->set_certificate_provider(
       provider->Ref(DEBUG_LOCATION, "set_certificate_provider"));
 }
@@ -142,6 +144,7 @@ void grpc_tls_credentials_options_set_server_authorization_check_config(
     grpc_tls_server_authorization_check_config* config) {
   GPR_ASSERT(options != nullptr);
   GPR_ASSERT(config != nullptr);
+  grpc_core::ExecCtx exec_ctx;
   options->set_server_authorization_check_config(config->Ref());
 }
 
@@ -159,6 +162,7 @@ grpc_tls_server_authorization_check_config_create(
             "check config.");
     return nullptr;
   }
+  grpc_core::ExecCtx exec_ctx;
   return new grpc_tls_server_authorization_check_config(
       config_user_data, schedule, cancel, destruct);
 }

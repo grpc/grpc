@@ -15,6 +15,7 @@
 licenses(["notice"])  # Apache v2
 
 load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 grpc_package(
     name = "xds_v3",
@@ -26,6 +27,7 @@ grpc_proto_library(
     srcs = [
         "address.proto",
     ],
+    well_known_protos = True,
 )
 
 grpc_proto_library(
@@ -85,6 +87,7 @@ grpc_proto_library(
     deps = [
         "base_proto",
         "config_source_proto",
+        "endpoint_proto",
     ],
 )
 
@@ -99,6 +102,14 @@ grpc_proto_library(
         "base_proto",
         "percent_proto",
     ],
+)
+
+grpc_proto_library(
+    name = "extension_proto",
+    srcs = [
+        "extension.proto",
+    ],
+    well_known_protos = True,
 )
 
 grpc_proto_library(
@@ -186,10 +197,18 @@ grpc_proto_library(
     srcs = [
         "http_connection_manager.proto",
     ],
+    well_known_protos = True,
     deps = [
         "config_source_proto",
         "protocol_proto",
         "route_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "router_proto",
+    srcs = [
+        "router.proto",
     ],
 )
 
@@ -216,12 +235,84 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
+    name = "fault_common_proto",
+    srcs = [
+        "fault_common.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "percent_proto",
+    ],
+)
+
+grpc_proto_library(
     name = "tls_proto",
     srcs = [
         "tls.proto",
     ],
     well_known_protos = True,
     deps = [
+        "base_proto",
+        "extension_proto",
         "string_proto",
     ],
+)
+
+grpc_proto_library(
+    name = "config_dump_proto",
+    srcs = [
+        "config_dump.proto",
+    ],
+    well_known_protos = True,
+)
+
+grpc_proto_library(
+    name = "csds_proto",
+    srcs = [
+        "csds.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "base_proto",
+        "config_dump_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "fault_proto",
+    srcs = [
+        "fault.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "fault_common_proto",
+        "percent_proto",
+        "route_proto",
+    ],
+)
+
+py_proto_library(
+    name = "csds_py_pb2",
+    deps = [":_csds_proto_only"],
+)
+
+py_grpc_library(
+    name = "csds_py_pb2_grpc",
+    srcs = [":_csds_proto_only"],
+    deps = [":csds_py_pb2"],
+)
+
+py_proto_library(
+    name = "config_dump_py_pb2",
+    deps = [":_config_dump_proto_only"],
+)
+
+py_proto_library(
+    name = "base_py_pb2",
+    deps = [":_base_proto_only"],
+)
+
+py_proto_library(
+    name = "percent_py_pb2",
+    deps = [":_percent_proto_only"],
 )

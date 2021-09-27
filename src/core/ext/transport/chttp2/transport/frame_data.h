@@ -25,6 +25,7 @@
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
+
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/transport.h"
@@ -50,31 +51,31 @@ struct grpc_chttp2_data_parser {
   grpc_chttp2_stream_state state = GRPC_CHTTP2_DATA_FH_0;
   uint8_t frame_type = 0;
   uint32_t frame_size = 0;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
 
   bool is_frame_compressed = false;
   grpc_core::Chttp2IncomingByteStream* parsing_frame = nullptr;
 };
 
 /* start processing a new data frame */
-grpc_error* grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser* parser,
-                                                uint8_t flags,
-                                                uint32_t stream_id,
-                                                grpc_chttp2_stream* s);
+grpc_error_handle grpc_chttp2_data_parser_begin_frame(
+    grpc_chttp2_data_parser* parser, uint8_t flags, uint32_t stream_id,
+    grpc_chttp2_stream* s);
 
 /* handle a slice of a data frame - is_last indicates the last slice of a
    frame */
-grpc_error* grpc_chttp2_data_parser_parse(void* parser,
-                                          grpc_chttp2_transport* t,
-                                          grpc_chttp2_stream* s,
-                                          const grpc_slice& slice, int is_last);
+grpc_error_handle grpc_chttp2_data_parser_parse(void* parser,
+                                                grpc_chttp2_transport* t,
+                                                grpc_chttp2_stream* s,
+                                                const grpc_slice& slice,
+                                                int is_last);
 
 void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
                              uint32_t write_bytes, int is_eof,
                              grpc_transport_one_way_stats* stats,
                              grpc_slice_buffer* outbuf);
 
-grpc_error* grpc_deframe_unprocessed_incoming_frames(
+grpc_error_handle grpc_deframe_unprocessed_incoming_frames(
     grpc_chttp2_data_parser* p, grpc_chttp2_stream* s,
     grpc_slice_buffer* slices, grpc_slice* slice_out,
     grpc_core::OrphanablePtr<grpc_core::ByteStream>* stream_out);

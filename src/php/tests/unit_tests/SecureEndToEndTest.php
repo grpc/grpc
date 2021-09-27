@@ -53,7 +53,7 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
         $deadline = Grpc\Timeval::infFuture();
         $status_text = 'xyz';
         $call = new Grpc\Call($this->channel,
-                              'dummy_method',
+                              'phony_method',
                               $deadline,
                               $this->host_override);
 
@@ -66,7 +66,7 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($event->send_close);
 
         $event = $this->server->requestCall();
-        $this->assertSame('dummy_method', $event->method);
+        $this->assertSame('phony_method', $event->method);
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
@@ -104,7 +104,7 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
         $req_text = 'message_write_flags_test';
         $status_text = 'xyz';
         $call = new Grpc\Call($this->channel,
-                              'dummy_method',
+                              'phony_method',
                               $deadline,
                               $this->host_override);
 
@@ -119,7 +119,7 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($event->send_close);
 
         $event = $this->server->requestCall();
-        $this->assertSame('dummy_method', $event->method);
+        $this->assertSame('phony_method', $event->method);
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
@@ -154,7 +154,7 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
         $status_text = 'status:client_server_full_response_text';
 
         $call = new Grpc\Call($this->channel,
-                              'dummy_method',
+                              'phony_method',
                               $deadline,
                               $this->host_override);
 
@@ -169,7 +169,7 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($event->send_message);
 
         $event = $this->server->requestCall();
-        $this->assertSame('dummy_method', $event->method);
+        $this->assertSame('phony_method', $event->method);
         $server_call = $event->call;
 
         $event = $server_call->startBatch([

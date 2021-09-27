@@ -20,6 +20,7 @@
  * working */
 
 #include <benchmark/benchmark.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/completion_queue.h>
@@ -74,7 +75,7 @@ static void DoneWithCompletionOnHeap(void* /*arg*/,
   delete completion;
 }
 
-class DummyTag final : public internal::CompletionQueueTag {
+class PhonyTag final : public internal::CompletionQueueTag {
  public:
   bool FinalizeResult(void** /*tag*/, bool* /*status*/) override {
     return true;
@@ -87,10 +88,10 @@ static void BM_Pass1Cpp(benchmark::State& state) {
   grpc_completion_queue* c_cq = cq.cq();
   for (auto _ : state) {
     grpc_cq_completion completion;
-    DummyTag dummy_tag;
+    PhonyTag phony_tag;
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(grpc_cq_begin_op(c_cq, &dummy_tag));
-    grpc_cq_end_op(c_cq, &dummy_tag, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
+    GPR_ASSERT(grpc_cq_begin_op(c_cq, &phony_tag));
+    grpc_cq_end_op(c_cq, &phony_tag, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
                    nullptr, &completion);
 
     void* tag;
@@ -162,14 +163,14 @@ static gpr_mu shutdown_mu, mu;
 static gpr_cv shutdown_cv, cv;
 
 // Tag completion queue iterate times
-class TagCallback : public grpc_experimental_completion_queue_functor {
+class TagCallback : public grpc_completion_queue_functor {
  public:
   explicit TagCallback(int* iter) : iter_(iter) {
     functor_run = &TagCallback::Run;
     inlineable = false;
   }
   ~TagCallback() {}
-  static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
+  static void Run(grpc_completion_queue_functor* cb, int ok) {
     gpr_mu_lock(&mu);
     GPR_ASSERT(static_cast<bool>(ok));
     *static_cast<TagCallback*>(cb)->iter_ += 1;
@@ -182,14 +183,14 @@ class TagCallback : public grpc_experimental_completion_queue_functor {
 };
 
 // Check if completion queue is shut down
-class ShutdownCallback : public grpc_experimental_completion_queue_functor {
+class ShutdownCallback : public grpc_completion_queue_functor {
  public:
   explicit ShutdownCallback(bool* done) : done_(done) {
     functor_run = &ShutdownCallback::Run;
     inlineable = false;
   }
   ~ShutdownCallback() {}
-  static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
+  static void Run(grpc_completion_queue_functor* cb, int ok) {
     gpr_mu_lock(&shutdown_mu);
     *static_cast<ShutdownCallback*>(cb)->done_ = static_cast<bool>(ok);
     gpr_cv_signal(&shutdown_cv);

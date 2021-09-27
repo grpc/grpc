@@ -17,8 +17,11 @@
 #ifndef GRPC_CORE_EXT_XDS_XDS_CHANNEL_ARGS_H
 #define GRPC_CORE_EXT_XDS_XDS_CHANNEL_ARGS_H
 
-// Pointer channel arg containing a ref to the XdsClient object.
-#define GRPC_ARG_XDS_CLIENT "grpc.xds_client"
+// Specifies channel args for the xDS client.
+// Used only when GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG
+// is set.
+#define GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS \
+  "grpc.xds_client_channel_args"
 
 // Timeout in milliseconds to wait for a resource to be returned from
 // the xds server before assuming that it does not exist.

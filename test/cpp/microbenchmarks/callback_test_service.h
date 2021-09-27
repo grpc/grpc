@@ -19,11 +19,13 @@
 #ifndef TEST_CPP_MICROBENCHMARKS_CALLBACK_TEST_SERVICE_H
 #define TEST_CPP_MICROBENCHMARKS_CALLBACK_TEST_SERVICE_H
 
-#include <benchmark/benchmark.h>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <sstream>
+
+#include <benchmark/benchmark.h>
+
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
 
@@ -32,17 +34,16 @@ namespace testing {
 
 const char* const kServerMessageSize = "server_message_size";
 
-class CallbackStreamingTestService
-    : public EchoTestService::ExperimentalCallbackService {
+class CallbackStreamingTestService : public EchoTestService::CallbackService {
  public:
   CallbackStreamingTestService() {}
 
-  experimental::ServerUnaryReactor* Echo(
-      experimental::CallbackServerContext* context, const EchoRequest* request,
-      EchoResponse* response) override;
+  ServerUnaryReactor* Echo(CallbackServerContext* context,
+                           const EchoRequest* request,
+                           EchoResponse* response) override;
 
-  experimental::ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream(
-      experimental::CallbackServerContext* context) override;
+  ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream(
+      CallbackServerContext* context) override;
 };
 }  // namespace testing
 }  // namespace grpc

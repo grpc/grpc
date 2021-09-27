@@ -63,19 +63,20 @@ class GoogleMeshCaCertificateProviderFactory
     const std::string& location() const { return location_; }
 
     static RefCountedPtr<Config> Parse(const Json& config_json,
-                                       grpc_error** error);
+                                       grpc_error_handle* error);
 
    private:
     // Helpers for parsing the config
-    std::vector<grpc_error*> ParseJsonObjectStsService(
+    std::vector<grpc_error_handle> ParseJsonObjectStsService(
         const Json::Object& sts_service);
-    std::vector<grpc_error*> ParseJsonObjectCallCredentials(
+    std::vector<grpc_error_handle> ParseJsonObjectCallCredentials(
         const Json::Object& call_credentials);
-    std::vector<grpc_error*> ParseJsonObjectGoogleGrpc(
+    std::vector<grpc_error_handle> ParseJsonObjectGoogleGrpc(
         const Json::Object& google_grpc);
-    std::vector<grpc_error*> ParseJsonObjectGrpcServices(
+    std::vector<grpc_error_handle> ParseJsonObjectGrpcServices(
         const Json::Object& grpc_service);
-    std::vector<grpc_error*> ParseJsonObjectServer(const Json::Object& server);
+    std::vector<grpc_error_handle> ParseJsonObjectServer(
+        const Json::Object& server);
 
     std::string endpoint_;
     StsConfig sts_config_;
@@ -90,7 +91,7 @@ class GoogleMeshCaCertificateProviderFactory
 
   RefCountedPtr<CertificateProviderFactory::Config>
   CreateCertificateProviderConfig(const Json& config_json,
-                                  grpc_error** error) override;
+                                  grpc_error_handle* error) override;
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
       RefCountedPtr<CertificateProviderFactory::Config> /*config*/) override {

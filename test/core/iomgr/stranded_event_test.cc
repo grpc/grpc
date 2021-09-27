@@ -27,6 +27,10 @@
 
 #include <gmock/gmock.h>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -36,27 +40,21 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
-
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/uri/uri_parser.h"
-
+#include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-#include "test/core/end2end/cq_verifier.h"
 
 namespace {
 
@@ -394,7 +392,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
       for (int i = 1; i <= kNumMessagePingPongsPerCall; i++) {
         {
           grpc_core::MutexLock lock(&ping_pong_round_mu);
-          ping_pong_round_cv.Broadcast();
+          ping_pong_round_cv.SignalAll();
           while (int(ping_pong_round) != i) {
             ping_pong_round_cv.Wait(&ping_pong_round_mu);
           }
@@ -404,7 +402,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
         {
           grpc_core::MutexLock lock(&ping_pong_round_mu);
           ping_pongs_done++;
-          ping_pong_round_cv.Broadcast();
+          ping_pong_round_cv.SignalAll();
         }
       }
       gpr_log(GPR_DEBUG, "now receive status on call with server address:%s",
@@ -425,7 +423,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
         ping_pong_round_cv.Wait(&ping_pong_round_mu);
       }
       ping_pong_round++;
-      ping_pong_round_cv.Broadcast();
+      ping_pong_round_cv.SignalAll();
       gpr_log(GPR_DEBUG, "initiate ping pong round: %ld", ping_pong_round);
     }
   }

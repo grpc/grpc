@@ -18,6 +18,8 @@
 
 #include "src/cpp/client/secure_credentials.h"
 
+#include "absl/strings/str_join.h"
+
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -27,8 +29,6 @@
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/channel_arguments.h>
-
-#include "absl/strings/str_join.h"
 
 // TODO(yashykt): We shouldn't be including "src/core" headers.
 #include "src/core/lib/gpr/env.h"
@@ -109,16 +109,12 @@ std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
       grpc_google_default_credentials_create(nullptr));
 }
 
-namespace experimental {
-
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
     const grpc::string& json_string, const std::vector<grpc::string>& scopes) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   return WrapCallCredentials(grpc_external_account_credentials_create(
       json_string.c_str(), absl::StrJoin(scopes, ",").c_str()));
 }
-
-}  // namespace experimental
 
 // Builds SSL Credentials given SSL specific options
 std::shared_ptr<ChannelCredentials> SslCredentials(
@@ -161,7 +157,7 @@ grpc::Status StsCredentialsOptionsFromJson(const std::string& json_string,
                         "options cannot be nullptr.");
   }
   ClearStsCredentialsOptions(options);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::Json json = grpc_core::Json::Parse(json_string.c_str(), &error);
   if (error != GRPC_ERROR_NONE ||
       json.type() != grpc_core::Json::Type::OBJECT) {
@@ -219,7 +215,7 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
   ClearStsCredentialsOptions(options);
   grpc_slice json_string = grpc_empty_slice();
   char* sts_creds_path = gpr_getenv("STS_CREDENTIALS");
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc::Status status;
   auto cleanup = [&json_string, &sts_creds_path, &error, &status]() {
     grpc_slice_unref_internal(json_string);
@@ -236,7 +232,7 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
   error = grpc_load_file(sts_creds_path, 1, &json_string);
   if (error != GRPC_ERROR_NONE) {
     status =
-        grpc::Status(grpc::StatusCode::NOT_FOUND, grpc_error_string(error));
+        grpc::Status(grpc::StatusCode::NOT_FOUND, grpc_error_std_string(error));
     return cleanup();
   }
   status = StsCredentialsOptionsFromJson(
@@ -410,7 +406,7 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
 }
 
 namespace {
-void DeleteWrapper(void* wrapper, grpc_error* /*ignored*/) {
+void DeleteWrapper(void* wrapper, grpc_error_handle /*ignored*/) {
   MetadataCredentialsPluginWrapper* w =
       static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
   delete w;
@@ -496,7 +492,6 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
     grpc_metadata md_entry;
     md_entry.key = SliceFromCopiedString(metadatum.first);
     md_entry.value = SliceFromCopiedString(metadatum.second);
-    md_entry.flags = 0;
     md.push_back(md_entry);
   }
   if (creds_md != nullptr) {
@@ -511,7 +506,6 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
       for (const auto& elem : md) {
         creds_md[*num_creds_md].key = elem.key;
         creds_md[*num_creds_md].value = elem.value;
-        creds_md[*num_creds_md].flags = elem.flags;
         ++(*num_creds_md);
       }
       *status_code = static_cast<grpc_status_code>(status.error_code());

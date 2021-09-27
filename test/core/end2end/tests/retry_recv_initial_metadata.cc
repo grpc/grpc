@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -33,8 +31,8 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/static_metadata.h"
-
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
@@ -119,26 +117,31 @@ static void test_retry_recv_initial_metadata(grpc_end2end_test_config config) {
   grpc_slice details;
   int was_cancelled = 2;
   char* peer;
+  grpc_metadata initial_metadata_from_server = {
+      grpc_slice_from_static_string("key1"),
+      grpc_slice_from_static_string("val1"),
+      {{nullptr, nullptr, nullptr, nullptr}}};
 
-  grpc_arg arg;
-  arg.type = GRPC_ARG_STRING;
-  arg.key = const_cast<char*>(GRPC_ARG_SERVICE_CONFIG);
-  arg.value.string = const_cast<char*>(
-      "{\n"
-      "  \"methodConfig\": [ {\n"
-      "    \"name\": [\n"
-      "      { \"service\": \"service\", \"method\": \"method\" }\n"
-      "    ],\n"
-      "    \"retryPolicy\": {\n"
-      "      \"maxAttempts\": 2,\n"
-      "      \"initialBackoff\": \"1s\",\n"
-      "      \"maxBackoff\": \"120s\",\n"
-      "      \"backoffMultiplier\": 1.6,\n"
-      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-      "    }\n"
-      "  } ]\n"
-      "}");
-  grpc_channel_args client_args = {1, &arg};
+  grpc_arg args[] = {
+      grpc_channel_arg_string_create(
+          const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
+          const_cast<char*>(
+              "{\n"
+              "  \"methodConfig\": [ {\n"
+              "    \"name\": [\n"
+              "      { \"service\": \"service\", \"method\": \"method\" }\n"
+              "    ],\n"
+              "    \"retryPolicy\": {\n"
+              "      \"maxAttempts\": 2,\n"
+              "      \"initialBackoff\": \"1s\",\n"
+              "      \"maxBackoff\": \"120s\",\n"
+              "      \"backoffMultiplier\": 1.6,\n"
+              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+              "    }\n"
+              "  } ]\n"
+              "}")),
+  };
+  grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   grpc_end2end_test_fixture f =
       begin_test(config, "retry_recv_initial_metadata", &client_args, nullptr);
 
@@ -204,10 +207,16 @@ static void test_retry_recv_initial_metadata(grpc_end2end_test_config config) {
 
   // Server sends initial metadata in its own batch, before sending
   // trailing metadata.
+  // Ideally, this would not require actually sending any metadata
+  // entries, but we do so to avoid sporadic failures in the proxy
+  // tests, where the proxy may wind up combining the batches, depending
+  // on timing.  Sending a metadata entry ensures that the transport
+  // won't send a Trailers-Only response, even if the batches are combined.
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
+  op->data.send_initial_metadata.count = 1;
+  op->data.send_initial_metadata.metadata = &initial_metadata_from_server;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
                                 nullptr);

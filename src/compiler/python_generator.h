@@ -34,7 +34,7 @@ struct GeneratorConfiguration {
   std::string grpc_package_root;
   // TODO(https://github.com/grpc/grpc/issues/8622): Drop this.
   std::string beta_package_root;
-  // TODO(https://github.com/google/protobuf/issues/888): Drop this.
+  // TODO(https://github.com/protocolbuffers/protobuf/issues/888): Drop this.
   std::string import_prefix;
   std::vector<std::string> prefixes_to_filter;
 };

@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SUPPORT_METHOD_HANDLER_H
 #define GRPCPP_SUPPORT_METHOD_HANDLER_H
 
-#include <grpcpp/impl/codegen/method_handler.h>
+#include <grpcpp/impl/codegen/method_handler.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SUPPORT_METHOD_HANDLER_H

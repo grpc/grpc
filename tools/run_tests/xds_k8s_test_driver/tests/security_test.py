@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-import uuid
 
 from absl import flags
 from absl.testing import absltest
 
 from framework import xds_k8s_testcase
+from framework.helpers import rand
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -109,7 +109,8 @@ class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
         been received as confirmed by the TD team.
         """
         # Create backend service
-        self.td.setup_backend_for_grpc()
+        self.td.setup_backend_for_grpc(
+            health_check_port=self.server_maintenance_port)
 
         # Start server and attach its NEGs to the backend service, but
         # until they become healthy.
@@ -145,7 +146,8 @@ class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
         The order of operations is the same as in `test_mtls_error`.
         """
         # Create backend service
-        self.td.setup_backend_for_grpc()
+        self.td.setup_backend_for_grpc(
+            health_check_port=self.server_maintenance_port)
 
         # Start server and attach its NEGs to the backend service, but
         # until they become healthy.
@@ -159,7 +161,7 @@ class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
                                       server_port=self.server_port,
                                       tls=True,
                                       mtls=False)
-        incorrect_namespace = f'incorrect-namespace-{uuid.uuid4().hex}'
+        incorrect_namespace = f'incorrect-namespace-{rand.rand_string()}'
         self.td.setup_client_security(server_namespace=incorrect_namespace,
                                       server_name=self.server_name,
                                       tls=True,

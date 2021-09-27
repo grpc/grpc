@@ -18,7 +18,10 @@
 
 /* Test out pollset latencies */
 
+#include <string.h>
+
 #include <benchmark/benchmark.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -28,12 +31,9 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
-
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
-
-#include <string.h>
 
 #ifdef GRPC_LINUX_MULTIPOLL_WITH_EPOLL
 #include <sys/epoll.h>
@@ -41,7 +41,7 @@
 #include <unistd.h>
 #endif
 
-static void shutdown_ps(void* ps, grpc_error* /*error*/) {
+static void shutdown_ps(void* ps, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(ps));
 }
 
@@ -167,7 +167,7 @@ template <class F>
 TestClosure* MakeTestClosure(F f) {
   struct C : public TestClosure {
     explicit C(F f) : f_(f) { GRPC_CLOSURE_INIT(this, C::cbfn, this, nullptr); }
-    static void cbfn(void* arg, grpc_error* /*error*/) {
+    static void cbfn(void* arg, grpc_error_handle /*error*/) {
       C* p = static_cast<C*>(arg);
       p->f_();
     }

@@ -44,7 +44,7 @@ static void test_constructor_option(void) {
 }
 
 // Simple functor for testing. It will count how many times being called.
-class SimpleFunctorForAdd : public grpc_experimental_completion_queue_functor {
+class SimpleFunctorForAdd : public grpc_completion_queue_functor {
  public:
   friend class SimpleFunctorCheckForAdd;
   SimpleFunctorForAdd() {
@@ -54,16 +54,15 @@ class SimpleFunctorForAdd : public grpc_experimental_completion_queue_functor {
     internal_success = 0;
   }
   ~SimpleFunctorForAdd() {}
-  static void Run(struct grpc_experimental_completion_queue_functor* cb,
-                  int /*ok*/) {
+  static void Run(struct grpc_completion_queue_functor* cb, int /*ok*/) {
     auto* callback = static_cast<SimpleFunctorForAdd*>(cb);
-    callback->count_.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
+    callback->count_.fetch_add(1, std::memory_order_relaxed);
   }
 
-  int count() { return count_.Load(grpc_core::MemoryOrder::RELAXED); }
+  int count() { return count_.load(std::memory_order_relaxed); }
 
  private:
-  grpc_core::Atomic<int> count_{0};
+  std::atomic<int> count_{0};
 };
 
 static void test_add(void) {
@@ -138,8 +137,7 @@ static void test_multi_add(void) {
 }
 
 // Checks the current count with a given number.
-class SimpleFunctorCheckForAdd
-    : public grpc_experimental_completion_queue_functor {
+class SimpleFunctorCheckForAdd : public grpc_completion_queue_functor {
  public:
   SimpleFunctorCheckForAdd(int ok, int* count) : count_(count) {
     functor_run = &SimpleFunctorCheckForAdd::Run;
@@ -147,8 +145,7 @@ class SimpleFunctorCheckForAdd
     internal_success = ok;
   }
   ~SimpleFunctorCheckForAdd() {}
-  static void Run(struct grpc_experimental_completion_queue_functor* cb,
-                  int /*ok*/) {
+  static void Run(struct grpc_completion_queue_functor* cb, int /*ok*/) {
     auto* callback = static_cast<SimpleFunctorCheckForAdd*>(cb);
     (*callback->count_)++;
     GPR_ASSERT(*callback->count_ == callback->internal_success);

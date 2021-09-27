@@ -23,7 +23,7 @@ $channel = new Grpc\Channel('localhost:1000', [
 
 $deadline = Grpc\Timeval::infFuture();
 $call = new Grpc\Call($channel,
-                      'dummy_method',
+                      'phony_method',
                       $deadline);
 
 $call->cancel();

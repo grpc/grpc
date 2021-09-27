@@ -55,10 +55,16 @@ std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
 
-/// Builds XDS Credentials.
+GRPC_DEPRECATED(
+    "Use grpc::XdsCredentials instead. The experimental version will be "
+    "deleted after the 1.41 release.")
 std::shared_ptr<ChannelCredentials> XdsCredentials(
     const std::shared_ptr<ChannelCredentials>& fallback_creds);
 }  // namespace experimental
+
+/// Builds XDS Credentials.
+std::shared_ptr<ChannelCredentials> XdsCredentials(
+    const std::shared_ptr<ChannelCredentials>& fallback_creds);
 
 /// A channel credentials object encapsulates all the state needed by a client
 /// to authenticate with a server for a given channel.
@@ -80,7 +86,7 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
   // AsSecureCredentials(). Once we are able to remove insecure builds from gRPC
   // (and also internal dependencies on the indirect method of creating a
   // channel through credentials), we would be able to remove this.
-  friend std::shared_ptr<ChannelCredentials> grpc::experimental::XdsCredentials(
+  friend std::shared_ptr<ChannelCredentials> grpc::XdsCredentials(
       const std::shared_ptr<ChannelCredentials>& fallback_creds);
 
   virtual SecureChannelCredentials* AsSecureCredentials() = 0;
@@ -277,6 +283,12 @@ class MetadataCredentialsPlugin {
 std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin);
 
+/// Builds External Account credentials.
+/// json_string is the JSON string containing the credentials options.
+/// scopes contains the scopes to be binded with the credentials.
+std::shared_ptr<CallCredentials> ExternalAccountCredentials(
+    const grpc::string& json_string, const std::vector<grpc::string>& scopes);
+
 namespace experimental {
 
 /// Options for creating STS Oauth Token Exchange credentials following the IETF
@@ -306,12 +318,6 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options);
 
 std::shared_ptr<CallCredentials> StsCredentials(
     const StsCredentialsOptions& options);
-
-/// Builds External Account credentials.
-/// json_string is the JSON string containing the credentials options.
-/// scopes contains the scopes to be binded with the credentials.
-std::shared_ptr<CallCredentials> ExternalAccountCredentials(
-    const grpc::string& json_string, const std::vector<grpc::string>& scopes);
 
 std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin,

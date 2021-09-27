@@ -23,12 +23,13 @@
 #include <string>
 #include <thread>
 
+#include "helper.h"
+
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
-#include "helper.h"
 #ifdef BAZEL_BUILD
 #include "examples/protos/route_guide.grpc.pb.h"
 #else
@@ -41,12 +42,12 @@ using grpc::ClientReader;
 using grpc::ClientReaderWriter;
 using grpc::ClientWriter;
 using grpc::Status;
-using routeguide::Point;
 using routeguide::Feature;
+using routeguide::Point;
 using routeguide::Rectangle;
-using routeguide::RouteSummary;
-using routeguide::RouteNote;
 using routeguide::RouteGuide;
+using routeguide::RouteNote;
+using routeguide::RouteSummary;
 
 Point MakePoint(long latitude, long longitude) {
   Point p;
@@ -55,16 +56,15 @@ Point MakePoint(long latitude, long longitude) {
   return p;
 }
 
-Feature MakeFeature(const std::string& name,
-                    long latitude, long longitude) {
+Feature MakeFeature(const std::string& name, long latitude, long longitude) {
   Feature f;
   f.set_name(name);
   f.mutable_location()->CopyFrom(MakePoint(latitude, longitude));
   return f;
 }
 
-RouteNote MakeRouteNote(const std::string& message,
-                        long latitude, long longitude) {
+RouteNote MakeRouteNote(const std::string& message, long latitude,
+                        long longitude) {
   RouteNote n;
   n.set_message(message);
   n.mutable_location()->CopyFrom(MakePoint(latitude, longitude));
@@ -102,10 +102,9 @@ class RouteGuideClient {
     std::unique_ptr<ClientReader<Feature> > reader(
         stub_->ListFeatures(&context, rect));
     while (reader->Read(&feature)) {
-      std::cout << "Found feature called "
-                << feature.name() << " at "
-                << feature.location().latitude()/kCoordFactor_ << ", "
-                << feature.location().longitude()/kCoordFactor_ << std::endl;
+      std::cout << "Found feature called " << feature.name() << " at "
+                << feature.location().latitude() / kCoordFactor_ << ", "
+                << feature.location().longitude() / kCoordFactor_ << std::endl;
     }
     Status status = reader->Finish();
     if (status.ok()) {
@@ -125,22 +124,21 @@ class RouteGuideClient {
     std::default_random_engine generator(seed);
     std::uniform_int_distribution<int> feature_distribution(
         0, feature_list_.size() - 1);
-    std::uniform_int_distribution<int> delay_distribution(
-        500, 1500);
+    std::uniform_int_distribution<int> delay_distribution(500, 1500);
 
     std::unique_ptr<ClientWriter<Point> > writer(
         stub_->RecordRoute(&context, &stats));
     for (int i = 0; i < kPoints; i++) {
       const Feature& f = feature_list_[feature_distribution(generator)];
-      std::cout << "Visiting point "
-                << f.location().latitude()/kCoordFactor_ << ", "
-                << f.location().longitude()/kCoordFactor_ << std::endl;
+      std::cout << "Visiting point " << f.location().latitude() / kCoordFactor_
+                << ", " << f.location().longitude() / kCoordFactor_
+                << std::endl;
       if (!writer->Write(f.location())) {
         // Broken stream.
         break;
       }
-      std::this_thread::sleep_for(std::chrono::milliseconds(
-          delay_distribution(generator)));
+      std::this_thread::sleep_for(
+          std::chrono::milliseconds(delay_distribution(generator)));
     }
     writer->WritesDone();
     Status status = writer->Finish();
@@ -162,14 +160,13 @@ class RouteGuideClient {
         stub_->RouteChat(&context));
 
     std::thread writer([stream]() {
-      std::vector<RouteNote> notes{
-        MakeRouteNote("First message", 0, 0),
-        MakeRouteNote("Second message", 0, 1),
-        MakeRouteNote("Third message", 1, 0),
-        MakeRouteNote("Fourth message", 0, 0)};
+      std::vector<RouteNote> notes{MakeRouteNote("First message", 0, 0),
+                                   MakeRouteNote("Second message", 0, 1),
+                                   MakeRouteNote("Third message", 1, 0),
+                                   MakeRouteNote("Fourth message", 0, 0)};
       for (const RouteNote& note : notes) {
-        std::cout << "Sending message " << note.message()
-                  << " at " << note.location().latitude() << ", "
+        std::cout << "Sending message " << note.message() << " at "
+                  << note.location().latitude() << ", "
                   << note.location().longitude() << std::endl;
         stream->Write(note);
       }
@@ -178,8 +175,8 @@ class RouteGuideClient {
 
     RouteNote server_note;
     while (stream->Read(&server_note)) {
-      std::cout << "Got message " << server_note.message()
-                << " at " << server_note.location().latitude() << ", "
+      std::cout << "Got message " << server_note.message() << " at "
+                << server_note.location().latitude() << ", "
                 << server_note.location().longitude() << std::endl;
     }
     writer.join();
@@ -190,7 +187,6 @@ class RouteGuideClient {
   }
 
  private:
-
   bool GetOneFeature(const Point& point, Feature* feature) {
     ClientContext context;
     Status status = stub_->GetFeature(&context, point, feature);
@@ -204,12 +200,12 @@ class RouteGuideClient {
     }
     if (feature->name().empty()) {
       std::cout << "Found no feature at "
-                << feature->location().latitude()/kCoordFactor_ << ", "
-                << feature->location().longitude()/kCoordFactor_ << std::endl;
+                << feature->location().latitude() / kCoordFactor_ << ", "
+                << feature->location().longitude() / kCoordFactor_ << std::endl;
     } else {
-      std::cout << "Found feature called " << feature->name()  << " at "
-                << feature->location().latitude()/kCoordFactor_ << ", "
-                << feature->location().longitude()/kCoordFactor_ << std::endl;
+      std::cout << "Found feature called " << feature->name() << " at "
+                << feature->location().latitude() / kCoordFactor_ << ", "
+                << feature->location().longitude() / kCoordFactor_ << std::endl;
     }
     return true;
   }

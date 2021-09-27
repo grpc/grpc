@@ -197,14 +197,23 @@ cdef class _ServicerContext:
     def set_trailing_metadata(self, object metadata):
         self._rpc_state.trailing_metadata = tuple(metadata)
 
+    def trailing_metadata(self):
+        return self._rpc_state.trailing_metadata
+
     def invocation_metadata(self):
         return self._rpc_state.invocation_metadata()
 
     def set_code(self, object code):
         self._rpc_state.status_code = get_status_code(code)
 
+    def code(self):
+        return self._rpc_state.status_code
+
     def set_details(self, str details):
         self._rpc_state.status_details = details
+
+    def details(self):
+        return self._rpc_state.status_details
 
     def set_compression(self, object compression):
         if self._rpc_state.metadata_sent:
@@ -251,6 +260,12 @@ cdef class _ServicerContext:
             return ctx
         else:
             return {}
+
+    def time_remaining(self):
+        if self._rpc_state.details.deadline.seconds == _GPR_INF_FUTURE.seconds:
+            return None
+        else:
+            return max(_time_from_timespec(self._rpc_state.details.deadline) - time.time(), 0)
 
 
 cdef class _SyncServicerContext:
@@ -310,6 +325,9 @@ cdef class _SyncServicerContext:
 
     def auth_context(self):
         return self._context.auth_context()
+
+    def time_remaining(self):
+        return self._context.time_remaining()
 
 
 async def _run_interceptor(object interceptors, object query_handler,
@@ -822,7 +840,8 @@ cdef class AioServer:
         init_grpc_aio()
         # NOTE(lidiz) Core objects won't be deallocated automatically.
         # If AioServer.shutdown is not called, those objects will leak.
-        self._server = Server(options)
+        # TODO(rbellevi): Support xDS in aio server.
+        self._server = Server(options, False)
         grpc_server_register_completion_queue(
             self._server.c_server,
             global_completion_queue(),

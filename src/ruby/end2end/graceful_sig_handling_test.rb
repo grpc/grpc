@@ -25,16 +25,14 @@ def main
   server_runner = ServerRunner.new(echo_service)
   server_port = server_runner.run
   STDERR.puts 'start client'
-  control_stub, client_pid = start_client('graceful_sig_handling_client.rb', server_port)
-  # use receipt of one RPC to indicate that the child process is
-  # ready
-  echo_service.wait_for_first_rpc_received(20)
+  client_controller = ClientController.new(
+    'graceful_sig_handling_client.rb', server_port)
   # now get the client to send an RPC
-  control_stub.do_echo_rpc(
+  client_controller.stub.do_echo_rpc(
     ClientControl::DoEchoRpcRequest.new(request: 'hello'))
   STDERR.puts 'killing client'
-  Process.kill('SIGINT', client_pid)
-  Process.wait(client_pid)
+  Process.kill('SIGINT', client_controller.client_pid)
+  Process.wait(client_controller.client_pid)
   client_exit_status = $CHILD_STATUS
   if client_exit_status.exited?
     if client_exit_status.exitstatus != 0
@@ -47,7 +45,6 @@ def main
   end
 
   STDERR.puts 'Client ended gracefully'
-  # no need to call cleanup, client should already be dead
   server_runner.stop
 end
 

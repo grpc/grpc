@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SUPPORT_CLIENT_INTERCEPTOR_H
 #define GRPCPP_SUPPORT_CLIENT_INTERCEPTOR_H
 
-#include <grpcpp/impl/codegen/client_interceptor.h>
+#include <grpcpp/impl/codegen/client_interceptor.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SUPPORT_CLIENT_INTERCEPTOR_H

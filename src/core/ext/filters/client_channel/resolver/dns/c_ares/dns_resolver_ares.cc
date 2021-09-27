@@ -24,13 +24,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <address_sorting/address_sorting.h>
+
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-
-#include <address_sorting/address_sorting.h>
 
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
@@ -60,8 +60,6 @@ namespace grpc_core {
 
 namespace {
 
-const char kDefaultPort[] = "https";
-
 class AresDnsResolver : public Resolver {
  public:
   explicit AresDnsResolver(ResolverArgs args);
@@ -80,10 +78,10 @@ class AresDnsResolver : public Resolver {
   void MaybeStartResolvingLocked();
   void StartResolvingLocked();
 
-  static void OnNextResolution(void* arg, grpc_error* error);
-  static void OnResolved(void* arg, grpc_error* error);
-  void OnNextResolutionLocked(grpc_error* error);
-  void OnResolvedLocked(grpc_error* error);
+  static void OnNextResolution(void* arg, grpc_error_handle error);
+  static void OnResolved(void* arg, grpc_error_handle error);
+  void OnNextResolutionLocked(grpc_error_handle error);
+  void OnResolvedLocked(grpc_error_handle error);
 
   /// DNS server to use (if not system default)
   std::string dns_server_;
@@ -193,18 +191,18 @@ void AresDnsResolver::ShutdownLocked() {
   }
 }
 
-void AresDnsResolver::OnNextResolution(void* arg, grpc_error* error) {
+void AresDnsResolver::OnNextResolution(void* arg, grpc_error_handle error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnNextResolutionLocked(error); },
                            DEBUG_LOCATION);
 }
 
-void AresDnsResolver::OnNextResolutionLocked(grpc_error* error) {
+void AresDnsResolver::OnNextResolutionLocked(grpc_error_handle error) {
   GRPC_CARES_TRACE_LOG(
       "resolver:%p re-resolution timer fired. error: %s. shutdown_initiated_: "
       "%d",
-      this, grpc_error_string(error), shutdown_initiated_);
+      this, grpc_error_std_string(error).c_str(), shutdown_initiated_);
   have_next_resolution_timer_ = false;
   if (error == GRPC_ERROR_NONE && !shutdown_initiated_) {
     if (!resolving_) {
@@ -227,7 +225,7 @@ bool ValueInJsonArray(const Json::Array& array, const char* value) {
 }
 
 std::string ChooseServiceConfig(char* service_config_choice_json,
-                                grpc_error** error) {
+                                grpc_error_handle* error) {
   Json json = Json::Parse(service_config_choice_json, error);
   if (*error != GRPC_ERROR_NONE) return "";
   if (json.type() != Json::Type::ARRAY) {
@@ -236,7 +234,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
     return "";
   }
   const Json* service_config = nullptr;
-  absl::InlinedVector<grpc_error*, 4> error_list;
+  absl::InlinedVector<grpc_error_handle, 4> error_list;
   for (const Json& choice : json.array_value()) {
     if (choice.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -305,14 +303,14 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
   return service_config->Dump();
 }
 
-void AresDnsResolver::OnResolved(void* arg, grpc_error* error) {
+void AresDnsResolver::OnResolved(void* arg, grpc_error_handle error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnResolvedLocked(error); },
                            DEBUG_LOCATION);
 }
 
-void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
+void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
   GPR_ASSERT(resolving_);
   resolving_ = false;
   gpr_free(pending_request_);
@@ -354,7 +352,7 @@ void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
     backoff_.Reset();
   } else {
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed: %s", this,
-                         grpc_error_string(error));
+                         grpc_error_std_string(error).c_str());
     std::string error_message =
         absl::StrCat("DNS resolution failed for service: ", name_to_resolve_);
     result_handler_->ReturnError(grpc_error_set_int(
@@ -362,10 +360,14 @@ void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
                                                          &error, 1),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
     // Set retry timer.
+    // InvalidateNow to avoid getting stuck re-initializing this timer
+    // in a loop while draining the currently-held WorkSerializer.
+    // Also see https://github.com/grpc/grpc/issues/26079.
+    ExecCtx::Get()->InvalidateNow();
     grpc_millis next_try = backoff_.NextAttemptTime();
     grpc_millis timeout = next_try - ExecCtx::Get()->Now();
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed (will retry): %s",
-                         this, grpc_error_string(error));
+                         this, grpc_error_std_string(error).c_str());
     GPR_ASSERT(!have_next_resolution_timer_);
     have_next_resolution_timer_ = true;
     // TODO(roth): We currently deal with this ref manually.  Once the
@@ -389,6 +391,10 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
   // can start the next resolution.
   if (have_next_resolution_timer_) return;
   if (last_resolution_timestamp_ >= 0) {
+    // InvalidateNow to avoid getting stuck re-initializing this timer
+    // in a loop while draining the currently-held WorkSerializer.
+    // Also see https://github.com/grpc/grpc/issues/26079.
+    ExecCtx::Get()->InvalidateNow();
     const grpc_millis earliest_next_resolution =
         last_resolution_timestamp_ + min_time_between_resolutions_;
     const grpc_millis ms_until_next_resolution =
@@ -423,7 +429,7 @@ void AresDnsResolver::StartResolvingLocked() {
   resolving_ = true;
   service_config_json_ = nullptr;
   pending_request_ = grpc_dns_lookup_ares_locked(
-      dns_server_.c_str(), name_to_resolve_.c_str(), kDefaultPort,
+      dns_server_.c_str(), name_to_resolve_.c_str(), kDefaultSecurePort,
       interested_parties_, &on_resolved_, &addresses_,
       enable_srv_queries_ ? &balancer_addresses_ : nullptr,
       request_service_config_ ? &service_config_json_ : nullptr,
@@ -455,7 +461,7 @@ class AresDnsResolverFactory : public ResolverFactory {
 extern grpc_address_resolver_vtable* grpc_resolve_address_impl;
 static grpc_address_resolver_vtable* default_resolver;
 
-static grpc_error* blocking_resolve_address_ares(
+static grpc_error_handle blocking_resolve_address_ares(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses) {
   return default_resolver->blocking_resolve_address(name, default_port,
@@ -465,13 +471,6 @@ static grpc_error* blocking_resolve_address_ares(
 static grpc_address_resolver_vtable ares_resolver = {
     grpc_resolve_address_ares, blocking_resolve_address_ares};
 
-#ifdef GRPC_UV
-/* TODO(murgatroid99): Remove this when we want the cares resolver to be the
- * default when using libuv */
-static bool should_use_ares(const char* resolver_env) {
-  return resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0;
-}
-#else  /* GRPC_UV */
 static bool should_use_ares(const char* resolver_env) {
   // TODO(lidiz): Remove the "g_custom_iomgr_enabled" flag once c-ares support
   // custom IO managers (e.g. gevent).
@@ -479,7 +478,6 @@ static bool should_use_ares(const char* resolver_env) {
          (resolver_env == nullptr || strlen(resolver_env) == 0 ||
           gpr_stricmp(resolver_env, "ares") == 0);
 }
-#endif /* GRPC_UV */
 
 static bool g_use_ares_dns_resolver;
 
@@ -490,7 +488,7 @@ void grpc_resolver_dns_ares_init() {
     g_use_ares_dns_resolver = true;
     gpr_log(GPR_DEBUG, "Using ares dns resolver");
     address_sorting_init();
-    grpc_error* error = grpc_ares_init();
+    grpc_error_handle error = grpc_ares_init();
     if (error != GRPC_ERROR_NONE) {
       GRPC_LOG_IF_ERROR("grpc_ares_init() failed", error);
       return;

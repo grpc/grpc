@@ -18,15 +18,16 @@
 
 /* Test various closure related operations */
 
-#include <benchmark/benchmark.h>
-#include <grpc/grpc.h>
 #include <sstream>
+
+#include <benchmark/benchmark.h>
+
+#include <grpc/grpc.h>
 
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
@@ -51,7 +52,7 @@ static void BM_WellFlushed(benchmark::State& state) {
 }
 BENCHMARK(BM_WellFlushed);
 
-static void DoNothing(void* /*arg*/, grpc_error* /*error*/) {}
+static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 static void BM_ClosureInitAgainstExecCtx(benchmark::State& state) {
   TrackCounters track_counters;
@@ -369,7 +370,7 @@ class Rescheduler {
   benchmark::State& state_;
   grpc_closure closure_;
 
-  static void Step(void* arg, grpc_error* /*error*/) {
+  static void Step(void* arg, grpc_error_handle /*error*/) {
     Rescheduler* self = static_cast<Rescheduler*>(arg);
     if (self->state_.KeepRunning()) {
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, &self->closure_, GRPC_ERROR_NONE);

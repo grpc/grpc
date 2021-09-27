@@ -28,13 +28,13 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/sync.h>
-#include "src/core/lib/transport/metadata_batch.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 struct grpc_http_response;
 
@@ -187,13 +187,13 @@ struct grpc_call_credentials
                                     grpc_auth_metadata_context context,
                                     grpc_credentials_mdelem_array* md_array,
                                     grpc_closure* on_request_metadata,
-                                    grpc_error** error) = 0;
+                                    grpc_error_handle* error) = 0;
 
   // Cancels a pending asynchronous operation started by
   // grpc_call_credentials_get_request_metadata() with the corresponding
   // value of \a md_array.
   virtual void cancel_get_request_metadata(
-      grpc_credentials_mdelem_array* md_array, grpc_error* error) = 0;
+      grpc_credentials_mdelem_array* md_array, grpc_error_handle error) = 0;
 
   virtual grpc_security_level min_security_level() const {
     return min_security_level_;

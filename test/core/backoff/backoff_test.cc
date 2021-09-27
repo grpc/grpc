@@ -20,10 +20,11 @@
 
 #include <algorithm>
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-#include <gtest/gtest.h>
 #include "test/core/util/test_config.h"
 
 namespace grpc {

@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_stack.h"
-
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -33,6 +31,8 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -51,15 +51,16 @@ static void put_metadata(grpc_mdelem md, std::vector<std::string>* out) {
   gpr_free(dump);
 }
 
-static void put_metadata_list(grpc_metadata_batch md,
+static void put_metadata_list(const grpc_metadata_batch& md,
                               std::vector<std::string>* out) {
-  grpc_linked_mdelem* m;
-  for (m = md.list.head; m != nullptr; m = m->next) {
-    if (m != md.list.head) out->push_back(", ");
-    put_metadata(m->md, out);
-  }
-  if (md.deadline != GRPC_MILLIS_INF_FUTURE) {
-    out->push_back(absl::StrFormat(" deadline=%" PRId64, md.deadline));
+  bool first = true;
+  md.ForEach([&](grpc_mdelem elem) {
+    if (!first) out->push_back(", ");
+    first = false;
+    put_metadata(elem, out);
+  });
+  if (md.deadline() != GRPC_MILLIS_INF_FUTURE) {
+    out->push_back(absl::StrFormat(" deadline=%" PRId64, md.deadline()));
   }
 }
 
@@ -109,7 +110,7 @@ std::string grpc_transport_stream_op_batch_string(
   if (op->cancel_stream) {
     out.push_back(absl::StrCat(
         " CANCEL:",
-        grpc_error_string(op->payload->cancel_stream.cancel_error)));
+        grpc_error_std_string(op->payload->cancel_stream.cancel_error)));
   }
 
   return absl::StrJoin(out, "");
@@ -131,13 +132,13 @@ std::string grpc_transport_op_string(grpc_transport_op* op) {
   }
 
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
-    out.push_back(absl::StrCat(" DISCONNECT:",
-                               grpc_error_string(op->disconnect_with_error)));
+    out.push_back(absl::StrCat(
+        " DISCONNECT:", grpc_error_std_string(op->disconnect_with_error)));
   }
 
-  if (op->goaway_error) {
-    out.push_back(
-        absl::StrCat(" SEND_GOAWAY:%s", grpc_error_string(op->goaway_error)));
+  if (op->goaway_error != GRPC_ERROR_NONE) {
+    out.push_back(absl::StrCat(" SEND_GOAWAY:%s",
+                               grpc_error_std_string(op->goaway_error)));
   }
 
   if (op->set_accept_stream) {

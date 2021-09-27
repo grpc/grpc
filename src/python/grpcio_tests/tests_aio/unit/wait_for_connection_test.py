@@ -14,19 +14,20 @@
 """Tests behavior of the wait for connection API on client side."""
 
 import asyncio
-import logging
-import unittest
 import datetime
+import logging
 from typing import Callable, Tuple
+import unittest
 
 import grpc
 from grpc.experimental import aio
 
+from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import test_pb2_grpc
+from tests_aio.unit import _common
+from tests_aio.unit._constants import UNREACHABLE_TARGET
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
-from tests_aio.unit import _common
-from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
-from tests_aio.unit._constants import UNREACHABLE_TARGET
 
 _REQUEST = b'\x01\x02\x03'
 _TEST_METHOD = '/test/Test'
@@ -42,11 +43,11 @@ class TestWaitForConnection(AioTestBase):
     async def setUp(self):
         address, self._server = await start_test_server()
         self._channel = aio.insecure_channel(address)
-        self._dummy_channel = aio.insecure_channel(UNREACHABLE_TARGET)
+        self._phony_channel = aio.insecure_channel(UNREACHABLE_TARGET)
         self._stub = test_pb2_grpc.TestServiceStub(self._channel)
 
     async def tearDown(self):
-        await self._dummy_channel.close()
+        await self._phony_channel.close()
         await self._channel.close()
         await self._server.stop(None)
 
@@ -122,7 +123,7 @@ class TestWaitForConnection(AioTestBase):
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
     async def test_unary_unary_error(self):
-        call = self._dummy_channel.unary_unary(_TEST_METHOD)(_REQUEST)
+        call = self._phony_channel.unary_unary(_TEST_METHOD)(_REQUEST)
 
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await call.wait_for_connection()
@@ -130,7 +131,7 @@ class TestWaitForConnection(AioTestBase):
         self.assertEqual(grpc.StatusCode.UNAVAILABLE, rpc_error.code())
 
     async def test_unary_stream_error(self):
-        call = self._dummy_channel.unary_stream(_TEST_METHOD)(_REQUEST)
+        call = self._phony_channel.unary_stream(_TEST_METHOD)(_REQUEST)
 
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await call.wait_for_connection()
@@ -138,7 +139,7 @@ class TestWaitForConnection(AioTestBase):
         self.assertEqual(grpc.StatusCode.UNAVAILABLE, rpc_error.code())
 
     async def test_stream_unary_error(self):
-        call = self._dummy_channel.stream_unary(_TEST_METHOD)()
+        call = self._phony_channel.stream_unary(_TEST_METHOD)()
 
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await call.wait_for_connection()
@@ -146,7 +147,7 @@ class TestWaitForConnection(AioTestBase):
         self.assertEqual(grpc.StatusCode.UNAVAILABLE, rpc_error.code())
 
     async def test_stream_stream_error(self):
-        call = self._dummy_channel.stream_stream(_TEST_METHOD)()
+        call = self._phony_channel.stream_stream(_TEST_METHOD)()
 
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await call.wait_for_connection()

@@ -16,6 +16,8 @@
  *
  */
 
+#include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -27,7 +29,6 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
-#include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"
@@ -52,7 +53,7 @@
 #define ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL \
   "test application protocol"
 #define ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL "test record protocol"
-#define ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE (256 * 1024)
+#define ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE (2 * 1024 * 1024)
 #define ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY "peer"
 #define ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE "attributes"
 

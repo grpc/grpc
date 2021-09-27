@@ -2,7 +2,9 @@
 
 Below is the release schedule for gRPC [Java](https://github.com/grpc/grpc-java/releases), [Go](https://github.com/grpc/grpc-go/releases) and [Core](https://github.com/grpc/grpc/releases) and its  dependent languages C++, C#, Objective-C, PHP, Python and Ruby.
 
-Releases are scheduled every six weeks on Tuesdays on a best effort basis. In some unavoidable situations a release may be delayed or a language may skip a release altogether and do the next release to catch up with other languages. See the past releases in the links above. A six-week cycle gives us a good balance between delivering new features/fixes quickly and keeping the release overhead low.
+Releases are scheduled every six weeks on Tuesdays on a best effort basis. In some unavoidable situations a release may be delayed or released early or a language may skip a release altogether and do the next release to catch up with other languages. See the past releases in the links above. A six-week cycle gives us a good balance between delivering new features/fixes quickly and keeping the release overhead low.
+
+The gRPC release support policy can be found [here](https://grpc.io/docs/what-is-grpc/faq/#how-long-are-grpc-releases-supported-for).
 
 Releases are cut from release branches. For Core and Java repos, the release branch is cut two weeks before the scheduled release date. For Go, the branch is cut just before the release. An RC (release candidate) is published for Core and its dependent languages just after the branch cut. This RC is later promoted to release version if no further changes are made to the release branch. We do our best to keep head of master branch stable at all times regardless of release schedule. Daily build packages from master branch for C#, PHP, Python, Ruby and Protoc plugins are published on [packages.grpc.io](https://packages.grpc.io/). If you depend on gRPC in production we recommend to set up your CI system to test the RCs and, if possible, the daily builds.
 

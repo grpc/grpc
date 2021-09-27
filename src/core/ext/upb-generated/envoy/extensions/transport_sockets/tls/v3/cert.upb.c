@@ -7,9 +7,8 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/extensions/transport_sockets/tls/v3/cert.upb.h"
-#include "udpa/annotations/status.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/secret.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"

@@ -25,7 +25,6 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/work_serializer.h"
-
 #include "test/core/util/test_config.h"
 
 static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
@@ -34,7 +33,9 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
   void ReturnResult(grpc_core::Resolver::Result /*result*/) override {}
 
-  void ReturnError(grpc_error* error) override { GRPC_ERROR_UNREF(error); }
+  void ReturnError(grpc_error_handle error) override {
+    GRPC_ERROR_UNREF(error);
+  }
 };
 
 static void test_succeeds(grpc_core::ResolverFactory* factory,

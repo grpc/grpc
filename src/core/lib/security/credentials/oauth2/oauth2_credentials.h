@@ -24,6 +24,7 @@
 #include <string>
 
 #include <grpc/grpc_security.h>
+
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -78,13 +79,13 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
                             grpc_auth_metadata_context context,
                             grpc_credentials_mdelem_array* md_array,
                             grpc_closure* on_request_metadata,
-                            grpc_error** error) override;
+                            grpc_error_handle* error) override;
 
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
-                                   grpc_error* error) override;
+                                   grpc_error_handle error) override;
 
   void on_http_response(grpc_credentials_metadata_request* r,
-                        grpc_error* error);
+                        grpc_error_handle error);
   std::string debug_string() override;
 
  protected:
@@ -138,10 +139,10 @@ class grpc_access_token_credentials final : public grpc_call_credentials {
                             grpc_auth_metadata_context context,
                             grpc_credentials_mdelem_array* md_array,
                             grpc_closure* on_request_metadata,
-                            grpc_error** error) override;
+                            grpc_error_handle* error) override;
 
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
-                                   grpc_error* error) override;
+                                   grpc_error_handle error) override;
 
   std::string debug_string() override;
 

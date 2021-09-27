@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -33,8 +31,8 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/static_metadata.h"
-
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
@@ -120,25 +118,26 @@ static void test_retry_too_many_attempts(grpc_end2end_test_config config) {
   int was_cancelled = 2;
   char* peer;
 
-  grpc_arg arg;
-  arg.type = GRPC_ARG_STRING;
-  arg.key = const_cast<char*>(GRPC_ARG_SERVICE_CONFIG);
-  arg.value.string = const_cast<char*>(
-      "{\n"
-      "  \"methodConfig\": [ {\n"
-      "    \"name\": [\n"
-      "      { \"service\": \"service\", \"method\": \"method\" }\n"
-      "    ],\n"
-      "    \"retryPolicy\": {\n"
-      "      \"maxAttempts\": 2,\n"
-      "      \"initialBackoff\": \"1s\",\n"
-      "      \"maxBackoff\": \"120s\",\n"
-      "      \"backoffMultiplier\": 1.6,\n"
-      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-      "    }\n"
-      "  } ]\n"
-      "}");
-  grpc_channel_args client_args = {1, &arg};
+  grpc_arg args[] = {
+      grpc_channel_arg_string_create(
+          const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
+          const_cast<char*>(
+              "{\n"
+              "  \"methodConfig\": [ {\n"
+              "    \"name\": [\n"
+              "      { \"service\": \"service\", \"method\": \"method\" }\n"
+              "    ],\n"
+              "    \"retryPolicy\": {\n"
+              "      \"maxAttempts\": 2,\n"
+              "      \"initialBackoff\": \"1s\",\n"
+              "      \"maxBackoff\": \"120s\",\n"
+              "      \"backoffMultiplier\": 1.6,\n"
+              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+              "    }\n"
+              "  } ]\n"
+              "}")),
+  };
+  grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   grpc_end2end_test_fixture f =
       begin_test(config, "retry_too_many_attempts", &client_args, nullptr);
 

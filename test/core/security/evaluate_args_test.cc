@@ -1,4 +1,4 @@
-// Copyright 2020 gRPC authors.
+// Copyright 2021 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,206 +14,152 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/security/authorization/evaluate_args.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "absl/strings/string_view.h"
-
-#include "src/core/lib/security/authorization/evaluate_args.h"
-#include "test/core/util/eval_args_mock_endpoint.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "test/core/util/evaluate_args_test_util.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
 
 class EvaluateArgsTest : public ::testing::Test {
  protected:
-  void SetUp() override {
-    local_address_ = "255.255.255.255";
-    peer_address_ = "128.128.128.128";
-    local_port_ = 413;
-    peer_port_ = 314;
-    endpoint_ = CreateEvalArgsMockEndpoint(local_address_.c_str(), local_port_,
-                                           peer_address_.c_str(), peer_port_);
-    evaluate_args_ =
-        absl::make_unique<EvaluateArgs>(nullptr, nullptr, endpoint_);
-  }
-  void TearDown() override { grpc_endpoint_destroy(endpoint_); }
-  grpc_endpoint* endpoint_;
-  std::unique_ptr<EvaluateArgs> evaluate_args_;
-  std::string local_address_;
-  std::string peer_address_;
-  int local_port_;
-  int peer_port_;
+  EvaluateArgsTestUtil util_;
 };
 
-TEST_F(EvaluateArgsTest, TestEvaluateArgsLocalAddress) {
-  absl::string_view src_address = evaluate_args_->GetLocalAddress();
-  EXPECT_EQ(src_address, local_address_);
+TEST_F(EvaluateArgsTest, EmptyMetadata) {
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetPath(), nullptr);
+  EXPECT_EQ(args.GetMethod(), nullptr);
+  EXPECT_EQ(args.GetHost(), nullptr);
+  EXPECT_THAT(args.GetHeaders(), ::testing::ElementsAre());
+  EXPECT_EQ(args.GetHeaderValue("some_key", nullptr), absl::nullopt);
 }
 
-TEST_F(EvaluateArgsTest, TestEvaluateArgsLocalPort) {
-  int src_port = evaluate_args_->GetLocalPort();
-  EXPECT_EQ(src_port, local_port_);
+TEST_F(EvaluateArgsTest, GetPathSuccess) {
+  util_.AddPairToMetadata(":path", "/expected/path");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetPath(), "/expected/path");
 }
 
-TEST_F(EvaluateArgsTest, TestEvaluateArgsPeerAddress) {
-  absl::string_view dest_address = evaluate_args_->GetPeerAddress();
-  EXPECT_EQ(dest_address, peer_address_);
+TEST_F(EvaluateArgsTest, GetHostSuccess) {
+  util_.AddPairToMetadata("host", "host123");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetHost(), "host123");
 }
 
-TEST_F(EvaluateArgsTest, TestEvaluateArgsPeerPort) {
-  int dest_port = evaluate_args_->GetPeerPort();
-  EXPECT_EQ(dest_port, peer_port_);
+TEST_F(EvaluateArgsTest, GetMethodSuccess) {
+  util_.AddPairToMetadata(":method", "GET");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetMethod(), "GET");
 }
 
-TEST(EvaluateArgsMetadataTest, HandlesNullMetadata) {
-  EvaluateArgs eval_args(nullptr, nullptr, nullptr);
-  EXPECT_EQ(eval_args.GetPath(), nullptr);
-  EXPECT_EQ(eval_args.GetMethod(), nullptr);
-  EXPECT_EQ(eval_args.GetHost(), nullptr);
-  EXPECT_THAT(eval_args.GetHeaders(), ::testing::ElementsAre());
+TEST_F(EvaluateArgsTest, GetHeadersSuccess) {
+  util_.AddPairToMetadata("host", "host123");
+  util_.AddPairToMetadata(":path", "/expected/path");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_THAT(args.GetHeaders(),
+              ::testing::UnorderedElementsAre(
+                  ::testing::Pair("host", "host123"),
+                  ::testing::Pair(":path", "/expected/path")));
 }
 
-TEST(EvaluateArgsMetadataTest, HandlesEmptyMetadata) {
-  grpc_metadata_batch metadata;
-  grpc_metadata_batch_init(&metadata);
-  EvaluateArgs eval_args(&metadata, nullptr, nullptr);
-  EXPECT_EQ(eval_args.GetPath(), nullptr);
-  EXPECT_EQ(eval_args.GetMethod(), nullptr);
-  EXPECT_EQ(eval_args.GetHost(), nullptr);
-  EXPECT_THAT(eval_args.GetHeaders(), ::testing::ElementsAre());
-  grpc_metadata_batch_destroy(&metadata);
+TEST_F(EvaluateArgsTest, GetHeaderValueSuccess) {
+  util_.AddPairToMetadata("key123", "value123");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  std::string concatenated_value;
+  absl::optional<absl::string_view> value =
+      args.GetHeaderValue("key123", &concatenated_value);
+  ASSERT_TRUE(value.has_value());
+  EXPECT_EQ(value.value(), "value123");
 }
 
-TEST(EvaluateArgsMetadataTest, GetPathSuccess) {
-  grpc_init();
-  const char* kPath = "/some/path";
-  grpc_metadata_batch metadata;
-  grpc_metadata_batch_init(&metadata);
-  grpc_slice fake_val = grpc_slice_intern(grpc_slice_from_static_string(kPath));
-  grpc_mdelem fake_val_md = grpc_mdelem_from_slices(GRPC_MDSTR_PATH, fake_val);
-  grpc_linked_mdelem storage;
-  storage.md = fake_val_md;
-  ASSERT_EQ(grpc_metadata_batch_link_head(&metadata, &storage),
-            GRPC_ERROR_NONE);
-  EvaluateArgs eval_args(&metadata, nullptr, nullptr);
-  EXPECT_EQ(eval_args.GetPath(), kPath);
-  grpc_metadata_batch_destroy(&metadata);
-  grpc_shutdown();
+TEST_F(EvaluateArgsTest, TestLocalAddressAndPort) {
+  util_.SetLocalEndpoint("ipv6:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:456");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  grpc_resolved_address local_address = args.GetLocalAddress();
+  EXPECT_EQ(grpc_sockaddr_to_uri(&local_address),
+            "ipv6:[2001:db8:85a3::8a2e:370:7334]:456");
+  EXPECT_EQ(args.GetLocalAddressString(),
+            "2001:0db8:85a3:0000:0000:8a2e:0370:7334");
+  EXPECT_EQ(args.GetLocalPort(), 456);
 }
 
-TEST(EvaluateArgsMetadataTest, GetHostSuccess) {
-  grpc_init();
-  const char* kHost = "host";
-  grpc_metadata_batch metadata;
-  grpc_metadata_batch_init(&metadata);
-  grpc_slice fake_val = grpc_slice_intern(grpc_slice_from_static_string(kHost));
-  grpc_mdelem fake_val_md = grpc_mdelem_from_slices(GRPC_MDSTR_HOST, fake_val);
-  grpc_linked_mdelem storage;
-  storage.md = fake_val_md;
-  ASSERT_EQ(grpc_metadata_batch_link_head(&metadata, &storage),
-            GRPC_ERROR_NONE);
-  EvaluateArgs eval_args(&metadata, nullptr, nullptr);
-  EXPECT_EQ(eval_args.GetHost(), kHost);
-  grpc_metadata_batch_destroy(&metadata);
-  grpc_shutdown();
+TEST_F(EvaluateArgsTest, TestPeerAddressAndPort) {
+  util_.SetPeerEndpoint("ipv4:255.255.255.255:123");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  grpc_resolved_address peer_address = args.GetPeerAddress();
+  EXPECT_EQ(grpc_sockaddr_to_uri(&peer_address), "ipv4:255.255.255.255:123");
+  EXPECT_EQ(args.GetPeerAddressString(), "255.255.255.255");
+  EXPECT_EQ(args.GetPeerPort(), 123);
 }
 
-TEST(EvaluateArgsMetadataTest, GetMethodSuccess) {
-  grpc_init();
-  const char* kMethod = "GET";
-  grpc_metadata_batch metadata;
-  grpc_metadata_batch_init(&metadata);
-  grpc_slice fake_val =
-      grpc_slice_intern(grpc_slice_from_static_string(kMethod));
-  grpc_mdelem fake_val_md =
-      grpc_mdelem_from_slices(GRPC_MDSTR_METHOD, fake_val);
-  grpc_linked_mdelem storage;
-  storage.md = fake_val_md;
-  ASSERT_EQ(grpc_metadata_batch_link_head(&metadata, &storage),
-            GRPC_ERROR_NONE);
-  EvaluateArgs eval_args(&metadata, nullptr, nullptr);
-  EXPECT_EQ(eval_args.GetMethod(), kMethod);
-  grpc_metadata_batch_destroy(&metadata);
-  grpc_shutdown();
+TEST_F(EvaluateArgsTest, EmptyAuthContext) {
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_TRUE(args.GetTransportSecurityType().empty());
+  EXPECT_TRUE(args.GetSpiffeId().empty());
+  EXPECT_TRUE(args.GetUriSans().empty());
+  EXPECT_TRUE(args.GetDnsSans().empty());
+  EXPECT_TRUE(args.GetCommonName().empty());
 }
 
-TEST(EvaluateArgsMetadataTest, GetHeadersSuccess) {
-  grpc_init();
-  const char* kPath = "/some/path";
-  const char* kHost = "host";
-  grpc_metadata_batch metadata;
-  grpc_metadata_batch_init(&metadata);
-  grpc_slice fake_path =
-      grpc_slice_intern(grpc_slice_from_static_string(kPath));
-  grpc_mdelem fake_path_md =
-      grpc_mdelem_from_slices(GRPC_MDSTR_PATH, fake_path);
-  grpc_linked_mdelem storage;
-  storage.md = fake_path_md;
-  ASSERT_EQ(grpc_metadata_batch_link_head(&metadata, &storage, GRPC_BATCH_PATH),
-            GRPC_ERROR_NONE);
-  grpc_slice fake_host =
-      grpc_slice_intern(grpc_slice_from_static_string(kHost));
-  grpc_mdelem fake_host_md =
-      grpc_mdelem_from_slices(GRPC_MDSTR_HOST, fake_host);
-  grpc_linked_mdelem storage2;
-  storage2.md = fake_host_md;
-  ASSERT_EQ(
-      grpc_metadata_batch_link_tail(&metadata, &storage2, GRPC_BATCH_HOST),
-      GRPC_ERROR_NONE);
-  EvaluateArgs eval_args(&metadata, nullptr, nullptr);
-  EXPECT_THAT(
-      eval_args.GetHeaders(),
-      ::testing::UnorderedElementsAre(
-          ::testing::Pair(StringViewFromSlice(GRPC_MDSTR_HOST), kHost),
-          ::testing::Pair(StringViewFromSlice(GRPC_MDSTR_PATH), kPath)));
-  grpc_metadata_batch_destroy(&metadata);
-  grpc_shutdown();
+TEST_F(EvaluateArgsTest, GetTransportSecurityTypeSuccessOneProperty) {
+  util_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+                                 "ssl");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetTransportSecurityType(), "ssl");
 }
 
-TEST(EvaluateArgsAuthContextTest, HandlesNullAuthContext) {
-  EvaluateArgs eval_args(nullptr, nullptr, nullptr);
-  EXPECT_EQ(eval_args.GetSpiffeId(), nullptr);
-  EXPECT_EQ(eval_args.GetCertServerName(), nullptr);
+TEST_F(EvaluateArgsTest, GetTransportSecurityTypeFailDuplicateProperty) {
+  util_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+                                 "type1");
+  util_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+                                 "type2");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_TRUE(args.GetTransportSecurityType().empty());
 }
 
-TEST(EvaluateArgsAuthContextTest, HandlesEmptyAuthCtx) {
-  grpc_auth_context auth_context(nullptr);
-  EvaluateArgs eval_args(nullptr, &auth_context, nullptr);
-  EXPECT_EQ(eval_args.GetSpiffeId(), nullptr);
-  EXPECT_EQ(eval_args.GetCertServerName(), nullptr);
+TEST_F(EvaluateArgsTest, GetSpiffeIdSuccessOneProperty) {
+  util_.AddPropertyToAuthContext(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, "id123");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetSpiffeId(), "id123");
 }
 
-TEST(EvaluateArgsAuthContextTest, GetSpiffeIdSuccessOneProperty) {
-  grpc_auth_context auth_context(nullptr);
-  const char* kId = "spiffeid";
-  auth_context.add_cstring_property(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, kId);
-  EvaluateArgs eval_args(nullptr, &auth_context, nullptr);
-  EXPECT_EQ(eval_args.GetSpiffeId(), kId);
+TEST_F(EvaluateArgsTest, GetSpiffeIdFailDuplicateProperty) {
+  util_.AddPropertyToAuthContext(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, "id123");
+  util_.AddPropertyToAuthContext(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, "id456");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_TRUE(args.GetSpiffeId().empty());
 }
 
-TEST(EvaluateArgsAuthContextTest, GetSpiffeIdFailDuplicateProperty) {
-  grpc_auth_context auth_context(nullptr);
-  auth_context.add_cstring_property(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, "id1");
-  auth_context.add_cstring_property(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, "id2");
-  EvaluateArgs eval_args(nullptr, &auth_context, nullptr);
-  EXPECT_EQ(eval_args.GetSpiffeId(), nullptr);
+TEST_F(EvaluateArgsTest, GetUriSanSuccessMultipleProperties) {
+  util_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME, "foo");
+  util_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME, "bar");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_THAT(args.GetUriSans(), ::testing::ElementsAre("foo", "bar"));
 }
 
-TEST(EvaluateArgsAuthContextTest, GetCertServerNameSuccessOneProperty) {
-  grpc_auth_context auth_context(nullptr);
-  const char* kServer = "server";
-  auth_context.add_cstring_property(GRPC_X509_CN_PROPERTY_NAME, kServer);
-  EvaluateArgs eval_args(nullptr, &auth_context, nullptr);
-  EXPECT_EQ(eval_args.GetCertServerName(), kServer);
+TEST_F(EvaluateArgsTest, GetDnsSanSuccessMultipleProperties) {
+  util_.AddPropertyToAuthContext(GRPC_PEER_DNS_PROPERTY_NAME, "foo");
+  util_.AddPropertyToAuthContext(GRPC_PEER_DNS_PROPERTY_NAME, "bar");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_THAT(args.GetDnsSans(), ::testing::ElementsAre("foo", "bar"));
 }
 
-TEST(EvaluateArgsAuthContextTest, GetCertServerNameFailDuplicateProperty) {
-  grpc_auth_context auth_context(nullptr);
-  auth_context.add_cstring_property(GRPC_X509_CN_PROPERTY_NAME, "server1");
-  auth_context.add_cstring_property(GRPC_X509_CN_PROPERTY_NAME, "server2");
-  EvaluateArgs eval_args(nullptr, &auth_context, nullptr);
-  EXPECT_EQ(eval_args.GetCertServerName(), nullptr);
+TEST_F(EvaluateArgsTest, GetCommonNameSuccessOneProperty) {
+  util_.AddPropertyToAuthContext(GRPC_X509_CN_PROPERTY_NAME, "server123");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetCommonName(), "server123");
+}
+
+TEST_F(EvaluateArgsTest, GetCommonNameFailDuplicateProperty) {
+  util_.AddPropertyToAuthContext(GRPC_X509_CN_PROPERTY_NAME, "server123");
+  util_.AddPropertyToAuthContext(GRPC_X509_CN_PROPERTY_NAME, "server456");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_TRUE(args.GetCommonName().empty());
 }
 
 }  // namespace grpc_core
@@ -221,5 +167,8 @@ TEST(EvaluateArgsAuthContextTest, GetCertServerNameFailDuplicateProperty) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
 }

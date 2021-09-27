@@ -37,7 +37,7 @@ static char* buf2str(void* buffer, size_t length) {
   return out;
 }
 
-static grpc_error* handle_response_line(grpc_http_parser* parser) {
+static grpc_error_handle handle_response_line(grpc_http_parser* parser) {
   uint8_t* beg = parser->cur_line;
   uint8_t* cur = beg;
   uint8_t* end = beg + parser->cur_line_length;
@@ -90,7 +90,7 @@ static grpc_error* handle_response_line(grpc_http_parser* parser) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error* handle_request_line(grpc_http_parser* parser) {
+static grpc_error_handle handle_request_line(grpc_http_parser* parser) {
   uint8_t* beg = parser->cur_line;
   uint8_t* cur = beg;
   uint8_t* end = beg + parser->cur_line_length;
@@ -161,7 +161,7 @@ static grpc_error* handle_request_line(grpc_http_parser* parser) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error* handle_first_line(grpc_http_parser* parser) {
+static grpc_error_handle handle_first_line(grpc_http_parser* parser) {
   switch (parser->type) {
     case GRPC_HTTP_REQUEST:
       return handle_request_line(parser);
@@ -172,14 +172,14 @@ static grpc_error* handle_first_line(grpc_http_parser* parser) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Should never reach here"));
 }
 
-static grpc_error* add_header(grpc_http_parser* parser) {
+static grpc_error_handle add_header(grpc_http_parser* parser) {
   uint8_t* beg = parser->cur_line;
   uint8_t* cur = beg;
   uint8_t* end = beg + parser->cur_line_length;
   size_t* hdr_count = nullptr;
   grpc_http_header** hdrs = nullptr;
   grpc_http_header hdr = {nullptr, nullptr};
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
 
   GPR_ASSERT(cur != end);
 
@@ -221,7 +221,7 @@ static grpc_error* add_header(grpc_http_parser* parser) {
 
   if (*hdr_count == parser->hdr_capacity) {
     parser->hdr_capacity =
-        GPR_MAX(parser->hdr_capacity + 1, parser->hdr_capacity * 3 / 2);
+        std::max(parser->hdr_capacity + 1, parser->hdr_capacity * 3 / 2);
     *hdrs = static_cast<grpc_http_header*>(
         gpr_realloc(*hdrs, parser->hdr_capacity * sizeof(**hdrs)));
   }
@@ -235,9 +235,9 @@ done:
   return error;
 }
 
-static grpc_error* finish_line(grpc_http_parser* parser,
-                               bool* found_body_start) {
-  grpc_error* err;
+static grpc_error_handle finish_line(grpc_http_parser* parser,
+                                     bool* found_body_start) {
+  grpc_error_handle err;
   switch (parser->state) {
     case GRPC_HTTP_FIRST_LINE:
       err = handle_first_line(parser);
@@ -264,7 +264,7 @@ static grpc_error* finish_line(grpc_http_parser* parser,
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error* addbyte_body(grpc_http_parser* parser, uint8_t byte) {
+static grpc_error_handle addbyte_body(grpc_http_parser* parser, uint8_t byte) {
   size_t* body_length = nullptr;
   char** body = nullptr;
 
@@ -280,7 +280,7 @@ static grpc_error* addbyte_body(grpc_http_parser* parser, uint8_t byte) {
   }
 
   if (*body_length == parser->body_capacity) {
-    parser->body_capacity = GPR_MAX(8, parser->body_capacity * 3 / 2);
+    parser->body_capacity = std::max(size_t(8), parser->body_capacity * 3 / 2);
     *body = static_cast<char*>(gpr_realloc(*body, parser->body_capacity));
   }
   (*body)[*body_length] = static_cast<char>(byte);
@@ -313,8 +313,8 @@ static bool check_line(grpc_http_parser* parser) {
   return false;
 }
 
-static grpc_error* addbyte(grpc_http_parser* parser, uint8_t byte,
-                           bool* found_body_start) {
+static grpc_error_handle addbyte(grpc_http_parser* parser, uint8_t byte,
+                                 bool* found_body_start) {
   switch (parser->state) {
     case GRPC_HTTP_FIRST_LINE:
     case GRPC_HTTP_HEADERS:
@@ -371,12 +371,12 @@ void grpc_http_response_destroy(grpc_http_response* response) {
   gpr_free(response->hdrs);
 }
 
-grpc_error* grpc_http_parser_parse(grpc_http_parser* parser,
-                                   const grpc_slice& slice,
-                                   size_t* start_of_body) {
+grpc_error_handle grpc_http_parser_parse(grpc_http_parser* parser,
+                                         const grpc_slice& slice,
+                                         size_t* start_of_body) {
   for (size_t i = 0; i < GRPC_SLICE_LENGTH(slice); i++) {
     bool found_body_start = false;
-    grpc_error* err =
+    grpc_error_handle err =
         addbyte(parser, GRPC_SLICE_START_PTR(slice)[i], &found_body_start);
     if (err != GRPC_ERROR_NONE) return err;
     if (found_body_start && start_of_body != nullptr) *start_of_body = i + 1;
@@ -384,7 +384,7 @@ grpc_error* grpc_http_parser_parse(grpc_http_parser* parser,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_http_parser_eof(grpc_http_parser* parser) {
+grpc_error_handle grpc_http_parser_eof(grpc_http_parser* parser) {
   if (parser->state != GRPC_HTTP_BODY) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Did not finish headers");
   }

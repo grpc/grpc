@@ -34,7 +34,7 @@ void ParseJson(const std::string& json, const std::string& type,
   auto status = JsonToBinaryString(
       type_resolver.get(), "type.googleapis.com/" + type, json, &binary);
   if (!status.ok()) {
-    std::string errmsg(status.error_message());
+    std::string errmsg(status.message());
     gpr_log(GPR_ERROR, "Failed to convert json to binary: errcode=%d msg=%s",
             status.code(), errmsg.c_str());
     gpr_log(GPR_ERROR, "JSON: %s", json.c_str());

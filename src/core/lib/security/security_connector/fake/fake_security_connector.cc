@@ -79,6 +79,11 @@ class grpc_fake_channel_security_connector final
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error_handle error) override {
+    GRPC_ERROR_UNREF(error);
+  }
+
   int cmp(const grpc_security_connector* other_sc) const override {
     auto* other =
         reinterpret_cast<const grpc_fake_channel_security_connector*>(other_sc);
@@ -87,12 +92,12 @@ class grpc_fake_channel_security_connector final
     c = strcmp(target_, other->target_);
     if (c != 0) return c;
     if (expected_targets_ == nullptr || other->expected_targets_ == nullptr) {
-      c = GPR_ICMP(expected_targets_, other->expected_targets_);
+      c = grpc_core::QsortCompare(expected_targets_, other->expected_targets_);
     } else {
       c = strcmp(expected_targets_, other->expected_targets_);
     }
     if (c != 0) return c;
-    return GPR_ICMP(is_lb_channel_, other->is_lb_channel_);
+    return grpc_core::QsortCompare(is_lb_channel_, other->is_lb_channel_);
   }
 
   void add_handshakers(const grpc_channel_args* args,
@@ -105,7 +110,7 @@ class grpc_fake_channel_security_connector final
   bool check_call_host(absl::string_view host,
                        grpc_auth_context* /*auth_context*/,
                        grpc_closure* /*on_call_host_checked*/,
-                       grpc_error** /*error*/) override {
+                       grpc_error_handle* /*error*/) override {
     absl::string_view authority_hostname;
     absl::string_view authority_ignored_port;
     absl::string_view target_hostname;
@@ -135,7 +140,7 @@ class grpc_fake_channel_security_connector final
   }
 
   void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
-                              grpc_error* error) override {
+                              grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 
@@ -214,7 +219,7 @@ static void fake_check_peer(
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   const char* prop_name;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   *auth_context = nullptr;
   if (peer.property_count != 2) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -224,10 +229,9 @@ static void fake_check_peer(
   prop_name = peer.properties[0].name;
   if (prop_name == nullptr ||
       strcmp(prop_name, TSI_CERTIFICATE_TYPE_PEER_PROPERTY) != 0) {
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("Unexpected property in fake peer: ",
-                     prop_name == nullptr ? "<EMPTY>" : prop_name)
-            .c_str());
+                     prop_name == nullptr ? "<EMPTY>" : prop_name));
     goto end;
   }
   if (strncmp(peer.properties[0].value.data, TSI_FAKE_CERTIFICATE_TYPE,
@@ -239,10 +243,9 @@ static void fake_check_peer(
   prop_name = peer.properties[1].name;
   if (prop_name == nullptr ||
       strcmp(prop_name, TSI_SECURITY_LEVEL_PEER_PROPERTY) != 0) {
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("Unexpected property in fake peer: ",
-                     prop_name == nullptr ? "<EMPTY>" : prop_name)
-            .c_str());
+                     prop_name == nullptr ? "<EMPTY>" : prop_name));
     goto end;
   }
   if (strncmp(peer.properties[1].value.data, TSI_FAKE_SECURITY_LEVEL,
@@ -285,6 +288,11 @@ class grpc_fake_server_security_connector
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     fake_check_peer(this, peer, auth_context, on_peer_checked);
+  }
+
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error_handle error) override {
+    GRPC_ERROR_UNREF(error);
   }
 
   void add_handshakers(const grpc_channel_args* args,

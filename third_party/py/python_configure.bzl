@@ -256,7 +256,7 @@ def _get_python_include(repository_ctx, python_bin):
             python_bin,
             "-c",
             "import os;" +
-            "main_header = os.path.join('{}', 'Python.h');".format(include_path) +
+            "main_header = os.path.join(r'{}', 'Python.h');".format(include_path) +
             "assert os.path.exists(main_header), main_header + ' does not exist.'",
         ],
         error_msg = "Unable to find Python headers for {}".format(python_bin),
@@ -348,7 +348,7 @@ def _python_autoconf_impl(repository_ctx):
         repository_ctx,
         "_python2",
         _PYTHON2_BIN_PATH,
-        "python",
+        "python2",
         _PYTHON2_LIB_PATH,
         True
     )

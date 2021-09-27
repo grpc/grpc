@@ -465,7 +465,7 @@ namespace Grpc.Core
                         //   when the framework attempts to run the finalizers for SafeHandle object representing the native
                         //   grpc objects. The finalizers calls the native grpc_*_destroy methods (e.g. grpc_server_destroy)
                         //   in a random order, which is not supported by gRPC.
-                        // - On Mono, the process would hang as the GrpcThreadPool threads are sleeping
+                        // - On Mono, the process would freeze as the GrpcThreadPool threads are sleeping
                         //   in grpc_completion_queue_next P/Invoke invocation and mono won't let the
                         //   process shutdown until the P/Invoke calls return. We achieve that by shutting down
                         //   the completion queue(s) which associated with the GrpcThreadPool, which will

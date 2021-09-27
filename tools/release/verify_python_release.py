@@ -30,8 +30,9 @@ import argparse
 import collections
 import hashlib
 import os
-import requests
 import sys
+
+import requests
 
 _DEFAULT_PACKAGES = [
     "grpcio",
@@ -41,6 +42,8 @@ _DEFAULT_PACKAGES = [
     "grpcio-reflection",
     "grpcio-channelz",
     "grpcio-testing",
+    "grpcio-admin",
+    "grpcio-csds",
 ]
 
 Artifact = collections.namedtuple("Artifact", ("filename", "checksum"))

@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CALLBACK_COMMON_H
 #define GRPCPP_IMPL_CODEGEN_CALLBACK_COMMON_H
 
+// IWYU pragma: private
+
 #include <functional>
 
 #include <grpc/impl/codegen/grpc_types.h>
@@ -66,8 +68,7 @@ Reactor* CatchingReactorGetter(Func&& func, Args&&... args) {
 // constructed and then fired at exactly one point. There is no expectation
 // that they can be reused without reconstruction.
 
-class CallbackWithStatusTag
-    : public grpc_experimental_completion_queue_functor {
+class CallbackWithStatusTag : public grpc_completion_queue_functor {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
@@ -108,8 +109,7 @@ class CallbackWithStatusTag
   CompletionQueueTag* ops_;
   Status status_;
 
-  static void StaticRun(grpc_experimental_completion_queue_functor* cb,
-                        int ok) {
+  static void StaticRun(grpc_completion_queue_functor* cb, int ok) {
     static_cast<CallbackWithStatusTag*>(cb)->Run(static_cast<bool>(ok));
   }
   void Run(bool ok) {
@@ -134,8 +134,7 @@ class CallbackWithStatusTag
 /// CallbackWithSuccessTag can be reused multiple times, and will be used in
 /// this fashion for streaming operations. As a result, it shouldn't clear
 /// anything up until its destructor
-class CallbackWithSuccessTag
-    : public grpc_experimental_completion_queue_functor {
+class CallbackWithSuccessTag : public grpc_completion_queue_functor {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
@@ -198,8 +197,7 @@ class CallbackWithSuccessTag
   std::function<void(bool)> func_;
   CompletionQueueTag* ops_;
 
-  static void StaticRun(grpc_experimental_completion_queue_functor* cb,
-                        int ok) {
+  static void StaticRun(grpc_completion_queue_functor* cb, int ok) {
     static_cast<CallbackWithSuccessTag*>(cb)->Run(static_cast<bool>(ok));
   }
   void Run(bool ok) {

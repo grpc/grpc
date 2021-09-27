@@ -18,6 +18,14 @@
 
 #include "test/cpp/util/grpc_tool.h"
 
+#include <chrono>
+#include <sstream>
+
+#include <gtest/gtest.h>
+
+#include "absl/flags/declare.h"
+#include "absl/flags/flag.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/channel.h>
@@ -27,13 +35,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
 
-#include <chrono>
-#include <sstream>
-
-#include "absl/flags/declare.h"
-#include "absl/flags/flag.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -42,6 +44,7 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/cli_credentials.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "test/cpp/util/test_config.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
@@ -62,7 +65,8 @@ using grpc::testing::EchoResponse;
   "RequestStream\n"               \
   "ResponseStream\n"              \
   "BidiStream\n"                  \
-  "Unimplemented\n"
+  "Unimplemented\n"               \
+  "UnimplementedBidi\n"
 
 #define ECHO_TEST_SERVICE_DESCRIPTION                                          \
   "filename: src/proto/grpc/testing/echo.proto\n"                              \
@@ -88,6 +92,8 @@ using grpc::testing::EchoResponse;
   "grpc.testing.EchoResponse) {}\n"                                            \
   "  rpc Unimplemented(grpc.testing.EchoRequest) returns "                     \
   "(grpc.testing.EchoResponse) {}\n"                                           \
+  "  rpc UnimplementedBidi(stream grpc.testing.EchoRequest) returns (stream "  \
+  "grpc.testing.EchoResponse) {}\n"                                            \
   "}\n"                                                                        \
   "\n"
 
@@ -150,7 +156,7 @@ class TestCliCredentials final : public grpc::testing::CliCredentials {
     grpc_slice_unref(ca_slice);
     return credential_ptr;
   }
-  const std::string GetCredentialUsage() const override { return ""; }
+  std::string GetCredentialUsage() const override { return ""; }
 
  private:
   const bool secure_;
@@ -284,7 +290,7 @@ class GrpcToolTest : public ::testing::Test {
   // SetUpServer cannot be used with EXPECT_EXIT. grpc_pick_unused_port_or_die()
   // uses atexit() to free chosen ports, and it will spawn a new thread in
   // resolve_address_posix.c:192 at exit time.
-  const std::string SetUpServer(bool secure = false) {
+  std::string SetUpServer(bool secure = false) {
     std::ostringstream server_address;
     int port = grpc_pick_unused_port_or_die();
     server_address << "localhost:" << port;
@@ -465,12 +471,12 @@ TEST_F(GrpcToolTest, ListOneMethod) {
 }
 
 TEST_F(GrpcToolTest, TypeNotFound) {
-  // Test input "grpc_cli type localhost:<port> grpc.testing.DummyRequest"
+  // Test input "grpc_cli type localhost:<port> grpc.testing.PhonyRequest"
   std::stringstream output_stream;
 
   const std::string server_address = SetUpServer();
   const char* argv[] = {"grpc_cli", "type", server_address.c_str(),
-                        "grpc.testing.DummyRequest"};
+                        "grpc.testing.PhonyRequest"};
 
   EXPECT_TRUE(1 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
@@ -1342,6 +1348,6 @@ TEST_F(GrpcToolTest, ConfiguringDefaultServiceConfig) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE("threadsafe");
   return RUN_ALL_TESTS();
 }

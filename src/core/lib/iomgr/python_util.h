@@ -23,13 +23,14 @@
 
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/status.h>
+
 #include "src/core/lib/iomgr/error.h"
 
 // These are only used by the gRPC Python extensions.
 // They are easier to define here (rather than in Cython)
 // because Cython doesn't handle #defines well.
 
-inline grpc_error* grpc_socket_error(char* error) {
+inline grpc_error_handle grpc_socket_error(char* error) {
   return grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error),
                             GRPC_ERROR_INT_GRPC_STATUS,
                             GRPC_STATUS_UNAVAILABLE);
@@ -43,4 +44,4 @@ inline int grpc_slice_buffer_length(grpc_slice_buffer* buffer, int i) {
   return GRPC_SLICE_LENGTH(buffer->slices[i]);
 }
 
-#endif
+#endif  // GRPC_CORE_LIB_IOMGR_PYTHON_UTIL_H

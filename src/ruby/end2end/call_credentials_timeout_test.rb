@@ -49,7 +49,29 @@ def create_server_creds
     true) # force client auth
 end
 
-# rubocop:disable Metrics/AbcSize
+def check_rpcs_still_possible(stub)
+  # Expect three more RPCs to succeed. Use a retry loop because the server
+  # thread pool might still be busy processing the previous round of RPCs.
+  3.times do
+    timeout_seconds = 30
+    deadline = Time.now + timeout_seconds
+    success = false
+    while Time.now < deadline
+      STDERR.puts 'now perform another RPC and expect OK...'
+      begin
+        stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 10)
+        success = true
+        break
+      rescue GRPC::BadStatus => e
+        STDERR.puts "RPC received status: #{e}. Try again..."
+      end
+    end
+    unless success
+      fail "failed to complete a successful RPC within #{timeout_seconds} seconds"
+    end
+  end
+end
+
 # rubocop:disable Metrics/MethodLength
 def main
   server_runner = ServerRunner.new(EchoServerImpl)
@@ -119,13 +141,7 @@ def main
   unless got_at_least_one_failure.value
     fail 'expected at least one of the initial RPCs to fail'
   end
-  # Expect three more RPCs to succeed
-  STDERR.puts 'now perform another RPC and expect OK...'
-  stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 10)
-  STDERR.puts 'now perform another RPC and expect OK...'
-  stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 10)
-  STDERR.puts 'now perform another RPC and expect OK...'
-  stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 10)
+  check_rpcs_still_possible(stub)
   jwt_aud_uri_extraction_success_count_mu.synchronize do
     if jwt_aud_uri_extraction_success_count.value < 4
       fail "Expected auth metadata plugin callback to be ran with the jwt_aud_uri

@@ -1,25 +1,12 @@
-Protocol Buffers/gRPC Integration Into .NET Build
+Protocol Buffers/gRPC Codegen Integration Into .NET Build
 =================================================
 
 With Grpc.Tools package version 1.17 we made it easier to compile .proto files
 in your project using the `dotnet build` command, Visual Studio, or command-line
 MSBuild. You need to configure the .csproj project according to the way you want
-to integrate Protocol Buffer files into your build. If you are upgrading an
-existing project, read through this list of common scenarios and decide if any
-one of them matches your approach. The protoc command line migration is
-explained near the end of this document; this migration may be the quickest but
-not the long-term solution.
+to integrate Protocol Buffer files into your build.
 
 There is also a Reference section at the end of the file.
-
-Reporting issues
-----------------
-
-First thing first, if you found a bug in this new build system, or have a
-scenario that is not easily covered, please open an [issue in the gRPC
-repository](https://github.com/grpc/grpc/issues), and **tag the user @kkm000**
-somewhere in the text (for example, include `/cc @kkm000` at end of the issue
-text) to seize his immediate attention.
 
 Common scenarios
 ----------------
@@ -48,35 +35,27 @@ is a meta-package, in turn referencing Grpc.Core and Google.Protobuf packages).
 It is **very important** to mark Grpc.Tools as a development-only dependency, so
 that the *users* of your library do not fetch the tools package:
 
-* "Classic" .csproj with `packages.config` (Visual Studio, Mono): This is
- handled automatically by NuGet. See the attribute added by Visual Studio to the
- [packages.config](../../examples/csharp/HelloworldLegacyCsproj/Greeter/packages.config#L6)
- file in the HelloworldLegacyCsproj/Greeter example.
-
-* "SDK" .csproj (Visual Studio, `dotnet new`): Add an attribute
+* "dotnet SDK" .csproj (Visual Studio, `dotnet new`): Add an attribute
  `PrivateAssets="All"` to the Grpc.Tools package reference. See an example in the
  [Greeter.csproj](../../examples/csharp/Helloworld/Greeter/Greeter.csproj#L10)
  example project in this repository. If adding a package reference in Visual
  Studio, edit the project file and add this attribute. [This is a bug in NuGet
  client](https://github.com/NuGet/Home/issues/4125).
 
+ * "Classic" .csproj with `packages.config` (Visual Studio, Mono): This is
+ handled automatically by NuGet. See the attribute added by Visual Studio to the
+ [packages.config](../../examples/csharp/HelloworldLegacyCsproj/Greeter/packages.config#L6)
+ file in the HelloworldLegacyCsproj/Greeter example.
+
 If building a NuGet package from your library with the nuget command line tool
 from a .nuspec file, then the spec file may (and probably should) reference the
-Grpc metapackage, but **do not add a reference to Grpc.Tools** to it. .NET "SDK"
+Grpc metapackage, but **do not add a reference to Grpc.Tools** to it. "dotnet SDK"
 projects handle this automatically when called from `dotnet pack` by excluding
 any packages with private assets, such as thus marked Grpc.Tools.
 
 #### Per-file options that can be set in Visual Studio
 
-For a "classic" project, you can only add .proto files with all options set to
-default (if you find it necessary to modify these options, then hand-edit the
-.csproj file). Click on the "show all files" button, add files to project, then
-change file type of the .proto files to "Protobuf" in the Properties window
-drop-down. This menu item will appear after you import the Grpc.Tools package:
-
-![Properties in a classic project](doc/integration.md-fig.1-classic.png)
-
-For an "SDK" project, you have more control of some frequently used options.
+For a "dotnet SDK" project, you have more control of some frequently used options.
 **You may need to open and close Visual Studio** for this form to appear in the
 properties window after adding a reference to Grpc.Tools package (we do not know
 whether this is a bug or by design, but it looks like a bug):
@@ -85,6 +64,14 @@ whether this is a bug or by design, but it looks like a bug):
 
 You can also change options of multiple files at once by selecting them in the
 Project Explorer together.
+
+For a "classic" project, you can only add .proto files with all options set to
+default (if you find it necessary to modify these options, then hand-edit the
+.csproj file). Click on the "show all files" button, add files to project, then
+change file type of the .proto files to "Protobuf" in the Properties window
+drop-down. This menu item will appear after you import the Grpc.Tools package:
+
+![Properties in a classic project](doc/integration.md-fig.1-classic.png)
 
 See the Reference section at end of this file for options that can be set
 per-file by modifying the source .csproj directly.
@@ -104,6 +91,39 @@ Add Files dialog, there is a little [down arrow near the Open
 button](https://stackoverflow.com/a/9770061). Click on it, and choose "Add as
 link". If you do not select this option, Visual Studio will copy files to the
 project directory instead.
+
+#### My .proto files have same filename in different folders
+
+Starting from Grpc.Tools version 2.31, protocol buffers compilation preserves original folder structure for generated files. Eg.
+
+- `../ProjectFolder/Protos/v2/http.proto`
+- `../ProjectFolder/Protos/v3/http.proto`
+
+Will result in:
+
+- `../ProjectFolder/obj/CONFIGURATION/FRAMEWORK/Protos/v2/Greet.cs`
+- `../ProjectFolder/obj/CONFIGURATION/FRAMEWORK/Protos/v2/GreetGrpc.cs`
+- `../ProjectFolder/obj/CONFIGURATION/FRAMEWORK/Protos/v3/Greet.cs`
+- `../ProjectFolder/obj/CONFIGURATION/FRAMEWORK/Protos/v3/GreetGrpc.cs`
+
+This feature resolves problems we have faced in large projects. Moreover, There is now also a project-wide new option Protobuf_ProtoRoot to define the fallback ProtoRoot. If the ProtoRoot is set, this also reduces the amount of problems that lead to duplicates. Eg.
+
+```xml
+  <ItemGroup>
+    <Protobuf Include="Protos\v2\greet.proto" ProtoRoot="Protos" />
+  </ItemGroup>
+```
+
+Before Grpc.Tools version 2.31 all .proto files were compiled into `obj` directory, flattening relative paths. For proto files with duplicated names it cause following errors `NETSDK1022 Duplicate 'Compile' items were included. [...]` or `MSB3105 [...] Duplicate items are not supported by the "Sources" parameter`. The workaround for this problem was introducing relative paths in your `obj` folder, by manipulating output path. Eg. 
+
+```xml
+  <ItemGroup>
+    <Protobuf Include="Protos/v2/http.proto" OutputDir="$(Protobuf_OutputPath)%(RelativeDir)"  />
+    <Protobuf Include="Protos/v3/http.proto" OutputDir="$(Protobuf_OutputPath)%(RelativeDir)"  />
+  </ItemGroup>
+```
+
+__Note, this was a workaround approach, we recommend updating Grpc.Tools to the latest version.__
 
 ### I just want to generate proto and gRPC C# sources from my .proto files (no C# compile)
 
@@ -323,14 +343,16 @@ The following metadata are recognized on the `<Protobuf>` items.
 
 | Name           | Default   | Value                | Synopsis                         |
 |----------------|-----------|----------------------|----------------------------------|
-| Access         | `public`  | `public`, `internal` | Generated class access           |
-| ProtoCompile   | `true`    | `true`, `false`      | Pass files to protoc?            |
-| ProtoRoot      | See notes | A directory          | Common root for set of files     |
-| CompileOutputs | `true`    | `true`, `false`      | C#-compile generated files?      |
-| OutputDir      | See notes | A directory          | Directory for generated C# files |
-| GrpcOutputDir  | See notes | A directory          | Directory for generated stubs    |
-| GrpcServices   | `both`    | `none`, `client`,    | Generated gRPC stubs             |
-|                |           | `server`, `both`     |                                  |
+| Access         | `public`  | `public`, `internal`               | Generated class access           |
+| AdditionalProtocArguments | | arbitrary cmdline arguments | Extra command line flags passed to `protoc` command |
+| ProtoCompile   | `true`    | `true`, `false`                    | Pass files to protoc?            |
+| ProtoRoot      | See notes | A directory                        | Common root for set of files     |
+| CompileOutputs | `true`    | `true`, `false`                    | C#-compile generated files?      |
+| OutputDir      | See notes | A directory                        | Directory for generated C# files with protobuf messages |
+| OutputOptions  | | arbitrary options                  | Extra options passed to C# codegen as `--csharp_opt=opt1,opt2` |
+| GrpcOutputDir  | See notes | A directory                        | Directory for generated gRPC stubs    |
+| GrpcOutputOptions | | arbitrary options                  | Extra options passed to gRPC codegen as `--grpc_opt=opt1,opt2` |
+| GrpcServices   | `both`    | `none`, `client`, `server`, `both` | Generated gRPC stubs             |
 
 __Notes__
 
@@ -356,6 +378,18 @@ Unless explicitly set, will follow `OutputDir` for any given file.
 * __Access__  
 Sets generated class access on _both_ generated message and gRPC stub classes.
 
+* __AdditionalProtocArguments__ 
+Pass additional commandline arguments to the `protoc` command being invoked.
+Normally this option should not be used, but it exists for scenarios when you need to pass
+otherwise unsupported (e.g. experimental) flags to protocol buffer compiler.
+
+* __GrpcOutputOptions__ 
+Pass additional options to the `grpc_csharp_plugin` in form of the `--grpc_opt` flag.
+Normally this option should not be used as it's values are already controlled by "Access"
+and "GrpcServices" metadata, but it might be useful in situations where you want
+to explicitly pass some otherwise unsupported (e.g. experimental) options to the
+`grpc_csharp_plugin`.
+
 `grpc_csharp_plugin` command line options
 ---------
 
@@ -367,7 +401,6 @@ to perform code generation. Here is an overview of the available `grpc_csharp_pl
 | no_client       | off       | Don't generate the client stub                           |
 | no_server       | off       | Don't generate the server-side stub                      |
 | internal_access | off       | Generate classes with "internal" visibility              |
-| lite_client     | off       | Generate client stubs that inherit from "LiteClientBase" |
 
 Note that the protocol buffer compiler has a special commandline syntax for plugin options.
 Example:

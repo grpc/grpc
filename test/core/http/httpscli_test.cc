@@ -16,8 +16,6 @@
  *
  */
 
-#include "src/core/lib/http/httpcli.h"
-
 #include <string.h>
 
 #include <grpc/grpc.h>
@@ -28,6 +26,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/util/port.h"
@@ -44,14 +43,14 @@ static grpc_millis n_seconds_time(int seconds) {
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
-static void on_finish(void* arg, grpc_error* error) {
+static void on_finish(void* arg, grpc_error_handle error) {
   const char* expect =
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
   grpc_http_response* response = static_cast<grpc_http_response*>(arg);
   GPR_ASSERT(response);
   gpr_log(GPR_INFO, "response status=%d error=%s", response->status,
-          grpc_error_string(error));
+          grpc_error_std_string(error).c_str());
   GPR_ASSERT(response->status == 200);
   GPR_ASSERT(response->body_length == strlen(expect));
   GPR_ASSERT(0 == memcmp(expect, response->body, response->body_length));
@@ -87,7 +86,6 @@ static void test_get(int port) {
       &g_context, &g_pops, resource_quota, &req, n_seconds_time(15),
       GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
       &response);
-  grpc_resource_quota_unref_internal(resource_quota);
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker* worker = nullptr;
@@ -127,7 +125,6 @@ static void test_post(int port) {
       &g_context, &g_pops, resource_quota, &req, "hello", 5, n_seconds_time(15),
       GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
       &response);
-  grpc_resource_quota_unref_internal(resource_quota);
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker* worker = nullptr;
@@ -143,7 +140,7 @@ static void test_post(int port) {
   grpc_http_response_destroy(&response);
 }
 
-static void destroy_pops(void* p, grpc_error* /*error*/) {
+static void destroy_pops(void* p, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(
       grpc_polling_entity_pollset(static_cast<grpc_polling_entity*>(p)));
 }

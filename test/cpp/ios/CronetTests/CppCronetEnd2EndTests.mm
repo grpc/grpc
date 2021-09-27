@@ -574,11 +574,11 @@ using grpc::ClientContext;
 }
 
 - (void)testClientInterceptor {
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>> creators;
-  // Add 20 dummy interceptors
+  // Add 20 phony interceptors
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(new DummyInterceptorFactory()));
+    creators.push_back(std::unique_ptr<PhonyInterceptorFactory>(new PhonyInterceptorFactory()));
   }
   auto channel = [self getChannelWithInterceptors:std::move(creators)];
   auto stub = EchoTestService::NewStub(channel);
@@ -589,7 +589,7 @@ using grpc::ClientContext;
   request.set_message("Hello");
   Status s = stub->Echo(&context, request, &response);
   XCTAssertTrue(s.ok());
-  XCTAssertEqual(DummyInterceptor::GetNumTimesRun(), 20);
+  XCTAssertEqual(PhonyInterceptor::GetNumTimesRun(), 20);
 }
 
 @end

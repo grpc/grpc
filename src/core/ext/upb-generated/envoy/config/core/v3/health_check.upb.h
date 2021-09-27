@@ -9,7 +9,7 @@
 #ifndef ENVOY_CONFIG_CORE_V3_HEALTH_CHECK_PROTO_UPB_H_
 #define ENVOY_CONFIG_CORE_V3_HEALTH_CHECK_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -81,13 +81,19 @@ UPB_INLINE envoy_config_core_v3_HealthCheck *envoy_config_core_v3_HealthCheck_ne
 UPB_INLINE envoy_config_core_v3_HealthCheck *envoy_config_core_v3_HealthCheck_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_core_v3_HealthCheck *ret = envoy_config_core_v3_HealthCheck_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_core_v3_HealthCheck *envoy_config_core_v3_HealthCheck_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_core_v3_HealthCheck *ret = envoy_config_core_v3_HealthCheck_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_core_v3_HealthCheck_serialize(const envoy_config_core_v3_HealthCheck *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_core_v3_HealthCheck_msginit, arena, len);
@@ -100,7 +106,7 @@ typedef enum {
   envoy_config_core_v3_HealthCheck_health_checker_custom_health_check = 13,
   envoy_config_core_v3_HealthCheck_health_checker_NOT_SET = 0
 } envoy_config_core_v3_HealthCheck_health_checker_oneofcases;
-UPB_INLINE envoy_config_core_v3_HealthCheck_health_checker_oneofcases envoy_config_core_v3_HealthCheck_health_checker_case(const envoy_config_core_v3_HealthCheck* msg) { return (envoy_config_core_v3_HealthCheck_health_checker_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(84, 160), int32_t); }
+UPB_INLINE envoy_config_core_v3_HealthCheck_health_checker_oneofcases envoy_config_core_v3_HealthCheck_health_checker_case(const envoy_config_core_v3_HealthCheck* msg) { return (envoy_config_core_v3_HealthCheck_health_checker_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(88, 168), int32_t); }
 
 UPB_INLINE bool envoy_config_core_v3_HealthCheck_has_timeout(const envoy_config_core_v3_HealthCheck *msg) { return _upb_hasbit(msg, 1); }
 UPB_INLINE const struct google_protobuf_Duration* envoy_config_core_v3_HealthCheck_timeout(const envoy_config_core_v3_HealthCheck *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 32), const struct google_protobuf_Duration*); }
@@ -116,16 +122,16 @@ UPB_INLINE bool envoy_config_core_v3_HealthCheck_has_alt_port(const envoy_config
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_core_v3_HealthCheck_alt_port(const envoy_config_core_v3_HealthCheck *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(40, 72), const struct google_protobuf_UInt32Value*); }
 UPB_INLINE bool envoy_config_core_v3_HealthCheck_has_reuse_connection(const envoy_config_core_v3_HealthCheck *msg) { return _upb_hasbit(msg, 7); }
 UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_core_v3_HealthCheck_reuse_connection(const envoy_config_core_v3_HealthCheck *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(44, 80), const struct google_protobuf_BoolValue*); }
-UPB_INLINE bool envoy_config_core_v3_HealthCheck_has_http_health_check(const envoy_config_core_v3_HealthCheck *msg) { return _upb_getoneofcase(msg, UPB_SIZE(84, 160)) == 8; }
-UPB_INLINE const envoy_config_core_v3_HealthCheck_HttpHealthCheck* envoy_config_core_v3_HealthCheck_http_health_check(const envoy_config_core_v3_HealthCheck *msg) { return UPB_READ_ONEOF(msg, const envoy_config_core_v3_HealthCheck_HttpHealthCheck*, UPB_SIZE(80, 152), UPB_SIZE(84, 160), 8, NULL); }
-UPB_INLINE bool envoy_config_core_v3_HealthCheck_has_tcp_health_check(const envoy_config_core_v3_HealthCheck *msg) { return _upb_getoneofcase(msg, UPB_SIZE(84, 160)) == 9; }
-UPB_INLINE const envoy_config_core_v3_HealthCheck_TcpHealthCheck* envoy_config_core_v3_HealthCheck_tcp_health_check(const envoy_config_core_v3_HealthCheck *msg) { return UPB_READ_ONEOF(msg, const envoy_config_core_v3_HealthCheck_TcpHealthCheck*, UPB_SIZE(80, 152), UPB_SIZE(84, 160), 9, NULL); }
-UPB_INLINE bool envoy_config_core_v3_HealthCheck_has_grpc_health_check(const envoy_config_core_v3_HealthCheck *msg) { return _upb_getoneofcase(msg, UPB_SIZE(84, 160)) == 11; }
-UPB_INLINE const envoy_config_core_v3_HealthCheck_GrpcHealthCheck* envoy_config_core_v3_HealthCheck_grpc_health_check(const envoy_config_core_v3_HealthCheck *msg) { return UPB_READ_ONEOF(msg, const envoy_config_core_v3_HealthCheck_GrpcHealthCheck*, UPB_SIZE(80, 152), UPB_SIZE(84, 160), 11, NULL); }
+UPB_INLINE bool envoy_config_core_v3_HealthCheck_has_http_health_check(const envoy_config_core_v3_HealthCheck *msg) { return _upb_getoneofcase(msg, UPB_SIZE(88, 168)) == 8; }
+UPB_INLINE const envoy_config_core_v3_HealthCheck_HttpHealthCheck* envoy_config_core_v3_HealthCheck_http_health_check(const envoy_config_core_v3_HealthCheck *msg) { return UPB_READ_ONEOF(msg, const envoy_config_core_v3_HealthCheck_HttpHealthCheck*, UPB_SIZE(84, 160), UPB_SIZE(88, 168), 8, NULL); }
+UPB_INLINE bool envoy_config_core_v3_HealthCheck_has_tcp_health_check(const envoy_config_core_v3_HealthCheck *msg) { return _upb_getoneofcase(msg, UPB_SIZE(88, 168)) == 9; }
+UPB_INLINE const envoy_config_core_v3_HealthCheck_TcpHealthCheck* envoy_config_core_v3_HealthCheck_tcp_health_check(const envoy_config_core_v3_HealthCheck *msg) { return UPB_READ_ONEOF(msg, const envoy_config_core_v3_HealthCheck_TcpHealthCheck*, UPB_SIZE(84, 160), UPB_SIZE(88, 168), 9, NULL); }
+UPB_INLINE bool envoy_config_core_v3_HealthCheck_has_grpc_health_check(const envoy_config_core_v3_HealthCheck *msg) { return _upb_getoneofcase(msg, UPB_SIZE(88, 168)) == 11; }
+UPB_INLINE const envoy_config_core_v3_HealthCheck_GrpcHealthCheck* envoy_config_core_v3_HealthCheck_grpc_health_check(const envoy_config_core_v3_HealthCheck *msg) { return UPB_READ_ONEOF(msg, const envoy_config_core_v3_HealthCheck_GrpcHealthCheck*, UPB_SIZE(84, 160), UPB_SIZE(88, 168), 11, NULL); }
 UPB_INLINE bool envoy_config_core_v3_HealthCheck_has_no_traffic_interval(const envoy_config_core_v3_HealthCheck *msg) { return _upb_hasbit(msg, 8); }
 UPB_INLINE const struct google_protobuf_Duration* envoy_config_core_v3_HealthCheck_no_traffic_interval(const envoy_config_core_v3_HealthCheck *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(48, 88), const struct google_protobuf_Duration*); }
-UPB_INLINE bool envoy_config_core_v3_HealthCheck_has_custom_health_check(const envoy_config_core_v3_HealthCheck *msg) { return _upb_getoneofcase(msg, UPB_SIZE(84, 160)) == 13; }
-UPB_INLINE const envoy_config_core_v3_HealthCheck_CustomHealthCheck* envoy_config_core_v3_HealthCheck_custom_health_check(const envoy_config_core_v3_HealthCheck *msg) { return UPB_READ_ONEOF(msg, const envoy_config_core_v3_HealthCheck_CustomHealthCheck*, UPB_SIZE(80, 152), UPB_SIZE(84, 160), 13, NULL); }
+UPB_INLINE bool envoy_config_core_v3_HealthCheck_has_custom_health_check(const envoy_config_core_v3_HealthCheck *msg) { return _upb_getoneofcase(msg, UPB_SIZE(88, 168)) == 13; }
+UPB_INLINE const envoy_config_core_v3_HealthCheck_CustomHealthCheck* envoy_config_core_v3_HealthCheck_custom_health_check(const envoy_config_core_v3_HealthCheck *msg) { return UPB_READ_ONEOF(msg, const envoy_config_core_v3_HealthCheck_CustomHealthCheck*, UPB_SIZE(84, 160), UPB_SIZE(88, 168), 13, NULL); }
 UPB_INLINE bool envoy_config_core_v3_HealthCheck_has_unhealthy_interval(const envoy_config_core_v3_HealthCheck *msg) { return _upb_hasbit(msg, 9); }
 UPB_INLINE const struct google_protobuf_Duration* envoy_config_core_v3_HealthCheck_unhealthy_interval(const envoy_config_core_v3_HealthCheck *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(52, 96), const struct google_protobuf_Duration*); }
 UPB_INLINE bool envoy_config_core_v3_HealthCheck_has_unhealthy_edge_interval(const envoy_config_core_v3_HealthCheck *msg) { return _upb_hasbit(msg, 10); }
@@ -143,6 +149,8 @@ UPB_INLINE bool envoy_config_core_v3_HealthCheck_has_event_service(const envoy_c
 UPB_INLINE const struct envoy_config_core_v3_EventServiceConfig* envoy_config_core_v3_HealthCheck_event_service(const envoy_config_core_v3_HealthCheck *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(72, 136), const struct envoy_config_core_v3_EventServiceConfig*); }
 UPB_INLINE bool envoy_config_core_v3_HealthCheck_has_transport_socket_match_criteria(const envoy_config_core_v3_HealthCheck *msg) { return _upb_hasbit(msg, 15); }
 UPB_INLINE const struct google_protobuf_Struct* envoy_config_core_v3_HealthCheck_transport_socket_match_criteria(const envoy_config_core_v3_HealthCheck *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(76, 144), const struct google_protobuf_Struct*); }
+UPB_INLINE bool envoy_config_core_v3_HealthCheck_has_no_traffic_healthy_interval(const envoy_config_core_v3_HealthCheck *msg) { return _upb_hasbit(msg, 16); }
+UPB_INLINE const struct google_protobuf_Duration* envoy_config_core_v3_HealthCheck_no_traffic_healthy_interval(const envoy_config_core_v3_HealthCheck *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(80, 152), const struct google_protobuf_Duration*); }
 
 UPB_INLINE void envoy_config_core_v3_HealthCheck_set_timeout(envoy_config_core_v3_HealthCheck *msg, struct google_protobuf_Duration* value) {
   _upb_sethas(msg, 1);
@@ -236,7 +244,7 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_config_core_v3_HealthCheck_mu
   return sub;
 }
 UPB_INLINE void envoy_config_core_v3_HealthCheck_set_http_health_check(envoy_config_core_v3_HealthCheck *msg, envoy_config_core_v3_HealthCheck_HttpHealthCheck* value) {
-  UPB_WRITE_ONEOF(msg, envoy_config_core_v3_HealthCheck_HttpHealthCheck*, UPB_SIZE(80, 152), value, UPB_SIZE(84, 160), 8);
+  UPB_WRITE_ONEOF(msg, envoy_config_core_v3_HealthCheck_HttpHealthCheck*, UPB_SIZE(84, 160), value, UPB_SIZE(88, 168), 8);
 }
 UPB_INLINE struct envoy_config_core_v3_HealthCheck_HttpHealthCheck* envoy_config_core_v3_HealthCheck_mutable_http_health_check(envoy_config_core_v3_HealthCheck *msg, upb_arena *arena) {
   struct envoy_config_core_v3_HealthCheck_HttpHealthCheck* sub = (struct envoy_config_core_v3_HealthCheck_HttpHealthCheck*)envoy_config_core_v3_HealthCheck_http_health_check(msg);
@@ -248,7 +256,7 @@ UPB_INLINE struct envoy_config_core_v3_HealthCheck_HttpHealthCheck* envoy_config
   return sub;
 }
 UPB_INLINE void envoy_config_core_v3_HealthCheck_set_tcp_health_check(envoy_config_core_v3_HealthCheck *msg, envoy_config_core_v3_HealthCheck_TcpHealthCheck* value) {
-  UPB_WRITE_ONEOF(msg, envoy_config_core_v3_HealthCheck_TcpHealthCheck*, UPB_SIZE(80, 152), value, UPB_SIZE(84, 160), 9);
+  UPB_WRITE_ONEOF(msg, envoy_config_core_v3_HealthCheck_TcpHealthCheck*, UPB_SIZE(84, 160), value, UPB_SIZE(88, 168), 9);
 }
 UPB_INLINE struct envoy_config_core_v3_HealthCheck_TcpHealthCheck* envoy_config_core_v3_HealthCheck_mutable_tcp_health_check(envoy_config_core_v3_HealthCheck *msg, upb_arena *arena) {
   struct envoy_config_core_v3_HealthCheck_TcpHealthCheck* sub = (struct envoy_config_core_v3_HealthCheck_TcpHealthCheck*)envoy_config_core_v3_HealthCheck_tcp_health_check(msg);
@@ -260,7 +268,7 @@ UPB_INLINE struct envoy_config_core_v3_HealthCheck_TcpHealthCheck* envoy_config_
   return sub;
 }
 UPB_INLINE void envoy_config_core_v3_HealthCheck_set_grpc_health_check(envoy_config_core_v3_HealthCheck *msg, envoy_config_core_v3_HealthCheck_GrpcHealthCheck* value) {
-  UPB_WRITE_ONEOF(msg, envoy_config_core_v3_HealthCheck_GrpcHealthCheck*, UPB_SIZE(80, 152), value, UPB_SIZE(84, 160), 11);
+  UPB_WRITE_ONEOF(msg, envoy_config_core_v3_HealthCheck_GrpcHealthCheck*, UPB_SIZE(84, 160), value, UPB_SIZE(88, 168), 11);
 }
 UPB_INLINE struct envoy_config_core_v3_HealthCheck_GrpcHealthCheck* envoy_config_core_v3_HealthCheck_mutable_grpc_health_check(envoy_config_core_v3_HealthCheck *msg, upb_arena *arena) {
   struct envoy_config_core_v3_HealthCheck_GrpcHealthCheck* sub = (struct envoy_config_core_v3_HealthCheck_GrpcHealthCheck*)envoy_config_core_v3_HealthCheck_grpc_health_check(msg);
@@ -285,7 +293,7 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_core_v3_HealthCheck_mut
   return sub;
 }
 UPB_INLINE void envoy_config_core_v3_HealthCheck_set_custom_health_check(envoy_config_core_v3_HealthCheck *msg, envoy_config_core_v3_HealthCheck_CustomHealthCheck* value) {
-  UPB_WRITE_ONEOF(msg, envoy_config_core_v3_HealthCheck_CustomHealthCheck*, UPB_SIZE(80, 152), value, UPB_SIZE(84, 160), 13);
+  UPB_WRITE_ONEOF(msg, envoy_config_core_v3_HealthCheck_CustomHealthCheck*, UPB_SIZE(84, 160), value, UPB_SIZE(88, 168), 13);
 }
 UPB_INLINE struct envoy_config_core_v3_HealthCheck_CustomHealthCheck* envoy_config_core_v3_HealthCheck_mutable_custom_health_check(envoy_config_core_v3_HealthCheck *msg, upb_arena *arena) {
   struct envoy_config_core_v3_HealthCheck_CustomHealthCheck* sub = (struct envoy_config_core_v3_HealthCheck_CustomHealthCheck*)envoy_config_core_v3_HealthCheck_custom_health_check(msg);
@@ -396,6 +404,19 @@ UPB_INLINE struct google_protobuf_Struct* envoy_config_core_v3_HealthCheck_mutab
   }
   return sub;
 }
+UPB_INLINE void envoy_config_core_v3_HealthCheck_set_no_traffic_healthy_interval(envoy_config_core_v3_HealthCheck *msg, struct google_protobuf_Duration* value) {
+  _upb_sethas(msg, 16);
+  *UPB_PTR_AT(msg, UPB_SIZE(80, 152), struct google_protobuf_Duration*) = value;
+}
+UPB_INLINE struct google_protobuf_Duration* envoy_config_core_v3_HealthCheck_mutable_no_traffic_healthy_interval(envoy_config_core_v3_HealthCheck *msg, upb_arena *arena) {
+  struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_config_core_v3_HealthCheck_no_traffic_healthy_interval(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_Duration*)_upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_core_v3_HealthCheck_set_no_traffic_healthy_interval(msg, sub);
+  }
+  return sub;
+}
 
 /* envoy.config.core.v3.HealthCheck.Payload */
 
@@ -405,13 +426,19 @@ UPB_INLINE envoy_config_core_v3_HealthCheck_Payload *envoy_config_core_v3_Health
 UPB_INLINE envoy_config_core_v3_HealthCheck_Payload *envoy_config_core_v3_HealthCheck_Payload_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_core_v3_HealthCheck_Payload *ret = envoy_config_core_v3_HealthCheck_Payload_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_Payload_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_Payload_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_core_v3_HealthCheck_Payload *envoy_config_core_v3_HealthCheck_Payload_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_core_v3_HealthCheck_Payload *ret = envoy_config_core_v3_HealthCheck_Payload_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_Payload_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_Payload_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_core_v3_HealthCheck_Payload_serialize(const envoy_config_core_v3_HealthCheck_Payload *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_core_v3_HealthCheck_Payload_msginit, arena, len);
@@ -444,13 +471,19 @@ UPB_INLINE envoy_config_core_v3_HealthCheck_HttpHealthCheck *envoy_config_core_v
 UPB_INLINE envoy_config_core_v3_HealthCheck_HttpHealthCheck *envoy_config_core_v3_HealthCheck_HttpHealthCheck_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_core_v3_HealthCheck_HttpHealthCheck *ret = envoy_config_core_v3_HealthCheck_HttpHealthCheck_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_HttpHealthCheck_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_HttpHealthCheck_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_core_v3_HealthCheck_HttpHealthCheck *envoy_config_core_v3_HealthCheck_HttpHealthCheck_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_core_v3_HealthCheck_HttpHealthCheck *ret = envoy_config_core_v3_HealthCheck_HttpHealthCheck_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_HttpHealthCheck_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_HttpHealthCheck_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_core_v3_HealthCheck_HttpHealthCheck_serialize(const envoy_config_core_v3_HealthCheck_HttpHealthCheck *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_core_v3_HealthCheck_HttpHealthCheck_msginit, arena, len);
@@ -564,13 +597,19 @@ UPB_INLINE envoy_config_core_v3_HealthCheck_TcpHealthCheck *envoy_config_core_v3
 UPB_INLINE envoy_config_core_v3_HealthCheck_TcpHealthCheck *envoy_config_core_v3_HealthCheck_TcpHealthCheck_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_core_v3_HealthCheck_TcpHealthCheck *ret = envoy_config_core_v3_HealthCheck_TcpHealthCheck_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_TcpHealthCheck_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_TcpHealthCheck_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_core_v3_HealthCheck_TcpHealthCheck *envoy_config_core_v3_HealthCheck_TcpHealthCheck_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_core_v3_HealthCheck_TcpHealthCheck *ret = envoy_config_core_v3_HealthCheck_TcpHealthCheck_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_TcpHealthCheck_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_TcpHealthCheck_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_core_v3_HealthCheck_TcpHealthCheck_serialize(const envoy_config_core_v3_HealthCheck_TcpHealthCheck *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_core_v3_HealthCheck_TcpHealthCheck_msginit, arena, len);
@@ -616,13 +655,19 @@ UPB_INLINE envoy_config_core_v3_HealthCheck_RedisHealthCheck *envoy_config_core_
 UPB_INLINE envoy_config_core_v3_HealthCheck_RedisHealthCheck *envoy_config_core_v3_HealthCheck_RedisHealthCheck_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_core_v3_HealthCheck_RedisHealthCheck *ret = envoy_config_core_v3_HealthCheck_RedisHealthCheck_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_RedisHealthCheck_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_RedisHealthCheck_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_core_v3_HealthCheck_RedisHealthCheck *envoy_config_core_v3_HealthCheck_RedisHealthCheck_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_core_v3_HealthCheck_RedisHealthCheck *ret = envoy_config_core_v3_HealthCheck_RedisHealthCheck_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_RedisHealthCheck_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_RedisHealthCheck_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_core_v3_HealthCheck_RedisHealthCheck_serialize(const envoy_config_core_v3_HealthCheck_RedisHealthCheck *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_core_v3_HealthCheck_RedisHealthCheck_msginit, arena, len);
@@ -642,13 +687,19 @@ UPB_INLINE envoy_config_core_v3_HealthCheck_GrpcHealthCheck *envoy_config_core_v
 UPB_INLINE envoy_config_core_v3_HealthCheck_GrpcHealthCheck *envoy_config_core_v3_HealthCheck_GrpcHealthCheck_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_core_v3_HealthCheck_GrpcHealthCheck *ret = envoy_config_core_v3_HealthCheck_GrpcHealthCheck_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_GrpcHealthCheck_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_GrpcHealthCheck_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_core_v3_HealthCheck_GrpcHealthCheck *envoy_config_core_v3_HealthCheck_GrpcHealthCheck_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_core_v3_HealthCheck_GrpcHealthCheck *ret = envoy_config_core_v3_HealthCheck_GrpcHealthCheck_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_GrpcHealthCheck_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_GrpcHealthCheck_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_core_v3_HealthCheck_GrpcHealthCheck_serialize(const envoy_config_core_v3_HealthCheck_GrpcHealthCheck *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_core_v3_HealthCheck_GrpcHealthCheck_msginit, arena, len);
@@ -672,13 +723,19 @@ UPB_INLINE envoy_config_core_v3_HealthCheck_CustomHealthCheck *envoy_config_core
 UPB_INLINE envoy_config_core_v3_HealthCheck_CustomHealthCheck *envoy_config_core_v3_HealthCheck_CustomHealthCheck_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_core_v3_HealthCheck_CustomHealthCheck *ret = envoy_config_core_v3_HealthCheck_CustomHealthCheck_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_CustomHealthCheck_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_CustomHealthCheck_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_core_v3_HealthCheck_CustomHealthCheck *envoy_config_core_v3_HealthCheck_CustomHealthCheck_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_core_v3_HealthCheck_CustomHealthCheck *ret = envoy_config_core_v3_HealthCheck_CustomHealthCheck_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_CustomHealthCheck_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_CustomHealthCheck_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_core_v3_HealthCheck_CustomHealthCheck_serialize(const envoy_config_core_v3_HealthCheck_CustomHealthCheck *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_core_v3_HealthCheck_CustomHealthCheck_msginit, arena, len);
@@ -718,13 +775,19 @@ UPB_INLINE envoy_config_core_v3_HealthCheck_TlsOptions *envoy_config_core_v3_Hea
 UPB_INLINE envoy_config_core_v3_HealthCheck_TlsOptions *envoy_config_core_v3_HealthCheck_TlsOptions_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_core_v3_HealthCheck_TlsOptions *ret = envoy_config_core_v3_HealthCheck_TlsOptions_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_TlsOptions_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_TlsOptions_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_core_v3_HealthCheck_TlsOptions *envoy_config_core_v3_HealthCheck_TlsOptions_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_core_v3_HealthCheck_TlsOptions *ret = envoy_config_core_v3_HealthCheck_TlsOptions_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_TlsOptions_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_core_v3_HealthCheck_TlsOptions_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_core_v3_HealthCheck_TlsOptions_serialize(const envoy_config_core_v3_HealthCheck_TlsOptions *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_core_v3_HealthCheck_TlsOptions_msginit, arena, len);
