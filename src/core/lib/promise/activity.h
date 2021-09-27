@@ -281,7 +281,7 @@ class EnterContexts : public promise_detail::Context<Contexts>... {
 // There should exist a static function:
 // struct WakeupScheduler {
 //   template <typename ActivityType>
-//   static void ScheduleWakeup(WakeupScheduler*, ActivityType* activity);
+//   void ScheduleWakeup(ActivityType* activity);
 // };
 // This function should arrange that activity->RunScheduledWakeup() be invoked
 // at the earliest opportunity.
@@ -479,25 +479,6 @@ ActivityPtr MakeActivity(Factory promise_factory,
           std::move(promise_factory), std::move(wakeup_scheduler),
           std::move(on_done), std::move(contexts)...));
 }
-
-// A wakeup scheduler that simply crashes.
-// Useful for very limited tests.
-struct NoWakeupScheduler {
-  template <typename ActivityType>
-  void ScheduleWakeup(ActivityType*) {
-    abort();
-  }
-};
-
-// A wakeup scheduler that simply runs the callback immediately.
-// Useful for unit testing, probably not so much for real systems due to lock
-// ordering problems.
-struct InlineWakeupScheduler {
-  template <typename ActivityType>
-  void ScheduleWakeup(ActivityType* activity) {
-    activity->RunScheduledWakeup();
-  }
-};
 
 }  // namespace grpc_core
 

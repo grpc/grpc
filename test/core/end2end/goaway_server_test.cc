@@ -123,6 +123,7 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
   } else {
     *addresses = absl::make_unique<grpc_core::ServerAddressList>();
     grpc_sockaddr_in sa;
+    memset(&sa, 0, sizeof(sa));
     sa.sin_family = GRPC_AF_INET;
     sa.sin_addr.s_addr = 0x100007f;
     sa.sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));

@@ -21,6 +21,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/wait_set.h"
+#include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::_;
 using testing::Mock;
@@ -29,19 +30,6 @@ using testing::SaveArg;
 using testing::StrictMock;
 
 namespace grpc_core {
-
-class MockCallbackScheduler {
- public:
-  MOCK_METHOD(void, Schedule, (std::function<void()>));
-};
-
-struct UseMockCallbackScheduler {
-  MockCallbackScheduler* scheduler;
-  template <typename ActivityType>
-  void ScheduleWakeup(ActivityType* activity) {
-    scheduler->Schedule([activity] { activity->RunScheduledWakeup(); });
-  }
-};
 
 // A simple Barrier type: stalls progress until it is 'cleared'.
 class Barrier {

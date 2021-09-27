@@ -175,7 +175,8 @@ bool PortAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
 
 bool AuthenticatedAuthorizationMatcher::Matches(
     const EvaluateArgs& args) const {
-  if (args.GetTransportSecurityType() != GRPC_SSL_TRANSPORT_SECURITY_TYPE) {
+  if (args.GetTransportSecurityType() != GRPC_SSL_TRANSPORT_SECURITY_TYPE &&
+      args.GetTransportSecurityType() != GRPC_TLS_TRANSPORT_SECURITY_TYPE) {
     // Connection is not authenticated.
     return false;
   }
