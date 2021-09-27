@@ -105,9 +105,7 @@ class Fuzzer {
           std::function<void(ReclamationSweep)> reclaimer;
           auto cfg = action.post_reclaimer();
           if (cfg.synchronous()) {
-            reclaimer = [this, cfg](ReclamationSweep) {
-              RunMsg(cfg.msg());
-            };
+            reclaimer = [this, cfg](ReclamationSweep) { RunMsg(cfg.msg()); };
           } else {
             reclaimer = [cfg, this](ReclamationSweep sweep) {
               struct Args {
