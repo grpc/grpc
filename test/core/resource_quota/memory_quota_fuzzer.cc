@@ -105,7 +105,7 @@ class Fuzzer {
           std::function<void(ReclamationSweep)> reclaimer;
           auto cfg = action.post_reclaimer();
           if (cfg.synchronous()) {
-            reclaimer = [this, cfg](ReclamationSweep sweep) {
+            reclaimer = [this, cfg](ReclamationSweep) {
               RunMsg(cfg.msg());
             };
           } else {
@@ -117,7 +117,7 @@ class Fuzzer {
               };
               auto* args = new Args{std::move(sweep), cfg.msg(), this};
               auto* closure = GRPC_CLOSURE_CREATE(
-                  [](void* arg, grpc_error* error) {
+                  [](void* arg, grpc_error*) {
                     auto* args = static_cast<Args*>(arg);
                     args->fuzzer->RunMsg(args->msg);
                     delete args;

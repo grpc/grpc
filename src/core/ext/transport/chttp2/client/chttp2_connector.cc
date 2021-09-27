@@ -28,7 +28,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/connector.h"
-#include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -54,8 +53,6 @@ Chttp2Connector::~Chttp2Connector() {
 
 void Chttp2Connector::Connect(const Args& args, Result* result,
                               grpc_closure* notify) {
-  grpc_resolved_address addr;
-  Subchannel::GetAddressFromSubchannelAddressArg(args.channel_args, &addr);
   grpc_endpoint** ep;
   {
     MutexLock lock(&mu_);
@@ -83,9 +80,9 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   grpc_tcp_client_connect(
       &connected_, ep,
       grpc_slice_allocator_create(resource_quota_,
-                                  grpc_sockaddr_to_string(&addr, false),
+                                  grpc_sockaddr_to_string(args.address, false),
                                   args.channel_args),
-      args.interested_parties, args.channel_args, &addr, args.deadline);
+      args.interested_parties, args.channel_args, args.address, args.deadline);
 }
 
 void Chttp2Connector::Shutdown(grpc_error_handle error) {

@@ -25,7 +25,6 @@ grpc_cc_test(
     srcs = ["memory_quota_test.cc"],
     external_deps = [
         "gtest",
-        "absl/synchronization",
     ],
     language = "c++",
     uses_polling = False,
@@ -59,6 +58,17 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:resource_quota",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "memory_quota_stress_test",
+    srcs = ["memory_quota_stress_test.cc"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:memory_quota",
         "//test/core/util:grpc_suppressions",
     ],
 )
