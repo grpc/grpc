@@ -493,9 +493,9 @@ void filter_init_fails(grpc_end2end_test_config config) {
                 if (!*enable) return true;
                 // Want to add the filter as close to the end as possible,
                 // to make sure that all of the filters work well together.
-                // However, we can't add it at the very end, because the
-                // client channel filter must be the last one.  So we add it
-                // right before the last one.
+                // However, we can't add it at the very end, because either the
+                // client_channel filter or connected_channel filter must be the
+                // last one.  So we add it right before the last one.
                 grpc_channel_stack_builder_iterator* it =
                     grpc_channel_stack_builder_create_iterator_at_last(builder);
                 GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
