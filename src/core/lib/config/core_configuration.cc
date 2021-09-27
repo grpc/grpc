@@ -52,10 +52,21 @@ void CoreConfiguration::RegisterBuilder(std::function<void(Builder*)> builder) {
 const CoreConfiguration& CoreConfiguration::BuildNewAndMaybeSet() {
   // Construct builder, pass it up to code that knows about build configuration
   Builder builder;
+  // The linked list of builders stores things in reverse registration order.
+  // To get things registered as systems relying on this expect however, we
+  // actually need to run things in forward registration order, so we iterate
+  // once over the linked list to build a vector of builders, and then iterate
+  // over said vector in reverse to actually run the builders.
+  std::vector<RegisteredBuilder*> registered_builders;
   for (RegisteredBuilder* b = builders_.load(std::memory_order_acquire);
        b != nullptr; b = b->next) {
-    b->builder(&builder);
+    registered_builders.push_back(b);
   }
+  for (auto it = registered_builders.rbegin(); it != registered_builders.rend();
+       ++it) {
+    (*it)->builder(&builder);
+  }
+  // Finally, call the built in configuration builder.
   BuildCoreConfiguration(&builder);
   // Use builder to construct a confguration
   CoreConfiguration* p = builder.Build();
