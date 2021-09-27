@@ -290,6 +290,15 @@ class Table {
     }
   }
 
+  // Iterate through each set field in the table
+  template <typename F>
+  void ForEach(F f) const {
+    ForEachImpl(std::move(f), absl::make_index_sequence<sizeof...(Ts)>());
+  }
+
+  // Count the number of set fields in the table
+  size_t count() const { return present_bits_.count(); }
+
  private:
   // Bit field for which elements of the table are set (true) or un-set (false,
   // the default) -- one bit for each type in Ts.
@@ -354,6 +363,14 @@ class Table {
     }
   }
 
+  // Call (*f)(value) if that value is in the table.
+  template <size_t I, typename F>
+  void CallIf(F* f) const {
+    if (auto* p = get<I>()) {
+      (*f)(*p);
+    }
+  }
+
   // For each field (element I=0, 1, ...) if that field is present, call its
   // destructor.
   template <size_t... I>
@@ -375,6 +392,12 @@ class Table {
   void Move(absl::index_sequence<I...>, Table&& rhs) {
     table_detail::do_these_things(
         {(MoveIf<or_clear, I>(std::forward<Table>(rhs)), 1)...});
+  }
+
+  // For each field (element I=0, 1, ...) if that field is present, call f.
+  template <typename F, size_t... I>
+  void ForEachImpl(F f, absl::index_sequence<I...>) const {
+    table_detail::do_these_things({(CallIf<I>(&f), 1)...});
   }
 
   // Bit field indicating which elements are set.
