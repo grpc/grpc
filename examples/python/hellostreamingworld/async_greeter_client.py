@@ -1,4 +1,4 @@
-# Copyright 2020 gRPC authors.
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,8 +24,19 @@ import hellostreamingworld_pb2_grpc
 async def run() -> None:
     async with grpc.aio.insecure_channel('localhost:50051') as channel:
         stub = hellostreamingworld_pb2_grpc.MultiGreeterStub(channel)
+
+        # Read from an async generator
         async for response in stub.sayHello(hellostreamingworld_pb2.HelloRequest(name='you')):
-            print("Greeter client received: " + response.message)
+            print("Greeter client received from async generator: " + response.message)
+
+        # Direct read from the stub
+        hello_stream = stub.sayHello(
+            hellostreamingworld_pb2.HelloRequest(name='you'))
+        while True:
+            response = await hello_stream.read()
+            if response == grpc.aio.EOF:
+                break
+            print("Greeter client received from direct read: " + response.message)
 
 
 if __name__ == '__main__':

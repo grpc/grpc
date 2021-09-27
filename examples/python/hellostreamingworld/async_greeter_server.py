@@ -1,4 +1,4 @@
-# Copyright 2020 gRPC authors.
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,8 +21,11 @@ from hellostreamingworld_pb2_grpc import MultiGreeterServicer, add_MultiGreeterS
 from hellostreamingworld_pb2 import HelloRequest, HelloReply
 
 
+NUMBER_OF_REPLY = 10
+
+
 async def say_hello_generator(request):
-    for i in range(10):
+    for i in range(NUMBER_OF_REPLY):
         yield HelloReply(message=f"Hello number {i}, {request.name}!")
 
 
