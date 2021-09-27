@@ -15,8 +15,6 @@
 
 set -ex
 
-shopt -s nullglob
-
 if [ "$#" != "1" ] ; then
     echo "Must supply bazel version to be tested." >/dev/stderr
     exit 1
@@ -26,20 +24,22 @@ VERSION="$1"
 
 cd "$(dirname "$0")"/../../..
 
-EXCEPTIONS=(
+EXCLUDED_TARGETS=(
   # iOS platform fails the analysis phase since there is no toolchain available
   # for it.
-  "//src/objective-c/..."
-  "//third_party/objective_c/..."
+  "-//src/objective-c/..."
+  "-//third_party/objective_c/..."
 
   # This could be a legitmate failure due to bitrot.
-  "//src/proto/grpc/testing:test_gen_proto"
+  "-//src/proto/grpc/testing:test_gen_proto"
 
   # This appears to be a legitimately broken BUILD file. There's a reference to
   # a non-existent "link_dynamic_library.sh".
-   "//third_party/toolchains/bazel_0.26.0_rbe_windows:all"
+  "-//third_party/toolchains/bazel_0.26.0_rbe_windows:all"
+
+  # TODO(jtattermusch): add back once fixed
+  "-//examples/android/binder/..."
 )
 
-
 export OVERRIDE_BAZEL_VERSION="$VERSION"
-printf ' -%s' "${EXCEPTIONS[@]}" | xargs bazel build -- //...
+bazel build -- //... "${EXCLUDED_TARGETS[@]}"
