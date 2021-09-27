@@ -355,8 +355,7 @@ static grpc_error_handle update_path_for_get(
       grpc_mdelem_from_slices(GRPC_MDSTR_PATH, path_with_query_slice);
   grpc_metadata_batch* b =
       batch->payload->send_initial_metadata.send_initial_metadata;
-  return grpc_metadata_batch_substitute(b, b->legacy_index()->named.path,
-                                        mdelem_path_and_query);
+  return b->Substitute(b->legacy_index()->named.path, mdelem_path_and_query);
 }
 
 static void remove_if_present(grpc_metadata_batch* batch,
