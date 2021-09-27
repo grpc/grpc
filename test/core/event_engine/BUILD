@@ -42,8 +42,8 @@ grpc_cc_library(
 )
 
 grpc_cc_test(
-    name = "noop_event_engine_test",
-    srcs = ["test_suite/noop_event_engine_test.cc"],
+    name = "simple_event_engine_test",
+    srcs = ["test_suite/simple_event_engine_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
     deps = [

@@ -30,7 +30,7 @@ using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 
 constexpr absl::Duration SLEEP_TIME = absl::Milliseconds(100);
 
-class NoopEventEngine : public grpc_event_engine::experimental::EventEngine {
+class SimpleEventEngine : public grpc_event_engine::experimental::EventEngine {
  public:
   void Run(EventEngine::Closure* closure) override { closure->Run(); }
 
@@ -81,7 +81,7 @@ class NoopEventEngine : public grpc_event_engine::experimental::EventEngine {
 
   bool IsWorkerThread() override { return false; }
 
-  ~NoopEventEngine() {
+  ~SimpleEventEngine() {
     shutting_down_ = true;
     for (std::thread& t : threads_) {
       t.join();
@@ -94,5 +94,5 @@ class NoopEventEngine : public grpc_event_engine::experimental::EventEngine {
 };
 
 std::unique_ptr<EventEngine> EventEngineTest::NewEventEngine() {
-  return absl::make_unique<NoopEventEngine>();
+  return absl::make_unique<SimpleEventEngine>();
 }
