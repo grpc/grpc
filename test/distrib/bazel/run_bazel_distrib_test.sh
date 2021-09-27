@@ -15,17 +15,15 @@
 
 set -ex
 
-shopt -s nullglob
-
 cd "$(dirname "$0")"
 
+# TODO(jtattermusch): make build work with bazel 2.2.0 and bazel 1.2.1 if that's reasonably simple.
 SUPPORTED_VERSIONS=(
-  "1.2.1"
-  "2.2.0"
   "3.7.2"
   "4.0.0"
 )
 
 for VERSION in "${SUPPORTED_VERSIONS[@]}"; do
+    echo "Running bazel distribtest with bazel version $VERSION"
     ./test_single_bazel_version.sh "$VERSION"
 done
