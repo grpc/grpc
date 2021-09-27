@@ -1956,6 +1956,8 @@ src/core/lib/slice/static_slice.h \
 src/core/lib/surface/README.md \
 src/core/lib/surface/api_trace.cc \
 src/core/lib/surface/api_trace.h \
+src/core/lib/surface/builtins.cc \
+src/core/lib/surface/builtins.h \
 src/core/lib/surface/byte_buffer.cc \
 src/core/lib/surface/byte_buffer_reader.cc \
 src/core/lib/surface/call.cc \

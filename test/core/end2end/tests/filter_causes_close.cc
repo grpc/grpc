@@ -26,11 +26,10 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
-
-static bool g_enable_filter = false;
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -251,29 +250,17 @@ static const grpc_channel_filter test_filter = {
  * Registration
  */
 
-static bool maybe_add_filter(grpc_channel_stack_builder* builder,
-                             void* /*arg*/) {
-  if (g_enable_filter) {
-    return grpc_channel_stack_builder_prepend_filter(builder, &test_filter,
-                                                     nullptr, nullptr);
-  } else {
-    return true;
-  }
-}
-
-static void init_plugin(void) {
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, 0, maybe_add_filter,
-                                   nullptr);
-}
-
-static void destroy_plugin(void) {}
-
 void filter_causes_close(grpc_end2end_test_config config) {
-  g_enable_filter = true;
-  test_request(config);
-  g_enable_filter = false;
+  grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        grpc_core::BuildCoreConfiguration(builder);
+        builder->channel_init()->RegisterStage(
+            GRPC_SERVER_CHANNEL, 0, [](grpc_channel_stack_builder* builder) {
+              return grpc_channel_stack_builder_prepend_filter(
+                  builder, &test_filter, nullptr, nullptr);
+            });
+      },
+      [config] { test_request(config); });
 }
 
-void filter_causes_close_pre_init(void) {
-  grpc_register_plugin(init_plugin, destroy_plugin);
-}
+void filter_causes_close_pre_init(void) {}

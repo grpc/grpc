@@ -2050,6 +2050,7 @@ add_library(grpc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/slice/static_slice.cc
   src/core/lib/surface/api_trace.cc
+  src/core/lib/surface/builtins.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
   src/core/lib/surface/call.cc
@@ -2634,6 +2635,7 @@ add_library(grpc_unsecure
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/slice/static_slice.cc
   src/core/lib/surface/api_trace.cc
+  src/core/lib/surface/builtins.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
   src/core/lib/surface/call.cc
@@ -10505,6 +10507,8 @@ add_executable(core_configuration_test
   src/core/lib/gprpp/time_util.cc
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
+  src/core/lib/surface/channel_init.cc
+  src/core/lib/surface/channel_stack_type.cc
   test/core/config/core_configuration_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
