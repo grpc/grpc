@@ -120,7 +120,7 @@ static grpc_error_handle client_filter_incoming_metadata(
     if (b->legacy_index()->named.grpc_status != nullptr ||
         grpc_mdelem_static_value_eq(b->legacy_index()->named.status->md,
                                     GRPC_MDELEM_STATUS_200)) {
-      grpc_metadata_batch_remove(b, GRPC_BATCH_STATUS);
+      b->Remove(GRPC_BATCH_STATUS);
     } else {
       char* val = grpc_dump_slice(
           GRPC_MDVALUE(b->legacy_index()->named.status->md), GPR_DUMP_ASCII);
@@ -184,7 +184,7 @@ static grpc_error_handle client_filter_incoming_metadata(
         gpr_free(val);
       }
     }
-    grpc_metadata_batch_remove(b, GRPC_BATCH_CONTENT_TYPE);
+    b->Remove(GRPC_BATCH_CONTENT_TYPE);
   }
 
   return GRPC_ERROR_NONE;
@@ -361,7 +361,7 @@ static grpc_error_handle update_path_for_get(
 
 static void remove_if_present(grpc_metadata_batch* batch,
                               grpc_metadata_batch_callouts_index idx) {
-  grpc_metadata_batch_remove(batch, idx);
+  batch->Remove(idx);
 }
 
 static void http_client_start_transport_stream_op_batch(

@@ -185,7 +185,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
                        b->legacy_index()->named.method->md));
     }
-    grpc_metadata_batch_remove(b, GRPC_BATCH_METHOD);
+    b->Remove(GRPC_BATCH_METHOD);
   } else {
     hs_add_error(
         error_name, &error,
@@ -202,7 +202,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
                        b->legacy_index()->named.te->md));
     }
-    grpc_metadata_batch_remove(b, GRPC_BATCH_TE);
+    b->Remove(GRPC_BATCH_TE);
   } else {
     hs_add_error(error_name, &error,
                  grpc_error_set_str(
@@ -222,7 +222,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
                        b->legacy_index()->named.scheme->md));
     }
-    grpc_metadata_batch_remove(b, GRPC_BATCH_SCHEME);
+    b->Remove(GRPC_BATCH_SCHEME);
   } else {
     hs_add_error(
         error_name, &error,
@@ -261,7 +261,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
         gpr_free(val);
       }
     }
-    grpc_metadata_batch_remove(b, GRPC_BATCH_CONTENT_TYPE);
+    b->Remove(GRPC_BATCH_CONTENT_TYPE);
   }
 
   if (b->legacy_index()->named.path == nullptr) {
@@ -316,7 +316,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
       b->legacy_index()->named.authority == nullptr) {
     grpc_linked_mdelem* el = b->legacy_index()->named.host;
     grpc_mdelem md = GRPC_MDELEM_REF(el->md);
-    grpc_metadata_batch_remove(b, el);
+    b->Remove(el);
     hs_add_error(
         error_name, &error,
         grpc_metadata_batch_add_head(
@@ -338,7 +338,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   if (!chand->surface_user_agent &&
       b->legacy_index()->named.user_agent != nullptr) {
-    grpc_metadata_batch_remove(b, GRPC_BATCH_USER_AGENT);
+    b->Remove(GRPC_BATCH_USER_AGENT);
   }
 
   return error;

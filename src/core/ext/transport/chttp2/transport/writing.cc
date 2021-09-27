@@ -350,7 +350,7 @@ class DataSendContext {
     is_last_frame_ = send_bytes == s_->flow_controlled_buffer.length &&
                      s_->fetching_send_message == nullptr &&
                      s_->send_trailing_metadata != nullptr &&
-                     grpc_metadata_batch_is_empty(s_->send_trailing_metadata);
+                     s_->send_trailing_metadata->empty();
     grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, send_bytes,
                             is_last_frame_, &s_->stats.outgoing, &t_->outbuf);
     s_->flow_control->SentData(send_bytes);
@@ -385,7 +385,7 @@ class DataSendContext {
     }
     is_last_frame_ = is_last_data_frame &&
                      s_->send_trailing_metadata != nullptr &&
-                     grpc_metadata_batch_is_empty(s_->send_trailing_metadata);
+                     s_->send_trailing_metadata->empty();
     grpc_chttp2_encode_data(s_->id, &s_->compressed_data_buffer, send_bytes,
                             is_last_frame_, &s_->stats.outgoing, &t_->outbuf);
     s_->flow_control->SentData(send_bytes);
@@ -566,7 +566,7 @@ class StreamWriteContext {
     if (compressed_data_buffer_len() != 0) return;
 
     GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "sending trailing_metadata"));
-    if (grpc_metadata_batch_is_empty(s_->send_trailing_metadata)) {
+    if (s_->send_trailing_metadata->empty()) {
       grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, 0, true,
                               &s_->stats.outgoing, &t_->outbuf);
     } else {

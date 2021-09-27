@@ -331,7 +331,7 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
     grpc_core::ExecCtx exec_ctx;
 
     for (size_t i = 0; i < GRPC_STATIC_MDELEM_COUNT; i++) {
-      grpc_mdelem p = GRPC_MAKE_MDELEM(&grpc_static_mdelem_table()[i],
+      grpc_mdelem p = GRPC_MAKE_MDELEM(&grpc_core::g_static_mdelem_table[i],
                                        GRPC_MDELEM_STORAGE_STATIC);
       grpc_mdelem q =
           grpc_mdelem_from_slices(maybe_dup(GRPC_MDKEY(p), dup_key),
@@ -371,8 +371,7 @@ static void test_grpc_metadata_batch_get_value_returns_one_value(void) {
     storage.md = grpc_mdelem_from_slices(
         grpc_slice_intern(grpc_slice_from_static_string(kKey)),
         grpc_slice_intern(grpc_slice_from_static_string(kValue)));
-    GPR_ASSERT(grpc_metadata_batch_link_head(&metadata, &storage) ==
-               GRPC_ERROR_NONE);
+    GPR_ASSERT(metadata.LinkHead(&storage) == GRPC_ERROR_NONE);
     std::string concatenated_value;
     absl::optional<absl::string_view> value =
         grpc_metadata_batch_get_value(&metadata, kKey, &concatenated_value);
@@ -394,13 +393,11 @@ static void test_grpc_metadata_batch_get_value_returns_multiple_values(void) {
     storage1.md = grpc_mdelem_from_slices(
         grpc_slice_intern(grpc_slice_from_static_string(kKey)),
         grpc_slice_intern(grpc_slice_from_static_string(kValue1)));
-    GPR_ASSERT(grpc_metadata_batch_link_tail(&metadata, &storage1) ==
-               GRPC_ERROR_NONE);
+    GPR_ASSERT(metadata.LinkTail(&storage1) == GRPC_ERROR_NONE);
     storage2.md = grpc_mdelem_from_slices(
         grpc_slice_intern(grpc_slice_from_static_string(kKey)),
         grpc_slice_intern(grpc_slice_from_static_string(kValue2)));
-    GPR_ASSERT(grpc_metadata_batch_link_tail(&metadata, &storage2) ==
-               GRPC_ERROR_NONE);
+    GPR_ASSERT(metadata.LinkTail(&storage2) == GRPC_ERROR_NONE);
     std::string concatenated_value;
     absl::optional<absl::string_view> value =
         grpc_metadata_batch_get_value(&metadata, kKey, &concatenated_value);
