@@ -23,7 +23,7 @@ load(
 )
 load("@bazel_skylib//lib:selects.bzl", "selects")
 
-licenses(["notice"])
+licenses(["reciprocal"])
 
 package(
     default_visibility = ["//visibility:public"],
