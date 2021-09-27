@@ -279,9 +279,11 @@ class Fuzzer {
         return [this, config, called]() mutable -> Poll<IntHdl> {
           if (!called) {
             if (config.owning()) {
-              wakers_[config.waker()].push_back(Activity::current()->MakeOwningWaker());
+              wakers_[config.waker()].push_back(
+                  Activity::current()->MakeOwningWaker());
             } else {
-              wakers_[config.waker()].push_back(Activity::current()->MakeNonOwningWaker());
+              wakers_[config.waker()].push_back(
+                  Activity::current()->MakeNonOwningWaker());
             }
             return Pending();
           }
