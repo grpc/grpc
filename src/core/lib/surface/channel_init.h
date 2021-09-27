@@ -63,6 +63,8 @@ class ChannelInit {
 
    private:
     struct Slot {
+      Slot(Stage stage, int priority)
+          : stage(std::move(stage)), priority(priority) {}
       Stage stage;
       int priority;
     };
@@ -71,14 +73,7 @@ class ChannelInit {
 
   /// Construct a channel stack of some sort: see channel_stack.h for details
   /// \a type is the type of channel stack to create
-  /// \a prefix_bytes is the number of bytes before the channel stack to
-  /// allocate \a args are configuration arguments for the channel stack \a
-  /// initial_refs is the initial refcount to give the channel stack \a destroy
-  /// and \a destroy_arg specify how to destroy the channel stack
-  ///    if destroy_arg is NULL, the returned value from this function will be
-  ///    substituted
-  /// \a optional_transport is either NULL or a constructed transport object
-  /// Returns true for successful creation, false otherwise.
+  /// \a builder is the channel stack builder to build into.
   bool CreateStack(grpc_channel_stack_builder* builder,
                    grpc_channel_stack_type type) const;
 

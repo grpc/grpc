@@ -78,7 +78,6 @@ grpc_fuzzer(
         "//:gpr_base",
         "//:grpc++_base",
         "//:grpc_base",
-        "//:grpc_base_c",
         "//src/core/ext/transport/binder/transport:binder_transport",
         "//test/core/util:grpc_test_util",
     ],

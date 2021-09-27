@@ -26,7 +26,7 @@ namespace grpc_core {
 
 void ChannelInit::Builder::RegisterStage(grpc_channel_stack_type type,
                                          int priority, Stage stage) {
-  slots_[type].emplace_back(Slot{std::move(stage), priority});
+  slots_[type].emplace_back(std::move(stage), priority);
 }
 
 ChannelInit ChannelInit::Builder::Build() {
