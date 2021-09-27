@@ -206,7 +206,4 @@ class StressTest {
 
 }  // namespace grpc_core
 
-// Hook needed to run ExecCtx outside of iomgr.
-void grpc_set_default_iomgr_platform() {}
-
 int main(int argc, char** argv) { grpc_core::StressTest(16, 64).Run(8); }
