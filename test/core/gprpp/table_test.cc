@@ -112,6 +112,18 @@ TEST(Table, SameTypes) {
   EXPECT_EQ(t.get<2>(), nullptr);
 }
 
+TEST(Table, ForEach) {
+  Table<int, int, int> t;
+  t.set<0>(1);
+  t.set<1>(2);
+  t.set<2>(3);
+  int i = 1;
+  t.ForEach([&i](int x) {
+    EXPECT_EQ(x, i);
+    i++;
+  });
+}
+
 #if !defined(_MSC_VER)
 // Test suite proving this is memory efficient compared to
 // tuple<optional<Ts>...>

@@ -291,8 +291,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
       grpc_mdelem mdelem_path_without_query = grpc_mdelem_from_slices(
           GRPC_MDSTR_PATH, grpc_slice_sub(path_slice, 0, offset));
 
-      grpc_metadata_batch_substitute(b, b->legacy_index()->named.path,
-                                     mdelem_path_without_query);
+      b->Substitute(b->legacy_index()->named.path, mdelem_path_without_query);
 
       /* decode payload from query and add to the slice buffer to be returned */
       const int k_url_safe = 1;

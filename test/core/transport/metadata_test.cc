@@ -354,8 +354,8 @@ static void test_grpc_metadata_batch_get_value_with_absent_key(void) {
   {
     grpc_metadata_batch metadata;
     std::string concatenated_value;
-    absl::optional<absl::string_view> value = grpc_metadata_batch_get_value(
-        &metadata, "absent_key", &concatenated_value);
+    absl::optional<absl::string_view> value =
+        metadata.GetValue("absent_key", &concatenated_value);
     GPR_ASSERT(value == absl::nullopt);
   }
   grpc_shutdown();
@@ -374,7 +374,7 @@ static void test_grpc_metadata_batch_get_value_returns_one_value(void) {
     GPR_ASSERT(metadata.LinkHead(&storage) == GRPC_ERROR_NONE);
     std::string concatenated_value;
     absl::optional<absl::string_view> value =
-        grpc_metadata_batch_get_value(&metadata, kKey, &concatenated_value);
+        metadata.GetValue(kKey, &concatenated_value);
     GPR_ASSERT(value.has_value());
     GPR_ASSERT(value.value() == kValue);
   }
@@ -400,7 +400,7 @@ static void test_grpc_metadata_batch_get_value_returns_multiple_values(void) {
     GPR_ASSERT(metadata.LinkTail(&storage2) == GRPC_ERROR_NONE);
     std::string concatenated_value;
     absl::optional<absl::string_view> value =
-        grpc_metadata_batch_get_value(&metadata, kKey, &concatenated_value);
+        metadata.GetValue(kKey, &concatenated_value);
     GPR_ASSERT(value.has_value());
     GPR_ASSERT(value.value() == absl::StrCat(kValue1, ",", kValue2));
   }
