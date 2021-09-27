@@ -1376,6 +1376,7 @@ grpc_cc_library(
 alias(
     name = "grpc_base_c",
     actual = "grpc_base",
+    visibility = ["@grpc:alt_grpc_base_legacy"],
 )
 
 grpc_cc_library(
