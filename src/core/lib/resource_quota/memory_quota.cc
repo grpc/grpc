@@ -16,8 +16,6 @@
 
 #include "src/core/lib/resource_quota/memory_quota.h"
 
-#include <thread>
-
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
@@ -391,11 +389,11 @@ void MemoryQuota::SetSize(size_t new_size) {
 void MemoryQuota::Take(size_t amount) {
   // If there's a request for nothing, then do nothing!
   if (amount == 0) return;
-  GPR_DEBUG_ASSERT(amount <= std::numeric_limits<ssize_t>::max());
+  GPR_DEBUG_ASSERT(amount <= std::numeric_limits<intptr_t>::max());
   // Grab memory from the quota.
   auto prior = free_bytes_.fetch_sub(amount, std::memory_order_acq_rel);
   // If we push into overcommit, awake the reclaimer.
-  if (prior >= 0 && prior < static_cast<ssize_t>(amount)) {
+  if (prior >= 0 && prior < static_cast<intptr_t>(amount)) {
     reclaimer_activity_->ForceWakeup();
   }
 }
