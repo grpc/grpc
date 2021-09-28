@@ -250,10 +250,10 @@ def grpc_deps():
         http_archive(
             name = "com_github_google_benchmark",
             sha256 = "daa4a97e0547d76de300e325a49177b199f3689ce5a35e25d47696f7cb050f86",
-            strip_prefix = "benchmark-73d4d5e8d6d449fc8663765a42aa8aeeee844489",
+            strip_prefix = "benchmark-0baacde3618ca617da95375e0af13ce1baadea47",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/benchmark/archive/73d4d5e8d6d449fc8663765a42aa8aeeee844489.tar.gz",
-                "https://github.com/google/benchmark/archive/73d4d5e8d6d449fc8663765a42aa8aeeee844489.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/benchmark/archive/0baacde3618ca617da95375e0af13ce1baadea4.tar.gz",
+                "https://github.com/google/benchmark/archive/0baacde3618ca617da95375e0af13ce1baadea4.tar.gz",
             ],
         )
 
