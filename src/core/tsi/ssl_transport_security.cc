@@ -96,7 +96,7 @@ struct tsi_ssl_client_handshaker_factory {
   unsigned char* alpn_protocol_list;
   size_t alpn_protocol_list_length;
   grpc_core::RefCountedPtr<tsi::SslSessionLRUCache> session_cache;
-  grpc_core::RefCountedPtr<tsi::TlsKeyLogger> key_logger;
+  grpc_core::RefCountedPtr<tsi::TlsSessionKeyLogger> key_logger;
 };
 
 struct tsi_ssl_server_handshaker_factory {
@@ -109,7 +109,7 @@ struct tsi_ssl_server_handshaker_factory {
   size_t ssl_context_count;
   unsigned char* alpn_protocol_list;
   size_t alpn_protocol_list_length;
-  grpc_core::RefCountedPtr<tsi::TlsKeyLogger> key_logger;
+  grpc_core::RefCountedPtr<tsi::TlsSessionKeyLogger> key_logger;
 };
 
 struct tsi_ssl_handshaker {
@@ -1019,10 +1019,6 @@ void tsi_ssl_session_cache_ref(tsi_ssl_session_cache* cache) {
 void tsi_ssl_session_cache_unref(tsi_ssl_session_cache* cache) {
   reinterpret_cast<tsi::SslSessionLRUCache*>(cache)->Unref();
 }
-
-/* --- tsi_ssl_key_logger methods implementation. */
-
-void tsi_tls_key_logger_registry_init() { tsi::TlsKeyLoggerRegistry::Init(); }
 
 /* --- tsi_frame_protector methods implementation. ---*/
 
@@ -1992,7 +1988,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   if (options->key_logger != nullptr) {
     // Unref is manually called on factory destruction
     impl->key_logger =
-        reinterpret_cast<tsi::TlsKeyLogger*>(options->key_logger)->Ref();
+        reinterpret_cast<tsi::TlsSessionKeyLogger*>(options->key_logger)->Ref();
     if (options->session_cache == nullptr) {
       // Need to set factory at g_ssl_ctx_ex_factory_index
       SSL_CTX_set_ex_data(ssl_context, g_ssl_ctx_ex_factory_index, impl);
@@ -2144,7 +2140,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   if (options->key_logger != nullptr) {
     // Unref is manually called on factory destruction.
     impl->key_logger =
-        reinterpret_cast<tsi::TlsKeyLogger*>(options->key_logger)->Ref();
+        reinterpret_cast<tsi::TlsSessionKeyLogger*>(options->key_logger)->Ref();
   }
 
   for (i = 0; i < options->num_key_cert_pairs; i++) {

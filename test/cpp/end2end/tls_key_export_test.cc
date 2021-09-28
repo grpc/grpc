@@ -1,20 +1,16 @@
-/*
- *
- * Copyright 2021 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2021 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <string>
 #include <thread>  // NOLINT
@@ -59,7 +55,7 @@ extern "C" {
 
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::TlsChannelCredentialsOptions;
-using ::grpc::experimental::TlsKeyLoggerConfig;
+using ::grpc::experimental::TlsSessionKeyLoggerConfig;
 using ::grpc::experimental::TlsServerCredentialsOptions;
 
 namespace grpc {
@@ -99,31 +95,34 @@ class TestScenario {
  public:
   TestScenario(int num_listening_ports, bool share_tls_key_log_file,
                bool enable_tls_key_logging)
-      : num_listening_ports(num_listening_ports),
-        share_tls_key_log_file(share_tls_key_log_file),
-        enable_tls_key_logging(enable_tls_key_logging) {}
-
-  void Log() const;
-  int num_listening_ports;
-  bool share_tls_key_log_file;
-  bool enable_tls_key_logging;
-};
-
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
-  return out << absl::StrCat(
-             "TestScenario{num_listening_ports=", scenario.num_listening_ports,
+      : num_listening_ports_(num_listening_ports),
+        share_tls_key_log_file_(share_tls_key_log_file),
+        enable_tls_key_logging_(enable_tls_key_logging) {}
+  std::string AsString() const {
+    return absl::StrCat(
+             "TestScenario{num_listening_ports=", num_listening_ports_,
              ", share_tls_key_log_file=",
-             (scenario.share_tls_key_log_file ? "true" : "false"),
+             (share_tls_key_log_file_ ? "true" : "false"),
              ", enable_tls_key_logging=",
-             (scenario.enable_tls_key_logging ? "true" : "false"), "'}");
-}
+             (enable_tls_key_logging_ ? "true" : "false"), "'}");
+  }
 
-void TestScenario::Log() const {
-  std::ostringstream out;
-  out << *this;
-  gpr_log(GPR_INFO, "%s", out.str().c_str());
-}
+  int num_listening_ports() const {
+    return num_listening_ports_;
+  }
+
+  bool share_tls_key_log_file() const {
+    return share_tls_key_log_file_;
+  }
+
+  bool enable_tls_key_logging() const {
+    return enable_tls_key_logging_;
+  }
+ private:
+  int num_listening_ports_;
+  bool share_tls_key_log_file_;
+  bool enable_tls_key_logging_;
+};
 
 int CountOccurancesInFileContents(std::string file_contents,
                                   std::string search_string) {
@@ -139,10 +138,7 @@ int CountOccurancesInFileContents(std::string file_contents,
 class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
  protected:
   TlsKeyLoggingEnd2EndTest() {
-    share_ssl_key_log_file_ = GetParam().share_tls_key_log_file;
-    num_listening_ports_ = GetParam().num_listening_ports;
-    enable_tls_key_logging_ = GetParam().enable_tls_key_logging;
-    GetParam().Log();
+    gpr_log(GPR_INFO, "%s\n", GetParam().AsString().c_str());
   }
 
   std::string CreateTmpFile() {
@@ -162,16 +158,14 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
     ::grpc::ChannelArguments args;
     args.SetSslTargetNameOverride("foo.test.google.com.au");
 
-    gpr_setenv(GRPC_TLS_KEY_LOGGING_ENV_VAR, "true");
-
-    if (num_listening_ports_ > 0) {
-      ports_ = new int[num_listening_ports_];
+    if (GetParam().num_listening_ports() > 0) {
+      ports_.reserve(GetParam().num_listening_ports());
     }
 
     std::string shared_key_log_file_server;
     std::string shared_key_log_file_channel;
 
-    if (share_ssl_key_log_file_) {
+    if (GetParam().share_tls_key_log_file()) {
       shared_key_log_file_server = CreateTmpFile();
       shared_key_log_file_channel = CreateTmpFile();
     }
@@ -184,13 +178,13 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
         std::make_shared<FileWatcherCertificateProvider>(
             CLIENT_KEY_PATH, CLIENT_CERT_PATH, CA_CERT_PATH, 1);
 
-    auth_check = std::make_shared<
+    auth_check_ = std::make_shared<
         ::grpc::experimental::TlsServerAuthorizationCheckConfig>(
         std::make_shared<ServerAuthzCheck>());
 
-    for (int i = 0; i < num_listening_ports_; i++) {
+    for (int i = 0; i < GetParam().num_listening_ports(); i++) {
       // Configure tls credential options for each port
-      TlsKeyLoggerConfig server_port_tls_key_log_config;
+      TlsSessionKeyLoggerConfig server_port_tls_key_log_config;
       TlsServerCredentialsOptions server_creds_options(
           server_certificate_provider);
       server_creds_options.set_cert_request_type(
@@ -199,17 +193,17 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
       server_creds_options.watch_root_certs();
 
       // Set a separate ssl key log file for each port if not shared
-      if (share_ssl_key_log_file_) {
+      if (GetParam().share_tls_key_log_file()) {
         tmp_server_tls_key_log_file_by_port_.push_back(
             shared_key_log_file_server);
       } else {
         tmp_server_tls_key_log_file_by_port_.push_back(CreateTmpFile());
       }
 
-      if (enable_tls_key_logging_) {
-        server_port_tls_key_log_config.set_tls_key_log_file_path(
+      if (GetParam().enable_tls_key_logging()) {
+        server_port_tls_key_log_config.set_tls_session_key_log_file_path(
             tmp_server_tls_key_log_file_by_port_[i]);
-        server_creds_options.set_tls_key_log_config(
+        server_creds_options.set_tls_session_key_log_config(
             server_port_tls_key_log_config);
       }
 
@@ -225,13 +219,13 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
     server_thread_ =
         std::thread(&TlsKeyLoggingEnd2EndTest::RunServerLoop, this);
 
-    for (int i = 0; i < num_listening_ports_; i++) {
+    for (int i = 0; i < GetParam().num_listening_ports(); i++) {
       ASSERT_NE(0, ports_[i]);
       server_addresses_.push_back(absl::StrCat("localhost:", ports_[i]));
 
       // Configure tls credential options for each stub. Each stub connects to
       // a separate port on the server.
-      TlsKeyLoggerConfig stub_tls_key_log_config;
+      TlsSessionKeyLoggerConfig stub_tls_key_log_config;
       TlsChannelCredentialsOptions channel_creds_options;
       channel_creds_options.set_certificate_provider(
           channel_certificate_provider);
@@ -239,19 +233,20 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
           GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
       channel_creds_options.watch_identity_key_cert_pairs();
       channel_creds_options.watch_root_certs();
-      channel_creds_options.set_server_authorization_check_config(auth_check);
+      channel_creds_options.set_server_authorization_check_config(auth_check_);
 
       // Set a separate ssl key log file for each port if not shared.
-      if (share_ssl_key_log_file_) {
+      if (GetParam().share_tls_key_log_file()) {
         tmp_stub_tls_key_log_file_.push_back(shared_key_log_file_channel);
       } else {
         tmp_stub_tls_key_log_file_.push_back(CreateTmpFile());
       }
 
-      if (enable_tls_key_logging_) {
-        stub_tls_key_log_config.set_tls_key_log_file_path(
+      if (GetParam().enable_tls_key_logging()) {
+        stub_tls_key_log_config.set_tls_session_key_log_file_path(
             tmp_stub_tls_key_log_file_[i]);
-        channel_creds_options.set_tls_key_log_config(stub_tls_key_log_config);
+        channel_creds_options.set_tls_session_key_log_config(
+            stub_tls_key_log_config);
       }
 
       stubs_.push_back(EchoTestService::NewStub(::grpc::CreateCustomChannel(
@@ -264,20 +259,14 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
     server_->Shutdown();
     server_thread_.join();
 
-    if (num_listening_ports_ > 0) {
-      delete[] ports_;
-    }
-
     // Remove all created files.
-    for (int i = 0; i < num_listening_ports_; i++) {
+    for (int i = 0; i < GetParam().num_listening_ports(); i++) {
       remove(tmp_stub_tls_key_log_file_[i].c_str());
       remove(tmp_server_tls_key_log_file_by_port_[i].c_str());
-      if (share_ssl_key_log_file_) {
+      if (GetParam().share_tls_key_log_file()) {
         break;
       }
     }
-
-    gpr_unsetenv(GRPC_TLS_KEY_LOGGING_ENV_VAR);
   }
 
   void RunServerLoop() { server_->Wait(); }
@@ -285,7 +274,7 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
   const std::string client_method_name_ = "grpc.testing.EchoTestService/Echo";
   const std::string server_method_name_ = "grpc.testing.EchoTestService/Echo";
 
-  int* ports_ = nullptr;
+  std::vector<int> ports_;
   std::vector<std::string> tmp_server_tls_key_log_file_by_port_;
   std::vector<std::string> tmp_stub_tls_key_log_file_;
   std::vector<std::string> server_addresses_;
@@ -293,20 +282,14 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
   EchoServer service_;
   std::unique_ptr<::grpc::Server> server_;
   std::shared_ptr<::grpc::experimental::TlsServerAuthorizationCheckConfig>
-      auth_check;
+      auth_check_;
   std::thread server_thread_;
-
-  // If true, same ssl key log file is used for all channels (on the client)
-  // and all ports (on the server).
-  bool share_ssl_key_log_file_;
-  int num_listening_ports_;
-  bool enable_tls_key_logging_;
 };
 
 TEST_P(TlsKeyLoggingEnd2EndTest, KeyLogging) {
   // Cover all valid statuses.
   for (int i = 0; i <= NUM_REQUESTS_PER_CHANNEL; ++i) {
-    for (int j = 0; j < num_listening_ports_; ++j) {
+    for (int j = 0; j < GetParam().num_listening_ports(); ++j) {
       EchoRequest request;
       request.set_message("foo");
       request.mutable_param()->mutable_expected_error()->set_code(0);
@@ -317,13 +300,13 @@ TEST_P(TlsKeyLoggingEnd2EndTest, KeyLogging) {
     }
   }
 
-  for (int i = 0; i < num_listening_ports_; i++) {
+  for (int i = 0; i < GetParam().num_listening_ports(); i++) {
     std::string server_key_log = ::grpc_core::testing::GetFileContents(
         tmp_server_tls_key_log_file_by_port_[i].c_str());
     std::string channel_key_log = ::grpc_core::testing::GetFileContents(
         tmp_stub_tls_key_log_file_[i].c_str());
 
-    if (!enable_tls_key_logging_) {
+    if (!GetParam().enable_tls_key_logging()) {
       EXPECT_THAT(server_key_log, ::testing::IsEmpty());
       EXPECT_THAT(channel_key_log, ::testing::IsEmpty());
     }
@@ -331,23 +314,23 @@ TEST_P(TlsKeyLoggingEnd2EndTest, KeyLogging) {
 #ifdef TLS_KEY_LOGGING_AVAILABLE
     EXPECT_THAT(server_key_log, ::testing::StrEq(channel_key_log));
 
-    if (share_ssl_key_log_file_ && enable_tls_key_logging_) {
+    if (GetParam().share_tls_key_log_file() && GetParam().enable_tls_key_logging()) {
       EXPECT_EQ(CountOccurancesInFileContents(
                     server_key_log, "CLIENT_HANDSHAKE_TRAFFIC_SECRET"),
-                num_listening_ports_);
+                GetParam().num_listening_ports());
       EXPECT_EQ(CountOccurancesInFileContents(
                     server_key_log, "SERVER_HANDSHAKE_TRAFFIC_SECRET"),
-                num_listening_ports_);
+                GetParam().num_listening_ports());
       EXPECT_EQ(CountOccurancesInFileContents(server_key_log,
                                               "CLIENT_TRAFFIC_SECRET_0"),
-                num_listening_ports_);
+                GetParam().num_listening_ports());
       EXPECT_EQ(CountOccurancesInFileContents(server_key_log,
                                               "SERVER_TRAFFIC_SECRET_0"),
-                num_listening_ports_);
+                GetParam().num_listening_ports());
       EXPECT_EQ(
           CountOccurancesInFileContents(server_key_log, "EXPORTER_SECRET"),
-          num_listening_ports_);
-    } else if (enable_tls_key_logging_) {
+          GetParam().num_listening_ports());
+    } else if (GetParam().enable_tls_key_logging()) {
       EXPECT_EQ(CountOccurancesInFileContents(
                     server_key_log, "CLIENT_HANDSHAKE_TRAFFIC_SECRET"),
                 1);
@@ -365,13 +348,13 @@ TEST_P(TlsKeyLoggingEnd2EndTest, KeyLogging) {
     }
 #else
     // If TLS Key logging is not available, the files should be empty.
-    if (enable_tls_key_logging_) {
+    if (GetParam().enable_tls_key_logging()) {
       EXPECT_THAT(server_key_log, ::testing::IsEmpty());
       EXPECT_THAT(channel_key_log, ::testing::IsEmpty());
     }
 #endif
 
-    if (share_ssl_key_log_file_) {
+    if (GetParam().share_tls_key_log_file()) {
       break;
     }
   }

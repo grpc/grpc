@@ -26,67 +26,57 @@
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 namespace tsi {
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
-grpc_core::Mutex* g_tls_key_logger_registry_mu;
-std::map<std::string, TlsKeyLogFileWriter*> g_tls_key_log_file_writer_map
-  ABSL_GUARDED_BY(g_tls_key_logger_registry_mu);
-static std::atomic<bool> g_tls_key_logger_registry_initialized(false);
-#endif
+grpc_core::Mutex
+  TlsSessionKeyLoggerRegistry::tls_session_key_logger_registry_mu;
+std::map<std::string, TlsSessionKeyLogFileWriter*>
+    TlsSessionKeyLoggerRegistry::tls_session_key_log_file_writer_map;
 
-TlsKeyLogFileWriter::TlsKeyLogFileWriter(
-    const std::string& tls_key_log_file_path)
-    : fd_(nullptr), tls_key_log_file_path_(tls_key_log_file_path) {
-  GPR_ASSERT(!tls_key_log_file_path_.empty());
-  fd_ = fopen(tls_key_log_file_path_.c_str(), "w+");
-  grpc_error_handle error = GRPC_ERROR_NONE;
-
+TlsSessionKeyLogFileWriter::TlsSessionKeyLogFileWriter(
+    const std::string& tls_session_key_log_file_path)
+    : fd_(nullptr),
+    tls_session_key_log_file_path_(tls_session_key_log_file_path) {
+  GPR_ASSERT(!tls_session_key_log_file_path_.empty());
+  fd_ = fopen(tls_session_key_log_file_path_.c_str(), "w+");
   if (fd_ == nullptr) {
-    error = GRPC_OS_ERROR(errno, "fopen");
-  }
-
-  if (error != GRPC_ERROR_NONE) {
+    grpc_error_handle error = GRPC_OS_ERROR(errno, "fopen");
     gpr_log(GPR_ERROR,
             "Ignoring TLS Key logging. ERROR Opening TLS Keylog "
             "file: %s", grpc_error_std_string(error).c_str());
   }
 };
 
-TlsKeyLogFileWriter::~TlsKeyLogFileWriter() {
+TlsSessionKeyLogFileWriter::~TlsSessionKeyLogFileWriter() {
   if (fd_ != nullptr) fclose(fd_);
   {
-    grpc_core::MutexLock lock(g_tls_key_logger_registry_mu);
-    g_tls_key_log_file_writer_map.erase(tls_key_log_file_path_);
+    grpc_core::MutexLock lock(
+        &TlsSessionKeyLoggerRegistry::tls_session_key_logger_registry_mu);
+    TlsSessionKeyLoggerRegistry::tls_session_key_log_file_writer_map.erase(
+        tls_session_key_log_file_path_);
   }
 }
 
-void TlsKeyLogFileWriter::AppendSessionKeys(
+void TlsSessionKeyLogFileWriter::AppendSessionKeys(
     SSL_CTX* /* ssl_context */,
-    const TsiTlsKeyLoggerConfig& tsi_tls_key_log_config,
+    TsiTlsSessionKeyLogConfig* tls_session_key_log_config,
     const std::string& session_keys_info) {
   grpc_core::MutexLock lock(&lock_);
 
   if (fd_ == nullptr || session_keys_info.empty()) return;
 
-  switch (tsi_tls_key_log_config.key_logging_format) {
+  switch (tls_session_key_log_config->tls_session_key_logging_format()) {
     case GRPC_TLS_KEY_LOG_FORMAT_NSS:
       // Append to key log file under lock
       bool err;
-
-      err = (fwrite(session_keys_info.c_str(), sizeof(char),
-                    session_keys_info.length(),
+      err = (fwrite((session_keys_info + "\n").c_str(), sizeof(char),
+                    session_keys_info.length() + 1,
                     fd_) < session_keys_info.length());
-
-      // Append new-line character as well. Doing a separate syscall to avoid
-      // dynamic memory allocation and modification of passed session_keys_info
-      err |= (fwrite("\n", sizeof(char), 1, fd_) != 1);
 
       if (err) {
         grpc_error_handle error = GRPC_OS_ERROR(errno, "fwrite");
-        gpr_log(GPR_ERROR, "Error Appending to TLS Keylog file: %s",
+        gpr_log(GPR_ERROR, "Error Appending to TLS session key log file: %s",
                 grpc_error_std_string(error).c_str());
         fclose(fd_);
         fd_ = nullptr;  // disable future attempts to write to this file
@@ -97,62 +87,53 @@ void TlsKeyLogFileWriter::AppendSessionKeys(
 
     // For future extensions to support more/custom logging formats
     default:
+      gpr_log(GPR_INFO, "Unsupported TLS Key logging logging format: %d\n",
+              tls_session_key_log_config->tls_session_key_logging_format());
       break;
   }
 }
 
-grpc_core::RefCountedPtr<TlsKeyLogger>
-TlsKeyLoggerRegistry::CreateTlsKeyLogger(
-    const TsiTlsKeyLoggerConfig& tsi_tls_key_log_config) {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
-  if (!g_tls_key_logger_registry_initialized.load()) {
+TlsSessionKeyLogger * TlsSessionKeyLoggerRegistry::CreateTlsSessionKeyLogger(
+    TsiTlsSessionKeyLogConfig tls_session_key_log_config) {
+  // To control parallel access to registry
+  grpc_core::MutexLock lock(&tls_session_key_logger_registry_mu);
+  if (tls_session_key_log_config.tls_session_key_log_file_path().empty()) {
     return nullptr;
   }
-  // To control parallel access to registry
-  grpc_core::MutexLock lock(g_tls_key_logger_registry_mu);
-  if (tsi_tls_key_log_config.tls_key_log_file_path.empty()) return nullptr;
+  auto file_path =
+      tls_session_key_log_config.tls_session_key_log_file_path();
+  // Check if a TlsSessionKeyLogFileWriter instance already exists for the
+  // specified file path.
+  auto it = tls_session_key_log_file_writer_map.find(file_path);
+  if (it == tls_session_key_log_file_writer_map.end()) {
+    // Create a new TlsSessionKeyLogFileWriter instance
+    // Sets Ref count of new_tls_session_key_log_file_writer to 1 to make sure
+    // the tls_session_key_log_file_writer_map is an owner. Relevant
+    // TlsSessionKeyLogger objects which share this TlsSessionKeyLogFileWriter
+    // instance also become owners.
+    auto new_tls_session_key_log_file_writer =
+        grpc_core::MakeRefCounted<TlsSessionKeyLogFileWriter>(file_path);
 
-  // Check if a TlsKeyLogFileWriter instance already exists for the specified
-  // file path.
-  auto it = g_tls_key_log_file_writer_map.find(
-      tsi_tls_key_log_config.tls_key_log_file_path);
-
-  if (it == g_tls_key_log_file_writer_map.end()) {
-    // Create a new TlsKeyLogFileWriter instance
-    auto new_tls_key_log_file_writer =
-        grpc_core::MakeRefCounted<TlsKeyLogFileWriter>(
-                                  tsi_tls_key_log_config.tls_key_log_file_path);
-
-    g_tls_key_log_file_writer_map.insert(
-        std::pair<std::string, TlsKeyLogFileWriter*>(
-            tsi_tls_key_log_config.tls_key_log_file_path,
-            new_tls_key_log_file_writer.get()));
+    tls_session_key_log_file_writer_map.insert(
+        std::pair<std::string, TlsSessionKeyLogFileWriter*>(
+            file_path, new_tls_session_key_log_file_writer.get()));
 
     // The key logger becomes an owner of the key log file writer
     // instance.
-    auto new_tls_key_logger =
-        grpc_core::MakeRefCounted<TlsKeyLogger>(
-            tsi_tls_key_log_config, std::move(new_tls_key_log_file_writer));
-    return new_tls_key_logger;
+    auto new_tls_session_key_logger =
+        grpc_core::MakeRefCounted<TlsSessionKeyLogger>(
+            tls_session_key_log_config,
+            std::move(new_tls_session_key_log_file_writer)).release();
+    return new_tls_session_key_logger;
   }
 
   // The key logger also becomes an owner of the key log file writer
   // instance.
-  auto new_tls_key_logger =
-      grpc_core::MakeRefCounted<TlsKeyLogger>(tsi_tls_key_log_config,
-                                              it->second->Ref());
-  return new_tls_key_logger;
-#endif
-  return nullptr;
-}
-
-void TlsKeyLoggerRegistry::Init() {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
-  if (!g_tls_key_logger_registry_initialized.exchange(true)) {
-    // g_tls_key_log_file_writer_map.clear();
-    g_tls_key_logger_registry_mu = new grpc_core::Mutex();
-  }
-#endif
+  auto new_tls_session_key_logger =
+      grpc_core::MakeRefCounted<TlsSessionKeyLogger>(
+          tls_session_key_log_config,
+          it->second->Ref()).release();
+  return new_tls_session_key_logger;
 }
 
 };  // namespace tsi

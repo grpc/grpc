@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <grpc/grpc_security_constants.h>
+#include <grpc/grpc_security.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpcpp/security/tls_certificate_provider.h>
@@ -146,47 +147,44 @@ class TlsServerAuthorizationCheckConfig {
       server_authorization_check_interface_;
 };
 
-/// Configuration for Tls key logging.
-class TlsKeyLoggerConfig {
- private:
-  // The full path at which the TLS keys would be exported.
-  std::string tls_key_log_file_path;
-
-  // The format in which the TLS keys would be exported at this path.
-  grpc_tls_key_log_format tls_key_log_format;
-
-  // Future extensions can include filters such as IP addresses etc.
-
+// Configuration for Tls key logging.
+class TlsSessionKeyLoggerConfig {
  public:
-  // Constructor
-  explicit TlsKeyLoggerConfig()
-      : tls_key_log_file_path(""), tls_key_log_format(GRPC_TLS_KEY_LOG_FORMAT_NSS){};
 
-  // Copy ctor
-  TlsKeyLoggerConfig(const TlsKeyLoggerConfig& copy) {
-    tls_key_log_file_path = copy.tls_key_log_file_path;
-    tls_key_log_format = copy.tls_key_log_format;
+  TlsSessionKeyLoggerConfig() {
+    c_config_ = grpc_tls_session_key_log_config_create();
   };
 
-  // Sets the tls key log file path.
-  void set_tls_key_log_file_path(std::string key_log_file_path) {
-    tls_key_log_file_path = std::move(key_log_file_path);
+  ~TlsSessionKeyLoggerConfig() {
+    grpc_tls_session_key_log_config_release(c_config_);
+  };
+
+  // Disable copy and assignment
+  TlsSessionKeyLoggerConfig(const TlsSessionKeyLoggerConfig& copy) = delete;
+  TlsSessionKeyLoggerConfig & operator=(const TlsSessionKeyLoggerConfig&) = delete;
+
+  // Sets the tls session key log file path.
+  void set_tls_session_key_log_file_path(std::string key_log_file_path) {
+    grpc_tls_session_key_log_config_set_log_path(c_config_,
+                                                 key_log_file_path.c_str());
   }
 
-  // Sets the tls key logging format. Currently only NSS format is supported.
-  void set_tls_key_log_format(grpc_tls_key_log_format tls_key_log_format) {
-    tls_key_log_format = tls_key_log_format;
+  // Sets the tls session key logging format. Currently only NSS format is
+  // supported.
+  void set_tls_session_key_log_format(
+      grpc_tls_session_key_log_format tls_session_key_log_format) {
+    grpc_tls_session_key_log_config_set_log_format(c_config_,
+                                                   tls_session_key_log_format);
   }
 
-  // Returns the set tls key log file path.
-  std::string get_tls_key_log_file_path() const {
-    return this->tls_key_log_file_path;
+  // Returns the core c_config struct associated with this configuration
+  // wrapper class
+  grpc_tls_session_key_log_config * c_config() const {
+    return c_config_;
   }
-
-  // Returns the set tls key log file format.
-  grpc_tls_key_log_format get_tls_key_log_format() const {
-    return this->tls_key_log_format;
-  }
+ private:
+  // A TLS session key logging config.
+  grpc_tls_session_key_log_config* c_config_;
 };
 
 // Base class of configurable options specified by users to configure their
@@ -230,17 +228,15 @@ class TlsCredentialsOptions {
   //
   // @param identity_cert_name the name of identity key-cert pairs being set.
   void set_identity_cert_name(const std::string& identity_cert_name);
-  // Sets the Tls key logging configuration. If not set, tls key logging is
-  // disabled. Note that this should be used only for debugging purposes. It
-  // should never be used in a production environment due to security
-  // concerns. For extra protection, an environment variable
-  //      GRPC_TLS_KEY_LOGGING_ENABLED=true
-  // must also be set to enable Tls Key logging. Otherwise this config is
-  // simply ignored.
+  // Sets the Tls session key logging configuration. If not set, tls
+  // session key logging is disabled. Note that this should be used only for
+  // debugging purposes. It should never be used in a production environment
+  // due to security concerns.
   //
-  // @param tls_keylog_config Tls key logging config of the type
-  // gprc::experimental::TlsKeyLoggerConfig
-  void set_tls_key_log_config(const TlsKeyLoggerConfig& tls_key_log_config);
+  // @param tls_session_key_log_config: Tls session key logging config of the
+  // type gprc::experimental::TlsSessionKeyLoggerConfig
+  void set_tls_session_key_log_config(
+      const TlsSessionKeyLoggerConfig& tls_session_key_log_config);
 
   // ----- Getters for member fields ----
   // Get the internal c options. This function shall be used only internally.

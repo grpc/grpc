@@ -1117,70 +1117,67 @@ grpc_authorization_policy_provider_static_data_create(
 GRPCAPI void grpc_authorization_policy_provider_release(
     grpc_authorization_policy_provider* provider);
 
-/** --- TLS Key logging. ---
- * Experimental API to control tls key logging. Tls key logging is expected
- * to be used only for debugging purposes and never in production. Tls
- * key logging is only enabled when:
- * 1. At least one grpc_tls_credentials_options object is assigned a tls
+/** --- TLS session key logging. ---
+ * Experimental API to control tls session key logging. Tls session key logging
+ * is expected to be used only for debugging purposes and never in production.
+ * Tls session key logging is only enabled when:
+ *  At least one grpc_tls_credentials_options object is assigned a tls session
  *  key logging config using the API specified below.
- * 2. The GRPC_TLS_KEY_LOGGING_ENABLED environment variable is set to true.
  */
 
 /**
  * EXPERIMENTAL API - Subject to change.
- * An opaque type pointing to a Tls Key logger helper object which provides
- * methods to Log Tls session keys to files.
+ * An opaque type pointing to a Tls session key logging configuration.
  */
-typedef struct gprc_tls_key_logger grpc_tls_key_logger;
+typedef struct grpc_tls_session_key_log_config grpc_tls_session_key_log_config;
 
 /**
  * EXPERIMENTAL API - Subject to change.
- * An opaque type pointing to a Tls key logging configuration.
+ * Creates and returns a grpc_tls_session_key_log_config. The caller becomes an
+ * owner of the returned object and can free the allocated resources
+ * appropriately using the grpc_tls_session_key_log_config_release API
  */
-typedef struct grpc_tls_key_log_config grpc_tls_key_log_config;
+grpc_tls_session_key_log_config* grpc_tls_session_key_log_config_create();
 
 /**
  * EXPERIMENTAL API - Subject to change.
- * Associates a key logging config with a a grpc_tls_credentials_options object.
+ * Releases the ownership of a previously created
+ * grpc_tls_session_key_log_config object.
+ */
+void grpc_tls_session_key_log_config_release(
+    grpc_tls_session_key_log_config* config);
+
+/**
+ * EXPERIMENTAL API - Subject to change.
+ * Sets the logging format for TLS session key logging.
+ */
+void grpc_tls_session_key_log_config_set_log_format(
+    grpc_tls_session_key_log_config* config,
+    grpc_tls_session_key_log_format format);
+
+/**
+ * EXPERIMENTAL API - Subject to change.
+ * Sets the file path for TLS session key logging.
+ */
+void grpc_tls_session_key_log_config_set_log_path(
+    grpc_tls_session_key_log_config* config, const char* path);
+
+
+/**
+ * EXPERIMENTAL API - Subject to change.
+ * Associates a session key logging config with a
+ * grpc_tls_credentials_options object.
  * - options is the grpc_tls_credentials_options object
- * - tls_key_log_file_path contains the path where tls keys need to be logged
- * - key_log_format contains the format in which the tls keys will be logged.
- */
-GRPCAPI void grpc_tls_credentials_options_set_tls_key_log_config(
-    grpc_tls_credentials_options* options, grpc_tls_key_log_config* config);
-
-/**
- * EXPERIMENTAL API - Subject to change.
- * Creates a Tls Key logger helper object corresponding to a
- * grpc_tls_credentials_options object. If no tls config was associated with
- * the credentials options object using the above API, then this method returns
- * nullptr.
- * The returned helper object provides methods to log session keys. Currently
- * it points to an object of type tsi::TlsKeyLogger.
+ * - config is a grpc_tls_session_key_log_config object containing session key
+ *   logging configuration.
  *
- * This method can only be invoked after grpc_tls_key_logger_registry_init()
- * method has already been invoked. Otherwise it would return nullptr.
- *
- * - options refers to the grpc_tls_credentials_options object which is parsed
- *  to read any previously set tls key log configuration. A Tls key logger
- *  object is constructed based on this configuration.
+ * Each grpc_tls_credentials_options object can be associated with only
+ * one grpc_tls_session_key_log_config. An existing config will not be
+ * overwritten.
  */
-GRPCAPI grpc_tls_key_logger* grpc_tls_key_logger_create(
-    grpc_tls_credentials_options* options);
-
-/**
- * EXPERIMENTAL API - Subject to change.
- * Destroys/unrefs a previously created Tls Key logger helper object.
- * key_logger - the object to destroy/unref.
- */
-GRPCAPI void grpc_tls_key_logger_destroy(grpc_tls_key_logger* key_logger);
-
-/**
- * EXPERIMENTAL API - Subject to change.
- * Initializes a Tls Key logger registry. Tls Key logger objects can only be
- * created after the registry is initialized.
- */
-GRPCAPI void grpc_tls_key_logger_registry_init();
+GRPCAPI void grpc_tls_credentials_options_set_tls_session_key_log_config(
+    grpc_tls_credentials_options* options,
+    grpc_tls_session_key_log_config* config);
 
 #ifdef __cplusplus
 }

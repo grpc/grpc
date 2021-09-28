@@ -60,11 +60,6 @@ extern "C" {
    grpc_google_default_credentials_create function. */
 #define GRPC_GOOGLE_CREDENTIALS_ENV_VAR "GOOGLE_APPLICATION_CREDENTIALS"
 
-/** Environment variable that controls whether TLS Key logging is enabled
-   if the corresponding config is set. This must only be used for debugging
-   purposes and never in production. It must be set to a string "true". */
-#define GRPC_TLS_KEY_LOGGING_ENV_VAR "GRPC_TLS_KEY_LOGGING_ENABLED"
-
 /** Results for the SSL roots override callback. */
 typedef enum {
   GRPC_SSL_ROOTS_OVERRIDE_OK,
@@ -162,15 +157,15 @@ typedef enum { UDS = 0, LOCAL_TCP } grpc_local_connect_type;
 /** The TLS versions that are supported by the SSL stack. **/
 typedef enum { TLS1_2, TLS1_3 } grpc_tls_version;
 
-/** Supported TLS Keylogging formats. Future extensions can support more
- * formats.
+/** Supported TLS session key logging formats. Future extensions can support
+ * more formats.
  */
 typedef enum {
-  /** NSS is the default key logging format used by browsers like chrome,
-     firefox and by packet capture tools like wireshark.
+  /** NSS is the default session key logging format used by browsers like
+   * chrome, firefox and by packet capture tools like wireshark.
   */
   GRPC_TLS_KEY_LOG_FORMAT_NSS = 0
-} grpc_tls_key_log_format;
+} grpc_tls_session_key_log_format;
 
 #ifdef __cplusplus
 }

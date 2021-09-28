@@ -81,10 +81,15 @@ void tsi_ssl_session_cache_unref(tsi_ssl_session_cache* cache);
    Experimental SSL Key logging functionality to enable decryption of
    packet captures.  */
 
-typedef struct tsi_tls_key_logger tsi_tls_key_logger;
+typedef struct tsi_tls_session_key_logger tsi_tls_session_key_logger;
 
-/* Initialize a registry to hold created Tls Key loggers */
-void tsi_tls_key_logger_registry_init();
+static constexpr bool tsi_tls_session_key_logging_supported() {
+  #if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
+  return true;
+  #else
+  return false;
+  #endif
+}
 
 /* --- tsi_ssl_client_handshaker_factory object ---
 
@@ -161,7 +166,7 @@ struct tsi_ssl_client_handshaker_options {
   /* ssl_session_cache is a cache for reusable client-side sessions. */
   tsi_ssl_session_cache* session_cache;
   /* tsi_ssl_key_logger is an instance used to log SSL keys to a file. */
-  tsi_tls_key_logger* key_logger;
+  tsi_tls_session_key_logger* key_logger;
 
   /* skip server certificate verification. */
   bool skip_server_certificate_verification;
@@ -301,7 +306,7 @@ struct tsi_ssl_server_handshaker_options {
   tsi_tls_version min_tls_version;
   tsi_tls_version max_tls_version;
   /* tsi_ssl_key_logger is an instance used to log SSL keys to a file. */
-  tsi_tls_key_logger* key_logger;
+  tsi_tls_session_key_logger* key_logger;
 
   tsi_ssl_server_handshaker_options()
       : pem_key_cert_pairs(nullptr),
