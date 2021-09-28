@@ -43,7 +43,6 @@ namespace tsi {
 // Tsi implementation of the session key log config.
 // struct grpc_tls_session_key_log_config will wrap around this type.
 struct TsiTlsSessionKeyLogConfig {
- public:
   TsiTlsSessionKeyLogConfig() = default;
   TsiTlsSessionKeyLogConfig(const TsiTlsSessionKeyLogConfig&) = default;
   void set_tls_session_key_log_file_path(std::string path) {
@@ -149,4 +148,4 @@ class TlsSessionKeyLoggerRegistry {
 
 }  // namespace tsi
 
-#endif /* GRPC_CORE_TSI_SSL_KEY_LOGGING_SSL_KEY_LOGGING_H */
+#endif // GRPC_CORE_TSI_SSL_KEY_LOGGING_SSL_KEY_LOGGING_H

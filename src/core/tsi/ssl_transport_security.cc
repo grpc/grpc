@@ -1979,7 +1979,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     impl->session_cache =
         reinterpret_cast<tsi::SslSessionLRUCache*>(options->session_cache)
             ->Ref();
-    SSL_CTX_set_ex_data(ssl_context, g_ssl_ctx_ex_factory_index, impl);
     SSL_CTX_sess_set_new_cb(ssl_context,
                             server_handshaker_factory_new_session_callback);
     SSL_CTX_set_session_cache_mode(ssl_context, SSL_SESS_CACHE_CLIENT);
@@ -1989,16 +1988,17 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     // Unref is manually called on factory destruction
     impl->key_logger =
         reinterpret_cast<tsi::TlsSessionKeyLogger*>(options->key_logger)->Ref();
-    if (options->session_cache == nullptr) {
-      // Need to set factory at g_ssl_ctx_ex_factory_index
-      SSL_CTX_set_ex_data(ssl_context, g_ssl_ctx_ex_factory_index, impl);
-    }  // Otherwise it is already set
-
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-       // SSL_CTX_set_keylog_callback is set here to register callback
+    #if OPENSSL_VERSION_NUMBER >= 0x10100000
+    // SSL_CTX_set_keylog_callback is set here to register callback
     // when ssl/tls handshakes complete.
     SSL_CTX_set_keylog_callback(ssl_context, ssl_client_keylogging_callback);
-#endif
+    #endif
+  }
+
+  if (options->session_cache != nullptr ||
+      options->key_logger != nullptr) {
+      // Need to set factory at g_ssl_ctx_ex_factory_index
+      SSL_CTX_set_ex_data(ssl_context, g_ssl_ctx_ex_factory_index, impl);
   }
 
   do {
