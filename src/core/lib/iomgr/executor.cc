@@ -27,12 +27,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/iomgr_internal.h"
 
 #define MAX_DEPTH 2
 
@@ -92,7 +91,7 @@ TraceFlag executor_trace(false, "executor");
 Executor::Executor(const char* name) : name_(name) {
   adding_thread_lock_ = GPR_SPINLOCK_STATIC_INITIALIZER;
   gpr_atm_rel_store(&num_threads_, 0);
-  max_threads_ = GPR_MAX(1, 2 * gpr_cpu_num_cores());
+  max_threads_ = std::max(1u, 2 * gpr_cpu_num_cores());
 }
 
 void Executor::Init() { SetThreading(true); }
@@ -204,7 +203,7 @@ void Executor::SetThreading(bool threading) {
     // an application.
     // TODO(guantaol): create another method to finish all the pending closures
     // registered in the background poller by grpc_core::Executor.
-    grpc_iomgr_shutdown_background_closure();
+    grpc_iomgr_platform_shutdown_background_closure();
   }
 
   EXECUTOR_TRACE("(%s) SetThreading(%d) done", name_, threading);
@@ -237,7 +236,6 @@ void Executor::ThreadMain(void* arg) {
       break;
     }
 
-    GRPC_STATS_INC_EXECUTOR_QUEUE_DRAINED();
     grpc_closure_list closures = ts->elems;
     ts->elems = GRPC_CLOSURE_LIST_INIT;
     gpr_mu_unlock(&ts->mu);
@@ -254,11 +252,6 @@ void Executor::ThreadMain(void* arg) {
 void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
                        bool is_short) {
   bool retry_push;
-  if (is_short) {
-    GRPC_STATS_INC_EXECUTOR_SCHEDULED_SHORT_ITEMS();
-  } else {
-    GRPC_STATS_INC_EXECUTOR_SCHEDULED_LONG_ITEMS();
-  }
 
   do {
     retry_push = false;
@@ -279,16 +272,14 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
       return;
     }
 
-    if (grpc_iomgr_add_closure_to_background_poller(closure, error)) {
+    if (grpc_iomgr_platform_add_closure_to_background_poller(closure, error)) {
       return;
     }
 
     ThreadState* ts = g_this_thread_state;
     if (ts == nullptr) {
-      ts = &thd_state_[GPR_HASH_POINTER(grpc_core::ExecCtx::Get(),
-                                        cur_thread_count)];
-    } else {
-      GRPC_STATS_INC_EXECUTOR_SCHEDULED_TO_SELF();
+      ts = &thd_state_[grpc_core::HashPointer(grpc_core::ExecCtx::Get(),
+                                              cur_thread_count)];
     }
 
     ThreadState* orig_ts = ts;
@@ -341,7 +332,6 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
       // - Note that gpr_cv_signal() won't immediately wakeup the thread. That
       //   happens after we release the mutex &ts->mu a few lines below
       if (grpc_closure_list_empty(ts->elems) && !ts->shutdown) {
-        GRPC_STATS_INC_EXECUTOR_WAKEUP_INITIATED();
         gpr_cv_signal(&ts->cv);
       }
 
@@ -371,10 +361,6 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
         thd_state_[cur_thread_count].thd.Start();
       }
       gpr_spinlock_unlock(&adding_thread_lock_);
-    }
-
-    if (retry_push) {
-      GRPC_STATS_INC_EXECUTOR_PUSH_RETRIES();
     }
   } while (retry_push);
 }

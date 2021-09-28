@@ -88,6 +88,8 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -100,7 +102,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 #define GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -265,7 +266,7 @@ class GrpcLb : public LoadBalancingPolicy {
           static_cast<const TokenAndClientStatsAttribute*>(other_base);
       int r = lb_token_.compare(other->lb_token_);
       if (r != 0) return r;
-      return GPR_ICMP(client_stats_.get(), other->client_stats_.get());
+      return QsortCompare(client_stats_.get(), other->client_stats_.get());
     }
 
     std::string ToString() const override {
@@ -1054,8 +1055,8 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
     switch (response.type) {
       case response.INITIAL: {
         if (response.client_stats_report_interval != 0) {
-          client_stats_report_interval_ =
-              GPR_MAX(GPR_MS_PER_SEC, response.client_stats_report_interval);
+          client_stats_report_interval_ = std::max(
+              int64_t(GPR_MS_PER_SEC), response.client_stats_report_interval);
           if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
             gpr_log(GPR_INFO,
                     "[grpclb %p] lb_calld=%p: Received initial LB response "
@@ -1744,39 +1745,34 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 // Plugin registration
 //
 
-namespace {
-
-// Only add client_load_reporting filter if the grpclb LB policy is used.
-bool maybe_add_client_load_reporting_filter(grpc_channel_stack_builder* builder,
-                                            void* arg) {
-  const grpc_channel_args* args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
-  const grpc_arg* channel_arg =
-      grpc_channel_args_find(args, GRPC_ARG_LB_POLICY_NAME);
-  if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_STRING &&
-      strcmp(channel_arg->value.string, "grpclb") == 0) {
-    // TODO(roth): When we get around to re-attempting
-    // https://github.com/grpc/grpc/pull/16214, we should try to keep
-    // this filter at the very top of the subchannel stack, since that
-    // will minimize the number of metadata elements that the filter
-    // needs to iterate through to find the ClientStats object.
-    return grpc_channel_stack_builder_prepend_filter(
-        builder, static_cast<const grpc_channel_filter*>(arg), nullptr,
-        nullptr);
-  }
-  return true;
-}
-
-}  // namespace
-
 void grpc_lb_policy_grpclb_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
           absl::make_unique<grpc_core::GrpcLbFactory>());
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      maybe_add_client_load_reporting_filter,
-      const_cast<grpc_channel_filter*>(&grpc_client_load_reporting_filter));
 }
 
 void grpc_lb_policy_grpclb_shutdown() {}
+
+namespace grpc_core {
+void RegisterGrpcLbLoadReportingFilter(CoreConfiguration::Builder* builder) {
+  builder->channel_init()->RegisterStage(
+      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      [](grpc_channel_stack_builder* builder) {
+        const grpc_channel_args* args =
+            grpc_channel_stack_builder_get_channel_arguments(builder);
+        const grpc_arg* channel_arg =
+            grpc_channel_args_find(args, GRPC_ARG_LB_POLICY_NAME);
+        if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_STRING &&
+            strcmp(channel_arg->value.string, "grpclb") == 0) {
+          // TODO(roth): When we get around to re-attempting
+          // https://github.com/grpc/grpc/pull/16214, we should try to keep
+          // this filter at the very top of the subchannel stack, since that
+          // will minimize the number of metadata elements that the filter
+          // needs to iterate through to find the ClientStats object.
+          return grpc_channel_stack_builder_prepend_filter(
+              builder, &grpc_client_load_reporting_filter, nullptr, nullptr);
+        }
+        return true;
+      });
+}
+}  // namespace grpc_core

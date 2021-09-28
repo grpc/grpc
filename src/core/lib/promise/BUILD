@@ -343,3 +343,13 @@ grpc_cc_library(
         "//:gpr_platform",
     ],
 )
+
+grpc_cc_library(
+    name = "exec_ctx_wakeup_scheduler",
+    language = "c++",
+    public_hdrs = ["exec_ctx_wakeup_scheduler.h"],
+    deps = [
+        "//:exec_ctx",
+        "//:gpr_platform",
+    ],
+)

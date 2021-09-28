@@ -120,7 +120,7 @@ static void set_pollset_set(grpc_transport*, grpc_stream*, grpc_pollset_set*) {
 
 static void AssignMetadata(grpc_metadata_batch* mb, grpc_core::Arena* arena,
                            const grpc_binder::Metadata& md) {
-  grpc_metadata_batch_init(mb);
+  mb->Clear();
   for (auto& p : md) {
     grpc_linked_mdelem* glm = static_cast<grpc_linked_mdelem*>(
         arena->Alloc(sizeof(grpc_linked_mdelem)));
@@ -132,7 +132,7 @@ static void AssignMetadata(grpc_metadata_batch* mb, grpc_core::Arena* arena,
     // Unref here to prevent memory leak
     grpc_slice_unref_internal(key);
     grpc_slice_unref_internal(value);
-    GPR_ASSERT(grpc_metadata_batch_link_tail(mb, glm) == GRPC_ERROR_NONE);
+    GPR_ASSERT(mb->LinkTail(glm) == GRPC_ERROR_NONE);
   }
 }
 
@@ -302,8 +302,8 @@ static void recv_trailing_metadata_locked(void* arg,
         grpc_linked_mdelem* glm = static_cast<grpc_linked_mdelem*>(
             gbs->arena->Alloc(sizeof(grpc_linked_mdelem)));
         glm->md = grpc_get_reffed_status_elem(args->status);
-        GPR_ASSERT(grpc_metadata_batch_link_tail(gbs->recv_trailing_metadata,
-                                                 glm) == GRPC_ERROR_NONE);
+        GPR_ASSERT(gbs->recv_trailing_metadata->LinkTail(glm) ==
+                   GRPC_ERROR_NONE);
         gpr_log(GPR_INFO, "trailing_metadata = %p",
                 gbs->recv_trailing_metadata);
         gpr_log(GPR_INFO, "glm = %p", glm);
@@ -396,7 +396,7 @@ static void perform_stream_op_locked(void* stream_op,
     grpc_binder::Metadata init_md;
     auto batch = op->payload->send_initial_metadata.send_initial_metadata;
 
-    (*batch)->ForEach([&](grpc_mdelem md) {
+    batch->ForEach([&](grpc_mdelem md) {
       absl::string_view key = grpc_core::StringViewFromSlice(GRPC_MDKEY(md));
       absl::string_view value =
           grpc_core::StringViewFromSlice(GRPC_MDVALUE(md));
@@ -448,7 +448,7 @@ static void perform_stream_op_locked(void* stream_op,
     auto batch = op->payload->send_trailing_metadata.send_trailing_metadata;
     grpc_binder::Metadata trailing_metadata;
 
-    (*batch)->ForEach([&](grpc_mdelem md) {
+    batch->ForEach([&](grpc_mdelem md) {
       // Client will not send trailing metadata.
       GPR_ASSERT(!gbt->is_client);
 
