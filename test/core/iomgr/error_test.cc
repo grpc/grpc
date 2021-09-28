@@ -30,22 +30,22 @@
 
 TEST(ErrorTest, SetGetInt) {
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test");
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  EXPECT_NE(error, GRPC_ERROR_NONE);
   intptr_t i = 0;
-  GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_FILE_LINE, &i));
-  GPR_ASSERT(i);  // line set will never be 0
-  GPR_ASSERT(!grpc_error_get_int(error, GRPC_ERROR_INT_ERRNO, &i));
-  GPR_ASSERT(!grpc_error_get_int(error, GRPC_ERROR_INT_SIZE, &i));
+  EXPECT_TRUE(grpc_error_get_int(error, GRPC_ERROR_INT_FILE_LINE, &i));
+  EXPECT_TRUE(i);  // line set will never be 0
+  EXPECT_TRUE(!grpc_error_get_int(error, GRPC_ERROR_INT_ERRNO, &i));
+  EXPECT_TRUE(!grpc_error_get_int(error, GRPC_ERROR_INT_SIZE, &i));
 
   intptr_t errnumber = 314;
   error = grpc_error_set_int(error, GRPC_ERROR_INT_ERRNO, errnumber);
-  GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_ERRNO, &i));
-  GPR_ASSERT(i == errnumber);
+  EXPECT_TRUE(grpc_error_get_int(error, GRPC_ERROR_INT_ERRNO, &i));
+  EXPECT_EQ(i, errnumber);
 
   intptr_t http = 2;
   error = grpc_error_set_int(error, GRPC_ERROR_INT_HTTP2_ERROR, http);
-  GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_HTTP2_ERROR, &i));
-  GPR_ASSERT(i == http);
+  EXPECT_TRUE(grpc_error_get_int(error, GRPC_ERROR_INT_HTTP2_ERROR, &i));
+  EXPECT_EQ(i, http);
 
   GRPC_ERROR_UNREF(error);
 }
@@ -54,22 +54,22 @@ TEST(ErrorTest, SetGetStr) {
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test");
 
   std::string str;
-  GPR_ASSERT(!grpc_error_get_str(error, GRPC_ERROR_STR_SYSCALL, &str));
-  GPR_ASSERT(!grpc_error_get_str(error, GRPC_ERROR_STR_TSI_ERROR, &str));
+  EXPECT_TRUE(!grpc_error_get_str(error, GRPC_ERROR_STR_SYSCALL, &str));
+  EXPECT_TRUE(!grpc_error_get_str(error, GRPC_ERROR_STR_TSI_ERROR, &str));
 
-  GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_FILE, &str));
+  EXPECT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_FILE, &str));
   EXPECT_THAT(str, testing::HasSubstr("error_test.c"));
   // __FILE__ expands differently on
   // Windows. All should at least
   // contain error_test.c
 
-  GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &str));
-  GPR_ASSERT(str == "Test");
+  EXPECT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &str));
+  EXPECT_EQ(str, "Test");
 
   error =
       grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, "longer message");
-  GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, &str));
-  GPR_ASSERT(str == "longer message");
+  EXPECT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, &str));
+  EXPECT_EQ(str, "longer message");
 
   GRPC_ERROR_UNREF(error);
 }
@@ -80,22 +80,22 @@ TEST(ErrorTest, CopyAndUnRef) {
       grpc_error_set_str(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test"),
                          GRPC_ERROR_STR_GRPC_MESSAGE, "message");
   std::string str;
-  GPR_ASSERT(grpc_error_get_str(error1, GRPC_ERROR_STR_GRPC_MESSAGE, &str));
-  GPR_ASSERT(str == "message");
+  EXPECT_TRUE(grpc_error_get_str(error1, GRPC_ERROR_STR_GRPC_MESSAGE, &str));
+  EXPECT_EQ(str, "message");
 
   // error 1 has two refs
   GRPC_ERROR_REF(error1);
   // this gives error3 a ref to the new error, and decrements error1 to one ref
   grpc_error_handle error3 =
       grpc_error_set_str(error1, GRPC_ERROR_STR_SYSCALL, "syscall");
-  GPR_ASSERT(error3 != error1);  // should not be the same because of extra ref
-  GPR_ASSERT(grpc_error_get_str(error3, GRPC_ERROR_STR_GRPC_MESSAGE, &str));
-  GPR_ASSERT(str == "message");
+  EXPECT_NE(error3, error1);  // should not be the same because of extra ref
+  EXPECT_TRUE(grpc_error_get_str(error3, GRPC_ERROR_STR_GRPC_MESSAGE, &str));
+  EXPECT_EQ(str, "message");
 
   // error 1 should not have a syscall but 3 should
-  GPR_ASSERT(!grpc_error_get_str(error1, GRPC_ERROR_STR_SYSCALL, &str));
-  GPR_ASSERT(grpc_error_get_str(error3, GRPC_ERROR_STR_SYSCALL, &str));
-  GPR_ASSERT(str == "syscall");
+  EXPECT_TRUE(!grpc_error_get_str(error1, GRPC_ERROR_STR_SYSCALL, &str));
+  EXPECT_TRUE(grpc_error_get_str(error3, GRPC_ERROR_STR_SYSCALL, &str));
+  EXPECT_EQ(str, "syscall");
 
   GRPC_ERROR_UNREF(error1);
   GRPC_ERROR_UNREF(error3);
@@ -107,7 +107,7 @@ TEST(ErrorTest, CreateReferencing) {
                          GRPC_ERROR_STR_GRPC_MESSAGE, "message");
   grpc_error_handle parent =
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Parent", &child, 1);
-  GPR_ASSERT(parent != GRPC_ERROR_NONE);
+  EXPECT_NE(parent, GRPC_ERROR_NONE);
 
   GRPC_ERROR_UNREF(child);
   GRPC_ERROR_UNREF(parent);
@@ -127,7 +127,7 @@ TEST(ErrorTest, CreateReferencingMany) {
 
   grpc_error_handle parent =
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Parent", children, 3);
-  GPR_ASSERT(parent != GRPC_ERROR_NONE);
+  EXPECT_NE(parent, GRPC_ERROR_NONE);
 
   for (size_t i = 0; i < 3; ++i) {
     GRPC_ERROR_UNREF(children[i]);
@@ -171,12 +171,12 @@ TEST(ErrorTest, TestOsError) {
   grpc_error_handle error = GRPC_OS_ERROR(fake_errno, syscall);
 
   intptr_t i = 0;
-  GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_ERRNO, &i));
-  GPR_ASSERT(i == fake_errno);
+  EXPECT_TRUE(grpc_error_get_int(error, GRPC_ERROR_INT_ERRNO, &i));
+  EXPECT_EQ(i, fake_errno);
 
   std::string str;
-  GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_SYSCALL, &str));
-  GPR_ASSERT(str == syscall);
+  EXPECT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_SYSCALL, &str));
+  EXPECT_EQ(str, syscall);
   GRPC_ERROR_UNREF(error);
 }
 
@@ -196,13 +196,13 @@ TEST(ErrorTest, Overflow) {
   error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, 5);
 
   intptr_t i;
-  GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_HTTP2_ERROR, &i));
-  GPR_ASSERT(i == 5);
-  GPR_ASSERT(!grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &i));
+  EXPECT_TRUE(grpc_error_get_int(error, GRPC_ERROR_INT_HTTP2_ERROR, &i));
+  EXPECT_EQ(i, 5);
+  EXPECT_TRUE(!grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &i));
 
   error = grpc_error_set_int(error, GRPC_ERROR_INT_HTTP2_ERROR, 10);
-  GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_HTTP2_ERROR, &i));
-  GPR_ASSERT(i == 10);
+  EXPECT_TRUE(grpc_error_get_int(error, GRPC_ERROR_INT_HTTP2_ERROR, &i));
+  EXPECT_EQ(i, 10);
 
   GRPC_ERROR_UNREF(error);
 #endif

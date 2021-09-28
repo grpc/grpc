@@ -219,8 +219,6 @@ finish:
     fd = nullptr;
   }
   done = (--ac->refs == 0);
-  // Create a copy of the data from "ac" to be accessed after the unlock, as
-  // "ac" and its contents may be deallocated by the time they are read.
   gpr_mu_unlock(&ac->mu);
   if (error != GRPC_ERROR_NONE) {
     std::string str;
