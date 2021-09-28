@@ -38,7 +38,8 @@ from tests.unit.framework.common import test_constants
 from tests.unit import test_common
 
 
-@unittest.skipIf(test_common.running_under_gevent(), "Causes deadlock under gevent.")
+@unittest.skipIf(test_common.running_under_gevent(),
+                 "Causes deadlock under gevent.")
 class RPCPart2Test(BaseRPCTest, unittest.TestCase):
 
     def testDefaultThreadPoolIsUsed(self):
