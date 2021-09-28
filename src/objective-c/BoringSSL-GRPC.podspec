@@ -152,7 +152,6 @@ Pod::Spec.new do |s|
   end
 
   s.prepare_command = <<-END_OF_COMMAND
-    set -e
     # Add a module map and an umbrella header
     mkdir -p src/include/openssl
     cat > src/include/openssl/umbrella.h <<EOF
