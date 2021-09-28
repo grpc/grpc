@@ -20,6 +20,7 @@
 
 #include "src/core/lib/transport/status_metadata.h"
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/static_metadata.h"
 

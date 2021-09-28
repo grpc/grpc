@@ -22,6 +22,7 @@
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
+#include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::MockFunction;
 using testing::StrictMock;
@@ -44,7 +45,7 @@ TEST(PipeTest, CanSendAndReceive) {
               return absl::OkStatus();
             });
       },
-      NoCallbackScheduler(),
+      NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
@@ -64,7 +65,7 @@ TEST(PipeTest, CanReceiveAndSend) {
               return absl::OkStatus();
             });
       },
-      NoCallbackScheduler(),
+      NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
@@ -95,7 +96,7 @@ TEST(PipeTest, CanSeeClosedOnSend) {
               return absl::OkStatus();
             });
       },
-      NoCallbackScheduler(),
+      NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
@@ -125,7 +126,7 @@ TEST(PipeTest, CanSeeClosedOnReceive) {
               return absl::OkStatus();
             });
       },
-      NoCallbackScheduler(),
+      NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
@@ -167,7 +168,7 @@ TEST(PipeTest, CanFilter) {
               return absl::OkStatus();
             });
       },
-      NoCallbackScheduler(),
+      NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 

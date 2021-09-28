@@ -1,4 +1,4 @@
-# Copyright 2016 gRPC authors.
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -340,6 +340,16 @@ grpc_cc_library(
     deps = [
         "poll",
         "promise_factory",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "exec_ctx_wakeup_scheduler",
+    language = "c++",
+    public_hdrs = ["exec_ctx_wakeup_scheduler.h"],
+    deps = [
+        "//:exec_ctx",
         "//:gpr_platform",
     ],
 )

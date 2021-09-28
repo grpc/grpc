@@ -31,6 +31,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "//:channel_init",
         "//:gpr_platform",
         "//:handshaker_registry",
     ],
