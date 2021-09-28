@@ -1303,7 +1303,7 @@ void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
             cache->size_ -= it->second->Size();
             it = cache->map_.erase(it);
           } else {
-            it++;
+            ++it;
           }
         }
         grpc_millis now = ExecCtx::Get()->Now();
@@ -1540,25 +1540,25 @@ void RlsLb::RlsRequest::StartCallLocked() {
   memset(ops, 0, sizeof(ops));
   grpc_op* op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op++;
+  ++op;
   op->op = GRPC_OP_SEND_MESSAGE;
   send_message_ = MakeRequestProto();
   op->data.send_message.send_message = send_message_;
-  op++;
+  ++op;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op++;
+  ++op;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata =
       &recv_initial_metadata_;
-  op++;
+  ++op;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &recv_message_;
-  op++;
+  ++op;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &recv_trailing_metadata_;
   op->data.recv_status_on_client.status = &status_recv_;
   op->data.recv_status_on_client.status_details = &status_details_recv_;
-  op++;
+  ++op;
   Ref(DEBUG_LOCATION, "OnRlsCallComplete").release();
   auto call_error = grpc_call_start_batch_and_execute(
       call_, ops, static_cast<size_t>(op - ops), &call_complete_cb_);
@@ -1669,7 +1669,7 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
     return response_info;
   }
   response_info.targets.reserve(num_targets);
-  for (size_t i = 0; i < num_targets; i++) {
+  for (size_t i = 0; i < num_targets; ++i) {
     response_info.targets.emplace_back(targets_strview[i].data,
                                        targets_strview[i].size);
   }
@@ -1828,9 +1828,9 @@ void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle error) {
               state = GRPC_CHANNEL_READY;
               break;
             } else if (item_state == GRPC_CHANNEL_CONNECTING) {
-              num_connecting++;
+              ++num_connecting;
             } else if (item_state == GRPC_CHANNEL_IDLE) {
-              num_idle++;
+              ++num_idle;
             }
           }
           if (state != GRPC_CHANNEL_READY) {
