@@ -1163,6 +1163,8 @@
     <file baseinstalldir="/" name="src/core/lib/slice/static_slice.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/builtins.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/builtins.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer_reader.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.cc" role="src" />

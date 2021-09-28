@@ -903,6 +903,7 @@ libs:
   - src/core/lib/slice/slice_utils.h
   - src/core/lib/slice/static_slice.h
   - src/core/lib/surface/api_trace.h
+  - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/channel.h
@@ -1466,6 +1467,7 @@ libs:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/slice/static_slice.cc
   - src/core/lib/surface/api_trace.cc
+  - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
@@ -1909,6 +1911,7 @@ libs:
   - src/core/lib/slice/slice_utils.h
   - src/core/lib/slice/static_slice.h
   - src/core/lib/surface/api_trace.h
+  - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/channel.h
@@ -2190,6 +2193,7 @@ libs:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/slice/static_slice.cc
   - src/core/lib/surface/api_trace.cc
+  - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
@@ -5405,6 +5409,8 @@ targets:
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
+  - src/core/lib/surface/channel_init.h
+  - src/core/lib/surface/channel_stack_type.h
   src:
   - src/core/ext/upb-generated/google/api/annotations.upb.c
   - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
@@ -5464,6 +5470,8 @@ targets:
   - src/core/lib/gprpp/time_util.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
+  - src/core/lib/surface/channel_init.cc
+  - src/core/lib/surface/channel_stack_type.cc
   - test/core/config/core_configuration_test.cc
   deps:
   - absl/base:base

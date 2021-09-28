@@ -27,10 +27,10 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/channel_init.h"
 
 namespace grpc_core {
 
@@ -370,25 +370,22 @@ bool grpc_deadline_checking_enabled(const grpc_channel_args* channel_args) {
       !grpc_channel_args_want_minimal_stack(channel_args));
 }
 
-static bool maybe_add_deadline_filter(grpc_channel_stack_builder* builder,
-                                      void* arg) {
-  return grpc_deadline_checking_enabled(
-             grpc_channel_stack_builder_get_channel_arguments(builder))
-             ? grpc_channel_stack_builder_prepend_filter(
-                   builder, static_cast<const grpc_channel_filter*>(arg),
-                   nullptr, nullptr)
-             : true;
+namespace grpc_core {
+void RegisterDeadlineFilter(CoreConfiguration::Builder* builder) {
+  auto register_filter = [builder](grpc_channel_stack_type type,
+                                   const grpc_channel_filter* filter) {
+    builder->channel_init()->RegisterStage(
+        type, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+        [filter](grpc_channel_stack_builder* builder) {
+          if (grpc_deadline_checking_enabled(
+                  grpc_channel_stack_builder_get_channel_arguments(builder))) {
+            return grpc_channel_stack_builder_prepend_filter(builder, filter,
+                                                             nullptr, nullptr);
+          }
+          return true;
+        });
+  };
+  register_filter(GRPC_CLIENT_DIRECT_CHANNEL, &grpc_client_deadline_filter);
+  register_filter(GRPC_SERVER_CHANNEL, &grpc_server_deadline_filter);
 }
-
-void grpc_deadline_filter_init(void) {
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      maybe_add_deadline_filter,
-      const_cast<grpc_channel_filter*>(&grpc_client_deadline_filter));
-  grpc_channel_init_register_stage(
-      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      maybe_add_deadline_filter,
-      const_cast<grpc_channel_filter*>(&grpc_server_deadline_filter));
-}
-
-void grpc_deadline_filter_shutdown(void) {}
+}  // namespace grpc_core

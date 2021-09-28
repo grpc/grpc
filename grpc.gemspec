@@ -1183,6 +1183,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/slice/static_slice.h )
   s.files += %w( src/core/lib/surface/api_trace.cc )
   s.files += %w( src/core/lib/surface/api_trace.h )
+  s.files += %w( src/core/lib/surface/builtins.cc )
+  s.files += %w( src/core/lib/surface/builtins.h )
   s.files += %w( src/core/lib/surface/byte_buffer.cc )
   s.files += %w( src/core/lib/surface/byte_buffer_reader.cc )
   s.files += %w( src/core/lib/surface/call.cc )
