@@ -118,7 +118,7 @@ TlsSessionKeyLogger * TlsSessionKeyLoggerRegistry::CreateTlsSessionKeyLogger(
         std::pair<std::string, TlsSessionKeyLogFileWriter*>(
             file_path, new_tls_session_key_log_file_writer.get()));
 
-    // The key logger becomes an owner of the key log file writer
+    // The key logger also becomes an owner of the key log file writer
     // instance.
     auto new_tls_session_key_logger =
         grpc_core::MakeRefCounted<TlsSessionKeyLogger>(

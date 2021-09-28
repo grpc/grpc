@@ -1137,21 +1137,23 @@ typedef struct grpc_tls_session_key_log_config grpc_tls_session_key_log_config;
  * owner of the returned object and can free the allocated resources
  * appropriately using the grpc_tls_session_key_log_config_release API
  */
-grpc_tls_session_key_log_config* grpc_tls_session_key_log_config_create();
+
+GRPCAPI grpc_tls_session_key_log_config*
+  grpc_tls_session_key_log_config_create();
 
 /**
  * EXPERIMENTAL API - Subject to change.
  * Releases the ownership of a previously created
  * grpc_tls_session_key_log_config object.
  */
-void grpc_tls_session_key_log_config_release(
+GRPCAPI void grpc_tls_session_key_log_config_release(
     grpc_tls_session_key_log_config* config);
 
 /**
  * EXPERIMENTAL API - Subject to change.
  * Sets the logging format for TLS session key logging.
  */
-void grpc_tls_session_key_log_config_set_log_format(
+GRPCAPI void grpc_tls_session_key_log_config_set_log_format(
     grpc_tls_session_key_log_config* config,
     grpc_tls_session_key_log_format format);
 
@@ -1159,7 +1161,8 @@ void grpc_tls_session_key_log_config_set_log_format(
  * EXPERIMENTAL API - Subject to change.
  * Sets the file path for TLS session key logging.
  */
-void grpc_tls_session_key_log_config_set_log_path(
+
+GRPCAPI void grpc_tls_session_key_log_config_set_log_path(
     grpc_tls_session_key_log_config* config, const char* path);
 
 
