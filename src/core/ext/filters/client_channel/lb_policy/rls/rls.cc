@@ -169,12 +169,7 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
 // RLS LB policy.
 class RlsLb : public LoadBalancingPolicy {
  public:
-  explicit RlsLb(Args args)
-      : LoadBalancingPolicy(std::move(args)), cache_(this) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-      gpr_log(GPR_INFO, "[rlslb %p] policy created", this);
-    }
-  }
+  explicit RlsLb(Args args);
 
   const char* name() const override { return kRls; }
   void UpdateLocked(UpdateArgs args) override;
@@ -611,7 +606,7 @@ class RlsLb : public LoadBalancingPolicy {
   const grpc_channel_args* channel_args_ = nullptr;
   RefCountedPtr<RlsLbConfig> config_;
   RefCountedPtr<ChildPolicyWrapper> default_child_policy_;
-  std::map<std::string, ChildPolicyWrapper*> child_policy_map_;
+  std::map<std::string /*target*/, ChildPolicyWrapper*> child_policy_map_;
 };
 
 //
@@ -1684,77 +1679,98 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
 // RlsLb
 //
 
+std::string GetServerUri(const grpc_channel_args* args) {
+  const char* server_uri_str =
+      grpc_channel_args_find_string(args, GRPC_ARG_SERVER_URI);
+  GPR_ASSERT(server_uri_str != nullptr);
+  absl::StatusOr<URI> uri = URI::Parse(server_uri_str);
+  GPR_ASSERT(uri.ok());
+  return std::string(absl::StripPrefix(uri->path(), "/"));
+}
+
+RlsLb::RlsLb(Args args)
+    : LoadBalancingPolicy(std::move(args)),
+      server_name_(GetServerUri(args.args)),
+      cache_(this) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+    gpr_log(GPR_INFO, "[rlslb %p] policy created", this);
+  }
+}
+
 void RlsLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy updated", this);
   }
+  // Swap out config, addresses, and channel args.
+  RefCountedPtr<RlsLbConfig> old_config = std::move(config_);
+  config_ = std::move(args.config);
   ServerAddressList old_addresses = std::move(addresses_);
-  addresses_ = args.addresses;
+  addresses_ = std::move(args.addresses);
   grpc_channel_args_destroy(channel_args_);
   channel_args_ = grpc_channel_args_copy(args.args);
-  const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
-  const char* server_uri_str = grpc_channel_arg_get_string(arg);
-  GPR_ASSERT(server_uri_str != nullptr);
-  absl::StatusOr<URI> uri = URI::Parse(server_uri_str);
-  GPR_ASSERT(uri.ok());
-  server_name_ = std::string(absl::StripPrefix(uri->path(), "/"));
+  // Now grab the lock to swap out the state it guards.
   {
     MutexLock lock(&mu_);
-    RefCountedPtr<RlsLbConfig> old_config = config_;
-    config_ = args.config;
+    // Swap out RLS channel if needed.
     if (old_config == nullptr ||
         config_->lookup_service() != old_config->lookup_service()) {
       rls_channel_ = MakeOrphanable<RlsChannel>(
           Ref(DEBUG_LOCATION, "RlsChannel"), config_->lookup_service(),
           channel_args_);
     }
+    // Resize cache if needed.
     if (old_config == nullptr ||
         config_->cache_size_bytes() != old_config->cache_size_bytes()) {
-      if (config_->cache_size_bytes() != 0) {
-        cache_.Resize(config_->cache_size_bytes());
+      cache_.Resize(config_->cache_size_bytes());
+    }
+  }
+  // Determine whether we need to update all child policies.
+  bool update_child_policies =
+      old_config == nullptr ||
+      old_config->child_policy_config() != config_->child_policy_config() ||
+      old_addresses != addresses_ ||
+      grpc_channel_args_compare(args.args, channel_args_) != 0;
+  // If default target changes, swap out child policy.
+  bool created_default_child = false;
+  if (old_config == nullptr ||
+      config_->default_target() != old_config->default_target()) {
+    if (config_->default_target().empty()) {
+      default_child_policy_.reset();
+    } else {
+      auto it = child_policy_map_.find(config_->default_target());
+      if (it == child_policy_map_.end()) {
+        default_child_policy_ = MakeRefCounted<ChildPolicyWrapper>(
+            Ref(DEBUG_LOCATION, "ChildPolicyWrapper"),
+            config_->default_target());
+        created_default_child = true;
       } else {
-        cache_.Resize(kDefaultCacheSizeBytes);
+        default_child_policy_ =
+            it->second->Ref(DEBUG_LOCATION, "DefaultChildPolicy");
       }
     }
-    if (old_config == nullptr ||
-        config_->default_target() != old_config->default_target()) {
-      if (config_->default_target().empty()) {
-        default_child_policy_.reset();
-      } else {
-        auto it = child_policy_map_.find(config_->default_target());
-        if (it == child_policy_map_.end()) {
-          default_child_policy_ = MakeRefCounted<ChildPolicyWrapper>(
-              Ref(DEBUG_LOCATION, "ChildPolicyWrapper"),
-              config_->default_target());
-          default_child_policy_->UpdateLocked(config_->child_policy_config(),
-                                              addresses_, channel_args_);
-        } else {
-          default_child_policy_ =
-              it->second->Ref(DEBUG_LOCATION, "DefaultChildPolicy");
-        }
-      }
-    }
-    if (old_config == nullptr ||
-        (config_->child_policy_config() != old_config->child_policy_config()) ||
-        (addresses_ != old_addresses)) {
-      for (auto& child : child_policy_map_) {
-        Json copied_child_policy_config = config_->child_policy_config();
-        grpc_error_handle error = InsertOrUpdateChildPolicyField(
-            config_->child_policy_config_target_field_name(),
-            child.second->target(), &copied_child_policy_config);
-        GPR_ASSERT(error == GRPC_ERROR_NONE);
-        child.second->UpdateLocked(copied_child_policy_config, addresses_,
-                                   channel_args_);
-      }
-      if (default_child_policy_ != nullptr) {
-        Json copied_child_policy_config = config_->child_policy_config();
-        grpc_error_handle error = InsertOrUpdateChildPolicyField(
-            config_->child_policy_config_target_field_name(),
-            default_child_policy_->target(), &copied_child_policy_config);
-        GPR_ASSERT(error == GRPC_ERROR_NONE);
-        default_child_policy_->UpdateLocked(copied_child_policy_config,
-                                            addresses_, channel_args_);
-      }
+  }
+  // Update child policies.  Note that this cannot be done while holding
+  // the lock, since that would cause a deadlock: calling UpdateLocked()
+  // on the child policy will cause it to invoke the helper's
+  // UpdateState() method, which will try to reacquire the lock.
+  auto update_child_policy = [&](ChildPolicyWrapper* child_policy_wrapper) {
+    Json copied_child_policy_config = config_->child_policy_config();
+    grpc_error_handle error = InsertOrUpdateChildPolicyField(
+        config_->child_policy_config_target_field_name(),
+        child_policy_wrapper->target(), &copied_child_policy_config);
+    GPR_ASSERT(error == GRPC_ERROR_NONE);
+    child_policy_wrapper->UpdateLocked(copied_child_policy_config,
+                                       addresses_, channel_args_);
+  };
+  // Update default child policy if needed.
+  if (created_default_child ||
+      (update_child_policies && default_child_policy_ != nullptr)) {
+    update_child_policy(default_child_policy_.get());
+  }
+  // Update all other child policies if needed.
+  if (update_child_policies) {
+    for (auto& p : child_policy_map_) {
+      update_child_policy(p.second);
     }
   }
   UpdatePicker();
