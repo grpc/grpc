@@ -411,12 +411,12 @@ static void test_grpc_metadata_batch_get_value_returns_multiple_values(void) {
 static void test_grpc_chttp2_incoming_metadata_replace_or_add_works(void) {
   grpc_core::Arena* arena = grpc_core::Arena::Create(1024);
   grpc_chttp2_incoming_metadata_buffer buffer(arena);
-  grpc_chttp2_incoming_metadata_buffer_add(
+  GRPC_LOG_IF_ERROR(grpc_chttp2_incoming_metadata_buffer_add(
       &buffer, grpc_mdelem_from_slices(grpc_slice_from_static_string("a"),
-                                       grpc_slice_from_static_string("b")));
-  grpc_chttp2_incoming_metadata_buffer_replace_or_add(
+                                       grpc_slice_from_static_string("b"))));
+  GRPC_LOG_IF_ERROR(grpc_chttp2_incoming_metadata_buffer_replace_or_add(
       &buffer, grpc_slice_from_static_string("a"),
-      grpc_slice_malloc(1024 * 1024 * 1024));
+      grpc_slice_malloc(1024 * 1024 * 1024)));
   arena->Destroy();
 }
 
