@@ -268,11 +268,11 @@ class MetadataMap {
   template <typename Which>
   struct Value {
     Value() = default;
-    Value(const typename Which::ValueType& value) : value(value) {}
+    explicit Value(const typename Which::ValueType& value) : value(value) {}
     Value(const Value&) = default;
     Value& operator=(const Value&) = default;
-    Value(Value&&) = default;
-    Value& operator=(Value&&) = default;
+    Value(Value&&) noexcept = default;
+    Value& operator=(Value&&) noexcept = default;
     GPR_NO_UNIQUE_ADDRESS typename Which::ValueType value;
   };
   // Callable for the ForEach in Encode() -- for each value, call the
