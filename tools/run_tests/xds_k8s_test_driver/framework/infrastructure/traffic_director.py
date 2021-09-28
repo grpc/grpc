@@ -68,7 +68,7 @@ class TrafficDirectorManager:
         resource_prefix: str,
         resource_suffix: str,
         network: str = 'default',
-        compute_api_version: Optional[str] = None,
+        compute_api_version: str = 'v1',
     ):
         # API
         self.compute = _ComputeV1(gcp_api_manager,
