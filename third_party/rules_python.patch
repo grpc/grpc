@@ -1,3 +1,54 @@
+diff --git a/python/pip_install/extract_wheels/lib/bazel.py b/python/pip_install/extract_wheels/lib/bazel.py
+index 7a91191..27b0c7a 100644
+--- a/python/pip_install/extract_wheels/lib/bazel.py
++++ b/python/pip_install/extract_wheels/lib/bazel.py
+@@ -99,7 +99,7 @@ def generate_build_file_contents(
+     data_exclude = [
+         "*.whl",
+         "**/*.py",
+-        f"{WHEEL_ENTRY_POINT_PREFIX}*.py",
++        "{}*.py".format(WHEEL_ENTRY_POINT_PREFIX),
+         "**/* *",
+         "BUILD.bazel",
+         "WORKSPACE",
+@@ -354,7 +354,7 @@ def extract_wheel(
+     directory_path = Path(directory)
+     entry_points = []
+     for name, entry_point in sorted(whl.entry_points().items()):
+-        entry_point_script = f"{WHEEL_ENTRY_POINT_PREFIX}_{name}.py"
++        entry_point_script = "{}_{}.py".format(WHEEL_ENTRY_POINT_PREFIX, name)
+         (directory_path / entry_point_script).write_text(generate_entry_point_contents(entry_point))
+         entry_points.append(generate_entry_point_rule(
+             entry_point_script,
+@@ -373,5 +373,5 @@ def extract_wheel(
+ 
+     if not incremental:
+         os.remove(whl.path)
+-        return f"//{directory}"
++        return "//{}".format(directory)
+     return None
+diff --git a/python/pip_install/pip_compile.py b/python/pip_install/pip_compile.py
+index 278e848..db9a430 100644
+--- a/python/pip_install/pip_compile.py
++++ b/python/pip_install/pip_compile.py
+@@ -79,7 +79,7 @@ else:
+             print(
+                 "pip-compile exited with code 2. This means that pip-compile found "
+                 "incompatible requirements or could not find a version that matches "
+-                f"the install requirement in {requirements_in}.",
++                "the install requirement in {}.".format(requirements_in),
+                 file=sys.stderr,
+             )
+             sys.exit(1)
+@@ -100,7 +100,7 @@ else:
+             sys.exit(0)
+         else:
+             print(
+-                f"pip-compile unexpectedly exited with code {e.code}.",
++                "pip-compile unexpectedly exited with code {}.".format(e.code),
+                 file=sys.stderr
+             )
+             sys.exit(1)
 diff --git a/python/pip_install/pip_repository.bzl b/python/pip_install/pip_repository.bzl
 index c3007e1..40013f4 100644
 --- a/python/pip_install/pip_repository.bzl
