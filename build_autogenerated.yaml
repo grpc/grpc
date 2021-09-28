@@ -906,6 +906,7 @@ libs:
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/channel.h
+  - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
@@ -1472,6 +1473,7 @@ libs:
   - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
   - src/core/lib/surface/channel.cc
+  - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_ping.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/surface/completion_queue.cc
@@ -1910,6 +1912,7 @@ libs:
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/channel.h
+  - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
@@ -2194,6 +2197,7 @@ libs:
   - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
   - src/core/lib/surface/channel.cc
+  - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_ping.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/surface/completion_queue.cc
@@ -5401,6 +5405,8 @@ targets:
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
+  - src/core/lib/surface/channel_init.h
+  - src/core/lib/surface/channel_stack_type.h
   src:
   - src/core/ext/upb-generated/google/api/annotations.upb.c
   - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
@@ -5460,6 +5466,8 @@ targets:
   - src/core/lib/gprpp/time_util.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
+  - src/core/lib/surface/channel_init.cc
+  - src/core/lib/surface/channel_stack_type.cc
   - test/core/config/core_configuration_test.cc
   deps:
   - absl/base:base
