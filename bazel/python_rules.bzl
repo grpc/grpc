@@ -304,7 +304,6 @@ def py2and3_test(
     )
 
 def py_grpc_test(**kwargs):
-    """Runs a test in multiple different ways.
-    """
+    """Runs a test under all supported environments."""
     py2and3_test(**kwargs)
     py_grpc_gevent_test(**kwargs)
