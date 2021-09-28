@@ -54,6 +54,7 @@ def grpc_python_deps():
             patches = ["//third_party:rules_python.patch"],
             patch_args = ["-p1"],
         )
+
         # native.local_repository(
         #     name = "io_bazel_rules_python",
         #     path = "../rules_python",
