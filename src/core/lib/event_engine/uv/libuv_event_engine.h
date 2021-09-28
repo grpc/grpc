@@ -84,6 +84,8 @@ class LibuvEventEngine final
   // This should be set only once to true by the thread when it's done setting
   // itself up.
   grpc_event_engine::experimental::Promise<bool> ready_;
+  // Set by the libuv run thread, allowing the destructor to return
+  grpc_event_engine::experimental::Promise<bool> perish_;
   grpc_core::Thread thread_;
   grpc_core::MultiProducerSingleConsumerQueue queue_;
 

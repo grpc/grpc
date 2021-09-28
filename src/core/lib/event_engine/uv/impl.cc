@@ -208,6 +208,7 @@ LibuvEventEngine::~LibuvEventEngine() {
     // undefined behavior, which is in line with our surface API contracts,
     // which stipulate the same thing.
     uv_unref(reinterpret_cast<uv_handle_t*>(&engine->kicker_));
+    uv_stop(&engine->loop_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       // This is an unstable API from libuv that we use for its intended
       // purpose: debugging. This can tell us if there's lingering handles
@@ -220,10 +221,12 @@ LibuvEventEngine::~LibuvEventEngine() {
             gpr_log(GPR_DEBUG,
                     "in shutdown, handle %p type %s has references: %s", handle,
                     name, uv_has_ref(handle) ? "yes" : "no");
+            uv_close(handle, nullptr);
           },
           nullptr);
     }
   });
+  GPR_ASSERT(perish_.Get());
 }
 
 // Since libuv is single-threaded and not thread-safe, we will be running all
@@ -315,11 +318,15 @@ void LibuvEventEngine::RunThread() {
               this);
     }
     ctx.Flush();
+    if (!uv_loop_alive(&loop_)) {
+      break;
+    }
   }
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::Thread, shutting down", this);
   }
+  perish_.Set(true);
 }
 
 void LibuvEventEngine::Run(std::function<void()> fn) {
