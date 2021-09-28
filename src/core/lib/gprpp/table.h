@@ -375,7 +375,7 @@ class Table {
   // destructor.
   template <size_t... I>
   void Destruct(absl::index_sequence<I...>) {
-    table_detail::do_these_things(
+    table_detail::do_these_things<int>(
         {(table_detail::DestructIfNotNull(get<I>()), 1)...});
   }
 
@@ -383,21 +383,21 @@ class Table {
   // or_clear as per CopyIf().
   template <bool or_clear, size_t... I>
   void Copy(absl::index_sequence<I...>, const Table& rhs) {
-    table_detail::do_these_things({(CopyIf<or_clear, I>(rhs), 1)...});
+    table_detail::do_these_things<int>({(CopyIf<or_clear, I>(rhs), 1)...});
   }
 
   // For each field (element I=0, 1, ...) move that field into this table -
   // or_clear as per MoveIf().
   template <bool or_clear, size_t... I>
   void Move(absl::index_sequence<I...>, Table&& rhs) {
-    table_detail::do_these_things(
+    table_detail::do_these_things<int>(
         {(MoveIf<or_clear, I>(std::forward<Table>(rhs)), 1)...});
   }
 
   // For each field (element I=0, 1, ...) if that field is present, call f.
   template <typename F, size_t... I>
   void ForEachImpl(F f, absl::index_sequence<I...>) const {
-    table_detail::do_these_things({(CallIf<I>(&f), 1)...});
+    table_detail::do_these_things<int>({(CallIf<I>(&f), 1)...});
   }
 
   // Bit field indicating which elements are set.

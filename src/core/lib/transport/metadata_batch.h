@@ -30,6 +30,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/table.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -66,6 +67,18 @@ grpc_error_handle grpc_attach_md_to_error(grpc_error_handle src,
 
 namespace grpc_core {
 
+// grpc-timeout metadata trait.
+// ValueType is defined as grpc_millis - an absolute timestamp (i.e. a
+// deadline!), that is converted to a duration by transports before being
+// sent.
+// TODO(ctiller): Move this elsewhere. During the transition we need to be able
+// to name this in MetadataMap, but ultimately once the transition is done we
+// should not need to.
+struct GrpcTimeoutMetadata {
+  using ValueType = grpc_millis;
+  static const char* key() { return "grpc-timeout"; }
+};
+
 // MetadataMap encodes the mapping of metadata keys to metadata values.
 // Right now the API presented is the minimal one that will allow us to
 // substitute this type for grpc_metadata_batch in a relatively easy fashion. At
@@ -73,9 +86,20 @@ namespace grpc_core {
 // again, whilst minimally holding the performance bar already set (and
 // hopefully improving some things).
 // In the meantime, we're not going to invest much time in ephemeral API
-// documentation, so if you must use one of these API's and it's not obvious
+// documentation, so if you must use one of these APIs and it's not obvious
 // how, reach out to ctiller.
-template <typename... TraitsIgnored>
+//
+// MetadataMap takes a list of traits. Each of these trait objects defines
+// one metadata field that is used by core, and so should have more specialized
+// handling than just using the generic APIs.
+//
+// Each trait object has the following signature:
+// // Traits for the grpc-xyz metadata field:
+// struct GrpcXyzMetadata {
+//   using ValueType = ...;
+//   static constexpr char* key() { return "grpc-xyz"; }
+// };
+template <typename... Traits>
 class MetadataMap {
  public:
   MetadataMap();
@@ -86,13 +110,71 @@ class MetadataMap {
   MetadataMap(MetadataMap&&) noexcept;
   MetadataMap& operator=(MetadataMap&&) noexcept;
 
+  // Encode this metadata map into some encoder.
+  // For each field that is set in the MetadataMap, call
+  // encoder->Encode.
+  //
+  // For fields for which we have traits, this will be a method with
+  // the signature:
+  //    void Encode(TraitsType, typename TraitsType::ValueType value);
+  // For fields for which we do not have traits, this will be a method
+  // with the signature:
+  //    void Encode(grpc_mdelem md);
+  // TODO(ctiller): It's expected that the latter Encode method will
+  // become Encode(Slice, Slice) by the end of the current metadata API
+  // transitions.
   template <typename Encoder>
   void Encode(Encoder* encoder) const {
     for (auto* l = list_.head; l; l = l->next) {
       encoder->Encode(l->md);
     }
-    if (deadline_ != GRPC_MILLIS_INF_FUTURE) encoder->EncodeDeadline(deadline_);
+    table_.ForEach(EncodeWrapper<Encoder>{encoder});
   }
+
+  // Get the pointer to the value of some known metadata.
+  // Returns nullptr if the metadata is not present.
+  // Causes a compilation error if Which is not an element of Traits.
+  template <typename Which>
+  const typename Which::ValueType* get_pointer(Which) const {
+    if (auto* p = table_.template get<Value<Which>>()) return &p->value;
+    return nullptr;
+  }
+
+  // Get the pointer to the value of some known metadata.
+  // Returns nullptr if the metadata is not present.
+  // Causes a compilation error if Which is not an element of Traits.
+  template <typename Which>
+  typename Which::ValueType* get_pointer(Which) {
+    if (auto* p = table_.template get<Value<Which>>()) return &p->value;
+    return nullptr;
+  }
+
+  // Get the value of some known metadata.
+  // Returns nullopt if the metadata is not present.
+  // Causes a compilation error if Which is not an element of Traits.
+  template <typename Which>
+  absl::optional<typename Which::ValueType> get(Which) const {
+    if (auto* p = table_.template get<Value<Which>>()) return p->value;
+    return absl::nullopt;
+  }
+
+  // Set the value of some known metadata.
+  // Returns a pointer to the new value.
+  template <typename Which, typename... Args>
+  typename Which::ValueType* Set(Which, Args&&... args) {
+    return &table_.template set<Value<Which>>(std::forward<Args>(args)...)
+                ->value;
+  }
+
+  // Remove a specific piece of known metadata.
+  template <typename Which>
+  void Remove(Which) {
+    table_.template clear<Value<Which>>();
+  }
+
+  //
+  // All APIs below this point are subject to change.
+  //
 
   template <typename F>
   void ForEach(F f) const {
@@ -132,9 +214,7 @@ class MetadataMap {
   void Clear();
   bool empty() const { return count() == 0; }
 
-  size_t count() const {
-    return list_.count + (deadline_ == GRPC_MILLIS_INF_FUTURE ? 0 : 1);
-  }
+  size_t count() const { return list_.count + table_.count(); }
   size_t non_deadline_count() const { return list_.count; }
   size_t default_count() const { return list_.default_count; }
 
@@ -175,13 +255,37 @@ class MetadataMap {
   void AssertOk() {}
 #endif
 
-  grpc_millis deadline() const { return deadline_; }
-  void SetDeadline(grpc_millis deadline) { deadline_ = deadline; }
-  void ClearDeadline() { SetDeadline(GRPC_MILLIS_INF_FUTURE); }
+  // TODO(ctiller): the following explicit deadline handling methods are
+  // deprecated in terms of the traits based APIs.
+  grpc_millis deadline() const {
+    return get(GrpcTimeoutMetadata()).value_or(GRPC_MILLIS_INF_FUTURE);
+  };
 
   const grpc_metadata_batch_callouts* legacy_index() const { return &idx_; }
 
  private:
+  // Generate a strong type for metadata values per trait.
+  template <typename Which>
+  struct Value {
+    Value() = default;
+    explicit Value(const typename Which::ValueType& value) : value(value) {}
+    Value(const Value&) = default;
+    Value& operator=(const Value&) = default;
+    Value(Value&&) noexcept = default;
+    Value& operator=(Value&&) noexcept = default;
+    GPR_NO_UNIQUE_ADDRESS typename Which::ValueType value;
+  };
+  // Callable for the ForEach in Encode() -- for each value, call the
+  // appropriate encoder method.
+  template <typename Encoder>
+  struct EncodeWrapper {
+    Encoder* encoder;
+    template <typename Which>
+    void operator()(const Value<Which>& which) {
+      encoder->Encode(Which(), which.value);
+    }
+  };
+
   void AssertValidCallouts();
   grpc_error_handle LinkCallout(grpc_linked_mdelem* storage,
                                 grpc_metadata_batch_callouts_index idx)
@@ -272,13 +376,11 @@ class MetadataMap {
     assert_valid_list(list);
   }
 
+  // Table of known metadata types.
+  Table<Value<Traits>...> table_;
   /** Metadata elements in this batch */
   grpc_mdelem_list list_;
   grpc_metadata_batch_callouts idx_;
-  /** Used to calculate grpc-timeout at the point of sending,
-      or GRPC_MILLIS_INF_FUTURE if this batch does not need to send a
-      grpc-timeout */
-  grpc_millis deadline_;
 };
 
 template <typename... Traits>
@@ -307,29 +409,26 @@ template <typename... Traits>
 MetadataMap<Traits...>::MetadataMap() {
   memset(&list_, 0, sizeof(list_));
   memset(&idx_, 0, sizeof(idx_));
-  deadline_ = GRPC_MILLIS_INF_FUTURE;
 }
 
 template <typename... Traits>
-MetadataMap<Traits...>::MetadataMap(MetadataMap&& other) noexcept {
+MetadataMap<Traits...>::MetadataMap(MetadataMap&& other) noexcept
+    : table_(std::move(other.table_)) {
   list_ = other.list_;
   idx_ = other.idx_;
-  deadline_ = other.deadline_;
   memset(&other.list_, 0, sizeof(list_));
   memset(&other.idx_, 0, sizeof(idx_));
-  other.deadline_ = GRPC_MILLIS_INF_FUTURE;
 }
 
 template <typename... Traits>
 MetadataMap<Traits...>& MetadataMap<Traits...>::operator=(
     MetadataMap&& other) noexcept {
   Clear();
+  table_ = std::move(other.table_);
   list_ = other.list_;
   idx_ = other.idx_;
-  deadline_ = other.deadline_;
   memset(&other.list_, 0, sizeof(list_));
   memset(&other.idx_, 0, sizeof(idx_));
-  other.deadline_ = GRPC_MILLIS_INF_FUTURE;
   return *this;
 }
 
@@ -567,7 +666,8 @@ bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
 
 }  // namespace grpc_core
 
-using grpc_metadata_batch = grpc_core::MetadataMap<>;
+using grpc_metadata_batch =
+    grpc_core::MetadataMap<grpc_core::GrpcTimeoutMetadata>;
 
 inline void grpc_metadata_batch_clear(grpc_metadata_batch* batch) {
   batch->Clear();

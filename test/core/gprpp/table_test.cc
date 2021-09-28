@@ -24,6 +24,8 @@
 namespace grpc_core {
 namespace testing {
 
+TEST(Table, InstantiateEmpty) { Table<>(); }
+
 TEST(Table, NoOp) {
   Table<int, double, std::string> t;
   EXPECT_EQ(t.get<int>(), nullptr);

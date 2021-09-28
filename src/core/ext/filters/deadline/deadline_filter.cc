@@ -114,9 +114,7 @@ class TimerState {
 // synchronized.
 static void start_timer_if_needed(grpc_call_element* elem,
                                   grpc_millis deadline) {
-  if (deadline == GRPC_MILLIS_INF_FUTURE) {
-    return;
-  }
+  if (deadline == GRPC_MILLIS_INF_FUTURE) return;
   grpc_deadline_state* deadline_state =
       static_cast<grpc_deadline_state*>(elem->call_data);
   GPR_ASSERT(deadline_state->timer_state == nullptr);
@@ -295,7 +293,9 @@ static void deadline_client_start_transport_stream_op_batch(
 static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   server_call_data* calld = static_cast<server_call_data*>(elem->call_data);
-  start_timer_if_needed(elem, calld->recv_initial_metadata->deadline());
+  start_timer_if_needed(
+      elem, calld->recv_initial_metadata->get(grpc_core::GrpcTimeoutMetadata())
+                .value_or(GRPC_MILLIS_INF_FUTURE));
   // Invoke the next callback.
   grpc_core::Closure::Run(DEBUG_LOCATION,
                           calld->next_recv_initial_metadata_ready,

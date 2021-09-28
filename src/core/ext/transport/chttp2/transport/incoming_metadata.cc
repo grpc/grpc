@@ -53,7 +53,11 @@ grpc_error_handle grpc_chttp2_incoming_metadata_buffer_replace_or_add(
 
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
     grpc_chttp2_incoming_metadata_buffer* buffer, grpc_millis deadline) {
-  buffer->batch.SetDeadline(deadline);
+  if (deadline != GRPC_MILLIS_INF_FUTURE) {
+    buffer->batch.Set(grpc_core::GrpcTimeoutMetadata(), deadline);
+  } else {
+    buffer->batch.Remove(grpc_core::GrpcTimeoutMetadata());
+  }
 }
 
 void grpc_chttp2_incoming_metadata_buffer_publish(

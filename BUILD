@@ -1722,6 +1722,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_refcount",
+        "table",
         "useful",
     ],
 )

@@ -169,6 +169,20 @@ class BitSet {
   Uint<kUnitBits> units_[kUnits];
 };
 
+// Zero-size specialization of BitSet.
+// Useful for generic programming.
+// Make a compile time error out of get/set type accesses, and hard-codes
+// queries that do make sense.
+template <>
+class BitSet<0> {
+ public:
+  constexpr BitSet() {}
+
+  bool all() const { return true; }
+  bool none() const { return true; }
+  uint32_t count() const { return 0; }
+};
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_GPRPP_BITSET_H
