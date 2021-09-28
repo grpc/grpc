@@ -23,7 +23,6 @@ readonly TEST_DRIVER_REPO_URL="https://github.com/${TEST_DRIVER_REPO_OWNER:-grpc
 readonly TEST_DRIVER_BRANCH="${TEST_DRIVER_BRANCH:-master}"
 readonly TEST_DRIVER_PATH="tools/run_tests/xds_k8s_test_driver"
 readonly TEST_DRIVER_PROTOS_PATH="src/proto/grpc/testing"
-readonly TEST_DRIVER_DISCOVERY_ALPHA_JSON="config/discovery/alpha.json"
 
 #######################################
 # Run command end report its exit code. Doesn't exit on non-zero exit code.

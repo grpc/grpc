@@ -112,7 +112,7 @@ run_test() {
 run_alpha_test() {
   local test_name=$1
   run_test ${test_name} \
-    --compute_v1_discovery_file="${TEST_DRIVER_DISCOVERY_ALPHA_JSON}"
+    --compute_api_version="v1alpha"
 }
 
 #######################################
