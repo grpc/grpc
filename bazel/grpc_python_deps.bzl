@@ -49,9 +49,15 @@ def grpc_python_deps():
     if "io_bazel_rules_python" not in native.existing_rules():
         http_archive(
             name = "io_bazel_rules_python",
-            url = "https://github.com/bazelbuild/rules_python/releases/download/0.1.0/rules_python-0.1.0.tar.gz",
-            sha256 = "b6d46438523a3ec0f3cead544190ee13223a52f6a6765a29eae7b7cc24cc83a0",
+            url = "https://github.com/bazelbuild/rules_python/releases/download/0.4.0/rules_python-0.4.0.tar.gz",
+            # sha256 = "954aa89b491be4a083304a2cb838019c8b8c3720a7abb9c4cb81ac7a24230cea",
+            patches = ["//third_party:rules_python.patch"],
+            patch_args = ["-p1"],
         )
+        # native.local_repository(
+        #     name = "io_bazel_rules_python",
+        #     path = "../rules_python",
+        # )
 
     python_configure(name = "local_config_python")
 

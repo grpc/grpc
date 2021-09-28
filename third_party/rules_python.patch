@@ -1,0 +1,49 @@
+diff --git a/python/pip_install/pip_repository.bzl b/python/pip_install/pip_repository.bzl
+index c3007e1..40013f4 100644
+--- a/python/pip_install/pip_repository.bzl
++++ b/python/pip_install/pip_repository.bzl
+@@ -39,7 +39,8 @@ def _resolve_python_interpreter(rctx):
+         if "/" not in python_interpreter:
+             python_interpreter = rctx.which(python_interpreter)
+         if not python_interpreter:
+-            fail("python interpreter not found")
++            print("WARNING: python interpreter not found. Python targets will not be functional")
++            return ""
+     return python_interpreter
+ 
+ def _parse_optional_attrs(rctx, args):
+@@ -93,11 +94,23 @@ def _parse_optional_attrs(rctx, args):
+ 
+     return args
+ 
++def _generate_stub_requirements_bzl(rctx):
++    contents = """\
++def requirement(name):
++    return "@{repo}//:empty"
++""".format(repo=rctx.attr.name)
++    rctx.file("requirements.bzl", contents)
++
+ _BUILD_FILE_CONTENTS = """\
+ package(default_visibility = ["//visibility:public"])
+ 
+ # Ensure the `requirements.bzl` source can be accessed by stardoc, since users load() from it
+ exports_files(["requirements.bzl"])
++
++py_library(
++    name = "empty",
++    srcs = [],
++)
+ """
+ 
+ def _pip_repository_impl(rctx):
+@@ -109,6 +122,10 @@ def _pip_repository_impl(rctx):
+     # We need a BUILD file to load the generated requirements.bzl
+     rctx.file("BUILD.bazel", _BUILD_FILE_CONTENTS)
+ 
++    if not python_interpreter:
++      _generate_stub_requirements_bzl(rctx)
++      return
++
+     pypath = _construct_pypath(rctx)
+ 
+     if rctx.attr.incremental:
