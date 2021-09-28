@@ -35,7 +35,11 @@ from tests.unit._rpc_test_helpers import unary_stream_multi_callable
 from tests.unit._rpc_test_helpers import unary_unary_multi_callable
 from tests.unit.framework.common import test_constants
 
+from tests.unit import test_common
 
+
+@unittest.skipIf(test_common.running_under_gevent(),
+                 "This test is nondeterministic under gevent.")
 class RPCPart1Test(BaseRPCTest, unittest.TestCase):
 
     def testExpiredStreamRequestBlockingUnaryResponse(self):
