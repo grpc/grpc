@@ -159,6 +159,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             resource_prefix=self.resource_prefix,
             resource_suffix=(self.resource_suffix or ""),
             network=self.network,
+            compute_api_version=self.compute_api_version,
         )
         # Kubernetes namespace
         self.k8s_namespace = k8s.KubernetesNamespace(self.k8s_api_manager,

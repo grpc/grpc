@@ -234,6 +234,13 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
   size_t unused_bytes_size = 0;
   tsi_result result = tsi_handshaker_result_get_unused_bytes(
       handshaker_result_, &unused_bytes, &unused_bytes_size);
+  if (result != TSI_OK) {
+    HandshakeFailedLocked(grpc_set_tsi_error_result(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "TSI handshaker result does not provide unused bytes"),
+        result));
+    return;
+  }
   // Check whether we need to wrap the endpoint.
   tsi_zero_copy_grpc_protector* zero_copy_protector = nullptr;
   tsi_frame_protector* protector = nullptr;

@@ -105,7 +105,14 @@ run_test() {
     --secondary_kube_context="${SECONDARY_KUBE_CONTEXT}" \
     --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
-    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml"
+    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
+    ${@:2}
+}
+
+run_alpha_test() {
+  local test_name=$1
+  run_test ${test_name} \
+    --compute_api_version="v1alpha"
 }
 
 #######################################
@@ -144,6 +151,7 @@ main() {
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
   local failed_tests=0
+  run_alpha_test subsetting_test || (( failed_tests++ ))
   test_suites=("change_backend_service_test" "failover_test" "remove_neg_test" "round_robin_test" "affinity_test")
   for test in "${test_suites[@]}"; do
     run_test $test || (( failed_tests++ ))

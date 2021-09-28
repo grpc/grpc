@@ -353,10 +353,10 @@ def targets():
         PythonDistribTest('linux', 'x64', 'ubuntu1804'),
         PythonDistribTest('linux', 'aarch64', 'python38_buster'),
         PythonDistribTest('linux', 'x64', 'alpine3.7', source=True),
-        PythonDistribTest('linux', 'x64', 'jessie', source=True),
-        PythonDistribTest('linux', 'x86', 'jessie', source=True),
+        PythonDistribTest('linux', 'x64', 'buster', source=True),
+        PythonDistribTest('linux', 'x86', 'buster', source=True),
         PythonDistribTest('linux', 'x64', 'centos7', source=True),
-        PythonDistribTest('linux', 'x64', 'fedora23', source=True),
+        PythonDistribTest('linux', 'x64', 'fedora34', source=True),
         PythonDistribTest('linux', 'x64', 'arch', source=True),
         PythonDistribTest('linux', 'x64', 'ubuntu1804', source=True),
         # Ruby
