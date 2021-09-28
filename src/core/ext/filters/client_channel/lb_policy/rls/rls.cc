@@ -326,7 +326,16 @@ class RlsLb : public LoadBalancingPolicy {
 
     class Entry : public InternallyRefCounted<Entry> {
      public:
-      explicit Entry(RefCountedPtr<RlsLb> lb_policy);
+      Entry(RefCountedPtr<RlsLb> lb_policy, const RequestKey& key);
+
+      // Notify the entry when it's evicted from the cache. Performs shut down.
+      // Note: We are forced to disable lock analysis here because
+      // Orphan() is called by OrphanablePtr<>, which cannot have lock
+      // annotations for this particular caller.
+      void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
+
+      // Cache size of entry.
+      size_t Size() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
       // Pick subchannel for request based on the entry's state.
       PickResult Pick(PickArgs args, RlsLbConfig* config,
@@ -336,17 +345,14 @@ class RlsLb : public LoadBalancingPolicy {
       // If the cache entry is in backoff state, resets the backoff and, if
       // applicable, its backoff timer. The method does not update the LB
       // policy's picker; the caller is responsible for that if necessary.
-      void ResetBackoff();
+      void ResetBackoff() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
       // Check if the entry should be removed by the clean-up timer.
-      bool ShouldRemove() const;
+      bool ShouldRemove() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
       // Check if the entry can be evicted from the cache, i.e. the
       // min_expiration_time_ has passed.
-      bool CanEvict() const;
-
-      // Notify the entry when it's evicted from the cache. Performs shut down.
-      void Orphan() override;
+      bool CanEvict() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
       // Updates the entry upon reception of a new RLS response. This method
       // must be called from the LB policy work serializer.
@@ -354,13 +360,8 @@ class RlsLb : public LoadBalancingPolicy {
                                std::unique_ptr<BackOff> backoff_state)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
-      // Set the iterator to the lru_list element of the cache corresponding to
-      // this entry.
-      // FIXME: restructure somehow to make this go away?
-      void set_iterator(Cache::Iterator iterator) { lru_iterator_ = iterator; }
-      // Get the iterator to the lru_list element of the cache corresponding to
-      // this entry.
-      Cache::Iterator iterator() const { return lru_iterator_; }
+      // Moves entry to the end of the LRU list.
+      void MarkUsed() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
      private:
       // Callback when the backoff timer is fired.
@@ -368,25 +369,30 @@ class RlsLb : public LoadBalancingPolicy {
 
       RefCountedPtr<RlsLb> lb_policy_;
 
-      bool is_shutdown_ = false;
+      bool is_shutdown_ ABSL_GUARDED_BY(&RlsLb::mu_) = false;
 
       // Backoff states
-      absl::Status status_;
-      std::unique_ptr<BackOff> backoff_state_ = nullptr;
-      grpc_timer backoff_timer_;
-      bool timer_pending_ = false;
-      grpc_closure backoff_timer_callback_;
-      grpc_millis backoff_time_ = GRPC_MILLIS_INF_PAST;
-      grpc_millis backoff_expiration_time_ = GRPC_MILLIS_INF_PAST;
+      absl::Status status_ ABSL_GUARDED_BY(&RlsLb::mu_);
+      std::unique_ptr<BackOff> backoff_state_ ABSL_GUARDED_BY(&RlsLb::mu_);
+      grpc_timer backoff_timer_ ABSL_GUARDED_BY(&RlsLb::mu_);
+      bool timer_pending_ ABSL_GUARDED_BY(&RlsLb::mu_) = false;
+      grpc_closure backoff_timer_callback_ ABSL_GUARDED_BY(&RlsLb::mu_);
+      grpc_millis backoff_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
+          GRPC_MILLIS_INF_PAST;
+      grpc_millis backoff_expiration_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
+          GRPC_MILLIS_INF_PAST;
 
       // RLS response states
-      std::vector<RefCountedPtr<ChildPolicyWrapper>> child_policy_wrappers_;
-      std::string header_data_;
-      grpc_millis data_expiration_time_ = GRPC_MILLIS_INF_PAST;
-      grpc_millis stale_time_ = GRPC_MILLIS_INF_PAST;
+      std::vector<RefCountedPtr<ChildPolicyWrapper>>
+      child_policy_wrappers_ ABSL_GUARDED_BY(&RlsLb::mu_);
+      std::string header_data_ ABSL_GUARDED_BY(&RlsLb::mu_);
+      grpc_millis data_expiration_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
+          GRPC_MILLIS_INF_PAST;
+      grpc_millis stale_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
+          GRPC_MILLIS_INF_PAST;
 
-      grpc_millis min_expiration_time_;
-      Cache::Iterator lru_iterator_;
+      grpc_millis min_expiration_time_ ABSL_GUARDED_BY(&RlsLb::mu_);
+      Cache::Iterator lru_iterator_ ABSL_GUARDED_BY(&RlsLb::mu_);
     };
 
     explicit Cache(RlsLb* lb_policy);
@@ -394,49 +400,50 @@ class RlsLb : public LoadBalancingPolicy {
     // Finds an entry from the cache that corresponds to a key. If an entry is
     // not found, nullptr is returned. Otherwise, the entry is considered
     // recently used and its order in the LRU list of the cache is updated.
-    Entry* Find(const RequestKey& key);
+    Entry* Find(const RequestKey& key)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
     // Finds an entry from the cache that corresponds to a key. If an entry is
     // not found, an entry is created, inserted in the cache, and returned to
     // the caller. Otherwise, the entry found is returned to the caller. The
     // entry returned to the user is considered recently used and its order in
     // the LRU list of the cache is updated.
-    Entry* FindOrInsert(const RequestKey& key);
+    Entry* FindOrInsert(const RequestKey& key)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
     // Resizes the cache. If the new cache size is greater than the current size
     // of the cache, do nothing. Otherwise, evict the oldest entries that
     // exceed the new size limit of the cache.
-    void Resize(int64_t bytes);
+    void Resize(int64_t bytes) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
     // Resets backoff of all the cache entries.
-    void ResetAllBackoff();
+    void ResetAllBackoff() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
     // Shutdown the cache; clean-up and orphan all the stored cache entries.
-    void Shutdown();
+    void Shutdown() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
    private:
-    using MapType = std::unordered_map<RequestKey, OrphanablePtr<Entry>,
-                                       absl::Hash<RequestKey>>;
-
     static void OnCleanupTimer(void* arg, grpc_error_handle error);
+
+    // Returns the entry size for a given key.
+    static size_t EntrySizeForKey(const RequestKey& key);
 
     // Evicts oversized cache elements when the current size is greater than
     // the specified limit.
-    void MaybeShrinkSize(int64_t bytes);
-
-    // Sets an entry to be recently used and move it to the end of the LRU
-    // list.
-    void SetRecentUsage(MapType::iterator entry);
+    void MaybeShrinkSize(int64_t bytes)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
     RlsLb* lb_policy_;
 
-    int64_t size_limit_ = 0;
-    int64_t size_ = 0;
+    int64_t size_limit_ ABSL_GUARDED_BY(&RlsLb::mu_) = 0;
+    int64_t size_ ABSL_GUARDED_BY(&RlsLb::mu_) = 0;
 
-    std::list<RequestKey> lru_list_;
-    MapType map_;
-    grpc_timer cleanup_timer_;
-    grpc_closure timer_callback_;
+    std::list<RequestKey> lru_list_ ABSL_GUARDED_BY(&RlsLb::mu_);
+    std::unordered_map<RequestKey, OrphanablePtr<Entry>,
+                       absl::Hash<RequestKey>>
+        map_ ABSL_GUARDED_BY(&RlsLb::mu_);
+    grpc_timer cleanup_timer_ ABSL_GUARDED_BY(&RlsLb::mu_);
+    grpc_closure timer_callback_ ABSL_GUARDED_BY(&RlsLb::mu_);
   };
 
   // Channel for communicating with the RLS server.
@@ -459,10 +466,13 @@ class RlsLb : public LoadBalancingPolicy {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
     // Reports the result of an RLS call to the throttle.
-    void ReportResponseLocked(bool response_succeeded);
+    void ReportResponseLocked(bool response_succeeded)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
     // Checks if a proposed RLS call should be throttled.
-    bool ShouldThrottle() { return throttle_.ShouldThrottle(); }
+    bool ShouldThrottle() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
+      return throttle_.ShouldThrottle();
+    }
 
     // Resets the channel's backoff.
     void ResetBackoff();
@@ -493,9 +503,10 @@ class RlsLb : public LoadBalancingPolicy {
       explicit Throttle(int window_size_seconds = 0,
                         double ratio_for_successes = 0, int paddings = 0);
 
-      bool ShouldThrottle();
+      bool ShouldThrottle() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
-      void RegisterResponse(bool success);
+      void RegisterResponse(bool success)
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
      private:
       grpc_millis window_size_;
@@ -503,17 +514,17 @@ class RlsLb : public LoadBalancingPolicy {
       int paddings_;
 
       // Logged timestamp of requests.
-      std::deque<grpc_millis> requests_;
+      std::deque<grpc_millis> requests_ ABSL_GUARDED_BY(&RlsLb::mu_);
 
       // Logged timestamp of responses that were successful.
-      std::deque<grpc_millis> successes_;
+      std::deque<grpc_millis> successes_ ABSL_GUARDED_BY(&RlsLb::mu_);
     };
 
     RefCountedPtr<RlsLb> lb_policy_;
     bool is_shutdown_ = false;
 
     grpc_channel* channel_ = nullptr;
-    Throttle throttle_;
+    Throttle throttle_ ABSL_GUARDED_BY(&RlsLb::mu_);
     StateWatcher* watcher_ = nullptr;
   };
 
@@ -877,133 +888,6 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
 }
 
 //
-// RlsLb::Cache
-//
-
-RlsLb::Cache::Cache(RlsLb* lb_policy) : lb_policy_(lb_policy) {
-  grpc_millis now = ExecCtx::Get()->Now();
-  lb_policy_->Ref(DEBUG_LOCATION, "CacheCleanupTimer").release();
-  GRPC_CLOSURE_INIT(&timer_callback_, OnCleanupTimer, this, nullptr);
-  grpc_timer_init(&cleanup_timer_, now + kCacheCleanupTimerInterval,
-                  &timer_callback_);
-}
-
-RlsLb::Cache::Entry* RlsLb::Cache::Find(const RequestKey& key) {
-  auto it = map_.find(key);
-  if (it == map_.end()) return nullptr;
-  SetRecentUsage(it);
-  return it->second.get();
-}
-
-RlsLb::Cache::Entry* RlsLb::Cache::FindOrInsert(const RequestKey& key) {
-  auto it = map_.find(key);
-  // If not found, create new entry.
-  if (it == map_.end()) {
-    size_t new_entry_size = key.Size() * 2 + sizeof(Entry);
-    MaybeShrinkSize(size_limit_ - new_entry_size);
-    Entry* entry = new Entry(lb_policy_->Ref(DEBUG_LOCATION, "CacheEntry"));
-    map_.emplace(key, OrphanablePtr<Entry>(entry));
-    auto lru_it = lru_list_.insert(lru_list_.end(), key);
-    entry->set_iterator(lru_it);
-    size_ += new_entry_size;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-      gpr_log(GPR_INFO, "[rlslb %p] key=%s: cache entry added, entry=%p",
-              lb_policy_, key.ToString().c_str(), entry);
-    }
-    return entry;
-  }
-  // Entry found, so use it.
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-    gpr_log(GPR_INFO, "[rlslb %p] key=%s: found cache entry %p", lb_policy_,
-            key.ToString().c_str(), it->second.get());
-  }
-  SetRecentUsage(it);
-  return it->second.get();
-}
-
-void RlsLb::Cache::Resize(int64_t bytes) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-    gpr_log(GPR_INFO, "[rlslb %p] resizing cache to %" PRId64 " bytes",
-            lb_policy_, bytes);
-  }
-  size_limit_ = bytes;
-  MaybeShrinkSize(size_limit_);
-}
-
-void RlsLb::Cache::ResetAllBackoff() {
-  for (auto& p : map_) {
-    p.second->ResetBackoff();
-  }
-}
-
-void RlsLb::Cache::Shutdown() {
-  map_.clear();
-  lru_list_.clear();
-  grpc_timer_cancel(&cleanup_timer_);
-}
-
-void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
-  Cache* cache = static_cast<Cache*>(arg);
-  GRPC_ERROR_REF(error);
-  cache->lb_policy_->work_serializer()->Run(
-      [cache, error]() {
-        RefCountedPtr<RlsLb> lb_policy(cache->lb_policy_);
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-          gpr_log(GPR_INFO, "[rlslb %p] cache cleanup timer fired (%s)",
-                  cache->lb_policy_, grpc_error_std_string(error).c_str());
-        }
-        if (error == GRPC_ERROR_CANCELLED) return;
-        MutexLock lock(&lb_policy->mu_);
-        if (lb_policy->is_shutdown_) return;
-        for (auto it = cache->map_.begin(); it != cache->map_.end();) {
-          if (GPR_UNLIKELY(it->second->ShouldRemove())) {
-            if (!it->second->CanEvict()) break;
-            auto lru_it = it->second->iterator();
-            size_t key_size = lru_it->Size();
-            // FIXME: this calculation exists in a few places --
-            // refactor to avoid duplication
-            cache->size_ -= (key_size   /* entry in lru_list_ */
-                             + key_size /* key of entry in map_ */
-                             + sizeof(Entry) /* value of entry in map_ */);
-            it = cache->map_.erase(it);
-            cache->lru_list_.erase(lru_it);
-          } else {
-            it++;
-          }
-        }
-        grpc_millis now = ExecCtx::Get()->Now();
-        lb_policy.release();
-        grpc_timer_init(&cache->cleanup_timer_,
-                        now + kCacheCleanupTimerInterval,
-                        &cache->timer_callback_);
-      },
-      DEBUG_LOCATION);
-}
-
-void RlsLb::Cache::MaybeShrinkSize(int64_t bytes) {
-  while (size_ > bytes) {
-    auto lru_it = lru_list_.begin();
-    if (GPR_UNLIKELY(lru_it == lru_list_.end())) break;
-    auto map_it = map_.find(*lru_it);
-    GPR_ASSERT(map_it != map_.end());
-    if (!map_it->second->CanEvict()) break;
-    size_t key_size = lru_it->Size();
-    size_ -= (key_size   /* entry in lru_list_ */
-              + key_size /* key of entry in map_ */
-              + sizeof(Entry) /* value of entry in map_ */);
-    map_.erase(map_it);
-    lru_list_.erase(lru_it);
-  }
-}
-
-void RlsLb::Cache::SetRecentUsage(MapType::iterator entry) {
-  auto lru_it = entry->second->iterator();
-  auto new_it = lru_list_.insert(lru_list_.end(), *lru_it);
-  lru_list_.erase(lru_it);
-  entry->second->set_iterator(new_it);
-}
-
-//
 // RlsLb::Cache::Entry
 //
 
@@ -1016,13 +900,39 @@ std::unique_ptr<BackOff> MakeCacheEntryBackoff() {
           .set_max_backoff(kCacheBackoffMax));
 }
 
-RlsLb::Cache::Entry::Entry(RefCountedPtr<RlsLb> lb_policy)
+RlsLb::Cache::Entry::Entry(RefCountedPtr<RlsLb> lb_policy,
+                           const RequestKey& key)
     : InternallyRefCounted<Entry>(
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) ? "CacheEntry" : nullptr),
       lb_policy_(std::move(lb_policy)),
       backoff_state_(MakeCacheEntryBackoff()),
-      min_expiration_time_(ExecCtx::Get()->Now() + kMinExpirationTime) {
+      min_expiration_time_(ExecCtx::Get()->Now() + kMinExpirationTime),
+      lru_iterator_(lb_policy_->cache_.lru_list_.insert(
+                        lb_policy_->cache_.lru_list_.end(), key)) {
   GRPC_CLOSURE_INIT(&backoff_timer_callback_, OnBackoffTimer, this, nullptr);
+}
+
+void RlsLb::Cache::Entry::Orphan() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+    gpr_log(GPR_INFO, "[rlslb %p] cache entry=%p: cache entry evicted",
+            lb_policy_.get(), this);
+  }
+  is_shutdown_ = true;
+  lb_policy_->cache_.lru_list_.erase(lru_iterator_);
+  lru_iterator_ = lb_policy_->cache_.lru_list_.end();  // Just in case.
+  backoff_state_.reset();
+  if (timer_pending_) {
+    grpc_timer_cancel(&backoff_timer_);
+    lb_policy_->UpdatePicker();
+  }
+  child_policy_wrappers_.clear();
+  Unref(DEBUG_LOCATION, "Orphan");
+}
+
+size_t RlsLb::Cache::Entry::Size() const {
+  // lru_iterator_ is not valid once we're shut down.
+  GPR_ASSERT(!is_shutdown_);
+  return lb_policy_->cache_.EntrySizeForKey(*lru_iterator_);
 }
 
 // FIXME: move this logic into Picker::Pick()
@@ -1151,19 +1061,11 @@ bool RlsLb::Cache::Entry::CanEvict() const {
   return min_expiration_time_ < now;
 }
 
-void RlsLb::Cache::Entry::Orphan() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-    gpr_log(GPR_INFO, "[rlslb %p] cache entry=%p: cache entry evicted",
-            lb_policy_.get(), this);
-  }
-  is_shutdown_ = true;
-  backoff_state_.reset();
-  if (timer_pending_) {
-    grpc_timer_cancel(&backoff_timer_);
-    lb_policy_->UpdatePicker();
-  }
-  child_policy_wrappers_.clear();
-  Unref(DEBUG_LOCATION, "Orphan");
+void RlsLb::Cache::Entry::MarkUsed() {
+  auto& lru_list = lb_policy_->cache_.lru_list_;
+  auto new_it = lru_list.insert(lru_list.end(), *lru_iterator_);
+  lru_list.erase(lru_iterator_);
+  lru_iterator_ = new_it;
 }
 
 grpc_error_handle InsertOrUpdateChildPolicyField(const std::string& field,
@@ -1204,11 +1106,7 @@ grpc_error_handle InsertOrUpdateChildPolicyField(const std::string& field,
 void RlsLb::Cache::Entry::OnRlsResponseLocked(
     ResponseInfo response, std::unique_ptr<BackOff> backoff_state) {
   // Move the entry to the end of the LRU list.
-  Cache& cache = lb_policy_->cache_;
-  cache.lru_list_.push_back(*lru_iterator_);
-  cache.lru_list_.erase(lru_iterator_);
-  lru_iterator_ = cache.lru_list_.end();
-  lru_iterator_--;
+  MarkUsed();
   // If the request failed, store the failed status and update the
   // backoff state.
   if (!response.status.ok()) {
@@ -1239,7 +1137,7 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
   backoff_time_ = GRPC_MILLIS_INF_PAST;
   backoff_expiration_time_ = GRPC_MILLIS_INF_PAST;
   // Check if we need to update this list of targets.
-  bool targets_changed = [&]() {
+  bool targets_changed = [&]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
     if (child_policy_wrappers_.size() != response.targets.size()) return true;
     for (size_t i = 0; i < response.targets.size(); ++i) {
       if (child_policy_wrappers_[i]->target() != response.targets[i]) {
@@ -1305,18 +1203,133 @@ void RlsLb::Cache::Entry::OnBackoffTimer(void* arg, grpc_error_handle error) {
         RefCountedPtr<Entry> entry(cache_entry);
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
           gpr_log(GPR_INFO,
-                  "[rlslb %p] cache entry=%p, error=%s: successful RLS "
-                  "response received",
+                  "[rlslb %p] cache entry=%p, error=%s: backoff timer fired",
                   entry->lb_policy_.get(), entry.get(),
                   grpc_error_std_string(error).c_str());
         }
         GRPC_ERROR_UNREF(error);
-        entry->timer_pending_ = false;
+        {
+          MutexLock lock(&entry->lb_policy_->mu_);
+          entry->timer_pending_ = false;
+        }
         // The pick was in backoff state and there could be a pick queued if
         // wait_for_ready is true. We'll update the picker for that case.
         entry->lb_policy_->UpdatePicker();
       },
       DEBUG_LOCATION);
+}
+
+//
+// RlsLb::Cache
+//
+
+RlsLb::Cache::Cache(RlsLb* lb_policy) : lb_policy_(lb_policy) {
+  grpc_millis now = ExecCtx::Get()->Now();
+  lb_policy_->Ref(DEBUG_LOCATION, "CacheCleanupTimer").release();
+  GRPC_CLOSURE_INIT(&timer_callback_, OnCleanupTimer, this, nullptr);
+  grpc_timer_init(&cleanup_timer_, now + kCacheCleanupTimerInterval,
+                  &timer_callback_);
+}
+
+RlsLb::Cache::Entry* RlsLb::Cache::Find(const RequestKey& key) {
+  auto it = map_.find(key);
+  if (it == map_.end()) return nullptr;
+  it->second->MarkUsed();
+  return it->second.get();
+}
+
+RlsLb::Cache::Entry* RlsLb::Cache::FindOrInsert(const RequestKey& key) {
+  auto it = map_.find(key);
+  // If not found, create new entry.
+  if (it == map_.end()) {
+    size_t entry_size = EntrySizeForKey(key);
+    MaybeShrinkSize(size_limit_ - entry_size);
+    Entry* entry =
+        new Entry(lb_policy_->Ref(DEBUG_LOCATION, "CacheEntry"), key);
+    map_.emplace(key, OrphanablePtr<Entry>(entry));
+    size_ += entry_size;
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+      gpr_log(GPR_INFO, "[rlslb %p] key=%s: cache entry added, entry=%p",
+              lb_policy_, key.ToString().c_str(), entry);
+    }
+    return entry;
+  }
+  // Entry found, so use it.
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+    gpr_log(GPR_INFO, "[rlslb %p] key=%s: found cache entry %p", lb_policy_,
+            key.ToString().c_str(), it->second.get());
+  }
+  it->second->MarkUsed();
+  return it->second.get();
+}
+
+void RlsLb::Cache::Resize(int64_t bytes) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+    gpr_log(GPR_INFO, "[rlslb %p] resizing cache to %" PRId64 " bytes",
+            lb_policy_, bytes);
+  }
+  size_limit_ = bytes;
+  MaybeShrinkSize(size_limit_);
+}
+
+void RlsLb::Cache::ResetAllBackoff() {
+  for (auto& p : map_) {
+    p.second->ResetBackoff();
+  }
+}
+
+void RlsLb::Cache::Shutdown() {
+  map_.clear();
+  lru_list_.clear();
+  grpc_timer_cancel(&cleanup_timer_);
+}
+
+void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
+  Cache* cache = static_cast<Cache*>(arg);
+  GRPC_ERROR_REF(error);
+  cache->lb_policy_->work_serializer()->Run(
+      [cache, error]() {
+        RefCountedPtr<RlsLb> lb_policy(cache->lb_policy_);
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+          gpr_log(GPR_INFO, "[rlslb %p] cache cleanup timer fired (%s)",
+                  cache->lb_policy_, grpc_error_std_string(error).c_str());
+        }
+        if (error == GRPC_ERROR_CANCELLED) return;
+        MutexLock lock(&lb_policy->mu_);
+        if (lb_policy->is_shutdown_) return;
+        for (auto it = cache->map_.begin(); it != cache->map_.end();) {
+          if (GPR_UNLIKELY(it->second->ShouldRemove())) {
+            if (!it->second->CanEvict()) break;
+            cache->size_ -= it->second->Size();
+            it = cache->map_.erase(it);
+          } else {
+            it++;
+          }
+        }
+        grpc_millis now = ExecCtx::Get()->Now();
+        lb_policy.release();
+        grpc_timer_init(&cache->cleanup_timer_,
+                        now + kCacheCleanupTimerInterval,
+                        &cache->timer_callback_);
+      },
+      DEBUG_LOCATION);
+}
+
+size_t RlsLb::Cache::EntrySizeForKey(const RequestKey& key) {
+  // Key is stored twice, once in LRU list and again in the cache map.
+  return (key.Size() * 2) + sizeof(Entry);
+}
+
+void RlsLb::Cache::MaybeShrinkSize(int64_t bytes) {
+  while (size_ > bytes) {
+    auto lru_it = lru_list_.begin();
+    if (GPR_UNLIKELY(lru_it == lru_list_.end())) break;
+    auto map_it = map_.find(*lru_it);
+    GPR_ASSERT(map_it != map_.end());
+    if (!map_it->second->CanEvict()) break;
+    size_ -= map_it->second->Size();
+    map_.erase(map_it);
+  }
 }
 
 //
@@ -1333,8 +1346,8 @@ void RlsLb::RlsChannel::StateWatcher::OnConnectivityStateChange(
             lb_policy, rls_channel_.get(), this,
             ConnectivityStateName(new_state), status.ToString().c_str());
   }
-  MutexLock lock(&lb_policy->mu_);
   if (rls_channel_->is_shutdown_) return;
+  MutexLock lock(&lb_policy->mu_);
   if (new_state == GRPC_CHANNEL_READY && was_transient_failure_) {
     was_transient_failure_ = false;
     lb_policy->cache_.ResetAllBackoff();
@@ -1463,6 +1476,7 @@ void RlsLb::RlsChannel::ResetBackoff() {
 // RlsLb::RlsRequest
 //
 
+// FIXME: update this to handle call creds and domain correctly
 RlsLb::RlsRequest::RlsRequest(RefCountedPtr<RlsLb> lb_policy, RequestKey key,
                               RefCountedPtr<RlsChannel> rls_channel,
                               std::unique_ptr<BackOff> backoff_state)
