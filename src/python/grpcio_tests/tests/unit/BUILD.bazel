@@ -144,10 +144,10 @@ py_grpc_test(
     imports = ["../../"],
     main = "_dynamic_stubs_test.py",
     deps = [
+        ":test_common",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_tests/tests/testing",
         "//tools/distrib/python/grpcio_tools:grpc_tools",
         "@six",
-        ":test_common",
     ],
 )

@@ -101,9 +101,3 @@ pip_install(
     name = "grpc_python_dependencies",
     requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
 )
-
-# load("@grpc_python_dependencies//:requirements.bzl", "pip_install")
-# 
-# pip_repositories()
-# 
-# pip_install()
