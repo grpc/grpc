@@ -1,13 +1,17 @@
 A reusable test suite for EventEngine implementations.
 
 To exercise a custom EventEngine, simply link against `:event_engine_test_suite`
-and provide a definition of `EventEngineTest::NewEventEngine`. For a class
-called `MyCustomEventEngine`, it will look something like:
+and provide a testing `main` function that sets a custom EventEngine factory:
 
 ```
+#include "path/to/my_custom_event_engine.h"
 #include "src/core/event_engine/test_suite/event_engine_test.h"
 
-std::unique_ptr<EventEngine> EventEngineTest::NewEventEngine() {
-  return absl::make_unique<MyCustomEventEngine>();
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  SetEventEngineFactory(
+      []() { return absl::make_unique<MyCustomEventEngine>(); });
+  auto result = RUN_ALL_TESTS();
+  return result;
 }
 ```
