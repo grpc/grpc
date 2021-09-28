@@ -264,6 +264,13 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
   size_t unused_bytes_size = 0;
   result = tsi_handshaker_result_get_unused_bytes(
       handshaker_result_, &unused_bytes, &unused_bytes_size);
+  if (result != TSI_OK) {
+    HandshakeFailedLocked(grpc_set_tsi_error_result(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "TSI handshaker result does not provide unused bytes"),
+        result));
+    return;
+  }
   // Create secure endpoint.
   if (unused_bytes_size > 0) {
     grpc_slice slice = grpc_slice_from_copied_buffer(
