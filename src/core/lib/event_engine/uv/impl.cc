@@ -406,6 +406,16 @@ std::unique_ptr<EventEngine::DNSResolver> LibuvEventEngine::GetDNSResolver() {
   return nullptr;
 }
 
+void LibuvEventEngine::Run(/*closure=*/Closure*) {
+  GPR_ASSERT(false && "LibuvEventEngine::Run(Closure*) not implemented");
+}
+
+EventEngine::TaskHandle LibuvEventEngine::RunAt(/*when=*/absl::Time,
+                                                /*closure=*/Closure*) {
+  GPR_ASSERT(false &&
+             "LibuvEventEngine::RunAt(absl::Time, Closure*) not implemented");
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 /// LibuvTask
 ////////////////////////////////////////////////////////////////////////////////
