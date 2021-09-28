@@ -65,12 +65,12 @@ void grpc_error_get_status(grpc_error_handle error, grpc_millis deadline,
     if (code != nullptr) *code = GRPC_STATUS_OK;
     if (message != nullptr) {
       // Normally, we call grpc_error_get_str(
-      //   error, GRPC_ERROR_STR_GRPC_MESSAGE, slice).
+      //   error, GRPC_ERROR_STR_GRPC_MESSAGE, message).
       // We can fastpath since we know that:
       // 1) Error is null
       // 2) which == GRPC_ERROR_STR_GRPC_MESSAGE
-      // 3) The resulting slice is statically known.
-      // 4) Said resulting slice is of length 0 ("").
+      // 3) The resulting message is statically known.
+      // 4) Said resulting message is "".
       // This means 3 movs, instead of 10s of instructions and a strlen.
       *message = "";
     }

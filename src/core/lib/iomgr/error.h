@@ -364,13 +364,10 @@ grpc_error_handle grpc_error_set_int(grpc_error_handle src,
 /// intptr_t for `p`, even if the value of `p` is not used.
 bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
                         intptr_t* p);
-/// This call takes ownership of the slice; the error is responsible for
-/// eventually unref-ing it.
 grpc_error_handle grpc_error_set_str(
     grpc_error_handle src, grpc_error_strs which,
     absl::string_view str) GRPC_MUST_USE_RESULT;
 /// Returns false if the specified string is not set.
-/// Caller does NOT own the slice.
 bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
                         std::string* str);
 

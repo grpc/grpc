@@ -744,7 +744,6 @@ static void set_final_status(grpc_call* call, grpc_error_handle error) {
     grpc_error_get_status(error, call->send_deadline,
                           call->final_op.client.status, &status_details,
                           nullptr, call->final_op.client.error_string);
-    // explicitly take a ref
     *call->final_op.client.status_details =
         grpc_slice_from_cpp_string(std::move(status_details));
     call->status_error.set(error);

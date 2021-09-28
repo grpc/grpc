@@ -598,7 +598,7 @@ grpc_error_handle grpc_error_set_str(grpc_error_handle src,
                                      absl::string_view str) {
   grpc_error_handle new_err = copy_error_and_unref(src);
   internal_set_str(&new_err, which,
-                   grpc_slice_from_cpp_string(std::string(str)));
+                   grpc_slice_from_copied_buffer(str.data(), str.length()));
   return new_err;
 }
 

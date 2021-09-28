@@ -28,7 +28,7 @@
 
 #include "test/core/util/test_config.h"
 
-static void test_set_get_int() {
+TEST(ErrorTest, SetGetInt) {
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test");
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   intptr_t i = 0;
@@ -50,7 +50,7 @@ static void test_set_get_int() {
   GRPC_ERROR_UNREF(error);
 }
 
-static void test_set_get_str() {
+TEST(ErrorTest, SetGetStr) {
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test");
 
   std::string str;
@@ -74,7 +74,7 @@ static void test_set_get_str() {
   GRPC_ERROR_UNREF(error);
 }
 
-static void test_copy_and_unref() {
+TEST(ErrorTest, CopyAndUnRef) {
   // error1 has one ref
   grpc_error_handle error1 =
       grpc_error_set_str(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test"),
@@ -101,7 +101,7 @@ static void test_copy_and_unref() {
   GRPC_ERROR_UNREF(error3);
 }
 
-static void test_create_referencing() {
+TEST(ErrorTest, CreateReferencing) {
   grpc_error_handle child =
       grpc_error_set_str(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Child"),
                          GRPC_ERROR_STR_GRPC_MESSAGE, "message");
@@ -113,7 +113,7 @@ static void test_create_referencing() {
   GRPC_ERROR_UNREF(parent);
 }
 
-static void test_create_referencing_many() {
+TEST(ErrorTest, CreateReferencingMany) {
   grpc_error_handle children[3];
   children[0] =
       grpc_error_set_str(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Child1"),
@@ -135,7 +135,7 @@ static void test_create_referencing_many() {
   GRPC_ERROR_UNREF(parent);
 }
 
-static void print_error_string() {
+TEST(ErrorTest, PrintErrorString) {
   grpc_error_handle error =
       grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
                          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNIMPLEMENTED);
@@ -145,7 +145,7 @@ static void print_error_string() {
   GRPC_ERROR_UNREF(error);
 }
 
-static void print_error_string_reference() {
+TEST(ErrorTest, PrintErrorStringReference) {
   grpc_error_handle children[2];
   children[0] = grpc_error_set_str(
       grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("1"),
@@ -165,7 +165,7 @@ static void print_error_string_reference() {
   GRPC_ERROR_UNREF(parent);
 }
 
-static void test_os_error() {
+TEST(ErrorTest, TestOsError) {
   int fake_errno = 5;
   const char* syscall = "syscall name";
   grpc_error_handle error = GRPC_OS_ERROR(fake_errno, syscall);
@@ -180,7 +180,7 @@ static void test_os_error() {
   GRPC_ERROR_UNREF(error);
 }
 
-static void test_overflow() {
+TEST(ErrorTest, Overflow) {
   // absl::Status doesn't have a limit so there is no overflow
 #ifndef GRPC_ERROR_IS_ABSEIL_STATUS
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Overflow");
@@ -211,16 +211,8 @@ static void test_overflow() {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  test_set_get_int();
-  test_set_get_str();
-  test_copy_and_unref();
-  print_error_string();
-  print_error_string_reference();
-  test_os_error();
-  test_create_referencing();
-  test_create_referencing_many();
-  test_overflow();
+  ::testing::InitGoogleTest(&argc, argv);
+  int retval = RUN_ALL_TESTS();
   grpc_shutdown();
-
-  return 0;
+  return retval;
 }
