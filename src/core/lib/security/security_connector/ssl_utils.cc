@@ -523,7 +523,7 @@ static void grpc_ssl_session_cache_arg_destroy(void* p) {
 }
 
 static int grpc_ssl_session_cache_arg_cmp(void* p, void* q) {
-  return GPR_ICMP(p, q);
+  return grpc_core::QsortCompare(p, q);
 }
 
 grpc_arg grpc_ssl_session_cache_create_channel_arg(

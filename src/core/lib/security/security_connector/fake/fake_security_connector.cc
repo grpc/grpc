@@ -92,12 +92,12 @@ class grpc_fake_channel_security_connector final
     c = strcmp(target_, other->target_);
     if (c != 0) return c;
     if (expected_targets_ == nullptr || other->expected_targets_ == nullptr) {
-      c = GPR_ICMP(expected_targets_, other->expected_targets_);
+      c = grpc_core::QsortCompare(expected_targets_, other->expected_targets_);
     } else {
       c = strcmp(expected_targets_, other->expected_targets_);
     }
     if (c != 0) return c;
-    return GPR_ICMP(is_lb_channel_, other->is_lb_channel_);
+    return grpc_core::QsortCompare(is_lb_channel_, other->is_lb_channel_);
   }
 
   void add_handshakers(const grpc_channel_args* args,

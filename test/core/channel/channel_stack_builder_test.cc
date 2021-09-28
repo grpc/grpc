@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/util/test_config.h"
@@ -92,38 +93,29 @@ const grpc_channel_filter original_filter = {
     grpc_channel_next_get_info,
     "filter_name"};
 
-static bool add_replacement_filter(grpc_channel_stack_builder* builder,
-                                   void* arg) {
-  const grpc_channel_filter* filter =
-      static_cast<const grpc_channel_filter*>(arg);
+static bool add_replacement_filter(grpc_channel_stack_builder* builder) {
   // Get rid of any other version of the filter, as determined by having the
   // same name.
-  GPR_ASSERT(grpc_channel_stack_builder_remove_filter(builder, filter->name));
+  GPR_ASSERT(grpc_channel_stack_builder_remove_filter(builder,
+                                                      replacement_filter.name));
   return grpc_channel_stack_builder_prepend_filter(
-      builder, filter, set_arg_once_fn, &g_replacement_fn_called);
+      builder, &replacement_filter, set_arg_once_fn, &g_replacement_fn_called);
 }
 
-static bool add_original_filter(grpc_channel_stack_builder* builder,
-                                void* arg) {
+static bool add_original_filter(grpc_channel_stack_builder* builder) {
   return grpc_channel_stack_builder_prepend_filter(
-      builder, static_cast<const grpc_channel_filter*>(arg), set_arg_once_fn,
-      &g_original_fn_called);
+      builder, &original_filter, set_arg_once_fn, &g_original_fn_called);
 }
-
-static void init_plugin(void) {
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_CHANNEL, INT_MAX, add_original_filter,
-      const_cast<grpc_channel_filter*>(&original_filter));
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_CHANNEL, INT_MAX, add_replacement_filter,
-      const_cast<grpc_channel_filter*>(&replacement_filter));
-}
-
-static void destroy_plugin(void) {}
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
-  grpc_register_plugin(init_plugin, destroy_plugin);
+  grpc_core::CoreConfiguration::RegisterBuilder(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        builder->channel_init()->RegisterStage(GRPC_CLIENT_CHANNEL, INT_MAX,
+                                               add_original_filter);
+        builder->channel_init()->RegisterStage(GRPC_CLIENT_CHANNEL, INT_MAX,
+                                               add_replacement_filter);
+      });
   grpc_init();
   test_channel_stack_builder_filter_replace();
   grpc_shutdown();

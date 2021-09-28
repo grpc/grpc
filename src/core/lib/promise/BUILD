@@ -1,4 +1,4 @@
-# Copyright 2016 gRPC authors.
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,6 +33,19 @@ grpc_cc_library(
     deps = ["//:gpr_platform"],
 )
 
+
+grpc_cc_test(
+    name = "poll_test",
+    srcs = ["poll_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "poll",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
 grpc_cc_library(
     name = "context",
     language = "c++",
@@ -45,6 +58,18 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_test(
+    name = "context_test",
+    srcs = ["context_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "context",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
 grpc_cc_library(
     name = "map",
     language = "c++",
@@ -53,6 +78,24 @@ grpc_cc_library(
         "poll",
         "promise_like",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_test(
+    # Why promise_map_test and not map_test?
+    # third_party/benchmark defines a map_test in its cmakefile, and we depend
+    # on that from our cmakefile, and cmake wants to have a flat namespace to
+    # deal with xcode/visual studio limitations... sooo... promise_map_test it
+    # is.
+    name = "promise_map_test",
+    srcs = ["map_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "map",
+        "promise",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -69,6 +112,18 @@ grpc_cc_library(
         "poll",
         "promise_like",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_test(
+    name = "promise_test",
+    srcs = ["promise_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "promise",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -97,6 +152,23 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_test(
+    name = "promise_factory_test",
+    srcs = ["promise_factory_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/functional:bind_front",
+    ],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "promise",
+        "promise_factory",
+        "//:capture",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
 grpc_cc_library(
     name = "if",
     external_deps = [
@@ -108,6 +180,18 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_test(
+    name = "if_test",
+    srcs = ["if_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "if",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -134,6 +218,18 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_test(
+    name = "race_test",
+    srcs = ["race_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "race",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
 grpc_cc_library(
     name = "loop",
     language = "c++",
@@ -144,6 +240,19 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_test(
+    name = "loop_test",
+    srcs = ["loop_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "loop",
+        "seq",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -183,6 +292,18 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_test(
+    name = "join_test",
+    srcs = ["join_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "join",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
 grpc_cc_library(
     name = "try_join",
     language = "c++",
@@ -193,6 +314,18 @@ grpc_cc_library(
         "basic_join",
         "promise_status",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_test(
+    name = "try_join_test",
+    srcs = ["try_join_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "try_join",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -223,6 +356,18 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_test(
+    name = "seq_test",
+    srcs = ["seq_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "seq",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
 grpc_cc_library(
     name = "try_seq",
     language = "c++",
@@ -233,6 +378,18 @@ grpc_cc_library(
         "basic_seq",
         "promise_status",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_test(
+    name = "try_seq_test",
+    srcs = ["try_seq_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "try_seq",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -254,6 +411,23 @@ grpc_cc_library(
         "//:construct_destruct",
         "//:gpr_base",
         "//:gpr_codegen",
+    ],
+)
+
+grpc_cc_test(
+    name = "activity_test",
+    srcs = ["activity_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "activity",
+        "join",
+        "test_wakeup_schedulers",
+        "promise",
+        "seq",
+        "wait_set",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -300,6 +474,21 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_test(
+    name = "latch_test",
+    srcs = ["latch_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "join",
+        "test_wakeup_schedulers",
+        "latch",
+        "seq",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
 grpc_cc_library(
     name = "observable",
     language = "c++",
@@ -310,6 +499,21 @@ grpc_cc_library(
         "activity",
         "wait_set",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_test(
+    name = "observable_test",
+    srcs = ["observable_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "observable",
+        "promise",
+        "seq",
+        "test_wakeup_schedulers",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -329,6 +533,22 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_test(
+    name = "pipe_test",
+    srcs = ["pipe_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "join",
+        "pipe",
+        "promise",
+        "test_wakeup_schedulers",
+        "seq",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
 grpc_cc_library(
     name = "for_each",
     external_deps = [
@@ -345,206 +565,6 @@ grpc_cc_library(
 )
 
 grpc_cc_test(
-    name = "poll_test",
-    srcs = ["poll_test.cc"],
-    external_deps = ["gtest"],
-    language = "c++",
-    uses_polling = False,
-    deps = [
-        "poll",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "context_test",
-    srcs = ["context_test.cc"],
-    external_deps = ["gtest"],
-    language = "c++",
-    uses_polling = False,
-    deps = [
-        "context",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "promise_test",
-    srcs = ["promise_test.cc"],
-    external_deps = ["gtest"],
-    language = "c++",
-    uses_polling = False,
-    deps = [
-        "promise",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    # Why promise_map_test and not map_test?
-    # third_party/benchmark defines a map_test in its cmakefile, and we depend
-    # on that from our cmakefile, and cmake wants to have a flat namespace to
-    # deal with xcode/visual studio limitations... sooo... promise_map_test it
-    # is.
-    name = "promise_map_test",
-    srcs = ["map_test.cc"],
-    external_deps = ["gtest"],
-    language = "c++",
-    uses_polling = False,
-    deps = [
-        "map",
-        "promise",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "race_test",
-    srcs = ["race_test.cc"],
-    external_deps = ["gtest"],
-    language = "c++",
-    uses_polling = False,
-    deps = [
-        "race",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "promise_factory_test",
-    srcs = ["promise_factory_test.cc"],
-    external_deps = [
-        "gtest",
-        "absl/functional:bind_front",
-    ],
-    language = "c++",
-    uses_polling = False,
-    deps = [
-        "promise",
-        "promise_factory",
-        "//:capture",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "if_test",
-    srcs = ["if_test.cc"],
-    external_deps = ["gtest"],
-    language = "c++",
-    uses_polling = False,
-    deps = [
-        "if",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "loop_test",
-    srcs = ["loop_test.cc"],
-    external_deps = ["gtest"],
-    language = "c++",
-    uses_polling = False,
-    deps = [
-        "loop",
-        "seq",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "join_test",
-    srcs = ["join_test.cc"],
-    external_deps = ["gtest"],
-    language = "c++",
-    uses_polling = False,
-    deps = [
-        "join",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "try_join_test",
-    srcs = ["try_join_test.cc"],
-    external_deps = ["gtest"],
-    language = "c++",
-    uses_polling = False,
-    deps = [
-        "try_join",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "seq_test",
-    srcs = ["seq_test.cc"],
-    external_deps = ["gtest"],
-    language = "c++",
-    uses_polling = False,
-    deps = [
-        "seq",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "try_seq_test",
-    srcs = ["try_seq_test.cc"],
-    external_deps = ["gtest"],
-    language = "c++",
-    uses_polling = False,
-    deps = [
-        "try_seq",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "activity_test",
-    srcs = ["activity_test.cc"],
-    external_deps = ["gtest"],
-    language = "c++",
-    uses_polling = False,
-    deps = [
-        "activity",
-        "join",
-        "promise",
-        "seq",
-        "wait_set",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "latch_test",
-    srcs = ["latch_test.cc"],
-    external_deps = ["gtest"],
-    language = "c++",
-    uses_polling = False,
-    deps = [
-        "join",
-        "latch",
-        "seq",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "observable_test",
-    srcs = ["observable_test.cc"],
-    external_deps = ["gtest"],
-    language = "c++",
-    uses_polling = False,
-    deps = [
-        "observable",
-        "promise",
-        "seq",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
     name = "for_each_test",
     srcs = ["for_each_test.cc"],
     external_deps = ["gtest"],
@@ -553,6 +573,7 @@ grpc_cc_test(
     deps = [
         "for_each",
         "join",
+        "test_wakeup_schedulers",
         "map",
         "observable",
         "pipe",
@@ -561,17 +582,36 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_library(
+    name = "exec_ctx_wakeup_scheduler",
+    language = "c++",
+    public_hdrs = ["exec_ctx_wakeup_scheduler.h"],
+    deps = [
+        "//:exec_ctx",
+        "//:gpr_platform",
+    ],
+)
+
 grpc_cc_test(
-    name = "pipe_test",
-    srcs = ["pipe_test.cc"],
+    name = "exec_ctx_wakeup_scheduler_test",
+    srcs = ["exec_ctx_wakeup_scheduler_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
     deps = [
-        "join",
-        "pipe",
-        "promise",
-        "seq",
+        "//src/core/lib/promise:activity",
+        "//src/core/lib/promise:exec_ctx_wakeup_scheduler",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_library(
+    name = "test_wakeup_schedulers",
+    testonly = True,
+    hdrs = ["test_wakeup_schedulers.h"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:gpr_base",
         "//test/core/util:grpc_suppressions",
     ],
 )
