@@ -15,8 +15,6 @@
 
 set -ex
 
-shopt -s nullglob
-
 cd "$(dirname "$0")"
 
 GITHUB_URL="https://github.com"
@@ -24,6 +22,6 @@ REPO="bazelbuild/bazel"
 
 VERSION=$(curl -Ls "${GITHUB_URL}/${REPO}/releases/latest" | \
           grep "href=.*\.tar.gz" | \
-          egrep -o "[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*")
+          grep -o "[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*")
 
 ./test_single_bazel_version.sh "$VERSION"
