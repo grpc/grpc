@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_PROMISE_TEST_WAKEUP_SCHEDULERS_H
-#define GRPC_TEST_CORE_PROMISE_TEST_WAKEUP_SCHEDULERS_H
+#ifndef GRPC_CORE_LIB_PROMISE_TEST_WAKEUP_SCHEDULERS_H
+#define GRPC_CORE_LIB_PROMISE_TEST_WAKEUP_SCHEDULERS_H
+
+#include <grpc/impl/codegen/port_platform.h>
 
 #include <gmock/gmock.h>
 
@@ -61,4 +63,4 @@ struct UseMockCallbackScheduler {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_TEST_WAKEUP_SCHEDULERS_H

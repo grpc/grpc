@@ -33,7 +33,6 @@ grpc_cc_library(
     deps = ["//:gpr_platform"],
 )
 
-
 grpc_cc_test(
     name = "poll_test",
     srcs = ["poll_test.cc"],
@@ -423,9 +422,9 @@ grpc_cc_test(
     deps = [
         "activity",
         "join",
-        "test_wakeup_schedulers",
         "promise",
         "seq",
+        "test_wakeup_schedulers",
         "wait_set",
         "//test/core/util:grpc_suppressions",
     ],
@@ -482,9 +481,9 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "join",
-        "test_wakeup_schedulers",
         "latch",
         "seq",
+        "test_wakeup_schedulers",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -543,8 +542,8 @@ grpc_cc_test(
         "join",
         "pipe",
         "promise",
-        "test_wakeup_schedulers",
         "seq",
+        "test_wakeup_schedulers",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -573,11 +572,11 @@ grpc_cc_test(
     deps = [
         "for_each",
         "join",
-        "test_wakeup_schedulers",
         "map",
         "observable",
         "pipe",
         "seq",
+        "test_wakeup_schedulers",
         "//test/core/util:grpc_suppressions",
     ],
 )
