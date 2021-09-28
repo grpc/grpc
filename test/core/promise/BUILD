@@ -38,7 +38,7 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
-        "//src/core/lib/promise:poll",
+        "//:poll",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -50,7 +50,7 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
-        "//src/core/lib/promise:context",
+        "//:context",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -62,7 +62,7 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
-        "//src/core/lib/promise",
+        "//:promise",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -79,8 +79,8 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
-        "//src/core/lib/promise",
-        "//src/core/lib/promise:map",
+        "//:map",
+        "//:promise",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -92,7 +92,7 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
-        "//src/core/lib/promise:race",
+        "//:race",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -108,8 +108,8 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:capture",
-        "//src/core/lib/promise",
-        "//src/core/lib/promise:promise_factory",
+        "//:promise",
+        "//:promise_factory",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -121,7 +121,7 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
-        "//src/core/lib/promise:if",
+        "//:if",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -133,8 +133,8 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
-        "//src/core/lib/promise:loop",
-        "//src/core/lib/promise:seq",
+        "//:loop",
+        "//:seq",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -146,7 +146,7 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
-        "//src/core/lib/promise:join",
+        "//:join",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -158,7 +158,7 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
-        "//src/core/lib/promise:try_join",
+        "//:try_join",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -170,7 +170,7 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
-        "//src/core/lib/promise:seq",
+        "//:seq",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -182,7 +182,7 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
-        "//src/core/lib/promise:try_seq",
+        "//:try_seq",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -195,11 +195,11 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
-        "//src/core/lib/promise",
-        "//src/core/lib/promise:activity",
-        "//src/core/lib/promise:join",
-        "//src/core/lib/promise:seq",
-        "//src/core/lib/promise:wait_set",
+        "//:activity",
+        "//:join",
+        "//:promise",
+        "//:seq",
+        "//:wait_set",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -212,9 +212,9 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
-        "//src/core/lib/promise:join",
-        "//src/core/lib/promise:latch",
-        "//src/core/lib/promise:seq",
+        "//:join",
+        "//:latch",
+        "//:seq",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -227,9 +227,9 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
-        "//src/core/lib/promise",
-        "//src/core/lib/promise:observable",
-        "//src/core/lib/promise:seq",
+        "//:observable",
+        "//:promise",
+        "//:seq",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -242,12 +242,12 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
-        "//src/core/lib/promise:for_each",
-        "//src/core/lib/promise:join",
-        "//src/core/lib/promise:map",
-        "//src/core/lib/promise:observable",
-        "//src/core/lib/promise:pipe",
-        "//src/core/lib/promise:seq",
+        "//:for_each",
+        "//:join",
+        "//:map",
+        "//:observable",
+        "//:pipe",
+        "//:seq",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -260,10 +260,10 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
-        "//src/core/lib/promise",
-        "//src/core/lib/promise:join",
-        "//src/core/lib/promise:pipe",
-        "//src/core/lib/promise:seq",
+        "//:join",
+        "//:pipe",
+        "//:promise",
+        "//:seq",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -288,8 +288,8 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
-        "//src/core/lib/promise:activity",
-        "//src/core/lib/promise:exec_ctx_wakeup_scheduler",
+        "//:activity",
+        "//:exec_ctx_wakeup_scheduler",
         "//test/core/util:grpc_suppressions",
     ],
 )
