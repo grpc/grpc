@@ -251,6 +251,16 @@ tsi_result tsi_handshaker_result_extract_peer(const tsi_handshaker_result* self,
   return self->vtable->extract_peer(self, peer);
 }
 
+tsi_frame_protector_type tsi_handshaker_result_frame_protector_type(
+    const tsi_handshaker_result* self) {
+  // If implementation does not provide this method, then assume that
+  // a normal frame protector is needed.
+  if (self == nullptr || self->vtable->frame_protector_type == nullptr) {
+    return TSI_FRAME_PROTECTOR_NORMAL;
+  }
+  return self->vtable->frame_protector_type(self);
+}
+
 tsi_result tsi_handshaker_result_create_frame_protector(
     const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
     tsi_frame_protector** protector) {

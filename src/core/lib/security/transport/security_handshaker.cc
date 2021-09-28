@@ -235,46 +235,47 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
   tsi_result result = tsi_handshaker_result_get_unused_bytes(
       handshaker_result_, &unused_bytes, &unused_bytes_size);
   // Check whether we need to wrap the endpoint.
-  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
-      auth_context_.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
-  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-  if (prop == nullptr) {
-    HandshakeFailedLocked(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "auth context does not have an auth property representing a "
-        "security level"));
-    return;
-  }
-  if (absl::string_view(prop->value, prop->value_length) !=
-      "TSI_SECURITY_NONE") {
-    // Create zero-copy frame protector, if implemented.
-    tsi_zero_copy_grpc_protector* zero_copy_protector = nullptr;
-    tsi_result result = tsi_handshaker_result_create_zero_copy_grpc_protector(
-        handshaker_result_, max_frame_size_ == 0 ? nullptr : &max_frame_size_,
-        &zero_copy_protector);
-    if (result != TSI_OK && result != TSI_UNIMPLEMENTED) {
-      error = grpc_set_tsi_error_result(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Zero-copy frame protector creation failed"),
-          result);
-      HandshakeFailedLocked(error);
-      return;
-    }
-    // Create frame protector if zero-copy frame protector is NULL.
-    tsi_frame_protector* protector = nullptr;
-    if (zero_copy_protector == nullptr) {
-      result = tsi_handshaker_result_create_frame_protector(
+  tsi_zero_copy_grpc_protector* zero_copy_protector = nullptr;
+  tsi_frame_protector* protector = nullptr;
+  switch (tsi_handshaker_result_frame_protector_type(handshaker_result_)) {
+    case TSI_FRAME_PROTECTOR_ZERO_COPY:
+    case TSI_FRAME_PROTECTOR_NORMAL_OR_ZERO_COPY: {
+      // Create zero-copy frame protector.
+      tsi_result result = tsi_handshaker_result_create_zero_copy_grpc_protector(
           handshaker_result_, max_frame_size_ == 0 ? nullptr : &max_frame_size_,
-          &protector);
-      if (result != TSI_OK) {
+          &zero_copy_protector);
+      if (result != TSI_OK && result != TSI_UNIMPLEMENTED) {
         error = grpc_set_tsi_error_result(
             GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Frame protector creation failed"),
+                "Zero-copy frame protector creation failed"),
             result);
         HandshakeFailedLocked(error);
         return;
       }
+      break;
     }
-    // Create secure endpoint.
+    case TSI_FRAME_PROTECTOR_NORMAL: {
+      // Create normal frame protector.
+      if (zero_copy_protector == nullptr) {
+        result = tsi_handshaker_result_create_frame_protector(
+            handshaker_result_,
+            max_frame_size_ == 0 ? nullptr : &max_frame_size_, &protector);
+        if (result != TSI_OK) {
+          error = grpc_set_tsi_error_result(
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "Frame protector creation failed"),
+              result);
+          HandshakeFailedLocked(error);
+          return;
+        }
+        break;
+      }
+    case TSI_FRAME_PROTECTOR_NONE:
+      break;
+    }
+  }
+  // If we have a frame protector, create a secure endpoint.
+  if (zero_copy_protector != nullptr || protector != nullptr) {
     if (unused_bytes_size > 0) {
       grpc_slice slice = grpc_slice_from_copied_buffer(
           reinterpret_cast<const char*>(unused_bytes), unused_bytes_size);

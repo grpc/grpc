@@ -91,6 +91,8 @@ struct tsi_handshaker {
 */
 struct tsi_handshaker_result_vtable {
   tsi_result (*extract_peer)(const tsi_handshaker_result* self, tsi_peer* peer);
+  tsi_frame_protector_type (*frame_protector_type)(
+      const tsi_handshaker_result* self);
   tsi_result (*create_zero_copy_grpc_protector)(
       const tsi_handshaker_result* self,
       size_t* max_output_protected_frame_size,
