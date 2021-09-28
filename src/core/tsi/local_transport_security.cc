@@ -94,7 +94,8 @@ static const tsi_handshaker_result_vtable result_vtable = {
     handshaker_result_frame_protector_type,
     nullptr, /* handshaker_result_create_zero_copy_grpc_protector */
     nullptr, /* handshaker_result_create_frame_protector */
-    handshaker_result_get_unused_bytes, handshaker_result_destroy};
+    handshaker_result_get_unused_bytes,
+    handshaker_result_destroy};
 
 static tsi_result create_handshaker_result(bool is_client,
                                            const unsigned char* received_bytes,

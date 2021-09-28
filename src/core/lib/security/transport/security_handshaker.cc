@@ -268,17 +268,17 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
             handshaker_result_,
             max_frame_size_ == 0 ? nullptr : &max_frame_size_, &protector);
         if (result != TSI_OK) {
-          error = grpc_set_tsi_error_result(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "Frame protector creation failed"),
-              result);
+          error =
+              grpc_set_tsi_error_result(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                            "Frame protector creation failed"),
+                                        result);
           HandshakeFailedLocked(error);
           return;
         }
         break;
       }
-    case TSI_FRAME_PROTECTOR_NONE:
-      break;
+      case TSI_FRAME_PROTECTOR_NONE:
+        break;
     }
   }
   // If we have a frame protector, create a secure endpoint.

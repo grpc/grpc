@@ -255,7 +255,8 @@ static const tsi_handshaker_result_vtable result_vtable = {
     handshaker_result_frame_protector_type,
     handshaker_result_create_zero_copy_grpc_protector,
     handshaker_result_create_frame_protector,
-    handshaker_result_get_unused_bytes, handshaker_result_destroy};
+    handshaker_result_get_unused_bytes,
+    handshaker_result_destroy};
 
 tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
                                              bool is_client,
