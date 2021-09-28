@@ -158,12 +158,12 @@ static const tsi_handshaker_result_vtable result_vtable = {
     handshaker_result_extract_peer,
     handshaker_result_create_zero_copy_grpc_protector,
     nullptr, /* handshaker_result_create_frame_protector */
-    handshaker_result_get_unused_bytes,
-    handshaker_result_destroy};
+    handshaker_result_get_unused_bytes, handshaker_result_destroy};
 
-static tsi_result create_handshaker_result(
-    bool is_client, const unsigned char* received_bytes,
-    size_t received_bytes_size, tsi_handshaker_result** self) {
+static tsi_result create_handshaker_result(bool is_client,
+                                           const unsigned char* received_bytes,
+                                           size_t received_bytes_size,
+                                           tsi_handshaker_result** self) {
   if (self == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to create_handshaker_result()");
     return TSI_INVALID_ARGUMENT;
