@@ -369,7 +369,7 @@ class EventEngine {
 
 // TODO(hork): finalize the API and document it. We need to firm up the story
 // around user-provided EventEngines.
-EventEngine* DefaultEventEngineFactory();
+std::shared_ptr<EventEngine> DefaultEventEngineFactory();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

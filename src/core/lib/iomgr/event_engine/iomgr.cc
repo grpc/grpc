@@ -17,6 +17,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/uv/libuv_event_engine.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/event_engine/iomgr.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -40,10 +41,15 @@ namespace {
 
 using ::grpc_event_engine::experimental::DefaultEventEngineFactory;
 using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::LibuvEventEngine;
 
 EventEngine* g_event_engine = nullptr;
 
-void iomgr_platform_init(void) { g_event_engine = DefaultEventEngineFactory(); }
+void iomgr_platform_init(void) {
+  if (g_event_engine == nullptr) {
+    g_event_engine = new LibuvEventEngine();
+  }
+}
 
 void iomgr_platform_flush(void) {}
 
@@ -56,20 +62,20 @@ void iomgr_platform_shutdown_background_closure(void) {}
 
 bool iomgr_platform_is_any_background_poller_thread(void) {
   return g_event_engine->IsWorkerThread();
-}
+  }
 
-bool iomgr_platform_add_closure_to_background_poller(
-    grpc_closure* /* closure */, grpc_error_handle /* error */) {
-  return false;
-}
+  bool iomgr_platform_add_closure_to_background_poller(
+      grpc_closure* /* closure */, grpc_error_handle /* error */) {
+    return false;
+  }
 
-grpc_iomgr_platform_vtable vtable = {
-    iomgr_platform_init,
-    iomgr_platform_flush,
-    iomgr_platform_shutdown,
-    iomgr_platform_shutdown_background_closure,
-    iomgr_platform_is_any_background_poller_thread,
-    iomgr_platform_add_closure_to_background_poller};
+  grpc_iomgr_platform_vtable vtable = {
+      iomgr_platform_init,
+      iomgr_platform_flush,
+      iomgr_platform_shutdown,
+      iomgr_platform_shutdown_background_closure,
+      iomgr_platform_is_any_background_poller_thread,
+      iomgr_platform_add_closure_to_background_poller};
 
 }  // namespace
 
