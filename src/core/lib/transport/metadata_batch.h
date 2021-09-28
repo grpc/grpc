@@ -111,6 +111,18 @@ class MetadataMap {
   MetadataMap& operator=(MetadataMap&&) noexcept;
 
   // Encode this metadata map into some encoder.
+  // For each field that is set in the MetadataMap, call
+  // encoder->Encode.
+  //
+  // For fields for which we have traits, this will be a method with
+  // the signature:
+  //    void Encode(TraitsType, typename TraitsType::ValueType value);
+  // For fields for which we do not have traits, this will be a method
+  // with the signature:
+  //    void Encode(grpc_mdelem md);
+  // TODO(ctiller): It's expected that the latter Encode method will
+  // become Encode(Slice, Slice) by the end of the current metadata API
+  // transitions.
   template <typename Encoder>
   void Encode(Encoder* encoder) const {
     for (auto* l = list_.head; l; l = l->next) {
