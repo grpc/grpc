@@ -298,12 +298,25 @@ def py2and3_test(
         suite_kwargs["visibility"] = kwargs["visibility"]
 
     native.test_suite(
-        name = name,
+        name = name + ".both_pythons",
         tests = names,
         **suite_kwargs
     )
 
-def py_grpc_test(**kwargs):
+def py_grpc_test(name, **kwargs):
     """Runs a test under all supported environments."""
-    py2and3_test(**kwargs)
-    py_grpc_gevent_test(**kwargs)
+    py2and3_test(name, **kwargs)
+    py_grpc_gevent_test(name, **kwargs)
+
+    suite_kwargs = {}
+    if "visibility" in kwargs:
+        suite_kwargs["visibility"] = kwargs["visibility"]
+
+    native.test_suite(
+        name = name,
+        tests = [
+            name + ".both_pythons",
+            name + ".gevent",
+        ],
+        **suite_kwargs
+    )
