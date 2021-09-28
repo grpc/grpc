@@ -132,6 +132,10 @@ static tsi_result handshaker_result_create_zero_copy_grpc_protector(
 static tsi_result handshaker_result_get_unused_bytes(
     const tsi_handshaker_result* self, const unsigned char** bytes,
     size_t* bytes_size) {
+  if (self == nullptr || bytes == nullptr || bytes_size == nullptr) {
+    gpr_log(GPR_ERROR, "Invalid arguments to get_unused_bytes()");
+    return TSI_INVALID_ARGUMENT;
+  }
   auto* result = reinterpret_cast<local_tsi_handshaker_result*>(
       const_cast<tsi_handshaker_result*>(self));
   *bytes_size = result->unused_bytes_size;
