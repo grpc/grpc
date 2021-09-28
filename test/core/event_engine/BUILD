@@ -32,7 +32,6 @@ grpc_cc_test(
 grpc_cc_library(
     name = "event_engine_test_suite",
     srcs = [
-        "test_suite/event_engine_test_main.cc",
         "test_suite/timer_test.cc",
     ],
     hdrs = ["test_suite/event_engine_test.h"],

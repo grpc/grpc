@@ -93,6 +93,10 @@ class SimpleEventEngine : public grpc_event_engine::experimental::EventEngine {
   bool shutting_down_ = false;
 };
 
-std::unique_ptr<EventEngine> EventEngineTest::NewEventEngine() {
-  return absl::make_unique<SimpleEventEngine>();
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  SetEventEngineFactory(
+      []() { return absl::make_unique<SimpleEventEngine>(); });
+  auto result = RUN_ALL_TESTS();
+  return result;
 }
