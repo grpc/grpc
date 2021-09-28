@@ -32,6 +32,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_utils.h"
+#include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -407,6 +408,18 @@ static void test_grpc_metadata_batch_get_value_returns_multiple_values(void) {
   grpc_shutdown();
 }
 
+static void test_grpc_chttp2_incoming_metadata_replace_or_add_works(void) {
+  grpc_core::Arena* arena = grpc_core::Arena::Create(1024);
+  grpc_chttp2_incoming_metadata_buffer buffer(arena);
+  grpc_chttp2_incoming_metadata_buffer_add(
+      &buffer, grpc_mdelem_from_slices(grpc_slice_from_static_string("a"),
+                                       grpc_slice_from_static_string("b")));
+  grpc_chttp2_incoming_metadata_buffer_replace_or_add(
+      &buffer, grpc_slice_from_static_string("a"),
+      grpc_slice_malloc(1024 * 1024 * 1024));
+  arena->Destroy();
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -427,6 +440,7 @@ int main(int argc, char** argv) {
   test_grpc_metadata_batch_get_value_with_absent_key();
   test_grpc_metadata_batch_get_value_returns_one_value();
   test_grpc_metadata_batch_get_value_returns_multiple_values();
+  test_grpc_chttp2_incoming_metadata_replace_or_add_works();
   grpc_shutdown();
   return 0;
 }
