@@ -582,7 +582,7 @@ class TrafficDirectorManager:
     def delete_alternative_forwarding_rule(self, force=False):
         if force:
             name = self.make_resource_name(self.ALTERNATIVE_FORWARDING_RULE_NAME)
-        elif self.forwarding_rule:
+        elif self.alternative_forwarding_rule:
             name = self.alternative_forwarding_rule.name
         else:
             return

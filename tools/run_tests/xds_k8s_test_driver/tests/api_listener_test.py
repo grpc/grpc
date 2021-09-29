@@ -13,6 +13,7 @@
 # limitations under the License.
 import logging
 from typing import List, Optional
+import datetime
 
 from absl import flags
 from absl.testing import absltest
@@ -20,6 +21,7 @@ from absl.testing import absltest
 from framework import xds_k8s_testcase
 from framework.infrastructure import k8s
 from framework.test_app import server_app
+from framework.helpers import retryers
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -31,6 +33,7 @@ _XdsTestClient = xds_k8s_testcase.XdsTestClient
 
 class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     ALTERNATE_RESOURCE_SUFFIX = '2'
+    previous_route_config_version: str
 
     def test_api_listener(self) -> None:
         with self.subTest('00_create_health_check'):
@@ -66,6 +69,7 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         with self.subTest('09_test_server_received_rpcs_from_test_client'):
             self.assertSuccessfulRpcs(self.test_client)
+            self.previous_route_config_version = self.getRouteConfigVersion(self.test_client)
 
         with self.subTest('10_delete_one_url_map_target_proxy_forwarding_rule'):
             self.td.delete_forwarding_rule()
@@ -73,14 +77,29 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.td.delete_url_map()
 
         with self.subTest('11_test_server_continues_to_receive_rpcs'):
-            # TODO: Use CSDS to check that deletions of the original forwarding
-            # rule, target proxy, and URL map have propagated from TD to the
-            # client instead of an unconditional wait.
-            ATTEMPTS_TILL_PROPAGATION = 10
-            for i in range(ATTEMPTS_TILL_PROPAGATION):
+            class TdPropagationRetryableError(Exception):
+              pass
+
+            def verify_route_traffic_continues():
+              self.assertSuccessfulRpcs(self.test_client)
+              if self.previous_route_config_version == self.getRouteConfigVersion(self.test_client):
+                logger.info('Routing config not propagated yet. Retrying.')
+                raise TdPropagationRetryableError()
+              else:
                 self.assertSuccessfulRpcs(self.test_client)
+                logger.info('Success.')
 
-
+            retryer = retryers.constant_retryer(
+              wait_fixed=datetime.timedelta(seconds=2),
+              timeout=datetime.timedelta(seconds=xds_k8s_testcase._TD_CONFIG_MAX_WAIT_SEC),
+              retry_on_exceptions=(TdPropagationRetryableError,),
+              logger=logging,
+              log_level=logging.INFO)
+            try:
+              retryer(verify_route_traffic_continues)
+            except retryers.RetryError:
+              logging.info('Retry exhausted. TD routing config propagation failed after timeout %ds.',
+                           xds_k8s_testcase._TD_CONFIG_MAX_WAIT_SEC)
 
 if __name__ == '__main__':
     absltest.main(failfast=True)
