@@ -16,6 +16,7 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include <algorithm>
 #include <memory>
 #include <type_traits>
 #include <vector>
