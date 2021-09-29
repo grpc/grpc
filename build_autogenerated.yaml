@@ -6551,6 +6551,7 @@ targets:
   headers:
   - test/core/event_engine/test_suite/event_engine_test.h
   src:
+  - test/core/event_engine/test_suite/event_engine_test.cc
   - test/core/event_engine/test_suite/libuv_event_engine_test.cc
   - test/core/event_engine/test_suite/timer_test.cc
   deps:
@@ -7506,6 +7507,7 @@ targets:
   headers:
   - test/core/event_engine/test_suite/event_engine_test.h
   src:
+  - test/core/event_engine/test_suite/event_engine_test.cc
   - test/core/event_engine/test_suite/simple_event_engine_test.cc
   - test/core/event_engine/test_suite/timer_test.cc
   deps:

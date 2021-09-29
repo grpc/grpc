@@ -13106,6 +13106,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(libuv_event_engine_test
+  test/core/event_engine/test_suite/event_engine_test.cc
   test/core/event_engine/test_suite/libuv_event_engine_test.cc
   test/core/event_engine/test_suite/timer_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -15377,6 +15378,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(simple_event_engine_test
+  test/core/event_engine/test_suite/event_engine_test.cc
   test/core/event_engine/test_suite/simple_event_engine_test.cc
   test/core/event_engine/test_suite/timer_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
