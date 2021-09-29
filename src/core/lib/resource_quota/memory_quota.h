@@ -295,7 +295,7 @@ class MemoryCounter final : public BasicMemoryAllocator {
 // be rebound to a different memory quota.
 class MemoryOwner : public MemoryAllocator {
  public:
-  MemoryOwner(std::shared_ptr<BasicMemoryAllocator> allocator)
+  explicit MemoryOwner(std::shared_ptr<BasicMemoryAllocator> allocator)
       : MemoryAllocator(std::move(allocator)) {}
 
   // Post a reclaimer for some reclamation pass.
@@ -316,7 +316,7 @@ class MemoryQuota final
   MemoryQuota() : memory_quota_(std::make_shared<BasicMemoryQuota>()) {
     memory_quota_->Start();
   }
-  ~MemoryQuota() {
+  ~MemoryQuota() override {
     if (memory_quota_ != nullptr) memory_quota_->Stop();
   }
 
