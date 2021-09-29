@@ -58,6 +58,9 @@ def py_grpc_gevent_test(
         cmd = "cp $< $@",
     )
 
+    if "flaky" in kwargs:
+      kwargs.pop("flaky")
+
     native.py_test(
         name = name + ".gevent",
         args = [name],
@@ -66,5 +69,6 @@ def py_grpc_gevent_test(
         main = copied_main_filename,
         python_version = "PY3",
         size = size,
+        flaky = True,
         **kwargs
     )
