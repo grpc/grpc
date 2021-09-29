@@ -25,7 +25,7 @@
 set -e
 
 # DISABLE_BAZEL_WRAPPER can be set to eliminate the wrapper logic
-if [ "${DISABLE_BAZEL_WRAPPER}" != "" ]
+if [ "${DISABLE_BAZEL_WRAPPER}" != "" ] && [ "${OVERRIDE_BAZEL_VERSION}" == "" ]
 then
   if [ "${BAZEL_REAL}" != "" ]
   then
