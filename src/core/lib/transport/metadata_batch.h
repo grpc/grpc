@@ -34,6 +34,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 
 typedef struct grpc_linked_mdelem {
   grpc_linked_mdelem() {}
@@ -76,7 +77,21 @@ namespace grpc_core {
 // should not need to.
 struct GrpcTimeoutMetadata {
   using ValueType = grpc_millis;
+  using MementoType = grpc_millis;
   static const char* key() { return "grpc-timeout"; }
+  static MementoType ParseMemento(const grpc_slice& value) {
+    grpc_millis timeout;
+    if (GPR_UNLIKELY(!grpc_http2_decode_timeout(value, &timeout))) {
+      timeout = GRPC_MILLIS_INF_FUTURE;
+    }
+    return timeout;
+  }
+  static ValueType MementoToValue(MementoType timeout) {
+    if (timeout == GRPC_MILLIS_INF_FUTURE) {
+      return GRPC_MILLIS_INF_FUTURE;
+    }
+    return grpc_core::ExecCtx::Get()->Now() + timeout;
+  }
 };
 
 // MetadataMap encodes the mapping of metadata keys to metadata values.
@@ -175,6 +190,66 @@ class MetadataMap {
   //
   // All APIs below this point are subject to change.
   //
+
+  class Memento {
+   public:
+    template <typename Which>
+    Memento(Which,
+            absl::enable_if_t<
+                std::is_trivial<typename Which::MementoType>::value &&
+                    sizeof(typename Which::MementoType) <= sizeof(intptr_t),
+                typename Which::MementoType>
+                value) {
+      static const VTable vtable = {
+          [](intptr_t) {},
+          [](intptr_t value, MetadataMap* map) {
+            map->Set(Which(), static_cast<typename Which::MementoType>(value));
+          },
+      };
+      vtable_ = &vtable;
+      value_ = static_cast<intptr_t>(value);
+    }
+
+    Memento(const Memento&) = delete;
+    Memento& operator=(const Memento&) = delete;
+    Memento(Memento&& other) noexcept
+        : vtable_(other.vtable_), value_(other.value_) {
+      other.vtable_ = EmptyVTable();
+    }
+    Memento& operator=(Memento&& other) noexcept {
+      vtable_ = other.vtable_;
+      value_ = other.value_;
+      other.vtable_ = EmptyVTable();
+      return *this;
+    }
+
+    void SetOnMetadataMap(MetadataMap* map) const { vtable_->set(value_, map); }
+
+   private:
+    struct VTable {
+      void (*destroy)(intptr_t value);
+      void (*set)(intptr_t value, MetadataMap* map);
+    };
+    static const VTable* EmptyVTable() {
+      static const VTable vtable = {[](intptr_t) {},
+                                    [](intptr_t, MetadataMap*) {}};
+      return &vtable;
+    }
+    const VTable* vtable_;
+    intptr_t value_;
+  };
+
+  absl::optional<Memento> SetIfBuiltin(absl::string_view key,
+                                       const grpc_slice& value) {
+    // hack for now.
+    if (key == GrpcTimeoutMetadata::key()) {
+      auto memento_value = GrpcTimeoutMetadata::ParseMemento(value);
+      auto set_value = GrpcTimeoutMetadata::MementoToValue(memento_value);
+      Set(GrpcTimeoutMetadata(), set_value);
+      return Memento(GrpcTimeoutMetadata(), memento_value);
+    }
+    return absl::nullopt;
+  }
 
   template <typename F>
   void ForEach(F f) const {
