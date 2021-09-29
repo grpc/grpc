@@ -56,16 +56,16 @@ class XdsResolver : public Resolver {
  public:
   explicit XdsResolver(ResolverArgs args, RefCountedPtr<XdsClient> xds_client,
                        std::string lds_resource_name, std::string authority,
-                       const XdsBootstrap::XdsServer xds_server)
+                       std::string xds_server)
       : work_serializer_(std::move(args.work_serializer)),
         result_handler_(std::move(args.result_handler)),
+        args_(grpc_channel_args_copy(args.args)),
+        interested_parties_(args.pollset_set),
+        xds_client_(std::move(xds_client)),
         server_name_(lds_resource_name),
         lds_resource_name_(std::move(lds_resource_name)),
         authority_(std::move(authority)),
-        xds_server_(std::move(xds_server)),
-        args_(grpc_channel_args_copy(args.args)),
-        interested_parties_(args.pollset_set),
-        xds_client_(std::move(xds_client)) {
+        xds_server_(std::move(xds_server)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO,
               "[xds_resolver %p] created for URI scheme %s path %s authority "
@@ -273,11 +273,11 @@ class XdsResolver : public Resolver {
   std::string server_name_;
   std::string lds_resource_name_;
   std::string authority_;
+  std::string xds_server_;
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
 
   RefCountedPtr<XdsClient> xds_client_;
-  const XdsBootstrap::XdsServer xds_server_;
 
   XdsClient::ListenerWatcherInterface* listener_watcher_ = nullptr;
   // This will not contain the RouteConfiguration, even if it comes with the
@@ -1008,8 +1008,16 @@ class XdsResolverFactory : public ResolverFactory {
     }
     std::string lds_resource_name;
     std::string authority;
-    XdsBootstrap::XdsServer xds_server = xds_client->bootstrap().server();
+    std::string xds_server;
     if (args.uri.scheme() == "xds") {
+      xds_server = absl::StrCat(
+          xds_client->bootstrap().server().server_uri,
+          xds_client->bootstrap().server().channel_creds_config.string_value(),
+          absl::StrJoin(
+              std::vector<std::string>(
+                  xds_client->bootstrap().server().server_features.begin(),
+                  xds_client->bootstrap().server().server_features.end()),
+              ""));
       std::string target_hostname(absl::StripPrefix(args.uri.path(), "/"));
       if (!args.uri.authority().empty()) {
         auto authority_config =
@@ -1029,7 +1037,14 @@ class XdsResolverFactory : public ResolverFactory {
         lds_resource_name = absl::StrReplaceAll(
             name_template, {{"%s", PercentEncode(target_hostname)}});
         if (!authority_config->xds_servers.empty()) {
-          xds_server = authority_config->xds_servers[0];
+          xds_server = absl::StrCat(
+              authority_config->server().server_uri,
+              authority_config->server().channel_creds_config.string_value(),
+              absl::StrJoin(
+                  std::vector<std::string>(
+                      authority_config->server().server_features.begin(),
+                      authority_config->server().server_features.end()),
+                  ""));
         }
       } else {
         // args.uri.authority().empty() case
@@ -1052,14 +1067,13 @@ class XdsResolverFactory : public ResolverFactory {
             lds_resource_name.c_str(), authority.c_str());
     return MakeOrphanable<XdsResolver>(std::move(args), std::move(xds_client),
                                        lds_resource_name, authority,
-                                       std::move(xds_server));
+                                       xds_server);
   }
 
   const char* scheme() const override { return "xds"; }
 };
 
 }  // namespace
-
 }  // namespace grpc_core
 
 void grpc_resolver_xds_init() {
