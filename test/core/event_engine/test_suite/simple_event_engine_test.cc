@@ -81,6 +81,7 @@ class SimpleEventEngine : public grpc_event_engine::experimental::EventEngine {
             break;
           case RunState::kCancelled:
             can_run = false;
+            break;
           case RunState::kRan:
             GPR_ASSERT(
                 false &&
@@ -120,23 +121,24 @@ class SimpleEventEngine : public grpc_event_engine::experimental::EventEngine {
   // Unimplemented methods
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
-      Listener::AcceptCallback on_accept,
-      std::function<void(absl::Status)> on_shutdown,
-      const EndpointConfig& config,
-      std::unique_ptr<SliceAllocatorFactory> slice_allocator_factory) override {
+      /*on_accept=*/Listener::AcceptCallback,
+      /*on_shutdown=*/std::function<void(absl::Status)>,
+      /*config=*/const EndpointConfig&,
+      /*slice_allocator_factory=*/std::unique_ptr<SliceAllocatorFactory>)
+      override {
     abort();
   }
 
-  EventEngine::TaskHandle RunAt(absl::Time when,
-                                EventEngine::Closure* closure) override {
+  EventEngine::TaskHandle RunAt(/*when=*/absl::Time,
+                                /*closure=*/EventEngine::Closure*) override {
     abort();
   }
 
-  absl::Status Connect(EventEngine::OnConnectCallback on_connect,
-                       const EventEngine::ResolvedAddress& addr,
-                       const EndpointConfig& args,
-                       std::unique_ptr<SliceAllocator> slice_allocator,
-                       absl::Time deadline) override {
+  absl::Status Connect(/*on_connect=*/EventEngine::OnConnectCallback,
+                       /*addr=*/const EventEngine::ResolvedAddress&,
+                       /*args=*/const EndpointConfig&,
+                       /*slice_allocator=*/std::unique_ptr<SliceAllocator>,
+                       /*deadline=*/absl::Time) override {
     abort();
   }
   std::unique_ptr<DNSResolver> GetDNSResolver() override { abort(); }
