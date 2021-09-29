@@ -16,6 +16,9 @@
 
 // FIXME: add tests:
 // - cache eviction via cleanup timer (based on age)
+// - RLS channel is down; wait_for_ready request is sent and RLS request fails
+//   and goes into backoff; RLS channel comes back up before backoff timer
+//   fires; request is processed at that point
 
 #include <deque>
 #include <map>

@@ -529,6 +529,8 @@ class RlsLb : public LoadBalancingPolicy {
     // Asynchronously starts a call on rls_channel for key.
     // Stores backoff_state, which will be transferred to the data cache
     // if the RLS request fails.
+    // FIXME: request proto needs to include the reason and, if it's
+    // staleness, the cached header data
     RlsRequest(RefCountedPtr<RlsLb> lb_policy, RlsLb::RequestKey key,
                RefCountedPtr<RlsChannel> rls_channel,
                std::unique_ptr<BackOff> backoff_state);
@@ -917,6 +919,10 @@ void RlsLb::Cache::Entry::Orphan() {
   lru_iterator_ = lb_policy_->cache_.lru_list_.end();  // Just in case.
   backoff_state_.reset();
   if (timer_pending_) {
+    // FIXME: note that in this case, we *do* want to return a new
+    // picker to force it to reprocess any queued wait_for_ready RPCs
+    // (maybe only when default target is unset?  be consistent with
+    // other FIXMEs)
     grpc_timer_cancel(&backoff_timer_);
     lb_policy_->UpdatePicker();
   }
@@ -1041,6 +1047,9 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
 void RlsLb::Cache::Entry::ResetBackoff() {
   backoff_time_ = GRPC_MILLIS_INF_PAST;
   if (timer_pending_) {
+    // FIXME: this needs to ensure that the timer callback will *not*
+    // update the picker, since we'll do that once for all timers
+    // instead of once per timer
     grpc_timer_cancel(&backoff_timer_);
     timer_pending_ = false;
   }
@@ -1114,6 +1123,7 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
     backoff_time_ = backoff_state_->NextAttemptTime();
     grpc_millis now = ExecCtx::Get()->Now();
     backoff_expiration_time_ = now + (backoff_time_ - now) * 2;
+    // FIXME: should we start this even if the default target is set?
     if (lb_policy_->config_->default_target().empty()) {
       timer_pending_ = true;
       Ref(DEBUG_LOCATION, "BackoffTimer").release();
@@ -1271,6 +1281,7 @@ void RlsLb::Cache::ResetAllBackoff() {
   for (auto& p : map_) {
     p.second->ResetBackoff();
   }
+  lb_policy_->UpdatePicker();
 }
 
 void RlsLb::Cache::Shutdown() {
@@ -1345,9 +1356,11 @@ void RlsLb::RlsChannel::StateWatcher::OnConnectivityStateChange(
   MutexLock lock(&lb_policy->mu_);
   if (new_state == GRPC_CHANNEL_READY && was_transient_failure_) {
     was_transient_failure_ = false;
-    lb_policy->cache_.ResetAllBackoff();
+    // FIXME: do this even if there is a default target?
+    // (see the other FIXME below about whether we start the backoff
+    // timer in this case -- should be consistent in both cases)
     if (lb_policy->config_->default_target().empty()) {
-      lb_policy->UpdatePicker();
+      lb_policy->cache_.ResetAllBackoff();
     }
   } else if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     was_transient_failure_ = true;
@@ -1773,6 +1786,10 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
       update_child_policy(p.second);
     }
   }
+  // FIXME: do this only if actually needed?  design doc says we need
+  // this if the default target changed, but in that case it will
+  // already have been done by the initial update to the default target
+  // above...
   UpdatePicker();
 }
 
@@ -1787,6 +1804,7 @@ void RlsLb::ResetBackoffLocked() {
   {
     MutexLock lock(&mu_);
     rls_channel_->ResetBackoff();
+    // FIXME: do we actually want to do this here?
     cache_.ResetAllBackoff();
   }
   for (auto& child : child_policy_map_) {
