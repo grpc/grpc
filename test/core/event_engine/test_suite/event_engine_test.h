@@ -21,8 +21,9 @@
 
 #include "src/core/lib/gprpp/sync.h"
 
-std::function<std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>*
-    g_ee_factory = nullptr;
+extern std::function<
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>*
+    g_ee_factory;
 
 // Manages the lifetime of the global EventEngine factory.
 class EventEngineTestEnvironment : public testing::Environment {
