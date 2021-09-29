@@ -56,7 +56,8 @@ struct tsi_frame_protector {
    See transport_security_interface.h for documentation. */
 struct tsi_handshaker_vtable {
   /* Methods for supporting the old synchronous API.
-     These can be null if the TSI impl supports only the new async API. */
+     These can be null if the TSI impl supports only the new
+     async-capable API. */
   tsi_result (*get_bytes_to_send_to_peer)(tsi_handshaker* self,
                                           unsigned char* bytes,
                                           size_t* bytes_size);
@@ -70,7 +71,7 @@ struct tsi_handshaker_vtable {
                                        tsi_frame_protector** protector);
   /* Must be implemented by all TSI impls. */
   void (*destroy)(tsi_handshaker* self);
-  /* Methods for supporting the new async API.
+  /* Methods for supporting the new async-capable API.
      These can be null if the TSI impl supports only the old sync API. */
   tsi_result (*next)(tsi_handshaker* self, const unsigned char* received_bytes,
                      size_t received_bytes_size,
