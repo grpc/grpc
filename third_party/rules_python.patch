@@ -50,7 +50,7 @@ index 278e848..db9a430 100644
              )
              sys.exit(1)
 diff --git a/python/pip_install/pip_repository.bzl b/python/pip_install/pip_repository.bzl
-index c3007e1..9d764ed 100644
+index c3007e1..f8a9234 100644
 --- a/python/pip_install/pip_repository.bzl
 +++ b/python/pip_install/pip_repository.bzl
 @@ -39,7 +39,8 @@ def _resolve_python_interpreter(rctx):
@@ -104,7 +104,7 @@ index c3007e1..9d764ed 100644
 +    if major_version == None or minor_version == None:
 +        print("WARNING: Failed to get Python version of {}".format(python_interpreter))
 +        return False
-+    if (major_version != 3 or major_version < 6):
++    if (major_version != 3 or minor_version < 6):
 +        print("WARNING: {} is of version {}.{}. This version is unsupported.".format(python_interpreter, major_version, minor_version))
 +        return False
 +    return True
