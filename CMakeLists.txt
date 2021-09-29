@@ -680,6 +680,7 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_c server_ssl_test)
   endif()
   add_dependencies(buildtests_c server_test)
+  add_dependencies(buildtests_c slice_buffer_test)
   add_dependencies(buildtests_c slice_intern_test)
   add_dependencies(buildtests_c slice_split_test)
   add_dependencies(buildtests_c slice_string_helpers_test)
@@ -709,7 +710,6 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_c test_core_gpr_time_test)
   add_dependencies(buildtests_c test_core_security_credentials_test)
-  add_dependencies(buildtests_c test_core_slice_slice_buffer_test)
   add_dependencies(buildtests_c test_core_slice_slice_test)
   add_dependencies(buildtests_c thd_test)
   add_dependencies(buildtests_c threadpool_test)
@@ -988,8 +988,6 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx string_ref_test)
   add_dependencies(buildtests_cxx table_test)
-  add_dependencies(buildtests_cxx test_core_event_engine_slice_buffer_test)
-  add_dependencies(buildtests_cxx test_core_event_engine_slice_test)
   add_dependencies(buildtests_cxx test_cpp_client_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_server_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_util_slice_test)
@@ -1882,6 +1880,7 @@ add_library(grpc
   src/core/lib/event_engine/endpoint_config.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/sockaddr.cc
+  src/core/lib/event_engine/uv/impl.cc
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/httpcli_security_connector.cc
@@ -1912,7 +1911,6 @@ add_library(grpc
   src/core/lib/iomgr/event_engine/resolver.cc
   src/core/lib/iomgr/event_engine/tcp.cc
   src/core/lib/iomgr/event_engine/timer.cc
-  src/core/lib/iomgr/event_engine/uv/impl.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/executor/mpmcqueue.cc
@@ -2175,9 +2173,7 @@ foreach(_hdr
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
   include/grpc/event_engine/port.h
-  include/grpc/event_engine/slice.h
   include/grpc/event_engine/slice_allocator.h
-  include/grpc/event_engine/slice_buffer.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -2525,6 +2521,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/endpoint_config.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/sockaddr.cc
+  src/core/lib/event_engine/uv/impl.cc
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
@@ -2554,7 +2551,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/event_engine/resolver.cc
   src/core/lib/iomgr/event_engine/tcp.cc
   src/core/lib/iomgr/event_engine/timer.cc
-  src/core/lib/iomgr/event_engine/uv/impl.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/executor/mpmcqueue.cc
@@ -2734,9 +2730,7 @@ foreach(_hdr
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
   include/grpc/event_engine/port.h
-  include/grpc/event_engine/slice.h
   include/grpc/event_engine/slice_allocator.h
-  include/grpc/event_engine/slice_buffer.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -6849,6 +6843,33 @@ target_link_libraries(server_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(slice_buffer_test
+  test/core/slice/slice_buffer_test.cc
+)
+
+target_include_directories(slice_buffer_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+
+target_link_libraries(slice_buffer_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(slice_intern_test
   test/core/slice/slice_intern_test.cc
 )
@@ -7371,33 +7392,6 @@ target_include_directories(test_core_security_credentials_test
 )
 
 target_link_libraries(test_core_security_credentials_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(test_core_slice_slice_buffer_test
-  test/core/slice/slice_buffer_test.cc
-)
-
-target_include_directories(test_core_slice_slice_buffer_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(test_core_slice_slice_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -15820,76 +15814,6 @@ target_link_libraries(table_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::optional
   absl::utility
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(test_core_event_engine_slice_buffer_test
-  test/core/event_engine/slice_buffer_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(test_core_event_engine_slice_buffer_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(test_core_event_engine_slice_buffer_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(test_core_event_engine_slice_test
-  test/core/event_engine/slice_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(test_core_event_engine_slice_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(test_core_event_engine_slice_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
 )
 
 

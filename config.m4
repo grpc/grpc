@@ -389,6 +389,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/endpoint_config.cc \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/sockaddr.cc \
+    src/core/lib/event_engine/uv/impl.cc \
     src/core/lib/gpr/alloc.cc \
     src/core/lib/gpr/atm.cc \
     src/core/lib/gpr/cpu_iphone.cc \
@@ -462,7 +463,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/event_engine/resolver.cc \
     src/core/lib/iomgr/event_engine/tcp.cc \
     src/core/lib/iomgr/event_engine/timer.cc \
-    src/core/lib/iomgr/event_engine/uv/impl.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
@@ -1189,12 +1189,12 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/uv)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr/event_engine)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr/event_engine/uv)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr/executor)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/matchers)

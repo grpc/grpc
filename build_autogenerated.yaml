@@ -422,9 +422,7 @@ libs:
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/port.h
-  - include/grpc/event_engine/slice.h
   - include/grpc/event_engine/slice_allocator.h
-  - include/grpc/event_engine/slice_buffer.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
@@ -755,6 +753,7 @@ libs:
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/endpoint_config_internal.h
   - src/core/lib/event_engine/sockaddr.h
+  - src/core/lib/event_engine/uv/libuv_event_engine.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/dual_ref_counted.h
@@ -1297,6 +1296,7 @@ libs:
   - src/core/lib/event_engine/endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/sockaddr.cc
+  - src/core/lib/event_engine/uv/impl.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/httpcli_security_connector.cc
@@ -1327,7 +1327,6 @@ libs:
   - src/core/lib/iomgr/event_engine/resolver.cc
   - src/core/lib/iomgr/event_engine/tcp.cc
   - src/core/lib/iomgr/event_engine/timer.cc
-  - src/core/lib/iomgr/event_engine/uv/impl.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/executor/mpmcqueue.cc
@@ -1673,9 +1672,7 @@ libs:
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/port.h
-  - include/grpc/event_engine/slice.h
   - include/grpc/event_engine/slice_allocator.h
-  - include/grpc/event_engine/slice_buffer.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
@@ -1810,6 +1807,7 @@ libs:
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/endpoint_config_internal.h
   - src/core/lib/event_engine/sockaddr.h
+  - src/core/lib/event_engine/uv/libuv_event_engine.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/dual_ref_counted.h
@@ -2078,6 +2076,7 @@ libs:
   - src/core/lib/event_engine/endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/sockaddr.cc
+  - src/core/lib/event_engine/uv/impl.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/parser.cc
@@ -2107,7 +2106,6 @@ libs:
   - src/core/lib/iomgr/event_engine/resolver.cc
   - src/core/lib/iomgr/event_engine/tcp.cc
   - src/core/lib/iomgr/event_engine/timer.cc
-  - src/core/lib/iomgr/event_engine/uv/impl.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/executor/mpmcqueue.cc
@@ -3926,6 +3924,15 @@ targets:
   - test/core/surface/server_test.cc
   deps:
   - grpc_test_util
+- name: slice_buffer_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/slice/slice_buffer_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: slice_intern_test
   build: test
   language: c
@@ -4126,15 +4133,6 @@ targets:
   - test/core/security/credentials_test.cc
   deps:
   - grpc_test_util
-- name: test_core_slice_slice_buffer_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/slice_buffer_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: test_core_slice_slice_test
   build: test
   language: c
@@ -7641,24 +7639,6 @@ targets:
   - absl/types:optional
   - absl/utility:utility
   uses_polling: false
-- name: test_core_event_engine_slice_buffer_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/event_engine/slice_buffer_test.cc
-  deps:
-  - grpc_test_util
-- name: test_core_event_engine_slice_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/event_engine/slice_test.cc
-  deps:
-  - grpc_test_util
 - name: test_cpp_client_credentials_test
   gtest: true
   build: test

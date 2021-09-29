@@ -1381,6 +1381,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/endpoint_config.cc \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/sockaddr.cc \
+    src/core/lib/event_engine/uv/impl.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/httpcli_security_connector.cc \
@@ -1411,7 +1412,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/event_engine/resolver.cc \
     src/core/lib/iomgr/event_engine/tcp.cc \
     src/core/lib/iomgr/event_engine/timer.cc \
-    src/core/lib/iomgr/event_engine/uv/impl.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
@@ -1623,9 +1623,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/port.h \
-    include/grpc/event_engine/slice.h \
     include/grpc/event_engine/slice_allocator.h \
-    include/grpc/event_engine/slice_buffer.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
@@ -1872,6 +1870,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/endpoint_config.cc \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/sockaddr.cc \
+    src/core/lib/event_engine/uv/impl.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
@@ -1901,7 +1900,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/event_engine/resolver.cc \
     src/core/lib/iomgr/event_engine/tcp.cc \
     src/core/lib/iomgr/event_engine/timer.cc \
-    src/core/lib/iomgr/event_engine/uv/impl.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
@@ -2031,9 +2029,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/port.h \
-    include/grpc/event_engine/slice.h \
     include/grpc/event_engine/slice_allocator.h \
-    include/grpc/event_engine/slice_buffer.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \

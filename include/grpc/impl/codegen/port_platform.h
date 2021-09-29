@@ -693,7 +693,7 @@ typedef unsigned __int64 uint64_t;
 
 #ifdef GRPC_USE_EVENT_ENGINE
 #undef GPR_SUPPORT_CHANNELS_FROM_FD
-#define GRPC_ARES 1
+#define GRPC_ARES 0
 #endif /* GRPC_USE_EVENT_ENGINE */
 
 #define GRPC_CALLBACK_API_NONEXPERIMENTAL

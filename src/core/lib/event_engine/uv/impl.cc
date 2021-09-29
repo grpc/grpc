@@ -23,7 +23,6 @@
 #include "absl/strings/str_format.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/event_engine/uv/libuv_event_engine.h"
 #include "src/core/lib/gprpp/mpscq.h"

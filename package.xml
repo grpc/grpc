@@ -36,9 +36,7 @@
     <file baseinstalldir="/" name="include/grpc/event_engine/endpoint_config.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/event_engine.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/port.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/event_engine/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/slice_allocator.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/event_engine/slice_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/fork.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_posix.h" role="src" />
@@ -771,6 +769,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/uv/impl.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/uv/libuv_event_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/atm.cc" role="src" />
@@ -907,7 +907,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/tcp.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/timer.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/uv/impl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/executor.cc" role="src" />

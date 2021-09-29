@@ -28,7 +28,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
-
 grpc_cc_library(
     name = "event_engine_test_suite",
     srcs = [

@@ -161,9 +161,7 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/endpoint_config.h",
     "include/grpc/event_engine/event_engine.h",
     "include/grpc/event_engine/port.h",
-    "include/grpc/event_engine/slice.h",
     "include/grpc/event_engine/slice_allocator.h",
-    "include/grpc/event_engine/slice_buffer.h",
 ]
 
 GRPC_SECURE_PUBLIC_HDRS = [
