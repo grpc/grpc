@@ -24,8 +24,8 @@
 #include "absl/time/time.h"
 
 #include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/port.h>
-#include <grpc/event_engine/slice_allocator.h>
 
 // TODO(hork): Define the Endpoint::Write metrics collection system
 namespace grpc_event_engine {
@@ -191,8 +191,9 @@ class EventEngine {
   class Listener {
    public:
     /// Called when the listener has accepted a new client connection.
-    using AcceptCallback = std::function<void(
-        std::unique_ptr<Endpoint>, const SliceAllocator& slice_allocator)>;
+    using AcceptCallback =
+        std::function<void(std::unique_ptr<Endpoint>,
+                           std::unique_ptr<MemoryAllocator> memory_allocator)>;
     virtual ~Listener() = default;
     /// Bind an address/port to this Listener.
     ///
@@ -221,7 +222,7 @@ class EventEngine {
       Listener::AcceptCallback on_accept,
       std::function<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,
-      std::unique_ptr<SliceAllocatorFactory> slice_allocator_factory) = 0;
+      std::unique_ptr<MemoryAllocatorFactory> slice_allocator_factory) = 0;
   /// Creates a client network connection to a remote network listener.
   ///
   /// May return an error status immediately if there was a failure in the
@@ -238,7 +239,7 @@ class EventEngine {
   virtual absl::Status Connect(OnConnectCallback on_connect,
                                const ResolvedAddress& addr,
                                const EndpointConfig& args,
-                               std::unique_ptr<SliceAllocator> slice_allocator,
+                               std::unique_ptr<MemoryAllocator> slice_allocator,
                                absl::Time deadline) = 0;
 
   /// Provides asynchronous resolution.

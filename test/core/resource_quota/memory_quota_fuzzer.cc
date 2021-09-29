@@ -58,34 +58,31 @@ class Fuzzer {
           ExecCtx::Get()->Flush();
           break;
         case memory_quota_fuzzer::Action::kCreateQuota:
-          memory_quotas_.emplace(action.quota(),
-                                 RefCountedPtr<MemoryQuota>(new MemoryQuota()));
+          memory_quotas_.emplace(action.quota(), MemoryQuota());
           break;
         case memory_quota_fuzzer::Action::kDeleteQuota:
           memory_quotas_.erase(action.quota());
           break;
         case memory_quota_fuzzer::Action::kCreateAllocator:
-          WithQuota(action.quota(),
-                    [this, action](RefCountedPtr<MemoryQuota> q) {
-                      memory_allocators_.emplace(action.allocator(),
-                                                 q->MakeMemoryAllocator());
-                    });
+          WithQuota(action.quota(), [this, action](MemoryQuota* q) {
+            memory_allocators_.emplace(action.allocator(),
+                                       q->CreateMemoryOwner());
+          });
           break;
         case memory_quota_fuzzer::Action::kDeleteAllocator:
           memory_allocators_.erase(action.allocator());
           break;
         case memory_quota_fuzzer::Action::kSetQuotaSize:
-          WithQuota(action.quota(), [action](RefCountedPtr<MemoryQuota> q) {
+          WithQuota(action.quota(), [action](MemoryQuota* q) {
             q->SetSize(Clamp(action.set_quota_size(), uint64_t{0},
                              uint64_t{std::numeric_limits<ssize_t>::max()}));
           });
           break;
         case memory_quota_fuzzer::Action::kRebindQuota:
-          WithQuota(action.quota(),
-                    [this, action](RefCountedPtr<MemoryQuota> q) {
-                      WithAllocator(action.allocator(),
-                                    [q](MemoryAllocator* a) { a->Rebind(q); });
-                    });
+          WithQuota(action.quota(), [this, action](MemoryQuota* q) {
+            WithAllocator(action.allocator(),
+                          [q](MemoryOwner* a) { a->Rebind(q); });
+          });
           break;
         case memory_quota_fuzzer::Action::kCreateAllocation: {
           auto min = action.create_allocation().min();
@@ -125,7 +122,7 @@ class Fuzzer {
             };
             auto pass = MapReclamationPass(cfg.pass());
             WithAllocator(action.allocator(),
-                          [pass, reclaimer](MemoryAllocator* a) {
+                          [pass, reclaimer](MemoryOwner* a) {
                             a->PostReclaimer(pass, reclaimer);
                           });
           }
@@ -140,18 +137,18 @@ class Fuzzer {
   void WithQuota(int quota, F f) {
     auto it = memory_quotas_.find(quota);
     if (it == memory_quotas_.end()) return;
-    f(it->second);
+    f(&it->second);
   }
 
   template <typename F>
   void WithAllocator(int allocator, F f) {
     auto it = memory_allocators_.find(allocator);
     if (it == memory_allocators_.end()) return;
-    f(it->second.get());
+    f(&it->second);
   }
 
-  std::map<int, RefCountedPtr<MemoryQuota>> memory_quotas_;
-  std::map<int, OrphanablePtr<MemoryAllocator>> memory_allocators_;
+  std::map<int, MemoryQuota> memory_quotas_;
+  std::map<int, MemoryOwner> memory_allocators_;
   std::map<int, MemoryAllocator::Reservation> allocations_;
 };
 
