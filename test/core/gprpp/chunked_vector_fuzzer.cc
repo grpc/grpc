@@ -80,7 +80,8 @@ class Fuzzer {
         // equivalent.
         auto it_from = vectors_.find(action.copy().from());
         if (it_from == vectors_.end()) {
-          it_from = vectors_.emplace(action.copy().from(), arena_).first;
+          it_from =
+              vectors_.emplace(action.copy().from(), Comparison(arena_)).first;
         }
         auto it_to = vectors_.find(action.copy().to());
         if (it_to == vectors_.end()) {
@@ -96,7 +97,8 @@ class Fuzzer {
         // equivalent.
         auto it_from = vectors_.find(action.move().from());
         if (it_from == vectors_.end()) {
-          it_from = vectors_.emplace(action.move().from(), arena_).first;
+          it_from =
+              vectors_.emplace(action.move().from(), Comparison(arena_)).first;
         }
         auto it_to = vectors_.find(action.move().to());
         if (it_to == vectors_.end()) {
@@ -135,7 +137,7 @@ class Fuzzer {
     if (it != vectors_.end()) {
       return &it->second;
     }
-    return &vectors_.emplace(index, arena_).first->second;
+    return &vectors_.emplace(index, Comparison(arena_)).first->second;
   }
 
   Arena* arena_;
