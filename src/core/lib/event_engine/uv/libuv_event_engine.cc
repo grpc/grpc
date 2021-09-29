@@ -305,9 +305,9 @@ EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time when,
   if (now >= when) {
     timeout = 0;
   } else {
-    // absl::ToUnix* rounds down. To be safe, round up on the deadline.
-    timeout =
-        std::ceil(absl::ToUnixMicros(when) / 1000.0) - absl::ToUnixMillis(now);
+    // absl tends to round down time conversions, so we add 1 milli to the
+    // timeout for safety. Better to err on the side of a timer firing late.
+    timeout = absl::ToInt64Milliseconds(when - now) + 1;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG,
