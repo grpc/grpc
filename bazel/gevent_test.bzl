@@ -59,7 +59,7 @@ def py_grpc_gevent_test(
     )
 
     if "flaky" in kwargs:
-      kwargs.pop("flaky")
+        kwargs.pop("flaky")
 
     native.py_test(
         name = name + ".gevent",
