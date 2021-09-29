@@ -67,7 +67,6 @@ def objc_grpc_library(name, deps, srcs = [], use_well_known_protos = False, **kw
         srcs = arc_srcs,
         defines = [
             "GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0",
-            "GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO=0",
         ],
         includes = [
             "_generated_protos",
