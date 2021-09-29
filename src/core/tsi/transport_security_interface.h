@@ -254,10 +254,11 @@ typedef struct tsi_handshaker_result tsi_handshaker_result;
 tsi_result tsi_handshaker_result_extract_peer(const tsi_handshaker_result* self,
                                               tsi_peer* peer);
 
-/* This method indicates what type of frame protector is required by the
+/* This method indicates what type of frame protector is provided by the
    TSI implementation. */
-tsi_frame_protector_type tsi_handshaker_result_frame_protector_type(
-    const tsi_handshaker_result* self);
+tsi_result tsi_handshaker_result_get_frame_protector_type(
+    const tsi_handshaker_result* self,
+    tsi_frame_protector_type* frame_protector_type);
 
 /* This method creates a tsi_frame_protector object. It returns TSI_OK assuming
    there is no fatal error.

@@ -59,9 +59,11 @@ static tsi_result handshaker_result_extract_peer(
   return TSI_OK;
 }
 
-static tsi_frame_protector_type handshaker_result_frame_protector_type(
-    const tsi_handshaker_result* /*self*/) {
-  return TSI_FRAME_PROTECTOR_NONE;
+static tsi_result handshaker_result_get_frame_protector_type(
+    const tsi_handshaker_result* /*self*/,
+    tsi_frame_protector_type* frame_protector_type) {
+  *frame_protector_type = TSI_FRAME_PROTECTOR_NONE;
+  return TSI_OK;
 }
 
 static tsi_result handshaker_result_get_unused_bytes(
@@ -91,7 +93,7 @@ static void handshaker_result_destroy(tsi_handshaker_result* self) {
 
 static const tsi_handshaker_result_vtable result_vtable = {
     handshaker_result_extract_peer,
-    handshaker_result_frame_protector_type,
+    handshaker_result_get_frame_protector_type,
     nullptr, /* handshaker_result_create_zero_copy_grpc_protector */
     nullptr, /* handshaker_result_create_frame_protector */
     handshaker_result_get_unused_bytes,

@@ -242,9 +242,20 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
     return;
   }
   // Check whether we need to wrap the endpoint.
+  tsi_frame_protector_type frame_protector_type;
+  result = tsi_handshaker_result_get_frame_protector_type(
+      handshaker_result_, &frame_protector_type);
+  if (result != TSI_OK) {
+    HandshakeFailedLocked(grpc_set_tsi_error_result(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "TSI handshaker result does not implement "
+            "get_frame_protector_type"),
+        result));
+    return;
+  }
   tsi_zero_copy_grpc_protector* zero_copy_protector = nullptr;
   tsi_frame_protector* protector = nullptr;
-  switch (tsi_handshaker_result_frame_protector_type(handshaker_result_)) {
+  switch (frame_protector_type) {
     case TSI_FRAME_PROTECTOR_ZERO_COPY:
       ABSL_FALLTHROUGH_INTENDED;
     case TSI_FRAME_PROTECTOR_NORMAL_OR_ZERO_COPY:
@@ -252,29 +263,25 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
       result = tsi_handshaker_result_create_zero_copy_grpc_protector(
           handshaker_result_, max_frame_size_ == 0 ? nullptr : &max_frame_size_,
           &zero_copy_protector);
-      if (result != TSI_OK && result != TSI_UNIMPLEMENTED) {
-        error = grpc_set_tsi_error_result(
+      if (result != TSI_OK) {
+        HandshakeFailedLocked(grpc_set_tsi_error_result(
             GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "Zero-copy frame protector creation failed"),
-            result);
-        HandshakeFailedLocked(error);
+            result));
         return;
       }
       break;
     case TSI_FRAME_PROTECTOR_NORMAL:
       // Create normal frame protector.
-      if (zero_copy_protector == nullptr) {
-        result = tsi_handshaker_result_create_frame_protector(
-            handshaker_result_,
-            max_frame_size_ == 0 ? nullptr : &max_frame_size_, &protector);
-        if (result != TSI_OK) {
-          error =
-              grpc_set_tsi_error_result(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                            "Frame protector creation failed"),
-                                        result);
-          HandshakeFailedLocked(error);
-          return;
-        }
+      result = tsi_handshaker_result_create_frame_protector(
+          handshaker_result_, max_frame_size_ == 0 ? nullptr : &max_frame_size_,
+          &protector);
+      if (result != TSI_OK) {
+        HandshakeFailedLocked(
+            grpc_set_tsi_error_result(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                          "Frame protector creation failed"),
+                                      result));
+        return;
       }
       break;
     case TSI_FRAME_PROTECTOR_NONE:
