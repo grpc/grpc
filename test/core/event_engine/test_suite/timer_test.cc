@@ -40,7 +40,7 @@ TEST_F(EventEngineTimerTest, ImmediateCallbackIsExecutedQuickly) {
     signaled = true;
     cv_.Signal();
   });
-  cv_.WaitWithTimeout(&mu_, absl::Microseconds(250));
+  cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
   ASSERT_TRUE(signaled);
 }
 
@@ -66,7 +66,7 @@ TEST_F(EventEngineTimerTest, CancelledCallbackIsNotExecuted) {
 
 TEST_F(EventEngineTimerTest, TimersRespectScheduleOrdering) {
   // Note: this is a brittle test if the first call to `RunAt` takes longer than
-  // a second.
+  // the second callback's wait time.
   std::vector<uint8_t> ordered;
   uint8_t count = 0;
   grpc_core::MutexLock lock(&mu_);
