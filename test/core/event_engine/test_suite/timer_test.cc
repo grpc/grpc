@@ -117,9 +117,14 @@ void EventEngineTimerTest::ScheduleCheckCB(absl::Time when,
                                            std::atomic<int>* call_count,
                                            std::atomic<int>* fail_count,
                                            int total_expected) {
-  auto now = absl::Now();
-  EXPECT_LE(when, now);
-  if (when > now) ++(*fail_count);
+  // TODO(hork): make the EventEngine the time source of truth! libuv supports
+  // millis, absl::Time reports in nanos. This generic test will be hard-coded
+  // to the lowest common denominator until EventEngines can compare relative
+  // times with supported resolution.
+  int64_t now_millis = absl::ToUnixMillis(absl::Now());
+  int64_t when_millis = absl::ToUnixMillis(when);
+  EXPECT_LE(when_millis, now_millis);
+  if (when_millis > now_millis) ++(*fail_count);
   if (++(*call_count) == total_expected) {
     grpc_core::MutexLock lock(&mu_);
     signaled_ = true;
