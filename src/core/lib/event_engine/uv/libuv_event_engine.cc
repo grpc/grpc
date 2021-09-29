@@ -16,6 +16,7 @@
 
 #include "src/core/lib/event_engine/uv/libuv_event_engine.h"
 
+#include <cmath>
 #include <functional>
 #include <thread>
 #include <unordered_map>
@@ -86,6 +87,7 @@ LibuvTask::LibuvTask(LibuvEventEngine* engine, std::function<void()>&& fn)
 }
 
 void LibuvTask::Start(LibuvEventEngine* engine, uint64_t timeout) {
+  uv_update_time(&engine->loop_);
   uv_timer_init(&engine->loop_, &timer_);
   uv_timer_start(
       &timer_,
@@ -303,7 +305,9 @@ EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time when,
   if (now >= when) {
     timeout = 0;
   } else {
-    timeout = (when - now) / absl::Milliseconds(1);
+    // absl::ToUnix* rounds down. To be safe, round up on the deadline.
+    timeout =
+        std::ceil(absl::ToUnixMicros(when) / 1000.0) - absl::ToUnixMillis(now);
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG,
