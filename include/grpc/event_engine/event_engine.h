@@ -31,6 +31,8 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+class SliceBuffer;
+
 ////////////////////////////////////////////////////////////////////////////////
 /// The EventEngine encapsulates all platform-specific behaviors related to low
 /// level network I/O, timers, asynchronous execution, and DNS resolution.
@@ -246,7 +248,7 @@ class EventEngine {
    public:
     /// Task handle for DNS Resolution requests.
     struct LookupTaskHandle {
-      intptr_t key[2];
+      intptr_t keys[2];
     };
     /// DNS SRV record type.
     struct SRVRecord {
@@ -367,7 +369,7 @@ class EventEngine {
 
 // TODO(hork): finalize the API and document it. We need to firm up the story
 // around user-provided EventEngines.
-std::shared_ptr<EventEngine> DefaultEventEngineFactory();
+EventEngine* DefaultEventEngineFactory();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

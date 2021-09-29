@@ -43,8 +43,7 @@ using ::grpc_event_engine::experimental::EventEngine;
 
 EventEngine* g_event_engine = nullptr;
 
-// TODO(nnoble): Instantiate the default EventEngine if none have been provided.
-void iomgr_platform_init(void) { GPR_ASSERT(g_event_engine != nullptr); }
+void iomgr_platform_init(void) { g_event_engine = DefaultEventEngineFactory(); }
 
 void iomgr_platform_flush(void) {}
 

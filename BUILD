@@ -161,7 +161,9 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/endpoint_config.h",
     "include/grpc/event_engine/event_engine.h",
     "include/grpc/event_engine/port.h",
+    "include/grpc/event_engine/slice.h",
     "include/grpc/event_engine/slice_allocator.h",
+    "include/grpc/event_engine/slice_buffer.h",
 ]
 
 GRPC_SECURE_PUBLIC_HDRS = [
@@ -1427,6 +1429,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/event_engine/resolver.cc",
         "src/core/lib/iomgr/event_engine/tcp.cc",
         "src/core/lib/iomgr/event_engine/timer.cc",
+        "src/core/lib/iomgr/event_engine/uv/impl.cc",
         "src/core/lib/iomgr/executor/mpmcqueue.cc",
         "src/core/lib/iomgr/executor/threadpool.cc",
         "src/core/lib/iomgr/fork_posix.cc",
@@ -1699,6 +1702,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
         "madler_zlib",
+        "uv",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,

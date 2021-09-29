@@ -884,7 +884,9 @@ include/grpc/compression.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/port.h \
+include/grpc/event_engine/slice.h \
 include/grpc/event_engine/slice_allocator.h \
+include/grpc/event_engine/slice_buffer.h \
 include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_posix.h \

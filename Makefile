@@ -1411,6 +1411,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/event_engine/resolver.cc \
     src/core/lib/iomgr/event_engine/tcp.cc \
     src/core/lib/iomgr/event_engine/timer.cc \
+    src/core/lib/iomgr/event_engine/uv/impl.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
@@ -1622,7 +1623,9 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/port.h \
+    include/grpc/event_engine/slice.h \
     include/grpc/event_engine/slice_allocator.h \
+    include/grpc/event_engine/slice_buffer.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
@@ -1898,6 +1901,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/event_engine/resolver.cc \
     src/core/lib/iomgr/event_engine/tcp.cc \
     src/core/lib/iomgr/event_engine/timer.cc \
+    src/core/lib/iomgr/event_engine/uv/impl.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
@@ -2027,7 +2031,9 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/port.h \
+    include/grpc/event_engine/slice.h \
     include/grpc/event_engine/slice_allocator.h \
+    include/grpc/event_engine/slice_buffer.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \

@@ -428,6 +428,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\event_engine\\resolver.cc " +
     "src\\core\\lib\\iomgr\\event_engine\\tcp.cc " +
     "src\\core\\lib\\iomgr\\event_engine\\timer.cc " +
+    "src\\core\\lib\\iomgr\\event_engine\\uv\\impl.cc " +
     "src\\core\\lib\\iomgr\\exec_ctx.cc " +
     "src\\core\\lib\\iomgr\\executor.cc " +
     "src\\core\\lib\\iomgr\\executor\\mpmcqueue.cc " +
@@ -1294,6 +1295,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\http");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\event_engine");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\event_engine\\uv");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\executor");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\json");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\matchers");
