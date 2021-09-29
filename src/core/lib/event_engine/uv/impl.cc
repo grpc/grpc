@@ -293,6 +293,8 @@ void LibuvEventEngine::Run(std::function<void()> fn) {
 EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time when,
                                                 std::function<void()> fn) {
   LibuvTask* task = new LibuvTask(this, std::move(fn));
+  // To avoid a thread race if task erasure happens before this method returns.
+  intptr_t task_key = task->Key();
   absl::Time now = absl::Now();
   uint64_t timeout;
   // Since libuv doesn't have a concept of negative timeout, we need to clamp
@@ -314,7 +316,7 @@ EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time when,
     task->Start(engine, timeout);
   });
 
-  return {task->Key()};
+  return {task_key};
 }
 
 bool LibuvEventEngine::Cancel(EventEngine::TaskHandle handle) {
