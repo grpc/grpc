@@ -92,7 +92,8 @@ class FileWatcherAuthorizationPolicyProvider
   gpr_event shutdown_event_;
 
   grpc_core::Mutex mu_;
-  // The latest valid authorization policy.
+  // Contents of specified file path. Policy used to make authorization
+  // decisions could differ from this policy.
   std::string authz_policy_ ABSL_GUARDED_BY(mu_);
   // Engines created using authz_policy_.
   RefCountedPtr<AuthorizationEngine> allow_engine_ ABSL_GUARDED_BY(mu_);
