@@ -329,8 +329,11 @@ static grpc_error_handle init_header_skip_frame_parser(
   bool is_eoh = t->expect_continuation_stream_id != 0;
   t->parser = grpc_chttp2_header_parser_parse;
   t->parser_data = &t->hpack_parser;
-  t->hpack_parser.BeginFrame(skip_header, hpack_boundary_type(t, is_eoh),
-                             priority_type);
+  t->hpack_parser.BeginFrame(
+      nullptr,
+      t->settings[GRPC_ACKED_SETTINGS]
+                 [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE],
+      hpack_boundary_type(t, is_eoh), priority_type);
   return GRPC_ERROR_NONE;
 }
 
@@ -342,7 +345,8 @@ static grpc_error_handle init_non_header_skip_frame_parser(
 
 void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t) {
   if (t->parser == grpc_chttp2_header_parser_parse) {
-    t->hpack_parser.ResetSink(skip_header);
+    abort();
+    // t->hpack_parser.ResetSink(skip_header);
   } else {
     t->parser = skip_parser;
   }
@@ -667,7 +671,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
   if (t->header_eof) {
     s->eos_received = true;
   }
-  HPackParser::Sink on_header;
+  grpc_chttp2_incoming_metadata_buffer* incoming_metadata_buffer = nullptr;
   switch (s->header_frames_received) {
     case 0:
       if (t->is_client && t->header_eof) {
@@ -675,22 +679,25 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
         if (s->trailing_metadata_available != nullptr) {
           *s->trailing_metadata_available = true;
         }
-        on_header = [t](grpc_mdelem md) { return on_trailing_header(t, md); };
+        incoming_metadata_buffer = &s->trailing_metadata_buffer;
       } else {
         GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing initial_metadata"));
-        on_header = [t](grpc_mdelem md) { return on_initial_header(t, md); };
+        incoming_metadata_buffer = &s->initial_metadata_buffer;
       }
       break;
     case 1:
       GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing trailing_metadata"));
-      on_header = [t](grpc_mdelem md) { return on_trailing_header(t, md); };
+      incoming_metadata_buffer = &s->trailing_metadata_buffer;
       break;
     case 2:
       gpr_log(GPR_ERROR, "too many header frames received");
       return init_header_skip_frame_parser(t, priority_type);
   }
-  t->hpack_parser.BeginFrame(std::move(on_header),
-                             hpack_boundary_type(t, is_eoh), priority_type);
+  t->hpack_parser.BeginFrame(
+      incoming_metadata_buffer,
+      t->settings[GRPC_ACKED_SETTINGS]
+                 [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE],
+      hpack_boundary_type(t, is_eoh), priority_type);
   return GRPC_ERROR_NONE;
 }
 

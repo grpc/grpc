@@ -935,15 +935,17 @@ class HPackParser::String {
       value_;
 };
 
-// Parser parses one frame + continuations worth of headers.
+// Parser parses one key/value pair from a byte stream.
 class HPackParser::Parser {
  public:
-  Parser(Input* input, HPackParser::Sink* sink, HPackTable* table,
+  Parser(Input* input, grpc_chttp2_incoming_metadata_buffer* metadata_buffer,
+         uint32_t metadata_size_limit, HPackTable* table,
          uint8_t* dynamic_table_updates_allowed)
       : input_(input),
-        sink_(sink),
+        metadata_buffer_(metadata_buffer),
         table_(table),
-        dynamic_table_updates_allowed_(dynamic_table_updates_allowed) {}
+        dynamic_table_updates_allowed_(dynamic_table_updates_allowed),
+        metadata_size_limit_(metadata_size_limit) {}
 
   // Skip any priority bits, or return false on failure
   bool SkipPriority() {
@@ -1102,13 +1104,22 @@ class HPackParser::Parser {
       };
     }
     // Pass up to the transport
-    grpc_error_handle err = (*sink_)(md);
+    if (GPR_UNLIKELY(metadata_buffer_ == nullptr)) return true;
+    const size_t new_size = metadata_buffer_->size + GRPC_MDELEM_LENGTH(md);
+    if (GPR_UNLIKELY(new_size > metadata_size_limit_)) {
+      return HandleMetadataSizeLimitExceeded(md, new_size);
+    }
+
+    grpc_error_handle err =
+        grpc_chttp2_incoming_metadata_buffer_add(metadata_buffer_, md);
     if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
       input_->SetError(err);
       return false;
     }
     return true;
   }
+
+  bool HandleMetadataSizeLimitExceeded(grpc_mdelem md, size_t new_size);
 
   // Parse a string encoded key and a string encoded value
   template <typename TakeValueType>
@@ -1211,9 +1222,10 @@ class HPackParser::Parser {
   }
 
   Input* input_;
-  HPackParser::Sink* sink_;
+  grpc_chttp2_incoming_metadata_buffer* metadata_buffer_;
   HPackTable* const table_;
   uint8_t* dynamic_table_updates_allowed_;
+  uint32_t metadata_size_limit_;
 };
 
 UnmanagedMemorySlice HPackParser::String::Take(Extern) {
@@ -1263,8 +1275,10 @@ HPackParser::HPackParser() = default;
 
 HPackParser::~HPackParser() = default;
 
-void HPackParser::BeginFrame(Sink sink, Boundary boundary, Priority priority) {
-  sink_ = std::move(sink);
+void HPackParser::BeginFrame(
+    grpc_chttp2_incoming_metadata_buffer* metadata_buffer,
+    uint32_t metadata_size_limit, Boundary boundary, Priority priority) {
+  metadata_buffer_ = metadata_buffer;
   boundary_ = boundary;
   priority_ = priority;
   dynamic_table_updates_allowed_ = 2;
@@ -1310,9 +1324,9 @@ bool HPackParser::ParseInputInner(Input* input) {
     }
   }
   while (!input->end_of_stream()) {
-    if (GPR_UNLIKELY(
-            !Parser(input, &sink_, &table_, &dynamic_table_updates_allowed_)
-                 .Parse())) {
+    if (GPR_UNLIKELY(!Parser(input, metadata_buffer_, metadata_size_limit_,
+                             &table_, &dynamic_table_updates_allowed_)
+                          .Parse())) {
       return false;
     }
     input->UpdateFrontier();
@@ -1320,7 +1334,7 @@ bool HPackParser::ParseInputInner(Input* input) {
   return true;
 }
 
-void HPackParser::FinishFrame() { sink_ = Sink(); }
+void HPackParser::FinishFrame() { metadata_buffer_ = nullptr; }
 
 }  // namespace grpc_core
 

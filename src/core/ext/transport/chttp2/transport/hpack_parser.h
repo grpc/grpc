@@ -25,6 +25,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
+#include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
@@ -49,9 +50,6 @@ class HPackParser {
     Included
   };
 
-  // User specified structure called for each received header.
-  using Sink = std::function<grpc_error_handle(grpc_mdelem)>;
-
   HPackParser();
   ~HPackParser();
 
@@ -61,9 +59,9 @@ class HPackParser {
 
   // Begin parsing a new frame
   // Sink receives each parsed header,
-  void BeginFrame(Sink sink, Boundary boundary, Priority priority);
-  // Change the header sink mid parse
-  void ResetSink(Sink sink) { sink_ = std::move(sink); }
+  void BeginFrame(grpc_chttp2_incoming_metadata_buffer* metadata_buffer,
+                  uint32_t metadata_size_limit, Boundary boundary,
+                  Priority priority);
   // Parse one slice worth of data
   grpc_error_handle Parse(const grpc_slice& slice, bool is_last);
   // Reset state ready for the next BeginFrame
@@ -85,8 +83,9 @@ class HPackParser {
   grpc_error_handle ParseInput(Input input, bool is_last);
   bool ParseInputInner(Input* input);
 
-  // Callback per header received
-  Sink sink_;
+  // Target metadata buffer
+  grpc_chttp2_incoming_metadata_buffer* metadata_buffer_ = nullptr;
+  uint32_t metadata_size_limit_;
 
   // Bytes that could not be parsed last parsing round
   std::vector<uint8_t> unparsed_bytes_;
