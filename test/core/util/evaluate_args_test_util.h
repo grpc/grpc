@@ -28,12 +28,9 @@ namespace grpc_core {
 
 class EvaluateArgsTestUtil {
  public:
-  EvaluateArgsTestUtil() { grpc_metadata_batch_init(&metadata_); }
+  EvaluateArgsTestUtil() = default;
 
-  ~EvaluateArgsTestUtil() {
-    grpc_metadata_batch_destroy(&metadata_);
-    delete channel_args_;
-  }
+  ~EvaluateArgsTestUtil() { delete channel_args_; }
 
   void AddPairToMetadata(const char* key, const char* value) {
     metadata_storage_.emplace_back();

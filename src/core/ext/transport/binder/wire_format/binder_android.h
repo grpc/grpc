@@ -15,9 +15,9 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_ANDROID_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_ANDROID_H
 
-#if defined(ANDROID) || defined(__ANDROID__)
-
 #include <grpc/impl/codegen/port_platform.h>
+
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
 #include <android/binder_auto_utils.h>
 #include <android/binder_ibinder.h>
@@ -28,13 +28,9 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
-
-// TODO(b/192208764): move this check to somewhere else
-#if __ANDROID_API__ < 29
-#error "We only support Android API level >= 29."
-#endif
 
 namespace grpc_binder {
 
@@ -48,9 +44,9 @@ class WritableParcelAndroid final : public WritableParcel {
   explicit WritableParcelAndroid(AParcel* parcel) : parcel_(parcel) {}
   ~WritableParcelAndroid() override = default;
 
-  int32_t GetDataPosition() const override;
-  absl::Status SetDataPosition(int32_t pos) override;
+  int32_t GetDataSize() const override;
   absl::Status WriteInt32(int32_t data) override;
+  absl::Status WriteInt64(int64_t data) override;
   absl::Status WriteBinder(HasRawBinder* binder) override;
   absl::Status WriteString(absl::string_view s) override;
   absl::Status WriteByteArray(const int8_t* buffer, int32_t length) override;
@@ -65,18 +61,18 @@ class ReadableParcelAndroid final : public ReadableParcel {
  public:
   ReadableParcelAndroid() = default;
   // TODO(waynetu): Get rid of the const_cast.
-  explicit ReadableParcelAndroid(const AParcel* parcel)
-      : parcel_(const_cast<AParcel*>(parcel)) {}
+  explicit ReadableParcelAndroid(const AParcel* parcel) : parcel_(parcel) {}
   ~ReadableParcelAndroid() override = default;
 
-  absl::Status ReadInt32(int32_t* data) const override;
-  absl::Status ReadBinder(std::unique_ptr<Binder>* data) const override;
-  absl::Status ReadByteArray(std::string* data) const override;
-  // FIXME(waynetu): Fix the interface.
-  absl::Status ReadString(char data[111]) const override;
+  int32_t GetDataSize() const override;
+  absl::Status ReadInt32(int32_t* data) override;
+  absl::Status ReadInt64(int64_t* data) override;
+  absl::Status ReadBinder(std::unique_ptr<Binder>* data) override;
+  absl::Status ReadByteArray(std::string* data) override;
+  absl::Status ReadString(std::string* str) override;
 
  private:
-  AParcel* parcel_ = nullptr;
+  const AParcel* parcel_ = nullptr;
 
   friend class BinderAndroid;
 };
@@ -85,8 +81,7 @@ class BinderAndroid final : public Binder {
  public:
   explicit BinderAndroid(ndk::SpAIBinder binder)
       : binder_(binder),
-        input_parcel_(absl::make_unique<WritableParcelAndroid>()),
-        output_parcel_(absl::make_unique<ReadableParcelAndroid>()) {}
+        input_parcel_(absl::make_unique<WritableParcelAndroid>()) {}
   ~BinderAndroid() override = default;
 
   void* GetRawBinder() override { return binder_.get(); }
@@ -98,9 +93,6 @@ class BinderAndroid final : public Binder {
   WritableParcel* GetWritableParcel() const override {
     return input_parcel_.get();
   }
-  ReadableParcel* GetReadableParcel() const override {
-    return output_parcel_.get();
-  };
 
   std::unique_ptr<TransactionReceiver> ConstructTxReceiver(
       grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
@@ -109,7 +101,6 @@ class BinderAndroid final : public Binder {
  private:
   ndk::SpAIBinder binder_;
   std::unique_ptr<WritableParcelAndroid> input_parcel_;
-  std::unique_ptr<ReadableParcelAndroid> output_parcel_;
 };
 
 class TransactionReceiverAndroid final : public TransactionReceiver {
@@ -127,6 +118,6 @@ class TransactionReceiverAndroid final : public TransactionReceiver {
 
 }  // namespace grpc_binder
 
-#endif  // defined(ANDROID) || defined(__ANDROID__)
+#endif /*GPR_SUPPORT_BINDER_TRANSPORT*/
 
 #endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_ANDROID_H

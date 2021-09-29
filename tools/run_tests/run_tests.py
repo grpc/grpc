@@ -273,23 +273,6 @@ class CLanguage(object):
                 # see https://github.com/grpc/grpc/blob/b5b8578b3f8b4a9ce61ed6677e19d546e43c5c68/tools/run_tests/artifacts/artifact_targets.py#L253
                 self._cmake_configure_extra_args.append('-DOPENSSL_NO_ASM=ON')
 
-        if args.iomgr_platform == "uv":
-            cflags = '-DGRPC_UV -DGRPC_CUSTOM_IOMGR_THREAD_CHECK -DGRPC_CUSTOM_SOCKET '
-            try:
-                cflags += subprocess.check_output(
-                    ['pkg-config', '--cflags', 'libuv']).strip() + ' '
-            except (subprocess.CalledProcessError, OSError):
-                pass
-            try:
-                ldflags = subprocess.check_output(
-                    ['pkg-config', '--libs', 'libuv']).strip() + ' '
-            except (subprocess.CalledProcessError, OSError):
-                ldflags = '-luv '
-            self._make_options += [
-                'EXTRA_CPPFLAGS={}'.format(cflags),
-                'EXTRA_LDLIBS={}'.format(ldflags)
-            ]
-
     def test_specs(self):
         out = []
         binaries = get_c_tests(self.args.travis, self.test_lang)
@@ -301,8 +284,6 @@ class CLanguage(object):
             polling_strategies = (_POLLING_STRATEGIES.get(
                 self.platform, ['all']) if target.get('uses_polling', True) else
                                   ['none'])
-            if self.args.iomgr_platform == 'uv':
-                polling_strategies = ['all']
             for polling_strategy in polling_strategies:
                 env = {
                     'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
@@ -483,24 +464,20 @@ class CLanguage(object):
             return ('jessie', [])
         elif compiler == 'gcc5.3':
             return ('ubuntu1604', [])
-        elif compiler == 'gcc7.4':
-            return ('ubuntu1804', [])
         elif compiler == 'gcc8.3':
             return ('buster', [])
         elif compiler == 'gcc8.3_openssl102':
             return ('buster_openssl102', [
                 "-DgRPC_SSL_PROVIDER=package",
             ])
+        elif compiler == 'gcc11':
+            return ('gcc_11', [])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
-        elif compiler == 'clang4.0':
-            return ('ubuntu1604',
-                    self._clang_cmake_configure_extra_args(
-                        version_suffix='-4.0'))
-        elif compiler == 'clang5.0':
-            return ('ubuntu1604',
-                    self._clang_cmake_configure_extra_args(
-                        version_suffix='-5.0'))
+        elif compiler == 'clang4':
+            return ('clang_4', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang12':
+            return ('clang_12', self._clang_cmake_configure_extra_args())
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
@@ -698,9 +675,7 @@ class PythonLanguage(object):
 
     def _python_manager_name(self):
         """Choose the docker image to use based on python version."""
-        if self.args.compiler in [
-                'python2.7', 'python3.5', 'python3.6', 'python3.7', 'python3.8'
-        ]:
+        if self.args.compiler in ['python3.6', 'python3.7', 'python3.8']:
             return 'stretch_' + self.args.compiler[len('python'):]
         elif self.args.compiler == 'python_alpine':
             return 'alpine'
@@ -752,16 +727,6 @@ class PythonLanguage(object):
                                         builder_prefix_arguments,
                                         venv_relative_python, toolchain, runner,
                                         test_command, args.iomgr_platform)
-        python27_config = _python_config_generator(name='py27',
-                                                   major='2',
-                                                   minor='7',
-                                                   bits=bits,
-                                                   config_vars=config_vars)
-        python35_config = _python_config_generator(name='py35',
-                                                   major='3',
-                                                   minor='5',
-                                                   bits=bits,
-                                                   config_vars=config_vars)
         python36_config = _python_config_generator(name='py36',
                                                    major='3',
                                                    minor='6',
@@ -814,14 +779,9 @@ class PythonLanguage(object):
                     return (python38_config,)
                 else:
                     return (
-                        python35_config,
                         python37_config,
                         python38_config,
                     )
-        elif args.compiler == 'python2.7':
-            return (python27_config,)
-        elif args.compiler == 'python3.5':
-            return (python35_config,)
         elif args.compiler == 'python3.6':
             return (python36_config,)
         elif args.compiler == 'python3.7':
@@ -835,11 +795,9 @@ class PythonLanguage(object):
         elif args.compiler == 'pypy3':
             return (pypy32_config,)
         elif args.compiler == 'python_alpine':
-            return (python27_config,)
+            return (python38_config,)
         elif args.compiler == 'all_the_cpythons':
             return (
-                python27_config,
-                python35_config,
                 python36_config,
                 python37_config,
                 python38_config,
@@ -1436,12 +1394,12 @@ argp.add_argument(
         'default',
         'gcc4.9',
         'gcc5.3',
-        'gcc7.4',
         'gcc8.3',
         'gcc8.3_openssl102',
+        'gcc11',
         'gcc_musl',
-        'clang4.0',
-        'clang5.0',
+        'clang4',
+        'clang12',
         'python2.7',
         'python3.5',
         'python3.6',
@@ -1464,7 +1422,7 @@ argp.add_argument(
     'Selects compiler to use. Allowed values depend on the platform and language.'
 )
 argp.add_argument('--iomgr_platform',
-                  choices=['native', 'uv', 'gevent', 'asyncio'],
+                  choices=['native', 'gevent', 'asyncio'],
                   default='native',
                   help='Selects iomgr platform to build on')
 argp.add_argument('--build_only',

@@ -18,8 +18,6 @@
 
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
 
-#include "src/core/lib/iomgr/sockaddr.h"
-
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
@@ -45,12 +43,14 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/port.h"
+#include "test/core/util/resource_user_util.h"
 
 struct grpc_end2end_http_proxy {
   grpc_end2end_http_proxy()
@@ -489,10 +489,8 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   }
   // Make sure we got a CONNECT request.
   if (strcmp(conn->http_request.method, "CONNECT") != 0) {
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("HTTP proxy got request method ",
-                     conn->http_request.method)
-            .c_str());
+    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "HTTP proxy got request method ", conn->http_request.method));
     proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request",
                             GRPC_ERROR_REF(error));
     GRPC_ERROR_UNREF(error);
@@ -538,6 +536,7 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   GRPC_CLOSURE_INIT(&conn->on_server_connect_done, on_server_connect_done, conn,
                     grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint,
+                          grpc_slice_allocator_create_unlimited(),
                           conn->pollset_set, nullptr,
                           &resolved_addresses->addrs[0], deadline);
   grpc_resolved_addresses_destroy(resolved_addresses);
@@ -612,8 +611,11 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name.c_str());
   // Create TCP server.
   proxy->channel_args = grpc_channel_args_copy(args);
-  grpc_error_handle error =
-      grpc_tcp_server_create(nullptr, proxy->channel_args, &proxy->server);
+  grpc_error_handle error = grpc_tcp_server_create(
+      nullptr, proxy->channel_args,
+      grpc_slice_allocator_factory_create(
+          grpc_resource_quota_from_channel_args(args, true)),
+      &proxy->server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   // Bind to port.
   grpc_resolved_address resolved_addr;

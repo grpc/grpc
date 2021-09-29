@@ -345,7 +345,7 @@ struct grpc_chttp2_transport {
   /** data to write now */
   grpc_slice_buffer outbuf;
   /** hpack encoding */
-  grpc_chttp2_hpack_compressor hpack_compressor;
+  grpc_core::HPackCompressor hpack_compressor;
   /** is this a client? */
   bool is_client;
 
@@ -589,7 +589,8 @@ struct grpc_chttp2_stream {
   grpc_published_metadata_method published_metadata[2] = {};
   bool final_metadata_requested = false;
 
-  grpc_chttp2_incoming_metadata_buffer metadata_buffer[2];
+  grpc_chttp2_incoming_metadata_buffer initial_metadata_buffer;
+  grpc_chttp2_incoming_metadata_buffer trailing_metadata_buffer;
 
   grpc_slice_buffer frame_storage; /* protected by t combiner */
 

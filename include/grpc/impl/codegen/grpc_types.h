@@ -19,14 +19,16 @@
 #ifndef GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
+// IWYU pragma: private
+
 #include <grpc/impl/codegen/port_platform.h>
+
+#include <stddef.h>
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/impl/codegen/status.h>
-
-#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,9 +56,6 @@ typedef struct grpc_byte_buffer {
 /** Completion Queues enable notification of the completion of
  * asynchronous actions. */
 typedef struct grpc_completion_queue grpc_completion_queue;
-
-/** An alarm associated with a completion queue. */
-typedef struct grpc_alarm grpc_alarm;
 
 /** The Channel interface allows creation of Call objects. */
 typedef struct grpc_channel grpc_channel;

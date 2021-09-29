@@ -702,4 +702,5 @@ cdef extern from "grpc/grpc_security_constants.h":
 
 
 cdef extern from "src/core/lib/iomgr/error.h":
-  const grpc_error* GRPC_ERROR_CANCELLED
+  ctypedef grpc_error* grpc_error_handle
+  grpc_error_handle GRPC_ERROR_CANCELLED

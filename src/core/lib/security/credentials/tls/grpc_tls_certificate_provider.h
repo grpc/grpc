@@ -19,11 +19,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc_security.h>
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/status/statusor.h"
+
+#include <grpc/grpc_security.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -108,7 +109,8 @@ class FileWatcherCertificateProvider final
   // Read the root certificates from files and update the distributor.
   absl::optional<std::string> ReadRootCertificatesFromFile(
       const std::string& root_cert_full_path);
-  // Read the root certificates from files and update the distributor.
+  // Read the private key and the certificate chain from files and update the
+  // distributor.
   absl::optional<PemKeyCertPairList> ReadIdentityKeyCertPairFromFiles(
       const std::string& private_key_path,
       const std::string& identity_certificate_path);

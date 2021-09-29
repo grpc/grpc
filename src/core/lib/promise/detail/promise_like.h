@@ -17,9 +17,8 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include "src/core/lib/promise/poll.h"
-
 #include <utility>
+
 #include "src/core/lib/promise/poll.h"
 
 // A Promise is a callable object that returns Poll<T> for some T.
@@ -54,7 +53,7 @@ struct PollWrapper {
 
 template <typename T>
 struct PollWrapper<Poll<T>> {
-  static Poll<T> Wrap(Poll<T>&& x) { return x; }
+  static Poll<T> Wrap(Poll<T>&& x) { return std::forward<Poll<T>>(x); }
 };
 
 template <typename T>
@@ -68,10 +67,15 @@ class PromiseLike {
   GPR_NO_UNIQUE_ADDRESS F f_;
 
  public:
-  explicit PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
+  // NOLINTNEXTLINE - internal detail that drastically simplifies calling code.
+  PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
   auto operator()() -> decltype(WrapInPoll(f_())) { return WrapInPoll(f_()); }
   using Result = typename PollTraits<decltype(WrapInPoll(f_()))>::Type;
 };
+
+// T -> T, const T& -> T
+template <typename T>
+using RemoveCVRef = absl::remove_cv_t<absl::remove_reference_t<T>>;
 
 }  // namespace promise_detail
 }  // namespace grpc_core

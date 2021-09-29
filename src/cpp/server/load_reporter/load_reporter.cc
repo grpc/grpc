@@ -18,19 +18,21 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include "src/cpp/server/load_reporter/load_reporter.h"
+
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
+
 #include <chrono>
 #include <ctime>
 #include <iterator>
 
-#include "src/cpp/server/load_reporter/constants.h"
-#include "src/cpp/server/load_reporter/get_cpu_stats.h"
-#include "src/cpp/server/load_reporter/load_reporter.h"
-
 #include "opencensus/stats/internal/set_aggregation_window.h"
 #include "opencensus/tags/tag_key.h"
+
+#include "src/cpp/server/load_reporter/constants.h"
+#include "src/cpp/server/load_reporter/get_cpu_stats.h"
 
 namespace grpc {
 namespace load_reporter {

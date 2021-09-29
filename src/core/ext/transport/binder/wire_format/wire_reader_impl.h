@@ -22,6 +22,7 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/synchronization/notification.h"
+
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
@@ -31,9 +32,9 @@ namespace grpc_binder {
 
 class WireReaderImpl : public WireReader {
  public:
-  explicit WireReaderImpl(
+  WireReaderImpl(
       std::shared_ptr<TransportStreamReceiver> transport_stream_receiver,
-      bool is_client);
+      bool is_client, std::function<void()> on_destruct_callback = nullptr);
   ~WireReaderImpl() override;
 
   void Orphan() override { Unref(); }
@@ -62,11 +63,11 @@ class WireReaderImpl : public WireReader {
   /// setup, we assume that the first half of SETUP_TRANSPORT (up to step 2) is
   /// already done somewhere else (see test/end2end/binder_transport_test.cc for
   /// how it's handled in the testing environment).
-  std::unique_ptr<WireWriter> SetupTransport(
+  std::shared_ptr<WireWriter> SetupTransport(
       std::unique_ptr<Binder> binder) override;
 
   absl::Status ProcessTransaction(transaction_code_t code,
-                                  const ReadableParcel* parcel);
+                                  ReadableParcel* parcel, int uid);
 
   /// Send SETUP_TRANSPORT request through \p binder.
   ///
@@ -92,19 +93,37 @@ class WireReaderImpl : public WireReader {
 
  private:
   absl::Status ProcessStreamingTransaction(transaction_code_t code,
-                                           const ReadableParcel* parcel);
+                                           ReadableParcel* parcel);
   absl::Status ProcessStreamingTransactionImpl(transaction_code_t code,
-                                               const ReadableParcel* parcel,
-                                               int* cancellation_flags);
+                                               ReadableParcel* parcel,
+                                               int* cancellation_flags)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::shared_ptr<TransportStreamReceiver> transport_stream_receiver_;
   absl::Notification connection_noti_;
+  grpc_core::Mutex mu_;
+  bool connected_ ABSL_GUARDED_BY(mu_) = false;
+  bool recvd_setup_transport_ ABSL_GUARDED_BY(mu_) = false;
   // NOTE: other_end_binder_ will be moved out when RecvSetupTransport() is
   // called. Be cautious not to access it afterward.
   std::unique_ptr<Binder> other_end_binder_;
-  absl::flat_hash_map<transaction_code_t, int32_t> expected_seq_num_;
+  absl::flat_hash_map<transaction_code_t, int32_t> expected_seq_num_
+      ABSL_GUARDED_BY(mu_);
+  absl::flat_hash_map<transaction_code_t, std::string> message_buffer_
+      ABSL_GUARDED_BY(mu_);
   std::unique_ptr<TransactionReceiver> tx_receiver_;
   bool is_client_;
+  // When WireReaderImpl gets destructed, call on_destruct_callback_. This is
+  // mostly for decrementing the reference count of its transport.
+  std::function<void()> on_destruct_callback_;
+
+  // ACK every 16k bytes.
+  static constexpr int64_t kFlowControlAckBytes = 16 * 1024;
+  int64_t num_incoming_bytes_ ABSL_GUARDED_BY(mu_) = 0;
+  int64_t num_acknowledged_bytes_ ABSL_GUARDED_BY(mu_) = 0;
+
+  // Used to send ACK.
+  std::shared_ptr<WireWriter> wire_writer_;
 };
 
 }  // namespace grpc_binder

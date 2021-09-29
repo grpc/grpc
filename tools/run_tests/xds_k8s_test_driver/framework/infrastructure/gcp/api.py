@@ -21,7 +21,9 @@ from absl import flags
 from google.cloud import secretmanager_v1
 from google.longrunning import operations_pb2
 from google.protobuf import json_format
+from google.protobuf import text_format
 from google.rpc import code_pb2
+from google.rpc import error_details_pb2
 from googleapiclient import discovery
 import googleapiclient.errors
 import googleapiclient.http
@@ -113,6 +115,8 @@ class GcpApiManager:
                 return self._build_from_file(self.compute_v1_discovery_file)
             else:
                 return self._build_from_discovery_v1(api_name, version)
+        elif version == 'v1alpha':
+            return self._build_from_discovery_v1(api_name, 'alpha')
 
         raise NotImplementedError(f'Compute {version} not supported')
 
@@ -125,6 +129,8 @@ class GcpApiManager:
                 version,
                 api_key=self.private_api_key,
                 visibility_labels=['NETWORKSECURITY_ALPHA'])
+        elif version == 'v1beta1':
+            return self._build_from_discovery_v2(api_name, version)
 
         raise NotImplementedError(f'Network Security {version} not supported')
 
@@ -137,6 +143,8 @@ class GcpApiManager:
                 version,
                 api_key=self.private_api_key,
                 visibility_labels=['NETWORKSERVICES_ALPHA'])
+        elif version == 'v1beta1':
+            return self._build_from_discovery_v2(api_name, version)
 
         raise NotImplementedError(f'Network Services {version} not supported')
 
@@ -255,14 +263,24 @@ class OperationError(Error):
 
     def __init__(self, api_name, operation_response, message=None):
         self.api_name = api_name
-        operation = json_format.ParseDict(operation_response, Operation())
+        operation = json_format.ParseDict(
+            operation_response,
+            Operation(),
+            ignore_unknown_fields=True,
+            descriptor_pool=error_details_pb2.DESCRIPTOR.pool)
         self.name = operation.name or 'unknown'
-        self.error = operation.error
         self.code_name = code_pb2.Code.Name(operation.error.code)
+        self.error = operation.error
+        # Collect error details packed as Any without parsing concrete types.
+        self.error_details = [
+            text_format.MessageToString(any_error, as_one_line=True)
+            for any_error in self.error.details
+        ]
         if message is None:
             message = (f'{api_name} operation "{self.name}" failed. Error '
                        f'code: {self.error.code} ({self.code_name}), '
-                       f'message: {self.error.message}')
+                       f'message: {self.error.message}, '
+                       f'details: {self.error_details}')
         self.message = message
         super().__init__(message)
 

@@ -13,15 +13,18 @@
 // limitations under the License.
 
 #include "src/core/lib/gprpp/bitset.h"
+
+#include <random>
+
 #include <gtest/gtest.h>
 
 namespace grpc_core {
 namespace testing {
 
 // Stand in type to make the size to test a type
-template <std::size_t K>
+template <size_t K>
 struct Size {
-  static constexpr std::size_t kBits = K;
+  static constexpr size_t kBits = K;
 };
 
 using TestSizes = ::testing::Types<
@@ -52,25 +55,46 @@ TYPED_TEST(BitSetTest, NoneAtInit) {
 }
 
 TYPED_TEST(BitSetTest, OneBit) {
-  constexpr std::size_t kBits = TypeParam::kBits;
-  for (std::size_t i = 0; i < kBits; i++) {
+  constexpr size_t kBits = TypeParam::kBits;
+  for (size_t i = 0; i < kBits; i++) {
     BitSet<kBits> b;
     b.set(i);
     EXPECT_FALSE(b.none());
-    for (std::size_t j = 0; j < kBits; j++) {
+    for (size_t j = 0; j < kBits; j++) {
       EXPECT_EQ(b.is_set(j), i == j);
     }
   }
 }
 
 TYPED_TEST(BitSetTest, AllSet) {
-  constexpr std::size_t kBits = TypeParam::kBits;
+  constexpr size_t kBits = TypeParam::kBits;
   BitSet<kBits> b;
-  for (std::size_t i = 0; i < kBits; i++) {
+  for (size_t i = 0; i < kBits; i++) {
     EXPECT_FALSE(b.all());
     b.set(i);
   }
   EXPECT_TRUE(b.all());
+}
+
+TYPED_TEST(BitSetTest, Count) {
+  constexpr size_t kBits = TypeParam::kBits;
+  BitSet<kBits> b;
+  std::set<size_t> bits_set;
+  std::random_device rd;
+  std::uniform_int_distribution<size_t> dist(0, kBits - 1);
+  for (size_t i = 0; i < 4 * kBits; i++) {
+    size_t bit = dist(rd);
+    bits_set.insert(bit);
+    b.set(bit);
+    EXPECT_EQ(b.count(), bits_set.size());
+  }
+}
+
+TEST(EmptyBitSet, Empty) {
+  BitSet<0> b;
+  EXPECT_TRUE(b.all());
+  EXPECT_TRUE(b.none());
+  EXPECT_EQ(b.count(), 0);
 }
 
 }  // namespace testing

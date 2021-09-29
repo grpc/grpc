@@ -18,22 +18,18 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
-
 #include "src/core/lib/iomgr/iomgr_internal.h"
-#include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/iomgr/timer_manager.h"
+
+#include <stddef.h>
 
 static grpc_iomgr_platform_vtable* iomgr_platform_vtable = nullptr;
 
-void grpc_set_iomgr_platform_vtable(grpc_iomgr_platform_vtable* vtable) {
-  iomgr_platform_vtable = vtable;
+bool grpc_have_determined_iomgr_platform() {
+  return iomgr_platform_vtable != nullptr;
 }
 
-void grpc_determine_iomgr_platform() {
-  if (iomgr_platform_vtable == nullptr) {
-    grpc_set_default_iomgr_platform();
-  }
+void grpc_set_iomgr_platform_vtable(grpc_iomgr_platform_vtable* vtable) {
+  iomgr_platform_vtable = vtable;
 }
 
 void grpc_iomgr_platform_init() { iomgr_platform_vtable->init(); }

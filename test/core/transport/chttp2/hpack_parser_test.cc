@@ -65,7 +65,12 @@ static void test_vector(grpc_core::HPackParser* parser,
 
   for (i = 0; i < nslices; i++) {
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(parser->Parse(slices[i], i == nslices - 1) == GRPC_ERROR_NONE);
+    auto err = parser->Parse(slices[i], i == nslices - 1);
+    if (err != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "Unexpected parse error: %s",
+              grpc_error_std_string(err).c_str());
+      abort();
+    }
   }
 
   for (i = 0; i < nslices; i++) {
@@ -233,6 +238,18 @@ static void test_vectors(grpc_slice_split_mode mode) {
          std::make_pair(
              "set-cookie",
              "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1")});
+  }
+
+  {
+    grpc_core::HPackParser parser;
+    // Binary metadata: created using:
+    // tools/codegen/core/gen_header_frame.py
+    //    --compression inc --no_framing --hex
+    //    < test/core/transport/chttp2/binary-metadata.headers
+    test_vector(&parser, mode,
+                "40 09 61 2e 62 2e 63 2d 62 69 6e 0c 62 32 31 6e 4d 6a 41 79 "
+                "4d 51 3d 3d",
+                {std::make_pair("a.b.c-bin", "omg2021")});
   }
 }
 

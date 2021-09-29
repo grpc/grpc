@@ -123,8 +123,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "hpack_table_test",
-    srcs = ["hpack_table_test.cc"],
+    name = "hpack_parser_table_test",
+    srcs = ["hpack_parser_table_test.cc"],
     language = "C++",
     uses_polling = False,
     deps = [
@@ -220,6 +220,19 @@ grpc_cc_test(
     deps = [
         "//:gpr_platform",
         "//:popularity_count",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "hpack_encoder_index_test",
+    srcs = ["hpack_encoder_index_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr_platform",
+        "//:hpack_encoder_index",
         "//test/core/util:grpc_suppressions",
     ],
 )

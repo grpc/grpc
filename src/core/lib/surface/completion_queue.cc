@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <atomic>
 #include <vector>
 
 #include "absl/strings/str_format.h"
@@ -38,7 +39,6 @@
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tls.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -224,7 +224,7 @@ class CqEventQueue {
   /* Note: The counter is not incremented/decremented atomically with push/pop.
    * The count is only eventually consistent */
   intptr_t num_items() const {
-    return num_queue_items_.Load(grpc_core::MemoryOrder::RELAXED);
+    return num_queue_items_.load(std::memory_order_relaxed);
   }
 
   bool Push(grpc_cq_completion* c);
@@ -239,14 +239,14 @@ class CqEventQueue {
   /* A lazy counter of number of items in the queue. This is NOT atomically
      incremented/decremented along with push/pop operations and hence is only
      eventually consistent */
-  grpc_core::Atomic<intptr_t> num_queue_items_{0};
+  std::atomic<intptr_t> num_queue_items_{0};
 };
 
 struct cq_next_data {
   ~cq_next_data() {
     GPR_ASSERT(queue.num_items() == 0);
 #ifndef NDEBUG
-    if (pending_events.Load(grpc_core::MemoryOrder::ACQUIRE) != 0) {
+    if (pending_events.load(std::memory_order_acquire) != 0) {
       gpr_log(GPR_ERROR, "Destroying CQ without draining it fully.");
     }
 #endif
@@ -257,11 +257,11 @@ struct cq_next_data {
 
   /** Counter of how many things have ever been queued on this completion queue
       useful for avoiding locks to check the queue */
-  grpc_core::Atomic<intptr_t> things_queued_ever{0};
+  std::atomic<intptr_t> things_queued_ever{0};
 
   /** Number of outstanding events (+1 if not shut down)
       Initial count is dropped by grpc_completion_queue_shutdown */
-  grpc_core::Atomic<intptr_t> pending_events{1};
+  std::atomic<intptr_t> pending_events{1};
 
   /** 0 initially. 1 once we initiated shutdown */
   bool shutdown_called = false;
@@ -277,7 +277,7 @@ struct cq_pluck_data {
     GPR_ASSERT(completed_head.next ==
                reinterpret_cast<uintptr_t>(&completed_head));
 #ifndef NDEBUG
-    if (pending_events.Load(grpc_core::MemoryOrder::ACQUIRE) != 0) {
+    if (pending_events.load(std::memory_order_acquire) != 0) {
       gpr_log(GPR_ERROR, "Destroying CQ without draining it fully.");
     }
 #endif
@@ -289,17 +289,17 @@ struct cq_pluck_data {
 
   /** Number of pending events (+1 if we're not shutdown).
       Initial count is dropped by grpc_completion_queue_shutdown. */
-  grpc_core::Atomic<intptr_t> pending_events{1};
+  std::atomic<intptr_t> pending_events{1};
 
   /** Counter of how many things have ever been queued on this completion queue
       useful for avoiding locks to check the queue */
-  grpc_core::Atomic<intptr_t> things_queued_ever{0};
+  std::atomic<intptr_t> things_queued_ever{0};
 
   /** 0 initially. 1 once we completed shutting */
   /* TODO: (sreek) This is not needed since (shutdown == 1) if and only if
    * (pending_events == 0). So consider removing this in future and use
    * pending_events */
-  grpc_core::Atomic<bool> shutdown{false};
+  std::atomic<bool> shutdown{false};
 
   /** 0 initially. 1 once we initiated shutdown */
   bool shutdown_called = false;
@@ -314,7 +314,7 @@ struct cq_callback_data {
 
   ~cq_callback_data() {
 #ifndef NDEBUG
-    if (pending_events.Load(grpc_core::MemoryOrder::ACQUIRE) != 0) {
+    if (pending_events.load(std::memory_order_acquire) != 0) {
       gpr_log(GPR_ERROR, "Destroying CQ without draining it fully.");
     }
 #endif
@@ -324,7 +324,7 @@ struct cq_callback_data {
 
   /** Number of pending events (+1 if we're not shutdown).
       Initial count is dropped by grpc_completion_queue_shutdown. */
-  grpc_core::Atomic<intptr_t> pending_events{1};
+  std::atomic<intptr_t> pending_events{1};
 
   /** 0 initially. 1 once we initiated shutdown */
   bool shutdown_called = false;
@@ -439,10 +439,7 @@ grpc_core::TraceFlag grpc_cq_pluck_trace(false, "queue_pluck");
 
 static void on_pollset_shutdown_done(void* arg, grpc_error_handle error);
 
-void grpc_cq_global_init() {
-  gpr_tls_init(g_cached_event);
-  gpr_tls_init(g_cached_cq);
-}
+void grpc_cq_global_init() {}
 
 void grpc_completion_queue_thread_local_cache_init(grpc_completion_queue* cq) {
   if (g_cached_cq == nullptr) {
@@ -462,7 +459,7 @@ int grpc_completion_queue_thread_local_cache_flush(grpc_completion_queue* cq,
     storage->done(storage->done_arg, storage);
     ret = 1;
     cq_next_data* cqd = static_cast<cq_next_data*> DATA_FROM_CQ(cq);
-    if (cqd->pending_events.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) == 1) {
+    if (cqd->pending_events.fetch_sub(1, std::memory_order_acq_rel) == 1) {
       GRPC_CQ_INTERNAL_REF(cq, "shutting_down");
       gpr_mu_lock(cq->mu);
       cq_finish_shutdown_next(cq);
@@ -479,7 +476,7 @@ int grpc_completion_queue_thread_local_cache_flush(grpc_completion_queue* cq,
 bool CqEventQueue::Push(grpc_cq_completion* c) {
   queue_.Push(
       reinterpret_cast<grpc_core::MultiProducerSingleConsumerQueue::Node*>(c));
-  return num_queue_items_.FetchAdd(1, grpc_core::MemoryOrder::RELAXED) == 0;
+  return num_queue_items_.fetch_add(1, std::memory_order_relaxed) == 0;
 }
 
 grpc_cq_completion* CqEventQueue::Pop() {
@@ -500,7 +497,7 @@ grpc_cq_completion* CqEventQueue::Pop() {
   }
 
   if (c) {
-    num_queue_items_.FetchSub(1, grpc_core::MemoryOrder::RELAXED);
+    num_queue_items_.fetch_sub(1, std::memory_order_relaxed);
   }
 
   return c;
@@ -631,8 +628,8 @@ static void cq_check_tag(grpc_completion_queue* cq, void* tag, bool lock_cq) {
   for (int i = 0; i < static_cast<int>(cq->outstanding_tag_count); i++) {
     if (cq->outstanding_tags[i] == tag) {
       cq->outstanding_tag_count--;
-      GPR_SWAP(void*, cq->outstanding_tags[i],
-               cq->outstanding_tags[cq->outstanding_tag_count]);
+      std::swap(cq->outstanding_tags[i],
+                cq->outstanding_tags[cq->outstanding_tag_count]);
       found = 1;
       break;
     }
@@ -651,24 +648,25 @@ static void cq_check_tag(grpc_completion_queue* /*cq*/, void* /*tag*/,
 
 static bool cq_begin_op_for_next(grpc_completion_queue* cq, void* /*tag*/) {
   cq_next_data* cqd = static_cast<cq_next_data*> DATA_FROM_CQ(cq);
-  return cqd->pending_events.IncrementIfNonzero();
+  return grpc_core::IncrementIfNonzero(&cqd->pending_events);
 }
 
 static bool cq_begin_op_for_pluck(grpc_completion_queue* cq, void* /*tag*/) {
   cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
-  return cqd->pending_events.IncrementIfNonzero();
+  return grpc_core::IncrementIfNonzero(&cqd->pending_events);
 }
 
 static bool cq_begin_op_for_callback(grpc_completion_queue* cq, void* /*tag*/) {
   cq_callback_data* cqd = static_cast<cq_callback_data*> DATA_FROM_CQ(cq);
-  return cqd->pending_events.IncrementIfNonzero();
+  return grpc_core::IncrementIfNonzero(&cqd->pending_events);
 }
 
 bool grpc_cq_begin_op(grpc_completion_queue* cq, void* tag) {
 #ifndef NDEBUG
   gpr_mu_lock(cq->mu);
   if (cq->outstanding_tag_count == cq->outstanding_tag_capacity) {
-    cq->outstanding_tag_capacity = GPR_MAX(4, 2 * cq->outstanding_tag_capacity);
+    cq->outstanding_tag_capacity =
+        std::max(size_t(4), 2 * cq->outstanding_tag_capacity);
     cq->outstanding_tags = static_cast<void**>(gpr_realloc(
         cq->outstanding_tags,
         sizeof(*cq->outstanding_tags) * cq->outstanding_tag_capacity));
@@ -717,13 +715,13 @@ static void cq_end_op_for_next(
   } else {
     /* Add the completion to the queue */
     bool is_first = cqd->queue.Push(storage);
-    cqd->things_queued_ever.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
+    cqd->things_queued_ever.fetch_add(1, std::memory_order_relaxed);
     /* Since we do not hold the cq lock here, it is important to do an 'acquire'
        load here (instead of a 'no_barrier' load) to match with the release
        store
-       (done via pending_events.FetchSub(1, ACQ_REL)) in cq_shutdown_next
+       (done via pending_events.fetch_sub(1, ACQ_REL)) in cq_shutdown_next
        */
-    if (cqd->pending_events.Load(grpc_core::MemoryOrder::ACQUIRE) != 1) {
+    if (cqd->pending_events.load(std::memory_order_acquire) != 1) {
       /* Only kick if this is the first item queued */
       if (is_first) {
         gpr_mu_lock(cq->mu);
@@ -737,8 +735,7 @@ static void cq_end_op_for_next(
           GRPC_ERROR_UNREF(kick_error);
         }
       }
-      if (cqd->pending_events.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) ==
-          1) {
+      if (cqd->pending_events.fetch_sub(1, std::memory_order_acq_rel) == 1) {
         GRPC_CQ_INTERNAL_REF(cq, "shutting_down");
         gpr_mu_lock(cq->mu);
         cq_finish_shutdown_next(cq);
@@ -747,7 +744,7 @@ static void cq_end_op_for_next(
       }
     } else {
       GRPC_CQ_INTERNAL_REF(cq, "shutting_down");
-      cqd->pending_events.Store(0, grpc_core::MemoryOrder::RELEASE);
+      cqd->pending_events.store(0, std::memory_order_release);
       gpr_mu_lock(cq->mu);
       cq_finish_shutdown_next(cq);
       gpr_mu_unlock(cq->mu);
@@ -795,12 +792,12 @@ static void cq_end_op_for_pluck(
   cq_check_tag(cq, tag, false); /* Used in debug builds only */
 
   /* Add to the list of completions */
-  cqd->things_queued_ever.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
+  cqd->things_queued_ever.fetch_add(1, std::memory_order_relaxed);
   cqd->completed_tail->next =
       reinterpret_cast<uintptr_t>(storage) | (1u & cqd->completed_tail->next);
   cqd->completed_tail = storage;
 
-  if (cqd->pending_events.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) == 1) {
+  if (cqd->pending_events.fetch_sub(1, std::memory_order_acq_rel) == 1) {
     cq_finish_shutdown_pluck(cq);
     gpr_mu_unlock(cq->mu);
   } else {
@@ -860,7 +857,7 @@ static void cq_end_op_for_callback(
 
   cq_check_tag(cq, tag, true); /* Used in debug builds only */
 
-  if (cqd->pending_events.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) == 1) {
+  if (cqd->pending_events.fetch_sub(1, std::memory_order_acq_rel) == 1) {
     cq_finish_shutdown_callback(cq);
   }
 
@@ -915,12 +912,12 @@ class ExecCtxNext : public grpc_core::ExecCtx {
     GPR_ASSERT(a->stolen_completion == nullptr);
 
     intptr_t current_last_seen_things_queued_ever =
-        cqd->things_queued_ever.Load(grpc_core::MemoryOrder::RELAXED);
+        cqd->things_queued_ever.load(std::memory_order_relaxed);
 
     if (current_last_seen_things_queued_ever !=
         a->last_seen_things_queued_ever) {
       a->last_seen_things_queued_ever =
-          cqd->things_queued_ever.Load(grpc_core::MemoryOrder::RELAXED);
+          cqd->things_queued_ever.load(std::memory_order_relaxed);
 
       /* Pop a cq_completion from the queue. Returns NULL if the queue is empty
        * might return NULL in some cases even if the queue is not empty; but
@@ -979,7 +976,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
 
   grpc_millis deadline_millis = grpc_timespec_to_millis_round_up(deadline);
   cq_is_finished_arg is_finished_arg = {
-      cqd->things_queued_ever.Load(grpc_core::MemoryOrder::RELAXED),
+      cqd->things_queued_ever.load(std::memory_order_relaxed),
       cq,
       deadline_millis,
       nullptr,
@@ -1018,7 +1015,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
       }
     }
 
-    if (cqd->pending_events.Load(grpc_core::MemoryOrder::ACQUIRE) == 0) {
+    if (cqd->pending_events.load(std::memory_order_acquire) == 0) {
       /* Before returning, check if the queue has any items left over (since
          MultiProducerSingleConsumerQueue::Pop() can sometimes return NULL
          even if the queue is not empty. If so, keep retrying but do not
@@ -1068,7 +1065,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
   }
 
   if (cqd->queue.num_items() > 0 &&
-      cqd->pending_events.Load(grpc_core::MemoryOrder::ACQUIRE) > 0) {
+      cqd->pending_events.load(std::memory_order_acquire) > 0) {
     gpr_mu_lock(cq->mu);
     cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), nullptr);
     gpr_mu_unlock(cq->mu);
@@ -1092,7 +1089,7 @@ static void cq_finish_shutdown_next(grpc_completion_queue* cq) {
   cq_next_data* cqd = static_cast<cq_next_data*> DATA_FROM_CQ(cq);
 
   GPR_ASSERT(cqd->shutdown_called);
-  GPR_ASSERT(cqd->pending_events.Load(grpc_core::MemoryOrder::RELAXED) == 0);
+  GPR_ASSERT(cqd->pending_events.load(std::memory_order_relaxed) == 0);
 
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
 }
@@ -1114,10 +1111,10 @@ static void cq_shutdown_next(grpc_completion_queue* cq) {
     return;
   }
   cqd->shutdown_called = true;
-  /* Doing acq/release FetchSub here to match with
+  /* Doing acq/release fetch_sub here to match with
    * cq_begin_op_for_next and cq_end_op_for_next functions which read/write
    * on this counter without necessarily holding a lock on cq */
-  if (cqd->pending_events.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) == 1) {
+  if (cqd->pending_events.fetch_sub(1, std::memory_order_acq_rel) == 1) {
     cq_finish_shutdown_next(cq);
   }
   gpr_mu_unlock(cq->mu);
@@ -1147,7 +1144,7 @@ static void del_plucker(grpc_completion_queue* cq, void* tag,
   for (int i = 0; i < cqd->num_pluckers; i++) {
     if (cqd->pluckers[i].tag == tag && cqd->pluckers[i].worker == worker) {
       cqd->num_pluckers--;
-      GPR_SWAP(plucker, cqd->pluckers[i], cqd->pluckers[cqd->num_pluckers]);
+      std::swap(cqd->pluckers[i], cqd->pluckers[cqd->num_pluckers]);
       return;
     }
   }
@@ -1167,12 +1164,12 @@ class ExecCtxPluck : public grpc_core::ExecCtx {
 
     GPR_ASSERT(a->stolen_completion == nullptr);
     gpr_atm current_last_seen_things_queued_ever =
-        cqd->things_queued_ever.Load(grpc_core::MemoryOrder::RELAXED);
+        cqd->things_queued_ever.load(std::memory_order_relaxed);
     if (current_last_seen_things_queued_ever !=
         a->last_seen_things_queued_ever) {
       gpr_mu_lock(cq->mu);
       a->last_seen_things_queued_ever =
-          cqd->things_queued_ever.Load(grpc_core::MemoryOrder::RELAXED);
+          cqd->things_queued_ever.load(std::memory_order_relaxed);
       grpc_cq_completion* c;
       grpc_cq_completion* prev = &cqd->completed_head;
       while ((c = reinterpret_cast<grpc_cq_completion*>(
@@ -1228,7 +1225,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
   gpr_mu_lock(cq->mu);
   grpc_millis deadline_millis = grpc_timespec_to_millis_round_up(deadline);
   cq_is_finished_arg is_finished_arg = {
-      cqd->things_queued_ever.Load(grpc_core::MemoryOrder::RELAXED),
+      cqd->things_queued_ever.load(std::memory_order_relaxed),
       cq,
       deadline_millis,
       nullptr,
@@ -1265,7 +1262,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
       }
       prev = c;
     }
-    if (cqd->shutdown.Load(grpc_core::MemoryOrder::RELAXED)) {
+    if (cqd->shutdown.load(std::memory_order_relaxed)) {
       gpr_mu_unlock(cq->mu);
       ret.type = GRPC_QUEUE_SHUTDOWN;
       ret.success = 0;
@@ -1327,8 +1324,8 @@ static void cq_finish_shutdown_pluck(grpc_completion_queue* cq) {
   cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
 
   GPR_ASSERT(cqd->shutdown_called);
-  GPR_ASSERT(!cqd->shutdown.Load(grpc_core::MemoryOrder::RELAXED));
-  cqd->shutdown.Store(true, grpc_core::MemoryOrder::RELAXED);
+  GPR_ASSERT(!cqd->shutdown.load(std::memory_order_relaxed));
+  cqd->shutdown.store(true, std::memory_order_relaxed);
 
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
 }
@@ -1352,7 +1349,7 @@ static void cq_shutdown_pluck(grpc_completion_queue* cq) {
     return;
   }
   cqd->shutdown_called = true;
-  if (cqd->pending_events.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) == 1) {
+  if (cqd->pending_events.fetch_sub(1, std::memory_order_acq_rel) == 1) {
     cq_finish_shutdown_pluck(cq);
   }
   gpr_mu_unlock(cq->mu);
@@ -1395,7 +1392,7 @@ static void cq_shutdown_callback(grpc_completion_queue* cq) {
     return;
   }
   cqd->shutdown_called = true;
-  if (cqd->pending_events.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) == 1) {
+  if (cqd->pending_events.fetch_sub(1, std::memory_order_acq_rel) == 1) {
     gpr_mu_unlock(cq->mu);
     cq_finish_shutdown_callback(cq);
   } else {

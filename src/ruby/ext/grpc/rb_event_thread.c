@@ -19,17 +19,17 @@
 #include <ruby/ruby.h>
 
 #include "rb_event_thread.h"
-#include "rb_grpc_imports.generated.h"
 
+#include <ruby/thread.h>
 #include <stdbool.h>
+
+#include "rb_grpc.h"
+#include "rb_grpc_imports.generated.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <ruby/thread.h>
-
-#include "rb_grpc.h"
 
 typedef struct grpc_rb_event {
   // callback will be called with argument while holding the GVL

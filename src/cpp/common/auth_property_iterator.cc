@@ -16,9 +16,8 @@
  *
  */
 
-#include <grpcpp/security/auth_context.h>
-
 #include <grpc/grpc_security.h>
+#include <grpcpp/security/auth_context.h>
 
 namespace grpc {
 

@@ -22,14 +22,13 @@
 
 #ifdef GRPC_WINSOCK_SOCKET
 
-#include "src/core/lib/iomgr/sockaddr_windows.h"
-
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"

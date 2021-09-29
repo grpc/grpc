@@ -34,6 +34,7 @@ RpcTypeEmptyCall = xds_url_map_testcase.RpcTypeEmptyCall
 ExpectedResult = xds_url_map_testcase.ExpectedResult
 XdsTestClient = client_app.XdsTestClient
 XdsUrlMapTestCase = xds_url_map_testcase.XdsUrlMapTestCase
+TestConfig = xds_url_map_testcase.TestConfig
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_url_map_testcase)
@@ -78,11 +79,13 @@ class _BaseXdsTimeOutTestCase(XdsUrlMapTestCase):
         raise NotImplementedError()
 
 
-# TODO(lidiz) either add support for rpc-behavior to other languages, or we
-# should always use Java server as backend.
-@absltest.skipUnless('java-server' in xds_k8s_flags.SERVER_IMAGE.value,
-                     'Only Java server supports the rpc-behavior metadata.')
 class TestTimeoutInRouteRule(_BaseXdsTimeOutTestCase):
+
+    @staticmethod
+    def is_supported(config: TestConfig) -> bool:
+        # TODO(lidiz) either add support for rpc-behavior to other languages, or we
+        # should always use Java server as backend.
+        return config.server_lang == 'java'
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(
@@ -107,9 +110,11 @@ class TestTimeoutInRouteRule(_BaseXdsTimeOutTestCase):
             tolerance=_ERROR_TOLERANCE)
 
 
-@absltest.skipUnless('java-server' in xds_k8s_flags.SERVER_IMAGE.value,
-                     'Only Java server supports the rpc-behavior metadata.')
 class TestTimeoutInApplication(_BaseXdsTimeOutTestCase):
+
+    @staticmethod
+    def is_supported(config: TestConfig) -> bool:
+        return config.server_lang == 'java'
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(

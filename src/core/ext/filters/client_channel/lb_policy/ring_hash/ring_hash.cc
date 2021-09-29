@@ -25,6 +25,7 @@
 #include "xxhash.h"
 
 #include <grpc/support/alloc.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
@@ -32,7 +33,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -235,7 +235,7 @@ class RingHash : public LoadBalancingPolicy {
       }
 
      private:
-      static void RunInExecCtx(void* arg, grpc_error* /*error*/) {
+      static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
         auto* self = static_cast<SubchannelConnectionAttempter*>(arg);
         self->ring_hash_lb_->work_serializer()->Run(
             [self]() {
@@ -729,7 +729,7 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kRingHash; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error** error) const override {
+      const Json& json, grpc_error_handle* error) const override {
     size_t min_ring_size;
     size_t max_ring_size;
     std::vector<grpc_error_handle> error_list;

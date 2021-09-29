@@ -90,6 +90,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         cls.xds_server_uri = xds_flags.XDS_SERVER_URI.value
         cls.ensure_firewall = xds_flags.ENSURE_FIREWALL.value
         cls.firewall_allowed_ports = xds_flags.FIREWALL_ALLOWED_PORTS.value
+        cls.compute_api_version = xds_flags.COMPUTE_API_VERSION.value
 
         # Resource names.
         cls.resource_prefix = xds_flags.RESOURCE_PREFIX.value
@@ -114,6 +115,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         cls.force_cleanup = _FORCE_CLEANUP.value
         cls.debug_use_port_forwarding = \
             xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
+        cls.enable_workload_identity = xds_k8s_flags.ENABLE_WORKLOAD_IDENTITY.value
         cls.check_local_certs = _CHECK_LOCAL_CERTS.value
 
         # Resource managers
@@ -342,11 +344,13 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             cls.server_maintenance_port = KubernetesServerRunner.DEFAULT_MAINTENANCE_PORT
 
     def initTrafficDirectorManager(self) -> TrafficDirectorManager:
-        return TrafficDirectorManager(self.gcp_api_manager,
-                                      project=self.project,
-                                      resource_prefix=self.resource_prefix,
-                                      resource_suffix=self.resource_suffix,
-                                      network=self.network)
+        return TrafficDirectorManager(
+            self.gcp_api_manager,
+            project=self.project,
+            resource_prefix=self.resource_prefix,
+            resource_suffix=self.resource_suffix,
+            network=self.network,
+            compute_api_version=self.compute_api_version)
 
     def initKubernetesServerRunner(self) -> KubernetesServerRunner:
         return KubernetesServerRunner(
@@ -360,7 +364,8 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             gcp_service_account=self.gcp_service_account,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
-            debug_use_port_forwarding=self.debug_use_port_forwarding)
+            debug_use_port_forwarding=self.debug_use_port_forwarding,
+            enable_workload_identity=self.enable_workload_identity)
 
     def initKubernetesClientRunner(self) -> KubernetesClientRunner:
         return KubernetesClientRunner(
@@ -375,6 +380,7 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             xds_server_uri=self.xds_server_uri,
             network=self.network,
             debug_use_port_forwarding=self.debug_use_port_forwarding,
+            enable_workload_identity=self.enable_workload_identity,
             stats_port=self.client_port,
             reuse_namespace=self.server_namespace == self.client_namespace)
 
@@ -411,7 +417,8 @@ class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
             project=self.project,
             resource_prefix=self.resource_prefix,
             resource_suffix=self.resource_suffix,
-            network=self.network)
+            network=self.network,
+            compute_api_version=self.compute_api_version)
 
 
 class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
@@ -442,7 +449,8 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             project=self.project,
             resource_prefix=self.resource_prefix,
             resource_suffix=self.resource_suffix,
-            network=self.network)
+            network=self.network,
+            compute_api_version=self.compute_api_version)
 
     def initKubernetesServerRunner(self) -> KubernetesServerRunner:
         return KubernetesServerRunner(

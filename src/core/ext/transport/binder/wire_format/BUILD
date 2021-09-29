@@ -18,6 +18,9 @@ licenses(["notice"])
 
 package(
     default_visibility = ["//visibility:public"],
+    features = [
+        "layering_check",
+    ],
 )
 
 grpc_cc_library(
@@ -34,6 +37,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:gpr",
+        "//:gpr_platform",
     ],
 )
 
@@ -53,6 +57,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:gpr",
+        "//:gpr_platform",
         "//:orphanable",
     ],
 )
@@ -72,6 +77,7 @@ grpc_cc_library(
     deps = [
         ":binder",
         ":wire_reader",
+        "//:gpr_platform",
     ],
 )
 
@@ -80,6 +86,7 @@ grpc_cc_library(
     srcs = ["wire_writer.cc"],
     hdrs = ["wire_writer.h"],
     external_deps = [
+        "absl/container:flat_hash_map",
         "absl/strings",
     ],
     deps = [
@@ -87,6 +94,7 @@ grpc_cc_library(
         ":transaction",
         "//:gpr",
         "//:gpr_base",
+        "//:gpr_platform",
     ],
 )
 
@@ -107,6 +115,7 @@ grpc_cc_library(
         ":binder",
         ":wire_writer",
         "//:gpr",
+        "//:gpr_platform",
         "//:orphanable",
         "//src/core/ext/transport/binder/utils:transport_stream_receiver",
     ],

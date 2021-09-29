@@ -24,6 +24,9 @@
 #include <string>
 #include <thread>
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -52,17 +55,13 @@
 #include "src/core/lib/transport/authority_override.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
-
+#include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
-
-#include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include "test/cpp/util/test_config.h"
 
 // TODO(dgq): Other scenarios in need of testing:
 // - Send a serverlist with faulty ip:port addresses (port > 2^16, etc).
@@ -958,7 +957,7 @@ TEST_F(SingleBalancerTest, SecureNaming) {
 }
 
 TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE("threadsafe");
   // Make sure that we blow up (via abort() from the security connector) when
   // the name from the balancer doesn't match expectations.
   ASSERT_DEATH_IF_SUPPORTED(

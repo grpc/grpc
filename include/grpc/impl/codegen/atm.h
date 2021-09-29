@@ -19,6 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_ATM_H
 #define GRPC_IMPL_CODEGEN_ATM_H
 
+// IWYU pragma: private, include <grpc/support/atm.h>
+
 /** This interface provides atomic operations and barriers.
    It is internal to gpr support code and should not be used outside it.
 
@@ -70,11 +72,11 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 #if defined(GPR_GCC_ATOMIC)
-#include <grpc/impl/codegen/atm_gcc_atomic.h>
+#include <grpc/impl/codegen/atm_gcc_atomic.h>  // IWYU pragma: export
 #elif defined(GPR_GCC_SYNC)
-#include <grpc/impl/codegen/atm_gcc_sync.h>
+#include <grpc/impl/codegen/atm_gcc_sync.h>  // IWYU pragma: export
 #elif defined(GPR_WINDOWS_ATOMIC)
-#include <grpc/impl/codegen/atm_windows.h>
+#include <grpc/impl/codegen/atm_windows.h>  // IWYU pragma: export
 #else
 #error could not determine platform for atm
 #endif

@@ -16,6 +16,8 @@
  *
  */
 
+#include "src/core/lib/iomgr/load_file.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -26,7 +28,6 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)

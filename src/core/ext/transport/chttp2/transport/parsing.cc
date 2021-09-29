@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/transport/chttp2/transport/internal.h"
-
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
@@ -28,6 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/slice/slice_utils.h"
@@ -91,15 +90,13 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
     case GRPC_DTS_CLIENT_PREFIX_23:
       while (cur != end && t->deframe_state != GRPC_DTS_FH_0) {
         if (*cur != GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state]) {
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrFormat(
-                  "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
-                  "at byte %d",
-                  GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state],
-                  static_cast<int>(static_cast<uint8_t>(
-                      GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state])),
-                  *cur, static_cast<int>(*cur), t->deframe_state)
-                  .c_str());
+          return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+              "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
+              "at byte %d",
+              GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state],
+              static_cast<int>(static_cast<uint8_t>(
+                  GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state])),
+              *cur, static_cast<int>(*cur), t->deframe_state));
         }
         ++cur;
         // NOLINTNEXTLINE(bugprone-misplaced-widening-cast)
@@ -198,12 +195,11 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
                  t->incoming_frame_size >
                      t->settings[GRPC_ACKED_SETTINGS]
                                 [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]) {
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
             absl::StrFormat("Frame size %d is larger than max frame size %d",
                             t->incoming_frame_size,
                             t->settings[GRPC_ACKED_SETTINGS]
-                                       [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE])
-                .c_str());
+                                       [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]));
       }
       if (++cur == end) {
         return GRPC_ERROR_NONE;
@@ -257,27 +253,22 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
 static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t) {
   if (t->is_first_frame &&
       t->incoming_frame_type != GRPC_CHTTP2_FRAME_SETTINGS) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat(
-            "Expected SETTINGS frame as the first frame, got frame type ",
-            t->incoming_frame_type)
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Expected SETTINGS frame as the first frame, got frame type ",
+        t->incoming_frame_type));
   }
   t->is_first_frame = false;
   if (t->expect_continuation_stream_id != 0) {
     if (t->incoming_frame_type != GRPC_CHTTP2_FRAME_CONTINUATION) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrFormat("Expected CONTINUATION frame, got frame type %02x",
-                          t->incoming_frame_type)
-              .c_str());
+                          t->incoming_frame_type));
     }
     if (t->expect_continuation_stream_id != t->incoming_stream_id) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrFormat(
-              "Expected CONTINUATION frame for grpc_chttp2_stream %08x, got "
-              "grpc_chttp2_stream %08x",
-              t->expect_continuation_stream_id, t->incoming_stream_id)
-              .c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+          "Expected CONTINUATION frame for grpc_chttp2_stream %08x, got "
+          "grpc_chttp2_stream %08x",
+          t->expect_continuation_stream_id, t->incoming_stream_id));
     }
     return init_header_frame_parser(t, 1);
   }
@@ -460,7 +451,8 @@ handle_timeout(grpc_chttp2_stream* s, grpc_mdelem md) {
   }
   if (timeout != GRPC_MILLIS_INF_FUTURE) {
     grpc_chttp2_incoming_metadata_buffer_set_deadline(
-        &s->metadata_buffer[0], grpc_core::ExecCtx::Get()->Now() + timeout);
+        &s->initial_metadata_buffer,
+        grpc_core::ExecCtx::Get()->Now() + timeout);
   }
   GRPC_MDELEM_UNREF(md);
   return GRPC_ERROR_NONE;
@@ -513,7 +505,8 @@ static grpc_error_handle on_initial_header(void* tp, grpc_mdelem md) {
     return handle_timeout(s, md);
   }
 
-  const size_t new_size = s->metadata_buffer[0].size + GRPC_MDELEM_LENGTH(md);
+  const size_t new_size =
+      s->initial_metadata_buffer.size + GRPC_MDELEM_LENGTH(md);
   const size_t metadata_size_limit =
       t->settings[GRPC_ACKED_SETTINGS]
                  [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
@@ -521,8 +514,8 @@ static grpc_error_handle on_initial_header(void* tp, grpc_mdelem md) {
     return handle_metadata_size_limit_exceeded(t, s, md, new_size,
                                                metadata_size_limit);
   } else {
-    grpc_error_handle error =
-        grpc_chttp2_incoming_metadata_buffer_add(&s->metadata_buffer[0], md);
+    grpc_error_handle error = grpc_chttp2_incoming_metadata_buffer_add(
+        &s->initial_metadata_buffer, md);
     if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
       return handle_metadata_add_failure(t, s, md, error);
     }
@@ -548,7 +541,8 @@ static grpc_error_handle on_trailing_header(void* tp, grpc_mdelem md) {
     gpr_free(value);
   }
 
-  const size_t new_size = s->metadata_buffer[1].size + GRPC_MDELEM_LENGTH(md);
+  const size_t new_size =
+      s->trailing_metadata_buffer.size + GRPC_MDELEM_LENGTH(md);
   const size_t metadata_size_limit =
       t->settings[GRPC_ACKED_SETTINGS]
                  [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
@@ -570,8 +564,8 @@ static grpc_error_handle on_trailing_header(void* tp, grpc_mdelem md) {
     s->seen_error = true;
     GRPC_MDELEM_UNREF(md);
   } else {
-    grpc_error_handle error =
-        grpc_chttp2_incoming_metadata_buffer_add(&s->metadata_buffer[1], md);
+    grpc_error_handle error = grpc_chttp2_incoming_metadata_buffer_add(
+        &s->trailing_metadata_buffer, md);
     if (error != GRPC_ERROR_NONE) {
       grpc_chttp2_cancel_stream(t, s, error);
       grpc_chttp2_parsing_become_skip_parser(t);

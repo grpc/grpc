@@ -28,6 +28,7 @@ import unittest
 
 import logging
 import traceback
+import sys
 
 import grpc
 from grpc_status import rpc_status
@@ -113,6 +114,8 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return None
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class StatusTest(unittest.TestCase):
 
     def setUp(self):

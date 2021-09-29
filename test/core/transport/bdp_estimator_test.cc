@@ -18,13 +18,14 @@
 
 #include "src/core/lib/transport/bdp_estimator.h"
 
+#include <limits.h>
+
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-
-#include <gtest/gtest.h>
-#include <limits.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -125,7 +126,7 @@ TEST_P(BdpEstimatorRandomTest, GetEstimateRandomValues) {
     if (sample > max) max = sample;
     AddSample(&est, sample);
     if (i >= 3) {
-      EXPECT_LE(est.EstimateBdp(), GPR_MAX(65536, 2 * NextPow2(max)))
+      EXPECT_LE(est.EstimateBdp(), std::max(int64_t(65536), 2 * NextPow2(max)))
           << " min:" << min << " max:" << max << " sample:" << sample;
     }
   }

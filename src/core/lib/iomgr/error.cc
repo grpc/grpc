@@ -22,7 +22,7 @@
 #include <inttypes.h>
 #include <string.h>
 
-#include <grpc/status.h>
+#include <grpc/impl/codegen/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -34,7 +34,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error_internal.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,
@@ -65,7 +64,7 @@ absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
   return s;
 }
 
-std::string grpc_error_std_string(const absl::Status& error) {
+std::string grpc_error_std_string(absl::Status error) {
   return grpc_core::StatusToString(error);
 }
 
@@ -87,9 +86,9 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
   char* utf8_message = gpr_format_message(err);
   absl::Status s =
       StatusCreate(absl::StatusCode::kUnknown, "WSA Error", location, {});
-  StatusSetInt(&s, StatusIntProperty::WSA_ERROR, err);
-  StatusSetStr(&s, StatusStrProperty::OS_ERROR, utf8_message);
-  StatusSetStr(&s, StatusStrProperty::SYSCALL, call_name);
+  StatusSetInt(&s, grpc_core::StatusIntProperty::kWsaError, err);
+  StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError, utf8_message);
+  StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall, call_name);
 }
 #endif
 
@@ -108,6 +107,22 @@ bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
     *p = *value;
     return true;
   } else {
+    // TODO(veblush): Remove this once absl::Status migration is done
+    if (which == GRPC_ERROR_INT_GRPC_STATUS) {
+      switch (error.code()) {
+        case absl::StatusCode::kOk:
+          *p = GRPC_STATUS_OK;
+          return true;
+        case absl::StatusCode::kResourceExhausted:
+          *p = GRPC_STATUS_RESOURCE_EXHAUSTED;
+          return true;
+        case absl::StatusCode::kCancelled:
+          *p = GRPC_STATUS_CANCELLED;
+          return true;
+        default:
+          break;
+      }
+    }
     return false;
   }
 }
@@ -130,6 +145,12 @@ bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
     *s = grpc_slice_from_copied_buffer(value->c_str(), value->size());
     return true;
   } else {
+    // TODO(veblush): Remove this once absl::Status migration is done
+    if (which == GRPC_ERROR_STR_DESCRIPTION && !error.message().empty()) {
+      *s = grpc_slice_from_copied_buffer(error.message().data(),
+                                         error.message().size());
+      return true;
+    }
     return false;
   }
 }
@@ -300,8 +321,8 @@ static uint8_t get_placement(grpc_error_handle* err, size_t size) {
   GPR_ASSERT(*err);
   uint8_t slots = static_cast<uint8_t>(size / sizeof(intptr_t));
   if ((*err)->arena_size + slots > (*err)->arena_capacity) {
-    (*err)->arena_capacity = static_cast<uint8_t> GPR_MIN(
-        UINT8_MAX - 1, (3 * (*err)->arena_capacity / 2));
+    (*err)->arena_capacity = static_cast<uint8_t>(std::min(
+        size_t(UINT8_MAX - 1), size_t(3 * (*err)->arena_capacity / 2)));
     if ((*err)->arena_size + slots > (*err)->arena_capacity) {
       return UINT8_MAX;
     }
@@ -417,7 +438,6 @@ grpc_error_handle grpc_error_create(const char* file, int line,
                                     const grpc_slice& desc,
                                     grpc_error_handle* referencing,
                                     size_t num_referencing) {
-  GPR_TIMER_SCOPE("grpc_error_create", 0);
   uint8_t initial_arena_capacity = static_cast<uint8_t>(
       DEFAULT_ERROR_CAPACITY +
       static_cast<uint8_t>(num_referencing * SLOTS_PER_LINKED_ERROR) +
@@ -489,7 +509,6 @@ static void ref_errs(grpc_error_handle err) {
 }
 
 static grpc_error_handle copy_error_and_unref(grpc_error_handle in) {
-  GPR_TIMER_SCOPE("copy_error_and_unref", 0);
   grpc_error_handle out;
   if (grpc_error_is_special(in)) {
     out = GRPC_ERROR_CREATE_FROM_STATIC_STRING("unknown");
@@ -541,7 +560,6 @@ static grpc_error_handle copy_error_and_unref(grpc_error_handle in) {
 
 grpc_error_handle grpc_error_set_int(grpc_error_handle src,
                                      grpc_error_ints which, intptr_t value) {
-  GPR_TIMER_SCOPE("grpc_error_set_int", 0);
   grpc_error_handle new_err = copy_error_and_unref(src);
   internal_set_int(&new_err, which, value);
   return new_err;
@@ -555,16 +573,15 @@ struct special_error_status_map {
 const special_error_status_map error_status_map[] = {
     {GRPC_STATUS_OK, "", 0},                // GRPC_ERROR_NONE
     {GRPC_STATUS_INVALID_ARGUMENT, "", 0},  // GRPC_ERROR_RESERVED_1
-    {GRPC_STATUS_RESOURCE_EXHAUSTED, "Out of memory",
-     strlen("Out of memory")},              // GRPC_ERROR_OOM
+    {GRPC_STATUS_RESOURCE_EXHAUSTED, "RESOURCE_EXHAUSTED",
+     strlen("RESOURCE_EXHAUSTED")},         // GRPC_ERROR_OOM
     {GRPC_STATUS_INVALID_ARGUMENT, "", 0},  // GRPC_ERROR_RESERVED_2
-    {GRPC_STATUS_CANCELLED, "Cancelled",
-     strlen("Cancelled")},  // GRPC_ERROR_CANCELLED
+    {GRPC_STATUS_CANCELLED, "CANCELLED",
+     strlen("CANCELLED")},  // GRPC_ERROR_CANCELLED
 };
 
 bool grpc_error_get_int(grpc_error_handle err, grpc_error_ints which,
                         intptr_t* p) {
-  GPR_TIMER_SCOPE("grpc_error_get_int", 0);
   if (grpc_error_is_special(err)) {
     if (which != GRPC_ERROR_INT_GRPC_STATUS) return false;
     *p = error_status_map[reinterpret_cast<size_t>(err)].code;
@@ -581,7 +598,6 @@ bool grpc_error_get_int(grpc_error_handle err, grpc_error_ints which,
 grpc_error_handle grpc_error_set_str(grpc_error_handle src,
                                      grpc_error_strs which,
                                      const grpc_slice& str) {
-  GPR_TIMER_SCOPE("grpc_error_set_str", 0);
   grpc_error_handle new_err = copy_error_and_unref(src);
   internal_set_str(&new_err, which, str);
   return new_err;
@@ -610,7 +626,6 @@ bool grpc_error_get_str(grpc_error_handle err, grpc_error_strs which,
 
 grpc_error_handle grpc_error_add_child(grpc_error_handle src,
                                        grpc_error_handle child) {
-  GPR_TIMER_SCOPE("grpc_error_add_child", 0);
   if (src != GRPC_ERROR_NONE) {
     if (child == GRPC_ERROR_NONE) {
       /* \a child is empty. Simply return the ref to \a src */
@@ -631,9 +646,9 @@ grpc_error_handle grpc_error_add_child(grpc_error_handle src,
   }
 }
 
-static const char* no_error_string = "\"No Error\"";
-static const char* oom_error_string = "\"Out of memory\"";
-static const char* cancelled_error_string = "\"Cancelled\"";
+static const char* no_error_string = "\"OK\"";
+static const char* oom_error_string = "\"RESOURCE_EXHAUSTED\"";
+static const char* cancelled_error_string = "\"CANCELLED\"";
 
 struct kv_pair {
   char* key;
@@ -646,7 +661,7 @@ struct kv_pairs {
 };
 static void append_chr(char c, char** s, size_t* sz, size_t* cap) {
   if (*sz == *cap) {
-    *cap = GPR_MAX(8, 3 * *cap / 2);
+    *cap = std::max(size_t(8), 3 * *cap / 2);
     *s = static_cast<char*>(gpr_realloc(*s, *cap));
   }
   (*s)[(*sz)++] = c;
@@ -698,7 +713,7 @@ static void append_esc_str(const uint8_t* str, size_t len, char** s, size_t* sz,
 
 static void append_kv(kv_pairs* kvs, char* key, char* value) {
   if (kvs->num_kvs == kvs->cap_kvs) {
-    kvs->cap_kvs = GPR_MAX(3 * kvs->cap_kvs / 2, 4);
+    kvs->cap_kvs = std::max(3 * kvs->cap_kvs / 2, size_t(4));
     kvs->kvs = static_cast<kv_pair*>(
         gpr_realloc(kvs->kvs, sizeof(*kvs->kvs) * kvs->cap_kvs));
   }
@@ -842,7 +857,6 @@ static char* finish_kvs(kv_pairs* kvs) {
 }
 
 const char* grpc_error_string(grpc_error_handle err) {
-  GPR_TIMER_SCOPE("grpc_error_string", 0);
   if (err == GRPC_ERROR_NONE) return no_error_string;
   if (err == GRPC_ERROR_OOM) return oom_error_string;
   if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;

@@ -18,10 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/health/health_check_client.h"
+
 #include <stdint.h>
 #include <stdio.h>
-
-#include "src/core/ext/filters/client_channel/health/health_check_client.h"
 
 #include "upb/upb.hpp"
 
@@ -315,7 +315,6 @@ void HealthCheckClient::CallState::StartCall() {
   batch_.on_complete = GRPC_CLOSURE_INIT(&on_complete_, OnComplete, this,
                                          grpc_schedule_on_exec_ctx);
   // Add send_initial_metadata op.
-  grpc_metadata_batch_init(&send_initial_metadata_);
   error = grpc_metadata_batch_add_head(
       &send_initial_metadata_, &path_metadata_storage_,
       grpc_mdelem_from_slices(
@@ -333,12 +332,10 @@ void HealthCheckClient::CallState::StartCall() {
   payload_.send_message.send_message.reset(send_message_.get());
   batch_.send_message = true;
   // Add send_trailing_metadata op.
-  grpc_metadata_batch_init(&send_trailing_metadata_);
   payload_.send_trailing_metadata.send_trailing_metadata =
       &send_trailing_metadata_;
   batch_.send_trailing_metadata = true;
   // Add recv_initial_metadata op.
-  grpc_metadata_batch_init(&recv_initial_metadata_);
   payload_.recv_initial_metadata.recv_initial_metadata =
       &recv_initial_metadata_;
   payload_.recv_initial_metadata.recv_flags = nullptr;
@@ -363,7 +360,6 @@ void HealthCheckClient::CallState::StartCall() {
   // Initialize recv_trailing_metadata batch.
   recv_trailing_metadata_batch_.payload = &payload_;
   // Add recv_trailing_metadata op.
-  grpc_metadata_batch_init(&recv_trailing_metadata_);
   payload_.recv_trailing_metadata.recv_trailing_metadata =
       &recv_trailing_metadata_;
   payload_.recv_trailing_metadata.collect_stats = &collect_stats_;
@@ -425,8 +421,9 @@ void HealthCheckClient::CallState::StartCancel(void* arg,
 
 void HealthCheckClient::CallState::Cancel() {
   bool expected = false;
-  if (cancelled_.CompareExchangeStrong(&expected, true, MemoryOrder::ACQ_REL,
-                                       MemoryOrder::ACQUIRE)) {
+  if (cancelled_.compare_exchange_strong(expected, true,
+                                         std::memory_order_acq_rel,
+                                         std::memory_order_acquire)) {
     call_->Ref(DEBUG_LOCATION, "cancel").release();
     GRPC_CALL_COMBINER_START(
         &call_combiner_,
@@ -440,8 +437,8 @@ void HealthCheckClient::CallState::OnComplete(void* arg,
   HealthCheckClient::CallState* self =
       static_cast<HealthCheckClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "on_complete");
-  grpc_metadata_batch_destroy(&self->send_initial_metadata_);
-  grpc_metadata_batch_destroy(&self->send_trailing_metadata_);
+  self->send_initial_metadata_.Clear();
+  self->send_trailing_metadata_.Clear();
   self->call_->Unref(DEBUG_LOCATION, "on_complete");
 }
 
@@ -450,7 +447,7 @@ void HealthCheckClient::CallState::RecvInitialMetadataReady(
   HealthCheckClient::CallState* self =
       static_cast<HealthCheckClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "recv_initial_metadata_ready");
-  grpc_metadata_batch_destroy(&self->recv_initial_metadata_);
+  self->recv_initial_metadata_.Clear();
   self->call_->Unref(DEBUG_LOCATION, "recv_initial_metadata_ready");
 }
 
@@ -471,7 +468,7 @@ void HealthCheckClient::CallState::DoneReadingRecvMessage(
       state, error == GRPC_ERROR_NONE && !healthy
                  ? "backend unhealthy"
                  : grpc_error_std_string(error).c_str());
-  seen_response_.Store(true, MemoryOrder::RELEASE);
+  seen_response_.store(true, std::memory_order_release);
   grpc_slice_buffer_destroy_internal(&recv_message_buffer_);
   // Start another recv_message batch.
   // This re-uses the ref we're holding.
@@ -557,9 +554,10 @@ void HealthCheckClient::CallState::RecvTrailingMetadataReady(
     grpc_error_get_status(error, GRPC_MILLIS_INF_FUTURE, &status,
                           nullptr /* slice */, nullptr /* http_error */,
                           nullptr /* error_string */);
-  } else if (self->recv_trailing_metadata_.idx.named.grpc_status != nullptr) {
+  } else if (self->recv_trailing_metadata_.legacy_index()->named.grpc_status !=
+             nullptr) {
     status = grpc_get_status_code_from_metadata(
-        self->recv_trailing_metadata_.idx.named.grpc_status->md);
+        self->recv_trailing_metadata_.legacy_index()->named.grpc_status->md);
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
     gpr_log(GPR_INFO,
@@ -568,7 +566,7 @@ void HealthCheckClient::CallState::RecvTrailingMetadataReady(
             self->health_check_client_.get(), self, status);
   }
   // Clean up.
-  grpc_metadata_batch_destroy(&self->recv_trailing_metadata_);
+  self->recv_trailing_metadata_.Clear();
   // For status UNIMPLEMENTED, give up and assume always healthy.
   bool retry = true;
   if (status == GRPC_STATUS_UNIMPLEMENTED) {
@@ -598,7 +596,7 @@ void HealthCheckClient::CallState::CallEndedLocked(bool retry) {
     health_check_client_->call_state_.reset();
     if (retry) {
       GPR_ASSERT(!health_check_client_->shutting_down_);
-      if (seen_response_.Load(MemoryOrder::ACQUIRE)) {
+      if (seen_response_.load(std::memory_order_acquire)) {
         // If the call fails after we've gotten a successful response, reset
         // the backoff and restart the call immediately.
         health_check_client_->retry_backoff_.Reset();

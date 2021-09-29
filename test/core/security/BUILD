@@ -280,7 +280,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_base_c",
+        "//:grpc_base",
         "//:grpc_secure",
         "//:tsi",
         "//:tsi_interface",
