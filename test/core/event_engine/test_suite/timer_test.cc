@@ -131,7 +131,7 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
   int thread_count = 100;
   float timeout_min_seconds = 1;
   float timeout_max_seconds = 10;
-  std::atomic<int> call_countt{0};
+  std::atomic<int> call_count{0};
   std::atomic<int> failed_timer_count{0};
   absl::BitGen bitgen;
   for (int i = 0; i < thread_count; ++i) {
