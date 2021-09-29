@@ -15,8 +15,8 @@
 #include <atomic>
 #include <functional>
 #include <thread>
-#include <unordered_map>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
@@ -34,9 +34,12 @@ using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 
 constexpr absl::Duration SLEEP_TIME = absl::Milliseconds(100);
 
-// A simple EventEngine implementation, NOT TO BE USED IN PRODUCTION.
-// The task map grows without bounds.
-// It is not thread-safe.
+// A simple EventEngine implementation to exercise the tests
+//
+// **DO NOT USE IN PRODUCTION**
+// * The task map grows without bounds.
+// * It is not thread-safe.
+// * Eggregious locking for the sake of simplicity
 class SimpleEventEngine : public grpc_event_engine::experimental::EventEngine {
  public:
   ~SimpleEventEngine() {
@@ -52,59 +55,46 @@ class SimpleEventEngine : public grpc_event_engine::experimental::EventEngine {
   // TODO(hork): run async
   void Run(std::function<void()> closure) override { closure(); }
 
-  absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
-      Listener::AcceptCallback on_accept,
-      std::function<void(absl::Status)> on_shutdown,
-      const EndpointConfig& config,
-      std::unique_ptr<SliceAllocatorFactory> slice_allocator_factory) override {
-    abort();
-  }
-
-  EventEngine::TaskHandle RunAt(absl::Time when,
-                                EventEngine::Closure* closure) override {
-    abort();
-  }
-
   EventEngine::TaskHandle RunAt(absl::Time when,
                                 std::function<void()> closure) override {
     // Scheduling a cb on an EventEngine that's being destroyed is UB
     if (shutting_down_.load()) abort();
     std::thread t{[=]() {
       intptr_t current_thread_id = ThreadHash(std::this_thread::get_id());
+      // Poll until ready, periodically checking for cancellation and shutdown
       while (absl::Now() < when) {
         if (shutting_down_.load()) return;
+        {
+          grpc_core::MutexLock lock(&run_states_mu_);
+          if (run_states_[current_thread_id] == RunState::kCancelled) return;
+        }
         absl::SleepFor(SLEEP_TIME);
       }
       bool can_run;
       {
         grpc_core::MutexLock lock(&run_states_mu_);
-        auto emplaced = run_states_.emplace(current_thread_id, RunState::kRan);
-        bool already_existed = !emplaced.second;
-        can_run = !already_existed;
-        if (already_existed) {
-          switch (emplaced.first->second) {
-            case RunState::kNotRun:
-              run_states_[current_thread_id] = RunState::kRan;
-              can_run = true;
-              break;
-            case RunState::kCancelled:
-              can_run = false;
-          }
+        RunState prev_state = run_states_[current_thread_id];
+        switch (prev_state) {
+          case RunState::kNotRun:
+            run_states_[current_thread_id] = RunState::kRan;
+            can_run = true;
+            break;
+          case RunState::kCancelled:
+            can_run = false;
+          case RunState::kRan:
+            GPR_ASSERT(
+                false &&
+                "Running the same closure thread twice should be impossible");
         }
       }
       if (can_run) {
-        std::cerr << absl::StrFormat(
-            "DO NOT SUBMIT - Running closure on thd %d. State: %d\n",
-            current_thread_id, run_states_[current_thread_id]);
         closure();
-      } else {
-        std::cerr << "DO NOT SUBMIT - closure cancelled\n";
       }
     }};
     intptr_t id = ThreadHash(t.get_id());
     {
       grpc_core::MutexLock lock(&run_states_mu_);
-      // Insert kNotRun if the thread has not already set it.
+      // Insert kNotRun if the thread has not already set it beforehand.
       run_states_.emplace(id, RunState::kNotRun);
     }
     threads_.emplace(id, std::move(t));
@@ -121,14 +111,25 @@ class SimpleEventEngine : public grpc_event_engine::experimental::EventEngine {
     // Double cancellation is invalid usage.
     GPR_ASSERT(found->second != RunState::kCancelled);
     if (found->second == RunState::kNotRun) {
-      std::cerr << absl::StrFormat("DO NOT SUBMIT - CAN cancel thd %d\n",
-                                   handle.keys[0]);
       run_states_[handle.keys[0]] = RunState::kCancelled;
       return true;
     }
-    std::cerr << absl::StrFormat("DO NOT SUBMIT - cannot cancel thd %d\n",
-                                 handle.keys[0]);
     return false;
+  }
+
+  // Unimplemented methods
+
+  absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
+      Listener::AcceptCallback on_accept,
+      std::function<void(absl::Status)> on_shutdown,
+      const EndpointConfig& config,
+      std::unique_ptr<SliceAllocatorFactory> slice_allocator_factory) override {
+    abort();
+  }
+
+  EventEngine::TaskHandle RunAt(absl::Time when,
+                                EventEngine::Closure* closure) override {
+    abort();
   }
 
   absl::Status Connect(EventEngine::OnConnectCallback on_connect,
@@ -136,23 +137,19 @@ class SimpleEventEngine : public grpc_event_engine::experimental::EventEngine {
                        const EndpointConfig& args,
                        std::unique_ptr<SliceAllocator> slice_allocator,
                        absl::Time deadline) override {
-    return absl::OkStatus();
+    abort();
   }
-
-  std::unique_ptr<DNSResolver> GetDNSResolver() override { return nullptr; }
-
-  bool IsWorkerThread() override { return false; }
+  std::unique_ptr<DNSResolver> GetDNSResolver() override { abort(); }
+  bool IsWorkerThread() override { abort(); }
 
  private:
   intptr_t ThreadHash(const std::thread::id& tid) { return hasher_(tid); }
 
   enum class RunState { kNotRun, kCancelled, kRan };
 
-  std::unordered_map<intptr_t, std::thread> threads_;
+  absl::flat_hash_map<intptr_t, std::thread> threads_;
   grpc_core::Mutex run_states_mu_;
-  // Using an unordered_map since std::atomic does not have the required
-  // constructors to be used in absl::flat_hash_map.
-  std::unordered_map<intptr_t, RunState> run_states_
+  absl::flat_hash_map<intptr_t, RunState> run_states_
       ABSL_GUARDED_BY(run_states_mu_);
   std::atomic<bool> shutting_down_{false};
   std::hash<std::thread::id> hasher_{};
