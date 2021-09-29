@@ -222,6 +222,27 @@ WINDOWS_LIBUV_SOURCES = [
     "src/win/winsock.h",
 ]
 
+GCC_COPTS = [
+    "-D_LARGEFILE_SOURCE",
+    "-D_FILE_OFFSET_BITS=64",
+    "-D_GNU_SOURCE",
+    "-pthread",
+    "--std=gnu89",
+    "-pedantic",
+    "-Wno-error",
+    "-Wno-strict-aliasing",
+    "-Wstrict-aliasing",
+    "-O2",
+    "-Wno-implicit-function-declaration",
+    "-Wno-unused-function",
+    "-Wno-unused-variable",
+]
+
+DARWIN_COPTS = [
+    "-D_DARWIN_USE_64_BIT_INODE=1",
+    "-D_DARWIN_UNLIMITED_SELECT=1",
+]
+
 cc_library(
     name = "libuv",
     srcs = select({
@@ -243,33 +264,15 @@ cc_library(
         "//conditions:default": COMMON_LIBUV_HEADERS + UNIX_LIBUV_HEADERS + LINUX_LIBUV_HEADERS,
     }),
     copts = [
-        "-D_LARGEFILE_SOURCE",
-        "-D_FILE_OFFSET_BITS=64",
-        "-D_GNU_SOURCE",
-        "-pthread",
-        "--std=gnu89",
-        "-pedantic",
-        "-Wno-error",
-        "-Wno-strict-aliasing",
-        "-Wstrict-aliasing",
-        "-O2",
-        "-Wno-implicit-function-declaration",
-        "-Wno-unused-function",
-        "-Wno-unused-variable",
     ] + select({
-        ":darwin_x86_64": [],
-        ":darwin_arm64": [],
-        ":darwin_arm64e": [],
+        ":darwin_x86_64": DARWIN_COPTS + GCC_COPTS,
+        ":darwin_arm64": DARWIN_COPTS + GCC_COPTS,
+        ":darwin_arm64e": DARWIN_COPTS + GCC_COPTS,
         ":windows": [
             "-DWIN32_LEAN_AND_MEAN",
             "-D_WIN32_WINNT=0x0600",
         ],
-        "//conditions:default": [
-            "-Wno-tree-vrp",
-            "-Wno-omit-frame-pointer",
-            "-D_DARWIN_USE_64_BIT_INODE=1",
-            "-D_DARWIN_UNLIMITED_SELECT=1",
-        ],
+        "//conditions:default": GCC_COPTS,
     }),
     includes = [
         "include",
