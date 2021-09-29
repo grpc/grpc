@@ -507,9 +507,6 @@ XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
             "ChannelState::ChannelState constructor donna stack %p %s",
             trace[i], symbol);
   }
-  // Move to XdsResolver::StartLocked() cause test failures: StartLocked not
-  // called before some cases like XdsServerConfigFetcher::StartWatch()
-  StartConnectivityWatchLocked();
 }
 
 XdsClient::ChannelState::~ChannelState() {
@@ -553,8 +550,9 @@ void XdsClient::ChannelState::StopLrsCall() { lrs_calld_.reset(); }
 
 void XdsClient::ChannelState::StartConnectivityWatchLocked() {
   gpr_log(GPR_INFO, "donna channel_ is already init to %p", channel_);
-  channel_ =
-      CreateXdsChannel(xds_client_->args_, server_);
+  if (channel_ == nullptr) {
+    channel_ = CreateXdsChannel(xds_client_->args_, server_);
+  }
   gpr_log(GPR_INFO, "donna channel_ is after CreateXdsChannel %p", channel_);
   GPR_ASSERT(channel_ != nullptr);
   ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
@@ -584,6 +582,7 @@ void XdsClient::ChannelState::SubscribeLocked(const std::string& type_url,
     gpr_log(GPR_ERROR, "Adding connect in SubscribeLocked donna stack %p %s",
             trace[i], symbol);
   }
+  StartConnectivityWatchLocked();
   if (ads_calld_ == nullptr) {
     // Start the ADS call if this is the first request.
     ads_calld_.reset(new RetryableCall<AdsCallState>(
@@ -1970,49 +1969,12 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
   gpr_log(GPR_INFO, "donna server key end of constructor %s", key.c_str());
 }
 
-void XdsClient::StartConnectivityWatchLocked() {
-  MutexLock lock(&mu_);
-  chand_->StartConnectivityWatchLocked();
-}
-
 XdsClient::~XdsClient() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] destroying xds client", this);
   }
   grpc_channel_args_destroy(args_);
   grpc_pollset_set_destroy(interested_parties_);
-}
-
-void XdsClient::AddChannelzLinkage(
-    channelz::ChannelNode* parent_channelz_node) {
-  MutexLock lock(&mu_);
-  void* trace[256];
-  int n = absl::GetStackTrace(trace, 256, 0);
-  for (int i = 0; i <= n; ++i) {
-    char tmp[1024];
-    const char* symbol = "(unknown)";
-    if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
-      symbol = tmp;
-    }
-    gpr_log(GPR_ERROR, "stack %p %s", trace[i], symbol);
-  }
-  gpr_log(GPR_INFO, "donna see channel in AddChannelzLinkage %p",
-          chand_->channel());
-  channelz::ChannelNode* xds_channelz_node =
-      grpc_channel_get_channelz_node(chand_->channel());
-  if (xds_channelz_node != nullptr) {
-    parent_channelz_node->AddChildChannel(xds_channelz_node->uuid());
-  }
-}
-
-void XdsClient::RemoveChannelzLinkage(
-    channelz::ChannelNode* parent_channelz_node) {
-  MutexLock lock(&mu_);
-  channelz::ChannelNode* xds_channelz_node =
-      grpc_channel_get_channelz_node(chand_->channel());
-  if (xds_channelz_node != nullptr) {
-    parent_channelz_node->RemoveChildChannel(xds_channelz_node->uuid());
-  }
 }
 
 void XdsClient::Orphan() {

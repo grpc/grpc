@@ -784,16 +784,8 @@ void XdsResolver::StartLocked() {
             symbol);
   }
   GPR_ASSERT(xds_client_ != nullptr);
-  // newly inserted here: will Create connection with XDS server here
-  // xds_client_->StartConnectivityWatchLocked();
   grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
                                    interested_parties_);
-  channelz::ChannelNode* parent_channelz_node =
-      grpc_channel_args_find_pointer<channelz::ChannelNode>(
-          args_, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
-  if (parent_channelz_node != nullptr) {
-    xds_client_->AddChannelzLinkage(parent_channelz_node);
-  }
   auto watcher = absl::make_unique<ListenerWatcher>(Ref());
   listener_watcher_ = watcher.get();
   xds_client_->WatchListenerData(server_name_, std::move(watcher));
@@ -811,12 +803,6 @@ void XdsResolver::ShutdownLocked() {
     if (route_config_watcher_ != nullptr) {
       xds_client_->CancelRouteConfigDataWatch(
           server_name_, route_config_watcher_, /*delay_unsubscription=*/false);
-    }
-    channelz::ChannelNode* parent_channelz_node =
-        grpc_channel_args_find_pointer<channelz::ChannelNode>(
-            args_, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
-    if (parent_channelz_node != nullptr) {
-      xds_client_->RemoveChannelzLinkage(parent_channelz_node);
     }
     grpc_pollset_set_del_pollset_set(xds_client_->interested_parties(),
                                      interested_parties_);
