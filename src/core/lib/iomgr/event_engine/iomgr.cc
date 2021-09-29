@@ -62,20 +62,20 @@ void iomgr_platform_shutdown_background_closure(void) {}
 
 bool iomgr_platform_is_any_background_poller_thread(void) {
   return g_event_engine->IsWorkerThread();
-  }
+}
 
-  bool iomgr_platform_add_closure_to_background_poller(
-      grpc_closure* /* closure */, grpc_error_handle /* error */) {
-    return false;
-  }
+bool iomgr_platform_add_closure_to_background_poller(
+    grpc_closure* /* closure */, grpc_error_handle /* error */) {
+  return false;
+}
 
-  grpc_iomgr_platform_vtable vtable = {
-      iomgr_platform_init,
-      iomgr_platform_flush,
-      iomgr_platform_shutdown,
-      iomgr_platform_shutdown_background_closure,
-      iomgr_platform_is_any_background_poller_thread,
-      iomgr_platform_add_closure_to_background_poller};
+grpc_iomgr_platform_vtable vtable = {
+    iomgr_platform_init,
+    iomgr_platform_flush,
+    iomgr_platform_shutdown,
+    iomgr_platform_shutdown_background_closure,
+    iomgr_platform_is_any_background_poller_thread,
+    iomgr_platform_add_closure_to_background_poller};
 
 }  // namespace
 
