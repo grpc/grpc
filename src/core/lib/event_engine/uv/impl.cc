@@ -37,43 +37,6 @@ namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
-// Helper to dump network traffic in a legible manner.
-// Probably belongs to a different utility file elsewhere, but wasn't sure if
-// we even want to keep it eventually.
-void hexdump(const std::string& prefix, const void* data_, size_t size) {
-  const uint8_t* data = static_cast<const uint8_t*>(data_);
-  char ascii[17];
-  ascii[16] = 0;
-  memset(ascii, ' ', 16);
-  std::string line;
-  size_t beginning;
-  for (size_t i = 0; i < size; i++) {
-    if (i % 16 == 0) {
-      line = "";
-      beginning = i;
-    }
-    uint8_t d = data[i];
-    line += absl::StrFormat("%02X ", d);
-    ascii[i % 16] = isprint(d) ? d : '.';
-    size_t n = i + 1;
-    if (((n % 8) == 0) || (n == size)) {
-      line += " ";
-      if (((n % 16) != 0) && (n != size)) continue;
-      if (n == size) {
-        n %= 16;
-        for (unsigned p = n; (n != 0) && (p < 16); p++) {
-          line += "   ";
-          ascii[p] = ' ';
-        }
-        if ((n <= 8) && (n != 0)) {
-          line += " ";
-        }
-      }
-      gpr_log(GPR_DEBUG, "%s %p %04zX  | %s| %s |", prefix.c_str(),
-              data + beginning, beginning, line.c_str(), ascii);
-    }
-  }
-}
 
 struct SchedulingRequest : grpc_core::MultiProducerSingleConsumerQueue::Node {
   typedef std::function<void(LibuvEventEngine*)> functor;
@@ -121,7 +84,6 @@ LibuvTask::LibuvTask(LibuvEventEngine* engine, std::function<void()>&& fn)
   timer_.data = this;
 }
 
-// Must be called from libuv thread
 void LibuvTask::Start(LibuvEventEngine* engine, uint64_t timeout) {
   uv_timer_init(&engine->loop_, &timer_);
   uv_timer_start(
@@ -140,8 +102,6 @@ void LibuvTask::Start(LibuvEventEngine* engine, uint64_t timeout) {
       timeout, 0);
 }
 
-// Must be called from libuv thread
-// Precondition: the EventEngine must be tracking this timer.
 void LibuvTask::Cancel(Promise<bool>& will_be_cancelled) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvTask@%p, cancelled: key = %" PRIiPTR, this, key_);
