@@ -39,7 +39,7 @@ class ChunkedVector {
   };
 
  public:
-  ChunkedVector(Arena* arena) : arena_(arena) {}
+  explicit ChunkedVector(Arena* arena) : arena_(arena) {}
   template <class Iterator>
   ChunkedVector(Arena* arena, Iterator begin, Iterator end) : arena_(arena) {
     for (; begin != end; ++begin) {
@@ -52,12 +52,12 @@ class ChunkedVector {
     Swap(&other);
     return *this;
   }
-  ChunkedVector(ChunkedVector&& other)
+  ChunkedVector(ChunkedVector&& other) noexcept
       : arena_(other.arena_), first_(other.first_), append_(other.append_) {
     other.first_ = nullptr;
     other.append_ = nullptr;
   }
-  ChunkedVector& operator=(ChunkedVector&& other) {
+  ChunkedVector& operator=(ChunkedVector&& other) noexcept {
     Swap(&other);
     return *this;
   }
@@ -204,4 +204,4 @@ class ChunkedVector {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_GPRPP_CHUNKED_VECTOR_H
