@@ -330,7 +330,7 @@ class CLanguage(object):
                     list_test_command = None
                     filter_test_command = None
 
-                    # these are the flag defined by gtest and benchmark framework to list
+                    # these are the flag defined by benchmark framework to list
                     # and filter test runs. We use them to split each individual test
                     # into its own JobSpec, and thus into its own process.
                     if 'benchmark' in target and target['benchmark']:
@@ -356,40 +356,6 @@ class CLanguage(object):
                                         _DEFAULT_TIMEOUT_SECONDS) *
                                     timeout_scaling,
                                     environ=env))
-                    elif 'gtest' in target and target['gtest']:
-                        # here we parse the output of --gtest_list_tests to build up a complete
-                        # list of the tests contained in a binary for each test, we then
-                        # add a job to run, filtering for just that test.
-                        with open(os.devnull, 'w') as fnull:
-                            tests = subprocess.check_output(
-                                [binary, '--gtest_list_tests'], stderr=fnull)
-                        base = None
-                        for line in tests.decode().split('\n'):
-                            i = line.find('#')
-                            if i >= 0:
-                                line = line[:i]
-                            if not line:
-                                continue
-                            if line[0] != ' ':
-                                base = line.strip()
-                            else:
-                                assert base is not None
-                                assert line[1] == ' '
-                                test = base + line.strip()
-                                cmdline = [binary,
-                                           '--gtest_filter=%s' % test
-                                          ] + target['args']
-                                out.append(
-                                    self.config.job_spec(
-                                        cmdline,
-                                        shortname='%s %s' %
-                                        (' '.join(cmdline), shortname_ext),
-                                        cpu_cost=cpu_cost,
-                                        timeout_seconds=target.get(
-                                            'timeout_seconds',
-                                            _DEFAULT_TIMEOUT_SECONDS) *
-                                        timeout_scaling,
-                                        environ=env))
                     else:
                         cmdline = [binary] + target['args']
                         shortname = target.get(
