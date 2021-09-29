@@ -14,6 +14,8 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include "src/core/lib/event_engine/uv/libuv_event_engine.h"
+
 #include <functional>
 #include <thread>
 #include <unordered_map>
@@ -24,7 +26,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/uv/libuv_event_engine.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"

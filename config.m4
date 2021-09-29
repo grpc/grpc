@@ -389,7 +389,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/endpoint_config.cc \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/sockaddr.cc \
-    src/core/lib/event_engine/uv/impl.cc \
+    src/core/lib/event_engine/uv/libuv_event_engine.cc \
     src/core/lib/gpr/alloc.cc \
     src/core/lib/gpr/atm.cc \
     src/core/lib/gpr/cpu_iphone.cc \

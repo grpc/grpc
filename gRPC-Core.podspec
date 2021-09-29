@@ -876,7 +876,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/event_engine.cc',
                       'src/core/lib/event_engine/sockaddr.cc',
                       'src/core/lib/event_engine/sockaddr.h',
-                      'src/core/lib/event_engine/uv/impl.cc',
+                      'src/core/lib/event_engine/uv/libuv_event_engine.cc',
                       'src/core/lib/event_engine/uv/libuv_event_engine.h',
                       'src/core/lib/gpr/alloc.cc',
                       'src/core/lib/gpr/alloc.h',

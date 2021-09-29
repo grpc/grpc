@@ -789,7 +789,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/event_engine.cc )
   s.files += %w( src/core/lib/event_engine/sockaddr.cc )
   s.files += %w( src/core/lib/event_engine/sockaddr.h )
-  s.files += %w( src/core/lib/event_engine/uv/impl.cc )
+  s.files += %w( src/core/lib/event_engine/uv/libuv_event_engine.cc )
   s.files += %w( src/core/lib/event_engine/uv/libuv_event_engine.h )
   s.files += %w( src/core/lib/gpr/alloc.cc )
   s.files += %w( src/core/lib/gpr/alloc.h )

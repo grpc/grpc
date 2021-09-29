@@ -769,7 +769,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/uv/impl.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/uv/libuv_event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/uv/libuv_event_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.h" role="src" />
