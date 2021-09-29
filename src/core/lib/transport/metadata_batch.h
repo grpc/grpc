@@ -209,6 +209,9 @@ class MetadataMap {
   }
 
   // Set key to value if it exists and return true, otherwise return false.
+  // If this function returns true, it takes ownership of key and value.
+  // If this function returns false, it does not take ownership of key nor
+  // value.
   bool ReplaceIfExists(grpc_slice key, grpc_slice value);
 
   void Clear();
@@ -652,8 +655,7 @@ bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
   AssertValidCallouts();
   for (grpc_linked_mdelem* l = list_.head; l != nullptr; l = l->next) {
     if (grpc_slice_eq(GRPC_MDKEY(l->md), key)) {
-      auto new_mdelem = grpc_mdelem_from_slices(grpc_slice_ref_internal(key),
-                                                grpc_slice_ref_internal(value));
+      auto new_mdelem = grpc_mdelem_from_slices(key, value);
       GRPC_MDELEM_UNREF(l->md);
       l->md = new_mdelem;
       AssertValidCallouts();
