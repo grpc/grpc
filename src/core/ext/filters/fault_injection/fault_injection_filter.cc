@@ -46,27 +46,27 @@ static_assert(
     std::is_trivially_destructible<std::atomic<uint32_t>>::value,
     "the active fault counter needs to have a trivially destructible type");
 
-inline int GetLinkedMetadatumValueInt(grpc_linked_mdelem* md) {
+inline int GetMetadatumValueInt(grpc_mdelem md) {
   int res;
-  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md->md)), &res)) {
+  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md)), &res)) {
     return res;
   } else {
     return -1;
   }
 }
 
-inline uint32_t GetLinkedMetadatumValueUnsignedInt(grpc_linked_mdelem* md) {
+inline uint32_t GetMetadatumValueUnsignedInt(grpc_mdelem md) {
   uint32_t res;
-  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md->md)), &res)) {
+  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md)), &res)) {
     return res;
   } else {
     return -1;
   }
 }
 
-inline int64_t GetLinkedMetadatumValueInt64(grpc_linked_mdelem* md) {
+inline int64_t GetMetadatumValueInt64(grpc_mdelem md) {
   int64_t res;
-  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md->md)), &res)) {
+  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md)), &res)) {
     return res;
   } else {
     return -1;
@@ -347,9 +347,8 @@ void CallData::DecideWhetherToInjectFaults(
                 *fi_policy_);
       }
     };
-    for (grpc_linked_mdelem* md = initial_metadata->list.head; md != nullptr;
-         md = md->next) {
-      absl::string_view key = StringViewFromSlice(GRPC_MDKEY(md->md));
+    initial_metadata->ForEach([&](grpc_mdelem md) {
+      absl::string_view key = StringViewFromSlice(GRPC_MDKEY(md));
       // Only perform string comparison if:
       //   1. Needs to check this header;
       //   2. The value is not been filled before.
@@ -358,31 +357,31 @@ void CallData::DecideWhetherToInjectFaults(
            copied_policy->abort_code == GRPC_STATUS_OK) &&
           key == fi_policy_->abort_code_header) {
         maybe_copy_policy_func();
-        grpc_status_code_from_int(GetLinkedMetadatumValueInt(md),
+        grpc_status_code_from_int(GetMetadatumValueInt(md),
                                   &copied_policy->abort_code);
       }
       if (!fi_policy_->abort_percentage_header.empty() &&
           key == fi_policy_->abort_percentage_header) {
         maybe_copy_policy_func();
         copied_policy->abort_percentage_numerator =
-            GPR_MIN(GetLinkedMetadatumValueUnsignedInt(md),
-                    fi_policy_->abort_percentage_numerator);
+            std::min(GetMetadatumValueUnsignedInt(md),
+                     fi_policy_->abort_percentage_numerator);
       }
       if (!fi_policy_->delay_header.empty() &&
           (copied_policy == nullptr || copied_policy->delay == 0) &&
           key == fi_policy_->delay_header) {
         maybe_copy_policy_func();
         copied_policy->delay = static_cast<grpc_millis>(
-            GPR_MAX(GetLinkedMetadatumValueInt64(md), 0));
+            std::max(GetMetadatumValueInt64(md), int64_t(0)));
       }
       if (!fi_policy_->delay_percentage_header.empty() &&
           key == fi_policy_->delay_percentage_header) {
         maybe_copy_policy_func();
         copied_policy->delay_percentage_numerator =
-            GPR_MIN(GetLinkedMetadatumValueUnsignedInt(md),
-                    fi_policy_->delay_percentage_numerator);
+            std::min(GetMetadatumValueUnsignedInt(md),
+                     fi_policy_->delay_percentage_numerator);
       }
-    }
+    });
     if (copied_policy != nullptr) fi_policy_ = copied_policy;
   }
   // Roll the dice
@@ -456,8 +455,10 @@ void CallData::ResumeBatch(void* arg, grpc_error_handle error) {
   // Abort if needed.
   error = calld->MaybeAbort();
   if (error != GRPC_ERROR_NONE) {
+    calld->abort_error_ = error;
     grpc_transport_stream_op_batch_finish_with_failure(
-        calld->delayed_batch_, error, calld->call_combiner_);
+        calld->delayed_batch_, GRPC_ERROR_REF(calld->abort_error_),
+        calld->call_combiner_);
     return;
   }
   // Chain to the next filter.

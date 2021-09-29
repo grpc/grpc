@@ -70,8 +70,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   grpc_millis saved_now = grpc_core::ExecCtx::Get()->Now();
 
   grpc_metadata_batch b;
-  grpc_metadata_batch_init(&b);
-  b.deadline = saved_now + 30 * 1000;
+  b.Set(grpc_core::GrpcTimeoutMetadata(), saved_now + 30 * 1000);
 
   grpc_core::HPackCompressor c;
   grpc_transport_one_way_stats stats;
@@ -91,7 +90,6 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
     grpc_slice_buffer_reset_and_unref_internal(&outbuf);
     grpc_core::ExecCtx::Get()->Flush();
   }
-  grpc_metadata_batch_destroy(&b);
   grpc_slice_buffer_destroy_internal(&outbuf);
 
   std::ostringstream label;
@@ -112,10 +110,9 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   static bool logged_representative_output = false;
 
-  grpc_metadata_batch b;
-  grpc_metadata_batch_init(&b);
   std::vector<grpc_mdelem> elems = Fixture::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
+  grpc_metadata_batch b;
   for (size_t i = 0; i < elems.size(); i++) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
@@ -148,7 +145,6 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
     grpc_slice_buffer_reset_and_unref_internal(&outbuf);
     grpc_core::ExecCtx::Get()->Flush();
   }
-  grpc_metadata_batch_destroy(&b);
   grpc_slice_buffer_destroy_internal(&outbuf);
 
   std::ostringstream label;

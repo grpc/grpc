@@ -54,6 +54,13 @@ class Loop {
   explicit Loop(F f) : factory_(std::move(f)), promise_(factory_.Repeated()) {}
   ~Loop() { promise_.~Promise(); }
 
+  Loop(Loop&& loop) noexcept
+      : factory_(std::move(loop.factory_)),
+        promise_(std::move(loop.promise_)) {}
+
+  Loop(const Loop& loop) = delete;
+  Loop& operator=(const Loop& loop) = delete;
+
   Poll<Result> operator()() {
     while (true) {
       // Poll the inner promise.

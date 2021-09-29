@@ -194,6 +194,9 @@ extern grpc_call_cancel_type grpc_call_cancel_import;
 typedef grpc_call_error(*grpc_call_cancel_with_status_type)(grpc_call* call, grpc_status_code status, const char* description, void* reserved);
 extern grpc_call_cancel_with_status_type grpc_call_cancel_with_status_import;
 #define grpc_call_cancel_with_status grpc_call_cancel_with_status_import
+typedef int(*grpc_call_failed_before_recv_message_type)(const grpc_call* c);
+extern grpc_call_failed_before_recv_message_type grpc_call_failed_before_recv_message_import;
+#define grpc_call_failed_before_recv_message grpc_call_failed_before_recv_message_import
 typedef void(*grpc_call_ref_type)(grpc_call* call);
 extern grpc_call_ref_type grpc_call_ref_import;
 #define grpc_call_ref grpc_call_ref_import

@@ -660,10 +660,9 @@ absl::StatusOr<URI> ValidateStsCredentialsOptions(
                      ? ""
                      : options->token_exchange_service_uri);
   if (!sts_url.ok()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrFormat("Invalid or missing STS endpoint URL. Error: %s",
-                        sts_url.status().ToString())
-            .c_str()));
+                        sts_url.status().ToString())));
   } else if (sts_url->scheme() != "https" && sts_url->scheme() != "http") {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Invalid URI scheme, must be https to http."));

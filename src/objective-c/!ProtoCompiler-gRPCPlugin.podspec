@@ -42,7 +42,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler-gRPCPlugin'
-  v = '1.41.0-dev'
+  v = '1.42.0-dev'
   s.version  = v
   s.summary  = 'The gRPC ProtoC plugin generates Objective-C files from .proto services.'
   s.description = <<-DESC
@@ -121,6 +121,7 @@ Pod::Spec.new do |s|
   # present in this pod's directory. We use that knowledge to check for the existence of the file
   # and, if absent, compile the plugin from the local sources.
   s.prepare_command = <<-CMD
+    set -e
     if [ ! -f #{plugin} ]; then
       #{bazel} build //src/compiler:grpc_objective_c_plugin
     fi

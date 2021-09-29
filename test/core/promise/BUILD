@@ -12,11 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
 grpc_package(name = "test/core/promise")
+
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+
+grpc_cc_library(
+    name = "test_wakeup_schedulers",
+    testonly = True,
+    hdrs = ["test_wakeup_schedulers.h"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:gpr_base",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
 
 grpc_cc_test(
     name = "poll_test",
@@ -121,6 +134,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:loop",
+        "//:seq",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -180,6 +194,7 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
+        "test_wakeup_schedulers",
         "//:activity",
         "//:join",
         "//:promise",
@@ -196,6 +211,7 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
+        "test_wakeup_schedulers",
         "//:join",
         "//:latch",
         "//:seq",
@@ -210,8 +226,27 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
+        "test_wakeup_schedulers",
         "//:observable",
         "//:promise",
+        "//:seq",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "for_each_test",
+    srcs = ["for_each_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "test_wakeup_schedulers",
+        "//:for_each",
+        "//:join",
+        "//:map",
+        "//:observable",
+        "//:pipe",
         "//:seq",
         "//test/core/util:grpc_suppressions",
     ],
@@ -224,10 +259,37 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
+        "test_wakeup_schedulers",
         "//:join",
         "//:pipe",
         "//:promise",
         "//:seq",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_proto_fuzzer(
+    name = "promise_fuzzer",
+    srcs = ["promise_fuzzer.cc"],
+    corpus = "promise_fuzzer_corpus",
+    language = "C++",
+    proto = "promise_fuzzer.proto",
+    tags = ["no_windows"],
+    uses_polling = False,
+    deps = [
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "exec_ctx_wakeup_scheduler_test",
+    srcs = ["exec_ctx_wakeup_scheduler_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:activity",
+        "//:exec_ctx_wakeup_scheduler",
         "//test/core/util:grpc_suppressions",
     ],
 )

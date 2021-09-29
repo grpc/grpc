@@ -33,6 +33,7 @@
 
 #include "src/core/lib/channel/handshaker_factory.h"
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "test/core/handshake/server_ssl_common.h"
@@ -76,10 +77,15 @@ class ReadAheadHandshakerFactory : public HandshakerFactory {
 }  // namespace grpc_core
 
 int main(int /*argc*/, char* /*argv*/[]) {
+  grpc_core::CoreConfiguration::BuildSpecialConfiguration(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        BuildCoreConfiguration(builder);
+        builder->handshaker_registry()->RegisterHandshakerFactory(
+            true /* at_start */, grpc_core::HANDSHAKER_SERVER,
+            absl::make_unique<grpc_core::ReadAheadHandshakerFactory>());
+      });
+
   grpc_init();
-  grpc_core::HandshakerRegistry::RegisterHandshakerFactory(
-      true /* at_start */, grpc_core::HANDSHAKER_SERVER,
-      absl::make_unique<grpc_core::ReadAheadHandshakerFactory>());
   const char* full_alpn_list[] = {"grpc-exp", "h2"};
   GPR_ASSERT(server_ssl_test(full_alpn_list, 2, "grpc-exp"));
   CleanupSslLibrary();

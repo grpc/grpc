@@ -207,11 +207,6 @@ class ClientChannel {
   static void GetChannelInfo(grpc_channel_element* elem,
                              const grpc_channel_info* info);
 
-  // Note: Does NOT return a new ref.
-  grpc_error_handle disconnect_error() const {
-    return disconnect_error_.load(std::memory_order_acquire);
-  }
-
   // Note: All methods with "Locked" suffix must be invoked from within
   // work_serializer_.
 
@@ -343,12 +338,8 @@ class ClientChannel {
   std::map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>>
       pending_subchannel_updates_ ABSL_GUARDED_BY(work_serializer_);
   int keepalive_time_ ABSL_GUARDED_BY(work_serializer_) = -1;
-
-  //
-  // Fields accessed from both data plane mutex and control plane
-  // work_serializer.
-  //
-  std::atomic<grpc_error_handle> disconnect_error_{GRPC_ERROR_NONE};
+  grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(work_serializer_) =
+      GRPC_ERROR_NONE;
 
   //
   // Fields guarded by a mutex, since they need to be accessed

@@ -24,7 +24,7 @@
 
 #include "src/core/ext/filters/workarounds/workaround_utils.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/transport/metadata.h"
 
 namespace {
@@ -46,8 +46,8 @@ struct call_data {
 // Find the user agent metadata element in the batch
 static bool get_user_agent_mdelem(const grpc_metadata_batch* batch,
                                   grpc_mdelem* md) {
-  if (batch->idx.named.user_agent != nullptr) {
-    *md = batch->idx.named.user_agent->md;
+  if (batch->legacy_index()->named.user_agent != nullptr) {
+    *md = batch->legacy_index()->named.user_agent->md;
     return true;
   }
   return false;
@@ -185,7 +185,7 @@ const grpc_channel_filter grpc_workaround_cronet_compression_filter = {
     "workaround_cronet_compression"};
 
 static bool register_workaround_cronet_compression(
-    grpc_channel_stack_builder* builder, void* /*arg*/) {
+    grpc_channel_stack_builder* builder) {
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   const grpc_arg* a = grpc_channel_args_find(
@@ -201,11 +201,17 @@ static bool register_workaround_cronet_compression(
 }
 
 void grpc_workaround_cronet_compression_filter_init(void) {
-  grpc_channel_init_register_stage(
-      GRPC_SERVER_CHANNEL, GRPC_WORKAROUND_PRIORITY_HIGH,
-      register_workaround_cronet_compression, nullptr);
   grpc_register_workaround(GRPC_WORKAROUND_ID_CRONET_COMPRESSION,
                            parse_user_agent);
 }
 
 void grpc_workaround_cronet_compression_filter_shutdown(void) {}
+
+namespace grpc_core {
+void RegisterWorkaroundCronetCompressionFilter(
+    CoreConfiguration::Builder* builder) {
+  builder->channel_init()->RegisterStage(
+      GRPC_SERVER_CHANNEL, GRPC_WORKAROUND_PRIORITY_HIGH,
+      register_workaround_cronet_compression);
+}
+}  // namespace grpc_core

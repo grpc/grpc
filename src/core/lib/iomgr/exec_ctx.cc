@@ -20,14 +20,11 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/combiner.h"
-#include "src/core/lib/iomgr/event_engine/closure.h"
-#include "src/core/lib/iomgr/event_engine/iomgr.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
 
 static void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
@@ -50,13 +47,8 @@ static void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
 }
 
 static void exec_ctx_sched(grpc_closure* closure, grpc_error_handle error) {
-#if defined(GRPC_USE_EVENT_ENGINE) && \
-    defined(GRPC_EVENT_ENGINE_REPLACE_EXEC_CTX)
-  grpc_iomgr_event_engine()->Run(GrpcClosureToCallback(closure, error), {});
-#else
   grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(), closure,
                            error);
-#endif
 }
 
 static gpr_timespec g_start_time;

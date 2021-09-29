@@ -26,7 +26,6 @@
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 char* grpc_slice_to_c_string(grpc_slice slice) {
@@ -43,21 +42,6 @@ grpc_slice grpc_slice_copy(grpc_slice s) {
   memcpy(GRPC_SLICE_START_PTR(out), GRPC_SLICE_START_PTR(s),
          GRPC_SLICE_LENGTH(s));
   return out;
-}
-
-/* Public API */
-grpc_slice grpc_slice_ref(grpc_slice slice) {
-  return grpc_slice_ref_internal(slice);
-}
-
-/* Public API */
-void grpc_slice_unref(grpc_slice slice) {
-  if (grpc_core::ExecCtx::Get() == nullptr) {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_slice_unref_internal(slice);
-  } else {
-    grpc_slice_unref_internal(slice);
-  }
 }
 
 namespace grpc_core {
