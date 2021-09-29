@@ -214,7 +214,7 @@ LibuvEventEngine::~LibuvEventEngine() {
       // that are still going to hold up the loop at this point.
       uv_walk(
           &engine->loop_,
-          [](uv_handle_t* handle, void* arg) {
+          [](uv_handle_t* handle, /*arg=*/void*) {
             uv_handle_type type = uv_handle_get_type(handle);
             const char* name = uv_handle_type_name(type);
             gpr_log(GPR_DEBUG,
