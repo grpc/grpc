@@ -247,9 +247,9 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
   switch (tsi_handshaker_result_frame_protector_type(handshaker_result_)) {
     case TSI_FRAME_PROTECTOR_ZERO_COPY:
       ABSL_FALLTHROUGH_INTENDED;
-    case TSI_FRAME_PROTECTOR_NORMAL_OR_ZERO_COPY: {
+    case TSI_FRAME_PROTECTOR_NORMAL_OR_ZERO_COPY:
       // Create zero-copy frame protector.
-      tsi_result result = tsi_handshaker_result_create_zero_copy_grpc_protector(
+      result = tsi_handshaker_result_create_zero_copy_grpc_protector(
           handshaker_result_, max_frame_size_ == 0 ? nullptr : &max_frame_size_,
           &zero_copy_protector);
       if (result != TSI_OK && result != TSI_UNIMPLEMENTED) {
@@ -261,8 +261,7 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
         return;
       }
       break;
-    }
-    case TSI_FRAME_PROTECTOR_NORMAL: {
+    case TSI_FRAME_PROTECTOR_NORMAL:
       // Create normal frame protector.
       if (zero_copy_protector == nullptr) {
         result = tsi_handshaker_result_create_frame_protector(
@@ -276,11 +275,10 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
           HandshakeFailedLocked(error);
           return;
         }
-        break;
       }
-      case TSI_FRAME_PROTECTOR_NONE:
-        break;
-    }
+      break;
+    case TSI_FRAME_PROTECTOR_NONE:
+      break;
   }
   // If we have a frame protector, create a secure endpoint.
   if (zero_copy_protector != nullptr || protector != nullptr) {
