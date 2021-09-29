@@ -117,8 +117,9 @@ void EventEngineTimerTest::ScheduleCheckCB(absl::Time when,
                                            std::atomic<int>* call_count,
                                            std::atomic<int>* fail_count,
                                            int total_expected) {
-  EXPECT_LE(when, absl::Now());
-  if (when > absl::Now()) ++fail_count;
+  auto now = absl::Now();
+  EXPECT_LE(when, now);
+  if (when > now) ++(*fail_count);
   if (++(*call_count) == total_expected) {
     grpc_core::MutexLock lock(&mu_);
     signaled_ = true;
@@ -148,4 +149,5 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
     cv_.Wait(&mu_);
   }
   gpr_log(GPR_DEBUG, "failed timer count: %d", failed_timer_count.load());
+  ASSERT_EQ(0, failed_timer_count.load());
 }
