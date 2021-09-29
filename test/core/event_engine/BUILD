@@ -36,7 +36,10 @@ grpc_cc_library(
         "test_suite/timer_test.cc",
     ],
     hdrs = ["test_suite/event_engine_test.h"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/random",
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:grpc",
@@ -47,8 +50,11 @@ grpc_cc_library(
 grpc_cc_test(
     name = "simple_event_engine_test",
     srcs = ["test_suite/simple_event_engine_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
+    uses_polling = False,
     deps = [
         ":event_engine_test_suite",
         "//:grpc",
