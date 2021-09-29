@@ -1878,12 +1878,10 @@ grpc_millis GetRequestTimeout(const grpc_channel_args* args) {
 }
 
 grpc_channel_args* ModifyChannelArgs(const grpc_channel_args* args) {
-  absl::InlinedVector<grpc_arg, 2> args_to_add = {
+  absl::InlinedVector<grpc_arg, 1> args_to_add = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
           5 * 60 * GPR_MS_PER_SEC),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
   };
   return grpc_channel_args_copy_and_add(args, args_to_add.data(),
                                         args_to_add.size());
@@ -1918,26 +1916,6 @@ XdsClient::~XdsClient() {
   }
   grpc_channel_args_destroy(args_);
   grpc_pollset_set_destroy(interested_parties_);
-}
-
-void XdsClient::AddChannelzLinkage(
-    channelz::ChannelNode* parent_channelz_node) {
-  MutexLock lock(&mu_);
-  channelz::ChannelNode* xds_channelz_node =
-      grpc_channel_get_channelz_node(chand_->channel());
-  if (xds_channelz_node != nullptr) {
-    parent_channelz_node->AddChildChannel(xds_channelz_node->uuid());
-  }
-}
-
-void XdsClient::RemoveChannelzLinkage(
-    channelz::ChannelNode* parent_channelz_node) {
-  MutexLock lock(&mu_);
-  channelz::ChannelNode* xds_channelz_node =
-      grpc_channel_get_channelz_node(chand_->channel());
-  if (xds_channelz_node != nullptr) {
-    parent_channelz_node->RemoveChildChannel(xds_channelz_node->uuid());
-  }
 }
 
 void XdsClient::Orphan() {
