@@ -30,6 +30,8 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
 
+_TD_CONFIG_RETRY_WAIT_SEC = 2
+
 
 class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     ALTERNATE_RESOURCE_SUFFIX = '2'
@@ -44,7 +46,8 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         with self.subTest('02_create_url_maps'):
             self.td.create_url_map(self.server_xds_host, self.server_xds_port)
-            self.td.create_alternative_url_map(self.server_xds_host, self.server_xds_port)
+            self.td.create_alternative_url_map(self.server_xds_host,
+                                               self.server_xds_port)
 
         with self.subTest('03_create_target_proxies'):
             self.td.create_target_proxy()
@@ -52,7 +55,8 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         with self.subTest('04_create_forwarding_rule'):
             self.td.create_forwarding_rule(self.server_xds_port)
-            self.td.create_alternative_forwarding_rule(self.server_xds_port, ip_address='10.10.10.10')
+            self.td.create_alternative_forwarding_rule(self.server_xds_port,
+                                                       ip_address='10.10.10.10')
 
         with self.subTest('05_start_test_servers'):
             self.test_servers: List[_XdsTestServer] = self.startTestServers()
@@ -69,7 +73,8 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         with self.subTest('09_test_server_received_rpcs_from_test_client'):
             self.assertSuccessfulRpcs(self.test_client)
-            self.previous_route_config_version = self.getRouteConfigVersion(self.test_client)
+            self.previous_route_config_version = self.getRouteConfigVersion(
+                self.test_client)
 
         with self.subTest('10_delete_one_url_map_target_proxy_forwarding_rule'):
             self.td.delete_forwarding_rule()
@@ -77,29 +82,38 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.td.delete_url_map()
 
         with self.subTest('11_test_server_continues_to_receive_rpcs'):
+
             class TdPropagationRetryableError(Exception):
-              pass
+                pass
 
             def verify_route_traffic_continues():
-              self.assertSuccessfulRpcs(self.test_client)
-              if self.previous_route_config_version == self.getRouteConfigVersion(self.test_client):
-                logger.info('Routing config not propagated yet. Retrying.')
-                raise TdPropagationRetryableError()
-              else:
                 self.assertSuccessfulRpcs(self.test_client)
-                logger.info('Success.')
+                if self.previous_route_config_version == self.getRouteConfigVersion(
+                        self.test_client):
+                    logger.info('Routing config not propagated yet. Retrying.')
+                    raise TdPropagationRetryableError(
+                        "CSDS not get updated routing config corresponding"
+                        " to the second set of url maps")
+                else:
+                    self.assertSuccessfulRpcs(self.test_client)
+                    logger.info('Success.')
 
             retryer = retryers.constant_retryer(
-              wait_fixed=datetime.timedelta(seconds=2),
-              timeout=datetime.timedelta(seconds=xds_k8s_testcase._TD_CONFIG_MAX_WAIT_SEC),
-              retry_on_exceptions=(TdPropagationRetryableError,),
-              logger=logging,
-              log_level=logging.INFO)
+                wait_fixed=datetime.timedelta(
+                    seconds=_TD_CONFIG_RETRY_WAIT_SEC),
+                timeout=datetime.timedelta(
+                    seconds=xds_k8s_testcase._TD_CONFIG_MAX_WAIT_SEC),
+                retry_on_exceptions=(TdPropagationRetryableError,),
+                logger=logging,
+                log_level=logging.INFO)
             try:
-              retryer(verify_route_traffic_continues)
-            except retryers.RetryError:
-              logging.info('Retry exhausted. TD routing config propagation failed after timeout %ds.',
-                           xds_k8s_testcase._TD_CONFIG_MAX_WAIT_SEC)
+                retryer(verify_route_traffic_continues)
+            except retryers.RetryError as e:
+                logging.info(
+                    'Retry exhausted. TD routing config propagation failed after timeout %ds.',
+                    xds_k8s_testcase._TD_CONFIG_MAX_WAIT_SEC)
+                raise e
+
 
 if __name__ == '__main__':
     absltest.main(failfast=True)
