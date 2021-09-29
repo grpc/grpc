@@ -1920,26 +1920,6 @@ XdsClient::~XdsClient() {
   grpc_pollset_set_destroy(interested_parties_);
 }
 
-void XdsClient::AddChannelzLinkage(
-    channelz::ChannelNode* parent_channelz_node) {
-  MutexLock lock(&mu_);
-  channelz::ChannelNode* xds_channelz_node =
-      grpc_channel_get_channelz_node(chand_->channel());
-  if (xds_channelz_node != nullptr) {
-    parent_channelz_node->AddChildChannel(xds_channelz_node->uuid());
-  }
-}
-
-void XdsClient::RemoveChannelzLinkage(
-    channelz::ChannelNode* parent_channelz_node) {
-  MutexLock lock(&mu_);
-  channelz::ChannelNode* xds_channelz_node =
-      grpc_channel_get_channelz_node(chand_->channel());
-  if (xds_channelz_node != nullptr) {
-    parent_channelz_node->RemoveChildChannel(xds_channelz_node->uuid());
-  }
-}
-
 void XdsClient::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] shutting down xds client", this);
