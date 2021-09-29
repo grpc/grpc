@@ -549,12 +549,6 @@ void XdsClient::ChannelState::MaybeStartLrsCall() {
 void XdsClient::ChannelState::StopLrsCall() { lrs_calld_.reset(); }
 
 void XdsClient::ChannelState::StartConnectivityWatchLocked() {
-  gpr_log(GPR_INFO, "donna channel_ is already init to %p", channel_);
-  if (channel_ == nullptr) {
-    channel_ = CreateXdsChannel(xds_client_->args_, server_);
-  }
-  gpr_log(GPR_INFO, "donna channel_ is after CreateXdsChannel %p", channel_);
-  GPR_ASSERT(channel_ != nullptr);
   ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
   GPR_ASSERT(client_channel != nullptr);
   watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "ChannelState+watch"));
@@ -582,6 +576,11 @@ void XdsClient::ChannelState::SubscribeLocked(const std::string& type_url,
     gpr_log(GPR_ERROR, "Adding connect in SubscribeLocked donna stack %p %s",
             trace[i], symbol);
   }
+  if (channel_ == nullptr) {
+    channel_ = CreateXdsChannel(xds_client_->args_, server_);
+  }
+  gpr_log(GPR_INFO, "donna channel_ is after CreateXdsChannel %p", channel_);
+  GPR_ASSERT(channel_ != nullptr);
   StartConnectivityWatchLocked();
   if (ads_calld_ == nullptr) {
     // Start the ADS call if this is the first request.
@@ -1938,7 +1937,7 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
   }
   // Create ChannelState object for top level xds server and all xds servers
   // under authorities; connections to the xds servers will lazily happen in
-  // XdsResolver::StartLocked.
+  // Subscribe
   std::string key = absl::StrCat(
       bootstrap_->server().server_uri,
       bootstrap_->server().channel_creds_config.string_value(),
