@@ -23,7 +23,6 @@
 #include <vector>
 
 #include <grpc/grpc_security_constants.h>
-#include <grpc/grpc_security.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpcpp/security/tls_certificate_provider.h>
@@ -147,35 +146,27 @@ class TlsServerAuthorizationCheckConfig {
       server_authorization_check_interface_;
 };
 
+typedef struct grpc_tls_session_key_log_config grpc_tls_session_key_log_config;
+
 // Configuration for Tls key logging.
 class TlsSessionKeyLoggerConfig {
  public:
 
-  TlsSessionKeyLoggerConfig() {
-    c_config_ = grpc_tls_session_key_log_config_create();
-  };
-
-  ~TlsSessionKeyLoggerConfig() {
-    grpc_tls_session_key_log_config_release(c_config_);
-  };
+  TlsSessionKeyLoggerConfig();
+  ~TlsSessionKeyLoggerConfig();
 
   // Disable copy and assignment
   TlsSessionKeyLoggerConfig(const TlsSessionKeyLoggerConfig& copy) = delete;
-  TlsSessionKeyLoggerConfig & operator=(const TlsSessionKeyLoggerConfig&) = delete;
+  TlsSessionKeyLoggerConfig & operator=(
+      const TlsSessionKeyLoggerConfig&) = delete;
 
   // Sets the tls session key log file path.
-  void set_tls_session_key_log_file_path(std::string key_log_file_path) {
-    grpc_tls_session_key_log_config_set_log_path(c_config_,
-                                                 key_log_file_path.c_str());
-  }
+  void set_tls_session_key_log_file_path(std::string key_log_file_path);
 
   // Sets the tls session key logging format. Currently only NSS format is
   // supported.
   void set_tls_session_key_log_format(
-      grpc_tls_session_key_log_format tls_session_key_log_format) {
-    grpc_tls_session_key_log_config_set_log_format(c_config_,
-                                                   tls_session_key_log_format);
-  }
+      grpc_tls_session_key_log_format tls_session_key_log_format);
 
   // Returns the core c_config struct associated with this configuration
   // wrapper class
