@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <atomic>
+#include <functional>
 #include <thread>
+#include <unordered_map>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -30,10 +34,22 @@ using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 
 constexpr absl::Duration SLEEP_TIME = absl::Milliseconds(100);
 
+// A simple EventEngine implementation, NOT TO BE USED IN PRODUCTION.
+// The task map grows without bounds.
+// It is not thread-safe.
 class SimpleEventEngine : public grpc_event_engine::experimental::EventEngine {
  public:
+  ~SimpleEventEngine() {
+    shutting_down_.store(true);
+    for (auto& iter : threads_) {
+      iter.second.join();
+    }
+  }
+
+  // TODO(hork): run async
   void Run(EventEngine::Closure* closure) override { closure->Run(); }
 
+  // TODO(hork): run async
   void Run(std::function<void()> closure) override { closure(); }
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
@@ -41,33 +57,79 @@ class SimpleEventEngine : public grpc_event_engine::experimental::EventEngine {
       std::function<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,
       std::unique_ptr<SliceAllocatorFactory> slice_allocator_factory) override {
-    return nullptr;
+    abort();
   }
 
   EventEngine::TaskHandle RunAt(absl::Time when,
                                 EventEngine::Closure* closure) override {
-    std::thread t([=]() {
-      while (absl::Now() < when) {
-        absl::SleepFor(SLEEP_TIME);
-        if (shutting_down_) return;
-      }
-      closure->Run();
-    });
-    return {-1, -1};
-  }
-  EventEngine::TaskHandle RunAt(absl::Time when,
-                                std::function<void()> closure) override {
-    threads_.emplace_back([=]() {
-      while (absl::Now() < when) {
-        absl::SleepFor(SLEEP_TIME);
-        if (shutting_down_) return;
-      }
-      closure();
-    });
-    return {-1, -1};
+    abort();
   }
 
-  bool Cancel(EventEngine::TaskHandle handle) override { return false; }
+  EventEngine::TaskHandle RunAt(absl::Time when,
+                                std::function<void()> closure) override {
+    // Scheduling a cb on an EventEngine that's being destroyed is UB
+    if (shutting_down_.load()) abort();
+    std::thread t{[=]() {
+      intptr_t current_thread_id = ThreadHash(std::this_thread::get_id());
+      while (absl::Now() < when) {
+        if (shutting_down_.load()) return;
+        absl::SleepFor(SLEEP_TIME);
+      }
+      bool can_run;
+      {
+        grpc_core::MutexLock lock(&run_states_mu_);
+        auto emplaced = run_states_.emplace(current_thread_id, RunState::kRan);
+        bool already_existed = !emplaced.second;
+        can_run = !already_existed;
+        if (already_existed) {
+          switch (emplaced.first->second) {
+            case RunState::kNotRun:
+              run_states_[current_thread_id] = RunState::kRan;
+              can_run = true;
+              break;
+            case RunState::kCancelled:
+              can_run = false;
+          }
+        }
+      }
+      if (can_run) {
+        std::cerr << absl::StrFormat(
+            "DO NOT SUBMIT - Running closure on thd %d. State: %d\n",
+            current_thread_id, run_states_[current_thread_id]);
+        closure();
+      } else {
+        std::cerr << "DO NOT SUBMIT - closure cancelled\n";
+      }
+    }};
+    intptr_t id = ThreadHash(t.get_id());
+    {
+      grpc_core::MutexLock lock(&run_states_mu_);
+      // Insert kNotRun if the thread has not already set it.
+      run_states_.emplace(id, RunState::kNotRun);
+    }
+    threads_.emplace(id, std::move(t));
+    return {id, -1};
+  }
+
+  bool Cancel(EventEngine::TaskHandle handle) override {
+    grpc_core::MutexLock lock(&run_states_mu_);
+    auto found = run_states_.find(handle.keys[0]);
+    if (found == run_states_.end()) {
+      // unknown task
+      return false;
+    }
+    // Double cancellation is invalid usage.
+    GPR_ASSERT(found->second != RunState::kCancelled);
+    if (found->second == RunState::kNotRun) {
+      std::cerr << absl::StrFormat("DO NOT SUBMIT - CAN cancel thd %d\n",
+                                   handle.keys[0]);
+      run_states_[handle.keys[0]] = RunState::kCancelled;
+      return true;
+    }
+    std::cerr << absl::StrFormat("DO NOT SUBMIT - cannot cancel thd %d\n",
+                                 handle.keys[0]);
+    return false;
+  }
 
   absl::Status Connect(EventEngine::OnConnectCallback on_connect,
                        const EventEngine::ResolvedAddress& addr,
@@ -81,20 +143,23 @@ class SimpleEventEngine : public grpc_event_engine::experimental::EventEngine {
 
   bool IsWorkerThread() override { return false; }
 
-  ~SimpleEventEngine() {
-    shutting_down_ = true;
-    for (std::thread& t : threads_) {
-      t.join();
-    }
-  }
-
  private:
-  std::vector<std::thread> threads_;
-  bool shutting_down_ = false;
+  intptr_t ThreadHash(const std::thread::id& tid) { return hasher_(tid); }
+
+  enum class RunState { kNotRun, kCancelled, kRan };
+
+  std::unordered_map<intptr_t, std::thread> threads_;
+  grpc_core::Mutex run_states_mu_;
+  // Using an unordered_map since std::atomic does not have the required
+  // constructors to be used in absl::flat_hash_map.
+  std::unordered_map<intptr_t, RunState> run_states_
+      ABSL_GUARDED_BY(run_states_mu_);
+  std::atomic<bool> shutting_down_{false};
+  std::hash<std::thread::id> hasher_{};
 };
 
 int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
+  testing::InitGoogleTest(&argc, argv);
   SetEventEngineFactory(
       []() { return absl::make_unique<SimpleEventEngine>(); });
   auto result = RUN_ALL_TESTS();
