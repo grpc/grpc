@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <grpc/event_engine/memory_allocator.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"

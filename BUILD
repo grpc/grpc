@@ -1286,19 +1286,19 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "event_engine_memory_allocator",
-    hdrs = [
-        "include/grpc/event_engine/memory_allocator.h"
-    ],
     srcs = [
-        "src/core/lib/event_engine/memory_allocator.cc"
+        "src/core/lib/event_engine/memory_allocator.cc",
+    ],
+    hdrs = [
+        "include/grpc/event_engine/memory_allocator.h",
     ],
     language = "c++",
     deps = [
         "gpr_platform",
+        "ref_counted",
         "slice",
-        "slice_refcount" ,
-        "ref_counted"
-    ]
+        "slice_refcount",
+    ],
 )
 
 grpc_cc_library(
@@ -1311,6 +1311,7 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
+        "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
         "gpr_base",
         "loop",
@@ -1319,7 +1320,6 @@ grpc_cc_library(
         "seq",
         "slice_refcount",
         "useful",
-        "event_engine_memory_allocator"
     ],
 )
 
