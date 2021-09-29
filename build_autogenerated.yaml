@@ -4307,8 +4307,8 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/test_wakeup_schedulers.h
   - src/core/lib/promise/wait_set.h
-  - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/api/annotations.upb.c
   - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
@@ -5683,11 +5683,11 @@ targets:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/exec_ctx_wakeup_scheduler_test.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/slice/static_slice.cc
-  - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
   - absl/status:statusor
   - absl/types:variant
@@ -5830,8 +5830,8 @@ targets:
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/test_wakeup_schedulers.h
   - src/core/lib/promise/wait_set.h
-  - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/api/annotations.upb.c
   - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
@@ -6447,7 +6447,7 @@ targets:
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
-  - test/core/promise/test_wakeup_schedulers.h
+  - src/core/lib/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/api/annotations.upb.c
   - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
@@ -6738,8 +6738,8 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/test_wakeup_schedulers.h
   - src/core/lib/promise/wait_set.h
-  - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/api/annotations.upb.c
   - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
@@ -6917,7 +6917,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
-  - test/core/promise/test_wakeup_schedulers.h
+  - src/core/lib/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/api/annotations.upb.c
   - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
