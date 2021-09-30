@@ -209,7 +209,9 @@ class MemoryAllocator {
   };
 
  protected:
-  const std::shared_ptr<BasicMemoryAllocator>& allocator() { return allocator_; }
+  const std::shared_ptr<BasicMemoryAllocator>& allocator() {
+    return allocator_;
+  }
 
  private:
   std::shared_ptr<BasicMemoryAllocator> allocator_;
