@@ -75,6 +75,7 @@ grpc_channel_args* grpc_channel_args_copy_and_remove(
 
 grpc_channel_args* grpc_channel_args_remove_grpc_internal(
     const grpc_channel_args* src) {
+  if (src == nullptr) return nullptr;
   // Create result.
   grpc_channel_args* dst =
       static_cast<grpc_channel_args*>(gpr_malloc(sizeof(grpc_channel_args)));
@@ -85,7 +86,6 @@ grpc_channel_args* grpc_channel_args_remove_grpc_internal(
     if (absl::StartsWith(src->args[i].key, "grpc-private.")) continue;
     dst->args[dst->num_args++] = copy_arg(&src->args[i]);
   }
-  grpc_channel_args_destroy(src);
   return dst;
 }
 

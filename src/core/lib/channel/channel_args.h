@@ -44,7 +44,7 @@ grpc_channel_args* grpc_channel_args_copy_and_add(const grpc_channel_args* src,
 /** Remove any channel args prefixed with 'grpc.internal.'
  *  These are used for internal implementation details and are not intended to
  *  be exposed to users.
- *  Returns a new channel args instance, and consumes \a src.
+ *  Returns a new channel args instance.
  *  Should be called by any public API that receives channel args. */
 grpc_channel_args* grpc_channel_args_remove_grpc_internal(
     const grpc_channel_args* src);

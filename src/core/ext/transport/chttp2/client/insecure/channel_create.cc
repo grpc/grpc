@@ -69,6 +69,7 @@ grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
   grpc_channel* channel = grpc_channel_create(
       target, new_args, GRPC_CLIENT_CHANNEL, nullptr, nullptr, 0, error);
   grpc_channel_args_destroy(new_args);
+  grpc_channel_args_destroy(args);
   return channel;
 }
 
@@ -111,6 +112,7 @@ grpc_channel* grpc_insecure_channel_create(const char* target,
   grpc_channel* channel = grpc_core::CreateChannel(target, new_args, &error);
   // Clean up.
   grpc_channel_args_destroy(new_args);
+  grpc_channel_args_destroy(args);
   if (channel == nullptr) {
     intptr_t integer;
     grpc_status_code status = GRPC_STATUS_INTERNAL;

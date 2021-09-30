@@ -529,6 +529,7 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::RefCountedPtr<grpc_core::XdsClient> xds_client =
       grpc_core::XdsClient::GetOrCreate(args, &error);
+  grpc_channel_args_destroy(args);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Failed to create xds client: %s",
             grpc_error_std_string(error).c_str());
