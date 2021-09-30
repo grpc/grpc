@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/surface/call.h"
-
 #include <inttypes.h>
 
 #include <vector>
@@ -29,8 +27,10 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/surface/call.h"
 
 static void add_metadata(const grpc_metadata* md, size_t count,
                          std::vector<std::string>* b) {

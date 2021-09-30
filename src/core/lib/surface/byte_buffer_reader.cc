@@ -18,10 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/byte_buffer_reader.h>
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>

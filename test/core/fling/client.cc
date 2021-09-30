@@ -16,12 +16,14 @@
  *
  */
 
-#include <grpc/grpc.h>
-
 #include <stdio.h>
 #include <string.h>
 
+<<<<<<< HEAD
 #include <grpc/grpc_security.h>
+=======
+#include <grpc/grpc.h>
+>>>>>>> upstream/master
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 

@@ -16,12 +16,12 @@
  *
  */
 
+#include "src/cpp/ext/proto_server_reflection.h"
+
 #include <unordered_set>
 #include <vector>
 
 #include <grpcpp/grpcpp.h>
-
-#include "src/cpp/ext/proto_server_reflection.h"
 
 using grpc::Status;
 using grpc::StatusCode;

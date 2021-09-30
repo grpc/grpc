@@ -238,7 +238,7 @@ class PHP7DistribTest(object):
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
-        self.labels = ['distribtest', 'php7', platform, arch]
+        self.labels = ['distribtest', 'php', 'php7', platform, arch]
         if docker_suffix:
             self.labels.append(docker_suffix)
 
@@ -344,23 +344,20 @@ def targets():
         CSharpDistribTest('windows', 'x86'),
         CSharpDistribTest('windows', 'x64'),
         # Python
-        PythonDistribTest('linux', 'x64', 'jessie'),
-        PythonDistribTest('linux', 'x86', 'jessie'),
-        PythonDistribTest('linux', 'x64', 'centos6'),
+        PythonDistribTest('linux', 'x64', 'buster'),
+        PythonDistribTest('linux', 'x86', 'buster'),
         PythonDistribTest('linux', 'x64', 'centos7'),
-        PythonDistribTest('linux', 'x64', 'fedora23'),
+        PythonDistribTest('linux', 'x64', 'fedora34'),
         PythonDistribTest('linux', 'x64', 'opensuse'),
         PythonDistribTest('linux', 'x64', 'arch'),
-        PythonDistribTest('linux', 'x64', 'ubuntu1604'),
         PythonDistribTest('linux', 'x64', 'ubuntu1804'),
         PythonDistribTest('linux', 'aarch64', 'python38_buster'),
         PythonDistribTest('linux', 'x64', 'alpine3.7', source=True),
-        PythonDistribTest('linux', 'x64', 'jessie', source=True),
-        PythonDistribTest('linux', 'x86', 'jessie', source=True),
+        PythonDistribTest('linux', 'x64', 'buster', source=True),
+        PythonDistribTest('linux', 'x86', 'buster', source=True),
         PythonDistribTest('linux', 'x64', 'centos7', source=True),
-        PythonDistribTest('linux', 'x64', 'fedora23', source=True),
+        PythonDistribTest('linux', 'x64', 'fedora34', source=True),
         PythonDistribTest('linux', 'x64', 'arch', source=True),
-        PythonDistribTest('linux', 'x64', 'ubuntu1604', source=True),
         PythonDistribTest('linux', 'x64', 'ubuntu1804', source=True),
         # Ruby
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_4'),

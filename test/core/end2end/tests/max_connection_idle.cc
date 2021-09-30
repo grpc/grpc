@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <limits.h>
 #include <string.h>
 
@@ -28,6 +26,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
 #define MAX_CONNECTION_IDLE_MS 500
 #define MAX_CONNECTION_AGE_MS 9999

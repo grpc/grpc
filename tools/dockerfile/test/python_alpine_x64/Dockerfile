@@ -30,16 +30,19 @@ RUN apk update && apk add \
   make \
   perl \
   strace \
-  python2-dev \
-  py2-pip \
+  python3-dev \
+  py3-pip \
   unzip \
   wget \
   zip
 
+RUN ln -s /usr/bin/pip3 /usr/bin/pip
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
 # Install Python packages from PyPI
 RUN pip install --upgrade pip==19.3.1
 RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.15.0
+RUN pip install futures==3.1.1 enum34==1.1.10 protobuf==3.5.2.post1 six==1.16.0
 
 # Google Cloud platform API libraries
 RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0

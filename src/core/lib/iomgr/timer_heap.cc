@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include "src/core/lib/iomgr/timer_heap.h"
 
 #include <string.h>
@@ -27,6 +25,7 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/port.h"
 
 /* Adjusts a heap so as to move a hole at position i closer to the root,
    until a suitable position is found for element t. Then, copies t into that
@@ -98,7 +97,7 @@ void grpc_timer_heap_destroy(grpc_timer_heap* heap) { gpr_free(heap->timers); }
 bool grpc_timer_heap_add(grpc_timer_heap* heap, grpc_timer* timer) {
   if (heap->timer_count == heap->timer_capacity) {
     heap->timer_capacity =
-        GPR_MAX(heap->timer_capacity + 1, heap->timer_capacity * 3 / 2);
+        std::max(heap->timer_capacity + 1, heap->timer_capacity * 3 / 2);
     heap->timers = static_cast<grpc_timer**>(
         gpr_realloc(heap->timers, heap->timer_capacity * sizeof(grpc_timer*)));
   }

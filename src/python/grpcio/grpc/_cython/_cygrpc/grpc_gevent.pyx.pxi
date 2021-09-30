@@ -357,7 +357,7 @@ def _run_loop(timeout_ms):
     finally:
       g_event.clear()
 
-cdef grpc_error* run_loop(size_t timeout_ms) with gil:
+cdef grpc_error_handle run_loop(size_t timeout_ms) with gil:
   try:
     _run_loop(timeout_ms)
     return grpc_error_none()

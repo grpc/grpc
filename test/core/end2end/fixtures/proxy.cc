@@ -353,8 +353,7 @@ static void on_new_call(void* arg, int success) {
     proxy_call* pc = static_cast<proxy_call*>(gpr_malloc(sizeof(*pc)));
     memset(pc, 0, sizeof(*pc));
     pc->proxy = proxy;
-    GPR_SWAP(grpc_metadata_array, pc->c2p_initial_metadata,
-             proxy->new_call_metadata);
+    std::swap(pc->c2p_initial_metadata, proxy->new_call_metadata);
     pc->c2p = proxy->new_call;
     pc->p2s = grpc_channel_create_call(
         proxy->client, pc->c2p, GRPC_PROPAGATE_DEFAULTS, proxy->cq,

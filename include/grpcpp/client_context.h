@@ -34,6 +34,6 @@
 #ifndef GRPCPP_CLIENT_CONTEXT_H
 #define GRPCPP_CLIENT_CONTEXT_H
 
-#include <grpcpp/impl/codegen/client_context.h>
+#include <grpcpp/impl/codegen/client_context.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_CLIENT_CONTEXT_H

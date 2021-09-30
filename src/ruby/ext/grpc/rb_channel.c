@@ -17,24 +17,26 @@
  */
 
 #include <ruby/ruby.h>
+
+#include "rb_channel.h"
+
 #include <ruby/thread.h>
 
 #include "rb_byte_buffer.h"
-#include "rb_channel.h"
+#include "rb_call.h"
+#include "rb_channel_args.h"
+#include "rb_channel_credentials.h"
+#include "rb_completion_queue.h"
+#include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
+#include "rb_server.h"
+#include "rb_xds_channel_credentials.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include "rb_call.h"
-#include "rb_channel_args.h"
-#include "rb_channel_credentials.h"
-#include "rb_completion_queue.h"
-#include "rb_grpc.h"
-#include "rb_server.h"
-#include "rb_xds_channel_credentials.h"
 
 /* id_channel is the name of the hidden ivar that preserves a reference to the
  * channel on a call, so that calls are not GCed before their channel.  */

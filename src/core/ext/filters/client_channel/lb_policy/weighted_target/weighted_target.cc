@@ -387,12 +387,9 @@ void WeightedTargetLb::UpdateStateLocked() {
           absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
       break;
     default:
-      grpc_error_handle error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "weighted_target: all children report state TRANSIENT_FAILURE"),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-      status = grpc_error_to_absl_status(error);
-      picker = absl::make_unique<TransientFailurePicker>(error);
+      status = absl::UnavailableError(
+          "weighted_target: all children report state TRANSIENT_FAILURE");
+      picker = absl::make_unique<TransientFailurePicker>(status);
   }
   channel_control_helper()->UpdateState(connectivity_state, status,
                                         std::move(picker));
@@ -658,14 +655,8 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
         std::vector<grpc_error_handle> child_errors =
             ParseChildConfig(p.second, &child_config);
         if (!child_errors.empty()) {
-          // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
-          // string is not static in this case.
-          grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("field:targets key:", p.first).c_str());
-          for (grpc_error_handle child_error : child_errors) {
-            error = grpc_error_add_child(error, child_error);
-          }
-          error_list.push_back(error);
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+              absl::StrCat("field:targets key:", p.first), &child_errors));
         } else {
           target_map[p.first] = std::move(child_config);
         }

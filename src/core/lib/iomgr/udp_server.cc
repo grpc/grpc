@@ -31,8 +31,6 @@
 
 #ifdef GRPC_POSIX_SOCKET_UDP_SERVER
 
-#include "src/core/lib/iomgr/udp_server.h"
-
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -68,6 +66,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_factory_posix.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/udp_server.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
 /* A listener which implements basic features of Listening on a port for

@@ -16,16 +16,17 @@
  *
  */
 
+#include <memory>
+
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/server_builder.h>
-#include <gtest/gtest.h>
-
-#include <memory>
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"

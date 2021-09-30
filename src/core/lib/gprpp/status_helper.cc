@@ -19,9 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time_util.h"
-
-#include <grpc/support/log.h>
 
 #include "absl/strings/cord.h"
 #include "absl/strings/escaping.h"
@@ -29,10 +26,13 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/time/clock.h"
-
 #include "google/protobuf/any.upb.h"
 #include "google/rpc/status.upb.h"
 #include "upb/upb.hpp"
+
+#include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/time_util.h"
 
 namespace grpc_core {
 
@@ -131,8 +131,9 @@ void EncodeUInt32ToBytes(uint32_t v, char* buf) {
 }
 
 uint32_t DecodeUInt32FromBytes(const char* buf) {
-  return buf[0] | (uint32_t(buf[1]) << 8) | (uint32_t(buf[2]) << 16) |
-         (uint32_t(buf[3]) << 24);
+  const unsigned char* ubuf = reinterpret_cast<const unsigned char*>(buf);
+  return ubuf[0] | (uint32_t(ubuf[1]) << 8) | (uint32_t(ubuf[2]) << 16) |
+         (uint32_t(ubuf[3]) << 24);
 }
 
 std::vector<absl::Status> ParseChildren(absl::Cord children) {

@@ -19,6 +19,8 @@
 #include <memory>
 #include <vector>
 
+#include <gtest/gtest.h>
+
 #include "absl/memory/memory.h"
 
 #include <grpcpp/channel.h>
@@ -44,10 +46,9 @@
 
 #ifdef GRPC_POSIX_SOCKET
 #include <fcntl.h>
+
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #endif /* GRPC_POSIX_SOCKET */
-
-#include <gtest/gtest.h>
 
 namespace grpc {
 namespace testing {

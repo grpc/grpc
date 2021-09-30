@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from absl import flags
-import googleapiclient.discovery
+
+from framework.helpers import highlighter
 
 # GCP
 PROJECT = flags.DEFINE_string("project",
@@ -24,12 +25,6 @@ RESOURCE_PREFIX = flags.DEFINE_string(
     help=("(required) The prefix used to name GCP resources.\n"
           "Together with `resource_suffix` used to create unique "
           "resource names."))
-# TODO(sergiitk): remove after all migration to --resource_prefix completed.
-#   Known migration work: url map, staging flagfiles.
-NAMESPACE = flags.DEFINE_string(
-    "namespace",
-    default=None,
-    help="Deprecated. Use --resource_prefix instead.")
 RESOURCE_SUFFIX = flags.DEFINE_string(
     "resource_suffix",
     default=None,
@@ -41,6 +36,10 @@ RESOURCE_SUFFIX = flags.DEFINE_string(
 NETWORK = flags.DEFINE_string("network",
                               default="default",
                               help="GCP Network ID")
+COMPUTE_API_VERSION = flags.DEFINE_string(
+    "compute_api_version",
+    default='v1',
+    help="The version of the GCP Compute API, e.g., v1, v1alpha")
 # Mirrors --xds-server-uri argument of Traffic Director gRPC Bootstrap
 XDS_SERVER_URI = flags.DEFINE_string(
     "xds_server_uri",
@@ -114,8 +113,15 @@ CLIENT_PORT = flags.DEFINE_integer(
         "XdsStats, XdsUpdateClientConfigure, and ProtoReflection (optional).\n"
         "Doesn't have to be within --firewall_allowed_ports."))
 
+# Testing metadata
+TESTING_VERSION = flags.DEFINE_string(
+    "testing_version",
+    default="master",
+    help="The testing gRPC version branch name. Like master, v1.41.x, v1.37.x")
+
+flags.adopt_module_key_flags(highlighter)
+
 flags.mark_flags_as_required([
     "project",
-    # TODO(sergiitk): Make required when --namespace is removed.
-    # "resource_prefix",
+    "resource_prefix",
 ])

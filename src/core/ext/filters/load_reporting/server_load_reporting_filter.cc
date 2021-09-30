@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
+
 #include <string.h>
 
 #include <string>
@@ -31,7 +33,6 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
-#include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
@@ -199,8 +200,9 @@ void ServerLoadReportingCallData::StoreClientIpAndLrToken(const char* lr_token,
   if (lr_token_len != 0) {
     strncpy(cur_pos, lr_token, lr_token_len);
   }
-  GPR_ASSERT(cur_pos + lr_token_len - client_ip_and_lr_token_ ==
-             long(client_ip_and_lr_token_len_));
+  GPR_ASSERT(
+      static_cast<size_t>(cur_pos + lr_token_len - client_ip_and_lr_token_) ==
+      client_ip_and_lr_token_len_);
 }
 
 grpc_filtered_mdelem ServerLoadReportingCallData::RecvInitialMetadataFilter(
@@ -291,7 +293,9 @@ grpc_filtered_mdelem ServerLoadReportingCallData::SendTrailingMetadataFilter(
     }
     const double* cost_entry_ptr =
         reinterpret_cast<const double*>(GRPC_SLICE_START_PTR(value));
-    double cost_value = *cost_entry_ptr++;
+    double cost_value;
+    memcpy(&cost_value, cost_entry_ptr, sizeof(double));
+    cost_entry_ptr++;
     const char* cost_name = reinterpret_cast<const char*>(cost_entry_ptr);
     const size_t cost_name_len = cost_entry_size - sizeof(double);
     opencensus::stats::Record(
@@ -339,8 +343,8 @@ bool MaybeAddServerLoadReportingFilter(const grpc_channel_args& args) {
 // time if we build with the filter target.
 struct ServerLoadReportingFilterStaticRegistrar {
   ServerLoadReportingFilterStaticRegistrar() {
-    static grpc_core::Atomic<bool> registered{false};
-    if (registered.Load(grpc_core::MemoryOrder::ACQUIRE)) return;
+    static std::atomic<bool> registered{false};
+    if (registered.load(std::memory_order_acquire)) return;
     RegisterChannelFilter<ServerLoadReportingChannelData,
                           ServerLoadReportingCallData>(
         "server_load_reporting", GRPC_SERVER_CHANNEL, INT_MAX,
@@ -353,7 +357,7 @@ struct ServerLoadReportingFilterStaticRegistrar {
     ::grpc::load_reporter::MeasureEndBytesReceived();
     ::grpc::load_reporter::MeasureEndLatencyMs();
     ::grpc::load_reporter::MeasureOtherCallMetric();
-    registered.Store(true, grpc_core::MemoryOrder::RELEASE);
+    registered.store(true, std::memory_order_release);
   }
 } server_load_reporting_filter_static_registrar;
 

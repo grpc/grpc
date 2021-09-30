@@ -709,7 +709,6 @@ static void on_openid_config_retrieved(void* user_data,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
-  grpc_resource_quota_unref_internal(resource_quota);
   gpr_free(req.host);
   return;
 
@@ -834,7 +833,6 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
       &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
       &ctx->responses[rsp_idx]);
-  grpc_resource_quota_unref_internal(resource_quota);
   gpr_free(req.host);
   gpr_free(req.http.path);
   return;

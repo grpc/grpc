@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <string.h>
 
 #include <string>
@@ -37,6 +35,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -84,8 +83,13 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
   }
   gpr_setenv("http_proxy", proxy_uri.c_str());
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+<<<<<<< HEAD
   f->client = grpc_channel_create(creds, ffd->server_addr.c_str(), client_args,
                                   nullptr);
+=======
+  f->client = grpc_secure_channel_create(creds, ffd->server_addr.c_str(),
+                                         client_args, nullptr);
+>>>>>>> upstream/master
   grpc_channel_credentials_release(creds);
   GPR_ASSERT(f->client);
 }

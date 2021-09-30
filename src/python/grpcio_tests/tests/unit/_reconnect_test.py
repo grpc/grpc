@@ -13,16 +13,16 @@
 # limitations under the License.
 """Tests that a channel will reconnect if a connection is dropped"""
 
+import logging
 import socket
 import time
-import logging
 import unittest
 
 import grpc
 from grpc.framework.foundation import logging_pool
 
-from tests.unit.framework.common import test_constants
 from tests.unit.framework.common import bound_socket
+from tests.unit.framework.common import test_constants
 
 _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x00\x00\x01'

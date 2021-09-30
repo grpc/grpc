@@ -14,14 +14,16 @@
 
 # This is a list of llvm flags to be used when being built with use_strict_warning=1
 GRPC_LLVM_WARNING_FLAGS = [
-    # Enable all & extra waninrgs
+    # Enable all & extra warnings
     "-Wall",
     "-Wextra",
+    # Avoid some known traps
+    "-Wimplicit-fallthrough",
     # Consider warnings as errors
     "-Werror",
     # Ignore unknown warning flags
     "-Wno-unknown-warning-option",
-    # A list of flags coming from internal build system
+    # A list of enabled flags coming from internal build system
     "-Wc++20-extensions",
     "-Wctad-maybe-unsupported",
     "-Wdeprecated-increment-bool",
@@ -41,6 +43,8 @@ GRPC_LLVM_WARNING_FLAGS = [
     "-Wthread-safety-beta",
     "-Wunused-comparison",
     "-Wvla",
+    # A list of disabled flags coming from internal build system
+    "-Wno-string-concatenation",
     # Exceptions but will be removed
     "-Wno-deprecated-declarations",
     "-Wno-unused-function",

@@ -20,6 +20,7 @@
  * working */
 
 #include <benchmark/benchmark.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/completion_queue.h>

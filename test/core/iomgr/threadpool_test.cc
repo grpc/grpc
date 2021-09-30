@@ -56,13 +56,13 @@ class SimpleFunctorForAdd : public grpc_completion_queue_functor {
   ~SimpleFunctorForAdd() {}
   static void Run(struct grpc_completion_queue_functor* cb, int /*ok*/) {
     auto* callback = static_cast<SimpleFunctorForAdd*>(cb);
-    callback->count_.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
+    callback->count_.fetch_add(1, std::memory_order_relaxed);
   }
 
-  int count() { return count_.Load(grpc_core::MemoryOrder::RELAXED); }
+  int count() { return count_.load(std::memory_order_relaxed); }
 
  private:
-  grpc_core::Atomic<int> count_{0};
+  std::atomic<int> count_{0};
 };
 
 static void test_add(void) {

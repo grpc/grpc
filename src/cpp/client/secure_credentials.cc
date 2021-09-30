@@ -18,6 +18,8 @@
 
 #include "src/cpp/client/secure_credentials.h"
 
+#include "absl/strings/str_join.h"
+
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -27,8 +29,6 @@
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/channel_arguments.h>
-
-#include "absl/strings/str_join.h"
 
 // TODO(yashykt): We shouldn't be including "src/core" headers.
 #include "src/core/lib/gpr/env.h"

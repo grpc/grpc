@@ -16,8 +16,6 @@
 //
 //
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <string.h>
 
 #include <grpc/grpc_security.h>
@@ -26,6 +24,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

@@ -13,13 +13,15 @@
 # limitations under the License.
 """Channelz debug service implementation in gRPC Python."""
 
+from google.protobuf import json_format
 from grpc._cython import cygrpc
 
-from google.protobuf import json_format
 try:
-    from envoy.service.status.v3 import csds_pb2, csds_pb2_grpc
+    from envoy.service.status.v3 import csds_pb2
+    from envoy.service.status.v3 import csds_pb2_grpc
 except ImportError:
-    from src.proto.grpc.testing.xds.v3 import csds_pb2, csds_pb2_grpc
+    from src.proto.grpc.testing.xds.v3 import csds_pb2
+    from src.proto.grpc.testing.xds.v3 import csds_pb2_grpc
 
 
 class ClientStatusDiscoveryServiceServicer(

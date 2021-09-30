@@ -16,15 +16,10 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/support/channel_arguments.h>
 #include <inttypes.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -38,6 +33,14 @@
 #include <thread>
 
 #include "absl/flags/flag.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/support/channel_arguments.h>
+
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_mutator.h"

@@ -18,12 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/slice_buffer.h>
 #include "src/core/lib/security/security_connector/load_system_roots_linux.h"
 
-#if defined(GPR_LINUX) || defined(GPR_ANDROID)
+#include <grpc/slice_buffer.h>
 
-#include "src/core/lib/security/security_connector/load_system_roots.h"
+#if defined(GPR_LINUX) || defined(GPR_ANDROID)
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -44,6 +43,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/security/security_connector/load_system_roots.h"
 
 GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_system_ssl_roots_dir, "",
                                 "Custom directory to SSL Roots");

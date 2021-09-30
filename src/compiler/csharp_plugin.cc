@@ -53,8 +53,7 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         generate_server = false;
       } else if (options[i].first == "internal_access") {
         internal_access = true;
-      }
-      if (options[i].first == "file_suffix") {
+      } else if (options[i].first == "file_suffix") {
         file_suffix = options[i].second;
       } else {
         *error = "Unknown generator option: " + options[i].first;

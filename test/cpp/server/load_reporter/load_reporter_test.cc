@@ -18,23 +18,24 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include "src/cpp/server/load_reporter/load_reporter.h"
+
 #include <set>
 #include <vector>
 
 #include <gmock/gmock.h>
-#include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
 #include "absl/memory/memory.h"
+#include "opencensus/stats/testing/test_utils.h"
+
+#include <grpc/grpc.h>
 
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/cpp/server/load_reporter/constants.h"
-#include "src/cpp/server/load_reporter/load_reporter.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-#include "opencensus/stats/testing/test_utils.h"
 
 namespace grpc {
 namespace testing {
@@ -175,7 +176,7 @@ class LbFeedbackTest : public LoadReporterTest {
     ASSERT_THAT(static_cast<double>(lb_feedback.errors_per_second()),
                 DoubleNear(expected_eps, expected_eps * 0.3));
     gpr_log(GPR_INFO,
-            "Verified LB feedback matches the samples of index [%lu, %lu).",
+            "Verified LB feedback matches the samples of index [%zu, %zu).",
             start, start + count);
   }
 

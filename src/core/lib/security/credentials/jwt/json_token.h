@@ -21,8 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/slice.h>
 #include <openssl/rsa.h>
+
+#include <grpc/slice.h>
 
 #include "src/core/lib/json/json.h"
 

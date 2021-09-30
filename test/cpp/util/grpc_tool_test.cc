@@ -18,6 +18,14 @@
 
 #include "test/cpp/util/grpc_tool.h"
 
+#include <chrono>
+#include <sstream>
+
+#include <gtest/gtest.h>
+
+#include "absl/flags/declare.h"
+#include "absl/flags/flag.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/channel.h>
@@ -27,13 +35,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
 
-#include <chrono>
-#include <sstream>
-
-#include "absl/flags/declare.h"
-#include "absl/flags/flag.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -42,6 +44,7 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/cli_credentials.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "test/cpp/util/test_config.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
@@ -1345,6 +1348,6 @@ TEST_F(GrpcToolTest, ConfiguringDefaultServiceConfig) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE("threadsafe");
   return RUN_ALL_TESTS();
 }

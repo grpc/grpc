@@ -20,25 +20,31 @@
 
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 
-#include <grpc/grpc.h>
-
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/connector.h"
+<<<<<<< HEAD
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+=======
+>>>>>>> upstream/master
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
+<<<<<<< HEAD
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/gprpp/memory.h"
+=======
+#include "src/core/lib/config/core_configuration.h"
+>>>>>>> upstream/master
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -167,13 +173,16 @@ Chttp2Connector::Chttp2Connector() {
 }
 
 Chttp2Connector::~Chttp2Connector() {
-  if (endpoint_ != nullptr) grpc_endpoint_destroy(endpoint_);
+  if (resource_quota_ != nullptr) {
+    grpc_resource_quota_unref_internal(resource_quota_);
+  }
+  if (endpoint_ != nullptr) {
+    grpc_endpoint_destroy(endpoint_);
+  }
 }
 
 void Chttp2Connector::Connect(const Args& args, Result* result,
                               grpc_closure* notify) {
-  grpc_resolved_address addr;
-  Subchannel::GetAddressFromSubchannelAddressArg(args.channel_args, &addr);
   grpc_endpoint** ep;
   {
     MutexLock lock(&mu_);
@@ -185,6 +194,11 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     connecting_ = true;
     GPR_ASSERT(endpoint_ == nullptr);
     ep = &endpoint_;
+    if (resource_quota_ != nullptr) {
+      grpc_resource_quota_unref_internal(resource_quota_);
+    }
+    resource_quota_ =
+        grpc_resource_quota_from_channel_args(args.channel_args, true);
   }
   // In some implementations, the closure can be flushed before
   // grpc_tcp_client_connect() returns, and since the closure requires access
@@ -193,8 +207,12 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   // grpc_tcp_client_connect() will fill endpoint_ with proper contents, and we
   // make sure that we still exist at that point by taking a ref.
   Ref().release();  // Ref held by callback.
-  grpc_tcp_client_connect(&connected_, ep, args.interested_parties,
-                          args.channel_args, &addr, args.deadline);
+  grpc_tcp_client_connect(
+      &connected_, ep,
+      grpc_slice_allocator_create(resource_quota_,
+                                  grpc_sockaddr_to_string(args.address, false),
+                                  args.channel_args),
+      args.interested_parties, args.channel_args, args.address, args.deadline);
 }
 
 void Chttp2Connector::Shutdown(grpc_error_handle error) {
@@ -242,9 +260,9 @@ void Chttp2Connector::Connected(void* arg, grpc_error_handle error) {
 
 void Chttp2Connector::StartHandshakeLocked() {
   handshake_mgr_ = MakeRefCounted<HandshakeManager>();
-  HandshakerRegistry::AddHandshakers(HANDSHAKER_CLIENT, args_.channel_args,
-                                     args_.interested_parties,
-                                     handshake_mgr_.get());
+  CoreConfiguration::Get().handshaker_registry().AddHandshakers(
+      HANDSHAKER_CLIENT, args_.channel_args, args_.interested_parties,
+      handshake_mgr_.get());
   grpc_endpoint_add_to_pollset_set(endpoint_, args_.interested_parties);
   handshake_mgr_->DoHandshake(endpoint_, args_.channel_args, args_.deadline,
                               nullptr /* acceptor */, OnHandshakeDone, this);
@@ -287,8 +305,12 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       self->result_->Reset();
       NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, error);
     } else if (args->endpoint != nullptr) {
-      self->result_->transport =
-          grpc_create_chttp2_transport(args->args, args->endpoint, true);
+      self->result_->transport = grpc_create_chttp2_transport(
+          args->args, args->endpoint, true,
+          grpc_resource_user_create(
+              self->resource_quota_,
+              absl::StrCat(grpc_endpoint_get_peer(args->endpoint),
+                           ":connector_transport")));
       self->result_->socket_node =
           grpc_chttp2_transport_get_socket_node(self->result_->transport);
       self->result_->channel_args = args->args;

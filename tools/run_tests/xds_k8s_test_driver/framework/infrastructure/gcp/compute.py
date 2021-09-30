@@ -40,8 +40,11 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
     class ZonalGcpResource(GcpResource):
         zone: str
 
-    def __init__(self, api_manager: gcp.api.GcpApiManager, project: str):
-        super().__init__(api_manager.compute('v1'), project)
+    def __init__(self,
+                 api_manager: gcp.api.GcpApiManager,
+                 project: str,
+                 version: str = 'v1'):
+        super().__init__(api_manager.compute(version), project)
 
     class HealthCheckProtocol(enum.Enum):
         TCP = enum.auto()
@@ -112,18 +115,31 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
             self,
             name: str,
             health_check: GcpResource,
-            protocol: Optional[BackendServiceProtocol] = None) -> GcpResource:
+            affinity_header: str = None,
+            protocol: Optional[BackendServiceProtocol] = None,
+            subset_size: Optional[int] = None) -> GcpResource:
         if not isinstance(protocol, self.BackendServiceProtocol):
             raise TypeError(f'Unexpected Backend Service protocol: {protocol}')
-        return self._insert_resource(
-            self.api.backendServices(),
-            {
-                'name': name,
-                'loadBalancingScheme':
-                    'INTERNAL_SELF_MANAGED',  # Traffic Director
-                'healthChecks': [health_check.url],
-                'protocol': protocol.name,
-            })
+        body = {
+            'name': name,
+            'loadBalancingScheme': 'INTERNAL_SELF_MANAGED',  # Traffic Director
+            'healthChecks': [health_check.url],
+            'protocol': protocol.name,
+        }
+        # If affinity header is specified, config the backend service to support
+        # affinity, and set affinity header to the one given.
+        if affinity_header:
+            body['sessionAffinity'] = 'HEADER_FIELD'
+            body['localityLbPolicy'] = 'RING_HASH'
+            body['consistentHash'] = {
+                'httpHeaderName': affinity_header,
+            }
+        if subset_size:
+            body['subsetting'] = {
+                'policy': 'CONSISTENT_HASH_SUBSETTING',
+                'subsetSize': subset_size
+            }
+        return self._insert_resource(self.api.backendServices(), body)
 
     def get_backend_service_traffic_director(self, name: str) -> GcpResource:
         return self._get_resource(self.api.backendServices(),
@@ -135,11 +151,17 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                              body=body,
                              **kwargs)
 
-    def backend_service_add_backends(self, backend_service, backends):
+    def backend_service_patch_backends(
+            self,
+            backend_service,
+            backends,
+            max_rate_per_endpoint: Optional[int] = None):
+        if max_rate_per_endpoint is None:
+            max_rate_per_endpoint = 5
         backend_list = [{
             'group': backend.url,
             'balancingMode': 'RATE',
-            'maxRatePerEndpoint': 5
+            'maxRatePerEndpoint': max_rate_per_endpoint
         } for backend in backends]
 
         self._patch_resource(collection=self.api.backendServices(),
@@ -183,6 +205,12 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
 
     def create_url_map_with_content(self, url_map_body: Any) -> GcpResource:
         return self._insert_resource(self.api.urlMaps(), url_map_body)
+
+    def patch_url_map(self, url_map: GcpResource, body, **kwargs):
+        self._patch_resource(collection=self.api.urlMaps(),
+                             urlMap=url_map.name,
+                             body=body,
+                             **kwargs)
 
     def delete_url_map(self, name):
         self._delete_resource(self.api.urlMaps(), 'urlMap', name)

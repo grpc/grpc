@@ -19,6 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_PORT_PLATFORM_H
 #define GRPC_IMPL_CODEGEN_PORT_PLATFORM_H
 
+// IWYU pragma: private, include <grpc/support/port_platform.h>
+
 /*
  * Define GPR_BACKWARDS_COMPATIBILITY_MODE to try harder to be ABI
  * compatible with older platforms (currently only on Linux)
@@ -121,10 +123,14 @@
 #else
 #define GPR_WINDOWS_ATOMIC 1
 #endif
-#define GPR_STDCPP_TLS 1
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
+#ifdef __ANDROID_API__
+#if (__ANDROID_API__) >= 29
+#define GPR_SUPPORT_BINDER_TRANSPORT 1
+#endif
+#endif
 // TODO(apolcyn): re-evaluate support for c-ares
 // on android after upgrading our c-ares dependency.
 // See https://github.com/grpc/grpc/issues/18038.
@@ -136,7 +142,6 @@
 #endif /* _LP64 */
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_SYNC 1
-#define GPR_STDCPP_TLS 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
 #define GPR_POSIX_STAT 1
@@ -162,7 +167,6 @@
 #include <features.h>
 #define GPR_CPU_LINUX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_STDCPP_TLS 1
 #define GPR_LINUX 1
 #define GPR_LINUX_LOG
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
@@ -190,7 +194,6 @@
 #elif defined(__ASYLO__)
 #define GPR_ARCH_64 1
 #define GPR_CPU_POSIX 1
-#define GPR_GCC_TLS 1
 #define GPR_PLATFORM_STRING "asylo"
 #define GPR_GCC_SYNC 1
 #define GPR_POSIX_SYNC 1
@@ -224,12 +227,7 @@
 #define GPR_CPU_POSIX 1
 #define GPR_POSIX_CRASH_HANDLER 1
 #endif
-#ifdef __has_feature
-#if __has_feature(cxx_thread_local)
-#define GPR_STDCPP_TLS 1
-#endif
-#endif
-#ifndef GPR_STDCPP_TLS
+#if !(defined(__has_feature) && __has_feature(cxx_thread_local))
 #define GPR_PTHREAD_TLS 1
 #endif
 #define GPR_APPLE 1
@@ -260,7 +258,6 @@
 #define GPR_FREEBSD 1
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
@@ -285,7 +282,6 @@
 #define GPR_OPENBSD 1
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
@@ -307,7 +303,6 @@
 #define GPR_SOLARIS 1
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
@@ -331,7 +326,6 @@
 #define GPR_AIX 1
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
@@ -361,7 +355,6 @@
 #define GPR_NACL 1
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
@@ -388,7 +381,6 @@
 #define GPR_MUSL_LIBC_COMPAT 1
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_PTHREAD_TLS 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_ENV 1
@@ -505,12 +497,6 @@ typedef unsigned __int64 uint64_t;
 #error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WINDOWS, GPR_CPU_IPHONE, GPR_CPU_CUSTOM
 #endif
 
-#if defined(GPR_MSVC_TLS) + defined(GPR_GCC_TLS) + defined(GPR_PTHREAD_TLS) + \
-        defined(GPR_STDCPP_TLS) + defined(GPR_CUSTOM_TLS) !=                  \
-    1
-#error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, GPR_STDCPP_TLS, GPR_CUSTOM_TLS
-#endif
-
 /* maximum alignment needed for any type on this platform, rounded up to a
    power of two */
 #define GPR_MAX_ALIGNMENT 16
@@ -573,6 +559,14 @@ typedef unsigned __int64 uint64_t;
 #define CENSUSAPI GRPCAPI
 #endif
 
+#ifndef GPR_HAS_CPP_ATTRIBUTE
+#ifdef __has_cpp_attribute
+#define GPR_HAS_CPP_ATTRIBUTE(a) __has_cpp_attribute(a)
+#else
+#define GPR_HAS_CPP_ATTRIBUTE(a) 0
+#endif
+#endif /* GPR_HAS_CPP_ATTRIBUTE */
+
 #ifndef GPR_HAS_ATTRIBUTE
 #ifdef __has_attribute
 #define GPR_HAS_ATTRIBUTE(a) __has_attribute(a)
@@ -597,6 +591,22 @@ typedef unsigned __int64 uint64_t;
 #define GPR_ATTRIBUTE_NOINLINE
 #endif
 #endif /* GPR_ATTRIBUTE_NOINLINE */
+
+#ifndef GPR_NO_UNIQUE_ADDRESS
+#if GPR_HAS_CPP_ATTRIBUTE(no_unique_address)
+#define GPR_NO_UNIQUE_ADDRESS [[no_unique_address]]
+#else
+#define GPR_NO_UNIQUE_ADDRESS
+#endif
+#endif /* GPR_NO_UNIQUE_ADDRESS */
+
+#ifndef GRPC_DEPRECATED
+#if GPR_HAS_CPP_ATTRIBUTE(deprecated)
+#define GRPC_DEPRECATED(reason) [[deprecated(reason)]]
+#else
+#define GRPC_DEPRECATED(reason)
+#endif
+#endif /* GRPC_DEPRECATED */
 
 #ifndef GPR_ATTRIBUTE_WEAK
 /* Attribute weak is broken on LLVM/windows:
@@ -687,5 +697,16 @@ typedef unsigned __int64 uint64_t;
 #endif /* GRPC_USE_EVENT_ENGINE */
 
 #define GRPC_CALLBACK_API_NONEXPERIMENTAL
+
+/* clang 11 with msan miscompiles destruction of [[no_unique_address]] members
+ * of zero size - for a repro see:
+ * test/core/compiler_bugs/miscompile_with_no_unique_address_test.cc
+ */
+#ifdef __clang__
+#if __clang__ && __clang_major__ <= 11 && __has_feature(memory_sanitizer)
+#undef GPR_NO_UNIQUE_ADDRESS
+#define GPR_NO_UNIQUE_ADDRESS
+#endif
+#endif
 
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */

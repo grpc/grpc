@@ -21,7 +21,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/security/credentials/credentials.h"
-
 #include "src/core/lib/security/security_connector/ssl/ssl_security_connector.h"
 
 class grpc_ssl_credentials : public grpc_channel_credentials {
