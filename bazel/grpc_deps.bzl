@@ -260,7 +260,7 @@ def grpc_deps():
     if "com_googlesource_code_re2" not in native.existing_rules():
         http_archive(
             name = "com_googlesource_code_re2",
-            sha256 = "2d3a852e4fe540f7918f501af2ec5af8daeb3eb17a6a2c644f3e6fde552fd557",
+            sha256 = "319a58a58d8af295db97dfeecc4e250179c5966beaa2d842a82f0a013b6a239b",
             # Release 2021-09-01
             strip_prefix = "re2-8e08f47b11b413302749c0d8b17a1c94777495d5",
             urls = [
