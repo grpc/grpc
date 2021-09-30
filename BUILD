@@ -23,7 +23,7 @@ load(
 )
 load("@bazel_skylib//lib:selects.bzl", "selects")
 
-licenses(["notice"])
+licenses(["reciprocal"])
 
 package(
     default_visibility = ["//visibility:public"],
@@ -747,6 +747,16 @@ grpc_cc_library(
     name = "gpr_tls",
     hdrs = ["src/core/lib/gpr/tls.h"],
     deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "chunked_vector",
+    hdrs = ["src/core/lib/gprpp/chunked_vector.h"],
+    external_deps = ["absl/utility"],
+    deps = [
+        # TODO(ctiller): weaken this to just arena when that splits into its own target
+        "gpr_base",
+    ],
 )
 
 grpc_cc_library(
