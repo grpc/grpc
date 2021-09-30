@@ -88,6 +88,7 @@ class Fuzzer {
           auto min = action.create_allocation().min();
           auto max = action.create_allocation().max();
           if (min > max) break;
+          if (max > MemoryRequest::max_allowed_size()) break;
           MemoryRequest req(min, max);
           WithAllocator(
               action.allocator(), [this, action, req](MemoryAllocator* a) {

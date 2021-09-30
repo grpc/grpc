@@ -122,6 +122,10 @@ void MemoryCounter::Shutdown() {
 }
 
 size_t MemoryCounter::Reserve(MemoryRequest request) {
+  // Validate request - performed here so we don't bloat the generated code with
+  // inlined asserts.
+  GPR_ASSERT(request.min() <= request.max());
+  GPR_ASSERT(request.max() <= MemoryRequest::max_allowed_size());
   while (true) {
     // Attempt to reserve memory from our pool.
     auto reservation = TryReserve(request);

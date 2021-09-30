@@ -41,16 +41,22 @@ class SliceBuffer {
   grpc_slice_buffer* slice_buffer_;
 };
 
-// Reservation request - how much memory do we want to allocate?
+/// Reservation request - how much memory do we want to allocate?
 class MemoryRequest {
  public:
-  // Request a fixed amount of memory.
+  /// Request a fixed amount of memory.
   // NOLINTNEXTLINE(google-explicit-constructor)
   MemoryRequest(size_t n) : min_(n), max_(n) {}
-  // Request a range of memory.
-  MemoryRequest(size_t min, size_t max) : min_(std::min(min, max)), max_(max) {}
+  /// Request a range of memory.
+  /// Requires: \a min <= \a max.
+  /// Requires: \a max <= max_size()
+  MemoryRequest(size_t min, size_t max) : min_(min), max_(max) {}
 
-  // Increase the size by amount
+  /// Maximum allowable request size - hard coded to 1GB.
+  static constexpr size_t max_allowed_size() { return 1024 * 1024 * 1024; }
+
+  /// Increase the size by \a amount.
+  /// Undefined behavior if min() + amount or max() + amount overflows.
   MemoryRequest Increase(size_t amount) const {
     return MemoryRequest(min_ + amount, max_ + amount);
   }
@@ -63,6 +69,8 @@ class MemoryRequest {
   size_t max_;
 };
 
+/// Underlying memory allocation interface.
+/// Wrapped by MemoryAllocator to make it easier to use.
 class BasicMemoryAllocator
     : public std::enable_shared_from_this<BasicMemoryAllocator> {
  public:
@@ -72,24 +80,30 @@ class BasicMemoryAllocator
   BasicMemoryAllocator(const BasicMemoryAllocator&) = delete;
   BasicMemoryAllocator& operator=(const BasicMemoryAllocator&) = delete;
 
-  // Reserve bytes from the quota.
-  // If we enter overcommit, reclamation will begin concurrently.
-  // Returns the number of bytes reserved.
+  /// Reserve bytes from the quota.
+  /// If we enter overcommit, reclamation will begin concurrently.
+  /// Returns the number of bytes reserved.
+  /// If MemoryRequest is invalid, this function will abort.
+  /// If MemoryRequest is valid, this function is infallible, and will always
+  /// succeed at reserving the some number of bytes between request.min() and
+  /// request.max() inclusively.
   virtual size_t Reserve(MemoryRequest request) = 0;
 
-  // Release some bytes that were previously reserved.
+  /// Release some bytes that were previously reserved.
+  /// If more bytes are released than were reserved, we will have undefined
+  /// behavior.
   virtual void Release(size_t n) = 0;
 
-  // Shutdown this allocator.
-  // Further usage of Reserve() is undefined behavior.
+  /// Shutdown this allocator.
+  /// Further usage of Reserve() is undefined behavior.
   virtual void Shutdown() = 0;
 };
 
 class MemoryAllocator {
  public:
-  // Construct a MemoryAllocator given a BasicMemoryAllocator implementation.
-  // The constructed MemoryAllocator will call BasicMemoryAllocator::Shutdown()
-  // upon destruction.
+  /// Construct a MemoryAllocator given a BasicMemoryAllocator implementation.
+  /// The constructed MemoryAllocator will call BasicMemoryAllocator::Shutdown()
+  /// upon destruction.
   explicit MemoryAllocator(std::shared_ptr<BasicMemoryAllocator> allocator)
       : allocator_(allocator) {}
   ~MemoryAllocator() {
@@ -102,12 +116,12 @@ class MemoryAllocator {
   MemoryAllocator(MemoryAllocator&&) = default;
   MemoryAllocator& operator=(MemoryAllocator&&) = default;
 
-  // Reserve bytes from the quota.
-  // If we enter overcommit, reclamation will begin concurrently.
-  // Returns the number of bytes reserved.
+  /// Reserve bytes from the quota.
+  /// If we enter overcommit, reclamation will begin concurrently.
+  /// Returns the number of bytes reserved.
   size_t Reserve(MemoryRequest request) { return allocator_->Reserve(request); }
 
-  // Release some bytes that were previously reserved.
+  /// Release some bytes that were previously reserved.
   void Release(size_t n) { return allocator_->Release(n); }
 
   //
@@ -115,7 +129,7 @@ class MemoryAllocator {
   // Reserve/Release.
   //
 
-  // An automatic releasing reservation of memory.
+  /// An automatic releasing reservation of memory.
   class Reservation {
    public:
     Reservation() = default;
@@ -132,20 +146,20 @@ class MemoryAllocator {
     Reservation(std::shared_ptr<BasicMemoryAllocator> allocator, size_t size)
         : allocator_(allocator), size_(size) {}
 
-    std::shared_ptr<BasicMemoryAllocator> allocator_ = nullptr;
+    std::shared_ptr<BasicMemoryAllocator> allocator_;
     size_t size_ = 0;
   };
 
-  // Reserve bytes from the quota and automatically release them when
-  // Reservation is destroyed.
+  /// Reserve bytes from the quota and automatically release them when
+  /// Reservation is destroyed.
   Reservation MakeReservation(MemoryRequest request) {
     return Reservation(allocator_, Reserve(request));
   }
 
-  // Allocate a new object of type T, with constructor arguments.
-  // The returned type is wrapped, and upon destruction the reserved memory
-  // will be released to the allocator automatically. As such, T must have a
-  // virtual destructor so we can insert the necessary hook.
+  /// Allocate a new object of type T, with constructor arguments.
+  /// The returned type is wrapped, and upon destruction the reserved memory
+  /// will be released to the allocator automatically. As such, T must have a
+  /// virtual destructor so we can insert the necessary hook.
   template <typename T, typename... Args>
   typename std::enable_if<std::has_virtual_destructor<T>::value, T*>::type New(
       Args&&... args) {
@@ -165,26 +179,26 @@ class MemoryAllocator {
     return new Wrapper(allocator_, std::forward<Args>(args)...);
   }
 
-  // Construct a unique ptr immediately.
+  /// Construct a unique_ptr immediately.
   template <typename T, typename... Args>
   std::unique_ptr<T> MakeUnique(Args&&... args) {
     return std::unique_ptr<T>(New<T>(std::forward<Args>(args)...));
   }
 
-  // Allocate a slice, using MemoryRequest to size the number of returned bytes.
-  // For a variable length request, check the returned slice length to verify
-  // how much memory was allocated.
-  // Takes care of reserving memory for any relevant control structures also.
+  /// Allocate a slice, using MemoryRequest to size the number of returned
+  /// bytes. For a variable length request, check the returned slice length to
+  /// verify how much memory was allocated. Takes care of reserving memory for
+  /// any relevant control structures also.
   grpc_slice MakeSlice(MemoryRequest request);
 
-  // A C++ allocator for containers of T.
+  /// A C++ allocator for containers of T.
   template <typename T>
   class Container {
    public:
     using value_type = T;
 
-    // Construct the allocator: \a underlying_allocator is borrowed, and must
-    // outlive this object.
+    /// Construct the allocator: \a underlying_allocator is borrowed, and must
+    /// outlive this object.
     explicit Container(MemoryAllocator* underlying_allocator)
         : underlying_allocator_(underlying_allocator) {}
     template <typename U>
