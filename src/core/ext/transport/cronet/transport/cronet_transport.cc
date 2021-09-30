@@ -34,7 +34,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/cronet/transport/cronet_status.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
@@ -138,11 +137,11 @@ struct read_state {
   grpc_slice_buffer read_slice_buffer;
 
   /* vars for trailing metadata */
-  grpc_chttp2_incoming_metadata_buffer trailing_metadata;
+  grpc_metadata_batch trailing_metadata;
   bool trailing_metadata_valid = false;
 
   /* vars for initial metadata */
-  grpc_chttp2_incoming_metadata_buffer initial_metadata;
+  grpc_metadata_batch initial_metadata;
 };
 
 struct write_state {
@@ -405,7 +404,7 @@ static void execute_from_storage(stream_obj* s) {
 
 static void convert_cronet_array_to_metadata(
     const bidirectional_stream_header_array* header_array,
-    grpc_chttp2_incoming_metadata_buffer* mds) {
+    grpc_metadata_batch* mds) {
   for (size_t i = 0; i < header_array->count; i++) {
     CRONET_LOG(GPR_DEBUG, "header key=%s, value=%s",
                header_array->headers[i].key, header_array->headers[i].value);
@@ -421,8 +420,7 @@ static void convert_cronet_array_to_metadata(
           grpc_slice_from_static_string(header_array->headers[i].value));
     }
     GRPC_LOG_IF_ERROR("convert_cronet_array_to_metadata",
-                      grpc_chttp2_incoming_metadata_buffer_add(
-                          mds, grpc_mdelem_from_slices(key, value)));
+                      mds->Append(grpc_mdelem_from_slices(key, value)));
   }
 }
 
@@ -1152,9 +1150,8 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
           stream_op->payload->recv_initial_metadata.recv_initial_metadata_ready,
           GRPC_ERROR_NONE);
     } else {
-      grpc_chttp2_incoming_metadata_buffer_publish(
-          &oas->s->state.rs.initial_metadata,
-          stream_op->payload->recv_initial_metadata.recv_initial_metadata);
+      *stream_op->payload->recv_initial_metadata.recv_initial_metadata =
+          std::move(oas->s->state.rs.initial_metadata);
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
           stream_op->payload->recv_initial_metadata.recv_initial_metadata_ready,
@@ -1308,9 +1305,8 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       error =
           make_error_with_desc(grpc_error_code, stream_state->net_error, desc);
     } else if (oas->s->state.rs.trailing_metadata_valid) {
-      grpc_chttp2_incoming_metadata_buffer_publish(
-          &oas->s->state.rs.trailing_metadata,
-          stream_op->payload->recv_trailing_metadata.recv_trailing_metadata);
+      *stream_op->payload->recv_trailing_metadata.recv_trailing_metadata =
+          std::move(oas->s->state.rs.trailing_metadata);
       stream_state->rs.trailing_metadata_valid = false;
     }
     grpc_core::ExecCtx::Run(
