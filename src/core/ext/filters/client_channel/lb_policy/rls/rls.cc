@@ -53,7 +53,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
-#include "src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h"
+#include "src/proto/grpc/lookup/v1/rls.upb.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"
