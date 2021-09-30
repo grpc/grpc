@@ -391,8 +391,8 @@ class RlsLb : public LoadBalancingPolicy {
       OrphanablePtr<BackoffTimer> backoff_timer_;
 
       // RLS response states
-      std::vector<RefCountedPtr<ChildPolicyWrapper>>
-      child_policy_wrappers_ ABSL_GUARDED_BY(&RlsLb::mu_);
+      std::vector<RefCountedPtr<ChildPolicyWrapper>> child_policy_wrappers_
+          ABSL_GUARDED_BY(&RlsLb::mu_);
       std::string header_data_ ABSL_GUARDED_BY(&RlsLb::mu_);
       grpc_millis data_expiration_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
           GRPC_MILLIS_INF_PAST;
@@ -447,8 +447,7 @@ class RlsLb : public LoadBalancingPolicy {
     int64_t size_ ABSL_GUARDED_BY(&RlsLb::mu_) = 0;
 
     std::list<RequestKey> lru_list_ ABSL_GUARDED_BY(&RlsLb::mu_);
-    std::unordered_map<RequestKey, OrphanablePtr<Entry>,
-                       absl::Hash<RequestKey>>
+    std::unordered_map<RequestKey, OrphanablePtr<Entry>, absl::Hash<RequestKey>>
         map_ ABSL_GUARDED_BY(&RlsLb::mu_);
     grpc_timer cleanup_timer_ ABSL_GUARDED_BY(&RlsLb::mu_);
     grpc_closure timer_callback_ ABSL_GUARDED_BY(&RlsLb::mu_);
@@ -966,7 +965,7 @@ RlsLb::Cache::Entry::Entry(RefCountedPtr<RlsLb> lb_policy,
       backoff_state_(MakeCacheEntryBackoff()),
       min_expiration_time_(ExecCtx::Get()->Now() + kMinExpirationTime),
       lru_iterator_(lb_policy_->cache_.lru_list_.insert(
-                        lb_policy_->cache_.lru_list_.end(), key)) {}
+          lb_policy_->cache_.lru_list_.end(), key)) {}
 
 void RlsLb::Cache::Entry::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
@@ -1562,8 +1561,8 @@ void RlsLb::RlsRequest::StartCallLocked() {
   call_ = grpc_channel_create_pollset_set_call(
       rls_channel_->channel(), nullptr, GRPC_PROPAGATE_DEFAULTS,
       lb_policy_->interested_parties(),
-      grpc_slice_from_static_string(kRlsRequestPath), nullptr,
-      deadline_, nullptr);
+      grpc_slice_from_static_string(kRlsRequestPath), nullptr, deadline_,
+      nullptr);
   grpc_op ops[6];
   memset(ops, 0, sizeof(ops));
   grpc_op* op = ops;
@@ -1747,9 +1746,9 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
     // Swap out RLS channel if needed.
     if (old_config == nullptr ||
         config_->lookup_service() != old_config->lookup_service()) {
-      rls_channel_ = MakeOrphanable<RlsChannel>(
-          Ref(DEBUG_LOCATION, "RlsChannel"), config_->lookup_service(),
-          channel_args_);
+      rls_channel_ =
+          MakeOrphanable<RlsChannel>(Ref(DEBUG_LOCATION, "RlsChannel"),
+                                     config_->lookup_service(), channel_args_);
     }
     // Resize cache if needed.
     if (old_config == nullptr ||
@@ -1792,8 +1791,8 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
         config_->child_policy_config_target_field_name(),
         child_policy_wrapper->target(), &copied_child_policy_config);
     GPR_ASSERT(error == GRPC_ERROR_NONE);
-    child_policy_wrapper->UpdateLocked(copied_child_policy_config,
-                                       addresses_, channel_args_);
+    child_policy_wrapper->UpdateLocked(copied_child_policy_config, addresses_,
+                                       channel_args_);
   };
   // Update default child policy if needed.
   if (created_default_child ||
@@ -1852,12 +1851,12 @@ void RlsLb::UpdatePickerAsync() {
   // Run via the ExecCtx, since the caller may be holding the lock, and
   // we don't want to be doing that when we hop into the WorkSerializer,
   // in case the WorkSerializer callback happens to run inline.
-  ExecCtx::Run(DEBUG_LOCATION,
-               GRPC_CLOSURE_CREATE(
-                   UpdatePickerCallback,
-                   Ref(DEBUG_LOCATION, "UpdatePickerCallback").release(),
-                   grpc_schedule_on_exec_ctx),
-               GRPC_ERROR_NONE);
+  ExecCtx::Run(
+      DEBUG_LOCATION,
+      GRPC_CLOSURE_CREATE(UpdatePickerCallback,
+                          Ref(DEBUG_LOCATION, "UpdatePickerCallback").release(),
+                          grpc_schedule_on_exec_ctx),
+      GRPC_ERROR_NONE);
 }
 
 void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle /*error*/) {
