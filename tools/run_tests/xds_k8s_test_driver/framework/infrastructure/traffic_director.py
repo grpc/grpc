@@ -408,8 +408,8 @@ class TrafficDirectorManager:
         }
 
     def create_url_map(self, src_host: str, src_port: int) -> GcpResource:
-        name = self.make_resource_name(self.URL_MAP_NAME)
         src_address = f'{src_host}:{src_port}'
+        name = self.make_resource_name(self.URL_MAP_NAME)
         matcher_name = self.make_resource_name(self.URL_MAP_PATH_MATCHER_NAME)
         logger.info('Creating URL map "%s": %s -> %s', name, src_address,
                     self.backend_service.name)
@@ -453,8 +453,8 @@ class TrafficDirectorManager:
         name = self.make_resource_name(self.ALTERNATIVE_URL_MAP_NAME)
         src_address = f'{src_host}:{src_port}'
         matcher_name = self.make_resource_name(self.URL_MAP_PATH_MATCHER_NAME)
-        logger.info('Creating URL map "%s": %s -> %s', name, src_address,
-                    self.backend_service.name)
+        logger.info('Creating alternative URL map "%s": %s -> %s', name,
+                    src_address, self.backend_service.name)
         resource = self.compute.create_url_map_with_content(
             self._generate_url_map_body(name, matcher_name, [src_address],
                                         self.backend_service))
@@ -468,7 +468,7 @@ class TrafficDirectorManager:
             name = self.alternative_url_map.name
         else:
             return
-        logger.info('Deleting URL Map "%s"', name)
+        logger.info('Deleting alternative URL Map "%s"', name)
         self.compute.delete_url_map(name)
         self.url_map = None
 
@@ -516,8 +516,9 @@ class TrafficDirectorManager:
     def create_alternative_target_proxy(self):
         name = self.make_resource_name(self.ALTERNATIVE_TARGET_PROXY_NAME)
         if self.backend_service_protocol is BackendServiceProtocol.GRPC:
-            logger.info('Creating target GRPC proxy "%s" to URL map %s', name,
-                        self.alternative_url_map.name)
+            logger.info(
+                'Creating alternative target GRPC proxy "%s" to URL map %s',
+                name, self.alternative_url_map.name)
             self.alternative_target_proxy = self.compute.create_target_grpc_proxy(
                 name, self.alternative_url_map, validate_for_proxyless=False)
         else:
@@ -530,7 +531,7 @@ class TrafficDirectorManager:
             name = self.alternative_target_proxy.name
         else:
             return
-        logger.info('Deleting Target GRPC proxy "%s"', name)
+        logger.info('Deleting alternative Target GRPC proxy "%s"', name)
         self.compute.delete_target_grpc_proxy(name)
         self.alternative_target_proxy = None
 
@@ -576,8 +577,8 @@ class TrafficDirectorManager:
         name = self.make_resource_name(self.ALTERNATIVE_FORWARDING_RULE_NAME)
         src_port = int(src_port)
         logging.info(
-            'Creating forwarding rule "%s" in network "%s": %s:%s -> %s', name,
-            self.network, ip_address, src_port,
+            'Creating alternative forwarding rule "%s" in network "%s": %s:%s -> %s',
+            name, self.network, ip_address, src_port,
             self.alternative_target_proxy.url)
         resource = self.compute.create_forwarding_rule(
             name, src_port, self.alternative_target_proxy, self.network_url,
@@ -593,7 +594,7 @@ class TrafficDirectorManager:
             name = self.alternative_forwarding_rule.name
         else:
             return
-        logger.info('Deleting Forwarding rule "%s"', name)
+        logger.info('Deleting alternative Forwarding rule "%s"', name)
         self.compute.delete_forwarding_rule(name)
         self.alternative_forwarding_rule = None
 
