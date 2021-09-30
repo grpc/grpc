@@ -143,6 +143,7 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
   std::atomic<int> call_count{0};
   std::atomic<int> failed_call_count{0};
   std::vector<std::thread> threads;
+  threads.reserve(thread_count);
   for (int thread_n = 0; thread_n < thread_count; ++thread_n) {
     threads.emplace_back([&]() {
       absl::BitGen bitgen;
