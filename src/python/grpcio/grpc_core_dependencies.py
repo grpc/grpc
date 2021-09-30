@@ -51,6 +51,7 @@ CORE_SOURCE_FILES = [
     'src/core/ext/filters/client_channel/local_subchannel_pool.cc',
     'src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
     'src/core/ext/filters/client_channel/resolver.cc',
+    'src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc',
     'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
     'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc',
     'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc',
