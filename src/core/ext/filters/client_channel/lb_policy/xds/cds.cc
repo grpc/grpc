@@ -18,6 +18,8 @@
 
 #include <string.h>
 
+#include "absl/debugging/stacktrace.h"
+#include "absl/debugging/symbolize.h"
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
@@ -331,6 +333,16 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_INFO, "[cdslb %p] received update: cluster=%s", this,
             config_->cluster().c_str());
   }
+  void* trace[256];
+  int n = absl::GetStackTrace(trace, 256, 0);
+  for (int i = 0; i <= n; ++i) {
+    char tmp[1024];
+    const char* symbol = "(unknown)";
+    if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
+      symbol = tmp;
+    }
+    gpr_log(GPR_ERROR, "CdsLb::UpdateLocked stack %p %s", trace[i], symbol);
+  }
   // Update args.
   grpc_channel_args_destroy(args_);
   args_ = args.args;
@@ -350,7 +362,9 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
     }
     auto watcher = absl::make_unique<ClusterWatcher>(Ref(), config_->cluster());
     watchers_[config_->cluster()].watcher = watcher.get();
-    xds_client_->WatchClusterData(config_->cluster(), std::move(watcher));
+    xds_client_->WatchClusterData(config_->cluster(),
+                                  "need-key-from-cdslb-updatelocked",
+                                  std::move(watcher));
   }
 }
 
@@ -375,7 +389,9 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
               name.c_str());
     }
     state.watcher = watcher.get();
-    xds_client_->WatchClusterData(name, std::move(watcher));
+    xds_client_->WatchClusterData(
+        name, "need-key-from-cdslb-GenerateDiscoveryMechanismForCluster",
+        std::move(watcher));
     return false;
   }
   // Don't have the update we need yet.
@@ -668,8 +684,9 @@ void CdsLb::CancelClusterDataWatch(absl::string_view cluster_name,
                                                                     nullptr);
     xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(name, {});
   }
-  xds_client_->CancelClusterDataWatch(cluster_name, watcher,
-                                      delay_unsubscription);
+  xds_client_->CancelClusterDataWatch(
+      cluster_name, "need-key-from-cdslb-CancelClusterDataWatch", watcher,
+      delay_unsubscription);
 }
 //
 // factory

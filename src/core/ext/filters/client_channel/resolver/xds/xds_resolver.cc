@@ -788,7 +788,7 @@ void XdsResolver::StartLocked() {
                                    interested_parties_);
   auto watcher = absl::make_unique<ListenerWatcher>(Ref());
   listener_watcher_ = watcher.get();
-  xds_client_->WatchListenerData(server_name_, std::move(watcher));
+  xds_client_->WatchListenerData(server_name_, xds_server_, std::move(watcher));
 }
 
 void XdsResolver::ShutdownLocked() {
@@ -797,12 +797,14 @@ void XdsResolver::ShutdownLocked() {
   }
   if (xds_client_ != nullptr) {
     if (listener_watcher_ != nullptr) {
-      xds_client_->CancelListenerDataWatch(server_name_, listener_watcher_,
+      xds_client_->CancelListenerDataWatch(server_name_, xds_server_,
+                                           listener_watcher_,
                                            /*delay_unsubscription=*/false);
     }
     if (route_config_watcher_ != nullptr) {
-      xds_client_->CancelRouteConfigDataWatch(
-          server_name_, route_config_watcher_, /*delay_unsubscription=*/false);
+      xds_client_->CancelRouteConfigDataWatch(server_name_, xds_server_,
+                                              route_config_watcher_,
+                                              /*delay_unsubscription=*/false);
     }
     grpc_pollset_set_del_pollset_set(xds_client_->interested_parties(),
                                      interested_parties_);
@@ -818,7 +820,7 @@ void XdsResolver::OnListenerUpdate(XdsApi::LdsUpdate listener) {
       route_config_name_) {
     if (route_config_watcher_ != nullptr) {
       xds_client_->CancelRouteConfigDataWatch(
-          route_config_name_, route_config_watcher_,
+          route_config_name_, xds_server_, route_config_watcher_,
           /*delay_unsubscription=*/
           !listener.http_connection_manager.route_config_name.empty());
       route_config_watcher_ = nullptr;
@@ -829,7 +831,8 @@ void XdsResolver::OnListenerUpdate(XdsApi::LdsUpdate listener) {
       current_virtual_host_.routes.clear();
       auto watcher = absl::make_unique<RouteConfigWatcher>(Ref());
       route_config_watcher_ = watcher.get();
-      xds_client_->WatchRouteConfigData(route_config_name_, std::move(watcher));
+      xds_client_->WatchRouteConfigData(route_config_name_, xds_server_,
+                                        std::move(watcher));
     }
   }
   current_listener_ = std::move(listener);

@@ -401,8 +401,10 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Start() {
   auto watcher = absl::make_unique<EndpointWatcher>(
       Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"));
   watcher_ = watcher.get();
-  parent()->xds_client_->WatchEndpointData(GetEdsResourceName(),
-                                           std::move(watcher));
+  parent()->xds_client_->WatchEndpointData(
+      GetEdsResourceName(),
+      "need-a-key-from-XdsClusterResolverLb-EdsDiscoveryMechanism",
+      std::move(watcher));
 }
 
 void XdsClusterResolverLb::EdsDiscoveryMechanism::Orphan() {
@@ -412,8 +414,9 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Orphan() {
             ":%p cancelling xds watch for %s",
             parent(), index(), this, std::string(GetEdsResourceName()).c_str());
   }
-  parent()->xds_client_->CancelEndpointDataWatch(GetEdsResourceName(),
-                                                 watcher_);
+  parent()->xds_client_->CancelEndpointDataWatch(
+      GetEdsResourceName(), "need-a-key-from-XdsClusterResolverLb-orphan",
+      watcher_);
   Unref();
 }
 

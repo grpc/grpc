@@ -364,8 +364,9 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     listening_address = absl::StrReplaceAll(
         xds_client_->bootstrap().server_listener_resource_name_template(),
         {{"%s", listening_address}});
-    xds_client_->WatchListenerData(listening_address,
-                                   std::move(listener_watcher));
+    xds_client_->WatchListenerData(
+        listening_address, "need-key-from-xdsserverconfigfetcher-startwatch",
+        std::move(listener_watcher));
     MutexLock lock(&mu_);
     auto& watcher_state = watchers_[watcher_ptr];
     watcher_state.listening_address = listening_address;
@@ -378,9 +379,10 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     auto it = watchers_.find(watcher);
     if (it != watchers_.end()) {
       // Cancel the watch on the listener before erasing
-      xds_client_->CancelListenerDataWatch(it->second.listening_address,
-                                           it->second.listener_watcher,
-                                           false /* delay_unsubscription */);
+      xds_client_->CancelListenerDataWatch(
+          it->second.listening_address,
+          "need-key-from-xdsserverconfigfetcher-cancelwatch",
+          it->second.listener_watcher, false /* delay_unsubscription */);
       watchers_.erase(it);
     }
   }

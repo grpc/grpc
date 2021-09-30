@@ -112,8 +112,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // If the caller is going to start a new watch after cancelling the
   // old one, it should set delay_unsubscription to true.
   void WatchListenerData(absl::string_view listener_name,
+                         const std::string& xds_server,
                          std::unique_ptr<ListenerWatcherInterface> watcher);
   void CancelListenerDataWatch(absl::string_view listener_name,
+                               const std::string& xds_server,
                                ListenerWatcherInterface* watcher,
                                bool delay_unsubscription = false);
 
@@ -125,9 +127,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // If the caller is going to start a new watch after cancelling the
   // old one, it should set delay_unsubscription to true.
   void WatchRouteConfigData(
-      absl::string_view route_config_name,
+      absl::string_view route_config_name, const std::string& xds_server,
       std::unique_ptr<RouteConfigWatcherInterface> watcher);
   void CancelRouteConfigDataWatch(absl::string_view route_config_name,
+                                  const std::string& xds_server,
                                   RouteConfigWatcherInterface* watcher,
                                   bool delay_unsubscription = false);
 
@@ -139,8 +142,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // If the caller is going to start a new watch after cancelling the
   // old one, it should set delay_unsubscription to true.
   void WatchClusterData(absl::string_view cluster_name,
+                        const std::string& xds_server,
                         std::unique_ptr<ClusterWatcherInterface> watcher);
   void CancelClusterDataWatch(absl::string_view cluster_name,
+                              const std::string& xds_server,
                               ClusterWatcherInterface* watcher,
                               bool delay_unsubscription = false);
 
@@ -152,8 +157,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // If the caller is going to start a new watch after cancelling the
   // old one, it should set delay_unsubscription to true.
   void WatchEndpointData(absl::string_view eds_service_name,
+                         const std::string& xds_server,
                          std::unique_ptr<EndpointWatcherInterface> watcher);
   void CancelEndpointDataWatch(absl::string_view eds_service_name,
+                               const std::string& xds_server,
                                EndpointWatcherInterface* watcher,
                                bool delay_unsubscription = false);
 
@@ -337,6 +344,17 @@ class XdsClient : public DualRefCounted<XdsClient> {
       ABSL_GUARDED_BY(mu_);
   // One entry for each watched EDS resource.
   std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map_
+      ABSL_GUARDED_BY(mu_);
+
+  struct ResourceMap {
+    std::map<std::string /*listener_name*/, ListenerState> listener_map;
+    std::map<std::string /*route_config_name*/, RouteConfigState>
+        route_config_map;
+    std::map<std::string /*cluster_name*/, ClusterState> cluster_map;
+    std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map;
+  };
+
+  std::map<std::string /*authority*/, ResourceMap> resource_map_
       ABSL_GUARDED_BY(mu_);
 
   // Load report data.

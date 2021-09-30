@@ -723,6 +723,17 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
               ? "AdsCallState"
               : nullptr),
       parent_(std::move(parent)) {
+  void* trace[256];
+  int n = absl::GetStackTrace(trace, 256, 0);
+  for (int i = 0; i <= n; ++i) {
+    char tmp[1024];
+    const char* symbol = "(unknown)";
+    if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
+      symbol = tmp;
+    }
+    gpr_log(GPR_ERROR, "donna created AdsCallState stack %p %s", trace[i],
+            symbol);
+  }
   // Init the ADS call. Note that the call will progress every time there's
   // activity in xds_client()->interested_parties_, which is comprised of
   // the polling entities from client_channel.
@@ -2003,7 +2014,7 @@ void XdsClient::Orphan() {
 }
 
 void XdsClient::WatchListenerData(
-    absl::string_view listener_name,
+    absl::string_view listener_name, const std::string& xds_server,
     std::unique_ptr<ListenerWatcherInterface> watcher) {
   std::string listener_name_str = std::string(listener_name);
   MutexLock lock(&mu_);
@@ -2019,10 +2030,14 @@ void XdsClient::WatchListenerData(
     }
     w->OnListenerChanged(*listener_state.update);
   }
+  gpr_log(GPR_INFO, "donna WatchListenerData key is %s", xds_server.c_str());
+  // channels_[xds_server]->SubscribeLocked(XdsApi::kLdsTypeUrl,
+  // listener_name_str);
   chand_->SubscribeLocked(XdsApi::kLdsTypeUrl, listener_name_str);
 }
 
 void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
+                                        const std::string& xds_server,
                                         ListenerWatcherInterface* watcher,
                                         bool delay_unsubscription) {
   MutexLock lock(&mu_);
@@ -2034,6 +2049,10 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
     listener_state.watchers.erase(it);
     if (listener_state.watchers.empty()) {
       listener_map_.erase(listener_name_str);
+      gpr_log(GPR_INFO, "donna CancelListenerDataWatch key is %s",
+              xds_server.c_str());
+      // channels_[xds_server]->UnsubscribeLocked(XdsApi::kLdsTypeUrl,
+      // listener_name_str, delay_unsubscription);
       chand_->UnsubscribeLocked(XdsApi::kLdsTypeUrl, listener_name_str,
                                 delay_unsubscription);
     }
@@ -2041,7 +2060,7 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
 }
 
 void XdsClient::WatchRouteConfigData(
-    absl::string_view route_config_name,
+    absl::string_view route_config_name, const std::string& xds_server,
     std::unique_ptr<RouteConfigWatcherInterface> watcher) {
   std::string route_config_name_str = std::string(route_config_name);
   MutexLock lock(&mu_);
@@ -2059,10 +2078,14 @@ void XdsClient::WatchRouteConfigData(
     }
     w->OnRouteConfigChanged(*route_config_state.update);
   }
+  gpr_log(GPR_INFO, "donna WatchRouteConfigData key is %s", xds_server.c_str());
+  // channels_[xds_server]->SubscribeLocked(XdsApi::kRdsTypeUrl,
+  // route_config_name_str);
   chand_->SubscribeLocked(XdsApi::kRdsTypeUrl, route_config_name_str);
 }
 
 void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
+                                           const std::string& xds_server,
                                            RouteConfigWatcherInterface* watcher,
                                            bool delay_unsubscription) {
   MutexLock lock(&mu_);
@@ -2075,6 +2098,10 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
     route_config_state.watchers.erase(it);
     if (route_config_state.watchers.empty()) {
       route_config_map_.erase(route_config_name_str);
+      gpr_log(GPR_INFO, "donna CancelRouteConfigDataWatch key is %s",
+              xds_server.c_str());
+      // channels_[xds_server]->UnsubscribeLocked(XdsApi::kRdsTypeUrl,
+      // route_config_name_str, delay_unsubscription);
       chand_->UnsubscribeLocked(XdsApi::kRdsTypeUrl, route_config_name_str,
                                 delay_unsubscription);
     }
@@ -2082,7 +2109,7 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
 }
 
 void XdsClient::WatchClusterData(
-    absl::string_view cluster_name,
+    absl::string_view cluster_name, const std::string& xds_server,
     std::unique_ptr<ClusterWatcherInterface> watcher) {
   std::string cluster_name_str = std::string(cluster_name);
   MutexLock lock(&mu_);
@@ -2098,10 +2125,14 @@ void XdsClient::WatchClusterData(
     }
     w->OnClusterChanged(cluster_state.update.value());
   }
+  gpr_log(GPR_INFO, "donna WatchClusterData key is %s", xds_server.c_str());
+  // channels_[xds_server]->SubscribeLocked(XdsApi::kCdsTypeUrl,
+  // cluster_name_str);
   chand_->SubscribeLocked(XdsApi::kCdsTypeUrl, cluster_name_str);
 }
 
 void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
+                                       const std::string& xds_server,
                                        ClusterWatcherInterface* watcher,
                                        bool delay_unsubscription) {
   MutexLock lock(&mu_);
@@ -2113,6 +2144,10 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
     cluster_state.watchers.erase(it);
     if (cluster_state.watchers.empty()) {
       cluster_map_.erase(cluster_name_str);
+      gpr_log(GPR_INFO, "donna CancelClusterDataWatch key is %s",
+              xds_server.c_str());
+      // channels_[xds_server]->UnsubscribeLocked(XdsApi::kCdsTypeUrl,
+      // cluster_name_str, delay_unsubscription);
       chand_->UnsubscribeLocked(XdsApi::kCdsTypeUrl, cluster_name_str,
                                 delay_unsubscription);
     }
@@ -2120,7 +2155,7 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
 }
 
 void XdsClient::WatchEndpointData(
-    absl::string_view eds_service_name,
+    absl::string_view eds_service_name, const std::string& xds_server,
     std::unique_ptr<EndpointWatcherInterface> watcher) {
   std::string eds_service_name_str = std::string(eds_service_name);
   MutexLock lock(&mu_);
@@ -2136,10 +2171,14 @@ void XdsClient::WatchEndpointData(
     }
     w->OnEndpointChanged(endpoint_state.update.value());
   }
+  gpr_log(GPR_INFO, "donna WatchEndpointData key is %s", xds_server.c_str());
+  // channels_[xds_server]->SubscribeLocked(XdsApi::kEdsTypeUrl,
+  // eds_service_name_str);
   chand_->SubscribeLocked(XdsApi::kEdsTypeUrl, eds_service_name_str);
 }
 
 void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
+                                        const std::string& xds_server,
                                         EndpointWatcherInterface* watcher,
                                         bool delay_unsubscription) {
   MutexLock lock(&mu_);
@@ -2151,6 +2190,10 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
     endpoint_state.watchers.erase(it);
     if (endpoint_state.watchers.empty()) {
       endpoint_map_.erase(eds_service_name_str);
+      gpr_log(GPR_INFO, "donna CancelEndpointDataWatch key is %s",
+              xds_server.c_str());
+      // channels_[xds_server]->UnsubscribeLocked(XdsApi::kEdsTypeUrl,
+      // eds_service_name_str, delay_unsubscription);
       chand_->UnsubscribeLocked(XdsApi::kEdsTypeUrl, eds_service_name_str,
                                 delay_unsubscription);
     }
@@ -2187,6 +2230,10 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
         it->first.second /*eds_service_name*/);
     load_report_state.drop_stats = cluster_drop_stats.get();
   }
+  gpr_log(
+      GPR_INFO,
+      "donna AddClusterDropStats key is the xds_server instead of lrs_server");
+  // channels_[key]->MaybeStartLrsCall();
   chand_->MaybeStartLrsCall();
   return cluster_drop_stats;
 }
@@ -2244,6 +2291,10 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
         std::move(locality));
     locality_state.locality_stats = cluster_locality_stats.get();
   }
+  gpr_log(GPR_INFO,
+          "donna AddClusterLocalityStats key is the xds_server instead of "
+          "lrs_server");
+  // channels_[key]->MaybeStartLrsCall();
   chand_->MaybeStartLrsCall();
   return cluster_locality_stats;
 }
