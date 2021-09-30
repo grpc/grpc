@@ -1449,6 +1449,7 @@ void RlsLb::RlsChannel::Throttle::RegisterResponse(bool success) {
 // RlsLb::RlsChannel
 //
 
+// FIXME: update this to handle call creds and domain correctly
 RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy,
                               const std::string& target,
                               const grpc_channel_args* channel_args)
@@ -1522,7 +1523,6 @@ void RlsLb::RlsChannel::ResetBackoff() {
 // RlsLb::RlsRequest
 //
 
-// FIXME: update this to handle call creds and domain correctly
 RlsLb::RlsRequest::RlsRequest(RefCountedPtr<RlsLb> lb_policy, RequestKey key,
                               RefCountedPtr<RlsChannel> rls_channel,
                               std::unique_ptr<BackOff> backoff_state,
