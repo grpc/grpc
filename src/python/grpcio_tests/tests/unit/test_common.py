@@ -136,8 +136,8 @@ class WaitGroup(object):
 
 def running_under_gevent():
     try:
-        import gevent.socket
         from gevent import monkey
+        import gevent.socket
     except ImportError:
         return False
     else:
