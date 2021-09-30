@@ -15,6 +15,8 @@ load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 
 _GRPC_LIB = "//src/python/grpcio/grpc:grpcio"
 
+_COPIED_MAIN_SUFFIX = ".gevent.main"
+
 def py_grpc_gevent_test(
         name,
         srcs,
@@ -32,13 +34,9 @@ def py_grpc_gevent_test(
     supplied_python_version = kwargs.pop("python_version", "")
     if supplied_python_version and supplied_python_version != "PY3":
         fail("py_grpc_gevent_test only supports python_version=PY3")
-    size = None
-    if "size" in kwargs:
-        size = kwargs.pop("size")
     native.py_library(
         name = lib_name,
         srcs = srcs,
-        **kwargs
     )
     augmented_deps = deps + [
         ":{}".format(lib_name),
@@ -48,8 +46,7 @@ def py_grpc_gevent_test(
         augmented_deps.append(_GRPC_LIB)
 
     # The main file needs to be in the same package as the test file.
-    copied_main_suffix = ".gevent.main"
-    copied_main_name = name + copied_main_suffix
+    copied_main_name = name + _COPIED_MAIN_SUFFIX
     copied_main_filename = copied_main_name + ".py"
     native.genrule(
         name = copied_main_name,
@@ -58,6 +55,7 @@ def py_grpc_gevent_test(
         cmd = "cp $< $@",
     )
 
+    # TODO(https://github.com/grpc/grpc/issues/27542): Remove once gevent is deemed non-flaky.
     if "flaky" in kwargs:
         kwargs.pop("flaky")
 
@@ -68,7 +66,6 @@ def py_grpc_gevent_test(
         srcs = [copied_main_filename],
         main = copied_main_filename,
         python_version = "PY3",
-        size = size,
         flaky = True,
         **kwargs
     )

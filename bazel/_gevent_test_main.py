@@ -18,39 +18,36 @@ import sys
 import os
 import pkgutil
 
-import zope
-from zope.event import subscribers
+from typing import Sequence
 
 class SingleLoader(object):
-    def __init__(self, pattern):
+    def __init__(self, pattern: str):
         self._pattern = pattern
-        self.suite = unittest.TestSuite()
         self._loader = unittest.TestLoader()
-        tests = []
-        for importer, module_name, is_package in pkgutil.walk_packages([os.path.dirname(os.path.relpath(__file__))]):
-            if self._pattern in module_name:
-                module = importer.find_module(module_name).load_module(module_name)
-                tests.append(self._loader.loadTestsFromModule(module))
-        if len(tests) != 1:
-            raise AssertionError("Expected only 1 test module. Found {}".format(tests))
-        self.suite.addTest(tests[0])
+        self.suite = self._loader.discover(os.path.dirname(os.path.relpath(__file__)), pattern)
 
 
-    def loadTestsFromNames(self, names, module=None):
+    def loadTestsFromNames(self, names: Sequence[str], module: str = None) -> unittest.TestSuite:
         return self.suite
 
-from gevent import monkey
+if __name__ == "__main__":
+    from gevent import monkey
 
-monkey.patch_all()
+    monkey.patch_all()
 
-import grpc.experimental.gevent
-grpc.experimental.gevent.init_gevent()
-import gevent
+    import grpc.experimental.gevent
+    grpc.experimental.gevent.init_gevent()
+    import gevent
 
-loader = SingleLoader(sys.argv[1])
-runner = unittest.TextTestRunner()
+    if len(sys.argv) != 2:
+        print(f"USAGE: {sys.argv[0]} TARGET_MODULE", file=sys.stderr)
 
-result = gevent.spawn(runner.run, loader.suite)
-result.join()
-if not result.value.wasSuccessful():
-    sys.exit("Test failure.")
+    target_module = sys.argv[1]
+
+    loader = SingleLoader(target_module)
+    runner = unittest.TextTestRunner()
+
+    result = gevent.spawn(runner.run, loader.suite)
+    result.join()
+    if not result.value.wasSuccessful():
+        sys.exit("Test failure.")
