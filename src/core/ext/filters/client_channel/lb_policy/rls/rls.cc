@@ -329,6 +329,31 @@ class RlsLb : public LoadBalancingPolicy {
       // annotations for this particular caller.
       void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
+      const absl::Status& status() const
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
+        return status_;
+      }
+      grpc_millis backoff_time() const
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
+        return backoff_time_;
+      }
+      grpc_millis backoff_expiration_time() const
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
+        return backoff_expiration_time_;
+      }
+      grpc_millis data_expiration_time() const
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
+        return data_expiration_time_;
+      }
+      grpc_millis stale_time() const
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
+        return stale_time_;
+      }
+      grpc_millis min_expiration_time() const
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
+        return min_expiration_time_;
+      }
+
       // Cache size of entry.
       size_t Size() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
@@ -843,10 +868,8 @@ std::map<std::string, std::string> BuildKeyMap(
   return key_map;
 }
 
-// FIXME: make code here match pseudo-code in design doc, so that we can
-// more easily visually validate that it's doing the right thing
-// (will require merging code from Cache::Entry::Pick())
 LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
+  // Construct key for request.
   RequestKey key = {BuildKeyMap(config_->key_builder_map(), args.path,
                                 lb_policy_->server_name_,
                                 args.initial_metadata)};
@@ -854,49 +877,77 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
     gpr_log(GPR_INFO, "[rlslb %p] picker=%p: request keys: %s",
             lb_policy_.get(), this, key.ToString().c_str());
   }
+  grpc_millis now = ExecCtx::Get()->Now();
   MutexLock lock(&lb_policy_->mu_);
   if (lb_policy_->is_shutdown_) {
     return PickResult::Fail(
         absl::UnavailableError("LB policy already shut down"));
   }
   Cache::Entry* entry = lb_policy_->cache_.Find(key);
-  if (entry == nullptr) {
-    // Cache entry not found.  Attempt RLS request.
+  // If there is no cache entry, or if the cache entry is not in backoff
+  // and has a stale time in the past, start a new RLS request.
+  if (entry == nullptr ||
+      (entry->stale_time() < now && entry->backoff_time() < now)) {
     bool call_throttled = !lb_policy_->rls_channel_->MaybeMakeRlsCall(key);
-    if (call_throttled) {
-      // RLS request throttled.
+    if (call_throttled &&
+        (entry == nullptr || entry->data_expiration_time() < now)) {
+      // RLS request throttled and no non-expired cached data.
       // If default target is set, use that; otherwise, fail the pick.
-      if (config_->default_target().empty()) {
+      if (default_child_policy_ != nullptr) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-          gpr_log(GPR_INFO,
-                  "[rlslb %p] picker=%p: RLS call throttled; failing pick",
-                  lb_policy_.get(), this);
+          gpr_log(
+              GPR_INFO,
+              "[rlslb %p] picker=%p: RLS call throttled; using default target",
+              lb_policy_.get(), this);
         }
-        return PickResult::Fail(
-            absl::UnavailableError("RLS request throttled"));
+        return default_child_policy_->Pick(args);
       }
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-        gpr_log(
-            GPR_INFO,
-            "[rlslb %p] picker=%p: RLS call throttled; using default target",
-            lb_policy_.get(), this);
+        gpr_log(GPR_INFO,
+                "[rlslb %p] picker=%p: RLS call throttled; failing pick",
+                lb_policy_.get(), this);
       }
-      return default_child_policy_->Pick(args);
+      return PickResult::Fail(
+          absl::UnavailableError("RLS request throttled"));
     }
-    // RLS call started.  Queue the pick.
+  }
+  // If the cache entry exists, see if it has usable data.
+  if (entry != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-      gpr_log(GPR_INFO,
-              "[rlslb %p] picker=%p: RLS request started; queuing pick",
-              lb_policy_.get(), this);
+      gpr_log(GPR_INFO, "[rlslb %p] picker=%p: using cache entry %p",
+              lb_policy_.get(), this, entry);
     }
-    return PickResult::Queue();
+    // If the entry has non-expired data, use it.
+    if (entry->data_expiration_time() >= now) {
+      return entry->Pick(args, config_.get(), default_child_policy_.get());
+    }
+    // If the entry is in backoff, then use the default target if set,
+    // or else fail the pick.
+    if (entry->backoff_time() >= now) {
+      if (default_child_policy_ != nullptr) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+          gpr_log(
+              GPR_INFO,
+              "[rlslb %p] picker=%p: RLS call in backoff; using default target",
+              lb_policy_.get(), this);
+        }
+        return default_child_policy_->Pick(args);
+      }
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+        gpr_log(GPR_INFO,
+                "[rlslb %p] picker=%p: RLS call in backoff; failing pick",
+                lb_policy_.get(), this);
+      }
+      return PickResult::Fail(entry->status());
+    }
   }
-  // Cache entry found.
+  // RLS call pending.  Queue the pick.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-    gpr_log(GPR_INFO, "[rlslb %p] picker=%p: using cache entry %p",
-            lb_policy_.get(), this, entry);
+    gpr_log(GPR_INFO,
+            "[rlslb %p] picker=%p: RLS request pending; queuing pick",
+            lb_policy_.get(), this);
   }
-  return entry->Pick(args, config_.get(), default_child_policy_.get());
+  return PickResult::Queue();
 }
 
 //
@@ -990,112 +1041,50 @@ size_t RlsLb::Cache::Entry::Size() const {
   return lb_policy_->cache_.EntrySizeForKey(*lru_iterator_);
 }
 
-// FIXME: move this logic into Picker::Pick()
-// (currently, this logs the cache entry address as the picker address,
-// which is confusing)
 // FIXME: make sure all log messages are useful (e.g., logging request
 // key or RLS target name)
 LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
     PickArgs args, RlsLbConfig* config,
     ChildPolicyWrapper* default_child_policy) {
-  grpc_millis now = ExecCtx::Get()->Now();
-  if (stale_time_ < now && backoff_time_ < now) {
-    bool call_throttled = !lb_policy_->rls_channel_->MaybeMakeRlsCall(
-        *lru_iterator_, &backoff_state_);
-    if (call_throttled && data_expiration_time_ < now) {
-      if (config->default_target().empty()) {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-          gpr_log(GPR_INFO,
-                  "[rlslb %p] picker=%p: RLS call throttled; failing pick",
-                  lb_policy_.get(), this);
-        }
-        return PickResult::Fail(
-            absl::UnavailableError("RLS request throttled"));
-      }
+  for (const auto& child_policy_wrapper : child_policy_wrappers_) {
+    if (child_policy_wrapper->connectivity_state() ==
+        GRPC_CHANNEL_TRANSIENT_FAILURE) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-        gpr_log(
-            GPR_INFO,
-            "[rlslb %p] picker=%p: RLS call throttled; using default target",
-            lb_policy_.get(), this);
+        gpr_log(GPR_INFO,
+                "[rlslb %p] cache entry=%p: target %s in state "
+                "TRANSIENT_FAILURE; skipping",
+                lb_policy_.get(), this,
+                child_policy_wrapper->target().c_str());
       }
-      return default_child_policy->Pick(args);
+      continue;
     }
-  }
-  if (now <= data_expiration_time_) {
-    GPR_DEBUG_ASSERT(!child_policy_wrappers_.empty());
-    if (child_policy_wrappers_.empty()) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-        gpr_log(GPR_ERROR,
-                "[rlslb %p] cache entry=%p: cached response is valid but child "
-                "policy wrapper is empty",
-                lb_policy_.get(), this);
-      }
-      return PickResult::Fail(
-          absl::UnavailableError("child policy does not exist"));
+    // Child policy not in TRANSIENT_FAILURE, so delegate.
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+      gpr_log(
+          GPR_INFO,
+          "[rlslb %p] cache entry=%p: target %s in state %s; "
+          "delegating",
+          lb_policy_.get(), this, child_policy_wrapper->target().c_str(),
+          ConnectivityStateName(child_policy_wrapper->connectivity_state()));
     }
+    // Add header data.
     if (!header_data_.empty()) {
       char* copied_header_data =
           static_cast<char*>(args.call_state->Alloc(header_data_.length() + 1));
       strcpy(copied_header_data, header_data_.c_str());
       args.initial_metadata->Add(kRlsHeaderKey, copied_header_data);
     }
-    for (RefCountedPtr<ChildPolicyWrapper>& child_policy_wrapper :
-         child_policy_wrappers_) {
-      if (child_policy_wrapper->connectivity_state() ==
-          GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-          gpr_log(GPR_INFO,
-                  "[rlslb %p] cache entry=%p: target %s in state "
-                  "TRANSIENT_FAILURE; skipping",
-                  lb_policy_.get(), this,
-                  child_policy_wrapper->target().c_str());
-        }
-        continue;
-      }
-      // Child policy not in TRANSIENT_FAILURE, so delegate.
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-        gpr_log(
-            GPR_INFO,
-            "[rlslb %p] cache entry=%p: target %s in state %s; "
-            "delegating",
-            lb_policy_.get(), this, child_policy_wrapper->target().c_str(),
-            ConnectivityStateName(child_policy_wrapper->connectivity_state()));
-      }
-      return child_policy_wrapper->Pick(args);
-    }
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-      gpr_log(GPR_INFO,
-              "[rlslb %p] cache entry=%p: no healthy target found; "
-              "failing pick",
-              lb_policy_.get(), this);
-    }
-    return PickResult::Fail(
-        absl::UnavailableError("all RLS targets unreachable"));
+    return child_policy_wrapper->Pick(args);
   }
-  if (now <= backoff_time_) {
-    if (config->default_target().empty()) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-        gpr_log(GPR_INFO,
-                "[rlslb %p] cache entry=%p: cache entry in backoff; "
-                "failing pick",
-                lb_policy_.get(), this);
-      }
-      return PickResult::Fail(absl::UnavailableError("RLS request in backoff"));
-    }
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-      gpr_log(GPR_INFO,
-              "[rlslb %p] cache entry=%p: cache entry in backoff; using "
-              "default target",
-              lb_policy_.get(), this);
-    }
-    return default_child_policy->Pick(args);
-  }
+  // No child policy found.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO,
-            "[rlslb %p] cache entry=%p: RLS request in progress; queuing pick",
+            "[rlslb %p] cache entry=%p: no healthy target found; "
+            "failing pick",
             lb_policy_.get(), this);
   }
-  return PickResult::Queue();
+  return PickResult::Fail(
+      absl::UnavailableError("all RLS targets unreachable"));
 }
 
 void RlsLb::Cache::Entry::ResetBackoff() {
