@@ -127,8 +127,7 @@ class RlsServiceImpl : public RlsService {
             lookup::v1::RouteLookupRequest_Reason r)
         : key(std::move(kv)), reason(r) {}
     Request(std::map<std::string, std::string> kv,
-            lookup::v1::RouteLookupRequest_Reason r,
-            std::string h)
+            lookup::v1::RouteLookupRequest_Reason r, std::string h)
         : key(std::move(kv)), reason(r), stale_header_data(std::move(h)) {}
 
     explicit Request(const lookup::v1::RouteLookupRequest& request)
@@ -137,14 +136,12 @@ class RlsServiceImpl : public RlsService {
           stale_header_data(request.stale_header_data()) {}
 
     bool operator==(const Request& other) const {
-      return key == other.key &&
-             reason == other.reason &&
+      return key == other.key && reason == other.reason &&
              stale_header_data == other.stale_header_data;
     }
 
     bool operator<(const Request& other) const {
-      return key < other.key ||
-             reason < other.reason ||
+      return key < other.key || reason < other.reason ||
              stale_header_data < other.stale_header_data;
     }
   };
@@ -635,8 +632,8 @@ TEST_F(RlsEnd2endTest, DuplicateHeadersAreMerged) {
                                          kServiceValue, kMethodValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::Request({
-          {kTestKey, absl::StrCat(kTestValue, ",", kTestValue2)}}),
+      RlsServiceImpl::Request(
+          {{kTestKey, absl::StrCat(kTestValue, ",", kTestValue2)}}),
       RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   // Same header present twice in the request.  Values should be merged.
   CheckRpcSendOk(

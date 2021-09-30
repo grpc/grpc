@@ -1370,8 +1370,8 @@ void RlsLb::Cache::MaybeShrinkSize(size_t bytes) {
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO,
-            "[rlslb %p] LRU pass complete: desired size=%" PRIuPTR " size=%"
-            PRIuPTR,
+            "[rlslb %p] LRU pass complete: desired size=%" PRIuPTR
+            " size=%" PRIuPTR,
             lb_policy_, bytes, size_);
   }
 }
