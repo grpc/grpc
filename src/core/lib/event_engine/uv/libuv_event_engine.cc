@@ -307,7 +307,8 @@ EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time when,
   } else {
     // absl tends to round down time conversions, so we add 1 milli to the
     // timeout for safety. Better to err on the side of a timer firing late.
-    timeout = absl::ToInt64Milliseconds(when - now) + 1;
+    timeout =
+        std::ceil(absl::ToUnixMicros(when) / 1000.0) - absl::ToUnixMillis(now);
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG,
