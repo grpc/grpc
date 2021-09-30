@@ -30,6 +30,12 @@ extern const upb_msglayout grpc_lookup_v1_RouteLookupRequest_msginit;
 extern const upb_msglayout grpc_lookup_v1_RouteLookupRequest_KeyMapEntry_msginit;
 extern const upb_msglayout grpc_lookup_v1_RouteLookupResponse_msginit;
 
+typedef enum {
+  grpc_lookup_v1_RouteLookupRequest_REASON_UNKNOWN = 0,
+  grpc_lookup_v1_RouteLookupRequest_REASON_MISS = 1,
+  grpc_lookup_v1_RouteLookupRequest_REASON_STALE = 2
+} grpc_lookup_v1_RouteLookupRequest_Reason;
+
 
 /* grpc.lookup.v1.RouteLookupRequest */
 
@@ -57,27 +63,35 @@ UPB_INLINE char *grpc_lookup_v1_RouteLookupRequest_serialize(const grpc_lookup_v
   return upb_encode(msg, &grpc_lookup_v1_RouteLookupRequest_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview grpc_lookup_v1_RouteLookupRequest_server(const grpc_lookup_v1_RouteLookupRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
-UPB_INLINE upb_strview grpc_lookup_v1_RouteLookupRequest_path(const grpc_lookup_v1_RouteLookupRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview); }
-UPB_INLINE upb_strview grpc_lookup_v1_RouteLookupRequest_target_type(const grpc_lookup_v1_RouteLookupRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), upb_strview); }
-UPB_INLINE bool grpc_lookup_v1_RouteLookupRequest_has_key_map(const grpc_lookup_v1_RouteLookupRequest *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(24, 48)); }
-UPB_INLINE size_t grpc_lookup_v1_RouteLookupRequest_key_map_size(const grpc_lookup_v1_RouteLookupRequest *msg) {return _upb_msg_map_size(msg, UPB_SIZE(24, 48)); }
-UPB_INLINE bool grpc_lookup_v1_RouteLookupRequest_key_map_get(const grpc_lookup_v1_RouteLookupRequest *msg, upb_strview key, upb_strview *val) { return _upb_msg_map_get(msg, UPB_SIZE(24, 48), &key, 0, val, 0); }
-UPB_INLINE const grpc_lookup_v1_RouteLookupRequest_KeyMapEntry* grpc_lookup_v1_RouteLookupRequest_key_map_next(const grpc_lookup_v1_RouteLookupRequest *msg, size_t* iter) { return (const grpc_lookup_v1_RouteLookupRequest_KeyMapEntry*)_upb_msg_map_next(msg, UPB_SIZE(24, 48), iter); }
+UPB_INLINE upb_strview grpc_lookup_v1_RouteLookupRequest_server(const grpc_lookup_v1_RouteLookupRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
+UPB_INLINE upb_strview grpc_lookup_v1_RouteLookupRequest_path(const grpc_lookup_v1_RouteLookupRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_strview); }
+UPB_INLINE upb_strview grpc_lookup_v1_RouteLookupRequest_target_type(const grpc_lookup_v1_RouteLookupRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), upb_strview); }
+UPB_INLINE bool grpc_lookup_v1_RouteLookupRequest_has_key_map(const grpc_lookup_v1_RouteLookupRequest *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(36, 72)); }
+UPB_INLINE size_t grpc_lookup_v1_RouteLookupRequest_key_map_size(const grpc_lookup_v1_RouteLookupRequest *msg) {return _upb_msg_map_size(msg, UPB_SIZE(36, 72)); }
+UPB_INLINE bool grpc_lookup_v1_RouteLookupRequest_key_map_get(const grpc_lookup_v1_RouteLookupRequest *msg, upb_strview key, upb_strview *val) { return _upb_msg_map_get(msg, UPB_SIZE(36, 72), &key, 0, val, 0); }
+UPB_INLINE const grpc_lookup_v1_RouteLookupRequest_KeyMapEntry* grpc_lookup_v1_RouteLookupRequest_key_map_next(const grpc_lookup_v1_RouteLookupRequest *msg, size_t* iter) { return (const grpc_lookup_v1_RouteLookupRequest_KeyMapEntry*)_upb_msg_map_next(msg, UPB_SIZE(36, 72), iter); }
+UPB_INLINE int32_t grpc_lookup_v1_RouteLookupRequest_reason(const grpc_lookup_v1_RouteLookupRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t); }
+UPB_INLINE upb_strview grpc_lookup_v1_RouteLookupRequest_stale_header_data(const grpc_lookup_v1_RouteLookupRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(28, 56), upb_strview); }
 
 UPB_INLINE void grpc_lookup_v1_RouteLookupRequest_set_server(grpc_lookup_v1_RouteLookupRequest *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
 }
 UPB_INLINE void grpc_lookup_v1_RouteLookupRequest_set_path(grpc_lookup_v1_RouteLookupRequest *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_strview) = value;
 }
 UPB_INLINE void grpc_lookup_v1_RouteLookupRequest_set_target_type(grpc_lookup_v1_RouteLookupRequest *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), upb_strview) = value;
 }
-UPB_INLINE void grpc_lookup_v1_RouteLookupRequest_key_map_clear(grpc_lookup_v1_RouteLookupRequest *msg) { _upb_msg_map_clear(msg, UPB_SIZE(24, 48)); }
-UPB_INLINE bool grpc_lookup_v1_RouteLookupRequest_key_map_set(grpc_lookup_v1_RouteLookupRequest *msg, upb_strview key, upb_strview val, upb_arena *a) { return _upb_msg_map_set(msg, UPB_SIZE(24, 48), &key, 0, &val, 0, a); }
-UPB_INLINE bool grpc_lookup_v1_RouteLookupRequest_key_map_delete(grpc_lookup_v1_RouteLookupRequest *msg, upb_strview key) { return _upb_msg_map_delete(msg, UPB_SIZE(24, 48), &key, 0); }
-UPB_INLINE grpc_lookup_v1_RouteLookupRequest_KeyMapEntry* grpc_lookup_v1_RouteLookupRequest_key_map_nextmutable(grpc_lookup_v1_RouteLookupRequest *msg, size_t* iter) { return (grpc_lookup_v1_RouteLookupRequest_KeyMapEntry*)_upb_msg_map_next(msg, UPB_SIZE(24, 48), iter); }
+UPB_INLINE void grpc_lookup_v1_RouteLookupRequest_key_map_clear(grpc_lookup_v1_RouteLookupRequest *msg) { _upb_msg_map_clear(msg, UPB_SIZE(36, 72)); }
+UPB_INLINE bool grpc_lookup_v1_RouteLookupRequest_key_map_set(grpc_lookup_v1_RouteLookupRequest *msg, upb_strview key, upb_strview val, upb_arena *a) { return _upb_msg_map_set(msg, UPB_SIZE(36, 72), &key, 0, &val, 0, a); }
+UPB_INLINE bool grpc_lookup_v1_RouteLookupRequest_key_map_delete(grpc_lookup_v1_RouteLookupRequest *msg, upb_strview key) { return _upb_msg_map_delete(msg, UPB_SIZE(36, 72), &key, 0); }
+UPB_INLINE grpc_lookup_v1_RouteLookupRequest_KeyMapEntry* grpc_lookup_v1_RouteLookupRequest_key_map_nextmutable(grpc_lookup_v1_RouteLookupRequest *msg, size_t* iter) { return (grpc_lookup_v1_RouteLookupRequest_KeyMapEntry*)_upb_msg_map_next(msg, UPB_SIZE(36, 72), iter); }
+UPB_INLINE void grpc_lookup_v1_RouteLookupRequest_set_reason(grpc_lookup_v1_RouteLookupRequest *msg, int32_t value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
+}
+UPB_INLINE void grpc_lookup_v1_RouteLookupRequest_set_stale_header_data(grpc_lookup_v1_RouteLookupRequest *msg, upb_strview value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 56), upb_strview) = value;
+}
 
 /* grpc.lookup.v1.RouteLookupRequest.KeyMapEntry */
 

@@ -16,17 +16,19 @@ static const upb_msglayout *const grpc_lookup_v1_RouteLookupRequest_submsgs[1] =
   &grpc_lookup_v1_RouteLookupRequest_KeyMapEntry_msginit,
 };
 
-static const upb_msglayout_field grpc_lookup_v1_RouteLookupRequest__fields[4] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(16, 32), 0, 0, 9, _UPB_MODE_SCALAR},
-  {4, UPB_SIZE(24, 48), 0, 0, 11, _UPB_MODE_MAP},
+static const upb_msglayout_field grpc_lookup_v1_RouteLookupRequest__fields[6] = {
+  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(20, 40), 0, 0, 9, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(36, 72), 0, 0, 11, _UPB_MODE_MAP},
+  {5, UPB_SIZE(0, 0), 0, 0, 14, _UPB_MODE_SCALAR},
+  {6, UPB_SIZE(28, 56), 0, 0, 9, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout grpc_lookup_v1_RouteLookupRequest_msginit = {
   &grpc_lookup_v1_RouteLookupRequest_submsgs[0],
   &grpc_lookup_v1_RouteLookupRequest__fields[0],
-  UPB_SIZE(32, 64), 4, false, 4, 255,
+  UPB_SIZE(40, 80), 6, false, 6, 255,
 };
 
 static const upb_msglayout_field grpc_lookup_v1_RouteLookupRequest_KeyMapEntry__fields[2] = {
