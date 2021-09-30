@@ -69,7 +69,7 @@ then
     sleep 3
   done
   [[ "$gpg_recv_keys_success" == 1 ]] || exit 1
-  rvm --debug get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
+  rvm --debug --trace get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
   # stop echoing bash commands temporarily to prevent rvm from polluting the logs
   set +x
   source $HOME/.rvm/scripts/rvm
