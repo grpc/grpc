@@ -345,6 +345,10 @@ class RlsLb : public LoadBalancingPolicy {
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
         return data_expiration_time_;
       }
+      const std::string& header_data() const
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
+        return header_data_;
+      }
       grpc_millis stale_time() const
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
         return stale_time_;
@@ -352,6 +356,11 @@ class RlsLb : public LoadBalancingPolicy {
       grpc_millis min_expiration_time() const
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
         return min_expiration_time_;
+      }
+
+      std::unique_ptr<BackOff> TakeBackoffState()
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
+        return std::move(backoff_state_);
       }
 
       // Cache size of entry.
@@ -488,13 +497,10 @@ class RlsLb : public LoadBalancingPolicy {
     // Shuts down the channel.
     void Orphan() override;
 
-    // Checks if there is already an RLS call pending for the key. If
-    // not, the method further checks if a new RLS call should be throttle. If
-    // not, an RLS call is made.
-    //
-    // Returns false if a new RLS call is throttled; otherwise it returns true.
-    bool MaybeMakeRlsCall(const RequestKey& key,
-                          std::unique_ptr<BackOff>* backoff_state = nullptr)
+    // Starts an RLS call.
+    // If stale_entry is non-null, it points to the entry containing
+    // stale data for the key.
+    void StartRlsCall(const RequestKey& key, Cache::Entry* stale_entry)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
     // Reports the result of an RLS call to the throttle.
@@ -566,11 +572,11 @@ class RlsLb : public LoadBalancingPolicy {
     // Asynchronously starts a call on rls_channel for key.
     // Stores backoff_state, which will be transferred to the data cache
     // if the RLS request fails.
-    // FIXME: request proto needs to include the reason and, if it's
-    // staleness, the cached header data
     RlsRequest(RefCountedPtr<RlsLb> lb_policy, RlsLb::RequestKey key,
                RefCountedPtr<RlsChannel> rls_channel,
-               std::unique_ptr<BackOff> backoff_state);
+               std::unique_ptr<BackOff> backoff_state,
+               grpc_lookup_v1_RouteLookupRequest_Reason reason,
+               std::string stale_header_data);
     ~RlsRequest() override;
 
     // Shuts down the request.  If the request is still in flight, it is
@@ -596,8 +602,9 @@ class RlsLb : public LoadBalancingPolicy {
     RefCountedPtr<RlsLb> lb_policy_;
     RlsLb::RequestKey key_;
     RefCountedPtr<RlsChannel> rls_channel_;
-
     std::unique_ptr<BackOff> backoff_state_;
+    grpc_lookup_v1_RouteLookupRequest_Reason reason_;
+    std::string stale_header_data_;
 
     // RLS call state.
     grpc_millis deadline_;
@@ -668,6 +675,7 @@ void RlsLb::ChildPolicyWrapper::Orphan() {
 }
 
 LoadBalancingPolicy::PickResult RlsLb::ChildPolicyWrapper::Pick(PickArgs args) {
+  // FIXME: this can't happen, can it?
   if (picker_ == nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
       gpr_log(GPR_INFO,
@@ -883,32 +891,42 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
     return PickResult::Fail(
         absl::UnavailableError("LB policy already shut down"));
   }
+  // Check if there's a cache entry.
   Cache::Entry* entry = lb_policy_->cache_.Find(key);
   // If there is no cache entry, or if the cache entry is not in backoff
-  // and has a stale time in the past, start a new RLS request.
-  if (entry == nullptr ||
-      (entry->stale_time() < now && entry->backoff_time() < now)) {
-    bool call_throttled = !lb_policy_->rls_channel_->MaybeMakeRlsCall(key);
-    if (call_throttled &&
-        (entry == nullptr || entry->data_expiration_time() < now)) {
-      // RLS request throttled and no non-expired cached data.
-      // If default target is set, use that; otherwise, fail the pick.
-      if (default_child_policy_ != nullptr) {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-          gpr_log(
-              GPR_INFO,
-              "[rlslb %p] picker=%p: RLS call throttled; using default target",
-              lb_policy_.get(), this);
+  // and has a stale time in the past, and there is not already a
+  // pending RLS request for this key, then try to start a new RLS request.
+  if ((entry == nullptr ||
+       (entry->stale_time() < now && entry->backoff_time() < now)) &&
+      lb_policy_->request_map_.find(key) == lb_policy_->request_map_.end()) {
+    // Check if requests are being throttled.
+    if (lb_policy_->rls_channel_->ShouldThrottle()) {
+      // Request is throttled.
+      // If there is no non-expired data in the cache, then we use the
+      // default target if set, or else we fail the pick.
+      if (entry == nullptr || entry->data_expiration_time() < now) {
+        if (default_child_policy_ != nullptr) {
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+            gpr_log(GPR_INFO,
+                    "[rlslb %p] picker=%p: RLS call throttled; "
+                    "using default target",
+                    lb_policy_.get(), this);
+          }
+          return default_child_policy_->Pick(args);
         }
-        return default_child_policy_->Pick(args);
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+          gpr_log(GPR_INFO,
+                  "[rlslb %p] picker=%p: RLS call throttled; failing pick",
+                  lb_policy_.get(), this);
+        }
+        return PickResult::Fail(
+            absl::UnavailableError("RLS request throttled"));
       }
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-        gpr_log(GPR_INFO,
-                "[rlslb %p] picker=%p: RLS call throttled; failing pick",
-                lb_policy_.get(), this);
-      }
-      return PickResult::Fail(absl::UnavailableError("RLS request throttled"));
     }
+    // Start the RLS call.
+    lb_policy_->rls_channel_->StartRlsCall(
+        key, (entry == nullptr || entry->data_expiration_time() < now) ? nullptr
+                                                                       : entry);
   }
   // If the cache entry exists, see if it has usable data.
   if (entry != nullptr) {
@@ -1459,21 +1477,22 @@ void RlsLb::RlsChannel::Orphan() {
   Unref(DEBUG_LOCATION, "Orphan");
 }
 
-bool RlsLb::RlsChannel::MaybeMakeRlsCall(
-    const RequestKey& key, std::unique_ptr<BackOff>* backoff_state) {
-  auto it = lb_policy_->request_map_.find(key);
-  if (it == lb_policy_->request_map_.end()) {
-    if (lb_policy_->rls_channel_->ShouldThrottle()) {
-      return false;
-    }
-    lb_policy_->request_map_.emplace(
-        key,
-        MakeOrphanable<RlsRequest>(
-            lb_policy_->Ref(DEBUG_LOCATION, "RlsRequest"), key,
-            lb_policy_->rls_channel_->Ref(DEBUG_LOCATION, "RlsRequest"),
-            backoff_state == nullptr ? nullptr : std::move(*backoff_state)));
+void RlsLb::RlsChannel::StartRlsCall(const RequestKey& key,
+                                     Cache::Entry* stale_entry) {
+  std::unique_ptr<BackOff> backoff_state;
+  grpc_lookup_v1_RouteLookupRequest_Reason reason =
+      grpc_lookup_v1_RouteLookupRequest_REASON_MISS;
+  std::string stale_header_data;
+  if (stale_entry != nullptr) {
+    backoff_state = stale_entry->TakeBackoffState();
+    reason = grpc_lookup_v1_RouteLookupRequest_REASON_STALE;
+    stale_header_data = stale_entry->header_data();
   }
-  return true;
+  lb_policy_->request_map_.emplace(
+      key, MakeOrphanable<RlsRequest>(
+               lb_policy_->Ref(DEBUG_LOCATION, "RlsRequest"), key,
+               lb_policy_->rls_channel_->Ref(DEBUG_LOCATION, "RlsRequest"),
+               std::move(backoff_state), reason, std::move(stale_header_data)));
 }
 
 void RlsLb::RlsChannel::ReportResponseLocked(bool response_succeeded) {
@@ -1492,13 +1511,17 @@ void RlsLb::RlsChannel::ResetBackoff() {
 // FIXME: update this to handle call creds and domain correctly
 RlsLb::RlsRequest::RlsRequest(RefCountedPtr<RlsLb> lb_policy, RequestKey key,
                               RefCountedPtr<RlsChannel> rls_channel,
-                              std::unique_ptr<BackOff> backoff_state)
+                              std::unique_ptr<BackOff> backoff_state,
+                              grpc_lookup_v1_RouteLookupRequest_Reason reason,
+                              std::string stale_header_data)
     : InternallyRefCounted<RlsRequest>(
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) ? "RlsRequest" : nullptr),
       lb_policy_(std::move(lb_policy)),
       key_(std::move(key)),
       rls_channel_(std::move(rls_channel)),
-      backoff_state_(std::move(backoff_state)) {
+      backoff_state_(std::move(backoff_state)),
+      reason_(reason),
+      stale_header_data_(std::move(stale_header_data)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO,
             "[rlslb %p] rls_request=%p: RLS request created for key %s",
@@ -1645,8 +1668,14 @@ grpc_byte_buffer* RlsLb::RlsRequest::MakeRequestProto() {
       req, upb_strview_make(kGrpc, sizeof(kGrpc) - 1));
   for (const auto& kv : key_.key_map) {
     grpc_lookup_v1_RouteLookupRequest_key_map_set(
-        req, upb_strview_make(kv.first.c_str(), kv.first.length()),
-        upb_strview_make(kv.second.c_str(), kv.second.length()), arena.ptr());
+        req, upb_strview_make(kv.first.data(), kv.first.size()),
+        upb_strview_make(kv.second.data(), kv.second.size()), arena.ptr());
+  }
+  grpc_lookup_v1_RouteLookupRequest_set_reason(req, reason_);
+  if (!stale_header_data_.empty()) {
+    grpc_lookup_v1_RouteLookupRequest_set_stale_header_data(
+        req,
+        upb_strview_make(stale_header_data_.data(), stale_header_data_.size()));
   }
   size_t len;
   char* buf =

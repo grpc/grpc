@@ -114,7 +114,40 @@ using RlsService =
 
 class RlsServiceImpl : public RlsService {
  public:
-  using RequestKey = std::map<std::string, std::string>;
+  struct Request {
+    std::map<std::string, std::string> key;
+    lookup::v1::RouteLookupRequest_Reason reason =
+        lookup::v1::RouteLookupRequest_Reason_REASON_MISS;
+    std::string stale_header_data;
+
+    Request() = default;
+    explicit Request(std::map<std::string, std::string> kv)
+        : key(std::move(kv)) {}
+    Request(std::map<std::string, std::string> kv,
+            lookup::v1::RouteLookupRequest_Reason r)
+        : key(std::move(kv)), reason(r) {}
+    Request(std::map<std::string, std::string> kv,
+            lookup::v1::RouteLookupRequest_Reason r,
+            std::string h)
+        : key(std::move(kv)), reason(r), stale_header_data(std::move(h)) {}
+
+    explicit Request(const lookup::v1::RouteLookupRequest& request)
+        : key(request.key_map().begin(), request.key_map().end()),
+          reason(request.reason()),
+          stale_header_data(request.stale_header_data()) {}
+
+    bool operator==(const Request& other) const {
+      return key == other.key &&
+             reason == other.reason &&
+             stale_header_data == other.stale_header_data;
+    }
+
+    bool operator<(const Request& other) const {
+      return key < other.key ||
+             reason < other.reason ||
+             stale_header_data < other.stale_header_data;
+    }
+  };
 
   struct Response {
     std::vector<std::string> targets;
@@ -140,16 +173,15 @@ class RlsServiceImpl : public RlsService {
             request->DebugString().c_str());
     IncreaseRequestCount();
     EXPECT_EQ(request->target_type(), "grpc");
-    RequestKey request_key(request->key_map().begin(),
-                           request->key_map().end());
+    Request req(*request);
     // See if we have a configured response for this request.
     Response res;
     {
       grpc::internal::MutexLock lock(&mu_);
-      auto it = responses_.find(request_key);
+      auto it = responses_.find(req);
       if (it == responses_.end()) {
-        gpr_log(GPR_INFO, "RLS: no matching request key, returning INTERNAL");
-        unmatched_requests_.push_back(std::move(request_key));
+        gpr_log(GPR_INFO, "RLS: no matching request, returning INTERNAL");
+        unmatched_requests_.push_back(std::move(req));
         return Status(INTERNAL, "no response entry");
       }
       res = it->second;
@@ -171,25 +203,25 @@ class RlsServiceImpl : public RlsService {
 
   void Shutdown() {}
 
-  void SetResponse(RequestKey request_key, Response response) {
+  void SetResponse(Request request, Response response) {
     grpc::internal::MutexLock lock(&mu_);
-    responses_[std::move(request_key)] = std::move(response);
+    responses_[std::move(request)] = std::move(response);
   }
 
-  void RemoveResponse(const RequestKey& request_key) {
+  void RemoveResponse(const Request& request) {
     grpc::internal::MutexLock lock(&mu_);
-    responses_.erase(request_key);
+    responses_.erase(request);
   }
 
-  std::vector<RequestKey> GetUnmatchedRequests() {
+  std::vector<Request> GetUnmatchedRequests() {
     grpc::internal::MutexLock lock(&mu_);
     return std::move(unmatched_requests_);
   }
 
  private:
   grpc::internal::Mutex mu_;
-  std::map<RequestKey, Response> responses_ ABSL_GUARDED_BY(&mu_);
-  std::vector<RequestKey> unmatched_requests_ ABSL_GUARDED_BY(&mu_);
+  std::map<Request, Response> responses_ ABSL_GUARDED_BY(&mu_);
+  std::vector<Request> unmatched_requests_ ABSL_GUARDED_BY(&mu_);
 };
 
 // Subclass of TestServiceImpl that increments a request counter for
@@ -572,7 +604,7 @@ TEST_F(RlsEnd2endTest, Basic) {
                                          kServiceValue, kMethodValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
+      RlsServiceImpl::Request({{kTestKey, kTestValue}}),
       RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
@@ -603,8 +635,8 @@ TEST_F(RlsEnd2endTest, DuplicateHeadersAreMerged) {
                                          kServiceValue, kMethodValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::RequestKey{
-          {kTestKey, absl::StrCat(kTestValue, ",", kTestValue2)}},
+      RlsServiceImpl::Request({
+          {kTestKey, absl::StrCat(kTestValue, ",", kTestValue2)}}),
       RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   // Same header present twice in the request.  Values should be merged.
   CheckRpcSendOk(
@@ -634,7 +666,7 @@ TEST_F(RlsEnd2endTest, SecondHeaderUsed) {
                                          kServiceValue, kMethodValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
+      RlsServiceImpl::Request({{kTestKey, kTestValue}}),
       RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key2", kTestValue}}));
@@ -670,10 +702,10 @@ TEST_F(RlsEnd2endTest, MultipleHeaderKeys) {
                             kServiceValue, kMethodValue, kTestKey, kTestKey2))
                         .Build());
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::RequestKey{
+      RlsServiceImpl::Request({
           {kTestKey, kTestValue},
           {kTestKey2, kTestValue2},
-      },
+      }),
       RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(
       DEBUG_LOCATION,
@@ -704,7 +736,7 @@ TEST_F(RlsEnd2endTest, NoHeaderMatch) {
                                          kServiceValue, kMethodValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::RequestKey{},
+      RlsServiceImpl::Request(),
       RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   // Request does not have header "key1", so kTestKey will not be added.
   CheckRpcSendOk(DEBUG_LOCATION);
@@ -730,7 +762,7 @@ TEST_F(RlsEnd2endTest, WildcardMethod) {
                                                        kServiceValue, kTestKey))
                         .Build());
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
+      RlsServiceImpl::Request({{kTestKey, kTestValue}}),
       RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
@@ -758,7 +790,7 @@ TEST_F(RlsEnd2endTest, NoKeyBuilderForMethod) {
                                          kServiceValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::RequestKey{},
+      RlsServiceImpl::Request(),
       RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION);
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
@@ -786,7 +818,7 @@ TEST_F(RlsEnd2endTest, HeaderData) {
                                          kServiceValue, kMethodValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
+      RlsServiceImpl::Request({{kTestKey, kTestValue}}),
       RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)},
                                kHeaderData));
   CheckRpcSendOk(DEBUG_LOCATION,
@@ -827,13 +859,13 @@ TEST_F(RlsEnd2endTest, ExtraKeysAndConstantKeys) {
                                          kConstantKey, kConstantValue))
           .Build());
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::RequestKey{
+      RlsServiceImpl::Request({
           {kTestKey, kTestValue},
           {kHostKey, kTestUrl},
           {kServiceKey, kServiceValue},
           {kMethodKey, kMethodValue},
           {kConstantKey, kConstantValue},
-      },
+      }),
       RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
@@ -865,11 +897,11 @@ TEST_F(RlsEnd2endTest, FailedRlsRequestWithoutDefaultTarget) {
   CheckRpcSendFailure(DEBUG_LOCATION,
                       RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_THAT(rls_server_->service_.GetUnmatchedRequests(),
-              ::testing::ElementsAre(::testing::ElementsAre(
-                  ::testing::Pair(kTestKey, kTestValue))));
+              ::testing::ElementsAre(
+                  RlsServiceImpl::Request({{kTestKey, kTestValue}})));
   // Now give the RLS server the right response.
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
+      RlsServiceImpl::Request({{kTestKey, kTestValue}}),
       RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   // Sleep long enough for backoff to elapse, then try another RPC.
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
@@ -904,8 +936,8 @@ TEST_F(RlsEnd2endTest, FailedRlsRequestWithDefaultTarget) {
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_THAT(rls_server_->service_.GetUnmatchedRequests(),
-              ::testing::ElementsAre(::testing::ElementsAre(
-                  ::testing::Pair(kTestKey, kTestValue))));
+              ::testing::ElementsAre(
+                  RlsServiceImpl::Request({{kTestKey, kTestValue}})));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 0);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
@@ -933,7 +965,7 @@ TEST_F(RlsEnd2endTest, RlsRequestTimeout) {
           .Build());
   // RLS server will send a response, but it's longer than the timeout.
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
+      RlsServiceImpl::Request({{kTestKey, kTestValue}}),
       RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)},
                                /*delay=*/3000));
   // The data plane RPC should be sent to the default target.
@@ -968,8 +1000,8 @@ TEST_F(RlsEnd2endTest, UpdateConfig) {
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_THAT(rls_server_->service_.GetUnmatchedRequests(),
-              ::testing::ElementsAre(::testing::ElementsAre(
-                  ::testing::Pair(kTestKey, kTestValue))));
+              ::testing::ElementsAre(
+                  RlsServiceImpl::Request({{kTestKey, kTestValue}})));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 0);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
@@ -1008,7 +1040,7 @@ TEST_F(RlsEnd2endTest, CachedResponse) {
                                          kServiceValue, kMethodValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
+      RlsServiceImpl::Request({{kTestKey, kTestValue}}),
       RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   // Send two RPCs.
   CheckRpcSendOk(DEBUG_LOCATION,
@@ -1042,7 +1074,7 @@ TEST_F(RlsEnd2endTest, StaleCacheEntry) {
           .set_stale_age(1000)
           .Build());
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
+      RlsServiceImpl::Request({{kTestKey, kTestValue}}),
       RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   // Send one RPC.  RLS server gets a request, and RPC goes to backend.
   CheckRpcSendOk(DEBUG_LOCATION,
@@ -1050,6 +1082,67 @@ TEST_F(RlsEnd2endTest, StaleCacheEntry) {
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
+  // Update RLS server to expect stale request.
+  rls_server_->service_.RemoveResponse(
+      RlsServiceImpl::Request({{kTestKey, kTestValue}}));
+  rls_server_->service_.SetResponse(
+      RlsServiceImpl::Request(
+          {{kTestKey, kTestValue}},
+          lookup::v1::RouteLookupRequest_Reason_REASON_STALE),
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
+  // Wait longer than stale age.
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
+  // Send another RPC.  This should use the stale value but should
+  // dispatch a second RLS request.
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
+  EXPECT_EQ(backends_[0]->service_.request_count(), 2);
+  // Wait for RLS server to receive the second request.
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
+  EXPECT_EQ(rls_server_->service_.request_count(), 2);
+  EXPECT_EQ(rls_server_->service_.response_count(), 2);
+}
+
+TEST_F(RlsEnd2endTest, StaleCacheEntryWithHeaderData) {
+  const char* kHeaderData = "header_data";
+  StartBackends(1);
+  SetNextResolution(
+      MakeServiceConfigBuilder()
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
+          .set_max_age(5000)
+          .set_stale_age(1000)
+          .Build());
+  rls_server_->service_.SetResponse(
+      RlsServiceImpl::Request({{kTestKey, kTestValue}}),
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)},
+                               kHeaderData));
+  // Send one RPC.  RLS server gets a request, and RPC goes to backend.
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
+  EXPECT_EQ(rls_server_->service_.request_count(), 1);
+  EXPECT_EQ(rls_server_->service_.response_count(), 1);
+  EXPECT_EQ(backends_[0]->service_.request_count(), 1);
+  // Update RLS server to expect stale request.
+  rls_server_->service_.RemoveResponse(
+      RlsServiceImpl::Request({{kTestKey, kTestValue}}));
+  rls_server_->service_.SetResponse(
+      RlsServiceImpl::Request(
+          {{kTestKey, kTestValue}},
+          lookup::v1::RouteLookupRequest_Reason_REASON_STALE, kHeaderData),
+      RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)},
+                               kHeaderData));
   // Wait longer than stale age.
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
   // Send another RPC.  This should use the stale value but should
@@ -1084,7 +1177,7 @@ TEST_F(RlsEnd2endTest, ExpiredCacheEntry) {
           .set_lookup_service_timeout(1000)
           .Build());
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
+      RlsServiceImpl::Request({{kTestKey, kTestValue}}),
       RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   // Send one RPC.  RLS server gets a request, and RPC goes to backend.
   CheckRpcSendOk(DEBUG_LOCATION,
@@ -1094,7 +1187,7 @@ TEST_F(RlsEnd2endTest, ExpiredCacheEntry) {
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
   // Remove response from RLS server so that the next RLS request fails.
   rls_server_->service_.RemoveResponse(
-      RlsServiceImpl::RequestKey{{kTestKey, kTestValue}});
+      RlsServiceImpl::Request({{kTestKey, kTestValue}}));
   // Wait for cache to be expired.
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
   // Send another RPC.  This should trigger a second RLS request, but
@@ -1129,10 +1222,10 @@ TEST_F(RlsEnd2endTest, CacheSizeLimit) {
           .Build());
   // Set RLS responses for both kTestValue and kTestValue2.
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
+      RlsServiceImpl::Request({{kTestKey, kTestValue}}),
       RlsServiceImpl::Response({TargetStringForPort(backends_[0]->port_)}));
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::RequestKey{{kTestKey, kTestValue2}},
+      RlsServiceImpl::Request({{kTestKey, kTestValue2}}),
       RlsServiceImpl::Response({TargetStringForPort(backends_[1]->port_)}));
   // Send an RPC for kTestValue.
   // RLS server gets a request, and RPC goes to backend.
@@ -1197,7 +1290,7 @@ TEST_F(RlsEnd2endTest, MultipleTargets) {
                                          kServiceValue, kMethodValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
-      RlsServiceImpl::RequestKey{{kTestKey, kTestValue}},
+      RlsServiceImpl::Request({{kTestKey, kTestValue}}),
       RlsServiceImpl::Response(
           // First target will not respond.
           {TargetStringForPort(grpc_pick_unused_port_or_die()),
