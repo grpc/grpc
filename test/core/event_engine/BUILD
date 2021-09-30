@@ -46,17 +46,3 @@ grpc_cc_library(
         "//test/core/util:grpc_test_util",
     ],
 )
-
-grpc_cc_test(
-    name = "simple_event_engine_test",
-    srcs = ["test_suite/simple_event_engine_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_polling = False,
-    deps = [
-        ":event_engine_test_suite",
-        "//:grpc",
-    ],
-)
