@@ -1771,6 +1771,7 @@ grpc_cc_library(
     deps = [
         "bitset",
         "channel_stack_type",
+        "chunked_vector",
         "closure",
         "config",
         "dual_ref_counted",
@@ -1788,7 +1789,6 @@ grpc_cc_library(
         "slice_refcount",
         "table",
         "useful",
-        "chunked_vector"
     ],
 )
 

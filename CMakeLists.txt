@@ -1657,7 +1657,6 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/hpack_utils.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
-  src/core/ext/transport/chttp2/transport/incoming_metadata.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/stream_map.cc
@@ -2490,7 +2489,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/hpack_utils.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
-  src/core/ext/transport/chttp2/transport/incoming_metadata.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/stream_map.cc
