@@ -2255,7 +2255,6 @@ grpc_cc_library(
         "gpr_base",
         "gpr_codegen",
         "grpc_base",
-        "grpc_base_c",
         "grpc_client_channel",
         "grpc_codegen",
         "grpc_secure",
