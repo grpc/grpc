@@ -1962,7 +1962,7 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
   chand_ = std::move(channels_[key]);
   for (auto& authority : bootstrap_->authorities()) {
     gpr_log(GPR_INFO, "donna in author");
-    for (auto& server : authority.second->xds_servers) {
+    for (auto& server : authority.second.xds_servers) {
       key = absl::StrCat(
           server.server_uri, server.channel_creds_config.string_value(),
           absl::StrJoin(std::vector<std::string>(server.server_features.begin(),

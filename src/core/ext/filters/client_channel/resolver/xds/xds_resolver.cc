@@ -55,8 +55,8 @@ namespace {
 class XdsResolver : public Resolver {
  public:
   explicit XdsResolver(ResolverArgs args, RefCountedPtr<XdsClient> xds_client,
-                       std::string lds_resource_name, std::string authority,
-                       std::string xds_server)
+                       std::string lds_resource_name,
+                       std::string data_plane_authority, std::string xds_server)
       : work_serializer_(std::move(args.work_serializer)),
         result_handler_(std::move(args.result_handler)),
         args_(grpc_channel_args_copy(args.args)),
@@ -64,15 +64,15 @@ class XdsResolver : public Resolver {
         xds_client_(std::move(xds_client)),
         server_name_(lds_resource_name),
         lds_resource_name_(std::move(lds_resource_name)),
-        authority_(std::move(authority)),
+        data_plane_authority_(std::move(data_plane_authority)),
         xds_server_(std::move(xds_server)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO,
               "[xds_resolver %p] created for URI scheme %s path %s authority "
-              "%s server name %s lds resource name %s authority %s",
+              "%s server name %s lds resource name %s data plane authority %s",
               this, args.uri.scheme().c_str(), args.uri.path().c_str(),
               args.uri.authority().c_str(), server_name_.c_str(),
-              lds_resource_name_.c_str(), authority_.c_str());
+              lds_resource_name_.c_str(), data_plane_authority_.c_str());
     }
   }
 
@@ -272,7 +272,7 @@ class XdsResolver : public Resolver {
   std::unique_ptr<ResultHandler> result_handler_;
   std::string server_name_;
   std::string lds_resource_name_;
-  std::string authority_;
+  std::string data_plane_authority_;
   std::string xds_server_;
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
@@ -1010,7 +1010,7 @@ class XdsResolverFactory : public ResolverFactory {
       return nullptr;
     }
     std::string lds_resource_name;
-    std::string authority;
+    std::string data_plane_authority;
     std::string xds_server;
     if (args.uri.scheme() == "xds") {
       xds_server = absl::StrCat(
@@ -1022,10 +1022,18 @@ class XdsResolverFactory : public ResolverFactory {
                   xds_client->bootstrap().server().server_features.end()),
               ""));
       std::string target_hostname(absl::StripPrefix(args.uri.path(), "/"));
-      if (!args.uri.authority().empty()) {
+      std::string authority;
+      gpr_log(GPR_INFO, "donna target_hostname is %s", target_hostname.c_str());
+      // always empty: if (!args.uri.authority().empty()) {
+      std::vector<std::string> parts_of_uri =
+          absl::StrSplit(target_hostname, "/");
+      GPR_ASSERT(parts_of_uri.size() == 1 || parts_of_uri.size() == 2);
+      if (parts_of_uri.size() == 2) {
+        gpr_log(GPR_INFO, "donna uri authority is not empty");
+        authority = parts_of_uri[0];
         auto authority_config =
-            xds_client->bootstrap().LookupAuthority(target_hostname);
-        if (authority_config == nullptr) {
+            xds_client->bootstrap().LookupAuthority(authority);
+        if (authority_config == absl::nullopt) {
           gpr_log(GPR_ERROR,
                   "Invalid target URI -- authority not found for %s.",
                   target_hostname.c_str());
@@ -1050,7 +1058,9 @@ class XdsResolverFactory : public ResolverFactory {
                   ""));
         }
       } else {
-        // args.uri.authority().empty() case
+        gpr_log(GPR_INFO, "donna uri authority is empty");
+        // args.uri.authority().empty() and uri path does not contain authority
+        // case
         std::string name_template =
             xds_client->bootstrap()
                 .client_default_listener_resource_name_template();
@@ -1063,13 +1073,14 @@ class XdsResolverFactory : public ResolverFactory {
         lds_resource_name =
             absl::StrReplaceAll(name_template, {{"%s", target_hostname}});
       }
-      authority = GetDefaultAuthority(args.uri);
+      data_plane_authority = GetDefaultAuthority(args.uri);
     }
-    gpr_log(GPR_INFO,
-            "donna constructued lds_resource_name %s and authority %s",
-            lds_resource_name.c_str(), authority.c_str());
+    gpr_log(
+        GPR_INFO,
+        "donna constructued lds_resource_name %s and data plane authority %s",
+        lds_resource_name.c_str(), data_plane_authority.c_str());
     return MakeOrphanable<XdsResolver>(std::move(args), std::move(xds_client),
-                                       lds_resource_name, authority,
+                                       lds_resource_name, data_plane_authority,
                                        xds_server);
   }
 

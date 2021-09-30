@@ -95,16 +95,20 @@ class XdsBootstrap {
   const std::string& server_listener_resource_name_template() const {
     return server_listener_resource_name_template_;
   }
-  std::map<std::string, Authority*>& authorities() { return authorities_; }
-  Authority* LookupAuthority(const std::string& name) const;
+  std::map<std::string, Authority>& authorities() { return authorities_; }
+  absl::optional<Authority> LookupAuthority(const std::string& name) const;
   const CertificateProviderStore::PluginDefinitionMap& certificate_providers()
       const {
     return certificate_providers_;
   }
 
  private:
-  grpc_error_handle ParseXdsServerList(Json* json);
-  grpc_error_handle ParseXdsServer(Json* json, size_t idx);
+  grpc_error_handle ParseXdsServerList(
+      Json* json, absl::InlinedVector<XdsServer, 1>& servers);
+  grpc_error_handle ParseXdsServer(Json* json, size_t idx,
+                                   absl::InlinedVector<XdsServer, 1>& servers);
+  grpc_error_handle ParseAuthorities(Json* json);
+  grpc_error_handle ParseAuthority(Json* json, const std::string& name);
   grpc_error_handle ParseChannelCredsArray(Json* json, XdsServer* server);
   grpc_error_handle ParseChannelCreds(Json* json, size_t idx,
                                       XdsServer* server);
@@ -119,7 +123,7 @@ class XdsBootstrap {
   std::unique_ptr<Node> node_;
   std::string client_default_listener_resource_name_template_;
   std::string server_listener_resource_name_template_;
-  std::map<std::string, Authority*> authorities_;
+  std::map<std::string, Authority> authorities_;
   CertificateProviderStore::PluginDefinitionMap certificate_providers_;
 };
 

@@ -209,6 +209,10 @@ constexpr char kBootstrapFileV3[] =
     "      \"sub_zone\": \"mp3\"\n"
     "    }\n"
     "  },\n"
+    "  \"authorities\": {\n"
+    "    \"xds.example.com\": {\n"
+    "    }\n"
+    "  },\n"
     "  \"server_listener_resource_name_template\": "
     "\"grpc/server?xds.resource.listening_address=%s\",\n"
     "  \"certificate_providers\": {\n"
@@ -3364,7 +3368,7 @@ TEST_P(XdsResolverOnlyTest, ClusterChangeAfterAdsCallFails) {
 
 using GlobalXdsClientTest = BasicTest;
 
-TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
+/*TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   const char* kNewServerName = "xds.example.com/new-server.example.com";
   Listener listener = default_listener_;
   listener.set_name(kNewServerName);
@@ -3377,13 +3381,13 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   // Create second channel and tell it to connect to kNewServerName.
-  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewServerName);
-  channel2->GetState(/*try_to_connect=*/true);
+  auto channel2 = CreateChannel(/*failover_timeout=0, kNewServerName);
+  channel2->GetState(/*try_to_connect=true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
   // Make sure there's only one client connected.
   EXPECT_EQ(1UL, balancers_[0]->ads_service()->clients().size());
-}
+}*/
 
 // Tests that the NACK for multiple bad LDS resources includes both errors.
 TEST_P(GlobalXdsClientTest, MultipleBadResources) {
