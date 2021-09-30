@@ -7484,20 +7484,6 @@ targets:
   - test/cpp/end2end/shutdown_test.cc
   deps:
   - grpc++_test_util
-- name: simple_event_engine_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/event_engine/test_suite/event_engine_test.h
-  src:
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/simple_event_engine_test.cc
-  - test/core/event_engine/test_suite/timer_test.cc
-  deps:
-  - absl/random:random
-  - grpc_test_util
-  uses_polling: false
 - name: simple_request_bad_client_test
   gtest: true
   build: test
