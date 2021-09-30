@@ -359,8 +359,23 @@ class RlsLb : public LoadBalancingPolicy {
       void MarkUsed() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
      private:
-      // Callback when the backoff timer is fired.
-      static void OnBackoffTimer(void* args, grpc_error_handle error);
+      class BackoffTimer : public InternallyRefCounted<BackoffTimer> {
+       public:
+        BackoffTimer(RefCountedPtr<Entry> entry, grpc_millis backoff_time);
+
+        // Note: We are forced to disable lock analysis here because
+        // Orphan() is called by OrphanablePtr<>, which cannot have lock
+        // annotations for this particular caller.
+        void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
+
+       private:
+        static void OnBackoffTimer(void* args, grpc_error_handle error);
+
+        RefCountedPtr<Entry> entry_;
+        bool armed_ ABSL_GUARDED_BY(&RlsLb::mu_) = true;
+        grpc_timer backoff_timer_;
+        grpc_closure backoff_timer_callback_;
+      };
 
       RefCountedPtr<RlsLb> lb_policy_;
 
@@ -369,13 +384,11 @@ class RlsLb : public LoadBalancingPolicy {
       // Backoff states
       absl::Status status_ ABSL_GUARDED_BY(&RlsLb::mu_);
       std::unique_ptr<BackOff> backoff_state_ ABSL_GUARDED_BY(&RlsLb::mu_);
-      grpc_timer backoff_timer_ ABSL_GUARDED_BY(&RlsLb::mu_);
-      bool timer_pending_ ABSL_GUARDED_BY(&RlsLb::mu_) = false;
-      grpc_closure backoff_timer_callback_ ABSL_GUARDED_BY(&RlsLb::mu_);
       grpc_millis backoff_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
           GRPC_MILLIS_INF_PAST;
       grpc_millis backoff_expiration_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
           GRPC_MILLIS_INF_PAST;
+      OrphanablePtr<BackoffTimer> backoff_timer_;
 
       // RLS response states
       std::vector<RefCountedPtr<ChildPolicyWrapper>>
@@ -580,10 +593,11 @@ class RlsLb : public LoadBalancingPolicy {
   // Returns a new picker to the channel to trigger reprocessing of
   // pending picks.  Schedules the actual picker update on the ExecCtx
   // to be run later, so it's safe to invoke this while holding the lock.
-  void UpdatePicker();
-
-  // Updates picker in the LB policy's work serializer.
+  void UpdatePickerAsync();
+  // Hops into work serializer and calls UpdatePickerLocked().
   static void UpdatePickerCallback(void* arg, grpc_error_handle error);
+  // Updates the picker in the work serializer.
+  void UpdatePickerLocked() ABSL_LOCKS_EXCLUDED(&mu_);
 
   // The name of the server for the channel.
   std::string server_name_;
@@ -727,18 +741,20 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
             wrapper_->target_.c_str(), this, ConnectivityStateName(state),
             status.ToString().c_str(), picker.get());
   }
-  MutexLock lock(&wrapper_->lb_policy_->mu_);
-  if (wrapper_->is_shutdown_) return;
-  if (wrapper_->connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
-      state != GRPC_CHANNEL_READY) {
-    return;
+  {
+    MutexLock lock(&wrapper_->lb_policy_->mu_);
+    if (wrapper_->is_shutdown_) return;
+    if (wrapper_->connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
+        state != GRPC_CHANNEL_READY) {
+      return;
+    }
+    wrapper_->connectivity_state_ = state;
+    GPR_DEBUG_ASSERT(picker != nullptr);
+    if (picker != nullptr) {
+      wrapper_->picker_ = std::move(picker);
+    }
   }
-  wrapper_->connectivity_state_ = state;
-  GPR_DEBUG_ASSERT(picker != nullptr);
-  if (picker != nullptr) {
-    wrapper_->picker_ = std::move(picker);
-  }
-  wrapper_->lb_policy_->UpdatePicker();
+  wrapper_->lb_policy_->UpdatePickerLocked();
 }
 
 void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::RequestReresolution() {
@@ -885,6 +901,51 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
 }
 
 //
+// RlsLb::Cache::Entry::BackoffTimer
+//
+
+RlsLb::Cache::Entry::BackoffTimer::BackoffTimer(RefCountedPtr<Entry> entry,
+                                                grpc_millis backoff_time)
+    : entry_(std::move(entry)) {
+  GRPC_CLOSURE_INIT(&backoff_timer_callback_, OnBackoffTimer, this, nullptr);
+  Ref(DEBUG_LOCATION, "BackoffTimer").release();
+  grpc_timer_init(&backoff_timer_, backoff_time, &backoff_timer_callback_);
+}
+
+void RlsLb::Cache::Entry::BackoffTimer::Orphan() {
+  if (armed_) {
+    armed_ = false;
+    grpc_timer_cancel(&backoff_timer_);
+  }
+  Unref(DEBUG_LOCATION, "Orphan");
+}
+
+void RlsLb::Cache::Entry::BackoffTimer::OnBackoffTimer(
+    void* arg, grpc_error_handle /*error*/) {
+  auto* self = static_cast<BackoffTimer*>(arg);
+  self->entry_->lb_policy_->work_serializer()->Run(
+      [self]() {
+        RefCountedPtr<BackoffTimer> backoff_timer(self);
+        {
+          MutexLock lock(&self->entry_->lb_policy_->mu_);
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+            gpr_log(GPR_INFO,
+                    "[rlslb %p] cache entry=%p, armed_=%d: backoff timer fired",
+                    self->entry_->lb_policy_.get(), self->entry_.get(),
+                    self->armed_);
+          }
+          bool cancelled = !self->armed_;
+          self->armed_ = false;
+          if (cancelled) return;
+        }
+        // The pick was in backoff state and there could be a pick queued if
+        // wait_for_ready is true. We'll update the picker for that case.
+        self->entry_->lb_policy_->UpdatePickerLocked();
+      },
+      DEBUG_LOCATION);
+}
+
+//
 // RlsLb::Cache::Entry
 //
 
@@ -905,9 +966,7 @@ RlsLb::Cache::Entry::Entry(RefCountedPtr<RlsLb> lb_policy,
       backoff_state_(MakeCacheEntryBackoff()),
       min_expiration_time_(ExecCtx::Get()->Now() + kMinExpirationTime),
       lru_iterator_(lb_policy_->cache_.lru_list_.insert(
-                        lb_policy_->cache_.lru_list_.end(), key)) {
-  GRPC_CLOSURE_INIT(&backoff_timer_callback_, OnBackoffTimer, this, nullptr);
-}
+                        lb_policy_->cache_.lru_list_.end(), key)) {}
 
 void RlsLb::Cache::Entry::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
@@ -918,13 +977,9 @@ void RlsLb::Cache::Entry::Orphan() {
   lb_policy_->cache_.lru_list_.erase(lru_iterator_);
   lru_iterator_ = lb_policy_->cache_.lru_list_.end();  // Just in case.
   backoff_state_.reset();
-  if (timer_pending_) {
-    // FIXME: note that in this case, we *do* want to return a new
-    // picker to force it to reprocess any queued wait_for_ready RPCs
-    // (maybe only when default target is unset?  be consistent with
-    // other FIXMEs)
-    grpc_timer_cancel(&backoff_timer_);
-    lb_policy_->UpdatePicker();
+  if (backoff_timer_ != nullptr) {
+    backoff_timer_.reset();
+    lb_policy_->UpdatePickerAsync();
   }
   child_policy_wrappers_.clear();
   Unref(DEBUG_LOCATION, "Orphan");
@@ -1046,13 +1101,7 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
 
 void RlsLb::Cache::Entry::ResetBackoff() {
   backoff_time_ = GRPC_MILLIS_INF_PAST;
-  if (timer_pending_) {
-    // FIXME: this needs to ensure that the timer callback will *not*
-    // update the picker, since we'll do that once for all timers
-    // instead of once per timer
-    grpc_timer_cancel(&backoff_timer_);
-    timer_pending_ = false;
-  }
+  backoff_timer_.reset();
 }
 
 bool RlsLb::Cache::Entry::ShouldRemove() const {
@@ -1123,13 +1172,9 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
     backoff_time_ = backoff_state_->NextAttemptTime();
     grpc_millis now = ExecCtx::Get()->Now();
     backoff_expiration_time_ = now + (backoff_time_ - now) * 2;
-    // FIXME: should we start this even if the default target is set?
-    if (lb_policy_->config_->default_target().empty()) {
-      timer_pending_ = true;
-      Ref(DEBUG_LOCATION, "BackoffTimer").release();
-      grpc_timer_init(&backoff_timer_, backoff_time_, &backoff_timer_callback_);
-    }
-    lb_policy_->UpdatePicker();
+    backoff_timer_ = MakeOrphanable<BackoffTimer>(
+        Ref(DEBUG_LOCATION, "BackoffTimer"), backoff_time_);
+    lb_policy_->UpdatePickerAsync();
     return;
   }
   // Request succeeded, so store the result.
@@ -1155,7 +1200,7 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
     // Targets didn't change, so we're not updating the list of child
     // policies.  Return a new picker so that any queued requests can be
     // re-processed.
-    lb_policy_->UpdatePicker();
+    lb_policy_->UpdatePickerAsync();
   } else {
     // Target list changed, so update it.
     std::set<absl::string_view> old_targets;
@@ -1195,33 +1240,9 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
     }
     child_policy_wrappers_ = std::move(new_child_policy_wrappers);
     if (update_picker) {
-      lb_policy_->UpdatePicker();
+      lb_policy_->UpdatePickerAsync();
     }
   }
-}
-
-void RlsLb::Cache::Entry::OnBackoffTimer(void* arg, grpc_error_handle error) {
-  auto* cache_entry = static_cast<Entry*>(arg);
-  GRPC_ERROR_REF(error);
-  cache_entry->lb_policy_->work_serializer()->Run(
-      [cache_entry, error]() {
-        RefCountedPtr<Entry> entry(cache_entry);
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-          gpr_log(GPR_INFO,
-                  "[rlslb %p] cache entry=%p, error=%s: backoff timer fired",
-                  entry->lb_policy_.get(), entry.get(),
-                  grpc_error_std_string(error).c_str());
-        }
-        GRPC_ERROR_UNREF(error);
-        {
-          MutexLock lock(&entry->lb_policy_->mu_);
-          entry->timer_pending_ = false;
-        }
-        // The pick was in backoff state and there could be a pick queued if
-        // wait_for_ready is true. We'll update the picker for that case.
-        entry->lb_policy_->UpdatePicker();
-      },
-      DEBUG_LOCATION);
 }
 
 //
@@ -1281,7 +1302,7 @@ void RlsLb::Cache::ResetAllBackoff() {
   for (auto& p : map_) {
     p.second->ResetBackoff();
   }
-  lb_policy_->UpdatePicker();
+  lb_policy_->UpdatePickerAsync();
 }
 
 void RlsLb::Cache::Shutdown() {
@@ -1356,12 +1377,11 @@ void RlsLb::RlsChannel::StateWatcher::OnConnectivityStateChange(
   MutexLock lock(&lb_policy->mu_);
   if (new_state == GRPC_CHANNEL_READY && was_transient_failure_) {
     was_transient_failure_ = false;
-    // FIXME: do this even if there is a default target?
-    // (see the other FIXME below about whether we start the backoff
-    // timer in this case -- should be consistent in both cases)
-    if (lb_policy->config_->default_target().empty()) {
-      lb_policy->cache_.ResetAllBackoff();
-    }
+    // Reset the backoff of all cache entries, so that we don't
+    // double-penalize if an RLS request fails while the channel is
+    // down, since the throttling for the channel being down is handled
+    // at the channel level instead of in the individual cache entries.
+    lb_policy->cache_.ResetAllBackoff();
   } else if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     was_transient_failure_ = true;
   }
@@ -1790,7 +1810,7 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
   // this if the default target changed, but in that case it will
   // already have been done by the initial update to the default target
   // above...
-  UpdatePicker();
+  UpdatePickerLocked();
 }
 
 void RlsLb::ExitIdleLocked() {
@@ -1828,7 +1848,7 @@ void RlsLb::ShutdownLocked() {
   default_child_policy_.reset();
 }
 
-void RlsLb::UpdatePicker() {
+void RlsLb::UpdatePickerAsync() {
   // Run via the ExecCtx, since the caller may be holding the lock, and
   // we don't want to be doing that when we hop into the WorkSerializer,
   // in case the WorkSerializer callback happens to run inline.
@@ -1840,50 +1860,52 @@ void RlsLb::UpdatePicker() {
                GRPC_ERROR_NONE);
 }
 
-void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle error) {
+void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle /*error*/) {
   auto* rls_lb = static_cast<RlsLb*>(arg);
-  GRPC_ERROR_REF(error);
   rls_lb->work_serializer()->Run(
       [rls_lb]() {
         RefCountedPtr<RlsLb> lb_policy(rls_lb);
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-          gpr_log(GPR_INFO, "[rlslb %p] update picker", lb_policy.get());
-        }
-        grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
-        int num_idle = 0;
-        int num_connecting = 0;
-        {
-          MutexLock lock(&lb_policy->mu_);
-          if (lb_policy->is_shutdown_) return;
-          for (auto& item : lb_policy->child_policy_map_) {
-            grpc_connectivity_state item_state =
-                item.second->connectivity_state();
-            if (item_state == GRPC_CHANNEL_READY) {
-              state = GRPC_CHANNEL_READY;
-              break;
-            } else if (item_state == GRPC_CHANNEL_CONNECTING) {
-              ++num_connecting;
-            } else if (item_state == GRPC_CHANNEL_IDLE) {
-              ++num_idle;
-            }
-          }
-          if (state != GRPC_CHANNEL_READY) {
-            if (num_connecting > 0) {
-              state = GRPC_CHANNEL_CONNECTING;
-            } else if (num_idle > 0) {
-              state = GRPC_CHANNEL_IDLE;
-            }
-          }
-        }
-        absl::Status status;
-        if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-          status = absl::UnavailableError("no children available");
-        }
-        auto* policy = lb_policy.get();
-        policy->channel_control_helper()->UpdateState(
-            state, status, absl::make_unique<Picker>(std::move(lb_policy)));
+        lb_policy->UpdatePickerLocked();
+        lb_policy.reset(DEBUG_LOCATION, "UpdatePickerCallback");
       },
       DEBUG_LOCATION);
+}
+
+void RlsLb::UpdatePickerLocked() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+    gpr_log(GPR_INFO, "[rlslb %p] update picker", this);
+  }
+  grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
+  int num_idle = 0;
+  int num_connecting = 0;
+  {
+    MutexLock lock(&mu_);
+    if (is_shutdown_) return;
+    for (auto& p : child_policy_map_) {
+      grpc_connectivity_state child_state = p.second->connectivity_state();
+      if (child_state == GRPC_CHANNEL_READY) {
+        state = GRPC_CHANNEL_READY;
+        break;
+      } else if (child_state == GRPC_CHANNEL_CONNECTING) {
+        ++num_connecting;
+      } else if (child_state == GRPC_CHANNEL_IDLE) {
+        ++num_idle;
+      }
+    }
+    if (state != GRPC_CHANNEL_READY) {
+      if (num_connecting > 0) {
+        state = GRPC_CHANNEL_CONNECTING;
+      } else if (num_idle > 0) {
+        state = GRPC_CHANNEL_IDLE;
+      }
+    }
+  }
+  absl::Status status;
+  if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    status = absl::UnavailableError("no children available");
+  }
+  channel_control_helper()->UpdateState(
+      state, status, absl::make_unique<Picker>(Ref(DEBUG_LOCATION, "Picker")));
 }
 
 //
