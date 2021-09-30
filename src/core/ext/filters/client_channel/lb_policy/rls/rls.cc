@@ -456,7 +456,7 @@ class RlsLb : public LoadBalancingPolicy {
     // Resizes the cache. If the new cache size is greater than the current size
     // of the cache, do nothing. Otherwise, evict the oldest entries that
     // exceed the new size limit of the cache.
-    void Resize(int64_t bytes) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
+    void Resize(size_t bytes) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
     // Resets backoff of all the cache entries.
     void ResetAllBackoff() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
@@ -472,13 +472,13 @@ class RlsLb : public LoadBalancingPolicy {
 
     // Evicts oversized cache elements when the current size is greater than
     // the specified limit.
-    void MaybeShrinkSize(int64_t bytes)
+    void MaybeShrinkSize(size_t bytes)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
     RlsLb* lb_policy_;
 
-    int64_t size_limit_ ABSL_GUARDED_BY(&RlsLb::mu_) = 0;
-    int64_t size_ ABSL_GUARDED_BY(&RlsLb::mu_) = 0;
+    size_t size_limit_ ABSL_GUARDED_BY(&RlsLb::mu_) = 0;
+    size_t size_ ABSL_GUARDED_BY(&RlsLb::mu_) = 0;
 
     std::list<RequestKey> lru_list_ ABSL_GUARDED_BY(&RlsLb::mu_);
     std::unordered_map<RequestKey, OrphanablePtr<Entry>, absl::Hash<RequestKey>>
@@ -930,12 +930,12 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
   }
   // If the cache entry exists, see if it has usable data.
   if (entry != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-      gpr_log(GPR_INFO, "[rlslb %p] picker=%p: using cache entry %p",
-              lb_policy_.get(), this, entry);
-    }
     // If the entry has non-expired data, use it.
     if (entry->data_expiration_time() >= now) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+        gpr_log(GPR_INFO, "[rlslb %p] picker=%p: using cache entry %p",
+                lb_policy_.get(), this, entry);
+      }
       return entry->Pick(args, config_.get(), default_child_policy_.get());
     }
     // If the entry is in backoff, then use the default target if set,
@@ -996,8 +996,12 @@ void RlsLb::Cache::Entry::BackoffTimer::OnBackoffTimer(
           MutexLock lock(&self->entry_->lb_policy_->mu_);
           if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
             gpr_log(GPR_INFO,
-                    "[rlslb %p] cache entry=%p, armed_=%d: backoff timer fired",
+                    "[rlslb %p] cache entry=%p %s, armed_=%d: "
+                    "backoff timer fired",
                     self->entry_->lb_policy_.get(), self->entry_.get(),
+                    self->entry_->is_shutdown_
+                        ? "(shut down)"
+                        : self->entry_->lru_iterator_->ToString().c_str(),
                     self->armed_);
           }
           bool cancelled = !self->armed_;
@@ -1036,8 +1040,8 @@ RlsLb::Cache::Entry::Entry(RefCountedPtr<RlsLb> lb_policy,
 
 void RlsLb::Cache::Entry::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-    gpr_log(GPR_INFO, "[rlslb %p] cache entry=%p: cache entry evicted",
-            lb_policy_.get(), this);
+    gpr_log(GPR_INFO, "[rlslb %p] cache entry=%p %s: cache entry evicted",
+            lb_policy_.get(), this, lru_iterator_->ToString().c_str());
   }
   is_shutdown_ = true;
   lb_policy_->cache_.lru_list_.erase(lru_iterator_);
@@ -1057,8 +1061,6 @@ size_t RlsLb::Cache::Entry::Size() const {
   return lb_policy_->cache_.EntrySizeForKey(*lru_iterator_);
 }
 
-// FIXME: make sure all log messages are useful (e.g., logging request
-// key or RLS target name)
 LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
     PickArgs args, RlsLbConfig* config,
     ChildPolicyWrapper* default_child_policy) {
@@ -1067,9 +1069,10 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
         GRPC_CHANNEL_TRANSIENT_FAILURE) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
         gpr_log(GPR_INFO,
-                "[rlslb %p] cache entry=%p: target %s in state "
+                "[rlslb %p] cache entry=%p %s: target %s in state "
                 "TRANSIENT_FAILURE; skipping",
-                lb_policy_.get(), this, child_policy_wrapper->target().c_str());
+                lb_policy_.get(), this, lru_iterator_->ToString().c_str(),
+                child_policy_wrapper->target().c_str());
       }
       continue;
     }
@@ -1077,9 +1080,10 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
       gpr_log(
           GPR_INFO,
-          "[rlslb %p] cache entry=%p: target %s in state %s; "
+          "[rlslb %p] cache entry=%p %s: target %s in state %s; "
           "delegating",
-          lb_policy_.get(), this, child_policy_wrapper->target().c_str(),
+          lb_policy_.get(), this, lru_iterator_->ToString().c_str(),
+          child_policy_wrapper->target().c_str(),
           ConnectivityStateName(child_policy_wrapper->connectivity_state()));
     }
     // Add header data.
@@ -1094,9 +1098,9 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
   // No child policy found.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO,
-            "[rlslb %p] cache entry=%p: no healthy target found; "
+            "[rlslb %p] cache entry=%p %s: no healthy target found; "
             "failing pick",
-            lb_policy_.get(), this);
+            lb_policy_.get(), this, lru_iterator_->ToString().c_str());
   }
   return PickResult::Fail(
       absl::UnavailableError("all RLS targets unreachable"));
@@ -1272,7 +1276,7 @@ RlsLb::Cache::Entry* RlsLb::Cache::FindOrInsert(const RequestKey& key) {
   // If not found, create new entry.
   if (it == map_.end()) {
     size_t entry_size = EntrySizeForKey(key);
-    MaybeShrinkSize(size_limit_ - entry_size);
+    MaybeShrinkSize(size_limit_ - std::min(size_limit_, entry_size));
     Entry* entry =
         new Entry(lb_policy_->Ref(DEBUG_LOCATION, "CacheEntry"), key);
     map_.emplace(key, OrphanablePtr<Entry>(entry));
@@ -1292,7 +1296,7 @@ RlsLb::Cache::Entry* RlsLb::Cache::FindOrInsert(const RequestKey& key) {
   return it->second.get();
 }
 
-void RlsLb::Cache::Resize(int64_t bytes) {
+void RlsLb::Cache::Resize(size_t bytes) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] resizing cache to %" PRId64 " bytes",
             lb_policy_, bytes);
@@ -1328,8 +1332,8 @@ void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
         MutexLock lock(&lb_policy->mu_);
         if (lb_policy->is_shutdown_) return;
         for (auto it = cache->map_.begin(); it != cache->map_.end();) {
-          if (GPR_UNLIKELY(it->second->ShouldRemove())) {
-            if (!it->second->CanEvict()) break;
+          if (GPR_UNLIKELY(it->second->ShouldRemove() &&
+                           it->second->CanEvict())) {
             cache->size_ -= it->second->Size();
             it = cache->map_.erase(it);
           } else {
@@ -1350,15 +1354,25 @@ size_t RlsLb::Cache::EntrySizeForKey(const RequestKey& key) {
   return (key.Size() * 2) + sizeof(Entry);
 }
 
-void RlsLb::Cache::MaybeShrinkSize(int64_t bytes) {
+void RlsLb::Cache::MaybeShrinkSize(size_t bytes) {
   while (size_ > bytes) {
     auto lru_it = lru_list_.begin();
     if (GPR_UNLIKELY(lru_it == lru_list_.end())) break;
     auto map_it = map_.find(*lru_it);
     GPR_ASSERT(map_it != map_.end());
     if (!map_it->second->CanEvict()) break;
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+      gpr_log(GPR_INFO, "[rlslb %p] LRU eviction: removing entry %p %s",
+              lb_policy_, map_it->second.get(), lru_it->ToString().c_str());
+    }
     size_ -= map_it->second->Size();
     map_.erase(map_it);
+  }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+    gpr_log(GPR_INFO,
+            "[rlslb %p] LRU pass complete: desired size=%" PRIuPTR " size=%"
+            PRIuPTR,
+            lb_policy_, bytes, size_);
   }
 }
 
