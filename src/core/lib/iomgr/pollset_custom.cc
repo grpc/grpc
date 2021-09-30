@@ -76,7 +76,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
   // control back to the application
   grpc_core::ExecCtx* curr = grpc_core::ExecCtx::Get();
   grpc_core::ExecCtx::Set(nullptr);
-  grpc_error* err = poller_vtable->poll(static_cast<size_t>(timeout));
+  grpc_error_handle err = poller_vtable->poll(static_cast<size_t>(timeout));
   grpc_core::ExecCtx::Set(curr);
   grpc_core::ExecCtx::Get()->InvalidateNow();
   if (grpc_core::ExecCtx::Get()->HasWork()) {

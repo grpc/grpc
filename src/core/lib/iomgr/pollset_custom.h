@@ -27,7 +27,7 @@
 
 typedef struct grpc_custom_poller_vtable {
   void (*init)();
-  grpc_error* (*poll)(size_t timeout_ms);
+  grpc_error_handle (*poll)(size_t timeout_ms);
   void (*kick)();
   void (*shutdown)();
 } grpc_custom_poller_vtable;

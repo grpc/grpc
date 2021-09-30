@@ -306,16 +306,10 @@ class ChannelFilter final {
   }
 };
 
-struct FilterRecord {
-  grpc_channel_stack_type stack_type;
-  int priority;
-  std::function<bool(const grpc_channel_args&)> include_filter;
-  grpc_channel_filter filter;
-};
-extern std::vector<FilterRecord>* channel_filters;
-
-void ChannelFilterPluginInit();
-void ChannelFilterPluginShutdown();
+void RegisterChannelFilter(
+    grpc_channel_stack_type stack_type, int priority,
+    std::function<bool(const grpc_channel_args&)> include_filter,
+    const grpc_channel_filter* filter);
 
 }  // namespace internal
 
@@ -333,26 +327,21 @@ template <typename ChannelDataType, typename CallDataType>
 void RegisterChannelFilter(
     const char* name, grpc_channel_stack_type stack_type, int priority,
     std::function<bool(const grpc_channel_args&)> include_filter) {
-  // If we haven't been called before, initialize channel_filters and
-  // call grpc_register_plugin().
-  if (internal::channel_filters == nullptr) {
-    grpc_register_plugin(internal::ChannelFilterPluginInit,
-                         internal::ChannelFilterPluginShutdown);
-    internal::channel_filters = new std::vector<internal::FilterRecord>();
-  }
-  // Add an entry to channel_filters. The filter will be added when the
-  // C-core initialization code calls ChannelFilterPluginInit().
-  typedef internal::ChannelFilter<ChannelDataType, CallDataType> FilterType;
-  internal::FilterRecord filter_record = {
-      stack_type,
-      priority,
-      include_filter,
-      {FilterType::StartTransportStreamOpBatch, FilterType::StartTransportOp,
-       FilterType::call_data_size, FilterType::InitCallElement,
-       FilterType::SetPollsetOrPollsetSet, FilterType::DestroyCallElement,
-       FilterType::channel_data_size, FilterType::InitChannelElement,
-       FilterType::DestroyChannelElement, FilterType::GetChannelInfo, name}};
-  internal::channel_filters->push_back(filter_record);
+  using FilterType = internal::ChannelFilter<ChannelDataType, CallDataType>;
+  static const grpc_channel_filter filter = {
+      FilterType::StartTransportStreamOpBatch,
+      FilterType::StartTransportOp,
+      FilterType::call_data_size,
+      FilterType::InitCallElement,
+      FilterType::SetPollsetOrPollsetSet,
+      FilterType::DestroyCallElement,
+      FilterType::channel_data_size,
+      FilterType::InitChannelElement,
+      FilterType::DestroyChannelElement,
+      FilterType::GetChannelInfo,
+      name};
+  grpc::internal::RegisterChannelFilter(stack_type, priority,
+                                        std::move(include_filter), &filter);
 }
 
 }  // namespace grpc

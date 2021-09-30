@@ -1648,8 +1648,7 @@ class NoOpHttpFilter : public grpc_core::XdsHttpFilterImpl {
 // GPR round the number at millisecond-level. This creates a 1ms difference,
 // which could cause flake.
 grpc_millis NowFromCycleCounter() {
-  gpr_cycle_counter now = gpr_get_cycle_counter();
-  return grpc_cycle_counter_to_millis_round_up(now);
+  return grpc_timespec_to_millis_round_down(gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 // Returns the number of RPCs needed to pass error_tolerance at 99.99994%
@@ -2099,6 +2098,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     int num_failure = 0;
     int num_drops = 0;
     int num_total = 0;
+    gpr_log(GPR_INFO, "========= WAITING FOR All BACKEND %lu TO %lu ==========",
+            static_cast<unsigned long>(start_index),
+            static_cast<unsigned long>(stop_index));
     while (!SeenAllBackends(start_index, stop_index, rpc_options.service)) {
       SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_drops,
                       rpc_options);

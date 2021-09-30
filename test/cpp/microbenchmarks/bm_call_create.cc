@@ -324,6 +324,7 @@ static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
  public:
   grpc_core::RefCountedPtr<grpc_core::Subchannel> CreateSubchannel(
+      const grpc_resolved_address& /*address*/,
       const grpc_channel_args* /*args*/) override {
     return nullptr;
   }
@@ -467,10 +468,10 @@ class SendEmptyMetadata {
   class Op {
    public:
     Op(SendEmptyMetadata* p, grpc_call_stack* /*s*/) {
-      grpc_metadata_batch_init(&batch_);
+      batch_.Clear();
       p->op_payload_.send_initial_metadata.send_initial_metadata = &batch_;
     }
-    void Finish() { grpc_metadata_batch_destroy(&batch_); }
+    void Finish() {}
 
    private:
     grpc_metadata_batch batch_;

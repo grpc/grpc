@@ -372,13 +372,13 @@ static void client_auth_start_transport_stream_op_batch(
   if (batch->send_initial_metadata) {
     grpc_metadata_batch* metadata =
         batch->payload->send_initial_metadata.send_initial_metadata;
-    if (metadata->idx.named.path != nullptr) {
-      calld->method =
-          grpc_slice_ref_internal(GRPC_MDVALUE(metadata->idx.named.path->md));
+    if (metadata->legacy_index()->named.path != nullptr) {
+      calld->method = grpc_slice_ref_internal(
+          GRPC_MDVALUE(metadata->legacy_index()->named.path->md));
     }
-    if (metadata->idx.named.authority != nullptr) {
+    if (metadata->legacy_index()->named.authority != nullptr) {
       calld->host = grpc_slice_ref_internal(
-          GRPC_MDVALUE(metadata->idx.named.authority->md));
+          GRPC_MDVALUE(metadata->legacy_index()->named.authority->md));
       batch->handler_private.extra_arg = elem;
       GRPC_CALL_STACK_REF(calld->owning_call, "check_call_host");
       GRPC_CLOSURE_INIT(&calld->async_result_closure, on_host_checked, batch,
