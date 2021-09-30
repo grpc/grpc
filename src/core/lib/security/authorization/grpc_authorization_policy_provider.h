@@ -86,15 +86,13 @@ class FileWatcherAuthorizationPolicyProvider
   absl::Status ForceUpdate();
 
   std::string authz_policy_path_;
+  std::string file_contents_;
   unsigned int refresh_interval_sec_;
 
   std::unique_ptr<Thread> refresh_thread_;
   gpr_event shutdown_event_;
 
   grpc_core::Mutex mu_;
-  // Contents of specified file path. Policy used to make authorization
-  // decisions could differ from this policy.
-  std::string authz_policy_ ABSL_GUARDED_BY(mu_);
   // Engines created using authz_policy_.
   RefCountedPtr<AuthorizationEngine> allow_engine_ ABSL_GUARDED_BY(mu_);
   RefCountedPtr<AuthorizationEngine> deny_engine_ ABSL_GUARDED_BY(mu_);

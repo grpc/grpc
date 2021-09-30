@@ -117,20 +117,20 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
 }
 
 absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
-  absl::StatusOr<std::string> authz_policy =
+  absl::StatusOr<std::string> file_contents =
       ReadPolicyFromFile(authz_policy_path_);
-  if (!authz_policy.ok()) {
-    return authz_policy.status();
+  if (!file_contents.ok()) {
+    return file_contents.status();
   }
-  grpc_core::MutexLock lock(&mu_);
-  if (authz_policy_ == *authz_policy) {
+  if (file_contents_ == *file_contents) {
     return absl::OkStatus();
   }
-  authz_policy_ = std::move(*authz_policy);
-  auto rbac_policies_or = GenerateRbacPolicies(authz_policy_);
+  file_contents_ = std::move(*file_contents);
+  auto rbac_policies_or = GenerateRbacPolicies(file_contents_);
   if (!rbac_policies_or.ok()) {
     return rbac_policies_or.status();
   }
+  grpc_core::MutexLock lock(&mu_);
   allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
       std::move(rbac_policies_or->allow_policy));
   deny_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
@@ -139,7 +139,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
     gpr_log(GPR_INFO,
             "authorization policy reload status: successfully loaded new "
             "policy\n%s",
-            authz_policy_.c_str());
+            file_contents_.c_str());
   }
   return absl::OkStatus();
 }
