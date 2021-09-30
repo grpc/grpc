@@ -450,9 +450,8 @@ handle_timeout(grpc_chttp2_stream* s, grpc_mdelem md) {
     }
   }
   if (timeout != GRPC_MILLIS_INF_FUTURE) {
-    grpc_chttp2_incoming_metadata_buffer_set_deadline(
-        &s->initial_metadata_buffer,
-        grpc_core::ExecCtx::Get()->Now() + timeout);
+    s->initial_metadata_buffer.Set(grpc_core::GrpcTimeoutMetadata(),
+                                   grpc_core::ExecCtx::Get()->Now() + timeout);
   }
   GRPC_MDELEM_UNREF(md);
   return GRPC_ERROR_NONE;
@@ -506,7 +505,7 @@ static grpc_error_handle on_initial_header(void* tp, grpc_mdelem md) {
   }
 
   const size_t new_size =
-      s->initial_metadata_buffer.size + GRPC_MDELEM_LENGTH(md);
+      s->initial_metadata_buffer.TransportSize() + GRPC_MDELEM_LENGTH(md);
   const size_t metadata_size_limit =
       t->settings[GRPC_ACKED_SETTINGS]
                  [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
@@ -514,8 +513,7 @@ static grpc_error_handle on_initial_header(void* tp, grpc_mdelem md) {
     return handle_metadata_size_limit_exceeded(t, s, md, new_size,
                                                metadata_size_limit);
   } else {
-    grpc_error_handle error = grpc_chttp2_incoming_metadata_buffer_add(
-        &s->initial_metadata_buffer, md);
+    grpc_error_handle error = s->initial_metadata_buffer.Append(md);
     if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
       return handle_metadata_add_failure(t, s, md, error);
     }
@@ -542,7 +540,7 @@ static grpc_error_handle on_trailing_header(void* tp, grpc_mdelem md) {
   }
 
   const size_t new_size =
-      s->trailing_metadata_buffer.size + GRPC_MDELEM_LENGTH(md);
+      s->trailing_metadata_buffer.TransportSize() + GRPC_MDELEM_LENGTH(md);
   const size_t metadata_size_limit =
       t->settings[GRPC_ACKED_SETTINGS]
                  [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
@@ -564,8 +562,7 @@ static grpc_error_handle on_trailing_header(void* tp, grpc_mdelem md) {
     s->seen_error = true;
     GRPC_MDELEM_UNREF(md);
   } else {
-    grpc_error_handle error = grpc_chttp2_incoming_metadata_buffer_add(
-        &s->trailing_metadata_buffer, md);
+    grpc_error_handle error = s->trailing_metadata_buffer.Append(md);
     if (error != GRPC_ERROR_NONE) {
       grpc_chttp2_cancel_stream(t, s, error);
       grpc_chttp2_parsing_become_skip_parser(t);

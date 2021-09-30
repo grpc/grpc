@@ -68,10 +68,14 @@ class ChunkedVector {
     std::swap(other->append_, append_);
   }
 
+  Arena* arena() const { return arena_; }
+
   // Append a new element to the end of the vector.
   template <typename... Args>
-  void EmplaceBack(Args&&... args) {
-    AppendSlot()->Init(std::forward<Args>(args)...);
+  T* EmplaceBack(Args&&... args) {
+    auto* p = AppendSlot();
+    p->Init(std::forward<Args>(args)...);
+    return &**p;
   }
 
   // Remove the last element and return it.
