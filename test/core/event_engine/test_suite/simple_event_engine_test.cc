@@ -97,8 +97,8 @@ class SimpleEventEngine : public grpc_event_engine::experimental::EventEngine {
       grpc_core::MutexLock lock(&run_states_mu_);
       // Insert kNotRun if the thread has not already set it beforehand.
       run_states_.emplace(id, RunState::kNotRun);
+      threads_.emplace(id, std::move(t));
     }
-    threads_.emplace(id, std::move(t));
     return {id, -1};
   }
 

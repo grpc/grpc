@@ -14,7 +14,6 @@
 
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_H
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <grpc/event_engine/event_engine.h>
@@ -56,8 +55,6 @@ class EventEngineTest : public testing::Test {
 void SetEventEngineFactory(
     std::function<
         std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
-        factory) {
-  testing::AddGlobalTestEnvironment(new EventEngineTestEnvironment(factory));
-}
+        factory);
 
 #endif  // GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_H

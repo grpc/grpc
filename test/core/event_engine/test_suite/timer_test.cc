@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <thread>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -134,25 +136,36 @@ void EventEngineTimerTest::ScheduleCheckCB(absl::Time when,
 
 TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
   auto engine = this->NewEventEngine();
-  int thread_count = 100;
-  float timeout_min_seconds = 1;
-  float timeout_max_seconds = 10;
+  constexpr int thread_count = 100;
+  constexpr int call_count_per_thread = 100;
+  constexpr float timeout_min_seconds = 1;
+  constexpr float timeout_max_seconds = 10;
   std::atomic<int> call_count{0};
-  std::atomic<int> failed_timer_count{0};
-  absl::BitGen bitgen;
-  for (int i = 0; i < thread_count; ++i) {
-    absl::Time when =
-        absl::Now() + absl::Seconds(absl::Uniform(bitgen, timeout_min_seconds,
-                                                  timeout_max_seconds));
-    engine->RunAt(when, absl::bind_front(&EventEngineTimerTest::ScheduleCheckCB,
-                                         this, when, &call_count,
-                                         &failed_timer_count, thread_count));
+  std::atomic<int> failed_call_count{0};
+  std::vector<std::thread> threads;
+  for (int thread_n = 0; thread_n < thread_count; ++thread_n) {
+    threads.emplace_back([&]() {
+      absl::BitGen bitgen;
+      for (int call_n = 0; call_n < call_count_per_thread; ++call_n) {
+        absl::Time when = absl::Now() + absl::Seconds(absl::Uniform(
+                                            bitgen, timeout_min_seconds,
+                                            timeout_max_seconds));
+        engine->RunAt(
+            when, absl::bind_front(&EventEngineTimerTest::ScheduleCheckCB, this,
+                                   when, &call_count, &failed_call_count,
+                                   thread_count * call_count_per_thread));
+      }
+    });
+  }
+  for (auto& t : threads) {
+    t.join();
   }
   grpc_core::MutexLock lock(&mu_);
   // to protect against spurious wakeups.
   while (!signaled_) {
     cv_.Wait(&mu_);
   }
-  gpr_log(GPR_DEBUG, "failed timer count: %d", failed_timer_count.load());
-  ASSERT_EQ(0, failed_timer_count.load());
+  gpr_log(GPR_DEBUG, "failed timer count: %d of %d", failed_call_count.load(),
+          thread_count * call_count);
+  ASSERT_EQ(0, failed_call_count.load());
 }
