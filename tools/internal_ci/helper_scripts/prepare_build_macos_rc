@@ -56,20 +56,19 @@ if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
   export RUN_TESTS_FLAGS="--filter_pr_tests --base_branch origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH $RUN_TESTS_FLAGS"
 fi
 
-if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
-then
+if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]; then
   # Fetch keys per https://rvm.io/rvm/install
   gpg_recv_keys_success=0
-  for ((i=0;i<5;i++)); do
+  for ((i = 0; i < 5; i++)); do
     # Use the Ubuntu keyserver instead of pool.sks-keyservers.net because sks-keyservers is now deprecated.
     GPG_KEYSERVER_ADDRESS="keyserver.ubuntu.com"
-    gpg --keyserver "hkp://${GPG_KEYSERVER_ADDRESS}" --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB \
-      && gpg_recv_keys_success=1
+    gpg --keyserver "hkp://${GPG_KEYSERVER_ADDRESS}" --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB &&
+      gpg_recv_keys_success=1
     [[ "$gpg_recv_keys_success" == 1 ]] && break
     sleep 3
   done
   [[ "$gpg_recv_keys_success" == 1 ]] || exit 1
-  rvm get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
+  rvm --debug get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
   # stop echoing bash commands temporarily to prevent rvm from polluting the logs
   set +x
   source $HOME/.rvm/scripts/rvm
@@ -79,7 +78,7 @@ then
     time rvm install "ruby-${RUBY_VERSION}"
     time gem install bundler -v 1.17.3 --no-document
     time gem install rake-compiler --no-document
-  done;
+  done
   echo "Setting default ruby version."
   rvm use 2.5.0 --default
   echo "Installing cocoapods."
@@ -92,8 +91,7 @@ then
   set -x
 fi
 
-if [ "${PREPARE_BUILD_INSTALL_DEPS_OBJC}" == "true" ]
-then
+if [ "${PREPARE_BUILD_INSTALL_DEPS_OBJC}" == "true" ]; then
   # cocoapods
   export LANG=en_US.UTF-8
   time gem install cocoapods --version 1.7.2 --no-document
@@ -116,8 +114,7 @@ then
   ln -s /tmpfs/DerivedData ~/Library/Developer/Xcode/DerivedData
 fi
 
-if [ "${PREPARE_BUILD_INSTALL_DEPS_PYTHON}" == "true" ]
-then
+if [ "${PREPARE_BUILD_INSTALL_DEPS_PYTHON}" == "true" ]; then
   # python
   time pip install --user -r $DIR/requirements.macos.txt
   time pip install --user --upgrade virtualenv Mako tox setuptools==44.1.1 twisted
@@ -125,7 +122,7 @@ then
   # Install Python 3.7 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.7" ]; then
     time curl -O https://www.python.org/ftp/python/3.7.0/python-3.7.0-macosx10.9.pkg
-    echo "ee4ad46ab8cd226ffc8df56d48acfdf7daa2714a9c51e6dc6262fc0b25519578  python-3.7.0-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+    echo "ee4ad46ab8cd226ffc8df56d48acfdf7daa2714a9c51e6dc6262fc0b25519578  python-3.7.0-macosx10.9.pkg" >/tmp/python_installer_checksum.sha256
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.7.0-macosx10.9.pkg -target /
   fi
@@ -133,7 +130,7 @@ then
   # Install Python 3.8 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.8" ]; then
     time curl -O https://www.python.org/ftp/python/3.8.0/python-3.8.0-macosx10.9.pkg
-    echo "30961fe060da9dc5afdc4e789a57fe9bcc0d20244474e9f095d7bfc89d2e1869  python-3.8.0-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+    echo "30961fe060da9dc5afdc4e789a57fe9bcc0d20244474e9f095d7bfc89d2e1869  python-3.8.0-macosx10.9.pkg" >/tmp/python_installer_checksum.sha256
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.8.0-macosx10.9.pkg -target /
   fi
@@ -141,7 +138,7 @@ then
   # Install Python 3.9 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.9" ]; then
     time curl -O https://www.python.org/ftp/python/3.9.0/python-3.9.0-macosx10.9.pkg
-    echo "dadee1d10c1a8ed58bb64ec7409a48c9fe38599791eaaea29303ee59fb95dfeb  python-3.9.0-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+    echo "dadee1d10c1a8ed58bb64ec7409a48c9fe38599791eaaea29303ee59fb95dfeb  python-3.9.0-macosx10.9.pkg" >/tmp/python_installer_checksum.sha256
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.9.0-macosx10.9.pkg -target /
   fi
@@ -149,22 +146,20 @@ then
   # Install Python 3.10 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.10" ]; then
     time curl -O https://www.python.org/ftp/python/3.10.0/python-3.10.0rc1-macos11.pkg
-    echo "5933d3d72438b03742d2bb3c8d6cb0e5db165d7110bbc95dac8016f5e31fae7b  python-3.10.0rc1-macos11.pkg" > /tmp/python_installer_checksum.sha256
+    echo "5933d3d72438b03742d2bb3c8d6cb0e5db165d7110bbc95dac8016f5e31fae7b  python-3.10.0rc1-macos11.pkg" >/tmp/python_installer_checksum.sha256
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.10.0rc1-macos11.pkg -target /
   fi
 fi
 
-if [ "${PREPARE_BUILD_INSTALL_DEPS_CSHARP}" == "true" ]
-then
+if [ "${PREPARE_BUILD_INSTALL_DEPS_CSHARP}" == "true" ]; then
   # Disable some unwanted dotnet options
   export NUGET_XMLDOC_MODE=skip
   export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
   export DOTNET_CLI_TELEMETRY_OPTOUT=true
 fi
 
-if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
-then
+if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]; then
   # It's required to update the brew because it won't work with the default version Kokoro has.
   # This can be fragile, though because the future version of brew can break. In that case,
   # please consider to fix the certain version like https://github.com/grpc/grpc/pull/24837.
