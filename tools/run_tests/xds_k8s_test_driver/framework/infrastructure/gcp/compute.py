@@ -219,13 +219,14 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         self,
         name: str,
         url_map: GcpResource,
-        validate_for_proxyless = True,
+        validate_for_proxyless=True,
     ) -> GcpResource:
-        return self._insert_resource(self.api.targetGrpcProxies(), {
-            'name': name,
-            'url_map': url_map.url,
-            'validate_for_proxyless': validate_for_proxyless,
-        })
+        return self._insert_resource(
+            self.api.targetGrpcProxies(), {
+                'name': name,
+                'url_map': url_map.url,
+                'validate_for_proxyless': validate_for_proxyless,
+            })
 
     def delete_target_grpc_proxy(self, name):
         self._delete_resource(self.api.targetGrpcProxies(), 'targetGrpcProxy',
@@ -251,7 +252,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         src_port: int,
         target_proxy: GcpResource,
         network_url: str,
-        ip_address = '0.0.0.0',
+        ip_address='0.0.0.0',
     ) -> GcpResource:
         return self._insert_resource(
             self.api.globalForwardingRules(),

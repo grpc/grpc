@@ -407,11 +407,7 @@ class TrafficDirectorManager:
             }],
         }
 
-    def create_url_map(
-        self,
-        src_host: str,
-        src_port: int
-    ) -> GcpResource:
+    def create_url_map(self, src_host: str, src_port: int) -> GcpResource:
         name = self.make_resource_name(self.URL_MAP_NAME)
         src_address = f'{src_host}:{src_port}'
         matcher_name = self.make_resource_name(self.URL_MAP_PATH_MATCHER_NAME)
@@ -452,11 +448,8 @@ class TrafficDirectorManager:
         self.compute.delete_url_map(name)
         self.url_map = None
 
-    def create_alternative_url_map(
-        self,
-        src_host: str,
-        src_port: int
-    ) -> GcpResource:
+    def create_alternative_url_map(self, src_host: str,
+                                   src_port: int) -> GcpResource:
         name = self.make_resource_name(self.ALTERNATIVE_URL_MAP_NAME)
         src_address = f'{src_host}:{src_port}'
         matcher_name = self.make_resource_name(self.URL_MAP_PATH_MATCHER_NAME)
@@ -524,11 +517,11 @@ class TrafficDirectorManager:
         name = self.make_resource_name(self.ALTERNATIVE_TARGET_PROXY_NAME)
         if self.backend_service_protocol is BackendServiceProtocol.GRPC:
             logger.info('Creating target GRPC proxy "%s" to URL map %s', name,
-                     self.alternative_url_map.name)
-            self.alternative_target_proxy = self.compute.create_target_grpc_proxy(name, self.alternative_url_map, validate_for_proxyless=False)
+                        self.alternative_url_map.name)
+            self.alternative_target_proxy = self.compute.create_target_grpc_proxy(
+                name, self.alternative_url_map, validate_for_proxyless=False)
         else:
             raise TypeError('Unexpected backend service protocol')
-
 
     def delete_alternative_target_grpc_proxy(self, force=False):
         if force:
@@ -577,22 +570,25 @@ class TrafficDirectorManager:
         self.compute.delete_forwarding_rule(name)
         self.forwarding_rule = None
 
-    def create_alternative_forwarding_rule(self, src_port: int, ip_address='0.0.0.0'):
+    def create_alternative_forwarding_rule(self,
+                                           src_port: int,
+                                           ip_address='0.0.0.0'):
         name = self.make_resource_name(self.ALTERNATIVE_FORWARDING_RULE_NAME)
         src_port = int(src_port)
         logging.info(
-            'Creating forwarding rule "%s" in network "%s": %s:%s -> %s',
-            name, self.network, ip_address, src_port, self.alternative_target_proxy.url)
-        resource = self.compute.create_forwarding_rule(name, src_port,
-                                                       self.alternative_target_proxy,
-                                                       self.network_url,
-                                                       ip_address)
+            'Creating forwarding rule "%s" in network "%s": %s:%s -> %s', name,
+            self.network, ip_address, src_port,
+            self.alternative_target_proxy.url)
+        resource = self.compute.create_forwarding_rule(
+            name, src_port, self.alternative_target_proxy, self.network_url,
+            ip_address)
         self.alternative_forwarding_rule = resource
         return resource
 
     def delete_alternative_forwarding_rule(self, force=False):
         if force:
-            name = self.make_resource_name(self.ALTERNATIVE_FORWARDING_RULE_NAME)
+            name = self.make_resource_name(
+                self.ALTERNATIVE_FORWARDING_RULE_NAME)
         elif self.alternative_forwarding_rule:
             name = self.alternative_forwarding_rule.name
         else:

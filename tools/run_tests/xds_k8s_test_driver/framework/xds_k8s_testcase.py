@@ -291,18 +291,19 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         self.assertSameElements(want, seen)
 
     def getRouteConfigVersion(self, test_client: XdsTestClient):
-      config = test_client.csds.fetch_client_status(log_level=logging.INFO)
-      self.assertIsNotNone(config)
-      route_config_version = None
-      for xds_config in config.xds_config:
-        if xds_config.WhichOneof('per_xds_config') == "route_config":
-          route_config = xds_config.route_config
-          logger.info('route config found: %s',
-                      json_format.MessageToJson(route_config, indent=2))
-          route_config_version = route_config.dynamic_route_configs[0].version_info
-          break
-      logger.info('found routing config version: %s', route_config_version)
-      return route_config_version
+        config = test_client.csds.fetch_client_status(log_level=logging.INFO)
+        self.assertIsNotNone(config)
+        route_config_version = None
+        for xds_config in config.xds_config:
+            if xds_config.WhichOneof('per_xds_config') == "route_config":
+                route_config = xds_config.route_config
+                logger.info('route config found: %s',
+                            json_format.MessageToJson(route_config, indent=2))
+                route_config_version = route_config.dynamic_route_configs[
+                    0].version_info
+                break
+        logger.info('found routing config version: %s', route_config_version)
+        return route_config_version
 
     def assertFailedRpcs(self,
                          test_client: XdsTestClient,
