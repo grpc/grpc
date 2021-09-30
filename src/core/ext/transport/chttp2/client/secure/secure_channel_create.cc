@@ -135,6 +135,7 @@ grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
     }
     return nullptr;
   }
+  args = grpc_channel_args_remove_grpc_internal(args);
   // Add channel arg containing the server URI.
   grpc_core::UniquePtr<char> canonical_target =
       ResolverRegistry::AddDefaultPrefixIfNeeded(target);

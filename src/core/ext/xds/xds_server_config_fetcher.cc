@@ -524,6 +524,7 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
     grpc_server_xds_status_notifier notifier, const grpc_channel_args* args) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
+  args = grpc_channel_args_remove_grpc_internal(args);
   GRPC_API_TRACE("grpc_server_config_fetcher_xds_create()", 0, ());
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::RefCountedPtr<grpc_core::XdsClient> xds_client =
