@@ -136,16 +136,16 @@ void EventEngineTimerTest::ScheduleCheckCB(absl::Time when,
 
 TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
   auto engine = this->NewEventEngine();
-  int thread_count = 100;
-  int call_count_per_thread = 100;
-  float timeout_min_seconds = 1;
-  float timeout_max_seconds = 10;
+  constexpr int thread_count = 100;
+  constexpr int call_count_per_thread = 100;
+  constexpr float timeout_min_seconds = 1;
+  constexpr float timeout_max_seconds = 10;
   std::atomic<int> call_count{0};
   std::atomic<int> failed_call_count{0};
-  absl::BitGen bitgen;
   std::vector<std::thread> threads;
   for (int thread_n = 0; thread_n < thread_count; ++thread_n) {
     threads.emplace_back([&]() {
+      absl::BitGen bitgen;
       for (int call_n = 0; call_n < call_count_per_thread; ++call_n) {
         absl::Time when = absl::Now() + absl::Seconds(absl::Uniform(
                                             bitgen, timeout_min_seconds,
