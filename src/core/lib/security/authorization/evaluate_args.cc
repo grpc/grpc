@@ -26,8 +26,6 @@
 
 namespace grpc_core {
 
-extern TraceFlag grpc_sdk_authz_trace;
-
 namespace {
 
 EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
@@ -77,16 +75,6 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
   if (endpoint != nullptr) {
     local_address = ParseEndpointUri(grpc_endpoint_get_local_address(endpoint));
     peer_address = ParseEndpointUri(grpc_endpoint_get_peer(endpoint));
-  }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
-    gpr_log(GPR_DEBUG,
-            "checking request: transport_security_type=%s, uri_sans=[%s], "
-            "dns_sans=[%s], local_address=%s:%d, peer_address=%s:%d",
-            std::string(transport_security_type).c_str(),
-            absl::StrJoin(uri_sans, ",").c_str(),
-            absl::StrJoin(dns_sans, ",").c_str(),
-            local_address.address_str.c_str(), local_address.port,
-            peer_address.address_str.c_str(), peer_address.port);
   }
 }
 
