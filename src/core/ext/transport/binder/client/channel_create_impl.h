@@ -17,15 +17,23 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include <map>
+
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc {
 namespace internal {
 
-grpc_channel* CreateChannelFromBinderImpl(
+// Creates a channel of GRPC_CLIENT_DIRECT_CHANNEL type from given endpoint
+// binder.
+grpc_channel* CreateDirectBinderChannelImpl(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder,
     const grpc_channel_args* args);
+
+// Creates a channel of GRPC_CLIENT_CHANNEL type.
+grpc_channel* CreateClientBinderChannelImpl(const grpc_channel_args* args);
 
 }  // namespace internal
 }  // namespace grpc

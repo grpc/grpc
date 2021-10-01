@@ -939,6 +939,7 @@ class ClientChannel::ClientChannelControlHelper
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
       ServerAddress address, const grpc_channel_args& args) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_) {
+    gpr_log(GPR_ERROR, "%s called", __func__);
     if (chand_->resolver_ == nullptr) return nullptr;  // Shutting down.
     // Determine health check service name.
     bool inhibit_health_checking = grpc_channel_args_find_bool(
@@ -1216,6 +1217,7 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
 }  // namespace
 
 void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
+  gpr_log(GPR_ERROR, "%s called", __func__);
   // Handle race conditions.
   if (resolver_ == nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
@@ -1403,6 +1405,7 @@ void ClientChannel::CreateOrUpdateLbPolicyLocked(
 // Creates a new LB policy.
 OrphanablePtr<LoadBalancingPolicy> ClientChannel::CreateLbPolicyLocked(
     const grpc_channel_args& args) {
+  gpr_log(GPR_ERROR, "%s called", __func__);
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer_;
   lb_policy_args.channel_control_helper =

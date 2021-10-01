@@ -85,6 +85,11 @@ void GoogleCloud2ProdResolverShutdown();
 }  // namespace grpc_core
 #endif
 
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
+void grpc_resolver_binder_init(void);
+void grpc_resolver_binder_shutdown(void);
+#endif
+
 void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_chttp2_plugin_init, grpc_chttp2_plugin_shutdown);
   grpc_register_plugin(grpc_client_channel_init, grpc_client_channel_shutdown);
@@ -131,6 +136,11 @@ void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_resolver_xds_init, grpc_resolver_xds_shutdown);
   grpc_register_plugin(grpc_core::GoogleCloud2ProdResolverInit,
                        grpc_core::GoogleCloud2ProdResolverShutdown);
+#endif
+
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
+  grpc_register_plugin(grpc_resolver_binder_init,
+                       grpc_resolver_binder_shutdown);
 #endif
 }
 

@@ -23,17 +23,34 @@ package(
     ],
 )
 
+grpc_cc_library(
+    name = "jni_utils",
+    srcs = [
+        "jni_utils.cc",
+    ],
+    hdrs = [
+        "jni_utils.h",
+    ],
+    deps = [
+        "//:gpr",
+        "//:gpr_base",
+        "//:gpr_platform",
+        "//:grpc",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//:grpc_codegen",
+    ],
+)
+
 # TODO(mingcl): See if it is possible to add flags that warns about undefined symbol at link time
 grpc_cc_library(
     name = "grpc_transport_binder_client",
     srcs = [
         "channel_create.cc",
         "channel_create.h",
-        "jni_utils.cc",
     ],
     hdrs = [
         "channel_create.h",
-        "jni_utils.h",
     ],
     external_deps = [
         "absl/strings",
@@ -41,6 +58,8 @@ grpc_cc_library(
     ],
     deps = [
         ":grpc_transport_binder_client_impl",
+        ":jni_utils",
+        ":connection_id_generator",
         "//:gpr",
         "//:gpr_base",
         "//:gpr_platform",
@@ -59,7 +78,31 @@ grpc_cc_library(
     name = "grpc_transport_binder_client_impl",
     srcs = ["channel_create_impl.cc"],
     hdrs = ["channel_create_impl.h"],
-    external_deps = [],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        ":binder_connector",
+        "//:gpr",
+        "//:gpr_base",
+        "//:gpr_platform",
+        "//:grpc",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//:grpc_client_channel",
+        "//:grpc_codegen",
+        "//src/core/ext/transport/binder/transport:binder_transport",
+        "//src/core/ext/transport/binder/wire_format:binder",
+    ],
+)
+
+grpc_cc_library(
+    name = "connection_id_generator",
+    srcs = ["connection_id_generator.cc"],
+    hdrs = ["connection_id_generator.h"],
+    external_deps = [
+        "absl/strings",
+    ],
     deps = [
         "//:gpr",
         "//:gpr_base",
@@ -67,8 +110,49 @@ grpc_cc_library(
         "//:grpc",
         "//:grpc++_base",
         "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "binder_connector",
+    srcs = ["binder_connector.cc"],
+    hdrs = ["binder_connector.h"],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        ":jni_utils",
+        ":endpoint_binder_pool",
+        "//:gpr",
+        "//:gpr_base",
+        "//:gpr_platform",
+        "//:grpc",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//:grpc_client_channel",
         "//:grpc_codegen",
         "//src/core/ext/transport/binder/transport:binder_transport",
         "//src/core/ext/transport/binder/wire_format:binder",
+        "//src/core/ext/transport/binder/wire_format:binder_android",
     ],
 )
+
+grpc_cc_library(
+    name = "endpoint_binder_pool",
+    srcs = ["endpoint_binder_pool.cc"],
+    hdrs = ["endpoint_binder_pool.h"],
+    external_deps = [
+    ],
+    deps = [
+        "//:gpr",
+        ":jni_utils",
+        "//:gpr_base",
+        "//:gpr_platform",
+        "//:grpc",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//src/core/ext/transport/binder/wire_format:binder_android",
+        "//src/core/ext/transport/binder/wire_format:binder",
+    ],
+)
+

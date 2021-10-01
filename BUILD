@@ -1841,6 +1841,7 @@ grpc_cc_library(
         "grpc_resolver_fake",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
+        "grpc_resolver_binder",
         "grpc_transport_chttp2_client_insecure",
         "grpc_transport_chttp2_server_insecure",
         "grpc_transport_inproc",
@@ -2767,6 +2768,23 @@ grpc_cc_library(
     name = "grpc_resolver_sockaddr",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_base",
+        "grpc_base",
+        "grpc_client_channel",
+        "slice",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_resolver_binder",
+    srcs = [
+        "src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc",
     ],
     external_deps = [
         "absl/strings",

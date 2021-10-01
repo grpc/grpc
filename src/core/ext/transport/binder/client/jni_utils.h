@@ -31,11 +31,11 @@ namespace grpc_binder {
 void CallStaticJavaMethod(JNIEnv* env, const std::string& clazz,
                           const std::string& method, const std::string& type,
                           jobject application, const std::string& pkg,
-                          const std::string& cls);
+                          const std::string& cls, const std::string& conn_id);
 
 jobject CallStaticJavaMethodForObject(JNIEnv* env, const std::string& clazz,
                                       const std::string& method,
-                                      const std::string& type);
+                                      const std::string& type, jstring arg);
 }  // namespace grpc_binder
 
 #endif

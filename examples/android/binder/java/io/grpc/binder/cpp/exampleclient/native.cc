@@ -26,24 +26,32 @@ Java_io_grpc_binder_cpp_exampleclient_ButtonPressHandler_native_1entry(
   static bool first = true;
   __android_log_print(ANDROID_LOG_INFO, "DemoClient", "Line number %d",
                       __LINE__);
+  static std::shared_ptr<grpc::Channel> channel;
   if (first) {
     first = false;
-    grpc::experimental::BindToOnDeviceServerService(
+    channel = grpc::experimental::CreateBinderChannel(
         env, application, "io.grpc.binder.cpp.exampleserver",
         "io.grpc.binder.cpp.exampleserver.ExportedEndpointService");
     return env->NewStringUTF("Clicked 1 time");
   } else {
-    auto channel =
-        grpc::experimental::CreateBinderChannel(env, application, "", "");
+    __android_log_print(ANDROID_LOG_INFO, "DemoClient", "Line number %d",
+                        __LINE__);
     auto stub = helloworld::Greeter::NewStub(channel);
     grpc::ClientContext context;
     helloworld::HelloRequest request;
     helloworld::HelloReply response;
     request.set_name("BinderTransportClient");
     grpc::Status status = stub->SayHello(&context, request, &response);
+    __android_log_print(ANDROID_LOG_INFO, "DemoClient", "Line number %d",
+                        __LINE__);
+    channel = nullptr;
     if (status.ok()) {
       return env->NewStringUTF(response.message().c_str());
     }
+    __android_log_print(ANDROID_LOG_INFO, "DemoClient",
+                        "status message = %s, code = %d, detail = %s",
+                        status.error_message().c_str(), status.error_code(),
+                        status.error_details().c_str());
     return env->NewStringUTF("Clicked more than 1 time. Status not ok");
   }
 }
