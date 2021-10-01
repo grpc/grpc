@@ -33,7 +33,8 @@ class SliceRefCount {
     rc->~SliceRefCount();
     gpr_free(rc);
   }
-  SliceRefCount(std::shared_ptr<BasicMemoryAllocator> allocator, size_t size)
+  SliceRefCount(std::shared_ptr<internal::MemoryAllocatorImpl> allocator,
+                size_t size)
       : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
               &base_),
         allocator_(std::move(allocator)),
@@ -47,7 +48,7 @@ class SliceRefCount {
  private:
   grpc_slice_refcount base_;
   grpc_core::RefCount refs_;
-  std::shared_ptr<BasicMemoryAllocator> allocator_;
+  std::shared_ptr<internal::MemoryAllocatorImpl> allocator_;
   size_t size_;
 };
 

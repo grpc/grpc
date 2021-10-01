@@ -162,6 +162,7 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/event_engine.h",
     "include/grpc/event_engine/port.h",
     "include/grpc/event_engine/memory_allocator.h",
+    "include/grpc/event_engine/internal/memory_allocator_impl.h",
 ]
 
 GRPC_SECURE_PUBLIC_HDRS = [
@@ -1301,6 +1302,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "include/grpc/event_engine/memory_allocator.h",
+        "include/grpc/event_engine/internal/memory_allocator_impl.h",
     ],
     language = "c++",
     deps = [

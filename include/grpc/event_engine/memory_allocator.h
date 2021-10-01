@@ -21,6 +21,7 @@
 #include <type_traits>
 #include <vector>
 
+#include <grpc/event_engine/internal/memory_allocator_impl.h>
 #include <grpc/slice.h>
 
 // forward-declaring an internal struct, not used publicly.
@@ -41,70 +42,13 @@ class SliceBuffer {
   grpc_slice_buffer* slice_buffer_;
 };
 
-/// Reservation request - how much memory do we want to allocate?
-class MemoryRequest {
- public:
-  /// Request a fixed amount of memory.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  MemoryRequest(size_t n) : min_(n), max_(n) {}
-  /// Request a range of memory.
-  /// Requires: \a min <= \a max.
-  /// Requires: \a max <= max_size()
-  MemoryRequest(size_t min, size_t max) : min_(min), max_(max) {}
-
-  /// Maximum allowable request size - hard coded to 1GB.
-  static constexpr size_t max_allowed_size() { return 1024 * 1024 * 1024; }
-
-  /// Increase the size by \a amount.
-  /// Undefined behavior if min() + amount or max() + amount overflows.
-  MemoryRequest Increase(size_t amount) const {
-    return MemoryRequest(min_ + amount, max_ + amount);
-  }
-
-  size_t min() const { return min_; }
-  size_t max() const { return max_; }
-
- private:
-  size_t min_;
-  size_t max_;
-};
-
-/// Underlying memory allocation interface.
-/// Wrapped by MemoryAllocator to make it easier to use.
-class BasicMemoryAllocator
-    : public std::enable_shared_from_this<BasicMemoryAllocator> {
- public:
-  BasicMemoryAllocator() {}
-  virtual ~BasicMemoryAllocator() {}
-
-  BasicMemoryAllocator(const BasicMemoryAllocator&) = delete;
-  BasicMemoryAllocator& operator=(const BasicMemoryAllocator&) = delete;
-
-  /// Reserve bytes from the quota.
-  /// If we enter overcommit, reclamation will begin concurrently.
-  /// Returns the number of bytes reserved.
-  /// If MemoryRequest is invalid, this function will abort.
-  /// If MemoryRequest is valid, this function is infallible, and will always
-  /// succeed at reserving the some number of bytes between request.min() and
-  /// request.max() inclusively.
-  virtual size_t Reserve(MemoryRequest request) = 0;
-
-  /// Release some bytes that were previously reserved.
-  /// If more bytes are released than were reserved, we will have undefined
-  /// behavior.
-  virtual void Release(size_t n) = 0;
-
-  /// Shutdown this allocator.
-  /// Further usage of Reserve() is undefined behavior.
-  virtual void Shutdown() = 0;
-};
-
 class MemoryAllocator {
  public:
-  /// Construct a MemoryAllocator given a BasicMemoryAllocator implementation.
-  /// The constructed MemoryAllocator will call BasicMemoryAllocator::Shutdown()
-  /// upon destruction.
-  explicit MemoryAllocator(std::shared_ptr<BasicMemoryAllocator> allocator)
+  /// Construct a MemoryAllocator given an internal::MemoryAllocatorImpl
+  /// implementation. The constructed MemoryAllocator will call
+  /// MemoryAllocatorImpl::Shutdown() upon destruction.
+  explicit MemoryAllocator(
+      std::shared_ptr<internal::MemoryAllocatorImpl> allocator)
       : allocator_(allocator) {}
   ~MemoryAllocator() {
     if (allocator_ != nullptr) allocator_->Shutdown();
@@ -143,10 +87,11 @@ class MemoryAllocator {
 
    private:
     friend class MemoryAllocator;
-    Reservation(std::shared_ptr<BasicMemoryAllocator> allocator, size_t size)
+    Reservation(std::shared_ptr<internal::MemoryAllocatorImpl> allocator,
+                size_t size)
         : allocator_(allocator), size_(size) {}
 
-    std::shared_ptr<BasicMemoryAllocator> allocator_;
+    std::shared_ptr<internal::MemoryAllocatorImpl> allocator_;
     size_t size_ = 0;
   };
 
@@ -167,13 +112,13 @@ class MemoryAllocator {
     // allocator.
     class Wrapper final : public T {
      public:
-      explicit Wrapper(std::shared_ptr<BasicMemoryAllocator> allocator,
+      explicit Wrapper(std::shared_ptr<internal::MemoryAllocatorImpl> allocator,
                        Args&&... args)
           : T(std::forward<Args>(args)...), allocator_(std::move(allocator)) {}
       ~Wrapper() override { allocator_->Release(sizeof(*this)); }
 
      private:
-      const std::shared_ptr<BasicMemoryAllocator> allocator_;
+      const std::shared_ptr<internal::MemoryAllocatorImpl> allocator_;
     };
     Reserve(sizeof(Wrapper));
     return new Wrapper(allocator_, std::forward<Args>(args)...);
@@ -223,12 +168,12 @@ class MemoryAllocator {
   };
 
  protected:
-  const std::shared_ptr<BasicMemoryAllocator>& allocator() {
+  const std::shared_ptr<internal::MemoryAllocatorImpl>& allocator() {
     return allocator_;
   }
 
  private:
-  std::shared_ptr<BasicMemoryAllocator> allocator_;
+  std::shared_ptr<internal::MemoryAllocatorImpl> allocator_;
 };
 
 // Wrapper type around std::vector to make initialization against a

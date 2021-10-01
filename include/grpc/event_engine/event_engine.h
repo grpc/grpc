@@ -191,9 +191,8 @@ class EventEngine {
   class Listener {
    public:
     /// Called when the listener has accepted a new client connection.
-    using AcceptCallback =
-        std::function<void(std::unique_ptr<Endpoint>,
-                           std::unique_ptr<MemoryAllocator> memory_allocator)>;
+    using AcceptCallback = std::function<void(
+        std::unique_ptr<Endpoint>, MemoryAllocator memory_allocator)>;
     virtual ~Listener() = default;
     /// Bind an address/port to this Listener.
     ///
@@ -236,11 +235,11 @@ class EventEngine {
   /// This allows gRPC's \a ResourceQuota system to monitor and control memory
   /// usage with graceful degradation mechanisms. Please see the \a
   /// MemoryAllocator API for more information.
-  virtual absl::Status Connect(
-      OnConnectCallback on_connect, const ResolvedAddress& addr,
-      const EndpointConfig& args,
-      std::unique_ptr<MemoryAllocator> memory_allocator,
-      absl::Time deadline) = 0;
+  virtual absl::Status Connect(OnConnectCallback on_connect,
+                               const ResolvedAddress& addr,
+                               const EndpointConfig& args,
+                               MemoryAllocator memory_allocator,
+                               absl::Time deadline) = 0;
 
   /// Provides asynchronous resolution.
   class DNSResolver {

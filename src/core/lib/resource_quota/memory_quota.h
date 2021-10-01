@@ -38,11 +38,12 @@ class MemoryQuota;
 
 using MemoryRequest = grpc_event_engine::experimental::MemoryRequest;
 
-using BasicMemoryAllocator =
-    grpc_event_engine::experimental::BasicMemoryAllocator;
-using MemoryAllocator = grpc_event_engine::experimental::MemoryAllocator;
-template <typename T>
-using Vector = grpc_event_engine::experimental::Vector<T>;
+// Pull in impl under a different name to keep the gRPC/EventEngine separation
+// clear.
+using EventEngineMemoryAllocatorImpl =
+    grpc_event_engine::experimental::internal::MemoryAllocatorImpl;
+using grpc_event_engine::experimental::MemoryAllocator;
+using grpc_event_engine::experimental::Vector;
 
 // Reclamation passes.
 // When memory is tight, we start trying to claim some back from memory
@@ -113,13 +114,14 @@ class ReclaimerQueue {
   // then *index is set to the index of the newly queued entry.
   // Associates the reclamation function with an allocator, and keeps that
   // allocator alive, so that we can use the pointer as an ABA guard.
-  void Insert(std::shared_ptr<BasicMemoryAllocator> allocator,
+  void Insert(std::shared_ptr<EventEngineMemoryAllocatorImpl> allocator,
               ReclamationFunction reclaimer, Index* index)
       ABSL_LOCKS_EXCLUDED(mu_);
   // Cancel a reclamation function - returns the function if cancelled
   // successfully, or nullptr if the reclamation was already begun and could not
   // be cancelled. allocator must be the same as was passed to Insert.
-  ReclamationFunction Cancel(Index index, BasicMemoryAllocator* allocator)
+  ReclamationFunction Cancel(Index index,
+                             EventEngineMemoryAllocatorImpl* allocator)
       ABSL_LOCKS_EXCLUDED(mu_);
   // Poll to see if an entry is available: returns Pending if not, or the
   // removed reclamation function if so.
@@ -141,11 +143,11 @@ class ReclaimerQueue {
  private:
   // One entry in the reclaimer queue
   struct Entry {
-    Entry(std::shared_ptr<BasicMemoryAllocator> allocator,
+    Entry(std::shared_ptr<EventEngineMemoryAllocatorImpl> allocator,
           ReclamationFunction reclaimer)
         : allocator(std::move(allocator)), reclaimer(reclaimer) {}
     // The allocator we'd be reclaiming for.
-    std::shared_ptr<BasicMemoryAllocator> allocator;
+    std::shared_ptr<EventEngineMemoryAllocatorImpl> allocator;
     // The reclamation function to call.
     ReclamationFunction reclaimer;
   };
@@ -186,15 +188,16 @@ class BasicMemoryQuota final
   // Instantaneous memory pressure approximation.
   size_t InstantaneousPressure() const;
   // Cancel a reclaimer
-  ReclamationFunction CancelReclaimer(size_t reclaimer,
-                                      typename ReclaimerQueue::Index index,
-                                      BasicMemoryAllocator* allocator) {
+  ReclamationFunction CancelReclaimer(
+      size_t reclaimer, typename ReclaimerQueue::Index index,
+      EventEngineMemoryAllocatorImpl* allocator) {
     return reclaimers_[reclaimer].Cancel(index, allocator);
   }
   // Insert a reclaimer
-  void InsertReclaimer(size_t reclaimer,
-                       std::shared_ptr<BasicMemoryAllocator> allocator,
-                       ReclamationFunction fn, ReclaimerQueue::Index* index) {
+  void InsertReclaimer(
+      size_t reclaimer,
+      std::shared_ptr<EventEngineMemoryAllocatorImpl> allocator,
+      ReclamationFunction fn, ReclaimerQueue::Index* index) {
     reclaimers_[reclaimer].Insert(std::move(allocator), std::move(fn), index);
   }
 
@@ -225,12 +228,13 @@ class BasicMemoryQuota final
   std::atomic<uint64_t> reclamation_counter_{0};
 };
 
-// MemoryAllocator grants the owner the ability to allocate memory from an
+// MemoryAllocatorImpl grants the owner the ability to allocate memory from an
 // underlying resource quota.
-class MemoryCounter final : public BasicMemoryAllocator {
+class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
  public:
-  explicit MemoryCounter(std::shared_ptr<BasicMemoryQuota> memory_quota);
-  ~MemoryCounter() override;
+  explicit GrpcMemoryAllocatorImpl(
+      std::shared_ptr<BasicMemoryQuota> memory_quota);
+  ~GrpcMemoryAllocatorImpl() override;
 
   // Rebind - Swaps the underlying quota for this allocator, taking care to
   // make sure memory allocated is moved to allocations against the new quota.
@@ -281,7 +285,8 @@ class MemoryCounter final : public BasicMemoryAllocator {
   std::shared_ptr<BasicMemoryQuota> memory_quota_
       ABSL_GUARDED_BY(memory_quota_mu_);
   // Amount of memory taken from the quota by this allocator.
-  size_t taken_bytes_ ABSL_GUARDED_BY(memory_quota_mu_) = sizeof(MemoryCounter);
+  size_t taken_bytes_ ABSL_GUARDED_BY(memory_quota_mu_) =
+      sizeof(GrpcMemoryAllocatorImpl);
   // Indices into the various reclaimer queues, used so that we can cancel
   // reclamation should we shutdown or get rebound.
   ReclaimerQueue::Index
@@ -295,13 +300,14 @@ class MemoryCounter final : public BasicMemoryAllocator {
 // be rebound to a different memory quota.
 class MemoryOwner : public MemoryAllocator {
  public:
-  explicit MemoryOwner(std::shared_ptr<BasicMemoryAllocator> allocator)
+  explicit MemoryOwner(
+      std::shared_ptr<EventEngineMemoryAllocatorImpl> allocator)
       : MemoryAllocator(std::move(allocator)) {}
 
   // Post a reclaimer for some reclamation pass.
   void PostReclaimer(ReclamationPass pass,
                      std::function<void(ReclamationSweep)> fn) {
-    static_cast<MemoryCounter*>(allocator().get())
+    static_cast<GrpcMemoryAllocatorImpl*>(allocator().get())
         ->PostReclaimer(pass, std::move(fn));
   }
 
@@ -330,7 +336,7 @@ class MemoryQuota final
   }
 
   MemoryOwner CreateMemoryOwner() {
-    auto counter = std::make_shared<MemoryCounter>(memory_quota_);
+    auto counter = std::make_shared<GrpcMemoryAllocatorImpl>(memory_quota_);
     return MemoryOwner(std::move(counter));
   }
 

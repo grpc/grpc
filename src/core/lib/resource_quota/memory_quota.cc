@@ -47,8 +47,9 @@ ReclamationSweep::~ReclamationSweep() {
 
 const ReclaimerQueue::Index ReclaimerQueue::kInvalidIndex;
 
-void ReclaimerQueue::Insert(std::shared_ptr<BasicMemoryAllocator> allocator,
-                            ReclamationFunction reclaimer, Index* index) {
+void ReclaimerQueue::Insert(
+    std::shared_ptr<EventEngineMemoryAllocatorImpl> allocator,
+    ReclamationFunction reclaimer, Index* index) {
   MutexLock lock(&mu_);
   if (*index < entries_.size() && entries_[*index].allocator == allocator) {
     entries_[*index].reclaimer.swap(reclaimer);
@@ -68,8 +69,8 @@ void ReclaimerQueue::Insert(std::shared_ptr<BasicMemoryAllocator> allocator,
   queue_.push(*index);
 }
 
-ReclamationFunction ReclaimerQueue::Cancel(Index index,
-                                           BasicMemoryAllocator* allocator) {
+ReclamationFunction ReclaimerQueue::Cancel(
+    Index index, EventEngineMemoryAllocatorImpl* allocator) {
   MutexLock lock(&mu_);
   if (index >= entries_.size()) return nullptr;
   Entry& entry = entries_[index];
@@ -97,22 +98,23 @@ Poll<ReclamationFunction> ReclaimerQueue::PollNext() {
 }
 
 //
-// MemoryCounter
+// GrpcMemoryAllocatorImpl
 //
 
-MemoryCounter::MemoryCounter(std::shared_ptr<BasicMemoryQuota> memory_quota)
+GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
+    std::shared_ptr<BasicMemoryQuota> memory_quota)
     : memory_quota_(memory_quota) {
   memory_quota_->Take(taken_bytes_);
 }
 
-MemoryCounter::~MemoryCounter() {
+GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
   GPR_ASSERT(free_bytes_.load(std::memory_order_acquire) +
-                 sizeof(MemoryCounter) ==
+                 sizeof(GrpcMemoryAllocatorImpl) ==
              taken_bytes_);
   memory_quota_->Return(taken_bytes_);
 }
 
-void MemoryCounter::Shutdown() {
+void GrpcMemoryAllocatorImpl::Shutdown() {
   ReclamationFunction old_reclaimers[kNumReclamationPasses];
   MutexLock lock(&memory_quota_mu_);
   for (size_t i = 0; i < kNumReclamationPasses; i++) {
@@ -121,7 +123,7 @@ void MemoryCounter::Shutdown() {
   }
 }
 
-size_t MemoryCounter::Reserve(MemoryRequest request) {
+size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
   // Validate request - performed here so we don't bloat the generated code with
   // inlined asserts.
   GPR_ASSERT(request.min() <= request.max());
@@ -135,7 +137,8 @@ size_t MemoryCounter::Reserve(MemoryRequest request) {
   }
 }
 
-absl::optional<size_t> MemoryCounter::TryReserve(MemoryRequest request) {
+absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
+    MemoryRequest request) {
   // How much memory should we request? (see the scaling below)
   size_t scaled_size_over_min = request.max() - request.min();
   // Scale the request down according to memory pressure if we have that
@@ -175,7 +178,7 @@ absl::optional<size_t> MemoryCounter::TryReserve(MemoryRequest request) {
   }
 }
 
-void MemoryCounter::Replenish() {
+void GrpcMemoryAllocatorImpl::Replenish() {
   MutexLock lock(&memory_quota_mu_);
   // Attempt a fairly low rate exponential growth request size, bounded between
   // some reasonable limits declared at top of file.
@@ -190,12 +193,12 @@ void MemoryCounter::Replenish() {
   MaybeRegisterReclaimerLocked();
 }
 
-void MemoryCounter::MaybeRegisterReclaimer() {
+void GrpcMemoryAllocatorImpl::MaybeRegisterReclaimer() {
   MutexLock lock(&memory_quota_mu_);
   MaybeRegisterReclaimerLocked();
 }
 
-void MemoryCounter::MaybeRegisterReclaimerLocked() {
+void GrpcMemoryAllocatorImpl::MaybeRegisterReclaimerLocked() {
   // If the reclaimer is already registered, then there's nothing to do.
   if (reclamation_indices_[0] != ReclaimerQueue::kInvalidIndex) return;
   // Grab references to the things we'll need
@@ -203,7 +206,7 @@ void MemoryCounter::MaybeRegisterReclaimerLocked() {
   memory_quota_->InsertReclaimer(
       0, self,
       [self](ReclamationSweep) {
-        auto* p = static_cast<MemoryCounter*>(self.get());
+        auto* p = static_cast<GrpcMemoryAllocatorImpl*>(self.get());
         MutexLock lock(&p->memory_quota_mu_);
         // Figure out how many bytes we can return to the quota.
         size_t return_bytes =
@@ -217,7 +220,8 @@ void MemoryCounter::MaybeRegisterReclaimerLocked() {
       &reclamation_indices_[0]);
 }
 
-void MemoryCounter::Rebind(std::shared_ptr<BasicMemoryQuota> memory_quota) {
+void GrpcMemoryAllocatorImpl::Rebind(
+    std::shared_ptr<BasicMemoryQuota> memory_quota) {
   MutexLock lock(&memory_quota_mu_);
   if (memory_quota_ == memory_quota) return;
   // Return memory to the original memory quota.
@@ -245,8 +249,8 @@ void MemoryCounter::Rebind(std::shared_ptr<BasicMemoryQuota> memory_quota) {
   }
 }
 
-void MemoryCounter::PostReclaimer(ReclamationPass pass,
-                                  ReclamationFunction fn) {
+void GrpcMemoryAllocatorImpl::PostReclaimer(ReclamationPass pass,
+                                            ReclamationFunction fn) {
   MutexLock lock(&memory_quota_mu_);
   auto pass_num = static_cast<size_t>(pass);
   memory_quota_->InsertReclaimer(pass_num, shared_from_this(), std::move(fn),
@@ -258,7 +262,8 @@ void MemoryCounter::PostReclaimer(ReclamationPass pass,
 //
 
 void MemoryOwner::Rebind(MemoryQuota* quota) {
-  static_cast<MemoryCounter*>(allocator().get())->Rebind(quota->memory_quota_);
+  static_cast<GrpcMemoryAllocatorImpl*>(allocator().get())
+      ->Rebind(quota->memory_quota_);
 }
 
 //
