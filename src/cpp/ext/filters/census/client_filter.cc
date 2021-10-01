@@ -60,9 +60,8 @@ void CensusClientCallData::StartTransportStreamOpBatch(
   // `grpc_census_call_set_context` which allows the application to set the
   // census context for a call anytime before the first call to
   // `grpc_call_start_batch`.
-  if (!context_created_) {
+  if (op->op()->send_initial_metadata) {
     tracer_->GenerateContext();
-    context_created_ = true;
   }
   grpc_call_next_op(elem, op->op());
 }

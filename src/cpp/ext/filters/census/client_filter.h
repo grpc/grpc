@@ -42,7 +42,6 @@ class CensusClientCallData : public CallData {
 
  private:
   OpenCensusCallTracer* tracer_ = nullptr;
-  bool context_created_ = false;
 };
 
 }  // namespace grpc
