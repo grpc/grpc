@@ -49,7 +49,7 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
   // implementations of that function will initialize and shutdown gRPC
   // internally.
   grpc_init();
-  gpr_log(GPR_DEBUG, "Example file: %s", GetParam().c_str());
+  gpr_log(GPR_INFO, "Example file: %s", GetParam().c_str());
   grpc_slice buffer;
   squelch = false;
   leak_check = false;

@@ -227,46 +227,10 @@ class MetadataMap {
     }
     // Takes ownership of elem
     explicit Memento(grpc_mdelem elem) {
-      static const VTable binary_vtable = {
-          true,
-          [](intptr_t value) {
-            GRPC_MDELEM_UNREF(grpc_mdelem{uintptr_t(value)});
-          },
-          [](intptr_t value, MetadataMap* map) {
-            return map->Append(GRPC_MDELEM_REF(grpc_mdelem{uintptr_t(value)}));
-          },
-          [](intptr_t value, const grpc_slice& value_slice) {
-            grpc_mdelem elem{uintptr_t(value)};
-            return Memento(grpc_mdelem_from_slices(
-                grpc_slice_ref_internal(GRPC_MDKEY(elem)), value_slice));
-          },
-          [](intptr_t value) {
-            grpc_mdelem elem{uintptr_t(value)};
-            return absl::StrCat(StringViewFromSlice(GRPC_MDKEY(elem)), ": ",
-                                StringViewFromSlice(GRPC_MDVALUE(elem)));
-          }};
-      static const VTable nonbinary_vtable = {
-          false,
-          [](intptr_t value) {
-            GRPC_MDELEM_UNREF(grpc_mdelem{uintptr_t(value)});
-          },
-          [](intptr_t value, MetadataMap* map) {
-            return map->Append(GRPC_MDELEM_REF(grpc_mdelem{uintptr_t(value)}));
-          },
-          [](intptr_t value, const grpc_slice& value_slice) {
-            grpc_mdelem elem{uintptr_t(value)};
-            return Memento(grpc_mdelem_from_slices(
-                grpc_slice_ref_internal(GRPC_MDKEY(elem)), value_slice));
-          },
-          [](intptr_t value) {
-            grpc_mdelem elem{uintptr_t(value)};
-            return absl::StrCat(StringViewFromSlice(GRPC_MDKEY(elem)), ": ",
-                                StringViewFromSlice(GRPC_MDVALUE(elem)));
-          }};
       if (grpc_is_binary_header_internal(GRPC_MDKEY(elem))) {
-        vtable_ = &binary_vtable;
+        vtable_ = MdelemVtable<true>();
       } else {
-        vtable_ = &nonbinary_vtable;
+        vtable_ = MdelemVtable<false>();
       }
       value_ = static_cast<intptr_t>(elem.payload);
       transport_size_ = GRPC_MDELEM_LENGTH(elem);
@@ -322,6 +286,37 @@ class MetadataMap {
           [](intptr_t, MetadataMap*) { return GRPC_ERROR_NONE; },
           [](intptr_t, const grpc_slice&) { return Memento(); },
           [](intptr_t) -> std::string { return "empty"; }};
+      return &vtable;
+    }
+    template <bool kIsBinaryHeader>
+    static const VTable* MdelemVtable() {
+      static const VTable vtable = {
+          kIsBinaryHeader,
+          [](intptr_t value) {
+            GRPC_MDELEM_UNREF(grpc_mdelem{uintptr_t(value)});
+          },
+          [](intptr_t value, MetadataMap* map) {
+            auto md = GRPC_MDELEM_REF(grpc_mdelem{uintptr_t(value)});
+            auto err = map->Append(md);
+            // If an error occurs, md is not consumed and we need to.
+            // This is an awful API, but that's why we're replacing it.
+            if (err != GRPC_ERROR_NONE) {
+              GRPC_MDELEM_UNREF(md);
+            }
+            return err;
+          },
+          [](intptr_t value, const grpc_slice& value_slice) {
+            grpc_mdelem elem{uintptr_t(value)};
+            return Memento(grpc_mdelem_from_slices(
+                static_cast<const ManagedMemorySlice&>(
+                    grpc_slice_ref_internal(GRPC_MDKEY(elem))),
+                value_slice));
+          },
+          [](intptr_t value) {
+            grpc_mdelem elem{uintptr_t(value)};
+            return absl::StrCat(StringViewFromSlice(GRPC_MDKEY(elem)), ": ",
+                                StringViewFromSlice(GRPC_MDVALUE(elem)));
+          }};
       return &vtable;
     }
     const VTable* vtable_;
