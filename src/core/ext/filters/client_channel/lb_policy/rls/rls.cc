@@ -230,23 +230,38 @@ class RlsLb : public LoadBalancingPolicy {
           target_(std::move(target)),
           picker_(absl::make_unique<QueuePicker>(std::move(lb_policy))) {}
 
-    void Orphan() override;
+    // Note: We are forced to disable lock analysis here because
+    // Orphan() is called by OrphanablePtr<>, which cannot have lock
+    // annotations for this particular caller.
+    void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
     const std::string& target() const { return target_; }
 
-    // Picks subchannel for call. If the picker is not reported by the child
-    // policy (i.e. picker_ == nullptr), the pick will be failed.
-    PickResult Pick(PickArgs args) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
+    PickResult Pick(PickArgs args) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
+      return picker_->Pick(args);
+    }
 
-    // Validates the configuration of the child policy with the extra target
-    // name field. If the child policy configuration does not validate, a
-    // TRANSIENT_FAILURE picker is returned. Otherwise, the child policy is
-    // updated with the new configuration.
+    // Updates for the child policy are handled in two phases:
+    // 1. In StartUpdate(), we parse and validate the new child policy
+    //    config and store the parsed config.
+    // 2. In MaybeFinishUpdate(), we actually pass the parsed config to the
+    //    child policy's UpdateLocked() method.
     //
+    // The reason we do this is to avoid deadlocks.  In StartUpdate(),
+    // if the new config fails to validate, then we need to set
+    // picker_ to an instance that will fail all requests, which
+    // requires holding the lock.  However, we cannot call the child
+    // policy's UpdateLocked() method from MaybeFinishUpdate() while
+    // holding the lock, since that would cause a deadlock: the child's
+    // UpdateLocked() will call the helper's UpdateState() method, which
+    // will try to acquire the lock to set picker_.  So StartUpdate() is
+    // called while we are still holding the lock, but MaybeFinishUpdate()
+    // is called after releasing it.
+    //
+    // Both methods grab the data they need from the parent object.
+    void StartUpdate() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
     // Does not take ownership of channel_args.
-    void UpdateLocked(const Json& child_policy_config,
-                      ServerAddressList addresses,
-                      const grpc_channel_args* channel_args);
+    void MaybeFinishUpdate() ABSL_LOCKS_EXCLUDED(&RlsLb::mu_);
 
     void ExitIdleLocked() {
       if (child_policy_ != nullptr) child_policy_->ExitIdleLocked();
@@ -293,9 +308,12 @@ class RlsLb : public LoadBalancingPolicy {
     bool is_shutdown_ = false;
 
     OrphanablePtr<ChildPolicyHandler> child_policy_;
+    RefCountedPtr<LoadBalancingPolicy::Config> pending_config_;
+
     grpc_connectivity_state connectivity_state_ ABSL_GUARDED_BY(&RlsLb::mu_) =
         GRPC_CHANNEL_IDLE;
-    std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker_;
+    std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker_
+        ABSL_GUARDED_BY(&RlsLb::mu_);
   };
 
   // A picker that uses the cache and the request map in the LB policy
@@ -382,10 +400,11 @@ class RlsLb : public LoadBalancingPolicy {
       // min_expiration_time_ has passed.
       bool CanEvict() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
-      // Updates the entry upon reception of a new RLS response. This method
-      // must be called from the LB policy work serializer.
-      void OnRlsResponseLocked(ResponseInfo response,
-                               std::unique_ptr<BackOff> backoff_state)
+      // Updates the entry upon reception of a new RLS response.
+      // Returns a list of child policy wrappers on which FinishUpdate()
+      // needs to be called after releasing the lock.
+      std::vector<ChildPolicyWrapper*> OnRlsResponseLocked(
+          ResponseInfo response, std::unique_ptr<BackOff> backoff_state)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
       // Moves entry to the end of the LRU list.
@@ -673,35 +692,56 @@ void RlsLb::ChildPolicyWrapper::Orphan() {
   picker_.reset();
 }
 
-LoadBalancingPolicy::PickResult RlsLb::ChildPolicyWrapper::Pick(PickArgs args) {
-  // FIXME: this can't happen, can it?
-  if (picker_ == nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-      gpr_log(GPR_INFO,
-              "[rlslb %p] ChildPolicyWrapper=%p [%s]: no picker from child "
-              "policy, queuing pick",
-              lb_policy_.get(), this, target_.c_str());
-    }
-    return PickResult::Queue();
+grpc_error_handle InsertOrUpdateChildPolicyField(const std::string& field,
+                                                 const std::string& value,
+                                                 Json* config) {
+  if (config->type() != Json::Type::ARRAY) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "child policy configuration is not an array");
   }
-  return picker_->Pick(args);
+  std::vector<grpc_error_handle> error_list;
+  for (Json& child_json : *config->mutable_array()) {
+    if (child_json.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "child policy item is not an object"));
+    } else {
+      Json::Object& child = *child_json.mutable_object();
+      if (child.size() != 1) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "child policy item contains more than one field"));
+      } else {
+        Json& child_config_json = child.begin()->second;
+        if (child_config_json.type() != Json::Type::OBJECT) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "child policy item config is not an object"));
+        } else {
+          Json::Object& child_config = *child_config_json.mutable_object();
+          child_config[field] = Json(value);
+        }
+      }
+    }
+  }
+  return GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+      absl::StrCat("errors when inserting field \"", field,
+                   "\" for child policy"),
+      &error_list);
 }
 
-void RlsLb::ChildPolicyWrapper::UpdateLocked(
-    const Json& child_policy_config, ServerAddressList addresses,
-    const grpc_channel_args* channel_args) {
+void RlsLb::ChildPolicyWrapper::StartUpdate() {
+  Json child_policy_config = lb_policy_->config_->child_policy_config();
+  grpc_error_handle error = InsertOrUpdateChildPolicyField(
+      lb_policy_->config_->child_policy_config_target_field_name(), target_,
+      &child_policy_config);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(
         GPR_INFO,
-        "[rlslb %p] ChildPolicyWrapper=%p [%s]: applying update, config: %s",
+        "[rlslb %p] ChildPolicyWrapper=%p [%s]: validating update, config: %s",
         lb_policy_.get(), this, target_.c_str(),
         child_policy_config.Dump().c_str());
   }
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  UpdateArgs update_args;
-  update_args.config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+  pending_config_ = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
       child_policy_config, &error);
-  GPR_DEBUG_ASSERT(error == GRPC_ERROR_NONE);
   // Returned RLS target fails the validation.
   if (error != GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
@@ -712,19 +752,25 @@ void RlsLb::ChildPolicyWrapper::UpdateLocked(
               grpc_error_std_string(error).c_str(),
               child_policy_config.Dump().c_str());
     }
+    pending_config_.reset();
     picker_ = absl::make_unique<TransientFailurePicker>(
         grpc_error_to_absl_status(error));
     GRPC_ERROR_UNREF(error);
     child_policy_.reset();
-    return;
   }
+}
+
+void RlsLb::ChildPolicyWrapper::MaybeFinishUpdate() {
+  // If pending_config_ is not set, that means StartUpdate() failed, so
+  // there's nothing to do here.
+  if (pending_config_ == nullptr) return;
   // If child policy doesn't yet exist, create it.
   if (child_policy_ == nullptr) {
     Args create_args;
     create_args.work_serializer = lb_policy_->work_serializer();
     create_args.channel_control_helper = absl::make_unique<ChildPolicyHelper>(
         WeakRef(DEBUG_LOCATION, "ChildPolicyHelper"));
-    create_args.args = channel_args;
+    create_args.args = lb_policy_->channel_args_;
     child_policy_ = MakeOrphanable<ChildPolicyHandler>(std::move(create_args),
                                                        &grpc_lb_rls_trace);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
@@ -737,8 +783,16 @@ void RlsLb::ChildPolicyWrapper::UpdateLocked(
                                      lb_policy_->interested_parties());
   }
   // Send the child the updated config.
-  update_args.addresses = std::move(addresses);
-  update_args.args = grpc_channel_args_copy(channel_args);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+    gpr_log(GPR_INFO,
+            "[rlslb %p] ChildPolicyWrapper=%p [%s], updating child policy "
+            "handler %p",
+            lb_policy_.get(), this, target_.c_str(), child_policy_.get());
+  }
+  UpdateArgs update_args;
+  update_args.config = std::move(pending_config_);
+  update_args.addresses = lb_policy_->addresses_;
+  update_args.args = grpc_channel_args_copy(lb_policy_->channel_args_);
   child_policy_->UpdateLocked(std::move(update_args));
 }
 
@@ -1129,42 +1183,8 @@ void RlsLb::Cache::Entry::MarkUsed() {
   lru_iterator_ = new_it;
 }
 
-grpc_error_handle InsertOrUpdateChildPolicyField(const std::string& field,
-                                                 const std::string& value,
-                                                 Json* config) {
-  if (config->type() != Json::Type::ARRAY) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "child policy configuration is not an array");
-  }
-  std::vector<grpc_error_handle> error_list;
-  for (Json& child_json : *config->mutable_array()) {
-    if (child_json.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "child policy item is not an object"));
-    } else {
-      Json::Object& child = *child_json.mutable_object();
-      if (child.size() != 1) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "child policy item contains more than one field"));
-      } else {
-        Json& child_config_json = child.begin()->second;
-        if (child_config_json.type() != Json::Type::OBJECT) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "child policy item config is not an object"));
-        } else {
-          Json::Object& child_config = *child_config_json.mutable_object();
-          child_config[field] = Json(value);
-        }
-      }
-    }
-  }
-  return GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
-      absl::StrCat("errors when inserting field \"", field,
-                   "\" for child policy"),
-      &error_list);
-}
-
-void RlsLb::Cache::Entry::OnRlsResponseLocked(
+std::vector<RlsLb::ChildPolicyWrapper*>
+RlsLb::Cache::Entry::OnRlsResponseLocked(
     ResponseInfo response, std::unique_ptr<BackOff> backoff_state) {
   // Move the entry to the end of the LRU list.
   MarkUsed();
@@ -1183,7 +1203,7 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
     backoff_timer_ = MakeOrphanable<BackoffTimer>(
         Ref(DEBUG_LOCATION, "BackoffTimer"), backoff_time_);
     lb_policy_->UpdatePickerAsync();
-    return;
+    return {};
   }
   // Request succeeded, so store the result.
   header_data_ = std::move(response.header_data);
@@ -1209,48 +1229,43 @@ void RlsLb::Cache::Entry::OnRlsResponseLocked(
     // policies.  Return a new picker so that any queued requests can be
     // re-processed.
     lb_policy_->UpdatePickerAsync();
-  } else {
-    // Target list changed, so update it.
-    std::set<absl::string_view> old_targets;
-    for (RefCountedPtr<ChildPolicyWrapper>& child_policy_wrapper :
-         child_policy_wrappers_) {
-      old_targets.emplace(child_policy_wrapper->target());
-    }
-    bool update_picker = false;
-    std::vector<RefCountedPtr<ChildPolicyWrapper>> new_child_policy_wrappers;
-    new_child_policy_wrappers.reserve(response.targets.size());
-    for (std::string& target : response.targets) {
-      auto it = lb_policy_->child_policy_map_.find(target);
-      if (it == lb_policy_->child_policy_map_.end()) {
-        new_child_policy_wrappers.emplace_back(
-            MakeRefCounted<ChildPolicyWrapper>(
-                lb_policy_->Ref(DEBUG_LOCATION, "ChildPolicyWrapper"), target));
-        Json copied_child_policy_config =
-            lb_policy_->config_->child_policy_config();
-        grpc_error_handle error = InsertOrUpdateChildPolicyField(
-            lb_policy_->config_->child_policy_config_target_field_name(),
-            target, &copied_child_policy_config);
-        GPR_ASSERT(error == GRPC_ERROR_NONE);
-        new_child_policy_wrappers.back()->UpdateLocked(
-            copied_child_policy_config, lb_policy_->addresses_,
-            lb_policy_->channel_args_);
-      } else {
-        new_child_policy_wrappers.emplace_back(
-            it->second->Ref(DEBUG_LOCATION, "CacheEntry"));
-        // If the target already existed but was not previously used for
-        // this key, then we'll need to update the picker, since we
-        // didn't actually create a new child policy, which would have
-        // triggered an RLS picker update when it returned its first picker.
-        if (old_targets.find(target) == old_targets.end()) {
-          update_picker = true;
-        }
+    return {};
+  }
+  // Target list changed, so update it.
+  std::set<absl::string_view> old_targets;
+  for (RefCountedPtr<ChildPolicyWrapper>& child_policy_wrapper :
+       child_policy_wrappers_) {
+    old_targets.emplace(child_policy_wrapper->target());
+  }
+  bool update_picker = false;
+  std::vector<ChildPolicyWrapper*> child_policies_to_finish_update;
+  std::vector<RefCountedPtr<ChildPolicyWrapper>> new_child_policy_wrappers;
+  new_child_policy_wrappers.reserve(response.targets.size());
+  for (std::string& target : response.targets) {
+    auto it = lb_policy_->child_policy_map_.find(target);
+    if (it == lb_policy_->child_policy_map_.end()) {
+      auto new_child = MakeRefCounted<ChildPolicyWrapper>(
+          lb_policy_->Ref(DEBUG_LOCATION, "ChildPolicyWrapper"), target);
+      new_child->StartUpdate();
+      child_policies_to_finish_update.push_back(new_child.get());
+      new_child_policy_wrappers.emplace_back(std::move(new_child));
+    } else {
+      new_child_policy_wrappers.emplace_back(
+          it->second->Ref(DEBUG_LOCATION, "CacheEntry"));
+      // If the target already existed but was not previously used for
+      // this key, then we'll need to update the picker, since we
+      // didn't actually create a new child policy, which would have
+      // triggered an RLS picker update when it returned its first picker.
+      if (old_targets.find(target) == old_targets.end()) {
+        update_picker = true;
       }
     }
-    child_policy_wrappers_ = std::move(new_child_policy_wrappers);
-    if (update_picker) {
-      lb_policy_->UpdatePickerAsync();
-    }
   }
+  child_policy_wrappers_ = std::move(new_child_policy_wrappers);
+  if (update_picker) {
+    lb_policy_->UpdatePickerAsync();
+  }
+  return child_policies_to_finish_update;
 }
 
 //
@@ -1678,13 +1693,21 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
             lb_policy_.get(), this, key_.ToString().c_str(),
             response.ToString().c_str());
   }
-  MutexLock lock(&lb_policy_->mu_);
-  if (lb_policy_->is_shutdown_) return;
-  rls_channel_->ReportResponseLocked(!response.status.ok());
-  Cache::Entry* cache_entry = lb_policy_->cache_.FindOrInsert(key_);
-  cache_entry->OnRlsResponseLocked(std::move(response),
-                                   std::move(backoff_state_));
-  lb_policy_->request_map_.erase(key_);
+  std::vector<ChildPolicyWrapper*> child_policies_to_finish_update;
+  {
+    MutexLock lock(&lb_policy_->mu_);
+    if (lb_policy_->is_shutdown_) return;
+    rls_channel_->ReportResponseLocked(!response.status.ok());
+    Cache::Entry* cache_entry = lb_policy_->cache_.FindOrInsert(key_);
+    child_policies_to_finish_update = cache_entry->OnRlsResponseLocked(
+        std::move(response), std::move(backoff_state_));
+    lb_policy_->request_map_.erase(key_);
+  }
+  // Now that we've released the lock, finish the update on any newly
+  // created child policies.
+  for (ChildPolicyWrapper* child : child_policies_to_finish_update) {
+    child->MaybeFinishUpdate();
+  }
 }
 
 grpc_byte_buffer* RlsLb::RlsRequest::MakeRequestProto() {
@@ -1782,21 +1805,11 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
   addresses_ = std::move(args.addresses);
   grpc_channel_args_destroy(channel_args_);
   channel_args_ = grpc_channel_args_copy(args.args);
-  // Now grab the lock to swap out the state it guards.
-  {
-    MutexLock lock(&mu_);
-    // Swap out RLS channel if needed.
-    if (old_config == nullptr ||
-        config_->lookup_service() != old_config->lookup_service()) {
-      rls_channel_ =
-          MakeOrphanable<RlsChannel>(Ref(DEBUG_LOCATION, "RlsChannel"),
-                                     config_->lookup_service(), channel_args_);
-    }
-    // Resize cache if needed.
-    if (old_config == nullptr ||
-        config_->cache_size_bytes() != old_config->cache_size_bytes()) {
-      cache_.Resize(config_->cache_size_bytes());
-    }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) &&
+      (old_config == nullptr ||
+       old_config->child_policy_config() != config_->child_policy_config())) {
+    gpr_log(GPR_INFO, "[rlslb %p] updated child policy config: %s", this,
+            config_->child_policy_config().Dump().c_str());
   }
   // Determine whether we need to update all child policies.
   bool update_child_policies =
@@ -1823,34 +1836,51 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
       }
     }
   }
-  // Update child policies.  Note that this cannot be done while holding
-  // the lock, since that would cause a deadlock: calling UpdateLocked()
-  // on the child policy will cause it to invoke the helper's
-  // UpdateState() method, which will try to reacquire the lock.
-  auto update_child_policy = [&](ChildPolicyWrapper* child_policy_wrapper) {
-    Json copied_child_policy_config = config_->child_policy_config();
-    grpc_error_handle error = InsertOrUpdateChildPolicyField(
-        config_->child_policy_config_target_field_name(),
-        child_policy_wrapper->target(), &copied_child_policy_config);
-    GPR_ASSERT(error == GRPC_ERROR_NONE);
-    child_policy_wrapper->UpdateLocked(copied_child_policy_config, addresses_,
-                                       channel_args_);
-  };
-  // Update default child policy if needed.
-  if (created_default_child ||
-      (update_child_policies && default_child_policy_ != nullptr)) {
-    update_child_policy(default_child_policy_.get());
-  }
-  // Update all other child policies if needed.
-  if (update_child_policies) {
-    for (auto& p : child_policy_map_) {
-      update_child_policy(p.second);
+  // Now grab the lock to swap out the state it guards.
+  {
+    MutexLock lock(&mu_);
+    // Swap out RLS channel if needed.
+    if (old_config == nullptr ||
+        config_->lookup_service() != old_config->lookup_service()) {
+      rls_channel_ =
+          MakeOrphanable<RlsChannel>(Ref(DEBUG_LOCATION, "RlsChannel"),
+                                     config_->lookup_service(), channel_args_);
+    }
+    // Resize cache if needed.
+    if (old_config == nullptr ||
+        config_->cache_size_bytes() != old_config->cache_size_bytes()) {
+      cache_.Resize(config_->cache_size_bytes());
+    }
+    // Start update of default child policy if needed.
+    if (created_default_child ||
+        (update_child_policies && default_child_policy_ != nullptr)) {
+      default_child_policy_->StartUpdate();
+    }
+    // Start update of all other child policies if needed.
+    if (update_child_policies) {
+      for (auto& p : child_policy_map_) {
+        p.second->StartUpdate();
+      }
     }
   }
-  // FIXME: do this only if actually needed?  design doc says we need
-  // this if the default target changed, but in that case it will
-  // already have been done by the initial update to the default target
-  // above...
+  // Now that we've released the lock, finish update of child policies.
+  // Finish update of default child policy if needed.
+  if (created_default_child ||
+      (update_child_policies && default_child_policy_ != nullptr)) {
+    default_child_policy_->MaybeFinishUpdate();
+  }
+  // Finish update of all other child policies if needed.
+  if (update_child_policies) {
+    for (auto& p : child_policy_map_) {
+      p.second->MaybeFinishUpdate();
+    }
+  }
+  // In principle, we need to update the picker here only if the config
+  // fields used by the picker have changed.  However, it seems fragile
+  // to check individual fields, since the picker logic could change in
+  // the future to use additional config fields, and we might not
+  // remember to update the code here.  So for now, we just unconditionally
+  // update the picker here, even though it's probably redundant.
   UpdatePickerLocked();
 }
 
@@ -1865,7 +1895,6 @@ void RlsLb::ResetBackoffLocked() {
   {
     MutexLock lock(&mu_);
     rls_channel_->ResetBackoff();
-    // FIXME: do we actually want to do this here?
     cache_.ResetAllBackoff();
   }
   for (auto& child : child_policy_map_) {
