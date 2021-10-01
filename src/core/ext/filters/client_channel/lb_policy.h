@@ -287,6 +287,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Requests that the resolver re-resolve.
     virtual void RequestReresolution() = 0;
 
+    /// Returns the channel authority.
+    virtual absl::string_view GetAuthority() = 0;
+
     /// Adds a trace message associated with the channel.
     enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };
     virtual void AddTraceEvent(TraceSeverity severity,

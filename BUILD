@@ -1587,7 +1587,6 @@ grpc_cc_library(
         "src/core/lib/surface/server.cc",
         "src/core/lib/surface/validate_metadata.cc",
         "src/core/lib/surface/version.cc",
-        "src/core/lib/transport/authority_override.cc",
         "src/core/lib/transport/bdp_estimator.cc",
         "src/core/lib/transport/byte_stream.cc",
         "src/core/lib/transport/connectivity_state.cc",
@@ -1723,7 +1722,6 @@ grpc_cc_library(
         "src/core/lib/surface/lame_client.h",
         "src/core/lib/surface/server.h",
         "src/core/lib/surface/validate_metadata.h",
-        "src/core/lib/transport/authority_override.h",
         "src/core/lib/transport/bdp_estimator.h",
         "src/core/lib/transport/byte_stream.h",
         "src/core/lib/transport/connectivity_state.h",
@@ -3303,11 +3301,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_transport_chttp2_client_connector",
     srcs = [
-        "src/core/ext/transport/chttp2/client/authority.cc",
         "src/core/ext/transport/chttp2/client/chttp2_connector.cc",
     ],
     hdrs = [
-        "src/core/ext/transport/chttp2/client/authority.h",
         "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     ],
     language = "c++",

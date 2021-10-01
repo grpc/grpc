@@ -1122,7 +1122,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc \
     src/core/ext/filters/workarounds/workaround_utils.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
-    src/core/ext/transport/chttp2/client/authority.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
@@ -1573,7 +1572,6 @@ LIBGRPC_SRC = \
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
-    src/core/lib/transport/authority_override.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
@@ -1805,7 +1803,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc \
     src/core/ext/filters/workarounds/workaround_utils.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
-    src/core/ext/transport/chttp2/client/authority.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
@@ -2006,7 +2003,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
-    src/core/lib/transport/authority_override.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
