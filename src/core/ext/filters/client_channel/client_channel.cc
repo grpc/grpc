@@ -1115,6 +1115,8 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
     gpr_log(GPR_INFO, "chand=%p: creating client_channel for channel stack %p",
             this, owning_stack_);
   }
+  // Start backup polling.
+  grpc_client_channel_start_backup_polling(interested_parties_);
   // Check client channel factory.
   if (client_channel_factory_ == nullptr) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -1176,8 +1178,6 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
   } else {
     default_authority_ = default_authority;
   }
-  // Start backup polling.
-  grpc_client_channel_start_backup_polling(interested_parties_);
   // Success.
   *error = GRPC_ERROR_NONE;
 }
