@@ -279,9 +279,7 @@ class LibuvListener final : public EventEngine::Listener {
       std::unique_ptr<grpc_event_engine::experimental::SliceAllocatorFactory>
           slice_allocator_factory);
 
-  void RegisterInLibuvThread(LibuvEventEngine* engine) {
-    uv_tcp_->RegisterInLibuvThread(engine);
-  }
+  void Register(LibuvEventEngine* engine);
 
   virtual ~LibuvListener() override;
 
@@ -566,12 +564,7 @@ class LibuvEventEngine final
       gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::CreateListener, created %p",
               this, ret.get());
     }
-    // Scheduling should have a guarantee on ordering. We don't need to wait
-    // until this is finished to return. Any subsequent call on the returned
-    // listener will schedule more work after this one.
-    RunInLibuvThread([&ret](LibuvEventEngine* engine) {
-      ret->RegisterInLibuvThread(engine);
-    });
+    ret->Register(this);
     return ret;
   }
 
@@ -1282,6 +1275,13 @@ void LibuvEndpoint::Read(EventEngine::Callback on_read,
                   });
             });
       });
+}
+
+void LibuvListener::Register(LibuvEventEngine* engine) {
+  auto uv_tcp = uv_tcp_;
+  engine->RunInLibuvThread([uv_tcp](LibuvEventEngine* engine) {
+    uv_tcp->RegisterInLibuvThread(engine);
+  });
 }
 
 void LibuvListenerWrapper::Close(LibuvEventEngine* engine) {
