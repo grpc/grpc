@@ -205,11 +205,24 @@ class MetadataMap {
           [](intptr_t) {},
           [](intptr_t value, MetadataMap* map) {
             map->Set(Which(), static_cast<typename Which::MementoType>(value));
+            return GRPC_ERROR_NONE;
           },
       };
       vtable_ = &vtable;
       value_ = static_cast<intptr_t>(value);
     }
+    // Takes ownership of elem
+    explicit Memento(grpc_mdelem elem) {
+      static const VTable vtable = {
+        [](intptr_t value) { GRPC_MDELEM_UNREF(grpc_mdelem{uintptr_t(value)}); },
+        [](intptr_t value, MetadataMap* map) {
+          return map->Append(GRPC_MDELEM_REF(grpc_mdelem{uintptr_t(value)}));
+        },
+      };
+      vtable_ = &vtable;
+      value_ = static_cast<intptr_t>(elem.payload);
+    }
+    Memento() : vtable_(EmptyVTable()) {}
 
     Memento(const Memento&) = delete;
     Memento& operator=(const Memento&) = delete;
@@ -229,11 +242,11 @@ class MetadataMap {
    private:
     struct VTable {
       void (*destroy)(intptr_t value);
-      void (*set)(intptr_t value, MetadataMap* map);
+      grpc_error_handle (*set)(intptr_t value, MetadataMap* map);
     };
     static const VTable* EmptyVTable() {
       static const VTable vtable = {[](intptr_t) {},
-                                    [](intptr_t, MetadataMap*) {}};
+                                    [](intptr_t, MetadataMap*) { return GRPC_ERROR_NONE; }};
       return &vtable;
     }
     const VTable* vtable_;

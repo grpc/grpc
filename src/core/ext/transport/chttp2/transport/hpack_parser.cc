@@ -938,7 +938,7 @@ class HPackParser::String {
 // Parser parses one key/value pair from a byte stream.
 class HPackParser::Parser {
  public:
-  Parser(Input* input, grpc_chttp2_incoming_metadata_buffer* metadata_buffer,
+  Parser(Input* input, grpc_metadata_batch* metadata_buffer,
          uint32_t metadata_size_limit, HPackTable* table,
          uint8_t* dynamic_table_updates_allowed)
       : input_(input),
@@ -1110,8 +1110,7 @@ class HPackParser::Parser {
       return HandleMetadataSizeLimitExceeded(md, new_size);
     }
 
-    grpc_error_handle err =
-        grpc_chttp2_incoming_metadata_buffer_add(metadata_buffer_, md);
+    grpc_error_handle err = metadata_buffer_->Append(md);
     if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
       input_->SetError(err);
       return false;

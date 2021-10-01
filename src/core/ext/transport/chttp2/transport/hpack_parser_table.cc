@@ -113,7 +113,7 @@ grpc_error_handle HPackTable::SetCurrentTableSize(uint32_t bytes) {
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle HPackTable::Add(grpc_mdelem md) {
+grpc_error_handle HPackTable::Add(Memento md) {
   /* determine how many bytes of buffer this entry represents */
   size_t elem_bytes = GRPC_SLICE_LENGTH(GRPC_MDKEY(md)) +
                       GRPC_SLICE_LENGTH(GRPC_MDVALUE(md)) +

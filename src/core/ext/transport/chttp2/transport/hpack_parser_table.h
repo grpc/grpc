@@ -21,8 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/types/variant.h"
-
 #include <grpc/slice.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
@@ -46,9 +44,7 @@ class HPackTable {
   void SetMaxBytes(uint32_t max_bytes);
   grpc_error_handle SetCurrentTableSize(uint32_t bytes);
 
-  // Transitional step: we'll store either grpc_mdelem or Memento objects until
-  // we can get away with just Memento's.
-  using Memento = absl::variant<grpc_mdelem, grpc_metadata_batch::Memento>;
+  using Memento = grpc_metadata_batch::Memento;
 
   // Lookup, but don't ref.
   const Memento* Lookup(uint32_t index) const {
@@ -59,7 +55,7 @@ class HPackTable {
     // reading the core static metadata table here; at that point we'd need our
     // own singleton static metadata in the correct order.
     if (index <= hpack_constants::kLastStaticEntry) {
-      return &g_static_mdelem_manifested[index - 1];
+      return &static_metadata_.memento[index - 1];
     } else {
       return LookupDynamic(index);
     }
@@ -72,6 +68,15 @@ class HPackTable {
   uint32_t num_entries() const { return num_entries_; }
 
  private:
+  struct StaticMementos {
+    StaticMementos() {
+      for (int i=0; i<hpack_constants::kLastStaticEntry; i++) {
+        memento[i] = Memento(g_static_mdelem_manifested[i]);
+      }
+    }
+    Memento memento[hpack_constants::kLastStaticEntry];
+  };
+
   enum { kInlineEntries = hpack_constants::kInitialTableEntries };
   using EntriesVec = absl::InlinedVector<Memento, kInlineEntries>;
 
@@ -106,6 +111,8 @@ class HPackTable {
   uint32_t max_entries_ = hpack_constants::kInitialTableEntries;
   // HPack table entries
   EntriesVec entries_{hpack_constants::kInitialTableEntries};
+  // Mementos for static data
+  static const StaticMementos static_metadata_;
 };
 
 }  // namespace grpc_core

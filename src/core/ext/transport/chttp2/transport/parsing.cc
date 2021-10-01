@@ -668,7 +668,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
   if (t->header_eof) {
     s->eos_received = true;
   }
-  grpc_chttp2_incoming_metadata_buffer* incoming_metadata_buffer = nullptr;
+  grpc_metadata_batch* incoming_metadata_buffer = nullptr;
   switch (s->header_frames_received) {
     case 0:
       if (t->is_client && t->header_eof) {

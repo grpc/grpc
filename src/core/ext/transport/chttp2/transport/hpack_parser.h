@@ -25,7 +25,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
-#include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
@@ -59,7 +59,7 @@ class HPackParser {
 
   // Begin parsing a new frame
   // Sink receives each parsed header,
-  void BeginFrame(grpc_chttp2_incoming_metadata_buffer* metadata_buffer,
+  void BeginFrame(grpc_metadata_batch* metadata_buffer,
                   uint32_t metadata_size_limit, Boundary boundary,
                   Priority priority);
   // Parse one slice worth of data
@@ -84,7 +84,7 @@ class HPackParser {
   bool ParseInputInner(Input* input);
 
   // Target metadata buffer
-  grpc_chttp2_incoming_metadata_buffer* metadata_buffer_ = nullptr;
+  grpc_metadata_batch* metadata_buffer_ = nullptr;
   uint32_t metadata_size_limit_;
 
   // Bytes that could not be parsed last parsing round
