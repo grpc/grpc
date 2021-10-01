@@ -30,10 +30,6 @@
 bool squelch = true;
 bool leak_check = true;
 
-static grpc_error_handle onhdr(grpc_mdelem md) {
-  GRPC_MDELEM_UNREF(md);
-  return GRPC_ERROR_NONE;
-}
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
@@ -41,10 +37,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
   {
+    auto arena = grpc_core::MakeScopedArena(1024);
     grpc_core::ExecCtx exec_ctx;
     grpc_core::HPackParser parser;
-    parser.BeginFrame(onhdr, grpc_core::HPackParser::Boundary::None,
-                      grpc_core::HPackParser::Priority::None, 4096);
+    grpc_metadata_batch b(arena.get());
+    parser.BeginFrame(&b, 1024, grpc_core::HPackParser::Boundary::None,
+                      grpc_core::HPackParser::Priority::None);
     GRPC_ERROR_UNREF(
         parser.Parse(grpc_slice_from_static_buffer(data, size), true));
   }

@@ -45,11 +45,10 @@ static void assert_index(const HPackTable* tbl, uint32_t idx, const char* key,
   EXPECT_EQ(md->DebugString(), absl::StrCat(key, ": ", value));
 }
 
-static void test_static_lookup(void) {
+TEST(HpackParserTableTest, StaticTable) {
   grpc_core::ExecCtx exec_ctx;
   HPackTable tbl;
 
-  LOG_TEST("test_static_lookup");
   assert_index(&tbl, 1, ":authority", "");
   assert_index(&tbl, 2, ":method", "GET");
   assert_index(&tbl, 3, ":method", "POST");
@@ -113,11 +112,9 @@ static void test_static_lookup(void) {
   assert_index(&tbl, 61, "www-authenticate", "");
 }
 
-static void test_many_additions(void) {
+TEST(HpackParserTableTest, ManyAdditions) {
   HPackTable tbl;
   int i;
-
-  LOG_TEST("test_many_additions");
 
   grpc_core::ExecCtx exec_ctx;
 
@@ -127,7 +124,7 @@ static void test_many_additions(void) {
     std::string value = absl::StrCat("VALUE:", i);
     elem = grpc_mdelem_from_slices(grpc_slice_from_cpp_string(key),
                                    grpc_slice_from_cpp_string(value));
-    GPR_ASSERT(tbl.Add(elem) == GRPC_ERROR_NONE);
+    GPR_ASSERT(tbl.Add(HPackTable::Memento(elem)) == GRPC_ERROR_NONE);
     GRPC_MDELEM_UNREF(elem);
     assert_index(&tbl, 1 + grpc_core::hpack_constants::kLastStaticEntry,
                  key.c_str(), value.c_str());

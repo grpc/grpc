@@ -115,6 +115,7 @@ grpc_cc_test(
     srcs = ["hpack_parser_test.cc"],
     language = "C++",
     uses_polling = False,
+    external_deps = ["gtest"],
     deps = [
         "//:gpr",
         "//:grpc",

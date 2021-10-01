@@ -436,11 +436,6 @@ static void BM_HpackParserInitDestroy(benchmark::State& state) {
 }
 BENCHMARK(BM_HpackParserInitDestroy);
 
-static grpc_error_handle(void* /*user_data*/, grpc_mdelem md) {
-  GRPC_MDELEM_UNREF(md);
-  return GRPC_ERROR_NONE;
-}
-
 template <class Fixture>
 static void BM_HpackParserParseHeader(benchmark::State& state) {
   TrackCounters track_counters;
@@ -450,11 +445,11 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   grpc_core::HPackParser p;
   const int kArenaSize = 4096 * 4096;
   auto* arena = grpc_core::Arena::Create(kArenaSize);
-  ManualConstructor<grpc_metadata_batch> b;
+  grpc_core::ManualConstructor<grpc_metadata_batch> b;
   b.Init(arena);
-  p.BeginFrame(&*b, grpc_core::HPackParser::Boundary::None,
-               grpc_core::HPackParser::Priority::None,
-               std::numeric_limits<uint32_t>::max());
+  p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
+               grpc_core::HPackParser::Boundary::None,
+               grpc_core::HPackParser::Priority::None);
   for (auto slice : init_slices) {
     GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice, false));
   }
@@ -470,9 +465,9 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       arena->Destroy();
       arena = grpc_core::Arena::Create(kArenaSize);
       b.Init(arena);
-      p.BeginFrame(&*b, grpc_core::HPackParser::Boundary::None,
-                   grpc_core::HPackParser::Priority::None,
-                   std::numeric_limits<uint32_t>::max());
+      p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
+                   grpc_core::HPackParser::Boundary::None,
+                   grpc_core::HPackParser::Priority::None);
     }
   }
   // Clean up
@@ -773,8 +768,6 @@ class RepresentativeServerTrailingMetadata {
     return {MakeSlice({0xbf, 0xbe})};
   }
 };
-
-static void free_timeout(void* p) { gpr_free(p); }
 
 // Send the same deadline repeatedly
 class SameDeadline {
