@@ -10,13 +10,13 @@ load("//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
 
 grpc_extra_deps()
 
-register_execution_platforms(
-    "//third_party/toolchains:rbe_windows",
-)
+# register_execution_platforms(
+#    "//third_party/toolchains:rbe_windows",
+# )
 
-register_toolchains(
-    "//third_party/toolchains/bazel_0.26.0_rbe_windows:cc-toolchain-x64_windows",
-)
+# register_toolchains(
+#     "//third_party/toolchains/bazel_0.26.0_rbe_windows:cc-toolchain-x64_windows",
+# )
 
 load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_rbe_exec_properties_dict", "custom_exec_properties")
 
