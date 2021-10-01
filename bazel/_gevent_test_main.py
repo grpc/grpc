@@ -22,9 +22,16 @@ from typing import Sequence
 
 class SingleLoader(object):
     def __init__(self, pattern: str):
-        self._pattern = pattern
-        self._loader = unittest.TestLoader()
-        self.suite = self._loader.discover(os.path.dirname(os.path.relpath(__file__)), pattern)
+        loader = unittest.TestLoader()
+        self.suite = unittest.TestSuite()
+        tests = []
+        for importer, module_name, is_package in pkgutil.walk_packages([os.path.dirname(os.path.relpath(__file__))]):
+            if pattern in module_name:
+                module = importer.find_module(module_name).load_module(module_name)
+                tests.append(loader.loadTestsFromModule(module))
+        if len(tests) != 1:
+            raise AssertionError("Expected only 1 test module. Found {}".format(tests))
+        self.suite.addTest(tests[0])
 
 
     def loadTestsFromNames(self, names: Sequence[str], module: str = None) -> unittest.TestSuite:

@@ -16,7 +16,7 @@
 load("//bazel:gevent_test.bzl", "py_grpc_gevent_test")
 load("//bazel:python_rules.bzl", "py2and3_test")
 
-def py_grpc_test(name, **kwargs):
+def internal_py_grpc_test(name, **kwargs):
     """Runs a test under all supported environments."""
     py2and3_test(name, **kwargs)
     py_grpc_gevent_test(name, **kwargs)
