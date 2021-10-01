@@ -47,7 +47,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     parser_ = absl::make_unique<grpc_core::HPackParser>();
   }
 
-  ~ParseTest() {
+  ~ParseTest() override {
     {
       grpc_core::ExecCtx exec_ctx;
       parser_.reset();

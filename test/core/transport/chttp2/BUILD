@@ -113,9 +113,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "hpack_parser_test",
     srcs = ["hpack_parser_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_polling = False,
-    external_deps = ["gtest"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -126,9 +126,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "hpack_parser_table_test",
     srcs = ["hpack_parser_table_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_polling = False,
-    external_deps = ["gtest"],
     deps = [
         "//:gpr",
         "//:grpc",

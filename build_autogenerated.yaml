@@ -3549,24 +3549,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: hpack_parser_table_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/hpack_parser_table_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: hpack_parser_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/hpack_parser_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: httpcli_test
   build: test
   language: c
@@ -6401,6 +6383,26 @@ targets:
   - test/core/transport/chttp2/hpack_encoder_index_test.cc
   deps:
   - absl/types:optional
+- name: hpack_parser_table_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/hpack_parser_table_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: hpack_parser_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/hpack_parser_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: http2_client
   build: test
   run: false
