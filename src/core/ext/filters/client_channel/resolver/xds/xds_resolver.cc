@@ -62,7 +62,7 @@ class XdsResolver : public Resolver {
         args_(grpc_channel_args_copy(args.args)),
         interested_parties_(args.pollset_set),
         xds_client_(std::move(xds_client)),
-        server_name_(lds_resource_name),
+        server_name_(data_plane_authority),
         lds_resource_name_(std::move(lds_resource_name)),
         data_plane_authority_(std::move(data_plane_authority)),
         xds_server_(std::move(xds_server)) {
@@ -1011,6 +1011,7 @@ class XdsResolverFactory : public ResolverFactory {
     }
     std::string lds_resource_name;
     std::string data_plane_authority;
+    std::string authority;
     std::string xds_server;
     if (args.uri.scheme() == "xds") {
       xds_server = absl::StrCat(
@@ -1022,7 +1023,7 @@ class XdsResolverFactory : public ResolverFactory {
                   xds_client->bootstrap().server().server_features.end()),
               ""));
       std::string target_hostname(absl::StripPrefix(args.uri.path(), "/"));
-      std::string authority;
+      data_plane_authority = GetDefaultAuthority(args.uri);
       gpr_log(GPR_INFO, "donna target_hostname is %s", target_hostname.c_str());
       // always empty: if (!args.uri.authority().empty()) {
       std::vector<std::string> parts_of_uri =
@@ -1042,11 +1043,13 @@ class XdsResolverFactory : public ResolverFactory {
         std::string name_template =
             authority_config->client_listener_resource_name_template;
         if (name_template.empty()) {
-          name_template = absl::StrCat("xdstp://", args.uri.authority(),
+          name_template = absl::StrCat("xdstp://", authority,
                                        "/envoy.config.listener.v3.Listener/%s");
         }
         lds_resource_name = absl::StrReplaceAll(
-            name_template, {{"%s", PercentEncode(target_hostname)}});
+            name_template, {{"%s", PercentEncode(data_plane_authority)}});
+        gpr_log(GPR_INFO, "donna name template %s and lds_resource_name %s",
+                name_template.c_str(), lds_resource_name.c_str());
         if (!authority_config->xds_servers.empty()) {
           xds_server = absl::StrCat(
               authority_config->server().server_uri,
@@ -1079,6 +1082,8 @@ class XdsResolverFactory : public ResolverFactory {
         GPR_INFO,
         "donna constructued lds_resource_name %s and data plane authority %s",
         lds_resource_name.c_str(), data_plane_authority.c_str());
+    gpr_log(GPR_INFO, "donna authority and xds_server %s and %s",
+            authority.c_str(), xds_server.c_str());
     return MakeOrphanable<XdsResolver>(std::move(args), std::move(xds_client),
                                        lds_resource_name, data_plane_authority,
                                        xds_server);
