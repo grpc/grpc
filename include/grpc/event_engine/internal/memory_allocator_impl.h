@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_EVENT_ENGINE_MEMORY_ALLOCATOR_IMPL_H
-#define GRPC_EVENT_ENGINE_MEMORY_ALLOCATOR_IMPL_H
+#ifndef GRPC_EVENT_ENGINE_INTERNAL_MEMORY_ALLOCATOR_IMPL_H
+#define GRPC_EVENT_ENGINE_INTERNAL_MEMORY_ALLOCATOR_IMPL_H
 
 #include <grpc/impl/codegen/port_platform.h>
 
@@ -95,4 +95,4 @@ class MemoryAllocatorImpl
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_EVENT_ENGINE_MEMORY_ALLOCATOR_H
+#endif  // GRPC_EVENT_ENGINE_INTERNAL_MEMORY_ALLOCATOR_IMPL_H

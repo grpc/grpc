@@ -43,7 +43,6 @@ using MemoryRequest = grpc_event_engine::experimental::MemoryRequest;
 using EventEngineMemoryAllocatorImpl =
     grpc_event_engine::experimental::internal::MemoryAllocatorImpl;
 using grpc_event_engine::experimental::MemoryAllocator;
-using grpc_event_engine::experimental::Vector;
 
 // Reclamation passes.
 // When memory is tight, we start trying to claim some back from memory
