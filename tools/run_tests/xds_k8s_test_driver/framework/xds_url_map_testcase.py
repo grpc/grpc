@@ -472,10 +472,14 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             rpc = expected_result.rpc_type
             status = expected_result.status_code.value[0]
             # Compute observation
-            seen_after = after_stats.stats_per_method.get(rpc, {}).result.get(
-                status, 0)
-            seen_before = before_stats.stats_per_method.get(rpc, {}).result.get(
-                status, 0)
+            try:
+                seen_after = after_stats.stats_per_method[rpc].result[status]
+            except:
+                seen_after = 0
+            try:
+                seen_before = before_stats.stats_per_method[rpc].result[status]
+            except:
+                seen_before = 0
             seen = seen_after - seen_before
             # Compute total number of RPC started
             stats_per_method_after = after_stats.stats_per_method.get(
