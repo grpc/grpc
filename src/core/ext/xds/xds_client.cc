@@ -503,8 +503,7 @@ XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
     if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
       symbol = tmp;
     }
-    gpr_log(GPR_ERROR,
-            "ChannelState::ChannelState constructor donna stack %p %s",
+    gpr_log(GPR_ERROR, "ChannelState::ChannelState constructor stack %p %s",
             trace[i], symbol);
   }
 }
@@ -573,7 +572,7 @@ void XdsClient::ChannelState::SubscribeLocked(const std::string& type_url,
     if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
       symbol = tmp;
     }
-    gpr_log(GPR_ERROR, "Adding connect in SubscribeLocked donna stack %p %s",
+    gpr_log(GPR_ERROR, "Adding connect in SubscribeLocked stack %p %s",
             trace[i], symbol);
   }
   if (channel_ == nullptr) {
@@ -731,8 +730,7 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
     if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
       symbol = tmp;
     }
-    gpr_log(GPR_ERROR, "donna created AdsCallState stack %p %s", trace[i],
-            symbol);
+    gpr_log(GPR_ERROR, "created AdsCallState stack %p %s", trace[i], symbol);
   }
   // Init the ADS call. Note that the call will progress every time there's
   // activity in xds_client()->interested_parties_, which is comprised of

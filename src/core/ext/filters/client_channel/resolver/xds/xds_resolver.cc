@@ -780,7 +780,7 @@ void XdsResolver::StartLocked() {
     if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
       symbol = tmp;
     }
-    gpr_log(GPR_ERROR, "XdsResolver::StartLocked donna stack %p %s", trace[i],
+    gpr_log(GPR_ERROR, "XdsResolver::StartLocked stack %p %s", trace[i],
             symbol);
   }
   GPR_ASSERT(xds_client_ != nullptr);

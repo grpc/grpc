@@ -3370,7 +3370,8 @@ using GlobalXdsClientTest = BasicTest;
 
 TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FEDERATION", "true");
-  const char* kNewServerName = "xds.example.com/server.example.com";
+  const char* kNewServerName = "new-server.example.com";
+  const char* kNewUrl = "xds.example.com/new-server.example.com";
   Listener listener = default_listener_;
   listener.set_name(kNewServerName);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
@@ -3382,7 +3383,7 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   // Create second channel and tell it to connect to kNewServerName.
-  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewServerName);
+  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewUrl);
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
