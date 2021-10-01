@@ -4176,6 +4176,14 @@ targets:
   - test/core/iomgr/resource_quota_test.cc
   deps:
   - grpc_test_util
+- name: test_core_security_credentials_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/security/credentials_test.cc
+  deps:
+  - grpc_test_util
 - name: test_core_slice_slice_test
   build: test
   language: c
@@ -7944,15 +7952,6 @@ targets:
   - absl/types:variant
   - gpr
   uses_polling: false
-- name: test_core_security_credentials_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/security/credentials_test.cc
-  deps:
-  - grpc_test_util
 - name: test_cpp_client_credentials_test
   gtest: true
   build: test
