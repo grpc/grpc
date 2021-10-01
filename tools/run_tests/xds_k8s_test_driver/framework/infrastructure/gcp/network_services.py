@@ -138,27 +138,25 @@ class GrpcRoute:
 
     @dataclasses.dataclass(frozen=True)
     class RouteAction:
-        destination: Optional['Destination']
+        destinations: Optional[List['Destination']]
         drop: Optional[int]
 
         @classmethod
         def from_response(cls, d: Dict[str, Any]) -> 'RouteAction':
             return cls(
-                destination=Destination.from_response(d["destination"])
-                if "destination" in d else None,
+                destinations=[Destination.from_response(dest) for dest in d["destinations"]] if "destinations" in d else [],
                 drop=d.get("drop"),
             )
 
     @dataclasses.dataclass(frozen=True)
     class RouteRule:
-        match: Optional['RouteMatch']
+        matches: Optional[List['RouteMatch']]
         action: 'RouteAction'
 
         @classmethod
         def from_response(cls, d: Dict[str, Any]) -> 'RouteRule':
             return cls(
-                match=RouteMatch.from_response(d["match"])
-                if "match" in d else "",
+                matches=[RouteMatch.from_response(m) for m in d["matches"]] if "matches" in d else [],
                 action=RouteAction.from_response(d["action"]),
             )
 

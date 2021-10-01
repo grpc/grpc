@@ -601,9 +601,9 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
                 host,
             "rules": [{
                 "action": {
-                    "destination": {
+                    "destinations": [{
                         "serviceName": self.backend_service.name
-                    }
+                    }]
                 }
             }],
         }
