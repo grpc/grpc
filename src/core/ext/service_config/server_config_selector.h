@@ -28,7 +28,7 @@ namespace grpc_core {
 // filter per call.
 class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
  public:
-  virtual ~ServerConfigSelector() = default;
+  ~ServerConfigSelector() override = default;
   struct CallConfig {
     grpc_error_handle error = GRPC_ERROR_NONE;
     const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
