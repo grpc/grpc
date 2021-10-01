@@ -829,14 +829,30 @@ static tsi_result populate_ssl_context(
     return TSI_INVALID_ARGUMENT;
   }
   {
+#if OPENSSL_VERSION_NUMBER < 0x10002000
+    /* OpenSSL 1.0.1 and older need the ECDH ephermal key parameter to
+       be set manually */
     EC_KEY* ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
     if (!SSL_CTX_set_tmp_ecdh(context, ecdh)) {
       gpr_log(GPR_ERROR, "Could not set ephemeral ECDH key.");
       EC_KEY_free(ecdh);
       return TSI_INTERNAL_ERROR;
     }
-    SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
     EC_KEY_free(ecdh);
+#elif OPENSSL_VERSION_NUMBER < 0x10100000
+    /* OpenSSL 1.0.2 and newer can automatically support ECDH and use
+       the most appropriate parameters */
+    if (!SSL_CTX_set_ecdh_auto(ctx->ctx, 1)) {
+      gpr_log(GPR_ERROR,
+	      "Could not set auto list of curves for ephemeral ECDH key.");
+      return TSI_INTERNAL_ERROR;
+    }
+
+    /* OpenSSL 1.1.0 and newer have always ecdh auto loading enabled,
+       so do nothing */
+#endif
+
+    SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
   }
   return TSI_OK;
 }
