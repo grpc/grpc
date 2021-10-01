@@ -368,9 +368,7 @@ class RlsLb : public LoadBalancingPolicy {
       size_t Size() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
       // Pick subchannel for request based on the entry's state.
-      PickResult Pick(PickArgs args, RlsLbConfig* config,
-                      ChildPolicyWrapper* default_child_policy)
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
+      PickResult Pick(PickArgs args) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
       // If the cache entry is in backoff state, resets the backoff and, if
       // applicable, its backoff timer. The method does not update the LB
@@ -941,7 +939,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
         gpr_log(GPR_INFO, "[rlslb %p] picker=%p: using cache entry %p",
                 lb_policy_.get(), this, entry);
       }
-      return entry->Pick(args, config_.get(), default_child_policy_.get());
+      return entry->Pick(args);
     }
     // If the entry is in backoff, then use the default target if set,
     // or else fail the pick.
@@ -1066,9 +1064,7 @@ size_t RlsLb::Cache::Entry::Size() const {
   return lb_policy_->cache_.EntrySizeForKey(*lru_iterator_);
 }
 
-LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
-    PickArgs args, RlsLbConfig* config,
-    ChildPolicyWrapper* default_child_policy) {
+LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
   for (const auto& child_policy_wrapper : child_policy_wrappers_) {
     if (child_policy_wrapper->connectivity_state() ==
         GRPC_CHANNEL_TRANSIENT_FAILURE) {
