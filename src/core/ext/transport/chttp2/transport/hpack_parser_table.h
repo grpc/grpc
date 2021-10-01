@@ -62,7 +62,7 @@ class HPackTable {
   }
 
   // add a table entry to the index
-  grpc_error_handle Add(Memento memento) GRPC_MUST_USE_RESULT;
+  grpc_error_handle Add(Memento md) GRPC_MUST_USE_RESULT;
 
   // Current entry count in the table.
   uint32_t num_entries() const { return num_entries_; }
