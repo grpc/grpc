@@ -1059,7 +1059,7 @@ class HPackParser::Parser {
  private:
   void GPR_ATTRIBUTE_NOINLINE LogHeader(const HPackTable::Memento& memento) {
     // TODO(ctiller): what should be here?
-    abort();
+    gpr_log(GPR_DEBUG, "recvhdr: %s", memento.DebugString().c_str());
   }
 
   bool EmitHeader(const HPackTable::Memento& md) {

@@ -62,6 +62,8 @@ class HPackParser {
   void BeginFrame(grpc_metadata_batch* metadata_buffer,
                   uint32_t metadata_size_limit, Boundary boundary,
                   Priority priority);
+  // Start throwing away any received headers after parsing them.
+  void StopBufferingFrame() { metadata_buffer_ = nullptr; }
   // Parse one slice worth of data
   grpc_error_handle Parse(const grpc_slice& slice, bool is_last);
   // Reset state ready for the next BeginFrame

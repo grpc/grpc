@@ -345,8 +345,7 @@ static grpc_error_handle init_non_header_skip_frame_parser(
 
 void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t) {
   if (t->parser == grpc_chttp2_header_parser_parse) {
-    abort();
-    // t->hpack_parser.ResetSink(skip_header);
+    t->hpack_parser.StopBufferingFrame();
   } else {
     t->parser = skip_parser;
   }
