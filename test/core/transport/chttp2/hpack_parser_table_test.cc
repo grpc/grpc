@@ -23,6 +23,8 @@
 
 #include <string>
 
+#include <gtest/gtest.h>
+
 #include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
@@ -34,20 +36,13 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
-#define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
-
-using grpc_core::HPackTable;
-
-static void assert_str(const HPackTable* /*tbl*/, grpc_slice mdstr,
-                       const char* str) {
-  GPR_ASSERT(grpc_slice_str_cmp(mdstr, str) == 0);
-}
+namespace grpc_core {
 
 static void assert_index(const HPackTable* tbl, uint32_t idx, const char* key,
                          const char* value) {
-  grpc_mdelem md = tbl->Peek(idx);
-  assert_str(tbl, GRPC_MDKEY(md), key);
-  assert_str(tbl, GRPC_MDVALUE(md), value);
+  const auto* md = tbl->Lookup(idx);
+  ASSERT_NE(md, nullptr);
+  EXPECT_EQ(md->DebugString(), absl::StrCat(key, ": ", value));
 }
 
 static void test_static_lookup(void) {
@@ -145,11 +140,13 @@ static void test_many_additions(void) {
   }
 }
 
+}  // namespace grpc_core
+
 int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  test_static_lookup();
-  test_many_additions();
+  int r = RUN_ALL_TESTS();
   grpc_shutdown();
-  return 0;
+  return r;
 }

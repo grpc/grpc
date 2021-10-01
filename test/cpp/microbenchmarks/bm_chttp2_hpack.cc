@@ -436,12 +436,12 @@ static void BM_HpackParserInitDestroy(benchmark::State& state) {
 }
 BENCHMARK(BM_HpackParserInitDestroy);
 
-static grpc_error_handle UnrefHeader(void* /*user_data*/, grpc_mdelem md) {
+static grpc_error_handle(void* /*user_data*/, grpc_mdelem md) {
   GRPC_MDELEM_UNREF(md);
   return GRPC_ERROR_NONE;
 }
 
-template <class Fixture, grpc_error_handle (*OnHeader)(void*, grpc_mdelem)>
+template <class Fixture>
 static void BM_HpackParserParseHeader(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
@@ -450,28 +450,34 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   grpc_core::HPackParser p;
   const int kArenaSize = 4096 * 4096;
   auto* arena = grpc_core::Arena::Create(kArenaSize);
-  p.BeginFrame([arena](grpc_mdelem e) { return OnHeader(arena, e); },
-               grpc_core::HPackParser::Boundary::None,
-               grpc_core::HPackParser::Priority::None);
+  ManualConstructor<grpc_metadata_batch> b;
+  b.Init(arena);
+  p.BeginFrame(&*b, grpc_core::HPackParser::Boundary::None,
+               grpc_core::HPackParser::Priority::None,
+               std::numeric_limits<uint32_t>::max());
   for (auto slice : init_slices) {
     GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice, false));
   }
   while (state.KeepRunning()) {
+    b->Clear();
     for (auto slice : benchmark_slices) {
       GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice, false));
     }
     grpc_core::ExecCtx::Get()->Flush();
     // Recreate arena every 4k iterations to avoid oom
     if (0 == (state.iterations() & 0xfff)) {
+      b.Destroy();
       arena->Destroy();
       arena = grpc_core::Arena::Create(kArenaSize);
-      p.BeginFrame([arena](grpc_mdelem e) { return OnHeader(arena, e); },
-                   grpc_core::HPackParser::Boundary::None,
-                   grpc_core::HPackParser::Priority::None);
+      b.Init(arena);
+      p.BeginFrame(&*b, grpc_core::HPackParser::Boundary::None,
+                   grpc_core::HPackParser::Priority::None,
+                   std::numeric_limits<uint32_t>::max());
     }
   }
   // Clean up
   arena->Destroy();
+  b.Destroy();
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);
 
@@ -770,83 +776,6 @@ class RepresentativeServerTrailingMetadata {
 
 static void free_timeout(void* p) { gpr_free(p); }
 
-// Benchmark the current on_initial_header implementation
-static grpc_error_handle OnInitialHeader(void* user_data, grpc_mdelem md) {
-  // Setup for benchmark. This will bloat the absolute values of this benchmark
-  grpc_metadata_batch buffer(static_cast<grpc_core::Arena*>(user_data));
-  bool seen_error = false;
-
-  // Below here is the code we actually care about benchmarking
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
-      !grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
-    seen_error = true;
-  }
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
-    grpc_millis* cached_timeout =
-        static_cast<grpc_millis*>(grpc_mdelem_get_user_data(md, free_timeout));
-    grpc_millis timeout;
-    if (cached_timeout != nullptr) {
-      timeout = *cached_timeout;
-    } else {
-      if (GPR_UNLIKELY(
-              !grpc_http2_decode_timeout(GRPC_MDVALUE(md), &timeout))) {
-        char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-        gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
-        gpr_free(val);
-        timeout = GRPC_MILLIS_INF_FUTURE;
-      }
-      if (GRPC_MDELEM_IS_INTERNED(md)) {
-        /* not already parsed: parse it now, and store the
-         * result away */
-        cached_timeout =
-            static_cast<grpc_millis*>(gpr_malloc(sizeof(grpc_millis)));
-        *cached_timeout = timeout;
-        grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
-      }
-    }
-    benchmark::DoNotOptimize(timeout);
-    GRPC_MDELEM_UNREF(md);
-  } else {
-    grpc_error_handle error = buffer.Append(md);
-    if (error != GRPC_ERROR_NONE) {
-      GPR_ASSERT(0);
-    }
-  }
-  return GRPC_ERROR_NONE;
-}
-
-// Benchmark timeout handling
-static grpc_error_handle OnHeaderTimeout(void* /*user_data*/, grpc_mdelem md) {
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
-    grpc_millis* cached_timeout =
-        static_cast<grpc_millis*>(grpc_mdelem_get_user_data(md, free_timeout));
-    grpc_millis timeout;
-    if (cached_timeout != nullptr) {
-      timeout = *cached_timeout;
-    } else {
-      if (!grpc_http2_decode_timeout(GRPC_MDVALUE(md), &timeout)) {
-        char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-        gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
-        gpr_free(val);
-        timeout = GRPC_MILLIS_INF_FUTURE;
-      }
-      if (GRPC_MDELEM_IS_INTERNED(md)) {
-        /* not already parsed: parse it now, and store the
-         * result away */
-        cached_timeout =
-            static_cast<grpc_millis*>(gpr_malloc(sizeof(grpc_millis)));
-        *cached_timeout = timeout;
-        grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
-      }
-    }
-    benchmark::DoNotOptimize(timeout);
-    GRPC_MDELEM_UNREF(md);
-  } else {
-    GPR_ASSERT(0);
-  }
-  return GRPC_ERROR_NONE;
-}
-
 // Send the same deadline repeatedly
 class SameDeadline {
  public:
@@ -861,55 +790,39 @@ class SameDeadline {
   }
 };
 
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, EmptyBatch, UnrefHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, IndexedSingleStaticElem,
-                   UnrefHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, AddIndexedSingleStaticElem,
-                   UnrefHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, KeyIndexedSingleStaticElem,
-                   UnrefHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, IndexedSingleInternedElem,
-                   UnrefHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, AddIndexedSingleInternedElem,
-                   UnrefHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, KeyIndexedSingleInternedElem,
-                   UnrefHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedElem, UnrefHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<1, false>,
-                   UnrefHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<3, false>,
-                   UnrefHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<10, false>,
-                   UnrefHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<31, false>,
-                   UnrefHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<100, false>,
-                   UnrefHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<1, true>,
-                   UnrefHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<3, true>,
-                   UnrefHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<10, true>,
-                   UnrefHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<31, true>,
-                   UnrefHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<100, true>,
-                   UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, EmptyBatch);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, IndexedSingleStaticElem);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, AddIndexedSingleStaticElem);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, KeyIndexedSingleStaticElem);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, IndexedSingleInternedElem);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, AddIndexedSingleInternedElem);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, KeyIndexedSingleInternedElem);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedElem);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<1, false>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<3, false>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<10, false>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<31, false>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<100, false>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<1, true>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<3, true>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<10, true>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<31, true>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<100, true>);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
-                   RepresentativeClientInitialMetadata, UnrefHeader);
+                   RepresentativeClientInitialMetadata);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
-                   MoreRepresentativeClientInitialMetadata, UnrefHeader);
+                   MoreRepresentativeClientInitialMetadata);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
-                   RepresentativeServerInitialMetadata, UnrefHeader);
+                   RepresentativeServerInitialMetadata);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
-                   RepresentativeServerTrailingMetadata, UnrefHeader);
+                   RepresentativeServerTrailingMetadata);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
-                   RepresentativeClientInitialMetadata, OnInitialHeader);
+                   RepresentativeClientInitialMetadata);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
-                   MoreRepresentativeClientInitialMetadata, OnInitialHeader);
+                   MoreRepresentativeClientInitialMetadata);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
-                   RepresentativeServerInitialMetadata, OnInitialHeader);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, SameDeadline, OnHeaderTimeout);
+                   RepresentativeServerInitialMetadata);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, SameDeadline);
 
 }  // namespace hpack_parser_fixtures
 
