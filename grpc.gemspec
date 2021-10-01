@@ -55,6 +55,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/compression.h )
   s.files += %w( include/grpc/event_engine/endpoint_config.h )
   s.files += %w( include/grpc/event_engine/event_engine.h )
+  s.files += %w( include/grpc/event_engine/internal/memory_allocator_impl.h )
   s.files += %w( include/grpc/event_engine/memory_allocator.h )
   s.files += %w( include/grpc/event_engine/port.h )
   s.files += %w( include/grpc/fork.h )

@@ -1301,8 +1301,8 @@ grpc_cc_library(
         "src/core/lib/event_engine/memory_allocator.cc",
     ],
     hdrs = [
-        "include/grpc/event_engine/memory_allocator.h",
         "include/grpc/event_engine/internal/memory_allocator_impl.h",
+        "include/grpc/event_engine/memory_allocator.h",
     ],
     language = "c++",
     deps = [

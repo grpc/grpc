@@ -119,6 +119,7 @@ Pod::Spec.new do |s|
                       'include/grpc/compression.h',
                       'include/grpc/event_engine/endpoint_config.h',
                       'include/grpc/event_engine/event_engine.h',
+                      'include/grpc/event_engine/internal/memory_allocator_impl.h',
                       'include/grpc/event_engine/memory_allocator.h',
                       'include/grpc/event_engine/port.h',
                       'include/grpc/fork.h',
