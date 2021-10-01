@@ -42,7 +42,7 @@ grpc_cc_library(
     deps = [
         "//:gpr_platform",
         "//:grpc++_internals",
-        "//:grpc_base_c",
+        "//:grpc_base",
         "//src/core/ext/transport/binder/transport:binder_transport",
         "//src/core/ext/transport/binder/wire_format:binder",
         "//src/core/ext/transport/binder/wire_format:binder_android",

@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+FROM fedora:34
 
-RUN apt-get update && apt-get install -y python3 python3-pip
+RUN yum clean all && yum update -y && yum install -y python3 python3-pip
 RUN pip3 install virtualenv==16.7.9
 
-RUN apt-get install -y build-essential
-RUN apt-get install -y python3-dev
+RUN yum groupinstall -y "Development Tools"
+RUN yum install -y redhat-rpm-config
+RUN yum install -y gcc-c++
+RUN yum install -y python3-devel

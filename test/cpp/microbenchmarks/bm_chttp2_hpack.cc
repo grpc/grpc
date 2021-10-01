@@ -70,7 +70,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   grpc_millis saved_now = grpc_core::ExecCtx::Get()->Now();
 
   grpc_metadata_batch b;
-  b.SetDeadline(saved_now + 30 * 1000);
+  b.Set(grpc_core::GrpcTimeoutMetadata(), saved_now + 30 * 1000);
 
   grpc_core::HPackCompressor c;
   grpc_transport_one_way_stats stats;

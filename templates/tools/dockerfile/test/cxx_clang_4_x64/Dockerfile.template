@@ -1,6 +1,6 @@
 %YAML 1.2
 --- |
-  # Copyright 2015 gRPC authors.
+  # Copyright 2021 gRPC authors.
   #
   # Licensed under the Apache License, Version 2.0 (the "License");
   # you may not use this file except in compliance with the License.
@@ -14,10 +14,12 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  FROM ubuntu:18.04
+  FROM silkeh/clang:4
   
-  <%include file="../../apt_get_basic.include"/>
+  RUN apt-get update && apt-get install -y build-essential curl git golang time wget zip
   <%include file="../../python_deps.include"/>
+  RUN pip install PyYAML==5.4.1
+  RUN apt-get install python-is-python2
   <%include file="../../gcp_api_libraries.include"/>
   <%include file="../../cxx_deps.include"/>
   <%include file="../../cmake.include"/>

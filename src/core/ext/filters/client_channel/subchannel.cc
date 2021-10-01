@@ -39,6 +39,7 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -48,7 +49,6 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/status_metadata.h"
@@ -986,7 +986,8 @@ bool Subchannel::PublishTransportLocked() {
       builder, connecting_result_.channel_args);
   grpc_channel_stack_builder_set_transport(builder,
                                            connecting_result_.transport);
-  if (!grpc_channel_init_create_stack(builder, GRPC_CLIENT_SUBCHANNEL)) {
+  if (!CoreConfiguration::Get().channel_init().CreateStack(
+          builder, GRPC_CLIENT_SUBCHANNEL)) {
     grpc_channel_stack_builder_destroy(builder);
     return false;
   }

@@ -121,8 +121,9 @@ Pod::Spec.new do |s|
   # and, if absent, build it from the local sources.
   repo_root = '../..'
   bazel = "#{repo_root}/tools/bazel"
-  
+
   s.prepare_command = <<-CMD
+    set -e
     if [ ! -f bin/protoc ]; then
       #{bazel} build @com_google_protobuf//:protoc
     else
