@@ -437,8 +437,6 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         test_client.update_config.configure(rpc_types=rpc_types,
                                             metadata=metadata,
                                             app_timeout=app_timeout)
-        # Configure RPC might race with get stats RPC on slower machines.
-        time.sleep(_CLIENT_CONFIGURE_WAIT_SEC)
         json_lb_stats = json_format.MessageToDict(
             test_client.get_load_balancer_stats(num_rpcs=num_rpcs))
         logging.info(
