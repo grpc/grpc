@@ -1314,7 +1314,7 @@ RlsLb::Cache::Entry* RlsLb::Cache::FindOrInsert(const RequestKey& key) {
 
 void RlsLb::Cache::Resize(size_t bytes) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-    gpr_log(GPR_INFO, "[rlslb %p] resizing cache to %" PRId64 " bytes",
+    gpr_log(GPR_INFO, "[rlslb %p] resizing cache to %" PRIuPTR " bytes",
             lb_policy_, bytes);
   }
   size_limit_ = bytes;
