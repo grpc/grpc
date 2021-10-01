@@ -17,9 +17,11 @@
 
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
 
+#include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
@@ -57,6 +59,26 @@ std::string UrlEncode(const absl::string_view& s) {
     }
   }
   return result;
+}
+
+// Expression to match:
+// //iam.googleapis.com/locations/[^/]+/workforcePools/[^/]+/providers/.+
+bool MatchWorkforcePoolAudience(const absl::string_view& audience) {
+  absl::string_view temp = audience;
+  // Match "//iam.googleapis.com/locations/"
+  if (!absl::ConsumePrefix(&temp, "//iam.googleapis.com")) return false;
+  if (!absl::ConsumePrefix(&temp, "/locations/")) return false;
+  // Match "[^/]+/workforcePools/"
+  std::vector<std::string> workforce_pools_split_result =
+      absl::StrSplit(temp, "/workforcePools/");
+  if (workforce_pools_split_result.size() != 2) return false;
+  if (absl::StrContains(workforce_pools_split_result[0], '/')) return false;
+  // Match "[^/]+/providers/.+"
+  std::vector<std::string> providers_split_result =
+      absl::StrSplit(workforce_pools_split_result[1], "/providers/");
+  if (providers_split_result.size() != 2) return false;
+  if (absl::StrContains(providers_split_result[0], '/')) return false;
+  return true;
 }
 
 }  // namespace
@@ -150,6 +172,17 @@ RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
   it = json.object_value().find("client_secret");
   if (it != json.object_value().end()) {
     options.client_secret = it->second.string_value();
+  }
+  it = json.object_value().find("workforce_pool_user_project");
+  if (it != json.object_value().end()) {
+    if (MatchWorkforcePoolAudience(options.audience)) {
+      options.workforce_pool_user_project = it->second.string_value();
+    } else {
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "workforce_pool_user_project should not be set for non-workforce "
+          "pool credentials");
+      return nullptr;
+    }
   }
   RefCountedPtr<ExternalAccountCredentials> creds;
   if (options.credential_source.object_value().find("environment_id") !=
@@ -286,6 +319,13 @@ void ExternalAccountCredentials::ExchangeToken(
   }
   body_parts.push_back(
       absl::StrFormat("%s=%s", "scope", UrlEncode(scope).c_str()));
+  std::map<std::string, Json> addtional_options_map;
+  if (options_.client_id.empty() && options_.client_secret.empty()) {
+    addtional_options_map["userProject"] = options_.workforce_pool_user_project;
+  }
+  Json addtional_options_json(addtional_options_map);
+  body_parts.push_back(absl::StrFormat(
+      "%s=%s", "options", UrlEncode(addtional_options_json.Dump()).c_str()));
   std::string body = absl::StrJoin(body_parts, "&");
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
