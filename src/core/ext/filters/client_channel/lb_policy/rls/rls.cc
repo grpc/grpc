@@ -279,6 +279,7 @@ class RlsLb : public LoadBalancingPolicy {
                        const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
+      absl::string_view GetAuthority() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
 
@@ -799,6 +800,10 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::RequestReresolution() {
   }
   if (wrapper_->is_shutdown_) return;
   wrapper_->lb_policy_->channel_control_helper()->RequestReresolution();
+}
+
+absl::string_view RlsLb::ChildPolicyWrapper::ChildPolicyHelper::GetAuthority() {
+  return wrapper_->lb_policy_->channel_control_helper()->GetAuthority();
 }
 
 void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::AddTraceEvent(
@@ -1449,17 +1454,29 @@ void RlsLb::RlsChannel::Throttle::RegisterResponse(bool success) {
 // RlsLb::RlsChannel
 //
 
-// FIXME: update this to handle call creds and domain correctly
 RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy,
                               const std::string& target,
                               const grpc_channel_args* channel_args)
     : InternallyRefCounted<RlsChannel>(
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) ? "RlsChannel" : nullptr),
       lb_policy_(std::move(lb_policy)) {
+  // Get channel creds from parent channel.
+  // TODO(roth): Once we eliminate insecure builds, get this via a
+  // method on the helper instead of digging through channel args.
   grpc_channel_credentials* creds =
       grpc_channel_credentials_find_in_args(channel_args);
-  channel_ =
-      grpc_secure_channel_create(creds, target.c_str(), nullptr, nullptr);
+  // Use the parent channel's authority.
+  std::string authority(lb_policy_->channel_control_helper()->GetAuthority());
+  grpc_arg arg_to_add = grpc_channel_arg_string_create(
+      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+      const_cast<char*>(authority.c_str()));
+  const char* arg_to_remove = {GRPC_ARG_DEFAULT_AUTHORITY};
+  grpc_channel_args* rls_channel_args =
+      grpc_channel_args_copy_and_add_and_remove(channel_args, &arg_to_remove,
+                                                1, &arg_to_add, 1);
+  channel_ = grpc_secure_channel_create(creds, target.c_str(),
+                                        rls_channel_args, nullptr);
+  grpc_channel_args_destroy(rls_channel_args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] RlsChannel=%p: created channel %p for %s",
             lb_policy_.get(), this, channel_, target.c_str());

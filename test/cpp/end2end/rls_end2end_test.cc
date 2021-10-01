@@ -56,6 +56,7 @@
 #include "test/core/util/test_config.h"
 #include "test/core/util/test_lb_policies.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "test/cpp/util/test_config.h"
 
 namespace grpc {
 namespace testing {
@@ -63,8 +64,7 @@ namespace {
 
 const char* kTestKey = "test_key";
 const char* kTestValue = "test_value";
-const char* kTestUrl = "test.google.fr";
-const char* kServerHost = "localhost";
+const char* kServerName = "test.google.fr";
 const char* kRequestMessage = "Live long and prosper.";
 const char* kHostKey = "host_key";
 const char* kServiceKey = "service_key";
@@ -73,6 +73,9 @@ const char* kMethodKey = "method_key";
 const char* kMethodValue = "Echo";
 const char* kConstantKey = "constant_key";
 const char* kConstantValue = "constant_value";
+
+const char* kCallCredsMdKey = "call_cred_name";
+const char* kCallCredsMdValue = "call_cred_value";
 
 template <typename ServiceType>
 class CountedService : public ServiceType {
@@ -163,11 +166,15 @@ class RlsServiceImpl : public RlsService {
   };
 
   ::grpc::Status RouteLookup(
-      ::grpc::ServerContext* /*context*/,
+      ::grpc::ServerContext* context,
       const ::grpc::lookup::v1::RouteLookupRequest* request,
       ::grpc::lookup::v1::RouteLookupResponse* response) override {
     gpr_log(GPR_INFO, "RLS: Received request: %s",
             request->DebugString().c_str());
+    // RLS server should see call creds.
+    EXPECT_THAT(context->client_metadata(),
+                ::testing::Contains(
+                    ::testing::Pair(kCallCredsMdKey, kCallCredsMdValue)));
     IncreaseRequestCount();
     EXPECT_EQ(request->target_type(), "grpc");
     Request req(*request);
@@ -227,6 +234,10 @@ class MyTestServiceImpl : public BackendService {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
+    // Backend should see call creds.
+    EXPECT_THAT(context->client_metadata(),
+                ::testing::Contains(
+                    ::testing::Pair(kCallCredsMdKey, kCallCredsMdValue)));
     IncreaseRequestCount();
     auto client_metadata = context->client_metadata();
     auto range = client_metadata.equal_range("X-Google-RLS-Data");
@@ -305,22 +316,35 @@ class RlsEnd2endTest : public ::testing::Test {
                                  &localhost_resolves_to_ipv6);
     ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
     rls_server_ = absl::make_unique<ServerThread<RlsServiceImpl>>("rls");
-    rls_server_->Start(kServerHost);
+    rls_server_->Start();
     resolver_response_generator_ =
         absl::make_unique<FakeResolverResponseGeneratorWrapper>();
-    ChannelArguments args;
-    args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                    resolver_response_generator_->Get());
-    auto creds = std::make_shared<SecureChannelCredentials>(
-        grpc_fake_transport_security_credentials_create());
-    auto channel = ::grpc::CreateCustomChannel(
-        absl::StrCat("fake:///", kTestUrl).c_str(), std::move(creds), args);
-    stub_ = grpc::testing::EchoTestService::NewStub(std::move(channel));
+    ResetStub();
   }
 
   void TearDown() override {
     ShutdownBackends();
     rls_server_->Shutdown();
+  }
+
+  void ResetStub(const char* expected_authority = kServerName) {
+    ChannelArguments args;
+    args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
+                    resolver_response_generator_->Get());
+    args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS,
+                   expected_authority);
+    grpc_channel_credentials* channel_creds =
+        grpc_fake_transport_security_credentials_create();
+    grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
+        kCallCredsMdKey, kCallCredsMdValue, false);
+    auto creds = std::make_shared<SecureChannelCredentials>(
+        grpc_composite_channel_credentials_create(channel_creds, call_creds,
+                                                  nullptr));
+    call_creds->Unref();
+    channel_creds->Unref();
+    auto channel = ::grpc::CreateCustomChannel(
+        absl::StrCat("fake:///", kServerName).c_str(), std::move(creds), args);
+    stub_ = grpc::testing::EchoTestService::NewStub(std::move(channel));
   }
 
   void ShutdownBackends() {
@@ -334,7 +358,7 @@ class RlsEnd2endTest : public ::testing::Test {
     for (size_t i = 0; i < num_servers; ++i) {
       backends_.push_back(
           absl::make_unique<ServerThread<MyTestServiceImpl>>("backend"));
-      backends_.back()->Start(kServerHost);
+      backends_.back()->Start();
     }
   }
 
@@ -524,7 +548,7 @@ class RlsEnd2endTest : public ::testing::Test {
           type_(type),
           service_(std::forward<Args>(args)...) {}
 
-    void Start(const grpc::string& server_host) {
+    void Start() {
       gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
       GPR_ASSERT(!running_);
       running_ = true;
@@ -535,22 +559,20 @@ class RlsEnd2endTest : public ::testing::Test {
       grpc::internal::MutexLock lock(&mu);
       grpc::internal::CondVar cond;
       thread_ = absl::make_unique<std::thread>(
-          std::bind(&ServerThread::Serve, this, server_host, &mu, &cond));
+          std::bind(&ServerThread::Serve, this, &mu, &cond));
       cond.Wait(&mu);
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());
     }
 
-    void Serve(const grpc::string& server_host, grpc::internal::Mutex* mu,
-               grpc::internal::CondVar* cond) {
+    void Serve(grpc::internal::Mutex* mu, grpc::internal::CondVar* cond) {
       // We need to acquire the lock here in order to prevent the notify_one
       // below from firing before its corresponding wait is executed.
       grpc::internal::MutexLock lock(mu);
-      std::ostringstream server_address;
-      server_address << server_host << ":" << port_;
       ServerBuilder builder;
       auto creds = std::make_shared<SecureServerCredentials>(
           grpc_fake_transport_security_server_credentials_create());
-      builder.AddListeningPort(server_address.str(), std::move(creds));
+      builder.AddListeningPort(absl::StrCat("localhost:", port_),
+                               std::move(creds));
       builder.RegisterService(&service_);
       server_ = builder.BuildAndStart();
       cond->Signal();
@@ -858,7 +880,7 @@ TEST_F(RlsEnd2endTest, ExtraKeysAndConstantKeys) {
   rls_server_->service_.SetResponse(
       RlsServiceImpl::Request({
           {kTestKey, kTestValue},
-          {kHostKey, kTestUrl},
+          {kHostKey, kServerName},
           {kServiceKey, kServiceValue},
           {kMethodKey, kMethodValue},
           {kConstantKey, kConstantValue},
@@ -1297,6 +1319,35 @@ TEST_F(RlsEnd2endTest, MultipleTargets) {
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
+}
+
+TEST_F(RlsEnd2endTest, RlsAuthorityDeathTest) {
+  GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE("threadsafe");
+  ResetStub("incorrect_authority");
+  SetNextResolution(
+      MakeServiceConfigBuilder()
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
+          .Build());
+  // Make sure that we blow up (via abort() from the security connector) when
+  // the authority for the RLS channel doesn't match expectations.
+  ASSERT_DEATH_IF_SUPPORTED(
+      {
+        CheckRpcSendOk(DEBUG_LOCATION,
+                       RpcOptions().set_metadata({{"key1", kTestValue}}));
+      },
+      "");
 }
 
 }  // namespace

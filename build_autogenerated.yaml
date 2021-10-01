@@ -7528,6 +7528,7 @@ targets:
   - test/cpp/end2end/rls_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - grpc++_test_config
   - grpc++_test_util
 - name: rls_lb_config_parser_test
   gtest: true

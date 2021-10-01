@@ -14930,6 +14930,7 @@ target_include_directories(rls_end2end_test
 target_link_libraries(rls_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_config
   grpc++_test_util
 )
 

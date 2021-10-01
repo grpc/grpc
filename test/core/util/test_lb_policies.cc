@@ -488,6 +488,10 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
       parent_->channel_control_helper()->RequestReresolution();
     }
 
+    absl::string_view GetAuthority() override {
+      return parent_->channel_control_helper()->GetAuthority();
+    }
+
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override {
       parent_->channel_control_helper()->AddTraceEvent(severity, message);
