@@ -23,7 +23,7 @@ load(
 )
 load("@bazel_skylib//lib:selects.bzl", "selects")
 
-licenses(["notice"])
+licenses(["reciprocal"])
 
 package(
     default_visibility = ["//visibility:public"],
@@ -750,6 +750,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "chunked_vector",
+    hdrs = ["src/core/lib/gprpp/chunked_vector.h"],
+    external_deps = ["absl/utility"],
+    deps = [
+        # TODO(ctiller): weaken this to just arena when that splits into its own target
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "capture",
     external_deps = ["absl/utility"],
     language = "c++",
@@ -1285,6 +1295,60 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "memory_quota",
+    srcs = [
+        "src/core/lib/resource_quota/memory_quota.cc",
+    ],
+    hdrs = [
+        "src/core/lib/resource_quota/memory_quota.h",
+    ],
+    deps = [
+        "activity",
+        "dual_ref_counted",
+        "exec_ctx_wakeup_scheduler",
+        "gpr_base",
+        "loop",
+        "orphanable",
+        "poll",
+        "race",
+        "ref_counted_ptr",
+        "seq",
+        "slice_refcount",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "thread_quota",
+    srcs = [
+        "src/core/lib/resource_quota/thread_quota.cc",
+    ],
+    hdrs = [
+        "src/core/lib/resource_quota/thread_quota.h",
+    ],
+    deps = [
+        "gpr_base",
+        "ref_counted",
+    ],
+)
+
+grpc_cc_library(
+    name = "resource_quota",
+    srcs = [
+        "src/core/lib/resource_quota/resource_quota.cc",
+    ],
+    hdrs = [
+        "src/core/lib/resource_quota/resource_quota.h",
+    ],
+    deps = [
+        "gpr_base",
+        "memory_quota",
+        "ref_counted",
+        "thread_quota",
+    ],
+)
+
+grpc_cc_library(
     name = "slice_refcount",
     srcs = [
         "src/core/lib/slice/slice_refcount.cc",
@@ -1707,6 +1771,7 @@ grpc_cc_library(
     deps = [
         "bitset",
         "channel_stack_type",
+        "chunked_vector",
         "closure",
         "config",
         "dual_ref_counted",
@@ -3119,7 +3184,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_utils.cc",
         "src/core/ext/transport/chttp2/transport/http2_settings.cc",
         "src/core/ext/transport/chttp2/transport/huffsyms.cc",
-        "src/core/ext/transport/chttp2/transport/incoming_metadata.cc",
         "src/core/ext/transport/chttp2/transport/parsing.cc",
         "src/core/ext/transport/chttp2/transport/stream_lists.cc",
         "src/core/ext/transport/chttp2/transport/stream_map.cc",
@@ -3146,7 +3210,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_utils.h",
         "src/core/ext/transport/chttp2/transport/http2_settings.h",
         "src/core/ext/transport/chttp2/transport/huffsyms.h",
-        "src/core/ext/transport/chttp2/transport/incoming_metadata.h",
         "src/core/ext/transport/chttp2/transport/internal.h",
         "src/core/ext/transport/chttp2/transport/stream_map.h",
         "src/core/ext/transport/chttp2/transport/varint.h",

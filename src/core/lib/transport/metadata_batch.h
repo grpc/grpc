@@ -30,6 +30,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/table.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/metadata.h"
@@ -117,7 +118,7 @@ struct GrpcTimeoutMetadata {
 template <typename... Traits>
 class MetadataMap {
  public:
-  MetadataMap();
+  explicit MetadataMap(Arena* arena);
   ~MetadataMap();
 
   MetadataMap(const MetadataMap&) = delete;
@@ -283,7 +284,20 @@ class MetadataMap {
     return error;
   }
 
+  GRPC_MUST_USE_RESULT grpc_error_handle Append(grpc_mdelem md) {
+    return AddTail(elem_storage_.EmplaceBack(), md);
+  }
+
+  GRPC_MUST_USE_RESULT grpc_error_handle ReplaceOrAppend(grpc_slice key,
+                                                         grpc_slice value) {
+    if (ReplaceIfExists(key, value)) return GRPC_ERROR_NONE;
+    return Append(grpc_mdelem_from_slices(key, value));
+  }
+
   // Set key to value if it exists and return true, otherwise return false.
+  // If this function returns true, it takes ownership of key and value.
+  // If this function returns false, it does not take ownership of key nor
+  // value.
   bool ReplaceIfExists(grpc_slice key, grpc_slice value);
 
   void Clear();
@@ -456,6 +470,8 @@ class MetadataMap {
   /** Metadata elements in this batch */
   grpc_mdelem_list list_;
   grpc_metadata_batch_callouts idx_;
+  // Backing store for added metadata.
+  ChunkedVector<grpc_linked_mdelem, 10> elem_storage_;
 };
 
 template <typename... Traits>
@@ -481,7 +497,7 @@ void MetadataMap<Traits...>::AssertOk() {
 #endif /* NDEBUG */
 
 template <typename... Traits>
-MetadataMap<Traits...>::MetadataMap() {
+MetadataMap<Traits...>::MetadataMap(Arena* arena) : elem_storage_(arena) {
   memset(&list_, 0, sizeof(list_));
   memset(&idx_, 0, sizeof(idx_));
 }
@@ -708,8 +724,9 @@ grpc_error_handle MetadataMap<Traits...>::Substitute(
 
 template <typename... Traits>
 void MetadataMap<Traits...>::Clear() {
+  auto* arena = elem_storage_.arena();
   this->~MetadataMap();
-  new (this) MetadataMap();
+  new (this) MetadataMap(arena);
 }
 
 template <typename... Traits>
@@ -727,8 +744,7 @@ bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
   AssertValidCallouts();
   for (grpc_linked_mdelem* l = list_.head; l != nullptr; l = l->next) {
     if (grpc_slice_eq(GRPC_MDKEY(l->md), key)) {
-      auto new_mdelem = grpc_mdelem_from_slices(grpc_slice_ref_internal(key),
-                                                grpc_slice_ref_internal(value));
+      auto new_mdelem = grpc_mdelem_from_slices(key, value);
       GRPC_MDELEM_UNREF(l->md);
       l->md = new_mdelem;
       AssertValidCallouts();

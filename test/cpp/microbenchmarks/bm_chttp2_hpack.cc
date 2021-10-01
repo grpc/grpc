@@ -30,9 +30,9 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "test/core/util/test_config.h"
@@ -69,7 +69,8 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   grpc_millis saved_now = grpc_core::ExecCtx::Get()->Now();
 
-  grpc_metadata_batch b;
+  auto arena = grpc_core::MakeScopedArena(1024);
+  grpc_metadata_batch b(arena.get());
   b.Set(grpc_core::GrpcTimeoutMetadata(), saved_now + 30 * 1000);
 
   grpc_core::HPackCompressor c;
@@ -112,7 +113,8 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
 
   std::vector<grpc_mdelem> elems = Fixture::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
-  grpc_metadata_batch b;
+  auto arena = grpc_core::MakeScopedArena(1024);
+  grpc_metadata_batch b(arena.get());
   for (size_t i = 0; i < elems.size(); i++) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
@@ -771,8 +773,7 @@ static void free_timeout(void* p) { gpr_free(p); }
 // Benchmark the current on_initial_header implementation
 static grpc_error_handle OnInitialHeader(void* user_data, grpc_mdelem md) {
   // Setup for benchmark. This will bloat the absolute values of this benchmark
-  grpc_chttp2_incoming_metadata_buffer buffer(
-      static_cast<grpc_core::Arena*>(user_data));
+  grpc_metadata_batch buffer(static_cast<grpc_core::Arena*>(user_data));
   bool seen_error = false;
 
   // Below here is the code we actually care about benchmarking
@@ -806,12 +807,7 @@ static grpc_error_handle OnInitialHeader(void* user_data, grpc_mdelem md) {
     benchmark::DoNotOptimize(timeout);
     GRPC_MDELEM_UNREF(md);
   } else {
-    const size_t new_size = buffer.size + GRPC_MDELEM_LENGTH(md);
-    if (!seen_error) {
-      buffer.size = new_size;
-    }
-    grpc_error_handle error =
-        grpc_chttp2_incoming_metadata_buffer_add(&buffer, md);
+    grpc_error_handle error = buffer.Append(md);
     if (error != GRPC_ERROR_NONE) {
       GPR_ASSERT(0);
     }

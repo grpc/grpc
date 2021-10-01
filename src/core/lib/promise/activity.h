@@ -341,7 +341,7 @@ class PromiseActivity final
   }
 
   void RunScheduledWakeup() {
-    GPR_ASSERT(wakeup_scheduled_.exchange(false, std::memory_order_relaxed));
+    GPR_ASSERT(wakeup_scheduled_.exchange(false, std::memory_order_acq_rel));
     Step();
     WakeupComplete();
   }
@@ -360,9 +360,11 @@ class PromiseActivity final
       WakeupComplete();
       return;
     }
-    if (!wakeup_scheduled_.exchange(true, std::memory_order_relaxed)) {
+    if (!wakeup_scheduled_.exchange(true, std::memory_order_acq_rel)) {
       // Can't safely run, so ask to run later.
       wakeup_scheduler_.ScheduleWakeup(this);
+    } else {
+      WakeupComplete();
     }
   }
 

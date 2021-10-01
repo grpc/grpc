@@ -292,7 +292,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/hpack_utils.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
-                      'src/core/ext/transport/chttp2/transport/incoming_metadata.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
                       'src/core/ext/transport/chttp2/transport/popularity_count.h',
                       'src/core/ext/transport/chttp2/transport/stream_map.h',
@@ -550,6 +549,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/arena.h',
                       'src/core/lib/gprpp/atomic_utils.h',
                       'src/core/lib/gprpp/bitset.h',
+                      'src/core/lib/gprpp/chunked_vector.h',
                       'src/core/lib/gprpp/construct_destruct.h',
                       'src/core/lib/gprpp/debug_location.h',
                       'src/core/lib/gprpp/dual_ref_counted.h',
@@ -965,7 +965,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/hpack_utils.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
-                              'src/core/ext/transport/chttp2/transport/incoming_metadata.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
                               'src/core/ext/transport/chttp2/transport/popularity_count.h',
                               'src/core/ext/transport/chttp2/transport/stream_map.h',
@@ -1223,6 +1222,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/arena.h',
                               'src/core/lib/gprpp/atomic_utils.h',
                               'src/core/lib/gprpp/bitset.h',
+                              'src/core/lib/gprpp/chunked_vector.h',
                               'src/core/lib/gprpp/construct_destruct.h',
                               'src/core/lib/gprpp/debug_location.h',
                               'src/core/lib/gprpp/dual_ref_counted.h',
@@ -1531,6 +1531,7 @@ Pod::Spec.new do |s|
   end
 
   s.prepare_command = <<-END_OF_COMMAND
+    set -e
     find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
     find third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "third_party/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/third_party/\\1"\\\n#else\\\n  #include  "third_party/\\1"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'

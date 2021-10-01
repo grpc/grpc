@@ -1404,7 +1404,7 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
         /* Process stream compression md element if it exists */
         if (s->header_frames_received ==
             0) { /* Only acts on initial metadata */
-          parse_stream_compression_md(t, s, &s->initial_metadata_buffer.batch);
+          parse_stream_compression_md(t, s, &s->initial_metadata_buffer);
         }
         s->published_metadata[s->header_frames_received] =
             GRPC_METADATA_PUBLISHED_FROM_WIRE;

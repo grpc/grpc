@@ -17,6 +17,8 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include <cassert>
+
 #include "absl/types/variant.h"
 #include "absl/utility/utility.h"
 
