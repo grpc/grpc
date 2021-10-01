@@ -25,8 +25,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
@@ -85,7 +85,6 @@ class HPackParser {
 
   // Target metadata buffer
   grpc_metadata_batch* metadata_buffer_ = nullptr;
-  uint32_t metadata_size_limit_;
 
   // Bytes that could not be parsed last parsing round
   std::vector<uint8_t> unparsed_bytes_;
@@ -98,6 +97,9 @@ class HPackParser {
   // buffering.
   Priority priority_;
   uint8_t dynamic_table_updates_allowed_;
+  // Length of frame so far.
+  uint32_t frame_length_;
+  uint32_t metadata_size_limit_;
 
   // hpack table
   HPackTable table_;

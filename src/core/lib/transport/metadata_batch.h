@@ -214,10 +214,12 @@ class MetadataMap {
     // Takes ownership of elem
     explicit Memento(grpc_mdelem elem) {
       static const VTable vtable = {
-        [](intptr_t value) { GRPC_MDELEM_UNREF(grpc_mdelem{uintptr_t(value)}); },
-        [](intptr_t value, MetadataMap* map) {
-          return map->Append(GRPC_MDELEM_REF(grpc_mdelem{uintptr_t(value)}));
-        },
+          [](intptr_t value) {
+            GRPC_MDELEM_UNREF(grpc_mdelem{uintptr_t(value)});
+          },
+          [](intptr_t value, MetadataMap* map) {
+            return map->Append(GRPC_MDELEM_REF(grpc_mdelem{uintptr_t(value)}));
+          },
       };
       vtable_ = &vtable;
       value_ = static_cast<intptr_t>(elem.payload);
@@ -237,7 +239,13 @@ class MetadataMap {
       return *this;
     }
 
-    void SetOnMetadataMap(MetadataMap* map) const { vtable_->set(value_, map); }
+    GRPC_MUST_USE_RESULT grpc_error_handle
+    SetOnMetadataMap(MetadataMap* map) const {
+      return vtable_->set(value_, map);
+    }
+
+    bool is_binary_header() const;
+    Memento WithNewValue(const grpc_slice& value) const;
 
    private:
     struct VTable {
@@ -245,24 +253,24 @@ class MetadataMap {
       grpc_error_handle (*set)(intptr_t value, MetadataMap* map);
     };
     static const VTable* EmptyVTable() {
-      static const VTable vtable = {[](intptr_t) {},
-                                    [](intptr_t, MetadataMap*) { return GRPC_ERROR_NONE; }};
+      static const VTable vtable = {
+          [](intptr_t) {},
+          [](intptr_t, MetadataMap*) { return GRPC_ERROR_NONE; }};
       return &vtable;
     }
     const VTable* vtable_;
     intptr_t value_;
   };
 
-  absl::optional<Memento> SetIfBuiltin(absl::string_view key,
-                                       const grpc_slice& value) {
+  template <class KeySlice, class ValueSlice>
+  static Memento Parse(const KeySlice& key, const ValueSlice& value) {
+    auto key_view = StringViewFromSlice(key);
     // hack for now.
-    if (key == GrpcTimeoutMetadata::key()) {
-      auto memento_value = GrpcTimeoutMetadata::ParseMemento(value);
-      auto set_value = GrpcTimeoutMetadata::MementoToValue(memento_value);
-      Set(GrpcTimeoutMetadata(), set_value);
-      return Memento(GrpcTimeoutMetadata(), memento_value);
+    if (key_view == GrpcTimeoutMetadata::key()) {
+      return Memento(GrpcTimeoutMetadata(),
+                     GrpcTimeoutMetadata::ParseMemento(value));
     }
-    return absl::nullopt;
+    return Memento(grpc_mdelem_from_slices(key, value));
   }
 
   template <typename F>
