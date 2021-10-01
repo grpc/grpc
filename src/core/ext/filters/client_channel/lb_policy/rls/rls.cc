@@ -501,8 +501,8 @@ class RlsLb : public LoadBalancingPolicy {
     std::list<RequestKey> lru_list_ ABSL_GUARDED_BY(&RlsLb::mu_);
     std::unordered_map<RequestKey, OrphanablePtr<Entry>, absl::Hash<RequestKey>>
         map_ ABSL_GUARDED_BY(&RlsLb::mu_);
-    grpc_timer cleanup_timer_ ABSL_GUARDED_BY(&RlsLb::mu_);
-    grpc_closure timer_callback_ ABSL_GUARDED_BY(&RlsLb::mu_);
+    grpc_timer cleanup_timer_;
+    grpc_closure timer_callback_;
   };
 
   // Channel for communicating with the RLS server.

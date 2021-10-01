@@ -62,10 +62,14 @@ namespace grpc {
 namespace testing {
 namespace {
 
-const char* kTestKey = "test_key";
-const char* kTestValue = "test_value";
 const char* kServerName = "test.google.fr";
 const char* kRequestMessage = "Live long and prosper.";
+
+const char* kCallCredsMdKey = "call_cred_name";
+const char* kCallCredsMdValue = "call_cred_value";
+
+const char* kTestKey = "test_key";
+const char* kTestValue = "test_value";
 const char* kHostKey = "host_key";
 const char* kServiceKey = "service_key";
 const char* kServiceValue = "grpc.testing.EchoTestService";
@@ -73,9 +77,6 @@ const char* kMethodKey = "method_key";
 const char* kMethodValue = "Echo";
 const char* kConstantKey = "constant_key";
 const char* kConstantValue = "constant_value";
-
-const char* kCallCredsMdKey = "call_cred_name";
-const char* kCallCredsMdValue = "call_cred_value";
 
 template <typename ServiceType>
 class CountedService : public ServiceType {
