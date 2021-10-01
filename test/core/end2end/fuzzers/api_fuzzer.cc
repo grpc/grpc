@@ -72,251 +72,6 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
   return ts;
 }
 
-static void end(input_stream* inp) { inp->cur = inp->end; }
-
-static void read_buffer(input_stream* inp, char** buffer, size_t* length,
-                        bool* special) {
-  *length = grpc_fuzzer_get_next_byte(inp);
-  if (*length == 255) {
-    if (special != nullptr) *special = true;
-    *length = grpc_fuzzer_get_next_byte(inp);
-  } else {
-    if (special != nullptr) *special = false;
-  }
-  *buffer = static_cast<char*>(gpr_malloc(*length));
-  for (size_t i = 0; i < *length; i++) {
-    (*buffer)[i] = static_cast<char>(grpc_fuzzer_get_next_byte(inp));
-  }
-}
-
-static grpc_slice maybe_intern(grpc_slice s, bool intern) {
-  grpc_slice r = intern ? grpc_slice_intern(s) : grpc_slice_ref(s);
-  grpc_slice_unref(s);
-  return r;
-}
-
-static grpc_slice read_string_like_slice(input_stream* inp) {
-  bool special;
-  char* s = grpc_fuzzer_get_next_string(inp, &special);
-  grpc_slice r = maybe_intern(grpc_slice_from_copied_string(s), special);
-  gpr_free(s);
-  return r;
-}
-
-static grpc_slice read_buffer_like_slice(input_stream* inp) {
-  char* buffer;
-  size_t length;
-  bool special;
-  read_buffer(inp, &buffer, &length, &special);
-  grpc_slice r =
-      maybe_intern(grpc_slice_from_copied_buffer(buffer, length), special);
-  gpr_free(buffer);
-  return r;
-}
-
-static uint32_t read_uint22(input_stream* inp) {
-  uint8_t b = grpc_fuzzer_get_next_byte(inp);
-  uint32_t x = b & 0x7f;
-  if (b & 0x80) {
-    x <<= 7;
-    b = grpc_fuzzer_get_next_byte(inp);
-    x |= b & 0x7f;
-    if (b & 0x80) {
-      x <<= 8;
-      x |= grpc_fuzzer_get_next_byte(inp);
-    }
-  }
-  return x;
-}
-
-static grpc_byte_buffer* read_message(input_stream* inp) {
-  grpc_slice slice = grpc_slice_malloc(read_uint22(inp));
-  memset(GRPC_SLICE_START_PTR(slice), 0, GRPC_SLICE_LENGTH(slice));
-  grpc_byte_buffer* out = grpc_raw_byte_buffer_create(&slice, 1);
-  grpc_slice_unref(slice);
-  return out;
-}
-
-static int read_int(input_stream* inp) {
-  return static_cast<int>(grpc_fuzzer_get_next_uint32(inp));
-}
-
-static grpc_channel_args* read_args(input_stream* inp) {
-  size_t n = grpc_fuzzer_get_next_byte(inp);
-  grpc_arg* args = static_cast<grpc_arg*>(gpr_malloc(sizeof(*args) * n));
-  for (size_t i = 0; i < n; i++) {
-    switch (grpc_fuzzer_get_next_byte(inp)) {
-      case 1:
-        args[i].type = GRPC_ARG_STRING;
-        args[i].key = grpc_fuzzer_get_next_string(inp, nullptr);
-        args[i].value.string = grpc_fuzzer_get_next_string(inp, nullptr);
-        break;
-      case 2:
-        args[i].type = GRPC_ARG_INTEGER;
-        args[i].key = grpc_fuzzer_get_next_string(inp, nullptr);
-        args[i].value.integer = read_int(inp);
-        break;
-      case 3:
-        args[i].type = GRPC_ARG_POINTER;
-        args[i].key = gpr_strdup(GRPC_ARG_RESOURCE_QUOTA);
-        args[i].value.pointer.vtable = grpc_resource_quota_arg_vtable();
-        args[i].value.pointer.p = g_resource_quota;
-        grpc_resource_quota_ref(g_resource_quota);
-        break;
-      default:
-        end(inp);
-        n = i;
-        break;
-    }
-  }
-  grpc_channel_args* a =
-      static_cast<grpc_channel_args*>(gpr_malloc(sizeof(*a)));
-  a->args = args;
-  a->num_args = n;
-  return a;
-}
-
-typedef struct cred_artifact_ctx {
-  int num_release;
-  char* release[3];
-} cred_artifact_ctx;
-#define CRED_ARTIFACT_CTX_INIT \
-  {                            \
-    0, { 0 }                   \
-  }
-
-static void cred_artifact_ctx_finish(cred_artifact_ctx* ctx) {
-  for (int i = 0; i < ctx->num_release; i++) {
-    gpr_free(ctx->release[i]);
-  }
-}
-
-static const char* read_cred_artifact(cred_artifact_ctx* ctx, input_stream* inp,
-                                      const char** builtins,
-                                      size_t num_builtins) {
-  uint8_t b = grpc_fuzzer_get_next_byte(inp);
-  if (b == 0) return nullptr;
-  if (b == 1) {
-    return ctx->release[ctx->num_release++] =
-               grpc_fuzzer_get_next_string(inp, nullptr);
-  }
-  if (b >= num_builtins + 1) {
-    end(inp);
-    return nullptr;
-  }
-  return builtins[b - 1];
-}
-
-static grpc_channel_credentials* read_ssl_channel_creds(input_stream* inp) {
-  cred_artifact_ctx ctx = CRED_ARTIFACT_CTX_INIT;
-  static const char* builtin_root_certs[] = {test_root_cert};
-  static const char* builtin_private_keys[] = {
-      test_server1_key, test_self_signed_client_key, test_signed_client_key};
-  static const char* builtin_cert_chains[] = {
-      test_server1_cert, test_self_signed_client_cert, test_signed_client_cert};
-  const char* root_certs = read_cred_artifact(
-      &ctx, inp, builtin_root_certs, GPR_ARRAY_SIZE(builtin_root_certs));
-  const char* private_key = read_cred_artifact(
-      &ctx, inp, builtin_private_keys, GPR_ARRAY_SIZE(builtin_private_keys));
-  const char* certs = read_cred_artifact(&ctx, inp, builtin_cert_chains,
-                                         GPR_ARRAY_SIZE(builtin_cert_chains));
-  grpc_ssl_pem_key_cert_pair key_cert_pair = {private_key, certs};
-  grpc_channel_credentials* creds = grpc_ssl_credentials_create(
-      root_certs,
-      private_key != nullptr && certs != nullptr ? &key_cert_pair : nullptr,
-      nullptr, nullptr);
-  cred_artifact_ctx_finish(&ctx);
-  return creds;
-}
-
-static grpc_call_credentials* read_call_creds(input_stream* inp, int depth) {
-  if (depth > 64) {
-    // prevent creating infinitely deep call creds
-    end(inp);
-    return nullptr;
-  }
-  switch (grpc_fuzzer_get_next_byte(inp)) {
-    default:
-      end(inp);
-      return nullptr;
-    case 0:
-      return nullptr;
-    case 1: {
-      grpc_call_credentials* c1 = read_call_creds(inp, depth + 1);
-      grpc_call_credentials* c2 = read_call_creds(inp, depth + 1);
-      if (c1 != nullptr && c2 != nullptr) {
-        grpc_call_credentials* out =
-            grpc_composite_call_credentials_create(c1, c2, nullptr);
-        grpc_call_credentials_release(c1);
-        grpc_call_credentials_release(c2);
-        return out;
-      } else if (c1 != nullptr) {
-        return c1;
-      } else if (c2 != nullptr) {
-        return c2;
-      } else {
-        return nullptr;
-      }
-      GPR_UNREACHABLE_CODE(return nullptr);
-    }
-    case 2: {
-      cred_artifact_ctx ctx = CRED_ARTIFACT_CTX_INIT;
-      const char* access_token = read_cred_artifact(&ctx, inp, nullptr, 0);
-      grpc_call_credentials* out =
-          access_token == nullptr
-              ? nullptr
-              : grpc_access_token_credentials_create(access_token, nullptr);
-      cred_artifact_ctx_finish(&ctx);
-      return out;
-    }
-    case 3: {
-      cred_artifact_ctx ctx = CRED_ARTIFACT_CTX_INIT;
-      const char* auth_token = read_cred_artifact(&ctx, inp, nullptr, 0);
-      const char* auth_selector = read_cred_artifact(&ctx, inp, nullptr, 0);
-      grpc_call_credentials* out =
-          auth_token == nullptr || auth_selector == nullptr
-              ? nullptr
-              : grpc_google_iam_credentials_create(auth_token, auth_selector,
-                                                   nullptr);
-      cred_artifact_ctx_finish(&ctx);
-      return out;
-    }
-      /* TODO(ctiller): more cred types here */
-  }
-}
-
-static grpc_channel_credentials* read_channel_creds(input_stream* inp) {
-  switch (grpc_fuzzer_get_next_byte(inp)) {
-    case 0:
-      return read_ssl_channel_creds(inp);
-      break;
-    case 1: {
-      grpc_channel_credentials* c1 = read_channel_creds(inp);
-      grpc_call_credentials* c2 = read_call_creds(inp, 0);
-      if (c1 != nullptr && c2 != nullptr) {
-        grpc_channel_credentials* out =
-            grpc_composite_channel_credentials_create(c1, c2, nullptr);
-        grpc_channel_credentials_release(c1);
-        grpc_call_credentials_release(c2);
-        return out;
-      } else if (c1) {
-        return c1;
-      } else if (c2) {
-        grpc_call_credentials_release(c2);
-        return nullptr;
-      } else {
-        return nullptr;
-      }
-      GPR_UNREACHABLE_CODE(return nullptr);
-    }
-    case 2:
-      return nullptr;
-    default:
-      end(inp);
-      return nullptr;
-  }
-}
-
 static bool is_eof(input_stream* inp) { return inp->cur == inp->end; }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -476,17 +231,22 @@ grpc_tcp_client_vtable fuzz_tcp_client_vtable = {my_tcp_client_connect};
 ////////////////////////////////////////////////////////////////////////////////
 // test driver
 
-typedef struct validator {
-  void (*validate)(void* arg, bool success);
-  void* arg;
-} validator;
+class Validator {
+ public:
+  Validator(std::function<void(bool)> impl) : impl_(impl) {}
 
-static validator* create_validator(void (*validate)(void* arg, bool success),
-                                   void* arg) {
-  validator* v = static_cast<validator*>(gpr_malloc(sizeof(*v)));
-  v->validate = validate;
-  v->arg = arg;
-  return v;
+  virtual ~Validator() {}
+  void Run(bool success) {
+    impl_(success);
+    delete this;
+  }
+
+ private:
+  std::function<void(bool)> impl_;
+};
+
+Validator* MakeValidator(std::function<void(bool)> impl) {
+  return new Validator(std::move(impl));
 }
 
 static void assert_success_and_decrement(void* counter, bool success) {
@@ -526,136 +286,87 @@ static void free_non_null(void* p) {
   gpr_free(p);
 }
 
-typedef enum { ROOT, CLIENT, SERVER, PENDING_SERVER } call_state_type;
+enum class CallType { ROOT, CLIENT, SERVER, PENDING_SERVER };
 
-#define DONE_FLAG_CALL_CLOSED ((uint64_t)(1 << 0))
+class Call {
+ public:
+  Call(CallType type) : type_(type) {}
 
-typedef struct call_state {
-  call_state_type type;
-  grpc_call* call;
-  grpc_byte_buffer* recv_message;
-  grpc_status_code status;
-  grpc_metadata_array recv_initial_metadata;
-  grpc_metadata_array recv_trailing_metadata;
-  grpc_slice recv_status_details;
-  int cancelled;
-  int pending_ops;
-  bool sent_initial_metadata;
-  grpc_call_details call_details;
-  grpc_byte_buffer* send_message;
-  // starts at 0, individual flags from DONE_FLAG_xxx are set
-  // as different operations are completed
-  uint64_t done_flags;
+  ~Call();
 
-  // array of pointers to free later
-  size_t num_to_free;
-  size_t cap_to_free;
-  void** to_free;
-
-  // array of slices to unref
-  size_t num_slices_to_unref;
-  size_t cap_slices_to_unref;
-  grpc_slice** slices_to_unref;
-
-  struct call_state* next;
-  struct call_state* prev;
-} call_state;
-
-static call_state* g_active_call;
-
-static call_state* new_call(call_state* sibling, call_state_type type) {
-  call_state* c = static_cast<call_state*>(gpr_malloc(sizeof(*c)));
-  memset(c, 0, sizeof(*c));
-  if (sibling != nullptr) {
-    c->next = sibling;
-    c->prev = sibling->prev;
-    c->next->prev = c->prev->next = c;
-  } else {
-    c->next = c->prev = c;
-  }
-  c->type = type;
-  return c;
-}
-
-static call_state* maybe_delete_call_state(call_state* call) {
-  call_state* next = call->next;
-
-  if (call->call != nullptr) return next;
-  if (call->pending_ops != 0) return next;
-
-  if (call == g_active_call) {
-    g_active_call = call->next;
-    GPR_ASSERT(call != g_active_call);
+  bool done() const {
+    if (call_ == nullptr) return true;
+    if (pending_ops_ == 0) return true;
+    return false;
   }
 
-  call->prev->next = call->next;
-  call->next->prev = call->prev;
-  grpc_metadata_array_destroy(&call->recv_initial_metadata);
-  grpc_metadata_array_destroy(&call->recv_trailing_metadata);
-  grpc_slice_unref(call->recv_status_details);
-  grpc_call_details_destroy(&call->call_details);
-
-  for (size_t i = 0; i < call->num_slices_to_unref; i++) {
-    grpc_slice_unref(*call->slices_to_unref[i]);
-    gpr_free(call->slices_to_unref[i]);
+  void* Allocate(size_t size) {
+    void* p = gpr_malloc(size);
+    free_pointers_.push_back(p);
+    return p;
   }
-  for (size_t i = 0; i < call->num_to_free; i++) {
-    gpr_free(call->to_free[i]);
+
+  template <typename T>
+  T* AllocArray(size_t elems) {
+    return static_cast<T*>(Allocate(sizeof(T) * elems));
   }
-  gpr_free(call->to_free);
-  gpr_free(call->slices_to_unref);
 
-  gpr_free(call);
-
-  return next;
-}
-
-static void add_to_free(call_state* call, void* p) {
-  if (call->num_to_free == call->cap_to_free) {
-    call->cap_to_free = std::max(size_t(8), 2 * call->cap_to_free);
-    call->to_free = static_cast<void**>(
-        gpr_realloc(call->to_free, sizeof(*call->to_free) * call->cap_to_free));
-  }
-  call->to_free[call->num_to_free++] = p;
-}
-
-static grpc_slice* add_slice_to_unref(call_state* call, grpc_slice s) {
-  if (call->num_slices_to_unref == call->cap_slices_to_unref) {
-    call->cap_slices_to_unref =
-        std::max(size_t(8), 2 * call->cap_slices_to_unref);
-    call->slices_to_unref = static_cast<grpc_slice**>(gpr_realloc(
-        call->slices_to_unref,
-        sizeof(*call->slices_to_unref) * call->cap_slices_to_unref));
-  }
-  call->slices_to_unref[call->num_slices_to_unref] =
-      static_cast<grpc_slice*>(gpr_malloc(sizeof(grpc_slice)));
-  *call->slices_to_unref[call->num_slices_to_unref++] = s;
-  return call->slices_to_unref[call->num_slices_to_unref - 1];
-}
-
-static void read_metadata(input_stream* inp, size_t* count,
-                          grpc_metadata** metadata, call_state* cs) {
-  *count = grpc_fuzzer_get_next_byte(inp);
-  if (*count) {
-    *metadata =
-        static_cast<grpc_metadata*>(gpr_malloc(*count * sizeof(**metadata)));
-    memset(*metadata, 0, *count * sizeof(**metadata));
-    for (size_t i = 0; i < *count; i++) {
-      (*metadata)[i].key = read_string_like_slice(inp);
-      (*metadata)[i].value = read_buffer_like_slice(inp);
-      add_slice_to_unref(cs, (*metadata)[i].key);
-      add_slice_to_unref(cs, (*metadata)[i].value);
+  template <typename T>
+  grpc_slice ReadSlice(const T& s) {
+    grpc_slice slice = grpc_slice_from_cpp_string(s.value());
+    if (s.intern()) {
+      slice = grpc_slice_intern(slice);
     }
-  } else {
-    *metadata = static_cast<grpc_metadata*>(gpr_malloc(1));
+    unref_slices_.push_back(slice);
+    return slice;
   }
-  add_to_free(cs, *metadata);
-}
 
-static call_state* destroy_call(call_state* call) {
-  grpc_call_unref(call->call);
-  call->call = nullptr;
-  return maybe_delete_call_state(call);
+  template <typename M>
+  grpc_metadata_array ReadMetadata(const M& metadata) {
+    grpc_metadata* m = AllocArray<grpc_metadata>(metadata.size());
+    for (size_t i = 0; i < metadata.size(); i++) {
+      m[i].key = ReadSlice(metadata[i].key);
+      m[i].value = ReadSlice(metadata[i].value);
+    }
+    return grpc_metadata_array{metadata.size(), metadata.size(), m};
+  }
+
+ private:
+  const CallType type_;
+  grpc_call* call_;
+  grpc_byte_buffer* recv_message_;
+  grpc_status_code status_;
+  grpc_metadata_array recv_initial_metadata_;
+  grpc_metadata_array recv_trailing_metadata_;
+  grpc_slice recv_status_details_ = grpc_empty_slice();
+  bool cancelled_ = false;
+  int pending_ops_ = 0;
+  bool sent_initial_metadata_ = false;
+  grpc_call_details call_details_{};
+  grpc_byte_buffer* send_message;
+  bool call_closed_ = false;
+
+  std::vector<void*> free_pointers_;
+  std::vector<grpc_slice> unref_slices_;
+};
+
+static std::vector<std::unique_ptr<Call>> g_calls;
+static size_t g_active_call = 0;
+
+Call::~Call() {
+  if (call_ != nullptr) {
+    grpc_call_unref(call_);
+  }
+
+  grpc_slice_unref(recv_status_details_);
+  grpc_call_details_destroy(&call_details_);
+
+  for (auto* p : free_pointers_) {
+    gpr_free(p);
+  }
+  for (auto s : unref_slices_) {
+    grpc_slice_unref(s);
+  }
 }
 
 static void finished_request_call(void* csp, bool success) {
