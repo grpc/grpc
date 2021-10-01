@@ -986,8 +986,8 @@ class ClientChannel::ClientChannelControlHelper
           const_cast<char*>(chand_->default_authority_.c_str())));
     }
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
-        &args, args_to_remove.data(), args_to_remove.size(),
-        args_to_add.data(), args_to_add.size());
+        &args, args_to_remove.data(), args_to_remove.size(), args_to_add.data(),
+        args_to_add.size());
     // Create subchannel.
     RefCountedPtr<Subchannel> subchannel =
         chand_->client_channel_factory_->CreateSubchannel(address.address(),
@@ -1169,8 +1169,8 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
       channel_args_, GRPC_ARG_KEEPALIVE_TIME_MS,
       {-1 /* default value, unset */, 1, INT_MAX});
   // Set default authority.
-  const char* default_authority = grpc_channel_args_find_string(
-      channel_args_, GRPC_ARG_DEFAULT_AUTHORITY);
+  const char* default_authority =
+      grpc_channel_args_find_string(channel_args_, GRPC_ARG_DEFAULT_AUTHORITY);
   if (default_authority == nullptr) {
     default_authority_ = ResolverRegistry::GetDefaultAuthority(server_uri);
   } else {
