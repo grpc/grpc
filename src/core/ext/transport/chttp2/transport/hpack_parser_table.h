@@ -44,17 +44,7 @@ class HPackTable {
   void SetMaxBytes(uint32_t max_bytes);
   grpc_error_handle SetCurrentTableSize(uint32_t bytes);
 
-  struct Memento {
-    template <typename T>
-    Memento(T&& value, uint32_t transport_size)
-        : memento(std::forward<T>(value)), transport_size(transport_size) {}
-    explicit Memento(grpc_mdelem elem)
-        : memento(elem), transport_size(GRPC_MDELEM_LENGTH(elem)) {}
-    Memento() : transport_size(hpack_constants::kEntryOverhead) {}
-    Memento WithNewValue(const grpc_slice& value) const;
-    grpc_metadata_batch::Memento memento;
-    uint32_t transport_size;
-  };
+  using Memento = grpc_metadata_batch::Memento;
 
   // Lookup, but don't ref.
   const Memento* Lookup(uint32_t index) const {

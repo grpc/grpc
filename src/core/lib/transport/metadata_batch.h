@@ -23,6 +23,7 @@
 
 #include <stdbool.h>
 
+#include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 
@@ -33,6 +34,7 @@
 #include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/table.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
@@ -93,6 +95,7 @@ struct GrpcTimeoutMetadata {
     }
     return grpc_core::ExecCtx::Get()->Now() + timeout;
   }
+  static MementoType DisplayValue(MementoType x) { return x; }
 };
 
 // MetadataMap encodes the mapping of metadata keys to metadata values.
@@ -200,41 +203,88 @@ class MetadataMap {
                 std::is_trivial<typename Which::MementoType>::value &&
                     sizeof(typename Which::MementoType) <= sizeof(intptr_t),
                 typename Which::MementoType>
-                value) {
+                value,
+            uint32_t transport_size) {
       static const VTable vtable = {
-          [](intptr_t) {},
+          absl::EndsWith(Which::key(), "-bin"), [](intptr_t) {},
           [](intptr_t value, MetadataMap* map) {
-            map->Set(Which(), static_cast<typename Which::MementoType>(value));
+            map->Set(Which(),
+                     Which::MementoToValue(
+                         static_cast<typename Which::MementoType>(value)));
             return GRPC_ERROR_NONE;
           },
-      };
+          [](intptr_t, const grpc_slice& value) {
+            return Memento(
+                Which(), Which::ParseMemento(value),
+                TransportSize(strlen(Which::key()), GRPC_SLICE_LENGTH(value)));
+          },
+          [](intptr_t value) {
+            return absl::StrCat(Which::key(), ": ", Which::DisplayValue(value));
+          }};
       vtable_ = &vtable;
       value_ = static_cast<intptr_t>(value);
+      transport_size_ = transport_size;
     }
     // Takes ownership of elem
     explicit Memento(grpc_mdelem elem) {
-      static const VTable vtable = {
+      static const VTable binary_vtable = {
+          true,
           [](intptr_t value) {
             GRPC_MDELEM_UNREF(grpc_mdelem{uintptr_t(value)});
           },
           [](intptr_t value, MetadataMap* map) {
             return map->Append(GRPC_MDELEM_REF(grpc_mdelem{uintptr_t(value)}));
           },
-      };
-      vtable_ = &vtable;
+          [](intptr_t value, const grpc_slice& value_slice) {
+            grpc_mdelem elem{uintptr_t(value)};
+            return Memento(grpc_mdelem_from_slices(
+                grpc_slice_ref_internal(GRPC_MDKEY(elem)), value_slice));
+          },
+          [](intptr_t value) {
+            grpc_mdelem elem{uintptr_t(value)};
+            return absl::StrCat(StringViewFromSlice(GRPC_MDKEY(elem)), ": ",
+                                StringViewFromSlice(GRPC_MDVALUE(elem)));
+          }};
+      static const VTable nonbinary_vtable = {
+          false,
+          [](intptr_t value) {
+            GRPC_MDELEM_UNREF(grpc_mdelem{uintptr_t(value)});
+          },
+          [](intptr_t value, MetadataMap* map) {
+            return map->Append(GRPC_MDELEM_REF(grpc_mdelem{uintptr_t(value)}));
+          },
+          [](intptr_t value, const grpc_slice& value_slice) {
+            grpc_mdelem elem{uintptr_t(value)};
+            return Memento(grpc_mdelem_from_slices(
+                grpc_slice_ref_internal(GRPC_MDKEY(elem)), value_slice));
+          },
+          [](intptr_t value) {
+            grpc_mdelem elem{uintptr_t(value)};
+            return absl::StrCat(StringViewFromSlice(GRPC_MDKEY(elem)), ": ",
+                                StringViewFromSlice(GRPC_MDVALUE(elem)));
+          }};
+      if (grpc_is_binary_header_internal(GRPC_MDKEY(elem))) {
+        vtable_ = &binary_vtable;
+      } else {
+        vtable_ = &nonbinary_vtable;
+      }
       value_ = static_cast<intptr_t>(elem.payload);
+      transport_size_ = GRPC_MDELEM_LENGTH(elem);
     }
     Memento() : vtable_(EmptyVTable()) {}
 
     Memento(const Memento&) = delete;
     Memento& operator=(const Memento&) = delete;
     Memento(Memento&& other) noexcept
-        : vtable_(other.vtable_), value_(other.value_) {
+        : vtable_(other.vtable_),
+          value_(other.value_),
+          transport_size_(other.transport_size_) {
       other.vtable_ = EmptyVTable();
     }
     Memento& operator=(Memento&& other) noexcept {
       vtable_ = other.vtable_;
       value_ = other.value_;
+      transport_size_ = other.transport_size_;
       other.vtable_ = EmptyVTable();
       return *this;
     }
@@ -244,22 +294,38 @@ class MetadataMap {
       return vtable_->set(value_, map);
     }
 
-    bool is_binary_header() const;
-    Memento WithNewValue(const grpc_slice& value) const;
+    bool is_binary_header() const { return vtable_->is_binary_header; }
+    uint32_t transport_size() const { return transport_size_; }
+    Memento WithNewValue(const grpc_slice& value) const {
+      return vtable_->with_new_value(value_, value);
+    }
+    std::string DebugString() const { return vtable_->debug_string(value_); }
+
+    // TODO(ctiller): use hpack constant?
+    static uint32_t TransportSize(uint32_t key_size, uint32_t value_size) {
+      return key_size + value_size + 32;
+    }
 
    private:
     struct VTable {
-      void (*destroy)(intptr_t value);
-      grpc_error_handle (*set)(intptr_t value, MetadataMap* map);
+      const bool is_binary_header;
+      void (*const destroy)(intptr_t value);
+      grpc_error_handle (*const set)(intptr_t value, MetadataMap* map);
+      Memento (*const with_new_value)(intptr_t value,
+                                      const grpc_slice& new_value);
+      std::string (*debug_string)(intptr_t value);
     };
     static const VTable* EmptyVTable() {
       static const VTable vtable = {
-          [](intptr_t) {},
-          [](intptr_t, MetadataMap*) { return GRPC_ERROR_NONE; }};
+          false, [](intptr_t) {},
+          [](intptr_t, MetadataMap*) { return GRPC_ERROR_NONE; },
+          [](intptr_t, const grpc_slice&) { return Memento(); },
+          [](intptr_t) -> std::string { return "empty"; }};
       return &vtable;
     }
     const VTable* vtable_;
     intptr_t value_;
+    uint32_t transport_size_;
   };
 
   template <class KeySlice, class ValueSlice>
@@ -268,7 +334,9 @@ class MetadataMap {
     // hack for now.
     if (key_view == GrpcTimeoutMetadata::key()) {
       return Memento(GrpcTimeoutMetadata(),
-                     GrpcTimeoutMetadata::ParseMemento(value));
+                     GrpcTimeoutMetadata::ParseMemento(value),
+                     Memento::TransportSize(GRPC_SLICE_LENGTH(key),
+                                            GRPC_SLICE_LENGTH(value)));
     }
     return Memento(grpc_mdelem_from_slices(key, value));
   }

@@ -38,6 +38,8 @@ extern grpc_core::TraceFlag grpc_http_trace;
 
 namespace grpc_core {
 
+const HPackTable::StaticMementos HPackTable::static_metadata_;
+
 HPackTable::HPackTable() = default;
 
 HPackTable::~HPackTable() = default;
@@ -45,8 +47,8 @@ HPackTable::~HPackTable() = default;
 /* Evict one element from the table */
 void HPackTable::EvictOne() {
   auto first_entry = std::move(entries_[first_entry_]);
-  GPR_ASSERT(first_entry.transport_size <= mem_used_);
-  mem_used_ -= first_entry.transport_size;
+  GPR_ASSERT(first_entry.transport_size() <= mem_used_);
+  mem_used_ -= first_entry.transport_size();
   first_entry_ = ((first_entry_ + 1) % entries_.size());
   num_entries_--;
 }
@@ -114,7 +116,7 @@ grpc_error_handle HPackTable::Add(Memento md) {
   }
 
   // we can't add elements bigger than the max table size
-  if (md.transport_size > current_table_bytes_) {
+  if (md.transport_size() > current_table_bytes_) {
     // HPACK draft 10 section 4.4 states:
     // If the size of the new entry is less than or equal to the maximum
     // size, that entry is added to the table.  It is not an error to
@@ -129,13 +131,13 @@ grpc_error_handle HPackTable::Add(Memento md) {
   }
 
   // evict entries to ensure no overflow
-  while (md.transport_size >
+  while (md.transport_size() >
          static_cast<size_t>(current_table_bytes_) - mem_used_) {
     EvictOne();
   }
 
   // copy the finalized entry in
-  mem_used_ += md.transport_size;
+  mem_used_ += md.transport_size();
   entries_[(first_entry_ + num_entries_) % entries_.size()] = std::move(md);
 
   // update accounting values

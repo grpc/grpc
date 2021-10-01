@@ -1065,12 +1065,12 @@ class HPackParser::Parser {
   bool EmitHeader(const HPackTable::Memento& md) {
     // Pass up to the transport
     if (GPR_UNLIKELY(metadata_buffer_ == nullptr)) return true;
-    *frame_length_ += md.transport_size;
+    *frame_length_ += md.transport_size();
     if (GPR_UNLIKELY(*frame_length_ > metadata_size_limit_)) {
       return HandleMetadataSizeLimitExceeded(md);
     }
 
-    grpc_error_handle err = md.memento.SetOnMetadataMap(metadata_buffer_);
+    grpc_error_handle err = md.SetOnMetadataMap(metadata_buffer_);
     if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
       input_->SetError(err);
       return false;
@@ -1110,8 +1110,6 @@ class HPackParser::Parser {
     return EmitHeader(md);
   }
 
-  bool HandleMetadataSizeLimitExceeded(const HPackTable::Memento& md);
-
   // Parse a string encoded key and a string encoded value
   template <typename TakeValueType>
   absl::optional<HPackTable::Memento> ParseLiteralKey() {
@@ -1125,11 +1123,7 @@ class HPackParser::Parser {
       return {};
     }
     auto value_slice = value->Take<TakeValueType>();
-    const auto transport_size = GRPC_SLICE_LENGTH(key_slice) +
-                                GRPC_SLICE_LENGTH(value_slice) +
-                                hpack_constants::kEntryOverhead;
-    return HPackTable::Memento(
-        grpc_metadata_batch::Parse(key_slice, value_slice), transport_size);
+    return grpc_metadata_batch::Parse(key_slice, value_slice);
   }
 
   // Parse an index encoded key and a string encoded value
@@ -1140,7 +1134,7 @@ class HPackParser::Parser {
       return InvalidHPackIndexError(index,
                                     absl::optional<HPackTable::Memento>());
     }
-    auto value = ParseValueString(elem->memento.is_binary_header());
+    auto value = ParseValueString(elem->is_binary_header());
     if (GPR_UNLIKELY(!value.has_value())) return {};
     return elem->WithNewValue(value->Take<TakeValueType>());
   }
@@ -1212,6 +1206,23 @@ class HPackParser::Parser {
               static_cast<intptr_t>(this->table_->num_entries()));
         },
         std::move(result));
+  }
+
+  GPR_ATTRIBUTE_NOINLINE
+  bool HandleMetadataSizeLimitExceeded(const HPackTable::Memento& md) {
+    gpr_log(GPR_DEBUG,
+            "received initial metadata size exceeds limit (%" PRIu32
+            " vs. %" PRIu32
+            "). GRPC_ARG_MAX_METADATA_SIZE can be set to increase this limit.",
+            *frame_length_, metadata_size_limit_);
+    return input_->MaybeSetErrorAndReturn(
+        [] {
+          return grpc_error_set_int(
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "received initial metadata size exceeds limit"),
+              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
+        },
+        false);
   }
 
   Input* input_;
