@@ -272,6 +272,7 @@ class MetadataMap {
       transport_size_ = GRPC_MDELEM_LENGTH(elem);
     }
     Memento() : vtable_(EmptyVTable()) {}
+    ~Memento() { vtable_->destroy(value_); }
 
     Memento(const Memento&) = delete;
     Memento& operator=(const Memento&) = delete;

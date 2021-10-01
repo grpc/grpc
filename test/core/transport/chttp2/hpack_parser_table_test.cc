@@ -120,17 +120,16 @@ TEST(HpackParserTableTest, ManyAdditions) {
 
   for (i = 0; i < 100000; i++) {
     grpc_mdelem elem;
-    std::string key = absl::StrCat("K:", i);
-    std::string value = absl::StrCat("VALUE:", i);
+    std::string key = absl::StrCat("K.", i);
+    std::string value = absl::StrCat("VALUE.", i);
     elem = grpc_mdelem_from_slices(grpc_slice_from_cpp_string(key),
                                    grpc_slice_from_cpp_string(value));
     GPR_ASSERT(tbl.Add(HPackTable::Memento(elem)) == GRPC_ERROR_NONE);
-    GRPC_MDELEM_UNREF(elem);
     assert_index(&tbl, 1 + grpc_core::hpack_constants::kLastStaticEntry,
                  key.c_str(), value.c_str());
     if (i) {
-      std::string key = absl::StrCat("K:", i - 1);
-      std::string value = absl::StrCat("VALUE:", i - 1);
+      std::string key = absl::StrCat("K.", i - 1);
+      std::string value = absl::StrCat("VALUE.", i - 1);
       assert_index(&tbl, 2 + grpc_core::hpack_constants::kLastStaticEntry,
                    key.c_str(), value.c_str());
     }
