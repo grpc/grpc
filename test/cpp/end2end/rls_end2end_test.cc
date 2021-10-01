@@ -331,8 +331,7 @@ class RlsEnd2endTest : public ::testing::Test {
     ChannelArguments args;
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     resolver_response_generator_->Get());
-    args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS,
-                   expected_authority);
+    args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_authority);
     grpc_channel_credentials* channel_creds =
         grpc_fake_transport_security_credentials_create();
     grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(

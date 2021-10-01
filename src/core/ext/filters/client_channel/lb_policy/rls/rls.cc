@@ -1468,10 +1468,10 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy,
       const_cast<char*>(authority.c_str()));
   const char* arg_to_remove = {GRPC_ARG_DEFAULT_AUTHORITY};
   grpc_channel_args* rls_channel_args =
-      grpc_channel_args_copy_and_add_and_remove(channel_args, &arg_to_remove,
-                                                1, &arg_to_add, 1);
-  channel_ = grpc_secure_channel_create(creds, target.c_str(),
-                                        rls_channel_args, nullptr);
+      grpc_channel_args_copy_and_add_and_remove(channel_args, &arg_to_remove, 1,
+                                                &arg_to_add, 1);
+  channel_ = grpc_secure_channel_create(creds, target.c_str(), rls_channel_args,
+                                        nullptr);
   grpc_channel_args_destroy(rls_channel_args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] RlsChannel=%p: created channel %p for %s",
