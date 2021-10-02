@@ -100,7 +100,7 @@ message CreateCall {
     uint32 propagation_mask = 1;
     StringSlice method = 2;
     StringSlice host = 3;
-    uint32 deadline = 4;
+    int32 timeout = 4;
 }
 
 message SendInitialMetadata {
@@ -162,7 +162,7 @@ message Action {
         Empty cancel_all_calls_if_shutdown = 7;
         Empty destroy_server_if_ready = 8;
         bool check_connectivity = 9;
-        Empty watch_connectivity = 10;
+        uint32 watch_connectivity = 10;
         CreateCall create_call = 11;
         Empty change_active_call = 12;
         Batch queue_batch = 13;
