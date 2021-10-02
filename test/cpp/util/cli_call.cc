@@ -35,8 +35,7 @@ namespace {
 void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 }  // namespace
 
-Status CliCall::Call(const std::string& request,
-                     std::string* response,
+Status CliCall::Call(const std::string& request, std::string* response,
                      IncomingMetadataContainer* server_initial_metadata,
                      IncomingMetadataContainer* server_trailing_metadata) {
   Write(request);

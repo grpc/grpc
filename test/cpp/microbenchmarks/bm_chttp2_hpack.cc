@@ -471,10 +471,10 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
     }
   }
   // Clean up
-  arena->Destroy();
   b.Destroy();
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);
+  arena->Destroy();
 
   track_counters.Finish(state);
 }
