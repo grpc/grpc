@@ -2586,6 +2586,16 @@ RefCountedPtr<XdsClient> XdsClient::GetOrCreate(const grpc_channel_args* args,
   return xds_client;
 }
 
+// Obtain the authority portion of the new-style resource name like
+// "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server.example.com"
+std::string GetAuthorityFromName(absl::string_view name) {
+  std::vector<absl::string_view> v = absl::StrSplit(name, '/');
+  if (v.size() > 3) {
+    return std::string(v[2]);
+  }
+  return "";
+}
+
 namespace internal {
 
 void SetXdsChannelArgsForTest(grpc_channel_args* args) {
