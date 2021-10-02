@@ -38,14 +38,10 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/data/ssl_test_data.h"
-#include "test/core/util/fuzzer_util.h"
+#include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/util/passthru_endpoint.h"
-
-using grpc_core::testing::grpc_fuzzer_get_next_byte;
-using grpc_core::testing::grpc_fuzzer_get_next_string;
-using grpc_core::testing::grpc_fuzzer_get_next_uint32;
-using grpc_core::testing::input_stream;
 
 ////////////////////////////////////////////////////////////////////////////////
 // logging
@@ -71,8 +67,6 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
   ts.clock_type = clock_type;
   return ts;
 }
-
-static bool is_eof(input_stream* inp) { return inp->cur == inp->end; }
 
 ////////////////////////////////////////////////////////////////////////////////
 // dns resolution
@@ -249,13 +243,15 @@ Validator* MakeValidator(std::function<void(bool)> impl) {
   return new Validator(std::move(impl));
 }
 
-static void assert_success_and_decrement(void* counter, bool success) {
-  GPR_ASSERT(success);
-  --*static_cast<int*>(counter);
+static Validator* AssertSuccessAndDecrement(int* counter) {
+  return MakeValidator([counter](bool success) {
+    GPR_ASSERT(success);
+    --*counter;
+  });
 }
 
-static void decrement(void* counter, bool /*success*/) {
-  --*static_cast<int*>(counter);
+static Validator* Decrement(int* counter) {
+  return MakeValidator([counter](bool) { --*counter; });
 }
 
 typedef struct connectivity_watch {
@@ -286,7 +282,7 @@ static void free_non_null(void* p) {
   gpr_free(p);
 }
 
-enum class CallType { ROOT, CLIENT, SERVER, PENDING_SERVER };
+enum class CallType { CLIENT, SERVER, PENDING_SERVER };
 
 class Call {
  public:
@@ -353,6 +349,19 @@ class Call {
 static std::vector<std::unique_ptr<Call>> g_calls;
 static size_t g_active_call = 0;
 
+static Call* ActiveCall() {
+  while (g_calls.size()) {
+    if (g_active_call >= g_calls.size()) {
+      g_active_call = 0;
+    }
+    if (!g_calls[g_active_call]->done()) {
+      return g_calls[g_active_call].get();
+    }
+    g_calls.erase(g_calls.begin() + g_active_call);
+  }
+  return nullptr;
+}
+
 Call::~Call() {
   if (call_ != nullptr) {
     grpc_call_unref(call_);
@@ -418,7 +427,7 @@ static validator* make_finished_batch_validator(call_state* cs,
   return create_validator(finished_batch, bi);
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   grpc_test_only_set_slice_hash_seed(0);
   char* grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
   if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
@@ -449,10 +458,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
-  while (!is_eof(&inp) || g_channel != nullptr || g_server != nullptr ||
-         pending_channel_watches > 0 || pending_pings > 0 ||
-         g_active_call->type != ROOT || g_active_call->next != g_active_call) {
-    if (is_eof(&inp)) {
+  int action_index = 0;
+
+  while (action_index < msg.actions_size() || g_channel != nullptr ||
+         g_server != nullptr || pending_channel_watches > 0 ||
+         pending_pings > 0 || ActiveCall() != nullptr) {
+    if (action_index == msg.actions_size()) {
       if (g_channel != nullptr) {
         grpc_channel_destroy(g_channel);
         g_channel = nullptr;
@@ -480,24 +491,22 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       } while (s != g_active_call);
 
       g_now = gpr_time_add(g_now, gpr_time_from_seconds(1, GPR_TIMESPAN));
+      grpc_timer_manager_tick();
+      continue;
     }
 
     grpc_timer_manager_tick();
 
-    switch (grpc_fuzzer_get_next_byte(&inp)) {
-      // terminate on bad bytes
-      default:
-        end(&inp);
-        break;
+    const api_fuzzer::Action& action = msg.actions(action_index);
+    action_index++;
+    switch (action.type_case()) {
       // tickle completion queue
       case 0: {
         grpc_event ev = grpc_completion_queue_next(
             cq, gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
         switch (ev.type) {
           case GRPC_OP_COMPLETE: {
-            validator* v = static_cast<validator*>(ev.tag);
-            v->validate(v->arg, ev.success);
-            gpr_free(v);
+            static_cast<Validator*>(ev.tag)->Run(ev.success);
             break;
           }
           case GRPC_QUEUE_TIMEOUT:
@@ -569,8 +578,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         if (g_server != nullptr) {
           grpc_server_shutdown_and_notify(
               g_server, cq,
-              create_validator(assert_success_and_decrement,
-                               &pending_server_shutdowns));
+              AssertSuccessAndDecrement(&pending_server_shutdowns));
           pending_server_shutdowns++;
           server_shutdown = true;
         } else {
