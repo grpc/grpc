@@ -179,7 +179,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'BoringSSL-GRPC', '0.0.21'
-    ss.dependency 'Libuv-gRPC'
+    ss.dependency 'Libuv-gRPC', '0.0.10'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version

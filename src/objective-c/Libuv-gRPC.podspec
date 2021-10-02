@@ -37,17 +37,17 @@
 
 Pod::Spec.new do |spec|
 
-  pod_version           = "0.0.6"
-  libuv_version         = "1.34.0"
+  pod_version           = "0.0.10"
+  libuv_version         = "1.37.0"
 
   spec.name         = "Libuv-gRPC"
   spec.version      = pod_version
-  spec.summary      = "Cross-platform asynchronous I/O"
+  spec.summary      = "gRPC-Only Libuv Pod"
 
   spec.description  = <<-DESC
-    libuv is a multi-platform support library with a focus on asynchronous I/O.
-    It was primarily developed for use by Node.js, but it's also used by Luvit,
-    Julia, pyuv, and others.
+    Libuv pod intended to be used only by gRPC iOS. libuv is a multi-platform
+    support library with a focus on asynchronous I/O. It was primarily developed
+    for use by Node.js, but it's also used by Luvit, Julia, pyuv, and others.
   DESC
 
   spec.homepage     = "https://libuv.org/"
@@ -131,7 +131,6 @@ Pod::Spec.new do |spec|
   spec.pod_target_xcconfig = {
     'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"',
     'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)" "$(PODS_TARGET_SRCROOT)/src" "$(PODS_TARGET_SRCROOT)/include"',
-    'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
     'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
     'CLANG_WARN_DOCUMENTATION_COMMENTS' => 'NO',
     'USE_HEADERMAP' => 'NO',
@@ -148,10 +147,5 @@ Pod::Spec.new do |spec|
     "-D_GNU_SOURCE",
     "-D_DARWIN_USE_64_BIT_INODE=1",
     "-D_DARWIN_UNLIMITED_SELECT=1"
-
-  spec.prepare_command = <<-CMD
-    find include -type f \\( -path '*.h' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "uv.h";#if COCOAPODS==1\\\n #include <uv/uv.h>\\\n#else\\\n #include  "uv.h"\\\n#endif;g'
-    find include -type f \\( -path '*.h' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#\s*include "uv/(.*)";#if COCOAPODS==1\\\n  #include <uv/uv/\\1>\\\n#else\\\n  #include  "uv/\\1"\\\n#endif;g'
-  CMD
 
 end
