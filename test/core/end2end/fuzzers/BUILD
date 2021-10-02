@@ -25,8 +25,8 @@ grpc_proto_fuzzer(
     size = "enormous",
     srcs = ["api_fuzzer.cc"],
     corpus = "api_fuzzer_corpus",
-    proto = "api_fuzzer.proto",
     language = "C++",
+    proto = "api_fuzzer.proto",
     tags = ["no_windows"],
     deps = [
         "//:gpr",
