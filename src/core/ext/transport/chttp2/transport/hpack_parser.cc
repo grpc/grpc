@@ -1208,7 +1208,7 @@ class HPackParser::Parser {
   }
 
   GPR_ATTRIBUTE_NOINLINE
-  bool HandleMetadataSizeLimitExceeded(const HPackTable::Memento& md) {
+  bool HandleMetadataSizeLimitExceeded(const HPackTable::Memento&) {
     gpr_log(GPR_DEBUG,
             "received initial metadata size exceeds limit (%" PRIu32
             " vs. %" PRIu32
