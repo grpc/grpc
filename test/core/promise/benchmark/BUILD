@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 licenses(["notice"])
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+
+grpc_package(name = "test/core/promise/benchmark")
 
 grpc_cc_test(
     name = "competition",
@@ -41,6 +44,7 @@ grpc_cc_test(
         "//:seq",
         "//:try_join",
         "//:try_seq",
+        "//test/core/promise:test_wakeup_schedulers",
         "//test/core/util:grpc_suppressions",
     ],
 )

@@ -28,6 +28,7 @@
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "test/core/promise/benchmark/filter_stack.h"
+#include "test/core/promise/test_wakeup_schedulers.h"
 
 namespace filter_stack {
 
@@ -269,7 +270,7 @@ static void BM_ActivityStack_Passthrough3_Unary(benchmark::State& state) {
           auto one = []() { return absl::OkStatus(); };
           return TrySeq(one, one, one);
         },
-        NoCallbackScheduler(),
+        NoWakeupScheduler(),
         [](absl::Status status) {
           if (!status.ok()) abort();
         });
@@ -284,7 +285,7 @@ static void BM_ActivityStack_Passthrough10_Unary(benchmark::State& state) {
           auto one = []() { return absl::OkStatus(); };
           return TrySeq(one, one, one, one, one, one, one, one, one, one);
         },
-        NoCallbackScheduler(),
+        NoWakeupScheduler(),
         [](absl::Status status) {
           if (!status.ok()) abort();
         });
@@ -307,7 +308,7 @@ static void BM_ActivityStack_Interject3Latches_Unary(benchmark::State& state) {
                           }),
                      []() { return absl::OkStatus(); });
         },
-        NoCallbackScheduler(),
+        NoWakeupScheduler(),
         [](absl::Status status) {
           if (!status.ok()) abort();
         },
@@ -332,7 +333,7 @@ static void BM_ActivityStack_Interject10Latches_Unary(benchmark::State& state) {
                           }),
                      []() { return absl::OkStatus(); });
         },
-        NoCallbackScheduler(),
+        NoWakeupScheduler(),
         [](absl::Status status) {
           if (!status.ok()) abort();
         },
@@ -360,7 +361,7 @@ static void BM_ActivityStack_Interject30Latches_Unary(benchmark::State& state) {
                    }),
               []() { return absl::OkStatus(); });
         },
-        NoCallbackScheduler(),
+        NoWakeupScheduler(),
         [](absl::Status status) {
           if (!status.ok()) abort();
         },
@@ -394,7 +395,7 @@ static void BM_ActivityStack_Interject3Filters_Unary(benchmark::State& state) {
                   []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
                   []() { return absl::OkStatus(); }));
         },
-        NoCallbackScheduler(),
+        NoWakeupScheduler(),
         [](absl::Status status) {
           if (!status.ok()) abort();
         },
@@ -429,7 +430,7 @@ static void BM_ActivityStack_Interject10Filters_Unary(benchmark::State& state) {
                   []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
                   []() { return absl::OkStatus(); }));
         },
-        NoCallbackScheduler(),
+        NoWakeupScheduler(),
         [](absl::Status status) {
           if (!status.ok()) abort();
         },
@@ -466,7 +467,7 @@ static void BM_ActivityStack_Interject30Filters_Unary(benchmark::State& state) {
                   []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
                   []() { return absl::OkStatus(); }));
         },
-        NoCallbackScheduler(),
+        NoWakeupScheduler(),
         [](absl::Status status) {
           if (!status.ok()) abort();
         },
