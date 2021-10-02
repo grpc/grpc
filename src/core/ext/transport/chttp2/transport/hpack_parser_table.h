@@ -70,7 +70,7 @@ class HPackTable {
  private:
   struct StaticMementos {
     StaticMementos() {
-      for (int i = 0; i < hpack_constants::kLastStaticEntry; i++) {
+      for (uint32_t i = 0; i < hpack_constants::kLastStaticEntry; i++) {
         memento[i] = Memento(g_static_mdelem_manifested[i]);
       }
     }
