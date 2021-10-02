@@ -1078,7 +1078,7 @@ static void queue_setting_update(grpc_chttp2_transport* t,
 void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
                                      uint32_t last_stream_id,
-                                     const grpc_slice& goaway_text) {
+                                     absl::string_view goaway_text) {
   // Discard the error from a previous goaway frame (if any)
   if (t->goaway_error != GRPC_ERROR_NONE) {
     GRPC_ERROR_UNREF(t->goaway_error);
@@ -1107,7 +1107,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
   // for new connections on that channel.
   if (GPR_UNLIKELY(t->is_client &&
                    goaway_error == GRPC_HTTP2_ENHANCE_YOUR_CALM &&
-                   grpc_slice_str_cmp(goaway_text, "too_many_pings") == 0)) {
+                   goaway_text == "too_many_pings")) {
     gpr_log(GPR_ERROR,
             "Received a GOAWAY with error code ENHANCE_YOUR_CALM and debug "
             "data equal to \"too_many_pings\"");
@@ -1230,9 +1230,9 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     if (closure->error_data.error == GRPC_ERROR_NONE) {
       closure->error_data.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error in HTTP transport completing operation");
-      closure->error_data.error = grpc_error_set_str(
-          closure->error_data.error, GRPC_ERROR_STR_TARGET_ADDRESS,
-          grpc_slice_from_copied_string(t->peer_string.c_str()));
+      closure->error_data.error =
+          grpc_error_set_str(closure->error_data.error,
+                             GRPC_ERROR_STR_TARGET_ADDRESS, t->peer_string);
     }
     closure->error_data.error =
         grpc_error_add_child(closure->error_data.error, error);
@@ -1752,12 +1752,12 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error) {
           grpc_error_std_string(error).c_str());
   t->sent_goaway_state = GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED;
   grpc_http2_error_code http_error;
-  grpc_slice slice;
-  grpc_error_get_status(error, GRPC_MILLIS_INF_FUTURE, nullptr, &slice,
+  std::string message;
+  grpc_error_get_status(error, GRPC_MILLIS_INF_FUTURE, nullptr, &message,
                         &http_error, nullptr);
-  grpc_chttp2_goaway_append(t->last_new_stream_id,
-                            static_cast<uint32_t>(http_error),
-                            grpc_slice_ref_internal(slice), &t->qbuf);
+  grpc_chttp2_goaway_append(
+      t->last_new_stream_id, static_cast<uint32_t>(http_error),
+      grpc_slice_from_cpp_string(std::move(message)), &t->qbuf);
   grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT);
   GRPC_ERROR_UNREF(error);
 }
@@ -2089,8 +2089,9 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                              grpc_error_handle error) {
   grpc_status_code status;
-  grpc_slice slice;
-  grpc_error_get_status(error, s->deadline, &status, &slice, nullptr, nullptr);
+  std::string message;
+  grpc_error_get_status(error, s->deadline, &status, &message, nullptr,
+                        nullptr);
   if (status != GRPC_STATUS_OK) {
     s->seen_error = true;
   }
@@ -2108,11 +2109,12 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                       s->trailing_metadata_buffer.ReplaceOrAppend(
                           GRPC_MDSTR_GRPC_STATUS,
                           grpc_core::UnmanagedMemorySlice(status_string)));
-    if (!GRPC_SLICE_IS_EMPTY(slice)) {
+    if (!message.empty()) {
+      grpc_slice message_slice = grpc_slice_from_cpp_string(std::move(message));
       GRPC_LOG_IF_ERROR(
           "add_status_message",
           s->trailing_metadata_buffer.ReplaceOrAppend(
-              GRPC_MDSTR_GRPC_MESSAGE, grpc_slice_ref_internal(slice)));
+              GRPC_MDSTR_GRPC_MESSAGE, message_slice));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
@@ -2252,8 +2254,8 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   uint8_t* p;
   uint32_t len = 0;
   grpc_status_code grpc_status;
-  grpc_slice slice;
-  grpc_error_get_status(error, s->deadline, &grpc_status, &slice, nullptr,
+  std::string message;
+  grpc_error_get_status(error, s->deadline, &grpc_status, &message, nullptr,
                         nullptr);
 
   GPR_ASSERT(grpc_status >= 0 && (int)grpc_status < 100);
@@ -2346,7 +2348,7 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   GPR_ASSERT(p == GRPC_SLICE_END_PTR(status_hdr));
   len += static_cast<uint32_t> GRPC_SLICE_LENGTH(status_hdr);
 
-  size_t msg_len = GRPC_SLICE_LENGTH(slice);
+  size_t msg_len = message.length();
   GPR_ASSERT(msg_len <= UINT32_MAX);
   grpc_core::VarintWriter<1> msg_len_writer(msg_len);
   message_pfx = GRPC_SLICE_MALLOC(14 + msg_len_writer.length());
@@ -2391,7 +2393,8 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   }
   grpc_slice_buffer_add(&t->qbuf, status_hdr);
   grpc_slice_buffer_add(&t->qbuf, message_pfx);
-  grpc_slice_buffer_add(&t->qbuf, grpc_slice_ref_internal(slice));
+  grpc_slice_buffer_add(&t->qbuf,
+                        grpc_slice_from_cpp_string(std::move(message)));
   grpc_chttp2_reset_ping_clock(t);
   grpc_chttp2_add_rst_stream_to_next_write(t, s->id, GRPC_HTTP2_NO_ERROR,
                                            &s->stats.outgoing);
