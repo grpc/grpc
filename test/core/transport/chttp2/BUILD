@@ -24,8 +24,8 @@ load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 grpc_proto_fuzzer(
     name = "hpack_parser_fuzzer",
     srcs = ["hpack_parser_fuzzer_test.cc"],
-    proto = "hpack_parser_fuzzer.proto",
     corpus = "hpack_parser_corpus",
+    proto = "hpack_parser_fuzzer.proto",
     tags = ["no_windows"],
     deps = [
         "//:grpc",
