@@ -18,12 +18,13 @@ licenses(["notice"])  # Apache v2
 
 grpc_package(name = "test/core/transport/chttp2")
 
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
-grpc_fuzzer(
+grpc_proto_fuzzer(
     name = "hpack_parser_fuzzer",
     srcs = ["hpack_parser_fuzzer_test.cc"],
+    proto = "hpack_parser_fuzzer.proto",
     corpus = "hpack_parser_corpus",
     tags = ["no_windows"],
     deps = [
