@@ -3269,6 +3269,9 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/client/authority.h",
         "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
     language = "c++",
     deps = [
         "config",

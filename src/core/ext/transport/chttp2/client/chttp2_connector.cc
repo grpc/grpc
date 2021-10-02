@@ -22,6 +22,8 @@
 
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/grpc.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
