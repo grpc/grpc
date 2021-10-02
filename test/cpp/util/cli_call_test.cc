@@ -110,9 +110,8 @@ TEST_F(CliCallTest, SimpleRpc) {
       server_trailing_metadata;
   client_metadata.insert(std::pair<std::string, std::string>("key1", "val1"));
   CliCall call(channel_, kMethod, client_metadata);
-  Status s2 = call.Call(request_bin, &response_bin,
-                            &server_initial_metadata,
-                            &server_trailing_metadata);
+  Status s2 = call.Call(request_bin, &response_bin, &server_initial_metadata,
+                        &server_trailing_metadata);
   EXPECT_TRUE(s2.ok());
 
   EXPECT_EQ(expected_response_bin, response_bin);

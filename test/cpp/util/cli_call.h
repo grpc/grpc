@@ -56,8 +56,7 @@ class CliCall final {
   ~CliCall();
 
   // Perform an unary generic RPC.
-  Status Call(const std::string& request,
-              std::string* response,
+  Status Call(const std::string& request, std::string* response,
               IncomingMetadataContainer* server_initial_metadata,
               IncomingMetadataContainer* server_trailing_metadata);
 
