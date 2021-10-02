@@ -182,8 +182,7 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
       grpc_error_set_int(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"),
           GRPC_ERROR_INT_GRPC_STATUS, error_code),
-      GRPC_ERROR_STR_GRPC_MESSAGE,
-      grpc_slice_from_static_string(error_message));
+      GRPC_ERROR_STR_GRPC_MESSAGE, error_message);
   grpc_arg error_arg = grpc_core::MakeLameClientErrorArg(&error);
   grpc_channel_args args = {1, &error_arg};
   grpc_channel* channel = grpc_channel_create(
