@@ -329,10 +329,13 @@ class MetadataMap {
     auto key_view = StringViewFromSlice(key);
     // hack for now.
     if (key_view == GrpcTimeoutMetadata::key()) {
-      return Memento(GrpcTimeoutMetadata(),
-                     GrpcTimeoutMetadata::ParseMemento(value),
-                     Memento::TransportSize(GRPC_SLICE_LENGTH(key),
-                                            GRPC_SLICE_LENGTH(value)));
+      Memento out(GrpcTimeoutMetadata(),
+                  GrpcTimeoutMetadata::ParseMemento(value),
+                  Memento::TransportSize(GRPC_SLICE_LENGTH(key),
+                                         GRPC_SLICE_LENGTH(value)));
+      grpc_slice_unref_internal(key);
+      grpc_slice_unref_internal(value);
+      return out;
     }
     return Memento(grpc_mdelem_from_slices(key, value));
   }

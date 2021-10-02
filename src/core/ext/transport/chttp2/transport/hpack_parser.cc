@@ -1122,8 +1122,7 @@ class HPackParser::Parser {
       grpc_slice_unref_internal(key_slice);
       return {};
     }
-    auto value_slice = value->Take<TakeValueType>();
-    return grpc_metadata_batch::Parse(key_slice, value_slice);
+    return grpc_metadata_batch::Parse(key_slice, value->Take<TakeValueType>());
   }
 
   // Parse an index encoded key and a string encoded value
@@ -1237,8 +1236,11 @@ UnmanagedMemorySlice HPackParser::String::Take(Extern) {
   auto s = Match(
       value_,
       [](const grpc_slice& slice) {
+        // TODO(ctiller): Think about this before submission.
         GPR_DEBUG_ASSERT(!grpc_slice_is_interned(slice));
-        return static_cast<const UnmanagedMemorySlice&>(slice);
+        auto out_slice = grpc_slice_copy(slice);
+        grpc_slice_unref_internal(slice);
+        return static_cast<const UnmanagedMemorySlice&>(out_slice);
       },
       [](absl::Span<const uint8_t> span) {
         return UnmanagedMemorySlice(
