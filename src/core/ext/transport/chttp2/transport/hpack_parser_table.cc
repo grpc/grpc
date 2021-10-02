@@ -38,9 +38,7 @@ extern grpc_core::TraceFlag grpc_http_trace;
 
 namespace grpc_core {
 
-const HPackTable::StaticMementos HPackTable::static_metadata_;
-
-HPackTable::HPackTable() = default;
+HPackTable::HPackTable() : static_metadata_(GetStaticMementos()) {}
 
 HPackTable::~HPackTable() = default;
 

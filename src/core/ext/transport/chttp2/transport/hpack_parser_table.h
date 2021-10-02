@@ -38,8 +38,8 @@ class HPackTable {
   HPackTable();
   ~HPackTable();
 
-  HPackTable(const HPackTable&);
-  HPackTable& operator=(const HPackTable&);
+  HPackTable(const HPackTable&) = delete;
+  HPackTable& operator=(const HPackTable&) = delete;
 
   void SetMaxBytes(uint32_t max_bytes);
   grpc_error_handle SetCurrentTableSize(uint32_t bytes);
@@ -76,6 +76,10 @@ class HPackTable {
     }
     Memento memento[hpack_constants::kLastStaticEntry];
   };
+  static const StaticMementos& GetStaticMementos() {
+    static const StaticMementos static_mementos;
+    return static_mementos;
+  }
 
   enum { kInlineEntries = hpack_constants::kInitialTableEntries };
   using EntriesVec = absl::InlinedVector<Memento, kInlineEntries>;
@@ -112,7 +116,7 @@ class HPackTable {
   // HPack table entries
   EntriesVec entries_{hpack_constants::kInitialTableEntries};
   // Mementos for static data
-  static const StaticMementos static_metadata_;
+  const StaticMementos& static_metadata_;
 };
 
 }  // namespace grpc_core
