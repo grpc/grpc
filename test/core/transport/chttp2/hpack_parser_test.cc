@@ -113,7 +113,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     }
 
     template <typename T, typename V>
-    void Encode(T traits, V value) {
+    void Encode(T, V) {
       abort();  // not implemented
     }
 
