@@ -48,17 +48,21 @@ DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
       const auto& frame = msg.frames(i);
       grpc_core::HPackParser::Boundary boundary =
           grpc_core::HPackParser::Boundary::None;
-      if (frame.end_of_headers())
+      if (frame.end_of_headers()) {
         boundary = grpc_core::HPackParser::Boundary::EndOfHeaders;
-      if (frame.end_of_stream())
+      }
+      if (frame.end_of_stream()) {
         boundary = grpc_core::HPackParser::Boundary::EndOfStream;
+      }
       grpc_core::HPackParser::Priority priority =
           grpc_core::HPackParser::Priority::None;
-      if (frame.priority())
+      if (frame.priority()) {
         priority = grpc_core::HPackParser::Priority::Included;
+      }
       int max_length = 1024;
-      if (frame.max_metadata_length() != 0)
+      if (frame.max_metadata_length() != 0) {
         max_length = frame.max_metadata_length();
+      }
 
       parser->BeginFrame(&b, max_length, boundary, priority);
       int stop_buffering_ctr =
