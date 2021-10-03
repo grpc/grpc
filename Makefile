@@ -36,10 +36,11 @@ endif
 
 # Basic machine detection
 HOST_MACHINE = $(shell uname -m)
-ifeq ($(HOST_MACHINE),x86_64)
-HOST_IS_X86_64 = true
+MACHINE ?= $(HOST_MACHINE)
+ifeq ($(MACHINE),x86_64)
+MACHINE_IS_X86_64 = true
 else
-HOST_IS_X86_64 = false
+MACHINE_IS_X86_64 = false
 endif
 
 MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
@@ -578,7 +579,7 @@ CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
 
 GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
 GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
-ifeq ($(HOST_IS_X86_64),true)
+ifeq ($(MACHINE_IS_X86_64),true)
 ABSL_RANDOM_HWAES_FLAGS = -maes -msse4
 else
 ABSL_RANDOM_HWAES_FLAGS =
