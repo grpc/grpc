@@ -36,6 +36,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/lib/transport/parsed_metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
@@ -97,19 +98,6 @@ struct GrpcTimeoutMetadata {
   }
   static MementoType DisplayValue(MementoType x) { return x; }
 };
-
-namespace metadata_detail {
-
-// Helper to determine whether a traits metadata is inlinable inside a memento,
-// or (if not) we'll need to take the memory allocation path.
-template <typename Which>
-struct HasSimpleMemento {
-  static constexpr bool value =
-      std::is_trivial<typename Which::MementoType>::value &&
-      sizeof(typename Which::MementoType) <= sizeof(intptr_t);
-};
-
-}  // namespace metadata_detail
 
 // MetadataMap encodes the mapping of metadata keys to metadata values.
 // Right now the API presented is the minimal one that will allow us to
@@ -204,182 +192,34 @@ class MetadataMap {
     table_.template clear<Value<Which>>();
   }
 
-  //
-  // All APIs below this point are subject to change.
-  //
-
-  class Memento {
-   public:
-    template <typename Which>
-    Memento(Which,
-            absl::enable_if_t<metadata_detail::HasSimpleMemento<Which>::value,
-                              typename Which::MementoType>
-                value,
-            uint32_t transport_size) {
-      static const VTable vtable = {
-          absl::EndsWith(Which::key(), "-bin"), [](intptr_t) {},
-          [](intptr_t value, MetadataMap* map) {
-            map->Set(Which(),
-                     Which::MementoToValue(
-                         static_cast<typename Which::MementoType>(value)));
-            return GRPC_ERROR_NONE;
-          },
-          [](intptr_t, const grpc_slice& value) {
-            return Memento(
-                Which(), Which::ParseMemento(value),
-                TransportSize(strlen(Which::key()), GRPC_SLICE_LENGTH(value)));
-          },
-          [](intptr_t value) {
-            return absl::StrCat(Which::key(), ": ", Which::DisplayValue(value));
-          }};
-      vtable_ = &vtable;
-      value_ = static_cast<intptr_t>(value);
-      transport_size_ = transport_size;
-    }
-    template <typename Which>
-    Memento(Which,
-            absl::enable_if_t<!metadata_detail::HasSimpleMemento<Which>::value,
-                              typename Which::MementoType>
-                value,
-            uint32_t transport_size) {
-      static const VTable vtable = {
-          absl::EndsWith(Which::key(), "-bin"),
-          [](intptr_t value) {
-            delete reinterpret_cast<typename Which::MementoType*>(value);
-          },
-          [](intptr_t value, MetadataMap* map) {
-            auto* p = reinterpret_cast<typename Which::MementoType*>(value);
-            map->Set(Which(), Which::MementoToValue(*p));
-            return GRPC_ERROR_NONE;
-          },
-          [](intptr_t, const grpc_slice& value) {
-            return Memento(
-                Which(), Which::ParseMemento(value),
-                TransportSize(strlen(Which::key()), GRPC_SLICE_LENGTH(value)));
-          },
-          [](intptr_t value) {
-            auto* p = reinterpret_cast<typename Which::MementoType*>(value);
-            return absl::StrCat(Which::key(), ": ", Which::DisplayValue(*p));
-          }};
-      vtable_ = &vtable;
-      value_ = reinterpret_cast<intptr_t>(
-          new typename Which::MementoValue(std::move(value)));
-      transport_size_ = transport_size;
-    }
-    // Takes ownership of elem
-    explicit Memento(grpc_mdelem elem) {
-      if (grpc_is_binary_header_internal(GRPC_MDKEY(elem))) {
-        vtable_ = MdelemVtable<true>();
-      } else {
-        vtable_ = MdelemVtable<false>();
-      }
-      value_ = static_cast<intptr_t>(elem.payload);
-      transport_size_ = GRPC_MDELEM_LENGTH(elem);
-    }
-    Memento() : vtable_(EmptyVTable()) {}
-    ~Memento() { vtable_->destroy(value_); }
-
-    Memento(const Memento&) = delete;
-    Memento& operator=(const Memento&) = delete;
-    Memento(Memento&& other) noexcept
-        : vtable_(other.vtable_),
-          value_(other.value_),
-          transport_size_(other.transport_size_) {
-      other.vtable_ = EmptyVTable();
-    }
-    Memento& operator=(Memento&& other) noexcept {
-      vtable_ = other.vtable_;
-      value_ = other.value_;
-      transport_size_ = other.transport_size_;
-      other.vtable_ = EmptyVTable();
-      return *this;
-    }
-
-    GRPC_MUST_USE_RESULT grpc_error_handle
-    SetOnMetadataMap(MetadataMap* map) const {
-      return vtable_->set(value_, map);
-    }
-
-    bool is_binary_header() const { return vtable_->is_binary_header; }
-    uint32_t transport_size() const { return transport_size_; }
-    Memento WithNewValue(const grpc_slice& value) const {
-      return vtable_->with_new_value(value_, value);
-    }
-    std::string DebugString() const { return vtable_->debug_string(value_); }
-
-    // TODO(ctiller): use hpack constant?
-    static uint32_t TransportSize(uint32_t key_size, uint32_t value_size) {
-      return key_size + value_size + 32;
-    }
-
-   private:
-    struct VTable {
-      const bool is_binary_header;
-      void (*const destroy)(intptr_t value);
-      grpc_error_handle (*const set)(intptr_t value, MetadataMap* map);
-      Memento (*const with_new_value)(intptr_t value,
-                                      const grpc_slice& new_value);
-      std::string (*debug_string)(intptr_t value);
-    };
-    static const VTable* EmptyVTable() {
-      static const VTable vtable = {
-          false, [](intptr_t) {},
-          [](intptr_t, MetadataMap*) { return GRPC_ERROR_NONE; },
-          [](intptr_t, const grpc_slice&) { return Memento(); },
-          [](intptr_t) -> std::string { return "empty"; }};
-      return &vtable;
-    }
-    template <bool kIsBinaryHeader>
-    static const VTable* MdelemVtable() {
-      static const VTable vtable = {
-          kIsBinaryHeader,
-          [](intptr_t value) {
-            GRPC_MDELEM_UNREF(grpc_mdelem{uintptr_t(value)});
-          },
-          [](intptr_t value, MetadataMap* map) {
-            auto md = GRPC_MDELEM_REF(grpc_mdelem{uintptr_t(value)});
-            auto err = map->Append(md);
-            // If an error occurs, md is not consumed and we need to.
-            // This is an awful API, but that's why we're replacing it.
-            if (err != GRPC_ERROR_NONE) {
-              GRPC_MDELEM_UNREF(md);
-            }
-            return err;
-          },
-          [](intptr_t value, const grpc_slice& value_slice) {
-            grpc_mdelem elem{uintptr_t(value)};
-            return Memento(grpc_mdelem_from_slices(
-                static_cast<const ManagedMemorySlice&>(
-                    grpc_slice_ref_internal(GRPC_MDKEY(elem))),
-                value_slice));
-          },
-          [](intptr_t value) {
-            grpc_mdelem elem{uintptr_t(value)};
-            return absl::StrCat(StringViewFromSlice(GRPC_MDKEY(elem)), ": ",
-                                StringViewFromSlice(GRPC_MDVALUE(elem)));
-          }};
-      return &vtable;
-    }
-    const VTable* vtable_;
-    intptr_t value_;
-    uint32_t transport_size_;
-  };
-
+  // Parse metadata from a key/value pair, and return an object representing
+  // that result.
   template <class KeySlice, class ValueSlice>
-  static Memento Parse(const KeySlice& key, const ValueSlice& value) {
+  static ParsedMetadata<MetadataMap> Parse(const KeySlice& key,
+                                           const ValueSlice& value) {
     auto key_view = StringViewFromSlice(key);
     // hack for now.
     if (key_view == GrpcTimeoutMetadata::key()) {
-      Memento out(GrpcTimeoutMetadata(),
-                  GrpcTimeoutMetadata::ParseMemento(value),
-                  Memento::TransportSize(GRPC_SLICE_LENGTH(key),
-                                         GRPC_SLICE_LENGTH(value)));
+      ParsedMetadata<MetadataMap> out(
+          GrpcTimeoutMetadata(), GrpcTimeoutMetadata::ParseMemento(value),
+          ParsedMetadata<MetadataMap>::TransportSize(GRPC_SLICE_LENGTH(key),
+                                                     GRPC_SLICE_LENGTH(value)));
       grpc_slice_unref_internal(key);
       grpc_slice_unref_internal(value);
       return out;
     }
-    return Memento(grpc_mdelem_from_slices(key, value));
+    return ParsedMetadata<MetadataMap>(grpc_mdelem_from_slices(key, value));
   }
+
+  // Set a value from a prased metadata object.
+  GRPC_MUST_USE_RESULT grpc_error_handle
+  Set(const ParsedMetadata<MetadataMap>& m) {
+    return m.SetOnContainer(this);
+  }
+
+  //
+  // All APIs below this point are subject to change.
+  //
 
   template <typename F>
   void ForEach(F f) const {
