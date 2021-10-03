@@ -924,6 +924,7 @@ libs:
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
+  - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/status_conversion.h
@@ -1931,6 +1932,7 @@ libs:
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
+  - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/status_conversion.h
@@ -7093,6 +7095,15 @@ targets:
   - test/core/gprpp/overload_test.cc
   deps: []
   uses_polling: false
+- name: parsed_metadata_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/parsed_metadata_test.cc
+  deps:
+  - grpc_test_util
 - name: pid_controller_test
   gtest: true
   build: test

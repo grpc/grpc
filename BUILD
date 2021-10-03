@@ -1729,6 +1729,7 @@ grpc_cc_library(
         "src/core/lib/transport/connectivity_state.h",
         "src/core/lib/transport/metadata.h",
         "src/core/lib/transport/metadata_batch.h",
+        "src/core/lib/transport/parsed_metadata.h",
         "src/core/lib/transport/pid_controller.h",
         "src/core/lib/transport/static_metadata.h",
         "src/core/lib/transport/status_conversion.h",

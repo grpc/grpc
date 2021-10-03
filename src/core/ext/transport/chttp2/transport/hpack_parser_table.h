@@ -44,7 +44,7 @@ class HPackTable {
   void SetMaxBytes(uint32_t max_bytes);
   grpc_error_handle SetCurrentTableSize(uint32_t bytes);
 
-  using Memento = grpc_metadata_batch::Memento;
+  using Memento = ParsedMetadata<grpc_metadata_batch>;
 
   // Lookup, but don't ref.
   const Memento* Lookup(uint32_t index) const {
