@@ -66,6 +66,7 @@ message CallCreds {
         CompositeCallCreds composite_call_creds = 1;
         string access_token = 2;
         IAM iam = 3;
+        Empty null = 4;
     }
 }
 
@@ -78,6 +79,7 @@ message ChannelCreds {
     oneof type {
         SslChannelCreds ssl_channel_creds = 1;
         CompositeChannelCreds composite_channel_creds = 2;
+        Empty null = 3;
     }
 }
 

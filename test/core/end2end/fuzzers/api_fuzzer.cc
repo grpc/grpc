@@ -258,11 +258,10 @@ static Validator* ValidateConnectivityWatch(gpr_timespec deadline,
                                             int* counter) {
   return MakeValidator([deadline, counter](bool success) {
     if (!success) {
-      GPR_ASSERT(gpr_time_cmp(gpr_now(w->deadline.clock_type), w->deadline) >=
-                 0);
+      GPR_ASSERT(gpr_time_cmp(gpr_now(deadline.clock_type), deadline) >= 0);
     }
     --*counter;
-  };
+  });
 }
 
 static void free_non_null(void* p) {
@@ -275,13 +274,19 @@ enum class CallType { CLIENT, SERVER, PENDING_SERVER };
 class Call {
  public:
   Call(CallType type) : type_(type) {}
-
   ~Call();
+
+  CallType type() const { return type_; }
 
   bool done() const {
     if (call_ == nullptr) return true;
     if (pending_ops_ == 0) return true;
     return false;
+  }
+
+  void SetCall(grpc_call* call) {
+    GPR_ASSERT(call_ == nullptr);
+    call_ = call;
   }
 
   void* Allocate(size_t size) {
@@ -332,13 +337,24 @@ class Call {
       }
       if ((has_ops & (1u << GRPC_OP_RECV_STATUS_ON_CLIENT)) ||
           (has_ops & (1u << GRPC_OP_RECV_CLOSE_ON_SERVER))) {
-        done_flags |= DONE_FLAG_CALL_CLOSED;
+        call_closed_ = true;
+      }
+    });
+  }
+
+  Validator* FinishedRequestCall() {
+    return MakeValidator([this](bool success) {
+      GPR_ASSERT(pending_ops_ > 0);
+      --pending_ops_;
+      if (success) {
+        GPR_ASSERT(call_ != nullptr);
+        type_ = CallType::SERVER;
       }
     });
   }
 
  private:
-  const CallType type_;
+  CallType type_;
   grpc_call* call_;
   grpc_byte_buffer* recv_message_;
   grpc_status_code status_;
@@ -349,7 +365,7 @@ class Call {
   int pending_ops_ = 0;
   bool sent_initial_metadata_ = false;
   grpc_call_details call_details_{};
-  grpc_byte_buffer* send_message;
+  grpc_byte_buffer* send_message_ = nullptr;
   bool call_closed_ = false;
 
   std::vector<void*> free_pointers_;
@@ -388,18 +404,6 @@ Call::~Call() {
   }
 }
 
-static void finished_request_call(void* csp, bool success) {
-  call_state* cs = static_cast<call_state*>(csp);
-  GPR_ASSERT(cs->pending_ops > 0);
-  --cs->pending_ops;
-  if (success) {
-    GPR_ASSERT(cs->call != nullptr);
-    cs->type = SERVER;
-  } else {
-    maybe_delete_call_state(cs);
-  }
-}
-
 grpc_channel_args* ReadArgs(
     const google::protobuf::RepeatedPtrField<api_fuzzer::ChannelArg>& args) {
   grpc_channel_args* res =
@@ -423,9 +427,125 @@ grpc_channel_args* ReadArgs(
         res->args[i].value.pointer.p = g_resource_quota;
         res->args[i].value.pointer.vtable = grpc_resource_quota_arg_vtable();
         break;
+      case api_fuzzer::ChannelArg::VALUE_NOT_SET:
+        res->args[i].type = GRPC_ARG_INTEGER;
+        res->args[i].value.integer = 0;
+        break;
     }
   }
   return res;
+}
+
+static const char* ReadCredArtifact(
+    const api_fuzzer::CredArtifact& artifact,
+    std::initializer_list<const char*> builtins) {
+  switch (artifact.type_case()) {
+    case api_fuzzer::CredArtifact::kCustom:
+      return artifact.custom().c_str();
+    case api_fuzzer::CredArtifact::kBuiltin:
+      if (artifact.builtin() < 0) return nullptr;
+      if (artifact.builtin() < static_cast<int>(builtins.size())) {
+        return *(builtins.begin() + artifact.builtin());
+      }
+      return nullptr;
+    case api_fuzzer::CredArtifact::TYPE_NOT_SET:
+      return nullptr;
+  }
+}
+
+static grpc_channel_credentials* ReadSslChannelCreds(
+    const api_fuzzer::SslChannelCreds& creds) {
+  const char* root_certs =
+      creds.has_root_certs()
+          ? ReadCredArtifact(creds.root_certs(), {test_root_cert})
+          : nullptr;
+  const char* private_key =
+      creds.has_private_key()
+          ? ReadCredArtifact(creds.private_key(),
+                             {test_server1_key, test_self_signed_client_key,
+                              test_signed_client_key})
+          : nullptr;
+  const char* certs =
+      creds.has_certs()
+          ? ReadCredArtifact(creds.certs(),
+                             {test_server1_cert, test_self_signed_client_cert,
+                              test_signed_client_cert})
+          : nullptr;
+  grpc_ssl_pem_key_cert_pair key_cert_pair = {private_key, certs};
+  return grpc_ssl_credentials_create(
+      root_certs,
+      private_key != nullptr && certs != nullptr ? &key_cert_pair : nullptr,
+      nullptr, nullptr);
+}
+
+static grpc_call_credentials* ReadCallCreds(
+    const api_fuzzer::CallCreds& creds) {
+  switch (creds.type_case()) {
+    case api_fuzzer::CallCreds::TYPE_NOT_SET:
+      return nullptr;
+    case api_fuzzer::CallCreds::kNull:
+      return nullptr;
+    case api_fuzzer::CallCreds::kCompositeCallCreds: {
+      grpc_call_credentials* out = nullptr;
+      for (const auto& child_creds :
+           creds.composite_call_creds().call_creds()) {
+        grpc_call_credentials* child = ReadCallCreds(child_creds);
+        if (child != nullptr) {
+          if (out == nullptr) {
+            out = child;
+          } else {
+            out = grpc_composite_call_credentials_create(out, child, nullptr);
+            grpc_call_credentials_release(child);
+            grpc_call_credentials_release(out);
+          }
+        }
+      }
+      return out;
+    }
+    case api_fuzzer::CallCreds::kAccessToken:
+      return grpc_access_token_credentials_create(creds.access_token().c_str(),
+                                                  nullptr);
+    case api_fuzzer::CallCreds::kIam:
+      return grpc_google_iam_credentials_create(
+          creds.iam().auth_token().c_str(), creds.iam().auth_selector().c_str(),
+          nullptr);
+      /* TODO(ctiller): more cred types here */
+  }
+}
+
+static grpc_channel_credentials* ReadChannelCreds(
+    const api_fuzzer::ChannelCreds& creds) {
+  switch (creds.type_case()) {
+    case api_fuzzer::ChannelCreds::TYPE_NOT_SET:
+      return nullptr;
+    case api_fuzzer::ChannelCreds::kSslChannelCreds:
+      return ReadSslChannelCreds(creds.ssl_channel_creds());
+    case api_fuzzer::ChannelCreds::kCompositeChannelCreds: {
+      const auto& comp = creds.composite_channel_creds();
+      grpc_channel_credentials* c1 =
+          comp.has_channel_creds() ? ReadChannelCreds(comp.channel_creds())
+                                   : nullptr;
+      grpc_call_credentials* c2 =
+          comp.has_call_creds() ? ReadCallCreds(comp.call_creds()) : nullptr;
+      if (c1 != nullptr && c2 != nullptr) {
+        grpc_channel_credentials* out =
+            grpc_composite_channel_credentials_create(c1, c2, nullptr);
+        grpc_channel_credentials_release(c1);
+        grpc_call_credentials_release(c2);
+        return out;
+      } else if (c1 != nullptr) {
+        return c1;
+      } else if (c2 != nullptr) {
+        grpc_call_credentials_release(c2);
+        return nullptr;
+      } else {
+        return nullptr;
+      }
+      GPR_UNREACHABLE_CODE(return nullptr);
+    }
+    case api_fuzzer::ChannelCreds::kNull:
+      return nullptr;
+  }
 }
 
 template <typename T>
@@ -463,7 +583,6 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   int pending_channel_watches = 0;
   int pending_pings = 0;
 
-  g_active_call = new_call(nullptr, ROOT);
   g_resource_quota = grpc_resource_quota_create("api_fuzzer");
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
@@ -491,14 +610,11 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
           g_server = nullptr;
         }
       }
-      call_state* s = g_active_call;
-      do {
-        if (s->type != PENDING_SERVER && s->call != nullptr) {
-          s = destroy_call(s);
-        } else {
-          s = s->next;
-        }
-      } while (s != g_active_call);
+      for (auto& call : g_calls) {
+        if (call == nullptr) continue;
+        if (call->type() == CallType::PENDING_SERVER) continue;
+        call.reset();
+      }
 
       g_now = gpr_time_add(g_now, gpr_time_from_seconds(1, GPR_TIMESPAN));
       grpc_timer_manager_tick();
@@ -654,8 +770,8 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       case api_fuzzer::Action::kCreateCall: {
         bool ok = true;
         if (g_channel == nullptr) ok = false;
-        grpc_call* parent_call = ActiveCall();
-        if (parent_call != nullptr && parent_call->type() == CLIENT) {
+        Call* parent_call = ActiveCall();
+        if (parent_call != nullptr && parent_call->type() == CallType::CLIENT) {
           parent_call = nullptr;
         }
         grpc_slice method = ReadSlice(action.create_call().method());
@@ -668,72 +784,73 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
             gpr_time_from_micros(action.create_call().timeout(), GPR_TIMESPAN));
 
         if (ok) {
-          call_state* cs = new_call(g_active_call, CLIENT);
-          cs->call = grpc_channel_create_call(
+          g_calls.emplace_back(new Call(CallType::CLIENT));
+          g_calls.back()->SetCall(grpc_channel_create_call(
               g_channel, parent_call, action.create_call().propagation_mask(),
-              cq, method, &host, deadline, nullptr);
+              cq, method, &host, deadline, nullptr));
         } else {
-          end(&inp);
+          no_more_actions();
         }
         grpc_slice_unref(method);
         grpc_slice_unref(host);
         break;
       }
       // switch the 'current' call
-      case 11: {
-        g_active_call = g_active_call->next;
+      case api_fuzzer::Action::kChangeActiveCall: {
+        g_active_call++;
+        ActiveCall();
         break;
       }
       // queue some ops on a call
-      case 12: {
-        if (g_active_call->type == PENDING_SERVER ||
-            g_active_call->type == ROOT || g_active_call->call == nullptr) {
-          end(&inp);
+      case api_fuzzer::Action::kQueueBatch: {
+        auto* active_call = ActiveCall();
+        if (active_call->type() == CallType::PENDING_SERVER ||
+            active_call->call() == nullptr) {
+          no_more_actions();
           break;
         }
-        size_t num_ops = grpc_fuzzer_get_next_byte(&inp);
-        if (num_ops > 6) {
-          end(&inp);
+        const auto& batch = action.queue_batch().operations();
+        if (batch.size() > 6) {
+          no_more_actions();
           break;
         }
-        grpc_op* ops =
-            static_cast<grpc_op*>(gpr_malloc(sizeof(grpc_op) * num_ops));
-        if (num_ops > 0) memset(ops, 0, sizeof(grpc_op) * num_ops);
+        std::vector<grpc_op> ops;
         bool ok = true;
         size_t i;
-        grpc_op* op;
+        grpc_op op;
         uint8_t has_ops = 0;
-        for (i = 0; i < num_ops; i++) {
-          op = &ops[i];
-          switch (grpc_fuzzer_get_next_byte(&inp)) {
-            default:
+        for (const auto& batch_op : batch) {
+          memset(&op, 0, sizeof(op));
+          switch (batch_op.op_case()) {
+            case api_fuzzer::BatchOp::OP_NOT_SET:
               /* invalid value */
               op->op = (grpc_op_type)-1;
               ok = false;
               break;
-            case GRPC_OP_SEND_INITIAL_METADATA:
-              if (g_active_call->sent_initial_metadata) {
+            case api_fuzzer::BatchOp::kSendInitialMetadata:
+              if (active_call->sent_initial_metadata()) {
                 ok = false;
               } else {
-                g_active_call->sent_initial_metadata = true;
+                active_call->set_sent_initial_metadata();
                 op->op = GRPC_OP_SEND_INITIAL_METADATA;
                 has_ops |= 1 << GRPC_OP_SEND_INITIAL_METADATA;
-                read_metadata(&inp, &op->data.send_initial_metadata.count,
-                              &op->data.send_initial_metadata.metadata,
-                              g_active_call);
+                auto ary = active_call->ReadMetadata(
+                    batch_op.send_initial_metadata().metadata());
+                op.data.send_initial_metadata.count = ary.count;
+                op.data.send_initial_metadata.metadata = ary.metadata;
               }
               break;
-            case GRPC_OP_SEND_MESSAGE:
+            case api_fuzzer::BatchOp::kSendMessage:
               op->op = GRPC_OP_SEND_MESSAGE;
-              if (g_active_call->send_message != nullptr) {
+              if (active_call->send_message() != nullptr) {
                 ok = false;
               } else {
                 has_ops |= 1 << GRPC_OP_SEND_MESSAGE;
-                g_active_call->send_message =
-                    op->data.send_message.send_message = read_message(&inp);
+                active_call->send_message = op->data.send_message.send_message =
+                    ReadSlice(active_call->send_message().message());
               }
               break;
-            case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+            case api_fuzzer::BatchOp::kSendCloseFromClient:
               op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
               has_ops |= 1 << GRPC_OP_SEND_CLOSE_FROM_CLIENT;
               break;
