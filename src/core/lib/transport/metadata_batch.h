@@ -109,7 +109,7 @@ struct HasSimpleMemento {
       sizeof(typename Which::MementoType) <= sizeof(intptr_t);
 };
 
-}
+}  // namespace metadata_detail
 
 // MetadataMap encodes the mapping of metadata keys to metadata values.
 // Right now the API presented is the minimal one that will allow us to
@@ -245,10 +245,10 @@ class MetadataMap {
       static const VTable vtable = {
           absl::EndsWith(Which::key(), "-bin"),
           [](intptr_t value) {
-            delete static_cast<typename Which::MementoType*>(value);
+            delete reinterpret_cast<typename Which::MementoType*>(value);
           },
           [](intptr_t value, MetadataMap* map) {
-            auto* p = static_cast<typename Which::MementoType>(value);
+            auto* p = reinterpret_cast<typename Which::MementoType*>(value);
             map->Set(Which(), Which::MementoToValue(*p));
             return GRPC_ERROR_NONE;
           },
@@ -258,11 +258,11 @@ class MetadataMap {
                 TransportSize(strlen(Which::key()), GRPC_SLICE_LENGTH(value)));
           },
           [](intptr_t value) {
-            auto* p = static_cast<typename Which::MementoType>(value);
+            auto* p = reinterpret_cast<typename Which::MementoType*>(value);
             return absl::StrCat(Which::key(), ": ", Which::DisplayValue(*p));
           }};
       vtable_ = &vtable;
-      value_ = static_cast<intptr_t>(
+      value_ = reinterpret_cast<intptr_t>(
           new typename Which::MementoValue(std::move(value)));
       transport_size_ = transport_size;
     }
