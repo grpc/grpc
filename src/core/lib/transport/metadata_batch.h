@@ -98,6 +98,19 @@ struct GrpcTimeoutMetadata {
   static MementoType DisplayValue(MementoType x) { return x; }
 };
 
+namespace metadata_detail {
+
+// Helper to determine whether a traits metadata is inlinable inside a memento,
+// or (if not) we'll need to take the memory allocation path.
+template <typename Which>
+struct HasSimpleMemento {
+  static constexpr bool value =
+      std::is_trivial<typename Which::MementoType>::value &&
+      sizeof(typename Which::MementoType) <= sizeof(intptr_t);
+};
+
+}
+
 // MetadataMap encodes the mapping of metadata keys to metadata values.
 // Right now the API presented is the minimal one that will allow us to
 // substitute this type for grpc_metadata_batch in a relatively easy fashion. At
@@ -199,10 +212,8 @@ class MetadataMap {
    public:
     template <typename Which>
     Memento(Which,
-            absl::enable_if_t<
-                std::is_trivial<typename Which::MementoType>::value &&
-                    sizeof(typename Which::MementoType) <= sizeof(intptr_t),
-                typename Which::MementoType>
+            absl::enable_if_t<metadata_detail::HasSimpleMemento<Which>::value,
+                              typename Which::MementoType>
                 value,
             uint32_t transport_size) {
       static const VTable vtable = {
@@ -223,6 +234,36 @@ class MetadataMap {
           }};
       vtable_ = &vtable;
       value_ = static_cast<intptr_t>(value);
+      transport_size_ = transport_size;
+    }
+    template <typename Which>
+    Memento(Which,
+            absl::enable_if_t<!metadata_detail::HasSimpleMemento<Which>::value,
+                              typename Which::MementoType>
+                value,
+            uint32_t transport_size) {
+      static const VTable vtable = {
+          absl::EndsWith(Which::key(), "-bin"),
+          [](intptr_t value) {
+            delete static_cast<typename Which::MementoType*>(value);
+          },
+          [](intptr_t value, MetadataMap* map) {
+            auto* p = static_cast<typename Which::MementoType>(value);
+            map->Set(Which(), Which::MementoToValue(*p));
+            return GRPC_ERROR_NONE;
+          },
+          [](intptr_t, const grpc_slice& value) {
+            return Memento(
+                Which(), Which::ParseMemento(value),
+                TransportSize(strlen(Which::key()), GRPC_SLICE_LENGTH(value)));
+          },
+          [](intptr_t value) {
+            auto* p = static_cast<typename Which::MementoType>(value);
+            return absl::StrCat(Which::key(), ": ", Which::DisplayValue(*p));
+          }};
+      vtable_ = &vtable;
+      value_ = static_cast<intptr_t>(
+          new typename Which::MementoValue(std::move(value)));
       transport_size_ = transport_size;
     }
     // Takes ownership of elem
