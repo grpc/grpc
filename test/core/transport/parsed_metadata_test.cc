@@ -14,11 +14,12 @@
 // limitations under the License.
 //
 
+#include "src/core/lib/transport/parsed_metadata.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {

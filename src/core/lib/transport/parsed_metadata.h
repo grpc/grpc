@@ -15,6 +15,18 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_PARSED_METADATA_H
 #define GRPC_CORE_LIB_TRANSPORT_PARSED_METADATA_H
 
+#include <grpc/support/port_platform.h>
+
+#include <cstdint>
+#include <type_traits>
+
+#include "absl/meta/type_traits.h"
+#include "absl/strings/match.h"
+
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/lib/transport/metadata.h"
+
 namespace grpc_core {
 
 namespace metadata_detail {
