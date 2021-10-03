@@ -1230,6 +1230,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/metadata.h )
   s.files += %w( src/core/lib/transport/metadata_batch.cc )
   s.files += %w( src/core/lib/transport/metadata_batch.h )
+  s.files += %w( src/core/lib/transport/parsed_metadata.h )
   s.files += %w( src/core/lib/transport/pid_controller.cc )
   s.files += %w( src/core/lib/transport/pid_controller.h )
   s.files += %w( src/core/lib/transport/static_metadata.cc )
