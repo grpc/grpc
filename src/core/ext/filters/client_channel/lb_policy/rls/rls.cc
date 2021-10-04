@@ -1668,11 +1668,11 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   ResponseInfo response;
   if (error != GRPC_ERROR_NONE) {
     grpc_status_code code;
-    grpc_slice message = grpc_empty_slice();
+    std::string message;
     grpc_error_get_status(error, deadline_, &code, &message,
                           /*http_error=*/nullptr, /*error_string=*/nullptr);
     response.status = absl::Status(static_cast<absl::StatusCode>(code),
-                                   StringViewFromSlice(message));
+                                   message);
   } else if (status_recv_ != GRPC_STATUS_OK) {
     response.status = absl::Status(static_cast<absl::StatusCode>(status_recv_),
                                    StringViewFromSlice(status_details_recv_));
