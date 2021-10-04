@@ -59,6 +59,7 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
   # Workaround for https://github.com/rvm/rvm/issues/5133
+  curl --version
   export CURL_SSL_BACKEND=secure-transport
 
   # Fetch keys per https://rvm.io/rvm/install
