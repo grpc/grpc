@@ -288,8 +288,8 @@ class XdsClient::ChannelState::AdsCallState
 
   void RejectAdsUpdateLocked(grpc_millis update_time,
                              const XdsApi::AdsParseResult& result,
-                             std::map<std::string, ResourceMap>* resource_map);
-  ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
+                             std::map<std::string, ResourceMap>* resource_map)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   static void OnRequestSent(void* arg, grpc_error_handle error);
   void OnRequestSentLocked(grpc_error_handle error)
@@ -748,16 +748,40 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
                     grpc_schedule_on_exec_ctx);
   for (const auto& a : xds_client()->resource_map_) {
     for (const auto& l : a.second.listener_map) {
-      SubscribeLocked(XdsApi::kLdsTypeUrl, std::string(l.first));
+      std::string listener_name_str(l.first);
+      if (absl::StartsWith(l.first, "xdstp:")) {
+        GPR_ASSERT(!a.first.empty());
+        listener_name_str =
+            ConstructFullResourceName(a.first, XdsApi::kLdsTypeUrl, l.first);
+      }
+      SubscribeLocked(XdsApi::kLdsTypeUrl, listener_name_str);
     }
     for (const auto& r : a.second.route_config_map) {
-      SubscribeLocked(XdsApi::kRdsTypeUrl, std::string(r.first));
+      std::string route_config_name_str(r.first);
+      if (absl::StartsWith(r.first, "xdstp:")) {
+        GPR_ASSERT(!a.first.empty());
+        route_config_name_str =
+            ConstructFullResourceName(a.first, XdsApi::kRdsTypeUrl, r.first);
+      }
+      SubscribeLocked(XdsApi::kRdsTypeUrl, route_config_name_str);
     }
     for (const auto& c : a.second.cluster_map) {
-      SubscribeLocked(XdsApi::kCdsTypeUrl, std::string(c.first));
+      std::string cluster_name_str(c.first);
+      if (absl::StartsWith(c.first, "xdstp:")) {
+        GPR_ASSERT(!a.first.empty());
+        cluster_name_str =
+            ConstructFullResourceName(a.first, XdsApi::kCdsTypeUrl, c.first);
+      }
+      SubscribeLocked(XdsApi::kCdsTypeUrl, cluster_name_str);
     }
     for (const auto& e : a.second.endpoint_map) {
-      SubscribeLocked(XdsApi::kEdsTypeUrl, std::string(e.first));
+      std::string endpoint_name_str(e.first);
+      if (absl::StartsWith(e.first, "xdstp:")) {
+        GPR_ASSERT(!a.first.empty());
+        endpoint_name_str =
+            ConstructFullResourceName(a.first, XdsApi::kEdsTypeUrl, e.first);
+      }
+      SubscribeLocked(XdsApi::kEdsTypeUrl, endpoint_name_str);
     }
   }
   // Op: recv initial metadata.
@@ -2030,10 +2054,11 @@ void XdsClient::WatchListenerData(
     absl::string_view listener_name,
     std::unique_ptr<ListenerWatcherInterface> watcher) {
   std::string authority_str = GetAuthorityFromName(listener_name);
-  std::string listener_name_str = GetResourceFromName(listener_name);
+  std::string resource_str = GetResourceFromName(listener_name);
+  std::string listener_name_str = std::string(listener_name);
   MutexLock lock(&mu_);
   ListenerState& listener_state =
-      resource_map_[authority_str].listener_map[listener_name_str];
+      resource_map_[authority_str].listener_map[resource_str];
   ListenerWatcherInterface* w = watcher.get();
   listener_state.watchers[w] = std::move(watcher);
   // If we've already received an LDS update, notify the new watcher
@@ -2045,7 +2070,7 @@ void XdsClient::WatchListenerData(
     }
     w->OnListenerChanged(*listener_state.update);
   }
-  chand_->SubscribeLocked(XdsApi::kLdsTypeUrl, listener_name_str);
+  chand_->SubscribeLocked(XdsApi::kLdsTypeUrl, std::move(listener_name_str));
 }
 
 void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
@@ -2054,15 +2079,15 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
   MutexLock lock(&mu_);
   if (shutting_down_) return;
   std::string authority_str = GetAuthorityFromName(listener_name);
-  std::string listener_name_str = GetResourceFromName(listener_name);
+  std::string resource_str = GetResourceFromName(listener_name);
   ListenerState& listener_state =
-      resource_map_[authority_str].listener_map[listener_name_str];
+      resource_map_[authority_str].listener_map[resource_str];
   auto it = listener_state.watchers.find(watcher);
   if (it != listener_state.watchers.end()) {
     listener_state.watchers.erase(it);
     if (listener_state.watchers.empty()) {
-      resource_map_[authority_str].listener_map.erase(listener_name_str);
-      chand_->UnsubscribeLocked(XdsApi::kLdsTypeUrl, listener_name_str,
+      resource_map_[authority_str].listener_map.erase(resource_str);
+      chand_->UnsubscribeLocked(XdsApi::kLdsTypeUrl, std::string(listener_name),
                                 delay_unsubscription);
     }
   }
@@ -2072,10 +2097,11 @@ void XdsClient::WatchRouteConfigData(
     absl::string_view route_config_name,
     std::unique_ptr<RouteConfigWatcherInterface> watcher) {
   std::string authority_str = GetAuthorityFromName(route_config_name);
-  std::string route_config_name_str = GetResourceFromName(route_config_name);
+  std::string resource_str = GetResourceFromName(route_config_name);
+  std::string route_config_name_str = std::string(route_config_name);
   MutexLock lock(&mu_);
   RouteConfigState& route_config_state =
-      resource_map_[authority_str].route_config_map[route_config_name_str];
+      resource_map_[authority_str].route_config_map[resource_str];
   RouteConfigWatcherInterface* w = watcher.get();
   route_config_state.watchers[w] = std::move(watcher);
   // If we've already received an RDS update, notify the new watcher
@@ -2088,7 +2114,8 @@ void XdsClient::WatchRouteConfigData(
     }
     w->OnRouteConfigChanged(*route_config_state.update);
   }
-  chand_->SubscribeLocked(XdsApi::kRdsTypeUrl, route_config_name_str);
+  chand_->SubscribeLocked(XdsApi::kRdsTypeUrl,
+                          std::move(route_config_name_str));
 }
 
 void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
@@ -2097,16 +2124,16 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
   MutexLock lock(&mu_);
   if (shutting_down_) return;
   std::string authority_str = GetAuthorityFromName(route_config_name);
-  std::string route_config_name_str = GetResourceFromName(route_config_name);
+  std::string resource_str = GetResourceFromName(route_config_name);
   RouteConfigState& route_config_state =
-      resource_map_[authority_str].route_config_map[route_config_name_str];
+      resource_map_[authority_str].route_config_map[resource_str];
   auto it = route_config_state.watchers.find(watcher);
   if (it != route_config_state.watchers.end()) {
     route_config_state.watchers.erase(it);
     if (route_config_state.watchers.empty()) {
-      resource_map_[authority_str].route_config_map.erase(
-          route_config_name_str);
-      chand_->UnsubscribeLocked(XdsApi::kRdsTypeUrl, route_config_name_str,
+      resource_map_[authority_str].route_config_map.erase(resource_str);
+      chand_->UnsubscribeLocked(XdsApi::kRdsTypeUrl,
+                                std::string(route_config_name),
                                 delay_unsubscription);
     }
   }
@@ -2116,10 +2143,11 @@ void XdsClient::WatchClusterData(
     absl::string_view cluster_name,
     std::unique_ptr<ClusterWatcherInterface> watcher) {
   std::string authority_str = GetAuthorityFromName(cluster_name);
-  std::string cluster_name_str = GetResourceFromName(cluster_name);
+  std::string resource_str = GetResourceFromName(cluster_name);
+  std::string cluster_name_str = std::string(cluster_name);
   MutexLock lock(&mu_);
   ClusterState& cluster_state =
-      resource_map_[authority_str].cluster_map[cluster_name_str];
+      resource_map_[authority_str].cluster_map[resource_str];
   ClusterWatcherInterface* w = watcher.get();
   cluster_state.watchers[w] = std::move(watcher);
   // If we've already received a CDS update, notify the new watcher
@@ -2131,7 +2159,7 @@ void XdsClient::WatchClusterData(
     }
     w->OnClusterChanged(cluster_state.update.value());
   }
-  chand_->SubscribeLocked(XdsApi::kCdsTypeUrl, cluster_name_str);
+  chand_->SubscribeLocked(XdsApi::kCdsTypeUrl, std::move(cluster_name_str));
 }
 
 void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
@@ -2140,15 +2168,15 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
   MutexLock lock(&mu_);
   if (shutting_down_) return;
   std::string authority_str = GetAuthorityFromName(cluster_name);
-  std::string cluster_name_str = GetResourceFromName(cluster_name);
+  std::string resource_str = GetResourceFromName(cluster_name);
   ClusterState& cluster_state =
-      resource_map_[authority_str].cluster_map[cluster_name_str];
+      resource_map_[authority_str].cluster_map[resource_str];
   auto it = cluster_state.watchers.find(watcher);
   if (it != cluster_state.watchers.end()) {
     cluster_state.watchers.erase(it);
     if (cluster_state.watchers.empty()) {
-      resource_map_[authority_str].cluster_map.erase(cluster_name_str);
-      chand_->UnsubscribeLocked(XdsApi::kCdsTypeUrl, cluster_name_str,
+      resource_map_[authority_str].cluster_map.erase(resource_str);
+      chand_->UnsubscribeLocked(XdsApi::kCdsTypeUrl, std::string(cluster_name),
                                 delay_unsubscription);
     }
   }
@@ -2158,10 +2186,11 @@ void XdsClient::WatchEndpointData(
     absl::string_view eds_service_name,
     std::unique_ptr<EndpointWatcherInterface> watcher) {
   std::string authority_str = GetAuthorityFromName(eds_service_name);
-  std::string eds_service_name_str = GetResourceFromName(eds_service_name);
+  std::string resource_str = GetResourceFromName(eds_service_name);
+  std::string eds_service_name_str = std::string(eds_service_name);
   MutexLock lock(&mu_);
   EndpointState& endpoint_state =
-      resource_map_[authority_str].endpoint_map[eds_service_name_str];
+      resource_map_[authority_str].endpoint_map[resource_str];
   EndpointWatcherInterface* w = watcher.get();
   endpoint_state.watchers[w] = std::move(watcher);
   // If we've already received an EDS update, notify the new watcher
@@ -2173,7 +2202,7 @@ void XdsClient::WatchEndpointData(
     }
     w->OnEndpointChanged(endpoint_state.update.value());
   }
-  chand_->SubscribeLocked(XdsApi::kEdsTypeUrl, eds_service_name_str);
+  chand_->SubscribeLocked(XdsApi::kEdsTypeUrl, std::move(eds_service_name_str));
 }
 
 void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
@@ -2182,15 +2211,16 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
   MutexLock lock(&mu_);
   if (shutting_down_) return;
   std::string authority_str = GetAuthorityFromName(eds_service_name);
-  std::string eds_service_name_str = GetResourceFromName(eds_service_name);
+  std::string resource_str = GetResourceFromName(eds_service_name);
   EndpointState& endpoint_state =
-      resource_map_[authority_str].endpoint_map[eds_service_name_str];
+      resource_map_[authority_str].endpoint_map[resource_str];
   auto it = endpoint_state.watchers.find(watcher);
   if (it != endpoint_state.watchers.end()) {
     endpoint_state.watchers.erase(it);
     if (endpoint_state.watchers.empty()) {
-      resource_map_[authority_str].endpoint_map.erase(eds_service_name_str);
-      chand_->UnsubscribeLocked(XdsApi::kEdsTypeUrl, eds_service_name_str,
+      resource_map_[authority_str].endpoint_map.erase(resource_str);
+      chand_->UnsubscribeLocked(XdsApi::kEdsTypeUrl,
+                                std::string(eds_service_name),
                                 delay_unsubscription);
     }
   }
@@ -2601,6 +2631,13 @@ std::string XdsClient::GetResourceFromName(absl::string_view name) {
     GPR_ASSERT("Invalid resource name");
   }
   return std::string(name);
+}
+
+std::string XdsClient::ConstructFullResourceName(
+    const std::string& authority, const std::string& resource_type,
+    const std::string& name) {
+  return absl::StrCat("xdstp://", authority, "/", resource_type, "/",
+                      absl::StripPrefix(name, "xdstp:/"));
 }
 
 namespace internal {
