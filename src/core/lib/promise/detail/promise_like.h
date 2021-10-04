@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_LIKE_H
 #define GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_LIKE_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <utility>
 

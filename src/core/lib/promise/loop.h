@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_PROMISE_LOOP_H
 #define GRPC_CORE_LIB_PROMISE_LOOP_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <new>
 #include <type_traits>
