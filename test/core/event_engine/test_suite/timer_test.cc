@@ -59,13 +59,23 @@ TEST_F(EventEngineTimerTest, SupportsCancellation) {
 }
 
 TEST_F(EventEngineTimerTest, CancelledCallbackIsNotExecuted) {
+  constexpr int thread_count = 100;
+  constexpr int call_count_per_thread = 100;
+  std::vector<std::thread> threads;
   {
     auto engine = this->NewEventEngine();
-    auto handle = engine->RunAt(absl::InfiniteFuture(), [this]() {
-      grpc_core::MutexLock lock(&mu_);
-      signaled_ = true;
-    });
-    ASSERT_TRUE(engine->Cancel(handle));
+    for (int thread_n = 0; thread_n < thread_count; ++thread_n) {
+      threads.emplace_back([&]() {
+        for (int call_n = 0; call_n < call_count_per_thread; ++call_n) {
+          ASSERT_TRUE(
+              engine->Cancel(engine->RunAt(absl::InfiniteFuture(), [this]() {
+                grpc_core::MutexLock lock(&mu_);
+                signaled_ = true;
+              })));
+        }
+      });
+    }
+    for (auto& t : threads) t.join();
   }
   // The engine is deleted, and all closures should have been flushed
   grpc_core::MutexLock lock(&mu_);
@@ -73,8 +83,8 @@ TEST_F(EventEngineTimerTest, CancelledCallbackIsNotExecuted) {
 }
 
 TEST_F(EventEngineTimerTest, TimersRespectScheduleOrdering) {
-  // Note: this is a brittle test if the first call to `RunAt` takes longer than
-  // the second callback's wait time.
+  // Note: this is a brittle test if the first call to `RunAt` takes longer
+  // than the second callback's wait time.
   std::vector<uint8_t> ordered;
   uint8_t count = 0;
   grpc_core::MutexLock lock(&mu_);
@@ -97,7 +107,8 @@ TEST_F(EventEngineTimerTest, TimersRespectScheduleOrdering) {
       cv_.WaitWithTimeout(&mu_, absl::Microseconds(100));
     }
   }
-  // The engine is deleted, and all closures should have been flushed beforehand
+  // The engine is deleted, and all closures should have been flushed
+  // beforehand
   ASSERT_THAT(ordered, ElementsAre(1, 2));
 }
 
@@ -119,10 +130,10 @@ void EventEngineTimerTest::ScheduleCheckCB(absl::Time when,
                                            std::atomic<int>* call_count,
                                            std::atomic<int>* fail_count,
                                            int total_expected) {
-  // TODO(hork): make the EventEngine the time source of truth! libuv supports
-  // millis, absl::Time reports in nanos. This generic test will be hard-coded
-  // to the lowest common denominator until EventEngines can compare relative
-  // times with supported resolution.
+  // TODO(hork): make the EventEngine the time source of truth! libuv
+  // supports millis, absl::Time reports in nanos. This generic test will be
+  // hard-coded to the lowest common denominator until EventEngines can
+  // compare relative times with supported resolution.
   int64_t now_millis = absl::ToUnixMillis(absl::Now());
   int64_t when_millis = absl::ToUnixMillis(when);
   EXPECT_LE(when_millis, now_millis);
