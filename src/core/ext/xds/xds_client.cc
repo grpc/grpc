@@ -1248,29 +1248,72 @@ void XdsClient::ChannelState::AdsCallState::RejectAdsUpdateLocked(
             result.resource_names_failed.size());
   }
   std::string details = grpc_error_std_string(result.parse_error);
-  /*for (auto& name : result.resource_names_failed) {
+  for (auto& name : result.resource_names_failed) {
     auto authority = GetAuthorityFromName(name);
     auto resource_name = GetResourceFromName(name);
     auto authority_iter = resource_map->find(authority);
     if (authority_iter != resource_map->end()) {
-      auto resource_iter =
-  authority_iter->second[result.type_url].find(resource_name); if (resource_iter
-  != authority_iter->second[result.type_url].end()) { auto& state =
-  resource_iter->second;
-    // Notify watchers of error.
-    for (const auto& p : state.watchers) {
-      p.first->OnError(GRPC_ERROR_REF(result.parse_error));
-    }
-    // Update resource metadata for CSDS.
-    UpdateResourceMetadataNacked(result.version, details, update_time,
-                                 &state.meta);
+      if (result.type_url == XdsApi::kLdsTypeUrl) {
+        auto resource_iter =
+            authority_iter->second.listener_map.find(resource_name);
+        if (resource_iter == authority_iter->second.listener_map.end()) {
+          continue;
+        }
+        auto& state = resource_iter->second;
+        // Notify watchers of error.
+        for (const auto& p : state.watchers) {
+          p.first->OnError(GRPC_ERROR_REF(result.parse_error));
+        }
+        // Update resource metadata for CSDS.
+        UpdateResourceMetadataNacked(result.version, details, update_time,
+                                     &state.meta);
+      } else if (result.type_url == XdsApi::kRdsTypeUrl) {
+        auto resource_iter =
+            authority_iter->second.route_config_map.find(resource_name);
+        if (resource_iter == authority_iter->second.route_config_map.end()) {
+          continue;
+        }
+        auto& state = resource_iter->second;
+        // Notify watchers of error.
+        for (const auto& p : state.watchers) {
+          p.first->OnError(GRPC_ERROR_REF(result.parse_error));
+        }
+        // Update resource metadata for CSDS.
+        UpdateResourceMetadataNacked(result.version, details, update_time,
+                                     &state.meta);
+      } else if (result.type_url == XdsApi::kCdsTypeUrl) {
+        auto resource_iter =
+            authority_iter->second.cluster_map.find(resource_name);
+        if (resource_iter == authority_iter->second.cluster_map.end()) {
+          continue;
+        }
+        auto& state = resource_iter->second;
+        // Notify watchers of error.
+        for (const auto& p : state.watchers) {
+          p.first->OnError(GRPC_ERROR_REF(result.parse_error));
+        }
+        // Update resource metadata for CSDS.
+        UpdateResourceMetadataNacked(result.version, details, update_time,
+                                     &state.meta);
+      } else if (result.type_url == XdsApi::kEdsTypeUrl) {
+        auto resource_iter =
+            authority_iter->second.endpoint_map.find(resource_name);
+        if (resource_iter == authority_iter->second.endpoint_map.end()) {
+          continue;
+        }
+        auto& state = resource_iter->second;
+        // Notify watchers of error.
+        for (const auto& p : state.watchers) {
+          p.first->OnError(GRPC_ERROR_REF(result.parse_error));
+        }
+        // Update resource metadata for CSDS.
+        UpdateResourceMetadataNacked(result.version, details, update_time,
+                                     &state.meta);
       } else {
-        continue;
+        GPR_ASSERT(0);
       }
-    } else {
-      continue;
     }
-  }*/
+  }
 }
 
 void XdsClient::ChannelState::AdsCallState::OnRequestSent(
@@ -2395,27 +2438,27 @@ std::string XdsClient::DumpClientConfigBinary() {
   // Collect resource metadata from listeners
   auto& lds_map =
       resource_type_metadata_map[XdsApi::kLdsTypeUrl].resource_metadata_map;
-  // for (auto& p : listener_map_) {
-  //  lds_map[p.first] = &p.second.meta;
-  //}
+  for (auto& p : resource_map_[""].listener_map) {
+    lds_map[p.first] = &p.second.meta;
+  }
   // Collect resource metadata from route configs
   auto& rds_map =
       resource_type_metadata_map[XdsApi::kRdsTypeUrl].resource_metadata_map;
-  // for (auto& p : route_config_map_) {
-  //  rds_map[p.first] = &p.second.meta;
-  //}
+  for (auto& p : resource_map_[""].route_config_map) {
+    rds_map[p.first] = &p.second.meta;
+  }
   // Collect resource metadata from clusters
   auto& cds_map =
       resource_type_metadata_map[XdsApi::kCdsTypeUrl].resource_metadata_map;
-  // for (auto& p : cluster_map_) {
-  //  cds_map[p.first] = &p.second.meta;
-  //}
+  for (auto& p : resource_map_[""].cluster_map) {
+    cds_map[p.first] = &p.second.meta;
+  }
   // Collect resource metadata from endpoints
   auto& eds_map =
       resource_type_metadata_map[XdsApi::kEdsTypeUrl].resource_metadata_map;
-  // for (auto& p : endpoint_map_) {
-  //  eds_map[p.first] = &p.second.meta;
-  //}
+  for (auto& p : resource_map_[""].endpoint_map) {
+    eds_map[p.first] = &p.second.meta;
+  }
   // Assemble config dump messages
   return api_.AssembleClientConfig(resource_type_metadata_map);
 }
