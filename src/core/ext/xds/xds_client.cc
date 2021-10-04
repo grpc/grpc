@@ -1276,66 +1276,65 @@ void XdsClient::ChannelState::AdsCallState::RejectAdsUpdateLocked(
     auto authority = GetAuthorityFromName(name);
     auto resource_name = GetResourceFromName(name);
     auto authority_iter = resource_map->find(authority);
-    if (authority_iter != resource_map->end()) {
-      if (result.type_url == XdsApi::kLdsTypeUrl) {
-        auto resource_iter =
-            authority_iter->second.listener_map.find(resource_name);
-        if (resource_iter == authority_iter->second.listener_map.end()) {
-          continue;
-        }
-        auto& state = resource_iter->second;
-        // Notify watchers of error.
-        for (const auto& p : state.watchers) {
-          p.first->OnError(GRPC_ERROR_REF(result.parse_error));
-        }
-        // Update resource metadata for CSDS.
-        UpdateResourceMetadataNacked(result.version, details, update_time,
-                                     &state.meta);
-      } else if (result.type_url == XdsApi::kRdsTypeUrl) {
-        auto resource_iter =
-            authority_iter->second.route_config_map.find(resource_name);
-        if (resource_iter == authority_iter->second.route_config_map.end()) {
-          continue;
-        }
-        auto& state = resource_iter->second;
-        // Notify watchers of error.
-        for (const auto& p : state.watchers) {
-          p.first->OnError(GRPC_ERROR_REF(result.parse_error));
-        }
-        // Update resource metadata for CSDS.
-        UpdateResourceMetadataNacked(result.version, details, update_time,
-                                     &state.meta);
-      } else if (result.type_url == XdsApi::kCdsTypeUrl) {
-        auto resource_iter =
-            authority_iter->second.cluster_map.find(resource_name);
-        if (resource_iter == authority_iter->second.cluster_map.end()) {
-          continue;
-        }
-        auto& state = resource_iter->second;
-        // Notify watchers of error.
-        for (const auto& p : state.watchers) {
-          p.first->OnError(GRPC_ERROR_REF(result.parse_error));
-        }
-        // Update resource metadata for CSDS.
-        UpdateResourceMetadataNacked(result.version, details, update_time,
-                                     &state.meta);
-      } else if (result.type_url == XdsApi::kEdsTypeUrl) {
-        auto resource_iter =
-            authority_iter->second.endpoint_map.find(resource_name);
-        if (resource_iter == authority_iter->second.endpoint_map.end()) {
-          continue;
-        }
-        auto& state = resource_iter->second;
-        // Notify watchers of error.
-        for (const auto& p : state.watchers) {
-          p.first->OnError(GRPC_ERROR_REF(result.parse_error));
-        }
-        // Update resource metadata for CSDS.
-        UpdateResourceMetadataNacked(result.version, details, update_time,
-                                     &state.meta);
-      } else {
-        GPR_ASSERT(0);
+    if (authority_iter == resource_map->end()) continue;
+    if (result.type_url == XdsApi::kLdsTypeUrl) {
+      auto resource_iter =
+          authority_iter->second.listener_map.find(resource_name);
+      if (resource_iter == authority_iter->second.listener_map.end()) {
+        continue;
       }
+      auto& state = resource_iter->second;
+      // Notify watchers of error.
+      for (const auto& p : state.watchers) {
+        p.first->OnError(GRPC_ERROR_REF(result.parse_error));
+      }
+      // Update resource metadata for CSDS.
+      UpdateResourceMetadataNacked(result.version, details, update_time,
+                                   &state.meta);
+    } else if (result.type_url == XdsApi::kRdsTypeUrl) {
+      auto resource_iter =
+          authority_iter->second.route_config_map.find(resource_name);
+      if (resource_iter == authority_iter->second.route_config_map.end()) {
+        continue;
+      }
+      auto& state = resource_iter->second;
+      // Notify watchers of error.
+      for (const auto& p : state.watchers) {
+        p.first->OnError(GRPC_ERROR_REF(result.parse_error));
+      }
+      // Update resource metadata for CSDS.
+      UpdateResourceMetadataNacked(result.version, details, update_time,
+                                   &state.meta);
+    } else if (result.type_url == XdsApi::kCdsTypeUrl) {
+      auto resource_iter =
+          authority_iter->second.cluster_map.find(resource_name);
+      if (resource_iter == authority_iter->second.cluster_map.end()) {
+        continue;
+      }
+      auto& state = resource_iter->second;
+      // Notify watchers of error.
+      for (const auto& p : state.watchers) {
+        p.first->OnError(GRPC_ERROR_REF(result.parse_error));
+      }
+      // Update resource metadata for CSDS.
+      UpdateResourceMetadataNacked(result.version, details, update_time,
+                                   &state.meta);
+    } else if (result.type_url == XdsApi::kEdsTypeUrl) {
+      auto resource_iter =
+          authority_iter->second.endpoint_map.find(resource_name);
+      if (resource_iter == authority_iter->second.endpoint_map.end()) {
+        continue;
+      }
+      auto& state = resource_iter->second;
+      // Notify watchers of error.
+      for (const auto& p : state.watchers) {
+        p.first->OnError(GRPC_ERROR_REF(result.parse_error));
+      }
+      // Update resource metadata for CSDS.
+      UpdateResourceMetadataNacked(result.version, details, update_time,
+                                   &state.meta);
+    } else {
+      GPR_ASSERT(0);
     }
   }
 }
@@ -2612,32 +2611,26 @@ RefCountedPtr<XdsClient> XdsClient::GetOrCreate(const grpc_channel_args* args,
 // "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server.example.com"
 std::string XdsClient::GetAuthorityFromName(absl::string_view name) {
   std::vector<absl::string_view> v = absl::StrSplit(name, '/');
-  if (v.size() > 3) {
+  if (v.size() > 5 && absl::StartsWith(v[0], "xdstp:")) {
     return std::string(v[2]);
-  } else if (v.size() != 1) {
-    GPR_ASSERT("Invalid resource name");
   }
   return "";
 }
 
 std::string XdsClient::GetResourceFromName(absl::string_view name) {
   std::vector<absl::string_view> v = absl::StrSplit(name, '/');
-  if (v.size() == 1) {
-    return std::string(name);
-  }
-  if (v.size() >= 5) {
+  if (v.size() > 5 && absl::StartsWith(v[0], "xdstp:")) {
     return absl::StrCat(std::string(v[0]), "/", std::string(v[4]));
-  } else if (v.size() != 1) {
-    GPR_ASSERT("Invalid resource name");
   }
   return std::string(name);
 }
 
 std::string XdsClient::ConstructFullResourceName(
-    const std::string& authority, const std::string& resource_type,
-    const std::string& name) {
-  return absl::StrCat("xdstp://", authority, "/", resource_type, "/",
-                      absl::StripPrefix(name, "xdstp:/"));
+    absl::string_view authority, absl::string_view resource_type,
+    absl::string_view name) {
+  return absl::StrCat("xdstp://", std::string(authority), "/",
+                      std::string(resource_type), "/",
+                      absl::StripPrefix(std::string(name), "xdstp:/"));
 }
 
 namespace internal {
