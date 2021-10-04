@@ -454,15 +454,17 @@ typedef struct {
   const char* value;
 } expected_md;
 
-typedef struct {
-  grpc_error_handle expected_error;
-  const expected_md* expected;
-  size_t expected_size;
+struct request_metadata_state {
+  request_metadata_state() = default;
+
+  grpc_error_handle expected_error = GRPC_ERROR_NONE;
+  const expected_md* expected = nullptr;
+  size_t expected_size = 0;
   grpc_credentials_mdelem_array md_array;
   grpc_closure on_request_metadata;
-  grpc_call_credentials* creds;
+  grpc_call_credentials* creds = nullptr;
   grpc_polling_entity pollent;
-} request_metadata_state;
+};
 
 static void check_metadata(const expected_md* expected,
                            grpc_credentials_mdelem_array* md_array) {
@@ -506,14 +508,13 @@ static void check_request_metadata(void* arg, grpc_error_handle error) {
   check_metadata(state->expected, &state->md_array);
   grpc_credentials_mdelem_array_destroy(&state->md_array);
   grpc_pollset_set_destroy(grpc_polling_entity_pollset_set(&state->pollent));
-  gpr_free(state);
+  delete state;
 }
 
 static request_metadata_state* make_request_metadata_state(
     grpc_error_handle expected_error, const expected_md* expected,
     size_t expected_size) {
-  request_metadata_state* state =
-      static_cast<request_metadata_state*>(gpr_zalloc(sizeof(*state)));
+  request_metadata_state* state = new request_metadata_state();
   state->expected_error = expected_error;
   state->expected = expected;
   state->expected_size = expected_size;
