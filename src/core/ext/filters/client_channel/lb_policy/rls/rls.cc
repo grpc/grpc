@@ -63,6 +63,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_util.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -1479,13 +1480,24 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy,
       grpc_channel_credentials_find_in_args(parent_channel_args);
   // Use the parent channel's authority.
   std::string authority(lb_policy_->channel_control_helper()->GetAuthority());
-  absl::InlinedVector<grpc_arg, 2> args = {
+  absl::InlinedVector<grpc_arg, 3> args = {
       grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
           const_cast<char*>(authority.c_str())),
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
   };
+  // Propagate fake security connector expected targets, if any.
+  // (This is ugly, but it seems better than propagating all channel args
+  // from the parent channel by default and then having a giant
+  // blacklist of args to strip out, like we do in grpclb.)
+  const char* fake_security_expected_targets = grpc_channel_args_find_string(
+      parent_channel_args, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
+  if (fake_security_expected_targets != nullptr) {
+    args.push_back(grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
+        const_cast<char*>(fake_security_expected_targets)));
+  }
   grpc_channel_args rls_channel_args = {args.size(), args.data()};
   channel_ = grpc_secure_channel_create(creds, target.c_str(),
                                         &rls_channel_args, nullptr);
