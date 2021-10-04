@@ -112,7 +112,7 @@ def gen_run_indices(runs_per_test: int) -> Iterable[str]:
         yield ''
         return
     prefix_length = len('{:d}'.format(runs_per_test - 1))
-    prefix_fmt = '{{:{:d}d}}'.format(prefix_length)
+    prefix_fmt = '{{:0{:d}d}}'.format(prefix_length)
     for i in range(runs_per_test):
         yield prefix_fmt.format(i)
 
