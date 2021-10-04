@@ -59,10 +59,13 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
   # Workaround for https://github.com/rvm/rvm/issues/5133
-  brew install curl
-  brew link curl --force
-  export PATH="/usr/local/bin:$PATH"
+  # brew install curl
+  # brew link curl --force
+  # export PATH="/usr/local/bin:$PATH"
   curl --version
+  curl --insecure https://curl.se/ca/cacert.pem -o cacert.pem
+  echo "f524fc21859b776e18df01a87880efa198112214e13494275dbcbd9bcb71d976 cacert.pem" | sha256sum --check || exit 1
+  export CURL_CA_BUNDLE=cacert.pem
 
   # Fetch keys per https://rvm.io/rvm/install
   gpg_recv_keys_success=0
