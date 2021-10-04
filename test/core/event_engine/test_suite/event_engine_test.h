@@ -27,7 +27,7 @@ extern std::function<
 // Manages the lifetime of the global EventEngine factory.
 class EventEngineTestEnvironment : public testing::Environment {
  public:
-  EventEngineTestEnvironment(
+  explicit EventEngineTestEnvironment(
       std::function<
           std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
           factory)

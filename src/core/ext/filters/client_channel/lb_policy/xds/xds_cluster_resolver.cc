@@ -572,13 +572,6 @@ XdsClusterResolverLb::XdsClusterResolverLb(RefCountedPtr<XdsClient> xds_client,
   }
   // EDS-only flow.
   if (!is_xds_uri_) {
-    // Setup channelz linkage.
-    channelz::ChannelNode* parent_channelz_node =
-        grpc_channel_args_find_pointer<channelz::ChannelNode>(
-            args.args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
-    if (parent_channelz_node != nullptr) {
-      xds_client_->AddChannelzLinkage(parent_channelz_node);
-    }
     // Couple polling.
     grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
                                      interested_parties());
@@ -602,13 +595,6 @@ void XdsClusterResolverLb::ShutdownLocked() {
   MaybeDestroyChildPolicyLocked();
   discovery_mechanisms_.clear();
   if (!is_xds_uri_) {
-    // Remove channelz linkage.
-    channelz::ChannelNode* parent_channelz_node =
-        grpc_channel_args_find_pointer<channelz::ChannelNode>(
-            args_, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
-    if (parent_channelz_node != nullptr) {
-      xds_client_->RemoveChannelzLinkage(parent_channelz_node);
-    }
     // Decouple polling.
     grpc_pollset_set_del_pollset_set(xds_client_->interested_parties(),
                                      interested_parties());

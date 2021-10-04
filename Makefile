@@ -1552,6 +1552,7 @@ LIBGRPC_SRC = \
     src/core/lib/slice/slice_string_helpers.cc \
     src/core/lib/slice/static_slice.cc \
     src/core/lib/surface/api_trace.cc \
+    src/core/lib/surface/builtins.cc \
     src/core/lib/surface/byte_buffer.cc \
     src/core/lib/surface/byte_buffer_reader.cc \
     src/core/lib/surface/call.cc \
@@ -1985,6 +1986,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/slice/slice_string_helpers.cc \
     src/core/lib/slice/static_slice.cc \
     src/core/lib/surface/api_trace.cc \
+    src/core/lib/surface/builtins.cc \
     src/core/lib/surface/byte_buffer.cc \
     src/core/lib/surface/byte_buffer_reader.cc \
     src/core/lib/surface/call.cc \

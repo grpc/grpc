@@ -45,7 +45,9 @@ void grpc_metadata_batch_copy(grpc_metadata_batch* src,
                               grpc_metadata_batch* dst,
                               grpc_linked_mdelem* storage) {
   dst->Clear();
-  dst->SetDeadline(src->deadline());
+  if (auto* p = src->get_pointer(grpc_core::GrpcTimeoutMetadata())) {
+    dst->Set(grpc_core::GrpcTimeoutMetadata(), *p);
+  }
   size_t i = 0;
   src->ForEach([&](grpc_mdelem md) {
     // If the mdelem is not external, take a ref.
@@ -72,7 +74,7 @@ grpc_error_handle grpc_attach_md_to_error(grpc_error_handle src,
                                           grpc_mdelem md) {
   grpc_error_handle out = grpc_error_set_str(
       grpc_error_set_str(src, GRPC_ERROR_STR_KEY,
-                         grpc_slice_ref_internal(GRPC_MDKEY(md))),
-      GRPC_ERROR_STR_VALUE, grpc_slice_ref_internal(GRPC_MDVALUE(md)));
+                         grpc_core::StringViewFromSlice(GRPC_MDKEY(md))),
+      GRPC_ERROR_STR_VALUE, grpc_core::StringViewFromSlice(GRPC_MDVALUE(md)));
   return out;
 }
