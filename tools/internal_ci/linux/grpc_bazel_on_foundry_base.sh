@@ -35,7 +35,7 @@ tools/bazel \
   --invocation_id="${BAZEL_INVOCATION_ID}" \
   --workspace_status_command=tools/remote_build/workspace_status_kokoro.sh \
   $@ \
-  -- //test/... || FAILED="true"
+  -- //test/cpp/end2end:rls_end2end_test@poller=epoll1 || FAILED="true"
 
 if [ "$UPLOAD_TEST_RESULTS" != "" ]
 then

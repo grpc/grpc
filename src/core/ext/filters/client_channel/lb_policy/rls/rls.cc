@@ -74,7 +74,7 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_lb_rls_trace(false, "rls_lb");
+TraceFlag grpc_lb_rls_trace(true, "rls_lb");
 
 namespace {
 
