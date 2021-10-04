@@ -98,7 +98,7 @@ grpc_error_handle grpc_error_set_int(grpc_error_handle src,
                                      grpc_error_ints which, intptr_t value) {
   if (src == GRPC_ERROR_NONE) {
     src = absl::UnknownError("");
-    StatusSetStr(&src, grpc_core::StatusIntProperty::kRpcStatus,
+    StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
                  GRPC_STATUS_OK);
   }
   grpc_core::StatusSetInt(
@@ -139,16 +139,13 @@ grpc_error_handle grpc_error_set_str(grpc_error_handle src,
                                      absl::string_view str) {
   if (src == GRPC_ERROR_NONE) {
     src = absl::UnknownError("");
-    StatusSetStr(&src, grpc_core::StatusIntProperty::kRpcStatus,
+    StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
                  GRPC_STATUS_OK);
   }
   if (which == GRPC_ERROR_STR_DESCRIPTION) {
     // To change the message of absl::Status, a new instance should be created
     // with a code and payload because it doesn't have a setter for it.
-    absl::Status s = absl::Status(
-        src.code(),
-        std::string(reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(str)),
-                    GRPC_SLICE_LENGTH(str)));
+    absl::Status s = absl::Status(src.code(), str);
     src.ForEachPayload(
         [&](absl::string_view type_url, const absl::Cord& payload) {
           s.SetPayload(type_url, payload);
@@ -170,7 +167,7 @@ bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
     if (msg.empty()) {
       return false;
     } else {
-      *s = msg;
+      *s = std::string(msg);
       return true;
     }
   } else {

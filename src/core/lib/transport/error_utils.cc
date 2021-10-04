@@ -135,7 +135,7 @@ void grpc_error_get_status(grpc_error_handle error, grpc_millis deadline,
       if (!grpc_error_get_str(found_error, GRPC_ERROR_STR_DESCRIPTION,
                               message)) {
 #ifdef GRPC_ERROR_IS_ABSEIL_STATUS
-        *message = grpc_error_std_string(error));
+        *message = grpc_error_std_string(error);
 #else
         *message = "unknown error";
 #endif
