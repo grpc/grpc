@@ -96,23 +96,21 @@ struct call_data {
 
 static grpc_metadata_array metadata_batch_to_md_array(
     const grpc_metadata_batch* batch) {
-  grpc_linked_mdelem* l;
   grpc_metadata_array result;
   grpc_metadata_array_init(&result);
-  for (l = batch->list.head; l != nullptr; l = l->next) {
+  batch->ForEach([&](grpc_mdelem md) {
     grpc_metadata* usr_md = nullptr;
-    grpc_mdelem md = l->md;
     grpc_slice key = GRPC_MDKEY(md);
     grpc_slice value = GRPC_MDVALUE(md);
     if (result.count == result.capacity) {
-      result.capacity = GPR_MAX(result.capacity + 8, result.capacity * 2);
+      result.capacity = std::max(result.capacity + 8, result.capacity * 2);
       result.metadata = static_cast<grpc_metadata*>(gpr_realloc(
           result.metadata, result.capacity * sizeof(grpc_metadata)));
     }
     usr_md = &result.metadata[result.count++];
     usr_md->key = grpc_slice_ref_internal(key);
     usr_md->value = grpc_slice_ref_internal(value);
-  }
+  });
   return result;
 }
 

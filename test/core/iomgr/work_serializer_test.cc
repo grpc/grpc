@@ -16,19 +16,20 @@
  *
  */
 
+#include "src/core/lib/iomgr/work_serializer.h"
+
 #include <memory>
 
 #include <gtest/gtest.h>
+
+#include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "absl/memory/memory.h"
-
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "test/core/util/test_config.h"
 
 namespace {
@@ -106,8 +107,8 @@ TEST(WorkSerializerTest, ExecuteMany) {
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
-  grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
+  grpc_init();
   int retval = RUN_ALL_TESTS();
   grpc_shutdown();
   return retval;

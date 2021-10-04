@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_INTERCEPTED_CHANNEL_H
 #define GRPCPP_IMPL_CODEGEN_INTERCEPTED_CHANNEL_H
 
+// IWYU pragma: private
+
 #include <grpcpp/impl/codegen/channel_interface.h>
 
 namespace grpc {

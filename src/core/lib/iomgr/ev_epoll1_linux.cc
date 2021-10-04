@@ -18,15 +18,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <grpc/support/log.h>
+
+#include "src/core/lib/iomgr/port.h"
 
 /* This polling engine is only relevant on linux kernels supporting epoll
    epoll_create() or epoll_create1() */
 #ifdef GRPC_LINUX_EPOLL
-#include "src/core/lib/iomgr/ev_epoll1_linux.h"
-
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -54,6 +52,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/block_annotate.h"
+#include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/lockfree_event.h"
@@ -196,7 +195,7 @@ struct grpc_pollset_worker {
     (worker)->kick_state_mutator = __LINE__; \
   } while (false)
 
-#define MAX_NEIGHBORHOODS 1024
+#define MAX_NEIGHBORHOODS 1024u
 
 typedef struct pollset_neighborhood {
   union {
@@ -526,7 +525,8 @@ static grpc_error_handle pollset_global_init(void) {
                 &ev) != 0) {
     return GRPC_OS_ERROR(errno, "epoll_ctl");
   }
-  g_num_neighborhoods = GPR_CLAMP(gpr_cpu_num_cores(), 1, MAX_NEIGHBORHOODS);
+  g_num_neighborhoods =
+      grpc_core::Clamp(gpr_cpu_num_cores(), 1u, MAX_NEIGHBORHOODS);
   g_neighborhoods = static_cast<pollset_neighborhood*>(
       gpr_zalloc(sizeof(*g_neighborhoods) * g_num_neighborhoods));
   for (size_t i = 0; i < g_num_neighborhoods; i++) {

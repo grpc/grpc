@@ -19,6 +19,8 @@ cdef _AioState _global_aio_state = _AioState()
 
 
 class AsyncIOEngine(enum.Enum):
+    # NOTE(lidiz) the support for custom_io_manager is removed in favor of the
+    # EventEngine project, which will be the only IO platform in Core.
     CUSTOM_IO_MANAGER = 'custom_io_manager'
     POLLER = 'poller'
 
@@ -40,29 +42,6 @@ cdef class _AioState:
         self.cq = None
 
 
-cdef _initialize_custom_io_manager():
-    # Activates asyncio IO manager.
-    # NOTE(lidiz) Custom IO manager must be activated before the first
-    # `grpc_init()`. Otherwise, some special configurations in Core won't
-    # pick up the change, and resulted in SEGFAULT or ABORT.
-    install_asyncio_iomgr()
-
-    # Initializes gRPC Core, must be called before other Core API
-    grpc_init()
-
-    # Timers are triggered by the Asyncio loop. We disable
-    # the background thread that is being used by the native
-    # gRPC iomgr.
-    grpc_timer_manager_set_threading(False)
-
-    # gRPC callbaks are executed within the same thread used by the Asyncio
-    # event loop, as it is being done by the other Asyncio callbacks.
-    Executor.SetThreadingAll(False)
-
-    # Creates the only completion queue
-    _global_aio_state.cq = CallbackCompletionQueue()
-
-
 cdef _initialize_poller():
     # Initializes gRPC Core, must be called before other Core API
     grpc_init()
@@ -80,9 +59,7 @@ cdef _actual_aio_initialization():
     _LOGGER.debug('Using %s as I/O engine', _global_aio_state.engine)
 
     # Initializes the process-level state accordingly
-    if _global_aio_state.engine is AsyncIOEngine.CUSTOM_IO_MANAGER:
-        _initialize_custom_io_manager()
-    elif _global_aio_state.engine is AsyncIOEngine.POLLER:
+    if _global_aio_state.engine is AsyncIOEngine.POLLER:
         _initialize_poller()
     else:
         raise ValueError('Unsupported engine type [%s]' % _global_aio_state.engine)
@@ -98,13 +75,7 @@ def _grpc_shutdown_wrapper(_):
 
 
 cdef _actual_aio_shutdown():
-    if _global_aio_state.engine is AsyncIOEngine.CUSTOM_IO_MANAGER:
-        future = schedule_coro_threadsafe(
-            _global_aio_state.cq.shutdown(),
-            (<CallbackCompletionQueue>_global_aio_state.cq)._loop
-        )
-        future.add_done_callback(_grpc_shutdown_wrapper)
-    elif _global_aio_state.engine is AsyncIOEngine.POLLER:
+    if _global_aio_state.engine is AsyncIOEngine.POLLER:
         (<PollerCompletionQueue>_global_aio_state.cq).shutdown()
         grpc_shutdown()
     else:

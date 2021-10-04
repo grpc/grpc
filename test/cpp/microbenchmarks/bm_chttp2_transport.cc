@@ -18,15 +18,19 @@
 
 /* Microbenchmarks around CHTTP2 transport operations */
 
+#include <string.h>
+
+#include <memory>
+#include <queue>
+#include <sstream>
+
 #include <benchmark/benchmark.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpcpp/support/channel_arguments.h>
-#include <string.h>
-#include <memory>
-#include <queue>
-#include <sstream>
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -319,11 +323,9 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
     op.payload = &op_payload;
   };
 
-  grpc_metadata_batch b;
-  grpc_metadata_batch_init(&b);
-  b.deadline = GRPC_MILLIS_INF_FUTURE;
   std::vector<grpc_mdelem> elems = Metadata::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
+  grpc_metadata_batch b;
   for (size_t i = 0; i < elems.size(); i++) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
@@ -355,7 +357,6 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, start.get(), GRPC_ERROR_NONE);
   f.FlushExecCtx();
   gpr_event_wait(&bm_done, gpr_inf_future(GPR_CLOCK_REALTIME));
-  grpc_metadata_batch_destroy(&b);
   track_counters.Finish(state);
 }
 BENCHMARK_TEMPLATE(BM_StreamCreateSendInitialMetadataDestroy,
@@ -423,12 +424,10 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   grpc_slice send_slice = grpc_slice_malloc_large(state.range(0));
   memset(GRPC_SLICE_START_PTR(send_slice), 0, GRPC_SLICE_LENGTH(send_slice));
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> send_stream;
-  grpc_metadata_batch b;
-  grpc_metadata_batch_init(&b);
-  b.deadline = GRPC_MILLIS_INF_FUTURE;
   std::vector<grpc_mdelem> elems =
       RepresentativeClientInitialMetadata::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
+  grpc_metadata_batch b;
   for (size_t i = 0; i < elems.size(); i++) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
@@ -487,7 +486,6 @@ static void BM_TransportStreamSend(benchmark::State& state) {
       MakeOnceClosure([s](grpc_error_handle /*error*/) { delete s; }));
   f.FlushExecCtx();
   track_counters.Finish(state);
-  grpc_metadata_batch_destroy(&b);
   grpc_slice_unref(send_slice);
 }
 BENCHMARK(BM_TransportStreamSend)->Range(0, 128 * 1024 * 1024);
@@ -565,14 +563,10 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
     op.payload = &op_payload;
   };
 
-  grpc_metadata_batch b;
-  grpc_metadata_batch_init(&b);
-  grpc_metadata_batch b_recv;
-  grpc_metadata_batch_init(&b_recv);
-  b.deadline = GRPC_MILLIS_INF_FUTURE;
   std::vector<grpc_mdelem> elems =
       RepresentativeClientInitialMetadata::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
+  grpc_metadata_batch b;
   for (size_t i = 0; i < elems.size(); i++) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
@@ -635,10 +629,11 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   });
 
   reset_op();
+  auto b_recv = absl::make_unique<grpc_metadata_batch>();
   op.send_initial_metadata = true;
   op.payload->send_initial_metadata.send_initial_metadata = &b;
   op.recv_initial_metadata = true;
-  op.payload->recv_initial_metadata.recv_initial_metadata = &b_recv;
+  op.payload->recv_initial_metadata.recv_initial_metadata = b_recv.get();
   op.payload->recv_initial_metadata.recv_initial_metadata_ready =
       do_nothing.get();
   op.on_complete = c.get();
@@ -672,10 +667,10 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   f.FlushExecCtx();
   gpr_event_wait(stream_cancel_done, gpr_inf_future(GPR_CLOCK_REALTIME));
   done_events.emplace_back(stream_cancel_done);
-  s->DestroyThen(
-      MakeOnceClosure([s](grpc_error_handle /*error*/) { delete s; }));
-  grpc_metadata_batch_destroy(&b);
-  grpc_metadata_batch_destroy(&b_recv);
+  s->DestroyThen(MakeOnceClosure([s, &b_recv](grpc_error_handle /*error*/) {
+    b_recv.reset();
+    delete s;
+  }));
   f.FlushExecCtx();
   track_counters.Finish(state);
   grpc_slice_unref(incoming_data);

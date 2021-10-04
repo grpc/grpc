@@ -16,11 +16,11 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <string.h>
 
 #include <grpc/support/log.h>
+
+#include "test/core/end2end/end2end_tests.h"
 
 const char* get_host_override_string(const char* str,
                                      grpc_end2end_test_config config) {

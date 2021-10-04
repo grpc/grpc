@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -35,6 +33,7 @@
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -213,13 +212,17 @@ static void request_with_payload_template(
   CQ_EXPECT_COMPLETION(cqv, tag(100), true);
   cq_verify(cqv);
 
-  GPR_ASSERT(GPR_BITCOUNT(grpc_call_test_only_get_encodings_accepted_by_peer(
-                 s)) == GRPC_COMPRESS_ALGORITHMS_COUNT);
-  GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
+  GPR_ASSERT(grpc_core::BitCount(
+                 grpc_call_test_only_get_encodings_accepted_by_peer(s)) ==
+             GRPC_COMPRESS_ALGORITHMS_COUNT);
+  GPR_ASSERT(
+      grpc_core::GetBit(grpc_call_test_only_get_encodings_accepted_by_peer(s),
                         GRPC_COMPRESS_NONE) != 0);
-  GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
+  GPR_ASSERT(
+      grpc_core::GetBit(grpc_call_test_only_get_encodings_accepted_by_peer(s),
                         GRPC_COMPRESS_DEFLATE) != 0);
-  GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
+  GPR_ASSERT(
+      grpc_core::GetBit(grpc_call_test_only_get_encodings_accepted_by_peer(s),
                         GRPC_COMPRESS_GZIP) != 0);
 
   memset(ops, 0, sizeof(ops));

@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_UTILS_TRANSPORT_STREAM_RECEIVER_IMPL_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_UTILS_TRANSPORT_STREAM_RECEIVER_IMPL_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <functional>
 #include <map>
@@ -50,12 +50,21 @@ class TransportStreamReceiverImpl : public TransportStreamReceiver {
                                   absl::StatusOr<Metadata> trailing_metadata,
                                   int status) override;
 
-  void CancelRecvMessageCallbacksDueToTrailingMetadata(
-      StreamIdentifier id) override;
-  void Clear(StreamIdentifier id) override;
-  void CancelStream(StreamIdentifier, absl::Status error) override;
+  void CancelStream(StreamIdentifier id) override;
 
  private:
+  // Trailing metadata marks the end of one-side of the stream. Thus, after
+  // receiving trailing metadata from the other-end, we know that there will
+  // never be in-coming message data anymore, and all recv_message callbacks
+  // (as well as recv_initial_metadata callback, if there's any) registered will
+  // never be satisfied. This function cancels all such callbacks gracefully
+  // (with GRPC_ERROR_NONE) to avoid being blocked waiting for them.
+  void OnRecvTrailingMetadata(StreamIdentifier id);
+
+  void CancelInitialMetadataCallback(StreamIdentifier id, absl::Status error);
+  void CancelMessageCallback(StreamIdentifier id, absl::Status error);
+  void CancelTrailingMetadataCallback(StreamIdentifier id, absl::Status error);
+
   std::map<StreamIdentifier, InitialMetadataCallbackType> initial_metadata_cbs_;
   std::map<StreamIdentifier, MessageDataCallbackType> message_cbs_;
   std::map<StreamIdentifier, TrailingMetadataCallbackType>
@@ -91,7 +100,7 @@ class TransportStreamReceiverImpl : public TransportStreamReceiver {
   // when RegisterRecvMessage() gets called, we should check whether
   // recv_message_cancelled_ contains the corresponding stream ID, and if so,
   // directly cancel the callback gracefully without pending it.
-  std::set<StreamIdentifier> recv_message_cancelled_ ABSL_GUARDED_BY(m_);
+  std::set<StreamIdentifier> trailing_metadata_recvd_ ABSL_GUARDED_BY(m_);
 
   bool is_client_;
   // Called when receiving initial metadata to inform the server about a new

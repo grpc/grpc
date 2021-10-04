@@ -16,6 +16,12 @@
  *
  */
 
+#include <sstream>
+
+#include "absl/flags/flag.h"
+#include "absl/strings/str_cat.h"
+#include "absl/synchronization/mutex.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -27,11 +33,6 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/xds_server_builder.h>
 
-#include <sstream>
-
-#include "absl/flags/flag.h"
-#include "absl/strings/str_cat.h"
-#include "absl/synchronization/mutex.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/transport/byte_stream.h"
@@ -55,7 +56,7 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
-using grpc::experimental::XdsServerBuilder;
+using grpc::XdsServerBuilder;
 using grpc::testing::Empty;
 using grpc::testing::HealthCheckServiceImpl;
 using grpc::testing::SimpleRequest;
@@ -128,11 +129,11 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
   if (secure_mode) {
-    XdsServerBuilder xds_builder;
+    grpc::XdsServerBuilder xds_builder;
     xds_builder.RegisterService(&service);
-    xds_builder.AddListeningPort(absl::StrCat("0.0.0.0:", port),
-                                 grpc::experimental::XdsServerCredentials(
-                                     grpc::InsecureServerCredentials()));
+    xds_builder.AddListeningPort(
+        absl::StrCat("0.0.0.0:", port),
+        grpc::XdsServerCredentials(grpc::InsecureServerCredentials()));
     xds_enabled_server = xds_builder.BuildAndStart();
     gpr_log(GPR_INFO, "Server starting on 0.0.0.0:%d", port);
     builder.RegisterService(&health_check_service);

@@ -17,10 +17,11 @@
  */
 
 #include "src/core/lib/transport/status_metadata.h"
-#include "src/core/lib/transport/static_metadata.h"
-#include "test/core/util/test_config.h"
 
 #include <gtest/gtest.h>
+
+#include "src/core/lib/transport/static_metadata.h"
+#include "test/core/util/test_config.h"
 
 namespace {
 

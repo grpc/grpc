@@ -267,7 +267,7 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
       const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
   const grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add(args.args, &new_arg, 1);
-  GPR_SWAP(const grpc_channel_args*, new_args, args.args);
+  std::swap(new_args, args.args);
   grpc_channel_args_destroy(new_args);
   latest_update_args_ = std::move(args);
   // If we are not in idle, start connection attempt immediately.

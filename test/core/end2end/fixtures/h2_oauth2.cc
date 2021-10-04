@@ -16,10 +16,11 @@
  *
  */
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <stdio.h>
 #include <string.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"

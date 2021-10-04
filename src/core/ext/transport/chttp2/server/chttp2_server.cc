@@ -23,6 +23,7 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <string.h>
+
 #include <vector>
 
 #include "absl/strings/match.h"
@@ -41,7 +42,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
-#include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -319,8 +320,8 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
       interested_parties_(grpc_pollset_set_create()),
       channel_resource_user_(channel_resource_user) {
   grpc_pollset_set_add_pollset(interested_parties_, accepting_pollset_);
-  HandshakerRegistry::AddHandshakers(HANDSHAKER_SERVER, args,
-                                     interested_parties_, handshake_mgr_.get());
+  CoreConfiguration::Get().handshaker_registry().AddHandshakers(
+      HANDSHAKER_SERVER, args, interested_parties_, handshake_mgr_.get());
 }
 
 Chttp2ServerListener::ActiveConnection::HandshakingState::~HandshakingState() {
@@ -752,8 +753,8 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     if (!args_result.ok()) {
       gpr_log(GPR_DEBUG, "Closing connection: %s",
               args_result.status().ToString().c_str());
-      endpoint_cleanup(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          args_result.status().ToString().c_str()));
+      endpoint_cleanup(
+          GRPC_ERROR_CREATE_FROM_CPP_STRING(args_result.status().ToString()));
       return;
     }
     grpc_error_handle error = GRPC_ERROR_NONE;

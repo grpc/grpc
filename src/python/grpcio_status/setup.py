@@ -53,6 +53,7 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
     'License :: OSI Approved :: Apache Software License',
 ]
 
@@ -93,5 +94,6 @@ setuptools.setup(name='grpcio-status',
                  classifiers=CLASSIFIERS,
                  package_dir=PACKAGE_DIRECTORIES,
                  packages=setuptools.find_packages('.'),
+                 python_requires='>=3.6',
                  install_requires=INSTALL_REQUIRES,
                  cmdclass=COMMAND_CLASS)

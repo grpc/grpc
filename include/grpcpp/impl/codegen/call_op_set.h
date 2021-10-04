@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CALL_OP_SET_H
 #define GRPCPP_IMPL_CODEGEN_CALL_OP_SET_H
 
+// IWYU pragma: private
+
 #include <cstring>
 #include <map>
 #include <memory>

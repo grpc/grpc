@@ -15,9 +15,7 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_POPULARITY_COUNT_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_POPULARITY_COUNT_H
 
-#include <grpc/impl/codegen/port_platform.h>
-
-#include "include/grpc/impl/codegen/port_platform.h"
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

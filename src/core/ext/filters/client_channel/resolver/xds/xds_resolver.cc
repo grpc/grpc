@@ -469,7 +469,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     RefCountedPtr<ServiceConfig>* method_config) {
   std::vector<std::string> fields;
   // Set retry policy if any.
-  if (route.retry_policy.has_value()) {
+  if (route.retry_policy.has_value() && !route.retry_policy->retry_on.Empty()) {
     std::vector<std::string> retry_parts;
     retry_parts.push_back(absl::StrFormat(
         "\"retryPolicy\": {\n"
@@ -538,11 +538,9 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     auto method_config_field =
         filter_impl->GenerateServiceConfig(http_filter.config, config_override);
     if (!method_config_field.ok()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("failed to generate method config for HTTP filter ",
-                       http_filter.name, ": ",
-                       method_config_field.status().ToString())
-              .c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "failed to generate method config for HTTP filter ", http_filter.name,
+          ": ", method_config_field.status().ToString()));
     }
     per_filter_configs[method_config_field->service_config_field_name]
         .push_back(method_config_field->element);
@@ -599,8 +597,7 @@ absl::optional<absl::string_view> GetHeaderValue(
   } else if (header_name == "content-type") {
     return "application/grpc";
   }
-  return grpc_metadata_batch_get_value(initial_metadata, header_name,
-                                       concatenated_value);
+  return initial_metadata->GetValue(header_name, concatenated_value);
 }
 
 bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
@@ -769,12 +766,6 @@ void XdsResolver::StartLocked() {
   }
   grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
                                    interested_parties_);
-  channelz::ChannelNode* parent_channelz_node =
-      grpc_channel_args_find_pointer<channelz::ChannelNode>(
-          args_, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
-  if (parent_channelz_node != nullptr) {
-    xds_client_->AddChannelzLinkage(parent_channelz_node);
-  }
   auto watcher = absl::make_unique<ListenerWatcher>(Ref());
   listener_watcher_ = watcher.get();
   xds_client_->WatchListenerData(server_name_, std::move(watcher));
@@ -792,12 +783,6 @@ void XdsResolver::ShutdownLocked() {
     if (route_config_watcher_ != nullptr) {
       xds_client_->CancelRouteConfigDataWatch(
           server_name_, route_config_watcher_, /*delay_unsubscription=*/false);
-    }
-    channelz::ChannelNode* parent_channelz_node =
-        grpc_channel_args_find_pointer<channelz::ChannelNode>(
-            args_, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
-    if (parent_channelz_node != nullptr) {
-      xds_client_->RemoveChannelzLinkage(parent_channelz_node);
     }
     grpc_pollset_set_del_pollset_set(xds_client_->interested_parties(),
                                      interested_parties_);
@@ -848,10 +833,9 @@ void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
   XdsApi::RdsUpdate::VirtualHost* vhost =
       rds_update.FindVirtualHostForDomain(server_name_);
   if (vhost == nullptr) {
-    OnError(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    OnError(GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("could not find VirtualHost for ", server_name_,
-                     " in RouteConfiguration")
-            .c_str()));
+                     " in RouteConfiguration")));
     return;
   }
   // Save the virtual host in the resolver.

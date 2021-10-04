@@ -16,12 +16,12 @@
  *
  */
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 #include "test/core/util/test_config.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 const size_t kTestMinTagLengthForCorruption = 8;
 const size_t kTestNumCrypters = 3;
@@ -120,7 +120,9 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(message_length == plaintext_bytes_written);
-  GPR_ASSERT(memcmp(message, plaintext, message_length) == 0);
+  if (message_length != 0) {
+    GPR_ASSERT(memcmp(message, plaintext, message_length) == 0);
+  }
 
   /**
    * The returned plaintext will be zeroed if there was an authentication error.
@@ -142,7 +144,9 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
           status, GRPC_STATUS_FAILED_PRECONDITION, "Checking tag failed.",
           error_message));
       GPR_ASSERT(plaintext_bytes_written == 0);
-      GPR_ASSERT(memcmp(zero_message, plaintext, plaintext_length) == 0);
+      if (plaintext_length != 0) {
+        GPR_ASSERT(memcmp(zero_message, plaintext, plaintext_length) == 0);
+      }
       gpr_free(corrupt_nonce);
       gpr_free(error_message);
     }
@@ -162,7 +166,9 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
         status, GRPC_STATUS_FAILED_PRECONDITION, error_message,
         "Checking tag failed"));
     GPR_ASSERT(plaintext_bytes_written == 0);
-    GPR_ASSERT(memcmp(zero_message, plaintext, plaintext_length) == 0);
+    if (plaintext_length != 0) {
+      GPR_ASSERT(memcmp(zero_message, plaintext, plaintext_length) == 0);
+    }
     gpr_free(error_message);
     gpr_free(corrupt_ciphertext_and_tag);
 
@@ -176,7 +182,9 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
         corrupt_ciphertext_and_tag, ciphertext_bytes_written, plaintext,
         plaintext_length, &plaintext_bytes_written, &error_message);
     GPR_ASSERT(plaintext_bytes_written == 0);
-    GPR_ASSERT(memcmp(zero_message, plaintext, plaintext_length) == 0);
+    if (plaintext_length != 0) {
+      GPR_ASSERT(memcmp(zero_message, plaintext, plaintext_length) == 0);
+    }
     GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
         status, GRPC_STATUS_FAILED_PRECONDITION, error_message,
         "Checking tag failed"));
@@ -198,7 +206,9 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
         status, GRPC_STATUS_FAILED_PRECONDITION, error_message,
         "Checking tag failed"));
     GPR_ASSERT(plaintext_bytes_written == 0);
-    GPR_ASSERT(memcmp(zero_message, plaintext, plaintext_length) == 0);
+    if (plaintext_length != 0) {
+      GPR_ASSERT(memcmp(zero_message, plaintext, plaintext_length) == 0);
+    }
     gpr_free(error_message);
     gpr_free(corrupt_ciphertext_and_tag);
   }
@@ -292,7 +302,9 @@ static void gsec_test_multiple_random_encrypt_decrypt(
         &(plaintext_bytes_writtens[ind]), nullptr);
     GPR_ASSERT(status == GRPC_STATUS_OK);
     GPR_ASSERT(message_length == plaintext_bytes_writtens[ind]);
-    GPR_ASSERT(memcmp(messages[ind], plaintexts[ind], message_length) == 0);
+    if (message_length != 0) {
+      GPR_ASSERT(memcmp(messages[ind], plaintexts[ind], message_length) == 0);
+    }
   }
 
   /* Slice the plaintext and encrypt with iovecs */
@@ -358,8 +370,10 @@ static void gsec_test_multiple_random_encrypt_decrypt(
                        decrypted_vec, &decrypted_length, &error_details),
                    error_details);
     GPR_ASSERT(decrypted_vec.iov_len == message_length);
-    GPR_ASSERT(memcmp(decrypted_vec.iov_base, messages[ind], message_length) ==
-               0);
+    if (message_length != 0) {
+      GPR_ASSERT(
+          memcmp(decrypted_vec.iov_base, messages[ind], message_length) == 0);
+    }
     free(decrypted);
     free(aad_vecs);
     free(ciphertext_vecs);
@@ -713,8 +727,10 @@ static void gsec_test_encrypt_decrypt_test_vector(
       test_vector->ciphertext_and_tag_length, plaintext_bytes, plaintext_length,
       &plaintext_bytes_written, nullptr);
   GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(memcmp(test_vector->plaintext, plaintext_bytes,
-                    plaintext_bytes_written) == 0);
+  if (plaintext_bytes_written != 0) {
+    GPR_ASSERT(memcmp(test_vector->plaintext, plaintext_bytes,
+                      plaintext_bytes_written) == 0);
+  }
 
   gpr_free(ciphertext_and_tag_bytes);
   gpr_free(plaintext_bytes);

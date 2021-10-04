@@ -18,13 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <inttypes.h>
 
-#ifdef GRPC_WINSOCK_SOCKET
+#include "src/core/lib/iomgr/port.h"
 
-#include "src/core/lib/iomgr/sockaddr_windows.h"
+#ifdef GRPC_WINSOCK_SOCKET
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -35,6 +33,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
@@ -226,8 +225,7 @@ failure:
   grpc_error_handle final_error =
       grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Failed to connect", &error, 1),
-                         GRPC_ERROR_STR_TARGET_ADDRESS,
-                         grpc_slice_from_cpp_string(std::move(target_uri)));
+                         GRPC_ERROR_STR_TARGET_ADDRESS, target_uri);
   GRPC_ERROR_UNREF(error);
   grpc_slice_allocator_destroy(slice_allocator);
   if (socket != NULL) {

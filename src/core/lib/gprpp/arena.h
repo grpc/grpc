@@ -27,6 +27,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <atomic>
 #include <new>
 #include <utility>
@@ -36,8 +38,6 @@
 
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/spinlock.h"
-
-#include <stddef.h>
 
 namespace grpc_core {
 

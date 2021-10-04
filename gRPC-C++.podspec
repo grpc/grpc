@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.41.0-dev'
+  version = '1.42.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -203,6 +203,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
     ss.dependency 'abseil/types/variant', abseil_version
+    ss.dependency 'abseil/utility/utility', abseil_version
 
     ss.source_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                       'src/core/ext/filters/client_channel/backup_poller.h',
@@ -282,10 +283,13 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/frame_rst_stream.h',
                       'src/core/ext/transport/chttp2/transport/frame_settings.h',
                       'src/core/ext/transport/chttp2/transport/frame_window_update.h',
+                      'src/core/ext/transport/chttp2/transport/hpack_constants.h',
                       'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
                       'src/core/ext/transport/chttp2/transport/hpack_encoder_index.h',
+                      'src/core/ext/transport/chttp2/transport/hpack_encoder_table.h',
                       'src/core/ext/transport/chttp2/transport/hpack_parser.h',
-                      'src/core/ext/transport/chttp2/transport/hpack_table.h',
+                      'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
+                      'src/core/ext/transport/chttp2/transport/hpack_utils.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/incoming_metadata.h',
@@ -567,6 +571,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/stat.h',
                       'src/core/lib/gprpp/status_helper.h',
                       'src/core/lib/gprpp/sync.h',
+                      'src/core/lib/gprpp/table.h',
                       'src/core/lib/gprpp/thd.h',
                       'src/core/lib/gprpp/time_util.h',
                       'src/core/lib/http/format_request.h',
@@ -617,7 +622,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/pollset_set.h',
                       'src/core/lib/iomgr/pollset_set_custom.h',
                       'src/core/lib/iomgr/pollset_set_windows.h',
-                      'src/core/lib/iomgr/pollset_uv.h',
                       'src/core/lib/iomgr/pollset_windows.h',
                       'src/core/lib/iomgr/port.h',
                       'src/core/lib/iomgr/python_util.h',
@@ -625,7 +629,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/resolve_address_custom.h',
                       'src/core/lib/iomgr/resource_quota.h',
                       'src/core/lib/iomgr/sockaddr.h',
-                      'src/core/lib/iomgr/sockaddr_custom.h',
                       'src/core/lib/iomgr/sockaddr_posix.h',
                       'src/core/lib/iomgr/sockaddr_windows.h',
                       'src/core/lib/iomgr/socket_factory_posix.h',
@@ -659,6 +662,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/authorization/authorization_engine.h',
                       'src/core/lib/security/authorization/authorization_policy_provider.h',
                       'src/core/lib/security/authorization/evaluate_args.h',
+                      'src/core/lib/security/authorization/sdk_server_authz_filter.h',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.h',
                       'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -705,9 +709,14 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/b64.h',
                       'src/core/lib/slice/percent_encoding.h',
                       'src/core/lib/slice/slice_internal.h',
+                      'src/core/lib/slice/slice_refcount.h',
+                      'src/core/lib/slice/slice_refcount_base.h',
+                      'src/core/lib/slice/slice_split.h',
                       'src/core/lib/slice/slice_string_helpers.h',
                       'src/core/lib/slice/slice_utils.h',
+                      'src/core/lib/slice/static_slice.h',
                       'src/core/lib/surface/api_trace.h',
+                      'src/core/lib/surface/builtins.h',
                       'src/core/lib/surface/call.h',
                       'src/core/lib/surface/call_test_only.h',
                       'src/core/lib/surface/channel.h',
@@ -947,10 +956,13 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/frame_rst_stream.h',
                               'src/core/ext/transport/chttp2/transport/frame_settings.h',
                               'src/core/ext/transport/chttp2/transport/frame_window_update.h',
+                              'src/core/ext/transport/chttp2/transport/hpack_constants.h',
                               'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
                               'src/core/ext/transport/chttp2/transport/hpack_encoder_index.h',
+                              'src/core/ext/transport/chttp2/transport/hpack_encoder_table.h',
                               'src/core/ext/transport/chttp2/transport/hpack_parser.h',
-                              'src/core/ext/transport/chttp2/transport/hpack_table.h',
+                              'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
+                              'src/core/ext/transport/chttp2/transport/hpack_utils.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/incoming_metadata.h',
@@ -1232,6 +1244,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/stat.h',
                               'src/core/lib/gprpp/status_helper.h',
                               'src/core/lib/gprpp/sync.h',
+                              'src/core/lib/gprpp/table.h',
                               'src/core/lib/gprpp/thd.h',
                               'src/core/lib/gprpp/time_util.h',
                               'src/core/lib/http/format_request.h',
@@ -1282,7 +1295,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/pollset_set.h',
                               'src/core/lib/iomgr/pollset_set_custom.h',
                               'src/core/lib/iomgr/pollset_set_windows.h',
-                              'src/core/lib/iomgr/pollset_uv.h',
                               'src/core/lib/iomgr/pollset_windows.h',
                               'src/core/lib/iomgr/port.h',
                               'src/core/lib/iomgr/python_util.h',
@@ -1290,7 +1302,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/resolve_address_custom.h',
                               'src/core/lib/iomgr/resource_quota.h',
                               'src/core/lib/iomgr/sockaddr.h',
-                              'src/core/lib/iomgr/sockaddr_custom.h',
                               'src/core/lib/iomgr/sockaddr_posix.h',
                               'src/core/lib/iomgr/sockaddr_windows.h',
                               'src/core/lib/iomgr/socket_factory_posix.h',
@@ -1324,6 +1335,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/authorization/authorization_engine.h',
                               'src/core/lib/security/authorization/authorization_policy_provider.h',
                               'src/core/lib/security/authorization/evaluate_args.h',
+                              'src/core/lib/security/authorization/sdk_server_authz_filter.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -1370,9 +1382,14 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/b64.h',
                               'src/core/lib/slice/percent_encoding.h',
                               'src/core/lib/slice/slice_internal.h',
+                              'src/core/lib/slice/slice_refcount.h',
+                              'src/core/lib/slice/slice_refcount_base.h',
+                              'src/core/lib/slice/slice_split.h',
                               'src/core/lib/slice/slice_string_helpers.h',
                               'src/core/lib/slice/slice_utils.h',
+                              'src/core/lib/slice/static_slice.h',
                               'src/core/lib/surface/api_trace.h',
+                              'src/core/lib/surface/builtins.h',
                               'src/core/lib/surface/call.h',
                               'src/core/lib/surface/call_test_only.h',
                               'src/core/lib/surface/channel.h',
@@ -1514,6 +1531,7 @@ Pod::Spec.new do |s|
   end
 
   s.prepare_command = <<-END_OF_COMMAND
+    set -e
     find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
     find third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "third_party/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/third_party/\\1"\\\n#else\\\n  #include  "third_party/\\1"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'

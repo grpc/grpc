@@ -88,7 +88,7 @@ grpc_cc_library(
         ":grpc_suppressions",
         ":stack_tracer",
         "//:gpr",
-        "//:grpc_base_c",
+        "//:grpc_base",
         "//:grpc_common",
     ],
 )

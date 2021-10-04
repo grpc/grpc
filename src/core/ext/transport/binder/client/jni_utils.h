@@ -17,21 +17,26 @@
 
 #if defined(ANDROID) || defined(__ANDROID__)
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <jni.h>
 
 #include <string>
 
-// TODO(mingcl): Put these functions in a proper namespace
+namespace grpc_binder {
+
 // TODO(mingcl): Use string_view
+// For now we hard code the arguments of the Java function because this is only
+// used to call that single function.
 void CallStaticJavaMethod(JNIEnv* env, const std::string& clazz,
                           const std::string& method, const std::string& type,
-                          jobject application);
+                          jobject application, const std::string& pkg,
+                          const std::string& cls);
 
 jobject CallStaticJavaMethodForObject(JNIEnv* env, const std::string& clazz,
                                       const std::string& method,
                                       const std::string& type);
+}  // namespace grpc_binder
 
 #endif
 

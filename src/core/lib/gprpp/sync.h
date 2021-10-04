@@ -21,11 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/synchronization/mutex.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "absl/synchronization/mutex.h"
 #include "src/core/lib/gprpp/time_util.h"
 
 // The core library is not accessible in C++ codegen headers, and vice versa.

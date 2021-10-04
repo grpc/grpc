@@ -21,21 +21,20 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/event_engine/port.h>
-
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <grpc/event_engine/port.h>
 #include <grpc/grpc.h>
 
 #ifndef _STRUCT_IOVEC
-#if !defined(GRPC_EVENT_ENGINE_POSIX) && !defined(GRPC_UV)
+#if !defined(GRPC_EVENT_ENGINE_POSIX)
 struct iovec {
   void* iov_base;
   size_t iov_len;
 };
-#endif  // GRPC_EVENT_ENGINE_POSIX && GRPC_UV
+#endif  // GRPC_EVENT_ENGINE_POSIX
 #endif  // _STRUCT_IOVEC
 
 /**

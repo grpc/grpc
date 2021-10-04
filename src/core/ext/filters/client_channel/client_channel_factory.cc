@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
+
 #include "src/core/lib/channel/channel_args.h"
 
 // Channel arg key for client channel factory.
@@ -31,7 +32,7 @@ namespace {
 void* factory_arg_copy(void* f) { return f; }
 void factory_arg_destroy(void* /*f*/) {}
 int factory_arg_cmp(void* factory1, void* factory2) {
-  return GPR_ICMP(factory1, factory2);
+  return QsortCompare(factory1, factory2);
 }
 const grpc_arg_pointer_vtable factory_arg_vtable = {
     factory_arg_copy, factory_arg_destroy, factory_arg_cmp};

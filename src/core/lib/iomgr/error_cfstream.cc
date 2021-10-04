@@ -19,11 +19,11 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_CFSTREAM
+#include <CoreFoundation/CoreFoundation.h>
+
 #include <string>
 
 #include "absl/strings/str_format.h"
-
-#include <CoreFoundation/CoreFoundation.h>
 
 #include <grpc/support/alloc.h>
 

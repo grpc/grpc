@@ -23,6 +23,7 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
+
 #include "src/cpp/ext/filters/census/channel_filter.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 
@@ -36,6 +37,11 @@ class CensusClientCallData : public CallData {
  public:
   grpc_error_handle Init(grpc_call_element* /* elem */,
                          const grpc_call_element_args* args) override;
+  void StartTransportStreamOpBatch(grpc_call_element* elem,
+                                   TransportStreamOpBatch* op) override;
+
+ private:
+  OpenCensusCallTracer* tracer_ = nullptr;
 };
 
 }  // namespace grpc

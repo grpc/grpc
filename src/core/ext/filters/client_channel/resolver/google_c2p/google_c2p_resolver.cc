@@ -321,7 +321,7 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
   const char* server_uri =
       override_server != nullptr && strlen(override_server.get()) > 0
           ? override_server.get()
-          : "directpath-trafficdirector.googleapis.com";
+          : "directpath-pa.googleapis.com";
   Json bootstrap = Json::Object{
       {"xds_servers",
        Json::Array{

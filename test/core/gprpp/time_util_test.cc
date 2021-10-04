@@ -14,16 +14,16 @@
 // limitations under the License.
 //
 
+#include "src/core/lib/gprpp/time_util.h"
+
 #include <stdio.h>
 #include <string.h>
 
 #include <gtest/gtest.h>
 
-#include <grpc/support/time.h>
-
 #include "absl/time/time.h"
 
-#include "src/core/lib/gprpp/time_util.h"
+#include <grpc/support/time.h>
 
 TEST(TimeUtilTest, ToGprTimeSpecFromAbslDurationWithRegularValues) {
   std::vector<int> times = {-10, -1, 0, 1, 10};

@@ -21,9 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/buffer_list.h"
-
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/iomgr/buffer_list.h"
 
 namespace grpc_core {
 /** A list of RPC Contexts */

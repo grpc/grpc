@@ -153,7 +153,7 @@ test_driver_pip_install() {
       echo "Found python virtual environment directory: ${venv_dir}"
     else
       echo "Creating python virtual environment: ${venv_dir}"
-      "python${PYTHON_VERSION} -m venv ${venv_dir}"
+      "python${PYTHON_VERSION}" -m venv "${venv_dir}"
     fi
     # Intentional: No need to check python venv activate script.
     # shellcheck source=/dev/null

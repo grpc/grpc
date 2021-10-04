@@ -102,18 +102,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
-  // TODO(roth): When we add federation, there will be multiple channels
-  // inside the XdsClient, and the set of channels may change over time,
-  // but not every channel may use every one of the child channels, so
-  // this API will need to change.  At minumum, we will need to hold a
-  // ref to the parent channelz node so that we can update its list of
-  // children as the set of xDS channels changes.  However, we may also
-  // want to make this a bit more selective such that only those
-  // channels on which a given parent channel is actually requesting
-  // resources will actually be marked as its children.
-  void AddChannelzLinkage(channelz::ChannelNode* parent_channelz_node);
-  void RemoveChannelzLinkage(channelz::ChannelNode* parent_channelz_node);
-
   void Orphan() override;
 
   // Start and cancel listener data watch for a listener.

@@ -18,12 +18,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/transport/cronet/transport/cronet_transport.h"
+
 #include <string.h>
 
 #include <string>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -33,7 +36,6 @@
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/cronet/transport/cronet_status.h"
-#include "src/core/ext/transport/cronet/transport/cronet_transport.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -47,8 +49,6 @@
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport_impl.h"
-
-#include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
 
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 #define GRPC_FLUSH_READ_SIZE 4096
@@ -309,13 +309,10 @@ static void read_grpc_header(stream_obj* s) {
 static grpc_error_handle make_error_with_desc(int error_code,
                                               int cronet_internal_error_code,
                                               const char* desc) {
-  std::string error_message =
-      absl::StrFormat("Cronet error code:%d, Cronet error detail:%s",
-                      cronet_internal_error_code, desc);
-  grpc_error_handle error =
-      GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_message.c_str());
-  error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, error_code);
-  return error;
+  return grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                                "Cronet error code:%d, Cronet error detail:%s",
+                                cronet_internal_error_code, desc)),
+                            GRPC_ERROR_INT_GRPC_STATUS, error_code);
 }
 
 inline op_and_state::op_and_state(stream_obj* s,
@@ -707,17 +704,8 @@ static void convert_metadata_to_cronet_headers(
     grpc_metadata_batch* metadata, const char* host, std::string* pp_url,
     bidirectional_stream_header** pp_headers, size_t* p_num_headers,
     const char** method) {
-  grpc_linked_mdelem* curr = metadata->list.head;
-  /* Walk the linked list and get number of header fields */
-  size_t num_headers_available = 0;
-  while (curr != nullptr) {
-    curr = curr->next;
-    num_headers_available++;
-  }
-  grpc_millis deadline = metadata->deadline;
-  if (deadline != GRPC_MILLIS_INF_FUTURE) {
-    num_headers_available++;
-  }
+  /* Get number of header fields */
+  size_t num_headers_available = metadata->count();
   /* Allocate enough memory. It is freed in the on_stream_ready callback
    */
   bidirectional_stream_header* headers =
@@ -730,11 +718,8 @@ static void convert_metadata_to_cronet_headers(
     are not used for cronet.
     TODO (makdharma): Eliminate need to traverse the LL second time for perf.
    */
-  curr = metadata->list.head;
   size_t num_headers = 0;
-  while (num_headers < num_headers_available) {
-    grpc_mdelem mdelem = curr->md;
-    curr = curr->next;
+  metadata->ForEach([&](grpc_mdelem mdelem) {
     char* key = grpc_slice_to_c_string(GRPC_MDKEY(mdelem));
     char* value;
     if (grpc_is_binary_header_internal(GRPC_MDKEY(mdelem))) {
@@ -750,7 +735,7 @@ static void convert_metadata_to_cronet_headers(
       /* Cronet populates these fields on its own */
       gpr_free(key);
       gpr_free(value);
-      continue;
+      return;
     }
     if (grpc_slice_eq_static_interned(GRPC_MDKEY(mdelem), GRPC_MDSTR_METHOD)) {
       if (grpc_slice_eq_static_interned(GRPC_MDVALUE(mdelem), GRPC_MDSTR_PUT)) {
@@ -761,29 +746,26 @@ static void convert_metadata_to_cronet_headers(
       }
       gpr_free(key);
       gpr_free(value);
-      continue;
+      return;
     }
     if (grpc_slice_eq_static_interned(GRPC_MDKEY(mdelem), GRPC_MDSTR_PATH)) {
       /* Create URL by appending :path value to the hostname */
       *pp_url = absl::StrCat("https://", host, value);
       gpr_free(key);
       gpr_free(value);
-      continue;
+      return;
     }
     CRONET_LOG(GPR_DEBUG, "header %s = %s", key, value);
     headers[num_headers].key = key;
     headers[num_headers].value = value;
     num_headers++;
-    if (curr == nullptr) {
-      break;
-    }
-  }
-  if (deadline != GRPC_MILLIS_INF_FUTURE) {
+  });
+  if (metadata->deadline() != GRPC_MILLIS_INF_FUTURE) {
     char* key = grpc_slice_to_c_string(GRPC_MDSTR_GRPC_TIMEOUT);
     char* value =
         static_cast<char*>(gpr_malloc(GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE));
-    grpc_http2_encode_timeout(deadline - grpc_core::ExecCtx::Get()->Now(),
-                              value);
+    grpc_http2_encode_timeout(
+        metadata->deadline() - grpc_core::ExecCtx::Get()->Now(), value);
     headers[num_headers].key = key;
     headers[num_headers].value = value;
 
@@ -805,15 +787,14 @@ static void parse_grpc_header(const uint8_t* data, int* length,
   *length |= (*p++);
 }
 
-static bool header_has_authority(grpc_linked_mdelem* head) {
-  while (head != nullptr) {
-    if (grpc_slice_eq_static_interned(GRPC_MDKEY(head->md),
-                                      GRPC_MDSTR_AUTHORITY)) {
-      return true;
+static bool header_has_authority(const grpc_metadata_batch* b) {
+  bool found = false;
+  b->ForEach([&](grpc_mdelem elem) {
+    if (grpc_slice_eq_static_interned(GRPC_MDKEY(elem), GRPC_MDSTR_AUTHORITY)) {
+      found = true;
     }
-    head = head->next;
-  }
-  return false;
+  });
+  return found;
 }
 
 /*
@@ -1441,8 +1422,8 @@ static void perform_stream_op(grpc_transport* /*gt*/, grpc_stream* gs,
                               grpc_transport_stream_op_batch* op) {
   CRONET_LOG(GPR_DEBUG, "perform_stream_op");
   if (op->send_initial_metadata &&
-      header_has_authority(op->payload->send_initial_metadata
-                               .send_initial_metadata->list.head)) {
+      header_has_authority(
+          op->payload->send_initial_metadata.send_initial_metadata)) {
     /* Cronet does not support :authority header field. We cancel the call when
      this field is present in metadata */
     if (op->recv_initial_metadata) {

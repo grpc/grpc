@@ -15,11 +15,10 @@
 #ifndef GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_LIKE_H
 #define GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_LIKE_H
 
-#include <grpc/impl/codegen/port_platform.h>
-
-#include "src/core/lib/promise/poll.h"
+#include <grpc/support/port_platform.h>
 
 #include <utility>
+
 #include "src/core/lib/promise/poll.h"
 
 // A Promise is a callable object that returns Poll<T> for some T.
@@ -73,6 +72,10 @@ class PromiseLike {
   auto operator()() -> decltype(WrapInPoll(f_())) { return WrapInPoll(f_()); }
   using Result = typename PollTraits<decltype(WrapInPoll(f_()))>::Type;
 };
+
+// T -> T, const T& -> T
+template <typename T>
+using RemoveCVRef = absl::remove_cv_t<absl::remove_reference_t<T>>;
 
 }  // namespace promise_detail
 }  // namespace grpc_core

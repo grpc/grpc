@@ -16,13 +16,13 @@
 //
 //
 
+#include "src/core/ext/xds/certificate_provider_store.h"
+
 #include <thread>
 
 #include <gmock/gmock.h>
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
-#include "src/core/ext/xds/certificate_provider_store.h"
-
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {

@@ -22,13 +22,13 @@
 
 #include <string.h>
 
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/surface/api_trace.h"
-#include "src/core/tsi/ssl_transport_security.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/tsi/ssl_transport_security.h"
 
 //
 // SSL Channel Credentials.

@@ -31,8 +31,9 @@ namespace grpc_core {
 
 TraceFlag grpc_subchannel_pool_trace(false, "subchannel_pool");
 
-SubchannelKey::SubchannelKey(const grpc_channel_args* args) {
-  Init(args, grpc_channel_args_normalize);
+SubchannelKey::SubchannelKey(const grpc_resolved_address& address,
+                             const grpc_channel_args* args) {
+  Init(address, args, grpc_channel_args_normalize);
 }
 
 SubchannelKey::~SubchannelKey() {
@@ -40,7 +41,7 @@ SubchannelKey::~SubchannelKey() {
 }
 
 SubchannelKey::SubchannelKey(const SubchannelKey& other) {
-  Init(other.args_, grpc_channel_args_copy);
+  Init(other.address_, other.args_, grpc_channel_args_copy);
 }
 
 SubchannelKey& SubchannelKey::operator=(const SubchannelKey& other) {
@@ -48,28 +49,36 @@ SubchannelKey& SubchannelKey::operator=(const SubchannelKey& other) {
     return *this;
   }
   grpc_channel_args_destroy(const_cast<grpc_channel_args*>(args_));
-  Init(other.args_, grpc_channel_args_copy);
+  Init(other.address_, other.args_, grpc_channel_args_copy);
   return *this;
 }
 
 SubchannelKey::SubchannelKey(SubchannelKey&& other) noexcept {
+  address_ = other.address_;
   args_ = other.args_;
   other.args_ = nullptr;
 }
 
 SubchannelKey& SubchannelKey::operator=(SubchannelKey&& other) noexcept {
+  address_ = other.address_;
   args_ = other.args_;
   other.args_ = nullptr;
   return *this;
 }
 
 bool SubchannelKey::operator<(const SubchannelKey& other) const {
+  if (address_.len < other.address_.len) return true;
+  if (address_.len > other.address_.len) return false;
+  int r = memcmp(address_.addr, other.address_.addr, address_.len);
+  if (r < 0) return true;
+  if (r > 0) return false;
   return grpc_channel_args_compare(args_, other.args_) < 0;
 }
 
 void SubchannelKey::Init(
-    const grpc_channel_args* args,
+    const grpc_resolved_address& address, const grpc_channel_args* args,
     grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args)) {
+  address_ = address;
   args_ = copy_channel_args(args);
 }
 
@@ -86,7 +95,7 @@ void arg_destroy(void* p) {
   subchannel_pool->Unref();
 }
 
-int arg_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+int arg_cmp(void* a, void* b) { return QsortCompare(a, b); }
 
 const grpc_arg_pointer_vtable subchannel_pool_arg_vtable = {
     arg_copy, arg_destroy, arg_cmp};

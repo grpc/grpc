@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/slice.h>
+#include <grpc/impl/codegen/slice.h>  // IWYU pragma: export
 #include <grpc/support/sync.h>
 
 #ifdef __cplusplus

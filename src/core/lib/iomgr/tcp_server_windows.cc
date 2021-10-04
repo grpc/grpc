@@ -22,8 +22,6 @@
 
 #ifdef GRPC_WINSOCK_SOCKET
 
-#include "src/core/lib/iomgr/sockaddr.h"
-
 #include <inttypes.h>
 #include <io.h>
 
@@ -43,6 +41,7 @@
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
@@ -231,11 +230,10 @@ static grpc_error_handle prepare_socket(SOCKET sock,
 failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   grpc_error_set_int(
-      grpc_error_set_str(
-          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-              "Failed to prepare server socket", &error, 1),
-          GRPC_ERROR_STR_TARGET_ADDRESS,
-          grpc_slice_from_cpp_string(grpc_sockaddr_to_uri(addr))),
+      grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                             "Failed to prepare server socket", &error, 1),
+                         GRPC_ERROR_STR_TARGET_ADDRESS,
+                         grpc_sockaddr_to_uri(addr)),
       GRPC_ERROR_INT_FD, (intptr_t)sock);
   GRPC_ERROR_UNREF(error);
   if (sock != INVALID_SOCKET) closesocket(sock);
