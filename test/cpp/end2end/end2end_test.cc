@@ -1463,8 +1463,11 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EXPECT_EQ(iter->error_message(), s.error_message());
     EXPECT_EQ(iter->binary_error_details(), s.error_details());
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "created"));
+#ifndef NDEBUG
+    // GRPC_ERROR_INT_FILE_LINE is for debug only
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "file"));
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "line"));
+#endif
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "status"));
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "13"));
   }
