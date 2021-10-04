@@ -227,7 +227,7 @@ grpc_tcp_client_vtable fuzz_tcp_client_vtable = {my_tcp_client_connect};
 
 class Validator {
  public:
-  Validator(std::function<void(bool)> impl) : impl_(impl) {}
+  explicit Validator(std::function<void(bool)> impl) : impl_(impl) {}
 
   virtual ~Validator() {}
   void Run(bool success) {
@@ -273,7 +273,7 @@ enum class CallType { CLIENT, SERVER, PENDING_SERVER };
 
 class Call {
  public:
-  Call(CallType type) : type_(type) {}
+  explicit Call(CallType type) : type_(type) {}
   ~Call();
 
   CallType type() const { return type_; }
@@ -366,7 +366,7 @@ class Call {
         break;
       case api_fuzzer::BatchOp::OP_NOT_SET:
         /* invalid value */
-        op.op = (grpc_op_type)-1;
+        op.op = static_cast<grpc_op_type>(-1);
         *batch_is_ok = false;
         break;
       case api_fuzzer::BatchOp::kSendInitialMetadata:
@@ -507,7 +507,7 @@ static std::vector<std::unique_ptr<Call>> g_calls;
 static size_t g_active_call = 0;
 
 static Call* ActiveCall() {
-  while (g_calls.size()) {
+  while (!g_calls.empty()) {
     if (g_active_call >= g_calls.size()) {
       g_active_call = 0;
     }
