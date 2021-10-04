@@ -510,7 +510,7 @@ class RlsLb : public LoadBalancingPolicy {
   class RlsChannel : public InternallyRefCounted<RlsChannel> {
    public:
     RlsChannel(RefCountedPtr<RlsLb> lb_policy, const std::string& target,
-               const grpc_channel_args* channel_args);
+               const grpc_channel_args* parent_channel_args);
 
     // Shuts down the channel.
     void Orphan() override;
@@ -580,8 +580,9 @@ class RlsLb : public LoadBalancingPolicy {
     bool is_shutdown_ = false;
 
     grpc_channel* channel_ = nullptr;
-    Throttle throttle_ ABSL_GUARDED_BY(&RlsLb::mu_);
+    RefCountedPtr<channelz::ChannelNode> parent_channelz_node_;
     StateWatcher* watcher_ = nullptr;
+    Throttle throttle_ ABSL_GUARDED_BY(&RlsLb::mu_);
   };
 
   // A pending RLS request.  Instances will be tracked in request_map_.
@@ -1467,7 +1468,7 @@ void RlsLb::RlsChannel::Throttle::RegisterResponse(bool success) {
 
 RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy,
                               const std::string& target,
-                              const grpc_channel_args* channel_args)
+                              const grpc_channel_args* parent_channel_args)
     : InternallyRefCounted<RlsChannel>(
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) ? "RlsChannel" : nullptr),
       lb_policy_(std::move(lb_policy)) {
@@ -1475,24 +1476,35 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy,
   // TODO(roth): Once we eliminate insecure builds, get this via a
   // method on the helper instead of digging through channel args.
   grpc_channel_credentials* creds =
-      grpc_channel_credentials_find_in_args(channel_args);
+      grpc_channel_credentials_find_in_args(parent_channel_args);
   // Use the parent channel's authority.
   std::string authority(lb_policy_->channel_control_helper()->GetAuthority());
-  grpc_arg arg_to_add = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>(authority.c_str()));
-  const char* arg_to_remove = {GRPC_ARG_DEFAULT_AUTHORITY};
-  grpc_channel_args* rls_channel_args =
-      grpc_channel_args_copy_and_add_and_remove(channel_args, &arg_to_remove, 1,
-                                                &arg_to_add, 1);
-  channel_ = grpc_secure_channel_create(creds, target.c_str(), rls_channel_args,
-                                        nullptr);
-  grpc_channel_args_destroy(rls_channel_args);
+  absl::InlinedVector<grpc_arg, 2> args = {
+      grpc_channel_arg_string_create(
+          const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+          const_cast<char*>(authority.c_str())),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
+  };
+  grpc_channel_args rls_channel_args = {args.size(), args.data()};
+  channel_ = grpc_secure_channel_create(creds, target.c_str(),
+                                        &rls_channel_args, nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] RlsChannel=%p: created channel %p for %s",
             lb_policy_.get(), this, channel_, target.c_str());
   }
   if (channel_ != nullptr) {
+    // Set up channelz linkage.
+    channelz::ChannelNode* child_channelz_node =
+        grpc_channel_get_channelz_node(channel_);
+    channelz::ChannelNode* parent_channelz_node =
+        grpc_channel_args_find_pointer<channelz::ChannelNode>(
+            parent_channel_args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
+    if (child_channelz_node != nullptr && parent_channelz_node != nullptr) {
+      parent_channelz_node->AddChildChannel(child_channelz_node->uuid());
+      parent_channelz_node_ = parent_channelz_node->Ref();
+    }
+    // Start connectivity watch.
     ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
     GPR_ASSERT(client_channel != nullptr);
     watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "StateWatcher"));
@@ -1509,6 +1521,14 @@ void RlsLb::RlsChannel::Orphan() {
   }
   is_shutdown_ = true;
   if (channel_ != nullptr) {
+    // Remove channelz linkage.
+    if (parent_channelz_node_ != nullptr) {
+      channelz::ChannelNode* child_channelz_node =
+          grpc_channel_get_channelz_node(channel_);
+      GPR_ASSERT(child_channelz_node != nullptr);
+      parent_channelz_node_->RemoveChildChannel(child_channelz_node->uuid());
+    }
+    // Stop connectivity watch.
     if (watcher_ != nullptr) {
       ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
       GPR_ASSERT(client_channel != nullptr);
