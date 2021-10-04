@@ -2017,10 +2017,12 @@ void XdsClient::Orphan() {
     // is possible for ADS calls to be in progress. Unreffing the loadbalancing
     // policies before those calls are done would lead to issues such as
     // https://github.com/grpc/grpc/issues/20928.
-    /*if (!listener_map_.empty()) {
-      cluster_map_.clear();
-      endpoint_map_.clear();
-    }*/
+    for (auto& a : resource_map_) {
+      if (!a.second.listener_map.empty()) {
+        a.second.cluster_map.clear();
+        a.second.endpoint_map.clear();
+      }
+    }
   }
 }
 
