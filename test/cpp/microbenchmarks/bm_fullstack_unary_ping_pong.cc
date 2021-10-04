@@ -29,15 +29,29 @@ namespace testing {
  * CONFIGURATIONS
  */
 
+// Add args to benchmark, but allow filtering.
+static void AddBenchmarkArgsList(
+    benchmark::internal::Benchmark* b,
+    const std::vector<std::vector<int64_t>>& args_list) {
+  // SKIPS SOME SCENARIOS!!!
+  for (int i = 0; i < args_list.size(); i += 7) {
+    b->Args(args_list[i]);
+  }
+}
+
 // Replace "benchmark::internal::Benchmark" with "::testing::Benchmark" to use
 // internal microbenchmarking tooling
 static void SweepSizesArgs(benchmark::internal::Benchmark* b) {
-  b->Args({0, 0});
+  std::vector<std::vector<int64_t>> args_list;
+
+  args_list.push_back({0, 0});
   for (int i = 1; i <= 128 * 1024 * 1024; i *= 8) {
-    b->Args({i, 0});
-    b->Args({0, i});
-    b->Args({i, i});
+    args_list.push_back({i, 0});
+    args_list.push_back({0, i});
+    args_list.push_back({i, i});
   }
+
+  AddBenchmarkArgsList(b, args_list);
 }
 
 BENCHMARK_TEMPLATE(BM_UnaryPingPong, TCP, NoOpMutator, NoOpMutator)

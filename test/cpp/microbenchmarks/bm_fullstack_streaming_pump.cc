@@ -29,22 +29,38 @@ namespace testing {
  * CONFIGURATIONS
  */
 
-BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, TCP)
-    ->Range(0, 128 * 1024 * 1024);
-BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, UDS)
-    ->Range(0, 128 * 1024 * 1024);
+// Add args to benchmark, but allow filtering.
+static void AddBenchmarkArgsList(
+    benchmark::internal::Benchmark* b,
+    const std::vector<std::vector<int64_t>>& args_list) {
+  // SKIPS SOME SCENARIOS!!!
+  for (int i = 0; i < args_list.size(); i += 7) {
+    b->Args(args_list[i]);
+  }
+}
+
+static void PumpStreamArgs(benchmark::internal::Benchmark* b) {
+  std::vector<std::vector<int64_t>> args_list;
+
+  for (int msg_size = 0; msg_size <= 128 * 1024 * 1024;
+       msg_size == 0 ? msg_size++ : msg_size *= 8) {
+    args_list.push_back({msg_size});
+  }
+  AddBenchmarkArgsList(b, args_list);
+}
+
+BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, TCP)->Apply(PumpStreamArgs);
+BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, UDS)->Apply(PumpStreamArgs);
 BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, InProcess)
-    ->Range(0, 128 * 1024 * 1024);
+    ->Apply(PumpStreamArgs);
 BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, InProcessCHTTP2)
-    ->Range(0, 128 * 1024 * 1024);
-BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, TCP)
-    ->Range(0, 128 * 1024 * 1024);
-BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, UDS)
-    ->Range(0, 128 * 1024 * 1024);
+    ->Apply(PumpStreamArgs);
+BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, TCP)->Apply(PumpStreamArgs);
+BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, UDS)->Apply(PumpStreamArgs);
 BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, InProcess)
-    ->Range(0, 128 * 1024 * 1024);
+    ->Apply(PumpStreamArgs);
 BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, InProcessCHTTP2)
-    ->Range(0, 128 * 1024 * 1024);
+    ->Apply(PumpStreamArgs);
 BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, MinTCP)->Arg(0);
 BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, MinUDS)->Arg(0);
 BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, MinInProcess)->Arg(0);

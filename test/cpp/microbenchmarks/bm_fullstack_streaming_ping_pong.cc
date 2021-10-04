@@ -25,6 +25,16 @@
 namespace grpc {
 namespace testing {
 
+// Add args to benchmark, but allow filtering.
+static void AddBenchmarkArgsList(
+    benchmark::internal::Benchmark* b,
+    const std::vector<std::vector<int64_t>>& args_list) {
+  // SKIPS SOME SCENARIOS!!!
+  for (int i = 0; i < args_list.size(); i += 7) {
+    b->Args(args_list[i]);
+  }
+}
+
 /*******************************************************************************
  * CONFIGURATIONS
  */
@@ -32,15 +42,30 @@ namespace testing {
 // Generate Args for StreamingPingPong benchmarks. Currently generates args for
 // only "small streams" (i.e streams with 0, 1 or 2 messages)
 static void StreamingPingPongArgs(benchmark::internal::Benchmark* b) {
-  int msg_size = 0;
+  std::vector<std::vector<int64_t>> args_list;
 
-  b->Args({0, 0});  // spl case: 0 ping-pong msgs (msg_size doesn't matter here)
+  args_list.push_back(
+      {0, 0});  // spl case: 0 ping-pong msgs (msg_size doesn't matter here)
 
-  for (msg_size = 0; msg_size <= 128 * 1024 * 1024;
-       msg_size == 0 ? msg_size++ : msg_size *= 8) {
-    b->Args({msg_size, 1});
-    b->Args({msg_size, 2});
+  args_list.push_back({0, 1});
+  args_list.push_back({0, 2});
+
+  for (int msg_size = 1; msg_size <= 128 * 1024 * 1024; msg_size *= 8) {
+    args_list.push_back({msg_size, 1});
+    args_list.push_back({msg_size, 2});
   }
+
+  AddBenchmarkArgsList(b, args_list);
+}
+
+static void StreamingPingPongMsgsArgs(benchmark::internal::Benchmark* b) {
+  std::vector<std::vector<int64_t>> args_list;
+
+  for (int msg_size = 0; msg_size <= 128 * 1024 * 1024;
+       msg_size == 0 ? msg_size++ : msg_size *= 8) {
+    args_list.push_back({msg_size});
+  }
+  AddBenchmarkArgsList(b, args_list);
 }
 
 BENCHMARK_TEMPLATE(BM_StreamingPingPong, InProcessCHTTP2, NoOpMutator,
@@ -53,12 +78,12 @@ BENCHMARK_TEMPLATE(BM_StreamingPingPong, InProcess, NoOpMutator, NoOpMutator)
 
 BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, InProcessCHTTP2, NoOpMutator,
                    NoOpMutator)
-    ->Range(0, 128 * 1024 * 1024);
+    ->Apply(StreamingPingPongMsgsArgs);
 BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, TCP, NoOpMutator, NoOpMutator)
-    ->Range(0, 128 * 1024 * 1024);
+    ->Apply(StreamingPingPongMsgsArgs);
 BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, InProcess, NoOpMutator,
                    NoOpMutator)
-    ->Range(0, 128 * 1024 * 1024);
+    ->Apply(StreamingPingPongMsgsArgs);
 
 BENCHMARK_TEMPLATE(BM_StreamingPingPong, MinInProcessCHTTP2, NoOpMutator,
                    NoOpMutator)
@@ -70,31 +95,34 @@ BENCHMARK_TEMPLATE(BM_StreamingPingPong, MinInProcess, NoOpMutator, NoOpMutator)
 
 BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, MinInProcessCHTTP2, NoOpMutator,
                    NoOpMutator)
-    ->Range(0, 128 * 1024 * 1024);
+    ->Apply(StreamingPingPongMsgsArgs);
 BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, MinTCP, NoOpMutator, NoOpMutator)
-    ->Range(0, 128 * 1024 * 1024);
+    ->Apply(StreamingPingPongMsgsArgs);
 BENCHMARK_TEMPLATE(BM_StreamingPingPongMsgs, MinInProcess, NoOpMutator,
                    NoOpMutator)
-    ->Range(0, 128 * 1024 * 1024);
+    ->Apply(StreamingPingPongMsgsArgs);
 
 // Generate Args for StreamingPingPongWithCoalescingApi benchmarks. Currently
 // generates args for only "small streams" (i.e streams with 0, 1 or 2 messages)
 static void StreamingPingPongWithCoalescingApiArgs(
     benchmark::internal::Benchmark* b) {
+  std::vector<std::vector<int64_t>> args_list;
   int msg_size = 0;
 
-  b->Args(
+  args_list.push_back(
       {0, 0, 0});  // spl case: 0 ping-pong msgs (msg_size doesn't matter here)
-  b->Args(
+  args_list.push_back(
       {0, 0, 1});  // spl case: 0 ping-pong msgs (msg_size doesn't matter here)
 
   for (msg_size = 0; msg_size <= 128 * 1024 * 1024;
        msg_size == 0 ? msg_size++ : msg_size *= 8) {
-    b->Args({msg_size, 1, 0});
-    b->Args({msg_size, 2, 0});
-    b->Args({msg_size, 1, 1});
-    b->Args({msg_size, 2, 1});
+    args_list.push_back({msg_size, 1, 0});
+    args_list.push_back({msg_size, 2, 0});
+    args_list.push_back({msg_size, 1, 1});
+    args_list.push_back({msg_size, 2, 1});
   }
+
+  AddBenchmarkArgsList(b, args_list);
 }
 
 BENCHMARK_TEMPLATE(BM_StreamingPingPongWithCoalescingApi, InProcessCHTTP2,

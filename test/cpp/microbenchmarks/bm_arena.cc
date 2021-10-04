@@ -34,6 +34,27 @@ static void BM_Arena_NoOp(benchmark::State& state) {
 }
 BENCHMARK(BM_Arena_NoOp)->Range(1, 1024 * 1024);
 
+// Add args to benchmark, but allow filtering.
+static void AddBenchmarkArgsList(
+    benchmark::internal::Benchmark* b,
+    const std::vector<std::vector<int64_t>>& args_list) {
+  // SKIPS SOME SCENARIOS!!!
+  for (int i = 0; i < args_list.size(); i += 7) {
+    b->Args(args_list[i]);
+  }
+}
+
+static void ArenaManyAllocArgs(benchmark::internal::Benchmark* b) {
+  std::vector<std::vector<int64_t>> args_list;
+
+  for (int arg1 = 1; arg1 <= 1024 * 1024; arg1 *= 8) {
+    for (int arg2 = 1; arg2 <= 32 * 1024; arg2 *= 8) {
+      args_list.push_back({arg1, arg2});
+    }
+  }
+  AddBenchmarkArgsList(b, args_list);
+}
+
 static void BM_Arena_ManyAlloc(benchmark::State& state) {
   Arena* a = Arena::Create(state.range(0));
   const size_t realloc_after =
@@ -48,7 +69,20 @@ static void BM_Arena_ManyAlloc(benchmark::State& state) {
   }
   a->Destroy();
 }
-BENCHMARK(BM_Arena_ManyAlloc)->Ranges({{1, 1024 * 1024}, {1, 32 * 1024}});
+BENCHMARK(BM_Arena_ManyAlloc)->Apply(ArenaManyAllocArgs);
+
+static void ArenaBatchArgs(benchmark::internal::Benchmark* b) {
+  std::vector<std::vector<int64_t>> args_list;
+
+  for (int arg1 = 1; arg1 <= 64 * 1024; arg1 *= 8) {
+    for (int arg2 = 1; arg2 <= 64; arg2 *= 8) {
+      for (int arg3 = 1; arg3 <= 1024; arg3 *= 8) {
+        args_list.push_back({arg1, arg2, arg3});
+      }
+    }
+  }
+  AddBenchmarkArgsList(b, args_list);
+}
 
 static void BM_Arena_Batch(benchmark::State& state) {
   for (auto _ : state) {
@@ -59,7 +93,7 @@ static void BM_Arena_Batch(benchmark::State& state) {
     a->Destroy();
   }
 }
-BENCHMARK(BM_Arena_Batch)->Ranges({{1, 64 * 1024}, {1, 64}, {1, 1024}});
+BENCHMARK(BM_Arena_Batch)->Apply(ArenaBatchArgs);
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
 // and others do not. This allows us to support both modes.
