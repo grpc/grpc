@@ -42,27 +42,45 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 struct internal_request {
-  grpc_slice request_text;
+  internal_request() = default;
+  ~internal_request() {
+    grpc_http_parser_destroy(&parser);
+    if (addresses != nullptr) {
+      grpc_resolved_addresses_destroy(addresses);
+    }
+    if (ep != nullptr) {
+      grpc_endpoint_destroy(ep);
+    }
+    grpc_slice_unref_internal(request_text);
+    gpr_free(host);
+    gpr_free(ssl_host_override);
+    grpc_iomgr_unregister_object(&iomgr_obj);
+    grpc_slice_buffer_destroy_internal(&incoming);
+    grpc_slice_buffer_destroy_internal(&outgoing);
+    GRPC_ERROR_UNREF(overall_error);
+    grpc_resource_quota_unref_internal(resource_quota);
+  }
+  grpc_slice request_text = grpc_empty_slice();
   grpc_http_parser parser;
-  grpc_resolved_addresses* addresses;
-  size_t next_address;
-  grpc_endpoint* ep;
-  grpc_resource_quota* resource_quota;
-  char* host;
-  char* ssl_host_override;
-  grpc_millis deadline;
-  int have_read_byte;
-  const grpc_httpcli_handshaker* handshaker;
-  grpc_closure* on_done;
-  grpc_httpcli_context* context;
-  grpc_polling_entity* pollent;
+  grpc_resolved_addresses* addresses = nullptr;
+  size_t next_address = 0;
+  grpc_endpoint* ep = nullptr;
+  grpc_resource_quota* resource_quota = nullptr;
+  char* host = nullptr;
+  char* ssl_host_override = nullptr;
+  grpc_millis deadline = 0;
+  int have_read_byte = 0;
+  const grpc_httpcli_handshaker* handshaker = nullptr;
+  grpc_closure* on_done = nullptr;
+  grpc_httpcli_context* context = nullptr;
+  grpc_polling_entity* pollent = nullptr;
   grpc_iomgr_object iomgr_obj;
   grpc_slice_buffer incoming;
   grpc_slice_buffer outgoing;
   grpc_closure on_read;
   grpc_closure done_write;
   grpc_closure connected;
-  grpc_error_handle overall_error;
+  grpc_error_handle overall_error = GRPC_ERROR_NONE;
 };
 static grpc_httpcli_get_override g_get_override = nullptr;
 static grpc_httpcli_post_override g_post_override = nullptr;
@@ -91,22 +109,7 @@ static void finish(internal_request* req, grpc_error_handle error) {
   grpc_polling_entity_del_from_pollset_set(req->pollent,
                                            req->context->pollset_set);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, req->on_done, error);
-  grpc_http_parser_destroy(&req->parser);
-  if (req->addresses != nullptr) {
-    grpc_resolved_addresses_destroy(req->addresses);
-  }
-  if (req->ep != nullptr) {
-    grpc_endpoint_destroy(req->ep);
-  }
-  grpc_slice_unref_internal(req->request_text);
-  gpr_free(req->host);
-  gpr_free(req->ssl_host_override);
-  grpc_iomgr_unregister_object(&req->iomgr_obj);
-  grpc_slice_buffer_destroy_internal(&req->incoming);
-  grpc_slice_buffer_destroy_internal(&req->outgoing);
-  GRPC_ERROR_UNREF(req->overall_error);
-  grpc_resource_quota_unref_internal(req->resource_quota);
-  gpr_free(req);
+  delete req;
 }
 
 static void append_error(internal_request* req, grpc_error_handle error) {
@@ -231,9 +234,7 @@ static void internal_request_begin(grpc_httpcli_context* context,
                                    grpc_httpcli_response* response,
                                    const char* name,
                                    const grpc_slice& request_text) {
-  internal_request* req =
-      static_cast<internal_request*>(gpr_malloc(sizeof(internal_request)));
-  memset(req, 0, sizeof(*req));
+  internal_request* req = new internal_request();
   req->request_text = request_text;
   grpc_http_parser_init(&req->parser, GRPC_HTTP_RESPONSE, response);
   req->on_done = on_done;
