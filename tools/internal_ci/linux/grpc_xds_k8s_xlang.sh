@@ -25,7 +25,7 @@ readonly GKE_CLUSTER_ZONE="us-central1-a"
 readonly IMAGE_REPO="gcr.io/grpc-testing/xds-interop"
 readonly SERVER_LANG="cpp go java"
 readonly CLIENT_LANG="cpp go java"
-readonly VERSION_TAG="v1.40.x"
+readonly VERSION_TAG="v1.41.x"
 
 #######################################
 # Executes the test case

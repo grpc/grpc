@@ -589,7 +589,8 @@ struct grpc_chttp2_stream {
   grpc_published_metadata_method published_metadata[2] = {};
   bool final_metadata_requested = false;
 
-  grpc_chttp2_incoming_metadata_buffer metadata_buffer[2];
+  grpc_chttp2_incoming_metadata_buffer initial_metadata_buffer;
+  grpc_chttp2_incoming_metadata_buffer trailing_metadata_buffer;
 
   grpc_slice_buffer frame_storage; /* protected by t combiner */
 
@@ -766,7 +767,7 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
 void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
                                      uint32_t last_stream_id,
-                                     const grpc_slice& goaway_text);
+                                     absl::string_view goaway_text);
 
 void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t);
 

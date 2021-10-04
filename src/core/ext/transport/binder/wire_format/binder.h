@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <cstdint>
 #include <functional>
@@ -77,7 +77,7 @@ class ReadableParcel {
 class TransactionReceiver : public HasRawBinder {
  public:
   using OnTransactCb =
-      std::function<absl::Status(transaction_code_t, ReadableParcel*)>;
+      std::function<absl::Status(transaction_code_t, ReadableParcel*, int uid)>;
 
   ~TransactionReceiver() override = default;
 };

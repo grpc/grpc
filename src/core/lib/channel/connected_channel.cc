@@ -232,9 +232,7 @@ static void bind_transport(grpc_channel_stack* channel_stack,
       grpc_transport_stream_size(static_cast<grpc_transport*>(t));
 }
 
-bool grpc_add_connected_filter(grpc_channel_stack_builder* builder,
-                               void* arg_must_be_null) {
-  GPR_ASSERT(arg_must_be_null == nullptr);
+bool grpc_add_connected_filter(grpc_channel_stack_builder* builder) {
   grpc_transport* t = grpc_channel_stack_builder_get_transport(builder);
   GPR_ASSERT(t != nullptr);
   return grpc_channel_stack_builder_append_filter(

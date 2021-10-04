@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
@@ -78,7 +78,8 @@ binder_status_t f_onTransact(AIBinder* binder, transaction_code_t code,
   std::unique_ptr<ReadableParcel> output =
       absl::make_unique<ReadableParcelAndroid>(in);
   // The lock should be released "after" the callback finishes.
-  absl::Status status = (*callback)(code, output.get());
+  absl::Status status =
+      (*callback)(code, output.get(), AIBinder_getCallingUid());
   if (status.ok()) {
     return STATUS_OK;
   } else {

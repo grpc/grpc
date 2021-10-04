@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h"
 
@@ -117,7 +117,7 @@ void TransportStreamReceiverImpl::RegisterRecvTrailingMetadata(
 void TransportStreamReceiverImpl::NotifyRecvInitialMetadata(
     StreamIdentifier id, absl::StatusOr<Metadata> initial_metadata) {
   gpr_log(GPR_INFO, "%s id = %d is_client = %d", __func__, id, is_client_);
-  if (!is_client_ && accept_stream_callback_) {
+  if (!is_client_ && accept_stream_callback_ && initial_metadata.ok()) {
     accept_stream_callback_();
   }
   InitialMetadataCallbackType cb;

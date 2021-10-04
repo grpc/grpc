@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <memory>
 #include <utility>
@@ -67,7 +67,7 @@ class WireReaderImpl : public WireReader {
       std::unique_ptr<Binder> binder) override;
 
   absl::Status ProcessTransaction(transaction_code_t code,
-                                  ReadableParcel* parcel);
+                                  ReadableParcel* parcel, int uid);
 
   /// Send SETUP_TRANSPORT request through \p binder.
   ///

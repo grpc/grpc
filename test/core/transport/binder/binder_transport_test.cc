@@ -148,7 +148,7 @@ MATCHER_P(GrpcErrorMessageContains, msg, "") {
 void VerifyMetadataEqual(const Metadata& md,
                          const grpc_metadata_batch& grpc_md) {
   size_t i = 0;
-  grpc_md->ForEach([&](grpc_mdelem mdelm) {
+  grpc_md.ForEach([&](grpc_mdelem mdelm) {
     EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDKEY(mdelm)), md[i].first);
     EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDVALUE(mdelm)),
               md[i].second);
@@ -163,7 +163,6 @@ struct MakeSendInitialMetadata {
                           const std::string& method_ref,
                           grpc_transport_stream_op_batch* op)
       : storage(initial_metadata.size()) {
-    grpc_metadata_batch_init(&grpc_initial_metadata);
     size_t i = 0;
     for (const auto& md : initial_metadata) {
       const std::string& key = md.first;
@@ -187,9 +186,7 @@ struct MakeSendInitialMetadata {
     op->payload->send_initial_metadata.send_initial_metadata =
         &grpc_initial_metadata;
   }
-  ~MakeSendInitialMetadata() {
-    grpc_metadata_batch_destroy(&grpc_initial_metadata);
-  }
+  ~MakeSendInitialMetadata() {}
 
   std::vector<grpc_linked_mdelem> storage;
   grpc_linked_mdelem method_ref_storage;
@@ -218,7 +215,6 @@ struct MakeSendTrailingMetadata {
   explicit MakeSendTrailingMetadata(const Metadata& trailing_metadata,
                                     grpc_transport_stream_op_batch* op) {
     EXPECT_TRUE(trailing_metadata.empty());
-    grpc_metadata_batch_init(&grpc_trailing_metadata);
 
     op->send_trailing_metadata = true;
     op->payload->send_trailing_metadata.send_trailing_metadata =
@@ -232,7 +228,6 @@ struct MakeRecvInitialMetadata {
   explicit MakeRecvInitialMetadata(grpc_transport_stream_op_batch* op,
                                    Expectation* call_before = nullptr)
       : ready(&notification) {
-    grpc_metadata_batch_init(&grpc_initial_metadata);
     op->recv_initial_metadata = true;
     op->payload->recv_initial_metadata.recv_initial_metadata =
         &grpc_initial_metadata;
@@ -245,9 +240,7 @@ struct MakeRecvInitialMetadata {
     }
   }
 
-  ~MakeRecvInitialMetadata() {
-    grpc_metadata_batch_destroy(&grpc_initial_metadata);
-  }
+  ~MakeRecvInitialMetadata() {}
 
   MockGrpcClosure ready;
   grpc_metadata_batch grpc_initial_metadata;
@@ -277,7 +270,6 @@ struct MakeRecvTrailingMetadata {
   explicit MakeRecvTrailingMetadata(grpc_transport_stream_op_batch* op,
                                     Expectation* call_before = nullptr)
       : ready(&notification) {
-    grpc_metadata_batch_init(&grpc_trailing_metadata);
     op->recv_trailing_metadata = true;
     op->payload->recv_trailing_metadata.recv_trailing_metadata =
         &grpc_trailing_metadata;
@@ -290,9 +282,7 @@ struct MakeRecvTrailingMetadata {
     }
   }
 
-  ~MakeRecvTrailingMetadata() {
-    grpc_metadata_batch_destroy(&grpc_trailing_metadata);
-  }
+  ~MakeRecvTrailingMetadata() {}
 
   MockGrpcClosure ready;
   grpc_metadata_batch grpc_trailing_metadata;

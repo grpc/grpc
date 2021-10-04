@@ -254,7 +254,7 @@ namespace {
 // Channel arg pointer vtable for GRPC_ARG_CLIENT_CHANNEL.
 void* ClientChannelArgCopy(void* p) { return p; }
 void ClientChannelArgDestroy(void* /*p*/) {}
-int ClientChannelArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
+int ClientChannelArgCmp(void* p, void* q) { return QsortCompare(p, q); }
 const grpc_arg_pointer_vtable kClientChannelArgPointerVtable = {
     ClientChannelArgCopy, ClientChannelArgDestroy, ClientChannelArgCmp};
 
@@ -268,7 +268,7 @@ void ServiceConfigObjArgDestroy(void* p) {
   auto* service_config = static_cast<ServiceConfig*>(p);
   service_config->Unref();
 }
-int ServiceConfigObjArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
+int ServiceConfigObjArgCmp(void* p, void* q) { return QsortCompare(p, q); }
 const grpc_arg_pointer_vtable kServiceConfigObjArgPointerVtable = {
     ServiceConfigObjArgCopy, ServiceConfigObjArgDestroy,
     ServiceConfigObjArgCmp};
@@ -456,15 +456,17 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
               chand, this, subchannel_.get());
     }
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "SubchannelWrapper");
-    auto* subchannel_node = subchannel_->channelz_node();
-    if (subchannel_node != nullptr) {
-      auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
-      if (it == chand_->subchannel_refcount_map_.end()) {
-        chand_->channelz_node_->AddChildSubchannel(subchannel_node->uuid());
-        it = chand_->subchannel_refcount_map_.emplace(subchannel_.get(), 0)
-                 .first;
+    if (chand_->channelz_node_ != nullptr) {
+      auto* subchannel_node = subchannel_->channelz_node();
+      if (subchannel_node != nullptr) {
+        auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
+        if (it == chand_->subchannel_refcount_map_.end()) {
+          chand_->channelz_node_->AddChildSubchannel(subchannel_node->uuid());
+          it = chand_->subchannel_refcount_map_.emplace(subchannel_.get(), 0)
+                   .first;
+        }
+        ++it->second;
       }
-      ++it->second;
     }
     chand_->subchannel_wrappers_.insert(this);
   }
@@ -476,14 +478,17 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
               chand_, this, subchannel_.get());
     }
     chand_->subchannel_wrappers_.erase(this);
-    auto* subchannel_node = subchannel_->channelz_node();
-    if (subchannel_node != nullptr) {
-      auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
-      GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
-      --it->second;
-      if (it->second == 0) {
-        chand_->channelz_node_->RemoveChildSubchannel(subchannel_node->uuid());
-        chand_->subchannel_refcount_map_.erase(it);
+    if (chand_->channelz_node_ != nullptr) {
+      auto* subchannel_node = subchannel_->channelz_node();
+      if (subchannel_node != nullptr) {
+        auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
+        GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
+        --it->second;
+        if (it->second == 0) {
+          chand_->channelz_node_->RemoveChildSubchannel(
+              subchannel_node->uuid());
+          chand_->subchannel_refcount_map_.erase(it);
+        }
       }
     }
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
@@ -954,7 +959,6 @@ class ClientChannel::ClientChannelControlHelper
     };
     // Add channel args needed for the subchannel.
     absl::InlinedVector<grpc_arg, 3> args_to_add = {
-        Subchannel::CreateSubchannelAddressArg(&address.address()),
         SubchannelPoolInterface::CreateChannelArg(
             chand_->subchannel_pool_.get()),
     };
@@ -966,10 +970,10 @@ class ClientChannel::ClientChannelControlHelper
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
         &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove),
         args_to_add.data(), args_to_add.size());
-    gpr_free(args_to_add[0].value.string);
     // Create subchannel.
     RefCountedPtr<Subchannel> subchannel =
-        chand_->client_channel_factory_->CreateSubchannel(new_args);
+        chand_->client_channel_factory_->CreateSubchannel(address.address(),
+                                                          new_args);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) return nullptr;
     // Make sure the subchannel has updated keepalive time.
@@ -2490,14 +2494,13 @@ class ClientChannel::LoadBalancedCall::Metadata
     linked_mdelem->md = grpc_mdelem_from_slices(
         ExternallyManagedSlice(key.data(), key.size()),
         ExternallyManagedSlice(value.data(), value.size()));
-    GPR_ASSERT(grpc_metadata_batch_link_tail(batch_, linked_mdelem) ==
-               GRPC_ERROR_NONE);
+    GPR_ASSERT(batch_->LinkTail(linked_mdelem) == GRPC_ERROR_NONE);
   }
 
   std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector()
       override {
     std::vector<std::pair<std::string, std::string>> result;
-    (*batch_)->ForEach([&](grpc_mdelem md) {
+    batch_->ForEach([&](grpc_mdelem md) {
       auto key = std::string(StringViewFromSlice(GRPC_MDKEY(md)));
       if (key != ":path") {
         result.push_back(
@@ -2510,7 +2513,7 @@ class ClientChannel::LoadBalancedCall::Metadata
 
   absl::optional<absl::string_view> Lookup(absl::string_view key,
                                            std::string* buffer) const override {
-    return grpc_metadata_batch_get_value(batch_, key, buffer);
+    return batch_->GetValue(key, buffer);
   }
 
  private:
@@ -2532,8 +2535,7 @@ class ClientChannel::LoadBalancedCall::LbCallState
   const LoadBalancingPolicy::BackendMetricData* GetBackendMetricData()
       override {
     if (lb_call_->backend_metric_data_ == nullptr) {
-      grpc_linked_mdelem* md = (*lb_call_->recv_trailing_metadata_)
-                                   ->legacy_index()
+      grpc_linked_mdelem* md = lb_call_->recv_trailing_metadata_->legacy_index()
                                    ->named.x_endpoint_load_metrics_bin;
       if (md != nullptr) {
         lb_call_->backend_metric_data_ =
@@ -2907,15 +2909,13 @@ void ClientChannel::LoadBalancedCall::RecvTrailingMetadataReady(
     if (error != GRPC_ERROR_NONE) {
       // Get status from error.
       grpc_status_code code;
-      grpc_slice message = grpc_empty_slice();
+      std::string message;
       grpc_error_get_status(error, self->deadline_, &code, &message,
                             /*http_error=*/nullptr, /*error_string=*/nullptr);
-      status = absl::Status(static_cast<absl::StatusCode>(code),
-                            StringViewFromSlice(message));
+      status = absl::Status(static_cast<absl::StatusCode>(code), message);
     } else {
       // Get status from headers.
-      const auto& fields =
-          (*self->recv_trailing_metadata_)->legacy_index()->named;
+      const auto& fields = self->recv_trailing_metadata_->legacy_index()->named;
       GPR_ASSERT(fields.grpc_status != nullptr);
       grpc_status_code code =
           grpc_get_status_code_from_metadata(fields.grpc_status->md);

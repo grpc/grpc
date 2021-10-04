@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -41,6 +39,7 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -50,7 +49,6 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/status_metadata.h"
@@ -255,9 +253,9 @@ void GetCallStatus(grpc_status_code* status, grpc_millis deadline,
   if (error != GRPC_ERROR_NONE) {
     grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
   } else {
-    if ((*md_batch)->legacy_index()->named.grpc_status != nullptr) {
+    if (md_batch->legacy_index()->named.grpc_status != nullptr) {
       *status = grpc_get_status_code_from_metadata(
-          (*md_batch)->legacy_index()->named.grpc_status->md);
+          md_batch->legacy_index()->named.grpc_status->md);
     } else {
       *status = GRPC_STATUS_UNKNOWN;
     }
@@ -655,42 +653,39 @@ Subchannel::Subchannel(SubchannelKey key,
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount) ? "Subchannel"
                                                                   : nullptr),
       key_(std::move(key)),
+      pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
       backoff_(ParseArgsForBackoffValues(args, &min_connect_timeout_ms_)) {
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
-  pollset_set_ = grpc_pollset_set_create();
-  grpc_resolved_address* addr =
-      static_cast<grpc_resolved_address*>(gpr_malloc(sizeof(*addr)));
-  GetAddressFromSubchannelAddressArg(args, addr);
-  grpc_resolved_address* new_address = nullptr;
-  grpc_channel_args* new_args = nullptr;
-  if (ProxyMapperRegistry::MapAddress(*addr, args, &new_address, &new_args)) {
-    GPR_ASSERT(new_address != nullptr);
-    gpr_free(addr);
-    addr = new_address;
-  }
-  static const char* keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS};
-  grpc_arg new_arg = CreateSubchannelAddressArg(addr);
-  gpr_free(addr);
-  args_ = grpc_channel_args_copy_and_add_and_remove(
-      new_args != nullptr ? new_args : args, keys_to_remove,
-      GPR_ARRAY_SIZE(keys_to_remove), &new_arg, 1);
-  gpr_free(new_arg.value.string);
-  if (new_args != nullptr) grpc_channel_args_destroy(new_args);
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);
-  const grpc_arg* arg = grpc_channel_args_find(args_, GRPC_ARG_ENABLE_CHANNELZ);
-  const bool channelz_enabled =
-      grpc_channel_arg_get_bool(arg, GRPC_ENABLE_CHANNELZ_DEFAULT);
-  arg = grpc_channel_args_find(
-      args_, GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE);
-  const grpc_integer_options options = {
-      GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0, INT_MAX};
-  size_t channel_tracer_max_memory =
-      static_cast<size_t>(grpc_channel_arg_get_integer(arg, options));
+  // Check proxy mapper to determine address to connect to and channel
+  // args to use.
+  address_for_connect_ = key_.address();
+  grpc_resolved_address* new_address = nullptr;
+  grpc_channel_args* new_args = nullptr;
+  if (ProxyMapperRegistry::MapAddress(address_for_connect_, args, &new_address,
+                                      &new_args)) {
+    GPR_ASSERT(new_address != nullptr);
+    address_for_connect_ = *new_address;
+    gpr_free(new_address);
+  }
+  if (new_args != nullptr) {
+    args_ = new_args;
+  } else {
+    args_ = grpc_channel_args_copy(args);
+  }
+  // Initialize channelz.
+  const bool channelz_enabled = grpc_channel_args_find_bool(
+      args_, GRPC_ARG_ENABLE_CHANNELZ, GRPC_ENABLE_CHANNELZ_DEFAULT);
   if (channelz_enabled) {
+    const size_t channel_tracer_max_memory =
+        static_cast<size_t>(grpc_channel_args_find_integer(
+            args_, GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE,
+            {GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0,
+             INT_MAX}));
     channelz_node_ = MakeRefCounted<channelz::SubchannelNode>(
-        GetTargetAddress(), channel_tracer_max_memory);
+        grpc_sockaddr_to_uri(&key_.address()), channel_tracer_max_memory);
     channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("subchannel created"));
@@ -711,8 +706,8 @@ Subchannel::~Subchannel() {
 
 RefCountedPtr<Subchannel> Subchannel::Create(
     OrphanablePtr<SubchannelConnector> connector,
-    const grpc_channel_args* args) {
-  SubchannelKey key(args);
+    const grpc_resolved_address& address, const grpc_channel_args* args) {
+  SubchannelKey key(address, args);
   SubchannelPoolInterface* subchannel_pool =
       SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(args);
   GPR_ASSERT(subchannel_pool != nullptr);
@@ -748,14 +743,6 @@ void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
     grpc_channel_args_destroy(args_);
     args_ = new_args;
   }
-}
-
-const char* Subchannel::GetTargetAddress() {
-  const grpc_arg* addr_arg =
-      grpc_channel_args_find(args_, GRPC_ARG_SUBCHANNEL_ADDRESS);
-  const char* addr_str = grpc_channel_arg_get_string(addr_arg);
-  GPR_ASSERT(addr_str != nullptr);  // Should have been set by LB policy.
-  return addr_str;
 }
 
 channelz::SubchannelNode* Subchannel::channelz_node() {
@@ -846,44 +833,6 @@ void Subchannel::Orphan() {
   connector_.reset();
   connected_subchannel_.reset();
   health_watcher_map_.ShutdownLocked();
-}
-
-grpc_arg Subchannel::CreateSubchannelAddressArg(
-    const grpc_resolved_address* addr) {
-  return grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_SUBCHANNEL_ADDRESS),
-      gpr_strdup(addr->len > 0 ? grpc_sockaddr_to_uri(addr).c_str() : ""));
-}
-
-const char* Subchannel::GetUriFromSubchannelAddressArg(
-    const grpc_channel_args* args) {
-  const grpc_arg* addr_arg =
-      grpc_channel_args_find(args, GRPC_ARG_SUBCHANNEL_ADDRESS);
-  const char* addr_str = grpc_channel_arg_get_string(addr_arg);
-  GPR_ASSERT(addr_str != nullptr);  // Should have been set by LB policy.
-  return addr_str;
-}
-
-namespace {
-
-void UriToSockaddr(const char* uri_str, grpc_resolved_address* addr) {
-  absl::StatusOr<URI> uri = URI::Parse(uri_str);
-  if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
-    GPR_ASSERT(uri.ok());
-  }
-  if (!grpc_parse_uri(*uri, addr)) memset(addr, 0, sizeof(*addr));
-}
-
-}  // namespace
-
-void Subchannel::GetAddressFromSubchannelAddressArg(
-    const grpc_channel_args* args, grpc_resolved_address* addr) {
-  const char* addr_uri_str = GetUriFromSubchannelAddressArg(args);
-  memset(addr, 0, sizeof(*addr));
-  if (*addr_uri_str != '\0') {
-    UriToSockaddr(addr_uri_str, addr);
-  }
 }
 
 namespace {
@@ -988,6 +937,7 @@ void Subchannel::OnRetryAlarm(void* arg, grpc_error_handle error) {
 
 void Subchannel::ContinueConnectingLocked() {
   SubchannelConnector::Args args;
+  args.address = &address_for_connect_;
   args.interested_parties = pollset_set_;
   const grpc_millis min_deadline =
       min_connect_timeout_ms_ + ExecCtx::Get()->Now();
@@ -1036,7 +986,8 @@ bool Subchannel::PublishTransportLocked() {
       builder, connecting_result_.channel_args);
   grpc_channel_stack_builder_set_transport(builder,
                                            connecting_result_.transport);
-  if (!grpc_channel_init_create_stack(builder, GRPC_CLIENT_SUBCHANNEL)) {
+  if (!CoreConfiguration::Get().channel_init().CreateStack(
+          builder, GRPC_CLIENT_SUBCHANNEL)) {
     grpc_channel_stack_builder_destroy(builder);
     return false;
   }
