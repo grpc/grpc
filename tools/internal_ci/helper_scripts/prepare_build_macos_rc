@@ -65,7 +65,7 @@ then
   curl --version
   curl --insecure https://curl.se/ca/cacert.pem -o cacert.pem
   echo "f524fc21859b776e18df01a87880efa198112214e13494275dbcbd9bcb71d976 cacert.pem" | sha256sum --check || exit 1
-  export CURL_CA_BUNDLE=cacert.pem
+  export CURL_CA_BUNDLE=$(pwd)/cacert.pem
 
   # Fetch keys per https://rvm.io/rvm/install
   gpg_recv_keys_success=0
@@ -78,7 +78,7 @@ then
     sleep 3
   done
   [[ "$gpg_recv_keys_success" == 1 ]] || exit 1
-  rvm --debug --trace get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
+  rvm --debug get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
   # stop echoing bash commands temporarily to prevent rvm from polluting the logs
   set +x
   source $HOME/.rvm/scripts/rvm
