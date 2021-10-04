@@ -13110,11 +13110,12 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
                       ::testing::_))))));
 }
 
+/*
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEmpty) {
   // The CSDS service should not fail if XdsClient is not initialized or there
   // is no working xDS configs.
   FetchCsdsResponse();
-}
+}*/
 
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerError) {
   int kFetchConfigRetries = 3;

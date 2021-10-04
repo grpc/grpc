@@ -501,9 +501,6 @@ XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
     gpr_log(GPR_INFO, "[xds_client %p] creating channel to %s",
             xds_client_.get(), server.server_uri.c_str());
   }
-  channel_ = CreateXdsChannel(xds_client_->args_, server);
-  GPR_ASSERT(channel_ != nullptr);
-  StartConnectivityWatchLocked();
 }
 
 XdsClient::ChannelState::~ChannelState() {
@@ -562,6 +559,11 @@ void XdsClient::ChannelState::CancelConnectivityWatchLocked() {
 
 void XdsClient::ChannelState::SubscribeLocked(const std::string& type_url,
                                               const std::string& name) {
+  if (channel_ == nullptr) {
+    channel_ = CreateXdsChannel(xds_client_->args_, server_);
+  }
+  GPR_ASSERT(channel_ != nullptr);
+  StartConnectivityWatchLocked();
   if (ads_calld_ == nullptr) {
     // Start the ADS call if this is the first request.
     ads_calld_.reset(new RetryableCall<AdsCallState>(

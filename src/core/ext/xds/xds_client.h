@@ -252,7 +252,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     const XdsBootstrap::XdsServer& server_;
 
     // The channel and its status.
-    grpc_channel* channel_;
+    grpc_channel* channel_ = nullptr;
     bool shutting_down_ = false;
     StateWatcher* watcher_ = nullptr;
 
