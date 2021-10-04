@@ -179,7 +179,6 @@ bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
     } else {
       // TODO(veblush): Remove this once absl::Status migration is done
       if (which == GRPC_ERROR_STR_GRPC_MESSAGE) {
-        const char* msg = nullptr;
         switch (error.code()) {
           case absl::StatusCode::kOk:
             *s = "";
