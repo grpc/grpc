@@ -108,8 +108,7 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
           grpc_error_set_str(
               GRPC_ERROR_CREATE_FROM_STATIC_STRING("RST_STREAM"),
               GRPC_ERROR_STR_GRPC_MESSAGE,
-              grpc_slice_from_cpp_string(absl::StrCat(
-                  "Received RST_STREAM with error code ", reason))),
+              absl::StrCat("Received RST_STREAM with error code ", reason)),
           GRPC_ERROR_INT_HTTP2_ERROR, static_cast<intptr_t>(reason));
     }
     grpc_chttp2_mark_stream_closed(t, s, true, true, error);

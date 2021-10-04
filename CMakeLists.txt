@@ -596,7 +596,6 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_c endpoint_pair_test)
   add_dependencies(buildtests_c env_test)
-  add_dependencies(buildtests_c error_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c ev_epollex_linux_test)
   endif()
@@ -847,6 +846,9 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx codegen_test_full)
   add_dependencies(buildtests_cxx codegen_test_minimal)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx competition)
+  endif()
   add_dependencies(buildtests_cxx connection_prefix_bad_client_test)
   add_dependencies(buildtests_cxx connectivity_state_test)
   add_dependencies(buildtests_cxx context_allocator_end2end_test)
@@ -861,6 +863,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx end2end_test)
   add_dependencies(buildtests_cxx endpoint_config_test)
   add_dependencies(buildtests_cxx error_details_test)
+  add_dependencies(buildtests_cxx error_test)
   add_dependencies(buildtests_cxx error_utils_test)
   add_dependencies(buildtests_cxx evaluate_args_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -5263,34 +5266,6 @@ target_include_directories(env_test
 )
 
 target_link_libraries(env_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(error_test
-  test/core/iomgr/endpoint_tests.cc
-  test/core/iomgr/error_test.cc
-)
-
-target_include_directories(error_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(error_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -10411,6 +10386,114 @@ target_link_libraries(codegen_test_minimal
 
 endif()
 if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(competition
+    src/core/ext/upb-generated/google/api/annotations.upb.c
+    src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
+    src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
+    src/core/ext/upb-generated/google/api/http.upb.c
+    src/core/ext/upb-generated/google/protobuf/any.upb.c
+    src/core/ext/upb-generated/google/protobuf/duration.upb.c
+    src/core/ext/upb-generated/google/protobuf/empty.upb.c
+    src/core/ext/upb-generated/google/protobuf/struct.upb.c
+    src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+    src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+    src/core/ext/upb-generated/google/rpc/status.upb.c
+    src/core/lib/gpr/alloc.cc
+    src/core/lib/gpr/atm.cc
+    src/core/lib/gpr/cpu_iphone.cc
+    src/core/lib/gpr/cpu_linux.cc
+    src/core/lib/gpr/cpu_posix.cc
+    src/core/lib/gpr/cpu_windows.cc
+    src/core/lib/gpr/env_linux.cc
+    src/core/lib/gpr/env_posix.cc
+    src/core/lib/gpr/env_windows.cc
+    src/core/lib/gpr/log.cc
+    src/core/lib/gpr/log_android.cc
+    src/core/lib/gpr/log_linux.cc
+    src/core/lib/gpr/log_posix.cc
+    src/core/lib/gpr/log_windows.cc
+    src/core/lib/gpr/murmur_hash.cc
+    src/core/lib/gpr/string.cc
+    src/core/lib/gpr/string_posix.cc
+    src/core/lib/gpr/string_util_windows.cc
+    src/core/lib/gpr/string_windows.cc
+    src/core/lib/gpr/sync.cc
+    src/core/lib/gpr/sync_abseil.cc
+    src/core/lib/gpr/sync_posix.cc
+    src/core/lib/gpr/sync_windows.cc
+    src/core/lib/gpr/time.cc
+    src/core/lib/gpr/time_posix.cc
+    src/core/lib/gpr/time_precise.cc
+    src/core/lib/gpr/time_windows.cc
+    src/core/lib/gpr/tmpfile_msys.cc
+    src/core/lib/gpr/tmpfile_posix.cc
+    src/core/lib/gpr/tmpfile_windows.cc
+    src/core/lib/gpr/wrap_memcpy.cc
+    src/core/lib/gprpp/arena.cc
+    src/core/lib/gprpp/examine_stack.cc
+    src/core/lib/gprpp/fork.cc
+    src/core/lib/gprpp/global_config_env.cc
+    src/core/lib/gprpp/host_port.cc
+    src/core/lib/gprpp/mpscq.cc
+    src/core/lib/gprpp/stat_posix.cc
+    src/core/lib/gprpp/stat_windows.cc
+    src/core/lib/gprpp/status_helper.cc
+    src/core/lib/gprpp/thd_posix.cc
+    src/core/lib/gprpp/thd_windows.cc
+    src/core/lib/gprpp/time_util.cc
+    src/core/lib/profiling/basic_timers.cc
+    src/core/lib/profiling/stap_timers.cc
+    src/core/lib/promise/activity.cc
+    test/core/promise/benchmark/competition.cc
+    test/core/promise/benchmark/filter_stack.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+
+  target_include_directories(competition
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(competition
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    absl::base
+    absl::core_headers
+    absl::memory
+    absl::status
+    absl::statusor
+    absl::cord
+    absl::str_format
+    absl::strings
+    absl::synchronization
+    absl::time
+    absl::optional
+    absl::variant
+    ${_gRPC_BENCHMARK_LIBRARIES}
+    upb
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
 
 add_executable(connection_prefix_bad_client_test
   test/core/bad_client/bad_client.cc
@@ -11044,6 +11127,42 @@ target_link_libraries(error_details_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_error_details
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(error_test
+  test/core/iomgr/endpoint_tests.cc
+  test/core/iomgr/error_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(error_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(error_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
 
