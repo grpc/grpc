@@ -333,7 +333,7 @@ class Call {
   template <typename M>
   grpc_metadata_array ReadMetadata(const M& metadata) {
     grpc_metadata* m = AllocArray<grpc_metadata>(metadata.size());
-    for (size_t i = 0; i < metadata.size(); i++) {
+    for (int i = 0; i < metadata.size(); ++i) {
       m[i].key = ReadSlice(metadata[i].key());
       m[i].value = ReadSlice(metadata[i].value());
     }
