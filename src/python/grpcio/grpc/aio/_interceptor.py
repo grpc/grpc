@@ -475,6 +475,7 @@ class _InterceptedStreamRequestMixin:
 
     _write_to_iterator_async_gen: Optional[AsyncIterable[RequestType]]
     _write_to_iterator_queue: Optional[asyncio.Queue]
+    _status_code_task: Optional[asyncio.Task]
 
     _FINISH_ITERATOR_SENTINEL = object()
 
@@ -488,6 +489,7 @@ class _InterceptedStreamRequestMixin:
             self._write_to_iterator_queue = asyncio.Queue(maxsize=1)
             self._write_to_iterator_async_gen = self._proxy_writes_as_request_iterator(
             )
+            self._status_code_task = None
             request_iterator = self._write_to_iterator_async_gen
         else:
             self._write_to_iterator_queue = None
@@ -508,17 +510,14 @@ class _InterceptedStreamRequestMixin:
         # Write the specified 'request' to the request iterator queue using the
         # specified 'call' to allow for interruption of the write in the case
         # of abrupt termination of the call.
-        _, pending = await asyncio.wait(
+        if self._status_code_task is None:
+            self._status_code_task = self._loop.create_task(call.code())
+
+        _, _ = await asyncio.wait(
             (self._loop.create_task(self._write_to_iterator_queue.put(request)),
-             self._loop.create_task(call.code())),
+             self._status_code_task),
             return_when=asyncio.FIRST_COMPLETED
         )
-        # don't accumulate unneeded pending tasks:
-        # pending would contain at most 1 element that is either the queue
-        # write task, or the call.code task, in both cases these tasks are no
-        # longer needed and should be cleared from the asyncio loop queue
-        if pending:
-            pending.pop().cancel()
 
     async def write(self, request: RequestType) -> None:
         # If no queue was created it means that requests
