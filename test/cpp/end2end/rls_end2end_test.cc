@@ -431,7 +431,7 @@ class RlsEnd2endTest : public ::testing::Test {
         : rls_server_port_(rls_server_port) {}
 
     ServiceConfigBuilder& set_lookup_service_timeout(grpc_millis timeout) {
-      lookup_service_timeout_ = timeout;
+      lookup_service_timeout_ = timeout * grpc_test_slowdown_factor();
       return *this;
     }
 
@@ -441,12 +441,12 @@ class RlsEnd2endTest : public ::testing::Test {
     }
 
     ServiceConfigBuilder& set_max_age(grpc_millis max_age) {
-      max_age_ = max_age;
+      max_age_ = max_age * grpc_test_slowdown_factor();
       return *this;
     }
 
     ServiceConfigBuilder& set_stale_age(grpc_millis stale_age) {
-      stale_age_ = stale_age;
+      stale_age_ = stale_age * grpc_test_slowdown_factor();
       return *this;
     }
 
