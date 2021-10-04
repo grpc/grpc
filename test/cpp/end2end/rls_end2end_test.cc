@@ -121,9 +121,9 @@ using RlsService =
 
 class RlsServiceImpl : public RlsService {
  public:
-  ::grpc::Status RouteLookup(
-      ::grpc::ServerContext* context, const RouteLookupRequest* request,
-      RouteLookupResponse* response) override {
+  ::grpc::Status RouteLookup(::grpc::ServerContext* context,
+                             const RouteLookupRequest* request,
+                             RouteLookupResponse* response) override {
     gpr_log(GPR_INFO, "RLS: Received request: %s",
             request->DebugString().c_str());
     // RLS server should see call creds.
@@ -198,8 +198,8 @@ class RlsServiceImpl : public RlsService {
   };
 
   grpc::internal::Mutex mu_;
-  std::map<RouteLookupRequest, ResponseData, RlsRequestLessThan>
-      responses_ ABSL_GUARDED_BY(&mu_);
+  std::map<RouteLookupRequest, ResponseData, RlsRequestLessThan> responses_
+      ABSL_GUARDED_BY(&mu_);
   std::vector<RouteLookupRequest> unmatched_requests_ ABSL_GUARDED_BY(&mu_);
 };
 
@@ -353,8 +353,8 @@ class RlsEnd2endTest : public ::testing::Test {
     return request;
   }
 
-  static RouteLookupResponse BuildRlsResponse(
-      std::vector<std::string> targets, const char* header_data = "") {
+  static RouteLookupResponse BuildRlsResponse(std::vector<std::string> targets,
+                                              const char* header_data = "") {
     RouteLookupResponse response;
     response.mutable_targets()->Add(targets.begin(), targets.end());
     response.set_header_data(header_data);
@@ -648,8 +648,7 @@ TEST_F(RlsEnd2endTest, DuplicateHeadersAreMerged) {
                                          kServiceValue, kMethodValue, kTestKey))
           .Build());
   rls_server_->service_.SetResponse(
-      BuildRlsRequest(
-          {{kTestKey, absl::StrCat(kTestValue, ",", kTestValue2)}}),
+      BuildRlsRequest({{kTestKey, absl::StrCat(kTestValue, ",", kTestValue2)}}),
       BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
   // Same header present twice in the request.  Values should be merged.
   CheckRpcSendOk(
@@ -833,7 +832,7 @@ TEST_F(RlsEnd2endTest, HeaderData) {
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
       BuildRlsResponse({TargetStringForPort(backends_[0]->port_)},
-                               kHeaderData));
+                       kHeaderData));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
@@ -909,14 +908,14 @@ TEST_F(RlsEnd2endTest, FailedRlsRequestWithoutDefaultTarget) {
   // The RLS request will fail, and thus so will the data plane RPC.
   CheckRpcSendFailure(DEBUG_LOCATION,
                       RpcOptions().set_metadata({{"key1", kTestValue}}));
-  EXPECT_THAT(rls_server_->service_.GetUnmatchedRequests(),
-              ::testing::ElementsAre(
-                  // TODO(roth): Change this to use ::testing::ProtoEquals()
-                  // once that becomes available in OSS.
-                  ::testing::Property(
-                      &RouteLookupRequest::DebugString,
-                      BuildRlsRequest(
-                          {{kTestKey, kTestValue}}).DebugString())));
+  EXPECT_THAT(
+      rls_server_->service_.GetUnmatchedRequests(),
+      ::testing::ElementsAre(
+          // TODO(roth): Change this to use ::testing::ProtoEquals()
+          // once that becomes available in OSS.
+          ::testing::Property(
+              &RouteLookupRequest::DebugString,
+              BuildRlsRequest({{kTestKey, kTestValue}}).DebugString())));
   // Now give the RLS server the right response.
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
@@ -953,14 +952,14 @@ TEST_F(RlsEnd2endTest, FailedRlsRequestWithDefaultTarget) {
   // The data plane RPC should be sent to the default target.
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
-  EXPECT_THAT(rls_server_->service_.GetUnmatchedRequests(),
-              ::testing::ElementsAre(
-                  // TODO(roth): Change this to use ::testing::ProtoEquals()
-                  // once that becomes available in OSS.
-                  ::testing::Property(
-                      &RouteLookupRequest::DebugString,
-                      BuildRlsRequest(
-                          {{kTestKey, kTestValue}}).DebugString())));
+  EXPECT_THAT(
+      rls_server_->service_.GetUnmatchedRequests(),
+      ::testing::ElementsAre(
+          // TODO(roth): Change this to use ::testing::ProtoEquals()
+          // once that becomes available in OSS.
+          ::testing::Property(
+              &RouteLookupRequest::DebugString,
+              BuildRlsRequest({{kTestKey, kTestValue}}).DebugString())));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 0);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
@@ -1022,14 +1021,14 @@ TEST_F(RlsEnd2endTest, UpdateConfig) {
   // The data plane RPC should be sent to the default target.
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
-  EXPECT_THAT(rls_server_->service_.GetUnmatchedRequests(),
-              ::testing::ElementsAre(
-                  // TODO(roth): Change this to use ::testing::ProtoEquals()
-                  // once that becomes available in OSS.
-                  ::testing::Property(
-                      &RouteLookupRequest::DebugString,
-                      BuildRlsRequest(
-                          {{kTestKey, kTestValue}}).DebugString())));
+  EXPECT_THAT(
+      rls_server_->service_.GetUnmatchedRequests(),
+      ::testing::ElementsAre(
+          // TODO(roth): Change this to use ::testing::ProtoEquals()
+          // once that becomes available in OSS.
+          ::testing::Property(
+              &RouteLookupRequest::DebugString,
+              BuildRlsRequest({{kTestKey, kTestValue}}).DebugString())));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 0);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
@@ -1154,7 +1153,7 @@ TEST_F(RlsEnd2endTest, StaleCacheEntryWithHeaderData) {
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
       BuildRlsResponse({TargetStringForPort(backends_[0]->port_)},
-                               kHeaderData));
+                       kHeaderData));
   // Send one RPC.  RLS server gets a request, and RPC goes to backend.
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
@@ -1168,7 +1167,7 @@ TEST_F(RlsEnd2endTest, StaleCacheEntryWithHeaderData) {
       BuildRlsRequest({{kTestKey, kTestValue}},
                       RouteLookupRequest::REASON_STALE, kHeaderData),
       BuildRlsResponse({TargetStringForPort(backends_[0]->port_)},
-                               kHeaderData));
+                       kHeaderData));
   // Wait longer than stale age.
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
   // Send another RPC.  This should use the stale value but should
