@@ -12,24 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_CHANNEL_CREATE_IMPL_H
-#define GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_CHANNEL_CREATE_IMPL_H
-
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/transport/binder/security_policy/security_policy.h"
-#include "src/core/ext/transport/binder/wire_format/binder.h"
-#include "src/core/lib/channel/channel_args.h"
+#include "src/core/ext/transport/binder/security_policy/internal_only_security_policy.h"
+
+#ifdef GPR_ANDROID
+
+#include <unistd.h>
 
 namespace grpc {
-namespace internal {
+namespace experimental {
+namespace binder {
 
-grpc_channel* CreateChannelFromBinderImpl(
-    std::unique_ptr<grpc_binder::Binder> endpoint_binder,
-    std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy,
-    const grpc_channel_args* args);
+InternalOnlySecurityPolicy::InternalOnlySecurityPolicy() = default;
 
-}  // namespace internal
+InternalOnlySecurityPolicy::~InternalOnlySecurityPolicy() = default;
+
+bool InternalOnlySecurityPolicy::IsAuthorized(int uid) {
+  return static_cast<uid_t>(uid) == getuid();
+};
+
+}  // namespace binder
+}  // namespace experimental
 }  // namespace grpc
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_CHANNEL_CREATE_IMPL_H
+#endif

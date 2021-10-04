@@ -24,28 +24,39 @@ package(
 )
 
 grpc_cc_library(
-    name = "grpc_transport_binder_server",
-    srcs = [
-        "binder_server.cc",
-        "binder_server_credentials.cc",
-    ],
+    name = "security_policy_interface",
     hdrs = [
-        "binder_server.h",
-        "binder_server_credentials.h",
+        "security_policy.h",
     ],
-    external_deps = [
-        "absl/container:flat_hash_map",
-        "absl/memory",
-        "absl/status",
-    ],
-    language = "c++",
     deps = [
         "//:gpr_platform",
-        "//:grpc++_internals",
-        "//:grpc_base",
-        "//src/core/ext/transport/binder/security_policy:security_policy_interface",
-        "//src/core/ext/transport/binder/transport:binder_transport",
-        "//src/core/ext/transport/binder/wire_format:binder",
-        "//src/core/ext/transport/binder/wire_format:binder_android",
+    ],
+)
+
+grpc_cc_library(
+    name = "internal_only_security_policy",
+    srcs = [
+        "internal_only_security_policy.cc",
+    ],
+    hdrs = [
+        "internal_only_security_policy.h",
+    ],
+    deps = [
+        ":security_policy_interface",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "untrusted_security_policy",
+    srcs = [
+        "untrusted_security_policy.cc",
+    ],
+    hdrs = [
+        "untrusted_security_policy.h",
+    ],
+    deps = [
+        ":security_policy_interface",
+        "//:gpr_platform",
     ],
 )

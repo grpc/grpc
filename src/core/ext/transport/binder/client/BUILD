@@ -48,6 +48,7 @@ grpc_cc_library(
         "//:grpc++_base",
         "//:grpc_base",
         "//:grpc_codegen",
+        "//src/core/ext/transport/binder/security_policy:security_policy_interface",
         "//src/core/ext/transport/binder/transport:binder_transport",
         "//src/core/ext/transport/binder/utils:transport_stream_receiver",
         "//src/core/ext/transport/binder/wire_format:binder_android",
