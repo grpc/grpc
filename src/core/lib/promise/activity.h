@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_PROMISE_ACTIVITY_H
 #define GRPC_CORE_LIB_PROMISE_ACTIVITY_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <functional>
 
@@ -95,8 +95,6 @@ class Waker {
 // Activity execution may be cancelled by simply deleting the activity. In such
 // a case, if execution had not already finished, the done callback would be
 // called with absl::CancelledError().
-// Activity also takes a CallbackScheduler instance on which to schedule
-// callbacks to itself in a lock-clean environment.
 class Activity : private Wakeable {
  public:
   // Cancel execution of the underlying promise.
@@ -280,17 +278,27 @@ class EnterContexts : public promise_detail::Context<Contexts>... {
 };
 
 // Implementation details for an Activity of an arbitrary type of promise.
-template <class F, class CallbackScheduler, class OnDone, typename... Contexts>
+// There should exist a static function:
+// struct WakeupScheduler {
+//   template <typename ActivityType>
+//   void ScheduleWakeup(ActivityType* activity);
+// };
+// This function should arrange that activity->RunScheduledWakeup() be invoked
+// at the earliest opportunity.
+// It can assume that activity will remain live until RunScheduledWakeup() is
+// invoked, and that a given activity will not be concurrently scheduled again
+// until its RunScheduledWakeup() has been invoked.
+template <class F, class WakeupScheduler, class OnDone, typename... Contexts>
 class PromiseActivity final
     : public Activity,
       private promise_detail::ContextHolder<Contexts>... {
  public:
   using Factory = PromiseFactory<void, F>;
-  PromiseActivity(F promise_factory, CallbackScheduler callback_scheduler,
+  PromiseActivity(F promise_factory, WakeupScheduler wakeup_scheduler,
                   OnDone on_done, Contexts... contexts)
       : Activity(),
         ContextHolder<Contexts>(std::move(contexts))...,
-        callback_scheduler_(std::move(callback_scheduler)),
+        wakeup_scheduler_(std::move(wakeup_scheduler)),
         on_done_(std::move(on_done)) {
     // Lock, construct an initial promise from the factory, and step it.
     // This may hit a waiter, which could expose our this pointer to other
@@ -332,6 +340,12 @@ class PromiseActivity final
     }
   }
 
+  void RunScheduledWakeup() {
+    GPR_ASSERT(wakeup_scheduled_.exchange(false, std::memory_order_acq_rel));
+    Step();
+    WakeupComplete();
+  }
+
  private:
   // Wakeup this activity. Arrange to poll the activity again at a convenient
   // time: this could be inline if it's deemed safe, or it could be by passing
@@ -346,11 +360,12 @@ class PromiseActivity final
       WakeupComplete();
       return;
     }
-    // Can't safely run, so ask to run later.
-    callback_scheduler_([this]() {
-      this->Step();
-      this->WakeupComplete();
-    });
+    if (!wakeup_scheduled_.exchange(true, std::memory_order_acq_rel)) {
+      // Can't safely run, so ask to run later.
+      wakeup_scheduler_.ScheduleWakeup(this);
+    } else {
+      WakeupComplete();
+    }
   }
 
   // Drop a wakeup
@@ -429,6 +444,14 @@ class PromiseActivity final
   }
 
   using Promise = typename Factory::Promise;
+  // Scheduler for wakeups
+  GPR_NO_UNIQUE_ADDRESS WakeupScheduler wakeup_scheduler_;
+  // Callback on completion of the promise.
+  GPR_NO_UNIQUE_ADDRESS OnDone on_done_;
+  // Has execution completed?
+  GPR_NO_UNIQUE_ADDRESS bool done_ ABSL_GUARDED_BY(mu_) = false;
+  // Is there a wakeup scheduled?
+  GPR_NO_UNIQUE_ADDRESS std::atomic<bool> wakeup_scheduled_{false};
   // We wrap the promise in a union to allow control over the construction
   // simultaneously with annotating mutex requirements and noting that the
   // promise contained may not use any memory.
@@ -438,46 +461,23 @@ class PromiseActivity final
     GPR_NO_UNIQUE_ADDRESS Promise promise;
   };
   GPR_NO_UNIQUE_ADDRESS PromiseHolder promise_holder_ ABSL_GUARDED_BY(mu_);
-  // Schedule callbacks on some external executor.
-  GPR_NO_UNIQUE_ADDRESS CallbackScheduler callback_scheduler_;
-  // Callback on completion of the promise.
-  GPR_NO_UNIQUE_ADDRESS OnDone on_done_;
-  // Has execution completed?
-  GPR_NO_UNIQUE_ADDRESS bool done_ ABSL_GUARDED_BY(mu_) = false;
 };
 
 }  // namespace promise_detail
 
 // Given a functor that returns a promise (a promise factory), a callback for
 // completion, and a callback scheduler, construct an activity.
-template <typename Factory, typename CallbackScheduler, typename OnDone,
+template <typename Factory, typename WakeupScheduler, typename OnDone,
           typename... Contexts>
 ActivityPtr MakeActivity(Factory promise_factory,
-                         CallbackScheduler callback_scheduler, OnDone on_done,
+                         WakeupScheduler wakeup_scheduler, OnDone on_done,
                          Contexts... contexts) {
   return ActivityPtr(
-      new promise_detail::PromiseActivity<Factory, CallbackScheduler, OnDone,
+      new promise_detail::PromiseActivity<Factory, WakeupScheduler, OnDone,
                                           Contexts...>(
-          std::move(promise_factory), std::move(callback_scheduler),
+          std::move(promise_factory), std::move(wakeup_scheduler),
           std::move(on_done), std::move(contexts)...));
 }
-
-// A callback scheduler that simply crashes
-// Useful for very limited tests
-struct NoCallbackScheduler {
-  template <typename F>
-  void operator()(F) {
-    abort();
-  }
-};
-
-// A callback scheduler that simply runs the callback
-// Useful for unit testing, probably not so much for real systems due to lock
-// ordering problems
-class InlineCallbackScheduler {
- public:
-  void operator()(std::function<void()> f) { f(); }
-};
 
 }  // namespace grpc_core
 

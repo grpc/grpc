@@ -32,7 +32,9 @@
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_utils.h"
+#include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -331,7 +333,7 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
     grpc_core::ExecCtx exec_ctx;
 
     for (size_t i = 0; i < GRPC_STATIC_MDELEM_COUNT; i++) {
-      grpc_mdelem p = GRPC_MAKE_MDELEM(&grpc_static_mdelem_table()[i],
+      grpc_mdelem p = GRPC_MAKE_MDELEM(&grpc_core::g_static_mdelem_table[i],
                                        GRPC_MDELEM_STORAGE_STATIC);
       grpc_mdelem q =
           grpc_mdelem_from_slices(maybe_dup(GRPC_MDKEY(p), dup_key),
@@ -354,8 +356,8 @@ static void test_grpc_metadata_batch_get_value_with_absent_key(void) {
   {
     grpc_metadata_batch metadata;
     std::string concatenated_value;
-    absl::optional<absl::string_view> value = grpc_metadata_batch_get_value(
-        &metadata, "absent_key", &concatenated_value);
+    absl::optional<absl::string_view> value =
+        metadata.GetValue("absent_key", &concatenated_value);
     GPR_ASSERT(value == absl::nullopt);
   }
   grpc_shutdown();
@@ -371,11 +373,10 @@ static void test_grpc_metadata_batch_get_value_returns_one_value(void) {
     storage.md = grpc_mdelem_from_slices(
         grpc_slice_intern(grpc_slice_from_static_string(kKey)),
         grpc_slice_intern(grpc_slice_from_static_string(kValue)));
-    GPR_ASSERT(grpc_metadata_batch_link_head(&metadata, &storage) ==
-               GRPC_ERROR_NONE);
+    GPR_ASSERT(metadata.LinkHead(&storage) == GRPC_ERROR_NONE);
     std::string concatenated_value;
     absl::optional<absl::string_view> value =
-        grpc_metadata_batch_get_value(&metadata, kKey, &concatenated_value);
+        metadata.GetValue(kKey, &concatenated_value);
     GPR_ASSERT(value.has_value());
     GPR_ASSERT(value.value() == kValue);
   }
@@ -394,20 +395,33 @@ static void test_grpc_metadata_batch_get_value_returns_multiple_values(void) {
     storage1.md = grpc_mdelem_from_slices(
         grpc_slice_intern(grpc_slice_from_static_string(kKey)),
         grpc_slice_intern(grpc_slice_from_static_string(kValue1)));
-    GPR_ASSERT(grpc_metadata_batch_link_tail(&metadata, &storage1) ==
-               GRPC_ERROR_NONE);
+    GPR_ASSERT(metadata.LinkTail(&storage1) == GRPC_ERROR_NONE);
     storage2.md = grpc_mdelem_from_slices(
         grpc_slice_intern(grpc_slice_from_static_string(kKey)),
         grpc_slice_intern(grpc_slice_from_static_string(kValue2)));
-    GPR_ASSERT(grpc_metadata_batch_link_tail(&metadata, &storage2) ==
-               GRPC_ERROR_NONE);
+    GPR_ASSERT(metadata.LinkTail(&storage2) == GRPC_ERROR_NONE);
     std::string concatenated_value;
     absl::optional<absl::string_view> value =
-        grpc_metadata_batch_get_value(&metadata, kKey, &concatenated_value);
+        metadata.GetValue(kKey, &concatenated_value);
     GPR_ASSERT(value.has_value());
     GPR_ASSERT(value.value() == absl::StrCat(kValue1, ",", kValue2));
   }
   grpc_shutdown();
+}
+
+static void test_grpc_chttp2_incoming_metadata_replace_or_add_works(void) {
+  grpc_core::Arena* arena = grpc_core::Arena::Create(1024);
+  grpc_chttp2_incoming_metadata_buffer buffer(arena);
+  GRPC_LOG_IF_ERROR("incoming_buffer_add",
+                    grpc_chttp2_incoming_metadata_buffer_add(
+                        &buffer, grpc_mdelem_from_slices(
+                                     grpc_slice_from_static_string("a"),
+                                     grpc_slice_from_static_string("b"))));
+  GRPC_LOG_IF_ERROR("incoming_buffer_replace_or_add",
+                    grpc_chttp2_incoming_metadata_buffer_replace_or_add(
+                        &buffer, grpc_slice_from_static_string("a"),
+                        grpc_slice_malloc(1024 * 1024 * 1024)));
+  arena->Destroy();
 }
 
 int main(int argc, char** argv) {
@@ -430,6 +444,7 @@ int main(int argc, char** argv) {
   test_grpc_metadata_batch_get_value_with_absent_key();
   test_grpc_metadata_batch_get_value_returns_one_value();
   test_grpc_metadata_batch_get_value_returns_multiple_values();
+  test_grpc_chttp2_incoming_metadata_replace_or_add_works();
   grpc_shutdown();
   return 0;
 }

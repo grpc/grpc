@@ -22,7 +22,7 @@
 #include <inttypes.h>
 #include <string.h>
 
-#include <grpc/status.h>
+#include <grpc/impl/codegen/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -34,8 +34,8 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error_internal.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_utils.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,
                                                         "error_refcount");
@@ -130,26 +130,23 @@ bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
 
 grpc_error_handle grpc_error_set_str(grpc_error_handle src,
                                      grpc_error_strs which,
-                                     const grpc_slice& str) {
+                                     absl::string_view str) {
   grpc_core::StatusSetStr(
-      &src, static_cast<grpc_core::StatusStrProperty>(which),
-      std::string(reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(str)),
-                  GRPC_SLICE_LENGTH(str)));
+      &src, static_cast<grpc_core::StatusStrProperty>(which), str);
   return src;
 }
 
 bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
-                        grpc_slice* s) {
+                        std::string* s) {
   absl::optional<std::string> value = grpc_core::StatusGetStr(
       error, static_cast<grpc_core::StatusStrProperty>(which));
   if (value.has_value()) {
-    *s = grpc_slice_from_copied_buffer(value->c_str(), value->size());
+    *s = std::move(*value);
     return true;
   } else {
     // TODO(veblush): Remove this once absl::Status migration is done
     if (which == GRPC_ERROR_STR_DESCRIPTION && !error.message().empty()) {
-      *s = grpc_slice_from_copied_buffer(error.message().data(),
-                                         error.message().size());
+      *s = std::move(*value);
       return true;
     }
     return false;
@@ -322,8 +319,8 @@ static uint8_t get_placement(grpc_error_handle* err, size_t size) {
   GPR_ASSERT(*err);
   uint8_t slots = static_cast<uint8_t>(size / sizeof(intptr_t));
   if ((*err)->arena_size + slots > (*err)->arena_capacity) {
-    (*err)->arena_capacity = static_cast<uint8_t>(
-        std::min(UINT8_MAX - 1, (3 * (*err)->arena_capacity / 2)));
+    (*err)->arena_capacity = static_cast<uint8_t>(std::min(
+        size_t(UINT8_MAX - 1), size_t(3 * (*err)->arena_capacity / 2)));
     if ((*err)->arena_size + slots > (*err)->arena_capacity) {
       return UINT8_MAX;
     }
@@ -439,7 +436,6 @@ grpc_error_handle grpc_error_create(const char* file, int line,
                                     const grpc_slice& desc,
                                     grpc_error_handle* referencing,
                                     size_t num_referencing) {
-  GPR_TIMER_SCOPE("grpc_error_create", 0);
   uint8_t initial_arena_capacity = static_cast<uint8_t>(
       DEFAULT_ERROR_CAPACITY +
       static_cast<uint8_t>(num_referencing * SLOTS_PER_LINKED_ERROR) +
@@ -511,7 +507,6 @@ static void ref_errs(grpc_error_handle err) {
 }
 
 static grpc_error_handle copy_error_and_unref(grpc_error_handle in) {
-  GPR_TIMER_SCOPE("copy_error_and_unref", 0);
   grpc_error_handle out;
   if (grpc_error_is_special(in)) {
     out = GRPC_ERROR_CREATE_FROM_STATIC_STRING("unknown");
@@ -563,7 +558,6 @@ static grpc_error_handle copy_error_and_unref(grpc_error_handle in) {
 
 grpc_error_handle grpc_error_set_int(grpc_error_handle src,
                                      grpc_error_ints which, intptr_t value) {
-  GPR_TIMER_SCOPE("grpc_error_set_int", 0);
   grpc_error_handle new_err = copy_error_and_unref(src);
   internal_set_int(&new_err, which, value);
   return new_err;
@@ -586,7 +580,6 @@ const special_error_status_map error_status_map[] = {
 
 bool grpc_error_get_int(grpc_error_handle err, grpc_error_ints which,
                         intptr_t* p) {
-  GPR_TIMER_SCOPE("grpc_error_get_int", 0);
   if (grpc_error_is_special(err)) {
     if (which != GRPC_ERROR_INT_GRPC_STATUS) return false;
     *p = error_status_map[reinterpret_cast<size_t>(err)].code;
@@ -602,28 +595,26 @@ bool grpc_error_get_int(grpc_error_handle err, grpc_error_ints which,
 
 grpc_error_handle grpc_error_set_str(grpc_error_handle src,
                                      grpc_error_strs which,
-                                     const grpc_slice& str) {
-  GPR_TIMER_SCOPE("grpc_error_set_str", 0);
+                                     absl::string_view str) {
   grpc_error_handle new_err = copy_error_and_unref(src);
-  internal_set_str(&new_err, which, str);
+  internal_set_str(&new_err, which,
+                   grpc_slice_from_copied_buffer(str.data(), str.length()));
   return new_err;
 }
 
 bool grpc_error_get_str(grpc_error_handle err, grpc_error_strs which,
-                        grpc_slice* str) {
+                        std::string* s) {
   if (grpc_error_is_special(err)) {
     if (which != GRPC_ERROR_STR_GRPC_MESSAGE) return false;
     const special_error_status_map& msg =
         error_status_map[reinterpret_cast<size_t>(err)];
-    str->refcount = &grpc_core::kNoopRefcount;
-    str->data.refcounted.bytes =
-        reinterpret_cast<uint8_t*>(const_cast<char*>(msg.msg));
-    str->data.refcounted.length = msg.len;
+    *s = std::string(msg.msg, msg.len);
     return true;
   }
   uint8_t slot = err->strs[which];
   if (slot != UINT8_MAX) {
-    *str = *reinterpret_cast<grpc_slice*>(err->arena + slot);
+    grpc_slice* slice = reinterpret_cast<grpc_slice*>(err->arena + slot);
+    *s = std::string(grpc_core::StringViewFromSlice(*slice));
     return true;
   } else {
     return false;
@@ -632,7 +623,6 @@ bool grpc_error_get_str(grpc_error_handle err, grpc_error_strs which,
 
 grpc_error_handle grpc_error_add_child(grpc_error_handle src,
                                        grpc_error_handle child) {
-  GPR_TIMER_SCOPE("grpc_error_add_child", 0);
   if (src != GRPC_ERROR_NONE) {
     if (child == GRPC_ERROR_NONE) {
       /* \a child is empty. Simply return the ref to \a src */
@@ -864,7 +854,6 @@ static char* finish_kvs(kv_pairs* kvs) {
 }
 
 const char* grpc_error_string(grpc_error_handle err) {
-  GPR_TIMER_SCOPE("grpc_error_string", 0);
   if (err == GRPC_ERROR_NONE) return no_error_string;
   if (err == GRPC_ERROR_OOM) return oom_error_string;
   if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;
@@ -911,9 +900,8 @@ grpc_error_handle grpc_os_error(const char* file, int line, int err,
                                 grpc_slice_from_static_string(strerror(err)),
                                 nullptr, 0),
               GRPC_ERROR_INT_ERRNO, err),
-          GRPC_ERROR_STR_OS_ERROR,
-          grpc_slice_from_static_string(strerror(err))),
-      GRPC_ERROR_STR_SYSCALL, grpc_slice_from_copied_string(call_name));
+          GRPC_ERROR_STR_OS_ERROR, strerror(err)),
+      GRPC_ERROR_STR_SYSCALL, call_name);
 }
 
 #ifdef GPR_WINDOWS
@@ -927,8 +915,8 @@ grpc_error_handle grpc_wsa_error(const char* file, int line, int err,
                                 grpc_slice_from_static_string("OS Error"), NULL,
                                 0),
               GRPC_ERROR_INT_WSA_ERROR, err),
-          GRPC_ERROR_STR_OS_ERROR, grpc_slice_from_copied_string(utf8_message)),
-      GRPC_ERROR_STR_SYSCALL, grpc_slice_from_static_string(call_name));
+          GRPC_ERROR_STR_OS_ERROR, utf8_message),
+      GRPC_ERROR_STR_SYSCALL, call_name);
   gpr_free(utf8_message);
   return error;
 }

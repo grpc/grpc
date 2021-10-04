@@ -21,6 +21,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/wait_set.h"
+#include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::_;
 using testing::Mock;
@@ -29,11 +30,6 @@ using testing::SaveArg;
 using testing::StrictMock;
 
 namespace grpc_core {
-
-class MockCallbackScheduler {
- public:
-  MOCK_METHOD(void, Schedule, (std::function<void()>));
-};
 
 // A simple Barrier type: stalls progress until it is 'cleared'.
 class Barrier {
@@ -101,7 +97,7 @@ TEST(ActivityTest, ImmediatelyCompleteWithSuccess) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
-      [] { return [] { return absl::OkStatus(); }; }, NoCallbackScheduler(),
+      [] { return [] { return absl::OkStatus(); }; }, NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
@@ -109,8 +105,7 @@ TEST(ActivityTest, ImmediatelyCompleteWithFailure) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::CancelledError()));
   MakeActivity(
-      [] { return [] { return absl::CancelledError(); }; },
-      NoCallbackScheduler(),
+      [] { return [] { return absl::CancelledError(); }; }, NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
@@ -119,7 +114,7 @@ TEST(ActivityTest, DropImmediately) {
   EXPECT_CALL(on_done, Call(absl::CancelledError()));
   MakeActivity(
       [] { return []() -> Poll<absl::Status> { return Pending(); }; },
-      NoCallbackScheduler(),
+      NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
@@ -127,7 +122,7 @@ TEST(ActivityTest, Cancel) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   auto activity = MakeActivity(
       [] { return []() -> Poll<absl::Status> { return Pending(); }; },
-      NoCallbackScheduler(),
+      NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   EXPECT_CALL(on_done, Call(absl::CancelledError()));
   activity->Cancel();
@@ -153,7 +148,7 @@ TYPED_TEST(BarrierTest, Barrier) {
           return absl::OkStatus();
         });
       },
-      InlineCallbackScheduler(),
+      InlineWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   // Clearing the barrier should let the activity proceed to return a result.
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
@@ -175,7 +170,7 @@ TYPED_TEST(BarrierTest, BarrierPing) {
           return absl::OkStatus();
         });
       },
-      [&scheduler1](std::function<void()> f) { scheduler1.Schedule(f); },
+      UseMockCallbackScheduler{&scheduler1},
       [&on_done1](absl::Status status) { on_done1.Call(std::move(status)); });
   auto activity2 = MakeActivity(
       [&b2] {
@@ -183,7 +178,7 @@ TYPED_TEST(BarrierTest, BarrierPing) {
           return absl::OkStatus();
         });
       },
-      [&scheduler2](std::function<void()> f) { scheduler2.Schedule(f); },
+      UseMockCallbackScheduler{&scheduler2},
       [&on_done2](absl::Status status) { on_done2.Call(std::move(status)); });
   // Since barrier triggers inside activity1 promise, activity2 wakeup will be
   // scheduled from a callback.
@@ -215,7 +210,7 @@ TYPED_TEST(BarrierTest, WakeSelf) {
                      return absl::OkStatus();
                    });
       },
-      NoCallbackScheduler(),
+      NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
@@ -230,7 +225,7 @@ TYPED_TEST(BarrierTest, WakeAfterDestruction) {
             return absl::OkStatus();
           });
         },
-        InlineCallbackScheduler(),
+        InlineWakeupScheduler(),
         [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   }
   b.Clear();
@@ -251,7 +246,7 @@ TEST(ActivityTest, ForceWakeup) {
             abort();
         }
       },
-      InlineCallbackScheduler(),
+      InlineWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   activity->ForceWakeup();
@@ -272,7 +267,7 @@ TEST(ActivityTest, WithContext) {
         *GetContext<TestContext>()->done = true;
         return Immediate(absl::OkStatus());
       },
-      NoCallbackScheduler(),
+      NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
       TestContext{&done});
   EXPECT_TRUE(done);
@@ -296,7 +291,7 @@ TEST(ActivityTest, CanCancelDuringExecution) {
             abort();
         }
       },
-      InlineCallbackScheduler(),
+      InlineWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 
   EXPECT_CALL(on_done, Call(absl::CancelledError()));
@@ -321,7 +316,7 @@ TEST(ActivityTest, CanCancelDuringSuccessfulExecution) {
             abort();
         }
       },
-      InlineCallbackScheduler(),
+      InlineWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 
   EXPECT_CALL(on_done, Call(absl::OkStatus()));

@@ -132,7 +132,7 @@ static void AssignMetadata(grpc_metadata_batch* mb, grpc_core::Arena* arena,
     // Unref here to prevent memory leak
     grpc_slice_unref_internal(key);
     grpc_slice_unref_internal(value);
-    GPR_ASSERT(grpc_metadata_batch_link_tail(mb, glm) == GRPC_ERROR_NONE);
+    GPR_ASSERT(mb->LinkTail(glm) == GRPC_ERROR_NONE);
   }
 }
 
@@ -302,8 +302,8 @@ static void recv_trailing_metadata_locked(void* arg,
         grpc_linked_mdelem* glm = static_cast<grpc_linked_mdelem*>(
             gbs->arena->Alloc(sizeof(grpc_linked_mdelem)));
         glm->md = grpc_get_reffed_status_elem(args->status);
-        GPR_ASSERT(grpc_metadata_batch_link_tail(gbs->recv_trailing_metadata,
-                                                 glm) == GRPC_ERROR_NONE);
+        GPR_ASSERT(gbs->recv_trailing_metadata->LinkTail(glm) ==
+                   GRPC_ERROR_NONE);
         gpr_log(GPR_INFO, "trailing_metadata = %p",
                 gbs->recv_trailing_metadata);
         gpr_log(GPR_INFO, "glm = %p", glm);
@@ -740,6 +740,8 @@ grpc_transport* grpc_create_binder_transport_client(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder) {
   gpr_log(GPR_INFO, __func__);
 
+  GPR_ASSERT(endpoint_binder != nullptr);
+
   grpc_binder_transport* t =
       new grpc_binder_transport(std::move(endpoint_binder), /*is_client=*/true);
 
@@ -749,6 +751,8 @@ grpc_transport* grpc_create_binder_transport_client(
 grpc_transport* grpc_create_binder_transport_server(
     std::unique_ptr<grpc_binder::Binder> client_binder) {
   gpr_log(GPR_INFO, __func__);
+
+  GPR_ASSERT(client_binder != nullptr);
 
   grpc_binder_transport* t =
       new grpc_binder_transport(std::move(client_binder), /*is_client=*/false);

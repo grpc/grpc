@@ -1917,8 +1917,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::
                            call_attempt_->send_initial_metadata_storage_);
   if (GPR_UNLIKELY(call_attempt_->send_initial_metadata_.legacy_index()
                        ->named.grpc_previous_rpc_attempts != nullptr)) {
-    grpc_metadata_batch_remove(&call_attempt_->send_initial_metadata_,
-                               GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
+    call_attempt_->send_initial_metadata_.Remove(
+        GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
   }
   if (GPR_UNLIKELY(calld->num_attempts_completed_ > 0)) {
     grpc_mdelem retry_md = grpc_mdelem_create(
@@ -2391,8 +2391,8 @@ RetryFilter::CallData::PendingBatch* RetryFilter::CallData::PendingBatchesAdd(
   // gRPC clients do not send trailing metadata.
   if (batch->send_initial_metadata) {
     pending_send_initial_metadata_ = true;
-    bytes_buffered_for_retry_ += grpc_metadata_batch_size(
-        batch->payload->send_initial_metadata.send_initial_metadata);
+    bytes_buffered_for_retry_ += batch->payload->send_initial_metadata
+                                     .send_initial_metadata->TransportSize();
   }
   if (batch->send_message) {
     pending_send_message_ = true;

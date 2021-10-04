@@ -78,6 +78,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "metadata_map_test",
+    srcs = ["metadata_map_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "metadata_test",
     srcs = ["metadata_test.cc"],
     language = "C++",

@@ -23,7 +23,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/config/core_configuration.h"
 
 namespace grpc_core {
 
@@ -117,27 +117,23 @@ const grpc_channel_filter ServiceConfigChannelArgFilter = {
     grpc_channel_next_get_info,
     "service_config_channel_arg"};
 
-bool maybe_add_service_config_channel_arg_filter(
-    grpc_channel_stack_builder* builder, void* /* arg */) {
-  const grpc_channel_args* channel_args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
-  if (grpc_channel_args_want_minimal_stack(channel_args) ||
-      grpc_channel_args_find_string(channel_args, GRPC_ARG_SERVICE_CONFIG) ==
-          nullptr) {
-    return true;
-  }
-  return grpc_channel_stack_builder_prepend_filter(
-      builder, &ServiceConfigChannelArgFilter, nullptr, nullptr);
-}
-
 }  // namespace
 
-}  // namespace grpc_core
-
-void grpc_service_config_channel_arg_filter_init(void) {
-  grpc_channel_init_register_stage(
+void RegisterServiceConfigChannelArgFilter(
+    CoreConfiguration::Builder* builder) {
+  builder->channel_init()->RegisterStage(
       GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      grpc_core::maybe_add_service_config_channel_arg_filter, nullptr);
+      [](grpc_channel_stack_builder* builder) {
+        const grpc_channel_args* channel_args =
+            grpc_channel_stack_builder_get_channel_arguments(builder);
+        if (grpc_channel_args_want_minimal_stack(channel_args) ||
+            grpc_channel_args_find_string(channel_args,
+                                          GRPC_ARG_SERVICE_CONFIG) == nullptr) {
+          return true;
+        }
+        return grpc_channel_stack_builder_prepend_filter(
+            builder, &ServiceConfigChannelArgFilter, nullptr, nullptr);
+      });
 }
 
-void grpc_service_config_channel_arg_filter_shutdown(void) {}
+}  // namespace grpc_core

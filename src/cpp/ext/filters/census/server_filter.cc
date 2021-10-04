@@ -52,12 +52,12 @@ void FilterInitialMetadata(grpc_metadata_batch* b,
   if (b->legacy_index()->named.grpc_trace_bin != nullptr) {
     sml->tracing_slice = grpc_slice_ref_internal(
         GRPC_MDVALUE(b->legacy_index()->named.grpc_trace_bin->md));
-    grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_TRACE_BIN);
+    b->Remove(GRPC_BATCH_GRPC_TRACE_BIN);
   }
   if (b->legacy_index()->named.grpc_tags_bin != nullptr) {
     sml->census_proto = grpc_slice_ref_internal(
         GRPC_MDVALUE(b->legacy_index()->named.grpc_tags_bin->md));
-    grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_TAGS_BIN);
+    b->Remove(GRPC_BATCH_GRPC_TAGS_BIN);
   }
 }
 

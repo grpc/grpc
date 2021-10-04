@@ -843,6 +843,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/status_helper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/status_helper.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/sync.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_windows.cc" role="src" />
@@ -1146,14 +1147,24 @@
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_intern.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount_base.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_split.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_split.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/static_slice.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/static_slice.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/builtins.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/builtins.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer_reader.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.cc" role="src" />
