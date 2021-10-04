@@ -25,6 +25,7 @@ grpc_cc_library(
     testonly = True,
     hdrs = ["test_wakeup_schedulers.h"],
     external_deps = ["gtest"],
+    visibility = ["//test/core:__subpackages__"],
     deps = [
         "//:gpr_base",
         "//test/core/util:grpc_suppressions",
@@ -277,6 +278,12 @@ grpc_proto_fuzzer(
     tags = ["no_windows"],
     uses_polling = False,
     deps = [
+        "//:activity",
+        "//:join",
+        "//:map",
+        "//:promise",
+        "//:race",
+        "//:seq",
         "//test/core/util:grpc_test_util",
     ],
 )
