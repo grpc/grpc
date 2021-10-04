@@ -3522,7 +3522,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3542,7 +3544,9 @@
     "uses_polling": true
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3562,7 +3566,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3582,7 +3588,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3602,7 +3610,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3622,7 +3632,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3642,7 +3654,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3662,7 +3676,9 @@
     "uses_polling": true
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3682,7 +3698,9 @@
     "uses_polling": true
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3702,7 +3720,9 @@
     "uses_polling": true
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3722,7 +3742,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3742,7 +3764,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3762,7 +3786,9 @@
     "uses_polling": true
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3782,7 +3808,9 @@
     "uses_polling": true
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3802,7 +3830,9 @@
     "uses_polling": true
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3822,7 +3852,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3842,7 +3874,9 @@
     "uses_polling": true
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -4342,7 +4376,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",

@@ -4738,6 +4738,8 @@ targets:
   - test/cpp/microbenchmarks/bm_alarm.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4751,6 +4753,8 @@ targets:
   - test/cpp/microbenchmarks/bm_arena.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4765,6 +4769,8 @@ targets:
   - test/cpp/microbenchmarks/bm_byte_buffer.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4779,6 +4785,8 @@ targets:
   - test/cpp/microbenchmarks/bm_call_create.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4803,6 +4811,8 @@ targets:
   - test/cpp/util/subprocess.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4826,6 +4836,8 @@ targets:
   - test/cpp/util/subprocess.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4839,6 +4851,8 @@ targets:
   - test/cpp/microbenchmarks/bm_channel.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4853,6 +4867,8 @@ targets:
   - test/cpp/microbenchmarks/bm_chttp2_hpack.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4867,6 +4883,8 @@ targets:
   - test/cpp/microbenchmarks/bm_chttp2_transport.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4880,6 +4898,8 @@ targets:
   - test/cpp/microbenchmarks/bm_closure.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4893,6 +4913,8 @@ targets:
   - test/cpp/microbenchmarks/bm_cq.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4906,6 +4928,8 @@ targets:
   - test/cpp/microbenchmarks/bm_cq_multiple_threads.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4920,6 +4944,8 @@ targets:
   - test/cpp/microbenchmarks/bm_error.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4935,6 +4961,8 @@ targets:
   - test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4949,6 +4977,8 @@ targets:
   - test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4964,6 +4994,8 @@ targets:
   deps:
   - absl/flags:flag
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4979,6 +5011,8 @@ targets:
   - test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4992,6 +5026,8 @@ targets:
   - test/cpp/microbenchmarks/bm_metadata.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -5006,6 +5042,8 @@ targets:
   - test/cpp/microbenchmarks/bm_pollset.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -5020,6 +5058,8 @@ targets:
   - test/cpp/microbenchmarks/bm_threadpool.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -5035,6 +5075,8 @@ targets:
   - test/cpp/microbenchmarks/bm_timer.cc
   deps:
   - benchmark_helpers
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
@@ -5609,6 +5651,8 @@ targets:
   - absl/types:variant
   - benchmark
   - upb
+  args:
+  - --benchmark_min_time=0.001
   benchmark: true
   defaults: benchmark
   platforms:
