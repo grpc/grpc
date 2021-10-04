@@ -2942,11 +2942,10 @@ void ClientChannel::LoadBalancedCall::RecvTrailingMetadataReady(
     if (error != GRPC_ERROR_NONE) {
       // Get status from error.
       grpc_status_code code;
-      grpc_slice message = grpc_empty_slice();
+      std::string message;
       grpc_error_get_status(error, self->deadline_, &code, &message,
                             /*http_error=*/nullptr, /*error_string=*/nullptr);
-      status = absl::Status(static_cast<absl::StatusCode>(code),
-                            StringViewFromSlice(message));
+      status = absl::Status(static_cast<absl::StatusCode>(code), message);
     } else {
       // Get status from headers.
       const auto& fields = self->recv_trailing_metadata_->legacy_index()->named;

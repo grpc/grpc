@@ -592,8 +592,7 @@ static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error,
           /* All tcp errors are marked with UNAVAILABLE so that application may
            * choose to retry. */
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
-      GRPC_ERROR_STR_TARGET_ADDRESS,
-      grpc_slice_from_copied_string(tcp->peer_string.c_str()));
+      GRPC_ERROR_STR_TARGET_ADDRESS, tcp->peer_string);
 }
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error);

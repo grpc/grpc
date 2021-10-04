@@ -840,13 +840,13 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
   if (host.empty()) {
     error = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+        GRPC_ERROR_STR_TARGET_ADDRESS, name);
     goto error_cleanup;
   } else if (port.empty()) {
     if (default_port == nullptr) {
       error = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+          GRPC_ERROR_STR_TARGET_ADDRESS, name);
       goto error_cleanup;
     }
     port = default_port;
@@ -878,7 +878,7 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
     } else {
       error = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("cannot parse authority"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+          GRPC_ERROR_STR_TARGET_ADDRESS, name);
       goto error_cleanup;
     }
     int status =
