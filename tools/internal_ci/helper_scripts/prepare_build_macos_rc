@@ -59,8 +59,10 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
   # Workaround for https://github.com/rvm/rvm/issues/5133
+  brew install curl
+  brew link curl --force
+  export PATH="/usr/local/bin:$PATH"
   curl --version
-  export CURL_SSL_BACKEND=secure-transport
 
   # Fetch keys per https://rvm.io/rvm/install
   gpg_recv_keys_success=0
