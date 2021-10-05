@@ -14,12 +14,11 @@
 """A gRPC server servicing both Greeter and RouteGuide RPCs."""
 
 from concurrent import futures
-import time
-import math
 import logging
+import math
+import time
 
 import grpc
-
 import helloworld_pb2
 import helloworld_pb2_grpc
 import route_guide_pb2

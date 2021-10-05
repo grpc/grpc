@@ -117,9 +117,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_rbac_engine",
+        "//:grpc_secure",
         "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -281,7 +280,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_base_c",
+        "//:grpc_base",
         "//:grpc_secure",
         "//:tsi",
         "//:tsi_interface",
@@ -448,6 +447,24 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_rbac_engine",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "grpc_authorization_policy_provider_test",
+    srcs = ["grpc_authorization_policy_provider_test.cc"],
+    data = [
+        "//test/core/security/authorization/test_policies:invalid_policy.json",
+        "//test/core/security/authorization/test_policies:valid_policy_1.json",
+        "//test/core/security/authorization/test_policies:valid_policy_2.json",
+    ],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_authorization_provider",
         "//test/core/util:grpc_test_util",
     ],
 )

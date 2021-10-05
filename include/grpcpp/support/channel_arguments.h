@@ -70,13 +70,7 @@ class ChannelArguments {
   /// the resolver.
   void SetGrpclbFallbackTimeout(int fallback_timeout);
 
-  /// For client channel's, the socket mutator operates on
-  /// "channel" sockets. For server's, the socket mutator operates
-  /// only on "listen" sockets.
-  /// TODO(apolcyn): allow socket mutators to also operate
-  /// on server "channel" sockets, and adjust the socket mutator
-  /// object to be more speficic about which type of socket
-  /// it should operate on.
+  /// Set a mutator for the underlying socket.
   void SetSocketMutator(grpc_socket_mutator* mutator);
 
   /// Set the string to prepend to the user agent.

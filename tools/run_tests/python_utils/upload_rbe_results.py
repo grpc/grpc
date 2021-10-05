@@ -15,11 +15,12 @@
 """Uploads RBE results to BigQuery"""
 
 import argparse
-import os
 import json
+import os
 import sys
-import urllib2
 import uuid
+
+import urllib2
 
 gcp_utils_dir = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../gcp/utils'))

@@ -23,6 +23,7 @@
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
 #include <netinet/in.h>
+
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
 #ifndef GRPC_SET_SOCKET_DUALSTACK_CUSTOM

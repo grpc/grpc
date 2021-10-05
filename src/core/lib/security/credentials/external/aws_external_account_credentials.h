@@ -19,9 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/credentials/external/external_account_credentials.h"
-
 #include "src/core/lib/security/credentials/external/aws_request_signer.h"
+#include "src/core/lib/security/credentials/external/external_account_credentials.h"
 
 namespace grpc_core {
 

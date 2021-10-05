@@ -15,8 +15,8 @@
 # limitations under the License.
 
 import os
-import sys
 import subprocess
+import sys
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../../test/cpp/qps'))
 subprocess.call(['./json_run_localhost_scenario_gen.py'])

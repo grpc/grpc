@@ -42,8 +42,8 @@ cdef extern from "grpc/byte_buffer_reader.h":
 
 
 cdef extern from "grpc/impl/codegen/grpc_types.h":
-    ctypedef struct grpc_experimental_completion_queue_functor:
-        void (*functor_run)(grpc_experimental_completion_queue_functor*, int);
+    ctypedef struct grpc_completion_queue_functor:
+        void (*functor_run)(grpc_completion_queue_functor*, int);
 
 
 cdef extern from "grpc/grpc.h":
@@ -358,7 +358,7 @@ cdef extern from "grpc/grpc.h":
   void grpc_completion_queue_destroy(grpc_completion_queue *cq) nogil
 
   grpc_completion_queue *grpc_completion_queue_create_for_callback(
-    grpc_experimental_completion_queue_functor* shutdown_callback,
+    grpc_completion_queue_functor* shutdown_callback,
     void *reserved) nogil
 
   grpc_call_error grpc_call_start_batch(
@@ -702,4 +702,5 @@ cdef extern from "grpc/grpc_security_constants.h":
 
 
 cdef extern from "src/core/lib/iomgr/error.h":
-  const grpc_error* GRPC_ERROR_CANCELLED
+  ctypedef grpc_error* grpc_error_handle
+  grpc_error_handle GRPC_ERROR_CANCELLED

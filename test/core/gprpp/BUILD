@@ -19,6 +19,8 @@ licenses(["notice"])  # Apache v2
 
 grpc_package(name = "test/core/gprpp")
 
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+
 grpc_cc_test(
     name = "examine_stack_test",
     srcs = ["examine_stack_test.cc"],
@@ -86,6 +88,57 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "bitset_test",
+    srcs = ["bitset_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:bitset",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "match_test",
+    srcs = ["match_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:match",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "overload_test",
+    srcs = ["overload_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:overload",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "table_test",
+    srcs = ["table_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/types:optional",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:table",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -217,6 +270,45 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "capture_test",
+    srcs = ["capture_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:capture",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "chunked_vector_test",
+    srcs = ["chunked_vector_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:chunked_vector",
+        "//:gpr_base",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_proto_fuzzer(
+    name = "chunked_vector_fuzzer",
+    srcs = ["chunked_vector_fuzzer.cc"],
+    corpus = "chunked_vector_corpora",
+    language = "C++",
+    proto = "chunked_vector_fuzzer.proto",
+    tags = ["no_windows"],
+    uses_polling = False,
+    deps = [
+        "//:chunked_vector",
         "//test/core/util:grpc_test_util",
     ],
 )

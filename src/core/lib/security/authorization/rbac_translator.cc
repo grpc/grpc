@@ -20,6 +20,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/strip.h"
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
@@ -54,6 +55,24 @@ absl::StatusOr<HeaderMatcher> GetHeaderMatcher(absl::string_view name,
   absl::string_view matcher = GetMatcherType(value, &type);
   return HeaderMatcher::Create(name, static_cast<HeaderMatcher::Type>(type),
                                matcher);
+}
+
+bool IsUnsupportedHeader(absl::string_view header_name) {
+  static const char* const kUnsupportedHeaders[] = {"host",
+                                                    "connection",
+                                                    "keep-alive",
+                                                    "proxy-authenticate",
+                                                    "proxy-authorization",
+                                                    "te",
+                                                    "trailer",
+                                                    "transfer-encoding",
+                                                    "upgrade"};
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(kUnsupportedHeaders); ++i) {
+    if (absl::EqualsIgnoreCase(header_name, kUnsupportedHeaders[i])) {
+      return true;
+    }
+  }
+  return false;
 }
 
 absl::StatusOr<Rbac::Principal> ParsePrincipalsArray(const Json& json) {
@@ -131,10 +150,9 @@ absl::StatusOr<Rbac::Permission> ParseHeaders(const Json& json) {
     return absl::InvalidArgumentError("\"key\" is not a string.");
   }
   absl::string_view header_name = it->second.string_value();
-  // TODO(ashithasantosh): Add connection headers below.
   if (absl::StartsWith(header_name, ":") ||
-      absl::StartsWith(header_name, "grpc-") || header_name == "host" ||
-      header_name == "Host") {
+      absl::StartsWith(header_name, "grpc-") ||
+      IsUnsupportedHeader(header_name)) {
     return absl::InvalidArgumentError(
         absl::StrFormat("Unsupported \"key\" %s.", header_name));
   }

@@ -21,9 +21,9 @@ import multiprocessing
 import os
 import sys
 
+from python_utils.filter_pull_request_tests import filter_tests
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
-from python_utils.filter_pull_request_tests import filter_tests
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
@@ -266,8 +266,8 @@ def _create_portability_test_jobs(extra_args=[],
 
     # portability C and C++ on x64
     for compiler in [
-            'gcc4.9', 'gcc5.3', 'gcc7.4', 'gcc8.3', 'gcc_musl', 'clang4.0',
-            'clang5.0'
+            'gcc4.9', 'gcc5.3', 'gcc8.3', 'gcc8.3_openssl102', 'gcc11',
+            'gcc_musl', 'clang4', 'clang12'
     ]:
         test_jobs += _generate_jobs(languages=['c', 'c++'],
                                     configs=['dbg'],
@@ -339,19 +339,6 @@ def _create_portability_test_jobs(extra_args=[],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
-
-    # TODO(jtattermusch): a large portion of the libuv tests is failing,
-    # which can end up killing the kokoro job due to gigabytes of error logs
-    # generated. Remove the --build_only flag
-    # once https://github.com/grpc/grpc/issues/17556 is fixed.
-    test_jobs += _generate_jobs(languages=['c'],
-                                configs=['dbg'],
-                                platforms=['linux'],
-                                iomgr_platforms=['uv'],
-                                labels=['portability', 'corelang'],
-                                extra_args=extra_args + ['--build_only'],
-                                inner_jobs=inner_jobs,
-                                timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     return test_jobs
 

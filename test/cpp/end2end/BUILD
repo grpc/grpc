@@ -506,6 +506,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
 )
@@ -527,7 +528,7 @@ grpc_cc_test(
         "gtest",
     ],
     flaky = True,  # TODO(b/144705388)
-    shard_count = 20,
+    shard_count = 50,
     tags = [
         "no_test_ios",
         "no_windows",
@@ -561,6 +562,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:router_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
 )
@@ -862,6 +864,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_test_ios"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -884,6 +887,25 @@ grpc_cc_test(
         "//:grpc++",
         "//:grpc++_reflection",
         "//:grpcpp_admin",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "sdk_authz_end2end_test",
+    srcs = ["sdk_authz_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc++_authorization_provider",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],

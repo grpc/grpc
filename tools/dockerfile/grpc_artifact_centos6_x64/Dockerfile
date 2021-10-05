@@ -13,12 +13,12 @@
 # limitations under the License.
 
 # Docker file for building gRPC artifacts.
-# Updated: 2020-10-08
+# Updated: 2021-08-23
 
 ##################
 # Base
 
-FROM dockcross/manylinux2010-x64
+FROM dockcross/manylinux2010-x64:20210210-84c47e5
 
 # Install essential packages.
 RUN yum -y install golang strace
@@ -28,7 +28,8 @@ RUN yum -y install golang strace
 # Ruby dependencies
 
 # Install rvm
-RUN gpg --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+RUN curl -sSL https://rvm.io/mpapis.asc | gpg --import -
+RUN curl -sSL https://rvm.io/pkuczynski.asc | gpg --import -
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
 # Install Ruby 2.6

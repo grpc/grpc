@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/service/listener/v3/lds.upb.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
 #include "google/api/annotations.upb.h"
@@ -20,7 +20,7 @@
 const upb_msglayout envoy_service_listener_v3_LdsDummy_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false, 255,
+  UPB_SIZE(0, 0), 0, false, 0, 255,
 };
 
 #include "upb/port_undef.inc"

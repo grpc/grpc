@@ -119,6 +119,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_channel_destroy);
   printf("%lx", (unsigned long) grpc_call_cancel);
   printf("%lx", (unsigned long) grpc_call_cancel_with_status);
+  printf("%lx", (unsigned long) grpc_call_failed_before_recv_message);
   printf("%lx", (unsigned long) grpc_call_ref);
   printf("%lx", (unsigned long) grpc_call_unref);
   printf("%lx", (unsigned long) grpc_server_request_call);
@@ -153,6 +154,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_channelz_get_channel);
   printf("%lx", (unsigned long) grpc_channelz_get_subchannel);
   printf("%lx", (unsigned long) grpc_channelz_get_socket);
+  printf("%lx", (unsigned long) grpc_authorization_policy_provider_arg_vtable);
   printf("%lx", (unsigned long) grpc_auth_property_iterator_next);
   printf("%lx", (unsigned long) grpc_auth_context_property_iterator);
   printf("%lx", (unsigned long) grpc_auth_context_peer_identity);
@@ -226,6 +228,9 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_tls_server_authorization_check_config_release);
   printf("%lx", (unsigned long) grpc_xds_credentials_create);
   printf("%lx", (unsigned long) grpc_xds_server_credentials_create);
+  printf("%lx", (unsigned long) grpc_authorization_policy_provider_static_data_create);
+  printf("%lx", (unsigned long) grpc_authorization_policy_provider_file_watcher_create);
+  printf("%lx", (unsigned long) grpc_authorization_policy_provider_release);
   printf("%lx", (unsigned long) grpc_raw_byte_buffer_create);
   printf("%lx", (unsigned long) grpc_raw_compressed_byte_buffer_create);
   printf("%lx", (unsigned long) grpc_byte_buffer_copy);

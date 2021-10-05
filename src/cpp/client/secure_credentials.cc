@@ -18,6 +18,8 @@
 
 #include "src/cpp/client/secure_credentials.h"
 
+#include "absl/strings/str_join.h"
+
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -27,8 +29,6 @@
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/channel_arguments.h>
-
-#include "absl/strings/str_join.h"
 
 // TODO(yashykt): We shouldn't be including "src/core" headers.
 #include "src/core/lib/gpr/env.h"
@@ -492,7 +492,6 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
     grpc_metadata md_entry;
     md_entry.key = SliceFromCopiedString(metadatum.first);
     md_entry.value = SliceFromCopiedString(metadatum.second);
-    md_entry.flags = 0;
     md.push_back(md_entry);
   }
   if (creds_md != nullptr) {
@@ -507,7 +506,6 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
       for (const auto& elem : md) {
         creds_md[*num_creds_md].key = elem.key;
         creds_md[*num_creds_md].value = elem.value;
-        creds_md[*num_creds_md].flags = elem.flags;
         ++(*num_creds_md);
       }
       *status_code = static_cast<grpc_status_code>(status.error_code());

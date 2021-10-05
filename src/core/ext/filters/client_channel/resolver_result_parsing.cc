@@ -125,11 +125,10 @@ ClientChannelServiceConfigParser::ParseGlobalParams(
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:loadBalancingPolicy error:Unknown lb policy"));
       } else if (requires_config) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
             absl::StrCat("field:loadBalancingPolicy error:", lb_policy_name,
                          " requires a config. Please use loadBalancingConfig "
-                         "instead.")
-                .c_str()));
+                         "instead.")));
       }
     }
   }

@@ -16,6 +16,8 @@
  *
  */
 
+#include "src/core/lib/gprpp/global_config.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -25,7 +27,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/memory.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_BOOL(bool_var);

@@ -16,6 +16,17 @@
  *
  */
 
+#include <algorithm>
+#include <condition_variable>
+#include <functional>
+#include <mutex>
+#include <sstream>
+#include <thread>
+
+#include <gtest/gtest.h>
+
+#include "absl/memory/memory.h"
+
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -25,16 +36,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_callback.h>
-#include <gtest/gtest.h>
 
-#include <algorithm>
-#include <condition_variable>
-#include <functional>
-#include <mutex>
-#include <sstream>
-#include <thread>
-
-#include "absl/memory/memory.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -1406,11 +1408,10 @@ TEST_P(ClientCallbackEnd2endTest, TestTrailersOnlyOnError) {
   }
 
   ResetStub();
-  class Reactor : public grpc::experimental::ClientBidiReactor<EchoRequest,
-                                                               EchoResponse> {
+  class Reactor : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
    public:
     explicit Reactor(grpc::testing::EchoTestService::Stub* stub) {
-      stub->experimental_async()->UnimplementedBidi(&context_, this);
+      stub->async()->UnimplementedBidi(&context_, this);
       StartCall();
     }
     void Await() {

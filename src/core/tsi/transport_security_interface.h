@@ -65,6 +65,26 @@ typedef enum {
 } tsi_client_certificate_request_type;
 
 typedef enum {
+  // TSI implementation provides a normal frame protector.  The caller
+  // should invoke tsi_handshaker_result_create_frame_protector() to
+  // generate the frame protector.
+  TSI_FRAME_PROTECTOR_NORMAL,
+  // TSI implementation provides a zero-copy frame protector.  The caller
+  // should invoke tsi_handshaker_result_create_zero_copy_grpc_protector()
+  // to generate the frame protector.
+  TSI_FRAME_PROTECTOR_ZERO_COPY,
+  // TSI implementation provides both normal and zero-copy frame protectors.
+  // The caller should invoke either
+  // tsi_handshaker_result_create_frame_protector() or
+  // tsi_handshaker_result_create_zero_copy_grpc_protector() to generate
+  // the frame protector.
+  TSI_FRAME_PROTECTOR_NORMAL_OR_ZERO_COPY,
+  // TSI implementation does not provide any frame protector.  This means
+  // that it is safe for the caller to send bytes unprotected on the wire.
+  TSI_FRAME_PROTECTOR_NONE,
+} tsi_frame_protector_type;
+
+typedef enum {
   TSI_TLS1_2,
   TSI_TLS1_3,
 } tsi_tls_version;
@@ -233,6 +253,12 @@ typedef struct tsi_handshaker_result tsi_handshaker_result;
    The caller is responsible for destructing the peer.  */
 tsi_result tsi_handshaker_result_extract_peer(const tsi_handshaker_result* self,
                                               tsi_peer* peer);
+
+/* This method indicates what type of frame protector is provided by the
+   TSI implementation. */
+tsi_result tsi_handshaker_result_get_frame_protector_type(
+    const tsi_handshaker_result* self,
+    tsi_frame_protector_type* frame_protector_type);
 
 /* This method creates a tsi_frame_protector object. It returns TSI_OK assuming
    there is no fatal error.

@@ -236,6 +236,7 @@ namespace Grpc.Core.Internal
                     Initialize(details.Channel.CompletionQueue);
 
                     halfcloseRequested = true;
+                    receiveResponseHeadersPending = true;
 
                     using (var serializationScope = DefaultSerializationContext.GetInitializedThreadLocalScope())
                     {
@@ -272,6 +273,7 @@ namespace Grpc.Core.Internal
                 {
                     GrpcPreconditions.CheckState(!started);
                     started = true;
+                    receiveResponseHeadersPending = true;
 
                     Initialize(details.Channel.CompletionQueue);
 
@@ -531,6 +533,19 @@ namespace Grpc.Core.Internal
         private void HandleReceivedResponseHeaders(bool success, Metadata responseHeaders)
         {
             // TODO(jtattermusch): handle success==false
+
+            bool releasedResources;
+            lock (myLock)
+            {
+                receiveResponseHeadersPending = false;
+                releasedResources = ReleaseResourcesIfPossible();
+            }
+
+            if (releasedResources)
+            {
+                OnAfterReleaseResourcesUnlocked();
+            }
+
             responseHeadersTcs.SetResult(responseHeaders);
         }
 

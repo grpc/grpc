@@ -55,6 +55,7 @@ INSTALL_REQUIRES = (
 
 try:
     import testing_commands as _testing_commands
+
     # we are in the build environment, otherwise the above import fails
     COMMAND_CLASS = {
         # Run preprocess from the repository *before* doing any packaging!

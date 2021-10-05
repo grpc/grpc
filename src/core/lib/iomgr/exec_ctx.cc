@@ -23,8 +23,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
 
 static void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
@@ -123,13 +123,13 @@ grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles) {
 }
 
 namespace grpc_core {
-GPR_TLS_CLASS_DEF(ExecCtx::exec_ctx_);
-GPR_TLS_CLASS_DEF(ApplicationCallbackExecCtx::callback_exec_ctx_);
+GPR_THREAD_LOCAL(ExecCtx*) ExecCtx::exec_ctx_;
+GPR_THREAD_LOCAL(ApplicationCallbackExecCtx*)
+ApplicationCallbackExecCtx::callback_exec_ctx_;
 
 // WARNING: for testing purposes only!
 void ExecCtx::TestOnlyGlobalInit(gpr_timespec new_val) {
   g_start_time = new_val;
-  gpr_tls_init(&exec_ctx_);
 }
 
 void ExecCtx::GlobalInit(void) {
@@ -140,7 +140,6 @@ void ExecCtx::GlobalInit(void) {
   g_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
   const gpr_cycle_counter cycle_after = gpr_get_cycle_counter();
   g_start_cycle = (cycle_before + cycle_after) / 2;
-  gpr_tls_init(&exec_ctx_);
 }
 
 bool ExecCtx::Flush() {

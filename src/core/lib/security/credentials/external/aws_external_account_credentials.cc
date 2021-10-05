@@ -155,10 +155,9 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
   }
   absl::StatusOr<URI> uri = URI::Parse(region_url_);
   if (!uri.ok()) {
-    FinishRetrieveSubjectToken("", GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                                       absl::StrFormat("Invalid region url. %s",
-                                                       uri.status().ToString())
-                                           .c_str()));
+    FinishRetrieveSubjectToken(
+        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                "Invalid region url. %s", uri.status().ToString())));
     return;
   }
   grpc_httpcli_request request;
@@ -174,7 +173,6 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRegion, this, nullptr);
   grpc_httpcli_get(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                    &request, ctx_->deadline, &ctx_->closure, &ctx_->response);
-  grpc_resource_quota_unref_internal(resource_quota);
   grpc_http_request_destroy(&request.http);
 }
 
@@ -206,9 +204,8 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
   absl::StatusOr<URI> uri = URI::Parse(url_);
   if (!uri.ok()) {
     FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrFormat("Invalid url: %s.", uri.status().ToString())
-                    .c_str()));
+        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(
+                absl::StrFormat("Invalid url: %s.", uri.status().ToString())));
     return;
   }
   grpc_httpcli_request request;
@@ -224,7 +221,6 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRoleName, this, nullptr);
   grpc_httpcli_get(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                    &request, ctx_->deadline, &ctx_->closure, &ctx_->response);
-  grpc_resource_quota_unref_internal(resource_quota);
   grpc_http_request_destroy(&request.http);
 }
 
@@ -268,10 +264,8 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
   absl::StatusOr<URI> uri = URI::Parse(url_with_role_name);
   if (!uri.ok()) {
     FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrFormat("Invalid url with role name: %s.",
-                                uri.status().ToString())
-                    .c_str()));
+        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                "Invalid url with role name: %s.", uri.status().ToString())));
     return;
   }
   grpc_httpcli_request request;
@@ -287,7 +281,6 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSigningKeys, this, nullptr);
   grpc_httpcli_get(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                    &request, ctx_->deadline, &ctx_->closure, &ctx_->response);
-  grpc_resource_quota_unref_internal(resource_quota);
   grpc_http_request_destroy(&request.http);
 }
 
@@ -320,10 +313,8 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
     access_key_id_ = it->second.string_value();
   } else {
     FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrFormat("Missing or invalid AccessKeyId in %s.",
-                                response_body)
-                    .c_str()));
+        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                "Missing or invalid AccessKeyId in %s.", response_body)));
     return;
   }
   it = json.object_value().find("SecretAccessKey");
@@ -332,10 +323,8 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
     secret_access_key_ = it->second.string_value();
   } else {
     FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrFormat("Missing or invalid SecretAccessKey in %s.",
-                                response_body)
-                    .c_str()));
+        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                "Missing or invalid SecretAccessKey in %s.", response_body)));
     return;
   }
   it = json.object_value().find("Token");
@@ -344,10 +333,8 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
     token_ = it->second.string_value();
   } else {
     FinishRetrieveSubjectToken(
-        "",
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrFormat("Missing or invalid Token in %s.", response_body)
-                .c_str()));
+        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                "Missing or invalid Token in %s.", response_body)));
     return;
   }
   BuildSubjectToken();

@@ -19,6 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_LOG_H
 #define GRPC_IMPL_CODEGEN_LOG_H
 
+// IWYU pragma: private, include <grpc/support/log.h>
+
 #include <grpc/impl/codegen/port_platform.h>
 
 #include <stdarg.h>

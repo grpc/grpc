@@ -16,8 +16,11 @@
  *
  */
 
+#include "test/core/util/memory_counters.h"
+
 #include <inttypes.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #include <grpc/grpc.h>
@@ -28,9 +31,6 @@
 
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/surface/init.h"
-#include "test/core/util/memory_counters.h"
-
-#include <stdio.h>
 
 static struct grpc_memory_counters g_memory_counters;
 static bool g_memory_counter_enabled;

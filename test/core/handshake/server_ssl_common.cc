@@ -19,13 +19,14 @@
 #include "test/core/handshake/server_ssl_common.h"
 
 #include <arpa/inet.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
 #include <string>
+
+#include <openssl/err.h>
+#include <openssl/ssl.h>
 
 #include "absl/strings/str_cat.h"
 
@@ -86,14 +87,16 @@ class ServerInfo {
 
   void Await() {
     grpc_core::MutexLock lock(&mu_);
-    grpc_core::WaitUntil(&cv_, &mu_, [this] { return ready_; });
+    while (!ready_) {
+      cv_.Wait(&mu_);
+    }
   }
 
  private:
   const int port_;
   grpc_core::Mutex mu_;
   grpc_core::CondVar cv_;
-  bool ready_ = false;
+  bool ready_ ABSL_GUARDED_BY(mu_) = false;
 };
 
 // Simple gRPC server. This listens until client_handshake_complete occurs.
@@ -269,7 +272,6 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   SSL_free(ssl);
   gpr_free(alpn_protos);
   SSL_CTX_free(ctx);
-  EVP_cleanup();
   close(sock);
 
   thd.Join();
@@ -278,3 +280,5 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
 
   return success;
 }
+
+void CleanupSslLibrary() { EVP_cleanup(); }

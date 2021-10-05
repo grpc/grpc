@@ -19,14 +19,14 @@
 #ifndef GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 #define GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 
+#include <memory>
+#include <vector>
+
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/support/config.h>
-
-#include <memory>
-#include <vector>
 
 // TODO(yihuazhang): remove the forward declaration here and include
 // <grpc/grpc_security.h> directly once the insecure builds are cleaned up.

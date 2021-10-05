@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -30,6 +28,7 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/proxy.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -47,14 +46,7 @@ static grpc_server* create_proxy_server(const char* port,
 
 static grpc_channel* create_proxy_client(const char* target,
                                          grpc_channel_args* client_args) {
-  // Disable retries in proxy client.
-  const char* args_to_remove = GRPC_ARG_ENABLE_RETRIES;
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_remove(client_args, &args_to_remove, 1);
-  grpc_channel* channel =
-      grpc_insecure_channel_create(target, new_args, nullptr);
-  grpc_channel_args_destroy(new_args);
-  return channel;
+  return grpc_insecure_channel_create(target, client_args, nullptr);
 }
 
 static const grpc_end2end_proxy_def proxy_def = {create_proxy_server,

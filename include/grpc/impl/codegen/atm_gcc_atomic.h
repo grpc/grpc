@@ -19,6 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_ATM_GCC_ATOMIC_H
 #define GRPC_IMPL_CODEGEN_ATM_GCC_ATOMIC_H
 
+// IWYU pragma: private, include <grpc/support/atm.h>
+
 /* atm_platform.h for gcc and gcc-like compilers with the
    __atomic_* interface.  */
 #include <grpc/impl/codegen/port_platform.h>

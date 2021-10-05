@@ -550,6 +550,13 @@ class CXXLanguage(Language):
                             minimal_stack=not secure,
                             categories=[SWEEP])
 
+                    maybe_scalable = [SCALABLE]
+                    if rpc_type == 'streaming_from_server' and synchronicity == 'async' and secure:
+                        # protobuf_async_streaming_from_server_qps_unconstrained_secure is very flaky
+                        # and has extremely high variance so running it isn't really useful.
+                        # see b/198275705
+                        maybe_scalable = [SWEEP]
+
                     yield _ping_pong_scenario(
                         'cpp_protobuf_%s_%s_qps_unconstrained_%s' %
                         (synchronicity, rpc_type, secstr),
@@ -561,7 +568,7 @@ class CXXLanguage(Language):
                         minimal_stack=not secure,
                         server_threads_per_cq=3,
                         client_threads_per_cq=3,
-                        categories=inproc_categories + [SCALABLE])
+                        categories=inproc_categories + maybe_scalable)
 
                     # TODO(vjpai): Re-enable this test. It has a lot of timeouts
                     # and hasn't yet been conclusively identified as a test failure

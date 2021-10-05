@@ -20,10 +20,11 @@
 
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 
-#include <grpcpp/server_context.h>
-
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/trace/span.h"
+
+#include <grpcpp/server_context.h>
+
 #include "src/cpp/ext/filters/census/channel_filter.h"
 #include "src/cpp/ext/filters/census/client_filter.h"
 #include "src/cpp/ext/filters/census/measures.h"
@@ -47,6 +48,9 @@ void RegisterOpenCensusPlugin() {
   RpcClientServerLatency();
   RpcClientSentMessagesPerRpc();
   RpcClientReceivedMessagesPerRpc();
+  RpcClientRetriesPerCall();
+  RpcClientTransparentRetriesPerCall();
+  RpcClientRetryDelayPerCall();
 
   RpcServerSentBytesPerRpc();
   RpcServerReceivedBytesPerRpc();
@@ -111,6 +115,16 @@ ABSL_CONST_INIT const absl::string_view kRpcClientRoundtripLatencyMeasureName =
 
 ABSL_CONST_INIT const absl::string_view kRpcClientServerLatencyMeasureName =
     "grpc.io/client/server_latency";
+
+ABSL_CONST_INIT const absl::string_view kRpcClientRetriesPerCallMeasureName =
+    "grpc.io/client/retries_per_call";
+
+ABSL_CONST_INIT const absl::string_view
+    kRpcClientTransparentRetriesPerCallMeasureName =
+        "grpc.io/client/transparent_retries_per_call";
+
+ABSL_CONST_INIT const absl::string_view kRpcClientRetryDelayPerCallMeasureName =
+    "grpc.io/client/retry_delay_per_call";
 
 // Server
 ABSL_CONST_INIT const absl::string_view
