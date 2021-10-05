@@ -161,42 +161,24 @@ static int check_identity(const grpc_auth_context* ctx,
   return 1;
 }
 
-static int check_x509_cn(const grpc_auth_context* ctx,
-                         const char* expected_cn) {
-  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
-      ctx, GRPC_X509_CN_PROPERTY_NAME);
+static int check_property_with_single_value(
+    const grpc_auth_context* ctx, const char* expected_property_name,
+    const char* expected_property_value) {
+  grpc_auth_property_iterator it =
+      grpc_auth_context_find_properties_by_name(ctx, expected_property_name);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   if (prop == nullptr) {
-    gpr_log(GPR_ERROR, "CN property not found.");
+    gpr_log(GPR_ERROR, "Expected value %s not found.", expected_property_value);
     return 0;
   }
-  if (strncmp(prop->value, expected_cn, prop->value_length) != 0) {
-    gpr_log(GPR_ERROR, "Expected CN %s and got %s", expected_cn, prop->value);
+  if (strncmp(prop->value, expected_property_value, prop->value_length) != 0) {
+    gpr_log(GPR_ERROR, "Expected value %s and got %s for property %s",
+            expected_property_value, prop->value, expected_property_name);
     return 0;
   }
   if (grpc_auth_property_iterator_next(&it) != nullptr) {
-    gpr_log(GPR_ERROR, "Expected only one property for CN.");
-    return 0;
-  }
-  return 1;
-}
-
-static int check_x509_pem_cert(const grpc_auth_context* ctx,
-                               const char* expected_pem_cert) {
-  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
-      ctx, GRPC_X509_PEM_CERT_PROPERTY_NAME);
-  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-  if (prop == nullptr) {
-    gpr_log(GPR_ERROR, "Pem certificate property not found.");
-    return 0;
-  }
-  if (strncmp(prop->value, expected_pem_cert, prop->value_length) != 0) {
-    gpr_log(GPR_ERROR, "Expected pem cert %s and got %s", expected_pem_cert,
-            prop->value);
-    return 0;
-  }
-  if (grpc_auth_property_iterator_next(&it) != nullptr) {
-    gpr_log(GPR_ERROR, "Expected only one property for pem cert.");
+    gpr_log(GPR_ERROR, "Expected only one property for %s",
+            expected_property_name);
     return 0;
   }
   return 1;
@@ -204,23 +186,26 @@ static int check_x509_pem_cert(const grpc_auth_context* ctx,
 
 static int check_x509_pem_cert_chain(const grpc_auth_context* ctx,
                                      const char* expected_pem_cert_chain) {
-  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
-      ctx, GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME);
-  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-  if (prop == nullptr) {
-    gpr_log(GPR_ERROR, "Pem certificate chain property not found.");
-    return 0;
-  }
-  if (strncmp(prop->value, expected_pem_cert_chain, prop->value_length) != 0) {
-    gpr_log(GPR_ERROR, "Expected pem cert chain %s and got %s",
-            expected_pem_cert_chain, prop->value);
-    return 0;
-  }
-  if (grpc_auth_property_iterator_next(&it) != nullptr) {
-    gpr_log(GPR_ERROR, "Expected only one property for pem cert chain.");
-    return 0;
-  }
-  return 1;
+  return check_property_with_single_value(
+      ctx, GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME, expected_pem_cert_chain);
+}
+
+static int check_x509_pem_cert(const grpc_auth_context* ctx,
+                               const char* expected_pem_cert) {
+  return check_property_with_single_value(ctx, GRPC_X509_PEM_CERT_PROPERTY_NAME,
+                                          expected_pem_cert);
+}
+
+static int check_x509_subject(const grpc_auth_context* ctx,
+                              const char* expected_subject) {
+  return check_property_with_single_value(ctx, GRPC_X509_SUBJECT_PROPERTY_NAME,
+                                          expected_subject);
+}
+
+static int check_x509_cn(const grpc_auth_context* ctx,
+                         const char* expected_cn) {
+  return check_property_with_single_value(ctx, GRPC_X509_CN_PROPERTY_NAME,
+                                          expected_cn);
 }
 
 static int check_sans(
@@ -622,6 +607,21 @@ static void test_spiffe_id_peer_to_auth_context(void) {
   multiple_uri_ctx.reset(DEBUG_LOCATION, "test");
 }
 
+static void test_subject_to_auth_context(void) {
+  tsi_peer peer;
+  const char* expected_subject = "subject1";
+  GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_PEER_PROPERTY, expected_subject,
+                 &peer.properties[0]) == TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  GPR_ASSERT(ctx != nullptr);
+  GPR_ASSERT(check_x509_subject(ctx.get(), expected_subject));
+  tsi_peer_destruct(&peer);
+  ctx.reset(DEBUG_LOCATION, "test");
+}
+
 static const char* roots_for_override_api = "roots for override api";
 
 static grpc_ssl_roots_override_result override_roots_success(
@@ -775,6 +775,7 @@ int main(int argc, char** argv) {
   test_email_peer_to_auth_context();
   test_ip_peer_to_auth_context();
   test_spiffe_id_peer_to_auth_context();
+  test_subject_to_auth_context();
   test_ipv6_address_san();
   test_default_ssl_roots();
   test_peer_alpn_check();

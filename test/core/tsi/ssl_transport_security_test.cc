@@ -269,6 +269,10 @@ static bool check_property(tsi_peer* peer, const char* property_name,
   return false;
 }
 
+static bool check_subject_name(tsi_peer* peer, const char* name) {
+  return check_property(peer, TSI_X509_SUBJECT_PEER_PROPERTY, name);
+}
+
 static bool check_subject_alt_name(tsi_peer* peer, const char* name) {
   return check_property(peer, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
                         name);
@@ -930,11 +934,14 @@ void ssl_tsi_test_extract_x509_subject_names() {
   tsi_peer peer;
   GPR_ASSERT(tsi_ssl_extract_x509_subject_names_from_pem_cert(cert, &peer) ==
              TSI_OK);
-  // tsi_peer should include one common name, one certificate, one security
-  // level, ten SAN fields, two DNS SAN fields, three URI fields, two email
-  // addresses and two IP addresses.
-  size_t expected_property_count = 21;
+  // tsi_peer should include one subject, one common name, one certificate, one
+  // security level, ten SAN fields, two DNS SAN fields, three URI fields, two
+  // email addresses and two IP addresses.
+  size_t expected_property_count = 22;
   GPR_ASSERT(peer.property_count == expected_property_count);
+  // Check subject
+  GPR_ASSERT(
+      check_subject_name(&peer, "CN=xpigors,OU=Google,L=SF,ST=CA,C=US") == 1);
   // Check common name
   const char* expected_cn = "xpigors";
   const tsi_peer_property* property = tsi_peer_get_property_by_name(

@@ -404,6 +404,36 @@ TEST_F(AuthorizationMatchersTest, AuthenticatedMatcherFailedDnsSanMatches) {
   EXPECT_FALSE(matcher.Matches(args));
 }
 
+TEST_F(AuthorizationMatchersTest,
+       AuthenticatedMatcherSuccessfulSubjectMatches) {
+  args_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+                                 GRPC_TLS_TRANSPORT_SECURITY_TYPE);
+  args_.AddPropertyToAuthContext(GRPC_X509_SUBJECT_PROPERTY_NAME,
+                                 "CN=abc,OU=Google");
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  // No match found in URI SANs, finds match in DNS SANs.
+  AuthenticatedAuthorizationMatcher matcher(
+      StringMatcher::Create(StringMatcher::Type::kExact,
+                            /*matcher=*/"CN=abc,OU=Google",
+                            /*case_sensitive=*/false)
+          .value());
+  EXPECT_TRUE(matcher.Matches(args));
+}
+
+TEST_F(AuthorizationMatchersTest, AuthenticatedMatcherFailedSubjectMatches) {
+  args_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+                                 GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  args_.AddPropertyToAuthContext(GRPC_X509_SUBJECT_PROPERTY_NAME,
+                                 "CN=abc,OU=Google");
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  AuthenticatedAuthorizationMatcher matcher(
+      StringMatcher::Create(StringMatcher::Type::kExact,
+                            /*matcher=*/"CN=def,OU=Google",
+                            /*case_sensitive=*/false)
+          .value());
+  EXPECT_FALSE(matcher.Matches(args));
+}
+
 TEST_F(AuthorizationMatchersTest, AuthenticatedMatcherFailedNothingMatches) {
   args_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
                                  GRPC_SSL_TRANSPORT_SECURITY_TYPE);
