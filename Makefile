@@ -1118,6 +1118,8 @@ LIBGRPC_SRC = \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc \
     src/core/ext/filters/workarounds/workaround_utils.cc \
+    src/core/ext/service_config/service_config.cc \
+    src/core/ext/service_config/service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/authority.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
@@ -1365,8 +1367,6 @@ LIBGRPC_SRC = \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_registry.cc \
-    src/core/lib/channel/service_config.cc \
-    src/core/lib/channel/service_config_parser.cc \
     src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_args.cc \
@@ -1798,6 +1798,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc \
     src/core/ext/filters/workarounds/workaround_utils.cc \
+    src/core/ext/service_config/service_config.cc \
+    src/core/ext/service_config/service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/authority.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
@@ -1851,8 +1853,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_registry.cc \
-    src/core/lib/channel/service_config.cc \
-    src/core/lib/channel/service_config_parser.cc \
     src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_args.cc \

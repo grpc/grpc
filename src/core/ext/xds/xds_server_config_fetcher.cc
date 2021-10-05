@@ -20,11 +20,12 @@
 
 #include "src/core/ext/xds/xds_server_config_fetcher.h"
 
+#include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 
+#include "src/core/ext/service_config/server_config_selector.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_server_config_selector.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -62,6 +63,269 @@ bool IsLoopbackIp(const grpc_resolved_address* address) {
   }
   return false;
 }
+
+class XdsServerConfigSelector : public ServerConfigSelector {
+ public:
+  ~XdsServerConfigSelector() override = default;
+  static absl::StatusOr<RefCountedPtr<XdsServerConfigSelector>> Create(
+      absl::StatusOr<XdsApi::RdsUpdate> rds_update,
+      const std::vector<XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter>&
+          http_filters);
+
+  CallConfig GetCallConfig(grpc_metadata_batch* metadata) override;
+
+ private:
+  struct VirtualHost {
+    struct Route {
+      XdsApi::Route::Matchers matchers;
+      RefCountedPtr<ServiceConfig> method_config;
+    };
+    std::vector<std::string> domains;
+    std::vector<Route> routes;
+  };
+
+  std::vector<VirtualHost> virtual_hosts_;
+};
+
+absl::StatusOr<RefCountedPtr<XdsServerConfigSelector>>
+XdsServerConfigSelector::Create(
+    absl::StatusOr<XdsApi::RdsUpdate> rds_update,
+    const std::vector<XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter>&
+        http_filters) {
+  if (!rds_update.ok()) {
+    return rds_update.status();
+  }
+  auto config_selector = MakeRefCounted<XdsServerConfigSelector>();
+  for (const auto& vhost : rds_update->virtual_hosts) {
+    config_selector->virtual_hosts_.push_back(VirtualHost());
+    auto& virtual_host = config_selector->virtual_hosts_.back();
+    virtual_host.domains = vhost.domains;
+    for (const auto& route : vhost.routes) {
+      virtual_host.routes.push_back(VirtualHost::Route());
+      VirtualHost::Route config_selector_route = virtual_host.routes.back();
+      config_selector_route.matchers = route.matchers;
+      grpc_channel_args* args = nullptr;
+      std::map<std::string, std::vector<std::string>> per_filter_configs;
+      for (const auto& http_filter : http_filters) {
+        // Find filter.  This is guaranteed to succeed, because it's checked
+        // at config validation time in the XdsApi code.
+        const XdsHttpFilterImpl* filter_impl =
+            XdsHttpFilterRegistry::GetFilterForType(
+                http_filter.config.config_proto_type_name);
+        GPR_ASSERT(filter_impl != nullptr);
+        // If there is not actually any C-core filter associated with this
+        // xDS filter, then it won't need any config, so skip it.
+        if (filter_impl->channel_filter() == nullptr) continue;
+        // Allow filter to add channel args that may affect service config
+        // parsing.
+        // TODO(): Is modifying channel args needed?
+        args = filter_impl->ModifyChannelArgs(args);
+        // Find config override, if any.
+        const XdsHttpFilterImpl::FilterConfig* config_override = nullptr;
+        auto it = route.typed_per_filter_config.find(http_filter.name);
+        if (it == route.typed_per_filter_config.end()) {
+          it = vhost.typed_per_filter_config.find(http_filter.name);
+          if (it != vhost.typed_per_filter_config.end()) {
+            config_override = &it->second;
+          }
+        } else {
+          config_override = &it->second;
+        }
+        // Generate service config for filter.
+        auto method_config_field = filter_impl->GenerateServiceConfig(
+            http_filter.config, config_override);
+        if (!method_config_field.ok()) {
+          return method_config_field.status();
+        }
+        per_filter_configs[method_config_field->service_config_field_name]
+            .push_back(method_config_field->element);
+      }
+      grpc_channel_args_destroy(args);
+      std::vector<std::string> fields;
+      fields.reserve(per_filter_configs.size());
+      for (const auto& p : per_filter_configs) {
+        fields.emplace_back(absl::StrCat("    \"", p.first, "\": [\n",
+                                         absl::StrJoin(p.second, ",\n"),
+                                         "\n    ]"));
+      }
+      if (!fields.empty()) {
+        std::string json = absl::StrCat(
+            "{\n"
+            "  \"methodConfig\": [ {\n"
+            "    \"name\": [\n"
+            "      {}\n"
+            "    ],\n"
+            "    ",
+            absl::StrJoin(fields, ",\n"),
+            "\n  } ]\n"
+            "}");
+        grpc_error_handle error = GRPC_ERROR_NONE;
+        config_selector_route.method_config =
+            ServiceConfig::Create(args, json.c_str(), &error);
+        GPR_ASSERT(error == GRPC_ERROR_NONE);
+      }
+    }
+  }
+  return config_selector;
+}
+
+// TODO(): Factor out common code with clientside
+absl::optional<absl::string_view> GetHeaderValue(
+    grpc_metadata_batch* initial_metadata, absl::string_view header_name,
+    std::string* concatenated_value) {
+  // Note: If we ever allow binary headers here, we still need to
+  // special-case ignore "grpc-tags-bin" and "grpc-trace-bin", since
+  // they are not visible to the LB policy in grpc-go.
+  if (absl::EndsWith(header_name, "-bin")) {
+    return absl::nullopt;
+  } else if (header_name == "content-type") {
+    return "application/grpc";
+  }
+  return grpc_metadata_batch_get_value(initial_metadata, header_name,
+                                       concatenated_value);
+}
+
+bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
+                  grpc_metadata_batch* initial_metadata) {
+  for (const auto& header_matcher : header_matchers) {
+    std::string concatenated_value;
+    if (!header_matcher.Match(GetHeaderValue(
+            initial_metadata, header_matcher.name(), &concatenated_value))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool UnderFraction(const uint32_t fraction_per_million) {
+  // Generate a random number in [0, 1000000).
+  const uint32_t random_number = rand() % 1000000;
+  return random_number < fraction_per_million;
+}
+
+ServerConfigSelector::CallConfig XdsServerConfigSelector::GetCallConfig(
+    grpc_metadata_batch* metadata) {
+  CallConfig call_config;
+  if (metadata->legacy_index()->named.path == nullptr) {
+    call_config.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("No path found");
+    return call_config;
+  }
+  absl::string_view path = absl::string_view(
+      reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(
+          GRPC_MDVALUE(metadata->legacy_index()->named.path->md))),
+      GRPC_SLICE_LENGTH(
+          GRPC_MDVALUE(metadata->legacy_index()->named.path->md)));
+  if (metadata->legacy_index()->named.authority == nullptr) {
+    call_config.error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("No authority found");
+    return call_config;
+  }
+  absl::string_view authority = absl::string_view(
+      reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(
+          GRPC_MDVALUE(metadata->legacy_index()->named.authority->md))),
+      GRPC_SLICE_LENGTH(
+          GRPC_MDVALUE(metadata->legacy_index()->named.authority->md)));
+  auto* virtual_host =
+      XdsApi::RdsUpdate::FindVirtualHostForDomain(&virtual_hosts_, authority);
+  if (virtual_host == nullptr) {
+    call_config.error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("could not find VirtualHost for ", authority,
+                     " in RouteConfiguration"));
+    return call_config;
+  }
+  for (const auto& route : virtual_host->routes) {
+    // Path matching.
+    if (!route.matchers.path_matcher.Match(path)) {
+      continue;
+    }
+    // Header Matching.
+    if (!HeadersMatch(route.matchers.header_matchers, metadata)) {
+      continue;
+    }
+    // Match fraction check
+    if (route.matchers.fraction_per_million.has_value() &&
+        !UnderFraction(route.matchers.fraction_per_million.value())) {
+      continue;
+    }
+    if (route.method_config != nullptr) {
+      call_config.method_configs =
+          route.method_config->GetMethodParsedConfigVector(grpc_empty_slice());
+      call_config.service_config = route.method_config;
+    }
+    return call_config;
+  }
+  call_config.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("No route matched");
+  return call_config;
+}
+
+class XdsServerConfigSelectorProvider : public ServerConfigSelectorProvider {
+ public:
+  XdsServerConfigSelectorProvider(
+      XdsServerConfigFetcher* server_config_fetcher, std::string resource_name,
+      absl::optional<absl::StatusOr<XdsApi::RdsUpdate>> static_resource,
+      std::vector<XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter>
+          http_filters)
+      : server_config_fetcher_(server_config_fetcher),
+        resource_name_(std::move(resource_name)),
+        static_resource_(std::move(static_resource)),
+        http_filters_(std::move(http_filters)) {}
+
+  absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
+      std::unique_ptr<
+          ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
+          watcher) override {
+    if (static_resource_.has_value())
+      return XdsServerConfigSelector::Create(static_resource_.value(),
+                                             http_filters_);
+    GPR_ASSERT(!resource_name_.empty());
+    MutexLock lock(&mu_);
+    GPR_ASSERT(watcher_ == nullptr);
+    watcher_ = std::move(watcher);
+    auto rds_watcher = absl::make_unique<RdsUpdateWatcher>(this);
+    rds_watcher_ = rds_watcher.get();
+    auto rds_update = server_config_fetcher_->StartRdsWatch(
+        resource_name_, std::move(rds_watcher));
+    GPR_ASSERT(rds_update.has_value());
+    return XdsServerConfigSelector::Create(rds_update.value(), http_filters_);
+  }
+
+  void CancelWatch() override {
+    MutexLock lock(&mu_);
+    watcher_.reset();
+    if (!resource_name_.empty()) {
+      server_config_fetcher_->CancelRdsWatch(resource_name_, rds_watcher_);
+      rds_watcher_ = nullptr;
+    }
+  }
+
+ private:
+  class RdsUpdateWatcher
+      : public XdsServerConfigFetcher::RdsUpdateWatcherInterface {
+   public:
+    explicit RdsUpdateWatcher(XdsServerConfigSelectorProvider* parent)
+        : parent_(parent) {}
+    void OnRdsUpdate(absl::StatusOr<XdsApi::RdsUpdate> rds_update) {
+      MutexLock lock(&parent_->mu_);
+      GPR_ASSERT(parent_->watcher_ != nullptr);
+      parent_->watcher_->OnServerConfigSelectorUpdate(
+          XdsServerConfigSelector::Create(rds_update, parent_->http_filters_));
+    }
+
+   private:
+    XdsServerConfigSelectorProvider* parent_;
+  };
+
+  XdsServerConfigFetcher* server_config_fetcher_;
+  std::string resource_name_;
+  absl::optional<absl::StatusOr<XdsApi::RdsUpdate>> static_resource_;
+  std::vector<XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter>
+      http_filters_;
+  Mutex mu_;
+  std::unique_ptr<
+      ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
+      watcher_ ABSL_GUARDED_BY(mu_);
+  RdsUpdateWatcher* rds_watcher_ ABSL_GUARDED_BY(mu_) = nullptr;
+};
 
 }  // namespace
 
@@ -315,18 +579,15 @@ XdsServerConfigFetcher::FilterChainMatchManager::UpdateChannelArgsForConnection(
   }
   // Add config selector filter
   if (!filters.empty()) {
-    filters.push_back(&kXdsServerConfigSelectorFilter);
+    // filters.push_back(&kXdsServerConfigSelectorFilter);
     grpc_channel_args* old_args = args;
-    auto server_config_selector_arg =
-        MakeRefCounted<XdsServerConfigSelectorArg>();
-    server_config_selector_arg->resource_name =
-        filter_chain->http_connection_manager.route_config_name;
-    server_config_selector_arg->rds_update =
-        filter_chain->http_connection_manager.rds_update;
-    server_config_selector_arg->server_config_fetcher = server_config_fetcher_;
-    server_config_selector_arg->http_filters =
-        filter_chain->http_connection_manager.http_filters;
-    grpc_arg arg_to_add = server_config_selector_arg->MakeChannelArg();
+    auto server_config_selector_provider =
+        MakeRefCounted<XdsServerConfigSelectorProvider>(
+            server_config_fetcher_,
+            filter_chain->http_connection_manager.route_config_name,
+            filter_chain->http_connection_manager.rds_update,
+            filter_chain->http_connection_manager.http_filters);
+    grpc_arg arg_to_add = server_config_selector_provider->MakeChannelArg();
     args = grpc_channel_args_copy_and_add(old_args, &arg_to_add, 1);
     grpc_channel_args_destroy(old_args);
   }

@@ -97,11 +97,13 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
   void CancelWatch(
       grpc_server_config_fetcher::WatcherInterface* watcher) override;
 
+  // TODO(yashykt): Remove
   absl::optional<absl::StatusOr<XdsApi::RdsUpdate>> StartRdsWatch(
       absl::string_view resource_name,
       std::unique_ptr<XdsServerConfigFetcher::RdsUpdateWatcherInterface>
           watcher);
 
+  // TODO(yashykt): Remove
   void CancelRdsWatch(
       absl::string_view resource_name,
       XdsServerConfigFetcher::RdsUpdateWatcherInterface* watcher);

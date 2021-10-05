@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/statusor.h"
+
 #include "src/core/ext/service_config/service_config.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -35,6 +37,30 @@ class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
     RefCountedPtr<ServiceConfig> service_config;
   };
   virtual CallConfig GetCallConfig(grpc_metadata_batch* metadata) = 0;
+};
+
+class ServerConfigSelectorProvider
+    : public RefCounted<ServerConfigSelectorProvider> {
+ public:
+  class ServerConfigSelectorWatcher {
+   public:
+    virtual ~ServerConfigSelectorWatcher() = default;
+    virtual void OnServerConfigSelectorUpdate(
+        absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) = 0;
+  };
+
+  ~ServerConfigSelectorProvider() override = default;
+  // Only a single watcher is allowed at present
+  virtual absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
+      std::unique_ptr<ServerConfigSelectorWatcher> watcher) = 0;
+  virtual void CancelWatch() = 0;
+
+  grpc_arg MakeChannelArg() const;
+  static RefCountedPtr<ServerConfigSelectorProvider> GetFromChannelArgs(
+      const grpc_channel_args& args);
+
+ private:
+  static const char* kChannelArgName;
 };
 
 }  // namespace grpc_core

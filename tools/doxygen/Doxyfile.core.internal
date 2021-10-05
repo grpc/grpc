@@ -1004,6 +1004,12 @@ src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc \
 src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h \
 src/core/ext/filters/workarounds/workaround_utils.cc \
 src/core/ext/filters/workarounds/workaround_utils.h \
+src/core/ext/service_config/server_config_call_data.h \
+src/core/ext/service_config/server_config_selector.h \
+src/core/ext/service_config/service_config.cc \
+src/core/ext/service_config/service_config.h \
+src/core/ext/service_config/service_config_parser.cc \
+src/core/ext/service_config/service_config_parser.h \
 src/core/ext/transport/README.md \
 src/core/ext/transport/binder/README.md \
 src/core/ext/transport/chttp2/README.md \
@@ -1529,12 +1535,6 @@ src/core/lib/channel/handshaker.h \
 src/core/lib/channel/handshaker_factory.h \
 src/core/lib/channel/handshaker_registry.cc \
 src/core/lib/channel/handshaker_registry.h \
-src/core/lib/channel/server_config_call_data.h \
-src/core/lib/channel/server_config_selector.h \
-src/core/lib/channel/service_config.cc \
-src/core/lib/channel/service_config.h \
-src/core/lib/channel/service_config_parser.cc \
-src/core/lib/channel/service_config_parser.h \
 src/core/lib/channel/status_util.cc \
 src/core/lib/channel/status_util.h \
 src/core/lib/compression/algorithm_metadata.h \

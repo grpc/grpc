@@ -1270,10 +1270,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_service_config",
     srcs = [
+        "src/core/ext/filters/server_config_selector/server_config_selector_filter.cc",
+        "src/core/ext/service_config/server_config_selector.cc",
         "src/core/ext/service_config/service_config.cc",
         "src/core/ext/service_config/service_config_parser.cc",
     ],
     hdrs = [
+        "src/core/ext/filters/server_config_selector/server_config_selector_filter.h",
         "src/core/ext/service_config/server_config_call_data.h",
         "src/core/ext/service_config/server_config_selector.h",
         "src/core/ext/service_config/service_config.h",
@@ -2123,11 +2126,9 @@ grpc_cc_library(
     name = "grpc_xds_server_config_fetcher",
     srcs = [
         "src/core/ext/xds/xds_server_config_fetcher.cc",
-        "src/core/ext/xds/xds_server_config_selector.cc",
     ],
     hdrs = [
         "src/core/ext/xds/xds_server_config_fetcher.h",
-        "src/core/ext/xds/xds_server_config_selector.h",
     ],
     external_deps = [
         "absl/strings",
