@@ -488,7 +488,7 @@ grpc_cc_library(
         "grpc_secure",
         "ref_counted_ptr",
         "slice",
-        "//src/core/lib/json"
+        "//src/core/lib/json",
     ],
 )
 
@@ -1451,7 +1451,7 @@ grpc_cc_library(
         "slice_refcount",
         "table",
         "useful",
-        "//src/core/lib/json"
+        "//src/core/lib/json",
     ],
 )
 
@@ -1954,8 +1954,8 @@ grpc_cc_library(
         "slice_refcount",
         "udpa_type_upb",
         "udpa_type_upbdefs",
+        "//src/core/lib/json",
         "//src/core/lib/json:util",
-        "//src/core/lib/json"
     ],
 )
 
@@ -2430,7 +2430,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_grpclb_balancer_addresses",
         "grpc_resolver_dns_selection",
-        "//src/core/lib/json"
+        "//src/core/lib/json",
     ],
 )
 
@@ -2642,7 +2642,7 @@ grpc_cc_library(
         "tsi",
         "tsi_interface",
         "useful",
-        "//src/core/lib/json"
+        "//src/core/lib/json",
     ],
 )
 

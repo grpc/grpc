@@ -30,25 +30,25 @@ grpc_cc_library(
     hdrs = [
         "json.h",
     ],
-    deps = [
-        "//:gpr_platform",
-        "//:error",
-        "//:exec_ctx",
-    ],
     external_deps = [
         "absl/strings",
-    ]
+    ],
+    deps = [
+        "//:error",
+        "//:exec_ctx",
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(
     name = "util",
     srcs = ["json_util.cc"],
     hdrs = ["json_util.h"],
-    deps = [
-        "//:gpr_platform",
-        ":json",
-    ],
     external_deps = [
         "absl/strings",
-    ]
+    ],
+    deps = [
+        ":json",
+        "//:gpr_platform",
+    ],
 )
