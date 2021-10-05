@@ -47,74 +47,93 @@ TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
 
 namespace {
 
-/*
-  client_idle_filter maintains a state tracking if there are active calls in the
-  channel and its internal idle_timer_. The states are specified as following:
+// State machine for the idle filter.
+// Keeps track of how many calls are in progress, whether there is a timer
+// started, and whether we've seen calls since the previous timer fired.
+class IdleFilterState {
+ public:
+  IdleFilterState() = default;
 
-  +--------------------------------------------+-------------+---------+
-  |               ChannelState                 | idle_timer_ | channel |
-  +--------------------------------------------+-------------+---------+
-  | IDLE                                       | unset       | idle    |
-  | CALLS_ACTIVE                               | unset       | busy    |
-  | TIMER_PENDING                              | set-valid   | idle    |
-  | TIMER_PENDING_CALLS_ACTIVE                 | set-invalid | busy    |
-  | TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START | set-invalid | idle    |
-  +--------------------------------------------+-------------+---------+
+  // Increment the number of calls in progress.
+  void IncreaseCallCount() {
+    uintptr_t state = state_.load(std::memory_order_relaxed);
+    uintptr_t new_state;
+    do {
+      new_state = state;
+      new_state |= kCallsStartedSinceLastTimerCheck;
+      new_state += kCallIncrement;
+    } while (!state_.compare_exchange_weak(state, new_state,
+                                           std::memory_order_relaxed,
+                                           std::memory_order_relaxed));
+  }
 
-  IDLE: The initial state of the client_idle_filter, indicating the channel is
-  in IDLE.
+  // Decrement the number of calls in progress.
+  // Return true if we reached idle with no timer started.
+  GRPC_MUST_USE_RESULT bool DecreaseCallCount() {
+    uintptr_t state = state_.load(std::memory_order_relaxed);
+    uintptr_t new_state;
+    bool start_timer;
+    do {
+      start_timer = false;
+      new_state = state;
+      new_state -= kCallIncrement;
+      if (state >> kCallInProgressShift == 0) {
+        if ((state & kTimerStarted) == 0) {
+          start_timer = true;
+          new_state |= kTimerStarted;
+        }
+      }
+    } while (!state_.compare_exchange_weak(state, new_state,
+                                           std::memory_order_relaxed,
+                                           std::memory_order_relaxed));
+    return start_timer;
+  }
 
-  CALLS_ACTIVE: The channel has 1 or 1+ active calls and the timer is not set.
+  // Check if there's been any activity since the last timer check.
+  // If there was, reset the activity flag and return true to indicated that
+  // a new timer should be started.
+  // If there was not, reset the timer flag and return false - in this case
+  // we know that the channel is idle and has been for one full cycle.
+  GRPC_MUST_USE_RESULT bool CheckTimer() {
+    uintptr_t state = state_.load(std::memory_order_relaxed);
+    uintptr_t new_state;
+    do {
+      if ((state >> kCallInProgressShift) != 0) {
+        // Still calls in progress: nothing needs updating, just return
+        // and keep the timer going!
+        return true;
+      }
+      new_state = state;
+      bool is_active = false;
+      if (state & kCallsStartedSinceLastTimerCheck) {
+        is_active = true;
+        new_state &= ~kCallsStartedSinceLastTimerCheck;
+      }
+      if (is_active) {
+        start_timer = true;
+      } else {
+        start_timer = false;
+        new_state &= ~kTimerStarted;
+      }
+    } while (!state_.compare_exchange_weak(state, new_state,
+                                           std::memory_order_relaxed,
+                                           std::memory_order_relaxed));
+    return start_timer;
+  }
 
-  TIMER_PENDING: The state after the timer is set and no calls have arrived
-  after the timer is set. The channel must have 0 active call in this state. If
-  the timer is fired in this state, the channel will go into IDLE state.
-
-  TIMER_PENDING_CALLS_ACTIVE: The state after the timer is set and at least one
-  call has arrived after the timer is set. The channel must have 1 or 1+ active
-  calls in this state. If the timer is fired in this state, we won't reschedule
-  it.
-
-  TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START: The state after the timer is set
-  and at least one call has arrived after the timer is set, BUT the channel
-  currently has 0 active call. If the timer is fired in this state, we will
-  reschedule it according to the finish time of the latest call.
-
-  PROCESSING: The state set to block other threads when the setting thread is
-  doing some work to keep state consistency.
-
-  idle_timer_ will not be cancelled (unless the channel is shutting down).
-  If the timer callback is called when the idle_timer_ is valid (i.e. idle_state
-  is TIMER_PENDING), the channel will enter IDLE, otherwise the channel won't be
-  changed.
-
-  State transitions:
-                                            IDLE
-                                            |  ^
-            ---------------------------------  *
-            |                                  *
-            v                                  *
-      CALLS_ACTIVE =================> TIMER_PENDING
-            ^                               |  ^
-            *  ------------------------------  *
-            *  |                               *
-            *  v                               *
-TIMER_PENDING_CALLS_ACTIVE ===> TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START
-            ^                               |
-            |                               |
-            ---------------------------------
-
-  ---> Triggered by IncreaseCallCount()
-  ===> Triggered by DecreaseCallCount()
-  ***> Triggered by IdleTimerCallback()
-*/
-enum ChannelState {
-  IDLE,
-  CALLS_ACTIVE,
-  TIMER_PENDING,
-  TIMER_PENDING_CALLS_ACTIVE,
-  TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START,
-  PROCESSING
+ private:
+  // Bit in state_ indicating that the timer has been started.
+  static constexpr uintptr_t kTimerStarted = 1;
+  // Bit in state_ indicating that we've seen a call start or stop since the
+  // last timer.
+  static constexpr uintptr_t kCallsStartedSinceLastTimerCheck = 2;
+  // How much should we shift to get the number of calls in progress.
+  static constexpr uintptr_t kCallsInProgressShift = 2;
+  // How much to increment/decrement the state_ when a call is started/stopped.
+  // Ensures we don't clobber the preceding bits.
+  static constexpr uintptr_t kCallIncrement = uintptr_t(1)
+                                              << kCallsInProgressShift;
+  std::atomic<uintptr_t> state_ = 0;
 };
 
 grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
@@ -159,9 +178,7 @@ class ChannelData {
   const grpc_millis client_idle_timeout_;
 
   // Member data used to track the state of channel.
-  grpc_millis last_idle_time_;
-  std::atomic<intptr_t> call_count_{0};
-  std::atomic<ChannelState> state_{IDLE};
+  IdleFilterState idle_filter_state_;
 
   // Idle timer and its callback closure.
   grpc_timer idle_timer_;
@@ -202,86 +219,13 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
 }
 
 void ChannelData::IncreaseCallCount() {
-  const intptr_t previous_value =
-      call_count_.fetch_add(1, std::memory_order_relaxed);
-  GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR,
-                       previous_value + 1);
-  if (previous_value == 0) {
-    // This call is the one that makes the channel busy.
-    // Loop here to make sure the previous decrease operation has finished.
-    ChannelState state = state_.load(std::memory_order_relaxed);
-    while (true) {
-      switch (state) {
-        // Timer has not been set. Switch to CALLS_ACTIVE.
-        case IDLE:
-          // In this case, no other threads will modify the state, so we can
-          // just store the value.
-          state_.store(CALLS_ACTIVE, std::memory_order_relaxed);
-          return;
-        // Timer has been set. Switch to TIMER_PENDING_CALLS_ACTIVE.
-        case TIMER_PENDING:
-        case TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START:
-          // At this point, the state may have been switched to IDLE by the
-          // idle timer callback. Therefore, use CAS operation to change the
-          // state atomically.
-          // Use std::memory_order_acquire on success to ensure last_idle_time_
-          // has been properly set in DecreaseCallCount().
-          if (state_.compare_exchange_weak(state, TIMER_PENDING_CALLS_ACTIVE,
-                                           std::memory_order_acquire,
-                                           std::memory_order_relaxed)) {
-            return;
-          }
-          break;
-        default:
-          // The state has not been switched to desired value yet, try again.
-          state = state_.load(std::memory_order_relaxed);
-          break;
-      }
-    }
-  }
+  idle_filter_state_.IncreaseCallCount();
 }
 
 void ChannelData::DecreaseCallCount() {
-  const intptr_t previous_value =
-      call_count_.fetch_sub(1, std::memory_order_relaxed);
-  GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR,
-                       previous_value - 1);
-  if (previous_value == 1) {
-    // This call is the one that makes the channel idle.
-    // last_idle_time_ does not need to be std::atomic<> because busy-loops in
-    // IncreaseCallCount(), DecreaseCallCount() and IdleTimerCallback() will
-    // prevent multiple threads from simultaneously accessing this variable.
-    last_idle_time_ = ExecCtx::Get()->Now();
-    ChannelState state = state_.load(std::memory_order_relaxed);
-    while (true) {
-      switch (state) {
-        // Timer has not been set. Set the timer and switch to TIMER_PENDING
-        case CALLS_ACTIVE:
-          // Release store here to make other threads see the updated value of
-          // last_idle_time_.
-          StartIdleTimer();
-          state_.store(TIMER_PENDING, std::memory_order_release);
-          return;
-        // Timer has been set. Switch to
-        // TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START
-        case TIMER_PENDING_CALLS_ACTIVE:
-          // At this point, the state may have been switched to CALLS_ACTIVE by
-          // the idle timer callback. Therefore, use CAS operation to change the
-          // state atomically.
-          // Release store here to make the idle timer callback see the updated
-          // value of last_idle_time_ to properly reset the idle timer.
-          if (state_.compare_exchange_weak(
-                  state, TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START,
-                  std::memory_order_release, std::memory_order_relaxed)) {
-            return;
-          }
-          break;
-        default:
-          // The state has not been switched to desired value yet, try again.
-          state = state_.load(std::memory_order_relaxed);
-          break;
-      }
-    }
+  if (idle_filter_state_.DecreaseCallCount()) {
+    // If there are no more calls in progress, start the idle timer.
+    StartIdleTimer();
   }
 }
 
@@ -315,44 +259,10 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error_handle error) {
     GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "max idle timer callback");
     return;
   }
-  bool finished = false;
-  ChannelState state = chand->state_.load(std::memory_order_relaxed);
-  while (!finished) {
-    switch (state) {
-      case TIMER_PENDING:
-        // Change the state to PROCESSING to block IncreaseCallCout() until the
-        // EnterIdle() operation finishes, preventing mistakenly entering IDLE
-        // when active RPC exists.
-        finished = chand->state_.compare_exchange_weak(
-            state, PROCESSING, std::memory_order_acquire,
-            std::memory_order_relaxed);
-        if (finished) {
-          chand->EnterIdle();
-          chand->state_.store(IDLE, std::memory_order_relaxed);
-        }
-        break;
-      case TIMER_PENDING_CALLS_ACTIVE:
-        finished = chand->state_.compare_exchange_weak(
-            state, CALLS_ACTIVE, std::memory_order_relaxed,
-            std::memory_order_relaxed);
-        break;
-      case TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START:
-        // Change the state to PROCESSING to block IncreaseCallCount() until the
-        // StartIdleTimer() operation finishes, preventing mistakenly restarting
-        // the timer after grpc_timer_cancel() when shutdown.
-        finished = chand->state_.compare_exchange_weak(
-            state, PROCESSING, std::memory_order_acquire,
-            std::memory_order_relaxed);
-        if (finished) {
-          chand->StartIdleTimer();
-          chand->state_.store(TIMER_PENDING, std::memory_order_relaxed);
-        }
-        break;
-      default:
-        // The state has not been switched to desired value yet, try again.
-        state = chand->state_.load(std::memory_order_relaxed);
-        break;
-    }
+  if (chand->idle_filter_state_.CheckTimer()) {
+    chand->StartIdleTimer();
+  } else {
+    chand->EnterIdle();
   }
   GRPC_IDLE_FILTER_LOG("timer finishes");
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "max idle timer callback");
