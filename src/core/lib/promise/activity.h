@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_PROMISE_ACTIVITY_H
 #define GRPC_CORE_LIB_PROMISE_ACTIVITY_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <functional>
 
@@ -364,6 +364,7 @@ class PromiseActivity final
       // Can't safely run, so ask to run later.
       wakeup_scheduler_.ScheduleWakeup(this);
     } else {
+      // Already a wakeup scheduled for later, drop ref.
       WakeupComplete();
     }
   }

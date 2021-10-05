@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_PROMISE_POLL_H
 #define GRPC_CORE_LIB_PROMISE_POLL_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "absl/types/variant.h"
 

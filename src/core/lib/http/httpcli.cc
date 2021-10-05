@@ -118,8 +118,7 @@ static void append_error(internal_request* req, grpc_error_handle error) {
   std::string addr_text = grpc_sockaddr_to_uri(addr);
   req->overall_error = grpc_error_add_child(
       req->overall_error,
-      grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
-                         grpc_slice_from_cpp_string(std::move(addr_text))));
+      grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_text));
 }
 
 static void do_read(internal_request* req) {
