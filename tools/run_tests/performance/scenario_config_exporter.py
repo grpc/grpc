@@ -42,7 +42,6 @@ import collections
 import json
 import re
 import sys
-
 from typing import Any, Callable, Dict, Iterable, NamedTuple
 
 import scenario_config

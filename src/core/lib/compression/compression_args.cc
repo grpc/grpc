@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/compression/compression_args.h"
+
 #include <limits.h>
 #include <string.h>
 
@@ -28,7 +30,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/compression/compression_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 
@@ -100,9 +101,9 @@ grpc_channel_args* grpc_channel_args_compression_algorithm_set_state(
             algo_name);
   } else if (states_arg_found) {
     if (state != 0) {
-      GPR_BITSET((unsigned*)states_arg, algorithm);
+      grpc_core::SetBit(reinterpret_cast<unsigned*>(states_arg), algorithm);
     } else if (algorithm != GRPC_COMPRESS_NONE) {
-      GPR_BITCLEAR((unsigned*)states_arg, algorithm);
+      grpc_core::ClearBit(reinterpret_cast<unsigned*>(states_arg), algorithm);
     }
   } else {
     /* create a new arg */
@@ -113,9 +114,11 @@ grpc_channel_args* grpc_channel_args_compression_algorithm_set_state(
     /* all enabled by default */
     tmp.value.integer = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
     if (state != 0) {
-      GPR_BITSET((unsigned*)&tmp.value.integer, algorithm);
+      grpc_core::SetBit(reinterpret_cast<unsigned*>(&tmp.value.integer),
+                        algorithm);
     } else if (algorithm != GRPC_COMPRESS_NONE) {
-      GPR_BITCLEAR((unsigned*)&tmp.value.integer, algorithm);
+      grpc_core::ClearBit(reinterpret_cast<unsigned*>(&tmp.value.integer),
+                          algorithm);
     }
     result = grpc_channel_args_copy_and_add(*a, &tmp, 1);
     grpc_channel_args_destroy(*a);

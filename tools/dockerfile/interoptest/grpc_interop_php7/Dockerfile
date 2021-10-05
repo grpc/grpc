@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+FROM debian:9
 
 
 #=================
@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y \
   ccache \
   curl \
   git \
+  libbison-dev \
   libcurl4-openssl-dev \
   libgmp-dev \
   libgmp3-dev \
@@ -37,28 +38,19 @@ RUN apt-get update && apt-get install -y \
   time \
   unzip \
   wget \
-  zip && apt-get clean
-
-# Install other dependencies
-RUN ln -sf /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
-RUN wget http://ftp.gnu.org/gnu/bison/bison-3.4.2.tar.gz -O /var/local/bison-3.4.2.tar.gz
-RUN cd /var/local \
-  && tar -zxvf bison-3.4.2.tar.gz \
-  && cd /var/local/bison-3.4.2 \
-  && ./configure \
-  && make \
-  && make install
+  zip \
+  zlib1g-dev && apt-get clean
 
 # Compile PHP7 from source
 RUN git clone https://github.com/php/php-src /var/local/git/php-src
 RUN cd /var/local/git/php-src \
-  && git checkout PHP-7.2.22 \
+  && git checkout PHP-7.2.34 \
   && ./buildconf --force \
   && ./configure \
   --with-gmp \
   --with-openssl \
   --with-zlib \
-  && make \
+  && make -j$(nproc) \
   && make install
 
 

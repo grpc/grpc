@@ -16,14 +16,11 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-
 #include <grpc/support/workaround_list.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
@@ -33,6 +30,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

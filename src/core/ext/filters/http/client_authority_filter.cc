@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/http/client_authority_filter.h"
+
 #include <assert.h>
 #include <limits.h>
 #include <string.h>
@@ -26,13 +28,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/http/client_authority_filter.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/static_metadata.h"
 
@@ -55,8 +57,9 @@ void client_authority_start_transport_stream_op_batch(
   // Handle send_initial_metadata.
   // If the initial metadata doesn't already contain :authority, add it.
   if (batch->send_initial_metadata &&
-      batch->payload->send_initial_metadata.send_initial_metadata->idx.named
-              .authority == nullptr) {
+      batch->payload->send_initial_metadata.send_initial_metadata
+              ->legacy_index()
+              ->named.authority == nullptr) {
     grpc_error_handle error = grpc_metadata_batch_add_head(
         batch->payload->send_initial_metadata.send_initial_metadata,
         &calld->authority_storage,
@@ -130,8 +133,7 @@ const grpc_channel_filter grpc_client_authority_filter = {
     grpc_channel_next_get_info,
     "authority"};
 
-static bool add_client_authority_filter(grpc_channel_stack_builder* builder,
-                                        void* arg) {
+static bool add_client_authority_filter(grpc_channel_stack_builder* builder) {
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   const grpc_arg* disable_client_authority_filter_arg = grpc_channel_args_find(
@@ -144,16 +146,14 @@ static bool add_client_authority_filter(grpc_channel_stack_builder* builder,
     }
   }
   return grpc_channel_stack_builder_prepend_filter(
-      builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
+      builder, &grpc_client_authority_filter, nullptr, nullptr);
 }
 
-void grpc_client_authority_filter_init(void) {
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_SUBCHANNEL, INT_MAX, add_client_authority_filter,
-      const_cast<grpc_channel_filter*>(&grpc_client_authority_filter));
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX, add_client_authority_filter,
-      const_cast<grpc_channel_filter*>(&grpc_client_authority_filter));
+namespace grpc_core {
+void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder) {
+  builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
+                                         add_client_authority_filter);
+  builder->channel_init()->RegisterStage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
+                                         add_client_authority_filter);
 }
-
-void grpc_client_authority_filter_shutdown(void) {}
+}  // namespace grpc_core

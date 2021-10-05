@@ -12,24 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Interceptors implementation of gRPC Asyncio Python."""
+from abc import ABCMeta
+from abc import abstractmethod
 import asyncio
 import collections
 import functools
-from abc import ABCMeta, abstractmethod
-from typing import Callable, Optional, Iterator, Sequence, Union, Awaitable, AsyncIterable
+from typing import (AsyncIterable, Awaitable, Callable, Iterator, Optional,
+                    Sequence, Union)
 
 import grpc
 from grpc._cython import cygrpc
 
 from . import _base_call
-from ._call import UnaryUnaryCall, UnaryStreamCall, StreamUnaryCall, StreamStreamCall, AioRpcError
-from ._call import _RPC_ALREADY_FINISHED_DETAILS, _RPC_HALF_CLOSED_DETAILS
+from ._call import AioRpcError
+from ._call import StreamStreamCall
+from ._call import StreamUnaryCall
+from ._call import UnaryStreamCall
+from ._call import UnaryUnaryCall
 from ._call import _API_STYLE_ERROR
-from ._utils import _timeout_to_deadline
-from ._typing import (RequestType, SerializingFunction, DeserializingFunction,
-                      ResponseType, DoneCallbackType, RequestIterableType,
-                      ResponseIterableType)
+from ._call import _RPC_ALREADY_FINISHED_DETAILS
+from ._call import _RPC_HALF_CLOSED_DETAILS
 from ._metadata import Metadata
+from ._typing import DeserializingFunction
+from ._typing import DoneCallbackType
+from ._typing import RequestIterableType
+from ._typing import RequestType
+from ._typing import ResponseIterableType
+from ._typing import ResponseType
+from ._typing import SerializingFunction
+from ._utils import _timeout_to_deadline
 
 _LOCAL_CANCELLATION_DETAILS = 'Locally cancelled by application!'
 

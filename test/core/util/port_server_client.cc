@@ -17,11 +17,10 @@
  */
 
 #include <grpc/support/port_platform.h>
+
 #include "test/core/util/test_config.h"
 
 #ifdef GRPC_TEST_PICK_PORT
-#include "test/core/util/port_server_client.h"
-
 #include <math.h>
 #include <string.h>
 
@@ -33,6 +32,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/http/httpcli.h"
+#include "test/core/util/port_server_client.h"
 
 typedef struct freereq {
   gpr_mu* mu = nullptr;
@@ -92,7 +92,6 @@ void grpc_free_port_using_server(int port) {
                      GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
                                          grpc_schedule_on_exec_ctx),
                      &rsp);
-    grpc_resource_quota_unref_internal(resource_quota);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(pr.mu);
     while (!pr.done) {
@@ -175,7 +174,6 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
                      GRPC_CLOSURE_CREATE(got_port_from_server, pr,
                                          grpc_schedule_on_exec_ctx),
                      &pr->response);
-    grpc_resource_quota_unref_internal(resource_quota);
     return;
   }
   GPR_ASSERT(response);
@@ -225,7 +223,6 @@ int grpc_pick_port_using_server(void) {
                      GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
                                          grpc_schedule_on_exec_ctx),
                      &pr.response);
-    grpc_resource_quota_unref_internal(resource_quota);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(pr.mu);
     while (pr.port == -1) {

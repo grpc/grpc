@@ -16,7 +16,9 @@
  *
  */
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#include "src/core/ext/transport/cronet/client/secure/cronet_channel_create.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -24,7 +26,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/transport/cronet/client/secure/cronet_channel_create.h"
 #include "src/core/ext/transport/cronet/transport/cronet_transport.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -58,8 +59,8 @@ GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
       grpc_create_cronet_transport(engine, target, new_args, reserved);
 
   grpc_core::ExecCtx exec_ctx;
-  grpc_channel* channel =
-      grpc_channel_create(target, new_args, GRPC_CLIENT_DIRECT_CHANNEL, ct);
+  grpc_channel* channel = grpc_channel_create(
+      target, new_args, GRPC_CLIENT_DIRECT_CHANNEL, ct, nullptr, 0, nullptr);
   grpc_channel_args_destroy(new_args);
   return channel;
 }

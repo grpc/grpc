@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
-
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

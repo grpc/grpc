@@ -25,6 +25,7 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "opencensus/stats/stats.h"
+
 #include "src/core/lib/surface/call.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
@@ -44,18 +45,19 @@ struct ServerMetadataElements {
 
 void FilterInitialMetadata(grpc_metadata_batch* b,
                            ServerMetadataElements* sml) {
-  if (b->idx.named.path != nullptr) {
-    sml->path = grpc_slice_ref_internal(GRPC_MDVALUE(b->idx.named.path->md));
+  if (b->legacy_index()->named.path != nullptr) {
+    sml->path = grpc_slice_ref_internal(
+        GRPC_MDVALUE(b->legacy_index()->named.path->md));
   }
-  if (b->idx.named.grpc_trace_bin != nullptr) {
-    sml->tracing_slice =
-        grpc_slice_ref_internal(GRPC_MDVALUE(b->idx.named.grpc_trace_bin->md));
-    grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_TRACE_BIN);
+  if (b->legacy_index()->named.grpc_trace_bin != nullptr) {
+    sml->tracing_slice = grpc_slice_ref_internal(
+        GRPC_MDVALUE(b->legacy_index()->named.grpc_trace_bin->md));
+    b->Remove(GRPC_BATCH_GRPC_TRACE_BIN);
   }
-  if (b->idx.named.grpc_tags_bin != nullptr) {
-    sml->census_proto =
-        grpc_slice_ref_internal(GRPC_MDVALUE(b->idx.named.grpc_tags_bin->md));
-    grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_TAGS_BIN);
+  if (b->legacy_index()->named.grpc_tags_bin != nullptr) {
+    sml->census_proto = grpc_slice_ref_internal(
+        GRPC_MDVALUE(b->legacy_index()->named.grpc_tags_bin->md));
+    b->Remove(GRPC_BATCH_GRPC_TAGS_BIN);
   }
 }
 

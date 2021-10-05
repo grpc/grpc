@@ -11,6 +11,13 @@
 # Uncomment to ensure the allow health check firewall exists before test case runs
 # --ensure_firewall
 
+# Use a resource prefix to describe usage and ownership
+--resource_prefix=xds-k8s-test
+
+# Use predictable resource suffix to simplify debugging
+# If left blank, the framework will randomly generate one
+--resource_suffix=dev
+
 # The name of kube context to use. See `gcloud container clusters get-credentials` and `kubectl config`
 --kube_context=context_name
 

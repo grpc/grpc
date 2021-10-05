@@ -13,12 +13,11 @@
 # limitations under the License.
 """Test of gRPC Python's application-layer API."""
 
-import unittest
 import logging
-
-import six
+import unittest
 
 import grpc
+import six
 
 from tests.unit import _from_grpc_import_star
 
@@ -76,6 +75,7 @@ class AllTest(unittest.TestCase):
             'access_token_call_credentials',
             'composite_call_credentials',
             'composite_channel_credentials',
+            'compute_engine_channel_credentials',
             'ssl_server_credentials',
             'ssl_server_certificate_configuration',
             'dynamic_ssl_server_credentials',

@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/type/matcher/v3/node.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/matcher/v3/struct.upb.h"
@@ -22,14 +22,14 @@ static const upb_msglayout *const envoy_type_matcher_v3_NodeMatcher_submsgs[2] =
 };
 
 static const upb_msglayout_field envoy_type_matcher_v3_NodeMatcher__fields[2] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
-  {2, UPB_SIZE(8, 16), 0, 1, 11, 3},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(8, 16), 0, 1, 11, _UPB_MODE_ARRAY},
 };
 
 const upb_msglayout envoy_type_matcher_v3_NodeMatcher_msginit = {
   &envoy_type_matcher_v3_NodeMatcher_submsgs[0],
   &envoy_type_matcher_v3_NodeMatcher__fields[0],
-  UPB_SIZE(16, 24), 2, false, 255,
+  UPB_SIZE(16, 24), 2, false, 2, 255,
 };
 
 #include "upb/port_undef.inc"

@@ -9,7 +9,7 @@
 #ifndef UDPA_ANNOTATIONS_MIGRATE_PROTO_UPB_H_
 #define UDPA_ANNOTATIONS_MIGRATE_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -39,13 +39,19 @@ UPB_INLINE udpa_annotations_MigrateAnnotation *udpa_annotations_MigrateAnnotatio
 UPB_INLINE udpa_annotations_MigrateAnnotation *udpa_annotations_MigrateAnnotation_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   udpa_annotations_MigrateAnnotation *ret = udpa_annotations_MigrateAnnotation_new(arena);
-  return (ret && upb_decode(buf, size, ret, &udpa_annotations_MigrateAnnotation_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &udpa_annotations_MigrateAnnotation_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE udpa_annotations_MigrateAnnotation *udpa_annotations_MigrateAnnotation_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   udpa_annotations_MigrateAnnotation *ret = udpa_annotations_MigrateAnnotation_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &udpa_annotations_MigrateAnnotation_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &udpa_annotations_MigrateAnnotation_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *udpa_annotations_MigrateAnnotation_serialize(const udpa_annotations_MigrateAnnotation *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &udpa_annotations_MigrateAnnotation_msginit, arena, len);
@@ -65,13 +71,19 @@ UPB_INLINE udpa_annotations_FieldMigrateAnnotation *udpa_annotations_FieldMigrat
 UPB_INLINE udpa_annotations_FieldMigrateAnnotation *udpa_annotations_FieldMigrateAnnotation_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   udpa_annotations_FieldMigrateAnnotation *ret = udpa_annotations_FieldMigrateAnnotation_new(arena);
-  return (ret && upb_decode(buf, size, ret, &udpa_annotations_FieldMigrateAnnotation_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &udpa_annotations_FieldMigrateAnnotation_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE udpa_annotations_FieldMigrateAnnotation *udpa_annotations_FieldMigrateAnnotation_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   udpa_annotations_FieldMigrateAnnotation *ret = udpa_annotations_FieldMigrateAnnotation_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &udpa_annotations_FieldMigrateAnnotation_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &udpa_annotations_FieldMigrateAnnotation_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *udpa_annotations_FieldMigrateAnnotation_serialize(const udpa_annotations_FieldMigrateAnnotation *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &udpa_annotations_FieldMigrateAnnotation_msginit, arena, len);
@@ -95,13 +107,19 @@ UPB_INLINE udpa_annotations_FileMigrateAnnotation *udpa_annotations_FileMigrateA
 UPB_INLINE udpa_annotations_FileMigrateAnnotation *udpa_annotations_FileMigrateAnnotation_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   udpa_annotations_FileMigrateAnnotation *ret = udpa_annotations_FileMigrateAnnotation_new(arena);
-  return (ret && upb_decode(buf, size, ret, &udpa_annotations_FileMigrateAnnotation_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &udpa_annotations_FileMigrateAnnotation_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE udpa_annotations_FileMigrateAnnotation *udpa_annotations_FileMigrateAnnotation_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   udpa_annotations_FileMigrateAnnotation *ret = udpa_annotations_FileMigrateAnnotation_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &udpa_annotations_FileMigrateAnnotation_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &udpa_annotations_FileMigrateAnnotation_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *udpa_annotations_FileMigrateAnnotation_serialize(const udpa_annotations_FileMigrateAnnotation *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &udpa_annotations_FileMigrateAnnotation_msginit, arena, len);

@@ -18,6 +18,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SERVER_CALLBACK_HANDLERS_H
 #define GRPCPP_IMPL_CODEGEN_SERVER_CALLBACK_HANDLERS_H
 
+// IWYU pragma: private
+
 #include <grpcpp/impl/codegen/message_allocator.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/server_callback.h>
@@ -81,7 +83,7 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
     ::grpc::ByteBuffer buf;
     buf.set_buffer(req);
     RequestType* request = nullptr;
-    MessageHolder<RequestType, ResponseType>* allocator_state = nullptr;
+    MessageHolder<RequestType, ResponseType>* allocator_state;
     if (allocator_ != nullptr) {
       allocator_state = allocator_->AllocateMessages();
     } else {
@@ -98,8 +100,6 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
     if (status->ok()) {
       return request;
     }
-    // Clean up on deserialization failure.
-    allocator_state->Release();
     return nullptr;
   }
 

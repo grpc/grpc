@@ -32,7 +32,7 @@ ENVIRONMENT:
 EXAMPLES:
 $0
 $0 --secure
-XDS_K8S_CONFIG=./path-to-flagfile.cfg $0 --namespace=override-namespace
+XDS_K8S_CONFIG=./path-to-flagfile.cfg $0 --resource_suffix=override-suffix
 EOF
   exit 1
 }
@@ -50,10 +50,10 @@ cd "${XDS_K8S_DRIVER_DIR}"
 if [[ "$1" == "--nosecure" ]]; then
   shift
   ./run.sh bin/run_td_setup.py --cmd=cleanup "$@" && \
-  ./run.sh bin/run_test_client.py --cmd=cleanup "$@" && \
+  ./run.sh bin/run_test_client.py --cmd=cleanup --cleanup_namespace "$@" && \
   ./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace "$@"
 else
   ./run.sh bin/run_td_setup.py --cmd=cleanup --security=mtls "$@" && \
-  ./run.sh bin/run_test_client.py --cmd=cleanup --secure "$@" && \
+  ./run.sh bin/run_test_client.py --cmd=cleanup --cleanup_namespace --secure "$@" && \
   ./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace --secure "$@"
 fi

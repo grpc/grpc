@@ -25,10 +25,6 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_UV
-#include <uv.h>
-#endif
-
 #ifdef GRPC_WINSOCK_SOCKET
 #include <ws2tcpip.h>
 #endif

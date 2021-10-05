@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
-import threading
-import unittest
 import platform
+import threading
+import time
+import unittest
 
 from grpc._cython import cygrpc
-from tests.unit._cython import test_utilities
-from tests.unit import test_common
+
 from tests.unit import resources
+from tests.unit import test_common
+from tests.unit._cython import test_utilities
 
 _SSL_HOST_OVERRIDE = b'foo.test.google.fr'
 _CALL_CREDENTIALS_METADATA_KEY = 'call-creds-key'

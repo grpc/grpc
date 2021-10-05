@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_GPRPP_OVERLOAD_H
 #define GRPC_CORE_LIB_GPRPP_OVERLOAD_H
 
-// Portable code. port_platform.h is not required.
+#include <grpc/support/port_platform.h>
 
 #include <utility>
 

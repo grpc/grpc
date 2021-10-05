@@ -19,14 +19,16 @@
 #ifndef GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
+// IWYU pragma: private
+
 #include <grpc/impl/codegen/port_platform.h>
+
+#include <stddef.h>
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/impl/codegen/status.h>
-
-#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,9 +56,6 @@ typedef struct grpc_byte_buffer {
 /** Completion Queues enable notification of the completion of
  * asynchronous actions. */
 typedef struct grpc_completion_queue grpc_completion_queue;
-
-/** An alarm associated with a completion queue. */
-typedef struct grpc_alarm grpc_alarm;
 
 /** The Channel interface allows creation of Call objects. */
 typedef struct grpc_channel grpc_channel;
@@ -384,12 +383,26 @@ typedef struct {
     Defaults to "blend". In the current implementation "blend" is equivalent to
     "latency". */
 #define GRPC_ARG_OPTIMIZATION_TARGET "grpc.optimization_target"
-/** If set to zero, disables retry behavior. Otherwise, transparent retries
-    are enabled for all RPCs, and configurable retries are enabled when they
-    are configured via the service config. For details, see:
+/** Enables retry functionality.  Defaults to true.  When enabled,
+    configurable retries are enabled when they are configured via the
+    service config.  For details, see:
       https://github.com/grpc/proposal/blob/master/A6-client-retries.md
+    NOTE: Transparent retries are not yet implemented.  When they are
+          implemented, they will also be enabled by this arg.
+    NOTE: Hedging functionality is not yet implemented, so those
+          fields in the service config will currently be ignored.  See
+          also the GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING arg below.
  */
 #define GRPC_ARG_ENABLE_RETRIES "grpc.enable_retries"
+/** Enables hedging functionality, as described in:
+      https://github.com/grpc/proposal/blob/master/A6-client-retries.md
+    Default is currently false, since this functionality is not yet
+    fully implemented.
+    NOTE: This channel arg is experimental and will eventually be removed.
+          Once hedging functionality has been implemented and proves stable,
+          this arg will be removed, and the hedging functionality will
+          be enabled via the GRPC_ARG_ENABLE_RETRIES arg above. */
+#define GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING "grpc.experimental.enable_hedging"
 /** Per-RPC retry buffer size, in bytes. Default is 256 KiB. */
 #define GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE "grpc.per_rpc_retry_buffer_size"
 /** Channel arg that carries the bridged objective c object for custom metrics

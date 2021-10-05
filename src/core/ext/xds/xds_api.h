@@ -27,25 +27,20 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
+#include "envoy/admin/v3/config_dump.upb.h"
 #include "re2/re2.h"
-
 #include "upb/def.hpp"
 
 #include <grpc/slice_buffer.h>
 
-#include "envoy/admin/v3/config_dump.upb.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
-
-// TODO(yashykt): Check to see if xDS security is enabled. This will be
-// removed once this feature is fully integration-tested and enabled by
-// default.
-bool XdsSecurityEnabled();
 
 class XdsClient;
 
@@ -109,9 +104,33 @@ class XdsApi {
       bool operator==(const HashPolicy& other) const;
       std::string ToString() const;
     };
-
     Matchers matchers;
     std::vector<HashPolicy> hash_policies;
+
+    struct RetryPolicy {
+      internal::StatusCodeSet retry_on;
+      uint32_t num_retries;
+
+      struct RetryBackOff {
+        Duration base_interval;
+        Duration max_interval;
+
+        bool operator==(const RetryBackOff& other) const {
+          return base_interval == other.base_interval &&
+                 max_interval == other.max_interval;
+        }
+        std::string ToString() const;
+      };
+      RetryBackOff retry_back_off;
+
+      bool operator==(const RetryPolicy& other) const {
+        return (retry_on == other.retry_on &&
+                num_retries == other.num_retries &&
+                retry_back_off == other.retry_back_off);
+      }
+      std::string ToString() const;
+    };
+    absl::optional<RetryPolicy> retry_policy;
 
     // Action for this route.
     // TODO(roth): When we can use absl::variant<>, consider using that
@@ -139,6 +158,7 @@ class XdsApi {
 
     bool operator==(const Route& other) const {
       return matchers == other.matchers && cluster_name == other.cluster_name &&
+             retry_policy == other.retry_policy &&
              weighted_clusters == other.weighted_clusters &&
              max_stream_duration == other.max_stream_duration &&
              typed_per_filter_config == other.typed_per_filter_config;
@@ -168,22 +188,11 @@ class XdsApi {
   };
 
   struct CommonTlsContext {
-    struct CertificateValidationContext {
-      std::vector<StringMatcher> match_subject_alt_names;
-
-      bool operator==(const CertificateValidationContext& other) const {
-        return match_subject_alt_names == other.match_subject_alt_names;
-      }
-
-      std::string ToString() const;
-      bool Empty() const;
-    };
-
-    struct CertificateProviderInstance {
+    struct CertificateProviderPluginInstance {
       std::string instance_name;
       std::string certificate_name;
 
-      bool operator==(const CertificateProviderInstance& other) const {
+      bool operator==(const CertificateProviderPluginInstance& other) const {
         return instance_name == other.instance_name &&
                certificate_name == other.certificate_name;
       }
@@ -192,28 +201,28 @@ class XdsApi {
       bool Empty() const;
     };
 
-    struct CombinedCertificateValidationContext {
-      CertificateValidationContext default_validation_context;
-      CertificateProviderInstance
-          validation_context_certificate_provider_instance;
+    struct CertificateValidationContext {
+      CertificateProviderPluginInstance ca_certificate_provider_instance;
+      std::vector<StringMatcher> match_subject_alt_names;
 
-      bool operator==(const CombinedCertificateValidationContext& other) const {
-        return default_validation_context == other.default_validation_context &&
-               validation_context_certificate_provider_instance ==
-                   other.validation_context_certificate_provider_instance;
+      bool operator==(const CertificateValidationContext& other) const {
+        return ca_certificate_provider_instance ==
+                   other.ca_certificate_provider_instance &&
+               match_subject_alt_names == other.match_subject_alt_names;
       }
 
       std::string ToString() const;
       bool Empty() const;
     };
 
-    CertificateProviderInstance tls_certificate_certificate_provider_instance;
-    CombinedCertificateValidationContext combined_validation_context;
+    CertificateValidationContext certificate_validation_context;
+    CertificateProviderPluginInstance tls_certificate_provider_instance;
 
     bool operator==(const CommonTlsContext& other) const {
-      return tls_certificate_certificate_provider_instance ==
-                 other.tls_certificate_certificate_provider_instance &&
-             combined_validation_context == other.combined_validation_context;
+      return certificate_validation_context ==
+                 other.certificate_validation_context &&
+             tls_certificate_provider_instance ==
+                 other.tls_certificate_provider_instance;
     }
 
     std::string ToString() const;

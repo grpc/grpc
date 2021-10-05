@@ -16,6 +16,8 @@
  *
  */
 
+#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+
 #include <string.h>
 
 #include <string>
@@ -25,7 +27,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -33,7 +34,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-
 #include "test/core/util/test_config.h"
 
 class ResultHandler : public grpc_core::Resolver::ResultHandler {

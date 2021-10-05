@@ -22,15 +22,17 @@
 
 #ifdef GRPC_BASIC_PROFILER
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
+
+#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/profiling/timers.h"
 
@@ -61,7 +63,7 @@ typedef struct gpr_timer_log_list {
   gpr_timer_log* tail;
 } gpr_timer_log_list;
 
-static __thread gpr_timer_log* g_thread_log;
+static GPR_THREAD_LOCAL(gpr_timer_log*) g_thread_log;
 static gpr_once g_once_init = GPR_ONCE_INIT;
 static FILE* output_file;
 static const char* output_filename_or_null = NULL;
@@ -71,7 +73,7 @@ static gpr_timer_log_list g_in_progress_logs;
 static gpr_timer_log_list g_done_logs;
 static int g_shutdown;
 static pthread_t g_writing_thread;
-static __thread int g_thread_id;
+static GPR_THREAD_LOCAL(int) g_thread_id;
 static int g_next_thread_id;
 static int g_writing_enabled = 1;
 

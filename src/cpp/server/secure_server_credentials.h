@@ -21,10 +21,9 @@
 
 #include <memory>
 
+#include <grpc/grpc_security.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
-
-#include <grpc/grpc_security.h>
 
 #include "src/cpp/server/thread_pool_interface.h"
 
