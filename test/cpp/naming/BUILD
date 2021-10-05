@@ -20,7 +20,7 @@ package(
     ],
 )
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_py_binary")
 load(":generate_resolver_component_tests.bzl", "generate_resolver_component_tests")
