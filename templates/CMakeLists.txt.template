@@ -328,6 +328,7 @@
   include(cmake/address_sorting.cmake)
   include(cmake/benchmark.cmake)
   include(cmake/cares.cmake)
+  include(cmake/libuv.cmake)
   include(cmake/protobuf.cmake)
   include(cmake/re2.cmake)
   include(cmake/ssl.cmake)
@@ -581,6 +582,7 @@
     PRIVATE
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_LIBUV_INCLUDE_DIR}</%text>
       <%text>${_gRPC_RE2_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
@@ -662,6 +664,7 @@
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/include
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_LIBUV_INCLUDE_DIR}</%text>
       <%text>${_gRPC_RE2_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
@@ -770,7 +773,7 @@
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "${" ".join(["gpr", "openssl"] + list_abseil_pkg_targets("grpc"))}"
-    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "re2", "upb", "cares", "z"])}"
+    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "uv", "re2", "upb", "cares", "z"])}"
     ""
     "grpc.pc")
 
