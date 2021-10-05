@@ -725,8 +725,7 @@ static grpc_error_handle error_from_status(grpc_status_code status,
   // guarantee that can be short-lived.
   return grpc_error_set_int(
       grpc_error_set_str(GRPC_ERROR_CREATE_FROM_COPIED_STRING(description),
-                         GRPC_ERROR_STR_GRPC_MESSAGE,
-                         grpc_slice_from_copied_string(description)),
+                         GRPC_ERROR_STR_GRPC_MESSAGE, description),
       GRPC_ERROR_INT_GRPC_STATUS, status);
 }
 
@@ -741,12 +740,12 @@ static void set_final_status(grpc_call* call, grpc_error_handle error) {
     gpr_log(GPR_DEBUG, "%s", grpc_error_std_string(error).c_str());
   }
   if (call->is_client) {
+    std::string status_details;
     grpc_error_get_status(error, call->send_deadline,
-                          call->final_op.client.status,
-                          call->final_op.client.status_details, nullptr,
-                          call->final_op.client.error_string);
-    // explicitly take a ref
-    grpc_slice_ref_internal(*call->final_op.client.status_details);
+                          call->final_op.client.status, &status_details,
+                          nullptr, call->final_op.client.error_string);
+    *call->final_op.client.status_details =
+        grpc_slice_from_cpp_string(std::move(status_details));
     call->status_error.set(error);
     GRPC_ERROR_UNREF(error);
     grpc_core::channelz::ChannelNode* channelz_channel =
@@ -1068,12 +1067,11 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
     if (b->legacy_index()->named.grpc_message != nullptr) {
       error = grpc_error_set_str(
           error, GRPC_ERROR_STR_GRPC_MESSAGE,
-          grpc_slice_ref_internal(
+          grpc_core::StringViewFromSlice(
               GRPC_MDVALUE(b->legacy_index()->named.grpc_message->md)));
       b->Remove(GRPC_BATCH_GRPC_MESSAGE);
     } else if (error != GRPC_ERROR_NONE) {
-      error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
-                                 grpc_empty_slice());
+      error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, "");
     }
     set_final_status(call, GRPC_ERROR_REF(error));
     b->Remove(GRPC_BATCH_GRPC_STATUS);
@@ -1763,9 +1761,8 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           if (status_error != GRPC_ERROR_NONE) {
             char* msg = grpc_slice_to_c_string(
                 GRPC_MDVALUE(call->send_extra_metadata[1].md));
-            status_error =
-                grpc_error_set_str(status_error, GRPC_ERROR_STR_GRPC_MESSAGE,
-                                   grpc_slice_from_copied_string(msg));
+            status_error = grpc_error_set_str(status_error,
+                                              GRPC_ERROR_STR_GRPC_MESSAGE, msg);
             gpr_free(msg);
           }
         }

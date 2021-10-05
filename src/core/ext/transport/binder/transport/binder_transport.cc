@@ -740,6 +740,8 @@ grpc_transport* grpc_create_binder_transport_client(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder) {
   gpr_log(GPR_INFO, __func__);
 
+  GPR_ASSERT(endpoint_binder != nullptr);
+
   grpc_binder_transport* t =
       new grpc_binder_transport(std::move(endpoint_binder), /*is_client=*/true);
 
@@ -749,6 +751,8 @@ grpc_transport* grpc_create_binder_transport_client(
 grpc_transport* grpc_create_binder_transport_server(
     std::unique_ptr<grpc_binder::Binder> client_binder) {
   gpr_log(GPR_INFO, __func__);
+
+  GPR_ASSERT(client_binder != nullptr);
 
   grpc_binder_transport* t =
       new grpc_binder_transport(std::move(client_binder), /*is_client=*/false);

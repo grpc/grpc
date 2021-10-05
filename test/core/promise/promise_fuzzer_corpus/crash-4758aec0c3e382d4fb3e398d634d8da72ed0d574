@@ -1,0 +1,20 @@
+promise {
+  race {
+    promises {
+      cancel_from_inside {
+      }
+    }
+    promises {
+      sleep_first_n: 0
+    }
+    promises {
+      sleep_first_n: 2097151999
+    }
+    promises {
+    }
+  }
+}
+actions {
+  flush_wakeup {
+  }
+}
