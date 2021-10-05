@@ -18,6 +18,6 @@ if(NOT LIBUV_ROOT_DIR)
 endif()
 
 add_subdirectory("${LIBUV_ROOT_DIR}" third_party/libuv)
-include_directories("${LIBUV_ROOT_DIR}/include")
+include_directories("${LIBUV_ROOT_DIR}/include", "${LIBUV_ROOT_DIR}/src")
 
-set(_gRPC_LIBUV_INCLUDE_DIR "${LIBUV_ROOT_DIR}/include")
+set(_gRPC_LIBUV_INCLUDE_DIR "${LIBUV_ROOT_DIR}/include" "${LIBUV_ROOT_DIR}/src")
