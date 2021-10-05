@@ -803,6 +803,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "include/grpc/impl/codegen/port_platform.h",
+        "include/grpc/support/port_platform.h",
     ],
 )
 
@@ -2723,6 +2724,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
+        "grpc_base",
         "grpc_matchers",
         "grpc_rbac_engine",
         "grpc_secure",

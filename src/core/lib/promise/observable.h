@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_PROMISE_OBSERVABLE_H
 #define GRPC_CORE_LIB_PROMISE_OBSERVABLE_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <limits>
 
