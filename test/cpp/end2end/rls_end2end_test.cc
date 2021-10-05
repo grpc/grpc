@@ -1317,9 +1317,8 @@ TEST_F(RlsEnd2endTest, MultipleTargets) {
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
       BuildRlsResponse(
-          // First target will not respond.
-          {TargetStringForPort(grpc_pick_unused_port_or_die()),
-           TargetStringForPort(backends_[0]->port_)}));
+          // First target will report TRANSIENT_FAILURE..
+          {"invalid_target", TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
