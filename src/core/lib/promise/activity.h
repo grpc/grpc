@@ -364,6 +364,7 @@ class PromiseActivity final
       // Can't safely run, so ask to run later.
       wakeup_scheduler_.ScheduleWakeup(this);
     } else {
+      // Already a wakeup scheduled for later, drop ref.
       WakeupComplete();
     }
   }
