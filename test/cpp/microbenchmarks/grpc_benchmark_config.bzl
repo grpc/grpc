@@ -14,5 +14,5 @@
 """Configuration macros for grpc microbenchmarking"""
 
 def grpc_benchmark_args():
-    """Command line arguments for running a microbenchmark under bazel"""
+    """Command line arguments for running a microbenchmark as a test"""
     return ["--benchmark_min_time=0.001"]
