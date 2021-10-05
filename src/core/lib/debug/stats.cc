@@ -175,4 +175,3 @@ std::string grpc_stats_data_as_json(const grpc_stats_data* data) {
 void grpc_stats_init(void) {}
 void grpc_stats_shutdown(void) {}
 #endif
-
