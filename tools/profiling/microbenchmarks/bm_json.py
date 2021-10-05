@@ -166,6 +166,8 @@ def parse_name(name):
         rest = s[0]
         dyn_args = s[1:]
     name = rest
+    print("Locals: {}".format(locals()))
+    print("Globals: {}".format(globals()))
     assert name in _BM_SPECS, '_BM_SPECS needs to be expanded for %s' % name
     assert len(dyn_args) == len(_BM_SPECS[name]['dyn'])
     assert len(tpl_args) == len(_BM_SPECS[name]['tpl'])
