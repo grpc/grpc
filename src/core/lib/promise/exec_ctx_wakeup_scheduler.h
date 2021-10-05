@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_PROMISE_EXEC_CTX_WAKEUP_SCHEDULER_H
 #define GRPC_CORE_LIB_PROMISE_EXEC_CTX_WAKEUP_SCHEDULER_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 

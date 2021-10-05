@@ -404,7 +404,7 @@ void MemoryQuota::FinishReclamation(uint64_t token) {
   if (reclamation_counter_.compare_exchange_strong(current, current + 1,
                                                    std::memory_order_relaxed,
                                                    std::memory_order_relaxed)) {
-    reclaimer_activity_->ForceWakeup();
+    if (reclaimer_activity_ != nullptr) reclaimer_activity_->ForceWakeup();
   }
 }
 

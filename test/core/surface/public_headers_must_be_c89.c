@@ -229,6 +229,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_xds_credentials_create);
   printf("%lx", (unsigned long) grpc_xds_server_credentials_create);
   printf("%lx", (unsigned long) grpc_authorization_policy_provider_static_data_create);
+  printf("%lx", (unsigned long) grpc_authorization_policy_provider_file_watcher_create);
   printf("%lx", (unsigned long) grpc_authorization_policy_provider_release);
   printf("%lx", (unsigned long) grpc_raw_byte_buffer_create);
   printf("%lx", (unsigned long) grpc_raw_compressed_byte_buffer_create);

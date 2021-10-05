@@ -1057,30 +1057,6 @@
     "ci_platforms": [
       "linux",
       "mac",
-      "posix",
-      "windows"
-    ],
-    "cpu_cost": 1.0,
-    "exclude_configs": [],
-    "exclude_iomgrs": [],
-    "flaky": false,
-    "gtest": false,
-    "language": "c",
-    "name": "error_test",
-    "platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "uses_polling": false
-  },
-  {
-    "args": [],
-    "benchmark": false,
-    "ci_platforms": [
-      "linux",
-      "mac",
       "posix"
     ],
     "cpu_cost": 1.0,
@@ -3546,7 +3522,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3566,7 +3544,9 @@
     "uses_polling": true
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3586,7 +3566,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3606,7 +3588,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3626,7 +3610,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3646,7 +3632,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3666,7 +3654,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3686,7 +3676,9 @@
     "uses_polling": true
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3706,7 +3698,9 @@
     "uses_polling": true
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3726,7 +3720,9 @@
     "uses_polling": true
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3746,7 +3742,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3766,7 +3764,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3786,7 +3786,9 @@
     "uses_polling": true
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3806,7 +3808,9 @@
     "uses_polling": true
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3826,7 +3830,9 @@
     "uses_polling": true
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3846,7 +3852,9 @@
     "uses_polling": false
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -3866,7 +3874,9 @@
     "uses_polling": true
   },
   {
-    "args": [],
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -4366,6 +4376,28 @@
     "uses_polling": false
   },
   {
+    "args": [
+      "--benchmark_min_time=0.001"
+    ],
+    "benchmark": true,
+    "ci_platforms": [
+      "linux",
+      "posix"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "competition",
+    "platforms": [
+      "linux",
+      "posix"
+    ],
+    "uses_polling": false
+  },
+  {
     "args": [],
     "benchmark": false,
     "ci_platforms": [
@@ -4676,6 +4708,30 @@
       "windows"
     ],
     "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "error_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": false
   },
   {
     "args": [],
