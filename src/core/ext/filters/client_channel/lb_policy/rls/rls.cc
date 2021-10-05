@@ -1490,7 +1490,7 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy,
   // Propagate fake security connector expected targets, if any.
   // (This is ugly, but it seems better than propagating all channel args
   // from the parent channel by default and then having a giant
-  // blacklist of args to strip out, like we do in grpclb.)
+  // exclude list of args to strip out, like we do in grpclb.)
   const char* fake_security_expected_targets = grpc_channel_args_find_string(
       parent_channel_args, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
   if (fake_security_expected_targets != nullptr) {
