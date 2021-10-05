@@ -17,6 +17,7 @@
   <%include file="../../debian_8_header.include"/>
 
   <%include file="../../apt_get_basic.include"/>
+  <%include file="../../fix_letsencrypt_cert.include"/>
   <%include file="../../python_deps.include"/>
   <%include file="../../gcp_api_libraries.include"/>
   <%include file="../../cxx_deps.include"/>

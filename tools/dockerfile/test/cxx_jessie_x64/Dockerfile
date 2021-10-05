@@ -50,6 +50,11 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
+# Remove the expired letsencrypt.org cert and update the CA certificates
+RUN apt-get install -y ca-certificates
+RUN rm /usr/share/ca-certificates/mozilla/DST_Root_CA_X3.crt
+RUN update-ca-certificates
+
 #====================
 # Python dependencies
 
@@ -87,7 +92,8 @@ RUN mkdir /var/local/jenkins
 
 #================
 # libuv
-RUN cd /tmp     && wget http://dist.libuv.org/dist/v1.9.1/libuv-v1.9.1.tar.gz     && tar -xf libuv-v1.9.1.tar.gz     && cd libuv-v1.9.1     && sh autogen.sh && ./configure --prefix=/usr && make && make install
+RUN cd /tmp     && wget https://dist.libuv.org/dist/v1.34.0/libuv-v1.34.0.tar.gz     && tar -xf libuv-v1.34.0.tar.gz     && cd libuv-v1.34.0     && sh autogen.sh && ./configure --prefix=/usr && make && make install
+
 
 # Install gcc-4.9 and other relevant items
 RUN apt-get update && apt-get -y install gcc gcc-multilib g++ g++-multilib && apt-get clean

@@ -226,15 +226,17 @@ void LibuvEventEngine::Kicker() {
 }
 
 void LibuvEventEngine::RunThread() {
-  // Ugh. LibUV doesn't take upon itself to mask SIGPIPE on its own on Unix
-  // systems. If a connection gets broken, we will get killed, unless we
-  // mask it out. These 4 lines of code likely need to be enclosed in a
-  // non-Windows #ifdef check, although I'm not certain what platforms will
-  // or will not have the necessary function calls here.
+#ifndef GPR_WINDOWS
+  // LibUV doesn't take upon itself to mask SIGPIPE on its own on Unix systems.
+  // If a connection gets broken, we will get killed, unless we mask it out.
+  // These 4 lines of code need to be enclosed in a non-Windows #ifdef check,
+  // although I'm not certain what platforms will or will not have the necessary
+  // function calls here.
   sigset_t set;
   sigemptyset(&set);
   sigaddset(&set, SIGPIPE);
   pthread_sigmask(SIG_BLOCK, &set, NULL);
+#endif
 
   // Setting up the loop.
   worker_thread_id_ = std::this_thread::get_id();
