@@ -274,7 +274,7 @@ elseif(UNIX)
 endif()
 
 if(WIN32)
-  set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32 crypt32)
+  set(_gRPC_BASELIB_LIBRARIES ws2_32 crypt32)
 endif()
 
 # Create directory for generated .proto files
