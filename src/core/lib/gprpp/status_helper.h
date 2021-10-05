@@ -176,6 +176,17 @@ void StatusFreePtr(uintptr_t ptr);
 /// This shouldn't be used except migration purpose.
 absl::Status StatusGetFromPtr(uintptr_t ptr);
 
+/// Returns ptr that is allocated in the heap memory and the given status is
+/// copied into. This ptr can be used to get Status later and should be
+/// freed by StatusFreeHeapPtr. This can be 0 in case of OkStatus.
+uintptr_t StatusAllocHeapPtr(absl::Status s);
+
+/// Frees the allocated status at heap ptr.
+void StatusFreeHeapPtr(uintptr_t ptr);
+
+/// Get the status from a heap ptr.
+absl::Status StatusGetFromHeapPtr(uintptr_t ptr);
+
 }  // namespace internal
 
 }  // namespace grpc_core
