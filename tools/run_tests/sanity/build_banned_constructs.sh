@@ -22,6 +22,10 @@ cd "$(dirname "$0")/../../.."
 # chokes the internal import process.
 #
 
-git grep -EIrn '^licenses\(.*#' '{bazel,examples,src,test,tools}/**/BUILD' | diff - /dev/null
-
+regex='^licenses\(.*#'
+for dir in bazel examples src test tools; do
+  for file in BUILD BUILD.bazel; do
+    git grep -EIrn $regex "$dir/**$file" | diff - /dev/null
+  done
+done
 
