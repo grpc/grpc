@@ -24,7 +24,7 @@
 extern "C" {
 // Adds endpoint binder to binder pool when Java notify us that the endpoint
 // binder is ready
-void Java_io_grpc_binder_cpp_SyncServiceConnection_NotifyConnected(
+JNIEXPORT void JNICALL Java_io_grpc_binder_cpp_SyncServiceConnection_NotifyConnected(
     JNIEnv* jni_env, jobject, jstring conn_id_jstring) {
   jboolean isCopy;
   const char* conn_id = jni_env->GetStringUTFChars(conn_id_jstring, &isCopy);
