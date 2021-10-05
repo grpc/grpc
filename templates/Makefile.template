@@ -442,7 +442,7 @@
   GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
   GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
   ifeq ($(HOST_IS_X86_64),true)
-  ABSL_RANDOM_HWAES_FLAGS = -maes -msse4
+  ABSL_RANDOM_HWAES_FLAGS = -maes
   else
   ABSL_RANDOM_HWAES_FLAGS =
   endif

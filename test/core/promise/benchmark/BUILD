@@ -18,6 +18,8 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 grpc_package(name = "test/core/promise/benchmark")
 
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_benchmark_args")
+
 grpc_cc_test(
     name = "competition",
     srcs = [
@@ -25,6 +27,7 @@ grpc_cc_test(
         "filter_stack.cc",
         "filter_stack.h",
     ],
+    args = grpc_benchmark_args(),
     external_deps = [
         "benchmark",
         "absl/synchronization",
@@ -35,14 +38,14 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
-        "//:activity",
-        "//:for_each",
-        "//:join",
-        "//:latch",
-        "//:pipe",
-        "//:seq",
-        "//:try_join",
-        "//:try_seq",
+        "//src/core/lib/promise:activity",
+        "//src/core/lib/promise:for_each",
+        "//src/core/lib/promise:join",
+        "//src/core/lib/promise:latch",
+        "//src/core/lib/promise:pipe",
+        "//src/core/lib/promise:seq",
+        "//src/core/lib/promise:try_join",
+        "//src/core/lib/promise:try_seq",
         "//test/core/promise:test_wakeup_schedulers",
         "//test/core/util:grpc_suppressions",
     ],
