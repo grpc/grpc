@@ -87,7 +87,7 @@ config_setting(
 )
 
 COMMON_LIBUV_HEADERS = [
-    "include/uv.h"
+    "include/uv.h",
     "include/uv/errno.h",
     "include/uv/threadpool.h",
     "include/uv/version.h",
