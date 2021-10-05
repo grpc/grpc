@@ -66,7 +66,7 @@ grpc_cc_library(
     deps = [
         ":fake_binder",
         "//:grpc++_base",
-        "//:grpc_base_c",
+        "//:grpc_base",
         "//src/core/ext/transport/binder/transport:binder_transport",
         "//src/core/ext/transport/binder/wire_format:wire_reader",
     ],

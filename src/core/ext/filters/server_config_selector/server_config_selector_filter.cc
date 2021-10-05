@@ -44,9 +44,10 @@ class ChannelData {
       : public ServerConfigSelectorProvider::ServerConfigSelectorWatcher {
    public:
     explicit ServerConfigSelectorWatcher(ChannelData* chand) : chand_(chand) {}
-    void OnServerConfigSelectorUpdate(absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) override {
-    	MutexLock lock(&chand_->mu_);
-    	chand_->config_selector_ = std::move(update);
+    void OnServerConfigSelectorUpdate(
+        absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) override {
+      MutexLock lock(&chand_->mu_);
+      chand_->config_selector_ = std::move(update);
     }
 
    private:
@@ -117,13 +118,13 @@ ChannelData::ChannelData(grpc_channel_element* /* elem */,
   server_config_selector_provider_ =
       ServerConfigSelectorProvider::GetFromChannelArgs(*args->channel_args);
   GPR_ASSERT(server_config_selector_provider_ != nullptr);
-  auto server_config_selector_watcher = absl::make_unique<ServerConfigSelectorWatcher>(this);
-  config_selector_ = server_config_selector_provider_->Watch(std::move(server_config_selector_watcher));
+  auto server_config_selector_watcher =
+      absl::make_unique<ServerConfigSelectorWatcher>(this);
+  config_selector_ = server_config_selector_provider_->Watch(
+      std::move(server_config_selector_watcher));
 }
 
-ChannelData::~ChannelData() {
-    server_config_selector_provider_->CancelWatch();
-}
+ChannelData::~ChannelData() { server_config_selector_provider_->CancelWatch(); }
 
 // CallData
 
@@ -249,4 +250,3 @@ const grpc_channel_filter kServerConfigSelectorFilter = {
 };
 
 }  // namespace grpc_core
-

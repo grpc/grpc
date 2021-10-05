@@ -116,7 +116,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/service_config/service_config.cc \
     src/core/ext/service_config/service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
-    src/core/ext/transport/chttp2/client/authority.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
@@ -597,12 +596,15 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
+    src/core/lib/slice/slice_api.cc \
     src/core/lib/slice/slice_buffer.cc \
     src/core/lib/slice/slice_intern.cc \
     src/core/lib/slice/slice_refcount.cc \
+    src/core/lib/slice/slice_split.cc \
     src/core/lib/slice/slice_string_helpers.cc \
     src/core/lib/slice/static_slice.cc \
     src/core/lib/surface/api_trace.cc \
+    src/core/lib/surface/builtins.cc \
     src/core/lib/surface/byte_buffer.cc \
     src/core/lib/surface/byte_buffer_reader.cc \
     src/core/lib/surface/call.cc \
@@ -622,7 +624,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
-    src/core/lib/transport/authority_override.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \

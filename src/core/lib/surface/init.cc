@@ -49,7 +49,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/server.h"
@@ -76,34 +75,6 @@ static void do_basic_init(void) {
   grpc_cq_global_init();
   grpc_core::grpc_executor_global_init();
   gpr_time_init();
-}
-
-static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
-  return grpc_channel_stack_builder_append_filter(
-      builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
-}
-
-static bool prepend_filter(grpc_channel_stack_builder* builder, void* arg) {
-  return grpc_channel_stack_builder_prepend_filter(
-      builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
-}
-
-static void register_builtin_channel_init() {
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   grpc_add_connected_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   grpc_add_connected_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   grpc_add_connected_filter, nullptr);
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_LAME_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      append_filter, const_cast<grpc_channel_filter*>(&grpc_lame_filter));
-  grpc_channel_init_register_stage(
-      GRPC_SERVER_CHANNEL, INT_MAX, prepend_filter,
-      const_cast<grpc_channel_filter*>(&grpc_core::Server::kServerTopFilter));
 }
 
 typedef struct grpc_plugin {
@@ -137,7 +108,6 @@ void grpc_init(void) {
     grpc_stats_init();
     grpc_slice_intern_init();
     grpc_mdctx_global_init();
-    grpc_channel_init_init();
     grpc_core::channelz::ChannelzRegistry::Init();
     grpc_security_pre_init();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
@@ -150,13 +120,7 @@ void grpc_init(void) {
         g_all_of_the_plugins[i].init();
       }
     }
-    /* register channel finalization AFTER all plugins, to ensure that it's run
-     * at the appropriate time */
-    grpc_register_security_filters();
-    register_builtin_channel_init();
     grpc_tracer_init();
-    /* no more changes to channel init pipelines */
-    grpc_channel_init_finalize();
     grpc_iomgr_start();
   }
 

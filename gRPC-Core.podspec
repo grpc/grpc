@@ -193,6 +193,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
     ss.dependency 'abseil/types/variant', abseil_version
+    ss.dependency 'abseil/utility/utility', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
 
     ss.source_files = 'src/core/ext/filters/census/grpc_context.cc',
@@ -335,8 +336,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/service_config/service_config_parser.h',
                       'src/core/ext/transport/chttp2/alpn/alpn.cc',
                       'src/core/ext/transport/chttp2/alpn/alpn.h',
-                      'src/core/ext/transport/chttp2/client/authority.cc',
-                      'src/core/ext/transport/chttp2/client/authority.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.cc',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                       'src/core/ext/transport/chttp2/client/insecure/channel_create.cc',
@@ -955,6 +954,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/status_helper.cc',
                       'src/core/lib/gprpp/status_helper.h',
                       'src/core/lib/gprpp/sync.h',
+                      'src/core/lib/gprpp/table.h',
                       'src/core/lib/gprpp/thd.h',
                       'src/core/lib/gprpp/thd_posix.cc',
                       'src/core/lib/gprpp/thd_windows.cc',
@@ -1258,12 +1258,15 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/percent_encoding.cc',
                       'src/core/lib/slice/percent_encoding.h',
                       'src/core/lib/slice/slice.cc',
+                      'src/core/lib/slice/slice_api.cc',
                       'src/core/lib/slice/slice_buffer.cc',
                       'src/core/lib/slice/slice_intern.cc',
                       'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_refcount.cc',
                       'src/core/lib/slice/slice_refcount.h',
                       'src/core/lib/slice/slice_refcount_base.h',
+                      'src/core/lib/slice/slice_split.cc',
+                      'src/core/lib/slice/slice_split.h',
                       'src/core/lib/slice/slice_string_helpers.cc',
                       'src/core/lib/slice/slice_string_helpers.h',
                       'src/core/lib/slice/slice_utils.h',
@@ -1271,6 +1274,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/static_slice.h',
                       'src/core/lib/surface/api_trace.cc',
                       'src/core/lib/surface/api_trace.h',
+                      'src/core/lib/surface/builtins.cc',
+                      'src/core/lib/surface/builtins.h',
                       'src/core/lib/surface/byte_buffer.cc',
                       'src/core/lib/surface/byte_buffer_reader.cc',
                       'src/core/lib/surface/call.cc',
@@ -1302,8 +1307,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/validate_metadata.cc',
                       'src/core/lib/surface/validate_metadata.h',
                       'src/core/lib/surface/version.cc',
-                      'src/core/lib/transport/authority_override.cc',
-                      'src/core/lib/transport/authority_override.h',
                       'src/core/lib/transport/bdp_estimator.cc',
                       'src/core/lib/transport/bdp_estimator.h',
                       'src/core/lib/transport/byte_stream.cc',
@@ -1528,7 +1531,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/service_config/service_config.h',
                               'src/core/ext/service_config/service_config_parser.h',
                               'src/core/ext/transport/chttp2/alpn/alpn.h',
-                              'src/core/ext/transport/chttp2/client/authority.h',
                               'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                               'src/core/ext/transport/chttp2/server/chttp2_server.h',
                               'src/core/ext/transport/chttp2/transport/bin_decoder.h',
@@ -1834,6 +1836,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/stat.h',
                               'src/core/lib/gprpp/status_helper.h',
                               'src/core/lib/gprpp/sync.h',
+                              'src/core/lib/gprpp/table.h',
                               'src/core/lib/gprpp/thd.h',
                               'src/core/lib/gprpp/time_util.h',
                               'src/core/lib/http/format_request.h',
@@ -1973,10 +1976,12 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_refcount.h',
                               'src/core/lib/slice/slice_refcount_base.h',
+                              'src/core/lib/slice/slice_split.h',
                               'src/core/lib/slice/slice_string_helpers.h',
                               'src/core/lib/slice/slice_utils.h',
                               'src/core/lib/slice/static_slice.h',
                               'src/core/lib/surface/api_trace.h',
+                              'src/core/lib/surface/builtins.h',
                               'src/core/lib/surface/call.h',
                               'src/core/lib/surface/call_test_only.h',
                               'src/core/lib/surface/channel.h',
@@ -1989,7 +1994,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/lame_client.h',
                               'src/core/lib/surface/server.h',
                               'src/core/lib/surface/validate_metadata.h',
-                              'src/core/lib/transport/authority_override.h',
                               'src/core/lib/transport/bdp_estimator.h',
                               'src/core/lib/transport/byte_stream.h',
                               'src/core/lib/transport/connectivity_state.h',
@@ -2282,6 +2286,7 @@ Pod::Spec.new do |s|
 
   # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
   s.prepare_command = <<-END_OF_COMMAND
+    set -e
     find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
     find third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "third_party/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/third_party/\\1"\\\n#else\\\n  #include  "third_party/\\1"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'

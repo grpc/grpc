@@ -123,6 +123,7 @@ class CdsLb : public LoadBalancingPolicy {
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
+    absl::string_view GetAuthority() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -259,6 +260,10 @@ void CdsLb::Helper::RequestReresolution() {
             parent_.get());
   }
   parent_->channel_control_helper()->RequestReresolution();
+}
+
+absl::string_view CdsLb::Helper::GetAuthority() {
+  return parent_->channel_control_helper()->GetAuthority();
 }
 
 void CdsLb::Helper::AddTraceEvent(TraceSeverity severity,

@@ -15,7 +15,9 @@
 #ifndef GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
 #define GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#include <cassert>
 
 #include "absl/types/variant.h"
 #include "absl/utility/utility.h"

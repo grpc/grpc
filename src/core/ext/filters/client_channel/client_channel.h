@@ -275,8 +275,8 @@ class ClientChannel {
   ClientChannelFactory* client_channel_factory_;
   const grpc_channel_args* channel_args_;
   RefCountedPtr<ServiceConfig> default_service_config_;
-  std::string server_name_;
-  UniquePtr<char> target_uri_;
+  std::string uri_to_resolve_;
+  std::string default_authority_;
   channelz::ChannelNode* channelz_node_;
   grpc_pollset_set* interested_parties_;
 

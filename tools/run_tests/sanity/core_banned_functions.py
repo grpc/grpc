@@ -33,8 +33,8 @@ BANNED_EXCEPT = {
     'grpc_slice_buffer_reset_and_unref(': [
         'src/core/lib/slice/slice_buffer.cc'
     ],
-    'grpc_slice_ref(': ['src/core/lib/slice/slice.cc'],
-    'grpc_slice_unref(': ['src/core/lib/slice/slice.cc'],
+    'grpc_slice_ref(': ['src/core/lib/slice/slice_api.cc'],
+    'grpc_slice_unref(': ['src/core/lib/slice/slice_api.cc'],
     'grpc_error_create(': [
         'src/core/lib/iomgr/error.cc', 'src/core/lib/iomgr/error_cfstream.cc'
     ],

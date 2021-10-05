@@ -15,11 +15,12 @@
 #ifndef GRPC_CORE_LIB_CONFIG_CORE_CONFIGURATION_H
 #define GRPC_CORE_LIB_CONFIG_CORE_CONFIGURATION_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <atomic>
 
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/surface/channel_init.h"
 
 namespace grpc_core {
 
@@ -34,6 +35,8 @@ class CoreConfiguration {
   // their configuration and assemble the published CoreConfiguration.
   class Builder {
    public:
+    ChannelInit::Builder* channel_init() { return &channel_init_; }
+
     HandshakerRegistry::Builder* handshaker_registry() {
       return &handshaker_registry_;
     }
@@ -41,6 +44,7 @@ class CoreConfiguration {
    private:
     friend class CoreConfiguration;
 
+    ChannelInit::Builder channel_init_;
     HandshakerRegistry::Builder handshaker_registry_;
 
     Builder();
@@ -77,12 +81,37 @@ class CoreConfiguration {
     delete config_.exchange(p, std::memory_order_release);
   }
 
+  // Attach a registration function globally.
+  // Each registration function is called *in addition to*
+  // BuildCoreConfiguration for the default core configuration. When using
+  // BuildSpecialConfiguration, one can use CallRegisteredBuilders to call them.
+  // Must be called before a configuration is built.
+  static void RegisterBuilder(std::function<void(Builder*)> builder);
+
+  // Call all registered builders.
+  // See RegisterBuilder for why you might want to call this.
+  static void CallRegisteredBuilders(Builder* builder);
+
   // Drop the core configuration. Users must ensure no other threads are
   // accessing the configuration.
   // Clears any dynamically registered builders.
   static void Reset();
 
+  // Helper for tests: Reset the configuration, build a special one, run some
+  // code, and then reset the configuration again.
+  // Templatized to be sure no codegen in normal builds.
+  template <typename BuildFunc, typename RunFunc>
+  static void RunWithSpecialConfiguration(BuildFunc build_configuration,
+                                          RunFunc code_to_run) {
+    Reset();
+    BuildSpecialConfiguration(build_configuration);
+    code_to_run();
+    Reset();
+  }
+
   // Accessors
+
+  const ChannelInit& channel_init() const { return channel_init_; }
 
   const HandshakerRegistry& handshaker_registry() const {
     return handshaker_registry_;
@@ -91,13 +120,22 @@ class CoreConfiguration {
  private:
   explicit CoreConfiguration(Builder* builder);
 
+  // Stores a builder for RegisterBuilder
+  struct RegisteredBuilder {
+    std::function<void(Builder*)> builder;
+    RegisteredBuilder* next;
+  };
+
   // Create a new CoreConfiguration, and either set it or throw it away.
   // We allow multiple CoreConfiguration's to be created in parallel.
   static const CoreConfiguration& BuildNewAndMaybeSet();
 
   // The configuration
   static std::atomic<CoreConfiguration*> config_;
+  // Extra registered builders
+  static std::atomic<RegisteredBuilder*> builders_;
 
+  ChannelInit channel_init_;
   HandshakerRegistry handshaker_registry_;
 };
 

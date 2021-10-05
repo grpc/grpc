@@ -271,8 +271,7 @@ class XdsServerConfigSelectorProvider : public ServerConfigSelectorProvider {
         http_filters_(std::move(http_filters)) {}
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::unique_ptr<
-          ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
+      std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
           watcher) override {
     if (static_resource_.has_value())
       return XdsServerConfigSelector::Create(static_resource_.value(),
@@ -321,8 +320,7 @@ class XdsServerConfigSelectorProvider : public ServerConfigSelectorProvider {
   std::vector<XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter>
       http_filters_;
   Mutex mu_;
-  std::unique_ptr<
-      ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
+  std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
       watcher_ ABSL_GUARDED_BY(mu_);
   RdsUpdateWatcher* rds_watcher_ ABSL_GUARDED_BY(mu_) = nullptr;
 };
