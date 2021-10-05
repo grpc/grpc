@@ -36,36 +36,39 @@ EXPECTED_NAMES = {
 
 errors = 0
 for root, dirs, files in os.walk('.'):
-  if root.startswith('./'): root = root[len('./'):]
-  # don't check third party
-  if root.startswith('third_party/'): continue
-  # only check BUILD files
-  if 'BUILD' not in files: continue
-  text = open('%s/BUILD' % root).read()
-  # find a grpc_package clause
-  pkg_start = text.find('grpc_package(')
-  if pkg_start == -1: continue
-  # parse it, taking into account nested parens
-  pkg_end = pkg_start + len('grpc_package(')
-  level = 1
-  while level == 1:
-    if text[pkg_end] == ')':
-      level -= 1
-    elif text[pkg_end] == '(':
-      level += 1
-    pkg_end += 1
-  # it's a python statement, so evaluate it to pull out the name of the package
-  name = eval(text[pkg_start:pkg_end],
-              {'grpc_package': lambda name, **kwargs: name})
-  # the name should be the path within the source tree, excepting some special
-  # BUILD files (really we should normalize them too at some point)
-  # TODO(ctiller): normalize all package names
-  expected_name = EXPECTED_NAMES.get(root, root)
-  if name != expected_name:
-    print("%s/BUILD should define a grpc_package with name=%r, not %r" % (
-        root, expected_name, name))
-    errors += 1
+    if root.startswith('./'):
+        root = root[len('./'):]
+    # don't check third party
+    if root.startswith('third_party/'):
+        continue
+    # only check BUILD files
+    if 'BUILD' not in files:
+        continue
+    text = open('%s/BUILD' % root).read()
+    # find a grpc_package clause
+    pkg_start = text.find('grpc_package(')
+    if pkg_start == -1:
+        continue
+    # parse it, taking into account nested parens
+    pkg_end = pkg_start + len('grpc_package(')
+    level = 1
+    while level == 1:
+        if text[pkg_end] == ')':
+            level -= 1
+        elif text[pkg_end] == '(':
+            level += 1
+        pkg_end += 1
+    # it's a python statement, so evaluate it to pull out the name of the package
+    name = eval(text[pkg_start:pkg_end],
+                {'grpc_package': lambda name, **kwargs: name})
+    # the name should be the path within the source tree, excepting some special
+    # BUILD files (really we should normalize them too at some point)
+    # TODO(ctiller): normalize all package names
+    expected_name = EXPECTED_NAMES.get(root, root)
+    if name != expected_name:
+        print("%s/BUILD should define a grpc_package with name=%r, not %r" %
+              (root, expected_name, name))
+        errors += 1
 
 if errors != 0:
-  sys.exit(1)
-
+    sys.exit(1)
