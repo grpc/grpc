@@ -17,7 +17,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package")
 licenses(["notice"])
 
 grpc_package(
-    name = "test/core/promise",
+    name = "src/core/lib/json",
     visibility = "grpc",
 )
 
