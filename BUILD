@@ -488,6 +488,7 @@ grpc_cc_library(
         "grpc_secure",
         "ref_counted_ptr",
         "slice",
+        "//src/core/lib/json"
     ],
 )
 
@@ -1227,9 +1228,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_pipe.cc",
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
         "src/core/lib/iomgr/work_serializer.cc",
-        "src/core/lib/json/json_reader.cc",
-        "src/core/lib/json/json_util.cc",
-        "src/core/lib/json/json_writer.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice_api.cc",
@@ -1373,8 +1371,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_pipe.h",
         "src/core/lib/iomgr/wakeup_fd_posix.h",
         "src/core/lib/iomgr/work_serializer.h",
-        "src/core/lib/json/json.h",
-        "src/core/lib/json/json_util.h",
         "src/core/lib/slice/b64.h",
         "src/core/lib/slice/percent_encoding.h",
         "src/core/lib/surface/api_trace.h",
@@ -1455,6 +1451,7 @@ grpc_cc_library(
         "slice_refcount",
         "table",
         "useful",
+        "//src/core/lib/json"
     ],
 )
 
@@ -1613,6 +1610,8 @@ grpc_cc_library(
         "slice",
         "udpa_orca_upb",
         "useful",
+        "//src/core/lib/json",
+        "//src/core/lib/json:util",
     ],
 )
 
@@ -1717,6 +1716,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
+        "//src/core/lib/json:util",
     ],
 )
 
@@ -1954,6 +1954,8 @@ grpc_cc_library(
         "slice_refcount",
         "udpa_type_upb",
         "udpa_type_upbdefs",
+        "//src/core/lib/json:util",
+        "//src/core/lib/json"
     ],
 )
 
@@ -1991,6 +1993,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_xds_client",
         "slice",
+        "//src/core/lib/json:util",
     ],
 )
 
@@ -2427,6 +2430,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_grpclb_balancer_addresses",
         "grpc_resolver_dns_selection",
+        "//src/core/lib/json"
     ],
 )
 
@@ -2638,6 +2642,7 @@ grpc_cc_library(
         "tsi",
         "tsi_interface",
         "useful",
+        "//src/core/lib/json"
     ],
 )
 
