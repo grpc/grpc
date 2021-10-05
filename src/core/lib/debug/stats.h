@@ -68,7 +68,9 @@ size_t grpc_stats_histo_count(const grpc_stats_data* stats,
 
 #else /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */
 
-typedef struct grpc_stats_data { char nothing; } grpc_stats_data;
+typedef struct grpc_stats_data {
+  char nothing;
+} grpc_stats_data;
 
 #define GRPC_THREAD_STATS_DATA() nullptr
 
