@@ -278,12 +278,12 @@ grpc_proto_fuzzer(
     tags = ["no_windows"],
     uses_polling = False,
     deps = [
-        "//:activity",
-        "//:join",
-        "//:map",
-        "//:promise",
-        "//:race",
-        "//:seq",
+        "//src/core/lib/promise",
+        "//src/core/lib/promise:activity",
+        "//src/core/lib/promise:join",
+        "//src/core/lib/promise:map",
+        "//src/core/lib/promise:race",
+        "//src/core/lib/promise:seq",
         "//test/core/util:grpc_test_util",
     ],
 )
