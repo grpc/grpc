@@ -54,7 +54,7 @@ config_setting(
     values = {"cpu": "ios_arm64"},
 )
 
-# The following architectures are found in 
+# The following architectures are found in
 # https://github.com/bazelbuild/bazel/blob/master/src/main/java/com/google/devtools/build/lib/rules/apple/ApplePlatform.java
 config_setting(
     name = "tvos_x86_64",
@@ -87,6 +87,7 @@ config_setting(
 )
 
 COMMON_LIBUV_HEADERS = [
+    "include/uv.h"
     "include/uv/errno.h",
     "include/uv/threadpool.h",
     "include/uv/version.h",
@@ -116,6 +117,7 @@ DARWIN_LIBUV_HEADERS = [
 WINDOWS_LIBUV_HEADERS = [
     "include/uv/win.h",
     "src/win/atomicops-inl.h",
+    "src/win/fs-fd-hash-inl.h",
     "src/win/handle-inl.h",
     "src/win/internal.h",
     "src/win/req-inl.h",
@@ -245,23 +247,21 @@ DARWIN_COPTS = [
 
 cc_library(
     name = "libuv",
-    srcs = select({
-        ":android": COMMON_LIBUV_SOURCES + UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES + ANDROID_LIBUV_SOURCES,
-        ":darwin_x86_64": COMMON_LIBUV_SOURCES + UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
-        ":darwin_arm64": COMMON_LIBUV_SOURCES + UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
-        ":darwin_arm64e": COMMON_LIBUV_SOURCES + UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
-        ":windows": COMMON_LIBUV_SOURCES + WINDOWS_LIBUV_SOURCES,
-        "//conditions:default": COMMON_LIBUV_SOURCES + UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES,
+    srcs = COMMON_LIBUV_SOURCES + select({
+        ":android": UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES + ANDROID_LIBUV_SOURCES,
+        ":darwin_x86_64": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
+        ":darwin_arm64": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
+        ":darwin_arm64e": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
+        ":windows": WINDOWS_LIBUV_SOURCES,
+        "//conditions:default": UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES,
     }),
-    hdrs = [
-        "include/uv.h",
-    ] + select({
-        ":android": COMMON_LIBUV_HEADERS + UNIX_LIBUV_HEADERS + LINUX_LIBUV_HEADERS + ANDROID_LIBUV_HEADERS,
-        ":darwin_x86_64": COMMON_LIBUV_HEADERS + UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
-        ":darwin_arm64": COMMON_LIBUV_HEADERS + UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
-        ":darwin_arm64e": COMMON_LIBUV_HEADERS + UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
-        ":windows": COMMON_LIBUV_HEADERS + WINDOWS_LIBUV_HEADERS,
-        "//conditions:default": COMMON_LIBUV_HEADERS + UNIX_LIBUV_HEADERS + LINUX_LIBUV_HEADERS,
+    hdrs = COMMON_LIBUV_HEADERS + select({
+        ":android": UNIX_LIBUV_HEADERS + LINUX_LIBUV_HEADERS + ANDROID_LIBUV_HEADERS,
+        ":darwin_x86_64": UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
+        ":darwin_arm64": UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
+        ":darwin_arm64e": UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
+        ":windows": WINDOWS_LIBUV_HEADERS,
+        "//conditions:default": UNIX_LIBUV_HEADERS + LINUX_LIBUV_HEADERS,
     }),
     copts = [
     ] + select({
