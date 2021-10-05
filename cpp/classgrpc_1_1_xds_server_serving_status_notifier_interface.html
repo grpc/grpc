@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>GRPC C++: grpc::experimental::XdsServerServingStatusNotifierInterface Class Reference</title>
+<title>GRPC C++: grpc::XdsServerServingStatusNotifierInterface Class Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -62,29 +62,35 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespacegrpc.html">grpc</a></li><li class="navelem"><a class="el" href="namespacegrpc_1_1experimental.html">experimental</a></li><li class="navelem"><a class="el" href="classgrpc_1_1experimental_1_1_xds_server_serving_status_notifier_interface.html">XdsServerServingStatusNotifierInterface</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespacegrpc.html">grpc</a></li><li class="navelem"><a class="el" href="classgrpc_1_1_xds_server_serving_status_notifier_interface.html">XdsServerServingStatusNotifierInterface</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-methods">Public Member Functions</a>  </div>
   <div class="headertitle">
-<div class="title">grpc::experimental::XdsServerServingStatusNotifierInterface Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
+<div class="title">grpc::XdsServerServingStatusNotifierInterface Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
 </div><!--header-->
 <div class="contents">
 
 <p><code>#include &lt;<a class="el" href="xds__server__builder_8h_source.html">xds_server_builder.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc_1_1_xds_server_serving_status_notifier_interface_1_1_serving_status_update.html">ServingStatusUpdate</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a69ef49a3a92e88463459eda10ecf9770"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_xds_server_serving_status_notifier_interface.html#a69ef49a3a92e88463459eda10ecf9770">~XdsServerServingStatusNotifierInterface</a> ()=default</td></tr>
-<tr class="separator:a69ef49a3a92e88463459eda10ecf9770"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aca31cba4fd4d401ee70d7394e9276d18"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_xds_server_serving_status_notifier_interface.html#aca31cba4fd4d401ee70d7394e9276d18">OnServingStatusUpdate</a> (std::string uri, <a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> status)=0</td></tr>
-<tr class="separator:aca31cba4fd4d401ee70d7394e9276d18"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a218fd62bca02c870bdb1e7019eba12df"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_xds_server_serving_status_notifier_interface.html#a218fd62bca02c870bdb1e7019eba12df">~XdsServerServingStatusNotifierInterface</a> ()=default</td></tr>
+<tr class="separator:a218fd62bca02c870bdb1e7019eba12df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae4fe05be7d9227f6b677c24307d529b0"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_xds_server_serving_status_notifier_interface.html#ae4fe05be7d9227f6b677c24307d529b0">OnServingStatusUpdate</a> (std::string uri, <a class="el" href="structgrpc_1_1_xds_server_serving_status_notifier_interface_1_1_serving_status_update.html">ServingStatusUpdate</a> update)=0</td></tr>
+<tr class="separator:ae4fe05be7d9227f6b677c24307d529b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a69ef49a3a92e88463459eda10ecf9770"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a69ef49a3a92e88463459eda10ecf9770">&#9670;&nbsp;</a></span>~XdsServerServingStatusNotifierInterface()</h2>
+<a id="a218fd62bca02c870bdb1e7019eba12df"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a218fd62bca02c870bdb1e7019eba12df">&#9670;&nbsp;</a></span>~XdsServerServingStatusNotifierInterface()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -93,7 +99,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual grpc::experimental::XdsServerServingStatusNotifierInterface::~XdsServerServingStatusNotifierInterface </td>
+          <td class="memname">virtual grpc::XdsServerServingStatusNotifierInterface::~XdsServerServingStatusNotifierInterface </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -109,8 +115,8 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="aca31cba4fd4d401ee70d7394e9276d18"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aca31cba4fd4d401ee70d7394e9276d18">&#9670;&nbsp;</a></span>OnServingStatusUpdate()</h2>
+<a id="ae4fe05be7d9227f6b677c24307d529b0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae4fe05be7d9227f6b677c24307d529b0">&#9670;&nbsp;</a></span>OnServingStatusUpdate()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -119,7 +125,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void grpc::experimental::XdsServerServingStatusNotifierInterface::OnServingStatusUpdate </td>
+          <td class="memname">virtual void grpc::XdsServerServingStatusNotifierInterface::OnServingStatusUpdate </td>
           <td>(</td>
           <td class="paramtype">std::string&#160;</td>
           <td class="paramname"><em>uri</em>, </td>
@@ -127,8 +133,8 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>&#160;</td>
-          <td class="paramname"><em>status</em>&#160;</td>
+          <td class="paramtype"><a class="el" href="structgrpc_1_1_xds_server_serving_status_notifier_interface_1_1_serving_status_update.html">ServingStatusUpdate</a>&#160;</td>
+          <td class="paramname"><em>update</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -151,7 +157,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

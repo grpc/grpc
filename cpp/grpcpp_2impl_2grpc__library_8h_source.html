@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -96,7 +96,7 @@ $(function() {
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_8h.html">grpc/grpc.h</a>&gt;</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpcpp_2impl_2codegen_2config_8h.html">grpcpp/impl/codegen/config.h</a>&gt;</span></div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpcpp_2impl_2codegen_2core__codegen_8h.html">grpcpp/impl/codegen/core_codegen.h</a>&gt;</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpcpp_2impl_2codegen_2grpc__library_8h.html">grpcpp/impl/codegen/grpc_library.h</a>&gt;</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpcpp_2impl_2codegen_2grpc__library_8h.html">grpcpp/impl/codegen/grpc_library.h</a>&gt;</span>  <span class="comment">// IWYU pragma: export</span></div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacegrpc.html">grpc</a> {</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
@@ -129,7 +129,7 @@ $(function() {
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="preprocessor">#endif  // GRPCPP_IMPL_GRPC_LIBRARY_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="anamespacegrpc_html"><div class="ttname"><a href="namespacegrpc.html">grpc</a></div><div class="ttdoc">An Alarm posts the user-provided tag to its associated completion queue or invokes the user-provided ...</div><div class="ttdef"><b>Definition:</b> alarm.h:33</div></div>
-<div class="ttc" id="aclassgrpc_1_1_core_codegen_html"><div class="ttname"><a href="classgrpc_1_1_core_codegen.html">grpc::CoreCodegen</a></div><div class="ttdoc">Implementation of the core codegen interface.</div><div class="ttdef"><b>Definition:</b> core_codegen.h:32</div></div>
+<div class="ttc" id="aclassgrpc_1_1_core_codegen_html"><div class="ttname"><a href="classgrpc_1_1_core_codegen.html">grpc::CoreCodegen</a></div><div class="ttdoc">Implementation of the core codegen interface.</div><div class="ttdef"><b>Definition:</b> core_codegen.h:34</div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2config_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2config_8h.html">config.h</a></div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2core__codegen_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2core__codegen_8h.html">core_codegen.h</a></div></div>
 <div class="ttc" id="agrpc_8h_html"><div class="ttname"><a href="grpc_8h.html">grpc.h</a></div></div>
@@ -137,17 +137,17 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_grpc_library_initializer_html_a71b365fd27307fc2ff820dea2d9ee561"><div class="ttname"><a href="classgrpc_1_1internal_1_1_grpc_library_initializer.html#a71b365fd27307fc2ff820dea2d9ee561">grpc::internal::GrpcLibraryInitializer::GrpcLibraryInitializer</a></div><div class="ttdeci">GrpcLibraryInitializer()</div><div class="ttdef"><b>Definition:</b> grpc_library.h:41</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_grpc_library_html_a48c327d8dd2c004da8c7aa17174303b1"><div class="ttname"><a href="classgrpc_1_1internal_1_1_grpc_library.html#a48c327d8dd2c004da8c7aa17174303b1">grpc::internal::GrpcLibrary::init</a></div><div class="ttdeci">void init() override</div><div class="ttdef"><b>Definition:</b> grpc_library.h:34</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_grpc_library_initializer_html_afdf0f7de75fd586c503d21387957e3be"><div class="ttname"><a href="classgrpc_1_1internal_1_1_grpc_library_initializer.html#afdf0f7de75fd586c503d21387957e3be">grpc::internal::GrpcLibraryInitializer::summon</a></div><div class="ttdeci">int summon()</div><div class="ttdoc">A no-op method to force the linker to reference this class, which will take care of initializing and ...</div><div class="ttdef"><b>Definition:</b> grpc_library.h:54</div></div>
-<div class="ttc" id="aclassgrpc_1_1_grpc_library_interface_html"><div class="ttname"><a href="classgrpc_1_1_grpc_library_interface.html">grpc::GrpcLibraryInterface</a></div><div class="ttdef"><b>Definition:</b> grpc_library.h:26</div></div>
+<div class="ttc" id="aclassgrpc_1_1_grpc_library_interface_html"><div class="ttname"><a href="classgrpc_1_1_grpc_library_interface.html">grpc::GrpcLibraryInterface</a></div><div class="ttdef"><b>Definition:</b> grpc_library.h:28</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_grpc_library_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_grpc_library.html">grpc::internal::GrpcLibrary</a></div><div class="ttdef"><b>Definition:</b> grpc_library.h:32</div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2grpc__library_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2grpc__library_8h.html">grpc_library.h</a></div></div>
 <div class="ttc" id="anamespacegrpc_html_ae98af9599a8d1a02e75bae1a9250e1dc"><div class="ttname"><a href="namespacegrpc.html#ae98af9599a8d1a02e75bae1a9250e1dc">grpc::g_glip</a></div><div class="ttdeci">GrpcLibraryInterface * g_glip</div><div class="ttdoc">Initialized by grpc::GrpcLibraryInitializer from &lt;grpcpp/impl/grpc_library.h&gt;</div></div>
-<div class="ttc" id="anamespacegrpc_html_abbcecc18dae64c65df0b6d9aa8bf67a8"><div class="ttname"><a href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">grpc::g_core_codegen_interface</a></div><div class="ttdeci">CoreCodegenInterface * g_core_codegen_interface</div><div class="ttdef"><b>Definition:</b> completion_queue.h:96</div></div>
+<div class="ttc" id="anamespacegrpc_html_abbcecc18dae64c65df0b6d9aa8bf67a8"><div class="ttname"><a href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">grpc::g_core_codegen_interface</a></div><div class="ttdeci">CoreCodegenInterface * g_core_codegen_interface</div><div class="ttdef"><b>Definition:</b> completion_queue.h:98</div></div>
 <div class="ttc" id="agrpc_8h_html_a573aed8e200997856a227c7eb798a185"><div class="ttname"><a href="grpc_8h.html#a573aed8e200997856a227c7eb798a185">grpc_init</a></div><div class="ttdeci">GRPCAPI void grpc_init(void)</div><div class="ttdoc">Initialize the grpc library.</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_grpc_library_html_a3877ce7da09f9be689733ae32db2c331"><div class="ttname"><a href="classgrpc_1_1internal_1_1_grpc_library.html#a3877ce7da09f9be689733ae32db2c331">grpc::internal::GrpcLibrary::shutdown</a></div><div class="ttdeci">void shutdown() override</div><div class="ttdef"><b>Definition:</b> grpc_library.h:35</div></div>
 <div class="ttc" id="agrpc_8h_html_a35f55253e80714c17f4f3a0657e06f1b"><div class="ttname"><a href="grpc_8h.html#a35f55253e80714c17f4f3a0657e06f1b">grpc_shutdown</a></div><div class="ttdeci">GRPCAPI void grpc_shutdown(void)</div><div class="ttdoc">Shut down the grpc library.</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:47 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

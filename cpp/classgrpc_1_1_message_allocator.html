@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>GRPC C++: grpc::experimental::RpcAllocatorState Class Reference</title>
+<title>GRPC C++: grpc::MessageAllocator&lt; RequestT, ResponseT &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -62,14 +62,14 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespacegrpc.html">grpc</a></li><li class="navelem"><a class="el" href="namespacegrpc_1_1experimental.html">experimental</a></li><li class="navelem"><a class="el" href="classgrpc_1_1experimental_1_1_rpc_allocator_state.html">RpcAllocatorState</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespacegrpc.html">grpc</a></li><li class="navelem"><a class="el" href="classgrpc_1_1_message_allocator.html">MessageAllocator</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a>  </div>
   <div class="headertitle">
-<div class="title">grpc::experimental::RpcAllocatorState Class Reference</div>  </div>
+<div class="title">grpc::MessageAllocator&lt; RequestT, ResponseT &gt; Class Template Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -77,23 +77,25 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aa2f076faaed3c8f2b7a113bf38e9c9dd"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_rpc_allocator_state.html#aa2f076faaed3c8f2b7a113bf38e9c9dd">~RpcAllocatorState</a> ()=default</td></tr>
-<tr class="separator:aa2f076faaed3c8f2b7a113bf38e9c9dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a75dc7544cb4886b53fcc5a7c98e525f5"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_rpc_allocator_state.html#a75dc7544cb4886b53fcc5a7c98e525f5">FreeRequest</a> ()</td></tr>
-<tr class="separator:a75dc7544cb4886b53fcc5a7c98e525f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad41a6c118205e81ad6e2f507f52210f6"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_message_allocator.html#ad41a6c118205e81ad6e2f507f52210f6">~MessageAllocator</a> ()=default</td></tr>
+<tr class="separator:ad41a6c118205e81ad6e2f507f52210f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab281cb65c8e7c9a53c190b336378be03"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1_message_holder.html">MessageHolder</a>&lt; RequestT, ResponseT &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_message_allocator.html#ab281cb65c8e7c9a53c190b336378be03">AllocateMessages</a> ()=0</td></tr>
+<tr class="separator:ab281cb65c8e7c9a53c190b336378be03"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="aa2f076faaed3c8f2b7a113bf38e9c9dd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa2f076faaed3c8f2b7a113bf38e9c9dd">&#9670;&nbsp;</a></span>~RpcAllocatorState()</h2>
+<a id="ad41a6c118205e81ad6e2f507f52210f6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad41a6c118205e81ad6e2f507f52210f6">&#9670;&nbsp;</a></span>~MessageAllocator()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;typename RequestT , typename ResponseT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual grpc::experimental::RpcAllocatorState::~RpcAllocatorState </td>
+          <td class="memname">virtual <a class="el" href="classgrpc_1_1_message_allocator.html">grpc::MessageAllocator</a>&lt; RequestT, ResponseT &gt;::~<a class="el" href="classgrpc_1_1_message_allocator.html">MessageAllocator</a> </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -109,17 +111,19 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a75dc7544cb4886b53fcc5a7c98e525f5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a75dc7544cb4886b53fcc5a7c98e525f5">&#9670;&nbsp;</a></span>FreeRequest()</h2>
+<a id="ab281cb65c8e7c9a53c190b336378be03"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab281cb65c8e7c9a53c190b336378be03">&#9670;&nbsp;</a></span>AllocateMessages()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;typename RequestT , typename ResponseT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void grpc::experimental::RpcAllocatorState::FreeRequest </td>
+          <td class="memname">virtual <a class="el" href="classgrpc_1_1_message_holder.html">MessageHolder</a>&lt;RequestT, ResponseT&gt;* <a class="el" href="classgrpc_1_1_message_allocator.html">grpc::MessageAllocator</a>&lt; RequestT, ResponseT &gt;::AllocateMessages </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -127,7 +131,7 @@ Public Member Functions</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -140,7 +144,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

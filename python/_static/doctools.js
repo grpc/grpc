@@ -301,12 +301,14 @@ var Documentation = {
               window.location.href = prevHref;
               return false;
             }
+            break;
           case 39: // right
             var nextHref = $('link[rel="next"]').prop('href');
             if (nextHref) {
               window.location.href = nextHref;
               return false;
             }
+            break;
         }
       }
     });

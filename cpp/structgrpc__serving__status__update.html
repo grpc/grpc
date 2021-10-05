@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>GRPC C++: include/grpc/event_engine/channel_args.h File Reference</title>
+<title>GRPC C++: grpc_serving_status_update Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -60,33 +60,60 @@ $(function() {
 </iframe>
 </div>
 
-<div id="nav-path" class="navpath">
-  <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_9d7a14d6d9adcbe4c35dbdb88d867e2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_bd8dffe728229f23f136e38dafaf5150.html">event_engine</a></li>  </ul>
-</div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#namespaces">Namespaces</a>  </div>
+<a href="#pub-attribs">Data Fields</a>  </div>
   <div class="headertitle">
-<div class="title">channel_args.h File Reference</div>  </div>
+<div class="title">grpc_serving_status_update Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="support_2port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br />
-</div>
-<p><a href="channel__args_8h_source.html">Go to the source code of this file.</a></p>
+
+<p><code>#include &lt;<a class="el" href="grpc_8h_source.html">grpc.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
-Namespaces</h2></td></tr>
-<tr class="memitem:namespacegrpc__event__engine"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine.html">grpc_event_engine</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:namespacegrpc__event__engine_1_1experimental"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html">grpc_event_engine::experimental</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Data Fields</h2></td></tr>
+<tr class="memitem:aed86b3804752c7a94c822711379d220f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc_2impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__serving__status__update.html#aed86b3804752c7a94c822711379d220f">code</a></td></tr>
+<tr class="separator:aed86b3804752c7a94c822711379d220f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a307e86f282b6e2cd01d2767673978ccc"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__serving__status__update.html#a307e86f282b6e2cd01d2767673978ccc">error_message</a></td></tr>
+<tr class="separator:a307e86f282b6e2cd01d2767673978ccc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Field Documentation</h2>
+<a id="aed86b3804752c7a94c822711379d220f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aed86b3804752c7a94c822711379d220f">&#9670;&nbsp;</a></span>code</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="grpc_2impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> grpc_serving_status_update::code</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a307e86f282b6e2cd01d2767673978ccc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a307e86f282b6e2cd01d2767673978ccc">&#9670;&nbsp;</a></span>error_message</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char* grpc_serving_status_update::error_message</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li>include/grpc/<a class="el" href="grpc_8h_source.html">grpc.h</a></li>
+</ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

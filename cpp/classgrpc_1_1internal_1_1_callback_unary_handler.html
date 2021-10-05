@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -80,8 +80,8 @@ $(function() {
 Public Member Functions</h2></td></tr>
 <tr class="memitem:af12ca5e3418d99d9bbaa0ffa4b321cff"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html#af12ca5e3418d99d9bbaa0ffa4b321cff">CallbackUnaryHandler</a> (std::function&lt; <a class="el" href="classgrpc_1_1_server_unary_reactor.html">ServerUnaryReactor</a> *(::<a class="el" href="classgrpc_1_1_callback_server_context.html">grpc::CallbackServerContext</a> *, const RequestType *, ResponseType *)&gt; get_reactor)</td></tr>
 <tr class="separator:af12ca5e3418d99d9bbaa0ffa4b321cff"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab93d072302905eb922a5564ca896fdf4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html#ab93d072302905eb922a5564ca896fdf4">SetMessageAllocator</a> (::<a class="el" href="classgrpc_1_1experimental_1_1_message_allocator.html">grpc::experimental::MessageAllocator</a>&lt; RequestType, ResponseType &gt; *allocator)</td></tr>
-<tr class="separator:ab93d072302905eb922a5564ca896fdf4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac0545e7cdb9b3075d84d2f0edd377bb6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html#ac0545e7cdb9b3075d84d2f0edd377bb6">SetMessageAllocator</a> (<a class="el" href="classgrpc_1_1_message_allocator.html">MessageAllocator</a>&lt; RequestType, ResponseType &gt; *allocator)</td></tr>
+<tr class="separator:ac0545e7cdb9b3075d84d2f0edd377bb6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1bb34f069e1fba2e4073afb74bc1a133"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html#a1bb34f069e1fba2e4073afb74bc1a133">RunHandler</a> (const HandlerParameter &amp;param) final</td></tr>
 <tr class="separator:a1bb34f069e1fba2e4073afb74bc1a133"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acce7d9b46c6b12bcffa94606b22513f7"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html#acce7d9b46c6b12bcffa94606b22513f7">Deserialize</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *req, ::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> *status, void **handler_data) final</td></tr>
@@ -196,8 +196,8 @@ template&lt;class RequestType , class ResponseType &gt; </div>
 
 </div>
 </div>
-<a id="ab93d072302905eb922a5564ca896fdf4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab93d072302905eb922a5564ca896fdf4">&#9670;&nbsp;</a></span>SetMessageAllocator()</h2>
+<a id="ac0545e7cdb9b3075d84d2f0edd377bb6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac0545e7cdb9b3075d84d2f0edd377bb6">&#9670;&nbsp;</a></span>SetMessageAllocator()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -210,7 +210,7 @@ template&lt;class RequestType , class ResponseType &gt; </div>
         <tr>
           <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html">grpc::internal::CallbackUnaryHandler</a>&lt; RequestType, ResponseType &gt;::SetMessageAllocator </td>
           <td>(</td>
-          <td class="paramtype">::<a class="el" href="classgrpc_1_1experimental_1_1_message_allocator.html">grpc::experimental::MessageAllocator</a>&lt; RequestType, ResponseType &gt; *&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_message_allocator.html">MessageAllocator</a>&lt; RequestType, ResponseType &gt; *&#160;</td>
           <td class="paramname"><em>allocator</em></td><td>)</td>
           <td></td>
         </tr>
@@ -231,7 +231,7 @@ template&lt;class RequestType , class ResponseType &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

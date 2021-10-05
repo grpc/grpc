@@ -1,7 +1,5 @@
 var searchData=
 [
-  ['path_574',['path',['../interface_g_r_p_c_request_options.html#a80855bd704d0e4f82894f99ce25562ed',1,'GRPCRequestOptions']]],
-  ['pemcertificatechain_575',['PEMCertificateChain',['../interface_g_r_p_c_call_options.html#a366ef2da494a1775ad8086b66f88f46e',1,'GRPCCallOptions::PEMCertificateChain()'],['../interface_g_r_p_c_mutable_call_options.html#a0395f7963b3aafcd23134aa45b0cb540',1,'GRPCMutableCallOptions::PEMCertificateChain()']]],
-  ['pemprivatekey_576',['PEMPrivateKey',['../interface_g_r_p_c_call_options.html#ae62a83a8eaee16969d3b6a260f0232f6',1,'GRPCCallOptions::PEMPrivateKey()'],['../interface_g_r_p_c_mutable_call_options.html#ae2acdf2fe250cebdbd4ddc2aae84c4f5',1,'GRPCMutableCallOptions::PEMPrivateKey()']]],
-  ['pemrootcertificates_577',['PEMRootCertificates',['../interface_g_r_p_c_call_options.html#a76406ede45d7edc906ea5c6b2456825f',1,'GRPCCallOptions::PEMRootCertificates()'],['../interface_g_r_p_c_mutable_call_options.html#aede2e87ee80a80244d52477cc660f039',1,'GRPCMutableCallOptions::PEMRootCertificates()']]]
+  ['oauth2accesstoken_578',['oauth2AccessToken',['../category_g_r_p_c_call_07_o_auth2_08.html#a59b887ecf7843b5a73bcaf38660e9683',1,'GRPCCall(OAuth2)::oauth2AccessToken()'],['../interface_g_r_p_c_call_options.html#a0e4b368a7e2aa6d2bdc3bfbd5135f682',1,'GRPCCallOptions::oauth2AccessToken()'],['../interface_g_r_p_c_mutable_call_options.html#a52bd62361c33766d4fea4e83dd76a1ca',1,'GRPCMutableCallOptions::oauth2AccessToken()'],['../interface_g_r_p_c_call.html#a59b887ecf7843b5a73bcaf38660e9683',1,'GRPCCall::oauth2AccessToken()']]],
+  ['oauth2challengeheader_579',['oauth2ChallengeHeader',['../category_g_r_p_c_call_07_o_auth2_08.html#a31a0d06ec3de57ad78f730cd6deef108',1,'GRPCCall(OAuth2)::oauth2ChallengeHeader()'],['../interface_g_r_p_c_call.html#a31a0d06ec3de57ad78f730cd6deef108',1,'GRPCCall::oauth2ChallengeHeader()']]]
 ];

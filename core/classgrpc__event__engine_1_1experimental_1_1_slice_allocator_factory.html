@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">16.0.0</span>
+   &#160;<span id="projectnumber">19.0.0</span>
    </div>
   </td>
  </tr>
@@ -69,7 +69,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a>  </div>
   <div class="headertitle">
-<div class="title">grpc_event_engine::experimental::SliceAllocatorFactory Class Reference</div>  </div>
+<div class="title">grpc_event_engine::experimental::SliceAllocatorFactory Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -77,25 +77,15 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aec79e363f9b915e3fa03a49ec249f35d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html#aec79e363f9b915e3fa03a49ec249f35d">SliceAllocatorFactory</a> (<a class="el" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a> *quota)</td></tr>
-<tr class="separator:aec79e363f9b915e3fa03a49ec249f35d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a527fef6b4f5d29876d4200b9020aa66a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html#a527fef6b4f5d29876d4200b9020aa66a">SliceAllocatorFactory</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html">SliceAllocatorFactory</a> &amp;other)=delete</td></tr>
-<tr class="separator:a527fef6b4f5d29876d4200b9020aa66a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acee2e49525fa1bc797c2cedb6d4842b9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html">SliceAllocatorFactory</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html#acee2e49525fa1bc797c2cedb6d4842b9">operator=</a> (const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html">SliceAllocatorFactory</a> &amp;other)=delete</td></tr>
-<tr class="separator:acee2e49525fa1bc797c2cedb6d4842b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aabc00b52fd346d0a174211f98eb76436"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html#aabc00b52fd346d0a174211f98eb76436">SliceAllocatorFactory</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html">SliceAllocatorFactory</a> &amp;&amp;other)=default</td></tr>
-<tr class="separator:aabc00b52fd346d0a174211f98eb76436"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab91d03ead66bab031d6790cf40c7d27d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html">SliceAllocatorFactory</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html#ab91d03ead66bab031d6790cf40c7d27d">operator=</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html">SliceAllocatorFactory</a> &amp;&amp;other)=default</td></tr>
-<tr class="separator:ab91d03ead66bab031d6790cf40c7d27d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5d3adf54fe09b5bbfdfcce20bfa0edf2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html#a5d3adf54fe09b5bbfdfcce20bfa0edf2">~SliceAllocatorFactory</a> ()</td></tr>
-<tr class="separator:a5d3adf54fe09b5bbfdfcce20bfa0edf2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae7b4ec60c374fb8e077c2fa9cf30f66b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html#ae7b4ec60c374fb8e077c2fa9cf30f66b">CreateSliceAllocator</a> (absl::string_view peer_name)</td></tr>
-<tr class="memdesc:ae7b4ec60c374fb8e077c2fa9cf30f66b"><td class="mdescLeft">&#160;</td><td class="mdescRight">On Endpoint creation, call <em>CreateSliceAllocator</em> with the name of the endpoint peer (a URI string, most likely).  <a href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html#ae7b4ec60c374fb8e077c2fa9cf30f66b">More...</a><br /></td></tr>
-<tr class="separator:ae7b4ec60c374fb8e077c2fa9cf30f66b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a57ff1f0d3096da1f16b9c0a9ace02f3d"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html#a57ff1f0d3096da1f16b9c0a9ace02f3d">~SliceAllocatorFactory</a> ()=default</td></tr>
+<tr class="separator:a57ff1f0d3096da1f16b9c0a9ace02f3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa5a0206ff69eaf5cf3f869238d09367"><td class="memItemLeft" align="right" valign="top">virtual std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html#afa5a0206ff69eaf5cf3f869238d09367">CreateSliceAllocator</a> (absl::string_view peer_name)=0</td></tr>
+<tr class="memdesc:afa5a0206ff69eaf5cf3f869238d09367"><td class="mdescLeft">&#160;</td><td class="mdescRight">On Endpoint creation, call <em>CreateSliceAllocator</em> with the name of the endpoint peer (a URI string, most likely).  <a href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html#afa5a0206ff69eaf5cf3f869238d09367">More...</a><br /></td></tr>
+<tr class="separator:afa5a0206ff69eaf5cf3f869238d09367"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="aec79e363f9b915e3fa03a49ec249f35d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aec79e363f9b915e3fa03a49ec249f35d">&#9670;&nbsp;</a></span>SliceAllocatorFactory() <span class="overload">[1/3]</span></h2>
+<a id="a57ff1f0d3096da1f16b9c0a9ace02f3d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a57ff1f0d3096da1f16b9c0a9ace02f3d">&#9670;&nbsp;</a></span>~SliceAllocatorFactory()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -104,162 +94,47 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">grpc_event_engine::experimental::SliceAllocatorFactory::SliceAllocatorFactory </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a> *&#160;</td>
-          <td class="paramname"><em>quota</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">explicit</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a527fef6b4f5d29876d4200b9020aa66a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a527fef6b4f5d29876d4200b9020aa66a">&#9670;&nbsp;</a></span>SliceAllocatorFactory() <span class="overload">[2/3]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">grpc_event_engine::experimental::SliceAllocatorFactory::SliceAllocatorFactory </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html">SliceAllocatorFactory</a> &amp;&#160;</td>
-          <td class="paramname"><em>other</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">delete</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aabc00b52fd346d0a174211f98eb76436"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aabc00b52fd346d0a174211f98eb76436">&#9670;&nbsp;</a></span>SliceAllocatorFactory() <span class="overload">[3/3]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">grpc_event_engine::experimental::SliceAllocatorFactory::SliceAllocatorFactory </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html">SliceAllocatorFactory</a> &amp;&amp;&#160;</td>
-          <td class="paramname"><em>other</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">default</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a5d3adf54fe09b5bbfdfcce20bfa0edf2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5d3adf54fe09b5bbfdfcce20bfa0edf2">&#9670;&nbsp;</a></span>~SliceAllocatorFactory()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">grpc_event_engine::experimental::SliceAllocatorFactory::~SliceAllocatorFactory </td>
+          <td class="memname">virtual grpc_event_engine::experimental::SliceAllocatorFactory::~SliceAllocatorFactory </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span><span class="mlabel">default</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="ae7b4ec60c374fb8e077c2fa9cf30f66b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae7b4ec60c374fb8e077c2fa9cf30f66b">&#9670;&nbsp;</a></span>CreateSliceAllocator()</h2>
+<a id="afa5a0206ff69eaf5cf3f869238d09367"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa5a0206ff69eaf5cf3f869238d09367">&#9670;&nbsp;</a></span>CreateSliceAllocator()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a> grpc_event_engine::experimental::SliceAllocatorFactory::CreateSliceAllocator </td>
+          <td class="memname">virtual std::unique_ptr&lt;<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a>&gt; grpc_event_engine::experimental::SliceAllocatorFactory::CreateSliceAllocator </td>
           <td>(</td>
           <td class="paramtype">absl::string_view&#160;</td>
           <td class="paramname"><em>peer_name</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p>On Endpoint creation, call <em>CreateSliceAllocator</em> with the name of the endpoint peer (a URI string, most likely). </p>
-<p>Note: <em>peer_name</em> must outlive the Endpoint. </p>
-
-</div>
-</div>
-<a id="acee2e49525fa1bc797c2cedb6d4842b9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acee2e49525fa1bc797c2cedb6d4842b9">&#9670;&nbsp;</a></span>operator=() <span class="overload">[1/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html">SliceAllocatorFactory</a>&amp; grpc_event_engine::experimental::SliceAllocatorFactory::operator= </td>
-          <td>(</td>
-          <td class="paramtype">const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html">SliceAllocatorFactory</a> &amp;&#160;</td>
-          <td class="paramname"><em>other</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">delete</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="ab91d03ead66bab031d6790cf40c7d27d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab91d03ead66bab031d6790cf40c7d27d">&#9670;&nbsp;</a></span>operator=() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html">SliceAllocatorFactory</a>&amp; grpc_event_engine::experimental::SliceAllocatorFactory::operator= </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html">SliceAllocatorFactory</a> &amp;&amp;&#160;</td>
-          <td class="paramname"><em>other</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">default</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
 
 </div>
 </div>
@@ -269,7 +144,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:46 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

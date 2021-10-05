@@ -1,7 +1,6 @@
 var searchData=
 [
-  ['read_1480',['Read',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ac02bc9bd2187311c93fb7d08b7cb015d',1,'grpc_event_engine::experimental::EventEngine::Endpoint']]],
-  ['resolvedaddress_1481',['ResolvedAddress',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html#ac8b476c2acd9c77dd881d29f2a379d5c',1,'grpc_event_engine::experimental::EventEngine::ResolvedAddress']]],
-  ['run_1482',['Run',['../classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a70c24cd7623fcd6c28f07428a5efb528',1,'grpc_event_engine::experimental::EventEngine']]],
-  ['runat_1483',['RunAt',['../classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ab3f692931265b6cc56fa4c23e506c376',1,'grpc_event_engine::experimental::EventEngine']]]
+  ['lookuphostname_1499',['LookupHostname',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a459458f24f4c0b6c53f645eefbcdde76',1,'grpc_event_engine::experimental::EventEngine::DNSResolver']]],
+  ['lookupsrv_1500',['LookupSRV',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a6d4789b6e43afb63fad936223d23772e',1,'grpc_event_engine::experimental::EventEngine::DNSResolver']]],
+  ['lookuptxt_1501',['LookupTXT',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a601c4264eb6fa157e2a1847dfd1b3cc2',1,'grpc_event_engine::experimental::EventEngine::DNSResolver']]]
 ];

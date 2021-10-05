@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -73,7 +73,15 @@ Server</h1>
 <p>Server should accept these arguments:</p>
 <ul>
 <li>&ndash;port=PORT<ul>
-<li>The port the server will run on.</li>
+<li>The port the test server will run on.</li>
+</ul>
+</li>
+<li>&ndash;maintenance_port=PORT<ul>
+<li>The port for the maintenance server running health, channelz, and admin(CSDS) services.</li>
+</ul>
+</li>
+<li>&ndash;secure_mode=BOOLEAN<ul>
+<li>When set to true it uses XdsServerCredentials with the test server for security test cases. In case of secure mode, port and maintenance_port should be different.</li>
 </ul>
 </li>
 </ul>
@@ -105,6 +113,10 @@ Client</h1>
 </li>
 <li>&ndash;rpc_timeout_sec=SEC<ul>
 <li>The timeout to set on all outbound RPCs. Default is 20.</li>
+</ul>
+</li>
+<li>&ndash;secure_mode=BOOLEAN<ul>
+<li>When set to true it uses XdsChannelCredentials with the test client for security test cases.</li>
 </ul>
 </li>
 </ul>
@@ -717,15 +729,122 @@ timeout</h2>
 <li>Test client configured to send UnaryCall RPCs and EmptyCall RPCs with the default application timeout (20 seconds), and metadata of <code>rpc-behavior: sleep-4</code>.</li>
 </ol>
 <ol type="a">
-<li>Test driver asserts client recieves ~100% status <code>OK</code> for EmptyCall and ~100% status <code>DEADLINE_EXCEEDED</code> for UnaryCall. </li>
+<li>Test driver asserts client recieves ~100% status <code>OK</code> for EmptyCall and ~100% status <code>DEADLINE_EXCEEDED</code> for UnaryCall.</li>
 </ol>
 </li>
+</ol>
+<h2><a class="anchor" id="autotoc_md257"></a>
+api_listener</h2>
+<p>The test case verifies a specific use case where it creates a second TD API listener using the same name as the existing one and then delete the old one. The test driver verifies this is a safe way to update the API listener configuration while keep using the existing name.</p>
+<p>Client parameters:</p>
+<ol type="1">
+<li>&ndash;num_channels=1</li>
+</ol>
+<ol type="1">
+<li>&ndash;qps=100</li>
+</ol>
+<p>Load balancer configuration:</p>
+<ol type="1">
+<li>One MIG with two backends.</li>
+</ol>
+<p>Assert:</p>
+<p>The test driver configuration steps:</p><ol type="1">
+<li>The test driver creates the first set of forwarding rule + target proxy + URL map with a test host name.</li>
+</ol>
+<ol type="1">
+<li>Then the test driver creates a second set of forwarding rule + target proxy + URL map with the same test host name.</li>
+</ol>
+<ol type="1">
+<li>The test driver deletes the first set of configurations in step 1.</li>
+</ol>
+<p>The test driver verifies, at each configuration step, the traffic is always able to reach the designated hosts.</p>
+<h2><a class="anchor" id="autotoc_md258"></a>
+metadata_filter</h2>
+<p>This test case verifies that metadata filter configurations in URL map match rule are effective at Traffic Director for routing selection against downstream node metadata.</p>
+<p>Client parameters:</p>
+<ol type="1">
+<li>&ndash;num_channels=1</li>
+</ol>
+<ol type="1">
+<li>&ndash;qps=100</li>
+</ol>
+<p>Load balancer configuration:</p>
+<ol type="1">
+<li>Two MIGs in the same zone, each having two backends.</li>
+</ol>
+<p>There are four test sub-cases:</p><ol type="1">
+<li>Test <code>MATCH_ALL</code> metadata filter criteria.</li>
+</ol>
+<ol type="1">
+<li>Test <code>MATCH_ANY</code> metadata filter criteria.</li>
+</ol>
+<ol type="1">
+<li>Test mixed <code>MATCH_ALL</code> and <code>MATCH_ANY</code> metadata filter criteria.</li>
+</ol>
+<ol type="1">
+<li>Test when multiple match rules with metadata filter all match.</li>
+</ol>
+<p>Assert:</p>
+<p>At each test sub-case described above, the test driver configures and verifies:</p>
+<ol type="1">
+<li>Set default URL map, and verify traffic goes to the original backend hosts.</li>
+</ol>
+<ol type="1">
+<li>Then patch URL map to update the match rule with metadata filter configuration under test added.</li>
+</ol>
+<ol type="1">
+<li>Then it verifies traffic switches to alternate backend service hosts.</li>
+</ol>
+<p>This way, we test that TD correctly evaluates both matching and non-matching configuration scenario.</p>
+<h2><a class="anchor" id="autotoc_md259"></a>
+forwarding_rule_port_match</h2>
+<p>This test verifies that request server uri port should match with the GCP forwarding rule configuration port.</p>
+<p>Client parameters:</p>
+<ol type="1">
+<li>&ndash;num_channels=1</li>
+</ol>
+<ol type="1">
+<li>&ndash;qps=100</li>
+</ol>
+<p>Load balancer configuration:</p>
+<ol type="1">
+<li>One MIG with two backends.</li>
+</ol>
+<p>Assert:</p><ol type="1">
+<li>The test driver configures matching port in the forwarding rule and in the request server uri, then verifies traffic reaches backend service instances.</li>
+</ol>
+<ol type="1">
+<li>The test driver updates the forwarding rule to use a different port, then verifies that the traffic stops going to those backend service instances.</li>
+</ol>
+<h2><a class="anchor" id="autotoc_md260"></a>
+forwarding_rule_default_port</h2>
+<p>This test verifies that omitting port in the request server uri should only match with the default port(80) configuration in the forwarding rule. In addition, request server uri port should exactly match that in the URL map host rule, as described in <a href="https://cloud.google.com/traffic-director/docs/proxyless-overview#proxyless-url-map">public doc</a>.</p>
+<p>Client parameters:</p>
+<ol type="1">
+<li>&ndash;num_channels=1</li>
+</ol>
+<ol type="1">
+<li>&ndash;qps=100</li>
+</ol>
+<p>Load balancer configuration:</p>
+<ol type="1">
+<li>One MIG with two backends.</li>
+</ol>
+<p>Assert:</p>
+<p>Test driver configures and verifies:</p><ol type="1">
+<li>No traffic goes to backends when configuring the target URI <code>xds:///myservice</code>, the forwarding rule with port <em>x != 80</em>, the URL map host rule <code>myservice::x</code>.</li>
+</ol>
+<ol type="1">
+<li>Traffic goes to backends when configuring the target URI <code>xds:///myservice</code>, the forwarding rule port <code>80</code> and the URL map host rule <code>myservice</code>.</li>
+</ol>
+<ol type="1">
+<li>No traffic goes to backends when configuring the target URI <code>xds:///myservice</code>, the forwarding rule port <code>80</code> and the host rule <code>myservice::80</code>. </li>
 </ol>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:58:21 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:35 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

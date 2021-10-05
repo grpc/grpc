@@ -1835,6 +1835,19 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ChannelCredentials.InternalPopulateConfiguration
   nameWithType: ChannelCredentials.InternalPopulateConfiguration
+- uid: Grpc.Core.ChannelCredentials.SecureSsl
+  name: SecureSsl
+  href: api/Grpc.Core.ChannelCredentials.html#Grpc_Core_ChannelCredentials_SecureSsl
+  commentId: P:Grpc.Core.ChannelCredentials.SecureSsl
+  fullName: Grpc.Core.ChannelCredentials.SecureSsl
+  nameWithType: ChannelCredentials.SecureSsl
+- uid: Grpc.Core.ChannelCredentials.SecureSsl*
+  name: SecureSsl
+  href: api/Grpc.Core.ChannelCredentials.html#Grpc_Core_ChannelCredentials_SecureSsl_
+  commentId: Overload:Grpc.Core.ChannelCredentials.SecureSsl
+  isSpec: "True"
+  fullName: Grpc.Core.ChannelCredentials.SecureSsl
+  nameWithType: ChannelCredentials.SecureSsl
 - uid: Grpc.Core.ChannelCredentialsConfiguratorBase
   name: ChannelCredentialsConfiguratorBase
   href: api/Grpc.Core.ChannelCredentialsConfiguratorBase.html

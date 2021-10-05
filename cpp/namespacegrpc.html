@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -106,6 +106,9 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A sequence of bytes.  <a href="classgrpc_1_1_byte_buffer.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_callback_generic_service.html">CallbackGenericService</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em><a class="el" href="classgrpc_1_1_callback_generic_service.html" title="CallbackGenericService is the base class for generic services implemented using the callback API and ...">CallbackGenericService</a></em> is the base class for generic services implemented using the callback API and registered through the <a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances.">ServerBuilder</a> using RegisterCallbackGenericService.  <a href="classgrpc_1_1_callback_generic_service.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -192,13 +195,15 @@ Data Structures</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A thin wrapper around <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> (see src/core/lib/surface/completion_queue.h).  <a href="classgrpc_1_1_completion_queue.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_context_allocator.html">ContextAllocator</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> allows users to use the contents of the <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> or GenericCallbackServerContext structure for the callback API.  <a href="classgrpc_1_1_context_allocator.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> allows users to use the contents of the <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> or <a class="el" href="classgrpc_1_1_generic_callback_server_context.html">GenericCallbackServerContext</a> structure for the callback API.  <a href="classgrpc_1_1_context_allocator.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen.html">CoreCodegen</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implementation of the core codegen interface.  <a href="classgrpc_1_1_core_codegen.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html">CoreCodegenInterface</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Interface between the codegen library and the minimal subset of core features required by the generated code.  <a href="classgrpc_1_1_core_codegen_interface.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_generic_callback_server_context.html">GenericCallbackServerContext</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_generic_server_context.html">GenericServerContext</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -212,11 +217,15 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_health_check_service_server_builder_option.html">HealthCheckServiceServerBuilderOption</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_message_allocator.html">MessageAllocator</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_message_holder.html">MessageHolder</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_metadata_credentials_plugin.html">MetadataCredentialsPlugin</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">User defined metadata credentials.  <a href="classgrpc_1_1_metadata_credentials_plugin.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Options for <em><a class="el" href="classgrpc_1_1_client_context.html#a70ff062f93b75964704b7f8ef97bf7f6" title="Create a new ClientContext as a child of an incoming server call, according to options (.">ClientContext::FromServerContext</a></em> specifying which traits from the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext or CallbackServerContext allows the code implementing a service handler to:">ServerContext</a></em> to propagate (copy) from it into a new <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to:">ClientContext</a></em>.  <a href="classgrpc_1_1_propagation_options.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Options for <em><a class="el" href="classgrpc_1_1_client_context.html#a47b253a4cdf3c188157471cbde7fdcec" title="Create a new ClientContext as a child of an incoming server call, according to options (.">ClientContext::FromServerContext</a></em> specifying which traits from the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext or CallbackServerContext allows the code implementing a service handler to:">ServerContext</a></em> to propagate (copy) from it into a new <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to:">ClientContext</a></em>.  <a href="classgrpc_1_1_propagation_options.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_proto_buffer_reader.html">ProtoBufferReader</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This is a specialization of the protobuf class ZeroCopyInputStream The principle is to get one chunk of data at a time from the proto layer, with options to backup (re-see some bytes) or skip (forward past some bytes)  <a href="classgrpc_1_1_proto_buffer_reader.html#details">More...</a><br /></td></tr>
@@ -226,6 +235,8 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory and thread usage by the gRPC library.">ResourceQuota</a> represents a bound on memory and thread usage by the gRPC library.  <a href="classgrpc_1_1_resource_quota.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_rpc_allocator_state.html">RpcAllocatorState</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_serialization_traits.html">SerializationTraits</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Defines how to serialize and deserialize some type.  <a href="classgrpc_1_1_serialization_traits.html#details">More...</a><br /></td></tr>
@@ -281,7 +292,7 @@ Data Structures</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A <a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext or CallbackServerContext allows the code implementing a service handler to:">ServerContext</a> or <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> allows the code implementing a service handler to:  <a href="classgrpc_1_1_server_context.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context_base.html">ServerContextBase</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Base class of <a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext or CallbackServerContext allows the code implementing a service handler to:">ServerContext</a>. Experimental until callback API is final.  <a href="classgrpc_1_1_server_context_base.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Base class of <a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext or CallbackServerContext allows the code implementing a service handler to:">ServerContext</a>.  <a href="classgrpc_1_1_server_context_base.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper around <em>grpc_server_credentials</em>, a way to authenticate a server.  <a href="classgrpc_1_1_server_credentials.html#details">More...</a><br /></td></tr>
@@ -356,6 +367,10 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Per-message write options.  <a href="classgrpc_1_1_write_options.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_xds_server_builder.html">XdsServerBuilder</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_xds_server_serving_status_notifier_interface.html">XdsServerServingStatusNotifierInterface</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
@@ -373,6 +388,9 @@ Typedefs</h2></td></tr>
 <tr class="separator:a0ab7f966b77578bc8033dd1198ef4ca0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a881afd211852397742952ee4058e0f8b"><td class="memItemLeft" align="right" valign="top">typedef <a class="el" href="classgrpc_1_1_server_async_writer.html">ServerAsyncWriter</a>&lt; <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a881afd211852397742952ee4058e0f8b">GenericServerAsyncWriter</a></td></tr>
 <tr class="separator:a881afd211852397742952ee4058e0f8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a49657ba035d924f2a65903c3fe1e3ae4"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a49657ba035d924f2a65903c3fe1e3ae4">ServerGenericBidiReactor</a> = <a class="el" href="classgrpc_1_1_server_bidi_reactor.html">ServerBidiReactor</a>&lt; <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>, <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &gt;</td></tr>
+<tr class="memdesc:a49657ba035d924f2a65903c3fe1e3ae4"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em>ServerGenericBidiReactor</em> is the reactor class for bidi streaming RPCs invoked on a <a class="el" href="classgrpc_1_1_callback_generic_service.html" title="CallbackGenericService is the base class for generic services implemented using the callback API and ...">CallbackGenericService</a>.  <a href="namespacegrpc.html#a49657ba035d924f2a65903c3fe1e3ae4">More...</a><br /></td></tr>
+<tr class="separator:a49657ba035d924f2a65903c3fe1e3ae4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab23a7f74e4fef64035c11941ba6c57c6"><td class="memItemLeft" align="right" valign="top">typedef std::pair&lt; <a class="el" href="classgrpc_1_1string__ref.html">string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">string_ref</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ab23a7f74e4fef64035c11941ba6c57c6">AuthProperty</a></td></tr>
 <tr class="separator:ab23a7f74e4fef64035c11941ba6c57c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -467,6 +485,9 @@ Functions</h2></td></tr>
 <tr class="separator:a12896f279762d0100669da708d466ec1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac35304b324f751024bbffaf38c15647c"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ac35304b324f751024bbffaf38c15647c">CreateCustomChannel</a> (const grpc::string &amp;target, const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">grpc::ChannelCredentials</a> &gt; &amp;creds, const <a class="el" href="classgrpc_1_1_channel_arguments.html">grpc::ChannelArguments</a> &amp;args)</td></tr>
 <tr class="separator:ac35304b324f751024bbffaf38c15647c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4dd034a2ba240d4fea11818160238c40"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a4dd034a2ba240d4fea11818160238c40">XdsCredentials</a> (const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt; &amp;fallback_creds)</td></tr>
+<tr class="memdesc:a4dd034a2ba240d4fea11818160238c40"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds XDS Credentials.  <a href="namespacegrpc.html#a4dd034a2ba240d4fea11818160238c40">More...</a><br /></td></tr>
+<tr class="separator:a4dd034a2ba240d4fea11818160238c40"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6beb3ac70ff94bd2ebbd89b8f21d1f61"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a6beb3ac70ff94bd2ebbd89b8f21d1f61">GoogleDefaultCredentials</a> ()</td></tr>
 <tr class="memdesc:a6beb3ac70ff94bd2ebbd89b8f21d1f61"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds credentials with reasonable defaults.  <a href="namespacegrpc.html#a6beb3ac70ff94bd2ebbd89b8f21d1f61">More...</a><br /></td></tr>
 <tr class="separator:a6beb3ac70ff94bd2ebbd89b8f21d1f61"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -502,6 +523,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a4597f5765148bd5bc141bcb778907a1f"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a4597f5765148bd5bc141bcb778907a1f">ExternalAccountCredentials</a> (const grpc::string &amp;json_string, const std::vector&lt; grpc::string &gt; &amp;scopes)</td></tr>
 <tr class="memdesc:a4597f5765148bd5bc141bcb778907a1f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds External Account credentials.  <a href="namespacegrpc.html#a4597f5765148bd5bc141bcb778907a1f">More...</a><br /></td></tr>
 <tr class="separator:a4597f5765148bd5bc141bcb778907a1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a061a0ee874c4aa28a233ca4abe040fdc"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a061a0ee874c4aa28a233ca4abe040fdc">XdsServerCredentials</a> (const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt; &amp;fallback_credentials)</td></tr>
+<tr class="memdesc:a061a0ee874c4aa28a233ca4abe040fdc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds Xds <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server.">ServerCredentials</a> given fallback credentials.  <a href="namespacegrpc.html#a061a0ee874c4aa28a233ca4abe040fdc">More...</a><br /></td></tr>
+<tr class="separator:a061a0ee874c4aa28a233ca4abe040fdc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a58c19329766a61e325450888aacef0ad"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a58c19329766a61e325450888aacef0ad">SslServerCredentials</a> (const <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html">grpc::SslServerCredentialsOptions</a> &amp;options)</td></tr>
 <tr class="memdesc:a58c19329766a61e325450888aacef0ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds SSL <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server.">ServerCredentials</a> given SSL specific options.  <a href="namespacegrpc.html#a58c19329766a61e325450888aacef0ad">More...</a><br /></td></tr>
 <tr class="separator:a58c19329766a61e325450888aacef0ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -637,6 +661,23 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="a49657ba035d924f2a65903c3fe1e3ae4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a49657ba035d924f2a65903c3fe1e3ae4">&#9670;&nbsp;</a></span>ServerGenericBidiReactor</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="namespacegrpc.html#a49657ba035d924f2a65903c3fe1e3ae4">grpc::ServerGenericBidiReactor</a> = typedef <a class="el" href="classgrpc_1_1_server_bidi_reactor.html">ServerBidiReactor</a>&lt;<a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>, <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p><em>ServerGenericBidiReactor</em> is the reactor class for bidi streaming RPCs invoked on a <a class="el" href="classgrpc_1_1_callback_generic_service.html" title="CallbackGenericService is the base class for generic services implemented using the callback API and ...">CallbackGenericService</a>. </p>
+<p>It is just a ServerBidi reactor with <a class="el" href="classgrpc_1_1_byte_buffer.html" title="A sequence of bytes.">ByteBuffer</a> arguments. </p>
 
 </div>
 </div>
@@ -1821,6 +1862,46 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
 
 </div>
 </div>
+<a id="a4dd034a2ba240d4fea11818160238c40"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4dd034a2ba240d4fea11818160238c40">&#9670;&nbsp;</a></span>XdsCredentials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a>&gt; grpc::XdsCredentials </td>
+          <td>(</td>
+          <td class="paramtype">const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>fallback_creds</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Builds XDS Credentials. </p>
+
+</div>
+</div>
+<a id="a061a0ee874c4aa28a233ca4abe040fdc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a061a0ee874c4aa28a233ca4abe040fdc">&#9670;&nbsp;</a></span>XdsServerCredentials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a>&gt; grpc::XdsServerCredentials </td>
+          <td>(</td>
+          <td class="paramtype">const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>fallback_credentials</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Builds Xds <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server.">ServerCredentials</a> given fallback credentials. </p>
+
+</div>
+</div>
 <h2 class="groupheader">Variable Documentation</h2>
 <a id="abbcecc18dae64c65df0b6d9aa8bf67a8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#abbcecc18dae64c65df0b6d9aa8bf67a8">&#9670;&nbsp;</a></span>g_core_codegen_interface</h2>
@@ -1907,7 +1988,7 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

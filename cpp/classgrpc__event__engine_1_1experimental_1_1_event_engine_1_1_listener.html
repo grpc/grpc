@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -74,38 +74,38 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
-<p>An <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html" title="An EventEngine Listener listens for incoming connection requests from gRPC clients and initiates requ...">Listener</a> listens for incoming connection requests from gRPC clients and initiates request processing once connections are established.  
+<p>Listens for incoming connection requests from gRPC clients and initiates request processing once connections are established.  
  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="event__engine_8h_source.html">event_engine.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:ac9c54c9ad654a12ad80a7248bcdd1edd"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#ac9c54c9ad654a12ad80a7248bcdd1edd">AcceptCallback</a> = std::function&lt; void(std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html">Endpoint</a> &gt;)&gt;</td></tr>
-<tr class="memdesc:ac9c54c9ad654a12ad80a7248bcdd1edd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called when the listener has accepted a new client connection.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#ac9c54c9ad654a12ad80a7248bcdd1edd">More...</a><br /></td></tr>
-<tr class="separator:ac9c54c9ad654a12ad80a7248bcdd1edd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af57919c84f1672ac35838cd396f9f43a"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#af57919c84f1672ac35838cd396f9f43a">AcceptCallback</a> = std::function&lt; void(std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html">Endpoint</a> &gt;, const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a> &amp;slice_allocator)&gt;</td></tr>
+<tr class="memdesc:af57919c84f1672ac35838cd396f9f43a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called when the listener has accepted a new client connection.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#af57919c84f1672ac35838cd396f9f43a">More...</a><br /></td></tr>
+<tr class="separator:af57919c84f1672ac35838cd396f9f43a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a691cbfd1fc82bed7d7dc04c9e7bba3cd"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#a691cbfd1fc82bed7d7dc04c9e7bba3cd">~Listener</a> ()=default</td></tr>
 <tr class="separator:a691cbfd1fc82bed7d7dc04c9e7bba3cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a95239090a62188308036ce1841aa8d65"><td class="memItemLeft" align="right" valign="top">virtual absl::StatusOr&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#a95239090a62188308036ce1841aa8d65">Bind</a> (const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a> &amp;addr)=0</td></tr>
-<tr class="memdesc:a95239090a62188308036ce1841aa8d65"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bind an address/port to this <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html" title="An EventEngine Listener listens for incoming connection requests from gRPC clients and initiates requ...">Listener</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#a95239090a62188308036ce1841aa8d65">More...</a><br /></td></tr>
+<tr class="memdesc:a95239090a62188308036ce1841aa8d65"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bind an address/port to this <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html" title="Listens for incoming connection requests from gRPC clients and initiates request processing once conn...">Listener</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#a95239090a62188308036ce1841aa8d65">More...</a><br /></td></tr>
 <tr class="separator:a95239090a62188308036ce1841aa8d65"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abe5c11d2747373e1d07ed422a7976714"><td class="memItemLeft" align="right" valign="top">virtual absl::Status&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#abe5c11d2747373e1d07ed422a7976714">Start</a> ()=0</td></tr>
 <tr class="separator:abe5c11d2747373e1d07ed422a7976714"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>An <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html" title="An EventEngine Listener listens for incoming connection requests from gRPC clients and initiates requ...">Listener</a> listens for incoming connection requests from gRPC clients and initiates request processing once connections are established. </p>
+<div class="textblock"><p>Listens for incoming connection requests from gRPC clients and initiates request processing once connections are established. </p>
 </div><h2 class="groupheader">Member Typedef Documentation</h2>
-<a id="ac9c54c9ad654a12ad80a7248bcdd1edd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac9c54c9ad654a12ad80a7248bcdd1edd">&#9670;&nbsp;</a></span>AcceptCallback</h2>
+<a id="af57919c84f1672ac35838cd396f9f43a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af57919c84f1672ac35838cd396f9f43a">&#9670;&nbsp;</a></span>AcceptCallback</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">using <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#ac9c54c9ad654a12ad80a7248bcdd1edd">grpc_event_engine::experimental::EventEngine::Listener::AcceptCallback</a> =  std::function&lt;void(std::unique_ptr&lt;<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html">Endpoint</a>&gt;)&gt;</td>
+          <td class="memname">using <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#af57919c84f1672ac35838cd396f9f43a">grpc_event_engine::experimental::EventEngine::Listener::AcceptCallback</a> =  std::function&lt;void( std::unique_ptr&lt;<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html">Endpoint</a>&gt;, const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a>&amp; slice_allocator)&gt;</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -165,8 +165,8 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Bind an address/port to this <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html" title="An EventEngine Listener listens for incoming connection requests from gRPC clients and initiates requ...">Listener</a>. </p>
-<p>It is expected that multiple addresses/ports can be bound to this <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html" title="An EventEngine Listener listens for incoming connection requests from gRPC clients and initiates requ...">Listener</a> before <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#abe5c11d2747373e1d07ed422a7976714">Listener::Start</a> has been called. Returns either the bound port or an appropriate error status. </p>
+<p>Bind an address/port to this <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html" title="Listens for incoming connection requests from gRPC clients and initiates request processing once conn...">Listener</a>. </p>
+<p>It is expected that multiple addresses/ports can be bound to this <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html" title="Listens for incoming connection requests from gRPC clients and initiates request processing once conn...">Listener</a> before <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#abe5c11d2747373e1d07ed422a7976714">Listener::Start</a> has been called. Returns either the bound port or an appropriate error status. </p>
 
 </div>
 </div>
@@ -201,7 +201,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

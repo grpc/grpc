@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -203,9 +203,9 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:ad51d67a4bd5a0960b4c15783e10a72a3 inherit pro_methods_classgrpc_1_1_server_context_base"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context_base.html#ad51d67a4bd5a0960b4c15783e10a72a3">AsyncNotifyWhenDone</a> (void *tag)</td></tr>
 <tr class="memdesc:ad51d67a4bd5a0960b4c15783e10a72a3 inherit pro_methods_classgrpc_1_1_server_context_base"><td class="mdescLeft">&#160;</td><td class="mdescRight">Async only.  <a href="classgrpc_1_1_server_context_base.html#ad51d67a4bd5a0960b4c15783e10a72a3">More...</a><br /></td></tr>
 <tr class="separator:ad51d67a4bd5a0960b4c15783e10a72a3 inherit pro_methods_classgrpc_1_1_server_context_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adb549554566258beb3ebaf79a20fc80c inherit pro_methods_classgrpc_1_1_server_context_base"><td class="memItemLeft" align="right" valign="top">::<a class="el" href="classgrpc_1_1experimental_1_1_rpc_allocator_state.html">grpc::experimental::RpcAllocatorState</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context_base.html#adb549554566258beb3ebaf79a20fc80c">GetRpcAllocatorState</a> ()</td></tr>
-<tr class="memdesc:adb549554566258beb3ebaf79a20fc80c inherit pro_methods_classgrpc_1_1_server_context_base"><td class="mdescLeft">&#160;</td><td class="mdescRight">NOTE: This is an API for advanced users who need custom allocators.  <a href="classgrpc_1_1_server_context_base.html#adb549554566258beb3ebaf79a20fc80c">More...</a><br /></td></tr>
-<tr class="separator:adb549554566258beb3ebaf79a20fc80c inherit pro_methods_classgrpc_1_1_server_context_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac3761141ec0ef14374401b3089595d75 inherit pro_methods_classgrpc_1_1_server_context_base"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_rpc_allocator_state.html">RpcAllocatorState</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context_base.html#ac3761141ec0ef14374401b3089595d75">GetRpcAllocatorState</a> ()</td></tr>
+<tr class="memdesc:ac3761141ec0ef14374401b3089595d75 inherit pro_methods_classgrpc_1_1_server_context_base"><td class="mdescLeft">&#160;</td><td class="mdescRight">NOTE: This is an API for advanced users who need custom allocators.  <a href="classgrpc_1_1_server_context_base.html#ac3761141ec0ef14374401b3089595d75">More...</a><br /></td></tr>
+<tr class="separator:ac3761141ec0ef14374401b3089595d75 inherit pro_methods_classgrpc_1_1_server_context_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a43b472d234c477021c8bee6d01d6d1d8 inherit pro_methods_classgrpc_1_1_server_context_base"><td class="memItemLeft" align="right" valign="top">::<a class="el" href="classgrpc_1_1_server_unary_reactor.html">grpc::ServerUnaryReactor</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context_base.html#a43b472d234c477021c8bee6d01d6d1d8">DefaultReactor</a> ()</td></tr>
 <tr class="memdesc:a43b472d234c477021c8bee6d01d6d1d8 inherit pro_methods_classgrpc_1_1_server_context_base"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a library-owned default unary reactor for use in minimal reaction cases.  <a href="classgrpc_1_1_server_context_base.html#a43b472d234c477021c8bee6d01d6d1d8">More...</a><br /></td></tr>
 <tr class="separator:a43b472d234c477021c8bee6d01d6d1d8 inherit pro_methods_classgrpc_1_1_server_context_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -278,8 +278,12 @@ Additional Inherited Members</h2></td></tr>
   </table>
   </dd>
 </dl>
-<p>Metadata must conform to the following format: Custom-Metadata -&gt; Binary-Header / ASCII-Header Binary-Header -&gt; {Header-Name "-bin" } {binary value} ASCII-Header -&gt; Header-Name ASCII-Value Header-Name -&gt; 1*( x30-39 / x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - . ASCII-Value -&gt; 1*( x20-x7E ) ; space and printable ASCII </p>
-
+<p>Metadata must conform to the following format: </p><pre class="fragment">Custom-Metadata -&gt; Binary-Header / ASCII-Header
+Binary-Header -&gt; {Header-Name "-bin" } {binary value}
+ASCII-Header -&gt; Header-Name ASCII-Value
+Header-Name -&gt; 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+ASCII-Value -&gt; 1*( %x20-%x7E ) ; space and printable ASCII
+</pre> 
 </div>
 </div>
 <a id="aea7f111233dddc155f8dcfa9c1e20184"></a>
@@ -304,8 +308,12 @@ Additional Inherited Members</h2></td></tr>
   </table>
   </dd>
 </dl>
-<p>Metadata must conform to the following format: Custom-Metadata -&gt; Binary-Header / ASCII-Header Binary-Header -&gt; {Header-Name "-bin" } {binary value} ASCII-Header -&gt; Header-Name ASCII-Value Header-Name -&gt; 1*( x30-39 / x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - . ASCII-Value -&gt; 1*( x20-x7E ) ; space and printable ASCII </p>
-
+<p>Metadata must conform to the following format: </p><pre class="fragment">Custom-Metadata -&gt; Binary-Header / ASCII-Header
+Binary-Header -&gt; {Header-Name "-bin" } {binary value}
+ASCII-Header -&gt; Header-Name ASCII-Value
+Header-Name -&gt; 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+ASCII-Value -&gt; 1*( %x20-%x7E ) ; space and printable ASCII
+</pre> 
 </div>
 </div>
 <a id="ad51d67a4bd5a0960b4c15783e10a72a3"></a>
@@ -699,7 +707,7 @@ Additional Inherited Members</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

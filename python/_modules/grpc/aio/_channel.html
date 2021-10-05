@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._channel &#8212; gRPC Python 1.38.0 documentation</title>
+    <title>grpc.aio._channel &#8212; gRPC Python 1.41.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
@@ -29,7 +29,7 @@
 
 
 
-<p class="blurb">1.38.0</p>
+<p class="blurb">1.41.0</p>
 
 
 
@@ -37,7 +37,7 @@
 
 
 <h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../grpc.html">gRPC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../grpc_asyncio.html">gRPC AsyncIO API</a></li>
@@ -66,7 +66,7 @@
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -106,23 +106,34 @@
 
 <span class="kn">import</span> <span class="nn">asyncio</span>
 <span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
 
 <span class="kn">import</span> <span class="nn">grpc</span>
-<span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_common</span><span class="p">,</span> <span class="n">_compression</span><span class="p">,</span> <span class="n">_grpcio_metadata</span>
+<span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_common</span>
+<span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_compression</span>
+<span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_grpcio_metadata</span>
 <span class="kn">from</span> <span class="nn">grpc._cython</span> <span class="kn">import</span> <span class="n">cygrpc</span>
 
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">_base_call</span><span class="p">,</span> <span class="n">_base_channel</span>
-<span class="kn">from</span> <span class="nn">._call</span> <span class="kn">import</span> <span class="p">(</span><span class="n">StreamStreamCall</span><span class="p">,</span> <span class="n">StreamUnaryCall</span><span class="p">,</span> <span class="n">UnaryStreamCall</span><span class="p">,</span>
-                    <span class="n">UnaryUnaryCall</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">._interceptor</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">InterceptedUnaryUnaryCall</span><span class="p">,</span> <span class="n">InterceptedUnaryStreamCall</span><span class="p">,</span>
-    <span class="n">InterceptedStreamUnaryCall</span><span class="p">,</span> <span class="n">InterceptedStreamStreamCall</span><span class="p">,</span> <span class="n">ClientInterceptor</span><span class="p">,</span>
-    <span class="n">UnaryUnaryClientInterceptor</span><span class="p">,</span> <span class="n">UnaryStreamClientInterceptor</span><span class="p">,</span>
-    <span class="n">StreamUnaryClientInterceptor</span><span class="p">,</span> <span class="n">StreamStreamClientInterceptor</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">_base_call</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">_base_channel</span>
+<span class="kn">from</span> <span class="nn">._call</span> <span class="kn">import</span> <span class="n">StreamStreamCall</span>
+<span class="kn">from</span> <span class="nn">._call</span> <span class="kn">import</span> <span class="n">StreamUnaryCall</span>
+<span class="kn">from</span> <span class="nn">._call</span> <span class="kn">import</span> <span class="n">UnaryStreamCall</span>
+<span class="kn">from</span> <span class="nn">._call</span> <span class="kn">import</span> <span class="n">UnaryUnaryCall</span>
+<span class="kn">from</span> <span class="nn">._interceptor</span> <span class="kn">import</span> <span class="n">ClientInterceptor</span>
+<span class="kn">from</span> <span class="nn">._interceptor</span> <span class="kn">import</span> <span class="n">InterceptedStreamStreamCall</span>
+<span class="kn">from</span> <span class="nn">._interceptor</span> <span class="kn">import</span> <span class="n">InterceptedStreamUnaryCall</span>
+<span class="kn">from</span> <span class="nn">._interceptor</span> <span class="kn">import</span> <span class="n">InterceptedUnaryStreamCall</span>
+<span class="kn">from</span> <span class="nn">._interceptor</span> <span class="kn">import</span> <span class="n">InterceptedUnaryUnaryCall</span>
+<span class="kn">from</span> <span class="nn">._interceptor</span> <span class="kn">import</span> <span class="n">StreamStreamClientInterceptor</span>
+<span class="kn">from</span> <span class="nn">._interceptor</span> <span class="kn">import</span> <span class="n">StreamUnaryClientInterceptor</span>
+<span class="kn">from</span> <span class="nn">._interceptor</span> <span class="kn">import</span> <span class="n">UnaryStreamClientInterceptor</span>
+<span class="kn">from</span> <span class="nn">._interceptor</span> <span class="kn">import</span> <span class="n">UnaryUnaryClientInterceptor</span>
 <span class="kn">from</span> <span class="nn">._metadata</span> <span class="kn">import</span> <span class="n">Metadata</span>
-<span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="p">(</span><span class="n">ChannelArgumentType</span><span class="p">,</span> <span class="n">DeserializingFunction</span><span class="p">,</span>
-                      <span class="n">SerializingFunction</span><span class="p">,</span> <span class="n">RequestIterableType</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="n">ChannelArgumentType</span>
+<span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="n">DeserializingFunction</span>
+<span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="n">RequestIterableType</span>
+<span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="n">SerializingFunction</span>
 <span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_timeout_to_deadline</span>
 
 <span class="n">_USER_AGENT</span> <span class="o">=</span> <span class="s1">&#39;grpc-python-asyncio/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_grpcio_metadata</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>

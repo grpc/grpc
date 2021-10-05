@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">16.0.0</span>
+   &#160;<span id="projectnumber">19.0.0</span>
    </div>
   </td>
  </tr>
@@ -91,15 +91,17 @@ $(function() {
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#ifndef GRPC_IMPL_CODEGEN_FORK_H</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#define GRPC_IMPL_CODEGEN_FORK_H</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keywordtype">void</span> <a class="code" href="impl_2codegen_2fork_8h.html#a450c01a1187f69112a22058bf690e2a0">grpc_prefork</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keywordtype">void</span> <a class="code" href="impl_2codegen_2fork_8h.html#aa8c18e7610bc7a87aff916d56ef19e0b">grpc_postfork_parent</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">// IWYU pragma: private, include &lt;grpc/fork.h&gt;</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keywordtype">void</span> <a class="code" href="impl_2codegen_2fork_8h.html#a450c01a1187f69112a22058bf690e2a0">grpc_prefork</a>(<span class="keywordtype">void</span>);</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="keywordtype">void</span> <a class="code" href="impl_2codegen_2fork_8h.html#aa05d1f5928dfcfe76a733f1dcfdc2ff3">grpc_postfork_child</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="keywordtype">void</span> <a class="code" href="impl_2codegen_2fork_8h.html#aa8c18e7610bc7a87aff916d56ef19e0b">grpc_postfork_parent</a>(<span class="keywordtype">void</span>);</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keywordtype">void</span> <a class="code" href="impl_2codegen_2fork_8h.html#af297152d9157a027414989e892531fc0">grpc_fork_handlers_auto_register</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keywordtype">void</span> <a class="code" href="impl_2codegen_2fork_8h.html#aa05d1f5928dfcfe76a733f1dcfdc2ff3">grpc_postfork_child</a>(<span class="keywordtype">void</span>);</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_FORK_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keywordtype">void</span> <a class="code" href="impl_2codegen_2fork_8h.html#af297152d9157a027414989e892531fc0">grpc_fork_handlers_auto_register</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_FORK_H */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aimpl_2codegen_2fork_8h_html_af297152d9157a027414989e892531fc0"><div class="ttname"><a href="impl_2codegen_2fork_8h.html#af297152d9157a027414989e892531fc0">grpc_fork_handlers_auto_register</a></div><div class="ttdeci">void grpc_fork_handlers_auto_register(void)</div></div>
 <div class="ttc" id="aimpl_2codegen_2fork_8h_html_aa05d1f5928dfcfe76a733f1dcfdc2ff3"><div class="ttname"><a href="impl_2codegen_2fork_8h.html#aa05d1f5928dfcfe76a733f1dcfdc2ff3">grpc_postfork_child</a></div><div class="ttdeci">void grpc_postfork_child(void)</div></div>
@@ -107,7 +109,7 @@ $(function() {
 <div class="ttc" id="aimpl_2codegen_2fork_8h_html_a450c01a1187f69112a22058bf690e2a0"><div class="ttname"><a href="impl_2codegen_2fork_8h.html#a450c01a1187f69112a22058bf690e2a0">grpc_prefork</a></div><div class="ttdeci">void grpc_prefork(void)</div><div class="ttdoc">gRPC applications should call this before calling fork().</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:45 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

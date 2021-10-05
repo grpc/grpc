@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -67,7 +67,6 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-methods">Public Member Functions</a>  </div>
   <div class="headertitle">
 <div class="title">grpc::Alarm Class Reference</div>  </div>
@@ -76,12 +75,6 @@ $(function() {
 
 <p><code>#include &lt;<a class="el" href="grpcpp_2alarm_8h_source.html">alarm.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
-Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_alarm_1_1experimental__type.html">experimental_type</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">NOTE: class <a class="el" href="classgrpc_1_1_alarm_1_1experimental__type.html" title="NOTE: class experimental_type is not part of the public API of this class TODO(vjpai): Move these con...">experimental_type</a> is not part of the public API of this class TODO(vjpai): Move these contents to the public API of <a class="el" href="classgrpc_1_1_alarm.html">Alarm</a> when they are no longer experimental.  <a href="classgrpc_1_1_alarm_1_1experimental__type.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a49ce7f2934d753389bd192574c509302"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_alarm.html#a49ce7f2934d753389bd192574c509302">Alarm</a> ()</td></tr>
@@ -111,9 +104,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a57837c6b6d75f622c056b3050cf000fb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_alarm.html#a57837c6b6d75f622c056b3050cf000fb">Cancel</a> ()</td></tr>
 <tr class="memdesc:a57837c6b6d75f622c056b3050cf000fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cancel a completion queue alarm.  <a href="classgrpc_1_1_alarm.html#a57837c6b6d75f622c056b3050cf000fb">More...</a><br /></td></tr>
 <tr class="separator:a57837c6b6d75f622c056b3050cf000fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8077a15a877dc22b4e2138960b678ab7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_alarm_1_1experimental__type.html">experimental_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_alarm.html#a8077a15a877dc22b4e2138960b678ab7">experimental</a> ()</td></tr>
-<tr class="memdesc:a8077a15a877dc22b4e2138960b678ab7"><td class="mdescLeft">&#160;</td><td class="mdescRight">NOTE: The function <a class="el" href="classgrpc_1_1_alarm.html#a8077a15a877dc22b4e2138960b678ab7" title="NOTE: The function experimental() is not stable public API.">experimental()</a> is not stable public API.  <a href="classgrpc_1_1_alarm.html#a8077a15a877dc22b4e2138960b678ab7">More...</a><br /></td></tr>
-<tr class="separator:a8077a15a877dc22b4e2138960b678ab7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5b29185d7ce797eac4cb4b33e2ce4be2"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a5b29185d7ce797eac4cb4b33e2ce4be2"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_alarm.html#a5b29185d7ce797eac4cb4b33e2ce4be2">Set</a> (const T &amp;deadline, std::function&lt; void(bool)&gt; f)</td></tr>
+<tr class="memdesc:a5b29185d7ce797eac4cb4b33e2ce4be2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set an alarm to invoke callback <em>f</em>.  <a href="classgrpc_1_1_alarm.html#a5b29185d7ce797eac4cb4b33e2ce4be2">More...</a><br /></td></tr>
+<tr class="separator:a5b29185d7ce797eac4cb4b33e2ce4be2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a49ce7f2934d753389bd192574c509302"></a>
@@ -286,34 +280,6 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
-<a id="a8077a15a877dc22b4e2138960b678ab7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8077a15a877dc22b4e2138960b678ab7">&#9670;&nbsp;</a></span>experimental()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_alarm_1_1experimental__type.html">experimental_type</a> grpc::Alarm::experimental </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>NOTE: The function <a class="el" href="classgrpc_1_1_alarm.html#a8077a15a877dc22b4e2138960b678ab7" title="NOTE: The function experimental() is not stable public API.">experimental()</a> is not stable public API. </p>
-<p>It is a view to the experimental components of this class. It may be changed or removed at any time. </p>
-
-</div>
-</div>
 <a id="ac17293fbf6f3a256e743c55ce66eac00"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac17293fbf6f3a256e743c55ce66eac00">&#9670;&nbsp;</a></span>operator=() <span class="overload">[1/2]</span></h2>
 
@@ -367,7 +333,7 @@ template&lt;typename T &gt; </div>
 </div>
 </div>
 <a id="abb9d93f77976356ddf8b79963be2c110"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abb9d93f77976356ddf8b79963be2c110">&#9670;&nbsp;</a></span>Set()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#abb9d93f77976356ddf8b79963be2c110">&#9670;&nbsp;</a></span>Set() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -413,13 +379,54 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
+<a id="a5b29185d7ce797eac4cb4b33e2ce4be2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5b29185d7ce797eac4cb4b33e2ce4be2">&#9670;&nbsp;</a></span>Set() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::Alarm::Set </td>
+          <td>(</td>
+          <td class="paramtype">const T &amp;&#160;</td>
+          <td class="paramname"><em>deadline</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::function&lt; void(bool)&gt;&#160;</td>
+          <td class="paramname"><em>f</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Set an alarm to invoke callback <em>f</em>. </p>
+<p>The argument to the callback states whether the alarm expired at <em>deadline</em> (true) or was cancelled (false) </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpcpp/<a class="el" href="grpcpp_2alarm_8h_source.html">alarm.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -161,6 +161,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a01715acec890fe4ddc91340bae5ead8c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a01715acec890fe4ddc91340bae5ead8c">EnableWorkaround</a> (<a class="el" href="workaround__list_8h.html#ade8be35fce7415c7234ac22d8b9ad9d2">grpc_workaround_list</a> id)</td></tr>
 <tr class="memdesc:a01715acec890fe4ddc91340bae5ead8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable a server workaround.  <a href="classgrpc_1_1_server_builder.html#a01715acec890fe4ddc91340bae5ead8c">More...</a><br /></td></tr>
 <tr class="separator:a01715acec890fe4ddc91340bae5ead8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad4b67b37b9e35881a680e1f70d400d03"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#ad4b67b37b9e35881a680e1f70d400d03">SetContextAllocator</a> (std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_context_allocator.html">grpc::ContextAllocator</a> &gt; context_allocator)</td></tr>
+<tr class="memdesc:ad4b67b37b9e35881a680e1f70d400d03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the allocator for creating and releasing callback server context.  <a href="classgrpc_1_1_server_builder.html#ad4b67b37b9e35881a680e1f70d400d03">More...</a><br /></td></tr>
+<tr class="separator:ad4b67b37b9e35881a680e1f70d400d03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a82e11c6cef547eb9a4f37a903dab145d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a82e11c6cef547eb9a4f37a903dab145d">RegisterCallbackGenericService</a> (<a class="el" href="classgrpc_1_1_callback_generic_service.html">grpc::CallbackGenericService</a> *service)</td></tr>
+<tr class="memdesc:a82e11c6cef547eb9a4f37a903dab145d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a generic service that uses the callback API.  <a href="classgrpc_1_1_server_builder.html#a82e11c6cef547eb9a4f37a903dab145d">More...</a><br /></td></tr>
+<tr class="separator:a82e11c6cef547eb9a4f37a903dab145d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a25f9ef23ff134f22db3bd969118a7cad"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder_1_1experimental__type.html">experimental_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a25f9ef23ff134f22db3bd969118a7cad">experimental</a> ()</td></tr>
 <tr class="memdesc:a25f9ef23ff134f22db3bd969118a7cad"><td class="mdescLeft">&#160;</td><td class="mdescRight">NOTE: The function <a class="el" href="classgrpc_1_1_server_builder.html#a25f9ef23ff134f22db3bd969118a7cad" title="NOTE: The function experimental() is not stable public API.">experimental()</a> is not stable public API.  <a href="classgrpc_1_1_server_builder.html#a25f9ef23ff134f22db3bd969118a7cad">More...</a><br /></td></tr>
 <tr class="separator:a25f9ef23ff134f22db3bd969118a7cad"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -404,7 +410,7 @@ template&lt;class T &gt; </div>
 <p>It can be invoked multiple times.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir"></td><td class="paramname">addr_uri</td><td>The address to try to bind to the server in URI form. If the scheme name is omitted, "dns:///" is assumed. To bind to any address, please use IPv6 any, i.e., [::]:&lt;port&gt;, which also accepts IPv4 connections. Valid values include dns:///localhost:1234, / 192.168.1.1:31416, dns:///[::1]:27182, etc.). </td></tr>
+    <tr><td class="paramdir"></td><td class="paramname">addr_uri</td><td>The address to try to bind to the server in URI form. If the scheme name is omitted, "dns:///" is assumed. To bind to any address, please use IPv6 any, i.e., [::]:&lt;port&gt;, which also accepts IPv4 connections. Valid values include dns:///localhost:1234, 192.168.1.1:31416, dns:///[::1]:27182, etc. </td></tr>
     <tr><td class="paramdir"></td><td class="paramname">creds</td><td>The credentials associated with the server. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">selected_port</td><td>If not <code>nullptr</code>, gets populated with the port number bound to the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server.">grpc::Server</a></em> for the corresponding endpoint after it is successfully bound by <a class="el" href="classgrpc_1_1_server_builder.html#a3ad1429e6575de79f8f17dad383fbc04" title="Return a running server which is ready for processing calls.">BuildAndStart()</a>, 0 otherwise. AddListeningPort does not modify this pointer. </td></tr>
   </table>
@@ -625,6 +631,27 @@ template&lt;class T &gt; </div>
 
 </div>
 </div>
+<a id="a82e11c6cef547eb9a4f37a903dab145d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a82e11c6cef547eb9a4f37a903dab145d">&#9670;&nbsp;</a></span>RegisterCallbackGenericService()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a>&amp; grpc::ServerBuilder::RegisterCallbackGenericService </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_callback_generic_service.html">grpc::CallbackGenericService</a> *&#160;</td>
+          <td class="paramname"><em>service</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Register a generic service that uses the callback API. </p>
+<p>Matches requests with any :authority This is mostly useful for writing generic gRPC Proxies where the exact serialization format is unknown </p>
+
+</div>
+</div>
 <a id="a36746c5eb8dd6bd046dab42a623b6260"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a36746c5eb8dd6bd046dab42a623b6260">&#9670;&nbsp;</a></span>RegisterService() <span class="overload">[1/2]</span></h2>
 
@@ -761,6 +788,27 @@ template&lt;class T &gt; </div>
 <p>Set the support status for compression algorithms. </p>
 <p>All algorithms are enabled by default.</p>
 <p>Incoming calls compressed with an unsupported algorithm will fail with <em>GRPC_STATUS_UNIMPLEMENTED</em>. </p>
+
+</div>
+</div>
+<a id="ad4b67b37b9e35881a680e1f70d400d03"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad4b67b37b9e35881a680e1f70d400d03">&#9670;&nbsp;</a></span>SetContextAllocator()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a>&amp; grpc::ServerBuilder::SetContextAllocator </td>
+          <td>(</td>
+          <td class="paramtype">std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_context_allocator.html">grpc::ContextAllocator</a> &gt;&#160;</td>
+          <td class="paramname"><em>context_allocator</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the allocator for creating and releasing callback server context. </p>
+<p>Takes the owndership of the allocator. </p>
 
 </div>
 </div>
@@ -1030,7 +1078,7 @@ template&lt;class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

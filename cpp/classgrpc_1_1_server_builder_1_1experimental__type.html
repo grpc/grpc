@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -91,15 +91,12 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aa0a480a570ad360f9353d6db0b05ee07"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a186259672778c70b9fffb1e6f753d17c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_1_1experimental__type.html#a186259672778c70b9fffb1e6f753d17c">SetInterceptorCreators</a> (std::vector&lt; std::unique_ptr&lt; <a class="el" href="classgrpc_1_1experimental_1_1_server_interceptor_factory_interface.html">grpc::experimental::ServerInterceptorFactoryInterface</a> &gt;&gt; interceptor_creators)</td></tr>
 <tr class="separator:a186259672778c70b9fffb1e6f753d17c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0a1ab9751051802301cd9af88bbd4935"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_1_1experimental__type.html#a0a1ab9751051802301cd9af88bbd4935">SetContextAllocator</a> (std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_context_allocator.html">grpc::ContextAllocator</a> &gt; context_allocator)</td></tr>
-<tr class="memdesc:a0a1ab9751051802301cd9af88bbd4935"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the allocator for creating and releasing callback server context.  <a href="classgrpc_1_1_server_builder_1_1experimental__type.html#a0a1ab9751051802301cd9af88bbd4935">More...</a><br /></td></tr>
-<tr class="separator:a0a1ab9751051802301cd9af88bbd4935"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa0dfb6068003cdc94d0cde50ffdf9a55"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_1_1experimental__type.html#aa0dfb6068003cdc94d0cde50ffdf9a55">RegisterCallbackGenericService</a> (<a class="el" href="classgrpc_1_1experimental_1_1_callback_generic_service.html">grpc::experimental::CallbackGenericService</a> *service)</td></tr>
-<tr class="memdesc:aa0dfb6068003cdc94d0cde50ffdf9a55"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a generic service that uses the callback API.  <a href="classgrpc_1_1_server_builder_1_1experimental__type.html#aa0dfb6068003cdc94d0cde50ffdf9a55">More...</a><br /></td></tr>
-<tr class="separator:aa0dfb6068003cdc94d0cde50ffdf9a55"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaa49e0cc8442d718c15a291f77173bf2"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classgrpc_1_1experimental_1_1_external_connection_acceptor.html">grpc::experimental::ExternalConnectionAcceptor</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_1_1experimental__type.html#aaa49e0cc8442d718c15a291f77173bf2">AddExternalConnectionAcceptor</a> (<a class="el" href="classgrpc_1_1_server_builder_1_1experimental__type.html#aa540de9e554cad2244c22302c58c6006">ExternalConnectionType</a> type, std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt; creds)</td></tr>
 <tr class="memdesc:aaa49e0cc8442d718c15a291f77173bf2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register an acceptor to handle the externally accepted connection in grpc server.  <a href="classgrpc_1_1_server_builder_1_1experimental__type.html#aaa49e0cc8442d718c15a291f77173bf2">More...</a><br /></td></tr>
 <tr class="separator:aaa49e0cc8442d718c15a291f77173bf2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb87869ec15ae743c7cb36ac864fb94c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_1_1experimental__type.html#afb87869ec15ae743c7cb36ac864fb94c">SetAuthorizationPolicyProvider</a> (std::shared_ptr&lt; <a class="el" href="classgrpc_1_1experimental_1_1_authorization_policy_provider_interface.html">experimental::AuthorizationPolicyProviderInterface</a> &gt; provider)</td></tr>
+<tr class="memdesc:afb87869ec15ae743c7cb36ac864fb94c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets server authorization policy provider in GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER channel argument.  <a href="classgrpc_1_1_server_builder_1_1experimental__type.html#afb87869ec15ae743c7cb36ac864fb94c">More...</a><br /></td></tr>
+<tr class="separator:afb87869ec15ae743c7cb36ac864fb94c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>NOTE: class <a class="el" href="classgrpc_1_1_server_builder_1_1experimental__type.html" title="NOTE: class experimental_type is not part of the public API of this class.">experimental_type</a> is not part of the public API of this class. </p>
@@ -189,45 +186,23 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="aa0dfb6068003cdc94d0cde50ffdf9a55"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa0dfb6068003cdc94d0cde50ffdf9a55">&#9670;&nbsp;</a></span>RegisterCallbackGenericService()</h2>
+<a id="afb87869ec15ae743c7cb36ac864fb94c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afb87869ec15ae743c7cb36ac864fb94c">&#9670;&nbsp;</a></span>SetAuthorizationPolicyProvider()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a>&amp; grpc::ServerBuilder::experimental_type::RegisterCallbackGenericService </td>
+          <td class="memname">void grpc::ServerBuilder::experimental_type::SetAuthorizationPolicyProvider </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1experimental_1_1_callback_generic_service.html">grpc::experimental::CallbackGenericService</a> *&#160;</td>
-          <td class="paramname"><em>service</em></td><td>)</td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1experimental_1_1_authorization_policy_provider_interface.html">experimental::AuthorizationPolicyProviderInterface</a> &gt;&#160;</td>
+          <td class="paramname"><em>provider</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Register a generic service that uses the callback API. </p>
-<p>Matches requests with any :authority This is mostly useful for writing generic gRPC Proxies where the exact serialization format is unknown </p>
-
-</div>
-</div>
-<a id="a0a1ab9751051802301cd9af88bbd4935"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0a1ab9751051802301cd9af88bbd4935">&#9670;&nbsp;</a></span>SetContextAllocator()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a>&amp; grpc::ServerBuilder::experimental_type::SetContextAllocator </td>
-          <td>(</td>
-          <td class="paramtype">std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_context_allocator.html">grpc::ContextAllocator</a> &gt;&#160;</td>
-          <td class="paramname"><em>context_allocator</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Set the allocator for creating and releasing callback server context. </p>
-<p>Takes the owndership of the allocator. </p>
+<p>Sets server authorization policy provider in GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER channel argument. </p>
 
 </div>
 </div>
@@ -263,7 +238,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

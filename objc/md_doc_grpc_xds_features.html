@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -67,7 +67,8 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>This document lists the <a href="https://github.com/envoyproxy/data-plane-api/tree/master/envoy/api/v2">xDS</a> features supported in various gRPC language implementations and versions.</p>
-<p>Note that a gRPC client will simply ignore the configuration of a feature it does not support. The gRPC client does not generate a log to indicate that some configuration was ignored. It is impractical to generate a log and keep it up-to-date because xDS has a large number of APIs that gRPC does not support and the APIs keep evolving too. We recommend reading the <a href="https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md">first gRFC</a> on xDS support in gRPC to understand the design philosophy.</p>
+<p>Note that a gRPC client will simply ignore the configuration of a feature it does not support. The gRPC client does not generate a log to indicate that some configuration was ignored. It is impractical to generate a log and keep it up-to-date because xDS has a large number of APIs that gRPC does not support and the APIs keep evolving too. In the case where an xDS field corresponding to a feature is supported but the value configured for that field is not supported, a gRPC client will NACK such a configuration. We recommend reading the <a href="https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md">first gRFC</a> on xDS support in gRPC to understand the design philosophy.</p>
+<p>Not all cluster load balancing policies are supported. A gRPC client will NACK the configuration that contains unsupported cluster load balancing policy. This will cause all cluster configurations to be rejected by the client because the xDS protocol currently requires rejecting all resources in a given response, rather than being able to reject only an individual resource from the response. Due to this limitation, you must ensure that all clients support the required cluster load balancing policy before configuring that policy for a service. For example, if you change the ROUND_ROBIN policy to RING_HASH, you must ensure that all the clients are upgraded to a version that supports RING_HASH.</p>
 <p>The EDS policy will <em>not</em> support <a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/overprovisioning">overprovisioning</a>, which is different from Envoy. Envoy takes the overprovisioning into account in both <a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/locality_weight">locality-weighted load balancing</a> and <a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/priority">priority failover</a>, but gRPC assumes that the xDS server will update it to redirect traffic when this kind of graceful failover is needed. gRPC will send the <a href="https://github.com/envoyproxy/envoy/pull/10136"><code>envoy.lb.does_not_support_overprovisioning</code> client feature</a> to the xDS server to tell the xDS server that it will not perform graceful failover; xDS server implementations may use this to decide whether to perform graceful failover themselves.</p>
 <p>The EDS policy will not support per-endpoint stats; it will report only per-locality stats.</p>
 <p>An <a href="https://github.com/envoyproxy/envoy/blob/12a4bc430eaf440ceb0d11286cfbd4c16b79cdd1/api/envoy/api/v2/endpoint/endpoint_components.proto#L72"><code>lb_endpoint</code></a> is ignored if the <code>health_status</code> is not HEALTHY or UNKNOWN. The optional <code>load_balancing_weight</code> is always ignored.</p>
@@ -125,13 +126,13 @@ Request routing to multiple clusters based on <a href="https://www.envoyproxy.io
 <li>
 Only max_stream_duration is supported.</li>
 </ul>
-</td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A31-xds-timeout-support-and-config-selector.md">A31</a> </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone"></td></tr>
+</td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A31-xds-timeout-support-and-config-selector.md">A31</a> </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/circuit_breaker.proto">Circuit Breaking</a>:<ul>
 <li>
 Only max_requests is supported.</li>
 </ul>
-</td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A32-xds-circuit-breaking.md">A32</a> </td><td class="markdownTableBodyNone">v1.37.1 (N/A for PHP) </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone"></td></tr>
+</td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A32-xds-circuit-breaking.md">A32</a> </td><td class="markdownTableBodyNone">v1.37.1 (N/A for PHP) </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/fault/v3/fault.proto">Fault Injection</a>:<br  />
  Only the following fields are supported:<ul>
@@ -144,15 +145,33 @@ max_active_faults</li>
 <li>
 headers</li>
 </ul>
-</td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A33-Fault-Injection.md">A33</a> </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone"></td></tr>
+</td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A33-Fault-Injection.md">A33</a> </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><a href="https://github.com/envoyproxy/envoy/blob/main/api/envoy/service/status/v3/csds.proto">Client Status Discovery Service</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A40-csds-support.md">A40</a> </td><td class="markdownTableBodyNone">v1.37.1 (Only C++) </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone"></td></tr>
+<td class="markdownTableBodyNone"><a href="https://github.com/envoyproxy/envoy/blob/main/api/envoy/service/status/v3/csds.proto">Client Status Discovery Service</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A40-csds-support.md">A40</a> </td><td class="markdownTableBodyNone">v1.37.1 (C++)<br  />
+v1.38.0 (Python) </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone"></td></tr>
 </table>
+<p><a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/load_balancers#ring-hash">Ring hash</a> load balancing policy:<br  />
+ Only the following <a href="https://github.com/envoyproxy/envoy/blob/2443032526cf6e50d63d35770df9473dd0460fc0/api/envoy/config/route/v3/route_components.proto#L706">policy specifiers</a> are supported:</p><ul>
+<li>
+header</li>
+<li>
+filter_state with key <code>io.grpc.channel_id</code></li>
+</ul>
+<p>Only <a href="https://github.com/envoyproxy/envoy/blob/2443032526cf6e50d63d35770df9473dd0460fc0/api/envoy/config/cluster/v3/cluster.proto#L383"><code>XX_HASH</code></a> function is supported. | <a href="https://github.com/grpc/proposal/blob/master/A42-xds-ring-hash-lb-policy.md">A42</a> | v1.40.0 | v1.40.1 | | <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-retrypolicy">Retry</a>:<br  />
+Only the following fields are supported:</p><ul>
+<li>
+retry_on for the following conditions: cancelled, deadline-exceeded, internal, resource-exhausted, and unavailable.</li>
+<li>
+num_retries</li>
+<li>
+retry_back_off</li>
+</ul>
+<p>| <a href="https://github.com/grpc/proposal/blob/master/A44-xds-retry.md">A44</a> | v1.40.0 | v1.40.1 | | | </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:58:19 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:34 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

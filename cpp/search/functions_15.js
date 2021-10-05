@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['xdscredentials_3457',['XdsCredentials',['../namespacegrpc_1_1experimental.html#a9c55f91536c2fbefcd8f8bea1db7125d',1,'grpc::experimental']]],
-  ['xdsservercredentials_3458',['XdsServerCredentials',['../namespacegrpc_1_1experimental.html#a7317b5a2aba8ba9b1126d39609e7da58',1,'grpc::experimental']]]
+  ['xdscredentials_3496',['XdsCredentials',['../namespacegrpc.html#a4dd034a2ba240d4fea11818160238c40',1,'grpc']]],
+  ['xdsservercredentials_3497',['XdsServerCredentials',['../namespacegrpc.html#a061a0ee874c4aa28a233ca4abe040fdc',1,'grpc']]]
 ];
