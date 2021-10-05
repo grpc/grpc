@@ -18,6 +18,8 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 grpc_package(name = "test/core/promise/benchmark")
 
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_benchmark_args")
+
 grpc_cc_test(
     name = "competition",
     srcs = [
@@ -25,6 +27,7 @@ grpc_cc_test(
         "filter_stack.cc",
         "filter_stack.h",
     ],
+    args = grpc_benchmark_args(),
     external_deps = [
         "benchmark",
         "absl/synchronization",
