@@ -34,6 +34,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 
+#ifdef GRPC_INCLUDE_STATS_MODULE
 grpc_stats_data* grpc_stats_per_cpu_storage = nullptr;
 static size_t g_num_cores;
 
@@ -170,3 +171,8 @@ std::string grpc_stats_data_as_json(const grpc_stats_data* data) {
   parts.push_back("}");
   return absl::StrJoin(parts, "");
 }
+#else
+void grpc_stats_init(void) {}
+void grpc_stats_shutdown(void) {}
+#endif
+
