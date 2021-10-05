@@ -551,7 +551,7 @@ grpc_cc_test(
         "gtest",
     ],
     flaky = True,  # TODO(b/144705388)
-    shard_count = 20,
+    shard_count = 50,
     tags = [
         "no_test_ios",
         "no_windows",

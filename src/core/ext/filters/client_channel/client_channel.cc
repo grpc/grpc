@@ -456,15 +456,17 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
               chand, this, subchannel_.get());
     }
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "SubchannelWrapper");
-    auto* subchannel_node = subchannel_->channelz_node();
-    if (subchannel_node != nullptr) {
-      auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
-      if (it == chand_->subchannel_refcount_map_.end()) {
-        chand_->channelz_node_->AddChildSubchannel(subchannel_node->uuid());
-        it = chand_->subchannel_refcount_map_.emplace(subchannel_.get(), 0)
-                 .first;
+    if (chand_->channelz_node_ != nullptr) {
+      auto* subchannel_node = subchannel_->channelz_node();
+      if (subchannel_node != nullptr) {
+        auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
+        if (it == chand_->subchannel_refcount_map_.end()) {
+          chand_->channelz_node_->AddChildSubchannel(subchannel_node->uuid());
+          it = chand_->subchannel_refcount_map_.emplace(subchannel_.get(), 0)
+                   .first;
+        }
+        ++it->second;
       }
-      ++it->second;
     }
     chand_->subchannel_wrappers_.insert(this);
   }
@@ -476,14 +478,17 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
               chand_, this, subchannel_.get());
     }
     chand_->subchannel_wrappers_.erase(this);
-    auto* subchannel_node = subchannel_->channelz_node();
-    if (subchannel_node != nullptr) {
-      auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
-      GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
-      --it->second;
-      if (it->second == 0) {
-        chand_->channelz_node_->RemoveChildSubchannel(subchannel_node->uuid());
-        chand_->subchannel_refcount_map_.erase(it);
+    if (chand_->channelz_node_ != nullptr) {
+      auto* subchannel_node = subchannel_->channelz_node();
+      if (subchannel_node != nullptr) {
+        auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
+        GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
+        --it->second;
+        if (it->second == 0) {
+          chand_->channelz_node_->RemoveChildSubchannel(
+              subchannel_node->uuid());
+          chand_->subchannel_refcount_map_.erase(it);
+        }
       }
     }
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
