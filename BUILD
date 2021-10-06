@@ -365,7 +365,6 @@ grpc_cc_library(
         "grpc_trace",
         "slice",
     ],
-    alwayslink = True,
 )
 
 grpc_cc_library(
