@@ -71,7 +71,7 @@ The `pick_first` policy takes a list of addresses from the resolver.  It
 attempts to connect to those addresses one at a time, in order, until it
 finds one that is reachable.  If none of the addresses are reachable, it
 sets the channel's state to TRANSIENT_FAILURE while it attempts to
-reconnect.  Appropriate [backoff](connection-backoff.md) is applies for
+reconnect.  Appropriate [backoff](connection-backoff.md) is applied for
 repeated connection attempts.
 
 If it is able to connect to one of the addresses, it sets the channel's
@@ -96,11 +96,12 @@ appropriate connection [backoff](connection-backoff.md).
 The policy sets the channel's connectivity state by aggregating the
 states of the subchannels:
 - If any one subchannel is in READY state, the channel's state is READY.
-- If there is any subchannel in state CONNECTING, the channel's state is
-  CONNECTING.
-- If there is any subchannel in state IDLE, the channel's state is IDLE.
-- If all subchannels are in state TRANSIENT_FAILURE, the channel's state
-  is TRANSIENT_FAILURE.
+- Otherwise, if there is any subchannel in state CONNECTING, the channel's
+  state is CONNECTING.
+- Otherwise, if there is any subchannel in state IDLE, the channel's state is
+  IDLE.
+- Otherwise, if all subchannels are in state TRANSIENT_FAILURE, the channel's
+  state is TRANSIENT_FAILURE.
 
 Note that when a given subchannel reports TRANSIENT_FAILURE, it is
 considered to still be in TRANSIENT_FAILURE until it successfully
