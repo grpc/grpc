@@ -415,10 +415,11 @@ void StatusFreeHeapPtr(uintptr_t ptr) {
 }
 
 absl::Status StatusGetFromHeapPtr(uintptr_t ptr) {
-  if (ptr == kOkStatusPtr)
+  if (ptr == kOkStatusPtr) {
     return absl::OkStatus();
-  else
+  } else {
     return *reinterpret_cast<absl::Status*>(ptr);
+  }
 }
 
 }  // namespace internal
