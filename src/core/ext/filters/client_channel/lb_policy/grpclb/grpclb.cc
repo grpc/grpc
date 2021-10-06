@@ -352,7 +352,6 @@ class GrpcLb : public LoadBalancingPolicy {
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
-    absl::string_view GetAuthority() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -729,10 +728,6 @@ void GrpcLb::Helper::RequestReresolution() {
       !parent_->lb_calld_->seen_initial_response()) {
     parent_->channel_control_helper()->RequestReresolution();
   }
-}
-
-absl::string_view GrpcLb::Helper::GetAuthority() {
-  return parent_->channel_control_helper()->GetAuthority();
 }
 
 void GrpcLb::Helper::AddTraceEvent(TraceSeverity severity,

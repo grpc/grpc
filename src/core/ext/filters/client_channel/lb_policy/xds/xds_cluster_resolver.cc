@@ -299,7 +299,6 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     // This is a no-op, because we get the addresses from the xds
     // client, which is a watch-based API.
     void RequestReresolution() override {}
-    absl::string_view GetAuthority() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -379,10 +378,6 @@ void XdsClusterResolverLb::Helper::UpdateState(
   }
   xds_cluster_resolver_policy_->channel_control_helper()->UpdateState(
       state, status, std::move(picker));
-}
-
-absl::string_view XdsClusterResolverLb::Helper::GetAuthority() {
-  return xds_cluster_resolver_policy_->channel_control_helper()->GetAuthority();
 }
 
 void XdsClusterResolverLb::Helper::AddTraceEvent(TraceSeverity severity,
