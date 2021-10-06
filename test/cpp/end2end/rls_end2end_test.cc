@@ -316,9 +316,9 @@ class RlsEnd2endTest : public ::testing::Test {
                                                   nullptr));
     call_creds->Unref();
     channel_creds->Unref();
-    auto channel = ::grpc::CreateCustomChannel(
+    channel_ = ::grpc::CreateCustomChannel(
         absl::StrCat("fake:///", kServerName).c_str(), std::move(creds), args);
-    stub_ = grpc::testing::EchoTestService::NewStub(std::move(channel));
+    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
   void ShutdownBackends() {
@@ -593,6 +593,7 @@ class RlsEnd2endTest : public ::testing::Test {
   std::unique_ptr<ServerThread<RlsServiceImpl>> rls_server_;
   std::unique_ptr<FakeResolverResponseGeneratorWrapper>
       resolver_response_generator_;
+  std::shared_ptr<grpc::Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
 };
 
@@ -1322,6 +1323,90 @@ TEST_F(RlsEnd2endTest, MultipleTargets) {
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
+}
+
+TEST_F(RlsEnd2endTest, ConnectivityStateReady) {
+  StartBackends(1);
+  SetNextResolution(
+      MakeServiceConfigBuilder()
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
+          .Build());
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(/*try_to_connect=*/false));
+  rls_server_->service_.SetResponse(
+      BuildRlsRequest({{kTestKey, kTestValue}}),
+      BuildRlsResponse(
+          // One target in TRANSIENT_FAILURE, the other in READY.
+          {"invalid_target", TargetStringForPort(backends_[0]->port_)}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
+  EXPECT_EQ(rls_server_->service_.request_count(), 1);
+  EXPECT_EQ(rls_server_->service_.response_count(), 1);
+  EXPECT_EQ(backends_[0]->service_.request_count(), 1);
+  EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(/*try_to_connect=*/false));
+}
+
+TEST_F(RlsEnd2endTest, ConnectivityStateIdle) {
+  SetNextResolution(
+      MakeServiceConfigBuilder()
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
+          .Build());
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(/*try_to_connect=*/false));
+  // RLS server not given any responses, so the request will fail.
+  CheckRpcSendFailure(DEBUG_LOCATION);
+  // No child policies, so should be IDLE.
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(/*try_to_connect=*/false));
+}
+
+TEST_F(RlsEnd2endTest, ConnectivityStateTransientFailure) {
+  SetNextResolution(
+      MakeServiceConfigBuilder()
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
+          .Build());
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(/*try_to_connect=*/false));
+  rls_server_->service_.SetResponse(BuildRlsRequest({{kTestKey, kTestValue}}),
+                                    BuildRlsResponse({"invalid_target"}));
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  EXPECT_EQ(rls_server_->service_.request_count(), 1);
+  EXPECT_EQ(rls_server_->service_.response_count(), 1);
+  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE,
+            channel_->GetState(/*try_to_connect=*/false));
 }
 
 TEST_F(RlsEnd2endTest, RlsAuthorityDeathTest) {

@@ -225,10 +225,7 @@ class RlsLb : public LoadBalancingPolicy {
   // Wraps a child policy for a given RLS target.
   class ChildPolicyWrapper : public DualRefCounted<ChildPolicyWrapper> {
    public:
-    ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy, std::string target)
-        : lb_policy_(lb_policy),
-          target_(std::move(target)),
-          picker_(absl::make_unique<QueuePicker>(std::move(lb_policy))) {}
+    ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy, std::string target);
 
     // Note: We are forced to disable lock analysis here because
     // Orphan() is called by OrphanablePtr<>, which cannot have lock
@@ -679,12 +676,21 @@ class RlsLb : public LoadBalancingPolicy {
 // RlsLb::ChildPolicyWrapper
 //
 
+RlsLb::ChildPolicyWrapper::ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy,
+                                              std::string target)
+    : lb_policy_(lb_policy),
+      target_(std::move(target)),
+      picker_(absl::make_unique<QueuePicker>(std::move(lb_policy))) {
+  lb_policy_->child_policy_map_.emplace(target_, this);
+}
+
 void RlsLb::ChildPolicyWrapper::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] ChildPolicyWrapper=%p [%s]: shutdown",
             lb_policy_.get(), this, target_.c_str());
   }
   is_shutdown_ = true;
+  lb_policy_->child_policy_map_.erase(target_);
   if (child_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
                                      lb_policy_->interested_parties());
@@ -1974,32 +1980,44 @@ void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle /*error*/) {
 
 void RlsLb::UpdatePickerLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-    gpr_log(GPR_INFO, "[rlslb %p] update picker", this);
+    gpr_log(GPR_INFO, "[rlslb %p] updating picker", this);
   }
-  grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
-  int num_idle = 0;
-  int num_connecting = 0;
-  {
-    MutexLock lock(&mu_);
-    if (is_shutdown_) return;
-    for (auto& p : child_policy_map_) {
-      grpc_connectivity_state child_state = p.second->connectivity_state();
-      if (child_state == GRPC_CHANNEL_READY) {
-        state = GRPC_CHANNEL_READY;
-        break;
-      } else if (child_state == GRPC_CHANNEL_CONNECTING) {
-        ++num_connecting;
-      } else if (child_state == GRPC_CHANNEL_IDLE) {
-        ++num_idle;
+  grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
+  if (!child_policy_map_.empty()) {
+    state = GRPC_CHANNEL_TRANSIENT_FAILURE;
+    int num_idle = 0;
+    int num_connecting = 0;
+    {
+      MutexLock lock(&mu_);
+      if (is_shutdown_) return;
+      for (auto& p : child_policy_map_) {
+        grpc_connectivity_state child_state = p.second->connectivity_state();
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+          gpr_log(GPR_INFO, "[rlslb %p] target %s in state %s", this,
+                  p.second->target().c_str(),
+                  ConnectivityStateName(child_state));
+        }
+        if (child_state == GRPC_CHANNEL_READY) {
+          state = GRPC_CHANNEL_READY;
+          break;
+        } else if (child_state == GRPC_CHANNEL_CONNECTING) {
+          ++num_connecting;
+        } else if (child_state == GRPC_CHANNEL_IDLE) {
+          ++num_idle;
+        }
+      }
+      if (state != GRPC_CHANNEL_READY) {
+        if (num_connecting > 0) {
+          state = GRPC_CHANNEL_CONNECTING;
+        } else if (num_idle > 0) {
+          state = GRPC_CHANNEL_IDLE;
+        }
       }
     }
-    if (state != GRPC_CHANNEL_READY) {
-      if (num_connecting > 0) {
-        state = GRPC_CHANNEL_CONNECTING;
-      } else if (num_idle > 0) {
-        state = GRPC_CHANNEL_IDLE;
-      }
-    }
+  }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+    gpr_log(GPR_INFO, "[rlslb %p] reporting state %s", this,
+            ConnectivityStateName(state));
   }
   absl::Status status;
   if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
