@@ -486,9 +486,9 @@ grpc_cc_library(
         "grpc_base",
         "grpc_codegen",
         "grpc_secure",
+        "json",
         "ref_counted_ptr",
         "slice",
-        "json",
     ],
 )
 
@@ -1777,6 +1777,7 @@ grpc_cc_library(
         "gpr_tls",
         "grpc_codegen",
         "grpc_trace",
+        "json",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
@@ -1784,7 +1785,6 @@ grpc_cc_library(
         "slice_refcount",
         "table",
         "useful",
-        "json",
     ],
 )
 
@@ -1937,14 +1937,14 @@ grpc_cc_library(
         "grpc_health_upb",
         "grpc_trace",
         "handshaker_registry",
+        "json",
+        "json_util",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
         "slice",
         "udpa_orca_upb",
         "useful",
-        "json",
-        "json_util",
     ],
 )
 
@@ -2281,14 +2281,14 @@ grpc_cc_library(
         "grpc_matchers",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
+        "json",
+        "json_util",
         "orphanable",
         "ref_counted_ptr",
         "slice",
         "slice_refcount",
         "udpa_type_upb",
         "udpa_type_upbdefs",
-        "json",
-        "json_util",
     ],
 )
 
@@ -2325,8 +2325,8 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_xds_client",
-        "slice",
         "json_util",
+        "slice",
     ],
 )
 
@@ -2968,6 +2968,7 @@ grpc_cc_library(
         "grpc_lb_xds_channel_args",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
+        "json",
         "ref_counted",
         "ref_counted_ptr",
         "slice",
@@ -2975,7 +2976,6 @@ grpc_cc_library(
         "tsi",
         "tsi_interface",
         "useful",
-        "json",
     ],
 )
 
@@ -4859,10 +4859,11 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
-        "json",
         "gpr_base",
+        "json",
     ],
 )
+
 grpc_generate_one_off_targets()
 
 filegroup(
