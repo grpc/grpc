@@ -25,7 +25,7 @@ cc_library(
         "-Wl,--no-undefined",
     ],
     deps = [
-        # Temporarily directly depend on these targets before we expose a public API
+        # Temporarily directly depend on these targets before we expose a public API trigger CI
         "//src/core/ext/transport/binder/client:grpc_transport_binder_client",
         "//src/core/ext/transport/binder/security_policy:untrusted_security_policy",
         "//examples/protos:helloworld_cc_grpc",
