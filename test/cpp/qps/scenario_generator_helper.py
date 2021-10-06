@@ -50,6 +50,10 @@ def _mutate_scenario(scenario_json):
     scenario_json['warmup_seconds'] = 0
     scenario_json['benchmark_seconds'] = 1
     outstanding_rpcs_divisor = 1
+    if scenario_json['client_config'][
+            'client_type'] == 'SYNC_CLIENT' or scenario_json['server_config'][
+                'server_type'] == 'SYNC_SERVER':
+        outstanding_rpcs_divisor = 10
     scenario_json['client_config']['outstanding_rpcs_per_channel'] = max(
         1,
         int(scenario_json['client_config']['outstanding_rpcs_per_channel'] /
