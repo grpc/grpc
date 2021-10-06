@@ -488,7 +488,7 @@ grpc_cc_library(
         "grpc_secure",
         "ref_counted_ptr",
         "slice",
-        "//src/core/lib/json",
+        "json",
     ],
 )
 
@@ -1784,7 +1784,7 @@ grpc_cc_library(
         "slice_refcount",
         "table",
         "useful",
-        "//src/core/lib/json",
+        "json",
     ],
 )
 
@@ -1943,8 +1943,8 @@ grpc_cc_library(
         "slice",
         "udpa_orca_upb",
         "useful",
-        "//src/core/lib/json",
-        "//src/core/lib/json:util",
+        "json",
+        "json_util",
     ],
 )
 
@@ -2049,7 +2049,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
-        "//src/core/lib/json:util",
+        "json_util",
     ],
 )
 
@@ -2287,8 +2287,8 @@ grpc_cc_library(
         "slice_refcount",
         "udpa_type_upb",
         "udpa_type_upbdefs",
-        "//src/core/lib/json",
-        "//src/core/lib/json:util",
+        "json",
+        "json_util",
     ],
 )
 
@@ -2326,7 +2326,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_xds_client",
         "slice",
-        "//src/core/lib/json:util",
+        "json_util",
     ],
 )
 
@@ -2763,7 +2763,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_grpclb_balancer_addresses",
         "grpc_resolver_dns_selection",
-        "//src/core/lib/json",
+        "json",
     ],
 )
 
@@ -2975,7 +2975,7 @@ grpc_cc_library(
         "tsi",
         "tsi_interface",
         "useful",
-        "//src/core/lib/json",
+        "json",
     ],
 )
 
@@ -4831,6 +4831,38 @@ grpc_cc_library(
     language = "c++",
 )
 
+grpc_cc_library(
+    name = "json",
+    srcs = [
+        "src/core/lib/json/json_reader.cc",
+        "src/core/lib/json/json_writer.cc",
+    ],
+    hdrs = [
+        "src/core/lib/json/json.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "error",
+        "exec_ctx",
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "json_util",
+    srcs = ["src/core/lib/json/json_util.cc"],
+    hdrs = ["src/core/lib/json/json_util.h"],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "json",
+        "gpr_base",
+    ],
+)
 grpc_generate_one_off_targets()
 
 filegroup(
