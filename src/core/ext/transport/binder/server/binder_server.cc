@@ -92,9 +92,14 @@ namespace grpc_core {
 
 class BinderServerListener : public Server::ListenerInterface {
  public:
-  BinderServerListener(Server* server, std::string addr,
-                       BinderTxReceiverFactory factory)
-      : server_(server), addr_(std::move(addr)), factory_(std::move(factory)) {}
+  BinderServerListener(
+      Server* server, std::string addr, BinderTxReceiverFactory factory,
+      std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+          security_policy)
+      : server_(server),
+        addr_(std::move(addr)),
+        factory_(std::move(factory)),
+        security_policy_(security_policy) {}
 
   void Start(Server* /*server*/,
              const std::vector<grpc_pollset*>* /*pollsets*/) override {
@@ -132,8 +137,18 @@ class BinderServerListener : public Server::ListenerInterface {
         grpc_binder::BinderTransportTxCode::SETUP_TRANSPORT) {
       return absl::InvalidArgumentError("Not a SETUP_TRANSPORT request");
     }
-    // TODO(mingcl): Verify security policy here
+
     gpr_log(GPR_ERROR, "calling uid = %d", uid);
+    if (!security_policy_->IsAuthorized(uid)) {
+      // TODO(mingcl): For now we just ignore this unauthorized
+      // SETUP_TRANSPORT transaction and ghost the client. Check if we should
+      // send back a SHUTDOWN_TRANSPORT in this case.
+      return absl::PermissionDeniedError(
+          "UID " + std::to_string(uid) +
+          " is not allowed to connect to this "
+          "server according to security policy.");
+    }
+
     int version;
     absl::Status status = parcel->ReadInt32(&version);
     if (!status.ok()) {
@@ -152,8 +167,8 @@ class BinderServerListener : public Server::ListenerInterface {
     client_binder->Initialize();
     // Finish the second half of SETUP_TRANSPORT in
     // grpc_create_binder_transport_server().
-    grpc_transport* server_transport =
-        grpc_create_binder_transport_server(std::move(client_binder));
+    grpc_transport* server_transport = grpc_create_binder_transport_server(
+        std::move(client_binder), security_policy_);
     GPR_ASSERT(server_transport);
     grpc_channel_args* args = grpc_channel_args_copy(server_->channel_args());
     grpc_error_handle error = server_->SetupTransport(server_transport, nullptr,
@@ -166,12 +181,15 @@ class BinderServerListener : public Server::ListenerInterface {
   grpc_closure* on_destroy_done_ = nullptr;
   std::string addr_;
   BinderTxReceiverFactory factory_;
+  std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy_;
   void* endpoint_binder_ = nullptr;
   std::unique_ptr<grpc_binder::TransactionReceiver> tx_receiver_;
 };
 
 bool AddBinderPort(const std::string& addr, grpc_server* server,
-                   BinderTxReceiverFactory factory) {
+                   BinderTxReceiverFactory factory,
+                   std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+                       security_policy) {
   const std::string kBinderUriScheme = "binder:";
   if (addr.compare(0, kBinderUriScheme.size(), kBinderUriScheme) != 0) {
     return false;
@@ -182,7 +200,8 @@ bool AddBinderPort(const std::string& addr, grpc_server* server,
   core_server->AddListener(
       grpc_core::OrphanablePtr<grpc_core::Server::ListenerInterface>(
           new grpc_core::BinderServerListener(core_server, addr.substr(pos),
-                                              std::move(factory))));
+                                              std::move(factory),
+                                              security_policy)));
   return true;
 }
 

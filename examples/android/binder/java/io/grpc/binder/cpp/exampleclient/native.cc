@@ -19,6 +19,7 @@
 #include "examples/protos/helloworld.pb.h"
 
 #include "src/core/ext/transport/binder/client/channel_create.h"
+#include "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h"
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_io_grpc_binder_cpp_exampleclient_ButtonPressHandler_native_1entry(
@@ -33,8 +34,11 @@ Java_io_grpc_binder_cpp_exampleclient_ButtonPressHandler_native_1entry(
         "io.grpc.binder.cpp.exampleserver.ExportedEndpointService");
     return env->NewStringUTF("Clicked 1 time");
   } else {
-    auto channel =
-        grpc::experimental::CreateBinderChannel(env, application, "", "");
+    // TODO(mingcl): Use same signature security after it become available
+    auto channel = grpc::experimental::CreateBinderChannel(
+        env, application, "", "",
+        std::make_shared<
+            grpc::experimental::binder::UntrustedSecurityPolicy>());
     auto stub = helloworld::Greeter::NewStub(channel);
     grpc::ClientContext context;
     helloworld::HelloRequest request;

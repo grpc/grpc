@@ -16,7 +16,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/promise")
+grpc_package(name = "test/core/resource_quota")
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
