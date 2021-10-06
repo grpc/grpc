@@ -36,7 +36,7 @@ namespace grpc_core {
 class BasicMemoryQuota;
 class MemoryQuota;
 
-using MemoryRequest = grpc_event_engine::experimental::MemoryRequest;
+using grpc_event_engine::experimental::MemoryRequest;
 
 // Pull in impl under a different name to keep the gRPC/EventEngine separation
 // clear.
