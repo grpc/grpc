@@ -879,25 +879,48 @@ class ClientChannel::ClientChannelControlHelper
         health_check_service_name = health_check_service_name_arg;
       }
     }
+    // Construct channel args for subchannel.
     // Remove channel args that should not affect subchannel uniqueness.
-    static const char* args_to_remove[] = {
+    absl::InlinedVector<const char*, 4> args_to_remove = {
         GRPC_ARG_HEALTH_CHECK_SERVICE_NAME,
         GRPC_ARG_INHIBIT_HEALTH_CHECKING,
         GRPC_ARG_CHANNELZ_CHANNEL_NODE,
     };
     // Add channel args needed for the subchannel.
-    absl::InlinedVector<grpc_arg, 3> args_to_add = {
+    absl::InlinedVector<grpc_arg, 2> args_to_add = {
         SubchannelPoolInterface::CreateChannelArg(
             chand_->subchannel_pool_.get()),
     };
+    // Check if default authority arg is already set.
+    const char* default_authority =
+        grpc_channel_args_find_string(&args, GRPC_ARG_DEFAULT_AUTHORITY);
+    // Add args from subchannel address.
     if (address.args() != nullptr) {
       for (size_t j = 0; j < address.args()->num_args; ++j) {
-        args_to_add.emplace_back(address.args()->args[j]);
+        grpc_arg& arg = address.args()->args[j];
+        if (strcmp(arg.key, GRPC_ARG_DEFAULT_AUTHORITY) == 0) {
+          // Don't add default authority arg from subchannel address if
+          // it's already set at the channel level -- the value from the
+          // application should take precedence over what is set by the
+          // resolver.
+          if (default_authority != nullptr) continue;
+          default_authority = arg.value.string;
+        }
+        args_to_add.emplace_back(arg);
       }
     }
+    // If we haven't already set the default authority arg, add it from
+    // the channel.
+    if (default_authority == nullptr) {
+      // Remove it, just in case it's actually present but is the wrong type.
+      args_to_remove.push_back(GRPC_ARG_DEFAULT_AUTHORITY);
+      args_to_add.push_back(grpc_channel_arg_string_create(
+          const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+          const_cast<char*>(chand_->default_authority_.c_str())));
+    }
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
-        &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove),
-        args_to_add.data(), args_to_add.size());
+        &args, args_to_remove.data(), args_to_remove.size(), args_to_add.data(),
+        args_to_add.size());
     // Create subchannel.
     RefCountedPtr<Subchannel> subchannel =
         chand_->client_channel_factory_->CreateSubchannel(address.address(),
@@ -938,6 +961,10 @@ class ClientChannel::ClientChannelControlHelper
       gpr_log(GPR_INFO, "chand=%p: started name re-resolving", chand_);
     }
     chand_->resolver_->RequestReresolutionLocked();
+  }
+
+  absl::string_view GetAuthority() override {
+    return chand_->default_authority_;
   }
 
   void AddTraceEvent(TraceSeverity severity, absl::string_view message) override
@@ -1029,15 +1056,6 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
         "Missing client channel factory in args for client channel filter");
     return;
   }
-  // Get server name to resolve, using proxy mapper if needed.
-  const char* server_uri =
-      grpc_channel_args_find_string(args->channel_args, GRPC_ARG_SERVER_URI);
-  if (server_uri == nullptr) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "server URI channel arg missing or wrong type in client channel "
-        "filter");
-    return;
-  }
   // Get default service config.  If none is specified via the client API,
   // we use an empty config.
   const char* service_config_json = grpc_channel_args_find_string(
@@ -1050,30 +1068,50 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
     default_service_config_.reset();
     return;
   }
-  absl::StatusOr<URI> uri = URI::Parse(server_uri);
-  if (uri.ok() && !uri->path().empty()) {
-    server_name_ = std::string(absl::StripPrefix(uri->path(), "/"));
+  // Get URI to resolve, using proxy mapper if needed.
+  const char* server_uri =
+      grpc_channel_args_find_string(args->channel_args, GRPC_ARG_SERVER_URI);
+  if (server_uri == nullptr) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "target URI channel arg missing or wrong type in client channel "
+        "filter");
+    return;
   }
+  uri_to_resolve_ = server_uri;
   char* proxy_name = nullptr;
   grpc_channel_args* new_args = nullptr;
   ProxyMapperRegistry::MapName(server_uri, args->channel_args, &proxy_name,
                                &new_args);
-  target_uri_.reset(proxy_name != nullptr ? proxy_name
-                                          : gpr_strdup(server_uri));
+  if (proxy_name != nullptr) {
+    uri_to_resolve_ = proxy_name;
+    gpr_free(proxy_name);
+  }
+  // Make sure the URI to resolve is valid, so that we know that
+  // resolver creation will succeed later.
+  if (!ResolverRegistry::IsValidTarget(uri_to_resolve_)) {
+    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("the target uri is not valid: ", uri_to_resolve_.c_str()));
+    return;
+  }
   // Strip out service config channel arg, so that it doesn't affect
   // subchannel uniqueness when the args flow down to that layer.
   const char* arg_to_remove = GRPC_ARG_SERVICE_CONFIG;
   channel_args_ = grpc_channel_args_copy_and_remove(
       new_args != nullptr ? new_args : args->channel_args, &arg_to_remove, 1);
   grpc_channel_args_destroy(new_args);
+  // Set initial keepalive time.
   keepalive_time_ = grpc_channel_args_find_integer(
       channel_args_, GRPC_ARG_KEEPALIVE_TIME_MS,
       {-1 /* default value, unset */, 1, INT_MAX});
-  if (!ResolverRegistry::IsValidTarget(target_uri_.get())) {
-    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("the target uri is not valid: ", target_uri_.get()));
-    return;
+  // Set default authority.
+  const char* default_authority =
+      grpc_channel_args_find_string(channel_args_, GRPC_ARG_DEFAULT_AUTHORITY);
+  if (default_authority == nullptr) {
+    default_authority_ = ResolverRegistry::GetDefaultAuthority(server_uri);
+  } else {
+    default_authority_ = default_authority;
   }
+  // Success.
   *error = GRPC_ERROR_NONE;
 }
 
@@ -1494,8 +1532,8 @@ void ClientChannel::CreateResolverLocked() {
     gpr_log(GPR_INFO, "chand=%p: starting name resolution", this);
   }
   resolver_ = ResolverRegistry::CreateResolver(
-      target_uri_.get(), channel_args_, interested_parties_, work_serializer_,
-      absl::make_unique<ResolverResultHandler>(this));
+      uri_to_resolve_.c_str(), channel_args_, interested_parties_,
+      work_serializer_, absl::make_unique<ResolverResultHandler>(this));
   // Since the validity of the args was checked when the channel was created,
   // CreateResolver() must return a non-null result.
   GPR_ASSERT(resolver_ != nullptr);
