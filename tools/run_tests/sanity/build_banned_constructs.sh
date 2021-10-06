@@ -25,7 +25,7 @@ cd "$(dirname "$0")/../../.."
 regex='^licenses\(.*#'
 for dir in bazel examples src test tools; do
   for file in BUILD BUILD.bazel; do
-    git grep -EIrn $regex "$dir/**$file" | diff - /dev/null
+    git grep -EIrn "$regex" "$dir/**$file" | diff - /dev/null
   done
 done
 
