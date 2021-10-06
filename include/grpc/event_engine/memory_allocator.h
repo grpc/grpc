@@ -49,7 +49,7 @@ class MemoryAllocator {
   /// MemoryAllocatorImpl::Shutdown() upon destruction.
   explicit MemoryAllocator(
       std::shared_ptr<internal::MemoryAllocatorImpl> allocator)
-      : allocator_(allocator) {}
+      : allocator_(std::move(allocator)) {}
   ~MemoryAllocator() {
     if (allocator_ != nullptr) allocator_->Shutdown();
   }
@@ -96,7 +96,7 @@ class MemoryAllocator {
     friend class MemoryAllocator;
     Reservation(std::shared_ptr<internal::MemoryAllocatorImpl> allocator,
                 size_t size)
-        : allocator_(allocator), size_(size) {}
+        : allocator_(std::move(allocator)), size_(size) {}
 
     std::shared_ptr<internal::MemoryAllocatorImpl> allocator_;
     size_t size_ = 0;
