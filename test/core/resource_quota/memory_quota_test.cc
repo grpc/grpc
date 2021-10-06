@@ -73,19 +73,19 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
   MemoryQuota memory_quota;
   memory_quota.SetSize(4096);
   auto memory_allocator = memory_quota.CreateMemoryOwner();
-  auto object = memory_allocator.MakeUnique<Sized<2048>>();
+  auto object = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
 
   memory_allocator.PostReclaimer(
       ReclamationPass::kDestructive,
       [&object](ReclamationSweep) { object.reset(); });
-  auto object2 = memory_allocator.MakeUnique<Sized<2048>>();
+  auto object2 = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
   exec_ctx.Flush();
   EXPECT_EQ(object.get(), nullptr);
 
   memory_allocator.PostReclaimer(
       ReclamationPass::kDestructive,
       [&object2](ReclamationSweep) { object2.reset(); });
-  auto object3 = memory_allocator.MakeUnique<Sized<2048>>();
+  auto object3 = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
   exec_ctx.Flush();
   EXPECT_EQ(object2.get(), nullptr);
 }
@@ -99,7 +99,7 @@ TEST(MemoryQuotaTest, BasicRebind) {
   memory_quota2.SetSize(4096);
 
   auto memory_allocator = memory_quota2.CreateMemoryOwner();
-  auto object = memory_allocator.MakeUnique<Sized<2048>>();
+  auto object = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
 
   memory_allocator.Rebind(&memory_quota);
   auto memory_allocator2 = memory_quota2.CreateMemoryOwner();
@@ -121,7 +121,7 @@ TEST(MemoryQuotaTest, BasicRebind) {
                                    object.reset();
                                  });
 
-  auto object2 = memory_allocator.MakeUnique<Sized<2048>>();
+  auto object2 = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
   exec_ctx.Flush();
   EXPECT_EQ(object.get(), nullptr);
 }

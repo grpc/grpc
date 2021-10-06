@@ -299,21 +299,28 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
 
 // MemoryOwner is an enhanced MemoryAllocator that can also reclaim memory, and
 // be rebound to a different memory quota.
-class MemoryOwner : public MemoryAllocator {
+class MemoryOwner {
  public:
   explicit MemoryOwner(
-      std::shared_ptr<EventEngineMemoryAllocatorImpl> allocator)
-      : MemoryAllocator(std::move(allocator)) {}
+      std::shared_ptr<GrpcMemoryAllocatorImpl> allocator)
+      : allocator_(std::move(allocator)) {}
+
+  MemoryAllocator* allocator() {
+    return &allocator_;
+  }
 
   // Post a reclaimer for some reclamation pass.
   void PostReclaimer(ReclamationPass pass,
                      std::function<void(ReclamationSweep)> fn) {
-    static_cast<GrpcMemoryAllocatorImpl*>(allocator().get())
+    static_cast<GrpcMemoryAllocatorImpl*>(allocator_.get_internal_impl_ptr())
         ->PostReclaimer(pass, std::move(fn));
   }
 
   // Rebind to a different quota.
   void Rebind(MemoryQuota* quota);
+
+ private:
+  MemoryAllocator allocator_;
 };
 
 // MemoryQuota tracks the amount of memory available as part of a ResourceQuota.
@@ -333,12 +340,13 @@ class MemoryQuota final
   MemoryQuota& operator=(MemoryQuota&&) = default;
 
   MemoryAllocator CreateMemoryAllocator() override {
-    return CreateMemoryOwner();
+    auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(memory_quota_);
+    return MemoryAllocator(std::move(impl));
   }
 
   MemoryOwner CreateMemoryOwner() {
-    auto counter = std::make_shared<GrpcMemoryAllocatorImpl>(memory_quota_);
-    return MemoryOwner(std::move(counter));
+    auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(memory_quota_);
+    return MemoryOwner(std::move(impl));
   }
 
   // Resize the quota to new_size.

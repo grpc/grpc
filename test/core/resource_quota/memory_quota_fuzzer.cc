@@ -91,8 +91,8 @@ class Fuzzer {
           if (max > MemoryRequest::max_allowed_size()) break;
           MemoryRequest req(min, max);
           WithAllocator(
-              action.allocator(), [this, action, req](MemoryAllocator* a) {
-                auto alloc = a->MakeReservation(req);
+              action.allocator(), [this, action, req](MemoryOwner* a) {
+                auto alloc = a->allocator()->MakeReservation(req);
                 allocations_.emplace(action.allocation(), std::move(alloc));
               });
         } break;

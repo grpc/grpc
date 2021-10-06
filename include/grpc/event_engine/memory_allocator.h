@@ -68,6 +68,13 @@ class MemoryAllocator {
   /// Release some bytes that were previously reserved.
   void Release(size_t n) { return allocator_->Release(n); }
 
+  /// Return a pointer to the underlying implementation.
+  /// Note that the interface of said implementatoin is unstable and likely to
+  /// change at any time.
+  internal::MemoryAllocatorImpl* get_internal_impl_ptr() {
+    return allocator_.get();
+  }
+
   //
   // The remainder of this type are helper functions implemented in terms of
   // Reserve/Release.

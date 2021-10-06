@@ -55,7 +55,7 @@ class StressTest {
             ReclamationPass::kDestructive}) {
         threads.push_back(Run([allocator, pass](StatePtr st) mutable {
           if (st->RememberReservation(
-                  allocator->MakeReservation(st->RandomRequest()))) {
+                  allocator->allocator()->MakeReservation(st->RandomRequest()))) {
             allocator->PostReclaimer(
                 pass, [st](ReclamationSweep) { st->ForgetReservations(); });
           }
