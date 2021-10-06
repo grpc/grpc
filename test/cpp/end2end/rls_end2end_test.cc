@@ -474,6 +474,8 @@ class RlsEnd2endTest : public ::testing::Test {
         route_lookup_config_parts.push_back(absl::StrFormat(
             "        \"defaultTarget\":\"%s\"", default_target_));
       }
+      route_lookup_config_parts.push_back(absl::StrFormat(
+          "        \"cacheSizeBytes\":%" PRId64, cache_size_bytes_));
       if (max_age_ > 0) {
         route_lookup_config_parts.push_back(
             absl::StrFormat("        \"maxAge\":\"%d.%09ds\"", max_age_ / 1000,
@@ -483,10 +485,6 @@ class RlsEnd2endTest : public ::testing::Test {
         route_lookup_config_parts.push_back(
             absl::StrFormat("        \"staleAge\":\"%d.%09ds\"",
                             stale_age_ / 1000, stale_age_ % 1000));
-      }
-      if (cache_size_bytes_ > 0) {
-        route_lookup_config_parts.push_back(absl::StrFormat(
-            "        \"cacheSizeBytes\":%" PRId64, cache_size_bytes_));
       }
       if (!key_builders_.empty()) {
         route_lookup_config_parts.push_back(
@@ -522,7 +520,7 @@ class RlsEnd2endTest : public ::testing::Test {
     std::string default_target_;
     grpc_millis max_age_ = 0;
     grpc_millis stale_age_ = 0;
-    int64_t cache_size_bytes_ = 0;
+    int64_t cache_size_bytes_ = 10485760;
     std::vector<std::string> key_builders_;
   };
 

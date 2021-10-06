@@ -86,7 +86,6 @@ const char* kRlsHeaderKey = "X-Google-RLS-Data";
 
 const grpc_millis kDefaultLookupServiceTimeout = 10000;
 const grpc_millis kMaxMaxAge = 5 * 60 * GPR_MS_PER_SEC;
-const int64_t kDefaultCacheSizeBytes = 10 * 1024 * 1024;
 const grpc_millis kMinExpirationTime = 5 * GPR_MS_PER_SEC;
 const grpc_millis kCacheBackoffInitial = 1 * GPR_MS_PER_SEC;
 const double kCacheBackoffMultiplier = 1.6;
@@ -2291,10 +2290,8 @@ RlsLbConfig::RouteLookupConfig ParseRouteLookupConfig(
     route_lookup_config.stale_age = route_lookup_config.max_age;
   }
   // Parse cacheSizeBytes.
-  route_lookup_config.cache_size_bytes = kDefaultCacheSizeBytes;
   ParseJsonObjectField(json, "cacheSizeBytes",
-                       &route_lookup_config.cache_size_bytes, &error_list,
-                       /*required=*/false);
+                       &route_lookup_config.cache_size_bytes, &error_list);
   if (route_lookup_config.cache_size_bytes <= 0) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:cacheSizeBytes error:must be greater than 0"));

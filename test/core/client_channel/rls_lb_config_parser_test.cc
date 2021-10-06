@@ -38,6 +38,7 @@ TEST_F(RlsConfigParsingTest, ValidConfig) {
       "    \"rls\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"lookupService\":\"rls.example.com:80\",\n"
+      "        \"cacheSizeBytes\":1,\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
       "            \"names\":[\n"
@@ -226,7 +227,8 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
       "  \"loadBalancingConfig\":[{\n"
       "    \"rls\":{\n"
       "      \"routeLookupConfig\":{\n"
-      "        \"lookupService\":\"\"\n"
+      "        \"lookupService\":\"\",\n"
+      "        \"cacheSizeBytes\":0\n"
       "      }\n"
       "    }\n"
       "  }]\n"
@@ -238,7 +240,8 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
               ::testing::ContainsRegex(
                   "errors parsing RLS LB policy config.*referenced_errors.*"
                   "field:routeLookupConfig.*referenced_errors.*"
-                  "field:lookupService error:must be valid gRPC target URI"));
+                  "field:lookupService error:must be valid gRPC target URI.*"
+                  "field:cacheSizeBytes error:must be greater than 0"));
   GRPC_ERROR_UNREF(error);
 }
 
