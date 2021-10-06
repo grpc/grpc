@@ -27,6 +27,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/http2_errors.h"
+#include "src/core/ext/filters/client_idle/idle_filter_state.h"
 
 // TODO(juanlishen): The idle filter is disabled in client channel by default
 // due to b/143502997. Try to fix the bug and enable the filter by default.
@@ -46,96 +47,6 @@ TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
   } while (0)
 
 namespace {
-
-// State machine for the idle filter.
-// Keeps track of how many calls are in progress, whether there is a timer
-// started, and whether we've seen calls since the previous timer fired.
-class IdleFilterState {
- public:
-  IdleFilterState() = default;
-
-  // Increment the number of calls in progress.
-  void IncreaseCallCount() {
-    uintptr_t state = state_.load(std::memory_order_relaxed);
-    uintptr_t new_state;
-    do {
-      new_state = state;
-      new_state |= kCallsStartedSinceLastTimerCheck;
-      new_state += kCallIncrement;
-    } while (!state_.compare_exchange_weak(state, new_state,
-                                           std::memory_order_relaxed,
-                                           std::memory_order_relaxed));
-  }
-
-  // Decrement the number of calls in progress.
-  // Return true if we reached idle with no timer started.
-  GRPC_MUST_USE_RESULT bool DecreaseCallCount() {
-    uintptr_t state = state_.load(std::memory_order_relaxed);
-    uintptr_t new_state;
-    bool start_timer;
-    do {
-      start_timer = false;
-      new_state = state;
-      new_state -= kCallIncrement;
-      if (state >> kCallsInProgressShift == 0) {
-        if ((state & kTimerStarted) == 0) {
-          start_timer = true;
-          new_state |= kTimerStarted;
-        }
-      }
-    } while (!state_.compare_exchange_weak(state, new_state,
-                                           std::memory_order_relaxed,
-                                           std::memory_order_relaxed));
-    return start_timer;
-  }
-
-  // Check if there's been any activity since the last timer check.
-  // If there was, reset the activity flag and return true to indicated that
-  // a new timer should be started.
-  // If there was not, reset the timer flag and return false - in this case
-  // we know that the channel is idle and has been for one full cycle.
-  GRPC_MUST_USE_RESULT bool CheckTimer() {
-    uintptr_t state = state_.load(std::memory_order_relaxed);
-    uintptr_t new_state;
-    bool start_timer;
-    do {
-      if ((state >> kCallsInProgressShift) != 0) {
-        // Still calls in progress: nothing needs updating, just return
-        // and keep the timer going!
-        return true;
-      }
-      new_state = state;
-      bool is_active = false;
-      if (state & kCallsStartedSinceLastTimerCheck) {
-        is_active = true;
-        new_state &= ~kCallsStartedSinceLastTimerCheck;
-      }
-      if (is_active) {
-        start_timer = true;
-      } else {
-        start_timer = false;
-        new_state &= ~kTimerStarted;
-      }
-    } while (!state_.compare_exchange_weak(state, new_state,
-                                           std::memory_order_relaxed,
-                                           std::memory_order_relaxed));
-    return start_timer;
-  }
-
- private:
-  // Bit in state_ indicating that the timer has been started.
-  static constexpr uintptr_t kTimerStarted = 1;
-  // Bit in state_ indicating that we've seen a call start or stop since the
-  // last timer.
-  static constexpr uintptr_t kCallsStartedSinceLastTimerCheck = 2;
-  // How much should we shift to get the number of calls in progress.
-  static constexpr uintptr_t kCallsInProgressShift = 2;
-  // How much to increment/decrement the state_ when a call is started/stopped.
-  // Ensures we don't clobber the preceding bits.
-  static constexpr uintptr_t kCallIncrement = uintptr_t(1)
-                                              << kCallsInProgressShift;
-  std::atomic<uintptr_t> state_{0};
-};
 
 grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
   return std::max(
@@ -179,7 +90,7 @@ class ChannelData {
   const grpc_millis client_idle_timeout_;
 
   // Member data used to track the state of channel.
-  IdleFilterState idle_filter_state_;
+  IdleFilterState idle_filter_state_{false};
 
   // Idle timer and its callback closure.
   grpc_timer idle_timer_;

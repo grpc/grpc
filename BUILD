@@ -1615,15 +1615,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "idle_filter_state",
+    srcs = [
+        "src/core/ext/filters/client_idle/idle_filter_state.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_idle/idle_filter_state.h",
+    ],
+    deps = [
+        "gpr_platform",
+    ],
+    language = "c++",
+)
+
+grpc_cc_library(
     name = "grpc_client_idle_filter",
     srcs = [
         "src/core/ext/filters/client_idle/client_idle_filter.cc",
     ],
-    language = "c++",
     deps = [
         "config",
         "gpr_base",
         "grpc_base",
+        "idle_filter_state",
     ],
 )
 
