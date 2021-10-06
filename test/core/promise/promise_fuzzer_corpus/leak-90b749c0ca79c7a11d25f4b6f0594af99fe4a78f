@@ -1,0 +1,12 @@
+promise {
+  never {
+  }
+}
+actions {
+  force_wakeup {
+  }
+}
+actions {
+  force_wakeup {
+  }
+}

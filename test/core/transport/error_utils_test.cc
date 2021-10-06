@@ -67,11 +67,9 @@ TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
   ASSERT_TRUE(grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &code));
   ASSERT_EQ(static_cast<grpc_status_code>(code), GRPC_STATUS_UNAVAILABLE);
   // Status message checks
-  grpc_slice message;
+  std::string message;
   ASSERT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &message));
-  absl::string_view str = grpc_core::StringViewFromSlice(message);
-  ASSERT_EQ(str, "Making tea");
-  grpc_slice_unref(message);
+  ASSERT_EQ(message, "Making tea");
   GRPC_ERROR_UNREF(error);
 }
 

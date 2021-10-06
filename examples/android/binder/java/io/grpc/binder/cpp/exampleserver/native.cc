@@ -24,6 +24,7 @@
 
 #include <grpcpp/grpcpp.h>
 
+#include "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h"
 #include "src/core/ext/transport/binder/server/binder_server.h"
 #include "src/core/ext/transport/binder/server/binder_server_credentials.h"
 
@@ -60,9 +61,12 @@ Java_io_grpc_binder_cpp_exampleserver_ExportedEndpointService_init_1grpc_1server
   grpc::ServerBuilder server_builder;
   server_builder.RegisterService(&service);
 
+  // TODO(mingcl): Use same signature security after it become available
   server_builder.AddListeningPort(
       "binder://example.service",
-      grpc::experimental::BinderServerCredentials());
+      grpc::experimental::BinderServerCredentials(
+          std::make_shared<
+              grpc::experimental::binder::UntrustedSecurityPolicy>()));
 
   server = server_builder.BuildAndStart();
 }
