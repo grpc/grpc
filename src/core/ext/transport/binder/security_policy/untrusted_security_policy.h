@@ -12,24 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_CHANNEL_CREATE_IMPL_H
-#define GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_CHANNEL_CREATE_IMPL_H
+#ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_SECURITY_POLICY_UNTRUSTED_SECURITY_POLICY_H
+#define GRPC_CORE_EXT_TRANSPORT_BINDER_SECURITY_POLICY_UNTRUSTED_SECURITY_POLICY_H
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/binder/security_policy/security_policy.h"
-#include "src/core/ext/transport/binder/wire_format/binder.h"
-#include "src/core/lib/channel/channel_args.h"
 
 namespace grpc {
-namespace internal {
+namespace experimental {
+namespace binder {
 
-grpc_channel* CreateChannelFromBinderImpl(
-    std::unique_ptr<grpc_binder::Binder> endpoint_binder,
-    std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy,
-    const grpc_channel_args* args);
+// Allows all connection
+class UntrustedSecurityPolicy : public SecurityPolicy {
+ public:
+  UntrustedSecurityPolicy();
+  ~UntrustedSecurityPolicy() override;
+  bool IsAuthorized(int uid) override;
+};
 
-}  // namespace internal
+}  // namespace binder
+}  // namespace experimental
 }  // namespace grpc
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_CHANNEL_CREATE_IMPL_H
+#endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_SECURITY_POLICY_UNTRUSTED_SECURITY_POLICY_H

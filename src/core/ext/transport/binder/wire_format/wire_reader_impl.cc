@@ -69,9 +69,12 @@ absl::StatusOr<Metadata> parse_metadata(ReadableParcel* reader) {
 
 WireReaderImpl::WireReaderImpl(
     std::shared_ptr<TransportStreamReceiver> transport_stream_receiver,
-    bool is_client, std::function<void()> on_destruct_callback)
+    bool is_client,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy,
+    std::function<void()> on_destruct_callback)
     : transport_stream_receiver_(std::move(transport_stream_receiver)),
       is_client_(is_client),
+      security_policy_(security_policy),
       on_destruct_callback_(on_destruct_callback) {}
 
 WireReaderImpl::~WireReaderImpl() {
@@ -168,7 +171,8 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
     return absl::InvalidArgumentError("Transports not connected yet");
   }
 
-  // TODO(mingcl): Verify security policy for every incoming call
+  // TODO(mingcl): See if we want to check the security policy for every RPC
+  // call or just during transport setup.
 
   switch (BinderTransportTxCode(code)) {
     case BinderTransportTxCode::SETUP_TRANSPORT: {
@@ -176,8 +180,16 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
         return absl::InvalidArgumentError(
             "Already received a SETUP_TRANSPORT request");
       }
-      gpr_log(GPR_ERROR, "calling uid = %d", uid);
       recvd_setup_transport_ = true;
+
+      gpr_log(GPR_ERROR, "calling uid = %d", uid);
+      if (!security_policy_->IsAuthorized(uid)) {
+        return absl::PermissionDeniedError(
+            "UID " + std::to_string(uid) +
+            " is not allowed to connect to this "
+            "transport according to security policy.");
+      }
+
       int version;
       RETURN_IF_ERROR(parcel->ReadInt32(&version));
       gpr_log(GPR_INFO, "version = %d", version);

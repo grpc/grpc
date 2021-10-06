@@ -117,6 +117,7 @@ grpc_cc_library(
         "//:gpr",
         "//:gpr_platform",
         "//:orphanable",
+        "//src/core/ext/transport/binder/security_policy:security_policy_interface",
         "//src/core/ext/transport/binder/utils:transport_stream_receiver",
     ],
 )
