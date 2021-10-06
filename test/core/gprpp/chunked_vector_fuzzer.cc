@@ -139,7 +139,7 @@ class Fuzzer {
     return &vectors_.emplace(index, Comparison(arena_.get())).first->second;
   }
 
-  ScopedArena arena_ = MakeScopedArena(128);
+  ScopedArenaPtr arena_ = MakeScopedArena(128);
   std::map<int, Comparison> vectors_;
 };
 }  // namespace grpc_core

@@ -190,7 +190,7 @@ struct MakeSendInitialMetadata {
 
   std::vector<grpc_linked_mdelem> storage;
   grpc_linked_mdelem method_ref_storage;
-  grpc_core::ScopedArena arena = grpc_core::MakeScopedArena(1024);
+  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
   grpc_metadata_batch grpc_initial_metadata{arena.get()};
 };
 
@@ -222,7 +222,7 @@ struct MakeSendTrailingMetadata {
         &grpc_trailing_metadata;
   }
 
-  grpc_core::ScopedArena arena = grpc_core::MakeScopedArena(1024);
+  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
   grpc_metadata_batch grpc_trailing_metadata{arena.get()};
 };
 
@@ -245,7 +245,7 @@ struct MakeRecvInitialMetadata {
   ~MakeRecvInitialMetadata() {}
 
   MockGrpcClosure ready;
-  grpc_core::ScopedArena arena = grpc_core::MakeScopedArena(1024);
+  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
   grpc_metadata_batch grpc_initial_metadata{arena.get()};
   absl::Notification notification;
 };
@@ -288,7 +288,7 @@ struct MakeRecvTrailingMetadata {
   ~MakeRecvTrailingMetadata() {}
 
   MockGrpcClosure ready;
-  grpc_core::ScopedArena arena = grpc_core::MakeScopedArena(1024);
+  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
   grpc_metadata_batch grpc_trailing_metadata{arena.get()};
   absl::Notification notification;
 };

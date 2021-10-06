@@ -121,9 +121,9 @@ class Arena {
 struct ScopedArenaDeleter {
   void operator()(Arena* arena) { arena->Destroy(); }
 };
-using ScopedArena = std::unique_ptr<Arena, ScopedArenaDeleter>;
-inline ScopedArena MakeScopedArena(size_t initial_size) {
-  return ScopedArena(Arena::Create(initial_size));
+using ScopedArenaPtr = std::unique_ptr<Arena, ScopedArenaDeleter>;
+inline ScopedArenaPtr MakeScopedArena(size_t initial_size) {
+  return ScopedArenaPtr(Arena::Create(initial_size));
 }
 
 }  // namespace grpc_core
