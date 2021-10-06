@@ -24,8 +24,8 @@
 #include "absl/time/time.h"
 
 #include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/port.h>
-#include <grpc/event_engine/slice_allocator.h>
 
 // TODO(hork): Define the Endpoint::Write metrics collection system
 namespace grpc_event_engine {
@@ -123,7 +123,7 @@ class EventEngine {
   /// created when connections are established, and Endpoint operations are
   /// gRPC's primary means of communication.
   ///
-  /// Endpoints must use the provided SliceAllocator for all data buffer memory
+  /// Endpoints must use the provided MemoryAllocator for all data buffer memory
   /// allocations. gRPC allows applications to set memory constraints per
   /// Channel or Server, and the implementation depends on all dynamic memory
   /// allocation being handled by the quota system.
@@ -192,7 +192,7 @@ class EventEngine {
    public:
     /// Called when the listener has accepted a new client connection.
     using AcceptCallback = std::function<void(
-        std::unique_ptr<Endpoint>, const SliceAllocator& slice_allocator)>;
+        std::unique_ptr<Endpoint>, MemoryAllocator memory_allocator)>;
     virtual ~Listener() = default;
     /// Bind an address/port to this Listener.
     ///
@@ -215,13 +215,13 @@ class EventEngine {
   /// exactly once, when the Listener is shut down. The status passed to it will
   /// indicate if there was a problem during shutdown.
   ///
-  /// The provided \a SliceAllocatorFactory is used to create \a SliceAllocators
-  /// for Endpoint construction.
+  /// The provided \a MemoryAllocatorFactory is used to create \a
+  /// MemoryAllocators for Endpoint construction.
   virtual absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
       std::function<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,
-      std::unique_ptr<SliceAllocatorFactory> slice_allocator_factory) = 0;
+      std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) = 0;
   /// Creates a client network connection to a remote network listener.
   ///
   /// May return an error status immediately if there was a failure in the
@@ -230,15 +230,15 @@ class EventEngine {
   /// expected that the \a on_connect callback will be asynchronously executed
   /// exactly once by the EventEngine.
   ///
-  /// Implementation Note: it is important that the \a slice_allocator be used
+  /// Implementation Note: it is important that the \a memory_allocator be used
   /// for all read/write buffer allocations in the EventEngine implementation.
   /// This allows gRPC's \a ResourceQuota system to monitor and control memory
   /// usage with graceful degradation mechanisms. Please see the \a
-  /// SliceAllocator API for more information.
+  /// MemoryAllocator API for more information.
   virtual absl::Status Connect(OnConnectCallback on_connect,
                                const ResolvedAddress& addr,
                                const EndpointConfig& args,
-                               std::unique_ptr<SliceAllocator> slice_allocator,
+                               MemoryAllocator memory_allocator,
                                absl::Time deadline) = 0;
 
   /// Provides asynchronous resolution.

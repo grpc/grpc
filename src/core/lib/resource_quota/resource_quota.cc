@@ -19,7 +19,7 @@
 namespace grpc_core {
 
 ResourceQuota::ResourceQuota()
-    : memory_quota_(MakeRefCounted<MemoryQuota>()),
+    : memory_quota_(std::make_shared<MemoryQuota>()),
       thread_quota_(MakeRefCounted<ThreadQuota>()) {}
 
 ResourceQuota::~ResourceQuota() = default;
