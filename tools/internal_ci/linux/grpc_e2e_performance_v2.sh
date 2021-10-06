@@ -54,7 +54,7 @@ GRPC_GO_GITREF="$(git ls-remote https://github.com/grpc/grpc-go.git master | cut
 GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/grpc-java.git master | cut -f1)"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
-WORKER_POOL_8CORE=workers-8core-ci
+WORKER_POOL_8CORE=workers-c2-8core-ci
 WORKER_POOL_32CORE=workers-32core-ci
 
 # Update go version.
