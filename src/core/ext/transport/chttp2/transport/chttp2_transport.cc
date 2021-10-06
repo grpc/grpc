@@ -3074,6 +3074,13 @@ grpc_error_handle Chttp2IncomingByteStream::Pull(grpc_slice* slice) {
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Stream decompression error.");
         return error;
       }
+      if (end_of_context &&
+          stream_->unprocessed_incoming_frames_buffer.length != 0) {
+        // malformed input fooled the decompressor
+        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Malformed input, decompression failed");
+        return error;
+      }
       GPR_ASSERT(stream_->unprocessed_incoming_frames_buffer.length == 0);
       grpc_slice_buffer_swap(&stream_->unprocessed_incoming_frames_buffer,
                              &stream_->decompressed_data_buffer);
