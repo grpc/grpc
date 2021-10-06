@@ -486,6 +486,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_codegen",
         "grpc_secure",
+        "json",
         "ref_counted_ptr",
         "slice",
     ],
@@ -1562,9 +1563,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_pipe.cc",
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
         "src/core/lib/iomgr/work_serializer.cc",
-        "src/core/lib/json/json_reader.cc",
-        "src/core/lib/json/json_util.cc",
-        "src/core/lib/json/json_writer.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice_api.cc",
@@ -1708,8 +1706,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_pipe.h",
         "src/core/lib/iomgr/wakeup_fd_posix.h",
         "src/core/lib/iomgr/work_serializer.h",
-        "src/core/lib/json/json.h",
-        "src/core/lib/json/json_util.h",
         "src/core/lib/slice/b64.h",
         "src/core/lib/slice/percent_encoding.h",
         "src/core/lib/surface/api_trace.h",
@@ -1783,6 +1779,7 @@ grpc_cc_library(
         "gpr_tls",
         "grpc_codegen",
         "grpc_trace",
+        "json",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
@@ -1942,6 +1939,8 @@ grpc_cc_library(
         "grpc_health_upb",
         "grpc_trace",
         "handshaker_registry",
+        "json",
+        "json_util",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
@@ -2052,6 +2051,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
+        "json_util",
     ],
 )
 
@@ -2283,6 +2283,8 @@ grpc_cc_library(
         "grpc_matchers",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
+        "json",
+        "json_util",
         "orphanable",
         "ref_counted_ptr",
         "slice",
@@ -2325,6 +2327,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_xds_client",
+        "json_util",
         "slice",
     ],
 )
@@ -2762,6 +2765,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_grpclb_balancer_addresses",
         "grpc_resolver_dns_selection",
+        "json",
     ],
 )
 
@@ -2966,6 +2970,7 @@ grpc_cc_library(
         "grpc_lb_xds_channel_args",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
+        "json",
         "ref_counted",
         "ref_counted_ptr",
         "slice",
@@ -3059,7 +3064,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base",
         "grpc_matchers",
         "grpc_rbac_engine",
         "grpc_secure",
@@ -4829,6 +4833,39 @@ grpc_cc_library(
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
     language = "c++",
+)
+
+grpc_cc_library(
+    name = "json",
+    srcs = [
+        "src/core/lib/json/json_reader.cc",
+        "src/core/lib/json/json_writer.cc",
+    ],
+    hdrs = [
+        "src/core/lib/json/json.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "error",
+        "exec_ctx",
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "json_util",
+    srcs = ["src/core/lib/json/json_util.cc"],
+    hdrs = ["src/core/lib/json/json_util.h"],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "gpr_base",
+        "json",
+    ],
 )
 
 grpc_generate_one_off_targets()

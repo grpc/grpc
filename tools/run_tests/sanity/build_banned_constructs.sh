@@ -1,4 +1,5 @@
-# Copyright 2021 gRPC authors.
+#!/bin/sh
+# Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+set -e
 
-exports_files([
-    "invalid_policy.json",
-    "valid_policy_1.json",
-    "valid_policy_2.json",
-])
+cd "$(dirname "$0")/../../.."
+
+#
+# Prevent the use of single line comments after license clauses, since this
+# chokes the internal import process.
+#
+
+regex='^licenses\(.*#'
+for dir in bazel examples src test tools; do
+  for file in BUILD BUILD.bazel; do
+    git grep -EIrn "$regex" "$dir/**$file" | diff - /dev/null
+  done
+done
+
