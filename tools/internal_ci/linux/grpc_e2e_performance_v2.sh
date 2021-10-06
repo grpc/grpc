@@ -55,7 +55,8 @@ GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/grpc-java.git master |
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-c2-8core-ci
-WORKER_POOL_32CORE=workers-32core-ci
+# c2-standard-30 is the closest machine spec to 32 core there is
+WORKER_POOL_32CORE=workers-c2-30core-ci
 
 # Update go version.
 TEST_INFRA_GOVERSION=go1.17.1
