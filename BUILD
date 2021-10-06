@@ -1622,10 +1622,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_idle/idle_filter_state.h",
     ],
+    language = "c++",
     deps = [
         "gpr_platform",
     ],
-    language = "c++",
 )
 
 grpc_cc_library(

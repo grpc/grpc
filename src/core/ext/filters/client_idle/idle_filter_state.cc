@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_idle/idle_filter_state.h"
 
 #include <assert.h>
 
 namespace grpc_core {
 
-IdleFilterState::IdleFilterState(bool start_timer) : state_(start_timer ? kTimerStarted : 0) {}
-
-IdleFilterState::~IdleFilterState() = default;
+IdleFilterState::IdleFilterState(bool start_timer)
+    : state_(start_timer ? kTimerStarted : 0) {}
 
 void IdleFilterState::IncreaseCallCount() {
   uintptr_t state = state_.load(std::memory_order_relaxed);
@@ -30,9 +31,8 @@ void IdleFilterState::IncreaseCallCount() {
     new_state = state;
     new_state |= kCallsStartedSinceLastTimerCheck;
     new_state += kCallIncrement;
-  } while (!state_.compare_exchange_weak(state, new_state,
-                                         std::memory_order_acq_rel,
-                                         std::memory_order_relaxed));
+  } while (!state_.compare_exchange_weak(
+      state, new_state, std::memory_order_acq_rel, std::memory_order_relaxed));
 }
 
 bool IdleFilterState::DecreaseCallCount() {
@@ -55,9 +55,8 @@ bool IdleFilterState::DecreaseCallCount() {
         new_state |= kTimerStarted;
       }
     }
-  } while (!state_.compare_exchange_weak(state, new_state,
-                                         std::memory_order_acq_rel,
-                                         std::memory_order_relaxed));
+  } while (!state_.compare_exchange_weak(
+      state, new_state, std::memory_order_acq_rel, std::memory_order_relaxed));
   return start_timer;
 }
 
@@ -89,11 +88,9 @@ bool IdleFilterState::CheckTimer() {
       start_timer = false;
       new_state &= ~kTimerStarted;
     }
-  } while (!state_.compare_exchange_weak(state, new_state,
-                                         std::memory_order_acq_rel,
-                                         std::memory_order_relaxed));
+  } while (!state_.compare_exchange_weak(
+      state, new_state, std::memory_order_acq_rel, std::memory_order_relaxed));
   return start_timer;
 }
 
-}
-
+}  // namespace grpc_core

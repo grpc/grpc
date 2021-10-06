@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_IDLE_FILTER_STATE_H
-#define GRPC_CORE_LIB_IDLE_FILTER_STATE_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_IDLE_IDLE_FILTER_STATE_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_IDLE_IDLE_FILTER_STATE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -27,7 +27,7 @@ namespace grpc_core {
 class IdleFilterState {
  public:
   explicit IdleFilterState(bool start_timer);
-  ~IdleFilterState();
+  ~IdleFilterState() = default;
 
   IdleFilterState(const IdleFilterState&);
   IdleFilterState& operator=(const IdleFilterState&);
@@ -61,7 +61,6 @@ class IdleFilterState {
   std::atomic<uintptr_t> state_;
 };
 
-}
+}  // namespace grpc_core
 
-#endif
-
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_IDLE_IDLE_FILTER_STATE_H

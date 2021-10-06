@@ -22,12 +22,12 @@
 
 #include <atomic>
 
+#include "src/core/ext/filters/client_idle/idle_filter_state.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/ext/filters/client_idle/idle_filter_state.h"
 
 // TODO(juanlishen): The idle filter is disabled in client channel by default
 // due to b/143502997. Try to fix the bug and enable the filter by default.
