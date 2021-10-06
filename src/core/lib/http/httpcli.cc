@@ -41,9 +41,32 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-struct internal_request {
-  internal_request() = default;
-  ~internal_request() {
+namespace {
+
+struct InternalRequest {
+  InternalRequest(const grpc_slice& request_text,
+                  grpc_httpcli_response* response,
+                  grpc_resource_quota* resource_quota, const char* host,
+                  const char* ssl_host_override, grpc_millis deadline,
+                  const grpc_httpcli_handshaker* handshaker,
+                  grpc_closure* on_done, grpc_httpcli_context* context,
+                  grpc_polling_entity* pollent, const char* name)
+      : request_text(request_text),
+        resource_quota(resource_quota),
+        host(gpr_strdup(host)),
+        ssl_host_override(gpr_strdup(ssl_host_override)),
+        deadline(deadline),
+        handshaker(handshaker),
+        on_done(on_done),
+        context(context),
+        pollent(pollent) {
+    grpc_http_parser_init(&parser, GRPC_HTTP_RESPONSE, response);
+    grpc_slice_buffer_init(&incoming);
+    grpc_slice_buffer_init(&outgoing);
+    grpc_iomgr_register_object(&iomgr_obj, name);
+  }
+
+  ~InternalRequest() {
     grpc_http_parser_destroy(&parser);
     if (addresses != nullptr) {
       grpc_resolved_addresses_destroy(addresses);
@@ -60,20 +83,21 @@ struct internal_request {
     GRPC_ERROR_UNREF(overall_error);
     grpc_resource_quota_unref_internal(resource_quota);
   }
-  grpc_slice request_text = grpc_empty_slice();
+
+  grpc_slice request_text;
   grpc_http_parser parser;
   grpc_resolved_addresses* addresses = nullptr;
   size_t next_address = 0;
   grpc_endpoint* ep = nullptr;
-  grpc_resource_quota* resource_quota = nullptr;
-  char* host = nullptr;
-  char* ssl_host_override = nullptr;
-  grpc_millis deadline = 0;
+  grpc_resource_quota* resource_quota;
+  char* host;
+  char* ssl_host_override;
+  grpc_millis deadline;
   int have_read_byte = 0;
-  const grpc_httpcli_handshaker* handshaker = nullptr;
-  grpc_closure* on_done = nullptr;
-  grpc_httpcli_context* context = nullptr;
-  grpc_polling_entity* pollent = nullptr;
+  const grpc_httpcli_handshaker* handshaker;
+  grpc_closure* on_done;
+  grpc_httpcli_context* context;
+  grpc_polling_entity* pollent;
   grpc_iomgr_object iomgr_obj;
   grpc_slice_buffer incoming;
   grpc_slice_buffer outgoing;
@@ -82,6 +106,9 @@ struct internal_request {
   grpc_closure connected;
   grpc_error_handle overall_error = GRPC_ERROR_NONE;
 };
+
+}  // namespace
+
 static grpc_httpcli_get_override g_get_override = nullptr;
 static grpc_httpcli_post_override g_post_override = nullptr;
 
@@ -103,16 +130,16 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context* context) {
   grpc_pollset_set_destroy(context->pollset_set);
 }
 
-static void next_address(internal_request* req, grpc_error_handle due_to_error);
+static void next_address(InternalRequest* req, grpc_error_handle due_to_error);
 
-static void finish(internal_request* req, grpc_error_handle error) {
+static void finish(InternalRequest* req, grpc_error_handle error) {
   grpc_polling_entity_del_from_pollset_set(req->pollent,
                                            req->context->pollset_set);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, req->on_done, error);
   delete req;
 }
 
-static void append_error(internal_request* req, grpc_error_handle error) {
+static void append_error(InternalRequest* req, grpc_error_handle error) {
   if (req->overall_error == GRPC_ERROR_NONE) {
     req->overall_error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
@@ -124,12 +151,12 @@ static void append_error(internal_request* req, grpc_error_handle error) {
       grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_text));
 }
 
-static void do_read(internal_request* req) {
+static void do_read(InternalRequest* req) {
   grpc_endpoint_read(req->ep, &req->incoming, &req->on_read, /*urgent=*/true);
 }
 
 static void on_read(void* user_data, grpc_error_handle error) {
-  internal_request* req = static_cast<internal_request*>(user_data);
+  InternalRequest* req = static_cast<InternalRequest*>(user_data);
   size_t i;
 
   for (i = 0; i < req->incoming.count; i++) {
@@ -153,10 +180,10 @@ static void on_read(void* user_data, grpc_error_handle error) {
   }
 }
 
-static void on_written(internal_request* req) { do_read(req); }
+static void on_written(InternalRequest* req) { do_read(req); }
 
 static void done_write(void* arg, grpc_error_handle error) {
-  internal_request* req = static_cast<internal_request*>(arg);
+  InternalRequest* req = static_cast<InternalRequest*>(arg);
   if (error == GRPC_ERROR_NONE) {
     on_written(req);
   } else {
@@ -164,14 +191,14 @@ static void done_write(void* arg, grpc_error_handle error) {
   }
 }
 
-static void start_write(internal_request* req) {
+static void start_write(InternalRequest* req) {
   grpc_slice_ref_internal(req->request_text);
   grpc_slice_buffer_add(&req->outgoing, req->request_text);
   grpc_endpoint_write(req->ep, &req->outgoing, &req->done_write, nullptr);
 }
 
 static void on_handshake_done(void* arg, grpc_endpoint* ep) {
-  internal_request* req = static_cast<internal_request*>(arg);
+  InternalRequest* req = static_cast<InternalRequest*>(arg);
 
   if (!ep) {
     next_address(req, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -184,7 +211,7 @@ static void on_handshake_done(void* arg, grpc_endpoint* ep) {
 }
 
 static void on_connected(void* arg, grpc_error_handle error) {
-  internal_request* req = static_cast<internal_request*>(arg);
+  InternalRequest* req = static_cast<InternalRequest*>(arg);
 
   if (!req->ep) {
     next_address(req, GRPC_ERROR_REF(error));
@@ -195,7 +222,7 @@ static void on_connected(void* arg, grpc_error_handle error) {
       req->deadline, on_handshake_done);
 }
 
-static void next_address(internal_request* req, grpc_error_handle error) {
+static void next_address(InternalRequest* req, grpc_error_handle error) {
   grpc_resolved_address* addr;
   if (error != GRPC_ERROR_NONE) {
     append_error(req, error);
@@ -217,7 +244,7 @@ static void next_address(internal_request* req, grpc_error_handle error) {
 }
 
 static void on_resolved(void* arg, grpc_error_handle error) {
-  internal_request* req = static_cast<internal_request*>(arg);
+  InternalRequest* req = static_cast<InternalRequest*>(arg);
   if (error != GRPC_ERROR_NONE) {
     finish(req, GRPC_ERROR_REF(error));
     return;
@@ -234,26 +261,15 @@ static void internal_request_begin(grpc_httpcli_context* context,
                                    grpc_httpcli_response* response,
                                    const char* name,
                                    const grpc_slice& request_text) {
-  internal_request* req = new internal_request();
-  req->request_text = request_text;
-  grpc_http_parser_init(&req->parser, GRPC_HTTP_RESPONSE, response);
-  req->on_done = on_done;
-  req->deadline = deadline;
-  req->handshaker =
-      request->handshaker ? request->handshaker : &grpc_httpcli_plaintext;
-  req->context = context;
-  req->pollent = pollent;
-  req->overall_error = GRPC_ERROR_NONE;
-  req->resource_quota = resource_quota;
+  InternalRequest* req = new InternalRequest(
+      request_text, response, resource_quota,
+
+      request->host, request->ssl_host_override, deadline,
+      request->handshaker ? request->handshaker : &grpc_httpcli_plaintext,
+      on_done, context, pollent, name);
   GRPC_CLOSURE_INIT(&req->on_read, on_read, req, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&req->done_write, done_write, req,
                     grpc_schedule_on_exec_ctx);
-  grpc_slice_buffer_init(&req->incoming);
-  grpc_slice_buffer_init(&req->outgoing);
-  grpc_iomgr_register_object(&req->iomgr_obj, name);
-  req->host = gpr_strdup(request->host);
-  req->ssl_host_override = gpr_strdup(request->ssl_host_override);
-
   GPR_ASSERT(pollent);
   grpc_polling_entity_add_to_pollset_set(req->pollent,
                                          req->context->pollset_set);
