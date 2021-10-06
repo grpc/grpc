@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>gRPC AsyncIO API &#8212; gRPC Python 1.38.0 documentation</title>
+    <title>gRPC AsyncIO API &#8212; gRPC Python 1.41.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
@@ -32,7 +32,7 @@
 
 
 
-<p class="blurb">1.38.0</p>
+<p class="blurb">1.41.0</p>
 
 
 
@@ -40,7 +40,7 @@
 
 
 <h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="grpc.html">gRPC</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">gRPC AsyncIO API</a><ul>
@@ -87,7 +87,7 @@
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -438,7 +438,7 @@ EXPERIMENTAL option.</p></li>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>generic_rpc_handlers</strong> (<em>Sequence</em><em>[</em><a class="reference internal" href="grpc.html#grpc.GenericRpcHandler" title="grpc.GenericRpcHandler"><em>grpc.GenericRpcHandler</em></a><em>]</em>) – A sequence of GenericRpcHandlers that will be</p></li>
-<li><p><strong>to service RPCs.</strong> (<em>used</em>) – </p></li>
+<li><p><strong>RPCs.</strong> (<em>used to service</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -816,7 +816,7 @@ this would return all items under the desired &lt;key&gt;.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>callback</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>None</em><em>]</em>) – A callable object will be called with the call object as</p></li>
-<li><p><strong>only argument.</strong> (<em>its</em>) – </p></li>
+<li><p><strong>argument.</strong> (<em>its only</em>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -1231,7 +1231,7 @@ server creation or set on the call.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc.aio.ServicerContext.invocation_metadata">
 <em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">invocation_metadata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#ServicerContext.invocation_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.ServicerContext.invocation_metadata" title="Permalink to this definition">¶</a></dt>
-<dd><p>Accesses the metadata from the sent by the client.</p>
+<dd><p>Accesses the metadata sent by the client.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>The invocation <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
@@ -1591,7 +1591,7 @@ messages to it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>grpc.aio._interceptor.ClientCallDetails</em></a><em>, </em><em>grpc.aio._typing.RequestType</em><em>]</em><em>, </em><em>grpc.aio._call.UnaryStreamCall</em><em>]</em>) – A coroutine that proceeds with the invocation by
+<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>grpc.aio._interceptor.ClientCallDetails</em></a><em>, </em><em>grpc.aio._typing.RequestType</em><em>]</em><em>, </em><em>grpc.aio._call.StreamUnaryCall</em><em>]</em>) – A coroutine that proceeds with the invocation by
 executing the next interceptor in the chain or invoking the
 actual RPC on the underlying Channel. It is the interceptor’s
 responsibility to call it if it decides to move the RPC forward.
@@ -1640,7 +1640,7 @@ become the source of the reads done by the caller.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>grpc.aio._interceptor.ClientCallDetails</em></a><em>, </em><em>grpc.aio._typing.RequestType</em><em>]</em><em>, </em><em>grpc.aio._call.UnaryStreamCall</em><em>]</em>) – A coroutine that proceeds with the invocation by
+<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>grpc.aio._interceptor.ClientCallDetails</em></a><em>, </em><em>grpc.aio._typing.RequestType</em><em>]</em><em>, </em><em>grpc.aio._call.StreamStreamCall</em><em>]</em>) – A coroutine that proceeds with the invocation by
 executing the next interceptor in the chain or invoking the
 actual RPC on the underlying Channel. It is the interceptor’s
 responsibility to call it if it decides to move the RPC forward.

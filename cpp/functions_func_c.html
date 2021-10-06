@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -82,8 +82,10 @@ $(function() {
 : <a class="el" href="classgrpc_1_1experimental_1_1_tls_credentials_options.html#a3855df30b65ebe6a3b7d8ce23238943c">grpc::experimental::TlsCredentialsOptions</a>
 </li>
 <li>c_provider()
-: <a class="el" href="classgrpc_1_1experimental_1_1_certificate_provider_interface.html#a3f293b3dedea1935a82e3a3bb779e949">grpc::experimental::CertificateProviderInterface</a>
+: <a class="el" href="classgrpc_1_1experimental_1_1_authorization_policy_provider_interface.html#a29c7bdcd3f1a0012fcd8523c995e56c3">grpc::experimental::AuthorizationPolicyProviderInterface</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_certificate_provider_interface.html#a3f293b3dedea1935a82e3a3bb779e949">grpc::experimental::CertificateProviderInterface</a>
 , <a class="el" href="classgrpc_1_1experimental_1_1_file_watcher_certificate_provider.html#a52c6245b084bc0a811177b28fc023d2a">grpc::experimental::FileWatcherCertificateProvider</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_static_data_authorization_policy_provider.html#ad227ab58a3506acac7b8c3394a88eeff">grpc::experimental::StaticDataAuthorizationPolicyProvider</a>
 , <a class="el" href="classgrpc_1_1experimental_1_1_static_data_certificate_provider.html#a1439dedd4a6879c3ff6d0802d991a22d">grpc::experimental::StaticDataCertificateProvider</a>
 </li>
 <li>c_resource_quota()
@@ -96,14 +98,13 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_slice.html#aa9588693e5faffee49e16fd82956f352">grpc::Slice</a>
 </li>
 <li>Call()
-: <a class="el" href="classgrpc_1_1internal_1_1_call.html#a97461e8a3cd38c3dc1205929bdb83e7f">grpc::internal::Call</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_call.html#ad6f340bd3dafcb61ba77ee1fd92aca4a">grpc::internal::Call</a>
 </li>
 <li>call()
 : <a class="el" href="classgrpc_1_1internal_1_1_call.html#a1ea7cfae5dc2ca7a3bc261825edb6d24">grpc::internal::Call</a>
 </li>
 <li>Call()
-: <a class="el" href="classgrpc_1_1internal_1_1_call.html#ad6f340bd3dafcb61ba77ee1fd92aca4a">grpc::internal::Call</a>
-, <a class="el" href="classgrpc_1_1_templated_generic_stub.html#aa80da2d8acda81ecc917bb899319cfae">grpc::TemplatedGenericStub&lt; RequestType, ResponseType &gt;</a>
+: <a class="el" href="classgrpc_1_1_templated_generic_stub.html#aa80da2d8acda81ecc917bb899319cfae">grpc::TemplatedGenericStub&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>CallbackBidiHandler()
 : <a class="el" href="classgrpc_1_1internal_1_1_callback_bidi_handler.html#a5d3acf6e3766b669d55daa9799bcedfa">grpc::internal::CallbackBidiHandler&lt; RequestType, ResponseType &gt;</a>
@@ -112,7 +113,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_callback_client_streaming_handler.html#ac2c12f55ce4b39ecc64005eefb06fa9b">grpc::internal::CallbackClientStreamingHandler&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>CallbackGenericService()
-: <a class="el" href="classgrpc_1_1experimental_1_1_callback_generic_service.html#a7a590a4597be7d1217f55b790d224b2c">grpc::experimental::CallbackGenericService</a>
+: <a class="el" href="classgrpc_1_1_callback_generic_service.html#a96b8a38dcf92e833d2c1837825f27b32">grpc::CallbackGenericService</a>
 </li>
 <li>CallbackServerContext()
 : <a class="el" href="classgrpc_1_1_callback_server_context.html#a636a0349b0344e4cbdb3be5c3a9889eb">grpc::CallbackServerContext</a>
@@ -236,9 +237,6 @@ $(function() {
 <li>ClientStreamingHandler()
 : <a class="el" href="classgrpc_1_1internal_1_1_client_streaming_handler.html#a19a0a47a232fc2106af01b2b0b97a286">grpc::internal::ClientStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
 </li>
-<li>Close()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a8a6308e6d413f6049cc7ba74442d49d1">grpc_event_engine::experimental::EventEngine::Endpoint</a>
-</li>
 <li>compare()
 : <a class="el" href="classgrpc_1_1string__ref.html#a2e3fa91fae8362cd8afd0eb0a7f0174e">grpc::string_ref</a>
 </li>
@@ -256,10 +254,10 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_server_context_base.html#a942b0a431630f987d558550bf9d49dd1">grpc::ServerContextBase</a>
 </li>
 <li>CondVar()
-: <a class="el" href="classgrpc_1_1internal_1_1_cond_var.html#a33ce590ba2b22d31e37a92f57509b2ef">grpc::internal::CondVar</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_cond_var.html#a3d961f0ea2c7b8929ac1b16f02a8133a">grpc::internal::CondVar</a>
 </li>
 <li>Connect()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3f18420478c34c4f2beca2ed62bcc259">grpc_event_engine::experimental::EventEngine</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a77a93980888e7f1fee07b2f987af3ff3">grpc_event_engine::experimental::EventEngine</a>
 </li>
 <li>context_allocator()
 : <a class="el" href="classgrpc_1_1_server.html#ace1254eaac4f93abfa7cd49c5b54f8f3">grpc::Server</a>
@@ -285,7 +283,8 @@ $(function() {
 : <a class="el" href="classgrpc_1_1string__ref.html#af00ae034a4d72e4e2cb661e858d3e57a">grpc::string_ref</a>
 </li>
 <li>Create()
-: <a class="el" href="classgrpc_1_1internal_1_1_client_async_reader_factory.html#a1109f1a4a191d6524237a642c3d98191">grpc::internal::ClientAsyncReaderFactory&lt; R &gt;</a>
+: <a class="el" href="classgrpc_1_1experimental_1_1_static_data_authorization_policy_provider.html#a4b5a96db220eb464ae7db3ffa80b2195">grpc::experimental::StaticDataAuthorizationPolicyProvider</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_client_async_reader_factory.html#a1109f1a4a191d6524237a642c3d98191">grpc::internal::ClientAsyncReaderFactory&lt; R &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_async_reader_writer_factory.html#acb877cd69b3c041afc2e637eda0e3a7d">grpc::internal::ClientAsyncReaderWriterFactory&lt; W, R &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_async_response_reader_factory.html#a991d3fb9029bceb59c705c27b9ef914c">grpc::internal::ClientAsyncResponseReaderFactory&lt; R &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_async_response_reader_helper.html#af550f8c9ac1350515c396f9d44a48226">grpc::internal::ClientAsyncResponseReaderHelper</a>
@@ -302,16 +301,16 @@ $(function() {
 : <a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html#a3874e0a3fda624a77c47f1c5b97a38a1">grpc::experimental::ClientInterceptorFactoryInterface</a>
 </li>
 <li>CreateListener()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3fbe3f983ef770110fe7647fd143b9d8">grpc_event_engine::experimental::EventEngine</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a887c568bc8142e3067e6826e453eb1c6">grpc_event_engine::experimental::EventEngine</a>
 </li>
 <li>CreateReactor()
-: <a class="el" href="classgrpc_1_1experimental_1_1_callback_generic_service.html#a83f986622f280b3e4aade8550de2c72e">grpc::experimental::CallbackGenericService</a>
+: <a class="el" href="classgrpc_1_1_callback_generic_service.html#a0417a54e9986e8279e7d867d6379c6dd">grpc::CallbackGenericService</a>
 </li>
 <li>CreateServerInterceptor()
 : <a class="el" href="classgrpc_1_1experimental_1_1_server_interceptor_factory_interface.html#a5517a5b475a975df03247a6a356a1bfd">grpc::experimental::ServerInterceptorFactoryInterface</a>
 </li>
 <li>CreateSliceAllocator()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html#ae7b4ec60c374fb8e077c2fa9cf30f66b">grpc_event_engine::experimental::SliceAllocatorFactory</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html#afa5a0206ff69eaf5cf3f869238d09367">grpc_event_engine::experimental::SliceAllocatorFactory</a>
 </li>
 <li>credentials()
 : <a class="el" href="classgrpc_1_1_client_context.html#ae815b758b873dc511ea9222fdacbd3c9">grpc::ClientContext</a>
@@ -323,7 +322,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

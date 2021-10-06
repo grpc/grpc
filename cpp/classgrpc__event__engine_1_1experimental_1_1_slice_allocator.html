@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -70,7 +70,7 @@ $(function() {
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a>  </div>
   <div class="headertitle">
-<div class="title">grpc_event_engine::experimental::SliceAllocator Class Reference</div>  </div>
+<div class="title">grpc_event_engine::experimental::SliceAllocator Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -78,36 +78,26 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a744faf8d8718717fb0b73766a7b388aa"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#a744faf8d8718717fb0b73766a7b388aa">AllocateCallback</a> = std::function&lt; void(absl::Status, SliceBuffer *buffer)&gt;</td></tr>
-<tr class="separator:a744faf8d8718717fb0b73766a7b388aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afd4506d647be83f155c1ad4a2daf6f41"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#afd4506d647be83f155c1ad4a2daf6f41">AllocateCallback</a> = std::function&lt; void(absl::Status)&gt;</td></tr>
+<tr class="separator:afd4506d647be83f155c1ad4a2daf6f41"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a7e79e1674ca2108a0a5cd53d1eb5bcf9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#a7e79e1674ca2108a0a5cd53d1eb5bcf9">SliceAllocator</a> (grpc_resource_user *user)</td></tr>
-<tr class="separator:a7e79e1674ca2108a0a5cd53d1eb5bcf9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a44d089fbc3affebdd46f855b69ae0bd2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#a44d089fbc3affebdd46f855b69ae0bd2">SliceAllocator</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a> &amp;other)=delete</td></tr>
-<tr class="separator:a44d089fbc3affebdd46f855b69ae0bd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a525427c8661d907d755170077f49b1d6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#a525427c8661d907d755170077f49b1d6">operator=</a> (const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a> &amp;other)=delete</td></tr>
-<tr class="separator:a525427c8661d907d755170077f49b1d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a13181f1ebd1771838e77919d08020bfb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#a13181f1ebd1771838e77919d08020bfb">SliceAllocator</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a> &amp;&amp;other)=default</td></tr>
-<tr class="separator:a13181f1ebd1771838e77919d08020bfb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab3c328500dccbf7515d6a3a047376b7b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#ab3c328500dccbf7515d6a3a047376b7b">operator=</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a> &amp;&amp;other)=default</td></tr>
-<tr class="separator:ab3c328500dccbf7515d6a3a047376b7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af971dbd45be329b53f40105bdae628d4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#af971dbd45be329b53f40105bdae628d4">~SliceAllocator</a> ()</td></tr>
-<tr class="separator:af971dbd45be329b53f40105bdae628d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a065b6db5dbfa4a0ecbf894cfcc340c69"><td class="memItemLeft" align="right" valign="top">absl::Status&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#a065b6db5dbfa4a0ecbf894cfcc340c69">Allocate</a> (size_t size, SliceBuffer *dest, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#a744faf8d8718717fb0b73766a7b388aa">SliceAllocator::AllocateCallback</a> cb)</td></tr>
-<tr class="memdesc:a065b6db5dbfa4a0ecbf894cfcc340c69"><td class="mdescLeft">&#160;</td><td class="mdescRight">Requests <em>size</em> bytes from gRPC, and populates <em>dest</em> with the allocated slices.  <a href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#a065b6db5dbfa4a0ecbf894cfcc340c69">More...</a><br /></td></tr>
-<tr class="separator:a065b6db5dbfa4a0ecbf894cfcc340c69"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5369f5c10223066a299562f582524077"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#a5369f5c10223066a299562f582524077">~SliceAllocator</a> ()=default</td></tr>
+<tr class="separator:a5369f5c10223066a299562f582524077"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5dac595ab7eaecb05ac17be1bccba45d"><td class="memItemLeft" align="right" valign="top">virtual absl::Status&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#a5dac595ab7eaecb05ac17be1bccba45d">Allocate</a> (size_t size, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *dest, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#afd4506d647be83f155c1ad4a2daf6f41">SliceAllocator::AllocateCallback</a> cb)=0</td></tr>
+<tr class="memdesc:a5dac595ab7eaecb05ac17be1bccba45d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Requests <em>size</em> bytes from gRPC, and populates <em>dest</em> with the allocated slices.  <a href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#a5dac595ab7eaecb05ac17be1bccba45d">More...</a><br /></td></tr>
+<tr class="separator:a5dac595ab7eaecb05ac17be1bccba45d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Typedef Documentation</h2>
-<a id="a744faf8d8718717fb0b73766a7b388aa"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a744faf8d8718717fb0b73766a7b388aa">&#9670;&nbsp;</a></span>AllocateCallback</h2>
+<a id="afd4506d647be83f155c1ad4a2daf6f41"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afd4506d647be83f155c1ad4a2daf6f41">&#9670;&nbsp;</a></span>AllocateCallback</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">using <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#a744faf8d8718717fb0b73766a7b388aa">grpc_event_engine::experimental::SliceAllocator::AllocateCallback</a> =  std::function&lt;void(absl::Status, SliceBuffer* buffer)&gt;</td>
+          <td class="memname">using <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#afd4506d647be83f155c1ad4a2daf6f41">grpc_event_engine::experimental::SliceAllocator::AllocateCallback</a> =  std::function&lt;void(absl::Status)&gt;</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -115,8 +105,8 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a7e79e1674ca2108a0a5cd53d1eb5bcf9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7e79e1674ca2108a0a5cd53d1eb5bcf9">&#9670;&nbsp;</a></span>SliceAllocator() <span class="overload">[1/3]</span></h2>
+<a id="a5369f5c10223066a299562f582524077"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5369f5c10223066a299562f582524077">&#9670;&nbsp;</a></span>~SliceAllocator()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -125,100 +115,33 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">grpc_event_engine::experimental::SliceAllocator::SliceAllocator </td>
-          <td>(</td>
-          <td class="paramtype">grpc_resource_user *&#160;</td>
-          <td class="paramname"><em>user</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">explicit</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a44d089fbc3affebdd46f855b69ae0bd2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a44d089fbc3affebdd46f855b69ae0bd2">&#9670;&nbsp;</a></span>SliceAllocator() <span class="overload">[2/3]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">grpc_event_engine::experimental::SliceAllocator::SliceAllocator </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a> &amp;&#160;</td>
-          <td class="paramname"><em>other</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">delete</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a13181f1ebd1771838e77919d08020bfb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a13181f1ebd1771838e77919d08020bfb">&#9670;&nbsp;</a></span>SliceAllocator() <span class="overload">[3/3]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">grpc_event_engine::experimental::SliceAllocator::SliceAllocator </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a> &amp;&amp;&#160;</td>
-          <td class="paramname"><em>other</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">default</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="af971dbd45be329b53f40105bdae628d4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af971dbd45be329b53f40105bdae628d4">&#9670;&nbsp;</a></span>~SliceAllocator()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">grpc_event_engine::experimental::SliceAllocator::~SliceAllocator </td>
+          <td class="memname">virtual grpc_event_engine::experimental::SliceAllocator::~SliceAllocator </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span><span class="mlabel">default</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a065b6db5dbfa4a0ecbf894cfcc340c69"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a065b6db5dbfa4a0ecbf894cfcc340c69">&#9670;&nbsp;</a></span>Allocate()</h2>
+<a id="a5dac595ab7eaecb05ac17be1bccba45d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5dac595ab7eaecb05ac17be1bccba45d">&#9670;&nbsp;</a></span>Allocate()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">absl::Status grpc_event_engine::experimental::SliceAllocator::Allocate </td>
+          <td class="memname">virtual absl::Status grpc_event_engine::experimental::SliceAllocator::Allocate </td>
           <td>(</td>
           <td class="paramtype">size_t&#160;</td>
           <td class="paramname"><em>size</em>, </td>
@@ -226,13 +149,13 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">SliceBuffer *&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *&#160;</td>
           <td class="paramname"><em>dest</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#a744faf8d8718717fb0b73766a7b388aa">SliceAllocator::AllocateCallback</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#afd4506d647be83f155c1ad4a2daf6f41">SliceAllocator::AllocateCallback</a>&#160;</td>
           <td class="paramname"><em>cb</em>&#160;</td>
         </tr>
         <tr>
@@ -241,62 +164,16 @@ Public Member Functions</h2></td></tr>
           <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p>Requests <em>size</em> bytes from gRPC, and populates <em>dest</em> with the allocated slices. </p>
-<p>Ownership of the <em>SliceBuffer</em> is not transferred. </p>
-
-</div>
-</div>
-<a id="a525427c8661d907d755170077f49b1d6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a525427c8661d907d755170077f49b1d6">&#9670;&nbsp;</a></span>operator=() <span class="overload">[1/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a>&amp; grpc_event_engine::experimental::SliceAllocator::operator= </td>
-          <td>(</td>
-          <td class="paramtype">const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a> &amp;&#160;</td>
-          <td class="paramname"><em>other</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">delete</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="ab3c328500dccbf7515d6a3a047376b7b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab3c328500dccbf7515d6a3a047376b7b">&#9670;&nbsp;</a></span>operator=() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a>&amp; grpc_event_engine::experimental::SliceAllocator::operator= </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a> &amp;&amp;&#160;</td>
-          <td class="paramname"><em>other</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">default</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
+<p>Ownership of the <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a></em> is not transferred.</p>
+<p>gRPC provides a ResourceQuota system to cap the amount of memory used by the library. When a memory limit has been reached, slice allocation is interrupted to attempt to reclaim memory from participating gRPC internals. When there is sufficient memory available, slice allocation proceeds as normal. </p>
 
 </div>
 </div>
@@ -306,7 +183,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -97,14 +97,12 @@ $(function() {
 <li>Serialize()
 : <a class="el" href="classgrpc_1_1_serialization_traits_3_01_byte_buffer_00_01void_01_4.html#a5a4c3007da4742be050c0d58de8c0590">grpc::SerializationTraits&lt; ByteBuffer, void &gt;</a>
 </li>
-<li>server()
-: <a class="el" href="classgrpc_1_1_server.html#a01bdfb4554d12a10bdc9cf875ffa74dd">grpc::Server</a>
-</li>
 <li>Server()
 : <a class="el" href="classgrpc_1_1_server.html#a304db7517d8a30c27c2305715288340b">grpc::Server</a>
 </li>
 <li>server()
-: <a class="el" href="classgrpc_1_1_server_interface.html#a8e9cf80377d3fd1f110089ad16ec79e7">grpc::ServerInterface</a>
+: <a class="el" href="classgrpc_1_1_server.html#a01bdfb4554d12a10bdc9cf875ffa74dd">grpc::Server</a>
+, <a class="el" href="classgrpc_1_1_server_interface.html#a8e9cf80377d3fd1f110089ad16ec79e7">grpc::ServerInterface</a>
 </li>
 <li>server_context()
 : <a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#afea452e560fd36a8d92e960611c01dbc">grpc::experimental::ServerRpcInfo</a>
@@ -176,8 +174,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_server_builder.html#a4799eec87ef7d336d0f5db95d273e432">grpc::ServerBuilder</a>
 </li>
 <li>Set()
-: <a class="el" href="classgrpc_1_1_alarm_1_1experimental__type.html#a44d38dda62537eedafcd453a04e2d274">grpc::Alarm::experimental_type</a>
-, <a class="el" href="classgrpc_1_1_alarm.html#abb9d93f77976356ddf8b79963be2c110">grpc::Alarm</a>
+: <a class="el" href="classgrpc_1_1_alarm.html#abb9d93f77976356ddf8b79963be2c110">grpc::Alarm</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_callback_with_success_tag.html#a1cc128de241d454cea786497d1761a2c">grpc::internal::CallbackWithSuccessTag</a>
 </li>
 <li>set_authority()
@@ -268,10 +265,10 @@ $(function() {
 : <a class="el" href="classgrpc_1_1experimental_1_1_tls_server_authorization_check_arg.html#af0e9d7810abb604be9205b8f2026e738">grpc::experimental::TlsServerAuthorizationCheckArg</a>
 </li>
 <li>set_request()
-: <a class="el" href="classgrpc_1_1experimental_1_1_message_holder.html#a3c627621eb7f90440e0fae41ebdbae10">grpc::experimental::MessageHolder&lt; RequestT, ResponseT &gt;</a>
+: <a class="el" href="classgrpc_1_1_message_holder.html#aa93d282938b8c801895ca3af1a54fbb0">grpc::MessageHolder&lt; RequestT, ResponseT &gt;</a>
 </li>
 <li>set_response()
-: <a class="el" href="classgrpc_1_1experimental_1_1_message_holder.html#a8bed5c98e17cff87b7641d527c84fac3">grpc::experimental::MessageHolder&lt; RequestT, ResponseT &gt;</a>
+: <a class="el" href="classgrpc_1_1_message_holder.html#a096aeb3afa14d0024797d556dc6f22b7">grpc::MessageHolder&lt; RequestT, ResponseT &gt;</a>
 </li>
 <li>set_root_cert_name()
 : <a class="el" href="classgrpc_1_1experimental_1_1_tls_credentials_options.html#abe3c120f3b7df4c64fb0163a0024c37c">grpc::experimental::TlsCredentialsOptions</a>
@@ -289,7 +286,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1experimental_1_1_tls_server_authorization_check_arg.html#ae8ef43dfad286f85c5f1aee9285b4a68">grpc::experimental::TlsServerAuthorizationCheckArg</a>
 </li>
 <li>set_status_notifier()
-: <a class="el" href="classgrpc_1_1experimental_1_1_xds_server_builder.html#a410029ffafc7be61aee43258d2160665">grpc::experimental::XdsServerBuilder</a>
+: <a class="el" href="classgrpc_1_1_xds_server_builder.html#a990da9b1dab5e4edb974d9f6220eda9d">grpc::XdsServerBuilder</a>
 </li>
 <li>set_success()
 : <a class="el" href="classgrpc_1_1experimental_1_1_tls_server_authorization_check_arg.html#aae139e8556e2b4debacdce10fc5c0ad7">grpc::experimental::TlsServerAuthorizationCheckArg</a>
@@ -309,6 +306,9 @@ $(function() {
 <li>SetAuthMetadataProcessor()
 : <a class="el" href="classgrpc_1_1_server_credentials.html#aac2d5861ec4c0534c3eaa7b36f5cc6fa">grpc::ServerCredentials</a>
 </li>
+<li>SetAuthorizationPolicyProvider()
+: <a class="el" href="classgrpc_1_1_server_builder_1_1experimental__type.html#afb87869ec15ae743c7cb36ac864fb94c">grpc::ServerBuilder::experimental_type</a>
+</li>
 <li>SetCall()
 : <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#ae45aa7858d2a41ccc909c7faa6167eac">grpc::internal::InterceptorBatchMethodsImpl</a>
 </li>
@@ -325,7 +325,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_server_builder.html#a26e4b20a377c4bbbe37c33aa72165034">grpc::ServerBuilder</a>
 </li>
 <li>SetContextAllocator()
-: <a class="el" href="classgrpc_1_1_server_builder_1_1experimental__type.html#a0a1ab9751051802301cd9af88bbd4935">grpc::ServerBuilder::experimental_type</a>
+: <a class="el" href="classgrpc_1_1_server_builder.html#ad4b67b37b9e35881a680e1f70d400d03">grpc::ServerBuilder</a>
 </li>
 <li>SetDefaultCompressionAlgorithm()
 : <a class="el" href="classgrpc_1_1_server_builder.html#a6ee516b7445ff4e1274a6d882f529504">grpc::ServerBuilder</a>
@@ -405,7 +405,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_resource_quota.html#ae6845dbf2ca8d94df38c36fff9ac15ca">grpc::ResourceQuota</a>
 </li>
 <li>SetMessageAllocator()
-: <a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html#ab93d072302905eb922a5564ca896fdf4">grpc::internal::CallbackUnaryHandler&lt; RequestType, ResponseType &gt;</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html#ac0545e7cdb9b3075d84d2f0edd377bb6">grpc::internal::CallbackUnaryHandler&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>SetMethodType()
 : <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a3d84cbcc47861ba127f053bb9590ff1f">grpc::internal::RpcMethod</a>
@@ -460,7 +460,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#ae9399219c13808b45f3acad088fb0981">grpc::ChannelArguments</a>
 </li>
 <li>SetServingStatus()
-: <a class="el" href="classgrpc_1_1_health_check_service_interface.html#a2db64a471c343d96f4e8e191efce8c08">grpc::HealthCheckServiceInterface</a>
+: <a class="el" href="classgrpc_1_1_health_check_service_interface.html#a1e7a4131b8ccdd1cea34fb2ffc540fdd">grpc::HealthCheckServiceInterface</a>
 </li>
 <li>SetSocketMutator()
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#a520690f499be85159a20200ddb986a96">grpc::ChannelArguments</a>
@@ -494,7 +494,6 @@ $(function() {
 </li>
 <li>Shutdown()
 : <a class="el" href="classgrpc_1_1_server_interface.html#a644772d11101318f1424e595dee73ccf">grpc::ServerInterface</a>
-, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a25339c7fab530be8234a1b06e4b3311a">grpc_event_engine::experimental::EventEngine</a>
 </li>
 <li>ShutdownInternal()
 : <a class="el" href="classgrpc_1_1_server_interface.html#a862fd9a2d64e66447d41d0aba40af2f9">grpc::ServerInterface</a>
@@ -517,16 +516,13 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_proto_buffer_reader.html#a0874823748781629e0b2bde470d78bf3">grpc::ProtoBufferReader</a>
 </li>
 <li>Slice()
-: <a class="el" href="classgrpc_1_1_slice.html#ac7fd05a7ad8edb55c163b544e7878bf9">grpc::Slice</a>
+: <a class="el" href="classgrpc_1_1_slice.html#a0fe7abc158b542eae02d1e7b8f76d625">grpc::Slice</a>
 </li>
 <li>slice_buffer()
 : <a class="el" href="classgrpc_1_1_proto_buffer_writer.html#a2735ca72a039d465dd538c6f3fa06e20">grpc::ProtoBufferWriter</a>
 </li>
-<li>SliceAllocator()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#a13181f1ebd1771838e77919d08020bfb">grpc_event_engine::experimental::SliceAllocator</a>
-</li>
-<li>SliceAllocatorFactory()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html#aabc00b52fd346d0a174211f98eb76436">grpc_event_engine::experimental::SliceAllocatorFactory</a>
+<li>SliceBuffer()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#ac896d876c45b5306c16d31860332bca2">grpc_event_engine::experimental::SliceBuffer</a>
 </li>
 <li>SplitServerStreamingHandler()
 : <a class="el" href="classgrpc_1_1internal_1_1_split_server_streaming_handler.html#a072dbd2e56d729d274791e6f24ba8129">grpc::internal::SplitServerStreamingHandler&lt; RequestType, ResponseType &gt;</a>
@@ -577,8 +573,8 @@ $(function() {
 </li>
 <li>StartWrite()
 : <a class="el" href="classgrpc_1_1_client_bidi_reactor.html#a3c14129661af38610185a006bbb7eca9">grpc::ClientBidiReactor&lt; Request, Response &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_write_reactor.html#a6bf49376d587340d3a0118d47905fc62">grpc::ClientWriteReactor&lt; Request &gt;</a>
-, <a class="el" href="classgrpc_1_1_server_bidi_reactor.html#adc27ac03a985881735647776200f6c71">grpc::ServerBidiReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1_client_write_reactor.html#a34e5ff58a81fe1d3edf4bb85b7d32dd7">grpc::ClientWriteReactor&lt; Request &gt;</a>
+, <a class="el" href="classgrpc_1_1_server_bidi_reactor.html#a7b457aceeb312472835007c289c711e8">grpc::ServerBidiReactor&lt; Request, Response &gt;</a>
 , <a class="el" href="classgrpc_1_1_server_write_reactor.html#a525d185a1924e021d1dba626ce756433">grpc::ServerWriteReactor&lt; Response &gt;</a>
 </li>
 <li>StartWriteAndFinish()
@@ -595,8 +591,11 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_client_bidi_reactor.html#a43f605fb458e7545718e595868eba3c8">grpc::ClientBidiReactor&lt; Request, Response &gt;</a>
 , <a class="el" href="classgrpc_1_1_client_write_reactor.html#a7ec6a54d1e64db79620b2225cdfa7b96">grpc::ClientWriteReactor&lt; Request &gt;</a>
 </li>
+<li>StaticDataAuthorizationPolicyProvider()
+: <a class="el" href="classgrpc_1_1experimental_1_1_static_data_authorization_policy_provider.html#a94081a1f69783c79d6bb073ae6c98d22">grpc::experimental::StaticDataAuthorizationPolicyProvider</a>
+</li>
 <li>StaticDataCertificateProvider()
-: <a class="el" href="classgrpc_1_1experimental_1_1_static_data_certificate_provider.html#a0b72dc0d81b33ecb4cc1812ee7b0d5f4">grpc::experimental::StaticDataCertificateProvider</a>
+: <a class="el" href="classgrpc_1_1experimental_1_1_static_data_certificate_provider.html#ab51acb420cf14f1d55f544f2aa62b3cf">grpc::experimental::StaticDataCertificateProvider</a>
 </li>
 <li>status()
 : <a class="el" href="classgrpc_1_1experimental_1_1_tls_server_authorization_check_arg.html#a0adceb3655ec111488cccc04ff079125">grpc::experimental::TlsServerAuthorizationCheckArg</a>
@@ -613,10 +612,13 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_streamed_unary_handler.html#ab4784adb1f00341659f6299fe8ade8e1">grpc::internal::StreamedUnaryHandler&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>string_ref()
-: <a class="el" href="classgrpc_1_1string__ref.html#a0631f7099a7fc8b1bbf16f3353074400">grpc::string_ref</a>
+: <a class="el" href="classgrpc_1_1string__ref.html#ab929e0c1cff6f7ab4f4d9e4b5734b18c">grpc::string_ref</a>
 </li>
 <li>StubOptions()
 : <a class="el" href="classgrpc_1_1_stub_options.html#aefbc4ac4c7a050a6317c1beb5f3bacfd">grpc::StubOptions</a>
+</li>
+<li>sub()
+: <a class="el" href="classgrpc_1_1_slice.html#a48b3aee091958392cdfe5a8cff7f850a">grpc::Slice</a>
 </li>
 <li>substr()
 : <a class="el" href="classgrpc_1_1string__ref.html#ae9c7f6a6af76030d720b135cc251c08b">grpc::string_ref</a>
@@ -640,7 +642,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -270,7 +270,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.ChannelCredentials.html",
-          "hash": "5YHdlNt1SludtkJrbPNzdQ=="
+          "hash": "lXjJVBEkamDX+hlEWptL/w=="
         }
       },
       "is_incremental": false,
@@ -990,7 +990,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.SslCredentials.html",
-          "hash": "vCrn3Q3DBk13aK0JbjWVVw=="
+          "hash": "ryRrtWab628BYGiXVVa8Ng=="
         }
       },
       "is_incremental": false,
@@ -1170,7 +1170,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.VersionInfo.html",
-          "hash": "vOB/6kMtYBp+uO5KeND6Fw=="
+          "hash": "jle/hKCMetNpnoV7hycDPA=="
         }
       },
       "is_incremental": false,
@@ -1372,7 +1372,8 @@
   "incremental_info": [
     {
       "status": {
-        "can_incremental": true,
+        "can_incremental": false,
+        "details": "Cannot build incrementally because last build info is missing.",
         "incrementalPhase": "build"
       },
       "processors": {
@@ -1382,7 +1383,7 @@
           "incrementalPhase": "build"
         },
         "ManagedReferenceDocumentProcessor": {
-          "can_incremental": true,
+          "can_incremental": false,
           "incrementalPhase": "build"
         }
       }

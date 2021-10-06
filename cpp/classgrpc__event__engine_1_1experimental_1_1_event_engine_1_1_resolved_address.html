@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -74,7 +74,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
-<p>A thin wrapper around a platform-specific sockaddr type.  
+<p>Thin wrapper around a platform-specific sockaddr type.  
  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="event__engine_8h_source.html">event_engine.h</a>&gt;</code></p>
@@ -83,6 +83,10 @@ $(function() {
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ac8b476c2acd9c77dd881d29f2a379d5c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html#ac8b476c2acd9c77dd881d29f2a379d5c">ResolvedAddress</a> (const sockaddr *<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html#ac82fd08c29871dfd009a6f592fdddecd">address</a>, socklen_t <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html#a139d2e8182d9b96905b19db907b8bc68">size</a>)</td></tr>
 <tr class="separator:ac8b476c2acd9c77dd881d29f2a379d5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d7a3bf8e2c76c6d4fedd72b99f2397c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html#a9d7a3bf8e2c76c6d4fedd72b99f2397c">ResolvedAddress</a> ()=default</td></tr>
+<tr class="separator:a9d7a3bf8e2c76c6d4fedd72b99f2397c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad0c0417018fa8ddfe1822893e023e4c8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html#ad0c0417018fa8ddfe1822893e023e4c8">ResolvedAddress</a> (const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a> &amp;)=default</td></tr>
+<tr class="separator:ad0c0417018fa8ddfe1822893e023e4c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac82fd08c29871dfd009a6f592fdddecd"><td class="memItemLeft" align="right" valign="top">const struct sockaddr *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html#ac82fd08c29871dfd009a6f592fdddecd">address</a> () const</td></tr>
 <tr class="separator:ac82fd08c29871dfd009a6f592fdddecd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a139d2e8182d9b96905b19db907b8bc68"><td class="memItemLeft" align="right" valign="top">socklen_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html#a139d2e8182d9b96905b19db907b8bc68">size</a> () const</td></tr>
@@ -94,7 +98,7 @@ Static Public Attributes</h2></td></tr>
 <tr class="separator:a0abb7fdbdb6842d41549af3da3471dab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A thin wrapper around a platform-specific sockaddr type. </p>
+<div class="textblock"><p>Thin wrapper around a platform-specific sockaddr type. </p>
 <p>A sockaddr struct exists on all platforms that gRPC supports.</p>
 <p>Platforms are expected to provide definitions for:</p><ul>
 <li>sockaddr</li>
@@ -103,7 +107,7 @@ Static Public Attributes</h2></td></tr>
 </ul>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="ac8b476c2acd9c77dd881d29f2a379d5c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac8b476c2acd9c77dd881d29f2a379d5c">&#9670;&nbsp;</a></span>ResolvedAddress()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ac8b476c2acd9c77dd881d29f2a379d5c">&#9670;&nbsp;</a></span>ResolvedAddress() <span class="overload">[1/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -126,6 +130,57 @@ Static Public Attributes</h2></td></tr>
           <td></td><td></td>
         </tr>
       </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a9d7a3bf8e2c76c6d4fedd72b99f2397c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9d7a3bf8e2c76c6d4fedd72b99f2397c">&#9670;&nbsp;</a></span>ResolvedAddress() <span class="overload">[2/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc_event_engine::experimental::EventEngine::ResolvedAddress::ResolvedAddress </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">default</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad0c0417018fa8ddfe1822893e023e4c8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad0c0417018fa8ddfe1822893e023e4c8">&#9670;&nbsp;</a></span>ResolvedAddress() <span class="overload">[3/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc_event_engine::experimental::EventEngine::ResolvedAddress::ResolvedAddress </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a> &amp;&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">default</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 </div>
@@ -194,7 +249,7 @@ Static Public Attributes</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

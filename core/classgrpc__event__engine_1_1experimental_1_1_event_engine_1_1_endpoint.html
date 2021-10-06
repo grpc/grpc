@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">16.0.0</span>
+   &#160;<span id="projectnumber">19.0.0</span>
    </div>
   </td>
  </tr>
@@ -73,7 +73,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
-<p>An <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="An Endpoint represents one end of a connection between a gRPC client and server.">Endpoint</a> represents one end of a connection between a gRPC client and server.  
+<p>One end of a connection between a gRPC client and server.  
  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="event__engine_8h_source.html">event_engine.h</a>&gt;</code></p>
@@ -81,25 +81,23 @@ $(function() {
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ac2549a2052ff34c77674c5dd95e0d8cd"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ac2549a2052ff34c77674c5dd95e0d8cd">~Endpoint</a> ()=default</td></tr>
-<tr class="memdesc:ac2549a2052ff34c77674c5dd95e0d8cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="An Endpoint represents one end of a connection between a gRPC client and server.">Endpoint</a> destructor is responsible for shutting down all connections and invoking all pending read or write callbacks with an error status.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ac2549a2052ff34c77674c5dd95e0d8cd">More...</a><br /></td></tr>
+<tr class="memdesc:ac2549a2052ff34c77674c5dd95e0d8cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuts down all connections and invokes all pending read or write callbacks with an error status.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ac2549a2052ff34c77674c5dd95e0d8cd">More...</a><br /></td></tr>
 <tr class="separator:ac2549a2052ff34c77674c5dd95e0d8cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac02bc9bd2187311c93fb7d08b7cb015d"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ac02bc9bd2187311c93fb7d08b7cb015d">Read</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ae2d013587133788e31d8984cf0783050">Callback</a> on_read, SliceBuffer *buffer, absl::Time deadline)=0</td></tr>
-<tr class="memdesc:ac02bc9bd2187311c93fb7d08b7cb015d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read data from the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="An Endpoint represents one end of a connection between a gRPC client and server.">Endpoint</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ac02bc9bd2187311c93fb7d08b7cb015d">More...</a><br /></td></tr>
-<tr class="separator:ac02bc9bd2187311c93fb7d08b7cb015d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1aa292386daca034898abfcacd0081ae"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a1aa292386daca034898abfcacd0081ae">Write</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ae2d013587133788e31d8984cf0783050">Callback</a> on_writable, SliceBuffer *data, absl::Time deadline)=0</td></tr>
-<tr class="memdesc:a1aa292386daca034898abfcacd0081ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write data out on the connection.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a1aa292386daca034898abfcacd0081ae">More...</a><br /></td></tr>
-<tr class="separator:a1aa292386daca034898abfcacd0081ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8a6308e6d413f6049cc7ba74442d49d1"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a8a6308e6d413f6049cc7ba74442d49d1">Close</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ae2d013587133788e31d8984cf0783050">Callback</a> on_close)=0</td></tr>
-<tr class="separator:a8a6308e6d413f6049cc7ba74442d49d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a45513f908f0b38f5b2d9a9820ad5e864"><td class="memItemLeft" align="right" valign="top">virtual const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a45513f908f0b38f5b2d9a9820ad5e864">GetPeerAddress</a> () const =0</td></tr>
-<tr class="memdesc:a45513f908f0b38f5b2d9a9820ad5e864"><td class="mdescLeft">&#160;</td><td class="mdescRight">These methods return an address in the format described in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html" title="The DNSResolver that provides asynchronous resolution.">DNSResolver</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a45513f908f0b38f5b2d9a9820ad5e864">More...</a><br /></td></tr>
-<tr class="separator:a45513f908f0b38f5b2d9a9820ad5e864"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5edd9101a486dd90a7b832c8aea9af19"><td class="memItemLeft" align="right" valign="top">virtual const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a5edd9101a486dd90a7b832c8aea9af19">GetLocalAddress</a> () const =0</td></tr>
-<tr class="separator:a5edd9101a486dd90a7b832c8aea9af19"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2e56a79f0684626eb5c14755fe89abfa"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a2e56a79f0684626eb5c14755fe89abfa">Read</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ae2d013587133788e31d8984cf0783050">Callback</a> on_read, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *buffer)=0</td></tr>
+<tr class="memdesc:a2e56a79f0684626eb5c14755fe89abfa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads data from the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a2e56a79f0684626eb5c14755fe89abfa">More...</a><br /></td></tr>
+<tr class="separator:a2e56a79f0684626eb5c14755fe89abfa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a38ca50d6f431b7085d96ff2de350c220"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a38ca50d6f431b7085d96ff2de350c220">Write</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ae2d013587133788e31d8984cf0783050">Callback</a> on_writable, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *data)=0</td></tr>
+<tr class="memdesc:a38ca50d6f431b7085d96ff2de350c220"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes data out on the connection.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a38ca50d6f431b7085d96ff2de350c220">More...</a><br /></td></tr>
+<tr class="separator:a38ca50d6f431b7085d96ff2de350c220"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad0b6e8aa3891af48f11a6422f1d95bb2"><td class="memItemLeft" align="right" valign="top">virtual const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ad0b6e8aa3891af48f11a6422f1d95bb2">GetPeerAddress</a> () const =0</td></tr>
+<tr class="memdesc:ad0b6e8aa3891af48f11a6422f1d95bb2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns an address in the format described in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html" title="Provides asynchronous resolution.">DNSResolver</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ad0b6e8aa3891af48f11a6422f1d95bb2">More...</a><br /></td></tr>
+<tr class="separator:ad0b6e8aa3891af48f11a6422f1d95bb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4cda2ef24a6abbc49df1806599c6c930"><td class="memItemLeft" align="right" valign="top">virtual const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a4cda2ef24a6abbc49df1806599c6c930">GetLocalAddress</a> () const =0</td></tr>
+<tr class="separator:a4cda2ef24a6abbc49df1806599c6c930"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>An <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="An Endpoint represents one end of a connection between a gRPC client and server.">Endpoint</a> represents one end of a connection between a gRPC client and server. </p>
-<p>Endpoints are created when connections are established, and <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="An Endpoint represents one end of a connection between a gRPC client and server.">Endpoint</a> operations are gRPC's primary means of communication.</p>
+<div class="textblock"><p>One end of a connection between a gRPC client and server. </p>
+<p>Endpoints are created when connections are established, and <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> operations are gRPC's primary means of communication.</p>
 <p>Endpoints must use the provided <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a> for all data buffer memory allocations. gRPC allows applications to set memory constraints per Channel or Server, and the implementation depends on all dynamic memory allocation being handled by the quota system. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="ac2549a2052ff34c77674c5dd95e0d8cd"></a>
@@ -125,13 +123,13 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>The <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="An Endpoint represents one end of a connection between a gRPC client and server.">Endpoint</a> destructor is responsible for shutting down all connections and invoking all pending read or write callbacks with an error status. </p>
+<p>Shuts down all connections and invokes all pending read or write callbacks with an error status. </p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a8a6308e6d413f6049cc7ba74442d49d1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8a6308e6d413f6049cc7ba74442d49d1">&#9670;&nbsp;</a></span>Close()</h2>
+<a id="a4cda2ef24a6abbc49df1806599c6c930"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4cda2ef24a6abbc49df1806599c6c930">&#9670;&nbsp;</a></span>GetLocalAddress()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -140,33 +138,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void grpc_event_engine::experimental::EventEngine::Endpoint::Close </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ae2d013587133788e31d8984cf0783050">Callback</a>&#160;</td>
-          <td class="paramname"><em>on_close</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a5edd9101a486dd90a7b832c8aea9af19"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5edd9101a486dd90a7b832c8aea9af19">&#9670;&nbsp;</a></span>GetLocalAddress()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">virtual const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a>* grpc_event_engine::experimental::EventEngine::Endpoint::GetLocalAddress </td>
+          <td class="memname">virtual const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a>&amp; grpc_event_engine::experimental::EventEngine::Endpoint::GetLocalAddress </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -181,8 +153,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a45513f908f0b38f5b2d9a9820ad5e864"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a45513f908f0b38f5b2d9a9820ad5e864">&#9670;&nbsp;</a></span>GetPeerAddress()</h2>
+<a id="ad0b6e8aa3891af48f11a6422f1d95bb2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad0b6e8aa3891af48f11a6422f1d95bb2">&#9670;&nbsp;</a></span>GetPeerAddress()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -191,7 +163,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a>* grpc_event_engine::experimental::EventEngine::Endpoint::GetPeerAddress </td>
+          <td class="memname">virtual const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a>&amp; grpc_event_engine::experimental::EventEngine::Endpoint::GetPeerAddress </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -204,13 +176,13 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>These methods return an address in the format described in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html" title="The DNSResolver that provides asynchronous resolution.">DNSResolver</a>. </p>
-<p>The returned values are owned by the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="An Endpoint represents one end of a connection between a gRPC client and server.">Endpoint</a> and are expected to remain valid for the life of the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="An Endpoint represents one end of a connection between a gRPC client and server.">Endpoint</a>. </p>
+<p>Returns an address in the format described in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html" title="Provides asynchronous resolution.">DNSResolver</a>. </p>
+<p>The returned values are expected to remain valid for the life of the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a>. </p>
 
 </div>
 </div>
-<a id="ac02bc9bd2187311c93fb7d08b7cb015d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac02bc9bd2187311c93fb7d08b7cb015d">&#9670;&nbsp;</a></span>Read()</h2>
+<a id="a2e56a79f0684626eb5c14755fe89abfa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2e56a79f0684626eb5c14755fe89abfa">&#9670;&nbsp;</a></span>Read()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -227,14 +199,8 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">SliceBuffer *&#160;</td>
-          <td class="paramname"><em>buffer</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">absl::Time&#160;</td>
-          <td class="paramname"><em>deadline</em>&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *&#160;</td>
+          <td class="paramname"><em>buffer</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -249,14 +215,15 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Read data from the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="An Endpoint represents one end of a connection between a gRPC client and server.">Endpoint</a>. </p>
+<p>Reads data from the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a>. </p>
 <p>When data is available on the connection, that data is moved into the <em>buffer</em>, and the <em>on_read</em> callback is called. The caller must ensure that the callback has access to the buffer when executed later. Ownership of the buffer is not transferred. Valid slices <em>may</em> be placed into the buffer even if the callback is invoked with a non-OK Status.</p>
-<p>For failed read operations, implementations should pass the appropriate statuses to <em>on_read</em>. For example, callbacks might expect to receive DEADLINE_EXCEEDED when the deadline is exceeded, and CANCELLED on endpoint shutdown. </p>
+<p>There can be at most one outstanding read per <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> at any given time. An outstanding read is one in which the <em>on_read</em> callback has not yet been executed for some previous call to <em>Read</em>. If an attempt is made to call <em>Read</em> while a previous read is still outstanding, the <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a></em> must abort.</p>
+<p>For failed read operations, implementations should pass the appropriate statuses to <em>on_read</em>. For example, callbacks might expect to receive CANCELLED on endpoint shutdown. </p>
 
 </div>
 </div>
-<a id="a1aa292386daca034898abfcacd0081ae"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1aa292386daca034898abfcacd0081ae">&#9670;&nbsp;</a></span>Write()</h2>
+<a id="a38ca50d6f431b7085d96ff2de350c220"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a38ca50d6f431b7085d96ff2de350c220">&#9670;&nbsp;</a></span>Write()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -273,14 +240,8 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">SliceBuffer *&#160;</td>
-          <td class="paramname"><em>data</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">absl::Time&#160;</td>
-          <td class="paramname"><em>deadline</em>&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *&#160;</td>
+          <td class="paramname"><em>data</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -295,9 +256,10 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Write data out on the connection. </p>
-<p><em>on_writable</em> is called when the connection is ready for more data. The Slices within the <em>data</em> buffer may be mutated at will by the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="An Endpoint represents one end of a connection between a gRPC client and server.">Endpoint</a> until <em>on_writable</em> is called. The <em>data</em> SliceBuffer will remain valid after calling <em>Write</em>, but its state is otherwise undefined.</p>
-<p>For failed write operations, implementations should pass the appropriate statuses to <em>on_writable</em>. For example, callbacks might expect to receive DEADLINE_EXCEEDED when the deadline is exceeded, and CANCELLED on endpoint shutdown. </p>
+<p>Writes data out on the connection. </p>
+<p><em>on_writable</em> is called when the connection is ready for more data. The Slices within the <em>data</em> buffer may be mutated at will by the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> until <em>on_writable</em> is called. The <em>data</em> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> will remain valid after calling <em>Write</em>, but its state is otherwise undefined. All bytes in <em>data</em> must have been written before calling <em>on_writable</em> unless an error has occurred.</p>
+<p>There can be at most one outstanding write per <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> at any given time. An outstanding write is one in which the <em>on_writable</em> callback has not yet been executed for some previous call to <em>Write</em>. If an attempt is made to call <em>Write</em> while a previous write is still outstanding, the <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a></em> must abort.</p>
+<p>For failed write operations, implementations should pass the appropriate statuses to <em>on_writable</em>. For example, callbacks might expect to receive CANCELLED on endpoint shutdown. </p>
 
 </div>
 </div>
@@ -307,7 +269,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:46 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

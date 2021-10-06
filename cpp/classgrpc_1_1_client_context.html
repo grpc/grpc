@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -166,9 +166,9 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a70ff062f93b75964704b7f8ef97bf7f6"><td class="memItemLeft" align="right" valign="top">static std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a70ff062f93b75964704b7f8ef97bf7f6">FromServerContext</a> (const <a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> &amp;server_context, <a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a> options=<a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a>())</td></tr>
-<tr class="memdesc:a70ff062f93b75964704b7f8ef97bf7f6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to:">ClientContext</a></em> as a child of an incoming server call, according to <em>options</em> (.  <a href="classgrpc_1_1_client_context.html#a70ff062f93b75964704b7f8ef97bf7f6">More...</a><br /></td></tr>
-<tr class="separator:a70ff062f93b75964704b7f8ef97bf7f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47b253a4cdf3c188157471cbde7fdcec"><td class="memItemLeft" align="right" valign="top">static std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a47b253a4cdf3c188157471cbde7fdcec">FromServerContext</a> (const <a class="el" href="classgrpc_1_1_server_context_base.html">grpc::ServerContextBase</a> &amp;server_context, <a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a> options=<a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a>())</td></tr>
+<tr class="memdesc:a47b253a4cdf3c188157471cbde7fdcec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to:">ClientContext</a></em> as a child of an incoming server call, according to <em>options</em> (.  <a href="classgrpc_1_1_client_context.html#a47b253a4cdf3c188157471cbde7fdcec">More...</a><br /></td></tr>
+<tr class="separator:a47b253a4cdf3c188157471cbde7fdcec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afdb2842b91383ad93eb22ee7143ed75c"><td class="memItemLeft" align="right" valign="top">static std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#afdb2842b91383ad93eb22ee7143ed75c">FromCallbackServerContext</a> (const <a class="el" href="classgrpc_1_1_callback_server_context.html">grpc::CallbackServerContext</a> &amp;server_context, <a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a> options=<a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a>())</td></tr>
 <tr class="separator:afdb2842b91383ad93eb22ee7143ed75c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad329c9fdd77093361518ef8ace1ee1f0"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#ad329c9fdd77093361518ef8ace1ee1f0">SetGlobalCallbacks</a> (<a class="el" href="classgrpc_1_1_client_context_1_1_global_callbacks.html">GlobalCallbacks</a> *callbacks)</td></tr>
@@ -178,6 +178,8 @@ Static Public Member Functions</h2></td></tr>
 Friends</h2></td></tr>
 <tr class="memitem:ac4ab4e2d21681704cee0f6e741cc813c"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#ac4ab4e2d21681704cee0f6e741cc813c">::grpc::testing::InteropClientContextInspector</a></td></tr>
 <tr class="separator:ac4ab4e2d21681704cee0f6e741cc813c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac6b4122b385d45f93cdfa96f1795de2b"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#ac6b4122b385d45f93cdfa96f1795de2b">::grpc::testing::ClientContextTestPeer</a></td></tr>
+<tr class="separator:ac6b4122b385d45f93cdfa96f1795de2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a506d0cd94cc911153c6ceb814a59524b"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a506d0cd94cc911153c6ceb814a59524b">::grpc::internal::CallOpClientRecvStatus</a></td></tr>
 <tr class="separator:a506d0cd94cc911153c6ceb814a59524b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3b165df6c09402c7753da14140c836cf"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a3b165df6c09402c7753da14140c836cf">::grpc::internal::CallOpRecvInitialMetadata</a></td></tr>
@@ -311,8 +313,13 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
   </table>
   </dd>
 </dl>
-<p>Metadata must conform to the following format: Custom-Metadata -&gt; Binary-Header / ASCII-Header Binary-Header -&gt; {Header-Name "-bin" } {binary value} ASCII-Header -&gt; Header-Name ASCII-Value Header-Name -&gt; 1*( x30-39 / x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - . ASCII-Value -&gt; 1*( x20-x7E ) ; space and printable ASCII </p>
-
+<p>Metadata must conform to the following format: </p><pre class="fragment">Custom-Metadata -&gt; Binary-Header / ASCII-Header
+Binary-Header -&gt; {Header-Name "-bin" } {binary value}
+ASCII-Header -&gt; Header-Name ASCII-Value
+Header-Name -&gt; 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+ASCII-Value -&gt; 1*( %x20-%x7E ) ; space and printable ASCII
+Custom-Metadata -&gt; Binary-Header / ASCII-Header
+</pre> 
 </div>
 </div>
 <a id="a8359c1be1e1cad1dbaff1436828ca8f9"></a>
@@ -546,8 +553,8 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 </div>
 </div>
-<a id="a70ff062f93b75964704b7f8ef97bf7f6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a70ff062f93b75964704b7f8ef97bf7f6">&#9670;&nbsp;</a></span>FromServerContext()</h2>
+<a id="a47b253a4cdf3c188157471cbde7fdcec"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a47b253a4cdf3c188157471cbde7fdcec">&#9670;&nbsp;</a></span>FromServerContext()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -558,7 +565,7 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
         <tr>
           <td class="memname">static std::unique_ptr&lt;<a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a>&gt; grpc::ClientContext::FromServerContext </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1_server_context_base.html">grpc::ServerContextBase</a> &amp;&#160;</td>
           <td class="paramname"><em>server_context</em>, </td>
         </tr>
         <tr>
@@ -1465,6 +1472,28 @@ template&lt;class Request &gt; </div>
 
 </div>
 </div>
+<a id="ac6b4122b385d45f93cdfa96f1795de2b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac6b4122b385d45f93cdfa96f1795de2b">&#9670;&nbsp;</a></span>::grpc::testing::ClientContextTestPeer</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::grpc::testing::ClientContextTestPeer</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="ac4ab4e2d21681704cee0f6e741cc813c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac4ab4e2d21681704cee0f6e741cc813c">&#9670;&nbsp;</a></span>::grpc::testing::InteropClientContextInspector</h2>
 
@@ -1493,7 +1522,7 @@ template&lt;class Request &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

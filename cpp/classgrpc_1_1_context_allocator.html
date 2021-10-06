@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -73,7 +73,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
-<p>A <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> allows users to use the contents of the <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> or GenericCallbackServerContext structure for the callback API.  
+<p>A <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> allows users to use the contents of the <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> or <a class="el" href="classgrpc_1_1_generic_callback_server_context.html">GenericCallbackServerContext</a> structure for the callback API.  
  <a href="classgrpc_1_1_context_allocator.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2server__context_8h_source.html">server_context.h</a>&gt;</code></p>
@@ -84,15 +84,15 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a5d46cf407b85699c39fea96059c9d56b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aba9bb4b6cdbd2ec99e2cbc4ac28189dc"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_context_allocator.html#aba9bb4b6cdbd2ec99e2cbc4ac28189dc">NewCallbackServerContext</a> ()</td></tr>
 <tr class="separator:aba9bb4b6cdbd2ec99e2cbc4ac28189dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af24b42759070fea66a734ffcd23b7be0"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1experimental_1_1_generic_callback_server_context.html">experimental::GenericCallbackServerContext</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_context_allocator.html#af24b42759070fea66a734ffcd23b7be0">NewGenericCallbackServerContext</a> ()</td></tr>
-<tr class="separator:af24b42759070fea66a734ffcd23b7be0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af54b7d6d5c5fb8585773ea1fdc0ce0e3"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1_generic_callback_server_context.html">GenericCallbackServerContext</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_context_allocator.html#af54b7d6d5c5fb8585773ea1fdc0ce0e3">NewGenericCallbackServerContext</a> ()</td></tr>
+<tr class="separator:af54b7d6d5c5fb8585773ea1fdc0ce0e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a72842a9cbc4cf0ad58c86f24cddd2919"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_context_allocator.html#a72842a9cbc4cf0ad58c86f24cddd2919">Release</a> (<a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> *)</td></tr>
 <tr class="separator:a72842a9cbc4cf0ad58c86f24cddd2919"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3ab5b4a420352e84dbc8e6f52eeded9a"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_context_allocator.html#a3ab5b4a420352e84dbc8e6f52eeded9a">Release</a> (<a class="el" href="classgrpc_1_1experimental_1_1_generic_callback_server_context.html">experimental::GenericCallbackServerContext</a> *)</td></tr>
-<tr class="separator:a3ab5b4a420352e84dbc8e6f52eeded9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a16e26cacfb66757078482406fac6ef45"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_context_allocator.html#a16e26cacfb66757078482406fac6ef45">Release</a> (<a class="el" href="classgrpc_1_1_generic_callback_server_context.html">GenericCallbackServerContext</a> *)</td></tr>
+<tr class="separator:a16e26cacfb66757078482406fac6ef45"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> allows users to use the contents of the <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> or GenericCallbackServerContext structure for the callback API. </p>
+<div class="textblock"><p>A <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> allows users to use the contents of the <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> or <a class="el" href="classgrpc_1_1_generic_callback_server_context.html">GenericCallbackServerContext</a> structure for the callback API. </p>
 <p>The library will invoke the allocator any time a new call is initiated. and call the Release method after the server OnDone. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a5d46cf407b85699c39fea96059c9d56b"></a>
@@ -146,8 +146,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="af24b42759070fea66a734ffcd23b7be0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af24b42759070fea66a734ffcd23b7be0">&#9670;&nbsp;</a></span>NewGenericCallbackServerContext()</h2>
+<a id="af54b7d6d5c5fb8585773ea1fdc0ce0e3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af54b7d6d5c5fb8585773ea1fdc0ce0e3">&#9670;&nbsp;</a></span>NewGenericCallbackServerContext()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -156,7 +156,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual <a class="el" href="classgrpc_1_1experimental_1_1_generic_callback_server_context.html">experimental::GenericCallbackServerContext</a>* grpc::ContextAllocator::NewGenericCallbackServerContext </td>
+          <td class="memname">virtual <a class="el" href="classgrpc_1_1_generic_callback_server_context.html">GenericCallbackServerContext</a>* grpc::ContextAllocator::NewGenericCallbackServerContext </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -197,8 +197,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a3ab5b4a420352e84dbc8e6f52eeded9a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3ab5b4a420352e84dbc8e6f52eeded9a">&#9670;&nbsp;</a></span>Release() <span class="overload">[2/2]</span></h2>
+<a id="a16e26cacfb66757078482406fac6ef45"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a16e26cacfb66757078482406fac6ef45">&#9670;&nbsp;</a></span>Release() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -209,7 +209,7 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">virtual void grpc::ContextAllocator::Release </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1experimental_1_1_generic_callback_server_context.html">experimental::GenericCallbackServerContext</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_generic_callback_server_context.html">GenericCallbackServerContext</a> *&#160;</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
@@ -229,7 +229,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

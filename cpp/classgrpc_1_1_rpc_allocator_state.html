@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>GRPC C++: grpc::experimental::MessageAllocator&lt; RequestT, ResponseT &gt; Class Template Reference</title>
+<title>GRPC C++: grpc::RpcAllocatorState Class Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -62,14 +62,14 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespacegrpc.html">grpc</a></li><li class="navelem"><a class="el" href="namespacegrpc_1_1experimental.html">experimental</a></li><li class="navelem"><a class="el" href="classgrpc_1_1experimental_1_1_message_allocator.html">MessageAllocator</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespacegrpc.html">grpc</a></li><li class="navelem"><a class="el" href="classgrpc_1_1_rpc_allocator_state.html">RpcAllocatorState</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a>  </div>
   <div class="headertitle">
-<div class="title">grpc::experimental::MessageAllocator&lt; RequestT, ResponseT &gt; Class Template Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
+<div class="title">grpc::RpcAllocatorState Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -77,25 +77,23 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a38af212fa464af133766f491eb3b6b09"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_message_allocator.html#a38af212fa464af133766f491eb3b6b09">~MessageAllocator</a> ()=default</td></tr>
-<tr class="separator:a38af212fa464af133766f491eb3b6b09"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9627bd3f63ab330465cd4c155bb8cc00"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1experimental_1_1_message_holder.html">MessageHolder</a>&lt; RequestT, ResponseT &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_message_allocator.html#a9627bd3f63ab330465cd4c155bb8cc00">AllocateMessages</a> ()=0</td></tr>
-<tr class="separator:a9627bd3f63ab330465cd4c155bb8cc00"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a94dde81dc4d0a18ed3c48b2226a0a5e5"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_rpc_allocator_state.html#a94dde81dc4d0a18ed3c48b2226a0a5e5">~RpcAllocatorState</a> ()=default</td></tr>
+<tr class="separator:a94dde81dc4d0a18ed3c48b2226a0a5e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a18b257676dc12be1d6901b382a9945bc"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_rpc_allocator_state.html#a18b257676dc12be1d6901b382a9945bc">FreeRequest</a> ()</td></tr>
+<tr class="separator:a18b257676dc12be1d6901b382a9945bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a38af212fa464af133766f491eb3b6b09"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a38af212fa464af133766f491eb3b6b09">&#9670;&nbsp;</a></span>~MessageAllocator()</h2>
+<a id="a94dde81dc4d0a18ed3c48b2226a0a5e5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a94dde81dc4d0a18ed3c48b2226a0a5e5">&#9670;&nbsp;</a></span>~RpcAllocatorState()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<div class="memtemplate">
-template&lt;typename RequestT , typename ResponseT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual <a class="el" href="classgrpc_1_1experimental_1_1_message_allocator.html">grpc::experimental::MessageAllocator</a>&lt; RequestT, ResponseT &gt;::~<a class="el" href="classgrpc_1_1experimental_1_1_message_allocator.html">MessageAllocator</a> </td>
+          <td class="memname">virtual grpc::RpcAllocatorState::~RpcAllocatorState </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -111,19 +109,17 @@ template&lt;typename RequestT , typename ResponseT &gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a9627bd3f63ab330465cd4c155bb8cc00"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9627bd3f63ab330465cd4c155bb8cc00">&#9670;&nbsp;</a></span>AllocateMessages()</h2>
+<a id="a18b257676dc12be1d6901b382a9945bc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a18b257676dc12be1d6901b382a9945bc">&#9670;&nbsp;</a></span>FreeRequest()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<div class="memtemplate">
-template&lt;typename RequestT , typename ResponseT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual <a class="el" href="classgrpc_1_1experimental_1_1_message_holder.html">MessageHolder</a>&lt;RequestT, ResponseT&gt;* <a class="el" href="classgrpc_1_1experimental_1_1_message_allocator.html">grpc::experimental::MessageAllocator</a>&lt; RequestT, ResponseT &gt;::AllocateMessages </td>
+          <td class="memname">virtual void grpc::RpcAllocatorState::FreeRequest </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -131,7 +127,7 @@ template&lt;typename RequestT , typename ResponseT &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -144,7 +140,7 @@ template&lt;typename RequestT , typename ResponseT &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

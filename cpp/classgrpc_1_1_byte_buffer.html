@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -96,6 +96,11 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:af17d560be1e61f773138ac8763206b8e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#af17d560be1e61f773138ac8763206b8e">operator=</a> (const <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &amp;buf)</td></tr>
 <tr class="memdesc:af17d560be1e61f773138ac8763206b8e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper of core function grpc_byte_buffer_copy .  <a href="classgrpc_1_1_byte_buffer.html#af17d560be1e61f773138ac8763206b8e">More...</a><br /></td></tr>
 <tr class="separator:af17d560be1e61f773138ac8763206b8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8029745487a96c50368a72205167e9c9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a8029745487a96c50368a72205167e9c9">TrySingleSlice</a> (<a class="el" href="classgrpc_1_1_slice.html">Slice</a> *slice) const</td></tr>
+<tr class="separator:a8029745487a96c50368a72205167e9c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa6fd7b9f8eeac20a283161c650bb18c6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#aa6fd7b9f8eeac20a283161c650bb18c6">DumpToSingleSlice</a> (<a class="el" href="classgrpc_1_1_slice.html">Slice</a> *slice) const</td></tr>
+<tr class="memdesc:aa6fd7b9f8eeac20a283161c650bb18c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dump (read) the buffer contents into <em>slics</em>.  <a href="classgrpc_1_1_byte_buffer.html#aa6fd7b9f8eeac20a283161c650bb18c6">More...</a><br /></td></tr>
+<tr class="separator:aa6fd7b9f8eeac20a283161c650bb18c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abe7615cdbd14996a7e82fc84e373a365"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#abe7615cdbd14996a7e82fc84e373a365">Dump</a> (std::vector&lt; <a class="el" href="classgrpc_1_1_slice.html">Slice</a> &gt; *slices) const</td></tr>
 <tr class="memdesc:abe7615cdbd14996a7e82fc84e373a365"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dump (read) the buffer contents into <em>slices</em>.  <a href="classgrpc_1_1_byte_buffer.html#abe7615cdbd14996a7e82fc84e373a365">More...</a><br /></td></tr>
 <tr class="separator:abe7615cdbd14996a7e82fc84e373a365"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -328,6 +333,26 @@ Friends</h2></td></tr>
 
 </div>
 </div>
+<a id="aa6fd7b9f8eeac20a283161c650bb18c6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa6fd7b9f8eeac20a283161c650bb18c6">&#9670;&nbsp;</a></span>DumpToSingleSlice()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_status.html">Status</a> grpc::ByteBuffer::DumpToSingleSlice </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_slice.html">Slice</a> *&#160;</td>
+          <td class="paramname"><em>slice</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Dump (read) the buffer contents into <em>slics</em>. </p>
+
+</div>
+</div>
 <a id="a42889c8018ea3868db2f54d92d1609ab"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a42889c8018ea3868db2f54d92d1609ab">&#9670;&nbsp;</a></span>Duplicate()</h2>
 
@@ -464,6 +489,24 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Swap the state of *this and *other. </p>
+
+</div>
+</div>
+<a id="a8029745487a96c50368a72205167e9c9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8029745487a96c50368a72205167e9c9">&#9670;&nbsp;</a></span>TrySingleSlice()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_status.html">Status</a> grpc::ByteBuffer::TrySingleSlice </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_slice.html">Slice</a> *&#160;</td>
+          <td class="paramname"><em>slice</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -865,7 +908,7 @@ template&lt;class RequestType &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

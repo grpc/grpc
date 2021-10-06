@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -67,7 +67,6 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pro-methods">Protected Member Functions</a> &#124;
 <a href="#friends">Friends</a>  </div>
@@ -81,11 +80,6 @@ $(function() {
 
 <p><code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2service__type_8h_source.html">service_type.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
-Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_service_1_1experimental__type.html">experimental_type</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:aacae94e74fed99c259fddd89f94536c8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_service.html#aacae94e74fed99c259fddd89f94536c8">Service</a> ()</td></tr>
@@ -103,8 +97,6 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
-<tr class="memitem:ab87fcf0e67cf1d927f86475652afe4a8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_service_1_1experimental__type.html">experimental_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_service.html#ab87fcf0e67cf1d927f86475652afe4a8">experimental</a> ()</td></tr>
-<tr class="separator:ab87fcf0e67cf1d927f86475652afe4a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a563222e738f5ef20ac51653e1ec6b1c7"><td class="memTemplParams" colspan="2">template&lt;class Message &gt; </td></tr>
 <tr class="memitem:a563222e738f5ef20ac51653e1ec6b1c7"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_service.html#a563222e738f5ef20ac51653e1ec6b1c7">RequestAsyncUnary</a> (int index, ::<a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> *context, Message *request, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *stream, ::<a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *call_cq, ::<a class="el" href="classgrpc_1_1_server_completion_queue.html">grpc::ServerCompletionQueue</a> *notification_cq, void *tag)</td></tr>
 <tr class="separator:a563222e738f5ef20ac51653e1ec6b1c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -125,6 +117,12 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:a2fb1874b038f8ea80031608ac59835f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5e4946c589b90ee5882e055787db901b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_service.html#a5e4946c589b90ee5882e055787db901b">MarkMethodStreamed</a> (int index, <a class="el" href="classgrpc_1_1internal_1_1_method_handler.html">internal::MethodHandler</a> *streamed_method)</td></tr>
 <tr class="separator:a5e4946c589b90ee5882e055787db901b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa325ad7be8e1e53d26bcbfed38d95e3b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_service.html#aa325ad7be8e1e53d26bcbfed38d95e3b">MarkMethodCallback</a> (int index, <a class="el" href="classgrpc_1_1internal_1_1_method_handler.html">internal::MethodHandler</a> *handler)</td></tr>
+<tr class="separator:aa325ad7be8e1e53d26bcbfed38d95e3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a855c5784d8892656b14bdcb6cdd515e0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_service.html#a855c5784d8892656b14bdcb6cdd515e0">MarkMethodRawCallback</a> (int index, <a class="el" href="classgrpc_1_1internal_1_1_method_handler.html">internal::MethodHandler</a> *handler)</td></tr>
+<tr class="separator:a855c5784d8892656b14bdcb6cdd515e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a48acaee5adf6895877a7dbad285610c7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1internal_1_1_method_handler.html">internal::MethodHandler</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_service.html#a48acaee5adf6895877a7dbad285610c7">GetHandler</a> (int index)</td></tr>
+<tr class="separator:a48acaee5adf6895877a7dbad285610c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
@@ -213,8 +211,8 @@ Friends</h2></td></tr>
 
 </div>
 </div>
-<a id="ab87fcf0e67cf1d927f86475652afe4a8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab87fcf0e67cf1d927f86475652afe4a8">&#9670;&nbsp;</a></span>experimental()</h2>
+<a id="a48acaee5adf6895877a7dbad285610c7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a48acaee5adf6895877a7dbad285610c7">&#9670;&nbsp;</a></span>GetHandler()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -223,9 +221,10 @@ Friends</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_service_1_1experimental__type.html">experimental_type</a> grpc::Service::experimental </td>
+          <td class="memname"><a class="el" href="classgrpc_1_1internal_1_1_method_handler.html">internal::MethodHandler</a>* grpc::Service::GetHandler </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>index</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -364,6 +363,42 @@ Friends</h2></td></tr>
 
 </div>
 </div>
+<a id="aa325ad7be8e1e53d26bcbfed38d95e3b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa325ad7be8e1e53d26bcbfed38d95e3b">&#9670;&nbsp;</a></span>MarkMethodCallback()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::Service::MarkMethodCallback </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>index</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_method_handler.html">internal::MethodHandler</a> *&#160;</td>
+          <td class="paramname"><em>handler</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a2fb1874b038f8ea80031608ac59835f3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2fb1874b038f8ea80031608ac59835f3">&#9670;&nbsp;</a></span>MarkMethodGeneric()</h2>
 
@@ -405,6 +440,42 @@ Friends</h2></td></tr>
           <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>index</em></td><td>)</td>
           <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a855c5784d8892656b14bdcb6cdd515e0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a855c5784d8892656b14bdcb6cdd515e0">&#9670;&nbsp;</a></span>MarkMethodRawCallback()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::Service::MarkMethodRawCallback </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>index</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_method_handler.html">internal::MethodHandler</a> *&#160;</td>
+          <td class="paramname"><em>handler</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -759,7 +830,7 @@ template&lt;class Message &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">16.0.0</span>
+   &#160;<span id="projectnumber">19.0.0</span>
    </div>
   </td>
  </tr>
@@ -272,8 +272,11 @@ Macros</h2></td></tr>
 <tr class="memdesc:ga5bbdfddb3afba6b330221d9adbecc778"><td class="mdescLeft">&#160;</td><td class="mdescRight">String defining the optimization target for a channel.  <a href="group__grpc__arg__keys.html#ga5bbdfddb3afba6b330221d9adbecc778">More...</a><br /></td></tr>
 <tr class="separator:ga5bbdfddb3afba6b330221d9adbecc778"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga212f667ecbcee3b100898ba7e88454df"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga212f667ecbcee3b100898ba7e88454df">GRPC_ARG_ENABLE_RETRIES</a>&#160;&#160;&#160;&quot;grpc.enable_retries&quot;</td></tr>
-<tr class="memdesc:ga212f667ecbcee3b100898ba7e88454df"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set to zero, disables retry behavior.  <a href="group__grpc__arg__keys.html#ga212f667ecbcee3b100898ba7e88454df">More...</a><br /></td></tr>
+<tr class="memdesc:ga212f667ecbcee3b100898ba7e88454df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enables retry functionality.  <a href="group__grpc__arg__keys.html#ga212f667ecbcee3b100898ba7e88454df">More...</a><br /></td></tr>
 <tr class="separator:ga212f667ecbcee3b100898ba7e88454df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaa96b205e65a2a441064390e6e52b3e5b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaa96b205e65a2a441064390e6e52b3e5b">GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING</a>&#160;&#160;&#160;&quot;grpc.experimental.enable_hedging&quot;</td></tr>
+<tr class="memdesc:gaa96b205e65a2a441064390e6e52b3e5b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enables hedging functionality, as described in: <a href="https://github.com/grpc/proposal/blob/master/A6-client-retries.md">https://github.com/grpc/proposal/blob/master/A6-client-retries.md</a> Default is currently false, since this functionality is not yet fully implemented.  <a href="group__grpc__arg__keys.html#gaa96b205e65a2a441064390e6e52b3e5b">More...</a><br /></td></tr>
+<tr class="separator:gaa96b205e65a2a441064390e6e52b3e5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaa40f8424599668676462a76ec54eb712"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaa40f8424599668676462a76ec54eb712">GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE</a>&#160;&#160;&#160;&quot;grpc.per_rpc_retry_buffer_size&quot;</td></tr>
 <tr class="memdesc:gaa40f8424599668676462a76ec54eb712"><td class="mdescLeft">&#160;</td><td class="mdescRight">Per-RPC retry buffer size, in bytes.  <a href="group__grpc__arg__keys.html#gaa40f8424599668676462a76ec54eb712">More...</a><br /></td></tr>
 <tr class="separator:gaa40f8424599668676462a76ec54eb712"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -310,6 +313,9 @@ Macros</h2></td></tr>
 <tr class="memitem:ga59dd5c3bc20b4041cf05d513a88ba2ec"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga59dd5c3bc20b4041cf05d513a88ba2ec">GRPC_ARG_CHANNEL_ID</a>&#160;&#160;&#160;&quot;grpc.channel_id&quot;</td></tr>
 <tr class="memdesc:ga59dd5c3bc20b4041cf05d513a88ba2ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">gRPC Objective-C channel pooling id.  <a href="group__grpc__arg__keys.html#ga59dd5c3bc20b4041cf05d513a88ba2ec">More...</a><br /></td></tr>
 <tr class="separator:ga59dd5c3bc20b4041cf05d513a88ba2ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga5008aa6d9780a65318382205bcbfb4aa"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga5008aa6d9780a65318382205bcbfb4aa">GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER</a>&#160;&#160;&#160;&quot;grpc.authorization_policy_provider&quot;</td></tr>
+<tr class="memdesc:ga5008aa6d9780a65318382205bcbfb4aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channel argument for grpc_authorization_policy_provider.  <a href="group__grpc__arg__keys.html#ga5008aa6d9780a65318382205bcbfb4aa">More...</a><br /></td></tr>
+<tr class="separator:ga5008aa6d9780a65318382205bcbfb4aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>Channel argument keys. </p>
@@ -328,6 +334,23 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 
 <p>If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) </p>
+
+</div>
+</div>
+<a id="ga5008aa6d9780a65318382205bcbfb4aa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga5008aa6d9780a65318382205bcbfb4aa">&#9670;&nbsp;</a></span>GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER&#160;&#160;&#160;&quot;grpc.authorization_policy_provider&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Channel argument for grpc_authorization_policy_provider. </p>
+<p>If present, enables gRPC authorization check. </p>
 
 </div>
 </div>
@@ -592,8 +615,8 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>If set to zero, disables retry behavior. </p>
-<p>Otherwise, transparent retries are enabled for all RPCs, and configurable retries are enabled when they are configured via the service config. For details, see: <a href="https://github.com/grpc/proposal/blob/master/A6-client-retries.md">https://github.com/grpc/proposal/blob/master/A6-client-retries.md</a> </p>
+<p>Enables retry functionality. </p>
+<p>Defaults to true. When enabled, configurable retries are enabled when they are configured via the service config. For details, see: <a href="https://github.com/grpc/proposal/blob/master/A6-client-retries.md">https://github.com/grpc/proposal/blob/master/A6-client-retries.md</a> NOTE: Transparent retries are not yet implemented. When they are implemented, they will also be enabled by this arg. NOTE: Hedging functionality is not yet implemented, so those fields in the service config will currently be ignored. See also the GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING arg below. </p>
 
 </div>
 </div>
@@ -610,6 +633,23 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 
 <p>If non-zero, expand wildcard addresses to a list of local addresses. </p>
+
+</div>
+</div>
+<a id="gaa96b205e65a2a441064390e6e52b3e5b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gaa96b205e65a2a441064390e6e52b3e5b">&#9670;&nbsp;</a></span>GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING&#160;&#160;&#160;&quot;grpc.experimental.enable_hedging&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Enables hedging functionality, as described in: <a href="https://github.com/grpc/proposal/blob/master/A6-client-retries.md">https://github.com/grpc/proposal/blob/master/A6-client-retries.md</a> Default is currently false, since this functionality is not yet fully implemented. </p>
+<p>NOTE: This channel arg is experimental and will eventually be removed. Once hedging functionality has been implemented and proves stable, this arg will be removed, and the hedging functionality will be enabled via the GRPC_ARG_ENABLE_RETRIES arg above. </p>
 
 </div>
 </div>
@@ -1660,7 +1700,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:46 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

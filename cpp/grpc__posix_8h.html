@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -73,8 +73,8 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &lt;<a class="el" href="support_2port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="grpc__types_8h_source.html">grpc/impl/codegen/grpc_types.h</a>&gt;</code><br />
 <code>#include &lt;stddef.h&gt;</code><br />
+<code>#include &lt;<a class="el" href="grpc__types_8h_source.html">grpc/impl/codegen/grpc_types.h</a>&gt;</code><br />
 </div>
 <p><a href="grpc__posix_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -159,14 +159,15 @@ Functions</h2></td></tr>
 
 <p>Add the connected communication channel based on file descriptor 'fd' to the 'server'. </p>
 <p>The 'fd' must be an open file descriptor corresponding to a connected socket. Events from the file descriptor may come on any of the server completion queues (i.e completion queues registered via the grpc_server_register_completion_queue API).</p>
-<p>The 'reserved' pointer MUST be NULL. </p>
+<p>The 'reserved' pointer MUST be NULL.</p>
+<p>TODO(hork): add channel_args to this API to allow endpoints and transports created in this function to participate in the resource quota feature. </p>
 
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

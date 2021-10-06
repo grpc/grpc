@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">16.0.0</span>
+   &#160;<span id="projectnumber">19.0.0</span>
    </div>
   </td>
  </tr>
@@ -76,6 +76,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html">EndpointConfig</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collection of parameters used to configure client and server endpoints.  <a href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html">EventEngine</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> encapsulates all platform-specific behaviors related to low level network I/O, timers, asynchronous execution, and DNS resolution.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -83,22 +86,23 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html">SliceAllocatorFactory</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a58656208f066797bf54e99bd5ad83818"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html">EventEngine</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a58656208f066797bf54e99bd5ad83818">GetDefaultEventEngine</a> ()</td></tr>
-<tr class="memdesc:a58656208f066797bf54e99bd5ad83818"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lazily instantiate and return a default global <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> instance if no custom instance is provided.  <a href="namespacegrpc__event__engine_1_1experimental.html#a58656208f066797bf54e99bd5ad83818">More...</a><br /></td></tr>
-<tr class="separator:a58656208f066797bf54e99bd5ad83818"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:addbbac1e0d5808c7afe722a8b949060d"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html">EventEngine</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#addbbac1e0d5808c7afe722a8b949060d">DefaultEventEngineFactory</a> ()</td></tr>
+<tr class="separator:addbbac1e0d5808c7afe722a8b949060d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
-<a id="a58656208f066797bf54e99bd5ad83818"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a58656208f066797bf54e99bd5ad83818">&#9670;&nbsp;</a></span>GetDefaultEventEngine()</h2>
+<a id="addbbac1e0d5808c7afe722a8b949060d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#addbbac1e0d5808c7afe722a8b949060d">&#9670;&nbsp;</a></span>DefaultEventEngineFactory()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html">EventEngine</a>&gt; grpc_event_engine::experimental::GetDefaultEventEngine </td>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html">EventEngine</a>&gt; grpc_event_engine::experimental::DefaultEventEngineFactory </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -106,15 +110,12 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Lazily instantiate and return a default global <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> instance if no custom instance is provided. </p>
-<p>If a custom <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> is provided for every channel/server via ChannelArgs, this method should never be called, and the default instance will never be instantiated. </p>
-
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:57:46 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

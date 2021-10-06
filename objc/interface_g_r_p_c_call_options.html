@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.38.0</span>
+   &#160;<span id="projectnumber">1.41.0</span>
    </div>
   </td>
  </tr>
@@ -159,6 +159,14 @@ Properties</h2></td></tr>
 <tr class="memitem:a337151c941a8fcf367939acd8a21dadc"><td class="memItemLeft" align="right" valign="top">NSUInteger&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#a337151c941a8fcf367939acd8a21dadc">channelOptionsHash</a></td></tr>
 <tr class="memdesc:a337151c941a8fcf367939acd8a21dadc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Hash for channel options.  <a href="interface_g_r_p_c_call_options.html#a337151c941a8fcf367939acd8a21dadc">More...</a><br /></td></tr>
 <tr class="separator:a337151c941a8fcf367939acd8a21dadc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aade1add5c02dda8d3050c03372f81c18"><td class="memItemLeft" align="right" valign="top">NSTimeInterval&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#aade1add5c02dda8d3050c03372f81c18">maxRetryInterval</a></td></tr>
+<tr class="separator:aade1add5c02dda8d3050c03372f81c18"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a71cc36ed61a0a991aa2273f40f5ea9e5"><td class="memItemLeft" align="right" valign="top">NSTimeInterval&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#a71cc36ed61a0a991aa2273f40f5ea9e5">minRetryInterval</a></td></tr>
+<tr class="separator:a71cc36ed61a0a991aa2273f40f5ea9e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5d0f0135954e50c8912e2d20c032ac78"><td class="memItemLeft" align="right" valign="top">NSUInteger&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#a5d0f0135954e50c8912e2d20c032ac78">retryCount</a></td></tr>
+<tr class="separator:a5d0f0135954e50c8912e2d20c032ac78"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a658ed2a443512dacbfd871ea5c7a03b9"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#a658ed2a443512dacbfd871ea5c7a03b9">retryFactor</a></td></tr>
+<tr class="separator:a658ed2a443512dacbfd871ea5c7a03b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Immutable user configurable options for a gRPC call. </p>
@@ -541,6 +549,50 @@ Properties</h2></td></tr>
 
 </div>
 </div>
+<a id="aade1add5c02dda8d3050c03372f81c18"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aade1add5c02dda8d3050c03372f81c18">&#9670;&nbsp;</a></span>maxRetryInterval</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">- (NSTimeInterval) maxRetryInterval</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a71cc36ed61a0a991aa2273f40f5ea9e5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a71cc36ed61a0a991aa2273f40f5ea9e5">&#9670;&nbsp;</a></span>minRetryInterval</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">- (NSTimeInterval) minRetryInterval</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a0e4b368a7e2aa6d2bdc3bfbd5135f682"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0e4b368a7e2aa6d2bdc3bfbd5135f682">&#9670;&nbsp;</a></span>oauth2AccessToken</h2>
 
@@ -664,6 +716,28 @@ Properties</h2></td></tr>
 
 </div>
 </div>
+<a id="a5d0f0135954e50c8912e2d20c032ac78"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5d0f0135954e50c8912e2d20c032ac78">&#9670;&nbsp;</a></span>retryCount</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">- (NSUInteger) retryCount</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a5f8f4bbb48dab6d80d6117333e618c39"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5f8f4bbb48dab6d80d6117333e618c39">&#9670;&nbsp;</a></span>retryEnabled</h2>
 
@@ -686,6 +760,28 @@ Properties</h2></td></tr>
 
 <p>Enable/Disable gRPC call's retry feature. </p>
 <p>The default is enabled. For details of this feature refer to <a href="https://github.com/grpc/proposal/blob/master/A6-client-retries.md">https://github.com/grpc/proposal/blob/master/A6-client-retries.md</a> </p>
+
+</div>
+</div>
+<a id="a658ed2a443512dacbfd871ea5c7a03b9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a658ed2a443512dacbfd871ea5c7a03b9">&#9670;&nbsp;</a></span>retryFactor</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">- (double) retryFactor</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -846,7 +942,7 @@ Properties</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 2 2021 06:58:19 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 5 2021 22:54:34 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
