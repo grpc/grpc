@@ -222,6 +222,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
+    absl::string_view GetAuthority() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -574,6 +575,10 @@ void XdsClusterImplLb::Helper::UpdateState(
 void XdsClusterImplLb::Helper::RequestReresolution() {
   if (xds_cluster_impl_policy_->shutting_down_) return;
   xds_cluster_impl_policy_->channel_control_helper()->RequestReresolution();
+}
+
+absl::string_view XdsClusterImplLb::Helper::GetAuthority() {
+  return xds_cluster_impl_policy_->channel_control_helper()->GetAuthority();
 }
 
 void XdsClusterImplLb::Helper::AddTraceEvent(TraceSeverity severity,
