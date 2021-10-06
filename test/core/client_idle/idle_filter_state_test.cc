@@ -14,13 +14,13 @@
 
 #include "src/core/ext/filters/client_idle/idle_filter_state.h"
 
-#include <gtest/gtest.h>
+#include <stdio.h>
 
-#include <thread>
 #include <chrono>
 #include <random>
+#include <thread>
 
-#include <stdio.h>
+#include <gtest/gtest.h>
 
 namespace grpc_core {
 namespace testing {
@@ -30,7 +30,7 @@ TEST(IdleFilterStateTest, IdlenessStartsTimer) {
   s.IncreaseCallCount();
   // First idle should start the timer
   EXPECT_TRUE(s.DecreaseCallCount());
-  for (int i=0; i<10; i++) {
+  for (int i = 0; i < 10; i++) {
     // Next idle should not!
     s.IncreaseCallCount();
     EXPECT_FALSE(s.DecreaseCallCount());
@@ -44,7 +44,7 @@ TEST(IdleFilterStateTest, TimerStopsAfterIdle) {
 
 TEST(IdleFilterStateTest, TimerKeepsGoingWithActivity) {
   IdleFilterState s(true);
-  for (int i=0; i<10; i++) {
+  for (int i = 0; i < 10; i++) {
     s.IncreaseCallCount();
     (void)s.DecreaseCallCount();
     EXPECT_TRUE(s.CheckTimer());
@@ -58,7 +58,7 @@ TEST(IdleFilterStateTest, StressTest) {
   int idle_polls = 0;
   int thread_jumps = 0;
   std::vector<std::thread> threads;
-  for (int idx=0; idx<100; idx++) {
+  for (int idx = 0; idx < 100; idx++) {
     std::thread t([&] {
       int ctr = 0;
       auto increase = [&] {
@@ -80,7 +80,7 @@ TEST(IdleFilterStateTest, StressTest) {
       std::mt19937 g{std::random_device()()};
       while (!done.load(std::memory_order_relaxed)) {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        for (int i=0; i<100; i++) {
+        for (int i = 0; i < 100; i++) {
           if (g() & 1) {
             increase();
           } else if (ctr > 0) {
@@ -100,11 +100,10 @@ TEST(IdleFilterStateTest, StressTest) {
   for (auto& thread : threads) thread.join();
 }
 
-}
-}  // namespace
+}  // namespace testing
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
-
