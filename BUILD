@@ -365,6 +365,7 @@ grpc_cc_library(
         "grpc_trace",
         "slice",
     ],
+    alwayslink = True,
 )
 
 grpc_cc_library(
@@ -407,6 +408,7 @@ grpc_cc_library(
         "grpc_transport_chttp2_server_secure",
         "slice",
     ],
+    alwayslink = True,
 )
 
 grpc_cc_library(
