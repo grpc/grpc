@@ -284,6 +284,9 @@ class RlsLb : public LoadBalancingPolicy {
      public:
       explicit ChildPolicyHelper(WeakRefCountedPtr<ChildPolicyWrapper> wrapper)
           : wrapper_(std::move(wrapper)) {}
+      ~ChildPolicyHelper() override {
+        wrapper_.reset(DEBUG_LOCATION, "ChildPolicyHelper");
+      }
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
           ServerAddress address, const grpc_channel_args& args) override;
@@ -317,10 +320,8 @@ class RlsLb : public LoadBalancingPolicy {
   // (synchronized via a mutex) to determine how to route requests.
   class Picker : public LoadBalancingPolicy::SubchannelPicker {
    public:
-    explicit Picker(RefCountedPtr<RlsLb> lb_policy)
-        : lb_policy_(std::move(lb_policy)),
-          config_(lb_policy_->config_),
-          default_child_policy_(lb_policy_->default_child_policy_) {}
+    explicit Picker(RefCountedPtr<RlsLb> lb_policy);
+    ~Picker() override;
 
     PickResult Pick(PickArgs args) override;
 
@@ -678,7 +679,10 @@ class RlsLb : public LoadBalancingPolicy {
 
 RlsLb::ChildPolicyWrapper::ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy,
                                               std::string target)
-    : lb_policy_(lb_policy),
+    : DualRefCounted<ChildPolicyWrapper>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) ? "ChildPolicyWrapper"
+                                                     : nullptr),
+      lb_policy_(lb_policy),
       target_(std::move(target)),
       picker_(absl::make_unique<QueuePicker>(std::move(lb_policy))) {
   lb_policy_->child_policy_map_.emplace(target_, this);
@@ -938,6 +942,27 @@ std::map<std::string, std::string> BuildKeyMap(
         std::string(path.substr(last_slash_pos + 1));
   }
   return key_map;
+}
+
+RlsLb::Picker::Picker(RefCountedPtr<RlsLb> lb_policy)
+    : lb_policy_(std::move(lb_policy)), config_(lb_policy_->config_) {
+  if (lb_policy_->default_child_policy_ != nullptr) {
+    default_child_policy_ =
+        lb_policy_->default_child_policy_->Ref(DEBUG_LOCATION, "Picker");
+  }
+}
+
+RlsLb::Picker::~Picker() {
+  // It's not safe to unref the default child policy in the picker,
+  // since that needs to be done in the WorkSerializer.
+  if (default_child_policy_ != nullptr) {
+    auto* default_child_policy = default_child_policy_.release();
+    lb_policy_->work_serializer()->Run(
+        [default_child_policy]() {
+          default_child_policy->Unref(DEBUG_LOCATION, "Picker");
+        },
+        DEBUG_LOCATION);
+  }
 }
 
 LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
@@ -1859,15 +1884,25 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
   if (old_config == nullptr ||
       config_->default_target() != old_config->default_target()) {
     if (config_->default_target().empty()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+        gpr_log(GPR_INFO, "[rlslb %p] unsetting default target", this);
+      }
       default_child_policy_.reset();
     } else {
       auto it = child_policy_map_.find(config_->default_target());
       if (it == child_policy_map_.end()) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+          gpr_log(GPR_INFO, "[rlslb %p] creating new default target", this);
+        }
         default_child_policy_ = MakeRefCounted<ChildPolicyWrapper>(
             Ref(DEBUG_LOCATION, "ChildPolicyWrapper"),
             config_->default_target());
         created_default_child = true;
       } else {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+          gpr_log(GPR_INFO,
+                  "[rlslb %p] using existing child for default target", this);
+        }
         default_child_policy_ =
             it->second->Ref(DEBUG_LOCATION, "DefaultChildPolicy");
       }
@@ -1888,29 +1923,36 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
         config_->cache_size_bytes() != old_config->cache_size_bytes()) {
       cache_.Resize(config_->cache_size_bytes());
     }
-    // Start update of default child policy if needed.
-    if (created_default_child ||
-        (update_child_policies && default_child_policy_ != nullptr)) {
-      default_child_policy_->StartUpdate();
-    }
-    // Start update of all other child policies if needed.
+    // Start update of child policies if needed.
     if (update_child_policies) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+        gpr_log(GPR_INFO, "[rlslb %p] starting child policy updates", this);
+      }
       for (auto& p : child_policy_map_) {
         p.second->StartUpdate();
       }
+    } else if (created_default_child) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+        gpr_log(GPR_INFO, "[rlslb %p] starting default child policy update",
+                this);
+      }
+      default_child_policy_->StartUpdate();
     }
   }
   // Now that we've released the lock, finish update of child policies.
-  // Finish update of default child policy if needed.
-  if (created_default_child ||
-      (update_child_policies && default_child_policy_ != nullptr)) {
-    default_child_policy_->MaybeFinishUpdate();
-  }
-  // Finish update of all other child policies if needed.
   if (update_child_policies) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+      gpr_log(GPR_INFO, "[rlslb %p] finishing child policy updates", this);
+    }
     for (auto& p : child_policy_map_) {
       p.second->MaybeFinishUpdate();
     }
+  } else if (created_default_child) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+      gpr_log(GPR_INFO, "[rlslb %p] finishing default child policy update",
+              this);
+    }
+    default_child_policy_->MaybeFinishUpdate();
   }
   // In principle, we need to update the picker here only if the config
   // fields used by the picker have changed.  However, it seems fragile
