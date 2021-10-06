@@ -17,7 +17,7 @@ licenses(["notice"])
 load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 
 grpc_package(
-    name = "rls",
+    name = "src/proto/grpc/lookup/v1",
     visibility = "public",
 )
 
