@@ -2252,6 +2252,8 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "dual_ref_counted",
+        "json",
+        "json_util",
         "gpr_base",
         "gpr_codegen",
         "grpc_base",
