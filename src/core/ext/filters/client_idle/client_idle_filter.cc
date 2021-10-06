@@ -77,7 +77,7 @@ class IdleFilterState {
       start_timer = false;
       new_state = state;
       new_state -= kCallIncrement;
-      if (state >> kCallInProgressShift == 0) {
+      if (state >> kCallsInProgressShift == 0) {
         if ((state & kTimerStarted) == 0) {
           start_timer = true;
           new_state |= kTimerStarted;
@@ -97,8 +97,9 @@ class IdleFilterState {
   GRPC_MUST_USE_RESULT bool CheckTimer() {
     uintptr_t state = state_.load(std::memory_order_relaxed);
     uintptr_t new_state;
+    bool start_timer;
     do {
-      if ((state >> kCallInProgressShift) != 0) {
+      if ((state >> kCallsInProgressShift) != 0) {
         // Still calls in progress: nothing needs updating, just return
         // and keep the timer going!
         return true;
@@ -133,7 +134,7 @@ class IdleFilterState {
   // Ensures we don't clobber the preceding bits.
   static constexpr uintptr_t kCallIncrement = uintptr_t(1)
                                               << kCallsInProgressShift;
-  std::atomic<uintptr_t> state_ = 0;
+  std::atomic<uintptr_t> state_{0};
 };
 
 grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
@@ -278,7 +279,7 @@ void ChannelData::StartIdleTimer() {
   GRPC_IDLE_FILTER_LOG("timer has started");
   // Hold a ref to the channel stack for the timer callback.
   GRPC_CHANNEL_STACK_REF(channel_stack_, "max idle timer callback");
-  grpc_timer_init(&idle_timer_, last_idle_time_ + client_idle_timeout_,
+  grpc_timer_init(&idle_timer_, ExecCtx::Get()->Now() + client_idle_timeout_,
                   &idle_timer_callback_);
 }
 
