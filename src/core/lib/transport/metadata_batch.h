@@ -116,9 +116,40 @@ struct GrpcTimeoutMetadata {
 // Each trait object has the following signature:
 // // Traits for the grpc-xyz metadata field:
 // struct GrpcXyzMetadata {
+//   // The type that's stored on MetadataBatch
 //   using ValueType = ...;
+//   // The type that's stored in compression/decompression tables
+//   using MementoType = ...;
+//   // The string key for this metadata type (for transports that require it)
 //   static constexpr char* key() { return "grpc-xyz"; }
+//   // Parse a memento from a slice
+//   static MementoType ParseMemento(const grpc_slice& value) { ... }
+//   // Convert a memento to a value
+//   static ValueType MementoToValue(MementoType memento) { ... }
+//   // Convert a value to something that can be passed to StrCat and displayed
+//   // for debugging
+//   static SomeStrCatableType DisplayValue(MementoType value) { ... }
 // };
+//
+// About parsing and mementos:
+//
+// Many gRPC transports exchange metadata as key/value strings, but also allow
+// for a more efficient representation as a single integer. We can use this
+// integer representation to avoid reparsing too, by storing the parsed value
+// in the compression table. This is what mementos are used for.
+//
+// A trait offers the capability to turn a slice into a memento via
+// ParseMemento. This is exposed to users of MetadataMap via the Parse() method,
+// that returns a ParsedMetadata object. That ParsedMetadata object can in turn
+// be used to set the same value on many different MetadataMaps without having
+// to reparse.
+//
+// Implementation wise, ParsedMetadata is a type erased wrapper around
+// MementoType. When we set a value on MetadataMap, we first turn that memento
+// into a value. For most types, this is going to be a no-op, but for example
+// for grpc-timeout we make the memento the timeout expressed on the wire, but
+// we make the value the timestamp of when the timeout will expire (i.e. the
+// deadline).
 template <typename... Traits>
 class MetadataMap {
  public:
@@ -211,7 +242,7 @@ class MetadataMap {
     return ParsedMetadata<MetadataMap>(grpc_mdelem_from_slices(key, value));
   }
 
-  // Set a value from a prased metadata object.
+  // Set a value from a parsed metadata object.
   GRPC_MUST_USE_RESULT grpc_error_handle
   Set(const ParsedMetadata<MetadataMap>& m) {
     return m.SetOnContainer(this);
@@ -693,6 +724,8 @@ grpc_error_handle MetadataMap<Traits...>::Substitute(
 
 template <typename... Traits>
 void MetadataMap<Traits...>::Clear() {
+  // TODO(ctiller): implement this without deconstructing/reconstructing once
+  // linked_mdelem is no longer a thing.
   auto* arena = elem_storage_.arena();
   this->~MetadataMap();
   new (this) MetadataMap(arena);
