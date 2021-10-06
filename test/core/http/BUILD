@@ -16,7 +16,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc
 
 grpc_package(name = "test/core/http")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
@@ -60,7 +60,7 @@ grpc_fuzzer(
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 

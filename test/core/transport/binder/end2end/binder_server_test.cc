@@ -26,6 +26,7 @@
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
+#include "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h"
 #include "src/core/ext/transport/binder/server/binder_server.h"
 #include "src/core/ext/transport/binder/server/binder_server_credentials.h"
 #include "test/core/transport/binder/end2end/fake_binder.h"
@@ -46,7 +47,9 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
           return absl::make_unique<
               grpc_binder::end2end_testing::FakeTransactionReceiver>(
               nullptr, std::move(transact_cb));
-        });
+        },
+        std::make_shared<
+            grpc::experimental::binder::UntrustedSecurityPolicy>());
   }
 
   void SetAuthMetadataProcessor(
@@ -71,8 +74,11 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
 
   return grpc::CreateChannelInternal(
       "",
-      grpc::internal::CreateChannelFromBinderImpl(std::move(endpoint_binder),
-                                                  nullptr),
+      grpc::internal::CreateChannelFromBinderImpl(
+          std::move(endpoint_binder),
+          std::make_shared<
+              grpc::experimental::binder::UntrustedSecurityPolicy>(),
+          nullptr),
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>());
 }
@@ -102,7 +108,10 @@ TEST(BinderServerCredentialsTest,
   grpc::testing::TestServiceImpl service;
   server_builder.RegisterService(&service);
   server_builder.AddListeningPort(
-      "binder://fail", grpc::experimental::BinderServerCredentials());
+      "binder://fail",
+      grpc::experimental::BinderServerCredentials(
+          std::make_shared<
+              grpc::experimental::binder::UntrustedSecurityPolicy>()));
   EXPECT_EQ(server_builder.BuildAndStart(), nullptr);
 }
 #endif  // !GPR_SUPPORT_BINDER_TRANSPORT

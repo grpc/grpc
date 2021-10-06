@@ -20,7 +20,7 @@ package(
     ],
 )
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 load("//bazel:grpc_build_system.bzl", "grpc_py_binary")
 
