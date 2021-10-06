@@ -150,6 +150,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
                        const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
+      absl::string_view GetAuthority() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
 
@@ -605,6 +606,11 @@ void WeightedTargetLb::WeightedChild::Helper::RequestReresolution() {
   if (weighted_child_->weighted_target_policy_->shutting_down_) return;
   weighted_child_->weighted_target_policy_->channel_control_helper()
       ->RequestReresolution();
+}
+
+absl::string_view WeightedTargetLb::WeightedChild::Helper::GetAuthority() {
+  return weighted_child_->weighted_target_policy_->channel_control_helper()
+      ->GetAuthority();
 }
 
 void WeightedTargetLb::WeightedChild::Helper::AddTraceEvent(
