@@ -252,9 +252,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
     const XdsBootstrap::XdsServer& server_;
 
     // The channel and its status.
-    grpc_channel* channel_ = nullptr;
+    grpc_channel* channel_;
     bool shutting_down_ = false;
-    StateWatcher* watcher_ = nullptr;
+    StateWatcher* watcher_;
 
     // The retryable XDS calls.
     OrphanablePtr<RetryableCall<AdsCallState>> ads_calld_;
@@ -330,7 +330,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_ ABSL_GUARDED_BY(mu_);
 
-  struct ResourceMap {
+  struct AuthorityState {
     std::map<std::string /*listener_name*/, ListenerState> listener_map;
     std::map<std::string /*route_config_name*/, RouteConfigState>
         route_config_map;
@@ -338,7 +338,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map;
   };
 
-  std::map<std::string /*authority*/, ResourceMap> resource_map_
+  std::map<std::string /*authority*/, AuthorityState> authority_state_
       ABSL_GUARDED_BY(mu_);
 
   // Load report data.
