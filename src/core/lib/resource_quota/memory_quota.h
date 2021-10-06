@@ -301,13 +301,10 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
 // be rebound to a different memory quota.
 class MemoryOwner {
  public:
-  explicit MemoryOwner(
-      std::shared_ptr<GrpcMemoryAllocatorImpl> allocator)
+  explicit MemoryOwner(std::shared_ptr<GrpcMemoryAllocatorImpl> allocator)
       : allocator_(std::move(allocator)) {}
 
-  MemoryAllocator* allocator() {
-    return &allocator_;
-  }
+  MemoryAllocator* allocator() { return &allocator_; }
 
   // Post a reclaimer for some reclamation pass.
   void PostReclaimer(ReclamationPass pass,
