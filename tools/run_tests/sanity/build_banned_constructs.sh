@@ -1,4 +1,5 @@
-# Copyright 2017 gRPC authors.
+#!/bin/sh
+# Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,24 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])
+set -e
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+cd "$(dirname "$0")/../../.."
 
-grpc_package(name = "test/cpp/performance")
+#
+# Prevent the use of single line comments after license clauses, since this
+# chokes the internal import process.
+#
 
-grpc_cc_test(
-    name = "writes_per_rpc_test",
-    srcs = ["writes_per_rpc_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    tags = ["no_windows"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc++",
-        "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util_base",
-    ],
-)
+regex='^licenses\(.*#'
+for dir in bazel examples src test tools; do
+  for file in BUILD BUILD.bazel; do
+    git grep -EIrn "$regex" "$dir/**$file" | diff - /dev/null
+  done
+done
+
