@@ -95,7 +95,7 @@ bool SdkServerAuthzFilter::CallData::IsAuthorized(SdkServerAuthzFilter* chand) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
     gpr_log(
         GPR_DEBUG,
-        "checking request: url_path:%s, transport_security_type=%s, "
+        "checking request: url_path=%s, transport_security_type=%s, "
         "uri_sans=[%s], dns_sans=[%s], local_address=%s:%d, peer_address=%s:%d",
         std::string(args.GetPath()).c_str(),
         std::string(args.GetTransportSecurityType()).c_str(),
