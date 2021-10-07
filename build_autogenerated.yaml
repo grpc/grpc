@@ -421,8 +421,9 @@ libs:
   - include/grpc/compression.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
+  - include/grpc/event_engine/internal/memory_allocator_impl.h
+  - include/grpc/event_engine/memory_allocator.h
   - include/grpc/event_engine/port.h
-  - include/grpc/event_engine/slice_allocator.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
@@ -496,12 +497,10 @@ libs:
   - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h
   - src/core/ext/filters/workarounds/workaround_utils.h
   - src/core/ext/transport/chttp2/alpn/alpn.h
-  - src/core/ext/transport/chttp2/client/authority.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
-  - src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
   - src/core/ext/transport/chttp2/transport/context_list.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
@@ -917,7 +916,6 @@ libs:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
-  - src/core/lib/transport/authority_override.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/byte_stream.h
   - src/core/lib/transport/connectivity_state.h
@@ -1038,7 +1036,6 @@ libs:
   - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
   - src/core/ext/filters/workarounds/workaround_utils.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
-  - src/core/ext/transport/chttp2/client/authority.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   - src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
@@ -1050,7 +1047,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
-  - src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   - src/core/ext/transport/chttp2/transport/context_list.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
@@ -1489,7 +1485,6 @@ libs:
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
-  - src/core/lib/transport/authority_override.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/byte_stream.cc
   - src/core/lib/transport/connectivity_state.cc
@@ -1675,8 +1670,9 @@ libs:
   - include/grpc/compression.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
+  - include/grpc/event_engine/internal/memory_allocator_impl.h
+  - include/grpc/event_engine/memory_allocator.h
   - include/grpc/event_engine/port.h
-  - include/grpc/event_engine/slice_allocator.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
@@ -1746,12 +1742,10 @@ libs:
   - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h
   - src/core/ext/filters/workarounds/workaround_utils.h
   - src/core/ext/transport/chttp2/alpn/alpn.h
-  - src/core/ext/transport/chttp2/client/authority.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
-  - src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
   - src/core/ext/transport/chttp2/transport/context_list.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
@@ -1927,7 +1921,6 @@ libs:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
-  - src/core/lib/transport/authority_override.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/byte_stream.h
   - src/core/lib/transport/connectivity_state.h
@@ -2015,7 +2008,6 @@ libs:
   - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
   - src/core/ext/filters/workarounds/workaround_utils.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
-  - src/core/ext/transport/chttp2/client/authority.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   - src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
@@ -2025,7 +2017,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
-  - src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   - src/core/ext/transport/chttp2/transport/context_list.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
@@ -2217,7 +2208,6 @@ libs:
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
-  - src/core/lib/transport/authority_override.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/byte_stream.cc
   - src/core/lib/transport/connectivity_state.cc
@@ -3699,6 +3689,7 @@ targets:
   - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -4660,6 +4651,8 @@ targets:
   language: c++
   headers:
   - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/security_policy/security_policy.h
+  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
   - src/core/ext/transport/binder/server/binder_server.h
   - src/core/ext/transport/binder/server/binder_server_credentials.h
   - src/core/ext/transport/binder/transport/binder_stream.h
@@ -4680,6 +4673,7 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   - src/core/ext/transport/binder/server/binder_server.cc
   - src/core/ext/transport/binder/server/binder_server_credentials.cc
   - src/core/ext/transport/binder/transport/binder_transport.cc
@@ -4700,6 +4694,8 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/binder/security_policy/security_policy.h
+  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
   - src/core/ext/transport/binder/transport/binder_stream.h
   - src/core/ext/transport/binder/transport/binder_transport.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
@@ -4712,6 +4708,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_writer.h
   - test/core/transport/binder/mock_objects.h
   src:
+  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   - src/core/ext/transport/binder/transport/binder_transport.cc
   - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
   - src/core/ext/transport/binder/wire_format/binder_constants.cc
@@ -5394,6 +5391,8 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/binder/security_policy/security_policy.h
+  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
   - src/core/ext/transport/binder/transport/binder_stream.h
   - src/core/ext/transport/binder/transport/binder_transport.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
@@ -5411,6 +5410,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   - src/core/ext/transport/binder/transport/binder_transport.cc
   - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
   - src/core/ext/transport/binder/wire_format/binder_constants.cc
@@ -5572,6 +5572,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/binder/security_policy/security_policy.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
   - src/core/ext/transport/binder/wire_format/binder.h
@@ -6535,6 +6536,7 @@ targets:
   - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -7629,6 +7631,7 @@ targets:
   - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -7904,6 +7907,8 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/binder/security_policy/security_policy.h
+  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
   - src/core/ext/transport/binder/wire_format/binder.h
@@ -7914,6 +7919,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_writer.h
   - test/core/transport/binder/mock_objects.h
   src:
+  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
   - src/core/ext/transport/binder/wire_format/binder_constants.cc
   - src/core/ext/transport/binder/wire_format/transaction.cc
@@ -7929,6 +7935,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/binder/security_policy/security_policy.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
   - src/core/ext/transport/binder/wire_format/binder.h

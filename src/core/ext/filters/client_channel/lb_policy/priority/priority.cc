@@ -162,6 +162,7 @@ class PriorityLb : public LoadBalancingPolicy {
                        const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
+      absl::string_view GetAuthority() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
 
@@ -740,14 +741,6 @@ void PriorityLb::ChildPriority::OnDeactivationTimerLocked(
 // PriorityLb::ChildPriority::Helper
 //
 
-void PriorityLb::ChildPriority::Helper::RequestReresolution() {
-  if (priority_->priority_policy_->shutting_down_) return;
-  if (priority_->ignore_reresolution_requests_) {
-    return;
-  }
-  priority_->priority_policy_->channel_control_helper()->RequestReresolution();
-}
-
 RefCountedPtr<SubchannelInterface>
 PriorityLb::ChildPriority::Helper::CreateSubchannel(
     ServerAddress address, const grpc_channel_args& args) {
@@ -762,6 +755,18 @@ void PriorityLb::ChildPriority::Helper::UpdateState(
   if (priority_->priority_policy_->shutting_down_) return;
   // Notify the priority.
   priority_->OnConnectivityStateUpdateLocked(state, status, std::move(picker));
+}
+
+void PriorityLb::ChildPriority::Helper::RequestReresolution() {
+  if (priority_->priority_policy_->shutting_down_) return;
+  if (priority_->ignore_reresolution_requests_) {
+    return;
+  }
+  priority_->priority_policy_->channel_control_helper()->RequestReresolution();
+}
+
+absl::string_view PriorityLb::ChildPriority::Helper::GetAuthority() {
+  return priority_->priority_policy_->channel_control_helper()->GetAuthority();
 }
 
 void PriorityLb::ChildPriority::Helper::AddTraceEvent(

@@ -30,13 +30,14 @@ namespace internal {
 
 grpc_channel* CreateChannelFromBinderImpl(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy,
     const grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_channel_create_from_binder(target=%p, args=%p)", 2,
                  ((void*)1234, args));
 
-  grpc_transport* transport =
-      grpc_create_binder_transport_client(std::move(endpoint_binder));
+  grpc_transport* transport = grpc_create_binder_transport_client(
+      std::move(endpoint_binder), security_policy);
   GPR_ASSERT(transport);
 
   // TODO(b/192207753): check binder alive and ping binder
