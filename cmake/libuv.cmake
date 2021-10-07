@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,12 +16,39 @@ if(gRPC_LIBUV_PROVIDER STREQUAL "module")
   if(NOT LIBUV_ROOT_DIR)
     set(LIBUV_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libuv)
   endif()
-  add_subdirectory("${LIBUV_ROOT_DIR}" third_party/libuv)
+  message(STATUS "Applying libuv.patch")
+  execute_process(
+    COMMAND patch -p1 --forward --ignore-whitespace
+    WORKING_DIRECTORY "${LIBUV_ROOT_DIR}"
+    INPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libuv.patch"
+    OUTPUT_VARIABLE OUTPUT
+    RESULT_VARIABLE RESULT)
+  if (RESULT EQUAL 0)
+    message(STATUS "Patch applied!")
+  else()
+    message(FATAL_ERROR "Failed to apply libuv.patch")
+  endif()
   include_directories("${LIBUV_ROOT_DIR}/include" "${LIBUV_ROOT_DIR}/src")
-  set(_gRPC_LIBUV_LIBRARIES uv)
-  set(_gRPC_LIBUV_INCLUDE_DIR "${LIBUV_ROOT_DIR}/include" "${LIBUV_ROOT_DIR}/src")
+  add_subdirectory("${LIBUV_ROOT_DIR}" third_party/libuv)
+  if(TARGET uv)
+    set(_gRPC_LIBUV_LIBRARIES uv)
+    set(_gRPC_LIBUV_INCLUDE_DIR "${LIBUV_ROOT_DIR}/include" "${LIBUV_ROOT_DIR}/src")
+    if(gRPC_INSTALL)
+      if(_gRPC_INSTALL_SUPPORTED_FROM_MODULE)
+        install(TARGETS uv EXPORT gRPCTargets
+          RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+          LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+          ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR})
+      else()
+        message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_LIBUV_PROVIDER is \"module\" and CMake version (${CMAKE_VERSION}) is less than 3.13.")
+        set(gRPC_INSTALL FALSE)
+      endif()
+    endif()
+  endif()
 elseif(gRPC_LIBUV_PROVIDER STREQUAL "package")
   find_package(uv REQUIRED)
-  set(_gRPC_LIBUV_LIBRARIES uv::uv)
+  if(TARGET uv)
+    set(_gRPC_LIBUV_LIBRARIES uv::uv)
+  endif()
   set(_gRPC_FIND_LIBUV "if(NOT uv_FOUND)\n  find_package(uv)\nendif()")
 endif()

@@ -397,6 +397,8 @@ def grpc_deps():
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/libuv/libuv/archive/15ae750151ac9341e5945eb38f8982d59fb99201.tar.gz",
                 "https://github.com/libuv/libuv/archive/15ae750151ac9341e5945eb38f8982d59fb99201.tar.gz",
             ],
+            patches = ["@com_github_grpc_grpc//third_party:libuv.patch"],
+            patch_args = ["-p1"],
         )
 
     if "com_google_googleapis" not in native.existing_rules():
