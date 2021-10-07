@@ -1367,7 +1367,7 @@ grpc_cc_library(
     deps = [
         "gpr_platform",
         "grpc_trace",
-    ]
+    ],
 )
 
 grpc_cc_library(
@@ -1551,7 +1551,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/is_epollexclusive_available.cc",
         "src/core/lib/iomgr/load_file.cc",
         "src/core/lib/iomgr/lockfree_event.cc",
-        "src/core/lib/resource_quota/api.cc",
         "src/core/lib/iomgr/polling_entity.cc",
         "src/core/lib/iomgr/pollset.cc",
         "src/core/lib/iomgr/pollset_custom.cc",
@@ -1599,6 +1598,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_pipe.cc",
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
         "src/core/lib/iomgr/work_serializer.cc",
+        "src/core/lib/resource_quota/api.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice_api.cc",
@@ -1814,15 +1814,15 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_trace",
         "json",
+        "memory_quota",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+        "resource_quota",
         "slice",
         "slice_refcount",
         "table",
         "useful",
-        "memory_quota",
-        "resource_quota",
     ],
 )
 
@@ -3275,12 +3275,12 @@ grpc_cc_library(
         "hpack_encoder_index",
         "hpack_encoder_table",
         "match",
+        "memory_quota",
         "popularity_count",
+        "resource_quota_trace",
         "slice",
         "slice_refcount",
         "useful",
-        "memory_quota",
-        "resource_quota_trace",
     ],
 )
 
@@ -3372,10 +3372,10 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_http_filters",
         "grpc_transport_chttp2",
+        "memory_quota",
         "ref_counted",
         "ref_counted_ptr",
         "slice",
-        "memory_quota"
     ],
 )
 

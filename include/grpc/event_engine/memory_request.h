@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_EVENT_ENGINE_INTERNAL_MEMORY_RFEQUEST_H
-#define GRPC_EVENT_ENGINE_INTERNAL_MEMORY_RFEQUEST_H
+#ifndef GRPC_EVENT_ENGINE_MEMORY_REQUEST_H
+#define GRPC_EVENT_ENGINE_MEMORY_REQUEST_H
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -48,4 +48,4 @@ class MemoryRequest {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif
+#endif  // GRPC_EVENT_ENGINE_MEMORY_REQUEST_H

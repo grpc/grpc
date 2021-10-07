@@ -704,8 +704,8 @@ class IsolatedCallFixture : public TrackCounters {
         nullptr));
     {
       grpc_core::ExecCtx exec_ctx;
-      channel_ =
-          grpc_channel_create_with_builder(builder, GRPC_CLIENT_CHANNEL, 0);
+      channel_ = grpc_channel_create_with_builder(builder, GRPC_CLIENT_CHANNEL,
+                                                  nullptr);
     }
     cq_ = grpc_completion_queue_create_for_next(nullptr);
   }
