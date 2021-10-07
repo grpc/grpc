@@ -56,6 +56,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_XDS_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -74,6 +75,59 @@ Mutex* g_mu = nullptr;
 const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
 XdsClient* g_xds_client ABSL_GUARDED_BY(*g_mu) = nullptr;
 char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
+
+// Obtain the authority portion of the new-style resource name like
+// "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server.example.com"
+std::string GetAuthorityFromName(absl::string_view name) {
+  std::vector<absl::string_view> v = absl::StrSplit(name, '/');
+  if (v.size() > 5 && absl::StartsWith(v[0], "xdstp:")) {
+    return std::string(v[2]);
+  }
+  return "";
+}
+
+std::string GetResourceFromName(absl::string_view name) {
+  std::vector<absl::string_view> v = absl::StrSplit(name, '/');
+  if (v.size() > 5 && absl::StartsWith(v[0], "xdstp:")) {
+    return absl::StrCat(std::string(v[0]), "/", std::string(v[4]));
+  }
+  return std::string(name);
+}
+
+std::string ConstructFullResourceName(absl::string_view authority,
+                                      absl::string_view resource_type,
+                                      absl::string_view name) {
+  return absl::StrCat("xdstp://", std::string(authority), "/",
+                      std::string(resource_type), "/",
+                      absl::StripPrefix(std::string(name), "xdstp:/"));
+}
+
+struct ResourceNameFields {
+  std::string authority;
+  std::string id;
+};
+
+absl::StatusOr<ResourceNameFields> ParseResourceName(absl::string_view name) {
+  // Old-style names use the empty string for authority.
+  // ID is prefixed with "old:" to indicate that it's an old-style name.
+  // if (!absl::StartsWith(name, "xdstp:")) return ResourceNameFields{"",
+  // absl::StrCat("old:", name)};
+  if (!absl::StartsWith(name, "xdstp:"))
+    return ResourceNameFields{"", absl::StrCat(name)};
+  // New style name.  Parse URI.
+  auto uri = URI::Parse(name);
+  if (!uri.ok()) return uri.status();
+  // Split the resource type off of the path to get the id.
+  std::pair<absl::string_view, absl::string_view> path_parts =
+      absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
+  if (!absl::StartsWith(path_parts.first, "envoy.config.")) {
+    return absl::InvalidArgumentError(
+        "xdstp URI path must indicate xDS resource type");
+  }
+  // ID is prefixed with "xdstp:" to indicate that it's a new-style name.
+  return ResourceNameFields{uri->authority(),
+                            absl::StrCat("xdstp:", path_parts.second)};
+}
 
 }  // namespace
 
@@ -203,45 +257,49 @@ class XdsClient::ChannelState::AdsCallState
           gpr_log(GPR_INFO, "[xds_client %p] %s", ads_calld_->xds_client(),
                   grpc_error_std_string(watcher_error).c_str());
         }
-        auto authority = GetAuthorityFromName(name_);
-        auto resource_name = GetResourceFromName(name_);
-        if (type_url_ == XdsApi::kLdsTypeUrl) {
-          ListenerState& state = ads_calld_->xds_client()
-                                     ->authority_state_[authority]
-                                     .listener_map[resource_name];
-          state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-          for (const auto& p : state.watchers) {
-            p.first->OnError(GRPC_ERROR_REF(watcher_error));
+        auto resource = ParseResourceName(name_);
+        if (resource.ok()) {
+          if (type_url_ == XdsApi::kLdsTypeUrl) {
+            ListenerState& state =
+                ads_calld_->xds_client()
+                    ->authority_state_[resource.value().authority]
+                    .listener_map[resource.value().id];
+            state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
+            for (const auto& p : state.watchers) {
+              p.first->OnError(GRPC_ERROR_REF(watcher_error));
+            }
+          } else if (type_url_ == XdsApi::kRdsTypeUrl) {
+            RouteConfigState& state =
+                ads_calld_->xds_client()
+                    ->authority_state_[resource.value().authority]
+                    .route_config_map[resource.value().id];
+            state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
+            for (const auto& p : state.watchers) {
+              p.first->OnError(GRPC_ERROR_REF(watcher_error));
+            }
+          } else if (type_url_ == XdsApi::kCdsTypeUrl) {
+            ClusterState& state =
+                ads_calld_->xds_client()
+                    ->authority_state_[resource.value().authority]
+                    .cluster_map[resource.value().id];
+            state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
+            for (const auto& p : state.watchers) {
+              p.first->OnError(GRPC_ERROR_REF(watcher_error));
+            }
+          } else if (type_url_ == XdsApi::kEdsTypeUrl) {
+            EndpointState& state =
+                ads_calld_->xds_client()
+                    ->authority_state_[resource.value().authority]
+                    .endpoint_map[resource.value().id];
+            state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
+            for (const auto& p : state.watchers) {
+              p.first->OnError(GRPC_ERROR_REF(watcher_error));
+            }
+          } else {
+            GPR_UNREACHABLE_CODE(return );
           }
-        } else if (type_url_ == XdsApi::kRdsTypeUrl) {
-          RouteConfigState& state = ads_calld_->xds_client()
-                                        ->authority_state_[authority]
-                                        .route_config_map[resource_name];
-          state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-          for (const auto& p : state.watchers) {
-            p.first->OnError(GRPC_ERROR_REF(watcher_error));
-          }
-        } else if (type_url_ == XdsApi::kCdsTypeUrl) {
-          ClusterState& state = ads_calld_->xds_client()
-                                    ->authority_state_[authority]
-                                    .cluster_map[resource_name];
-          state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-          for (const auto& p : state.watchers) {
-            p.first->OnError(GRPC_ERROR_REF(watcher_error));
-          }
-        } else if (type_url_ == XdsApi::kEdsTypeUrl) {
-          EndpointState& state = ads_calld_->xds_client()
-                                     ->authority_state_[authority]
-                                     .endpoint_map[resource_name];
-          ;
-          state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-          for (const auto& p : state.watchers) {
-            p.first->OnError(GRPC_ERROR_REF(watcher_error));
-          }
-        } else {
-          GPR_UNREACHABLE_CODE(return );
+          GRPC_ERROR_UNREF(watcher_error);
         }
-        GRPC_ERROR_UNREF(watcher_error);
       }
       GRPC_ERROR_UNREF(error);
     }
@@ -2611,32 +2669,6 @@ RefCountedPtr<XdsClient> XdsClient::GetOrCreate(const grpc_channel_args* args,
     g_xds_client = xds_client.get();
   }
   return xds_client;
-}
-
-// Obtain the authority portion of the new-style resource name like
-// "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server.example.com"
-std::string XdsClient::GetAuthorityFromName(absl::string_view name) {
-  std::vector<absl::string_view> v = absl::StrSplit(name, '/');
-  if (v.size() > 5 && absl::StartsWith(v[0], "xdstp:")) {
-    return std::string(v[2]);
-  }
-  return "";
-}
-
-std::string XdsClient::GetResourceFromName(absl::string_view name) {
-  std::vector<absl::string_view> v = absl::StrSplit(name, '/');
-  if (v.size() > 5 && absl::StartsWith(v[0], "xdstp:")) {
-    return absl::StrCat(std::string(v[0]), "/", std::string(v[4]));
-  }
-  return std::string(name);
-}
-
-std::string XdsClient::ConstructFullResourceName(
-    absl::string_view authority, absl::string_view resource_type,
-    absl::string_view name) {
-  return absl::StrCat("xdstp://", std::string(authority), "/",
-                      std::string(resource_type), "/",
-                      absl::StripPrefix(std::string(name), "xdstp:/"));
 }
 
 namespace internal {

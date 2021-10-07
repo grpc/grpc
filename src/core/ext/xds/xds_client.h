@@ -85,12 +85,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
   static RefCountedPtr<XdsClient> GetOrCreate(const grpc_channel_args* args,
                                               grpc_error_handle* error);
 
-  static std::string GetAuthorityFromName(absl::string_view name);
-  static std::string GetResourceFromName(absl::string_view name);
-  static std::string ConstructFullResourceName(absl::string_view authority,
-                                               absl::string_view resource_type,
-                                               absl::string_view name);
-
   // Most callers should not instantiate directly.  Use GetOrCreate() instead.
   XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
             const grpc_channel_args* args);
