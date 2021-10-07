@@ -76,24 +76,6 @@ const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
 XdsClient* g_xds_client ABSL_GUARDED_BY(*g_mu) = nullptr;
 char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
 
-// Obtain the authority portion of the new-style resource name like
-// "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server.example.com"
-std::string GetAuthorityFromName(absl::string_view name) {
-  std::vector<absl::string_view> v = absl::StrSplit(name, '/');
-  if (v.size() > 5 && absl::StartsWith(v[0], "xdstp:")) {
-    return std::string(v[2]);
-  }
-  return "";
-}
-
-std::string GetResourceFromName(absl::string_view name) {
-  std::vector<absl::string_view> v = absl::StrSplit(name, '/');
-  if (v.size() > 5 && absl::StartsWith(v[0], "xdstp:")) {
-    return absl::StrCat(std::string(v[0]), "/", std::string(v[4]));
-  }
-  return std::string(name);
-}
-
 std::string ConstructFullResourceName(absl::string_view authority,
                                       absl::string_view resource_type,
                                       absl::string_view name) {
@@ -1374,25 +1356,27 @@ void XdsClient::ChannelState::AdsCallState::RejectAdsUpdateLocked(
   }
   std::string details = grpc_error_std_string(result.parse_error);
   for (auto& name : result.resource_names_failed) {
-    auto authority = GetAuthorityFromName(name);
-    auto resource_name = GetResourceFromName(name);
-    auto authority_it = xds_client()->authority_state_.find(authority);
-    if (authority_it == xds_client()->authority_state_.end()) continue;
-    AuthorityState& authority_state = authority_it->second;
-    if (result.type_url == XdsApi::kLdsTypeUrl) {
-      RejectAdsUpdateHelperLocked(resource_name, update_time, result,
-                                  &authority_state.listener_map);
-    } else if (result.type_url == XdsApi::kRdsTypeUrl) {
-      RejectAdsUpdateHelperLocked(resource_name, update_time, result,
-                                  &authority_state.route_config_map);
-    } else if (result.type_url == XdsApi::kCdsTypeUrl) {
-      RejectAdsUpdateHelperLocked(resource_name, update_time, result,
-                                  &authority_state.cluster_map);
-    } else if (result.type_url == XdsApi::kEdsTypeUrl) {
-      RejectAdsUpdateHelperLocked(resource_name, update_time, result,
-                                  &authority_state.endpoint_map);
-    } else {
-      GPR_ASSERT(0);
+    auto resource = ParseResourceName(name);
+    if (resource.ok()) {
+      auto authority_it =
+          xds_client()->authority_state_.find(resource.value().authority);
+      if (authority_it == xds_client()->authority_state_.end()) continue;
+      AuthorityState& authority_state = authority_it->second;
+      if (result.type_url == XdsApi::kLdsTypeUrl) {
+        RejectAdsUpdateHelperLocked(resource.value().id, update_time, result,
+                                    &authority_state.listener_map);
+      } else if (result.type_url == XdsApi::kRdsTypeUrl) {
+        RejectAdsUpdateHelperLocked(resource.value().id, update_time, result,
+                                    &authority_state.route_config_map);
+      } else if (result.type_url == XdsApi::kCdsTypeUrl) {
+        RejectAdsUpdateHelperLocked(resource.value().id, update_time, result,
+                                    &authority_state.cluster_map);
+      } else if (result.type_url == XdsApi::kEdsTypeUrl) {
+        RejectAdsUpdateHelperLocked(resource.value().id, update_time, result,
+                                    &authority_state.endpoint_map);
+      } else {
+        GPR_ASSERT(0);
+      }
     }
   }
 }
@@ -2107,12 +2091,12 @@ void XdsClient::Orphan() {
 void XdsClient::WatchListenerData(
     absl::string_view listener_name,
     std::unique_ptr<ListenerWatcherInterface> watcher) {
-  std::string authority_str = GetAuthorityFromName(listener_name);
-  std::string resource_str = GetResourceFromName(listener_name);
+  auto resource = ParseResourceName(listener_name);
+  if (!resource.ok()) return;
   std::string listener_name_str = std::string(listener_name);
   MutexLock lock(&mu_);
-  ListenerState& listener_state =
-      authority_state_[authority_str].listener_map[resource_str];
+  ListenerState& listener_state = authority_state_[resource.value().authority]
+                                      .listener_map[resource.value().id];
   ListenerWatcherInterface* w = watcher.get();
   listener_state.watchers[w] = std::move(watcher);
   // If we've already received an LDS update, notify the new watcher
@@ -2139,15 +2123,16 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
                                         bool delay_unsubscription) {
   MutexLock lock(&mu_);
   if (shutting_down_) return;
-  std::string authority_str = GetAuthorityFromName(listener_name);
-  std::string resource_str = GetResourceFromName(listener_name);
-  ListenerState& listener_state =
-      authority_state_[authority_str].listener_map[resource_str];
+  auto resource = ParseResourceName(listener_name);
+  if (!resource.ok()) return;
+  ListenerState& listener_state = authority_state_[resource.value().authority]
+                                      .listener_map[resource.value().id];
   auto it = listener_state.watchers.find(watcher);
   if (it != listener_state.watchers.end()) {
     listener_state.watchers.erase(it);
     if (listener_state.watchers.empty()) {
-      authority_state_[authority_str].listener_map.erase(resource_str);
+      authority_state_[resource.value().authority].listener_map.erase(
+          resource.value().id);
       chand_->UnsubscribeLocked(XdsApi::kLdsTypeUrl, std::string(listener_name),
                                 delay_unsubscription);
     }
@@ -2157,12 +2142,13 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
 void XdsClient::WatchRouteConfigData(
     absl::string_view route_config_name,
     std::unique_ptr<RouteConfigWatcherInterface> watcher) {
-  std::string authority_str = GetAuthorityFromName(route_config_name);
-  std::string resource_str = GetResourceFromName(route_config_name);
+  auto resource = ParseResourceName(route_config_name);
+  if (!resource.ok()) return;
   std::string route_config_name_str = std::string(route_config_name);
   MutexLock lock(&mu_);
   RouteConfigState& route_config_state =
-      authority_state_[authority_str].route_config_map[resource_str];
+      authority_state_[resource.value().authority]
+          .route_config_map[resource.value().id];
   RouteConfigWatcherInterface* w = watcher.get();
   route_config_state.watchers[w] = std::move(watcher);
   // If we've already received an RDS update, notify the new watcher
@@ -2191,15 +2177,17 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
                                            bool delay_unsubscription) {
   MutexLock lock(&mu_);
   if (shutting_down_) return;
-  std::string authority_str = GetAuthorityFromName(route_config_name);
-  std::string resource_str = GetResourceFromName(route_config_name);
+  auto resource = ParseResourceName(route_config_name);
+  if (!resource.ok()) return;
   RouteConfigState& route_config_state =
-      authority_state_[authority_str].route_config_map[resource_str];
+      authority_state_[resource.value().authority]
+          .route_config_map[resource.value().id];
   auto it = route_config_state.watchers.find(watcher);
   if (it != route_config_state.watchers.end()) {
     route_config_state.watchers.erase(it);
     if (route_config_state.watchers.empty()) {
-      authority_state_[authority_str].route_config_map.erase(resource_str);
+      authority_state_[resource.value().authority].route_config_map.erase(
+          resource.value().id);
       chand_->UnsubscribeLocked(XdsApi::kRdsTypeUrl,
                                 std::string(route_config_name),
                                 delay_unsubscription);
@@ -2210,12 +2198,12 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
 void XdsClient::WatchClusterData(
     absl::string_view cluster_name,
     std::unique_ptr<ClusterWatcherInterface> watcher) {
-  std::string authority_str = GetAuthorityFromName(cluster_name);
-  std::string resource_str = GetResourceFromName(cluster_name);
+  auto resource = ParseResourceName(cluster_name);
+  if (!resource.ok()) return;
   std::string cluster_name_str = std::string(cluster_name);
   MutexLock lock(&mu_);
-  ClusterState& cluster_state =
-      authority_state_[authority_str].cluster_map[resource_str];
+  ClusterState& cluster_state = authority_state_[resource.value().authority]
+                                    .cluster_map[resource.value().id];
   ClusterWatcherInterface* w = watcher.get();
   cluster_state.watchers[w] = std::move(watcher);
   // If we've already received a CDS update, notify the new watcher
@@ -2242,15 +2230,16 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
                                        bool delay_unsubscription) {
   MutexLock lock(&mu_);
   if (shutting_down_) return;
-  std::string authority_str = GetAuthorityFromName(cluster_name);
-  std::string resource_str = GetResourceFromName(cluster_name);
-  ClusterState& cluster_state =
-      authority_state_[authority_str].cluster_map[resource_str];
+  auto resource = ParseResourceName(cluster_name);
+  if (!resource.ok()) return;
+  ClusterState& cluster_state = authority_state_[resource.value().authority]
+                                    .cluster_map[resource.value().id];
   auto it = cluster_state.watchers.find(watcher);
   if (it != cluster_state.watchers.end()) {
     cluster_state.watchers.erase(it);
     if (cluster_state.watchers.empty()) {
-      authority_state_[authority_str].cluster_map.erase(resource_str);
+      authority_state_[resource.value().authority].cluster_map.erase(
+          resource.value().id);
       chand_->UnsubscribeLocked(XdsApi::kCdsTypeUrl, std::string(cluster_name),
                                 delay_unsubscription);
     }
@@ -2260,12 +2249,12 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
 void XdsClient::WatchEndpointData(
     absl::string_view eds_service_name,
     std::unique_ptr<EndpointWatcherInterface> watcher) {
-  std::string authority_str = GetAuthorityFromName(eds_service_name);
-  std::string resource_str = GetResourceFromName(eds_service_name);
+  auto resource = ParseResourceName(eds_service_name);
+  if (!resource.ok()) return;
   std::string eds_service_name_str = std::string(eds_service_name);
   MutexLock lock(&mu_);
-  EndpointState& endpoint_state =
-      authority_state_[authority_str].endpoint_map[resource_str];
+  EndpointState& endpoint_state = authority_state_[resource.value().authority]
+                                      .endpoint_map[resource.value().id];
   EndpointWatcherInterface* w = watcher.get();
   endpoint_state.watchers[w] = std::move(watcher);
   // If we've already received an EDS update, notify the new watcher
@@ -2292,15 +2281,16 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
                                         bool delay_unsubscription) {
   MutexLock lock(&mu_);
   if (shutting_down_) return;
-  std::string authority_str = GetAuthorityFromName(eds_service_name);
-  std::string resource_str = GetResourceFromName(eds_service_name);
-  EndpointState& endpoint_state =
-      authority_state_[authority_str].endpoint_map[resource_str];
+  auto resource = ParseResourceName(eds_service_name);
+  if (!resource.ok()) return;
+  EndpointState& endpoint_state = authority_state_[resource.value().authority]
+                                      .endpoint_map[resource.value().id];
   auto it = endpoint_state.watchers.find(watcher);
   if (it != endpoint_state.watchers.end()) {
     endpoint_state.watchers.erase(it);
     if (endpoint_state.watchers.empty()) {
-      authority_state_[authority_str].endpoint_map.erase(resource_str);
+      authority_state_[resource.value().authority].endpoint_map.erase(
+          resource.value().id);
       chand_->UnsubscribeLocked(XdsApi::kEdsTypeUrl,
                                 std::string(eds_service_name),
                                 delay_unsubscription);
