@@ -152,6 +152,8 @@ constexpr char kLbDropType[] = "lb";
 constexpr char kThrottleDropType[] = "throttle";
 constexpr char kServerName[] = "server.example.com";
 constexpr char kDefaultRouteConfigurationName[] = "route_config_name";
+constexpr char kDefaultSimpleServerRouteConfigurationName[] =
+    "simple_server_route_config_name";
 constexpr char kDefaultClusterName[] = "cluster_name";
 constexpr char kDefaultEdsServiceName[] = "eds_service_name";
 constexpr int kDefaultLocalityWeight = 3;
@@ -1739,6 +1741,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     auto* route = virtual_host->add_routes();
     route->mutable_match()->set_prefix("");
     route->mutable_route()->set_cluster(kDefaultClusterName);
+    // Construct a simple server-side RDS resource for tests to use.
+    simple_server_route_config_.set_name(
+        kDefaultSimpleServerRouteConfigurationName);
+    virtual_host = simple_server_route_config_.add_virtual_hosts();
+    virtual_host->add_domains("*");
+    auto* route = virtual_host->add_routes();
+    route->mutable_match()->set_prefix("");
+    route->mutable_non_forwarding_action();
     // Construct CDS resource.
     default_cluster_.set_name(kDefaultClusterName);
     default_cluster_.set_type(Cluster::EDS);
@@ -2849,6 +2859,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   Listener default_listener_;
   RouteConfiguration default_route_config_;
+  RouteConfiguration simple_server_route_config_;
   Cluster default_cluster_;
   bool use_xds_enabled_server_;
   bool bootstrap_contents_from_env_var_;
@@ -10818,6 +10829,36 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
                            "filter chain: {source_ports={8080}}"));
 }
 
+using XdsServerRdsTest = XdsServerSecurityTest;
+
+TEST_P(XdsServerRdsTest, Basic) {
+  Listener listener;
+  listener.set_name(absl::StrCat(
+      ipv6_only_ ? "grpc/server?xds.resource.listening_address=[::1]:"
+                 : "grpc/server?xds.resource.listening_address=127.0.0.1:",
+      backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      ipv6_only_ ? "[::1]" : "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  auto* filter_chain = listener.add_filter_chains();
+  HttpConnectionManager http_connection_manager;
+  auto* route_config = http_connection_manager.mutable_route_config();
+  auto* vhost = route_config->add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route = vhost->add_routes();
+  route->mutable_match()->set_prefix("");
+  route->mutable_non_forwarding_action();
+  auto* filter = http_connection_manager.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(
+      envoy::extensions::filters::http::router::v3::Router());
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      http_connection_manager);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
 using EdsTest = BasicTest;
 
 // Tests that EDS client should send a NACK if the EDS update contains
@@ -13524,6 +13565,13 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerStatusNotificationTest,
 
 // We are only testing the server here.
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerFilterChainMatchTest,
+                         ::testing::Values(TestType()
+                                               .set_use_fake_resolver()
+                                               .set_use_xds_credentials()),
+                         &TestTypeName);
+
+// We are only testing the server here.
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerRdsTest,
                          ::testing::Values(TestType()
                                                .set_use_fake_resolver()
                                                .set_use_xds_credentials()),

@@ -2164,6 +2164,10 @@ grpc_error_handle HttpConnectionManagerParse(
     const auto* http_filters =
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
             http_connection_manager_proto, &num_filters);
+    if (num_filters == 0) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Expected atleast one HTTP filter");
+    }
     std::set<absl::string_view> names_seen;
     for (size_t i = 0; i < num_filters; ++i) {
       const auto* http_filter = http_filters[i];
@@ -2244,45 +2248,43 @@ grpc_error_handle HttpConnectionManagerParse(
         XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter{
             "router", {kXdsHttpRouterFilterConfigName, Json()}});
   }
-  if (is_client) {
-    // Found inlined route_config. Parse it to find the cluster_name.
-    if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
-            http_connection_manager_proto)) {
-      const envoy_config_route_v3_RouteConfiguration* route_config =
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
-              http_connection_manager_proto);
-      XdsApi::RdsUpdate rds_update;
-      grpc_error_handle error =
-          RouteConfigParse(context, route_config, is_v2, &rds_update);
-      if (error != GRPC_ERROR_NONE) return error;
-      http_connection_manager->rds_update = std::move(rds_update);
-      return GRPC_ERROR_NONE;
-    }
-    // Validate that RDS must be used to get the route_config dynamically.
-    const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
-        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
+  // Found inlined route_config. Parse it to find the cluster_name.
+  if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
+          http_connection_manager_proto)) {
+    const envoy_config_route_v3_RouteConfiguration* route_config =
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
             http_connection_manager_proto);
-    if (rds == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "HttpConnectionManager neither has inlined route_config nor RDS.");
-    }
-    // Check that the ConfigSource specifies ADS.
-    const envoy_config_core_v3_ConfigSource* config_source =
-        envoy_extensions_filters_network_http_connection_manager_v3_Rds_config_source(
-            rds);
-    if (config_source == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "HttpConnectionManager missing config_source for RDS.");
-    }
-    if (!envoy_config_core_v3_ConfigSource_has_ads(config_source)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
-    }
-    // Get the route_config_name.
-    http_connection_manager->route_config_name = UpbStringToStdString(
-        envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
-            rds));
+    XdsApi::RdsUpdate rds_update;
+    grpc_error_handle error =
+        RouteConfigParse(context, route_config, is_v2, &rds_update);
+    if (error != GRPC_ERROR_NONE) return error;
+    http_connection_manager->rds_update = std::move(rds_update);
+    return GRPC_ERROR_NONE;
   }
+  // Validate that RDS must be used to get the route_config dynamically.
+  const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
+      envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
+          http_connection_manager_proto);
+  if (rds == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "HttpConnectionManager neither has inlined route_config nor RDS.");
+  }
+  // Check that the ConfigSource specifies ADS.
+  const envoy_config_core_v3_ConfigSource* config_source =
+      envoy_extensions_filters_network_http_connection_manager_v3_Rds_config_source(
+          rds);
+  if (config_source == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "HttpConnectionManager missing config_source for RDS.");
+  }
+  if (!envoy_config_core_v3_ConfigSource_has_ads(config_source)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
+  }
+  // Get the route_config_name.
+  http_connection_manager->route_config_name = UpbStringToStdString(
+      envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
+          rds));
   return GRPC_ERROR_NONE;
 }
 

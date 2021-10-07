@@ -187,9 +187,12 @@ void CallData::RecvInitialMetadataReady(void* user_data,
       auto call_config =
           config_selector.value()->GetCallConfig(calld->recv_initial_metadata_);
       if (call_config.error != GRPC_ERROR_NONE) {
+        gpr_log(GPR_ERROR, "%s",
+                grpc_error_std_string(call_config.error).c_str());
         calld->error_ = call_config.error;
         error = call_config.error;  // Does not take a ref
       } else {
+        gpr_log(GPR_ERROR, "here");
         calld->arena_->New<ServerConfigCallData>(
             std::move(call_config.service_config), call_config.method_configs,
             calld->call_context_);

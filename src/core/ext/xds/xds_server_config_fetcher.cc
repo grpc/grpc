@@ -23,6 +23,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 
+#include "src/core/ext/filters/server_config_selector/server_config_selector_filter.h"
 #include "src/core/ext/service_config/server_config_selector.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -273,9 +274,10 @@ class XdsServerConfigSelectorProvider : public ServerConfigSelectorProvider {
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
       std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
           watcher) override {
-    if (static_resource_.has_value())
+    if (static_resource_.has_value()) {
       return XdsServerConfigSelector::Create(static_resource_.value(),
                                              http_filters_);
+    }
     GPR_ASSERT(!resource_name_.empty());
     MutexLock lock(&mu_);
     GPR_ASSERT(watcher_ == nullptr);
@@ -576,19 +578,17 @@ XdsServerConfigFetcher::FilterChainMatchManager::UpdateChannelArgsForConnection(
     }
   }
   // Add config selector filter
-  if (!filters.empty()) {
-    // filters.push_back(&kXdsServerConfigSelectorFilter);
-    grpc_channel_args* old_args = args;
-    auto server_config_selector_provider =
-        MakeRefCounted<XdsServerConfigSelectorProvider>(
-            server_config_fetcher_,
-            filter_chain->http_connection_manager.route_config_name,
-            filter_chain->http_connection_manager.rds_update,
-            filter_chain->http_connection_manager.http_filters);
-    grpc_arg arg_to_add = server_config_selector_provider->MakeChannelArg();
-    args = grpc_channel_args_copy_and_add(old_args, &arg_to_add, 1);
-    grpc_channel_args_destroy(old_args);
-  }
+  filters.push_back(&kServerConfigSelectorFilter);
+  grpc_channel_args* old_args = args;
+  auto server_config_selector_provider =
+      MakeRefCounted<XdsServerConfigSelectorProvider>(
+          server_config_fetcher_,
+          filter_chain->http_connection_manager.route_config_name,
+          filter_chain->http_connection_manager.rds_update,
+          filter_chain->http_connection_manager.http_filters);
+  grpc_arg arg_to_add = server_config_selector_provider->MakeChannelArg();
+  args = grpc_channel_args_copy_and_add(old_args, &arg_to_add, 1);
+  grpc_channel_args_destroy(old_args);
   // Nothing to update if credentials are not xDS.
   grpc_server_credentials* server_creds =
       grpc_find_server_credentials_in_args(args);
@@ -605,7 +605,7 @@ XdsServerConfigFetcher::FilterChainMatchManager::UpdateChannelArgsForConnection(
   RefCountedPtr<XdsCertificateProvider> xds_certificate_provider =
       std::move(*result);
   GPR_ASSERT(xds_certificate_provider != nullptr);
-  grpc_arg arg_to_add = xds_certificate_provider->MakeChannelArg();
+  arg_to_add = xds_certificate_provider->MakeChannelArg();
   grpc_channel_args* updated_args =
       grpc_channel_args_copy_and_add(args, &arg_to_add, 1);
   grpc_channel_args_destroy(args);
