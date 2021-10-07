@@ -54,14 +54,14 @@ TEST_F(EventEngineTimerTest, ImmediateCallbackIsExecutedQuickly) {
 
 TEST_F(EventEngineTimerTest, SupportsCancellation) {
   auto engine = this->NewEventEngine();
-  auto handle = engine->RunAt(absl::InfiniteFuture(), []() {});
+  auto handle = engine->RunAt(absl::Now() + absl::Seconds(10000), []() {});
   ASSERT_TRUE(engine->Cancel(handle));
 }
 
 TEST_F(EventEngineTimerTest, CancelledCallbackIsNotExecuted) {
   {
     auto engine = this->NewEventEngine();
-    auto handle = engine->RunAt(absl::InfiniteFuture(), [this]() {
+    auto handle = engine->RunAt(absl::Now() + absl::Seconds(10000), [this]() {
       grpc_core::MutexLock lock(&mu_);
       signaled_ = true;
     });

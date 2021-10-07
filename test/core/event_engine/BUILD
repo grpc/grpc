@@ -31,6 +31,7 @@ grpc_cc_test(
 
 grpc_cc_library(
     name = "event_engine_test_suite",
+    testonly = 1,
     srcs = [
         "test_suite/event_engine_test.cc",
         "test_suite/timer_test.cc",
