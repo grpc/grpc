@@ -240,9 +240,8 @@ bool AddBinderPort(const std::string& addr, grpc_server* server,
   grpc_core::Server* core_server = server->core_server.get();
   core_server->AddListener(
       grpc_core::OrphanablePtr<grpc_core::Server::ListenerInterface>(
-          new grpc_core::BinderServerListener(core_server, conn_id,
-                                              std::move(factory),
-                                              security_policy)));
+          new grpc_core::BinderServerListener(
+              core_server, conn_id, std::move(factory), security_policy)));
   return true;
 }
 

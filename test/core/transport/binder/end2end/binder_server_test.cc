@@ -172,9 +172,8 @@ TEST_F(BinderServerTest, CreateChannelWithEndpointBinderMultipleConnections) {
   grpc::ServerBuilder server_builder;
   grpc::testing::TestServiceImpl service;
   server_builder.RegisterService(&service);
-  server_builder.AddListeningPort(
-      "binder:example.service.multiple.connections",
-      grpc::testing::BinderServerCredentials());
+  server_builder.AddListeningPort("binder:example.service.multiple.connections",
+                                  grpc::testing::BinderServerCredentials());
   std::unique_ptr<grpc::Server> server = server_builder.BuildAndStart();
   void* raw_endpoint_binder = grpc::experimental::binder::GetEndpointBinder(
       "example.service.multiple.connections");
