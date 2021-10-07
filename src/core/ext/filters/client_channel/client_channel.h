@@ -217,6 +217,7 @@ class ClientChannel {
 
   void CreateOrUpdateLbPolicyLocked(
       RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
+      const absl::optional<std::string>& health_check_service_name,
       Resolver::Result result) ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
       const grpc_channel_args& args)
@@ -230,9 +231,7 @@ class ClientChannel {
 
   void UpdateServiceConfigInControlPlaneLocked(
       RefCountedPtr<ServiceConfig> service_config,
-      RefCountedPtr<ConfigSelector> config_selector,
-      const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
-      const char* lb_policy_name)
+      RefCountedPtr<ConfigSelector> config_selector, const char* lb_policy_name)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
   void UpdateServiceConfigInDataPlaneLocked()
@@ -263,9 +262,6 @@ class ClientChannel {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(data_plane_mu_);
   void RemoveLbQueuedCall(LbQueuedCall* to_remove, grpc_polling_entity* pollent)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(data_plane_mu_);
-  RefCountedPtr<ConnectedSubchannel> GetConnectedSubchannelInDataPlane(
-      SubchannelInterface* subchannel) const
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(data_plane_mu_);
 
   //
   // Fields set at construction and never modified.
@@ -275,8 +271,8 @@ class ClientChannel {
   ClientChannelFactory* client_channel_factory_;
   const grpc_channel_args* channel_args_;
   RefCountedPtr<ServiceConfig> default_service_config_;
-  std::string server_name_;
-  UniquePtr<char> target_uri_;
+  std::string uri_to_resolve_;
+  std::string default_authority_;
   channelz::ChannelNode* channelz_node_;
   grpc_pollset_set* interested_parties_;
 
@@ -318,8 +314,6 @@ class ClientChannel {
       ABSL_GUARDED_BY(work_serializer_);
   RefCountedPtr<ConfigSelector> saved_config_selector_
       ABSL_GUARDED_BY(work_serializer_);
-  absl::optional<std::string> health_check_service_name_
-      ABSL_GUARDED_BY(work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> lb_policy_
       ABSL_GUARDED_BY(work_serializer_);
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_
@@ -332,11 +326,6 @@ class ClientChannel {
   // work_serializer when the SubchannelWrappers are created and destroyed.
   std::set<SubchannelWrapper*> subchannel_wrappers_
       ABSL_GUARDED_BY(work_serializer_);
-  // Pending ConnectedSubchannel updates for each SubchannelWrapper.
-  // Updates are queued here in the control plane work_serializer and then
-  // applied in the data plane mutex when the picker is updated.
-  std::map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>>
-      pending_subchannel_updates_ ABSL_GUARDED_BY(work_serializer_);
   int keepalive_time_ ABSL_GUARDED_BY(work_serializer_) = -1;
   grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(work_serializer_) =
       GRPC_ERROR_NONE;

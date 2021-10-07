@@ -161,7 +161,8 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/endpoint_config.h",
     "include/grpc/event_engine/event_engine.h",
     "include/grpc/event_engine/port.h",
-    "include/grpc/event_engine/slice_allocator.h",
+    "include/grpc/event_engine/memory_allocator.h",
+    "include/grpc/event_engine/internal/memory_allocator_impl.h",
 ]
 
 GRPC_SECURE_PUBLIC_HDRS = [
@@ -497,6 +498,7 @@ grpc_cc_library(
         "grpc_credentials_util",
         "grpc_secure",
         "grpc_security_base",
+        "json",
         "ref_counted_ptr",
         "slice",
     ],
@@ -817,6 +819,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "include/grpc/impl/codegen/port_platform.h",
+        "include/grpc/support/port_platform.h",
     ],
 )
 
@@ -1309,6 +1312,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_memory_allocator",
+    srcs = [
+        "src/core/lib/event_engine/memory_allocator.cc",
+    ],
+    hdrs = [
+        "include/grpc/event_engine/internal/memory_allocator_impl.h",
+        "include/grpc/event_engine/memory_allocator.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+        "ref_counted",
+        "slice",
+        "slice_refcount",
+    ],
+)
+
+grpc_cc_library(
     name = "memory_quota",
     srcs = [
         "src/core/lib/resource_quota/memory_quota.cc",
@@ -1319,6 +1340,7 @@ grpc_cc_library(
     deps = [
         "activity",
         "dual_ref_counted",
+        "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
         "gpr_base",
         "loop",
@@ -1414,6 +1436,7 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_trace",
         "slice",
+        "slice_refcount",
         "useful",
     ],
 )
@@ -1574,9 +1597,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_pipe.cc",
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
         "src/core/lib/iomgr/work_serializer.cc",
-        "src/core/lib/json/json_reader.cc",
-        "src/core/lib/json/json_util.cc",
-        "src/core/lib/json/json_writer.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice_api.cc",
@@ -1600,7 +1620,6 @@ grpc_cc_library(
         "src/core/lib/surface/server.cc",
         "src/core/lib/surface/validate_metadata.cc",
         "src/core/lib/surface/version.cc",
-        "src/core/lib/transport/authority_override.cc",
         "src/core/lib/transport/bdp_estimator.cc",
         "src/core/lib/transport/byte_stream.cc",
         "src/core/lib/transport/connectivity_state.cc",
@@ -1720,8 +1739,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_pipe.h",
         "src/core/lib/iomgr/wakeup_fd_posix.h",
         "src/core/lib/iomgr/work_serializer.h",
-        "src/core/lib/json/json.h",
-        "src/core/lib/json/json_util.h",
         "src/core/lib/slice/b64.h",
         "src/core/lib/slice/percent_encoding.h",
         "src/core/lib/surface/api_trace.h",
@@ -1736,7 +1753,6 @@ grpc_cc_library(
         "src/core/lib/surface/lame_client.h",
         "src/core/lib/surface/server.h",
         "src/core/lib/surface/validate_metadata.h",
-        "src/core/lib/transport/authority_override.h",
         "src/core/lib/transport/bdp_estimator.h",
         "src/core/lib/transport/byte_stream.h",
         "src/core/lib/transport/connectivity_state.h",
@@ -1795,6 +1811,7 @@ grpc_cc_library(
         "gpr_tls",
         "grpc_codegen",
         "grpc_trace",
+        "json",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
@@ -1955,6 +1972,8 @@ grpc_cc_library(
         "grpc_health_upb",
         "grpc_trace",
         "handshaker_registry",
+        "json",
+        "json_util",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
@@ -2065,6 +2084,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
+        "json_util",
     ],
 )
 
@@ -2258,6 +2278,8 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_tls_credentials",
         "grpc_transport_chttp2_client_connector",
+        "json",
+        "json_util",
         "orphanable",
         "ref_counted_ptr",
         "slice",
@@ -2300,6 +2322,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_xds_client",
+        "json_util",
         "slice",
     ],
 )
@@ -2738,6 +2761,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_grpclb_balancer_addresses",
         "grpc_resolver_dns_selection",
+        "json",
     ],
 )
 
@@ -3209,6 +3233,7 @@ grpc_cc_library(
         "grpc_base_c",
         "grpc_credentials_util",
         "grpc_security_base",
+        "json",
         "ref_counted",
         "ref_counted_ptr",
         "tsi_ssl_types",
@@ -3476,7 +3501,7 @@ grpc_cc_library(
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_matchers",
         "grpc_rbac_engine",
         "useful",
@@ -3586,7 +3611,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
         "src/core/ext/transport/chttp2/transport/bin_encoder.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_plugin.cc",
-        "src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.cc",
         "src/core/ext/transport/chttp2/transport/context_list.cc",
         "src/core/ext/transport/chttp2/transport/flow_control.cc",
@@ -3612,7 +3636,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/transport/chttp2/transport/bin_decoder.h",
         "src/core/ext/transport/chttp2/transport/bin_encoder.h",
-        "src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.h",
         "src/core/ext/transport/chttp2/transport/context_list.h",
         "src/core/ext/transport/chttp2/transport/flow_control.h",
@@ -3678,11 +3701,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_transport_chttp2_client_connector",
     srcs = [
-        "src/core/ext/transport/chttp2/client/authority.cc",
         "src/core/ext/transport/chttp2/client/chttp2_connector.cc",
     ],
     hdrs = [
-        "src/core/ext/transport/chttp2/client/authority.h",
         "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     ],
     language = "c++",
@@ -5135,6 +5156,39 @@ grpc_cc_library(
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
     language = "c++",
+)
+
+grpc_cc_library(
+    name = "json",
+    srcs = [
+        "src/core/lib/json/json_reader.cc",
+        "src/core/lib/json/json_writer.cc",
+    ],
+    hdrs = [
+        "src/core/lib/json/json.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "error",
+        "exec_ctx",
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "json_util",
+    srcs = ["src/core/lib/json/json_util.cc"],
+    hdrs = ["src/core/lib/json/json_util.h"],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "gpr_base",
+        "json",
+    ],
 )
 
 grpc_generate_one_off_targets()

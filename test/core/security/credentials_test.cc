@@ -491,13 +491,13 @@ static void check_request_metadata(void* arg, grpc_error_handle error) {
   if (state->expected_error == GRPC_ERROR_NONE) {
     GPR_ASSERT(error == GRPC_ERROR_NONE);
   } else {
-    grpc_slice expected_error;
+    std::string expected_error;
     GPR_ASSERT(grpc_error_get_str(state->expected_error,
                                   GRPC_ERROR_STR_DESCRIPTION, &expected_error));
-    grpc_slice actual_error;
+    std::string actual_error;
     GPR_ASSERT(
         grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &actual_error));
-    GPR_ASSERT(grpc_slice_cmp(expected_error, actual_error) == 0);
+    GPR_ASSERT(expected_error == actual_error);
     GRPC_ERROR_UNREF(state->expected_error);
   }
   gpr_log(GPR_INFO, "expected_size=%" PRIdPTR " actual_size=%" PRIdPTR,
@@ -2677,11 +2677,9 @@ test_url_external_account_creds_failure_invalid_credential_source_url(void) {
   auto creds =
       grpc_core::UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds == nullptr);
-  grpc_slice actual_error_slice;
-  GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
-                                &actual_error_slice));
-  absl::string_view actual_error =
-      grpc_core::StringViewFromSlice(actual_error_slice);
+  std::string actual_error;
+  GPR_ASSERT(
+      grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &actual_error));
   GPR_ASSERT(absl::StartsWith(actual_error, "Invalid credential source url."));
   GRPC_ERROR_UNREF(error);
 }
@@ -3219,12 +3217,11 @@ static void test_aws_external_account_creds_failure_unmatched_environment_id(
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds == nullptr);
-  grpc_slice expected_error_slice =
-      grpc_slice_from_static_string("environment_id does not match.");
-  grpc_slice actual_error_slice;
-  GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
-                                &actual_error_slice));
-  GPR_ASSERT(grpc_slice_cmp(expected_error_slice, actual_error_slice) == 0);
+  std::string expected_error = "environment_id does not match.";
+  std::string actual_error;
+  GPR_ASSERT(
+      grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &actual_error));
+  GPR_ASSERT(expected_error == actual_error);
   GRPC_ERROR_UNREF(error);
 }
 

@@ -813,8 +813,9 @@ include/grpc/census.h \
 include/grpc/compression.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
+include/grpc/event_engine/internal/memory_allocator_impl.h \
+include/grpc/event_engine/memory_allocator.h \
 include/grpc/event_engine/port.h \
-include/grpc/event_engine/slice_allocator.h \
 include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_posix.h \
@@ -1011,8 +1012,6 @@ src/core/ext/transport/binder/README.md \
 src/core/ext/transport/chttp2/README.md \
 src/core/ext/transport/chttp2/alpn/alpn.cc \
 src/core/ext/transport/chttp2/alpn/alpn.h \
-src/core/ext/transport/chttp2/client/authority.cc \
-src/core/ext/transport/chttp2/client/authority.h \
 src/core/ext/transport/chttp2/client/chttp2_connector.cc \
 src/core/ext/transport/chttp2/client/chttp2_connector.h \
 src/core/ext/transport/chttp2/client/insecure/README.md \
@@ -1027,8 +1026,6 @@ src/core/ext/transport/chttp2/transport/bin_decoder.h \
 src/core/ext/transport/chttp2/transport/bin_encoder.cc \
 src/core/ext/transport/chttp2/transport/bin_encoder.h \
 src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
-src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc \
-src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h \
 src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
 src/core/ext/transport/chttp2/transport/chttp2_transport.h \
 src/core/ext/transport/chttp2/transport/context_list.cc \
@@ -1982,8 +1979,6 @@ src/core/lib/surface/validate_metadata.cc \
 src/core/lib/surface/validate_metadata.h \
 src/core/lib/surface/version.cc \
 src/core/lib/transport/README.md \
-src/core/lib/transport/authority_override.cc \
-src/core/lib/transport/authority_override.h \
 src/core/lib/transport/bdp_estimator.cc \
 src/core/lib/transport/bdp_estimator.h \
 src/core/lib/transport/byte_stream.cc \

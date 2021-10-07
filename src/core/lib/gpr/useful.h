@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_GPR_USEFUL_H
 #define GRPC_CORE_LIB_GPR_USEFUL_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <cstddef>
 

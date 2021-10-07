@@ -65,6 +65,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":mock_objects",
+        "//src/core/ext/transport/binder/security_policy:untrusted_security_policy",
         "//src/core/ext/transport/binder/wire_format:wire_reader",
         "//test/core/util:grpc_test_util",
     ],
@@ -98,6 +99,7 @@ grpc_cc_test(
     deps = [
         ":mock_objects",
         "//:grpc",
+        "//src/core/ext/transport/binder/security_policy:untrusted_security_policy",
         "//src/core/ext/transport/binder/transport:binder_transport",
         "//test/core/util:grpc_test_util",
     ],
