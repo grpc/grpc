@@ -113,7 +113,7 @@ class Fuzzer {
               };
               auto* args = new Args{std::move(sweep), cfg.msg(), this};
               auto* closure = GRPC_CLOSURE_CREATE(
-                  [](void* arg, grpc_error*) {
+                  [](void* arg, grpc_error_handle) {
                     auto* args = static_cast<Args*>(arg);
                     args->fuzzer->RunMsg(args->msg);
                     delete args;

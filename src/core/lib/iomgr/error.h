@@ -161,7 +161,7 @@ void grpc_enable_error_creation();
 #define GRPC_ERROR_CANCELLED absl::CancelledError()
 
 #define GRPC_ERROR_REF(err) (err)
-#define GRPC_ERROR_UNREF(err)
+#define GRPC_ERROR_UNREF(err) (void)(err)
 
 #define GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc) \
   StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})

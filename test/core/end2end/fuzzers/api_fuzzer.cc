@@ -79,7 +79,7 @@ typedef struct addr_req {
   std::unique_ptr<grpc_core::ServerAddressList>* addresses;
 } addr_req;
 
-static void finish_resolve(void* arg, grpc_error* error) {
+static void finish_resolve(void* arg, grpc_error_handle error) {
   addr_req* r = static_cast<addr_req*>(arg);
 
   if (error == GRPC_ERROR_NONE && 0 == strcmp(r->addr, "server")) {
@@ -162,7 +162,7 @@ typedef struct {
   grpc_slice_allocator* slice_allocator;
 } future_connect;
 
-static void do_connect(void* arg, grpc_error* error) {
+static void do_connect(void* arg, grpc_error_handle error) {
   future_connect* fc = static_cast<future_connect*>(arg);
   if (error != GRPC_ERROR_NONE) {
     grpc_slice_allocator_destroy(fc->slice_allocator);
