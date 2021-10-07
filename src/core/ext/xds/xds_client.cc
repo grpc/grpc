@@ -1033,10 +1033,12 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
           lds_update.http_connection_manager.route_config_name);
     }
     // Ignore identical update.
-    auto authority = GetAuthorityFromName(listener_name);
-    auto resource_name = GetResourceFromName(listener_name);
+    auto resource = ParseResourceName(listener_name);
+    if (!resource.ok()) continue;
     ListenerState& listener_state =
-        xds_client()->authority_state_[authority].listener_map[resource_name];
+        xds_client()
+            ->authority_state_[resource.value().authority]
+            .listener_map[resource.value().id];
     if (listener_state.update.has_value() &&
         *listener_state.update == lds_update) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -1060,17 +1062,20 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   // cache, pretend that they are present in the update, so that we
   // don't incorrectly consider them deleted below.
   for (const std::string& listener_name : resource_names_failed) {
-    auto authority = GetAuthorityFromName(listener_name);
-    auto resource_name = GetResourceFromName(listener_name);
-    auto it = xds_client()->authority_state_[authority].listener_map.find(
-        listener_name);
-    if (it != xds_client()->authority_state_[authority].listener_map.end()) {
-      auto& resource = it->second.update;
-      if (!resource.has_value()) continue;
+    auto resource = ParseResourceName(listener_name);
+    if (!resource.ok()) continue;
+    auto it = xds_client()
+                  ->authority_state_[resource.value().authority]
+                  .listener_map.find(resource.value().id);
+    if (it != xds_client()
+                  ->authority_state_[resource.value().authority]
+                  .listener_map.end()) {
+      auto& update = it->second.update;
+      if (!update.has_value()) continue;
       lds_update_map[listener_name];
-      if (!resource->http_connection_manager.route_config_name.empty()) {
+      if (!update->http_connection_manager.route_config_name.empty()) {
         rds_resource_names_seen.insert(
-            resource->http_connection_manager.route_config_name);
+            update->http_connection_manager.route_config_name);
       }
     }
   }
@@ -1079,10 +1084,12 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   for (const auto& p : lds_state.subscribed_resources) {
     const std::string& listener_name = p.first;
     if (lds_update_map.find(listener_name) == lds_update_map.end()) {
-      auto authority = GetAuthorityFromName(listener_name);
-      auto resource_name = GetResourceFromName(listener_name);
+      auto resource = ParseResourceName(listener_name);
+      if (!resource.ok()) continue;
       ListenerState& listener_state =
-          xds_client()->authority_state_[authority].listener_map[listener_name];
+          xds_client()
+              ->authority_state_[resource.value().authority]
+              .listener_map[resource.value().id];
       // If the resource was newly requested but has not yet been received,
       // we don't want to generate an error for the watchers, because this LDS
       // response may be in reaction to an earlier request that did not yet
@@ -1104,12 +1111,12 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
     const std::string& rds_resource_name = p.first;
     if (rds_resource_names_seen.find(rds_resource_name) ==
         rds_resource_names_seen.end()) {
-      auto authority = GetAuthorityFromName(rds_resource_name);
-      auto resource_name = GetResourceFromName(rds_resource_name);
+      auto resource = ParseResourceName(rds_resource_name);
+      if (!resource.ok()) continue;
       RouteConfigState& route_config_state =
           xds_client()
-              ->authority_state_[authority]
-              .route_config_map[resource_name];
+              ->authority_state_[resource.value().authority]
+              .route_config_map[resource.value().id];
       route_config_state.update.reset();
       for (const auto& p : route_config_state.watchers) {
         p.first->OnResourceDoesNotExist();
@@ -1137,11 +1144,12 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
       gpr_log(GPR_INFO, "[xds_client %p] RDS resource:\n%s", xds_client(),
               rds_update.ToString().c_str());
     }
-    auto authority = GetAuthorityFromName(route_config_name);
-    auto resource_name = GetResourceFromName(route_config_name);
-    RouteConfigState& route_config_state = xds_client()
-                                               ->authority_state_[authority]
-                                               .route_config_map[resource_name];
+    auto resource = ParseResourceName(route_config_name);
+    if (!resource.ok()) continue;
+    RouteConfigState& route_config_state =
+        xds_client()
+            ->authority_state_[resource.value().authority]
+            .route_config_map[resource.value().id];
     // Ignore identical update.
     if (route_config_state.update.has_value() &&
         *route_config_state.update == rds_update) {
@@ -1189,10 +1197,12 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
                                        ? cluster_name
                                        : cds_update.eds_service_name);
     // Ignore identical update.
-    auto authority = GetAuthorityFromName(cluster_name);
-    auto resource_name = GetResourceFromName(cluster_name);
+    auto resource = ParseResourceName(cluster_name);
+    if (!resource.ok()) continue;
     ClusterState& cluster_state =
-        xds_client()->authority_state_[authority].cluster_map[cluster_name];
+        xds_client()
+            ->authority_state_[resource.value().authority]
+            .cluster_map[resource.value().id];
     if (cluster_state.update.has_value() &&
         *cluster_state.update == cds_update) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -1215,17 +1225,20 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   // cache, pretend that they are present in the update, so that we
   // don't incorrectly consider them deleted below.
   for (const std::string& cluster_name : resource_names_failed) {
-    auto authority = GetAuthorityFromName(cluster_name);
-    auto resource_name = GetResourceFromName(cluster_name);
-    auto it = xds_client()->authority_state_[authority].cluster_map.find(
-        cluster_name);
-    if (it != xds_client()->authority_state_[authority].cluster_map.end()) {
-      auto& resource = it->second.update;
-      if (!resource.has_value()) continue;
+    auto resource = ParseResourceName(cluster_name);
+    if (!resource.ok()) continue;
+    auto it = xds_client()
+                  ->authority_state_[resource.value().authority]
+                  .cluster_map.find(resource.value().id);
+    if (it != xds_client()
+                  ->authority_state_[resource.value().authority]
+                  .cluster_map.end()) {
+      auto& update = it->second.update;
+      if (!update.has_value()) continue;
       cds_update_map[cluster_name];
-      eds_resource_names_seen.insert(resource->eds_service_name.empty()
+      eds_resource_names_seen.insert(update->eds_service_name.empty()
                                          ? cluster_name
-                                         : resource->eds_service_name);
+                                         : update->eds_service_name);
     }
   }
   // For any subscribed resource that is not present in the update,
@@ -1233,10 +1246,12 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   for (const auto& p : cds_state.subscribed_resources) {
     const std::string& cluster_name = p.first;
     if (cds_update_map.find(cluster_name) == cds_update_map.end()) {
-      auto authority = GetAuthorityFromName(cluster_name);
-      auto resource_name = GetResourceFromName(cluster_name);
+      auto resource = ParseResourceName(cluster_name);
+      if (!resource.ok()) continue;
       ClusterState& cluster_state =
-          xds_client()->authority_state_[authority].cluster_map[resource_name];
+          xds_client()
+              ->authority_state_[resource.value().authority]
+              .cluster_map[resource.value().id];
       // If the resource was newly requested but has not yet been received,
       // we don't want to generate an error for the watchers, because this CDS
       // response may be in reaction to an earlier request that did not yet
@@ -1258,10 +1273,12 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
     const std::string& eds_resource_name = p.first;
     if (eds_resource_names_seen.find(eds_resource_name) ==
         eds_resource_names_seen.end()) {
-      auto authority = GetAuthorityFromName(eds_resource_name);
-      auto resource_name = GetResourceFromName(eds_resource_name);
+      auto resource = ParseResourceName(eds_resource_name);
+      if (!resource.ok()) continue;
       EndpointState& endpoint_state =
-          xds_client()->authority_state_[authority].endpoint_map[resource_name];
+          xds_client()
+              ->authority_state_[resource.value().authority]
+              .endpoint_map[resource.value().id];
       endpoint_state.update.reset();
       for (const auto& p : endpoint_state.watchers) {
         p.first->OnResourceDoesNotExist();
@@ -1289,10 +1306,12 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdateLocked(
       gpr_log(GPR_INFO, "[xds_client %p] EDS resource %s: %s", xds_client(),
               eds_resource_name.c_str(), eds_update.ToString().c_str());
     }
-    auto authority = GetAuthorityFromName(eds_resource_name);
-    auto resource_name = GetResourceFromName(eds_resource_name);
+    auto resource = ParseResourceName(eds_resource_name);
+    if (!resource.ok()) continue;
     EndpointState& endpoint_state =
-        xds_client()->authority_state_[authority].endpoint_map[resource_name];
+        xds_client()
+            ->authority_state_[resource.value().authority]
+            .endpoint_map[resource.value().id];
     // Ignore identical update.
     if (endpoint_state.update.has_value() &&
         *endpoint_state.update == eds_update) {
