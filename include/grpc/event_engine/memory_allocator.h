@@ -42,7 +42,10 @@ class SliceBuffer {
   grpc_slice_buffer* slice_buffer_;
 };
 
-class MemoryAllocator {
+// Tracks memory allocated by one system.
+// Is effectively a thin wrapper/smart pointer for a MemoryAllocatorImpl,
+// providing a convenient and stable API.
+class MemoryAllocator final {
  public:
   /// Construct a MemoryAllocator given an internal::MemoryAllocatorImpl
   /// implementation. The constructed MemoryAllocator will call
@@ -50,6 +53,8 @@ class MemoryAllocator {
   explicit MemoryAllocator(
       std::shared_ptr<internal::MemoryAllocatorImpl> allocator)
       : allocator_(std::move(allocator)) {}
+  // Construct an invalid MemoryAllocator.
+  MemoryAllocator() : allocator_(nullptr) {}
   ~MemoryAllocator() {
     if (allocator_ != nullptr) allocator_->Shutdown();
   }
@@ -74,7 +79,9 @@ class MemoryAllocator {
   internal::MemoryAllocatorImpl* get_internal_impl_ptr() {
     return allocator_.get();
   }
-
+  const internal::MemoryAllocatorImpl* get_internal_impl_ptr() const {
+    return allocator_.get();
+  }
   //
   // The remainder of this type are helper functions implemented in terms of
   // Reserve/Release.

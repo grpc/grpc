@@ -287,12 +287,10 @@ void ExternalAccountCredentials::ExchangeToken(
   body_parts.push_back(
       absl::StrFormat("%s=%s", "scope", UrlEncode(scope).c_str()));
   std::string body = absl::StrJoin(body_parts, "&");
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnExchangeToken, this, nullptr);
-  grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, resource_quota,
+  grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, MakeResourceQuota(),
                     &request, body.c_str(), body.size(), ctx_->deadline,
                     &ctx_->closure, &ctx_->response);
   grpc_http_request_destroy(&request.http);
@@ -373,12 +371,11 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
       uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   std::string scope = absl::StrJoin(scopes_, " ");
   std::string body = absl::StrFormat("%s=%s", "scope", scope);
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnImpersenateServiceAccount, this, nullptr);
-  grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, resource_quota,
+  // TODO(ctiller): Use the callers resource quota.
+  grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, MakeResourceQuota(),
                     &request, body.c_str(), body.size(), ctx_->deadline,
                     &ctx_->closure, &ctx_->response);
   grpc_http_request_destroy(&request.http);

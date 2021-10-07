@@ -25,6 +25,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 
 /* one listening port */
 typedef struct grpc_tcp_listener {
@@ -46,6 +47,9 @@ typedef struct grpc_tcp_listener {
      identified while iterating through 'next'. */
   struct grpc_tcp_listener* sibling;
   int is_sibling;
+
+  /* used to create slice allocators for endpoints, owned */
+  grpc_core::MemoryQuotaPtr memory_quota;
 } grpc_tcp_listener;
 
 /* the overall server */
@@ -94,9 +98,6 @@ struct grpc_tcp_server {
 
   /* a handler for external connections, owned */
   grpc_core::TcpServerFdHandler* fd_handler;
-
-  /* used to create slice allocators for endpoints, owned */
-  grpc_slice_allocator_factory* slice_allocator_factory;
 };
 
 /* If successful, add a listener to \a s for \a addr, set \a dsmode for the

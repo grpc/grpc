@@ -50,6 +50,8 @@ class ThreadQuota : public RefCounted<ThreadQuota> {
   size_t max_ ABSL_GUARDED_BY(mu_) = std::numeric_limits<size_t>::max();
 };
 
+using ThreadQuotaPtr = RefCountedPtr<ThreadQuota>;
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_RESOURCE_QUOTA_THREAD_QUOTA_H

@@ -401,50 +401,43 @@ static void my_cancel_ares_request_locked(grpc_ares_request* request) {
 ////////////////////////////////////////////////////////////////////////////////
 // client connection
 
-static void sched_connect(grpc_closure* closure,
-                          grpc_slice_allocator* slice_allocator,
-                          grpc_endpoint** ep, gpr_timespec deadline);
+static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
+                          gpr_timespec deadline);
 
 typedef struct {
   grpc_timer timer;
   grpc_closure* closure;
   grpc_endpoint** ep;
   gpr_timespec deadline;
-  grpc_slice_allocator* slice_allocator;
 } future_connect;
 
 static void do_connect(void* arg, grpc_error* error) {
   future_connect* fc = static_cast<future_connect*>(arg);
   if (error != GRPC_ERROR_NONE) {
-    grpc_slice_allocator_destroy(fc->slice_allocator);
     *fc->ep = nullptr;
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_REF(error));
   } else if (g_server != nullptr) {
-    grpc_slice_allocator_destroy(fc->slice_allocator);
     grpc_endpoint* client;
     grpc_endpoint* server;
     grpc_passthru_endpoint_create(&client, &server, nullptr);
     *fc->ep = client;
 
-    grpc_transport* transport = grpc_create_chttp2_transport(
-        nullptr, server, false,
-        grpc_resource_user_create(g_resource_quota, "transport-user"));
+    grpc_transport* transport =
+        grpc_create_chttp2_transport(nullptr, server, false);
     g_server->core_server->SetupTransport(transport, nullptr, nullptr, nullptr);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_NONE);
   } else {
-    sched_connect(fc->closure, fc->slice_allocator, fc->ep, fc->deadline);
+    sched_connect(fc->closure, fc->ep, fc->deadline);
   }
   gpr_free(fc);
 }
 
-static void sched_connect(grpc_closure* closure,
-                          grpc_slice_allocator* slice_allocator,
-                          grpc_endpoint** ep, gpr_timespec deadline) {
+static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
+                          gpr_timespec deadline) {
   if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) < 0) {
     *ep = nullptr;
-    grpc_slice_allocator_destroy(slice_allocator);
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, closure,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connect deadline exceeded"));
@@ -455,19 +448,17 @@ static void sched_connect(grpc_closure* closure,
   fc->closure = closure;
   fc->ep = ep;
   fc->deadline = deadline;
-  fc->slice_allocator = slice_allocator;
   grpc_timer_init(
       &fc->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx));
 }
 
 static void my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
-                                  grpc_slice_allocator* slice_allocator,
                                   grpc_pollset_set* /*interested_parties*/,
                                   const grpc_channel_args* /*channel_args*/,
                                   const grpc_resolved_address* /*addr*/,
                                   grpc_millis deadline) {
-  sched_connect(closure, slice_allocator, ep,
+  sched_connect(closure, ep,
                 grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
 }
 

@@ -162,6 +162,7 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/event_engine.h",
     "include/grpc/event_engine/port.h",
     "include/grpc/event_engine/memory_allocator.h",
+    "include/grpc/event_engine/memory_request.h",
     "include/grpc/event_engine/internal/memory_allocator_impl.h",
 ]
 
@@ -1305,6 +1306,7 @@ grpc_cc_library(
     hdrs = [
         "include/grpc/event_engine/internal/memory_allocator_impl.h",
         "include/grpc/event_engine/memory_allocator.h",
+        "include/grpc/event_engine/memory_request.h",
     ],
     language = "c++",
     deps = [
@@ -1352,6 +1354,20 @@ grpc_cc_library(
         "gpr_base",
         "ref_counted",
     ],
+)
+
+grpc_cc_library(
+    name = "resource_quota_trace",
+    srcs = [
+        "src/core/lib/resource_quota/trace.cc",
+    ],
+    hdrs = [
+        "src/core/lib/resource_quota/trace.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "grpc_trace",
+    ]
 )
 
 grpc_cc_library(
@@ -1535,6 +1551,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/is_epollexclusive_available.cc",
         "src/core/lib/iomgr/load_file.cc",
         "src/core/lib/iomgr/lockfree_event.cc",
+        "src/core/lib/resource_quota/api.cc",
         "src/core/lib/iomgr/polling_entity.cc",
         "src/core/lib/iomgr/pollset.cc",
         "src/core/lib/iomgr/pollset_custom.cc",
@@ -1546,7 +1563,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/resolve_address_custom.cc",
         "src/core/lib/iomgr/resolve_address_posix.cc",
         "src/core/lib/iomgr/resolve_address_windows.cc",
-        "src/core/lib/iomgr/resource_quota.cc",
         "src/core/lib/iomgr/socket_factory_posix.cc",
         "src/core/lib/iomgr/socket_mutator.cc",
         "src/core/lib/iomgr/socket_utils_common_posix.cc",
@@ -1643,6 +1659,7 @@ grpc_cc_library(
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/compression_args.h",
         "src/core/lib/compression/compression_internal.h",
+        "src/core/lib/resource_quota/api.h",
         "src/core/lib/compression/message_compress.h",
         "src/core/lib/compression/stream_compression.h",
         "src/core/lib/compression/stream_compression_gzip.h",
@@ -1697,7 +1714,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/python_util.h",
         "src/core/lib/iomgr/resolve_address.h",
         "src/core/lib/iomgr/resolve_address_custom.h",
-        "src/core/lib/iomgr/resource_quota.h",
         "src/core/lib/iomgr/sockaddr.h",
         "src/core/lib/iomgr/sockaddr_posix.h",
         "src/core/lib/iomgr/sockaddr_windows.h",
@@ -1805,6 +1821,8 @@ grpc_cc_library(
         "slice_refcount",
         "table",
         "useful",
+        "memory_quota",
+        "resource_quota",
     ],
 )
 
@@ -3261,6 +3279,8 @@ grpc_cc_library(
         "slice",
         "slice_refcount",
         "useful",
+        "memory_quota",
+        "resource_quota_trace",
     ],
 )
 
@@ -3355,6 +3375,7 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "slice",
+        "memory_quota"
     ],
 )
 

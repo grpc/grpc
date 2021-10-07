@@ -40,7 +40,6 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/passthru_endpoint.h"
 #include "test/core/util/port.h"
-#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {
@@ -74,8 +73,7 @@ class EndpointPairFixture {
       const grpc_channel_args* server_args =
           server_->c_server()->core_server->channel_args();
       grpc_transport* transport = grpc_create_chttp2_transport(
-          server_args, endpoints.server, false /* is_client */,
-          grpc_resource_user_create_unlimited());
+          server_args, endpoints.server, false /* is_client */);
       for (grpc_pollset* pollset :
            server_->c_server()->core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
@@ -94,12 +92,10 @@ class EndpointPairFixture {
 
       grpc_channel_args c_args = args.c_channel_args();
       grpc_transport* transport =
-          grpc_create_chttp2_transport(&c_args, endpoints.client, true,
-                                       grpc_resource_user_create_unlimited());
+          grpc_create_chttp2_transport(&c_args, endpoints.client, true);
       GPR_ASSERT(transport);
-      grpc_channel* channel =
-          grpc_channel_create("target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                              transport, nullptr, 0, nullptr);
+      grpc_channel* channel = grpc_channel_create(
+          "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, transport, nullptr);
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
       channel_ = ::grpc::CreateChannelInternal(

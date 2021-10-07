@@ -30,14 +30,19 @@ class ResourceQuota : public RefCounted<ResourceQuota> {
   ResourceQuota(const ResourceQuota&) = delete;
   ResourceQuota& operator=(const ResourceQuota&) = delete;
 
-  std::shared_ptr<MemoryQuota> memory_quota() { return memory_quota_; }
+  MemoryQuotaPtr memory_quota() { return memory_quota_; }
 
   const RefCountedPtr<ThreadQuota>& thread_quota() { return thread_quota_; }
 
  private:
-  std::shared_ptr<MemoryQuota> memory_quota_;
+  MemoryQuotaPtr memory_quota_;
   RefCountedPtr<ThreadQuota> thread_quota_;
 };
+
+using ResourceQuotaPtr = RefCountedPtr<ResourceQuota>;
+inline ResourceQuotaPtr MakeResourceQuota() {
+  return MakeRefCounted<ResourceQuota>();
+}
 
 }  // namespace grpc_core
 

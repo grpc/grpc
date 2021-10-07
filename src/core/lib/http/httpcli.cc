@@ -31,6 +31,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/http/format_request.h"
@@ -39,6 +40,7 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 struct internal_request {
@@ -47,7 +49,7 @@ struct internal_request {
   grpc_resolved_addresses* addresses;
   size_t next_address;
   grpc_endpoint* ep;
-  grpc_resource_quota* resource_quota;
+  grpc_core::ResourceQuotaPtr memory_quota;
   char* host;
   char* ssl_host_override;
   grpc_millis deadline;
@@ -105,8 +107,7 @@ static void finish(internal_request* req, grpc_error_handle error) {
   grpc_slice_buffer_destroy_internal(&req->incoming);
   grpc_slice_buffer_destroy_internal(&req->outgoing);
   GRPC_ERROR_UNREF(req->overall_error);
-  grpc_resource_quota_unref_internal(req->resource_quota);
-  gpr_free(req);
+  delete req;
 }
 
 static void append_error(internal_request* req, grpc_error_handle error) {
@@ -206,11 +207,11 @@ static void next_address(internal_request* req, grpc_error_handle error) {
   addr = &req->addresses->addrs[req->next_address++];
   GRPC_CLOSURE_INIT(&req->connected, on_connected, req,
                     grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&req->connected, &req->ep,
-                          grpc_slice_allocator_create(
-                              req->resource_quota, grpc_sockaddr_to_uri(addr)),
-                          req->context->pollset_set, nullptr, addr,
-                          req->deadline);
+  grpc_channel_args* channel_args =
+      ChannelArgsWrappingResourceQuota(req->memory_quota);
+  grpc_tcp_client_connect(&req->connected, &req->ep, req->context->pollset_set,
+                          channel_args, addr, req->deadline);
+  grpc_channel_args_destroy(channel_args);
 }
 
 static void on_resolved(void* arg, grpc_error_handle error) {
@@ -225,7 +226,7 @@ static void on_resolved(void* arg, grpc_error_handle error) {
 
 static void internal_request_begin(grpc_httpcli_context* context,
                                    grpc_polling_entity* pollent,
-                                   grpc_resource_quota* resource_quota,
+                                   grpc_core::ResourceQuotaPtr memory_quota,
                                    const grpc_httpcli_request* request,
                                    grpc_millis deadline, grpc_closure* on_done,
                                    grpc_httpcli_response* response,
@@ -243,7 +244,7 @@ static void internal_request_begin(grpc_httpcli_context* context,
   req->context = context;
   req->pollent = pollent;
   req->overall_error = GRPC_ERROR_NONE;
-  req->resource_quota = resource_quota;
+  req->memory_quota = std::move(memory_quota);
   GRPC_CLOSURE_INIT(&req->on_read, on_read, req, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&req->done_write, done_write, req,
                     grpc_schedule_on_exec_ctx);
@@ -264,37 +265,35 @@ static void internal_request_begin(grpc_httpcli_context* context,
 
 void grpc_httpcli_get(grpc_httpcli_context* context,
                       grpc_polling_entity* pollent,
-                      grpc_resource_quota* resource_quota,
+                      grpc_core::ResourceQuotaPtr memory_quota,
                       const grpc_httpcli_request* request, grpc_millis deadline,
                       grpc_closure* on_done, grpc_httpcli_response* response) {
   if (g_get_override && g_get_override(request, deadline, on_done, response)) {
-    grpc_resource_quota_unref_internal(resource_quota);
     return;
   }
   std::string name =
       absl::StrFormat("HTTP:GET:%s:%s", request->host, request->http.path);
-  internal_request_begin(context, pollent, resource_quota, request, deadline,
-                         on_done, response, name.c_str(),
+  internal_request_begin(context, pollent, std::move(memory_quota), request,
+                         deadline, on_done, response, name.c_str(),
                          grpc_httpcli_format_get_request(request));
 }
 
 void grpc_httpcli_post(grpc_httpcli_context* context,
                        grpc_polling_entity* pollent,
-                       grpc_resource_quota* resource_quota,
+                       grpc_core::ResourceQuotaPtr memory_quota,
                        const grpc_httpcli_request* request,
                        const char* body_bytes, size_t body_size,
                        grpc_millis deadline, grpc_closure* on_done,
                        grpc_httpcli_response* response) {
   if (g_post_override && g_post_override(request, body_bytes, body_size,
                                          deadline, on_done, response)) {
-    grpc_resource_quota_unref_internal(resource_quota);
     return;
   }
   std::string name =
       absl::StrFormat("HTTP:POST:%s:%s", request->host, request->http.path);
   internal_request_begin(
-      context, pollent, resource_quota, request, deadline, on_done, response,
-      name.c_str(),
+      context, pollent, std::move(memory_quota), request, deadline, on_done,
+      response, name.c_str(),
       grpc_httpcli_format_post_request(request, body_bytes, body_size));
 }
 
