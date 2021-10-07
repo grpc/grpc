@@ -84,6 +84,9 @@ set_property(CACHE gRPC_SSL_PROVIDER PROPERTY STRINGS "module" "package")
 set(gRPC_PROTOBUF_PROVIDER "module" CACHE STRING "Provider of protobuf library")
 set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
 
+set(gRPC_LIBUV_PROVIDER "module" CACHE STRING "Provider of libuv library")
+set_property(CACHE gRPC_LIBUV_PROVIDER PROPERTY STRINGS "module" "package")
+
 set(gRPC_PROTOBUF_PACKAGE_TYPE "" CACHE STRING "Algorithm for searching protobuf package")
 set_property(CACHE gRPC_PROTOBUF_PACKAGE_TYPE PROPERTY STRINGS "CONFIG" "MODULE")
 
@@ -12717,6 +12720,7 @@ target_include_directories(libuv_event_engine_test
 
 target_link_libraries(libuv_event_engine_test
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_LIBUV_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::random_random
   grpc_test_util

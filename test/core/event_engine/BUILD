@@ -50,7 +50,10 @@ grpc_cc_library(
 grpc_cc_test(
     name = "libuv_event_engine_test",
     srcs = ["test_suite/libuv_event_engine_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "uv",
+    ],
     language = "C++",
     uses_polling = False,
     deps = [

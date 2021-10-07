@@ -75,6 +75,9 @@
       deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
       deps.append("${_gRPC_RE2_LIBRARIES}")
       deps.append("${_gRPC_UPB_LIBRARIES}")
+    if 'libuv' in target_dict['name']:
+      # TODO(hork): find a better way to reliably link uv when needed.
+      deps.append("${_gRPC_LIBUV_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       if d == 'benchmark':
@@ -206,6 +209,9 @@
 
   set(gRPC_PROTOBUF_PROVIDER "module" CACHE STRING "Provider of protobuf library")
   set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
+
+  set(gRPC_LIBUV_PROVIDER "module" CACHE STRING "Provider of libuv library")
+  set_property(CACHE gRPC_LIBUV_PROVIDER PROPERTY STRINGS "module" "package")
 
   set(gRPC_PROTOBUF_PACKAGE_TYPE "" CACHE STRING "Algorithm for searching protobuf package")
   set_property(CACHE gRPC_PROTOBUF_PACKAGE_TYPE PROPERTY STRINGS "CONFIG" "MODULE")
@@ -475,7 +481,7 @@
     for lib in libs:
       if lib.build not in ["all", "protoc", "tool", "test", "private"] or lib.boringssl: continue
       if lib.get('build_system', []) and 'cmake' not in lib.get('build_system', []): continue
-      if lib.name in ['ares', 'benchmark', 're2', 'xxhash', 'z']: continue  # we build these using CMake instead
+      if lib.name in ['ares', 'benchmark', 'uv', 're2', 'xxhash', 'z']: continue  # we build these using CMake instead
       if is_absl_lib(lib.name): continue  # we build these using CMake instead
       cmake_libs.append(lib)
   %>

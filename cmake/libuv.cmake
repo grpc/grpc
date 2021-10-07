@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# TODO(hork): support module and package versions
 if(gRPC_LIBUV_PROVIDER STREQUAL "module")
   if(NOT LIBUV_ROOT_DIR)
     set(LIBUV_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libuv)
@@ -23,8 +22,6 @@ if(gRPC_LIBUV_PROVIDER STREQUAL "module")
   set(_gRPC_LIBUV_INCLUDE_DIR "${LIBUV_ROOT_DIR}/include" "${LIBUV_ROOT_DIR}/src")
 elseif(gRPC_LIBUV_PROVIDER STREQUAL "package")
   find_package(uv REQUIRED)
-  if(TARGET uv::uv)
-    set(_gRPC_LIBUV_LIBRARIES uv::uv)
-  endif()
+  set(_gRPC_LIBUV_LIBRARIES uv::uv)
   set(_gRPC_FIND_LIBUV "if(NOT uv_FOUND)\n  find_package(uv)\nendif()")
 endif()
