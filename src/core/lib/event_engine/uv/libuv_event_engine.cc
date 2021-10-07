@@ -357,8 +357,8 @@ LibuvEventEngine::CreateListener(
     /*on_accept=*/Listener::AcceptCallback,
     /*on_shutdown=*/std::function<void(absl::Status)>,
     /*args=*/const EndpointConfig&,
-    /*slice_allocator_factory=*/
-    std::unique_ptr<SliceAllocatorFactory>) {
+    /*memory_allocator_factory=*/
+    std::unique_ptr<MemoryAllocatorFactory>) {
   GPR_ASSERT(false && "LibuvEventEngine::CreateListener is unimplemented.");
   return absl::UnimplementedError(
       "LibuvEventEngine::CreateListener is unimplemented.");
@@ -368,7 +368,7 @@ absl::Status LibuvEventEngine::Connect(
     /*on_connect=*/OnConnectCallback,
     /*addr=*/const ResolvedAddress&,
     /*args=*/const EndpointConfig&,
-    /*slice_allocator=*/std::unique_ptr<SliceAllocator>,
+    /*memory_allocator=*/MemoryAllocator,
     /*deadline=*/absl::Time) {
   GPR_ASSERT(false && "LibuvEventEngine::Connect is unimplemented.");
   return absl::UnimplementedError(
