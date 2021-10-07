@@ -1,0 +1,157 @@
+# workers-8core pool nodes:
+# gke-benchmarks-prod2-workers-8core-e40a1489-5kgi
+# gke-benchmarks-prod2-workers-8core-e40a1489-6at4	
+# gke-benchmarks-prod2-workers-8core-e40a1489-cjox
+# gke-benchmarks-prod2-workers-8core-e40a1489-cwrb
+# gke-benchmarks-prod2-workers-8core-e40a1489-dve5
+# gke-benchmarks-prod2-workers-8core-e40a1489-k2qx
+# gke-benchmarks-prod2-workers-8core-e40a1489-navq
+# gke-benchmarks-prod2-workers-8core-e40a1489-tzlu
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: netperf-test-pod-0
+spec:
+  nodeSelector:
+    pool: workers-8core
+    kubernetes.io/hostname: gke-benchmarks-prod2-workers-8core-e40a1489-5kgi
+  hostNetwork: true
+  containers:
+  - name: netperf-pod
+    image: leannet/k8s-netperf:latest
+    ports:
+    
+    - containerPort: 5001
+    - containerPort: 8079
+    - containerPort: 8080
+    - containerPort: 8081
+    - containerPort: 12865
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: netperf-test-pod-1
+spec:
+  nodeSelector:
+    pool: workers-8core
+    kubernetes.io/hostname: gke-benchmarks-prod2-workers-8core-e40a1489-6at4
+  hostNetwork: true
+  containers:
+  - name: netperf-pod
+    image: leannet/k8s-netperf:latest
+    ports:
+    - containerPort: 5001
+    - containerPort: 8079
+    - containerPort: 8080
+    - containerPort: 8081
+    - containerPort: 12865
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: netperf-test-pod-2
+spec:
+  nodeSelector:
+    pool: workers-8core
+    kubernetes.io/hostname: gke-benchmarks-prod2-workers-8core-e40a1489-cjox
+  containers:
+  - name: netperf-pod
+    image: leannet/k8s-netperf:latest
+    ports:
+    - containerPort: 5001
+    - containerPort: 8079
+    - containerPort: 8080
+    - containerPort: 8081
+    - containerPort: 12865
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: netperf-test-pod-3
+spec:
+  nodeSelector:
+    pool: workers-8core
+    kubernetes.io/hostname: gke-benchmarks-prod2-workers-8core-e40a1489-cwrb
+  containers:
+  - name: netperf-pod
+    image: leannet/k8s-netperf:latest
+    ports:
+    - containerPort: 5001
+    - containerPort: 8079
+    - containerPort: 8080
+    - containerPort: 8081
+    - containerPort: 12865
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: netperf-test-pod-4
+spec:
+  nodeSelector:
+    pool: workers-8core
+    kubernetes.io/hostname: gke-benchmarks-prod2-workers-8core-e40a1489-dve5
+  containers:
+  - name: netperf-pod
+    image: leannet/k8s-netperf:latest
+    ports:
+    - containerPort: 5001
+    - containerPort: 8079
+    - containerPort: 8080
+    - containerPort: 8081
+    - containerPort: 12865
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: netperf-test-pod-5
+spec:
+  nodeSelector:
+    pool: workers-8core
+    kubernetes.io/hostname: gke-benchmarks-prod2-workers-8core-e40a1489-k2qx
+  containers:
+  - name: netperf-pod
+    image: leannet/k8s-netperf:latest
+    ports:
+    - containerPort: 5001
+    - containerPort: 8079
+    - containerPort: 8080
+    - containerPort: 8081
+    - containerPort: 12865
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: netperf-test-pod-6
+spec:
+  nodeSelector:
+    pool: workers-8core
+    kubernetes.io/hostname: gke-benchmarks-prod2-workers-8core-e40a1489-navq
+  containers:
+  - name: netperf-pod
+    image: leannet/k8s-netperf:latest
+    ports:
+    - containerPort: 5001
+    - containerPort: 8079
+    - containerPort: 8080
+    - containerPort: 8081
+    - containerPort: 12865
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: netperf-test-pod-7
+spec:
+  nodeSelector:
+    pool: workers-8core
+    kubernetes.io/hostname: gke-benchmarks-prod2-workers-8core-e40a1489-tzlu
+  containers:
+  - name: netperf-pod
+    image: leannet/k8s-netperf:latest
+    ports:
+    - containerPort: 5001
+    - containerPort: 8079
+    - containerPort: 8080
+    - containerPort: 8081
+    - containerPort: 12865
+---
