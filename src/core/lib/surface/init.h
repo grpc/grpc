@@ -28,11 +28,6 @@ class EventEngine;
 }
 }  // namespace grpc_event_engine
 
-<<<<<<< HEAD
-=======
-void grpc_register_security_filters(void);
-void grpc_security_pre_init(void);
->>>>>>> upstream/master
 void grpc_maybe_wait_for_async_shutdown(void);
 
 #endif /* GRPC_CORE_LIB_SURFACE_INIT_H */

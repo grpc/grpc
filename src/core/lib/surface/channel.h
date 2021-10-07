@@ -30,14 +30,6 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata.h"
 
-<<<<<<< HEAD
-grpc_channel* grpc_channel_create_internal(
-    const char* target, const grpc_channel_args* args,
-    grpc_channel_stack_type channel_stack_type,
-    grpc_transport* optional_transport,
-    grpc_resource_user* resource_user = nullptr,
-    grpc_error_handle* error = nullptr);
-=======
 /// Creates a grpc_channel.
 ///
 /// If the \a resource_user is not null, \a preallocated_bytes may have been
@@ -45,14 +37,13 @@ grpc_channel* grpc_channel_create_internal(
 /// freed from the resource_user upon channel destruction.
 ///
 /// Takes ownership of a \a resource_user ref.
-grpc_channel* grpc_channel_create(const char* target,
+grpc_channel* grpc_channel_create_internal(const char* target,
                                   const grpc_channel_args* args,
                                   grpc_channel_stack_type channel_stack_type,
                                   grpc_transport* optional_transport,
                                   grpc_resource_user* resource_user,
                                   size_t preallocated_bytes,
                                   grpc_error_handle* error);
->>>>>>> upstream/master
 
 /** The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
  * is safe to use from within core. */

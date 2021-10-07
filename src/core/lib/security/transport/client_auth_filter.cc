@@ -34,11 +34,7 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
-<<<<<<< HEAD
-=======
-#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/auth_filters.h"
->>>>>>> upstream/master
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"

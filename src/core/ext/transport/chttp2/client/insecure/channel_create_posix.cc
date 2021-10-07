@@ -62,15 +62,9 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
   grpc_resource_quota_unref_internal(resource_quota);
   GPR_ASSERT(transport);
   grpc_error_handle error = GRPC_ERROR_NONE;
-<<<<<<< HEAD
-  grpc_channel* channel = grpc_channel_create_internal(
-      target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport, nullptr,
-      &error);
-=======
   grpc_channel* channel =
-      grpc_channel_create(target, final_args, GRPC_CLIENT_DIRECT_CHANNEL,
+      grpc_channel_create_internal(target, final_args, GRPC_CLIENT_DIRECT_CHANNEL,
                           transport, nullptr, 0, &error);
->>>>>>> upstream/master
   grpc_channel_args_destroy(final_args);
   if (channel != nullptr) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);

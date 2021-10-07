@@ -17,10 +17,7 @@
  */
 
 #include <grpc/grpc.h>
-<<<<<<< HEAD
 #include <grpc/grpc_security.h>
-=======
->>>>>>> upstream/master
 
 #include "test/core/util/test_config.h"
 

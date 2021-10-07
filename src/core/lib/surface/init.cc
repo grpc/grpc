@@ -32,7 +32,9 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz_registry.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/fork.h"
@@ -46,6 +48,7 @@
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/security/authorization/sdk_server_authz_filter.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
@@ -55,6 +58,7 @@
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/builtins.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/lame_client.h"
@@ -116,17 +120,40 @@ static bool maybe_prepend_server_auth_filter(
   return true;
 }
 
-static void grpc_register_security_filters(void) {
+static bool maybe_prepend_sdk_server_authz_filter(
+    grpc_channel_stack_builder* builder) {
+  const grpc_channel_args* args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
+  const auto* provider =
+      grpc_channel_args_find_pointer<grpc_authorization_policy_provider>(
+          args, GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER);
+  if (provider != nullptr) {
+    return grpc_channel_stack_builder_prepend_filter(
+        builder, &grpc_core::SdkServerAuthzFilter::kFilterVtable, nullptr,
+        nullptr);
+  }
+  return true;
+}
+
+namespace grpc_core {
+void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
   // Register the auth client with a priority < INT_MAX to allow the authority
   // filter -on which the auth filter depends- to be higher on the channel
   // stack.
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX - 1,
-                                   maybe_prepend_client_auth_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX - 1,
-                                   maybe_prepend_client_auth_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX - 1,
-                                   maybe_prepend_server_auth_filter, nullptr);
+  builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, INT_MAX - 1,
+                                         maybe_prepend_client_auth_filter);
+  builder->channel_init()->RegisterStage(GRPC_CLIENT_DIRECT_CHANNEL,
+                                         INT_MAX - 1,
+                                         maybe_prepend_client_auth_filter);
+  builder->channel_init()->RegisterStage(GRPC_SERVER_CHANNEL, INT_MAX - 1,
+                                         maybe_prepend_server_auth_filter);
+  // Register the SdkServerAuthzFilter with a priority less than
+  // server_auth_filter to allow server_auth_filter on which the sdk filter
+  // depends on to be higher on the channel stack.
+  builder->channel_init()->RegisterStage(GRPC_SERVER_CHANNEL, INT_MAX - 2,
+                                         maybe_prepend_sdk_server_authz_filter);
 }
+}  // namespace grpc_core
 
 static void grpc_security_init() {
   grpc_core::SecurityRegisterHandshakerFactories();
@@ -407,3 +434,43 @@ void grpc_register_built_in_plugins(void) {
                        grpc_core::GoogleCloud2ProdResolverShutdown);
 #endif
 }
+
+namespace grpc_core {
+
+extern void BuildClientChannelConfiguration(
+    CoreConfiguration::Builder* builder);
+extern void SecurityRegisterHandshakerFactories(
+    CoreConfiguration::Builder* builder);
+extern void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder);
+extern void RegisterClientIdleFilter(CoreConfiguration::Builder* builder);
+extern void RegisterDeadlineFilter(CoreConfiguration::Builder* builder);
+extern void RegisterGrpcLbLoadReportingFilter(
+    CoreConfiguration::Builder* builder);
+extern void RegisterHttpFilters(CoreConfiguration::Builder* builder);
+extern void RegisterMaxAgeFilter(CoreConfiguration::Builder* builder);
+extern void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder);
+extern void RegisterSecurityFilters(CoreConfiguration::Builder* builder);
+extern void RegisterServiceConfigChannelArgFilter(
+    CoreConfiguration::Builder* builder);
+extern void RegisterWorkaroundCronetCompressionFilter(
+    CoreConfiguration::Builder* builder);
+
+void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
+  BuildClientChannelConfiguration(builder);
+  SecurityRegisterHandshakerFactories(builder);
+  RegisterClientAuthorityFilter(builder);
+  RegisterClientIdleFilter(builder);
+  RegisterGrpcLbLoadReportingFilter(builder);
+  RegisterHttpFilters(builder);
+  RegisterMaxAgeFilter(builder);
+  RegisterDeadlineFilter(builder);
+  RegisterMessageSizeFilter(builder);
+  RegisterWorkaroundCronetCompressionFilter(builder);
+  RegisterServiceConfigChannelArgFilter(builder);
+  // Run last so it gets a consistent location.
+  // TODO(ctiller): Is this actually necessary?
+  RegisterSecurityFilters(builder);
+  RegisterBuiltins(builder);
+}
+
+}  // namespace grpc_core

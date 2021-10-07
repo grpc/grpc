@@ -79,15 +79,9 @@ static void client_setup_transport(void* ts, grpc_transport* transport) {
   grpc_channel_args* args =
       grpc_channel_args_copy_and_add(cs->client_args, &authority_arg, 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
-<<<<<<< HEAD
-  cs->f->client = grpc_channel_create_internal("socketpair-target", args,
-                                               GRPC_CLIENT_DIRECT_CHANNEL,
-                                               transport, nullptr, &error);
-=======
   cs->f->client =
-      grpc_channel_create("socketpair-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
+      grpc_channel_create_internal("socketpair-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
                           transport, nullptr, 0, &error);
->>>>>>> upstream/master
   grpc_channel_args_destroy(args);
   if (cs->f->client != nullptr) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);

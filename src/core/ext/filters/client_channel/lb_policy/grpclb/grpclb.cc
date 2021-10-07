@@ -157,19 +157,14 @@ grpc_channel* CreateGrpclbBalancerChannel(const char* target_uri,
   grpc_channel_credentials* creds =
       grpc_channel_credentials_find_in_args(&args);
   if (creds == nullptr) {
-    grpc_channel_credentials* insecure_creds =
-        grpc_insecure_credentials_create();
     // Build with security but parent channel is insecure.
-    grpc_channel* channel =
-        grpc_channel_create(insecure_creds, target_uri, &args, nullptr);
-    grpc_channel_credentials_release(insecure_creds);
-    return channel;
+    return grpc_insecure_channel_create(target_uri, &args, nullptr);
   }
   const char* arg_to_remove = GRPC_ARG_CHANNEL_CREDENTIALS;
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_remove(&args, &arg_to_remove, 1);
   grpc_channel* channel =
-      grpc_channel_create(creds, target_uri, new_args, nullptr);
+      grpc_secure_channel_create(creds, target_uri, new_args, nullptr);
   grpc_channel_args_destroy(new_args);
   return channel;
 }

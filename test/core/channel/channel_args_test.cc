@@ -20,12 +20,9 @@
 
 #include <string.h>
 
-<<<<<<< HEAD
 #include <grpc/grpc_security.h>
-=======
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/log.h>
->>>>>>> upstream/master
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_stack.h"

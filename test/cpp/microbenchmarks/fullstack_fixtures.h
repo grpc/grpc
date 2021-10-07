@@ -205,14 +205,9 @@ class EndpointPairFixture : public BaseFixture {
           grpc_resource_user_create(client_resource_quota, "client_transport"));
       grpc_resource_quota_unref(client_resource_quota);
       GPR_ASSERT(client_transport_);
-<<<<<<< HEAD
-      grpc_channel* channel = grpc_channel_create_internal(
-          "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport_);
-=======
       grpc_channel* channel =
-          grpc_channel_create("target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL,
+          grpc_channel_create_internal("target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL,
                               client_transport_, nullptr, 0, nullptr);
->>>>>>> upstream/master
       grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr,
                                           nullptr);
 
