@@ -31,8 +31,8 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
@@ -91,7 +91,7 @@ static void do_basic_init(void) {
 static void grpc_security_pre_init(void) {}
 
 static bool maybe_prepend_client_auth_filter(
-    grpc_channel_stack_builder* builder, void* /*arg*/) {
+    grpc_channel_stack_builder* builder) {
   const grpc_channel_args* args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   if (args) {
@@ -106,7 +106,7 @@ static bool maybe_prepend_client_auth_filter(
 }
 
 static bool maybe_prepend_server_auth_filter(
-    grpc_channel_stack_builder* builder, void* /*arg*/) {
+    grpc_channel_stack_builder* builder) {
   const grpc_channel_args* args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   if (args) {
@@ -154,10 +154,6 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
                                          maybe_prepend_sdk_server_authz_filter);
 }
 }  // namespace grpc_core
-
-static void grpc_security_init() {
-  grpc_core::SecurityRegisterHandshakerFactories();
-}
 
 typedef struct grpc_plugin {
   void (*init)();

@@ -1850,14 +1850,17 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c \
     src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c \
     src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.c \
     src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c \
     src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c \
+    src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.c \
     src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c \
     src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c \
     src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.c \
     src/core/ext/upb-generated/envoy/config/listener/v3/api_listener.upb.c \
     src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c \
     src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c \
+    src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.c \
     src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c \
     src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.c \
     src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.c \
@@ -1884,6 +1887,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c \
     src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c \
     src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c \
+    src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c \
     src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c \
@@ -1937,14 +1941,17 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upbdefs-generated/envoy/config/core/v3/http_uri.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/load_report.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/listener/v3/api_listener.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.c \
@@ -1970,6 +1977,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upbdefs-generated/envoy/service/route/v3/rds.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.c \
@@ -2152,6 +2160,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
+    src/core/lib/security/authorization/sdk_server_authz_filter.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \
@@ -2333,13 +2342,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-<<<<<<< HEAD
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.18 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.18
-=======
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.19 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.19 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.19
->>>>>>> upstream/master
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -3020,12 +3024,10 @@ src/core/ext/filters/client_channel/proxy_mapper_registry.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_event_engine.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc: $(OPENSSL_DEP)
@@ -3060,7 +3062,6 @@ src/core/ext/filters/message_size/message_size_filter.cc: $(OPENSSL_DEP)
 src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc: $(OPENSSL_DEP)
 src/core/ext/filters/workarounds/workaround_utils.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/alpn/alpn.cc: $(OPENSSL_DEP)
-src/core/ext/transport/chttp2/client/authority.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/chttp2_connector.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/chttp2_server.cc: $(OPENSSL_DEP)
@@ -3078,8 +3079,10 @@ src/core/ext/transport/chttp2/transport/frame_rst_stream.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/transport/frame_settings.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/transport/frame_window_update.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/transport/hpack_encoder.cc: $(OPENSSL_DEP)
+src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/transport/hpack_parser.cc: $(OPENSSL_DEP)
-src/core/ext/transport/chttp2/transport/hpack_table.cc: $(OPENSSL_DEP)
+src/core/ext/transport/chttp2/transport/hpack_parser_table.cc: $(OPENSSL_DEP)
+src/core/ext/transport/chttp2/transport/hpack_utils.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/transport/http2_settings.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/transport/huffsyms.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/transport/incoming_metadata.cc: $(OPENSSL_DEP)
@@ -3306,12 +3309,12 @@ src/core/lib/compression/message_compress.cc: $(OPENSSL_DEP)
 src/core/lib/compression/stream_compression.cc: $(OPENSSL_DEP)
 src/core/lib/compression/stream_compression_gzip.cc: $(OPENSSL_DEP)
 src/core/lib/compression/stream_compression_identity.cc: $(OPENSSL_DEP)
+src/core/lib/config/core_configuration.cc: $(OPENSSL_DEP)
 src/core/lib/debug/stats.cc: $(OPENSSL_DEP)
 src/core/lib/debug/stats_data.cc: $(OPENSSL_DEP)
 src/core/lib/debug/trace.cc: $(OPENSSL_DEP)
 src/core/lib/event_engine/endpoint_config.cc: $(OPENSSL_DEP)
 src/core/lib/event_engine/event_engine.cc: $(OPENSSL_DEP)
-src/core/lib/event_engine/slice_allocator.cc: $(OPENSSL_DEP)
 src/core/lib/event_engine/sockaddr.cc: $(OPENSSL_DEP)
 src/core/lib/http/format_request.cc: $(OPENSSL_DEP)
 src/core/lib/http/httpcli.cc: $(OPENSSL_DEP)
@@ -3326,7 +3329,6 @@ src/core/lib/iomgr/endpoint.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/endpoint_cfstream.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/endpoint_pair_event_engine.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/endpoint_pair_posix.cc: $(OPENSSL_DEP)
-src/core/lib/iomgr/endpoint_pair_uv.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/endpoint_pair_windows.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/error.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/error_cfstream.cc: $(OPENSSL_DEP)
@@ -3362,7 +3364,6 @@ src/core/lib/iomgr/iomgr_custom.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/iomgr_internal.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/iomgr_posix.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/iomgr_posix_cfstream.cc: $(OPENSSL_DEP)
-src/core/lib/iomgr/iomgr_uv.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/iomgr_windows.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/is_epollexclusive_available.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/load_file.cc: $(OPENSSL_DEP)
@@ -3373,7 +3374,6 @@ src/core/lib/iomgr/pollset_custom.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/pollset_set.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/pollset_set_custom.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/pollset_set_windows.cc: $(OPENSSL_DEP)
-src/core/lib/iomgr/pollset_uv.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/pollset_windows.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/resolve_address.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/resolve_address_custom.cc: $(OPENSSL_DEP)
@@ -3385,7 +3385,6 @@ src/core/lib/iomgr/socket_mutator.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/socket_utils_common_posix.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/socket_utils_linux.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/socket_utils_posix.cc: $(OPENSSL_DEP)
-src/core/lib/iomgr/socket_utils_uv.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/socket_utils_windows.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/socket_windows.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/tcp_client.cc: $(OPENSSL_DEP)
@@ -3402,7 +3401,6 @@ src/core/lib/iomgr/tcp_server_utils_posix_common.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/tcp_server_windows.cc: $(OPENSSL_DEP)
-src/core/lib/iomgr/tcp_uv.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/tcp_windows.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/time_averaged_stats.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/timer.cc: $(OPENSSL_DEP)
@@ -3410,7 +3408,6 @@ src/core/lib/iomgr/timer_custom.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/timer_generic.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/timer_heap.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/timer_manager.cc: $(OPENSSL_DEP)
-src/core/lib/iomgr/timer_uv.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/udp_server.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/unix_sockets_posix.cc: $(OPENSSL_DEP)
 src/core/lib/iomgr/unix_sockets_posix_noop.cc: $(OPENSSL_DEP)
@@ -3482,10 +3479,15 @@ src/core/lib/security/util/json_util.cc: $(OPENSSL_DEP)
 src/core/lib/slice/b64.cc: $(OPENSSL_DEP)
 src/core/lib/slice/percent_encoding.cc: $(OPENSSL_DEP)
 src/core/lib/slice/slice.cc: $(OPENSSL_DEP)
+src/core/lib/slice/slice_api.cc: $(OPENSSL_DEP)
 src/core/lib/slice/slice_buffer.cc: $(OPENSSL_DEP)
 src/core/lib/slice/slice_intern.cc: $(OPENSSL_DEP)
+src/core/lib/slice/slice_refcount.cc: $(OPENSSL_DEP)
+src/core/lib/slice/slice_split.cc: $(OPENSSL_DEP)
 src/core/lib/slice/slice_string_helpers.cc: $(OPENSSL_DEP)
+src/core/lib/slice/static_slice.cc: $(OPENSSL_DEP)
 src/core/lib/surface/api_trace.cc: $(OPENSSL_DEP)
+src/core/lib/surface/builtins.cc: $(OPENSSL_DEP)
 src/core/lib/surface/byte_buffer.cc: $(OPENSSL_DEP)
 src/core/lib/surface/byte_buffer_reader.cc: $(OPENSSL_DEP)
 src/core/lib/surface/call.cc: $(OPENSSL_DEP)
@@ -3504,7 +3506,6 @@ src/core/lib/surface/metadata_array.cc: $(OPENSSL_DEP)
 src/core/lib/surface/server.cc: $(OPENSSL_DEP)
 src/core/lib/surface/validate_metadata.cc: $(OPENSSL_DEP)
 src/core/lib/surface/version.cc: $(OPENSSL_DEP)
-src/core/lib/transport/authority_override.cc: $(OPENSSL_DEP)
 src/core/lib/transport/bdp_estimator.cc: $(OPENSSL_DEP)
 src/core/lib/transport/byte_stream.cc: $(OPENSSL_DEP)
 src/core/lib/transport/connectivity_state.cc: $(OPENSSL_DEP)

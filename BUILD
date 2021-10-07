@@ -369,6 +369,7 @@ grpc_cc_library(
     deps = [
         "config",
         "gpr_base",
+        "grpc_authorization_base",
         "grpc_base",
         "grpc_common",
         "grpc_lb_policy_grpclb",
@@ -408,6 +409,7 @@ grpc_cc_library(
     deps = [
         "config",
         "gpr_base",
+        "grpc_authorization_base",
         "grpc_base",
         "grpc_common",
         "grpc_secure",
@@ -600,7 +602,7 @@ grpc_cc_library(
         "alts_util",
         "gpr_base",
         "grpc++",
-        "grpc_base_c",
+        "grpc_base",
         "tsi_alts_credentials",
     ],
 )
@@ -2580,7 +2582,7 @@ grpc_cc_library(
         "error",
         "gpr",
         "grpc++_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_lb_policy_grpclb",
         "grpc_security_base",
         "slice",
@@ -2879,9 +2881,11 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
+        "config",
         "gpr_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_trace",
+        "json",
         "ref_counted",
         "ref_counted_ptr",
         "tsi_base",
@@ -2901,12 +2905,16 @@ grpc_cc_library(
         "src/core/lib/security/authorization/evaluate_args.h",
         "src/core/lib/security/authorization/sdk_server_authz_filter.h",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_credentials_util",
         "grpc_trace",
+        "slice_refcount",
     ],
 )
 
@@ -2925,8 +2933,9 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "grpc_base",
         "tsi_base",
+        "useful",
     ],
 )
 
@@ -2948,7 +2957,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_security_base",
         "ref_counted_ptr",
         "tsi_fake_credentials",
@@ -2984,7 +2993,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr",
-        "grpc_base_c",
+        "grpc_base",
         "tsi_base",
     ],
 )
@@ -3006,7 +3015,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_client_channel",
         "grpc_security_base",
         "ref_counted_ptr",
@@ -3067,8 +3076,9 @@ grpc_cc_library(
         "config",
         "error",
         "gpr_base",
-        "grpc_base_c",
+        "grpc_base",
         "tsi_base",
+        "useful",
     ],
 )
 
@@ -3087,11 +3097,11 @@ grpc_cc_library(
         "upb_lib",
         "upb_lib_descriptor",
     ],
-    languape = "c++",
+    language = "c++",
     deps = [
         "alts_util",
         "gpr_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_security_base",
         "ref_counted_ptr",
         "tsi_alts_credentials",
@@ -3117,7 +3127,7 @@ grpc_cc_library(
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_credentials_util",
         "grpc_security_base",
         "grpc_transport_chttp2_alpn",
@@ -3146,7 +3156,7 @@ grpc_cc_library(
         "alts_util",
         "gpr_base",
         "grpc_alts_credentials",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_codegen",
         "grpc_external_account_credentials",
         "grpc_jwt_credentials",
@@ -3182,7 +3192,7 @@ grpc_cc_library(
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_security_base",
         "tsi_base",
         "tsi_ssl_credentials",
@@ -3204,7 +3214,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_security_base",
         "ref_counted_ptr",
     ],
@@ -3230,7 +3240,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_credentials_util",
         "grpc_security_base",
         "json",
@@ -3256,10 +3266,11 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_codegen",
         "grpc_credentials_util",
         "grpc_security_base",
+        "json",
         "ref_counted_ptr",
     ],
 )
@@ -3290,10 +3301,11 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_credentials_util",
         "grpc_oauth2_credentials",
         "grpc_security_base",
+        "slice_refcount",
     ],
 )
 
@@ -3318,8 +3330,9 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_security_base",
+        "useful",
     ],
 )
 
@@ -3349,13 +3362,14 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_credentials_util",
         "grpc_security_base",
         "grpc_transport_chttp2_alpn",
         "ref_counted_ptr",
         "tsi_base",
         "tsi_ssl_types",
+        "useful",
     ],
 )
 
@@ -3380,8 +3394,9 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config", 
         "gpr_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_security_base",
         "ref_counted_ptr",
         "tsi_ssl_credentials",
@@ -3395,10 +3410,11 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_alts_credentials",
         "grpc_authorization_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_external_account_credentials",
         "grpc_fake_credentials",
         "grpc_google_default_credentials",
@@ -3477,7 +3493,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_authorization_base",
-        "grpc_base_c",
+        "grpc_base",
         "grpc_matchers",
     ],
 )
@@ -3856,7 +3872,7 @@ grpc_cc_library(
     visibility = ["@grpc:tsi"],
     deps = [
         "gpr",
-        "grpc_base_c",
+        "grpc_base",
         "tsi_alts_credentials",
         "tsi_base",
         "tsi_fake_credentials",

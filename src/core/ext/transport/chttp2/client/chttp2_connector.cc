@@ -34,15 +34,14 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/transport/authority_override.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
@@ -129,7 +128,7 @@ grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
   const char* to_remove[] = {GRPC_ARG_SERVER_URI};
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
-  grpc_channel* channel = grpc_channel_create(
+  grpc_channel* channel = grpc_channel_create_internal(
       target, new_args, GRPC_CLIENT_CHANNEL, nullptr, nullptr, 0, error);
   grpc_channel_args_destroy(new_args);
   return channel;
@@ -390,9 +389,9 @@ void FactoryInit() {
 //                   - connect to it (trying alternatives as presented)
 //                   - perform handshakes
 grpc_channel* grpc_channel_create(grpc_channel_credentials* creds,
-                                         const char* target,
-                                         const grpc_channel_args* args,
-                                         void* reserved) {
+                                  const char* target,
+                                  const grpc_channel_args* args,
+                                  void* reserved) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE(
       "grpc_secure_channel_create(creds=%p, target=%s, args=%p, "

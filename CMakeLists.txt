@@ -1315,6 +1315,15 @@ target_link_libraries(end2end_tests
   grpc_test_util
 )
 
+foreach(_hdr
+  include/grpc/grpc_security.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
 
 endif()
 
@@ -2446,14 +2455,17 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c
   src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c
   src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.c
   src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c
   src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c
+  src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.c
   src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c
   src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c
   src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v3/api_listener.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c
+  src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c
   src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.c
   src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.c
@@ -2480,6 +2492,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c
   src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c
   src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c
+  src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c
@@ -2533,14 +2546,17 @@ add_library(grpc_unsecure
   src/core/ext/upbdefs-generated/envoy/config/core/v3/http_uri.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/load_report.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/listener/v3/api_listener.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.c
@@ -2566,6 +2582,7 @@ add_library(grpc_unsecure
   src/core/ext/upbdefs-generated/envoy/service/route/v3/rds.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.c
@@ -2748,6 +2765,7 @@ add_library(grpc_unsecure
   src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/sdk_server_authz_filter.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
   src/core/lib/security/credentials/alts/check_gcp_environment.cc
