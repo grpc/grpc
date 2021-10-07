@@ -885,6 +885,43 @@ TEST_F(RlsEnd2endTest, ExtraKeysAndConstantKeys) {
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
 }
 
+TEST_F(RlsEnd2endTest, TwoCacheEntriesWithSameTarget) {
+  const char* kTestValue2 = "test_value2";
+  StartBackends(1);
+  SetNextResolution(
+      MakeServiceConfigBuilder()
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
+          .Build());
+  rls_server_->service_.SetResponse(
+      BuildRlsRequest({{kTestKey, kTestValue}}),
+      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+  rls_server_->service_.SetResponse(
+      BuildRlsRequest({{kTestKey, kTestValue2}}),
+      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
+  EXPECT_EQ(rls_server_->service_.request_count(), 1);
+  EXPECT_EQ(rls_server_->service_.response_count(), 1);
+  EXPECT_EQ(backends_[0]->service_.request_count(), 1);
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue2}}));
+  EXPECT_EQ(rls_server_->service_.request_count(), 2);
+  EXPECT_EQ(rls_server_->service_.response_count(), 2);
+  EXPECT_EQ(backends_[0]->service_.request_count(), 2);
+}
+
 TEST_F(RlsEnd2endTest, FailedRlsRequestWithoutDefaultTarget) {
   StartBackends(1);
   SetNextResolution(
