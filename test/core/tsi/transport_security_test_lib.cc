@@ -616,7 +616,7 @@ void tsi_test_fixture_init(tsi_test_fixture* fixture) {
   fixture->notified = false;
 }
 
-void tsi_test_fixture_destroy(tsi_test_fixture* fixture) {
+void tsi_test_fixture_destroy(tsi_test_fixture* fixture, bool free_fixture) {
   if (fixture == nullptr) {
     return;
   }
@@ -631,7 +631,9 @@ void tsi_test_fixture_destroy(tsi_test_fixture* fixture) {
   fixture->vtable->destruct(fixture);
   gpr_mu_destroy(&fixture->mu);
   gpr_cv_destroy(&fixture->cv);
-  gpr_free(fixture);
+  if (free_fixture) {
+    gpr_free(fixture);
+  }
 }
 
 tsi_test_frame_protector_fixture* tsi_test_frame_protector_fixture_create() {
