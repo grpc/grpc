@@ -78,6 +78,8 @@ class XdsServerConfigSelector : public ServerConfigSelector {
  private:
   struct VirtualHost {
     struct Route {
+      bool inappropriate_action;  // true if an action other than
+                                  // kNonForwardingAction is configured.
       XdsApi::Route::Matchers matchers;
       RefCountedPtr<ServiceConfig> method_config;
     };
@@ -103,8 +105,10 @@ XdsServerConfigSelector::Create(
     virtual_host.domains = vhost.domains;
     for (const auto& route : vhost.routes) {
       virtual_host.routes.push_back(VirtualHost::Route());
-      VirtualHost::Route config_selector_route = virtual_host.routes.back();
+      auto& config_selector_route = virtual_host.routes.back();
       config_selector_route.matchers = route.matchers;
+      config_selector_route.inappropriate_action =
+          route.action_type != XdsApi::Route::ActionType::kNonForwardingAction;
       grpc_channel_args* args = nullptr;
       std::map<std::string, std::vector<std::string>> per_filter_configs;
       for (const auto& http_filter : http_filters) {
@@ -235,17 +239,21 @@ ServerConfigSelector::CallConfig XdsServerConfigSelector::GetCallConfig(
     return call_config;
   }
   for (const auto& route : virtual_host->routes) {
+    gpr_log(GPR_ERROR, "route %p", &route);
     // Path matching.
     if (!route.matchers.path_matcher.Match(path)) {
+      gpr_log(GPR_ERROR, "did not match");
       continue;
     }
     // Header Matching.
     if (!HeadersMatch(route.matchers.header_matchers, metadata)) {
+      gpr_log(GPR_ERROR, "did not match");
       continue;
     }
     // Match fraction check
     if (route.matchers.fraction_per_million.has_value() &&
         !UnderFraction(route.matchers.fraction_per_million.value())) {
+      gpr_log(GPR_ERROR, "did not match");
       continue;
     }
     if (route.method_config != nullptr) {

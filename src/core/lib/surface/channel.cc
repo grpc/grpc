@@ -268,11 +268,31 @@ grpc_channel* grpc_channel_create(
   grpc_channel_args_destroy(args);
   grpc_channel_stack_builder_set_target(builder, target);
   grpc_channel_stack_builder_set_transport(builder, optional_transport);
-  auto append_filters = [&] {
-    // TODO(yashykt): Maybe append filters after the census filter
+  auto add_http_filters = [&] {
+    // TODO(yashykt): Maybe append filters after the census filter. Atleast
+    // after the server filter.
+    // Insert the filters after the server or the census filter
+    grpc_channel_stack_builder_iterator* position_to_insert = nullptr;
+    grpc_channel_stack_builder_iterator* it =
+        grpc_channel_stack_builder_create_iterator_at_first(builder);
+    while (grpc_channel_stack_builder_move_next(it)) {
+      if (grpc_channel_stack_builder_iterator_is_end(it)) break;
+      const char* filter_name_at_it =
+          grpc_channel_stack_builder_iterator_filter_name(it);
+      if (strcmp("server", filter_name_at_it) == 0) {
+        position_to_insert = it;
+      }
+      if (strcmp("census_server", filter_name_at_it) ||
+          strcmp("opencensus_server", filter_name_at_it)) {
+        position_to_insert = it;
+        break;
+      }
+    }
+    if (position_to_insert == nullptr) return false;
+    GPR_ASSERT(grpc_channel_stack_builder_move_next(position_to_insert));
     for (const grpc_channel_filter* filter : filters) {
-      if (!grpc_channel_stack_builder_prepend_filter(builder, filter, nullptr,
-                                                     nullptr)) {
+      if (!grpc_channel_stack_builder_add_filter_before(
+              position_to_insert, filter, nullptr, nullptr)) {
         return false;
       }
     }
@@ -280,7 +300,7 @@ grpc_channel* grpc_channel_create(
   };
   if (!grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
           builder, channel_stack_type) ||
-      !append_filters()) {
+      !add_http_filters()) {
     grpc_channel_stack_builder_destroy(builder);
     if (resource_user != nullptr) {
       if (preallocated_bytes > 0) {

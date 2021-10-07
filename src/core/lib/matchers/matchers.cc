@@ -22,6 +22,9 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 
+// TODO():remove
+#include <grpc/support/log.h>
+
 namespace grpc_core {
 
 //

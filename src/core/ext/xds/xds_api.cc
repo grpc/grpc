@@ -1841,17 +1841,16 @@ grpc_error_handle RouteConfigParse(
         error = RouteActionParse(context, routes[j], &route.route.value(),
                                  &ignore_route);
         if (error != GRPC_ERROR_NONE) return error;
+        if (ignore_route) continue;
+        if (route.route->retry_policy == absl::nullopt &&
+            retry_policy != nullptr) {
+          route.route->retry_policy = virtual_host_retry_policy;
+        }
       } else if (envoy_config_route_v3_Route_has_non_forwarding_action(
                      routes[j])) {
         route.action_type = XdsApi::Route::ActionType::kNonForwardingAction;
       } else {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid action specified");
-      }
-      if (error != GRPC_ERROR_NONE) return error;
-      if (ignore_route) continue;
-      if (route.route->retry_policy == absl::nullopt &&
-          retry_policy != nullptr) {
-        route.route->retry_policy = virtual_host_retry_policy;
       }
       if (context.use_v3) {
         grpc_error_handle error = ParseTypedPerFilterConfig<
