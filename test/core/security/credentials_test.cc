@@ -489,7 +489,6 @@ class RequestMetadataState {
   static void OnRequestMetadata(void* arg, grpc_error_handle error) {
     RequestMetadataState* state = static_cast<RequestMetadataState*>(arg);
     state->CheckRequestMetadata(error);
-    delete state;
   }
 
   void CheckRequestMetadata(grpc_error_handle error) {
@@ -512,6 +511,7 @@ class RequestMetadataState {
             expected_size_, md_array_.size);
     GPR_ASSERT(md_array_.size == expected_size_);
     CheckMetadata(expected_, &md_array_);
+    delete this;
   }
 
   static void CheckMetadata(const ExpectedMetadata* expected,
