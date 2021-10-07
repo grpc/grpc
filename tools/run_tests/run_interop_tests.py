@@ -595,7 +595,9 @@ class RubyLanguage:
     def __str__(self):
         return 'ruby'
 
+
 _PYTHON_BINARY = 'py39_native/bin/python'
+
 
 class PythonLanguage:
 
@@ -607,8 +609,8 @@ class PythonLanguage:
 
     def client_cmd(self, args):
         return [
-            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--client', '--args="{}"'.format(' '.join(args))
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py', 'run_interop',
+            '--client', '--args="{}"'.format(' '.join(args))
         ]
 
     def client_cmd_http2interop(self, args):
@@ -622,8 +624,8 @@ class PythonLanguage:
 
     def server_cmd(self, args):
         return [
-            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--server', '--args="{}"'.format(' '.join(args))
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py', 'run_interop',
+            '--server', '--args="{}"'.format(' '.join(args))
         ]
 
     def global_env(self):
@@ -655,9 +657,8 @@ class PythonAsyncIOLanguage:
 
     def client_cmd(self, args):
         return [
-            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--use-asyncio', '--client',
-            '--args="{}"'.format(' '.join(args))
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py', 'run_interop',
+            '--use-asyncio', '--client', '--args="{}"'.format(' '.join(args))
         ]
 
     def client_cmd_http2interop(self, args):
