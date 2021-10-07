@@ -49,7 +49,7 @@ grpc_channel* CreateChannelFromBinderImpl(
   grpc_channel_args* final_args =
       grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_channel* channel = grpc_channel_create(
+  grpc_channel* channel = grpc_channel_create_internal(
       "binder_target_placeholder", final_args, GRPC_CLIENT_DIRECT_CHANNEL,
       transport, nullptr, 0, &error);
   // TODO(mingcl): Handle error properly
