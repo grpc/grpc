@@ -241,7 +241,9 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
             msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
 
     @staticmethod
-    def diffAccumulatedStatsPerMethod(before, after):
+    def diffAccumulatedStatsPerMethod(
+            before: grpc_testing.LoadBalancerAccumulatedStatsResponse,
+            after: grpc_testing.LoadBalancerAccumulatedStatsResponse):
         """Only diffs stats_per_method, as the other fields are deprecated."""
         diff = grpc_testing.LoadBalancerAccumulatedStatsResponse()
         for method, method_stats in after.stats_per_method.items():
