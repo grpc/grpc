@@ -79,9 +79,13 @@ char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
 std::string ConstructFullResourceName(absl::string_view authority,
                                       absl::string_view resource_type,
                                       absl::string_view name) {
-  return absl::StrCat("xdstp://", std::string(authority), "/",
-                      std::string(resource_type), "/",
-                      absl::StripPrefix(std::string(name), "xdstp:/"));
+  if (absl::StartsWith(name, "xdstp:")) {
+    return absl::StrCat("xdstp://", std::string(authority), "/",
+                        std::string(resource_type), "/",
+                        absl::StripPrefix(std::string(name), "xdstp:/"));
+  } else {
+    return std::string(name);
+  }
 }
 
 struct ResourceNameFields {
@@ -797,39 +801,23 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
                     grpc_schedule_on_exec_ctx);
   for (const auto& a : xds_client()->authority_state_) {
     for (const auto& l : a.second.listener_map) {
-      std::string listener_name_str(l.first);
-      if (absl::StartsWith(l.first, "xdstp:")) {
-        GPR_ASSERT(!a.first.empty());
-        listener_name_str =
-            ConstructFullResourceName(a.first, XdsApi::kLdsTypeUrl, l.first);
-      }
+      std::string listener_name_str =
+          ConstructFullResourceName(a.first, XdsApi::kLdsTypeUrl, l.first);
       SubscribeLocked(XdsApi::kLdsTypeUrl, listener_name_str);
     }
     for (const auto& r : a.second.route_config_map) {
-      std::string route_config_name_str(r.first);
-      if (absl::StartsWith(r.first, "xdstp:")) {
-        GPR_ASSERT(!a.first.empty());
-        route_config_name_str =
-            ConstructFullResourceName(a.first, XdsApi::kRdsTypeUrl, r.first);
-      }
+      std::string route_config_name_str =
+          ConstructFullResourceName(a.first, XdsApi::kRdsTypeUrl, r.first);
       SubscribeLocked(XdsApi::kRdsTypeUrl, route_config_name_str);
     }
     for (const auto& c : a.second.cluster_map) {
-      std::string cluster_name_str(c.first);
-      if (absl::StartsWith(c.first, "xdstp:")) {
-        GPR_ASSERT(!a.first.empty());
-        cluster_name_str =
-            ConstructFullResourceName(a.first, XdsApi::kCdsTypeUrl, c.first);
-      }
+      std::string cluster_name_str =
+          ConstructFullResourceName(a.first, XdsApi::kCdsTypeUrl, c.first);
       SubscribeLocked(XdsApi::kCdsTypeUrl, cluster_name_str);
     }
     for (const auto& e : a.second.endpoint_map) {
-      std::string endpoint_name_str(e.first);
-      if (absl::StartsWith(e.first, "xdstp:")) {
-        GPR_ASSERT(!a.first.empty());
-        endpoint_name_str =
-            ConstructFullResourceName(a.first, XdsApi::kEdsTypeUrl, e.first);
-      }
+      std::string endpoint_name_str =
+          ConstructFullResourceName(a.first, XdsApi::kEdsTypeUrl, e.first);
       SubscribeLocked(XdsApi::kEdsTypeUrl, endpoint_name_str);
     }
   }
@@ -2539,29 +2527,35 @@ std::string XdsClient::DumpClientConfigBinary() {
   for (auto& p : resource_version_map_) {
     resource_type_metadata_map[p.first].version = p.second;
   }
-  // Collect resource metadata from listeners
   auto& lds_map =
       resource_type_metadata_map[XdsApi::kLdsTypeUrl].resource_metadata_map;
-  for (auto& p : authority_state_[""].listener_map) {
-    lds_map[p.first] = &p.second.meta;
-  }
-  // Collect resource metadata from route configs
   auto& rds_map =
       resource_type_metadata_map[XdsApi::kRdsTypeUrl].resource_metadata_map;
-  for (auto& p : authority_state_[""].route_config_map) {
-    rds_map[p.first] = &p.second.meta;
-  }
-  // Collect resource metadata from clusters
   auto& cds_map =
       resource_type_metadata_map[XdsApi::kCdsTypeUrl].resource_metadata_map;
-  for (auto& p : authority_state_[""].cluster_map) {
-    cds_map[p.first] = &p.second.meta;
-  }
-  // Collect resource metadata from endpoints
   auto& eds_map =
       resource_type_metadata_map[XdsApi::kEdsTypeUrl].resource_metadata_map;
-  for (auto& p : authority_state_[""].endpoint_map) {
-    eds_map[p.first] = &p.second.meta;
+  // Collect resource metadata from listeners
+  for (auto& a : authority_state_) {
+    for (auto& p : a.second.listener_map) {
+      lds_map[ConstructFullResourceName(a.first, XdsApi::kLdsTypeUrl,
+                                        p.first)] = &p.second.meta;
+    }
+    // Collect resource metadata from route configs
+    for (auto& p : a.second.route_config_map) {
+      rds_map[ConstructFullResourceName(a.first, XdsApi::kRdsTypeUrl,
+                                        p.first)] = &p.second.meta;
+    }
+    // Collect resource metadata from clusters
+    for (auto& p : a.second.cluster_map) {
+      cds_map[ConstructFullResourceName(a.first, XdsApi::kCdsTypeUrl,
+                                        p.first)] = &p.second.meta;
+    }
+    // Collect resource metadata from endpoints
+    for (auto& p : a.second.endpoint_map) {
+      eds_map[ConstructFullResourceName(a.first, XdsApi::kEdsTypeUrl,
+                                        p.first)] = &p.second.meta;
+    }
   }
   // Assemble config dump messages
   return api_.AssembleClientConfig(resource_type_metadata_map);

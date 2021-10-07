@@ -594,7 +594,7 @@ class XdsApi {
     grpc_millis failed_update_time = 0;
   };
   using ResourceMetadataMap =
-      std::map<absl::string_view /*resource_name*/, const ResourceMetadata*>;
+      std::map<std::string /*resource_name*/, const ResourceMetadata*>;
   struct ResourceTypeMetadata {
     absl::string_view version;
     ResourceMetadataMap resource_metadata_map;
