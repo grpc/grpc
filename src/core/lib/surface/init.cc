@@ -298,12 +298,8 @@ void grpc_maybe_wait_for_async_shutdown(void) {
   }
 }
 
-void grpc_http_filters_init(void);
-void grpc_http_filters_shutdown(void);
 void grpc_chttp2_plugin_init(void);
 void grpc_chttp2_plugin_shutdown(void);
-void grpc_deadline_filter_init(void);
-void grpc_deadline_filter_shutdown(void);
 void grpc_client_channel_init(void);
 void grpc_client_channel_shutdown(void);
 void grpc_inproc_plugin_init(void);
@@ -326,16 +322,8 @@ void grpc_resolver_dns_native_init(void);
 void grpc_resolver_dns_native_shutdown(void);
 void grpc_resolver_sockaddr_init(void);
 void grpc_resolver_sockaddr_shutdown(void);
-void grpc_client_idle_filter_init(void);
-void grpc_client_idle_filter_shutdown(void);
-void grpc_max_age_filter_init(void);
-void grpc_max_age_filter_shutdown(void);
 void grpc_message_size_filter_init(void);
 void grpc_message_size_filter_shutdown(void);
-void grpc_service_config_channel_arg_filter_init(void);
-void grpc_service_config_channel_arg_filter_shutdown(void);
-void grpc_client_authority_filter_init(void);
-void grpc_client_authority_filter_shutdown(void);
 void grpc_workaround_cronet_compression_filter_init(void);
 void grpc_workaround_cronet_compression_filter_shutdown(void);
 namespace grpc_core {
@@ -373,10 +361,7 @@ void GoogleCloud2ProdResolverShutdown();
 #endif
 
 void grpc_register_built_in_plugins(void) {
-  grpc_register_plugin(grpc_http_filters_init, grpc_http_filters_shutdown);
   grpc_register_plugin(grpc_chttp2_plugin_init, grpc_chttp2_plugin_shutdown);
-  grpc_register_plugin(grpc_deadline_filter_init,
-                       grpc_deadline_filter_shutdown);
   grpc_register_plugin(grpc_client_channel_init, grpc_client_channel_shutdown);
   grpc_register_plugin(grpc_inproc_plugin_init, grpc_inproc_plugin_shutdown);
   grpc_register_plugin(grpc_resolver_fake_init, grpc_resolver_fake_shutdown);
@@ -398,17 +383,10 @@ void grpc_register_built_in_plugins(void) {
                        grpc_resolver_dns_native_shutdown);
   grpc_register_plugin(grpc_resolver_sockaddr_init,
                        grpc_resolver_sockaddr_shutdown);
-  grpc_register_plugin(grpc_client_idle_filter_init,
-                       grpc_client_idle_filter_shutdown);
-  grpc_register_plugin(grpc_max_age_filter_init, grpc_max_age_filter_shutdown);
   grpc_register_plugin(grpc_message_size_filter_init,
                        grpc_message_size_filter_shutdown);
   grpc_register_plugin(grpc_core::FaultInjectionFilterInit,
                        grpc_core::FaultInjectionFilterShutdown);
-  grpc_register_plugin(grpc_service_config_channel_arg_filter_init,
-                       grpc_service_config_channel_arg_filter_shutdown);
-  grpc_register_plugin(grpc_client_authority_filter_init,
-                       grpc_client_authority_filter_shutdown);
   grpc_register_plugin(grpc_workaround_cronet_compression_filter_init,
                        grpc_workaround_cronet_compression_filter_shutdown);
 #ifndef GRPC_NO_XDS
