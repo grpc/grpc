@@ -50,10 +50,10 @@ const ReclaimerQueue::Index ReclaimerQueue::kInvalidIndex;
 void ReclaimerQueue::Insert(
     std::shared_ptr<EventEngineMemoryAllocatorImpl> allocator,
     ReclamationFunction reclaimer, Index* index) {
-  mu_.Lock();
+  ReleasableMutexLock lock(&mu_);
   if (*index < entries_.size() && entries_[*index].allocator == allocator) {
     entries_[*index].reclaimer.swap(reclaimer);
-    mu_.Unlock();
+    lock.Release();
     reclaimer({});
     return;
   }
@@ -69,7 +69,6 @@ void ReclaimerQueue::Insert(
   }
   if (queue_.empty()) waker_.Wakeup();
   queue_.push(*index);
-  mu_.Unlock();
 }
 
 ReclamationFunction ReclaimerQueue::Cancel(
