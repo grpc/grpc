@@ -53,6 +53,7 @@ bool IdleFilterState::DecreaseCallCount() {
         // does.
         start_timer = true;
         new_state |= kTimerStarted;
+        new_state &= ~kCallsInProgressShift;
       }
     }
   } while (!state_.compare_exchange_weak(
