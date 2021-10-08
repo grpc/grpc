@@ -117,6 +117,8 @@ GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
 void GrpcMemoryAllocatorImpl::Shutdown() {
   ReclamationFunction old_reclaimers[kNumReclamationPasses];
   MutexLock lock(&memory_quota_mu_);
+  GPR_ASSERT(!shutdown_);
+  shutdown_ = true;
   for (size_t i = 0; i < kNumReclamationPasses; i++) {
     old_reclaimers[i] =
         memory_quota_->CancelReclaimer(i, reclamation_indices_[i], this);
@@ -180,6 +182,7 @@ absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
 
 void GrpcMemoryAllocatorImpl::Replenish() {
   MutexLock lock(&memory_quota_mu_);
+  GPR_ASSERT(!shutdown_);
   // Attempt a fairly low rate exponential growth request size, bounded between
   // some reasonable limits declared at top of file.
   auto amount = Clamp(taken_bytes_ / 3, kMinReplenishBytes, kMaxReplenishBytes);
@@ -201,6 +204,7 @@ void GrpcMemoryAllocatorImpl::MaybeRegisterReclaimer() {
 void GrpcMemoryAllocatorImpl::MaybeRegisterReclaimerLocked() {
   // If the reclaimer is already registered, then there's nothing to do.
   if (reclamation_indices_[0] != ReclaimerQueue::kInvalidIndex) return;
+  if (shutdown_) return;
   // Grab references to the things we'll need
   auto self = shared_from_this();
   memory_quota_->InsertReclaimer(
@@ -224,6 +228,7 @@ void GrpcMemoryAllocatorImpl::MaybeRegisterReclaimerLocked() {
 void GrpcMemoryAllocatorImpl::Rebind(
     std::shared_ptr<BasicMemoryQuota> memory_quota) {
   MutexLock lock(&memory_quota_mu_);
+  GPR_ASSERT(!shutdown_);
   if (memory_quota_ == memory_quota) return;
   // Return memory to the original memory quota.
   memory_quota_->Return(taken_bytes_);
@@ -253,6 +258,7 @@ void GrpcMemoryAllocatorImpl::Rebind(
 void GrpcMemoryAllocatorImpl::PostReclaimer(ReclamationPass pass,
                                             ReclamationFunction fn) {
   MutexLock lock(&memory_quota_mu_);
+  GPR_ASSERT(!shutdown_);
   auto pass_num = static_cast<size_t>(pass);
   memory_quota_->InsertReclaimer(pass_num, shared_from_this(), std::move(fn),
                                  &reclamation_indices_[pass_num]);
