@@ -485,6 +485,7 @@
         'absl/utility:utility',
         'gpr',
         'address_sorting',
+        'uv',
       ],
       'sources': [
         'src/core/ext/filters/census/grpc_context.cc',
@@ -1147,6 +1148,7 @@
         'absl/utility:utility',
         'gpr',
         'address_sorting',
+        'uv',
       ],
       'sources': [
         'src/core/ext/filters/census/grpc_context.cc',
@@ -2005,6 +2007,15 @@
         'third_party/re2/util/pcre.cc',
         'third_party/re2/util/rune.cc',
         'third_party/re2/util/strutil.cc',
+      ],
+    },
+    {
+      'target_name': 'uv',
+      'type': 'static_library',
+      'dependencies': [
+      ],
+      'sources': [
+        'DO_NOT_SUBMIT.cc',
       ],
     },
     {

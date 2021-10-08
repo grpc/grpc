@@ -197,6 +197,7 @@ php_config_m4:
   - boringssl
   - re2
   - z
+  - uv
   headers:
   - src/php/ext/grpc/byte_buffer.h
   - src/php/ext/grpc/call.h
@@ -229,6 +230,7 @@ python_dependencies:
   - boringssl
   - re2
   - z
+  - uv
 ruby_gem:
   deps:
   - grpc
@@ -237,3 +239,4 @@ ruby_gem:
   - boringssl
   - re2
   - z
+  - uv

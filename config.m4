@@ -40,6 +40,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_SUBST(GRPC_SHARED_LIBADD)
 
   PHP_NEW_EXTENSION(grpc,
+    DO_NOT_SUBMIT.cc \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/client_channel/backend_metric.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
@@ -1062,6 +1063,7 @@ if test "$PHP_GRPC" != "no"; then
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
     -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.42.0dev\""')
 
+  PHP_ADD_BUILD_DIR($ext_builddir/DO_NOT_SUBMIT.c)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/health)

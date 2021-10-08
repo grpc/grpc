@@ -1537,6 +1537,7 @@ libs:
   - gpr
   - libssl
   - address_sorting
+  - uv
   baselib: true
   generate_plugin_registry: true
 - name: grpc_csharp_ext
@@ -2232,6 +2233,7 @@ libs:
   - absl/utility:utility
   - gpr
   - address_sorting
+  - uv
   baselib: true
   generate_plugin_registry: true
 - name: benchmark_helpers

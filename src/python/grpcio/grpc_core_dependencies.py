@@ -15,6 +15,7 @@
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_core_dependencies.py.template`!!!
 
 CORE_SOURCE_FILES = [
+    'DO_NOT_SUBMIT.cc',
     'src/core/ext/filters/census/grpc_context.cc',
     'src/core/ext/filters/client_channel/backend_metric.cc',
     'src/core/ext/filters/client_channel/backup_poller.cc',

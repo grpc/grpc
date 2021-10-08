@@ -197,7 +197,8 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/utility/utility', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
 
-    ss.source_files = 'src/core/ext/filters/census/grpc_context.cc',
+    ss.source_files = 'DO_NOT_SUBMIT.cc',
+                      'src/core/ext/filters/census/grpc_context.cc',
                       'src/core/ext/filters/client_channel/backend_metric.cc',
                       'src/core/ext/filters/client_channel/backend_metric.h',
                       'src/core/ext/filters/client_channel/backup_poller.cc',

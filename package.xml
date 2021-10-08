@@ -29,6 +29,7 @@
     <file baseinstalldir="/" name="config.m4" role="src" />
     <file baseinstalldir="/" name="config.w32" role="src" />
     <file baseinstalldir="/" name="src/php/README.md" role="src" />
+    <file baseinstalldir="/" name="DO_NOT_SUBMIT.cc" role="src" />
     <file baseinstalldir="/" name="include/grpc/byte_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/byte_buffer_reader.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/census.h" role="src" />

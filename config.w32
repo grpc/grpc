@@ -6,6 +6,7 @@ ARG_WITH("grpc", "grpc support", "no");
 if (PHP_GRPC != "no") {
 
   EXTENSION("grpc",
+    "DO_NOT_SUBMIT.cc " +
     "src\\core\\ext\\filters\\census\\grpc_context.cc " +
     "src\\core\\ext\\filters\\client_channel\\backend_metric.cc " +
     "src\\core\\ext\\filters\\client_channel\\backup_poller.cc " +
@@ -1056,6 +1057,7 @@ if (PHP_GRPC != "no") {
   base_dir = get_define('BUILD_DIR');
   FSO.CreateFolder(base_dir+"\\ext");
   FSO.CreateFolder(base_dir+"\\ext\\grpc");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\DO_NOT_SUBMIT.c");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext");
