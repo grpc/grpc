@@ -220,6 +220,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/subchannel_pool_interface.cc )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_pool_interface.h )
   s.files += %w( src/core/ext/filters/client_idle/client_idle_filter.cc )
+  s.files += %w( src/core/ext/filters/client_idle/idle_filter_state.cc )
+  s.files += %w( src/core/ext/filters/client_idle/idle_filter_state.h )
   s.files += %w( src/core/ext/filters/deadline/deadline_filter.cc )
   s.files += %w( src/core/ext/filters/deadline/deadline_filter.h )
   s.files += %w( src/core/ext/filters/fault_injection/fault_injection_filter.cc )
