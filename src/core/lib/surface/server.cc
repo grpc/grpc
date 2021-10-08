@@ -1470,7 +1470,7 @@ grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
   grpc_channel_args* new_args =
-      grpc_core::EnsureResourceQuotaInChannelArgs(grpc_channel_args_copy(args));
+      grpc_core::EnsureResourceQuotaInChannelArgs(args);
   grpc_server* c_server = new grpc_server;
   c_server->core_server =
       grpc_core::MakeOrphanable<grpc_core::Server>(new_args);
