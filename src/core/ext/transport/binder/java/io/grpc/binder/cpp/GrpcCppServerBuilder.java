@@ -25,7 +25,7 @@ public class GrpcCppServerBuilder {
     String scheme = "binder:";
     if (uri.startsWith(scheme)) {
       String path = uri.substring(scheme.length());
-      // TODO(mingcl): Consider if we would like to make sure the path only contain alpha num
+      // TODO(mingcl): Consider if we would like to make sure the path only contain valid
       // characters here
       return GetEndpointBinderInternal(path);
     } else {
