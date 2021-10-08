@@ -349,8 +349,9 @@ class DynamicTerminationFilter::CallData {
                                    calld->call_context_, calld->path_,
                                    /*start_time=*/0,     calld->deadline_,
                                    calld->arena_,        calld->call_combiner_};
-    auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-        calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+    auto* service_config_call_data =
+        static_cast<ClientChannelServiceConfigCallData*>(
+            calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
     calld->lb_call_ = client_channel->CreateLoadBalancedCall(
         args, pollent, nullptr,
         service_config_call_data->call_dispatch_controller(),
@@ -2199,15 +2200,16 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
     ConfigSelector::CallConfig call_config =
         config_selector->GetCallConfig({&path_, initial_metadata, arena_});
     if (call_config.error != GRPC_ERROR_NONE) return call_config.error;
-    // Create a ServiceConfigCallData for the call.  This stores a ref to the
-    // ServiceConfig and caches the right set of parsed configs to use for
-    // the call.  The MethodConfig will store itself in the call context,
-    // so that it can be accessed by filters in the subchannel, and it
-    // will be cleaned up when the call ends.
-    auto* service_config_call_data = arena_->New<ServiceConfigCallData>(
-        std::move(call_config.service_config), call_config.method_configs,
-        std::move(call_config.call_attributes),
-        call_config.call_dispatch_controller, call_context_);
+    // Create a ClientChannelServiceConfigCallData for the call.  This stores
+    // a ref to the ServiceConfig and caches the right set of parsed configs
+    // to use for the call.  The ClientChannelServiceConfigCallData will store
+    // itself in the call context, so that it can be accessed by filters
+    // below us in the stack, and it will be cleaned up when the call ends.
+    auto* service_config_call_data =
+        arena_->New<ClientChannelServiceConfigCallData>(
+            std::move(call_config.service_config), call_config.method_configs,
+            std::move(call_config.call_attributes),
+            call_config.call_dispatch_controller, call_context_);
     // Apply our own method params to the call.
     auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
         service_config_call_data->GetMethodParsedConfig(
@@ -2249,8 +2251,9 @@ void ClientChannel::CallData::
     RecvTrailingMetadataReadyForConfigSelectorCommitCallback(
         void* arg, grpc_error_handle error) {
   auto* self = static_cast<CallData*>(arg);
-  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-      self->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+  auto* service_config_call_data =
+      static_cast<ClientChannelServiceConfigCallData*>(
+          self->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
   if (service_config_call_data != nullptr) {
     service_config_call_data->call_dispatch_controller()->Commit();
   }
