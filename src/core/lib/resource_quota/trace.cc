@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/resource_quota/trace.h"
 
 grpc_core::TraceFlag grpc_resource_quota_trace(false, "resource_quota");
