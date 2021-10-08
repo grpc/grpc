@@ -221,10 +221,10 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   grpc_resolved_address resolved_address_;
   Chttp2ServerArgsModifier const args_modifier_;
   ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
-  Mutex channel_args_mu_;
-  grpc_channel_args* args_ ABSL_GUARDED_BY(channel_args_mu_);
+  grpc_channel_args* args_;
+  Mutex connection_manager_mu_;
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
-      connection_manager_ ABSL_GUARDED_BY(channel_args_mu_);
+      connection_manager_ ABSL_GUARDED_BY(connection_manager_mu_);
   Mutex mu_;
   // Signals whether grpc_tcp_server_start() has been called.
   bool started_ ABSL_GUARDED_BY(mu_) = false;
@@ -252,7 +252,7 @@ void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConnectionManager(
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
       connection_manager_to_destroy;
   {
-    MutexLock lock(&listener_->channel_args_mu_);
+    MutexLock lock(&listener_->connection_manager_mu_);
     connection_manager_to_destroy = listener_->connection_manager_;
     listener_->connection_manager_ = std::move(connection_manager);
   }
@@ -720,12 +720,11 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
                                     grpc_pollset* accepting_pollset,
                                     grpc_tcp_server_acceptor* acceptor) {
   Chttp2ServerListener* self = static_cast<Chttp2ServerListener*>(arg);
-  grpc_channel_args* args = nullptr;
+  grpc_channel_args* args = grpc_channel_args_copy(self->args_);
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
       connection_manager;
   {
-    MutexLock lock(&self->channel_args_mu_);
-    args = grpc_channel_args_copy(self->args_);
+    MutexLock lock(&self->connection_manager_mu_);
     connection_manager = self->connection_manager_;
   }
   auto endpoint_cleanup = [&](grpc_error_handle error) {
