@@ -288,6 +288,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   // Amount of memory taken from the quota by this allocator.
   size_t taken_bytes_ ABSL_GUARDED_BY(memory_quota_mu_) =
       sizeof(GrpcMemoryAllocatorImpl);
+  bool shutdown_ ABSL_GUARDED_BY(memory_quota_mu_) = false;
   // Indices into the various reclaimer queues, used so that we can cancel
   // reclamation should we shutdown or get rebound.
   ReclaimerQueue::Index
