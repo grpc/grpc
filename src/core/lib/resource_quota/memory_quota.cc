@@ -119,14 +119,19 @@ GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
 
 void GrpcMemoryAllocatorImpl::Shutdown() {
   std::shared_ptr<BasicMemoryQuota> memory_quota;
+  ReclaimerQueue::Index reclamation_indices[kNumReclamationPasses];
   {
     MutexLock lock(&memory_quota_mu_);
     GPR_ASSERT(!shutdown_);
     shutdown_ = true;
     memory_quota = memory_quota_;
+    for (size_t i = 0; i < kNumReclamationPasses; i++) {
+      reclamation_indices[i] = absl::exchange(reclamation_indices_[i],
+                                              ReclaimerQueue::kInvalidIndex);
+    }
   }
   for (size_t i = 0; i < kNumReclamationPasses; i++) {
-    auto fn = memory_quota_->CancelReclaimer(i, reclamation_indices_[i], this);
+    auto fn = memory_quota->CancelReclaimer(i, reclamation_indices[i], this);
     if (fn != nullptr) fn({});
   }
 }
