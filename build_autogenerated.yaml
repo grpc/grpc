@@ -2217,6 +2217,7 @@ libs:
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/event_string.cc
   - src/core/lib/surface/init.cc
+  - src/core/lib/surface/init_unsecure.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.cc
   - src/core/lib/surface/server.cc
@@ -2236,6 +2237,7 @@ libs:
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
   - src/core/lib/uri/uri_parser.cc
+  - src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
