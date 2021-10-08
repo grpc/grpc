@@ -720,7 +720,8 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
                                     grpc_pollset* accepting_pollset,
                                     grpc_tcp_server_acceptor* acceptor) {
   Chttp2ServerListener* self = static_cast<Chttp2ServerListener*>(arg);
-  grpc_channel_args* args = grpc_channel_args_copy(self->args_);
+  grpc_channel_args* args = self->args_;
+  grpc_channel_args* args_to_destroy = nullptr;
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
       connection_manager;
   {
@@ -737,11 +738,12 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
       grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "No ConnectionManager configured. Closing connection.");
       endpoint_cleanup(error);
-      grpc_channel_args_destroy(args);
       return;
     }
     // TODO(yashykt): Maybe combine the following two arg modifiers into a
     // single one.
+    // Make a copy of the args so as to avoid destroying the original.
+    args = grpc_channel_args_copy(args);
     absl::StatusOr<grpc_channel_args*> args_result =
         connection_manager->UpdateChannelArgsForConnection(args, tcp);
     if (!args_result.ok()) {
@@ -749,6 +751,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
               args_result.status().ToString().c_str());
       endpoint_cleanup(
           GRPC_ERROR_CREATE_FROM_CPP_STRING(args_result.status().ToString()));
+      grpc_channel_args_destroy(args);
       return;
     }
     grpc_error_handle error = GRPC_ERROR_NONE;
@@ -760,6 +763,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
       grpc_channel_args_destroy(args);
       return;
     }
+    args_to_destroy = args;
   }
   grpc_resource_user* channel_resource_user = grpc_resource_user_create(
       self->resource_quota_,
@@ -797,7 +801,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
   } else {
     connection_ref->Start(std::move(listener_ref), tcp, args);
   }
-  grpc_channel_args_destroy(args);
+  grpc_channel_args_destroy(args_to_destroy);
 }
 
 void Chttp2ServerListener::TcpServerShutdownComplete(void* arg,
