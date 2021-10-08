@@ -45,16 +45,15 @@ bool IdleFilterState::DecreaseCallCount() {
     // Decrement call count (and assert there's at least one call outstanding!)
     assert(new_state >= kCallIncrement);
     new_state -= kCallIncrement;
-    // If that decrement reaches a call count of zero
-    if ((new_state >> kCallsInProgressShift) == 0) {
-      // And we have not started a timer
-      if ((new_state & kTimerStarted) == 0) {
-        // Flag that we will start a timer, and mark it started so nobody else
-        // does.
-        start_timer = true;
-        new_state |= kTimerStarted;
-        new_state &= ~kCallsInProgressShift;
-      }
+    // If that decrement reaches a call count of zero and we have not started a
+    // timer
+    if ((new_state >> kCallsInProgressShift) == 0 &&
+        (new_state & kTimerStarted) == 0) {
+      // Flag that we will start a timer, and mark it started so nobody else
+      // does.
+      start_timer = true;
+      new_state |= kTimerStarted;
+      new_state &= ~kCallsInProgressShift;
     }
   } while (!state_.compare_exchange_weak(
       state, new_state, std::memory_order_acq_rel, std::memory_order_relaxed));
