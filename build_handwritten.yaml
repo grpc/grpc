@@ -35,6 +35,21 @@ targets:
   - grpc
   - gpr
   uses_polling: false
+- name: libuv_event_engine_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/test_suite/event_engine_test.h
+  src:
+  - test/core/event_engine/test_suite/event_engine_test.cc
+  - test/core/event_engine/test_suite/libuv_event_engine_test.cc
+  - test/core/event_engine/test_suite/timer_test.cc
+  deps:
+  - absl/random:random
+  - grpc_test_util
+  - uv
+  uses_polling: false
 configs:
   asan:
     CC: clang
