@@ -78,8 +78,8 @@ class AuthorizationPolicy:
     rules: list
 
     @classmethod
-    def from_response(cls, name: str, response: Dict[str,
-                                                     Any]) -> 'AuthorizationPolicy':
+    def from_response(cls, name: str,
+                      response: Dict[str, Any]) -> 'AuthorizationPolicy':
         return cls(name=name,
                    url=response['name'],
                    create_time=response['createTime'],

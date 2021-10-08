@@ -275,9 +275,8 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         status = status_code.value[0]
         for found_status, count in stats.result.items():
             if found_status != status and count > 0:
-                self.fail(
-                    f"Expected only status {status} but found status "
-                    f"{found_status} for method {method}:\n{diff_stats}")
+                self.fail(f"Expected only status {status} but found status "
+                          f"{found_status} for method {method}:\n{diff_stats}")
         self.assertGreater(stats.result[status_code.value[0]], 0)
 
     def assertRpcsEventuallyGoToGivenServers(self,
