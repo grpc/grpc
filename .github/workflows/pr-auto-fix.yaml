@@ -5,13 +5,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Cache bazel build
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%W')"
       - name: Cache bazel
         uses: actions/cache@v2
         env:
           cache-name: bazel-cache
         with:
           path: ~/.cache/bazel
-          key: ${{ runner.os }}-${{ env.cache-name }}
+          key: ${{ runner.os }}-${{ steps.date.output.date }}
       # Cancel current runs if they're still running
       # (saves processing on fast pushes)
       - name: Cancel Previous Runs
