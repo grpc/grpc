@@ -70,7 +70,8 @@ class ParsedMetadata {
           value,
       uint32_t transport_size)
       : vtable_(ParsedMetadata::template NonTrivialTraitVTable<Which>()),
-        value_(static_cast<intptr_t>(value)),
+        value_(
+            reinterpret_cast<intptr_t>(new typename Which::MementoType(value))),
         transport_size_(transport_size) {}
   // Takes ownership of elem
   explicit ParsedMetadata(grpc_mdelem elem)
