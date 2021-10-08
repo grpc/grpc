@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package", "grpc_cc_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
@@ -22,9 +22,9 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 grpc_cc_library(
     name = "call_checker",
+    testonly = True,
     hdrs = ["call_checker.h"],
     language = "c++",
-    testonly = True,
 )
 
 grpc_cc_test(
@@ -36,10 +36,10 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
+        "call_checker",
         "//:memory_quota",
         "//test/core/util:grpc_suppressions",
-    "call_checker",
-        ],
+    ],
 )
 
 grpc_cc_test(
@@ -96,8 +96,8 @@ grpc_proto_fuzzer(
     tags = ["no_windows"],
     uses_polling = False,
     deps = [
+        "call_checker",
         "//:memory_quota",
         "//test/core/util:grpc_test_util",
-    "call_checker",
     ],
 )
