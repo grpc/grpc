@@ -787,7 +787,7 @@ TEST_F(SingleBalancerTest, Vanilla) {
 
 TEST_F(SingleBalancerTest, SubchannelCaching) {
   ResetStub(/*fallback_timeout=*/0, /*expected_targets=*/"",
-            /*subchannel_cache_delay_ms*/ 1500);
+            /*subchannel_cache_delay_ms=*/1500);
   SetNextResolutionAllBalancers();
   // Initially send all backends.
   ScheduleResponseForBalancer(
