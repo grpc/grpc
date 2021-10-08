@@ -57,7 +57,10 @@ class StressTest {
           if (st->RememberReservation(allocator->allocator()->MakeReservation(
                   st->RandomRequest()))) {
             allocator->PostReclaimer(
-                pass, [st](ReclamationSweep) { st->ForgetReservations(); });
+                pass, [st](absl::optional<ReclamationSweep> sweep) {
+                  if (!sweep.has_value()) return;
+                  st->ForgetReservations();
+                });
           }
         }));
       }
