@@ -5,11 +5,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Cache bazel build
-       - name: Get current time
-         uses: srfrnk/current-time@master
-         id: current-time
-         with:
-           format: YYYYWW
+      - name: Get current time
+        uses: srfrnk/current-time@master
+        id: current-time
+        with:
+          format: YYYYWW
       - name: Cache bazel
         uses: actions/cache@v2
         env:
