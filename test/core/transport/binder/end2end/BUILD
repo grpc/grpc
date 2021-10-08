@@ -67,6 +67,7 @@ grpc_cc_library(
         ":fake_binder",
         "//:grpc++_base",
         "//:grpc_base",
+        "//src/core/ext/transport/binder/security_policy:untrusted_security_policy",
         "//src/core/ext/transport/binder/transport:binder_transport",
         "//src/core/ext/transport/binder/wire_format:wire_reader",
     ],
@@ -100,6 +101,7 @@ grpc_cc_test(
     deps = [
         "//:grpc++",
         "//src/core/ext/transport/binder/client:grpc_transport_binder_client_impl",
+        "//src/core/ext/transport/binder/security_policy:untrusted_security_policy",
         "//src/core/ext/transport/binder/server:grpc_transport_binder_server",
         "//test/core/transport/binder/end2end:fake_binder",
         "//test/core/util:grpc_test_util",

@@ -15,7 +15,7 @@
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_package(name = "test/core/gprpp")
 

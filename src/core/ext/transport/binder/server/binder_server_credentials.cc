@@ -16,6 +16,7 @@
 
 #include <grpcpp/security/server_credentials.h>
 
+#include "src/core/ext/transport/binder/security_policy/security_policy.h"
 #include "src/core/ext/transport/binder/server/binder_server.h"
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
 
@@ -26,6 +27,10 @@ namespace {
 
 class BinderServerCredentialsImpl final : public ServerCredentials {
  public:
+  explicit BinderServerCredentialsImpl(
+      std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+          security_policy)
+      : security_policy_(security_policy) {}
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
   int AddPortToServer(const std::string& addr, grpc_server* server) override {
     return grpc_core::AddBinderPort(
@@ -33,7 +38,8 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
         [](grpc_binder::TransactionReceiver::OnTransactCb transact_cb) {
           return absl::make_unique<grpc_binder::TransactionReceiverAndroid>(
               nullptr, std::move(transact_cb));
-        });
+        },
+        security_policy_);
   }
 #else
   int AddPortToServer(const std::string& /*addr*/,
@@ -49,12 +55,18 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
 
  private:
   bool IsInsecure() const override { return true; }
+
+  std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy_;
 };
 
 }  // namespace
 
-std::shared_ptr<ServerCredentials> BinderServerCredentials() {
-  return std::shared_ptr<ServerCredentials>(new BinderServerCredentialsImpl());
+std::shared_ptr<ServerCredentials> BinderServerCredentials(
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+        security_policy) {
+  GPR_ASSERT(security_policy != nullptr);
+  return std::shared_ptr<ServerCredentials>(
+      new BinderServerCredentialsImpl(security_policy));
 }
 
 }  // namespace experimental

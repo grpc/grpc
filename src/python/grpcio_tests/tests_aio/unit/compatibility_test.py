@@ -78,7 +78,7 @@ class TestCompatibility(AioTestBase):
         await self._async_server.stop(None)
 
     async def _run_in_another_thread(self, func: Callable[[], None]):
-        work_done = asyncio.Event(loop=self.loop)
+        work_done = asyncio.Event()
 
         def thread_work():
             func()
