@@ -17,6 +17,7 @@ set -ex
 
 cd $(dirname $0)/../..
 
+tools/buildgen/generate_libuv_source_wrappers.py
 tools/buildgen/generate_projects.sh
 tools/distrib/check_include_guards.py --fix
 tools/distrib/check_copyright.py --fix
@@ -28,4 +29,3 @@ tools/distrib/yapf_code.sh
 tools/distrib/isort_code.sh
 tools/distrib/clang_format_code.sh
 tools/distrib/buildifier_format_code.sh || true
-

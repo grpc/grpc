@@ -6,7 +6,6 @@ ARG_WITH("grpc", "grpc support", "no");
 if (PHP_GRPC != "no") {
 
   EXTENSION("grpc",
-    "DO_NOT_SUBMIT.cc " +
     "src\\core\\ext\\filters\\census\\grpc_context.cc " +
     "src\\core\\ext\\filters\\client_channel\\backend_metric.cc " +
     "src\\core\\ext\\filters\\client_channel\\backup_poller.cc " +
@@ -632,6 +631,69 @@ if (PHP_GRPC != "no") {
     "src\\core\\tsi\\ssl_transport_security.cc " +
     "src\\core\\tsi\\transport_security.cc " +
     "src\\core\\tsi\\transport_security_grpc.cc " +
+    "src\\libuv\\src\\fs-poll.c " +
+    "src\\libuv\\src\\idna.c " +
+    "src\\libuv\\src\\inet.c " +
+    "src\\libuv\\src\\strscpy.c " +
+    "src\\libuv\\src\\threadpool.c " +
+    "src\\libuv\\src\\timer.c " +
+    "src\\libuv\\src\\unix\\android-ifaddrs.c " +
+    "src\\libuv\\src\\unix\\async.c " +
+    "src\\libuv\\src\\unix\\bsd-ifaddrs.c " +
+    "src\\libuv\\src\\unix\\core.c " +
+    "src\\libuv\\src\\unix\\darwin-proctitle.c " +
+    "src\\libuv\\src\\unix\\darwin.c " +
+    "src\\libuv\\src\\unix\\dl.c " +
+    "src\\libuv\\src\\unix\\fs.c " +
+    "src\\libuv\\src\\unix\\fsevents.c " +
+    "src\\libuv\\src\\unix\\getaddrinfo.c " +
+    "src\\libuv\\src\\unix\\getnameinfo.c " +
+    "src\\libuv\\src\\unix\\kqueue.c " +
+    "src\\libuv\\src\\unix\\linux-core.c " +
+    "src\\libuv\\src\\unix\\linux-inotify.c " +
+    "src\\libuv\\src\\unix\\linux-syscalls.c " +
+    "src\\libuv\\src\\unix\\loop-watcher.c " +
+    "src\\libuv\\src\\unix\\loop.c " +
+    "src\\libuv\\src\\unix\\pipe.c " +
+    "src\\libuv\\src\\unix\\poll.c " +
+    "src\\libuv\\src\\unix\\process.c " +
+    "src\\libuv\\src\\unix\\procfs-exepath.c " +
+    "src\\libuv\\src\\unix\\proctitle.c " +
+    "src\\libuv\\src\\unix\\pthread-fixes.c " +
+    "src\\libuv\\src\\unix\\signal.c " +
+    "src\\libuv\\src\\unix\\stream.c " +
+    "src\\libuv\\src\\unix\\sysinfo-loadavg.c " +
+    "src\\libuv\\src\\unix\\tcp.c " +
+    "src\\libuv\\src\\unix\\thread.c " +
+    "src\\libuv\\src\\unix\\tty.c " +
+    "src\\libuv\\src\\unix\\udp.c " +
+    "src\\libuv\\src\\uv-common.c " +
+    "src\\libuv\\src\\uv-data-getter-setters.c " +
+    "src\\libuv\\src\\version.c " +
+    "src\\libuv\\src\\win\\async.c " +
+    "src\\libuv\\src\\win\\core.c " +
+    "src\\libuv\\src\\win\\detect-wakeup.c " +
+    "src\\libuv\\src\\win\\dl.c " +
+    "src\\libuv\\src\\win\\error.c " +
+    "src\\libuv\\src\\win\\fs-event.c " +
+    "src\\libuv\\src\\win\\fs.c " +
+    "src\\libuv\\src\\win\\getaddrinfo.c " +
+    "src\\libuv\\src\\win\\getnameinfo.c " +
+    "src\\libuv\\src\\win\\handle.c " +
+    "src\\libuv\\src\\win\\loop-watcher.c " +
+    "src\\libuv\\src\\win\\pipe.c " +
+    "src\\libuv\\src\\win\\poll.c " +
+    "src\\libuv\\src\\win\\process-stdio.c " +
+    "src\\libuv\\src\\win\\process.c " +
+    "src\\libuv\\src\\win\\signal.c " +
+    "src\\libuv\\src\\win\\stream.c " +
+    "src\\libuv\\src\\win\\tcp.c " +
+    "src\\libuv\\src\\win\\thread.c " +
+    "src\\libuv\\src\\win\\tty.c " +
+    "src\\libuv\\src\\win\\udp.c " +
+    "src\\libuv\\src\\win\\util.c " +
+    "src\\libuv\\src\\win\\winapi.c " +
+    "src\\libuv\\src\\win\\winsock.c " +
     "src\\php\\ext\\grpc\\byte_buffer.c " +
     "src\\php\\ext\\grpc\\call.c " +
     "src\\php\\ext\\grpc\\call_credentials.c " +
@@ -1057,7 +1119,6 @@ if (PHP_GRPC != "no") {
   base_dir = get_define('BUILD_DIR');
   FSO.CreateFolder(base_dir+"\\ext");
   FSO.CreateFolder(base_dir+"\\ext\\grpc");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\DO_NOT_SUBMIT.c");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext");
@@ -1341,6 +1402,10 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\alts\\zero_copy_frame_protector");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\ssl");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\ssl\\session_cache");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\libuv");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\libuv\\src");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\libuv\\src\\unix");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\libuv\\src\\win");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\php");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\php\\ext");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\php\\ext\\grpc");

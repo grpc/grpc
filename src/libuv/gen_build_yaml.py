@@ -18,7 +18,6 @@ import yaml
 import glob
 
 out = {}
-
 out['libs'] = [{
     'name':
         'uv',
@@ -28,14 +27,12 @@ out['libs'] = [{
         'c',
     'secure':
         False,
-    'src': ['DO_NOT_SUBMIT.cc'],
-    # sorted(
-    #   glob.glob('src/libuv/*.cc')
-    # ),
-    'headers': [],
-        # sorted(
-        #     glob.glob('third_party/re2/re2/*.h') +
-        #     glob.glob('third_party/re2/util/*.h')),
+    'src':
+        sorted(glob.glob('src/libuv/src/**/*.c', recursive=True)),
+    'headers':
+        sorted(
+            glob.glob('src/libuv/src/**/*.h', recursive=True) +
+            glob.glob('src/libuv/include/**/*.h', recursive=True)),
 }]
 
 print(yaml.dump(out))
