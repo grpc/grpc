@@ -16,6 +16,8 @@ jobs:
           cache-name: bazel-cache
         with:
           path: ~/.cache/bazel
+          # formattedTime here is like 202132 - the year concatenated with the week
+          # as this changes every week, we cycle to a new cache once per week.
           key: ${{ runner.os }}-${{ steps.current-time.outputs.formattedTime }}
       # Cancel current runs if they're still running
       # (saves processing on fast pushes)
