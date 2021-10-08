@@ -116,8 +116,9 @@ class ParsedMetadata {
   }
   std::string DebugString() const { return vtable_->debug_string(value_); }
 
-  // TODO(ctiller): use hpack constant?
+  // TODO(ctiller): move to transport
   static uint32_t TransportSize(uint32_t key_size, uint32_t value_size) {
+    // TODO(ctiller): use hpack constant?
     return key_size + value_size + 32;
   }
 
