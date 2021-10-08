@@ -46,6 +46,7 @@
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
@@ -1468,8 +1469,12 @@ void Server::CallData::StartTransportStreamOpBatch(
 grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
+  grpc_channel_args* new_args =
+      grpc_core::EnsureResourceQuotaInChannelArgs(grpc_channel_args_copy(args));
   grpc_server* c_server = new grpc_server;
-  c_server->core_server = grpc_core::MakeOrphanable<grpc_core::Server>(args);
+  c_server->core_server =
+      grpc_core::MakeOrphanable<grpc_core::Server>(new_args);
+  grpc_channel_args_destroy(new_args);
   return c_server;
 }
 
