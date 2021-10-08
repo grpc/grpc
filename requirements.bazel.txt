@@ -14,3 +14,6 @@ chardet==3.0.4
 certifi==2017.4.17
 idna==2.7
 googleapis-common-protos==1.5.5
+gevent==21.1.2
+zope.event==4.5.0
+setuptools==44.1.1

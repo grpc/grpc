@@ -22,7 +22,7 @@ grpc_package(
     ],
 )
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_cc_binary(
     name = "low_level_ping_pong",

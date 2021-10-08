@@ -13,13 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex -o igncr || set -ex
+set -eo pipefail
 
 # Constants
 readonly GITHUB_REPOSITORY_NAME="grpc"
-# GKE Cluster
-readonly GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
-readonly GKE_CLUSTER_ZONE="us-central1-a"
+readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc/${TEST_DRIVER_BRANCH:-master}/tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh"
 ## xDS test server/client Docker images
 readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-server"
 readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-client"
@@ -136,8 +134,13 @@ run_test() {
 main() {
   local script_dir
   script_dir="$(dirname "$0")"
-  # shellcheck source=tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh
-  source "${script_dir}/grpc_xds_k8s_install_test_driver.sh"
+
+  # Source the test driver from the master branch.
+  echo "Sourcing test driver install script from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
+  source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
+
+  activate_gke_cluster GKE_CLUSTER_PSM_SECURITY
+
   set -x
   if [[ -n "${KOKORO_ARTIFACTS_DIR}" ]]; then
     kokoro_setup_test_driver "${GITHUB_REPOSITORY_NAME}"
