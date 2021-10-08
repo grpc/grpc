@@ -268,6 +268,7 @@ def py_grpc_library(
         **kwargs
     )
 
+# TODO(https://github.com/grpc/grpc/issues/27543): Remove once Python 2 is no longer supported.
 def py2and3_test(
         name,
         py_test = native.py_test,
@@ -297,7 +298,7 @@ def py2and3_test(
         suite_kwargs["visibility"] = kwargs["visibility"]
 
     native.test_suite(
-        name = name,
+        name = name + ".both_pythons",
         tests = names,
         **suite_kwargs
     )

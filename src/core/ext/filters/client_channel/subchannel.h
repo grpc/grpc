@@ -148,7 +148,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
     struct ConnectivityStateChange {
       grpc_connectivity_state state;
       absl::Status status;
-      RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     };
 
     ~ConnectivityStateWatcherInterface() override = default;
@@ -208,10 +207,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // If health_check_service_name is non-null, the returned connectivity
   // state will be based on the state reported by the backend for that
   // service name.
-  // If the return value is GRPC_CHANNEL_READY, also sets *connected_subchannel.
   grpc_connectivity_state CheckConnectivityState(
-      const absl::optional<std::string>& health_check_service_name,
-      RefCountedPtr<ConnectedSubchannel>* connected_subchannel)
+      const absl::optional<std::string>& health_check_service_name)
       ABSL_LOCKS_EXCLUDED(mu_);
 
   // Starts watching the subchannel's connectivity state.
@@ -234,6 +231,12 @@ class Subchannel : public DualRefCounted<Subchannel> {
       const absl::optional<std::string>& health_check_service_name,
       ConnectivityStateWatcherInterface* watcher) ABSL_LOCKS_EXCLUDED(mu_);
 
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel()
+      ABSL_LOCKS_EXCLUDED(mu_) {
+    MutexLock lock(&mu_);
+    return connected_subchannel_;
+  }
+
   // Attempt to connect to the backend.  Has no effect if already connected.
   void AttemptToConnect() ABSL_LOCKS_EXCLUDED(mu_);
 
@@ -255,7 +258,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
     void RemoveWatcherLocked(ConnectivityStateWatcherInterface* watcher);
 
     // Notifies all watchers in the list about a change to state.
-    void NotifyLocked(Subchannel* subchannel, grpc_connectivity_state state,
+    void NotifyLocked(grpc_connectivity_state state,
                       const absl::Status& status);
 
     void Clear() { watchers_.clear(); }

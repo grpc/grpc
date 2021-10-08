@@ -299,6 +299,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     // This is a no-op, because we get the addresses from the xds
     // client, which is a watch-based API.
     void RequestReresolution() override {}
+    absl::string_view GetAuthority() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -378,6 +379,10 @@ void XdsClusterResolverLb::Helper::UpdateState(
   }
   xds_cluster_resolver_policy_->channel_control_helper()->UpdateState(
       state, status, std::move(picker));
+}
+
+absl::string_view XdsClusterResolverLb::Helper::GetAuthority() {
+  return xds_cluster_resolver_policy_->channel_control_helper()->GetAuthority();
 }
 
 void XdsClusterResolverLb::Helper::AddTraceEvent(TraceSeverity severity,
@@ -1157,7 +1162,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
         if (!discovery_mechanism_errors.empty()) {
           grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
               absl::StrCat("field:discovery_mechanism element: ", i, " error"));
-          for (grpc_error_handle discovery_mechanism_error :
+          for (const grpc_error_handle& discovery_mechanism_error :
                discovery_mechanism_errors) {
             error = grpc_error_add_child(error, discovery_mechanism_error);
           }

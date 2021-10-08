@@ -854,7 +854,7 @@ cdef class AioServer:
         self.add_generic_rpc_handlers(generic_handlers)
         self._serving_task = None
 
-        self._shutdown_lock = asyncio.Lock(loop=self._loop)
+        self._shutdown_lock = asyncio.Lock()
         self._shutdown_completed = self._loop.create_future()
         self._shutdown_callback_wrapper = CallbackWrapper(
             self._shutdown_completed,
@@ -1008,12 +1008,8 @@ cdef class AioServer:
         else:
             try:
                 await asyncio.wait_for(
-                    asyncio.shield(
-                        self._shutdown_completed,
-                        loop=self._loop
-                    ),
+                    asyncio.shield(self._shutdown_completed),
                     grace,
-                    loop=self._loop,
                 )
             except asyncio.TimeoutError:
                 # Cancels all ongoing calls by the end of grace period.
@@ -1033,12 +1029,8 @@ cdef class AioServer:
         else:
             try:
                 await asyncio.wait_for(
-                    asyncio.shield(
-                        self._shutdown_completed,
-                        loop=self._loop,
-                    ),
+                    asyncio.shield(self._shutdown_completed),
                     timeout,
-                    loop=self._loop,
                 )
             except asyncio.TimeoutError:
                 if self._crash_exception is not None:

@@ -30,6 +30,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h"
 #include "src/core/ext/transport/binder/transport/binder_stream.h"
 #include "test/core/transport/binder/mock_objects.h"
 #include "test/core/util/test_config.h"
@@ -46,7 +47,9 @@ class BinderTransportTest : public ::testing::Test {
   BinderTransportTest()
       : arena_(grpc_core::Arena::Create(/* initial_size = */ 1)),
         transport_(grpc_create_binder_transport_client(
-            absl::make_unique<NiceMock<MockBinder>>())) {
+            absl::make_unique<NiceMock<MockBinder>>(),
+            std::make_shared<
+                grpc::experimental::binder::UntrustedSecurityPolicy>())) {
     auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
     gbt->wire_writer = absl::make_unique<MockWireWriter>();
     GRPC_STREAM_REF_INIT(&ref_, 1, nullptr, nullptr, "phony ref");

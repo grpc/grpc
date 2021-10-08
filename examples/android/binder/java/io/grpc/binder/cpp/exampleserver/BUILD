@@ -25,8 +25,9 @@ cc_library(
         "-Wl,--no-undefined",
     ],
     deps = [
-        # Temporarily directly depend on this target before we expose a public API
+        # Temporarily directly depend on these targets before we expose public APIs
         "//src/core/ext/transport/binder/server:grpc_transport_binder_server",
+        "//src/core/ext/transport/binder/security_policy:untrusted_security_policy",
         "//:grpc++",
         "//examples/protos:helloworld_cc_grpc",
     ],
@@ -52,7 +53,9 @@ android_library(
     srcs = ["ExportedEndpointService.java"],
     exports_manifest = True,
     manifest = "AndroidManifest_endpoint.xml",
-    deps = [],
+    deps = [
+        "@binder_transport_android_helper//io/grpc/binder/cpp:connection_helper",
+    ],
 )
 
 android_binary(

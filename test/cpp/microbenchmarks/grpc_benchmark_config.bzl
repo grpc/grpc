@@ -11,11 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Configuration macros for grpc microbenchmarking"""
 
-licenses(["notice"])  # Apache v2
-
-exports_files([
-    "invalid_policy.json",
-    "valid_policy_1.json",
-    "valid_policy_2.json",
-])
+def grpc_benchmark_args():
+    """Command line arguments for running a microbenchmark as a test"""
+    return ["--benchmark_min_time=0.001"]

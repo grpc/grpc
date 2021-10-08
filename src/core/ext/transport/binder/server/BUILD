@@ -43,6 +43,7 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc++_internals",
         "//:grpc_base",
+        "//src/core/ext/transport/binder/security_policy:security_policy_interface",
         "//src/core/ext/transport/binder/transport:binder_transport",
         "//src/core/ext/transport/binder/wire_format:binder",
         "//src/core/ext/transport/binder/wire_format:binder_android",

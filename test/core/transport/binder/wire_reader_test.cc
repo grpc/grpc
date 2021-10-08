@@ -27,6 +27,7 @@
 
 #include "absl/memory/memory.h"
 
+#include "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 #include "test/core/transport/binder/mock_objects.h"
 #include "test/core/util/test_config.h"
@@ -45,7 +46,10 @@ class WireReaderTest : public ::testing::Test {
   WireReaderTest()
       : transport_stream_receiver_(
             std::make_shared<StrictMock<MockTransportStreamReceiver>>()),
-        wire_reader_(transport_stream_receiver_, /*is_client=*/true) {}
+        wire_reader_(
+            transport_stream_receiver_, /*is_client=*/true,
+            std::make_shared<
+                grpc::experimental::binder::UntrustedSecurityPolicy>()) {}
 
  protected:
   void ExpectReadInt32(int result) {
