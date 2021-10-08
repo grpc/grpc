@@ -339,7 +339,12 @@ void RoundRobin::RoundRobinSubchannelList::
 void RoundRobin::RoundRobinSubchannelList::
     UpdateRoundRobinStateFromSubchannelStateCountsLocked() {
   RoundRobin* p = static_cast<RoundRobin*>(policy());
-  if (num_ready_ > 0) {
+  // If we have at least one READY subchannel, then swap to the new list.
+  // Also, if all of the subchannels are in TRANSIENT_FAILURE, then we know
+  // we've tried all of them and failed, so we go ahead and swap over
+  // anyway; this may cause the channel to go from READY to TRANSIENT_FAILURE,
+  // but we are doing what the control plane told us to do.
+  if (num_ready_ > 0 || num_transient_failure_ == num_subchannels()) {
     if (p->subchannel_list_.get() != this) {
       // Promote this list to p->subchannel_list_.
       // This list must be p->latest_pending_subchannel_list_, because

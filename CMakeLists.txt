@@ -274,7 +274,7 @@ elseif(UNIX)
 endif()
 
 if(WIN32)
-  set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32 crypt32)
+  set(_gRPC_BASELIB_LIBRARIES ws2_32 crypt32)
 endif()
 
 # Create directory for generated .proto files
@@ -1577,7 +1577,6 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
-  src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   src/core/ext/transport/chttp2/transport/context_list.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
@@ -2117,8 +2116,9 @@ foreach(_hdr
   include/grpc/compression.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
+  include/grpc/event_engine/internal/memory_allocator_impl.h
+  include/grpc/event_engine/memory_allocator.h
   include/grpc/event_engine/port.h
-  include/grpc/event_engine/slice_allocator.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -2410,7 +2410,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
-  src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   src/core/ext/transport/chttp2/transport/context_list.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
@@ -2675,8 +2674,9 @@ foreach(_hdr
   include/grpc/compression.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
+  include/grpc/event_engine/internal/memory_allocator_impl.h
+  include/grpc/event_engine/memory_allocator.h
   include/grpc/event_engine/port.h
-  include/grpc/event_engine/slice_allocator.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -6066,6 +6066,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   add_executable(memory_quota_stress_test
     src/core/lib/debug/trace.cc
+    src/core/lib/event_engine/memory_allocator.cc
     src/core/lib/iomgr/combiner.cc
     src/core/lib/iomgr/error.cc
     src/core/lib/iomgr/exec_ctx.cc
@@ -8392,6 +8393,7 @@ add_executable(binder_server_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
   src/core/ext/transport/binder/client/channel_create_impl.cc
+  src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   src/core/ext/transport/binder/server/binder_server.cc
   src/core/ext/transport/binder/server/binder_server_credentials.cc
   src/core/ext/transport/binder/transport/binder_transport.cc
@@ -8439,6 +8441,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(binder_transport_test
+  src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   src/core/ext/transport/binder/transport/binder_transport.cc
   src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
   src/core/ext/transport/binder/wire_format/binder_constants.cc
@@ -9998,6 +10001,7 @@ add_executable(end2end_binder_transport_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   src/core/ext/transport/binder/transport/binder_transport.cc
   src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
   src/core/ext/transport/binder/wire_format/binder_constants.cc
@@ -12595,6 +12599,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(memory_quota_test
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -15185,6 +15190,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_resource_quota_resource_quota_test
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -15973,6 +15979,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(wire_reader_test
+  src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
   src/core/ext/transport/binder/wire_format/binder_constants.cc
   src/core/ext/transport/binder/wire_format/transaction.cc

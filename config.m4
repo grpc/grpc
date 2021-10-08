@@ -129,7 +129,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
-    src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc \
     src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
     src/core/ext/transport/chttp2/transport/context_list.cc \
     src/core/ext/transport/chttp2/transport/flow_control.cc \
@@ -770,6 +769,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/asn1/a_object.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_octet.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_print.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_strex.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_strnid.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_time.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_type.c \
@@ -910,13 +910,13 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/trust_token/voprf.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_digest.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_sign.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/a_strex.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_verify.c \
     third_party/boringssl-with-bazel/src/crypto/x509/algorithm.c \
     third_party/boringssl-with-bazel/src/crypto/x509/asn1_gen.c \
     third_party/boringssl-with-bazel/src/crypto/x509/by_dir.c \
     third_party/boringssl-with-bazel/src/crypto/x509/by_file.c \
     third_party/boringssl-with-bazel/src/crypto/x509/i2d_pr.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/name_print.c \
     third_party/boringssl-with-bazel/src/crypto/x509/rsa_pss.c \
     third_party/boringssl-with-bazel/src/crypto/x509/t_crl.c \
     third_party/boringssl-with-bazel/src/crypto/x509/t_req.c \

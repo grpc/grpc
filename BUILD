@@ -161,7 +161,8 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/endpoint_config.h",
     "include/grpc/event_engine/event_engine.h",
     "include/grpc/event_engine/port.h",
-    "include/grpc/event_engine/slice_allocator.h",
+    "include/grpc/event_engine/memory_allocator.h",
+    "include/grpc/event_engine/internal/memory_allocator_impl.h",
 ]
 
 GRPC_SECURE_PUBLIC_HDRS = [
@@ -488,6 +489,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_codegen",
         "grpc_secure",
+        "json",
         "ref_counted_ptr",
         "slice",
     ],
@@ -901,6 +903,341 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "poll",
+    external_deps = [
+        "absl/types:variant",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/poll.h",
+    ],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "context",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/context.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "gpr_tls",
+    ],
+)
+
+grpc_cc_library(
+    name = "map",
+    language = "c++",
+    public_hdrs = ["src/core/lib/promise/map.h"],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_like",
+    ],
+)
+
+grpc_cc_library(
+    name = "promise",
+    external_deps = [
+        "absl/types:optional",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/promise.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_like",
+    ],
+)
+
+grpc_cc_library(
+    name = "promise_like",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/promise_like.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "poll",
+    ],
+)
+
+grpc_cc_library(
+    name = "promise_factory",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/promise_factory.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_like",
+    ],
+)
+
+grpc_cc_library(
+    name = "if",
+    external_deps = [
+        "absl/status:statusor",
+    ],
+    language = "c++",
+    public_hdrs = ["src/core/lib/promise/if.h"],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_factory",
+    ],
+)
+
+grpc_cc_library(
+    name = "promise_status",
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/status.h",
+    ],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "race",
+    language = "c++",
+    public_hdrs = ["src/core/lib/promise/race.h"],
+    deps = [
+        "gpr_platform",
+        "poll",
+    ],
+)
+
+grpc_cc_library(
+    name = "loop",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/loop.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_factory",
+    ],
+)
+
+grpc_cc_library(
+    name = "switch",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/switch.h",
+    ],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "basic_join",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/basic_join.h",
+    ],
+    deps = [
+        "bitset",
+        "construct_destruct",
+        "gpr_platform",
+        "poll",
+        "promise_factory",
+    ],
+)
+
+grpc_cc_library(
+    name = "join",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/join.h",
+    ],
+    deps = [
+        "basic_join",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "try_join",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/try_join.h",
+    ],
+    deps = [
+        "basic_join",
+        "gpr_platform",
+        "promise_status",
+    ],
+)
+
+grpc_cc_library(
+    name = "basic_seq",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/detail/basic_seq.h",
+    ],
+    deps = [
+        "construct_destruct",
+        "gpr_platform",
+        "poll",
+        "promise_factory",
+        "switch",
+    ],
+)
+
+grpc_cc_library(
+    name = "seq",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/seq.h",
+    ],
+    deps = [
+        "basic_seq",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "try_seq",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/try_seq.h",
+    ],
+    deps = [
+        "basic_seq",
+        "gpr_platform",
+        "promise_status",
+    ],
+)
+
+grpc_cc_library(
+    name = "activity",
+    srcs = [
+        "src/core/lib/promise/activity.cc",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/activity.h",
+    ],
+    deps = [
+        "atomic_utils",
+        "construct_destruct",
+        "context",
+        "gpr_base",
+        "gpr_codegen",
+        "poll",
+        "promise_factory",
+        "promise_status",
+    ],
+)
+
+grpc_cc_library(
+    name = "exec_ctx_wakeup_scheduler",
+    hdrs = [
+        "src/core/lib/promise/exec_ctx_wakeup_scheduler.h",
+    ],
+    language = "c++",
+    deps = [
+        "exec_ctx",
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "wait_set",
+    external_deps = [
+        "absl/container:flat_hash_set",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/wait_set.h",
+    ],
+    deps = [
+        "activity",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "intra_activity_waiter",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/intra_activity_waiter.h",
+    ],
+    deps = [
+        "activity",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "latch",
+    external_deps = [
+        "absl/status",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/latch.h",
+    ],
+    deps = [
+        "activity",
+        "gpr_platform",
+        "intra_activity_waiter",
+    ],
+)
+
+grpc_cc_library(
+    name = "observable",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/observable.h",
+    ],
+    deps = [
+        "activity",
+        "gpr_platform",
+        "wait_set",
+    ],
+)
+
+grpc_cc_library(
+    name = "pipe",
+    external_deps = [
+        "absl/status",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/pipe.h",
+    ],
+    deps = [
+        "activity",
+        "gpr_platform",
+        "intra_activity_waiter",
+    ],
+)
+
+grpc_cc_library(
+    name = "for_each",
+    external_deps = [
+        "absl/status",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    public_hdrs = ["src/core/lib/promise/for_each.h"],
+    deps = [
+        "gpr_platform",
+        "poll",
+        "promise_factory",
+    ],
+)
+
+grpc_cc_library(
     name = "ref_counted",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
@@ -987,8 +1324,27 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_trace",
+        "json",
     ],
 )        
+
+grpc_cc_library(
+    name = "event_engine_memory_allocator",
+    srcs = [
+        "src/core/lib/event_engine/memory_allocator.cc",
+    ],
+    hdrs = [
+        "include/grpc/event_engine/internal/memory_allocator_impl.h",
+        "include/grpc/event_engine/memory_allocator.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+        "ref_counted",
+        "slice",
+        "slice_refcount",
+    ],
+)
 
 grpc_cc_library(
     name = "memory_quota",
@@ -999,18 +1355,19 @@ grpc_cc_library(
         "src/core/lib/resource_quota/memory_quota.h",
     ],
     deps = [
+        "activity",
         "dual_ref_counted",
+        "event_engine_memory_allocator",
+        "exec_ctx_wakeup_scheduler",
         "gpr_base",
+        "loop",
         "orphanable",
+        "poll",
+        "race",
         "ref_counted_ptr",
+        "seq",
         "slice_refcount",
         "useful",
-        "//src/core/lib/promise:activity",
-        "//src/core/lib/promise:exec_ctx_wakeup_scheduler",
-        "//src/core/lib/promise:loop",
-        "//src/core/lib/promise:poll",
-        "//src/core/lib/promise:race",
-        "//src/core/lib/promise:seq",
     ],
 )
 
@@ -1257,9 +1614,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_pipe.cc",
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
         "src/core/lib/iomgr/work_serializer.cc",
-        "src/core/lib/json/json_reader.cc",
-        "src/core/lib/json/json_util.cc",
-        "src/core/lib/json/json_writer.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice_api.cc",
@@ -1402,8 +1756,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_pipe.h",
         "src/core/lib/iomgr/wakeup_fd_posix.h",
         "src/core/lib/iomgr/work_serializer.h",
-        "src/core/lib/json/json.h",
-        "src/core/lib/json/json_util.h",
         "src/core/lib/slice/b64.h",
         "src/core/lib/slice/percent_encoding.h",
         "src/core/lib/surface/api_trace.h",
@@ -1476,6 +1828,7 @@ grpc_cc_library(
         "gpr_tls",
         "grpc_codegen",
         "grpc_trace",
+        "json",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
@@ -1632,6 +1985,8 @@ grpc_cc_library(
         "grpc_service_config",
         "grpc_trace",
         "handshaker_registry",
+        "json",
+        "json_util",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
@@ -1744,6 +2099,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_service_config",
+        "json_util",
     ],
 )
 
@@ -1976,6 +2332,8 @@ grpc_cc_library(
         "grpc_secure",
         "grpc_service_config",
         "grpc_transport_chttp2_client_secure",
+        "json",
+        "json_util",
         "orphanable",
         "ref_counted_ptr",
         "slice",
@@ -2022,6 +2380,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_xds_client",
+        "json_util",
         "slice",
     ],
 )
@@ -2461,6 +2820,7 @@ grpc_cc_library(
         "grpc_grpclb_balancer_addresses",
         "grpc_resolver_dns_selection",
         "grpc_service_config",
+        "json",
     ],
 )
 
@@ -2665,6 +3025,7 @@ grpc_cc_library(
         "grpc_lb_xds_channel_args",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
+        "json",
         "ref_counted",
         "ref_counted_ptr",
         "slice",
@@ -2868,7 +3229,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
         "src/core/ext/transport/chttp2/transport/bin_encoder.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_plugin.cc",
-        "src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.cc",
         "src/core/ext/transport/chttp2/transport/context_list.cc",
         "src/core/ext/transport/chttp2/transport/flow_control.cc",
@@ -2894,7 +3254,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/transport/chttp2/transport/bin_decoder.h",
         "src/core/ext/transport/chttp2/transport/bin_encoder.h",
-        "src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.h",
         "src/core/ext/transport/chttp2/transport/context_list.h",
         "src/core/ext/transport/chttp2/transport/flow_control.h",
@@ -4527,6 +4886,39 @@ grpc_cc_library(
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
     language = "c++",
+)
+
+grpc_cc_library(
+    name = "json",
+    srcs = [
+        "src/core/lib/json/json_reader.cc",
+        "src/core/lib/json/json_writer.cc",
+    ],
+    hdrs = [
+        "src/core/lib/json/json.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "error",
+        "exec_ctx",
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "json_util",
+    srcs = ["src/core/lib/json/json_util.cc"],
+    hdrs = ["src/core/lib/json/json_util.h"],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "gpr_base",
+        "json",
+    ],
 )
 
 grpc_generate_one_off_targets()

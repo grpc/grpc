@@ -19,6 +19,7 @@ licenses(["notice"])
 android_library(
     name = "connection_helper",
     srcs = [
+        "GrpcCppServerBuilder.java",
         "NativeConnectionHelper.java",
         "SyncServiceConnection.java",
     ],

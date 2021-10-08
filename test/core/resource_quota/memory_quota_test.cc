@@ -20,6 +20,7 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_refcount.h"
+#include "test/core/resource_quota/call_checker.h"
 
 namespace grpc_core {
 namespace testing {
@@ -54,40 +55,48 @@ TEST(MemoryRequestTest, MinMax) {
 // MemoryQuotaTest
 //
 
-TEST(MemoryQuotaTest, NoOp) {
-  RefCountedPtr<MemoryQuota> memory_quota = MakeRefCounted<MemoryQuota>();
-}
+TEST(MemoryQuotaTest, NoOp) { MemoryQuota(); }
 
 TEST(MemoryQuotaTest, CreateAllocatorNoOp) {
-  RefCountedPtr<MemoryQuota> memory_quota = MakeRefCounted<MemoryQuota>();
-  auto memory_allocator = memory_quota->MakeMemoryAllocator();
+  MemoryQuota memory_quota;
+  auto memory_allocator = memory_quota.CreateMemoryAllocator();
 }
 
 TEST(MemoryQuotaTest, CreateObjectFromAllocator) {
-  RefCountedPtr<MemoryQuota> memory_quota = MakeRefCounted<MemoryQuota>();
-  auto memory_allocator = memory_quota->MakeMemoryAllocator();
-  auto object = memory_allocator->MakeUnique<Sized<4096>>();
+  MemoryQuota memory_quota;
+  auto memory_allocator = memory_quota.CreateMemoryAllocator();
+  auto object = memory_allocator.MakeUnique<Sized<4096>>();
 }
 
 TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
   ExecCtx exec_ctx;
 
-  RefCountedPtr<MemoryQuota> memory_quota = MakeRefCounted<MemoryQuota>();
-  memory_quota->SetSize(4096);
-  auto memory_allocator = memory_quota->MakeMemoryAllocator();
-  auto object = memory_allocator->MakeUnique<Sized<2048>>();
+  MemoryQuota memory_quota;
+  memory_quota.SetSize(4096);
+  auto memory_allocator = memory_quota.CreateMemoryOwner();
+  auto object = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
 
-  memory_allocator->PostReclaimer(
+  auto checker1 = CallChecker::Make();
+  memory_allocator.PostReclaimer(
       ReclamationPass::kDestructive,
-      [&object](ReclamationSweep) { object.reset(); });
-  auto object2 = memory_allocator->MakeUnique<Sized<2048>>();
+      [&object, checker1](absl::optional<ReclamationSweep> sweep) {
+        checker1->Called();
+        EXPECT_TRUE(sweep.has_value());
+        object.reset();
+      });
+  auto object2 = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
   exec_ctx.Flush();
   EXPECT_EQ(object.get(), nullptr);
 
-  memory_allocator->PostReclaimer(
+  auto checker2 = CallChecker::Make();
+  memory_allocator.PostReclaimer(
       ReclamationPass::kDestructive,
-      [&object2](ReclamationSweep) { object2.reset(); });
-  auto object3 = memory_allocator->MakeUnique<Sized<2048>>();
+      [&object2, checker2](absl::optional<ReclamationSweep> sweep) {
+        checker2->Called();
+        EXPECT_TRUE(sweep.has_value());
+        object2.reset();
+      });
+  auto object3 = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
   exec_ctx.Flush();
   EXPECT_EQ(object2.get(), nullptr);
 }
@@ -95,59 +104,65 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
 TEST(MemoryQuotaTest, BasicRebind) {
   ExecCtx exec_ctx;
 
-  RefCountedPtr<MemoryQuota> memory_quota = MakeRefCounted<MemoryQuota>();
-  memory_quota->SetSize(4096);
-  RefCountedPtr<MemoryQuota> memory_quota2 = MakeRefCounted<MemoryQuota>();
-  memory_quota2->SetSize(4096);
+  MemoryQuota memory_quota;
+  memory_quota.SetSize(4096);
+  MemoryQuota memory_quota2;
+  memory_quota2.SetSize(4096);
 
-  auto memory_allocator = memory_quota2->MakeMemoryAllocator();
-  auto object = memory_allocator->MakeUnique<Sized<2048>>();
+  auto memory_allocator = memory_quota2.CreateMemoryOwner();
+  auto object = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
 
-  memory_allocator->Rebind(memory_quota);
-  auto memory_allocator2 = memory_quota2->MakeMemoryAllocator();
+  memory_allocator.Rebind(&memory_quota);
+  auto memory_allocator2 = memory_quota2.CreateMemoryOwner();
 
-  memory_allocator2->PostReclaimer(ReclamationPass::kDestructive,
-                                   [](ReclamationSweep) {
-                                     // Taken memory should be reassigned to
-                                     // memory_quota, so this should never be
-                                     // reached.
-                                     abort();
-                                   });
+  auto checker1 = CallChecker::Make();
+  memory_allocator2.PostReclaimer(
+      ReclamationPass::kDestructive,
+      [checker1](absl::optional<ReclamationSweep> sweep) {
+        checker1->Called();
+        // Taken memory should be reassigned to
+        // memory_quota, so this should be cancelled
+        EXPECT_FALSE(sweep.has_value());
+      });
 
-  memory_allocator->PostReclaimer(ReclamationPass::kDestructive,
-                                  [&object](ReclamationSweep) {
-                                    // The new memory allocator should reclaim
-                                    // the object allocated against the previous
-                                    // quota because that's now part of this
-                                    // quota.
-                                    object.reset();
-                                  });
+  auto checker2 = CallChecker::Make();
+  memory_allocator.PostReclaimer(
+      ReclamationPass::kDestructive,
+      [&object, checker2](absl::optional<ReclamationSweep> sweep) {
+        checker2->Called();
+        EXPECT_TRUE(sweep.has_value());
+        // The new memory allocator should reclaim
+        // the object allocated against the previous
+        // quota because that's now part of this
+        // quota.
+        object.reset();
+      });
 
-  auto object2 = memory_allocator->MakeUnique<Sized<2048>>();
+  auto object2 = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
   exec_ctx.Flush();
   EXPECT_EQ(object.get(), nullptr);
 }
 
 TEST(MemoryQuotaTest, ReserveRangeNoPressure) {
-  RefCountedPtr<MemoryQuota> memory_quota = MakeRefCounted<MemoryQuota>();
-  auto memory_allocator = memory_quota->MakeMemoryAllocator();
+  MemoryQuota memory_quota;
+  auto memory_allocator = memory_quota.CreateMemoryAllocator();
   size_t total = 0;
   for (int i = 0; i < 10000; i++) {
-    auto n = memory_allocator->Reserve(MemoryRequest(100, 40000));
+    auto n = memory_allocator.Reserve(MemoryRequest(100, 40000));
     EXPECT_EQ(n, 40000);
     total += n;
   }
-  memory_allocator->Release(total);
+  memory_allocator.Release(total);
 }
 
 TEST(MemoryQuotaTest, MakeSlice) {
-  RefCountedPtr<MemoryQuota> memory_quota = MakeRefCounted<MemoryQuota>();
-  auto memory_allocator = memory_quota->MakeMemoryAllocator();
+  MemoryQuota memory_quota;
+  auto memory_allocator = memory_quota.CreateMemoryAllocator();
   std::vector<grpc_slice> slices;
   for (int i = 1; i < 1000; i++) {
     int min = i;
     int max = 10 * i - 9;
-    slices.push_back(memory_allocator->MakeSlice(MemoryRequest(min, max)));
+    slices.push_back(memory_allocator.MakeSlice(MemoryRequest(min, max)));
   }
   for (grpc_slice slice : slices) {
     grpc_slice_unref_internal(slice);
@@ -155,9 +170,9 @@ TEST(MemoryQuotaTest, MakeSlice) {
 }
 
 TEST(MemoryQuotaTest, ContainerAllocator) {
-  RefCountedPtr<MemoryQuota> memory_quota = MakeRefCounted<MemoryQuota>();
-  auto memory_allocator = memory_quota->MakeMemoryAllocator();
-  Vector<int> vec(memory_allocator.get());
+  MemoryQuota memory_quota;
+  auto memory_allocator = memory_quota.CreateMemoryAllocator();
+  Vector<int> vec(&memory_allocator);
   for (int i = 0; i < 100000; i++) {
     vec.push_back(i);
   }

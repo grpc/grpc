@@ -17,6 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/transport/binder/security_policy/security_policy.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/lib/channel/channel_args.h"
 
@@ -25,6 +26,7 @@ namespace internal {
 
 grpc_channel* CreateChannelFromBinderImpl(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy,
     const grpc_channel_args* args);
 
 }  // namespace internal

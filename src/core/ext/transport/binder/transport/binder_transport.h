@@ -26,6 +26,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/binder/security_policy/security_policy.h"
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
@@ -41,8 +42,10 @@ struct grpc_binder_stream;
 // TODO(mingcl): Decide casing for this class name. Should we use C-style class
 // name here or just go with C++ style?
 struct grpc_binder_transport {
-  explicit grpc_binder_transport(std::unique_ptr<grpc_binder::Binder> binder,
-                                 bool is_client);
+  explicit grpc_binder_transport(
+      std::unique_ptr<grpc_binder::Binder> binder, bool is_client,
+      std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+          security_policy);
   ~grpc_binder_transport();
 
   int NewStreamTxCode() {
@@ -81,8 +84,12 @@ struct grpc_binder_transport {
 };
 
 grpc_transport* grpc_create_binder_transport_client(
-    std::unique_ptr<grpc_binder::Binder> endpoint_binder);
+    std::unique_ptr<grpc_binder::Binder> endpoint_binder,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+        security_policy);
 grpc_transport* grpc_create_binder_transport_server(
-    std::unique_ptr<grpc_binder::Binder> client_binder);
+    std::unique_ptr<grpc_binder::Binder> client_binder,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+        security_policy);
 
 #endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_TRANSPORT_H

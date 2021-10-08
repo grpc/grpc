@@ -92,6 +92,18 @@ void SdkServerAuthzFilter::CallData::Destroy(
 bool SdkServerAuthzFilter::CallData::IsAuthorized(SdkServerAuthzFilter* chand) {
   EvaluateArgs args(recv_initial_metadata_batch_,
                     &chand->per_channel_evaluate_args_);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
+    gpr_log(
+        GPR_DEBUG,
+        "checking request: url_path=%s, transport_security_type=%s, "
+        "uri_sans=[%s], dns_sans=[%s], local_address=%s:%d, peer_address=%s:%d",
+        std::string(args.GetPath()).c_str(),
+        std::string(args.GetTransportSecurityType()).c_str(),
+        absl::StrJoin(args.GetUriSans(), ",").c_str(),
+        absl::StrJoin(args.GetDnsSans(), ",").c_str(),
+        std::string(args.GetLocalAddressString()).c_str(), args.GetLocalPort(),
+        std::string(args.GetPeerAddressString()).c_str(), args.GetPeerPort());
+  }
   grpc_authorization_policy_provider::AuthorizationEngines engines =
       chand->provider_->engines();
   if (engines.deny_engine != nullptr) {

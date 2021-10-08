@@ -76,15 +76,32 @@ void BindToOnDeviceServerService(void* jni_env_void, jobject application,
   // clang-format on
 }
 
+// CreateBinderChannel without security policy argument is deprecated
+std::shared_ptr<grpc::Channel> CreateBinderChannel(void*, jobject,
+                                                   absl::string_view,
+                                                   absl::string_view) {
+  GPR_ASSERT(0);
+  return {};
+}
+std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
+    void*, jobject, absl::string_view, absl::string_view,
+    const ChannelArguments&) {
+  GPR_ASSERT(0);
+  return {};
+}
+
 // BindToOndeviceServerService need to be called before this, in a different
 // task (due to Android API design). (Reference:
 // https://stackoverflow.com/a/3055749)
 // TODO(mingcl): Support multiple endpoint binder objects
 std::shared_ptr<grpc::Channel> CreateBinderChannel(
     void* jni_env_void, jobject application, absl::string_view package_name,
-    absl::string_view class_name) {
+    absl::string_view class_name,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+        security_policy) {
   return CreateCustomBinderChannel(jni_env_void, application, package_name,
-                                   class_name, ChannelArguments());
+                                   class_name, security_policy,
+                                   ChannelArguments());
 }
 
 // BindToOndeviceServerService need to be called before this, in a different
@@ -94,7 +111,11 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
 std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
     void* jni_env_void, jobject /*application*/,
     absl::string_view /*package_name*/, absl::string_view /*class_name*/,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy,
     const ChannelArguments& args) {
+  GPR_ASSERT(jni_env_void != nullptr);
+  GPR_ASSERT(security_policy != nullptr);
+
   JNIEnv* jni_env = static_cast<JNIEnv*>(jni_env_void);
 
   // clang-format off
@@ -112,7 +133,7 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
       ::grpc::internal::CreateChannelFromBinderImpl(
           absl::make_unique<grpc_binder::BinderAndroid>(
               grpc_binder::FromJavaBinder(jni_env, object)),
-          &channel_args),
+          security_policy, &channel_args),
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
 }
@@ -130,15 +151,16 @@ void BindToOnDeviceServerService(void*, jobject, absl::string_view,
   GPR_ASSERT(0);
 }
 
-std::shared_ptr<grpc::Channel> CreateBinderChannel(void*, jobject,
-                                                   absl::string_view,
-                                                   absl::string_view) {
+std::shared_ptr<grpc::Channel> CreateBinderChannel(
+    void*, jobject, absl::string_view, absl::string_view,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>) {
   GPR_ASSERT(0);
   return {};
 }
 
 std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
     void*, jobject, absl::string_view, absl::string_view,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>,
     const ChannelArguments&) {
   GPR_ASSERT(0);
   return {};
