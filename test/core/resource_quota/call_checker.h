@@ -15,8 +15,9 @@
 #ifndef LOCAL_GOOGLE_HOME_CTILLER_GRPC_TEST_CORE_RESOURCE_QUOTA_CALL_CHECKER_H_
 #define LOCAL_GOOGLE_HOME_CTILLER_GRPC_TEST_CORE_RESOURCE_QUOTA_CALL_CHECKER_H_
 
-#include <grpc/support/log.h>
 #include <memory>
+
+#include <grpc/support/log.h>
 
 namespace grpc_core {
 namespace testing {
