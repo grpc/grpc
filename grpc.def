@@ -162,6 +162,7 @@ EXPORTS
     grpc_xds_credentials_create
     grpc_xds_server_credentials_create
     grpc_authorization_policy_provider_static_data_create
+    grpc_authorization_policy_provider_file_watcher_create
     grpc_authorization_policy_provider_release
     grpc_raw_byte_buffer_create
     grpc_raw_compressed_byte_buffer_create
