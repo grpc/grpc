@@ -21,6 +21,8 @@ import os
 import sys
 import unittest
 
+from tests.unit import test_common
+
 _DATA_DIR = os.path.join("tests", "unit", "data")
 
 
@@ -124,6 +126,8 @@ def _test_grpc_tools_unimportable():
 # when they do not come from the "__main__" module, so this test passes
 # if run directly on Windows, but not if started by the test runner.
 @unittest.skipIf(os.name == "nt", "Windows multiprocessing unsupported")
+@unittest.skipIf(test_common.running_under_gevent(),
+                 "Import paths do not work with gevent runner.")
 class DynamicStubTest(unittest.TestCase):
 
     def test_sunny_day(self):

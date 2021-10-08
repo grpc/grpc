@@ -1132,7 +1132,6 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
-    src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc \
     src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
     src/core/ext/transport/chttp2/transport/context_list.cc \
     src/core/ext/transport/chttp2/transport/flow_control.cc \
@@ -1620,8 +1619,9 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
+    include/grpc/event_engine/internal/memory_allocator_impl.h \
+    include/grpc/event_engine/memory_allocator.h \
     include/grpc/event_engine/port.h \
-    include/grpc/event_engine/slice_allocator.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
@@ -1810,7 +1810,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
-    src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc \
     src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
     src/core/ext/transport/chttp2/transport/context_list.cc \
     src/core/ext/transport/chttp2/transport/flow_control.cc \
@@ -2024,8 +2023,9 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
+    include/grpc/event_engine/internal/memory_allocator_impl.h \
+    include/grpc/event_engine/memory_allocator.h \
     include/grpc/event_engine/port.h \
-    include/grpc/event_engine/slice_allocator.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
@@ -2089,6 +2089,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_object.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_octet.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_print.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_strex.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_strnid.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_time.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_type.c \
@@ -2229,13 +2230,13 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/trust_token/voprf.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_digest.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_sign.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/a_strex.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_verify.c \
     third_party/boringssl-with-bazel/src/crypto/x509/algorithm.c \
     third_party/boringssl-with-bazel/src/crypto/x509/asn1_gen.c \
     third_party/boringssl-with-bazel/src/crypto/x509/by_dir.c \
     third_party/boringssl-with-bazel/src/crypto/x509/by_file.c \
     third_party/boringssl-with-bazel/src/crypto/x509/i2d_pr.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/name_print.c \
     third_party/boringssl-with-bazel/src/crypto/x509/rsa_pss.c \
     third_party/boringssl-with-bazel/src/crypto/x509/t_crl.c \
     third_party/boringssl-with-bazel/src/crypto/x509/t_req.c \

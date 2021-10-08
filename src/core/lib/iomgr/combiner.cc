@@ -311,9 +311,10 @@ static void combiner_finally_exec(grpc_core::Combiner* lock,
 
 static void enqueue_finally(void* closure, grpc_error_handle error) {
   grpc_closure* cl = static_cast<grpc_closure*>(closure);
-  combiner_finally_exec(
-      reinterpret_cast<grpc_core::Combiner*>(cl->error_data.scratch), cl,
-      GRPC_ERROR_REF(error));
+  grpc_core::Combiner* lock =
+      reinterpret_cast<grpc_core::Combiner*>(cl->error_data.scratch);
+  cl->error_data.scratch = 0;
+  combiner_finally_exec(lock, cl, GRPC_ERROR_REF(error));
 }
 
 namespace grpc_core {

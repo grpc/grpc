@@ -16,7 +16,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc
 
 grpc_package(name = "test/core/bad_ssl")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 load(":generate_tests.bzl", "grpc_bad_ssl_tests")
 
