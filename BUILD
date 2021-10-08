@@ -2209,6 +2209,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_grpclb_balancer_addresses",
+        "grpc_insecure_credetials",
         "grpc_lb_upb",
         "grpc_resolver_fake",
         "grpc_security_base",
