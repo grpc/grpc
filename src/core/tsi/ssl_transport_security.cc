@@ -326,12 +326,12 @@ static tsi_result peer_property_from_x509_common_name(
 /* Gets the subject of an X509 cert as a tsi_peer_property. */
 static tsi_result peer_property_from_x509_subject(X509* cert,
                                                   tsi_peer_property* property) {
-  BIO* bio = BIO_new(BIO_s_mem());
   X509_NAME* subject_name = X509_get_subject_name(cert);
   if (subject_name == nullptr) {
     gpr_log(GPR_INFO, "Could not get subject name from certificate.");
     return TSI_NOT_FOUND;
   }
+  BIO* bio = BIO_new(BIO_s_mem());
   X509_NAME_print_ex(bio, subject_name, 0, XN_FLAG_RFC2253);
   char* contents;
   long len = BIO_get_mem_data(bio, &contents);

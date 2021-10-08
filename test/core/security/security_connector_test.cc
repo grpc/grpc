@@ -172,12 +172,12 @@ static int check_property_with_single_value(
     return 0;
   }
   if (strncmp(prop->value, expected_property_value, prop->value_length) != 0) {
-    gpr_log(GPR_ERROR, "Expected value %s and got %s for property %s",
+    gpr_log(GPR_ERROR, "Expected value %s and got %s for property %s.",
             expected_property_value, prop->value, expected_property_name);
     return 0;
   }
   if (grpc_auth_property_iterator_next(&it) != nullptr) {
-    gpr_log(GPR_ERROR, "Expected only one property for %s",
+    gpr_log(GPR_ERROR, "Expected only one property for %s.",
             expected_property_name);
     return 0;
   }
