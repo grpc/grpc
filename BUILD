@@ -3394,7 +3394,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "config", 
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_security_base",

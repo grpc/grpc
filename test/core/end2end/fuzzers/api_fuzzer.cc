@@ -811,7 +811,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           char* target_uri;
           gpr_asprintf(&target_uri, "dns:%s", target);
           grpc_channel_args* args = read_args(&inp);
-          g_channel = grpc_insecure_channel_create(target_uri, args, nullptr);
+          grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+          g_channel = grpc_channel_create(creds, target_uri, args, nullptr);
+          grpc_channel_credentials_release(creds);
           GPR_ASSERT(g_channel != nullptr);
           {
             grpc_core::ExecCtx exec_ctx;
@@ -1181,8 +1183,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           gpr_asprintf(&target_uri, "dns:%s", target);
           grpc_channel_args* args = read_args(&inp);
           grpc_channel_credentials* creds = read_channel_creds(&inp);
-          g_channel =
-              grpc_secure_channel_create(creds, target_uri, args, nullptr);
+          g_channel = grpc_channel_create(creds, target_uri, args, nullptr);
           GPR_ASSERT(g_channel != nullptr);
           {
             grpc_core::ExecCtx exec_ctx;

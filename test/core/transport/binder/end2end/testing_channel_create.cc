@@ -123,9 +123,9 @@ grpc_channel* grpc_binder_channel_create_for_testing(grpc_server* server,
   grpc_error_handle error = server->core_server->SetupTransport(
       server_transport, nullptr, args, nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_channel* channel =
-      grpc_channel_create("binder", client_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                          client_transport, nullptr, 0, &error);
+  grpc_channel* channel = grpc_channel_create_internal(
+      "binder", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport,
+      nullptr, 0, &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_channel_args_destroy(client_args);
   return channel;
