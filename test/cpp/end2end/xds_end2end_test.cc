@@ -152,7 +152,7 @@ constexpr char kLbDropType[] = "lb";
 constexpr char kThrottleDropType[] = "throttle";
 constexpr char kServerName[] = "server.example.com";
 constexpr char kDefaultRouteConfigurationName[] = "route_config_name";
-constexpr char kDefaultSimpleServerRouteConfigurationName[] =
+constexpr char kSimpleServerRouteConfigurationName[] =
     "simple_server_route_config_name";
 constexpr char kDefaultClusterName[] = "cluster_name";
 constexpr char kDefaultEdsServiceName[] = "eds_service_name";
@@ -1742,8 +1742,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     route->mutable_match()->set_prefix("");
     route->mutable_route()->set_cluster(kDefaultClusterName);
     // Construct a simple server-side RDS resource for tests to use.
-    simple_server_route_config_.set_name(
-        kDefaultSimpleServerRouteConfigurationName);
+    simple_server_route_config_.set_name(kSimpleServerRouteConfigurationName);
     virtual_host = simple_server_route_config_.add_virtual_hosts();
     virtual_host->add_domains("*");
     route = virtual_host->add_routes();
@@ -9561,7 +9560,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       auto stub = grpc::testing::EchoTestService::NewStub(channel);
       ClientContext context;
       context.set_wait_for_ready(true);
-      context.set_deadline(grpc_timeout_milliseconds_to_deadline(2000));
+      context.set_deadline(grpc_timeout_milliseconds_to_deadline(5000));
       EchoRequest request;
       request.set_message(kRequestMessage);
       EchoResponse response;
@@ -10863,10 +10862,68 @@ TEST_P(XdsServerRdsTest, Basic) {
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       simple_server_http_connection_manager_);
   balancers_[0]->ads_service()->SetLdsResource(listener);
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
-TEST_P(XdsServerRdsTest, FailsRouteMatchesOtherThanNonForwardingAction) {}
+TEST_P(XdsServerRdsTest, FailsRouteMatchesOtherThanNonForwardingAction) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      ipv6_only_ ? "::1" : "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  HttpConnectionManager http_connection_manager;
+  *http_connection_manager.mutable_route_config() =
+      default_route_config_;  // inappropriate route config for servers
+  auto* http_filter = http_connection_manager.add_http_filters();
+  http_filter->set_name("router");
+  http_filter->mutable_typed_config()->PackFrom(
+      envoy::extensions::filters::http::router::v3::Router());
+  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
+      http_connection_manager);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  balancers_[0]->ads_service()->SetRdsResource(simple_server_route_config_);
+  // The server should be ready to serve but RPCs should fail.
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerRdsTest, NonInlineRouteConfiguration) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      ipv6_only_ ? "::1" : "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  HttpConnectionManager http_connection_manager;
+  auto* rds = http_connection_manager.mutable_rds();
+  rds->set_route_config_name(kSimpleServerRouteConfigurationName);
+  rds->mutable_config_source()->mutable_ads();
+  auto* http_filter = http_connection_manager.add_http_filters();
+  http_filter->set_name("router");
+  http_filter->mutable_typed_config()->PackFrom(
+      envoy::extensions::filters::http::router::v3::Router());
+  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
+      http_connection_manager);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  balancers_[0]->ads_service()->SetRdsResource(simple_server_route_config_);
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {}
 
 using EdsTest = BasicTest;
 

@@ -84,7 +84,11 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
   class RdsUpdateWatcherInterface {
    public:
     virtual ~RdsUpdateWatcherInterface() = default;
-    virtual void OnRdsUpdate(absl::StatusOr<XdsApi::RdsUpdate> rds_update) = 0;
+    // A return value of true indicates that the watcher wants to continue
+    // watching on RDS updates, while a false value indicates that the fetcher
+    // should remove this watcher.
+    virtual ABSL_MUST_USE_RESULT bool OnRdsUpdate(
+        absl::StatusOr<XdsApi::RdsUpdate> rds_update) = 0;
   };
 
   explicit XdsServerConfigFetcher(RefCountedPtr<XdsClient> xds_client,
@@ -138,7 +142,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     class RdsUpdateWatcher : public RdsUpdateWatcherInterface {
      public:
       RdsUpdateWatcher(std::string resource_name, ListenerWatcher* parent);
-      void OnRdsUpdate(absl::StatusOr<XdsApi::RdsUpdate> rds_update) override
+      bool OnRdsUpdate(absl::StatusOr<XdsApi::RdsUpdate> rds_update) override
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(
               parent_->server_config_fetcher_->rds_mu_);
 
@@ -170,6 +174,8 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     ListenerWatcher* listener_watcher = nullptr;
   };
 
+  struct RdsUpdateWatcherState;
+
   class RouteConfigWatcher : public XdsClient::RouteConfigWatcherInterface {
    public:
     explicit RouteConfigWatcher(absl::string_view resource_name,
@@ -182,6 +188,9 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     void OnResourceDoesNotExist() override;
 
    private:
+    void Update(RdsUpdateWatcherState* state,
+                absl::StatusOr<XdsApi::RdsUpdate> rds_update);
+
     std::string resource_name_;
     XdsServerConfigFetcher* server_config_fetcher_;
   };
@@ -195,18 +204,34 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     int listener_refs = 0;
   };
 
+  // A fire and forget class to start watching on route config data from
+  // XdsClient via ExecCtx
+  class RouteConfigWatchStarter {
+   public:
+    RouteConfigWatchStarter(XdsServerConfigFetcher* server_config_fetcher,
+                            absl::string_view resource_name);
+
+   private:
+    static void RunInExecCtx(void* arg, grpc_error_handle /* error */);
+
+    grpc_closure closure_;
+    XdsServerConfigFetcher* server_config_fetcher_;
+    std::string resource_name_;
+  };
+
   absl::optional<absl::StatusOr<XdsApi::RdsUpdate>> StartRdsWatchInternal(
       absl::string_view resource_name,
       std::unique_ptr<XdsServerConfigFetcher::RdsUpdateWatcherInterface>
           watcher,
       bool inc_ref);
+  absl::optional<absl::StatusOr<XdsApi::RdsUpdate>> StartRdsWatchInternalLocked(
+      absl::string_view resource_name,
+      std::unique_ptr<XdsServerConfigFetcher::RdsUpdateWatcherInterface>
+          watcher,
+      bool inc_ref) ABSL_EXCLUSIVE_LOCKS_REQUIRED(rds_mu_);
   void CancelRdsWatchInternal(
       absl::string_view resource_name,
       XdsServerConfigFetcher::RdsUpdateWatcherInterface* watcher, bool dec_ref);
-  void CancelRdsWatchInternalLocked(
-      absl::string_view resource_name,
-      XdsServerConfigFetcher::RdsUpdateWatcherInterface* watcher, bool dec_ref)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(rds_mu_);
 
   RefCountedPtr<XdsClient> xds_client_;
   grpc_server_xds_status_notifier serving_status_notifier_;
