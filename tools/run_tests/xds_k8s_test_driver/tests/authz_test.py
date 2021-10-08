@@ -167,11 +167,11 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
             for t in self.RPC_TYPE_CYCLE:
                 if not stats.stats_per_method[t].rpcs_started:
                     rpc_type = t
-            assert rpc_type is not None, "All RPC types already used"
+            self.assertIsNotNone(rpc_type , "All RPC types already used")
         self.next_rpc_type = self.RPC_TYPE_CYCLE[rpc_type]
 
         metadata = None
-        if not test_metadata_val is None:
+        if test_metadata_val is not None:
             metadata = ((rpc_type, "test", test_metadata_val),)
         test_client.update_config.configure(rpc_types=[rpc_type],
                                             metadata=metadata)
