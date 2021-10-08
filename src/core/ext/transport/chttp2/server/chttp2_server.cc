@@ -693,16 +693,10 @@ Chttp2ServerListener::~Chttp2ServerListener() {
 void Chttp2ServerListener::Start(
     Server* /*server*/, const std::vector<grpc_pollset*>* /* pollsets */) {
   if (server_->config_fetcher() != nullptr) {
-    grpc_channel_args* args = nullptr;
     auto watcher = absl::make_unique<ConfigFetcherWatcher>(Ref());
     config_fetcher_watcher_ = watcher.get();
-    {
-      MutexLock lock(&channel_args_mu_);
-      args = grpc_channel_args_copy(args_);
-    }
     server_->config_fetcher()->StartWatch(
-        grpc_sockaddr_to_string(&resolved_address_, false), args,
-        std::move(watcher));
+        grpc_sockaddr_to_string(&resolved_address_, false), std::move(watcher));
   } else {
     {
       MutexLock lock(&mu_);
