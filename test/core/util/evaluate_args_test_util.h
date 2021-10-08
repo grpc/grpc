@@ -62,7 +62,7 @@ class EvaluateArgsTestUtil {
   }
 
  private:
-  ScopedArena arena_ = MakeScopedArena(1024);
+  ScopedArenaPtr arena_ = MakeScopedArena(1024);
   std::list<grpc_linked_mdelem> metadata_storage_;
   grpc_metadata_batch metadata_{arena_.get()};
   MockAuthorizationEndpoint endpoint_{/*local_uri=*/"", /*peer_uri=*/""};
