@@ -577,6 +577,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\surface\\completion_queue_factory.cc " +
     "src\\core\\lib\\surface\\event_string.cc " +
     "src\\core\\lib\\surface\\init.cc " +
+    "src\\core\\lib\\surface\\init_secure.cc " +
     "src\\core\\lib\\surface\\lame_client.cc " +
     "src\\core\\lib\\surface\\metadata_array.cc " +
     "src\\core\\lib\\surface\\server.cc " +
@@ -596,6 +597,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\transport\\transport.cc " +
     "src\\core\\lib\\transport\\transport_op_string.cc " +
     "src\\core\\lib\\uri\\uri_parser.cc " +
+    "src\\core\\plugin_registry\\grpc_plugin_registry.cc " +
     "src\\core\\tsi\\alts\\crypt\\aes_gcm.cc " +
     "src\\core\\tsi\\alts\\crypt\\gsec.cc " +
     "src\\core\\tsi\\alts\\frame_protector\\alts_counter.cc " +
@@ -1319,6 +1321,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\surface");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\transport");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\uri");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\plugin_registry");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\alts");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\alts\\crypt");

@@ -351,25 +351,12 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
-    select_deps = {
-        "grpc_no_xds": [],
-        "//conditions:default": [
-            "grpc_lb_policy_cds",
-            "grpc_lb_policy_xds_cluster_impl",
-            "grpc_lb_policy_xds_cluster_manager",
-            "grpc_lb_policy_xds_cluster_resolver",
-            "grpc_resolver_xds",
-            "grpc_resolver_c2p",
-            "grpc_xds_server_config_fetcher",
-        ],
-    },
     standalone = True,
     tags = ["avoid_dep"],
     visibility = ["@grpc:public"],
     deps = [
         "config",
         "gpr_base",
-        "grpc_authorization_base",
         "grpc_base",
         "grpc_common",
         "grpc_lb_policy_grpclb",
@@ -383,6 +370,7 @@ grpc_cc_library(
     name = "grpc",
     srcs = [
         "src/core/lib/surface/init.cc",
+        "src/core/plugin_registry/grpc_plugin_registry.cc",
     ],
     defines = select({
         "grpc_no_xds": ["GRPC_NO_XDS"],
@@ -2875,8 +2863,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
-        "libcrypto",
-        "libssl",
     ],
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
@@ -3406,7 +3392,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_secure",
     srcs = [
-        "src/core/lib/surface/init.cc",
+        "src/core/lib/surface/init_secure.cc",
     ],
     language = "c++",
     deps = [

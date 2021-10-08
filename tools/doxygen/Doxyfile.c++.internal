@@ -2131,6 +2131,7 @@ src/core/lib/surface/event_string.cc \
 src/core/lib/surface/event_string.h \
 src/core/lib/surface/init.cc \
 src/core/lib/surface/init.h \
+src/core/lib/surface/init_secure.cc \
 src/core/lib/surface/lame_client.cc \
 src/core/lib/surface/lame_client.h \
 src/core/lib/surface/metadata_array.cc \
@@ -2168,6 +2169,7 @@ src/core/lib/transport/transport_impl.h \
 src/core/lib/transport/transport_op_string.cc \
 src/core/lib/uri/uri_parser.cc \
 src/core/lib/uri/uri_parser.h \
+src/core/plugin_registry/grpc_plugin_registry.cc \
 src/core/tsi/alts/crypt/aes_gcm.cc \
 src/core/tsi/alts/crypt/gsec.cc \
 src/core/tsi/alts/crypt/gsec.h \

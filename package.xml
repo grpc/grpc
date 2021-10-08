@@ -1178,6 +1178,7 @@
     <file baseinstalldir="/" name="src/core/lib/surface/event_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/init_secure.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/lame_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/lame_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/metadata_array.cc" role="src" />
@@ -1215,6 +1216,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/transport_op_string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/uri/uri_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/uri/uri_parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/aes_gcm.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/gsec.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/gsec.h" role="src" />
