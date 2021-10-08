@@ -30,6 +30,46 @@
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
 
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
+
+#include <android/binder_ibinder.h>
+#include <android/binder_ibinder_jni.h>
+#include <jni.h>
+
+extern "C" {
+
+// This will be invoked from
+// src/core/ext/transport/binder/java/io/grpc/binder/cpp/GrpcCppServerBuilder.java
+JNIEXPORT jobject JNICALL
+Java_io_grpc_binder_cpp_GrpcCppServerBuilder_GetEndpointBinderInternal__Ljava_lang_String_2(
+    JNIEnv* jni_env, jobject, jstring conn_id_jstring) {
+  AIBinder* ai_binder = nullptr;
+
+  {
+    // This block is the scope of conn_id c-string
+    jboolean isCopy;
+    const char* conn_id = jni_env->GetStringUTFChars(conn_id_jstring, &isCopy);
+    ai_binder =
+        static_cast<AIBinder*>(grpc_get_endpoint_binder(std::string(conn_id)));
+    if (ai_binder == nullptr) {
+      gpr_log(GPR_ERROR, "Cannot find endpoint binder with connection id = %s",
+              conn_id);
+    }
+    if (isCopy == JNI_TRUE) {
+      jni_env->ReleaseStringUTFChars(conn_id_jstring, conn_id);
+    }
+  }
+
+  if (ai_binder == nullptr) {
+    return nullptr;
+  }
+
+  return AIBinder_toJavaBinder(jni_env, ai_binder);
+}
+}
+
+#endif
+
 namespace grpc {
 namespace experimental {
 namespace binder {
@@ -190,18 +230,18 @@ bool AddBinderPort(const std::string& addr, grpc_server* server,
                    BinderTxReceiverFactory factory,
                    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
                        security_policy) {
+  // TODO(mingcl): Check if the addr is valid here after binder address resolver
+  // related code are merged.
   const std::string kBinderUriScheme = "binder:";
   if (addr.compare(0, kBinderUriScheme.size(), kBinderUriScheme) != 0) {
     return false;
   }
-  size_t pos = kBinderUriScheme.size();
-  while (pos < addr.size() && addr[pos] == '/') pos++;
+  std::string conn_id = addr.substr(kBinderUriScheme.size());
   grpc_core::Server* core_server = server->core_server.get();
   core_server->AddListener(
       grpc_core::OrphanablePtr<grpc_core::Server::ListenerInterface>(
-          new grpc_core::BinderServerListener(core_server, addr.substr(pos),
-                                              std::move(factory),
-                                              security_policy)));
+          new grpc_core::BinderServerListener(
+              core_server, conn_id, std::move(factory), security_policy)));
   return true;
 }
 
