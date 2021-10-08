@@ -335,9 +335,10 @@ class RetryFilter::CallData {
         call_attempt_->lb_call_committed_ = true;
         auto* calld = call_attempt_->calld_;
         if (calld->retry_committed_) {
-          auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-              calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
-                  .value);
+          auto* service_config_call_data =
+              static_cast<ClientChannelServiceConfigCallData*>(
+                  calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
+                      .value);
           service_config_call_data->call_dispatch_controller()->Commit();
         }
       }
@@ -1159,8 +1160,9 @@ bool RetryFilter::CallData::CallAttempt::ShouldRetry(
     }
   }
   // Check with call dispatch controller.
-  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-      calld_->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+  auto* service_config_call_data =
+      static_cast<ClientChannelServiceConfigCallData*>(
+          calld_->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
   if (!service_config_call_data->call_dispatch_controller()->ShouldRetry()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
       gpr_log(
@@ -2231,8 +2233,9 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
                 chand_, this);
       }
       PendingBatchClear(pending);
-      auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-          call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+      auto* service_config_call_data =
+          static_cast<ClientChannelServiceConfigCallData*>(
+              call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
       committed_call_ = CreateLoadBalancedCall(
           service_config_call_data->call_dispatch_controller());
       committed_call_->StartTransportStreamOpBatch(batch);
@@ -2528,8 +2531,9 @@ void RetryFilter::CallData::RetryCommit(CallAttempt* call_attempt) {
     // call dispatch controller down into the LB call, and it won't be
     // our problem anymore.
     if (call_attempt->lb_call_committed()) {
-      auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-          call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+      auto* service_config_call_data =
+          static_cast<ClientChannelServiceConfigCallData*>(
+              call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
       service_config_call_data->call_dispatch_controller()->Commit();
     }
     // Free cached send ops.
