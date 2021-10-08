@@ -359,7 +359,7 @@ void BasicMemoryQuota::Take(size_t amount) {
   auto prior = free_bytes_.fetch_sub(amount, std::memory_order_acq_rel);
   // If we push into overcommit, awake the reclaimer.
   if (prior >= 0 && prior < static_cast<intptr_t>(amount)) {
-    reclaimer_activity_->ForceWakeup();
+    if (reclaimer_activity_ != nullptr) reclaimer_activity_->ForceWakeup();
   }
 }
 
