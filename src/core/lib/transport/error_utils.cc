@@ -36,7 +36,7 @@ static grpc_error_handle recursively_find_error_with_field(
   }
 #ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   std::vector<absl::Status> children = grpc_core::StatusGetChildren(error);
-  for (auto child : children) {
+  for (const absl::Status& child : children) {
     grpc_error_handle result = recursively_find_error_with_field(child, which);
     if (result != GRPC_ERROR_NONE) return result;
   }
@@ -103,6 +103,10 @@ void grpc_error_get_status(grpc_error_handle error, grpc_millis deadline,
                                 &integer)) {
     status = grpc_http2_error_to_grpc_status(
         static_cast<grpc_http2_error_code>(integer), deadline);
+  } else {
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+    status = static_cast<grpc_status_code>(found_error.code());
+#endif
   }
   if (code != nullptr) *code = status;
 
@@ -131,7 +135,7 @@ void grpc_error_get_status(grpc_error_handle error, grpc_millis deadline,
       if (!grpc_error_get_str(found_error, GRPC_ERROR_STR_DESCRIPTION,
                               message)) {
 #ifdef GRPC_ERROR_IS_ABSEIL_STATUS
-        *message = grpc_error_std_string(error));
+        *message = grpc_error_std_string(error);
 #else
         *message = "unknown error";
 #endif
@@ -167,7 +171,7 @@ bool grpc_error_has_clear_grpc_status(grpc_error_handle error) {
   }
 #ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   std::vector<absl::Status> children = grpc_core::StatusGetChildren(error);
-  for (auto child : children) {
+  for (const absl::Status& child : children) {
     if (grpc_error_has_clear_grpc_status(child)) {
       return true;
     }

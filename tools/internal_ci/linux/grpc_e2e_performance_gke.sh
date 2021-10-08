@@ -119,10 +119,6 @@ time ../test-infra/bin/prepare_prebuilt_workers \
     -t "${UNIQUE_IDENTIFIER}" \
     -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"
 
-# Create reports directories.
-mkdir -p "runner/${WORKER_POOL_8CORE}" "runner/${WORKER_POOL_32CORE}"
-
-
 # Run tests.
 time ../test-infra/bin/runner \
     -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
