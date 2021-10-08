@@ -76,6 +76,7 @@ UPBDEFS_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext',
                                                'upbdefs-generated'),)
 XXHASH_INCLUDE = (os.path.join('third_party', 'xxhash'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
+LIBUV_INCLUDE = (os.path.join('third_party', 'libuv'))
 README = os.path.join(PYTHON_STEM, 'README.rst')
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
@@ -154,6 +155,11 @@ BUILD_WITH_SYSTEM_CARES = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_CARES',
 # have the header files installed (in /usr/include/re2) and during
 # runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_RE2 = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_RE2', 'False')
+
+# Export this variable to use the system installation of libuv. You need to
+# have the header files installed (in /usr/include/libuv) and during
+# runtime, the shared library must be installed
+BUILD_WITH_SYSTEM_LIBUV = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_LIBUV', 'False')
 
 # Export this variable to force building the python extension with a statically linked libstdc++.
 # At least on linux, this is normally not needed as we can build manylinux-compatible wheels on linux just fine
@@ -297,12 +303,16 @@ if BUILD_WITH_SYSTEM_RE2:
     CORE_C_FILES = filter(lambda x: 'third_party/re2' not in x, CORE_C_FILES)
     RE2_INCLUDE = (os.path.join('/usr', 'include', 're2'),)
 
+if BUILD_WITH_SYSTEM_LIBUV:
+    CORE_C_FILES = filter(lambda x: 'third_party/libuv' not in x, CORE_C_FILES)
+    LIBUV_INCLUDE = (os.path.join('/usr', 'include', 'libuv'),)
+
 EXTENSION_INCLUDE_DIRECTORIES = ((PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE +
                                  ADDRESS_SORTING_INCLUDE + CARES_INCLUDE +
                                  RE2_INCLUDE + SSL_INCLUDE + UPB_INCLUDE +
                                  UPB_GRPC_GENERATED_INCLUDE +
                                  UPBDEFS_GRPC_GENERATED_INCLUDE +
-                                 XXHASH_INCLUDE + ZLIB_INCLUDE)
+                                 XXHASH_INCLUDE + ZLIB_INCLUDE + LIBUV_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:
@@ -326,6 +336,8 @@ if BUILD_WITH_SYSTEM_CARES:
     EXTENSION_LIBRARIES += ('cares',)
 if BUILD_WITH_SYSTEM_RE2:
     EXTENSION_LIBRARIES += ('re2',)
+if BUILD_WITH_SYSTEM_LIBUV:
+    EXTENSION_LIBRARIES += ('uv',)
 
 DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
 asm_files = []
