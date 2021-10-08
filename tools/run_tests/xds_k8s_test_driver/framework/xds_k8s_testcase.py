@@ -255,14 +255,15 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         return diff
 
     def assertRpcStatusCodes(self, test_client: XdsTestClient, *,
-                             status_code: grpc.StatusCode, length: int,
+                             status_code: grpc.StatusCode, duration: _timedelta,
                              method: str) -> None:
+        """Assert all RPCs for a method are completing with a certain status."""
         # Sending with pre-set QPS for a period of time
         before_stats = test_client.get_load_balancer_accumulated_stats()
         logging.info(
             'Received LoadBalancerAccumulatedStatsResponse from test client %s: before:\n%s',
             test_client.ip, before_stats)
-        time.sleep(length)
+        time.sleep(duration.total_seconds())
         after_stats = test_client.get_load_balancer_accumulated_stats()
         logging.info(
             'Received LoadBalancerAccumulatedStatsResponse from test client %s: after:\n%s',

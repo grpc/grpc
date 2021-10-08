@@ -79,7 +79,7 @@ class AuthorizationPolicy:
 
     @classmethod
     def from_response(cls, name: str, response: Dict[str,
-                                                     Any]) -> 'ClientTlsPolicy':
+                                                     Any]) -> 'AuthorizationPolicy':
         return cls(name=name,
                    url=response['name'],
                    create_time=response['createTime'],

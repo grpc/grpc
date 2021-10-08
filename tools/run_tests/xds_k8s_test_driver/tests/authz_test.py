@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
 from typing import Optional
 
 from absl import flags
@@ -27,7 +28,7 @@ _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
 _SecurityMode = xds_k8s_testcase.SecurityXdsKubernetesTestCase.SecurityMode
 
-_SAMPLE_DURATION = 0.5
+_SAMPLE_DURATION = datetime.timedelta(seconds=0.5)
 
 
 class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
@@ -177,7 +178,7 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
                                             metadata=metadata)
         self.assertRpcStatusCodes(test_client,
                                   status_code=status_code,
-                                  length=_SAMPLE_DURATION,
+                                  duration=_SAMPLE_DURATION,
                                   method=rpc_type)
 
     def test_plaintext_allow(self) -> None:
