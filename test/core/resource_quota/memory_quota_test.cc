@@ -77,14 +77,20 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
 
   memory_allocator.PostReclaimer(
       ReclamationPass::kDestructive,
-      [&object](ReclamationSweep) { object.reset(); });
+      [&object](absl::optional<ReclamationSweep> sweep) {
+        EXPECT_TRUE(sweep.has_value());
+        object.reset();
+      });
   auto object2 = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
   exec_ctx.Flush();
   EXPECT_EQ(object.get(), nullptr);
 
   memory_allocator.PostReclaimer(
       ReclamationPass::kDestructive,
-      [&object2](ReclamationSweep) { object2.reset(); });
+      [&object2](absl::optional<ReclamationSweep> sweep) {
+        EXPECT_TRUE(sweep.has_value());
+        object2.reset();
+      });
   auto object3 = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
   exec_ctx.Flush();
   EXPECT_EQ(object2.get(), nullptr);
@@ -105,21 +111,22 @@ TEST(MemoryQuotaTest, BasicRebind) {
   auto memory_allocator2 = memory_quota2.CreateMemoryOwner();
 
   memory_allocator2.PostReclaimer(ReclamationPass::kDestructive,
-                                  [](ReclamationSweep) {
+                                  [](absl::optional<ReclamationSweep> sweep) {
                                     // Taken memory should be reassigned to
-                                    // memory_quota, so this should never be
-                                    // reached.
-                                    abort();
+                                    // memory_quota, so this should be cancelled
+                                    EXPECT_FALSE(sweep.has_value());
                                   });
 
-  memory_allocator.PostReclaimer(ReclamationPass::kDestructive,
-                                 [&object](ReclamationSweep) {
-                                   // The new memory allocator should reclaim
-                                   // the object allocated against the previous
-                                   // quota because that's now part of this
-                                   // quota.
-                                   object.reset();
-                                 });
+  memory_allocator.PostReclaimer(
+      ReclamationPass::kDestructive,
+      [&object](absl::optional<ReclamationSweep> sweep) {
+        EXPECT_TRUE(sweep.has_value());
+        // The new memory allocator should reclaim
+        // the object allocated against the previous
+        // quota because that's now part of this
+        // quota.
+        object.reset();
+      });
 
   auto object2 = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
   exec_ctx.Flush();

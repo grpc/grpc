@@ -100,14 +100,16 @@ class Fuzzer {
           allocations_.erase(action.allocation());
           break;
         case memory_quota_fuzzer::Action::kPostReclaimer: {
-          std::function<void(ReclamationSweep)> reclaimer;
+          std::function<void(absl::optional<ReclamationSweep>)> reclaimer;
           auto cfg = action.post_reclaimer();
           if (cfg.synchronous()) {
-            reclaimer = [this, cfg](ReclamationSweep) { RunMsg(cfg.msg()); };
+            reclaimer = [this, cfg](absl::optional<ReclamationSweep>) {
+              RunMsg(cfg.msg());
+            };
           } else {
-            reclaimer = [cfg, this](ReclamationSweep sweep) {
+            reclaimer = [cfg, this](absl::optional<ReclamationSweep> sweep) {
               struct Args {
-                ReclamationSweep sweep;
+                absl::optional<ReclamationSweep> sweep;
                 memory_quota_fuzzer::Msg msg;
                 Fuzzer* fuzzer;
               };

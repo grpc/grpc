@@ -205,7 +205,8 @@ void GrpcMemoryAllocatorImpl::MaybeRegisterReclaimerLocked() {
   auto self = shared_from_this();
   memory_quota_->InsertReclaimer(
       0, self,
-      [self](ReclamationSweep) {
+      [self](absl::optional<ReclamationSweep> sweep) {
+        if (!sweep.has_value()) return;
         auto* p = static_cast<GrpcMemoryAllocatorImpl*>(self.get());
         MutexLock lock(&p->memory_quota_mu_);
         // Figure out how many bytes we can return to the quota.
