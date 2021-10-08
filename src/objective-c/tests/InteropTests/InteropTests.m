@@ -1408,8 +1408,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                   XCTAssertNotNil(error);
                                   XCTAssertEqual(
                                       error.code, GRPC_STATUS_UNAVAILABLE,
-                                      @"Received status %ld instead of UNAVAILABLE (14).",
-                                      error.code);
+                                      @"Received status %@ instead of UNAVAILABLE (14).",
+                                      @(error.code));
                                   [expectation fulfill];
                                 }]
                             callOptions:options];
