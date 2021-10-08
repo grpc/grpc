@@ -5,13 +5,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Cache bazel build
+      - name: Get current time
+        uses: srfrnk/current-time@master
+        id: current-time
+        with:
+          format: YYYYWW
       - name: Cache bazel
         uses: actions/cache@v2
         env:
           cache-name: bazel-cache
         with:
           path: ~/.cache/bazel
-          key: ${{ runner.os }}-${{ env.cache-name }}
+          # formattedTime here is like 202132 - the year concatenated with the week
+          # as this changes every week, we cycle to a new cache once per week.
+          key: ${{ runner.os }}-${{ steps.current-time.outputs.formattedTime }}
       # Cancel current runs if they're still running
       # (saves processing on fast pushes)
       - name: Cancel Previous Runs

@@ -47,57 +47,57 @@ typedef struct grpc_tcp_listener {
      identified while iterating through 'next'. */
   struct grpc_tcp_listener* sibling;
   int is_sibling;
-
-  /* used to create slice allocators for endpoints, owned */
-  grpc_core::MemoryQuotaPtr memory_quota;
 } grpc_tcp_listener;
 
 /* the overall server */
 struct grpc_tcp_server {
   gpr_refcount refs;
   /* Called whenever accept() succeeds on a server port. */
-  grpc_tcp_server_cb on_accept_cb;
-  void* on_accept_cb_arg;
+  grpc_tcp_server_cb on_accept_cb = nullptr;
+  void* on_accept_cb_arg = nullptr;
 
   gpr_mu mu;
 
   /* active port count: how many ports are actually still listening */
-  size_t active_ports;
+  size_t active_ports = 0;
   /* destroyed port count: how many ports are completely destroyed */
-  size_t destroyed_ports;
+  size_t destroyed_ports = 0;
 
   /* is this server shutting down? */
-  bool shutdown;
+  bool shutdown = false;
   /* have listeners been shutdown? */
-  bool shutdown_listeners;
+  bool shutdown_listeners = false;
   /* use SO_REUSEPORT */
-  bool so_reuseport;
+  bool so_reuseport = false;
   /* expand wildcard addresses to a list of all local addresses */
-  bool expand_wildcard_addrs;
+  bool expand_wildcard_addrs = false;
 
   /* linked list of server ports */
-  grpc_tcp_listener* head;
-  grpc_tcp_listener* tail;
-  unsigned nports;
+  grpc_tcp_listener* head = nullptr;
+  grpc_tcp_listener* tail = nullptr;
+  unsigned nports = 0;
 
   /* List of closures passed to shutdown_starting_add(). */
-  grpc_closure_list shutdown_starting;
+  grpc_closure_list shutdown_starting{nullptr, nullptr};
 
   /* shutdown callback */
-  grpc_closure* shutdown_complete;
+  grpc_closure* shutdown_complete = nullptr;
 
   /* all pollsets interested in new connections. The object pointed at is not
    * owned by this struct */
-  const std::vector<grpc_pollset*>* pollsets;
+  const std::vector<grpc_pollset*>* pollsets = nullptr;
 
   /* next pollset to assign a channel to */
-  gpr_atm next_pollset_to_assign;
+  gpr_atm next_pollset_to_assign = 0;
 
   /* channel args for this server */
-  grpc_channel_args* channel_args;
+  grpc_channel_args* channel_args = nullptr;
 
   /* a handler for external connections, owned */
-  grpc_core::TcpServerFdHandler* fd_handler;
+  grpc_core::TcpServerFdHandler* fd_handler = nullptr;
+
+  /* used to create slice allocators for endpoints, owned */
+  grpc_core::MemoryQuotaPtr memory_quota;
 };
 
 /* If successful, add a listener to \a s for \a addr, set \a dsmode for the

@@ -25,7 +25,7 @@
 set -e
 
 # DISABLE_BAZEL_WRAPPER can be set to eliminate the wrapper logic
-if [ "${DISABLE_BAZEL_WRAPPER}" != "" ]
+if [ "${DISABLE_BAZEL_WRAPPER}" != "" ] && [ "${OVERRIDE_BAZEL_VERSION}" == "" ]
 then
   if [ "${BAZEL_REAL}" != "" ]
   then
@@ -49,7 +49,8 @@ echo "INFO: Running bazel wrapper (see //tools/bazel for details), bazel version
 BASEURL_MIRROR="https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/bazel/releases/download"
 BASEURL="https://github.com/bazelbuild/bazel/releases/download"
 pushd "$(dirname "$0")" >/dev/null
-TOOLDIR=$(pwd)
+# bazel binary will be downloaded to GRPC_REPO_ROOT/tools directory by default
+DOWNLOAD_DIR=${OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR:-$(pwd)}
 
 case $(uname -sm) in
   "Linux x86_64")
@@ -68,13 +69,14 @@ case $(uname -sm) in
 esac
 
 filename="bazel-$VERSION-$suffix"
+filename_abs="${DOWNLOAD_DIR}/${filename}"
 
-if [ ! -x "$filename" ] ; then
+if [ ! -x "${filename_abs}" ] ; then
   # first try to download using mirror, fallback to download from github
   echo "Downloading bazel, will try URLs: ${BASEURL_MIRROR}/${VERSION}/${filename} ${BASEURL}/${VERSION}/${filename}" >&2
-  curl --fail -L --output "${filename}" "${BASEURL_MIRROR}/${VERSION}/${filename}" || curl --fail -L --output "${filename}" "${BASEURL}/${VERSION}/${filename}"
-  chmod a+x "$filename"
+  curl --fail -L --output "${filename_abs}" "${BASEURL_MIRROR}/${VERSION}/${filename}" || curl --fail -L --output "${filename_abs}" "${BASEURL}/${VERSION}/${filename}"
+  chmod a+x "${filename_abs}"
 fi
 
 popd >/dev/null
-exec "$TOOLDIR/$filename" "$@"
+exec "${filename_abs}" "$@"

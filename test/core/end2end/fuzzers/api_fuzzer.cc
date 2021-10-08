@@ -526,8 +526,8 @@ Call::~Call() {
   }
 }
 
-grpc_channel_args* ReadArgs(
-    const google::protobuf::RepeatedPtrField<api_fuzzer::ChannelArg>& args) {
+template <typename ChannelArgContainer>
+grpc_channel_args* ReadArgs(const ChannelArgContainer& args) {
   grpc_channel_args* res =
       static_cast<grpc_channel_args*>(gpr_malloc(sizeof(grpc_channel_args)));
   res->num_args = args.size();

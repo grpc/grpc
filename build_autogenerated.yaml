@@ -6550,6 +6550,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
   - src/core/lib/slice/static_slice.h
+  - test/core/resource_quota/call_checker.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc

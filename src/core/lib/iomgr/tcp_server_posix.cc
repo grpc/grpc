@@ -102,6 +102,8 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->nports = 0;
   s->channel_args = grpc_channel_args_copy(args);
   s->fd_handler = nullptr;
+  s->memory_quota =
+      grpc_core::ResourceQuotaFromChannelArgs(args)->memory_quota();
   gpr_atm_no_barrier_store(&s->next_pollset_to_assign, 0);
   *server = s;
   return GRPC_ERROR_NONE;
@@ -123,7 +125,7 @@ static void finish_shutdown(grpc_tcp_server* s) {
   }
   grpc_channel_args_destroy(s->channel_args);
   delete s->fd_handler;
-  gpr_free(s);
+  delete s;
 }
 
 static void destroyed_port(void* server, grpc_error_handle /*error*/) {
@@ -218,7 +220,7 @@ static void on_read(void* arg, grpc_error_handle err) {
       }
     }
 
-    if (sp->memory_quota->IsMemoryPressureHigh()) {
+    if (sp->server->memory_quota->IsMemoryPressureHigh()) {
       gpr_log(GPR_INFO, "Drop incoming connection: high memory pressure");
       close(fd);
       continue;
@@ -362,10 +364,6 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
     l->fd_index += count;
   }
 
-  auto memory_quota =
-      grpc_core::ResourceQuotaFromChannelArgs(listener->server->channel_args)
-          ->memory_quota();
-
   for (unsigned i = 0; i < count; i++) {
     int fd = -1;
     int port = -1;
@@ -397,7 +395,6 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
     sp->port = port;
     sp->port_index = listener->port_index;
     sp->fd_index = listener->fd_index + count - i;
-    sp->memory_quota = memory_quota;
     GPR_ASSERT(sp->emfd);
     while (listener->server->tail->next != nullptr) {
       listener->server->tail = listener->server->tail->next;

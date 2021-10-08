@@ -3151,14 +3151,18 @@ static void post_benign_reclaimer(grpc_chttp2_transport* t) {
   if (!t->benign_reclaimer_registered) {
     t->benign_reclaimer_registered = true;
     GRPC_CHTTP2_REF_TRANSPORT(t, "benign_reclaimer");
-    GRPC_CLOSURE_INIT(&t->benign_reclaimer_locked, benign_reclaimer, t,
-                      grpc_schedule_on_exec_ctx);
-    abort();  // TODO(ctiller): need to unref transport if cancelled.
     t->memory_owner.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
-        [t](grpc_core::ReclamationSweep sweep) {
-          t->active_reclamation = std::move(sweep);
-          t->combiner->Run(&t->benign_reclaimer_locked, GRPC_ERROR_NONE);
+        [t](absl::optional<grpc_core::ReclamationSweep> sweep) {
+          if (sweep.has_value()) {
+            GRPC_CLOSURE_INIT(&t->benign_reclaimer_locked,
+                              benign_reclaimer_locked, t,
+                              grpc_schedule_on_exec_ctx);
+            t->active_reclamation = std::move(*sweep);
+            t->combiner->Run(&t->benign_reclaimer_locked, GRPC_ERROR_NONE);
+          } else {
+            GRPC_CHTTP2_UNREF_TRANSPORT(t, "benign_reclaimer");
+          }
         });
   }
 }
@@ -3167,14 +3171,18 @@ static void post_destructive_reclaimer(grpc_chttp2_transport* t) {
   if (!t->destructive_reclaimer_registered) {
     t->destructive_reclaimer_registered = true;
     GRPC_CHTTP2_REF_TRANSPORT(t, "destructive_reclaimer");
-    GRPC_CLOSURE_INIT(&t->destructive_reclaimer_locked, destructive_reclaimer,
-                      t, grpc_schedule_on_exec_ctx);
-    abort();  // TODO(ctiller): need to unref transport if cancelled.
     t->memory_owner.PostReclaimer(
         grpc_core::ReclamationPass::kDestructive,
-        [t](grpc_core::ReclamationSweep sweep) {
-          t->active_reclamation = std::move(sweep);
-          t->combiner->Run(&t->destructive_reclaimer_locked, GRPC_ERROR_NONE);
+        [t](absl::optional<grpc_core::ReclamationSweep> sweep) {
+          if (sweep.has_value()) {
+            GRPC_CLOSURE_INIT(&t->destructive_reclaimer_locked,
+                              destructive_reclaimer_locked, t,
+                              grpc_schedule_on_exec_ctx);
+            t->active_reclamation = std::move(*sweep);
+            t->combiner->Run(&t->destructive_reclaimer_locked, GRPC_ERROR_NONE);
+          } else {
+            GRPC_CHTTP2_UNREF_TRANSPORT(t, "benign_reclaimer");
+          }
         });
   }
 }
