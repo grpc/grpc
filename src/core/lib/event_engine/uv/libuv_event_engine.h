@@ -42,7 +42,7 @@ class LibuvEventEngine final
     : public grpc_event_engine::experimental::EventEngine {
  public:
   LibuvEventEngine();
-  ~LibuvEventEngine();
+  ~LibuvEventEngine() override;
 
   void Run(std::function<void()> fn) override;
   TaskHandle RunAt(absl::Time when, std::function<void()> fn) override;
