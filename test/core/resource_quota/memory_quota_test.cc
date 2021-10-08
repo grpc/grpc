@@ -20,6 +20,7 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_refcount.h"
+#include "test/core/resource_quota/call_checker.h"
 
 namespace grpc_core {
 namespace testing {
@@ -75,9 +76,11 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
   auto memory_allocator = memory_quota.CreateMemoryOwner();
   auto object = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
 
+  auto checker1 = CallChecker::Make();
   memory_allocator.PostReclaimer(
       ReclamationPass::kDestructive,
-      [&object](absl::optional<ReclamationSweep> sweep) {
+      [&object, checker1](absl::optional<ReclamationSweep> sweep) {
+        checker1->Called();
         EXPECT_TRUE(sweep.has_value());
         object.reset();
       });
@@ -85,9 +88,11 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
   exec_ctx.Flush();
   EXPECT_EQ(object.get(), nullptr);
 
+  auto checker2 = CallChecker::Make();
   memory_allocator.PostReclaimer(
       ReclamationPass::kDestructive,
-      [&object2](absl::optional<ReclamationSweep> sweep) {
+      [&object2, checker2](absl::optional<ReclamationSweep> sweep) {
+        checker2->Called();
         EXPECT_TRUE(sweep.has_value());
         object2.reset();
       });
@@ -110,16 +115,21 @@ TEST(MemoryQuotaTest, BasicRebind) {
   memory_allocator.Rebind(&memory_quota);
   auto memory_allocator2 = memory_quota2.CreateMemoryOwner();
 
-  memory_allocator2.PostReclaimer(ReclamationPass::kDestructive,
-                                  [](absl::optional<ReclamationSweep> sweep) {
-                                    // Taken memory should be reassigned to
-                                    // memory_quota, so this should be cancelled
-                                    EXPECT_FALSE(sweep.has_value());
-                                  });
+  auto checker1 = CallChecker::Make();
+  memory_allocator2.PostReclaimer(
+      ReclamationPass::kDestructive,
+      [checker1](absl::optional<ReclamationSweep> sweep) {
+        checker1->Called();
+        // Taken memory should be reassigned to
+        // memory_quota, so this should be cancelled
+        EXPECT_FALSE(sweep.has_value());
+      });
 
+  auto checker2 = CallChecker::Make();
   memory_allocator.PostReclaimer(
       ReclamationPass::kDestructive,
-      [&object](absl::optional<ReclamationSweep> sweep) {
+      [&object, checker2](absl::optional<ReclamationSweep> sweep) {
+        checker2->Called();
         EXPECT_TRUE(sweep.has_value());
         // The new memory allocator should reclaim
         // the object allocated against the previous

@@ -12,13 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package", "grpc_cc_library")
 
 licenses(["notice"])
 
 grpc_package(name = "test/core/resource_quota")
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+
+grpc_cc_library(
+    name = "call_checker",
+    hdrs = ["call_checker.h"],
+    language = "c++",
+    testonly = True,
+)
 
 grpc_cc_test(
     name = "memory_quota_test",
@@ -31,7 +38,8 @@ grpc_cc_test(
     deps = [
         "//:memory_quota",
         "//test/core/util:grpc_suppressions",
-    ],
+    "call_checker",
+        ],
 )
 
 grpc_cc_test(
@@ -90,5 +98,6 @@ grpc_proto_fuzzer(
     deps = [
         "//:memory_quota",
         "//test/core/util:grpc_test_util",
+    "call_checker",
     ],
 )

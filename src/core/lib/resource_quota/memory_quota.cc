@@ -50,9 +50,11 @@ const ReclaimerQueue::Index ReclaimerQueue::kInvalidIndex;
 void ReclaimerQueue::Insert(
     std::shared_ptr<EventEngineMemoryAllocatorImpl> allocator,
     ReclamationFunction reclaimer, Index* index) {
-  MutexLock lock(&mu_);
+  mu_.Lock();
   if (*index < entries_.size() && entries_[*index].allocator == allocator) {
     entries_[*index].reclaimer.swap(reclaimer);
+    mu_.Unlock();
+    reclaimer({});
     return;
   }
   if (free_entries_.empty()) {
@@ -67,6 +69,7 @@ void ReclaimerQueue::Insert(
   }
   if (queue_.empty()) waker_.Wakeup();
   queue_.push(*index);
+  mu_.Unlock();
 }
 
 ReclamationFunction ReclaimerQueue::Cancel(
@@ -115,13 +118,16 @@ GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
 }
 
 void GrpcMemoryAllocatorImpl::Shutdown() {
-  ReclamationFunction old_reclaimers[kNumReclamationPasses];
-  MutexLock lock(&memory_quota_mu_);
-  GPR_ASSERT(!shutdown_);
-  shutdown_ = true;
+  std::shared_ptr<BasicMemoryQuota> memory_quota;
+  {
+    MutexLock lock(&memory_quota_mu_);
+    GPR_ASSERT(!shutdown_);
+    shutdown_ = true;
+    memory_quota = memory_quota_;
+  }
   for (size_t i = 0; i < kNumReclamationPasses; i++) {
-    old_reclaimers[i] =
-        memory_quota_->CancelReclaimer(i, reclamation_indices_[i], this);
+    auto fn = memory_quota_->CancelReclaimer(i, reclamation_indices_[i], this);
+    if (fn != nullptr) fn({});
   }
 }
 
