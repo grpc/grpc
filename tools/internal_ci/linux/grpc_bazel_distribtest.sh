@@ -22,4 +22,6 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-./test/distrib/bazel/run_bazel_distrib_test.sh
+export DOCKERFILE_DIR=tools/dockerfile/test/bazel
+export DOCKER_RUN_SCRIPT=test/distrib/bazel/run_bazel_distrib_test.sh
+exec tools/run_tests/dockerize/build_and_run_docker.sh

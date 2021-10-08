@@ -99,7 +99,8 @@ class ReclamationSweep {
   uint64_t sweep_token_;
 };
 
-using ReclamationFunction = std::function<void(ReclamationSweep)>;
+using ReclamationFunction =
+    std::function<void(absl::optional<ReclamationSweep>)>;
 
 class ReclaimerQueue {
  public:
@@ -257,8 +258,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   }
 
   // Post a reclamation function.
-  void PostReclaimer(ReclamationPass pass,
-                     std::function<void(ReclamationSweep)>);
+  void PostReclaimer(ReclamationPass pass, ReclamationFunction fn);
 
   // Shutdown the allocator.
   void Shutdown() override;
@@ -288,6 +288,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   // Amount of memory taken from the quota by this allocator.
   size_t taken_bytes_ ABSL_GUARDED_BY(memory_quota_mu_) =
       sizeof(GrpcMemoryAllocatorImpl);
+  bool shutdown_ ABSL_GUARDED_BY(memory_quota_mu_) = false;
   // Indices into the various reclaimer queues, used so that we can cancel
   // reclamation should we shutdown or get rebound.
   ReclaimerQueue::Index
@@ -307,8 +308,7 @@ class MemoryOwner {
   MemoryAllocator* allocator() { return &allocator_; }
 
   // Post a reclaimer for some reclamation pass.
-  void PostReclaimer(ReclamationPass pass,
-                     std::function<void(ReclamationSweep)> fn) {
+  void PostReclaimer(ReclamationPass pass, ReclamationFunction fn) {
     static_cast<GrpcMemoryAllocatorImpl*>(allocator_.get_internal_impl_ptr())
         ->PostReclaimer(pass, std::move(fn));
   }
