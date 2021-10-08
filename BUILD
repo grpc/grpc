@@ -1106,11 +1106,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "avl",
+    hdrs = [
+        "src/core/lib/avl/avl.h"
+    ],
+    deps = [
+        "gpr_platform"
+    ]
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
         "src/core/lib/address_utils/sockaddr_utils.cc",
-        "src/core/lib/avl/avl.cc",
         "src/core/lib/backoff/backoff.cc",
         "src/core/lib/channel/channel_args.cc",
         "src/core/lib/channel/channel_stack.cc",
@@ -1273,7 +1282,6 @@ grpc_cc_library(
         "src/core/lib/transport/http2_errors.h",
         "src/core/lib/address_utils/parse_address.h",
         "src/core/lib/address_utils/sockaddr_utils.h",
-        "src/core/lib/avl/avl.h",
         "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/call_tracer.h",
         "src/core/lib/channel/channel_args.h",
@@ -1434,6 +1442,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "avl",
         "bitset",
         "channel_stack_type",
         "closure",
