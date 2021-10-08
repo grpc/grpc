@@ -37,7 +37,8 @@ ResourceQuotaPtr ResourceQuotaFromChannelArgs(const grpc_channel_args* args);
 // If there is a resource quota set, copy args and return that.
 // If there is no resource quota set, set a default, and return new
 // channel args. Call grpc_channel_args_destroy on the input args.
-grpc_channel_args* EnsureResourceQuotaInChannelArgs(const grpc_channel_args* args);
+grpc_channel_args* EnsureResourceQuotaInChannelArgs(
+    const grpc_channel_args* args);
 
 // Create channel args with just the passed in resource quota
 grpc_channel_args* ChannelArgsWrappingResourceQuota(ResourceQuotaPtr);

@@ -37,7 +37,8 @@ grpc_arg MakeArg(ResourceQuota* quota) {
 }
 }  // namespace
 
-grpc_channel_args* EnsureResourceQuotaInChannelArgs(const grpc_channel_args* args) {
+grpc_channel_args* EnsureResourceQuotaInChannelArgs(
+    const grpc_channel_args* args) {
   if (grpc_channel_args_find(args, GRPC_ARG_RESOURCE_QUOTA) != nullptr) {
     return grpc_channel_args_copy(args);
   }

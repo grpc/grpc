@@ -58,7 +58,8 @@ grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
   grpc_arg arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_SERVER_URI), canonical_target.get());
   const char* to_remove[] = {GRPC_ARG_SERVER_URI};
-  grpc_channel_args* new_args0 = grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
+  grpc_channel_args* new_args0 =
+      grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
   grpc_channel_args* new_args = EnsureResourceQuotaInChannelArgs(new_args0);
   grpc_channel_args_destroy(new_args0);
   grpc_channel* channel = grpc_channel_create(
