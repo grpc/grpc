@@ -18,6 +18,8 @@ licenses(["notice"])
 
 grpc_package(name = "test/core/avl")
 
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+
 grpc_cc_test(
     name = "avl_test",
     srcs = ["avl_test.cc"],
@@ -27,5 +29,19 @@ grpc_cc_test(
     deps = [
         "//:avl",
         "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_proto_fuzzer(
+    name = "avl_fuzzer",
+    srcs = ["avl_fuzzer.cc"],
+    corpus = "avl_fuzzer_corpus",
+    language = "C++",
+    proto = "avl_fuzzer.proto",
+    tags = ["no_windows"],
+    uses_polling = False,
+    deps = [
+        "//:avl",
+        "//test/core/util:grpc_test_util",
     ],
 )

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/core/lib/avl/avl.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/avl/avl_fuzzer.pb.h"
 
@@ -25,22 +26,24 @@ class Fuzzer {
   void Run(const avl_fuzzer::Msg& msg) {
     CheckEqual();
     for (const auto& action : msg.actions()) {
-      switch (action.action_type()) {
-        case api_fuzzer::Action::kSet:
-          avl_ = avl_.Set(action.key(), action.set());
+      switch (action.action_case()) {
+        case avl_fuzzer::Action::kSet:
+          avl_ = avl_.Add(action.key(), action.set());
           map_[action.key()] = action.set();
           break;
-        case api_fuzzer::Action::kDelete:
+        case avl_fuzzer::Action::kDel:
           avl_ = avl_.Remove(action.key());
           map_.erase(action.key());
           break;
-        case api_fuzzer::Action::kGet: {
+        case avl_fuzzer::Action::kGet: {
           auto* p = avl_.Lookup(action.key());
           auto it = map_.find(action.key());
           if (it == map_.end() && p != nullptr) abort();
           if (it != map_.end() && p == nullptr) abort();
           if (it != map_.end() && it->second != *p) abort();
-        }
+        } break;
+        case avl_fuzzer::Action::ACTION_NOT_SET:
+          break;
       }
       CheckEqual();
     }
@@ -60,7 +63,7 @@ class Fuzzer {
 
   AVL<int, int> avl_;
   std::map<int, int> map_;
-}
+};
 
 }  // namespace grpc_core
 
