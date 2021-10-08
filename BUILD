@@ -3517,7 +3517,6 @@ grpc_cc_library(
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "gpr_base",
-        "grpc_base",
         "grpc_matchers",
         "grpc_rbac_engine",
         "useful",

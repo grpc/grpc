@@ -18,14 +18,15 @@ grpc_package(name = "test/core/end2end/fuzzers")
 
 licenses(["notice"])
 
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
 
-grpc_fuzzer(
+grpc_proto_fuzzer(
     name = "api_fuzzer",
     size = "enormous",
     srcs = ["api_fuzzer.cc"],
     corpus = "api_fuzzer_corpus",
     language = "C++",
+    proto = "api_fuzzer.proto",
     tags = ["no_windows"],
     deps = [
         "//:gpr",
