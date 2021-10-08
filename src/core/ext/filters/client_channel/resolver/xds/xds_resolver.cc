@@ -392,6 +392,10 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     route_table_.emplace_back();
     auto& route_entry = route_table_.back();
     route_entry.route = route;
+    if (route_entry.route.action_type !=
+        XdsApi::Route::ActionType::kRouteAction) {
+      continue;
+    }
     // If the route doesn't specify a timeout, set its timeout to the global
     // one.
     if (!route.route->max_stream_duration.has_value()) {
@@ -664,6 +668,13 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       continue;
     }
     // Found a route match
+    // TODO(roth): Please check this behavior.
+    if (entry.route.action_type != XdsApi::Route::ActionType::kRouteAction) {
+      CallConfig call_config;
+      call_config.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Matching route has inappropriate action");
+      return call_config;
+    }
     absl::string_view cluster_name;
     RefCountedPtr<ServiceConfig> method_config;
     if (entry.route.route->weighted_clusters.empty()) {

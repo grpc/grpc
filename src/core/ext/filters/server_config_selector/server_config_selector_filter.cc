@@ -199,6 +199,7 @@ void CallData::RecvInitialMetadataReady(void* user_data,
       }
     } else {
       calld->error_ = absl_status_to_grpc_error(config_selector.status());
+      error = calld->error_;
     }
   }
   calld->MaybeResumeRecvTrailingMetadataReady();

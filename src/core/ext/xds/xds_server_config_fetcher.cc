@@ -239,21 +239,17 @@ ServerConfigSelector::CallConfig XdsServerConfigSelector::GetCallConfig(
     return call_config;
   }
   for (const auto& route : virtual_host->routes) {
-    gpr_log(GPR_ERROR, "route %p", &route);
     // Path matching.
     if (!route.matchers.path_matcher.Match(path)) {
-      gpr_log(GPR_ERROR, "did not match");
       continue;
     }
     // Header Matching.
     if (!HeadersMatch(route.matchers.header_matchers, metadata)) {
-      gpr_log(GPR_ERROR, "did not match");
       continue;
     }
     // Match fraction check
     if (route.matchers.fraction_per_million.has_value() &&
         !UnderFraction(route.matchers.fraction_per_million.value())) {
-      gpr_log(GPR_ERROR, "did not match");
       continue;
     }
     // Found the matching route
@@ -315,8 +311,6 @@ class XdsServerConfigSelectorProvider : public ServerConfigSelectorProvider {
       GPR_ASSERT(watcher_ == nullptr);
       watcher_ = std::move(watcher);
     }
-    gpr_log(GPR_ERROR, "existing value %s",
-            resource_.status().ToString().c_str());
     return XdsServerConfigSelector::Create(resource_, http_filters_);
   }
 
@@ -577,7 +571,6 @@ XdsServerConfigFetcher::FilterChainMatchManager::
 absl::StatusOr<grpc_server_config_fetcher::ConnectionConfiguration>
 XdsServerConfigFetcher::FilterChainMatchManager::UpdateChannelArgsForConnection(
     grpc_channel_args* args, grpc_endpoint* tcp) {
-  gpr_log(GPR_ERROR, "update channel args");
   const auto* filter_chain = FindFilterChainDataForDestinationIp(
       filter_chain_map_.destination_ip_vector, tcp);
   if (filter_chain == nullptr && default_filter_chain_.has_value()) {
@@ -651,7 +644,6 @@ XdsServerConfigFetcher::ListenerWatcher::RdsUpdateWatcher::RdsUpdateWatcher(
 
 bool XdsServerConfigFetcher::ListenerWatcher::RdsUpdateWatcher::OnRdsUpdate(
     absl::StatusOr<XdsApi::RdsUpdate> /* rds_update */) {
-  gpr_log(GPR_ERROR, "got the initial update");
   {
     MutexLock lock(&parent_->mu_);
     for (auto it = parent_->pending_rds_updates_.begin();
@@ -727,7 +719,6 @@ void XdsServerConfigFetcher::ListenerWatcher::OnListenerChanged(
       // map.
       std::set<std::shared_ptr<XdsApi::LdsUpdate::FilterChainData>>
           filter_chains;
-      std::vector<std::string> resource_names;
       for (const auto& destination_ip :
            listener.filter_chain_map.destination_ip_vector) {
         for (int source_type = 0; source_type < 3; ++source_type) {
@@ -739,25 +730,31 @@ void XdsServerConfigFetcher::ListenerWatcher::OnListenerChanged(
           }
         }
       }
+      std::vector<std::string> resource_names;
       for (const auto& filter_chain : filter_chains) {
         if (!filter_chain->http_connection_manager.route_config_name.empty()) {
           resource_names.push_back(
               filter_chain->http_connection_manager.route_config_name);
-          auto rds_update_watcher = absl::make_unique<RdsUpdateWatcher>(
-              filter_chain->http_connection_manager.route_config_name, this);
-          auto rds_update_watcher_ptr = rds_update_watcher.get();
-          auto rds_update = server_config_fetcher_->StartRdsWatchInternalLocked(
-              filter_chain->http_connection_manager.route_config_name,
-              std::move(rds_update_watcher), /* inc_ref= */ true);
-          if (rds_update.has_value()) {
-            rds_watchers_to_cancel.emplace_back(
-                server_config_fetcher_,
-                filter_chain->http_connection_manager.route_config_name,
-                rds_update_watcher_ptr);
-          } else {
-            pending_rds_updates_.push_back(
-                filter_chain->http_connection_manager.route_config_name);
-          }
+        }
+      }
+      if (listener.default_filter_chain.has_value() &&
+          !listener.default_filter_chain->http_connection_manager
+               .route_config_name.empty()) {
+        resource_names.push_back(
+            listener.default_filter_chain->http_connection_manager
+                .route_config_name);
+      }
+      for (const auto& resource_name : resource_names) {
+        auto rds_update_watcher =
+            absl::make_unique<RdsUpdateWatcher>(resource_name, this);
+        auto rds_update_watcher_ptr = rds_update_watcher.get();
+        auto rds_update = server_config_fetcher_->StartRdsWatchInternalLocked(
+            resource_name, std::move(rds_update_watcher), /* inc_ref= */ true);
+        if (rds_update.has_value()) {
+          rds_watchers_to_cancel.emplace_back(
+              server_config_fetcher_, resource_name, rds_update_watcher_ptr);
+        } else {
+          pending_rds_updates_.push_back(resource_name);
         }
       }
       pending_filter_chain_match_manager_ =
@@ -824,7 +821,6 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceDoesNotExist() {
 
 void XdsServerConfigFetcher::ListenerWatcher::
     UpdateFilterChainMatchManagerLocked() {
-  gpr_log(GPR_ERROR, "updating filter chain manager");
   if (filter_chain_match_manager_ == nullptr) {
     if (serving_status_notifier_.on_serving_status_update != nullptr) {
       serving_status_notifier_.on_serving_status_update(
@@ -896,21 +892,15 @@ void XdsServerConfigFetcher::RouteConfigWatcher::OnResourceDoesNotExist() {
 void XdsServerConfigFetcher::RouteConfigWatcher::Update(
     RdsUpdateWatcherState* state,
     absl::StatusOr<XdsApi::RdsUpdate> rds_update) {
-  gpr_log(GPR_ERROR, "got an RDS update from XdsClient %s",
-          rds_update->ToString().c_str());
   for (auto it = state->rds_watchers.begin();
        it != state->rds_watchers.end();) {
-    gpr_log(GPR_ERROR, "new iteration");
     bool continue_watch = it->second->OnRdsUpdate(rds_update);
-    gpr_log(GPR_ERROR, "here");
     if (!continue_watch) {
       it = state->rds_watchers.erase(it);
-      gpr_log(GPR_ERROR, "erased");
     } else {
       ++it;
     }
   }
-  gpr_log(GPR_ERROR, "end update");
   state->rds_update = std::move(rds_update);
 }
 

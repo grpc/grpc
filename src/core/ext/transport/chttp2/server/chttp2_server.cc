@@ -715,8 +715,6 @@ void Chttp2ServerListener::Start(
 }
 
 void Chttp2ServerListener::StartListening() {
-  gpr_log(GPR_ERROR, "start listening %s",
-          grpc_sockaddr_to_string(&resolved_address_, false).c_str());
   grpc_tcp_server_start(tcp_server_, &server_->pollsets(), OnAccept, this);
 }
 
@@ -729,8 +727,6 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
                                     grpc_pollset* accepting_pollset,
                                     grpc_tcp_server_acceptor* acceptor) {
   Chttp2ServerListener* self = static_cast<Chttp2ServerListener*>(arg);
-  gpr_log(GPR_ERROR, "on accept %s",
-          grpc_sockaddr_to_string(&self->resolved_address_, false).c_str());
   grpc_channel_args* args = nullptr;
   std::vector<const grpc_channel_filter*> filters;
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
