@@ -249,7 +249,8 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         for method, method_stats in after.stats_per_method.items():
             for status, count in method_stats.result.items():
                 count -= before.stats_per_method[method].result[status]
-                assert count >= 0, "Diff of count shouldn't be negative"
+                if count < 0:
+                    raise AssertionError("Diff of count shouldn't be negative")
                 if count > 0:
                     diff.stats_per_method[method].result[status] = count
         return diff
