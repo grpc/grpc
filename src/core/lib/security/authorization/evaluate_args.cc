@@ -130,7 +130,7 @@ absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
   if (metadata_ == nullptr) {
     return absl::nullopt;
   }
-  return grpc_metadata_batch_get_value(metadata_, key, concatenated_value);
+  return metadata_->GetValue(key, concatenated_value);
 }
 
 grpc_resolved_address EvaluateArgs::GetLocalAddress() const {

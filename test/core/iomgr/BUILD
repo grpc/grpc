@@ -15,7 +15,7 @@
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
@@ -68,6 +68,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "error_test",
     srcs = ["error_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     uses_polling = False,
     deps = [
@@ -148,6 +151,18 @@ grpc_cc_test(
     tags = [
         "no_windows",  # LARGE_MACHINE is not configured for windows RBE
     ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "mpmcqueue_test",
+    srcs = ["mpmcqueue_test.cc"],
+    language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -280,6 +295,18 @@ grpc_cc_test(
     srcs = ["tcp_server_posix_test.cc"],
     language = "C++",
     tags = ["no_windows"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "threadpool_test",
+    srcs = ["threadpool_test.cc"],
+    language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",

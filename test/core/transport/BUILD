@@ -14,7 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_package(name = "test/core/transport")
 
@@ -66,6 +66,20 @@ grpc_cc_test(
 grpc_cc_test(
     name = "error_utils_test",
     srcs = ["error_utils_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "metadata_map_test",
+    srcs = ["metadata_map_test.cc"],
     external_deps = [
         "gtest",
     ],

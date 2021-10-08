@@ -1379,7 +1379,6 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
                                                 grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
-  grpc_millis op_deadline;
   if (error == GRPC_ERROR_NONE) {
     GPR_DEBUG_ASSERT(
         calld->recv_initial_metadata_->legacy_index()->named.path != nullptr);
@@ -1395,9 +1394,9 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
   } else {
     GRPC_ERROR_REF(error);
   }
-  op_deadline = calld->recv_initial_metadata_->deadline();
-  if (op_deadline != GRPC_MILLIS_INF_FUTURE) {
-    calld->deadline_ = op_deadline;
+  auto op_deadline = calld->recv_initial_metadata_->get(GrpcTimeoutMetadata());
+  if (op_deadline.has_value()) {
+    calld->deadline_ = *op_deadline;
   }
   if (calld->host_.has_value() && calld->path_.has_value()) {
     /* do nothing */

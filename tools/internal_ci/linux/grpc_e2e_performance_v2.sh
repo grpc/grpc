@@ -54,8 +54,9 @@ GRPC_GO_GITREF="$(git ls-remote https://github.com/grpc/grpc-go.git master | cut
 GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/grpc-java.git master | cut -f1)"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
-WORKER_POOL_8CORE=workers-8core-ci
-WORKER_POOL_32CORE=workers-32core-ci
+WORKER_POOL_8CORE=workers-c2-8core-ci
+# c2-standard-30 is the closest machine spec to 32 core there is
+WORKER_POOL_32CORE=workers-c2-30core-ci
 
 # Update go version.
 TEST_INFRA_GOVERSION=go1.17.1
@@ -117,12 +118,10 @@ time ../test-infra/bin/prepare_prebuilt_workers \
     -t "${UNIQUE_IDENTIFIER}" \
     -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"
 
-# Create reports directories.
-mkdir -p "runner/${WORKER_POOL_8CORE}" "runner/${WORKER_POOL_32CORE}"
-
 # Run tests.
 time ../test-infra/bin/runner \
     -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
     -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_32CORE}.yaml" \
+    -delete-successful-tests \
     -c "${WORKER_POOL_8CORE}:2" -c "${WORKER_POOL_32CORE}:2" \
     -o "runner/sponge_log.xml"

@@ -813,8 +813,9 @@ include/grpc/census.h \
 include/grpc/compression.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
+include/grpc/event_engine/internal/memory_allocator_impl.h \
+include/grpc/event_engine/memory_allocator.h \
 include/grpc/event_engine/port.h \
-include/grpc/event_engine/slice_allocator.h \
 include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_posix.h \
@@ -1013,8 +1014,6 @@ src/core/ext/transport/binder/README.md \
 src/core/ext/transport/chttp2/README.md \
 src/core/ext/transport/chttp2/alpn/alpn.cc \
 src/core/ext/transport/chttp2/alpn/alpn.h \
-src/core/ext/transport/chttp2/client/authority.cc \
-src/core/ext/transport/chttp2/client/authority.h \
 src/core/ext/transport/chttp2/client/chttp2_connector.cc \
 src/core/ext/transport/chttp2/client/chttp2_connector.h \
 src/core/ext/transport/chttp2/client/insecure/README.md \
@@ -1035,8 +1034,6 @@ src/core/ext/transport/chttp2/transport/bin_decoder.h \
 src/core/ext/transport/chttp2/transport/bin_encoder.cc \
 src/core/ext/transport/chttp2/transport/bin_encoder.h \
 src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
-src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc \
-src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h \
 src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
 src/core/ext/transport/chttp2/transport/chttp2_transport.h \
 src/core/ext/transport/chttp2/transport/context_list.cc \
@@ -1635,6 +1632,7 @@ src/core/lib/gprpp/stat_windows.cc \
 src/core/lib/gprpp/status_helper.cc \
 src/core/lib/gprpp/status_helper.h \
 src/core/lib/gprpp/sync.h \
+src/core/lib/gprpp/table.h \
 src/core/lib/gprpp/thd.h \
 src/core/lib/gprpp/thd_posix.cc \
 src/core/lib/gprpp/thd_windows.cc \
@@ -1702,6 +1700,10 @@ src/core/lib/iomgr/exec_ctx.cc \
 src/core/lib/iomgr/exec_ctx.h \
 src/core/lib/iomgr/executor.cc \
 src/core/lib/iomgr/executor.h \
+src/core/lib/iomgr/executor/mpmcqueue.cc \
+src/core/lib/iomgr/executor/mpmcqueue.h \
+src/core/lib/iomgr/executor/threadpool.cc \
+src/core/lib/iomgr/executor/threadpool.h \
 src/core/lib/iomgr/fork_posix.cc \
 src/core/lib/iomgr/fork_windows.cc \
 src/core/lib/iomgr/gethostname.h \
@@ -1942,6 +1944,8 @@ src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_refcount.cc \
 src/core/lib/slice/slice_refcount.h \
 src/core/lib/slice/slice_refcount_base.h \
+src/core/lib/slice/slice_split.cc \
+src/core/lib/slice/slice_split.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/slice/slice_utils.h \
@@ -1950,6 +1954,8 @@ src/core/lib/slice/static_slice.h \
 src/core/lib/surface/README.md \
 src/core/lib/surface/api_trace.cc \
 src/core/lib/surface/api_trace.h \
+src/core/lib/surface/builtins.cc \
+src/core/lib/surface/builtins.h \
 src/core/lib/surface/byte_buffer.cc \
 src/core/lib/surface/byte_buffer_reader.cc \
 src/core/lib/surface/call.cc \
@@ -1982,8 +1988,6 @@ src/core/lib/surface/validate_metadata.cc \
 src/core/lib/surface/validate_metadata.h \
 src/core/lib/surface/version.cc \
 src/core/lib/transport/README.md \
-src/core/lib/transport/authority_override.cc \
-src/core/lib/transport/authority_override.h \
 src/core/lib/transport/bdp_estimator.cc \
 src/core/lib/transport/bdp_estimator.h \
 src/core/lib/transport/byte_stream.cc \

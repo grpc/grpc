@@ -131,11 +131,10 @@ static grpc_error_handle client_filter_incoming_metadata(
               grpc_error_set_str(
                   GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "Received http2 :status header with non-200 OK status"),
-                  GRPC_ERROR_STR_VALUE, grpc_slice_from_copied_string(val)),
+                  GRPC_ERROR_STR_VALUE, val),
               GRPC_ERROR_INT_GRPC_STATUS,
               grpc_http2_status_to_grpc_status(atoi(val))),
-          GRPC_ERROR_STR_GRPC_MESSAGE,
-          grpc_slice_from_cpp_string(std::move(msg)));
+          GRPC_ERROR_STR_GRPC_MESSAGE, msg);
       gpr_free(val);
       return e;
     }
@@ -355,8 +354,7 @@ static grpc_error_handle update_path_for_get(
       grpc_mdelem_from_slices(GRPC_MDSTR_PATH, path_with_query_slice);
   grpc_metadata_batch* b =
       batch->payload->send_initial_metadata.send_initial_metadata;
-  return grpc_metadata_batch_substitute(b, b->legacy_index()->named.path,
-                                        mdelem_path_and_query);
+  return b->Substitute(b->legacy_index()->named.path, mdelem_path_and_query);
 }
 
 static void remove_if_present(grpc_metadata_batch* batch,

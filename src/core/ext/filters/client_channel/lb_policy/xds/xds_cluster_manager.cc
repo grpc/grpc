@@ -151,6 +151,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
                        const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
+      absl::string_view GetAuthority() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
 
@@ -568,6 +569,12 @@ void XdsClusterManagerLb::ClusterChild::Helper::RequestReresolution() {
   xds_cluster_manager_child_->xds_cluster_manager_policy_
       ->channel_control_helper()
       ->RequestReresolution();
+}
+
+absl::string_view XdsClusterManagerLb::ClusterChild::Helper::GetAuthority() {
+  return xds_cluster_manager_child_->xds_cluster_manager_policy_
+      ->channel_control_helper()
+      ->GetAuthority();
 }
 
 void XdsClusterManagerLb::ClusterChild::Helper::AddTraceEvent(

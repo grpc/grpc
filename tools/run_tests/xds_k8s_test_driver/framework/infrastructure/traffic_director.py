@@ -68,9 +68,12 @@ class TrafficDirectorManager:
         resource_prefix: str,
         resource_suffix: str,
         network: str = 'default',
+        compute_api_version: str = 'v1',
     ):
         # API
-        self.compute = _ComputeV1(gcp_api_manager, project)
+        self.compute = _ComputeV1(gcp_api_manager,
+                                  project,
+                                  version=compute_api_version)
 
         # Settings
         self.project: str = project
@@ -553,12 +556,14 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
                  *,
                  resource_prefix: str,
                  resource_suffix: Optional[str] = None,
-                 network: str = 'default'):
+                 network: str = 'default',
+                 compute_api_version: str = 'v1'):
         super().__init__(gcp_api_manager,
                          project,
                          resource_prefix=resource_prefix,
                          resource_suffix=resource_suffix,
-                         network=network)
+                         network=network,
+                         compute_api_version=compute_api_version)
 
         # API
         self.netsvc = _NetworkServicesV1Alpha1(gcp_api_manager, project)
@@ -653,12 +658,14 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         resource_prefix: str,
         resource_suffix: Optional[str] = None,
         network: str = 'default',
+        compute_api_version: str = 'v1',
     ):
         super().__init__(gcp_api_manager,
                          project,
                          resource_prefix=resource_prefix,
                          resource_suffix=resource_suffix,
-                         network=network)
+                         network=network,
+                         compute_api_version=compute_api_version)
 
         # API
         self.netsec = _NetworkSecurityV1Beta1(gcp_api_manager, project)

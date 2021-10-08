@@ -119,8 +119,9 @@ Pod::Spec.new do |s|
                       'include/grpc/compression.h',
                       'include/grpc/event_engine/endpoint_config.h',
                       'include/grpc/event_engine/event_engine.h',
+                      'include/grpc/event_engine/internal/memory_allocator_impl.h',
+                      'include/grpc/event_engine/memory_allocator.h',
                       'include/grpc/event_engine/port.h',
-                      'include/grpc/event_engine/slice_allocator.h',
                       'include/grpc/fork.h',
                       'include/grpc/grpc.h',
                       'include/grpc/grpc_posix.h',
@@ -177,7 +178,8 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.20'
+    ss.dependency 'BoringSSL-GRPC', '0.0.21'
+    ss.dependency 'Libuv-gRPC', '0.0.10'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
@@ -193,6 +195,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
     ss.dependency 'abseil/types/variant', abseil_version
+    ss.dependency 'abseil/utility/utility', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
 
     ss.source_files = 'src/core/ext/filters/census/grpc_context.cc',
@@ -333,8 +336,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/workarounds/workaround_utils.h',
                       'src/core/ext/transport/chttp2/alpn/alpn.cc',
                       'src/core/ext/transport/chttp2/alpn/alpn.h',
-                      'src/core/ext/transport/chttp2/client/authority.cc',
-                      'src/core/ext/transport/chttp2/client/authority.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.cc',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                       'src/core/ext/transport/chttp2/client/insecure/channel_create.cc',
@@ -350,8 +351,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/bin_encoder.cc',
                       'src/core/ext/transport/chttp2/transport/bin_encoder.h',
                       'src/core/ext/transport/chttp2/transport/chttp2_plugin.cc',
-                      'src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc',
-                      'src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h',
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.cc',
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
                       'src/core/ext/transport/chttp2/transport/context_list.cc',
@@ -950,6 +949,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/status_helper.cc',
                       'src/core/lib/gprpp/status_helper.h',
                       'src/core/lib/gprpp/sync.h',
+                      'src/core/lib/gprpp/table.h',
                       'src/core/lib/gprpp/thd.h',
                       'src/core/lib/gprpp/thd_posix.cc',
                       'src/core/lib/gprpp/thd_windows.cc',
@@ -1016,6 +1016,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.cc',
                       'src/core/lib/iomgr/executor.h',
+                      'src/core/lib/iomgr/executor/mpmcqueue.cc',
+                      'src/core/lib/iomgr/executor/mpmcqueue.h',
+                      'src/core/lib/iomgr/executor/threadpool.cc',
+                      'src/core/lib/iomgr/executor/threadpool.h',
                       'src/core/lib/iomgr/fork_posix.cc',
                       'src/core/lib/iomgr/fork_windows.cc',
                       'src/core/lib/iomgr/gethostname.h',
@@ -1256,6 +1260,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_refcount.cc',
                       'src/core/lib/slice/slice_refcount.h',
                       'src/core/lib/slice/slice_refcount_base.h',
+                      'src/core/lib/slice/slice_split.cc',
+                      'src/core/lib/slice/slice_split.h',
                       'src/core/lib/slice/slice_string_helpers.cc',
                       'src/core/lib/slice/slice_string_helpers.h',
                       'src/core/lib/slice/slice_utils.h',
@@ -1263,6 +1269,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/static_slice.h',
                       'src/core/lib/surface/api_trace.cc',
                       'src/core/lib/surface/api_trace.h',
+                      'src/core/lib/surface/builtins.cc',
+                      'src/core/lib/surface/builtins.h',
                       'src/core/lib/surface/byte_buffer.cc',
                       'src/core/lib/surface/byte_buffer_reader.cc',
                       'src/core/lib/surface/call.cc',
@@ -1294,8 +1302,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/validate_metadata.cc',
                       'src/core/lib/surface/validate_metadata.h',
                       'src/core/lib/surface/version.cc',
-                      'src/core/lib/transport/authority_override.cc',
-                      'src/core/lib/transport/authority_override.h',
                       'src/core/lib/transport/bdp_estimator.cc',
                       'src/core/lib/transport/bdp_estimator.h',
                       'src/core/lib/transport/byte_stream.cc',
@@ -1518,12 +1524,10 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
                               'src/core/ext/filters/workarounds/workaround_utils.h',
                               'src/core/ext/transport/chttp2/alpn/alpn.h',
-                              'src/core/ext/transport/chttp2/client/authority.h',
                               'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                               'src/core/ext/transport/chttp2/server/chttp2_server.h',
                               'src/core/ext/transport/chttp2/transport/bin_decoder.h',
                               'src/core/ext/transport/chttp2/transport/bin_encoder.h',
-                              'src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h',
                               'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
                               'src/core/ext/transport/chttp2/transport/context_list.h',
                               'src/core/ext/transport/chttp2/transport/flow_control.h',
@@ -1822,6 +1826,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/stat.h',
                               'src/core/lib/gprpp/status_helper.h',
                               'src/core/lib/gprpp/sync.h',
+                              'src/core/lib/gprpp/table.h',
                               'src/core/lib/gprpp/thd.h',
                               'src/core/lib/gprpp/time_util.h',
                               'src/core/lib/http/format_request.h',
@@ -1853,6 +1858,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/event_engine/resolved_address_internal.h',
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
+                              'src/core/lib/iomgr/executor/mpmcqueue.h',
+                              'src/core/lib/iomgr/executor/threadpool.h',
                               'src/core/lib/iomgr/gethostname.h',
                               'src/core/lib/iomgr/grpc_if_nametoindex.h',
                               'src/core/lib/iomgr/internal_errqueue.h',
@@ -1959,10 +1966,12 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_refcount.h',
                               'src/core/lib/slice/slice_refcount_base.h',
+                              'src/core/lib/slice/slice_split.h',
                               'src/core/lib/slice/slice_string_helpers.h',
                               'src/core/lib/slice/slice_utils.h',
                               'src/core/lib/slice/static_slice.h',
                               'src/core/lib/surface/api_trace.h',
+                              'src/core/lib/surface/builtins.h',
                               'src/core/lib/surface/call.h',
                               'src/core/lib/surface/call_test_only.h',
                               'src/core/lib/surface/channel.h',
@@ -1975,7 +1984,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/lame_client.h',
                               'src/core/lib/surface/server.h',
                               'src/core/lib/surface/validate_metadata.h',
-                              'src/core/lib/transport/authority_override.h',
                               'src/core/lib/transport/bdp_estimator.h',
                               'src/core/lib/transport/byte_stream.h',
                               'src/core/lib/transport/connectivity_state.h',
@@ -2268,7 +2276,9 @@ Pod::Spec.new do |s|
 
   # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
   s.prepare_command = <<-END_OF_COMMAND
+    set -e
     find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
+    find src/core -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <uv.h>;#if COCOAPODS==1\\\n  #include <uv/uv.h>\\\n#else\\\n  #include  <uv.h>\\\n#endif;g'
     find third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "third_party/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/third_party/\\1"\\\n#else\\\n  #include  "third_party/\\1"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm

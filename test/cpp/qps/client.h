@@ -191,8 +191,8 @@ class Client {
     if (median_latency_collection_interval_seconds_ > 0) {
       std::vector<double> medians_per_interval =
           threads_[0]->GetMedianPerIntervalList();
-      gpr_log(GPR_INFO, "Num threads: %ld", threads_.size());
-      gpr_log(GPR_INFO, "Number of medians: %ld", medians_per_interval.size());
+      gpr_log(GPR_INFO, "Num threads: %zu", threads_.size());
+      gpr_log(GPR_INFO, "Number of medians: %zu", medians_per_interval.size());
       for (size_t j = 0; j < medians_per_interval.size(); j++) {
         gpr_log(GPR_INFO, "%f", medians_per_interval[j]);
       }
