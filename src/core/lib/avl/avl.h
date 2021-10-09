@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIBAVL_H
-#define GRPC_CORE_LIBAVL_H
+#ifndef GRPC_CORE_LIB_AVL_AVL_H
+#define GRPC_CORE_LIB_AVL_AVL_H
+
+#include <grpc/support/port_platform.h>
 
 #include <algorithm>
 #include <memory>
@@ -64,7 +66,7 @@ class AVL {
   };
   NodePtr root_;
 
-  AVL(NodePtr root) : root_(std::move(root)) {}
+  explicit AVL(NodePtr root) : root_(std::move(root)) {}
 
   template <class F>
   static void ForEachImpl(const Node* n, F&& f) {
@@ -256,7 +258,7 @@ class AVL<K, void> {
   };
   NodePtr root_;
 
-  AVL(NodePtr root) : root_(std::move(root)) {}
+  explicit AVL(NodePtr root) : root_(std::move(root)) {}
 
   template <class F>
   static void ForEachImpl(const Node* n, F&& f) {
@@ -388,4 +390,4 @@ class AVL<K, void> {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_AVL_AVL_H
