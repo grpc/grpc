@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-
-# Copyright 2018 gRPC authors.
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,15 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import sys
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-script_dir = os.path.dirname(sys.argv[0])
-sys.path.append(script_dir)
+licenses(["notice"])
 
-import scenario_generator_helper as gen
+grpc_package(name = "test/core/client_idle")
 
-gen.generate_scenarios_bzl(
-    gen.generate_json_run_localhost_scenarios(),
-    os.path.join(script_dir, 'json_run_localhost_scenarios.bzl'),
-    'JSON_RUN_LOCALHOST_SCENARIOS')
+grpc_cc_test(
+    name = "idle_filter_state_test",
+    srcs = ["idle_filter_state_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:idle_filter_state",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
