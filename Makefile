@@ -1967,7 +1967,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/security/credentials/composite/composite_credentials.cc \
     src/core/lib/security/credentials/credentials.cc \
     src/core/lib/security/credentials/credentials_metadata.cc \
+    src/core/lib/security/credentials/insecure/insecure_credentials.cc \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
+    src/core/lib/security/security_connector/insecure/insecure_security_connector.cc \
     src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
@@ -2020,6 +2022,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/transport_op_string.cc \
     src/core/lib/uri/uri_parser.cc \
     src/core/plugin_registry/grpc_unsecure_plugin_registry.cc \
+    src/core/tsi/local_transport_security.cc \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
 
@@ -2930,7 +2933,6 @@ src/core/lib/security/credentials/fake/fake_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/google_default/credentials_generic.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/google_default/google_default_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/iam/iam_credentials.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/insecure/insecure_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/jwt/json_token.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/jwt/jwt_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/jwt/jwt_verifier.cc: $(OPENSSL_DEP)
@@ -2945,7 +2947,6 @@ src/core/lib/security/credentials/tls/tls_utils.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/xds/xds_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/alts/alts_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/fake/fake_security_connector.cc: $(OPENSSL_DEP)
-src/core/lib/security/security_connector/insecure/insecure_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/load_system_roots_fallback.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/load_system_roots_linux.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/local/local_security_connector.cc: $(OPENSSL_DEP)
@@ -2976,7 +2977,6 @@ src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc:
 src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc: $(OPENSSL_DEP)
 src/core/tsi/fake_transport_security.cc: $(OPENSSL_DEP)
-src/core/tsi/local_transport_security.cc: $(OPENSSL_DEP)
 src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc: $(OPENSSL_DEP)
 src/core/tsi/ssl/session_cache/ssl_session_cache.cc: $(OPENSSL_DEP)
 src/core/tsi/ssl/session_cache/ssl_session_openssl.cc: $(OPENSSL_DEP)
