@@ -1,0 +1,10 @@
+# TODO(lidiz) make the SHA dynamic
+FROM grpctesting/ruby_buster_x64:4ac6657810b86d633d43df262f8cda816ea497ec
+
+WORKDIR /workdir
+
+COPY . .
+
+RUN (cd src/ruby && bundle && rake compile)
+
+CMD [ "ruby", "src/ruby/pb/test/xds_client.rb" ]

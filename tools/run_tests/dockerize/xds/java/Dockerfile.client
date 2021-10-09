@@ -1,0 +1,18 @@
+FROM gradle:jdk11
+
+WORKDIR /workdir
+RUN mkdir /artifacts
+
+COPY . .
+RUN ./gradlew --no-daemon grpc-interop-testing:installDist -x test -PskipCodegen=true -PskipAndroid=true --console=plain
+RUN cp ./interop-testing/build/install/grpc-interop-testing/bin/xds-test-client /artifacts
+
+# Build runtime image.
+FROM openjdk:11.0.9.1-jdk
+COPY --from=0 /artifacts ./
+
+# Copy all logging profiles, use json logging by default
+ENV JAVA_OPTS="-Djava.util.logging.config.file=./buildscripts/xds-k8s/logging-json.properties"
+
+# Client
+ENTRYPOINT ["xds-test-client"]

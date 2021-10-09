@@ -1,0 +1,77 @@
+# Copyright 2021 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+package(
+    default_testonly = 1,
+    default_visibility = ["//visibility:public"],
+)
+
+XDS_LANGUAGES = [
+    "cpp", "python", "php", "ruby", "go", "java"
+]
+
+XDS_VERSIONS = [
+    "v1.33.x",
+    "v1.34.x",
+    "v1.35.x",
+    "v1.36.x",
+    "v1.37.x",
+    "v1.38.x",
+    "v1.39.x",
+    "v1.40.x",
+    "v1.41.x",
+]
+
+XDS_CLIENT_IMAGES = [
+    (language, version)
+    for language in XDS_LANGUAGES
+    for version in XDS_VERSIONS
+]
+
+XDS_SERVER_IMAGES = [
+    (language, version)
+    for language in ["cpp", "go", "java"]
+    for version in XDS_VERSIONS
+] + [
+    # Except cpp/go/java, only Python has xDS interop server
+    ('python', 'v1.41.x')
+]
+
+[
+    sh_test(
+        name = "maybe_update_xds_client_image_" + language + "_" + version,
+        size = "enormous",
+        srcs = ["update_xds_image.sh"],
+        args = ['client', language, version],
+        data = [
+            ":cloudbuild.yaml",
+            ":"+language+"/Dockerfile.client",
+        ],
+    )
+    for language, version in XDS_CLIENT_IMAGES
+]
+
+[
+    sh_test(
+        name = "maybe_update_xds_server_image_" + language + "_" + version,
+        size = "enormous",
+        srcs = ["update_xds_image.sh"],
+        args = ['server', language, version],
+        data = [
+            ":cloudbuild.yaml",
+            ":"+language+"/Dockerfile.server",
+        ],
+    )
+    for language, version in XDS_SERVER_IMAGES
+]
