@@ -36,7 +36,7 @@ class SslSessionLRUCache::Node {
     SetSession(std::move(session));
   }
 
-  ~Node() { grpc_slice_unref_internal(key_); }
+  ~Node() = default;
 
   // Not copyable nor movable.
   Node(const Node&) = delete;
@@ -86,7 +86,7 @@ SslSessionLRUCache::Node* SslSessionLRUCache::FindLocked(
   if (it == entry_by_key_.end()) {
     return nullptr;
   }
-  Node* node = static_cast<Node*>(value);
+  Node* node = it->second;
   // Move to the beginning.
   Remove(node);
   PushFront(node);
@@ -96,13 +96,12 @@ SslSessionLRUCache::Node* SslSessionLRUCache::FindLocked(
 
 void SslSessionLRUCache::Put(const char* key, SslSessionPtr session) {
   grpc_core::MutexLock lock(&lock_);
-  Node* node = FindLocked(grpc_slice_from_static_string(key));
+  Node* node = FindLocked(key);
   if (node != nullptr) {
     node->SetSession(std::move(session));
     return;
   }
-  grpc_slice key_slice = grpc_slice_from_copied_string(key);
-  node = new Node(key_slice, std::move(session));
+  node = new Node(key, std::move(session));
   PushFront(node);
   entry_by_key_.emplace(key, node);
   AssertInvariants();
@@ -120,8 +119,7 @@ void SslSessionLRUCache::Put(const char* key, SslSessionPtr session) {
 SslSessionPtr SslSessionLRUCache::Get(const char* key) {
   grpc_core::MutexLock lock(&lock_);
   // Key is only used for lookups.
-  grpc_slice key_slice = grpc_slice_from_static_string(key);
-  Node* node = FindLocked(key_slice);
+  Node* node = FindLocked(key);
   if (node == nullptr) {
     return nullptr;
   }
@@ -159,13 +157,6 @@ void SslSessionLRUCache::PushFront(SslSessionLRUCache::Node* node) {
 }
 
 #ifndef NDEBUG
-static size_t calculate_tree_size(grpc_avl_node* node) {
-  if (node == nullptr) {
-    return 0;
-  }
-  return 1 + calculate_tree_size(node->left) + calculate_tree_size(node->right);
-}
-
 void SslSessionLRUCache::AssertInvariants() {
   size_t size = 0;
   Node* prev = nullptr;
@@ -173,14 +164,15 @@ void SslSessionLRUCache::AssertInvariants() {
   while (current != nullptr) {
     size++;
     GPR_ASSERT(current->prev_ == prev);
-    void* node = grpc_avl_get(entry_by_key_, current->AvlKey(), nullptr);
-    GPR_ASSERT(node == current);
+    auto it = entry_by_key_.find(current->key());
+    GPR_ASSERT(it != entry_by_key_.end());
+    GPR_ASSERT(it->second == current);
     prev = current;
     current = current->next_;
   }
   GPR_ASSERT(prev == use_order_list_tail_);
   GPR_ASSERT(size == use_order_list_size_);
-  GPR_ASSERT(calculate_tree_size(entry_by_key_.root) == use_order_list_size_);
+  GPR_ASSERT(entry_by_key_.size() == use_order_list_size_);
 }
 #else
 void SslSessionLRUCache::AssertInvariants() {}

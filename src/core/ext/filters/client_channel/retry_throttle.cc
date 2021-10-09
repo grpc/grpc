@@ -31,6 +31,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/gprpp/manual_constructor.h"
+
 namespace grpc_core {
 namespace internal {
 
@@ -138,9 +140,11 @@ RefCountedPtr<ServerRetryThrottleData> ServerRetryThrottleMap::GetDataForServer(
   RefCountedPtr<ServerRetryThrottleData> result;
   gpr_mu_lock(&g_mu);
   auto it = g_map->find(server_name);
-  if (it != g_map->end() ||
-      it->second->max_milli_tokens() != max_milli_tokens ||
-      it->second->milli_token_ratio() != milli_token_ratio) {
+  ServerRetryThrottleData* throttle_data =
+      it == g_map->end() ? nullptr : it->second.get();
+  if (throttle_data == nullptr ||
+      throttle_data->max_milli_tokens() != max_milli_tokens ||
+      throttle_data->milli_token_ratio() != milli_token_ratio) {
     // Entry not found, or found with old parameters.  Create a new one.
     it = g_map
              ->insert(std::make_pair(
@@ -148,10 +152,10 @@ RefCountedPtr<ServerRetryThrottleData> ServerRetryThrottleMap::GetDataForServer(
                  MakeRefCounted<ServerRetryThrottleData>(
                      max_milli_tokens, milli_token_ratio, throttle_data)))
              .first;
+    throttle_data = it->second.get();
   }
-  auto result = it->second;
   gpr_mu_unlock(&g_mu);
-  return result;
+  return throttle_data;
 }
 
 }  // namespace internal

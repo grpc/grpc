@@ -73,7 +73,7 @@ class SslSessionLRUCache : public grpc_core::RefCounted<SslSessionLRUCache> {
  private:
   class Node;
 
-  Node* FindLocked(const grpc_slice& key);
+  Node* FindLocked(const std::string& key);
   void Remove(Node* node);
   void PushFront(Node* node);
   void AssertInvariants();
