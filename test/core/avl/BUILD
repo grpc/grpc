@@ -23,9 +23,9 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 grpc_cc_test(
     name = "avl_test",
     srcs = ["avl_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_polling = False,
-    external_deps = ["gtest"],
     deps = [
         "//:avl",
         "//test/core/util:grpc_suppressions",

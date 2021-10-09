@@ -1464,11 +1464,11 @@ grpc_cc_library(
 grpc_cc_library(
     name = "avl",
     hdrs = [
-        "src/core/lib/avl/avl.h"
+        "src/core/lib/avl/avl.h",
     ],
     deps = [
-        "gpr_platform"
-    ]
+        "gpr_platform",
+    ],
 )
 
 grpc_cc_library(
