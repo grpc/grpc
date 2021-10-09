@@ -24,15 +24,13 @@
 
 namespace grpc_core {
 
-struct RbacPolicies {
-  Rbac deny_policy;
-  Rbac allow_policy;
-};
-
-// Translates SDK authorization policy to Envoy RBAC policies. Returns error on
-// failure.
+// Translates SDK authorization policy to Envoy RBAC policies. On success, will
+// return one of the following -
+// 1. One allow RBAC policy or,
+// 2. Two RBAC policies, deny policy followed by allow policy.
+// Returns error on failure.
 // authz_policy: Authorization Policy string in JSON format.
-absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
+absl::StatusOr<std::vector<Rbac>> GenerateRbacPolicies(
     absl::string_view authz_policy);
 
 }  // namespace grpc_core

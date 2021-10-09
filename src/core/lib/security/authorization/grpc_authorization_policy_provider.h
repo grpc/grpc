@@ -40,7 +40,7 @@ class StaticDataAuthorizationPolicyProvider
 
   // Use factory method "Create" to create an instance of
   // StaticDataAuthorizationPolicyProvider.
-  explicit StaticDataAuthorizationPolicyProvider(RbacPolicies policies);
+  explicit StaticDataAuthorizationPolicyProvider(std::vector<Rbac> policies);
 
   AuthorizationEngines engines() override {
     return {allow_engine_, deny_engine_};

@@ -18,6 +18,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/strip.h"
 
 #include "src/core/lib/gpr/useful.h"
@@ -55,6 +56,14 @@ absl::StatusOr<HeaderMatcher> GetHeaderMatcher(absl::string_view name,
   absl::string_view matcher = GetMatcherType(value, &type);
   return HeaderMatcher::Create(name, static_cast<HeaderMatcher::Type>(type),
                                matcher);
+}
+
+std::string GetFieldNames(const std::map<std::string, Json>& policy) {
+  std::string names;
+  for (const auto& entry : policy) {
+    names += entry.first + " ";
+  }
+  return names;
 }
 
 bool IsUnsupportedHeader(absl::string_view header_name) {
@@ -206,7 +215,7 @@ absl::StatusOr<Rbac::Permission> ParsePathsArray(const Json& json) {
   return Rbac::Permission(Rbac::Permission::RuleType::kOr, std::move(paths));
 }
 
-absl::StatusOr<Rbac::Permission> ParseRequest(const Json& json) {
+absl::StatusOr<Rbac::Permission> ParseRequest(Json json) {
   std::vector<std::unique_ptr<Rbac::Permission>> request;
   auto it = json.object_value().find("paths");
   if (it != json.object_value().end()) {
@@ -219,6 +228,7 @@ absl::StatusOr<Rbac::Permission> ParseRequest(const Json& json) {
       request.push_back(
           absl::make_unique<Rbac::Permission>(std::move(paths_or.value())));
     }
+    json.mutable_object()->erase(it);
   }
   it = json.object_value().find("headers");
   if (it != json.object_value().end()) {
@@ -231,6 +241,12 @@ absl::StatusOr<Rbac::Permission> ParseRequest(const Json& json) {
       request.push_back(
           absl::make_unique<Rbac::Permission>(std::move(headers_or.value())));
     }
+    json.mutable_object()->erase(it);
+  }
+  if (json.object_value().size() > 0) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Policy contains unknown fields: ",
+                     GetFieldNames(json.object_value())));
   }
   if (request.empty()) {
     return Rbac::Permission(Rbac::Permission::RuleType::kAny);
@@ -238,15 +254,16 @@ absl::StatusOr<Rbac::Permission> ParseRequest(const Json& json) {
   return Rbac::Permission(Rbac::Permission::RuleType::kAnd, std::move(request));
 }
 
-absl::StatusOr<Rbac::Policy> ParseRules(const Json& json) {
+absl::StatusOr<Rbac::Policy> ParseRules(Json json) {
   Rbac::Principal principals;
   auto it = json.object_value().find("source");
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::OBJECT) {
       return absl::InvalidArgumentError("\"source\" is not an object.");
     }
-    auto peer_or = ParsePeer(it->second);
+    auto peer_or = ParsePeer(std::move(it->second));
     if (!peer_or.ok()) return peer_or.status();
+    json.mutable_object()->erase(it);
     principals = std::move(peer_or.value());
   } else {
     principals = Rbac::Principal(Rbac::Principal::RuleType::kAny);
@@ -257,20 +274,26 @@ absl::StatusOr<Rbac::Policy> ParseRules(const Json& json) {
     if (it->second.type() != Json::Type::OBJECT) {
       return absl::InvalidArgumentError("\"request\" is not an object.");
     }
-    auto request_or = ParseRequest(it->second);
+    auto request_or = ParseRequest(std::move(it->second));
     if (!request_or.ok()) return request_or.status();
+    json.mutable_object()->erase(it);
     permissions = std::move(request_or.value());
   } else {
     permissions = Rbac::Permission(Rbac::Permission::RuleType::kAny);
+  }
+  if (json.object_value().size() > 0) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Policy contains unknown fields: ",
+                     GetFieldNames(json.object_value())));
   }
   return Rbac::Policy(std::move(permissions), std::move(principals));
 }
 
 absl::StatusOr<std::map<std::string, Rbac::Policy>> ParseRulesArray(
-    const Json& json, absl::string_view name) {
+    Json json, absl::string_view name) {
   std::map<std::string, Rbac::Policy> policies;
-  for (size_t i = 0; i < json.array_value().size(); ++i) {
-    const Json& child = json.array_value().at(i);
+  for (size_t i = 0; i < json.mutable_array()->size(); ++i) {
+    Json& child = json.mutable_array()->at(i);
     if (child.type() != Json::Type::OBJECT) {
       return absl::InvalidArgumentError(
           absl::StrCat("rules ", i, ": is not an object."));
@@ -286,7 +309,8 @@ absl::StatusOr<std::map<std::string, Rbac::Policy>> ParseRulesArray(
     }
     std::string policy_name =
         std::string(name) + "_" + it->second.string_value();
-    auto policy_or = ParseRules(child);
+    child.mutable_object()->erase(it);
+    auto policy_or = ParseRules(std::move(child));
     if (!policy_or.ok()) {
       return absl::Status(
           policy_or.status().code(),
@@ -297,23 +321,23 @@ absl::StatusOr<std::map<std::string, Rbac::Policy>> ParseRulesArray(
   return std::move(policies);
 }
 
-absl::StatusOr<Rbac> ParseDenyRulesArray(const Json& json,
+absl::StatusOr<Rbac> ParseDenyRulesArray(Json json,
                                          absl::string_view name) {
-  auto policies_or = ParseRulesArray(json, name);
+  auto policies_or = ParseRulesArray(std::move(json), name);
   if (!policies_or.ok()) return policies_or.status();
   return Rbac(Rbac::Action::kDeny, std::move(policies_or.value()));
 }
 
-absl::StatusOr<Rbac> ParseAllowRulesArray(const Json& json,
+absl::StatusOr<Rbac> ParseAllowRulesArray(Json json,
                                           absl::string_view name) {
-  auto policies_or = ParseRulesArray(json, name);
+  auto policies_or = ParseRulesArray(std::move(json), name);
   if (!policies_or.ok()) return policies_or.status();
   return Rbac(Rbac::Action::kAllow, std::move(policies_or.value()));
 }
 
 }  // namespace
 
-absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
+absl::StatusOr<std::vector<Rbac>> GenerateRbacPolicies(
     absl::string_view authz_policy) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(authz_policy, &error);
@@ -328,29 +352,28 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
     return absl::InvalidArgumentError(
         "SDK authorization policy is not an object.");
   }
-  auto it = json.mutable_object()->find("name");
-  if (it == json.mutable_object()->end()) {
+  auto name_it = json.object_value().find("name");
+  if (name_it == json.object_value().end()) {
     return absl::InvalidArgumentError("\"name\" field is not present.");
   }
-  if (it->second.type() != Json::Type::STRING) {
+  if (name_it->second.type() != Json::Type::STRING) {
     return absl::InvalidArgumentError("\"name\" is not a string.");
   }
-  absl::string_view name = it->second.string_value();
-  RbacPolicies rbac_policies;
-  it = json.mutable_object()->find("deny_rules");
+  absl::string_view name = name_it->second.string_value();
+  std::vector<Rbac> rbacs;
+  auto it = json.mutable_object()->find("deny_rules");
   if (it != json.mutable_object()->end()) {
     if (it->second.type() != Json::Type::ARRAY) {
       return absl::InvalidArgumentError("\"deny_rules\" is not an array.");
     }
-    auto deny_policy_or = ParseDenyRulesArray(it->second, name);
+    auto deny_policy_or = ParseDenyRulesArray(std::move(it->second), name);
     if (!deny_policy_or.ok()) {
       return absl::Status(
           deny_policy_or.status().code(),
           absl::StrCat("deny_", deny_policy_or.status().message()));
     }
-    rbac_policies.deny_policy = std::move(deny_policy_or.value());
-  } else {
-    rbac_policies.deny_policy.action = Rbac::Action::kDeny;
+    rbacs.push_back(std::move(deny_policy_or.value()));
+    json.mutable_object()->erase(it);
   }
   it = json.mutable_object()->find("allow_rules");
   if (it == json.mutable_object()->end()) {
@@ -359,14 +382,21 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
   if (it->second.type() != Json::Type::ARRAY) {
     return absl::InvalidArgumentError("\"allow_rules\" is not an array.");
   }
-  auto allow_policy_or = ParseAllowRulesArray(it->second, name);
+  auto allow_policy_or = ParseAllowRulesArray(std::move(it->second), name);
   if (!allow_policy_or.ok()) {
     return absl::Status(
         allow_policy_or.status().code(),
         absl::StrCat("allow_", allow_policy_or.status().message()));
   }
-  rbac_policies.allow_policy = std::move(allow_policy_or.value());
-  return std::move(rbac_policies);
+  rbacs.push_back(std::move(allow_policy_or.value()));
+  json.mutable_object()->erase(it);
+  json.mutable_object()->erase(name_it);
+  if (json.object_value().size() > 0) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Policy contains unknown fields: ",
+                     GetFieldNames(json.object_value())));
+  }
+  return std::move(rbacs);
 }
 
 }  // namespace grpc_core

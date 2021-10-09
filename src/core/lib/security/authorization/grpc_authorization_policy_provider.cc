@@ -38,11 +38,21 @@ StaticDataAuthorizationPolicyProvider::Create(absl::string_view authz_policy) {
 }
 
 StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
-    RbacPolicies policies)
-    : allow_engine_(MakeRefCounted<GrpcAuthorizationEngine>(
-          std::move(policies.allow_policy))),
-      deny_engine_(MakeRefCounted<GrpcAuthorizationEngine>(
-          std::move(policies.deny_policy))) {}
+    std::vector<Rbac> policies) {
+  GPR_ASSERT(policies.size() <= 2);
+  if (policies.size() == 1) {
+    GPR_ASSERT(policies[0].action == Rbac::Action::kAllow);
+    allow_engine_ =
+        MakeRefCounted<GrpcAuthorizationEngine>(std::move(policies[0]));
+  } else {
+    GPR_ASSERT(policies[0].action == Rbac::Action::kDeny);
+    GPR_ASSERT(policies[1].action == Rbac::Action::kAllow);
+    deny_engine_ =
+        MakeRefCounted<GrpcAuthorizationEngine>(std::move(policies[0]));
+    allow_engine_ =
+        MakeRefCounted<GrpcAuthorizationEngine>(std::move(policies[1]));
+  }
+}
 
 namespace {
 
@@ -126,15 +136,24 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
     return absl::OkStatus();
   }
   file_contents_ = std::move(*file_contents);
-  auto rbac_policies_or = GenerateRbacPolicies(file_contents_);
-  if (!rbac_policies_or.ok()) {
-    return rbac_policies_or.status();
+  auto policies_or = GenerateRbacPolicies(file_contents_);
+  if (!policies_or.ok()) {
+    return policies_or.status();
   }
   grpc_core::MutexLock lock(&mu_);
-  allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
-      std::move(rbac_policies_or->allow_policy));
-  deny_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
-      std::move(rbac_policies_or->deny_policy));
+  GPR_ASSERT(policies_or->size() <= 2);
+  if (policies_or->size() == 1) {
+    GPR_ASSERT(policies_or->at(0).action == Rbac::Action::kAllow);
+    allow_engine_ =
+        MakeRefCounted<GrpcAuthorizationEngine>(std::move(policies_or->at(0)));
+  } else {
+    GPR_ASSERT(policies_or->at(0).action == Rbac::Action::kDeny);
+    GPR_ASSERT(policies_or->at(1).action == Rbac::Action::kAllow);
+    deny_engine_ =
+        MakeRefCounted<GrpcAuthorizationEngine>(std::move(policies_or->at(0)));
+    allow_engine_ =
+        MakeRefCounted<GrpcAuthorizationEngine>(std::move(policies_or->at(1)));
+  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
     gpr_log(GPR_INFO,
             "authorization policy reload status: successfully loaded new "
