@@ -35,9 +35,9 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "src/core/lib/resource_quota/api.h"
 
 /* TODO(yashykt): When our macos testing infrastructure becomes good enough, we
  * wouldn't need to reduce the number of threads on MacOS */
@@ -132,7 +132,8 @@ void bad_server_thread(void* vargs) {
   grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(resolved_addr.addr);
   int port;
   grpc_tcp_server* s;
-  grpc_channel_args* channel_args = grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
+  grpc_channel_args* channel_args =
+      grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
   grpc_error_handle error = grpc_tcp_server_create(nullptr, channel_args, &s);
   grpc_channel_args_destroy(channel_args);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
