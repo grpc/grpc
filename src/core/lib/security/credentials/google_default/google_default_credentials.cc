@@ -290,7 +290,7 @@ static grpc_error_handle create_default_creds_from_path(
   if (json.type() != Json::Type::OBJECT) {
     error = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to parse JSON"),
-        GRPC_ERROR_STR_RAW_BYTES, grpc_slice_ref_internal(creds_data));
+        GRPC_ERROR_STR_RAW_BYTES, grpc_core::StringViewFromSlice(creds_data));
     goto end;
   }
 

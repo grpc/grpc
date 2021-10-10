@@ -58,6 +58,9 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
+  # Workaround for https://github.com/rvm/rvm/issues/5133
+  export CURL_CA_BUNDLE=$(pwd)/etc/roots.pem
+
   # Fetch keys per https://rvm.io/rvm/install
   gpg_recv_keys_success=0
   for ((i=0;i<5;i++)); do

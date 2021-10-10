@@ -24,7 +24,6 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
-#include "src/core/ext/transport/chttp2/client/authority.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -37,12 +36,7 @@ class Chttp2InsecureClientChannelFactory : public ClientChannelFactory {
   RefCountedPtr<Subchannel> CreateSubchannel(
       const grpc_resolved_address& address,
       const grpc_channel_args* args) override {
-    grpc_channel_args* new_args =
-        grpc_default_authority_add_if_not_present(args);
-    RefCountedPtr<Subchannel> s = Subchannel::Create(
-        MakeOrphanable<Chttp2Connector>(), address, new_args);
-    grpc_channel_args_destroy(new_args);
-    return s;
+    return Subchannel::Create(MakeOrphanable<Chttp2Connector>(), address, args);
   }
 };
 

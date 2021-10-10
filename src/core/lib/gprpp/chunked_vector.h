@@ -113,7 +113,7 @@ class ChunkedVector {
     T* operator->() const { return &*chunk_->data[n_]; }
     ForwardIterator& operator++() {
       ++n_;
-      if (n_ == chunk_->count) {
+      while (chunk_ != nullptr && n_ == chunk_->count) {
         chunk_ = chunk_->next;
         n_ = 0;
       }
@@ -140,7 +140,7 @@ class ChunkedVector {
     const T* operator->() const { return &*chunk_->data[n_]; }
     ConstForwardIterator& operator++() {
       ++n_;
-      if (n_ == chunk_->count) {
+      while (chunk_ != nullptr && n_ == chunk_->count) {
         chunk_ = chunk_->next;
         n_ = 0;
       }

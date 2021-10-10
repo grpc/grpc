@@ -26,12 +26,12 @@ class StressTest {
   // Create a stress test with some size.
   StressTest(size_t num_quotas, size_t num_allocators) {
     for (size_t i = 0; i < num_quotas; ++i) {
-      quotas_.emplace_back(new MemoryQuota());
+      quotas_.emplace_back();
     }
     std::random_device g;
     std::uniform_int_distribution<size_t> dist(0, num_quotas - 1);
     for (size_t i = 0; i < num_allocators; ++i) {
-      allocators_.emplace_back(quotas_[dist(g)]->MakeMemoryAllocator());
+      allocators_.emplace_back(quotas_[dist(g)].CreateMemoryOwner());
     }
   }
 
@@ -40,7 +40,7 @@ class StressTest {
     std::vector<std::thread> threads;
 
     // A few threads constantly rebinding allocators to different quotas.
-    threads.reserve(2);
+    threads.reserve(2 + 2 + 3 * allocators_.size());
     for (int i = 0; i < 2; i++) threads.push_back(Run(Rebinder));
     // And another few threads constantly resizing quotas.
     for (int i = 0; i < 2; i++) threads.push_back(Run(Resizer));
@@ -49,15 +49,18 @@ class StressTest {
     // that allocator. Whenever the first allocation is made, schedule a
     // reclaimer for that pass.
     for (size_t i = 0; i < allocators_.size(); i++) {
-      auto* allocator = allocators_[i].get();
+      auto* allocator = &allocators_[i];
       for (ReclamationPass pass :
            {ReclamationPass::kBenign, ReclamationPass::kIdle,
             ReclamationPass::kDestructive}) {
         threads.push_back(Run([allocator, pass](StatePtr st) mutable {
-          if (st->RememberReservation(
-                  allocator->MakeReservation(st->RandomRequest()))) {
+          if (st->RememberReservation(allocator->allocator()->MakeReservation(
+                  st->RandomRequest()))) {
             allocator->PostReclaimer(
-                pass, [st](ReclamationSweep) { st->ForgetReservations(); });
+                pass, [st](absl::optional<ReclamationSweep> sweep) {
+                  if (!sweep.has_value()) return;
+                  st->ForgetReservations();
+                });
           }
         }));
       }
@@ -90,14 +93,14 @@ class StressTest {
 
     // Choose a random quota, and return an owned pointer to it.
     // Not thread-safe, only callable from the owning thread.
-    RefCountedPtr<MemoryQuota> RandomQuota() {
-      return test_->quotas_[quotas_distribution_(g_)];
+    MemoryQuota* RandomQuota() {
+      return &test_->quotas_[quotas_distribution_(g_)];
     }
 
     // Choose a random allocator, and return a borrowed pointer to it.
     // Not thread-safe, only callable from the owning thread.
-    MemoryAllocator* RandomAllocator() {
-      return test_->allocators_[allocators_distribution_(g_)].get();
+    MemoryOwner* RandomAllocator() {
+      return &test_->allocators_[allocators_distribution_(g_)];
     }
 
     // Random memory request size - 1% of allocations are chosen to be variable
@@ -164,14 +167,14 @@ class StressTest {
 
   // Choose one allocator, one quota, rebind the allocator to the quota.
   static void Rebinder(StatePtr st) {
-    MemoryAllocator* allocator = st->RandomAllocator();
-    RefCountedPtr<MemoryQuota> quota = st->RandomQuota();
-    allocator->Rebind(std::move(quota));
+    auto* allocator = st->RandomAllocator();
+    auto* quota = st->RandomQuota();
+    allocator->Rebind(quota);
   }
 
   // Choose one allocator, resize it to a randomly chosen size.
   static void Resizer(StatePtr st) {
-    RefCountedPtr<MemoryQuota> quota = st->RandomQuota();
+    auto* quota = st->RandomQuota();
     size_t size = st->RandomQuotaSize();
     quota->SetSize(size);
   }
@@ -198,10 +201,10 @@ class StressTest {
   // Memory quotas to test against. We build this up at construction time, but
   // then don't resize, so we can load from it continuously from all of the
   // threads.
-  std::vector<RefCountedPtr<MemoryQuota>> quotas_;
+  std::vector<MemoryQuota> quotas_;
   // Memory allocators to test against. Similarly, built at construction time,
   // and then the shape of this vector is not changed.
-  std::vector<OrphanablePtr<MemoryAllocator>> allocators_;
+  std::vector<MemoryOwner> allocators_;
 };
 }  // namespace
 

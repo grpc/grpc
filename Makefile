@@ -579,7 +579,7 @@ CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
 GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
 GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
 ifeq ($(HOST_IS_X86_64),true)
-ABSL_RANDOM_HWAES_FLAGS = -maes -msse4
+ABSL_RANDOM_HWAES_FLAGS = -maes
 else
 ABSL_RANDOM_HWAES_FLAGS =
 endif
@@ -1107,6 +1107,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/client_idle/client_idle_filter.cc \
+    src/core/ext/filters/client_idle/idle_filter_state.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \
     src/core/ext/filters/fault_injection/service_config_parser.cc \
@@ -1121,7 +1122,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc \
     src/core/ext/filters/workarounds/workaround_utils.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
-    src/core/ext/transport/chttp2/client/authority.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
@@ -1133,7 +1133,6 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
-    src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc \
     src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
     src/core/ext/transport/chttp2/transport/context_list.cc \
     src/core/ext/transport/chttp2/transport/flow_control.cc \
@@ -1571,7 +1570,6 @@ LIBGRPC_SRC = \
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
-    src/core/lib/transport/authority_override.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
@@ -1622,8 +1620,9 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
+    include/grpc/event_engine/internal/memory_allocator_impl.h \
+    include/grpc/event_engine/memory_allocator.h \
     include/grpc/event_engine/port.h \
-    include/grpc/event_engine/slice_allocator.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
@@ -1789,6 +1788,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/client_idle/client_idle_filter.cc \
+    src/core/ext/filters/client_idle/idle_filter_state.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \
     src/core/ext/filters/fault_injection/service_config_parser.cc \
@@ -1803,7 +1803,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc \
     src/core/ext/filters/workarounds/workaround_utils.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
-    src/core/ext/transport/chttp2/client/authority.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
@@ -1813,7 +1812,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
-    src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc \
     src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
     src/core/ext/transport/chttp2/transport/context_list.cc \
     src/core/ext/transport/chttp2/transport/flow_control.cc \
@@ -2004,7 +2002,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
-    src/core/lib/transport/authority_override.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
@@ -2028,8 +2025,9 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
+    include/grpc/event_engine/internal/memory_allocator_impl.h \
+    include/grpc/event_engine/memory_allocator.h \
     include/grpc/event_engine/port.h \
-    include/grpc/event_engine/slice_allocator.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
@@ -2093,6 +2091,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_object.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_octet.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_print.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_strex.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_strnid.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_time.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_type.c \
@@ -2233,13 +2232,13 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/trust_token/voprf.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_digest.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_sign.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/a_strex.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_verify.c \
     third_party/boringssl-with-bazel/src/crypto/x509/algorithm.c \
     third_party/boringssl-with-bazel/src/crypto/x509/asn1_gen.c \
     third_party/boringssl-with-bazel/src/crypto/x509/by_dir.c \
     third_party/boringssl-with-bazel/src/crypto/x509/by_file.c \
     third_party/boringssl-with-bazel/src/crypto/x509/i2d_pr.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/name_print.c \
     third_party/boringssl-with-bazel/src/crypto/x509/rsa_pss.c \
     third_party/boringssl-with-bazel/src/crypto/x509/t_crl.c \
     third_party/boringssl-with-bazel/src/crypto/x509/t_req.c \
