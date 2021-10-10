@@ -303,9 +303,20 @@ int TlsChannelSecurityConnector::cmp(
   if (c != 0) {
     return c;
   }
-  return grpc_ssl_cmp_target_name(
+  c = grpc_ssl_cmp_target_name(
       target_name_.c_str(), other->target_name_.c_str(),
       overridden_target_name_.c_str(), other->overridden_target_name_.c_str());
+  if (c != 0) {
+    return c;
+  };
+  c = options_->cmp(other->options_.get());
+  if (c != 0) {
+    return c;
+  };
+  // We don't check other fields as they are data stored in the security
+  // connector, which might change over time. In other words, the same security
+  // connector might have different values of these fields as time goes.
+  return 0;
 }
 
 bool TlsChannelSecurityConnector::check_call_host(
@@ -566,9 +577,21 @@ void TlsServerSecurityConnector::check_peer(
 }
 
 int TlsServerSecurityConnector::cmp(
-    const grpc_security_connector* other) const {
-  return server_security_connector_cmp(
+    const grpc_security_connector* other_sc) const {
+  auto* other = reinterpret_cast<const TlsServerSecurityConnector*>(other_sc);
+  int c = server_security_connector_cmp(
       static_cast<const grpc_server_security_connector*>(other));
+  if (c != 0) {
+    return c;
+  };
+  c = options_->cmp(other->options_.get());
+  if (c != 0) {
+    return c;
+  };
+  // We don't check other fields as they are data stored in the security
+  // connector, which might change over time. In other words, the same security
+  // connector might have different values of these fields as time goes.
+  return 0;
 }
 
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::

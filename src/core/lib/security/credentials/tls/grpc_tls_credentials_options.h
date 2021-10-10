@@ -174,6 +174,9 @@ struct grpc_tls_credentials_options
     identity_cert_name_ = std::move(identity_cert_name);
   }
 
+  // Other functions.
+  int cmp(const grpc_tls_credentials_options* other_options) const;
+
  private:
   grpc_ssl_client_certificate_request_type cert_request_type_ =
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;

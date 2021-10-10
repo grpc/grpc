@@ -64,6 +64,9 @@ class TlsChannelSecurityConnector final
     GRPC_ERROR_UNREF(error);
   }
 
+  // The compare function should compare the set of fields that affect the
+  // configured behavior of the security connector, not the current data that
+  // it happens to have as a result of that configured behavior.
   int cmp(const grpc_security_connector* other_sc) const override;
 
   bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
@@ -175,7 +178,10 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
     GRPC_ERROR_UNREF(error);
   }
 
-  int cmp(const grpc_security_connector* other) const override;
+  // The compare function should compare the set of fields that affect the
+  // configured behavior of the security connector, not the current data that
+  // it happens to have as a result of that configured behavior.
+  int cmp(const grpc_security_connector* other_sc) const override;
 
   tsi_ssl_server_handshaker_factory* ServerHandshakerFactoryForTesting() {
     MutexLock lock(&mu_);
