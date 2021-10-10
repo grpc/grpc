@@ -45,12 +45,13 @@ class Fuzzer {
   void Run(const memory_quota_fuzzer::Msg& msg) {
     grpc_core::ExecCtx exec_ctx;
     RunMsg(msg);
-    while (!memory_quotas_.empty() || !memory_allocators_.empty() || !allocations_.empty()) {
+    do {
       memory_quotas_.clear();
       memory_allocators_.clear();
       allocations_.clear();
       exec_ctx.Flush();
-    }
+    } while (!memory_quotas_.empty() || !memory_allocators_.empty() ||
+             !allocations_.empty());
   }
 
  private:

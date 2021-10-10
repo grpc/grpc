@@ -1,41 +1,21 @@
 actions {
-  quota: 6
-  create_quota {
-  }
+  create_quota {}
 }
 actions {
-  quota: 6
-  create_allocator {
-  }
+  create_allocator {}
 }
 actions {
-  quota: 6
   post_reclaimer {
-    pass: IDLE
     msg {
       actions {
-        allocation: 8
-        create_quota {
-        }
+        create_quota {}
+      }
+      actions {
+        create_allocator {}
+      }
+      actions {
+        post_reclaimer {}
       }
     }
   }
 }
-actions {
-  quota: 7
-  post_reclaimer {
-    pass: IDLE
-    msg {
-      actions {
-        create_allocator {
-        }
-      }
-      actions {
-        quota: 6
-        post_reclaimer {
-        }
-      }
-    }
-  }
-}
-
