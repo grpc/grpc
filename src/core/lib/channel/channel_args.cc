@@ -83,7 +83,7 @@ grpc_channel_args* grpc_channel_args_remove_grpc_internal(
       static_cast<grpc_arg*>(gpr_malloc(sizeof(grpc_arg) * src->num_args));
   dst->num_args = 0;
   for (size_t i = 0; i < src->num_args; ++i) {
-    if (absl::StartsWith(src->args[i].key, "grpc-private.")) continue;
+    if (absl::StartsWith(src->args[i].key, "grpc.internal.")) continue;
     dst->args[dst->num_args++] = copy_arg(&src->args[i]);
   }
   return dst;
