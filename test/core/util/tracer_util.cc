@@ -16,9 +16,8 @@
  *
  */
 
-#include "test/core/util/test_config.h"
-
 #include "src/core/lib/debug/trace.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {

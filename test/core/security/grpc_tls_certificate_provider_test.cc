@@ -16,15 +16,15 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
+#include <deque>
+#include <list>
+
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <gtest/gtest.h>
-
-#include <deque>
-#include <list>
 
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -139,18 +139,13 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
       std::string root_error_str;
       std::string identity_error_str;
       if (root_cert_error != GRPC_ERROR_NONE) {
-        grpc_slice root_error_slice;
         GPR_ASSERT(grpc_error_get_str(
-            root_cert_error, GRPC_ERROR_STR_DESCRIPTION, &root_error_slice));
-        root_error_str = std::string(StringViewFromSlice(root_error_slice));
+            root_cert_error, GRPC_ERROR_STR_DESCRIPTION, &root_error_str));
       }
       if (identity_cert_error != GRPC_ERROR_NONE) {
-        grpc_slice identity_error_slice;
         GPR_ASSERT(grpc_error_get_str(identity_cert_error,
                                       GRPC_ERROR_STR_DESCRIPTION,
-                                      &identity_error_slice));
-        identity_error_str =
-            std::string(StringViewFromSlice(identity_error_slice));
+                                      &identity_error_str));
       }
       state_->error_queue.emplace_back(std::move(root_error_str),
                                        std::move(identity_error_str));
@@ -495,8 +490,55 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
 }
 
-}  // namespace testing
+TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyPrivateKey) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch(/*private_key=*/"", cert_chain_);
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.status().message(), "Private key string is empty.");
+}
 
+TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyCertificate) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch(private_key_2_, /*cert_chain=*/"");
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.status().message(), "Certificate string is empty.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidCertFormat) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch(private_key_2_, "invalid_certificate");
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.status().message(),
+            "Conversion from PEM string to X509 failed.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FailedKeyCertMatchOnInvalidPrivateKeyFormat) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch("invalid_private_key", cert_chain_2_);
+  EXPECT_EQ(status.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.status().message(),
+            "Conversion from PEM string to EVP_PKEY failed.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, SuccessfulKeyCertMatch) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch(private_key_2_, cert_chain_2_);
+  EXPECT_TRUE(status.ok());
+  EXPECT_TRUE(*status);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidPair) {
+  absl::StatusOr<bool> status =
+      PrivateKeyAndCertificateMatch(private_key_2_, cert_chain_);
+  EXPECT_TRUE(status.ok());
+  EXPECT_FALSE(*status);
+}
+
+}  // namespace testing
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/type/tracing/v3/custom_tag.upb.h"
 #include "envoy/type/metadata/v3/metadata.upb.h"
 #include "udpa/annotations/status.upb.h"
@@ -24,49 +24,49 @@ static const upb_msglayout *const envoy_type_tracing_v3_CustomTag_submsgs[4] = {
 };
 
 static const upb_msglayout_field envoy_type_tracing_v3_CustomTag__fields[5] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 2, 11, 1},
-  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, 1},
-  {4, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 1, 11, 1},
-  {5, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 3, 11, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 2, 11, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 1, 11, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 3, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_type_tracing_v3_CustomTag_msginit = {
   &envoy_type_tracing_v3_CustomTag_submsgs[0],
   &envoy_type_tracing_v3_CustomTag__fields[0],
-  UPB_SIZE(16, 32), 5, false, 255,
+  UPB_SIZE(16, 32), 5, false, 5, 255,
 };
 
 static const upb_msglayout_field envoy_type_tracing_v3_CustomTag_Literal__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_type_tracing_v3_CustomTag_Literal_msginit = {
   NULL,
   &envoy_type_tracing_v3_CustomTag_Literal__fields[0],
-  UPB_SIZE(8, 16), 1, false, 255,
+  UPB_SIZE(8, 16), 1, false, 1, 255,
 };
 
 static const upb_msglayout_field envoy_type_tracing_v3_CustomTag_Environment__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), 0, 0, 9, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_type_tracing_v3_CustomTag_Environment_msginit = {
   NULL,
   &envoy_type_tracing_v3_CustomTag_Environment__fields[0],
-  UPB_SIZE(16, 32), 2, false, 255,
+  UPB_SIZE(16, 32), 2, false, 2, 255,
 };
 
 static const upb_msglayout_field envoy_type_tracing_v3_CustomTag_Header__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), 0, 0, 9, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_type_tracing_v3_CustomTag_Header_msginit = {
   NULL,
   &envoy_type_tracing_v3_CustomTag_Header__fields[0],
-  UPB_SIZE(16, 32), 2, false, 255,
+  UPB_SIZE(16, 32), 2, false, 2, 255,
 };
 
 static const upb_msglayout *const envoy_type_tracing_v3_CustomTag_Metadata_submsgs[2] = {
@@ -75,15 +75,15 @@ static const upb_msglayout *const envoy_type_tracing_v3_CustomTag_Metadata_subms
 };
 
 static const upb_msglayout_field envoy_type_tracing_v3_CustomTag_Metadata__fields[3] = {
-  {1, UPB_SIZE(12, 24), 1, 1, 11, 1},
-  {2, UPB_SIZE(16, 32), 2, 0, 11, 1},
-  {3, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {1, UPB_SIZE(12, 24), 1, 1, 11, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(16, 32), 2, 0, 11, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_type_tracing_v3_CustomTag_Metadata_msginit = {
   &envoy_type_tracing_v3_CustomTag_Metadata_submsgs[0],
   &envoy_type_tracing_v3_CustomTag_Metadata__fields[0],
-  UPB_SIZE(24, 48), 3, false, 255,
+  UPB_SIZE(24, 48), 3, false, 3, 255,
 };
 
 #include "upb/port_undef.inc"

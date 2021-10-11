@@ -30,30 +30,21 @@
 
 namespace grpc_core {
 
-/// When a service config is applied to a call in the client_channel_filter,
-/// we create an instance of this object on the arena.  A pointer to this
-/// object is also stored in the call_context, so that future filters can
+/// Stores the service config data associated with an individual call.
+/// A pointer to this object is stored in the call_context
+/// GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA element, so that filters can
 /// easily access method and global parameters for the call.
 class ServiceConfigCallData {
  public:
-  ServiceConfigCallData(
-      RefCountedPtr<ServiceConfig> service_config,
-      const ServiceConfigParser::ParsedConfigVector* method_configs,
-      std::map<const char*, absl::string_view> call_attributes,
-      grpc_call_context_element* call_context)
-      : service_config_(std::move(service_config)),
-        method_configs_(method_configs),
-        call_attributes_(std::move(call_attributes)) {
-    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value = this;
-    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].destroy = Destroy;
-  }
+  using CallAttributes = std::map<const char*, absl::string_view>;
 
   ServiceConfigCallData(
       RefCountedPtr<ServiceConfig> service_config,
       const ServiceConfigParser::ParsedConfigVector* method_configs,
-      grpc_call_context_element* call_context)
-      : ServiceConfigCallData(std::move(service_config), method_configs, {},
-                              call_context) {}
+      CallAttributes call_attributes)
+      : service_config_(std::move(service_config)),
+        method_configs_(method_configs),
+        call_attributes_(std::move(call_attributes)) {}
 
   ServiceConfig* service_config() { return service_config_.get(); }
 
@@ -66,19 +57,12 @@ class ServiceConfigCallData {
     return service_config_->GetGlobalParsedConfig(index);
   }
 
-  const std::map<const char*, absl::string_view>& call_attributes() const {
-    return call_attributes_;
-  }
+  const CallAttributes& call_attributes() const { return call_attributes_; }
 
  private:
-  static void Destroy(void* ptr) {
-    ServiceConfigCallData* self = static_cast<ServiceConfigCallData*>(ptr);
-    self->~ServiceConfigCallData();
-  }
-
   RefCountedPtr<ServiceConfig> service_config_;
-  const ServiceConfigParser::ParsedConfigVector* method_configs_ = nullptr;
-  std::map<const char*, absl::string_view> call_attributes_;
+  const ServiceConfigParser::ParsedConfigVector* method_configs_;
+  CallAttributes call_attributes_;
 };
 
 }  // namespace grpc_core

@@ -13,9 +13,9 @@
 # limitations under the License.
 """Tests application-provided metadata, status code, and details."""
 
+import logging
 import threading
 import unittest
-import logging
 
 import grpc
 
@@ -188,6 +188,8 @@ def _generic_handler(servicer):
     return grpc.method_handlers_generic_handler(_SERVICE, method_handlers)
 
 
+@unittest.skipIf(test_common.running_under_gevent(),
+                 "Causes deadlock in gevent.")
 class MetadataCodeDetailsTest(unittest.TestCase):
 
     def setUp(self):

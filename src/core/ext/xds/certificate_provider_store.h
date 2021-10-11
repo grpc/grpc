@@ -101,7 +101,7 @@ class CertificateProviderStore
 
   Mutex mu_;
   // Map of plugin configurations
-  PluginDefinitionMap plugin_config_map_ ABSL_GUARDED_BY(mu_);
+  const PluginDefinitionMap plugin_config_map_;
   // Underlying map for the providers.
   std::map<absl::string_view, CertificateProviderWrapper*>
       certificate_providers_map_ ABSL_GUARDED_BY(mu_);

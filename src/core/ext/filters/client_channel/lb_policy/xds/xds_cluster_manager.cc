@@ -151,6 +151,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
                        const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
+      absl::string_view GetAuthority() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
 
@@ -212,15 +213,8 @@ XdsClusterManagerLb::PickResult XdsClusterManagerLb::ClusterPicker::Pick(
   if (it != cluster_map_.end()) {
     return it->second->Pick(args);
   }
-  PickResult result;
-  result.type = PickResult::PICK_FAILED;
-  result.error = grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("xds cluster manager picker: unknown cluster \"",
-                       cluster_name, "\"")
-              .c_str()),
-      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
-  return result;
+  return PickResult::Fail(absl::InternalError(absl::StrCat(
+      "xds cluster manager picker: unknown cluster \"", cluster_name, "\"")));
 }
 
 //
@@ -577,6 +571,12 @@ void XdsClusterManagerLb::ClusterChild::Helper::RequestReresolution() {
       ->RequestReresolution();
 }
 
+absl::string_view XdsClusterManagerLb::ClusterChild::Helper::GetAuthority() {
+  return xds_cluster_manager_child_->xds_cluster_manager_policy_
+      ->channel_control_helper()
+      ->GetAuthority();
+}
+
 void XdsClusterManagerLb::ClusterChild::Helper::AddTraceEvent(
     TraceSeverity severity, absl::string_view message) {
   if (xds_cluster_manager_child_->xds_cluster_manager_policy_->shutting_down_) {
@@ -634,14 +634,8 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
         std::vector<grpc_error_handle> child_errors =
             ParseChildConfig(p.second, &child_config);
         if (!child_errors.empty()) {
-          // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
-          // string is not static in this case.
-          grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("field:children name:", child_name).c_str());
-          for (grpc_error_handle child_error : child_errors) {
-            error = grpc_error_add_child(error, child_error);
-          }
-          error_list.push_back(error);
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+              absl::StrCat("field:children name:", child_name), &child_errors));
         } else {
           cluster_map[child_name] = std::move(child_config);
           clusters_to_be_used.insert(child_name);

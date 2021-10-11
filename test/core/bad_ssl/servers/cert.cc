@@ -23,7 +23,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/load_file.h"
-
 #include "test/core/bad_ssl/server_common.h"
 
 /* This server will present an untrusted cert to the connecting client,

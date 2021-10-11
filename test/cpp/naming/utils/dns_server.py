@@ -15,26 +15,29 @@
 """Starts a local DNS server for use in tests"""
 
 import argparse
-import sys
-import yaml
-import signal
 import os
+import platform
+import signal
+import sys
 import threading
 import time
 
 import twisted
 import twisted.internet
-import twisted.internet.reactor
-import twisted.internet.threads
 import twisted.internet.defer
 import twisted.internet.protocol
+import twisted.internet.reactor
+import twisted.internet.threads
 import twisted.names
+from twisted.names import authority
+from twisted.names import client
+from twisted.names import common
+from twisted.names import dns
+from twisted.names import server
 import twisted.names.client
 import twisted.names.dns
 import twisted.names.server
-from twisted.names import client, server, common, authority, dns
-import argparse
-import platform
+import yaml
 
 _SERVER_HEALTH_CHECK_RECORD_NAME = 'health-check-local-dns-server-is-alive.resolver-tests.grpctestingexp'  # missing end '.' for twisted syntax
 _SERVER_HEALTH_CHECK_RECORD_DATA = '123.123.123.123'

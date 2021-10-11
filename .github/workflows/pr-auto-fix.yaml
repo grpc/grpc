@@ -1,0 +1,83 @@
+name: PR AutoFix
+on: [push]
+jobs:
+  PRAutoFix:
+    runs-on: ubuntu-latest
+    steps:
+      # Cache bazel build
+      - name: Get current time
+        uses: srfrnk/current-time@master
+        id: current-time
+        with:
+          format: YYYYWW
+      - name: Cache bazel
+        uses: actions/cache@v2
+        env:
+          cache-name: bazel-cache
+        with:
+          path: ~/.cache/bazel
+          # formattedTime here is like 202132 - the year concatenated with the week
+          # as this changes every week, we cycle to a new cache once per week.
+          key: ${{ runner.os }}-${{ steps.current-time.outputs.formattedTime }}
+      # Cancel current runs if they're still running
+      # (saves processing on fast pushes)
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
+      # Allow opt-out for some users
+      - name: Should I Stay Or Should I Go
+        uses: actions/github-script@v4
+        id: check
+        with:
+          script: |
+            // If you'd like not to run this code on your commits, add your github user id here:
+            NO_AUTOFIX_USERS = []
+            const { owner, repo } = context.repo
+            if (NO_AUTOFIX_USERS.includes(context.actor)) {
+              console.log('Cancelling');
+              const run_id = "${{ github.run_id }}";
+              await github.actions.cancelWorkflowRun({ owner, repo, run_id });
+              return 'go';
+            } else {
+              return 'stay';
+            }
+      - name: Wait for cancellation
+        run: sleep 60
+        if: steps.check.outputs.result == 'go'
+      - name: Should build?
+        run: test "${{ steps.check.outputs.result }}" = "stay"
+      # Setup to run sanity suite
+      - name: Install Python Interpreter
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install Python Packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml mako virtualenv
+          sudo apt-get install python-dev
+      - name: Check out repository code
+        uses: actions/checkout@v2
+        with:
+          submodules: True
+          fetch-depth: 0
+      # Run the things!
+      - name: clang-tidy fixes
+        run: ${{ github.workspace }}/tools/distrib/clang_tidy_code.sh --fix --only-changed || true
+      - name: Run sanitize
+        run: ${{ github.workspace }}/tools/distrib/sanitize.sh
+      # Report back with a PR if things are broken
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          delete-branch: true
+          branch-suffix: short-commit-hash
+          commit-message: "Automated change: Fix sanity tests"
+          title: Automated fix for ${{ github.ref }}
+          body: |
+            PanCakes to the rescue!
+
+            We noticed that our 'sanity' test was going to fail, but we think we can fix that automatically, so we put together this PR to do just that!
+
+            If you'd like to opt-out of these PR's, add yourself to NO_AUTOFIX_USERS in .github/workflows/pr-auto-fix.yaml

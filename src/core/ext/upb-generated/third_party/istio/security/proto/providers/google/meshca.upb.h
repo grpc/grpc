@@ -9,7 +9,7 @@
 #ifndef THIRD_PARTY_ISTIO_SECURITY_PROTO_PROVIDERS_GOOGLE_MESHCA_PROTO_UPB_H_
 #define THIRD_PARTY_ISTIO_SECURITY_PROTO_PROVIDERS_GOOGLE_MESHCA_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -38,13 +38,19 @@ UPB_INLINE google_security_meshca_v1_MeshCertificateRequest *google_security_mes
 UPB_INLINE google_security_meshca_v1_MeshCertificateRequest *google_security_meshca_v1_MeshCertificateRequest_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   google_security_meshca_v1_MeshCertificateRequest *ret = google_security_meshca_v1_MeshCertificateRequest_new(arena);
-  return (ret && upb_decode(buf, size, ret, &google_security_meshca_v1_MeshCertificateRequest_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &google_security_meshca_v1_MeshCertificateRequest_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE google_security_meshca_v1_MeshCertificateRequest *google_security_meshca_v1_MeshCertificateRequest_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   google_security_meshca_v1_MeshCertificateRequest *ret = google_security_meshca_v1_MeshCertificateRequest_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &google_security_meshca_v1_MeshCertificateRequest_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &google_security_meshca_v1_MeshCertificateRequest_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *google_security_meshca_v1_MeshCertificateRequest_serialize(const google_security_meshca_v1_MeshCertificateRequest *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_security_meshca_v1_MeshCertificateRequest_msginit, arena, len);
@@ -83,13 +89,19 @@ UPB_INLINE google_security_meshca_v1_MeshCertificateResponse *google_security_me
 UPB_INLINE google_security_meshca_v1_MeshCertificateResponse *google_security_meshca_v1_MeshCertificateResponse_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   google_security_meshca_v1_MeshCertificateResponse *ret = google_security_meshca_v1_MeshCertificateResponse_new(arena);
-  return (ret && upb_decode(buf, size, ret, &google_security_meshca_v1_MeshCertificateResponse_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &google_security_meshca_v1_MeshCertificateResponse_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE google_security_meshca_v1_MeshCertificateResponse *google_security_meshca_v1_MeshCertificateResponse_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   google_security_meshca_v1_MeshCertificateResponse *ret = google_security_meshca_v1_MeshCertificateResponse_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &google_security_meshca_v1_MeshCertificateResponse_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &google_security_meshca_v1_MeshCertificateResponse_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *google_security_meshca_v1_MeshCertificateResponse_serialize(const google_security_meshca_v1_MeshCertificateResponse *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_security_meshca_v1_MeshCertificateResponse_msginit, arena, len);

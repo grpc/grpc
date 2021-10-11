@@ -25,6 +25,20 @@ build:asan --linkopt=-fsanitize=address
 build:asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 build:asan --action_env=LSAN_OPTIONS=suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
 
+build:fuzzer_asan --strip=never
+build:fuzzer_asan --define=grpc_build_fuzzers=true
+build:fuzzer_asan --copt=-fsanitize=fuzzer,address
+build:fuzzer_asan --copt=-fsanitize-coverage=edge
+build:fuzzer_asan --copt=-fsanitize-coverage=trace-cmp
+build:fuzzer_asan --copt=-O0
+build:fuzzer_asan --copt=-fno-omit-frame-pointer
+build:fuzzer_asan --copt=-DGPR_NO_DIRECT_SYSCALLS
+build:fuzzer_asan --copt=-DGRPC_ASAN
+build:fuzzer_asan --copt=-DADDRESS_SANITIZER  # used by absl
+build:fuzzer_asan --linkopt=-fsanitize=fuzzer,address
+build:fuzzer_asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
+build:fuzzer_asan --action_env=LSAN_OPTIONS=suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
+
 # We have a separate ASAN config for Mac OS to workaround a couple of bugs:
 # 1. https://github.com/bazelbuild/bazel/issues/6932
 #    _FORTIFY_SOURCE=1 is enabled by default on Mac OS, which breaks ASAN.
@@ -103,4 +117,4 @@ build:mutrace --copt=-DNDEBUG
 build:mutrace --linkopt=-rdynamic
 
 # Compile database generation config
-build:compdb --build_tag_filters=-nocompdb
+build:compdb --build_tag_filters=-nocompdb --features=-layering_check

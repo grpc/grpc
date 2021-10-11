@@ -788,6 +788,7 @@ function interop_main($args, $stub = false)
             break;
         case 'special_status_message':
             specialStatusMessage($stub);
+            break;
         case 'unimplemented_service':
             unimplementedService($stub);
             break;

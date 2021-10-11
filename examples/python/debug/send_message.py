@@ -17,8 +17,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import logging
 import argparse
+import logging
+
 import grpc
 
 helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(

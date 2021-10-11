@@ -56,6 +56,11 @@ UPB_INLINE const upb_msgdef *envoy_config_overload_v3_OverloadAction_getmsgdef(u
   return upb_symtab_lookupmsg(s, "envoy.config.overload.v3.OverloadAction");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_overload_v3_BufferFactoryConfig_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_overload_v3_overload_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.overload.v3.BufferFactoryConfig");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_overload_v3_OverloadManager_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_overload_v3_overload_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.overload.v3.OverloadManager");

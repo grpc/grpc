@@ -27,6 +27,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -172,9 +173,9 @@ void TlsChannelSecurityConnector::add_handshakers(
     const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
     HandshakeManager* handshake_mgr) {
   MutexLock lock(&mu_);
+  tsi_handshaker* tsi_hs = nullptr;
   if (client_handshaker_factory_ != nullptr) {
     // Instantiate TSI handshaker.
-    tsi_handshaker* tsi_hs = nullptr;
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         client_handshaker_factory_,
         overridden_target_name_.empty() ? target_name_.c_str()
@@ -183,16 +184,10 @@ void TlsChannelSecurityConnector::add_handshakers(
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
               tsi_result_to_string(result));
-      return;
     }
-    // Create handshakers.
-    handshake_mgr->Add(SecurityHandshakerCreate(tsi_hs, this, args));
-    return;
   }
-  // TODO(ZhenLian): Implement the logic(delegation to
-  // BlockOnInitialCredentialHandshaker) when certificates are not ready.
-  gpr_log(GPR_ERROR, "%s not supported yet.",
-          "Client BlockOnInitialCredentialHandshaker");
+  // If tsi_hs is null, this will add a failing handshaker.
+  handshake_mgr->Add(SecurityHandshakerCreate(tsi_hs, this, args));
 }
 
 void TlsChannelSecurityConnector::check_peer(
@@ -427,27 +422,23 @@ TlsChannelSecurityConnector::ProcessServerAuthorizationCheckResult(
   grpc_error_handle error = GRPC_ERROR_NONE;
   /* Server authorization check is cancelled by caller. */
   if (arg->status == GRPC_STATUS_CANCELLED) {
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("Server authorization check is cancelled by the caller "
                      "with error: ",
-                     arg->error_details->error_details())
-            .c_str());
+                     arg->error_details->error_details()));
   } else if (arg->status == GRPC_STATUS_OK) {
     /* Server authorization check completed successfully but returned check
      * failure. */
     if (!arg->success) {
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat("Server authorization check failed with error: ",
-                       arg->error_details->error_details())
-              .c_str());
+                       arg->error_details->error_details()));
     }
     /* Server authorization check did not complete correctly. */
   } else {
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat(
-            "Server authorization check did not finish correctly with error: ",
-            arg->error_details->error_details())
-            .c_str());
+    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Server authorization check did not finish correctly with error: ",
+        arg->error_details->error_details()));
   }
   return error;
 }
@@ -549,24 +540,18 @@ void TlsServerSecurityConnector::add_handshakers(
     const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
     HandshakeManager* handshake_mgr) {
   MutexLock lock(&mu_);
+  tsi_handshaker* tsi_hs = nullptr;
   if (server_handshaker_factory_ != nullptr) {
     // Instantiate TSI handshaker.
-    tsi_handshaker* tsi_hs = nullptr;
     tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
         server_handshaker_factory_, &tsi_hs);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
               tsi_result_to_string(result));
-      return;
     }
-    // Create handshakers.
-    handshake_mgr->Add(SecurityHandshakerCreate(tsi_hs, this, args));
-    return;
   }
-  // TODO(ZhenLian): Implement the logic(delegation to
-  // BlockOnInitialCredentialHandshaker) when certificates are not ready.
-  gpr_log(GPR_ERROR, "%s not supported yet.",
-          "Server BlockOnInitialCredentialHandshaker");
+  // If tsi_hs is null, this will add a failing handshaker.
+  handshake_mgr->Add(SecurityHandshakerCreate(tsi_hs, this, args));
 }
 
 void TlsServerSecurityConnector::check_peer(
@@ -671,9 +656,8 @@ grpc_error_handle TlsCheckHostName(const char* peer_name,
                                    const tsi_peer* peer) {
   /* Check the peer name if specified. */
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Peer name ", peer_name, " is not in peer certificate")
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Peer name ", peer_name, " is not in peer certificate"));
   }
   return GRPC_ERROR_NONE;
 }

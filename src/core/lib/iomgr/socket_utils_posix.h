@@ -21,13 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/resolve_address.h"
-
 #include <sys/socket.h>
 #include <unistd.h>
 
 #include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_factory_posix.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 
@@ -101,12 +101,12 @@ grpc_error_handle grpc_set_socket_sndbuf(int fd, int buffer_size_bytes);
 grpc_error_handle grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes);
 
 /* Tries to set the socket using a grpc_socket_mutator */
-grpc_error_handle grpc_set_socket_with_mutator(int fd,
+grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
                                                grpc_socket_mutator* mutator);
 
 /* Extracts the first socket mutator from args if any and applies on the fd. */
 grpc_error_handle grpc_apply_socket_mutator_in_args(
-    int fd, const grpc_channel_args* args);
+    int fd, grpc_fd_usage usage, const grpc_channel_args* args);
 
 /* An enum to keep track of IPv4/IPv6 socket modes.
 

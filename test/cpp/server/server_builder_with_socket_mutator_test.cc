@@ -16,14 +16,14 @@
  *
  */
 
-#include <grpcpp/impl/codegen/config.h>
+#include <memory>
+
 #include <gtest/gtest.h>
 
+#include <grpc/grpc.h>
+#include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
-
-#include <grpc/grpc.h>
-#include <memory>
 
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -46,6 +46,7 @@ const grpc_socket_mutator_vtable mock_socket_mutator_vtable = {
     mock_socket_mutator_mutate_fd,
     mock_socket_mutator_compare,
     mock_socket_mutator_destroy,
+    nullptr,
 };
 
 class MockSocketMutator : public grpc_socket_mutator {

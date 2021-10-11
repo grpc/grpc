@@ -18,19 +18,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/slice.h>
-
 #include <inttypes.h>
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/static_metadata.h"
-#include "test/core/util/test_config.h"
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x);
 
@@ -57,7 +54,7 @@ static void test_slice_malloc_returns_something_sensible(void) {
       GRPC_SLICE_START_PTR(slice)[i] = static_cast<uint8_t>(i);
     }
     /* And finally we must succeed in destroying the slice */
-    grpc_slice_unref(slice);
+    grpc_slice_unref_internal(slice);
   }
 }
 
@@ -70,7 +67,7 @@ static void test_slice_new_returns_something_sensible(void) {
   GPR_ASSERT(slice.refcount);
   GPR_ASSERT(slice.data.refcounted.bytes == &x);
   GPR_ASSERT(slice.data.refcounted.length == 1);
-  grpc_slice_unref(slice);
+  grpc_slice_unref_internal(slice);
 }
 
 /* destroy function that sets a mark to indicate it was called. */
@@ -90,7 +87,7 @@ static void test_slice_new_with_user_data(void) {
   GPR_ASSERT(GRPC_SLICE_START_PTR(slice)[1] == 1);
 
   /* unref should cause destroy function to run. */
-  grpc_slice_unref(slice);
+  grpc_slice_unref_internal(slice);
   GPR_ASSERT(marker == 1);
 }
 
@@ -116,15 +113,15 @@ static void test_slice_new_with_len_returns_something_sensible(void) {
      make sure that that the destroy callback (i.e do_nothing_with_len_1()) is
      not called until the last unref operation */
   for (i = 0; i < num_refs; i++) {
-    grpc_slice_ref(slice);
+    grpc_slice_ref_internal(slice);
   }
   for (i = 0; i < num_refs; i++) {
-    grpc_slice_unref(slice);
+    grpc_slice_unref_internal(slice);
   }
   GPR_ASSERT(do_nothing_with_len_1_calls == 0); /* Shouldn't be called yet */
 
   /* last unref */
-  grpc_slice_unref(slice);
+  grpc_slice_unref_internal(slice);
   GPR_ASSERT(do_nothing_with_len_1_calls == 1);
 }
 
@@ -152,10 +149,10 @@ static void test_slice_sub_works(unsigned length) {
       for (k = 0; k < j - i; k++) {
         GPR_ASSERT(GRPC_SLICE_START_PTR(sub)[k] == (uint8_t)(i + k));
       }
-      grpc_slice_unref(sub);
+      grpc_slice_unref_internal(sub);
     }
   }
-  grpc_slice_unref(slice);
+  grpc_slice_unref_internal(slice);
 }
 
 static void check_head_tail(grpc_slice slice, grpc_slice head,
@@ -186,14 +183,14 @@ static void test_slice_split_head_works(size_t length) {
   /* Ensure that for all subsets length is correct and that we start on the
      correct byte. Additionally check that no copies were made. */
   for (i = 0; i < length; i++) {
-    tail = grpc_slice_ref(slice);
+    tail = grpc_slice_ref_internal(slice);
     head = grpc_slice_split_head(&tail, i);
     check_head_tail(slice, head, tail);
-    grpc_slice_unref(tail);
-    grpc_slice_unref(head);
+    grpc_slice_unref_internal(tail);
+    grpc_slice_unref_internal(head);
   }
 
-  grpc_slice_unref(slice);
+  grpc_slice_unref_internal(slice);
 }
 
 static void test_slice_split_tail_works(size_t length) {
@@ -214,14 +211,14 @@ static void test_slice_split_tail_works(size_t length) {
   /* Ensure that for all subsets length is correct and that we start on the
      correct byte. Additionally check that no copies were made. */
   for (i = 0; i < length; i++) {
-    head = grpc_slice_ref(slice);
+    head = grpc_slice_ref_internal(slice);
     tail = grpc_slice_split_tail(&head, i);
     check_head_tail(slice, head, tail);
-    grpc_slice_unref(tail);
-    grpc_slice_unref(head);
+    grpc_slice_unref_internal(tail);
+    grpc_slice_unref_internal(head);
   }
 
-  grpc_slice_unref(slice);
+  grpc_slice_unref_internal(slice);
 }
 
 static void test_slice_from_copied_string_works(void) {
@@ -234,68 +231,11 @@ static void test_slice_from_copied_string_works(void) {
   GPR_ASSERT(strlen(text) == GRPC_SLICE_LENGTH(slice));
   GPR_ASSERT(
       0 == memcmp(text, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice)));
-  grpc_slice_unref(slice);
-}
-
-static void test_slice_interning(void) {
-  LOG_TEST_NAME("test_slice_interning");
-
-  grpc_init();
-  grpc_slice src1 = grpc_slice_from_copied_string("hello123456789123456789");
-  grpc_slice src2 = grpc_slice_from_copied_string("hello123456789123456789");
-
-  // Explicitly checking that the slices are at different addresses prevents
-  // failure with windows opt 64bit build.
-  // See https://github.com/grpc/grpc/issues/20519
-  GPR_ASSERT(&src1 != &src2);
-  GPR_ASSERT(GRPC_SLICE_START_PTR(src1) != GRPC_SLICE_START_PTR(src2));
-
-  grpc_slice interned1 = grpc_slice_intern(src1);
-  grpc_slice interned2 = grpc_slice_intern(src2);
-  GPR_ASSERT(GRPC_SLICE_START_PTR(interned1) ==
-             GRPC_SLICE_START_PTR(interned2));
-  GPR_ASSERT(GRPC_SLICE_START_PTR(interned1) != GRPC_SLICE_START_PTR(src1));
-  GPR_ASSERT(GRPC_SLICE_START_PTR(interned2) != GRPC_SLICE_START_PTR(src2));
-  grpc_slice_unref(src1);
-  grpc_slice_unref(src2);
-  grpc_slice_unref(interned1);
-  grpc_slice_unref(interned2);
-  grpc_shutdown();
-}
-
-static void test_static_slice_interning(void) {
-  LOG_TEST_NAME("test_static_slice_interning");
-
-  // grpc_init/grpc_shutdown deliberately omitted: they should not be necessary
-  // to intern a static slice
-
-  for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
-    GPR_ASSERT(grpc_slice_is_equivalent(
-        grpc_static_slice_table()[i],
-        grpc_slice_intern(grpc_static_slice_table()[i])));
-  }
-}
-
-static void test_static_slice_copy_interning(void) {
-  LOG_TEST_NAME("test_static_slice_copy_interning");
-
-  grpc_init();
-
-  for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
-    grpc_slice copy = grpc_slice_dup(grpc_static_slice_table()[i]);
-    GPR_ASSERT(grpc_static_slice_table()[i].refcount != copy.refcount);
-    GPR_ASSERT(grpc_static_slice_table()[i].refcount ==
-               grpc_slice_intern(copy).refcount);
-    grpc_slice_unref(copy);
-  }
-
-  grpc_shutdown();
+  grpc_slice_unref_internal(slice);
 }
 
 static void test_moved_string_slice(void) {
   LOG_TEST_NAME("test_moved_string_slice");
-
-  grpc_init();
 
   // Small string should be inlined.
   constexpr char kSmallStr[] = "hello12345";
@@ -305,7 +245,7 @@ static void test_moved_string_slice(void) {
   GPR_ASSERT(GRPC_SLICE_LENGTH(small) == strlen(kSmallStr));
   GPR_ASSERT(GRPC_SLICE_START_PTR(small) !=
              reinterpret_cast<uint8_t*>(small_ptr));
-  grpc_slice_unref(small);
+  grpc_slice_unref_internal(small);
 
   // Large string should be move the reference.
   constexpr char kSLargeStr[] = "hello123456789123456789123456789";
@@ -315,7 +255,7 @@ static void test_moved_string_slice(void) {
   GPR_ASSERT(GRPC_SLICE_LENGTH(large) == strlen(kSLargeStr));
   GPR_ASSERT(GRPC_SLICE_START_PTR(large) ==
              reinterpret_cast<uint8_t*>(large_ptr));
-  grpc_slice_unref(large);
+  grpc_slice_unref_internal(large);
 
   // Moved buffer must respect the provided length not the actual length of the
   // string.
@@ -325,9 +265,7 @@ static void test_moved_string_slice(void) {
   GPR_ASSERT(GRPC_SLICE_LENGTH(small) == strlen(kSmallStr));
   GPR_ASSERT(GRPC_SLICE_START_PTR(small) !=
              reinterpret_cast<uint8_t*>(large_ptr));
-  grpc_slice_unref(small);
-
-  grpc_shutdown();
+  grpc_slice_unref_internal(small);
 }
 
 void test_string_view_from_slice() {
@@ -337,10 +275,8 @@ void test_string_view_from_slice() {
   GPR_ASSERT(std::string(sv) == kStr);
 }
 
-int main(int argc, char** argv) {
+int main(int, char**) {
   unsigned length;
-  grpc::testing::TestEnvironment env(argc, argv);
-  grpc_init();
   test_slice_malloc_returns_something_sensible();
   test_slice_new_returns_something_sensible();
   test_slice_new_with_user_data();
@@ -351,11 +287,7 @@ int main(int argc, char** argv) {
     test_slice_split_tail_works(length);
   }
   test_slice_from_copied_string_works();
-  test_slice_interning();
-  test_static_slice_interning();
-  test_static_slice_copy_interning();
   test_moved_string_slice();
   test_string_view_from_slice();
-  grpc_shutdown();
   return 0;
 }

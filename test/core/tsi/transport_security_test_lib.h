@@ -19,9 +19,9 @@
 #ifndef GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H_
 #define GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H_
 
-#include "src/core/tsi/transport_security_interface.h"
-
 #include <grpc/support/sync.h>
+
+#include "src/core/tsi/transport_security_interface.h"
 
 #define TSI_TEST_TINY_HANDSHAKE_BUFFER_SIZE 32
 #define TSI_TEST_SMALL_HANDSHAKE_BUFFER_SIZE 128

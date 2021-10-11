@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/xds/xds_api.h"
+
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
@@ -89,11 +91,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/xds/xds_api.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -109,28 +109,6 @@ namespace grpc_core {
 bool XdsAggregateAndLogicalDnsClusterEnabled() {
   char* value = gpr_getenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
-
-// TODO(donnadionne): Check to see if ring hash policy is enabled, this will be
-// removed once ring hash policy is fully integration-tested and enabled by
-// default.
-bool XdsRingHashEnabled() {
-  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
-
-// TODO(yashykt): Check to see if xDS security is enabled. This will be
-// removed once this feature is fully integration-tested and enabled by
-// default.
-bool XdsSecurityEnabled() {
-  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT");
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
   gpr_free(value);
@@ -215,6 +193,25 @@ std::string XdsApi::Route::HashPolicy::ToString() const {
 }
 
 //
+// XdsApi::Route::RetryPolicy
+//
+std::string XdsApi::Route::RetryPolicy::RetryBackOff::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(
+      absl::StrCat("RetryBackOff Base: ", base_interval.ToString()));
+  contents.push_back(
+      absl::StrCat("RetryBackOff max: ", max_interval.ToString()));
+  return absl::StrJoin(contents, ",");
+}
+
+std::string XdsApi::Route::RetryPolicy::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(absl::StrFormat("num_retries=%d", num_retries));
+  contents.push_back(retry_back_off.ToString());
+  return absl::StrJoin(contents, ",");
+}
+
+//
 // XdsApi::Route
 //
 
@@ -254,6 +251,10 @@ std::string XdsApi::Route::ToString() const {
   contents.push_back(matchers.ToString());
   for (const HashPolicy& hash_policy : hash_policies) {
     contents.push_back(absl::StrCat("hash_policy=", hash_policy.ToString()));
+  }
+  if (retry_policy.has_value()) {
+    contents.push_back(
+        absl::StrCat("retry_policy={", retry_policy->ToString(), "}"));
   }
   if (!cluster_name.empty()) {
     contents.push_back(absl::StrFormat("Cluster name: %s", cluster_name));
@@ -425,11 +426,11 @@ bool XdsApi::CommonTlsContext::CertificateValidationContext::Empty() const {
 }
 
 //
-// XdsApi::CommonTlsContext::CertificateValidationContext
+// XdsApi::CommonTlsContext::CertificateProviderPluginInstance
 //
 
-std::string XdsApi::CommonTlsContext::CertificateProviderInstance::ToString()
-    const {
+std::string
+XdsApi::CommonTlsContext::CertificateProviderPluginInstance::ToString() const {
   absl::InlinedVector<std::string, 2> contents;
   if (!instance_name.empty()) {
     contents.push_back(absl::StrFormat("instance_name=%s", instance_name));
@@ -441,34 +442,9 @@ std::string XdsApi::CommonTlsContext::CertificateProviderInstance::ToString()
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
-bool XdsApi::CommonTlsContext::CertificateProviderInstance::Empty() const {
+bool XdsApi::CommonTlsContext::CertificateProviderPluginInstance::Empty()
+    const {
   return instance_name.empty() && certificate_name.empty();
-}
-
-//
-// XdsApi::CommonTlsContext::CombinedCertificateValidationContext
-//
-
-std::string
-XdsApi::CommonTlsContext::CombinedCertificateValidationContext::ToString()
-    const {
-  absl::InlinedVector<std::string, 2> contents;
-  if (!default_validation_context.Empty()) {
-    contents.push_back(absl::StrFormat("default_validation_context=%s",
-                                       default_validation_context.ToString()));
-  }
-  if (!validation_context_certificate_provider_instance.Empty()) {
-    contents.push_back(absl::StrFormat(
-        "validation_context_certificate_provider_instance=%s",
-        validation_context_certificate_provider_instance.ToString()));
-  }
-  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
-}
-
-bool XdsApi::CommonTlsContext::CombinedCertificateValidationContext::Empty()
-    const {
-  return default_validation_context.Empty() &&
-         validation_context_certificate_provider_instance.Empty();
 }
 
 //
@@ -477,21 +453,22 @@ bool XdsApi::CommonTlsContext::CombinedCertificateValidationContext::Empty()
 
 std::string XdsApi::CommonTlsContext::ToString() const {
   absl::InlinedVector<std::string, 2> contents;
-  if (!tls_certificate_certificate_provider_instance.Empty()) {
-    contents.push_back(absl::StrFormat(
-        "tls_certificate_certificate_provider_instance=%s",
-        tls_certificate_certificate_provider_instance.ToString()));
+  if (!tls_certificate_provider_instance.Empty()) {
+    contents.push_back(
+        absl::StrFormat("tls_certificate_provider_instance=%s",
+                        tls_certificate_provider_instance.ToString()));
   }
-  if (!combined_validation_context.Empty()) {
-    contents.push_back(absl::StrFormat("combined_validation_context=%s",
-                                       combined_validation_context.ToString()));
+  if (!certificate_validation_context.Empty()) {
+    contents.push_back(
+        absl::StrFormat("certificate_validation_context=%s",
+                        certificate_validation_context.ToString()));
   }
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
 bool XdsApi::CommonTlsContext::Empty() const {
-  return tls_certificate_certificate_provider_instance.Empty() &&
-         combined_validation_context.Empty();
+  return tls_certificate_provider_instance.Empty() &&
+         certificate_validation_context.Empty();
 }
 
 //
@@ -835,15 +812,15 @@ bool IsLds(absl::string_view type_url, bool* is_v2 = nullptr) {
   return false;
 }
 
-bool IsRds(absl::string_view type_url) {
+bool IsRds(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
   return type_url == XdsApi::kRdsTypeUrl || type_url == kRdsV2TypeUrl;
 }
 
-bool IsCds(absl::string_view type_url) {
+bool IsCds(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
   return type_url == XdsApi::kCdsTypeUrl || type_url == kCdsV2TypeUrl;
 }
 
-bool IsEds(absl::string_view type_url) {
+bool IsEds(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
   return type_url == XdsApi::kEdsTypeUrl || type_url == kEdsV2TypeUrl;
 }
 
@@ -868,10 +845,13 @@ bool IsEds(absl::string_view type_url) {
 #endif
 
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
-               const XdsBootstrap::Node* node)
+               const XdsBootstrap::Node* node,
+               const CertificateProviderStore::PluginDefinitionMap*
+                   certificate_provider_definition_map)
     : client_(client),
       tracer_(tracer),
       node_(node),
+      certificate_provider_definition_map_(certificate_provider_definition_map),
       build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
                                   grpc_version_string(),
                                   GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
@@ -903,11 +883,13 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
 namespace {
 
 struct EncodingContext {
-  XdsClient* client;
+  XdsClient* client;  // Used only for logging. Unsafe for dereferencing.
   TraceFlag* tracer;
   upb_symtab* symtab;
   upb_arena* arena;
   bool use_v3;
+  const CertificateProviderStore::PluginDefinitionMap*
+      certificate_provider_definition_map;
 };
 
 // Works for both std::string and absl::string_view.
@@ -1116,8 +1098,12 @@ grpc_slice XdsApi::CreateAdsRequest(
     const std::string& version, const std::string& nonce,
     grpc_error_handle error, bool populate_node) {
   upb::Arena arena;
-  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
-                                   server.ShouldUseV3()};
+  const EncodingContext context = {client_,
+                                   tracer_,
+                                   symtab_.ptr(),
+                                   arena.ptr(),
+                                   server.ShouldUseV3(),
+                                   certificate_provider_definition_map_};
   // Create a request.
   envoy_service_discovery_v3_DiscoveryRequest* request =
       envoy_service_discovery_v3_DiscoveryRequest_new(arena.ptr());
@@ -1183,6 +1169,18 @@ void MaybeLogDiscoveryResponse(
     upb_text_encode(response, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] received response: %s", context.client,
             buf);
+  }
+}
+
+void MaybeLogListener(const EncodingContext& context,
+                      const envoy_config_listener_v3_Listener* listener) {
+  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
+      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+    const upb_msgdef* msg_type =
+        envoy_config_listener_v3_Listener_getmsgdef(context.symtab);
+    char buf[10240];
+    upb_text_encode(listener, msg_type, nullptr, 0, buf, sizeof(buf));
+    gpr_log(GPR_DEBUG, "[xds_client %p] Listener: %s", context.client, buf);
   }
 }
 
@@ -1329,10 +1327,8 @@ grpc_error_handle RoutePathMatchParse(
   absl::StatusOr<StringMatcher> string_matcher =
       StringMatcher::Create(type, match_string, case_sensitive);
   if (!string_matcher.ok()) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("path matcher: ", string_matcher.status().message())
-            .c_str());
-    ;
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("path matcher: ", string_matcher.status().message()));
   }
   route->matchers.path_matcher = std::move(string_matcher.value());
   return GRPC_ERROR_NONE;
@@ -1395,9 +1391,8 @@ grpc_error_handle RouteHeaderMatchersParse(
         HeaderMatcher::Create(name, type, match_string, range_start, range_end,
                               present_match, invert_match);
     if (!header_matcher.ok()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("header matcher: ", header_matcher.status().message())
-              .c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("header matcher: ", header_matcher.status().message()));
     }
     route->matchers.header_matchers.emplace_back(
         std::move(header_matcher.value()));
@@ -1477,9 +1472,8 @@ grpc_error_handle ParseTypedPerFilterConfig(
     absl::string_view filter_type =
         UpbStringToAbsl(google_protobuf_Any_type_url(any));
     if (filter_type.empty()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("no filter config specified for filter name ", key)
-              .c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("no filter config specified for filter name ", key));
     }
     bool is_optional = false;
     if (filter_type ==
@@ -1488,18 +1482,16 @@ grpc_error_handle ParseTypedPerFilterConfig(
       const auto* filter_config = envoy_config_route_v3_FilterConfig_parse(
           any_value.data, any_value.size, context.arena);
       if (filter_config == nullptr) {
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("could not parse FilterConfig wrapper for ", key)
-                .c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("could not parse FilterConfig wrapper for ", key));
       }
       is_optional =
           envoy_config_route_v3_FilterConfig_is_optional(filter_config);
       any = envoy_config_route_v3_FilterConfig_config(filter_config);
       if (any == nullptr) {
         if (is_optional) continue;
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("no filter config specified for filter name ", key)
-                .c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("no filter config specified for filter name ", key));
       }
     }
     grpc_error_handle error =
@@ -1509,22 +1501,110 @@ grpc_error_handle ParseTypedPerFilterConfig(
         XdsHttpFilterRegistry::GetFilterForType(filter_type);
     if (filter_impl == nullptr) {
       if (is_optional) continue;
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("no filter registered for config type ", filter_type)
-              .c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("no filter registered for config type ", filter_type));
     }
     absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
         filter_impl->GenerateFilterConfigOverride(
             google_protobuf_Any_value(any), context.arena);
     if (!filter_config.ok()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("filter config for type ", filter_type,
-                       " failed to parse: ", filter_config.status().ToString())
-              .c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "filter config for type ", filter_type,
+          " failed to parse: ", filter_config.status().ToString()));
     }
     (*typed_per_filter_config)[std::string(key)] = std::move(*filter_config);
   }
   return GRPC_ERROR_NONE;
+}
+
+XdsApi::Duration DurationParse(const google_protobuf_Duration* proto_duration) {
+  XdsApi::Duration duration;
+  duration.seconds = google_protobuf_Duration_seconds(proto_duration);
+  duration.nanos = google_protobuf_Duration_nanos(proto_duration);
+  return duration;
+}
+
+grpc_error_handle RetryPolicyParse(
+    const EncodingContext& context,
+    const envoy_config_route_v3_RetryPolicy* retry_policy,
+    absl::optional<XdsApi::Route::RetryPolicy>* retry) {
+  std::vector<grpc_error_handle> errors;
+  XdsApi::Route::RetryPolicy retry_to_return;
+  auto retry_on = UpbStringToStdString(
+      envoy_config_route_v3_RetryPolicy_retry_on(retry_policy));
+  std::vector<absl::string_view> codes = absl::StrSplit(retry_on, ',');
+  for (const auto& code : codes) {
+    if (code == "cancelled") {
+      retry_to_return.retry_on.Add(GRPC_STATUS_CANCELLED);
+    } else if (code == "deadline-exceeded") {
+      retry_to_return.retry_on.Add(GRPC_STATUS_DEADLINE_EXCEEDED);
+    } else if (code == "internal") {
+      retry_to_return.retry_on.Add(GRPC_STATUS_INTERNAL);
+    } else if (code == "resource-exhausted") {
+      retry_to_return.retry_on.Add(GRPC_STATUS_RESOURCE_EXHAUSTED);
+    } else if (code == "unavailable") {
+      retry_to_return.retry_on.Add(GRPC_STATUS_UNAVAILABLE);
+    } else {
+      if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
+        gpr_log(GPR_INFO, "Unsupported retry_on policy %s.",
+                std::string(code).c_str());
+      }
+    }
+  }
+  const google_protobuf_UInt32Value* num_retries =
+      envoy_config_route_v3_RetryPolicy_num_retries(retry_policy);
+  if (num_retries != nullptr) {
+    uint32_t num_retries_value = google_protobuf_UInt32Value_value(num_retries);
+    if (num_retries_value == 0) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "RouteAction RetryPolicy num_retries set to invalid value 0."));
+    } else {
+      retry_to_return.num_retries = num_retries_value;
+    }
+  } else {
+    retry_to_return.num_retries = 1;
+  }
+  const envoy_config_route_v3_RetryPolicy_RetryBackOff* backoff =
+      envoy_config_route_v3_RetryPolicy_retry_back_off(retry_policy);
+  if (backoff != nullptr) {
+    const google_protobuf_Duration* base_interval =
+        envoy_config_route_v3_RetryPolicy_RetryBackOff_base_interval(backoff);
+    if (base_interval == nullptr) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "RouteAction RetryPolicy RetryBackoff missing base interval."));
+    } else {
+      retry_to_return.retry_back_off.base_interval =
+          DurationParse(base_interval);
+    }
+    const google_protobuf_Duration* max_interval =
+        envoy_config_route_v3_RetryPolicy_RetryBackOff_max_interval(backoff);
+    XdsApi::Duration max;
+    if (max_interval != nullptr) {
+      max = DurationParse(max_interval);
+    } else {
+      // if max interval is not set, it is 10x the base, if the value in nanos
+      // can yield another second, adjust the value in seconds accordingly.
+      max.seconds = retry_to_return.retry_back_off.base_interval.seconds * 10;
+      max.nanos = retry_to_return.retry_back_off.base_interval.nanos * 10;
+      if (max.nanos > 1000000000) {
+        max.seconds += max.nanos / 1000000000;
+        max.nanos = max.nanos % 1000000000;
+      }
+    }
+    retry_to_return.retry_back_off.max_interval = max;
+  } else {
+    retry_to_return.retry_back_off.base_interval.seconds = 0;
+    retry_to_return.retry_back_off.base_interval.nanos = 25000000;
+    retry_to_return.retry_back_off.max_interval.seconds = 0;
+    retry_to_return.retry_back_off.max_interval.nanos = 250000000;
+  }
+  if (errors.empty()) {
+    *retry = retry_to_return;
+    return GRPC_ERROR_NONE;
+  } else {
+    return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing retry policy",
+                                         &errors);
+  }
 }
 
 grpc_error_handle RouteActionParse(const EncodingContext& context,
@@ -1620,89 +1700,92 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
                 max_stream_duration);
       }
       if (duration != nullptr) {
-        XdsApi::Duration duration_in_route;
-        duration_in_route.seconds = google_protobuf_Duration_seconds(duration);
-        duration_in_route.nanos = google_protobuf_Duration_nanos(duration);
-        route->max_stream_duration = duration_in_route;
+        route->max_stream_duration = DurationParse(duration);
       }
     }
   }
   // Get HashPolicy from RouteAction
-  if (XdsRingHashEnabled()) {
-    size_t size = 0;
-    const envoy_config_route_v3_RouteAction_HashPolicy* const* hash_policies =
-        envoy_config_route_v3_RouteAction_hash_policy(route_action, &size);
-    for (size_t i = 0; i < size; ++i) {
-      const envoy_config_route_v3_RouteAction_HashPolicy* hash_policy =
-          hash_policies[i];
-      XdsApi::Route::HashPolicy policy;
-      policy.terminal =
-          envoy_config_route_v3_RouteAction_HashPolicy_terminal(hash_policy);
-      const envoy_config_route_v3_RouteAction_HashPolicy_Header* header;
-      const envoy_config_route_v3_RouteAction_HashPolicy_FilterState*
-          filter_state;
-      if ((header = envoy_config_route_v3_RouteAction_HashPolicy_header(
-               hash_policy)) != nullptr) {
-        policy.type = XdsApi::Route::HashPolicy::Type::HEADER;
-        policy.header_name = UpbStringToStdString(
-            envoy_config_route_v3_RouteAction_HashPolicy_Header_header_name(
-                header));
-        const struct envoy_type_matcher_v3_RegexMatchAndSubstitute*
-            regex_rewrite =
-                envoy_config_route_v3_RouteAction_HashPolicy_Header_regex_rewrite(
-                    header);
-        if (regex_rewrite != nullptr) {
-          const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
-              envoy_type_matcher_v3_RegexMatchAndSubstitute_pattern(
-                  regex_rewrite);
-          if (regex_matcher == nullptr) {
-            gpr_log(
-                GPR_DEBUG,
-                "RouteAction HashPolicy contains policy specifier Header with "
-                "RegexMatchAndSubstitution but RegexMatcher pattern is "
-                "missing");
-            continue;
-          }
-          RE2::Options options;
-          policy.regex = absl::make_unique<RE2>(
-              UpbStringToStdString(
-                  envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)),
-              options);
-          if (!policy.regex->ok()) {
-            gpr_log(
-                GPR_DEBUG,
-                "RouteAction HashPolicy contains policy specifier Header with "
-                "RegexMatchAndSubstitution but RegexMatcher pattern does not "
-                "compile");
-            continue;
-          }
-          policy.regex_substitution = UpbStringToStdString(
-              envoy_type_matcher_v3_RegexMatchAndSubstitute_substitution(
-                  regex_rewrite));
-        }
-      } else if ((filter_state =
-                      envoy_config_route_v3_RouteAction_HashPolicy_filter_state(
-                          hash_policy)) != nullptr) {
-        std::string key = UpbStringToStdString(
-            envoy_config_route_v3_RouteAction_HashPolicy_FilterState_key(
-                filter_state));
-        if (key == "io.grpc.channel_id") {
-          policy.type = XdsApi::Route::HashPolicy::Type::CHANNEL_ID;
-        } else {
-          gpr_log(GPR_DEBUG,
-                  "RouteAction HashPolicy contains policy specifier "
-                  "FilterState but "
-                  "key is not io.grpc.channel_id.");
+  size_t size = 0;
+  const envoy_config_route_v3_RouteAction_HashPolicy* const* hash_policies =
+      envoy_config_route_v3_RouteAction_hash_policy(route_action, &size);
+  for (size_t i = 0; i < size; ++i) {
+    const envoy_config_route_v3_RouteAction_HashPolicy* hash_policy =
+        hash_policies[i];
+    XdsApi::Route::HashPolicy policy;
+    policy.terminal =
+        envoy_config_route_v3_RouteAction_HashPolicy_terminal(hash_policy);
+    const envoy_config_route_v3_RouteAction_HashPolicy_Header* header;
+    const envoy_config_route_v3_RouteAction_HashPolicy_FilterState*
+        filter_state;
+    if ((header = envoy_config_route_v3_RouteAction_HashPolicy_header(
+             hash_policy)) != nullptr) {
+      policy.type = XdsApi::Route::HashPolicy::Type::HEADER;
+      policy.header_name = UpbStringToStdString(
+          envoy_config_route_v3_RouteAction_HashPolicy_Header_header_name(
+              header));
+      const struct envoy_type_matcher_v3_RegexMatchAndSubstitute*
+          regex_rewrite =
+              envoy_config_route_v3_RouteAction_HashPolicy_Header_regex_rewrite(
+                  header);
+      if (regex_rewrite != nullptr) {
+        const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
+            envoy_type_matcher_v3_RegexMatchAndSubstitute_pattern(
+                regex_rewrite);
+        if (regex_matcher == nullptr) {
+          gpr_log(
+              GPR_DEBUG,
+              "RouteAction HashPolicy contains policy specifier Header with "
+              "RegexMatchAndSubstitution but RegexMatcher pattern is "
+              "missing");
           continue;
         }
+        RE2::Options options;
+        policy.regex = absl::make_unique<RE2>(
+            UpbStringToStdString(
+                envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)),
+            options);
+        if (!policy.regex->ok()) {
+          gpr_log(
+              GPR_DEBUG,
+              "RouteAction HashPolicy contains policy specifier Header with "
+              "RegexMatchAndSubstitution but RegexMatcher pattern does not "
+              "compile");
+          continue;
+        }
+        policy.regex_substitution = UpbStringToStdString(
+            envoy_type_matcher_v3_RegexMatchAndSubstitute_substitution(
+                regex_rewrite));
+      }
+    } else if ((filter_state =
+                    envoy_config_route_v3_RouteAction_HashPolicy_filter_state(
+                        hash_policy)) != nullptr) {
+      std::string key = UpbStringToStdString(
+          envoy_config_route_v3_RouteAction_HashPolicy_FilterState_key(
+              filter_state));
+      if (key == "io.grpc.channel_id") {
+        policy.type = XdsApi::Route::HashPolicy::Type::CHANNEL_ID;
       } else {
-        gpr_log(
-            GPR_DEBUG,
-            "RouteAction HashPolicy contains unsupported policy specifier.");
+        gpr_log(GPR_DEBUG,
+                "RouteAction HashPolicy contains policy specifier "
+                "FilterState but "
+                "key is not io.grpc.channel_id.");
         continue;
       }
-      route->hash_policies.emplace_back(std::move(policy));
+    } else {
+      gpr_log(GPR_DEBUG,
+              "RouteAction HashPolicy contains unsupported policy specifier.");
+      continue;
     }
+    route->hash_policies.emplace_back(std::move(policy));
+  }
+  // Get retry policy
+  const envoy_config_route_v3_RetryPolicy* retry_policy =
+      envoy_config_route_v3_RouteAction_retry_policy(route_action);
+  if (retry_policy != nullptr) {
+    absl::optional<XdsApi::Route::RetryPolicy> retry;
+    grpc_error_handle error = RetryPolicyParse(context, retry_policy, &retry);
+    if (error != GRPC_ERROR_NONE) return error;
+    route->retry_policy = retry;
   }
   return GRPC_ERROR_NONE;
 }
@@ -1710,7 +1793,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
 grpc_error_handle RouteConfigParse(
     const EncodingContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config,
-    XdsApi::RdsUpdate* rds_update) {
+    bool /*is_v2*/, XdsApi::RdsUpdate* rds_update) {
   MaybeLogRouteConfiguration(context, route_config);
   // Get the virtual hosts.
   size_t num_virtual_hosts;
@@ -1728,9 +1811,8 @@ grpc_error_handle RouteConfigParse(
       std::string domain_pattern = UpbStringToStdString(domains[j]);
       const MatchType match_type = DomainPatternMatchType(domain_pattern);
       if (match_type == INVALID_MATCH) {
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("Invalid domain pattern \"", domain_pattern, "\".")
-                .c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("Invalid domain pattern \"", domain_pattern, "\"."));
       }
       vhost.domains.emplace_back(std::move(domain_pattern));
     }
@@ -1747,6 +1829,15 @@ grpc_error_handle RouteConfigParse(
           envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_key,
           envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_value,
           &vhost.typed_per_filter_config);
+      if (error != GRPC_ERROR_NONE) return error;
+    }
+    // Parse retry policy.
+    absl::optional<XdsApi::Route::RetryPolicy> virtual_host_retry_policy;
+    const envoy_config_route_v3_RetryPolicy* retry_policy =
+        envoy_config_route_v3_VirtualHost_retry_policy(virtual_hosts[i]);
+    if (retry_policy != nullptr) {
+      grpc_error_handle error =
+          RetryPolicyParse(context, retry_policy, &virtual_host_retry_policy);
       if (error != GRPC_ERROR_NONE) return error;
     }
     // Parse routes.
@@ -1783,6 +1874,9 @@ grpc_error_handle RouteConfigParse(
       error = RouteActionParse(context, routes[j], &route, &ignore_route);
       if (error != GRPC_ERROR_NONE) return error;
       if (ignore_route) continue;
+      if (route.retry_policy == absl::nullopt && retry_policy != nullptr) {
+        route.retry_policy = virtual_host_retry_policy;
+      }
       if (context.use_v3) {
         grpc_error_handle error = ParseTypedPerFilterConfig<
             envoy_config_route_v3_Route,
@@ -1803,27 +1897,176 @@ grpc_error_handle RouteConfigParse(
   return GRPC_ERROR_NONE;
 }
 
-XdsApi::CommonTlsContext::CertificateProviderInstance
-CertificateProviderInstanceParse(
+// CertificateProviderInstance is deprecated but we are still supporting it for
+// backward compatibility reasons. Note that we still parse the data into the
+// same CertificateProviderPluginInstance struct since the fields are the same.
+// TODO(yashykt): Remove this once we stop supporting the old way of fetching
+// certificate provider instances.
+grpc_error_handle CertificateProviderInstanceParse(
+    const EncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance*
-        certificate_provider_instance_proto) {
-  return {
+        certificate_provider_instance_proto,
+    XdsApi::CommonTlsContext::CertificateProviderPluginInstance*
+        certificate_provider_plugin_instance) {
+  *certificate_provider_plugin_instance = {
       UpbStringToStdString(
           envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
               certificate_provider_instance_proto)),
       UpbStringToStdString(
           envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_certificate_name(
               certificate_provider_instance_proto))};
+  if (context.certificate_provider_definition_map->find(
+          certificate_provider_plugin_instance->instance_name) ==
+      context.certificate_provider_definition_map->end()) {
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Unrecognized certificate provider instance name: ",
+                     certificate_provider_plugin_instance->instance_name));
+  }
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error_handle CertificateProviderPluginInstanceParse(
+    const EncodingContext& context,
+    const envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance*
+        certificate_provider_plugin_instance_proto,
+    XdsApi::CommonTlsContext::CertificateProviderPluginInstance*
+        certificate_provider_plugin_instance) {
+  *certificate_provider_plugin_instance = {
+      UpbStringToStdString(
+          envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_instance_name(
+              certificate_provider_plugin_instance_proto)),
+      UpbStringToStdString(
+          envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_certificate_name(
+              certificate_provider_plugin_instance_proto))};
+  if (context.certificate_provider_definition_map->find(
+          certificate_provider_plugin_instance->instance_name) ==
+      context.certificate_provider_definition_map->end()) {
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Unrecognized certificate provider instance name: ",
+                     certificate_provider_plugin_instance->instance_name));
+  }
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error_handle CertificateValidationContextParse(
+    const EncodingContext& context,
+    const envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext*
+        certificate_validation_context_proto,
+    XdsApi::CommonTlsContext::CertificateValidationContext*
+        certificate_validation_context) {
+  std::vector<grpc_error_handle> errors;
+  size_t len = 0;
+  auto* subject_alt_names_matchers =
+      envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_match_subject_alt_names(
+          certificate_validation_context_proto, &len);
+  for (size_t i = 0; i < len; ++i) {
+    StringMatcher::Type type;
+    std::string matcher;
+    if (envoy_type_matcher_v3_StringMatcher_has_exact(
+            subject_alt_names_matchers[i])) {
+      type = StringMatcher::Type::kExact;
+      matcher = UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_exact(
+          subject_alt_names_matchers[i]));
+    } else if (envoy_type_matcher_v3_StringMatcher_has_prefix(
+                   subject_alt_names_matchers[i])) {
+      type = StringMatcher::Type::kPrefix;
+      matcher = UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_prefix(
+          subject_alt_names_matchers[i]));
+    } else if (envoy_type_matcher_v3_StringMatcher_has_suffix(
+                   subject_alt_names_matchers[i])) {
+      type = StringMatcher::Type::kSuffix;
+      matcher = UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_suffix(
+          subject_alt_names_matchers[i]));
+    } else if (envoy_type_matcher_v3_StringMatcher_has_contains(
+                   subject_alt_names_matchers[i])) {
+      type = StringMatcher::Type::kContains;
+      matcher =
+          UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_contains(
+              subject_alt_names_matchers[i]));
+    } else if (envoy_type_matcher_v3_StringMatcher_has_safe_regex(
+                   subject_alt_names_matchers[i])) {
+      type = StringMatcher::Type::kSafeRegex;
+      auto* regex_matcher = envoy_type_matcher_v3_StringMatcher_safe_regex(
+          subject_alt_names_matchers[i]);
+      matcher = UpbStringToStdString(
+          envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
+    } else {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Invalid StringMatcher specified"));
+      continue;
+    }
+    bool ignore_case = envoy_type_matcher_v3_StringMatcher_ignore_case(
+        subject_alt_names_matchers[i]);
+    absl::StatusOr<StringMatcher> string_matcher =
+        StringMatcher::Create(type, matcher,
+                              /*case_sensitive=*/!ignore_case);
+    if (!string_matcher.ok()) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("string matcher: ", string_matcher.status().message())));
+      continue;
+    }
+    if (type == StringMatcher::Type::kSafeRegex && ignore_case) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "StringMatcher: ignore_case has no effect for SAFE_REGEX."));
+      continue;
+    }
+    certificate_validation_context->match_subject_alt_names.push_back(
+        std::move(string_matcher.value()));
+  }
+  auto* ca_certificate_provider_instance =
+      envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_ca_certificate_provider_instance(
+          certificate_validation_context_proto);
+  if (ca_certificate_provider_instance != nullptr) {
+    grpc_error_handle error = CertificateProviderPluginInstanceParse(
+        context, ca_certificate_provider_instance,
+        &certificate_validation_context->ca_certificate_provider_instance);
+    if (error != GRPC_ERROR_NONE) errors.push_back(error);
+  }
+  if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_verify_certificate_spki(
+          certificate_validation_context_proto, nullptr) != nullptr) {
+    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "CertificateValidationContext: verify_certificate_spki "
+        "unsupported"));
+  }
+  if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_verify_certificate_hash(
+          certificate_validation_context_proto, nullptr) != nullptr) {
+    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "CertificateValidationContext: verify_certificate_hash "
+        "unsupported"));
+  }
+  auto* require_signed_certificate_timestamp =
+      envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_require_signed_certificate_timestamp(
+          certificate_validation_context_proto);
+  if (require_signed_certificate_timestamp != nullptr &&
+      google_protobuf_BoolValue_value(require_signed_certificate_timestamp)) {
+    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "CertificateValidationContext: "
+        "require_signed_certificate_timestamp unsupported"));
+  }
+  if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_has_crl(
+          certificate_validation_context_proto)) {
+    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "CertificateValidationContext: crl unsupported"));
+  }
+  if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_has_custom_validator_config(
+          certificate_validation_context_proto)) {
+    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "CertificateValidationContext: custom_validator_config "
+        "unsupported"));
+  }
+  return GRPC_ERROR_CREATE_FROM_VECTOR(
+      "Error parsing CertificateValidationContext", &errors);
 }
 
 grpc_error_handle CommonTlsContextParse(
-    const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
-        common_tls_context_proto,
-    XdsApi::CommonTlsContext* common_tls_context) GRPC_MUST_USE_RESULT;
-grpc_error_handle CommonTlsContextParse(
+    const EncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
         common_tls_context_proto,
     XdsApi::CommonTlsContext* common_tls_context) {
+  std::vector<grpc_error_handle> errors;
+  // The validation context is derived from the oneof in
+  // 'validation_context_type'. 'validation_context_sds_secret_config' is not
+  // supported.
   auto* combined_validation_context =
       envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_combined_validation_context(
           common_tls_context_proto);
@@ -1832,87 +2075,92 @@ grpc_error_handle CommonTlsContextParse(
         envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_default_validation_context(
             combined_validation_context);
     if (default_validation_context != nullptr) {
-      size_t len = 0;
-      auto* subject_alt_names_matchers =
-          envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_match_subject_alt_names(
-              default_validation_context, &len);
-      for (size_t i = 0; i < len; ++i) {
-        StringMatcher::Type type;
-        std::string matcher;
-        if (envoy_type_matcher_v3_StringMatcher_has_exact(
-                subject_alt_names_matchers[i])) {
-          type = StringMatcher::Type::kExact;
-          matcher =
-              UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_exact(
-                  subject_alt_names_matchers[i]));
-        } else if (envoy_type_matcher_v3_StringMatcher_has_prefix(
-                       subject_alt_names_matchers[i])) {
-          type = StringMatcher::Type::kPrefix;
-          matcher =
-              UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_prefix(
-                  subject_alt_names_matchers[i]));
-        } else if (envoy_type_matcher_v3_StringMatcher_has_suffix(
-                       subject_alt_names_matchers[i])) {
-          type = StringMatcher::Type::kSuffix;
-          matcher =
-              UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_suffix(
-                  subject_alt_names_matchers[i]));
-        } else if (envoy_type_matcher_v3_StringMatcher_has_contains(
-                       subject_alt_names_matchers[i])) {
-          type = StringMatcher::Type::kContains;
-          matcher =
-              UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_contains(
-                  subject_alt_names_matchers[i]));
-        } else if (envoy_type_matcher_v3_StringMatcher_has_safe_regex(
-                       subject_alt_names_matchers[i])) {
-          type = StringMatcher::Type::kSafeRegex;
-          auto* regex_matcher = envoy_type_matcher_v3_StringMatcher_safe_regex(
-              subject_alt_names_matchers[i]);
-          matcher = UpbStringToStdString(
-              envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
-        } else {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Invalid StringMatcher specified");
-        }
-        bool ignore_case = envoy_type_matcher_v3_StringMatcher_ignore_case(
-            subject_alt_names_matchers[i]);
-        absl::StatusOr<StringMatcher> string_matcher =
-            StringMatcher::Create(type, matcher,
-                                  /*case_sensitive=*/!ignore_case);
-        if (!string_matcher.ok()) {
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("string matcher: ",
-                           string_matcher.status().message())
-                  .c_str());
-        }
-        if (type == StringMatcher::Type::kSafeRegex && ignore_case) {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "StringMatcher: ignore_case has no effect for SAFE_REGEX.");
-        }
-        common_tls_context->combined_validation_context
-            .default_validation_context.match_subject_alt_names.push_back(
-                std::move(string_matcher.value()));
-      }
+      grpc_error_handle error = CertificateValidationContextParse(
+          context, default_validation_context,
+          &common_tls_context->certificate_validation_context);
+      if (error != GRPC_ERROR_NONE) errors.push_back(error);
     }
+    // If after parsing default_validation_context,
+    // common_tls_context->certificate_validation_context.ca_certificate_provider_instance
+    // is empty, fall back onto
+    // 'validation_context_certificate_provider_instance' inside
+    // 'combined_validation_context'. Note that this way of fetching root
+    // certificates is deprecated and will be removed in the future.
+    // TODO(yashykt): Remove this once it's no longer needed.
     auto* validation_context_certificate_provider_instance =
         envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_validation_context_certificate_provider_instance(
             combined_validation_context);
-    if (validation_context_certificate_provider_instance != nullptr) {
-      common_tls_context->combined_validation_context
-          .validation_context_certificate_provider_instance =
-          CertificateProviderInstanceParse(
-              validation_context_certificate_provider_instance);
+    if (common_tls_context->certificate_validation_context
+            .ca_certificate_provider_instance.Empty() &&
+        validation_context_certificate_provider_instance != nullptr) {
+      grpc_error_handle error = CertificateProviderInstanceParse(
+          context, validation_context_certificate_provider_instance,
+          &common_tls_context->certificate_validation_context
+               .ca_certificate_provider_instance);
+      if (error != GRPC_ERROR_NONE) errors.push_back(error);
+    }
+  } else {
+    auto* validation_context =
+        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_validation_context(
+            common_tls_context_proto);
+    if (validation_context != nullptr) {
+      grpc_error_handle error = CertificateValidationContextParse(
+          context, validation_context,
+          &common_tls_context->certificate_validation_context);
+      if (error != GRPC_ERROR_NONE) errors.push_back(error);
+    } else if (
+        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_validation_context_sds_secret_config(
+            common_tls_context_proto)) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "validation_context_sds_secret_config unsupported"));
     }
   }
-  auto* tls_certificate_certificate_provider_instance =
-      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_certificate_provider_instance(
+  auto* tls_certificate_provider_instance =
+      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_provider_instance(
           common_tls_context_proto);
-  if (tls_certificate_certificate_provider_instance != nullptr) {
-    common_tls_context->tls_certificate_certificate_provider_instance =
-        CertificateProviderInstanceParse(
-            tls_certificate_certificate_provider_instance);
+  if (tls_certificate_provider_instance != nullptr) {
+    grpc_error_handle error = CertificateProviderPluginInstanceParse(
+        context, tls_certificate_provider_instance,
+        &common_tls_context->tls_certificate_provider_instance);
+    if (error != GRPC_ERROR_NONE) errors.push_back(error);
+  } else {
+    // Fall back onto 'tls_certificate_certificate_provider_instance'. Note that
+    // this way of fetching identity certificates is deprecated and will be
+    // removed in the future.
+    // TODO(yashykt): Remove this once it's no longer needed.
+    auto* tls_certificate_certificate_provider_instance =
+        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_certificate_provider_instance(
+            common_tls_context_proto);
+    if (tls_certificate_certificate_provider_instance != nullptr) {
+      grpc_error_handle error = CertificateProviderInstanceParse(
+          context, tls_certificate_certificate_provider_instance,
+          &common_tls_context->tls_certificate_provider_instance);
+      if (error != GRPC_ERROR_NONE) errors.push_back(error);
+    } else {
+      if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_tls_certificates(
+              common_tls_context_proto)) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "tls_certificates unsupported"));
+      }
+      if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_tls_certificate_sds_secret_configs(
+              common_tls_context_proto)) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "tls_certificate_sds_secret_configs unsupported"));
+      }
+    }
   }
-  return GRPC_ERROR_NONE;
+  if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_tls_params(
+          common_tls_context_proto)) {
+    errors.push_back(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("tls_params unsupported"));
+  }
+  if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_custom_handshaker(
+          common_tls_context_proto)) {
+    errors.push_back(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("custom_handshaker unsupported"));
+  }
+  return GRPC_ERROR_CREATE_FROM_VECTOR("Error parsing CommonTlsContext",
+                                       &errors);
 }
 
 grpc_error_handle HttpConnectionManagerParse(
@@ -1930,10 +2178,8 @@ grpc_error_handle HttpConnectionManagerParse(
     const google_protobuf_Duration* duration =
         envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(options);
     if (duration != nullptr) {
-      http_connection_manager->http_max_stream_duration.seconds =
-          google_protobuf_Duration_seconds(duration);
-      http_connection_manager->http_max_stream_duration.nanos =
-          google_protobuf_Duration_nanos(duration);
+      http_connection_manager->http_max_stream_duration =
+          DurationParse(duration);
     }
   }
   // Parse filters.
@@ -1949,12 +2195,12 @@ grpc_error_handle HttpConnectionManagerParse(
           envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_name(
               http_filter));
       if (name.empty()) {
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("empty filter name at index ", i).c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("empty filter name at index ", i));
       }
       if (names_seen.find(name) != names_seen.end()) {
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("duplicate HTTP filter name: ", name).c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("duplicate HTTP filter name: ", name));
       }
       names_seen.insert(name);
       const bool is_optional =
@@ -1965,9 +2211,8 @@ grpc_error_handle HttpConnectionManagerParse(
               http_filter);
       if (any == nullptr) {
         if (is_optional) continue;
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("no filter config specified for filter name ", name)
-                .c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("no filter config specified for filter name ", name));
       }
       absl::string_view filter_type;
       grpc_error_handle error =
@@ -1977,27 +2222,38 @@ grpc_error_handle HttpConnectionManagerParse(
           XdsHttpFilterRegistry::GetFilterForType(filter_type);
       if (filter_impl == nullptr) {
         if (is_optional) continue;
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("no filter registered for config type ", filter_type)
-                .c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("no filter registered for config type ", filter_type));
       }
       if ((is_client && !filter_impl->IsSupportedOnClients()) ||
           (!is_client && !filter_impl->IsSupportedOnServers())) {
         if (is_optional) continue;
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
             absl::StrFormat("Filter %s is not supported on %s", filter_type,
-                            is_client ? "clients" : "servers")
-                .c_str());
+                            is_client ? "clients" : "servers"));
+      }
+      if (i < num_filters - 1) {
+        // Filters before the last filter must not be terminal.
+        if (filter_impl->IsTerminalFilter()) {
+          return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+              absl::StrCat("terminal filter for config type ", filter_type,
+                           " must be the last filter in the chain"));
+        }
+      } else {
+        // The last filter must be terminal.
+        if (!filter_impl->IsTerminalFilter()) {
+          return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+              absl::StrCat("non-terminal filter for config type ", filter_type,
+                           " is the last filter in the chain"));
+        }
       }
       absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
           filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
                                             context.arena);
       if (!filter_config.ok()) {
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(
-                "filter config for type ", filter_type,
-                " failed to parse: ", filter_config.status().ToString())
-                .c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+            "filter config for type ", filter_type,
+            " failed to parse: ", filter_config.status().ToString()));
       }
       http_connection_manager->http_filters.emplace_back(
           XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter{
@@ -2021,7 +2277,7 @@ grpc_error_handle HttpConnectionManagerParse(
               http_connection_manager_proto);
       XdsApi::RdsUpdate rds_update;
       grpc_error_handle error =
-          RouteConfigParse(context, route_config, &rds_update);
+          RouteConfigParse(context, route_config, is_v2, &rds_update);
       if (error != GRPC_ERROR_NONE) return error;
       http_connection_manager->rds_update = std::move(rds_update);
       return GRPC_ERROR_NONE;
@@ -2054,7 +2310,7 @@ grpc_error_handle HttpConnectionManagerParse(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle LdsResponseParseClient(
+grpc_error_handle LdsResourceParseClient(
     const EncodingContext& context,
     const envoy_config_listener_v3_ApiListener* api_listener, bool is_v2,
     XdsApi::LdsUpdate* lds_update) {
@@ -2079,45 +2335,75 @@ grpc_error_handle DownstreamTlsContextParse(
     XdsApi::DownstreamTlsContext* downstream_tls_context) {
   absl::string_view name = UpbStringToAbsl(
       envoy_config_core_v3_TransportSocket_name(transport_socket));
-  if (name == "envoy.transport_sockets.tls") {
-    auto* typed_config =
-        envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
-    if (typed_config != nullptr) {
-      const upb_strview encoded_downstream_tls_context =
-          google_protobuf_Any_value(typed_config);
-      auto* downstream_tls_context_proto =
-          envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_parse(
-              encoded_downstream_tls_context.data,
-              encoded_downstream_tls_context.size, context.arena);
-      if (downstream_tls_context_proto == nullptr) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Can't decode downstream tls context.");
-      }
-      auto* common_tls_context =
-          envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
-              downstream_tls_context_proto);
-      if (common_tls_context != nullptr) {
-        grpc_error_handle error = CommonTlsContextParse(
-            common_tls_context, &downstream_tls_context->common_tls_context);
-        if (error != GRPC_ERROR_NONE) return error;
-      }
-      auto* require_client_certificate =
-          envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_client_certificate(
-              downstream_tls_context_proto);
-      if (require_client_certificate != nullptr) {
-        downstream_tls_context->require_client_certificate =
-            google_protobuf_BoolValue_value(require_client_certificate);
-      }
-    }
-    if (downstream_tls_context->common_tls_context
-            .tls_certificate_certificate_provider_instance.instance_name
-            .empty()) {
+  if (name != "envoy.transport_sockets.tls") {
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Unrecognized transport socket: ", name));
+  }
+  auto* typed_config =
+      envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
+  std::vector<grpc_error_handle> errors;
+  if (typed_config != nullptr) {
+    const upb_strview encoded_downstream_tls_context =
+        google_protobuf_Any_value(typed_config);
+    auto* downstream_tls_context_proto =
+        envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_parse(
+            encoded_downstream_tls_context.data,
+            encoded_downstream_tls_context.size, context.arena);
+    if (downstream_tls_context_proto == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "TLS configuration provided but no "
-          "tls_certificate_certificate_provider_instance found.");
+          "Can't decode downstream tls context.");
+    }
+    auto* common_tls_context =
+        envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
+            downstream_tls_context_proto);
+    if (common_tls_context != nullptr) {
+      grpc_error_handle error =
+          CommonTlsContextParse(context, common_tls_context,
+                                &downstream_tls_context->common_tls_context);
+      if (error != GRPC_ERROR_NONE) errors.push_back(error);
+    }
+    auto* require_client_certificate =
+        envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_client_certificate(
+            downstream_tls_context_proto);
+    if (require_client_certificate != nullptr) {
+      downstream_tls_context->require_client_certificate =
+          google_protobuf_BoolValue_value(require_client_certificate);
+    }
+    auto* require_sni =
+        envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_sni(
+            downstream_tls_context_proto);
+    if (require_sni != nullptr &&
+        google_protobuf_BoolValue_value(require_sni)) {
+      errors.push_back(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("require_sni: unsupported"));
+    }
+    if (envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_ocsp_staple_policy(
+            downstream_tls_context_proto) !=
+        envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_LENIENT_STAPLING) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "ocsp_staple_policy: Only LENIENT_STAPLING supported"));
     }
   }
-  return GRPC_ERROR_NONE;
+  if (downstream_tls_context->common_tls_context
+          .tls_certificate_provider_instance.instance_name.empty()) {
+    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "TLS configuration provided but no "
+        "tls_certificate_provider_instance found."));
+  }
+  if (downstream_tls_context->require_client_certificate &&
+      downstream_tls_context->common_tls_context.certificate_validation_context
+          .ca_certificate_provider_instance.instance_name.empty()) {
+    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "TLS configuration requires client certificates but no certificate "
+        "provider instance specified for validation."));
+  }
+  if (!downstream_tls_context->common_tls_context.certificate_validation_context
+           .match_subject_alt_names.empty()) {
+    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "match_subject_alt_names not supported on servers"));
+  }
+  return GRPC_ERROR_CREATE_FROM_VECTOR("Error parsing DownstreamTlsContext",
+                                       &errors);
 }
 
 grpc_error_handle CidrRangeParse(
@@ -2208,67 +2494,69 @@ grpc_error_handle FilterChainParse(
     const EncodingContext& context,
     const envoy_config_listener_v3_FilterChain* filter_chain_proto, bool is_v2,
     FilterChain* filter_chain) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  std::vector<grpc_error_handle> errors;
   auto* filter_chain_match =
       envoy_config_listener_v3_FilterChain_filter_chain_match(
           filter_chain_proto);
   if (filter_chain_match != nullptr) {
-    error = FilterChainMatchParse(filter_chain_match,
-                                  &filter_chain->filter_chain_match);
-    if (error != GRPC_ERROR_NONE) return error;
+    grpc_error_handle error = FilterChainMatchParse(
+        filter_chain_match, &filter_chain->filter_chain_match);
+    if (error != GRPC_ERROR_NONE) errors.push_back(error);
   }
   // Parse the filters list. Currently we only support HttpConnectionManager.
   size_t size = 0;
   auto* filters =
       envoy_config_listener_v3_FilterChain_filters(filter_chain_proto, &size);
   if (size != 1) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "FilterChain should have exactly one filter: HttpConnectionManager; no "
-        "other filter is supported at the moment");
-  }
-  auto* typed_config = envoy_config_listener_v3_Filter_typed_config(filters[0]);
-  if (typed_config == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "No typed_config found in filter.");
-  }
-  absl::string_view type_url =
-      UpbStringToAbsl(google_protobuf_Any_type_url(typed_config));
-  if (type_url !=
-      "type.googleapis.com/"
-      "envoy.extensions.filters.network.http_connection_manager.v3."
-      "HttpConnectionManager") {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Unsupported filter type ", type_url).c_str());
-  }
-  const upb_strview encoded_http_connection_manager =
-      google_protobuf_Any_value(typed_config);
-  const auto* http_connection_manager =
-      envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_parse(
-          encoded_http_connection_manager.data,
-          encoded_http_connection_manager.size, context.arena);
-  if (http_connection_manager == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Could not parse HttpConnectionManager config from filter "
-        "typed_config");
-  }
-  filter_chain->filter_chain_data =
-      std::make_shared<XdsApi::LdsUpdate::FilterChainData>();
-  error = HttpConnectionManagerParse(
-      false /* is_client */, context, http_connection_manager, is_v2,
-      &filter_chain->filter_chain_data->http_connection_manager);
-  if (error != GRPC_ERROR_NONE) return error;
-  // Get the DownstreamTlsContext for the filter chain
-  if (XdsSecurityEnabled()) {
-    auto* transport_socket =
-        envoy_config_listener_v3_FilterChain_transport_socket(
-            filter_chain_proto);
-    if (transport_socket != nullptr) {
-      error = DownstreamTlsContextParse(
-          context, transport_socket,
-          &filter_chain->filter_chain_data->downstream_tls_context);
+        "other filter is supported at the moment"));
+  } else {
+    auto* typed_config =
+        envoy_config_listener_v3_Filter_typed_config(filters[0]);
+    if (typed_config == nullptr) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "No typed_config found in filter."));
+    } else {
+      absl::string_view type_url =
+          UpbStringToAbsl(google_protobuf_Any_type_url(typed_config));
+      if (type_url !=
+          "type.googleapis.com/"
+          "envoy.extensions.filters.network.http_connection_manager.v3."
+          "HttpConnectionManager") {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("Unsupported filter type ", type_url)));
+      } else {
+        const upb_strview encoded_http_connection_manager =
+            google_protobuf_Any_value(typed_config);
+        const auto* http_connection_manager =
+            envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_parse(
+                encoded_http_connection_manager.data,
+                encoded_http_connection_manager.size, context.arena);
+        if (http_connection_manager == nullptr) {
+          errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Could not parse HttpConnectionManager config from filter "
+              "typed_config"));
+        } else {
+          filter_chain->filter_chain_data =
+              std::make_shared<XdsApi::LdsUpdate::FilterChainData>();
+          grpc_error_handle error = HttpConnectionManagerParse(
+              false /* is_client */, context, http_connection_manager, is_v2,
+              &filter_chain->filter_chain_data->http_connection_manager);
+          if (error != GRPC_ERROR_NONE) errors.push_back(error);
+        }
+      }
     }
   }
-  return error;
+  auto* transport_socket =
+      envoy_config_listener_v3_FilterChain_transport_socket(filter_chain_proto);
+  if (transport_socket != nullptr) {
+    grpc_error_handle error = DownstreamTlsContextParse(
+        context, transport_socket,
+        &filter_chain->filter_chain_data->downstream_tls_context);
+    if (error != GRPC_ERROR_NONE) errors.push_back(error);
+  }
+  return GRPC_ERROR_CREATE_FROM_VECTOR("Error parsing FilterChain", &errors);
 }
 
 grpc_error_handle AddressParse(
@@ -2276,7 +2564,7 @@ grpc_error_handle AddressParse(
   const auto* socket_address =
       envoy_config_core_v3_Address_socket_address(address_proto);
   if (socket_address == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Address does not have socket_address");
   }
   if (envoy_config_core_v3_SocketAddress_protocol(socket_address) !=
@@ -2319,11 +2607,9 @@ grpc_error_handle AddFilterChainDataForSourcePort(
       port, XdsApi::LdsUpdate::FilterChainMap::FilterChainDataSharedPtr{
                 filter_chain.filter_chain_data});
   if (!insert_result.second) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat(
-            "Duplicate matching rules detected when adding filter chain: ",
-            filter_chain.filter_chain_match.ToString())
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Duplicate matching rules detected when adding filter chain: ",
+        filter_chain.filter_chain_match.ToString()));
   }
   return GRPC_ERROR_NONE;
 }
@@ -2488,7 +2774,7 @@ grpc_error_handle BuildFilterChainMap(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle LdsResponseParseServer(
+grpc_error_handle LdsResourceParseServer(
     const EncodingContext& context,
     const envoy_config_listener_v3_Listener* listener, bool is_v2,
     XdsApi::LdsUpdate* lds_update) {
@@ -2537,582 +2823,327 @@ grpc_error_handle LdsResponseParseServer(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle LdsResponseParse(
+grpc_error_handle LdsResourceParse(
     const EncodingContext& context,
-    const envoy_service_discovery_v3_DiscoveryResponse* response,
-    const std::set<absl::string_view>& expected_listener_names,
-    XdsApi::LdsUpdateMap* lds_update_map,
-    std::set<std::string>* resource_names_failed) {
-  std::vector<grpc_error_handle> errors;
-  // Get the resources from the response.
-  size_t size;
-  const google_protobuf_Any* const* resources =
-      envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
-  for (size_t i = 0; i < size; ++i) {
-    // Check the type_url of the resource.
-    absl::string_view type_url =
-        UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
-    bool is_v2 = false;
-    if (!IsLds(type_url, &is_v2)) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("resource index ", i, ": Resource is not LDS.")
-              .c_str()));
-      continue;
-    }
-    // Decode the listener.
-    const upb_strview encoded_listener =
-        google_protobuf_Any_value(resources[i]);
-    const envoy_config_listener_v3_Listener* listener =
-        envoy_config_listener_v3_Listener_parse(
-            encoded_listener.data, encoded_listener.size, context.arena);
-    if (listener == nullptr) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("resource index ", i, ": Can't decode listener.")
-              .c_str()));
-      continue;
-    }
-    // Check listener name. Ignore unexpected listeners.
-    std::string listener_name =
-        UpbStringToStdString(envoy_config_listener_v3_Listener_name(listener));
-    if (expected_listener_names.find(listener_name) ==
-        expected_listener_names.end()) {
-      continue;
-    }
-    // Fail if listener name is duplicated.
-    if (lds_update_map->find(listener_name) != lds_update_map->end()) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("duplicate listener name \"", listener_name, "\"")
-              .c_str()));
-      resource_names_failed->insert(listener_name);
-      continue;
-    }
-    // Serialize into JSON and store it in the LdsUpdateMap
-    XdsApi::LdsResourceData& lds_resource_data =
-        (*lds_update_map)[listener_name];
-    XdsApi::LdsUpdate& lds_update = lds_resource_data.resource;
-    lds_resource_data.serialized_proto = UpbStringToStdString(encoded_listener);
-    // Check whether it's a client or server listener.
-    const envoy_config_listener_v3_ApiListener* api_listener =
-        envoy_config_listener_v3_Listener_api_listener(listener);
-    const envoy_config_core_v3_Address* address =
-        envoy_config_listener_v3_Listener_address(listener);
-    if (api_listener != nullptr && address != nullptr) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat(listener_name,
-                       ": Listener has both address and ApiListener")
-              .c_str()));
-      resource_names_failed->insert(listener_name);
-      continue;
-    }
-    if (api_listener == nullptr && address == nullptr) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat(listener_name,
-                       ": Listener has neither address nor ApiListener")
-              .c_str()));
-      resource_names_failed->insert(listener_name);
-      continue;
-    }
-    grpc_error_handle error = GRPC_ERROR_NONE;
-    if (api_listener != nullptr) {
-      error = LdsResponseParseClient(context, api_listener, is_v2, &lds_update);
-    } else {
-      error = LdsResponseParseServer(context, listener, is_v2, &lds_update);
-    }
-    if (error != GRPC_ERROR_NONE) {
-      errors.push_back(grpc_error_add_child(
-          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat(listener_name, ": validation error").c_str()),
-          error));
-      resource_names_failed->insert(listener_name);
-    }
+    const envoy_config_listener_v3_Listener* listener, bool is_v2,
+    XdsApi::LdsUpdate* lds_update) {
+  // Check whether it's a client or server listener.
+  const envoy_config_listener_v3_ApiListener* api_listener =
+      envoy_config_listener_v3_Listener_api_listener(listener);
+  const envoy_config_core_v3_Address* address =
+      envoy_config_listener_v3_Listener_address(listener);
+  if (api_listener != nullptr && address != nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Listener has both address and ApiListener");
   }
-  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing LDS response", &errors);
+  if (api_listener == nullptr && address == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Listener has neither address nor ApiListener");
+  }
+  // Validate Listener fields.
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  if (api_listener != nullptr) {
+    error = LdsResourceParseClient(context, api_listener, is_v2, lds_update);
+  } else {
+    error = LdsResourceParseServer(context, listener, is_v2, lds_update);
+  }
+  return error;
 }
 
-grpc_error_handle RdsResponseParse(
+grpc_error_handle UpstreamTlsContextParse(
     const EncodingContext& context,
-    const envoy_service_discovery_v3_DiscoveryResponse* response,
-    const std::set<absl::string_view>& expected_route_configuration_names,
-    XdsApi::RdsUpdateMap* rds_update_map,
-    std::set<std::string>* resource_names_failed) {
-  std::vector<grpc_error_handle> errors;
-  // Get the resources from the response.
-  size_t size;
-  const google_protobuf_Any* const* resources =
-      envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
-  for (size_t i = 0; i < size; ++i) {
-    // Check the type_url of the resource.
-    absl::string_view type_url =
-        UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
-    if (!IsRds(type_url)) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("resource index ", i, ": Resource is not RDS.")
-              .c_str()));
-      continue;
+    const envoy_config_core_v3_TransportSocket* transport_socket,
+    XdsApi::CommonTlsContext* common_tls_context) {
+  // Record Upstream tls context
+  absl::string_view name = UpbStringToAbsl(
+      envoy_config_core_v3_TransportSocket_name(transport_socket));
+  if (name != "envoy.transport_sockets.tls") {
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Unrecognized transport socket: ", name));
+  }
+  auto* typed_config =
+      envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
+  if (typed_config != nullptr) {
+    const upb_strview encoded_upstream_tls_context =
+        google_protobuf_Any_value(typed_config);
+    auto* upstream_tls_context =
+        envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse(
+            encoded_upstream_tls_context.data,
+            encoded_upstream_tls_context.size, context.arena);
+    if (upstream_tls_context == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Can't decode upstream tls context.");
     }
-    // Decode the route_config.
-    const upb_strview encoded_route_config =
-        google_protobuf_Any_value(resources[i]);
-    const envoy_config_route_v3_RouteConfiguration* route_config =
-        envoy_config_route_v3_RouteConfiguration_parse(
-            encoded_route_config.data, encoded_route_config.size,
-            context.arena);
-    if (route_config == nullptr) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("resource index ", i, ": Can't decode route_config.")
-              .c_str()));
-      continue;
-    }
-    // Check route_config_name. Ignore unexpected route_config.
-    std::string route_config_name = UpbStringToStdString(
-        envoy_config_route_v3_RouteConfiguration_name(route_config));
-    if (expected_route_configuration_names.find(route_config_name) ==
-        expected_route_configuration_names.end()) {
-      continue;
-    }
-    // Fail if route config name is duplicated.
-    if (rds_update_map->find(route_config_name) != rds_update_map->end()) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("duplicate route config name \"", route_config_name,
-                       "\"")
-              .c_str()));
-      resource_names_failed->insert(route_config_name);
-      continue;
-    }
-    // Serialize into JSON and store it in the RdsUpdateMap
-    XdsApi::RdsResourceData& rds_resource_data =
-        (*rds_update_map)[route_config_name];
-    XdsApi::RdsUpdate& rds_update = rds_resource_data.resource;
-    rds_resource_data.serialized_proto =
-        UpbStringToStdString(encoded_route_config);
-    // Parse the route_config.
-    grpc_error_handle error =
-        RouteConfigParse(context, route_config, &rds_update);
-    if (error != GRPC_ERROR_NONE) {
-      errors.push_back(grpc_error_add_child(
-          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat(route_config_name, ": validation error").c_str()),
-          error));
-      resource_names_failed->insert(route_config_name);
+    auto* common_tls_context_proto =
+        envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
+            upstream_tls_context);
+    if (common_tls_context_proto != nullptr) {
+      grpc_error_handle error = CommonTlsContextParse(
+          context, common_tls_context_proto, common_tls_context);
+      if (error != GRPC_ERROR_NONE) {
+        return grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                        "Error parsing UpstreamTlsContext"),
+                                    error);
+      }
     }
   }
-  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing RDS response", &errors);
+  if (common_tls_context->certificate_validation_context
+          .ca_certificate_provider_instance.instance_name.empty()) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "UpstreamTlsContext: TLS configuration provided but no "
+        "ca_certificate_provider_instance found.");
+  }
+  return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle CdsResponseParse(
+grpc_error_handle CdsLogicalDnsParse(
+    const envoy_config_cluster_v3_Cluster* cluster,
+    XdsApi::CdsUpdate* cds_update) {
+  const auto* load_assignment =
+      envoy_config_cluster_v3_Cluster_load_assignment(cluster);
+  if (load_assignment == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "load_assignment not present for LOGICAL_DNS cluster");
+  }
+  size_t num_localities;
+  const auto* const* localities =
+      envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(load_assignment,
+                                                               &num_localities);
+  if (num_localities != 1) {
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("load_assignment for LOGICAL_DNS cluster must have "
+                     "exactly one locality, found ",
+                     num_localities));
+  }
+  size_t num_endpoints;
+  const auto* const* endpoints =
+      envoy_config_endpoint_v3_LocalityLbEndpoints_lb_endpoints(localities[0],
+                                                                &num_endpoints);
+  if (num_endpoints != 1) {
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("locality for LOGICAL_DNS cluster must have "
+                     "exactly one endpoint, found ",
+                     num_endpoints));
+  }
+  const auto* endpoint =
+      envoy_config_endpoint_v3_LbEndpoint_endpoint(endpoints[0]);
+  if (endpoint == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "LbEndpoint endpoint field not set");
+  }
+  const auto* address = envoy_config_endpoint_v3_Endpoint_address(endpoint);
+  if (address == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Endpoint address field not set");
+  }
+  const auto* socket_address =
+      envoy_config_core_v3_Address_socket_address(address);
+  if (socket_address == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Address socket_address field not set");
+  }
+  if (envoy_config_core_v3_SocketAddress_resolver_name(socket_address).size !=
+      0) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "LOGICAL_DNS clusters must NOT have a custom resolver name set");
+  }
+  absl::string_view address_str = UpbStringToAbsl(
+      envoy_config_core_v3_SocketAddress_address(socket_address));
+  if (address_str.empty()) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "SocketAddress address field not set");
+  }
+  if (!envoy_config_core_v3_SocketAddress_has_port_value(socket_address)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "SocketAddress port_value field not set");
+  }
+  cds_update->dns_hostname = JoinHostPort(
+      address_str,
+      envoy_config_core_v3_SocketAddress_port_value(socket_address));
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error_handle CdsResourceParse(
     const EncodingContext& context,
-    const envoy_service_discovery_v3_DiscoveryResponse* response,
-    const std::set<absl::string_view>& expected_cluster_names,
-    XdsApi::CdsUpdateMap* cds_update_map,
-    std::set<std::string>* resource_names_failed) {
+    const envoy_config_cluster_v3_Cluster* cluster, bool /*is_v2*/,
+    XdsApi::CdsUpdate* cds_update) {
   std::vector<grpc_error_handle> errors;
-  // Get the resources from the response.
-  size_t size;
-  const google_protobuf_Any* const* resources =
-      envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
-  // Parse all the resources in the CDS response.
-  for (size_t i = 0; i < size; ++i) {
-    // Check the type_url of the resource.
-    absl::string_view type_url =
-        UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
-    if (!IsCds(type_url)) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("resource index ", i, ": Resource is not CDS.")
-              .c_str()));
-      continue;
+  // Check the cluster_discovery_type.
+  if (!envoy_config_cluster_v3_Cluster_has_type(cluster) &&
+      !envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
+    errors.push_back(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType not found."));
+  } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
+             envoy_config_cluster_v3_Cluster_EDS) {
+    cds_update->cluster_type = XdsApi::CdsUpdate::ClusterType::EDS;
+    // Check the EDS config source.
+    const envoy_config_cluster_v3_Cluster_EdsClusterConfig* eds_cluster_config =
+        envoy_config_cluster_v3_Cluster_eds_cluster_config(cluster);
+    const envoy_config_core_v3_ConfigSource* eds_config =
+        envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(
+            eds_cluster_config);
+    if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config)) {
+      errors.push_back(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("EDS ConfigSource is not ADS."));
     }
-    // Decode the cluster.
-    const upb_strview encoded_cluster = google_protobuf_Any_value(resources[i]);
-    const envoy_config_cluster_v3_Cluster* cluster =
-        envoy_config_cluster_v3_Cluster_parse(
-            encoded_cluster.data, encoded_cluster.size, context.arena);
-    if (cluster == nullptr) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("resource index ", i, ": Can't decode cluster.")
-              .c_str()));
-      continue;
+    // Record EDS service_name (if any).
+    upb_strview service_name =
+        envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(
+            eds_cluster_config);
+    if (service_name.size != 0) {
+      cds_update->eds_service_name = UpbStringToStdString(service_name);
     }
-    MaybeLogCluster(context, cluster);
-    // Ignore unexpected cluster names.
-    std::string cluster_name =
-        UpbStringToStdString(envoy_config_cluster_v3_Cluster_name(cluster));
-    if (expected_cluster_names.find(cluster_name) ==
-        expected_cluster_names.end()) {
-      continue;
-    }
-    // Fail on duplicate resources.
-    if (cds_update_map->find(cluster_name) != cds_update_map->end()) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("duplicate resource name \"", cluster_name, "\"")
-              .c_str()));
-      resource_names_failed->insert(cluster_name);
-      continue;
-    }
-    // Add the cluster to cds_update_map.
-    XdsApi::CdsResourceData& cds_resource_data =
-        (*cds_update_map)[cluster_name];
-    XdsApi::CdsUpdate& cds_update = cds_resource_data.resource;
-    // Store serialized proto.
-    cds_resource_data.serialized_proto = UpbStringToStdString(encoded_cluster);
-    // Check the cluster_discovery_type.
-    if (!envoy_config_cluster_v3_Cluster_has_type(cluster) &&
-        !envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat(cluster_name, ": DiscoveryType not found.").c_str()));
-      resource_names_failed->insert(cluster_name);
-      continue;
-    }
-    if (envoy_config_cluster_v3_Cluster_type(cluster) ==
-        envoy_config_cluster_v3_Cluster_EDS) {
-      cds_update.cluster_type = XdsApi::CdsUpdate::ClusterType::EDS;
-      // Check the EDS config source.
-      const envoy_config_cluster_v3_Cluster_EdsClusterConfig*
-          eds_cluster_config =
-              envoy_config_cluster_v3_Cluster_eds_cluster_config(cluster);
-      const envoy_config_core_v3_ConfigSource* eds_config =
-          envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(
-              eds_cluster_config);
-      if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config)) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(cluster_name, ": EDS ConfigSource is not ADS.")
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
-        continue;
-      }
-      // Record EDS service_name (if any).
-      upb_strview service_name =
-          envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(
-              eds_cluster_config);
-      if (service_name.size != 0) {
-        cds_update.eds_service_name = UpbStringToStdString(service_name);
-      }
-    } else if (!XdsAggregateAndLogicalDnsClusterEnabled()) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat(cluster_name, ": DiscoveryType is not valid.").c_str()));
-      resource_names_failed->insert(cluster_name);
-      continue;
-    } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
-               envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
-      cds_update.cluster_type = XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS;
-      const auto* load_assignment =
-          envoy_config_cluster_v3_Cluster_load_assignment(cluster);
-      if (load_assignment == nullptr) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(
-                cluster_name,
-                ": load_assignment not present for LOGICAL_DNS cluster")
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
-        continue;
-      }
-      size_t num_localities;
-      const auto* const* localities =
-          envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(
-              load_assignment, &num_localities);
-      if (num_localities != 1) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(cluster_name,
-                         ": load_assignment for LOGICAL_DNS cluster must have "
-                         "exactly one locality, found ",
-                         num_localities)
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
-        continue;
-      }
-      size_t num_endpoints;
-      const auto* const* endpoints =
-          envoy_config_endpoint_v3_LocalityLbEndpoints_lb_endpoints(
-              localities[0], &num_endpoints);
-      if (num_endpoints != 1) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(cluster_name,
-                         ": locality for LOGICAL_DNS cluster must have "
-                         "exactly one endpoint, found ",
-                         num_endpoints)
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
-        continue;
-      }
-      const auto* endpoint =
-          envoy_config_endpoint_v3_LbEndpoint_endpoint(endpoints[0]);
-      if (endpoint == nullptr) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(cluster_name, ": LbEndpoint endpoint field not set")
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
-        continue;
-      }
-      const auto* address = envoy_config_endpoint_v3_Endpoint_address(endpoint);
-      if (address == nullptr) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(cluster_name, ": Endpoint address field not set")
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
-        continue;
-      }
-      const auto* socket_address =
-          envoy_config_core_v3_Address_socket_address(address);
-      if (socket_address == nullptr) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(cluster_name, ": Address socket_address field not set")
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
-        continue;
-      }
-      if (envoy_config_core_v3_SocketAddress_resolver_name(socket_address)
-              .size != 0) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(
-                cluster_name,
-                ": LOGICAL_DNS clusters must NOT have a custom resolver "
-                "name set")
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
-        continue;
-      }
-      absl::string_view address_str = UpbStringToAbsl(
-          envoy_config_core_v3_SocketAddress_address(socket_address));
-      if (address_str.empty()) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(cluster_name, ": SocketAddress address field not set")
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
-        continue;
-      }
-      if (!envoy_config_core_v3_SocketAddress_has_port_value(socket_address)) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(cluster_name,
-                         ": SocketAddress port_value field not set")
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
-        continue;
-      }
-      cds_update.dns_hostname = JoinHostPort(
-          address_str,
-          envoy_config_core_v3_SocketAddress_port_value(socket_address));
+  } else if (!XdsAggregateAndLogicalDnsClusterEnabled()) {
+    errors.push_back(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType is not valid."));
+  } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
+             envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
+    cds_update->cluster_type = XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS;
+    grpc_error_handle error = CdsLogicalDnsParse(cluster, cds_update);
+    if (error != GRPC_ERROR_NONE) errors.push_back(error);
+  } else {
+    if (!envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
+      errors.push_back(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType is not valid."));
     } else {
-      if (envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
-        const envoy_config_cluster_v3_Cluster_CustomClusterType*
-            custom_cluster_type =
-                envoy_config_cluster_v3_Cluster_cluster_type(cluster);
-        upb_strview type_name =
-            envoy_config_cluster_v3_Cluster_CustomClusterType_name(
+      const envoy_config_cluster_v3_Cluster_CustomClusterType*
+          custom_cluster_type =
+              envoy_config_cluster_v3_Cluster_cluster_type(cluster);
+      upb_strview type_name =
+          envoy_config_cluster_v3_Cluster_CustomClusterType_name(
+              custom_cluster_type);
+      if (UpbStringToAbsl(type_name) != "envoy.clusters.aggregate") {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "DiscoveryType is not valid."));
+      } else {
+        cds_update->cluster_type = XdsApi::CdsUpdate::ClusterType::AGGREGATE;
+        // Retrieve aggregate clusters.
+        const google_protobuf_Any* typed_config =
+            envoy_config_cluster_v3_Cluster_CustomClusterType_typed_config(
                 custom_cluster_type);
-        if (UpbStringToAbsl(type_name) == "envoy.clusters.aggregate") {
-          cds_update.cluster_type = XdsApi::CdsUpdate::ClusterType::AGGREGATE;
-          // Retrieve aggregate clusters.
-          const google_protobuf_Any* typed_config =
-              envoy_config_cluster_v3_Cluster_CustomClusterType_typed_config(
-                  custom_cluster_type);
-          const upb_strview aggregate_cluster_config_upb_strview =
-              google_protobuf_Any_value(typed_config);
-          const envoy_extensions_clusters_aggregate_v3_ClusterConfig*
-              aggregate_cluster_config =
-                  envoy_extensions_clusters_aggregate_v3_ClusterConfig_parse(
-                      aggregate_cluster_config_upb_strview.data,
-                      aggregate_cluster_config_upb_strview.size, context.arena);
-          if (aggregate_cluster_config == nullptr) {
-            errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrCat(cluster_name, ": Can't parse aggregate cluster.")
-                    .c_str()));
-            resource_names_failed->insert(cluster_name);
-            continue;
-          }
+        const upb_strview aggregate_cluster_config_upb_strview =
+            google_protobuf_Any_value(typed_config);
+        const envoy_extensions_clusters_aggregate_v3_ClusterConfig*
+            aggregate_cluster_config =
+                envoy_extensions_clusters_aggregate_v3_ClusterConfig_parse(
+                    aggregate_cluster_config_upb_strview.data,
+                    aggregate_cluster_config_upb_strview.size, context.arena);
+        if (aggregate_cluster_config == nullptr) {
+          errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Can't parse aggregate cluster."));
+        } else {
           size_t size;
           const upb_strview* clusters =
               envoy_extensions_clusters_aggregate_v3_ClusterConfig_clusters(
                   aggregate_cluster_config, &size);
           for (size_t i = 0; i < size; ++i) {
             const upb_strview cluster = clusters[i];
-            cds_update.prioritized_cluster_names.emplace_back(
+            cds_update->prioritized_cluster_names.emplace_back(
                 UpbStringToStdString(cluster));
           }
-        } else {
-          errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat(cluster_name, ": DiscoveryType is not valid.")
-                  .c_str()));
-          resource_names_failed->insert(cluster_name);
-          continue;
-        }
-      } else {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(cluster_name, ": DiscoveryType is not valid.")
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
-        continue;
-      }
-    }
-    // Check the LB policy.
-    if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
-        envoy_config_cluster_v3_Cluster_ROUND_ROBIN) {
-      cds_update.lb_policy = "ROUND_ROBIN";
-    } else if (XdsRingHashEnabled() &&
-               envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
-                   envoy_config_cluster_v3_Cluster_RING_HASH) {
-      cds_update.lb_policy = "RING_HASH";
-      // Record ring hash lb config
-      auto* ring_hash_config =
-          envoy_config_cluster_v3_Cluster_ring_hash_lb_config(cluster);
-      if (ring_hash_config != nullptr) {
-        const google_protobuf_UInt64Value* max_ring_size =
-            envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
-                ring_hash_config);
-        if (max_ring_size != nullptr) {
-          cds_update.max_ring_size =
-              google_protobuf_UInt64Value_value(max_ring_size);
-          if (cds_update.max_ring_size > 8388608 ||
-              cds_update.max_ring_size == 0) {
-            errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrCat(
-                    cluster_name,
-                    ": max_ring_size is not in the range of 1 to 8388608.")
-                    .c_str()));
-            resource_names_failed->insert(cluster_name);
-            continue;
-          }
-        }
-        const google_protobuf_UInt64Value* min_ring_size =
-            envoy_config_cluster_v3_Cluster_RingHashLbConfig_minimum_ring_size(
-                ring_hash_config);
-        if (min_ring_size != nullptr) {
-          cds_update.min_ring_size =
-              google_protobuf_UInt64Value_value(min_ring_size);
-          if (cds_update.min_ring_size > 8388608 ||
-              cds_update.min_ring_size == 0) {
-            errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrCat(
-                    cluster_name,
-                    ": min_ring_size is not in the range of 1 to 8388608.")
-                    .c_str()));
-            resource_names_failed->insert(cluster_name);
-            continue;
-          }
-          if (cds_update.min_ring_size > cds_update.max_ring_size) {
-            errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrCat(
-                    cluster_name,
-                    ": min_ring_size cannot be greater than max_ring_size.")
-                    .c_str()));
-            resource_names_failed->insert(cluster_name);
-            continue;
-          }
-        }
-        if (envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
-                ring_hash_config) !=
-            envoy_config_cluster_v3_Cluster_RingHashLbConfig_XX_HASH) {
-          errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat(cluster_name,
-                           ": ring hash lb config has invalid hash function.")
-                  .c_str()));
-          resource_names_failed->insert(cluster_name);
-          continue;
-        }
-      }
-    } else {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat(cluster_name, ": LB policy is not supported.").c_str()));
-      resource_names_failed->insert(cluster_name);
-      continue;
-    }
-    if (XdsSecurityEnabled()) {
-      // Record Upstream tls context
-      auto* transport_socket =
-          envoy_config_cluster_v3_Cluster_transport_socket(cluster);
-      if (transport_socket != nullptr) {
-        absl::string_view name = UpbStringToAbsl(
-            envoy_config_core_v3_TransportSocket_name(transport_socket));
-        if (name == "envoy.transport_sockets.tls") {
-          auto* typed_config =
-              envoy_config_core_v3_TransportSocket_typed_config(
-                  transport_socket);
-          if (typed_config != nullptr) {
-            const upb_strview encoded_upstream_tls_context =
-                google_protobuf_Any_value(typed_config);
-            auto* upstream_tls_context =
-                envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse(
-                    encoded_upstream_tls_context.data,
-                    encoded_upstream_tls_context.size, context.arena);
-            if (upstream_tls_context == nullptr) {
-              errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                  absl::StrCat(cluster_name,
-                               ": Can't decode upstream tls context.")
-                      .c_str()));
-              resource_names_failed->insert(cluster_name);
-              continue;
-            }
-            auto* common_tls_context =
-                envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
-                    upstream_tls_context);
-            if (common_tls_context != nullptr) {
-              grpc_error_handle error = CommonTlsContextParse(
-                  common_tls_context, &cds_update.common_tls_context);
-              if (error != GRPC_ERROR_NONE) {
-                errors.push_back(grpc_error_add_child(
-                    GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                        absl::StrCat(cluster_name, ": error in TLS context")
-                            .c_str()),
-                    error));
-                resource_names_failed->insert(cluster_name);
-                continue;
-              }
-            }
-          }
-          if (cds_update.common_tls_context.combined_validation_context
-                  .validation_context_certificate_provider_instance
-                  .instance_name.empty()) {
-            errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrCat(cluster_name,
-                             "TLS configuration provided but no "
-                             "validation_context_certificate_provider_instance "
-                             "found.")
-                    .c_str()));
-            resource_names_failed->insert(cluster_name);
-            continue;
-          }
-        }
-      }
-    }
-    // Record LRS server name (if any).
-    const envoy_config_core_v3_ConfigSource* lrs_server =
-        envoy_config_cluster_v3_Cluster_lrs_server(cluster);
-    if (lrs_server != nullptr) {
-      if (!envoy_config_core_v3_ConfigSource_has_self(lrs_server)) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(cluster_name, ": LRS ConfigSource is not self.")
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
-        continue;
-      }
-      cds_update.lrs_load_reporting_server_name.emplace("");
-    }
-    // The Cluster resource encodes the circuit breaking parameters in a list of
-    // Thresholds messages, where each message specifies the parameters for a
-    // particular RoutingPriority. we will look only at the first entry in the
-    // list for priority DEFAULT and default to 1024 if not found.
-    if (envoy_config_cluster_v3_Cluster_has_circuit_breakers(cluster)) {
-      const envoy_config_cluster_v3_CircuitBreakers* circuit_breakers =
-          envoy_config_cluster_v3_Cluster_circuit_breakers(cluster);
-      size_t num_thresholds;
-      const envoy_config_cluster_v3_CircuitBreakers_Thresholds* const*
-          thresholds = envoy_config_cluster_v3_CircuitBreakers_thresholds(
-              circuit_breakers, &num_thresholds);
-      for (size_t i = 0; i < num_thresholds; ++i) {
-        const auto* threshold = thresholds[i];
-        if (envoy_config_cluster_v3_CircuitBreakers_Thresholds_priority(
-                threshold) == envoy_config_core_v3_DEFAULT) {
-          const google_protobuf_UInt32Value* max_requests =
-              envoy_config_cluster_v3_CircuitBreakers_Thresholds_max_requests(
-                  threshold);
-          if (max_requests != nullptr) {
-            cds_update.max_concurrent_requests =
-                google_protobuf_UInt32Value_value(max_requests);
-          }
-          break;
         }
       }
     }
   }
-  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing CDS response", &errors);
+  // Check the LB policy.
+  if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
+      envoy_config_cluster_v3_Cluster_ROUND_ROBIN) {
+    cds_update->lb_policy = "ROUND_ROBIN";
+  } else if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
+             envoy_config_cluster_v3_Cluster_RING_HASH) {
+    cds_update->lb_policy = "RING_HASH";
+    // Record ring hash lb config
+    auto* ring_hash_config =
+        envoy_config_cluster_v3_Cluster_ring_hash_lb_config(cluster);
+    if (ring_hash_config != nullptr) {
+      const google_protobuf_UInt64Value* max_ring_size =
+          envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
+              ring_hash_config);
+      if (max_ring_size != nullptr) {
+        cds_update->max_ring_size =
+            google_protobuf_UInt64Value_value(max_ring_size);
+        if (cds_update->max_ring_size > 8388608 ||
+            cds_update->max_ring_size == 0) {
+          errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "max_ring_size is not in the range of 1 to 8388608."));
+        }
+      }
+      const google_protobuf_UInt64Value* min_ring_size =
+          envoy_config_cluster_v3_Cluster_RingHashLbConfig_minimum_ring_size(
+              ring_hash_config);
+      if (min_ring_size != nullptr) {
+        cds_update->min_ring_size =
+            google_protobuf_UInt64Value_value(min_ring_size);
+        if (cds_update->min_ring_size > 8388608 ||
+            cds_update->min_ring_size == 0) {
+          errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "min_ring_size is not in the range of 1 to 8388608."));
+        }
+        if (cds_update->min_ring_size > cds_update->max_ring_size) {
+          errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "min_ring_size cannot be greater than max_ring_size."));
+        }
+      }
+      if (envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
+              ring_hash_config) !=
+          envoy_config_cluster_v3_Cluster_RingHashLbConfig_XX_HASH) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "ring hash lb config has invalid hash function."));
+      }
+    }
+  } else {
+    errors.push_back(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("LB policy is not supported."));
+  }
+  auto* transport_socket =
+      envoy_config_cluster_v3_Cluster_transport_socket(cluster);
+  if (transport_socket != nullptr) {
+    grpc_error_handle error = UpstreamTlsContextParse(
+        context, transport_socket, &cds_update->common_tls_context);
+    if (error != GRPC_ERROR_NONE) {
+      errors.push_back(
+          grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                   "Error parsing security configuration"),
+                               error));
+    }
+  }
+  // Record LRS server name (if any).
+  const envoy_config_core_v3_ConfigSource* lrs_server =
+      envoy_config_cluster_v3_Cluster_lrs_server(cluster);
+  if (lrs_server != nullptr) {
+    if (!envoy_config_core_v3_ConfigSource_has_self(lrs_server)) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          ": LRS ConfigSource is not self."));
+    }
+    cds_update->lrs_load_reporting_server_name.emplace("");
+  }
+  // The Cluster resource encodes the circuit breaking parameters in a list of
+  // Thresholds messages, where each message specifies the parameters for a
+  // particular RoutingPriority. we will look only at the first entry in the
+  // list for priority DEFAULT and default to 1024 if not found.
+  if (envoy_config_cluster_v3_Cluster_has_circuit_breakers(cluster)) {
+    const envoy_config_cluster_v3_CircuitBreakers* circuit_breakers =
+        envoy_config_cluster_v3_Cluster_circuit_breakers(cluster);
+    size_t num_thresholds;
+    const envoy_config_cluster_v3_CircuitBreakers_Thresholds* const*
+        thresholds = envoy_config_cluster_v3_CircuitBreakers_thresholds(
+            circuit_breakers, &num_thresholds);
+    for (size_t i = 0; i < num_thresholds; ++i) {
+      const auto* threshold = thresholds[i];
+      if (envoy_config_cluster_v3_CircuitBreakers_Thresholds_priority(
+              threshold) == envoy_config_core_v3_DEFAULT) {
+        const google_protobuf_UInt32Value* max_requests =
+            envoy_config_cluster_v3_CircuitBreakers_Thresholds_max_requests(
+                threshold);
+        if (max_requests != nullptr) {
+          cds_update->max_concurrent_requests =
+              google_protobuf_UInt32Value_value(max_requests);
+        }
+        break;
+      }
+    }
+  }
+  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing CDS resource", &errors);
 }
 
 grpc_error_handle ServerAddressParseAndAppend(
@@ -3241,17 +3272,84 @@ grpc_error_handle DropParseAndAppend(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unknown denominator type");
   }
   // Cap numerator to 1000000.
-  numerator = GPR_MIN(numerator, 1000000);
+  numerator = std::min(numerator, 1000000u);
   drop_config->AddCategory(std::move(category), numerator);
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle EdsResponseParse(
-    const EncodingContext& context,
+grpc_error_handle EdsResourceParse(
+    const EncodingContext& /*context*/,
+    const envoy_config_endpoint_v3_ClusterLoadAssignment*
+        cluster_load_assignment,
+    bool /*is_v2*/, XdsApi::EdsUpdate* eds_update) {
+  std::vector<grpc_error_handle> errors;
+  // Get the endpoints.
+  size_t locality_size;
+  const envoy_config_endpoint_v3_LocalityLbEndpoints* const* endpoints =
+      envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(
+          cluster_load_assignment, &locality_size);
+  for (size_t j = 0; j < locality_size; ++j) {
+    size_t priority;
+    XdsApi::EdsUpdate::Priority::Locality locality;
+    grpc_error_handle error = LocalityParse(endpoints[j], &locality, &priority);
+    if (error != GRPC_ERROR_NONE) {
+      errors.push_back(error);
+      continue;
+    }
+    // Filter out locality with weight 0.
+    if (locality.lb_weight == 0) continue;
+    // Make sure prorities is big enough. Note that they might not
+    // arrive in priority order.
+    while (eds_update->priorities.size() < priority + 1) {
+      eds_update->priorities.emplace_back();
+    }
+    eds_update->priorities[priority].localities.emplace(locality.name.get(),
+                                                        std::move(locality));
+  }
+  for (const auto& priority : eds_update->priorities) {
+    if (priority.localities.empty()) {
+      errors.push_back(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("sparse priority list"));
+    }
+  }
+  // Get the drop config.
+  eds_update->drop_config = MakeRefCounted<XdsApi::EdsUpdate::DropConfig>();
+  const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy* policy =
+      envoy_config_endpoint_v3_ClusterLoadAssignment_policy(
+          cluster_load_assignment);
+  if (policy != nullptr) {
+    size_t drop_size;
+    const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload* const*
+        drop_overload =
+            envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_drop_overloads(
+                policy, &drop_size);
+    for (size_t j = 0; j < drop_size; ++j) {
+      grpc_error_handle error =
+          DropParseAndAppend(drop_overload[j], eds_update->drop_config.get());
+      if (error != GRPC_ERROR_NONE) {
+        errors.push_back(
+            grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                     "drop config validation error"),
+                                 error));
+      }
+    }
+  }
+  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing EDS resource", &errors);
+}
+
+template <typename ProtoParseFunction, typename ProtoResourceNameFunction,
+          typename ResourceTypeSelectorFunction, typename ProtoLogFunction,
+          typename ResourceParseFunction, typename UpdateMap>
+grpc_error_handle AdsResponseParse(
+    const EncodingContext& context, ProtoParseFunction proto_parse_function,
+    ProtoResourceNameFunction proto_resource_name_function,
+    ResourceTypeSelectorFunction resource_type_selector_function,
+    ProtoLogFunction proto_log_function,
+    ResourceParseFunction resource_parse_function,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
-    const std::set<absl::string_view>& expected_eds_service_names,
-    XdsApi::EdsUpdateMap* eds_update_map,
-    std::set<std::string>* resource_names_failed) {
+    const char* resource_type_string,
+    const std::set<absl::string_view>& expected_resource_names,
+    UpdateMap* update_map, std::set<std::string>* resource_names_failed) {
   std::vector<grpc_error_handle> errors;
   // Get the resources from the response.
   size_t size;
@@ -3261,115 +3359,57 @@ grpc_error_handle EdsResponseParse(
     // Check the type_url of the resource.
     absl::string_view type_url =
         UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
-    if (!IsEds(type_url)) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("resource index ", i, ": Resource is not EDS.")
-              .c_str()));
+    bool is_v2 = false;
+    if (!resource_type_selector_function(type_url, &is_v2)) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("resource index ", i, ": Resource is not ",
+                       resource_type_string, ".")));
       continue;
     }
-    // Get the cluster_load_assignment.
-    upb_strview encoded_cluster_load_assignment =
-        google_protobuf_Any_value(resources[i]);
-    envoy_config_endpoint_v3_ClusterLoadAssignment* cluster_load_assignment =
-        envoy_config_endpoint_v3_ClusterLoadAssignment_parse(
-            encoded_cluster_load_assignment.data,
-            encoded_cluster_load_assignment.size, context.arena);
-    if (cluster_load_assignment == nullptr) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("resource index ", i,
-                       ": Can't parse cluster_load_assignment.")
-              .c_str()));
+    // Parse the resource.
+    upb_strview serialized_resource = google_protobuf_Any_value(resources[i]);
+    auto* resource = proto_parse_function(
+        serialized_resource.data, serialized_resource.size, context.arena);
+    if (resource == nullptr) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("resource index ", i, ": Can't parse ",
+                       resource_type_string, " resource.")));
       continue;
     }
-    MaybeLogClusterLoadAssignment(context, cluster_load_assignment);
-    // Check the EDS service name.  Ignore unexpected names.
-    std::string eds_service_name = UpbStringToStdString(
-        envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(
-            cluster_load_assignment));
-    if (expected_eds_service_names.find(eds_service_name) ==
-        expected_eds_service_names.end()) {
+    proto_log_function(context, resource);
+    // Check the resource name.  Ignore unexpected names.
+    std::string resource_name =
+        UpbStringToStdString(proto_resource_name_function(resource));
+    if (expected_resource_names.find(resource_name) ==
+        expected_resource_names.end()) {
       continue;
     }
     // Fail on duplicate resources.
-    if (eds_update_map->find(eds_service_name) != eds_update_map->end()) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("duplicate resource name \"", eds_service_name, "\"")
-              .c_str()));
-      resource_names_failed->insert(eds_service_name);
+    if (update_map->find(resource_name) != update_map->end()) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("duplicate resource name \"", resource_name, "\"")));
+      resource_names_failed->insert(resource_name);
       continue;
     }
-    // Serialize into JSON and store it in the EdsUpdateMap
-    XdsApi::EdsResourceData& eds_resource_data =
-        (*eds_update_map)[eds_service_name];
-    XdsApi::EdsUpdate& eds_update = eds_resource_data.resource;
-    eds_resource_data.serialized_proto =
-        UpbStringToStdString(encoded_cluster_load_assignment);
-    // Get the endpoints.
-    size_t locality_size;
-    const envoy_config_endpoint_v3_LocalityLbEndpoints* const* endpoints =
-        envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(
-            cluster_load_assignment, &locality_size);
-    grpc_error_handle error = GRPC_ERROR_NONE;
-    for (size_t j = 0; j < locality_size; ++j) {
-      size_t priority;
-      XdsApi::EdsUpdate::Priority::Locality locality;
-      error = LocalityParse(endpoints[j], &locality, &priority);
-      if (error != GRPC_ERROR_NONE) break;
-      // Filter out locality with weight 0.
-      if (locality.lb_weight == 0) continue;
-      // Make sure prorities is big enough. Note that they might not
-      // arrive in priority order.
-      while (eds_update.priorities.size() < priority + 1) {
-        eds_update.priorities.emplace_back();
-      }
-      eds_update.priorities[priority].localities.emplace(locality.name.get(),
-                                                         std::move(locality));
-    }
+    // Validate resource.
+    decltype(UpdateMap::mapped_type::resource) update;
+    grpc_error_handle error =
+        resource_parse_function(context, resource, is_v2, &update);
     if (error != GRPC_ERROR_NONE) {
-      errors.push_back(grpc_error_add_child(
-          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat(eds_service_name, ": locality validation error")
-                  .c_str()),
-          error));
-      resource_names_failed->insert(eds_service_name);
-      continue;
-    }
-    for (const auto& priority : eds_update.priorities) {
-      if (priority.localities.empty()) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(eds_service_name, ": sparse priority list").c_str()));
-        resource_names_failed->insert(eds_service_name);
-        continue;
-      }
-    }
-    // Get the drop config.
-    eds_update.drop_config = MakeRefCounted<XdsApi::EdsUpdate::DropConfig>();
-    const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy* policy =
-        envoy_config_endpoint_v3_ClusterLoadAssignment_policy(
-            cluster_load_assignment);
-    if (policy != nullptr) {
-      size_t drop_size;
-      const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload* const*
-          drop_overload =
-              envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_drop_overloads(
-                  policy, &drop_size);
-      for (size_t j = 0; j < drop_size; ++j) {
-        error =
-            DropParseAndAppend(drop_overload[j], eds_update.drop_config.get());
-        if (error != GRPC_ERROR_NONE) break;
-      }
-      if (error != GRPC_ERROR_NONE) {
-        errors.push_back(grpc_error_add_child(
-            GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrCat(eds_service_name, ": drop config validation error")
-                    .c_str()),
-            error));
-        resource_names_failed->insert(eds_service_name);
-        continue;
-      }
+      errors.push_back(
+          grpc_error_add_child(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+                                   resource_name, ": validation error")),
+                               error));
+      resource_names_failed->insert(resource_name);
+    } else {
+      // Store result in update map, in both validated and serialized form.
+      auto& resource_data = (*update_map)[resource_name];
+      resource_data.resource = std::move(update);
+      resource_data.serialized_proto =
+          UpbStringToStdString(serialized_resource);
     }
   }
-  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing EDS response", &errors);
+  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing ADS response", &errors);
 }
 
 std::string TypeUrlInternalToExternal(absl::string_view type_url) {
@@ -3385,13 +3425,25 @@ std::string TypeUrlInternalToExternal(absl::string_view type_url) {
   return std::string(type_url);
 }
 
-template <typename UpdateMap>
-void MoveUpdatesToFailedSet(UpdateMap* update_map,
-                            std::set<std::string>* resource_names_failed) {
-  for (const auto& p : *update_map) {
-    resource_names_failed->insert(p.first);
-  }
-  update_map->clear();
+upb_strview LdsResourceName(
+    const envoy_config_listener_v3_Listener* lds_resource) {
+  return envoy_config_listener_v3_Listener_name(lds_resource);
+}
+
+upb_strview RdsResourceName(
+    const envoy_config_route_v3_RouteConfiguration* rds_resource) {
+  return envoy_config_route_v3_RouteConfiguration_name(rds_resource);
+}
+
+upb_strview CdsResourceName(
+    const envoy_config_cluster_v3_Cluster* cds_resource) {
+  return envoy_config_cluster_v3_Cluster_name(cds_resource);
+}
+
+upb_strview EdsResourceName(
+    const envoy_config_endpoint_v3_ClusterLoadAssignment* eds_resource) {
+  return envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(
+      eds_resource);
 }
 
 }  // namespace
@@ -3404,8 +3456,12 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
     const std::set<absl::string_view>& expected_eds_service_names) {
   AdsParseResult result;
   upb::Arena arena;
-  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
-                                   server.ShouldUseV3()};
+  const EncodingContext context = {client_,
+                                   tracer_,
+                                   symtab_.ptr(),
+                                   arena.ptr(),
+                                   server.ShouldUseV3(),
+                                   certificate_provider_definition_map_};
   // Decode the response.
   const envoy_service_discovery_v3_DiscoveryResponse* response =
       envoy_service_discovery_v3_DiscoveryResponse_parse(
@@ -3426,38 +3482,33 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
   result.nonce = UpbStringToStdString(
       envoy_service_discovery_v3_DiscoveryResponse_nonce(response));
   // Parse the response according to the resource type.
+  // TODO(roth): When we have time, consider defining an interface for the
+  // methods of each resource type, so that we don't have to pass
+  // individual functions into each call to AdsResponseParse().
   if (IsLds(result.type_url)) {
-    result.parse_error =
-        LdsResponseParse(context, response, expected_listener_names,
-                         &result.lds_update_map, &result.resource_names_failed);
-    if (result.parse_error != GRPC_ERROR_NONE) {
-      MoveUpdatesToFailedSet(&result.lds_update_map,
-                             &result.resource_names_failed);
-    }
+    result.parse_error = AdsResponseParse(
+        context, envoy_config_listener_v3_Listener_parse, LdsResourceName,
+        IsLds, MaybeLogListener, LdsResourceParse, response, "LDS",
+        expected_listener_names, &result.lds_update_map,
+        &result.resource_names_failed);
   } else if (IsRds(result.type_url)) {
-    result.parse_error =
-        RdsResponseParse(context, response, expected_route_configuration_names,
-                         &result.rds_update_map, &result.resource_names_failed);
-    if (result.parse_error != GRPC_ERROR_NONE) {
-      MoveUpdatesToFailedSet(&result.rds_update_map,
-                             &result.resource_names_failed);
-    }
+    result.parse_error = AdsResponseParse(
+        context, envoy_config_route_v3_RouteConfiguration_parse,
+        RdsResourceName, IsRds, MaybeLogRouteConfiguration, RouteConfigParse,
+        response, "RDS", expected_route_configuration_names,
+        &result.rds_update_map, &result.resource_names_failed);
   } else if (IsCds(result.type_url)) {
-    result.parse_error =
-        CdsResponseParse(context, response, expected_cluster_names,
-                         &result.cds_update_map, &result.resource_names_failed);
-    if (result.parse_error != GRPC_ERROR_NONE) {
-      MoveUpdatesToFailedSet(&result.cds_update_map,
-                             &result.resource_names_failed);
-    }
+    result.parse_error = AdsResponseParse(
+        context, envoy_config_cluster_v3_Cluster_parse, CdsResourceName, IsCds,
+        MaybeLogCluster, CdsResourceParse, response, "CDS",
+        expected_cluster_names, &result.cds_update_map,
+        &result.resource_names_failed);
   } else if (IsEds(result.type_url)) {
-    result.parse_error =
-        EdsResponseParse(context, response, expected_eds_service_names,
-                         &result.eds_update_map, &result.resource_names_failed);
-    if (result.parse_error != GRPC_ERROR_NONE) {
-      MoveUpdatesToFailedSet(&result.eds_update_map,
-                             &result.resource_names_failed);
-    }
+    result.parse_error = AdsResponseParse(
+        context, envoy_config_endpoint_v3_ClusterLoadAssignment_parse,
+        EdsResourceName, IsEds, MaybeLogClusterLoadAssignment, EdsResourceParse,
+        response, "EDS", expected_eds_service_names, &result.eds_update_map,
+        &result.resource_names_failed);
   }
   return result;
 }
@@ -3492,8 +3543,12 @@ grpc_slice SerializeLrsRequest(
 grpc_slice XdsApi::CreateLrsInitialRequest(
     const XdsBootstrap::XdsServer& server) {
   upb::Arena arena;
-  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
-                                   server.ShouldUseV3()};
+  const EncodingContext context = {client_,
+                                   tracer_,
+                                   symtab_.ptr(),
+                                   arena.ptr(),
+                                   server.ShouldUseV3(),
+                                   certificate_provider_definition_map_};
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
       envoy_service_load_stats_v3_LoadStatsRequest_new(arena.ptr());
@@ -3563,8 +3618,9 @@ void LocalityStatsPopulate(
 grpc_slice XdsApi::CreateLrsRequest(
     ClusterLoadReportMap cluster_load_report_map) {
   upb::Arena arena;
-  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
-                                   false};
+  const EncodingContext context = {
+      client_,     tracer_, symtab_.ptr(),
+      arena.ptr(), false,   certificate_provider_definition_map_};
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
       envoy_service_load_stats_v3_LoadStatsRequest_new(arena.ptr());
@@ -3897,8 +3953,9 @@ std::string XdsApi::AssembleClientConfig(
   // Fill-in the node information
   auto* node = envoy_service_status_v3_ClientConfig_mutable_node(client_config,
                                                                  arena.ptr());
-  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
-                                   true};
+  const EncodingContext context = {
+      client_,     tracer_, symtab_.ptr(),
+      arena.ptr(), true,    certificate_provider_definition_map_};
   PopulateNode(context, node_, build_version_, user_agent_name_,
                user_agent_version_, node);
   // Dump each xDS-type config into PerXdsConfig

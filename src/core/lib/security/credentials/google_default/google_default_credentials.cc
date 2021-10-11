@@ -18,11 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 
 #include <string.h>
 
 #include "absl/strings/match.h"
+#include "absl/strings/strip.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -33,6 +34,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
@@ -40,8 +42,8 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
-#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -193,7 +195,6 @@ static int is_metadata_server_reachable() {
       GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),
       &detector.response);
-  grpc_resource_quota_unref_internal(resource_quota);
   grpc_core::ExecCtx::Get()->Flush();
   /* Block until we get the response. This is not ideal but this should only be
     called once for the lifetime of the process by the default credentials. */
@@ -222,9 +223,55 @@ static int is_metadata_server_reachable() {
   return detector.success;
 }
 
+namespace {
+
+bool ValidateUrlField(const Json& json, const std::string& field) {
+  auto it = json.object_value().find(field);
+  if (it == json.object_value().end()) {
+    return true;
+  }
+  if (it->second.type() != Json::Type::STRING ||
+      it->second.string_value().empty()) {
+    return false;
+  }
+  absl::StatusOr<grpc_core::URI> url =
+      grpc_core::URI::Parse(it->second.string_value());
+  if (!url.ok()) return false;
+  if (!absl::EqualsIgnoreCase(url->scheme(), "https")) {
+    return false;
+  }
+  absl::string_view host;
+  absl::string_view port;
+  grpc_core::SplitHostPort(url->authority(), &host, &port);
+  if (absl::ConsumeSuffix(&host, ".googleapis.com")) {
+    if (host == "sts" || host == "iamcredentials") {
+      return true;
+    } else if (absl::StartsWith(host, "sts.") ||
+               absl::StartsWith(host, "iamcredentials.")) {
+      return true;
+    } else if (absl::EndsWith(host, ".sts") ||
+               absl::EndsWith(host, ".iamcredentials")) {
+      return true;
+    } else if (absl::EndsWith(host, "-sts") ||
+               absl::EndsWith(host, "-iamcredentials")) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool ValidateExteralAccountCredentials(const Json& json) {
+  return json.type() == Json::Type::OBJECT &&
+         ValidateUrlField(json, "token_url") &&
+         ValidateUrlField(json, "service_account_impersonation_url") &&
+         ValidateUrlField(json, "token_info_url");
+}
+
+}  // namespace
+
 /* Takes ownership of creds_path if not NULL. */
 static grpc_error_handle create_default_creds_from_path(
-    const std::string& creds_path, const char* user_provided_audience,
+    const std::string& creds_path,
     grpc_core::RefCountedPtr<grpc_call_credentials>* creds) {
   grpc_auth_json_key key;
   grpc_auth_refresh_token token;
@@ -243,17 +290,16 @@ static grpc_error_handle create_default_creds_from_path(
   if (json.type() != Json::Type::OBJECT) {
     error = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to parse JSON"),
-        GRPC_ERROR_STR_RAW_BYTES, grpc_slice_ref_internal(creds_data));
+        GRPC_ERROR_STR_RAW_BYTES, grpc_core::StringViewFromSlice(creds_data));
     goto end;
   }
 
   /* First, try an auth json key. */
   key = grpc_auth_json_key_create_from_json(json);
   if (grpc_auth_json_key_is_valid(&key)) {
-    if (user_provided_audience == nullptr) user_provided_audience = "";
     result =
         grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
-            key, grpc_max_auth_token_lifetime(), user_provided_audience);
+            key, grpc_max_auth_token_lifetime());
     if (result == nullptr) {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "grpc_service_account_jwt_access_credentials_create_from_auth_json_"
@@ -276,6 +322,11 @@ static grpc_error_handle create_default_creds_from_path(
   }
 
   /* Finally try an external account credentials.*/
+  if (!ValidateExteralAccountCredentials(json)) {
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Invalid external account credentials format.");
+    goto end;
+  }
   result = grpc_core::ExternalAccountCredentials::Create(json, {}, &error);
 
 end:
@@ -307,15 +358,14 @@ static bool metadata_server_available() {
 }
 
 static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
-    const char* user_provided_audience, grpc_error_handle* error) {
+    grpc_error_handle* error) {
   grpc_core::RefCountedPtr<grpc_call_credentials> call_creds;
   grpc_error_handle err;
 
   /* First, try the environment variable. */
   char* path_from_env = gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
   if (path_from_env != nullptr) {
-    err = create_default_creds_from_path(path_from_env, user_provided_audience,
-                                         &call_creds);
+    err = create_default_creds_from_path(path_from_env, &call_creds);
     gpr_free(path_from_env);
     if (err == GRPC_ERROR_NONE) return call_creds;
     *error = grpc_error_add_child(*error, err);
@@ -323,8 +373,7 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
 
   /* Then the well-known file. */
   err = create_default_creds_from_path(
-      grpc_get_well_known_google_credentials_file_path(),
-      user_provided_audience, &call_creds);
+      grpc_get_well_known_google_credentials_file_path(), &call_creds);
   if (err == GRPC_ERROR_NONE) return call_creds;
   *error = grpc_error_add_child(*error, err);
 
@@ -346,8 +395,7 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
 }
 
 grpc_channel_credentials* grpc_google_default_credentials_create(
-    grpc_call_credentials* call_credentials,
-    const char* user_provided_audience) {
+    grpc_call_credentials* call_credentials) {
   grpc_channel_credentials* result = nullptr;
   grpc_core::RefCountedPtr<grpc_call_credentials> call_creds(call_credentials);
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -357,7 +405,7 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
                  (call_credentials));
 
   if (call_creds == nullptr) {
-    call_creds = make_default_call_creds(user_provided_audience, &error);
+    call_creds = make_default_call_creds(&error);
   }
 
   if (call_creds != nullptr) {

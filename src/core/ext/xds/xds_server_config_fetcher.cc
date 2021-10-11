@@ -259,12 +259,12 @@ FilterChainMatchManager::CreateOrGetXdsCertificateProviderFromFilterChainData(
   // Configure root cert.
   absl::string_view root_provider_instance_name =
       filter_chain->downstream_tls_context.common_tls_context
-          .combined_validation_context
-          .validation_context_certificate_provider_instance.instance_name;
+          .certificate_validation_context.ca_certificate_provider_instance
+          .instance_name;
   absl::string_view root_provider_cert_name =
       filter_chain->downstream_tls_context.common_tls_context
-          .combined_validation_context
-          .validation_context_certificate_provider_instance.certificate_name;
+          .certificate_validation_context.ca_certificate_provider_instance
+          .certificate_name;
   if (!root_provider_instance_name.empty()) {
     certificate_providers.root =
         xds_client_->certificate_provider_store()
@@ -278,10 +278,10 @@ FilterChainMatchManager::CreateOrGetXdsCertificateProviderFromFilterChainData(
   // Configure identity cert.
   absl::string_view identity_provider_instance_name =
       filter_chain->downstream_tls_context.common_tls_context
-          .tls_certificate_certificate_provider_instance.instance_name;
+          .tls_certificate_provider_instance.instance_name;
   absl::string_view identity_provider_cert_name =
       filter_chain->downstream_tls_context.common_tls_context
-          .tls_certificate_certificate_provider_instance.certificate_name;
+          .tls_certificate_provider_instance.certificate_name;
   if (!identity_provider_instance_name.empty()) {
     certificate_providers.instance =
         xds_client_->certificate_provider_store()
@@ -428,7 +428,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
         if (serving_status_notifier_.on_serving_status_update != nullptr) {
           serving_status_notifier_.on_serving_status_update(
               serving_status_notifier_.user_data, listening_address_.c_str(),
-              GRPC_STATUS_OK, "");
+              {GRPC_STATUS_OK, ""});
         } else {
           gpr_log(GPR_INFO,
                   "xDS Listener resource obtained; will start serving on %s",
@@ -459,7 +459,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
         if (serving_status_notifier_.on_serving_status_update != nullptr) {
           serving_status_notifier_.on_serving_status_update(
               serving_status_notifier_.user_data, listening_address_.c_str(),
-              GRPC_STATUS_UNAVAILABLE, grpc_error_std_string(error).c_str());
+              {GRPC_STATUS_UNAVAILABLE, grpc_error_std_string(error).c_str()});
         } else {
           gpr_log(
               GPR_ERROR,
@@ -486,8 +486,8 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
       if (serving_status_notifier_.on_serving_status_update != nullptr) {
         serving_status_notifier_.on_serving_status_update(
             serving_status_notifier_.user_data, listening_address_.c_str(),
-            static_cast<grpc_status_code>(status.raw_code()),
-            std::string(status.message()).c_str());
+            {static_cast<grpc_status_code>(status.raw_code()),
+             std::string(status.message()).c_str()});
       }
     }
 

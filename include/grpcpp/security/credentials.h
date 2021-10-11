@@ -55,10 +55,16 @@ std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
 
-/// Builds XDS Credentials.
+GRPC_DEPRECATED(
+    "Use grpc::XdsCredentials instead. The experimental version will be "
+    "deleted after the 1.41 release.")
 std::shared_ptr<ChannelCredentials> XdsCredentials(
     const std::shared_ptr<ChannelCredentials>& fallback_creds);
 }  // namespace experimental
+
+/// Builds XDS Credentials.
+std::shared_ptr<ChannelCredentials> XdsCredentials(
+    const std::shared_ptr<ChannelCredentials>& fallback_creds);
 
 /// A channel credentials object encapsulates all the state needed by a client
 /// to authenticate with a server for a given channel.
@@ -80,7 +86,7 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
   // AsSecureCredentials(). Once we are able to remove insecure builds from gRPC
   // (and also internal dependencies on the indirect method of creating a
   // channel through credentials), we would be able to remove this.
-  friend std::shared_ptr<ChannelCredentials> grpc::experimental::XdsCredentials(
+  friend std::shared_ptr<ChannelCredentials> grpc::XdsCredentials(
       const std::shared_ptr<ChannelCredentials>& fallback_creds);
 
   virtual SecureChannelCredentials* AsSecureCredentials() = 0;
@@ -172,18 +178,11 @@ struct SslCredentialsOptions {
 
 /// Builds credentials with reasonable defaults.
 ///
-/// user_provided_audience is an optional field for user to override the
-/// auidence in the JWT token. If user_provided_audience is empty, the service
-/// URL will be used as the audience. Note that user_provided_audience will
-/// only be used if a service account JWT access credential is created by
-/// the application default credentials mechanism.
-///
 /// \warning Only use these credentials when connecting to a Google endpoint.
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
-    const grpc::string& user_provided_audience = "");
+std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials();
 
 /// Builds SSL Credentials given SSL specific options
 std::shared_ptr<ChannelCredentials> SslCredentials(
@@ -204,13 +203,9 @@ constexpr long kMaxAuthTokenLifetimeSecs = 3600;
 /// token_lifetime_seconds is the lifetime in seconds of each Json Web Token
 /// (JWT) created with this credentials. It should not exceed
 /// \a kMaxAuthTokenLifetimeSecs or will be cropped to this value.
-/// user_provided_audience is an optional field for user to override the
-/// auidence in the JWT token. If user_provided_audience is empty, the service
-/// URL will be used as the audience.
 std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
     const grpc::string& json_key,
-    long token_lifetime_seconds = kMaxAuthTokenLifetimeSecs,
-    const grpc::string& user_provided_audience = "");
+    long token_lifetime_seconds = kMaxAuthTokenLifetimeSecs);
 
 /// Builds refresh token credentials.
 /// json_refresh_token is the JSON string containing the refresh token along

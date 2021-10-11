@@ -18,6 +18,8 @@
 
 #include "src/cpp/client/secure_credentials.h"
 
+#include "absl/strings/str_join.h"
+
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -27,8 +29,6 @@
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/channel_arguments.h>
-
-#include "absl/strings/str_join.h"
 
 // TODO(yashykt): We shouldn't be including "src/core" headers.
 #include "src/core/lib/gpr/env.h"
@@ -103,14 +103,10 @@ std::shared_ptr<CallCredentials> WrapCallCredentials(
 }
 }  // namespace
 
-std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
-    const grpc::string& user_provided_audience) {
+std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   return internal::WrapChannelCredentials(
-      grpc_google_default_credentials_create(
-          nullptr, user_provided_audience.empty()
-                       ? nullptr
-                       : user_provided_audience.c_str()));
+      grpc_google_default_credentials_create(nullptr));
 }
 
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
@@ -221,6 +217,7 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
   char* sts_creds_path = gpr_getenv("STS_CREDENTIALS");
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc::Status status;
+  // NOLINTNEXTLINE(clang-diagnostic-unused-lambda-capture)
   auto cleanup = [&json_string, &sts_creds_path, &error, &status]() {
     grpc_slice_unref_internal(json_string);
     gpr_free(sts_creds_path);
@@ -324,8 +321,7 @@ std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials() {
 
 // Builds JWT credentials.
 std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
-    const std::string& json_key, long token_lifetime_seconds,
-    const grpc::string& user_provided_audience) {
+    const std::string& json_key, long token_lifetime_seconds) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   if (token_lifetime_seconds <= 0) {
     gpr_log(GPR_ERROR,
@@ -335,9 +331,7 @@ std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
   gpr_timespec lifetime =
       gpr_time_from_seconds(token_lifetime_seconds, GPR_TIMESPAN);
   return WrapCallCredentials(grpc_service_account_jwt_access_credentials_create(
-      json_key.c_str(), lifetime,
-      user_provided_audience.empty() ? nullptr
-                                     : user_provided_audience.c_str()));
+      json_key.c_str(), lifetime, nullptr));
 }
 
 // Builds refresh token credentials.
@@ -499,7 +493,6 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
     grpc_metadata md_entry;
     md_entry.key = SliceFromCopiedString(metadatum.first);
     md_entry.value = SliceFromCopiedString(metadatum.second);
-    md_entry.flags = 0;
     md.push_back(md_entry);
   }
   if (creds_md != nullptr) {
@@ -514,7 +507,6 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
       for (const auto& elem : md) {
         creds_md[*num_creds_md].key = elem.key;
         creds_md[*num_creds_md].value = elem.value;
-        creds_md[*num_creds_md].flags = elem.flags;
         ++(*num_creds_md);
       }
       *status_code = static_cast<grpc_status_code>(status.error_code());

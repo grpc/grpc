@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Implementation of the metadata abstraction for gRPC Asyncio Python."""
-from typing import List, Tuple, Iterator, Any, Union
-from collections import abc, OrderedDict
+from collections import OrderedDict
+from collections import abc
+from typing import Any, Iterator, List, Tuple, Union
 
 MetadataKey = str
 MetadataValue = Union[str, bytes]

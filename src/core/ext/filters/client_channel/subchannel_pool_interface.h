@@ -25,6 +25,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 
 namespace grpc_core {
 
@@ -35,7 +36,8 @@ extern TraceFlag grpc_subchannel_pool_trace;
 // A key that can uniquely identify a subchannel.
 class SubchannelKey {
  public:
-  explicit SubchannelKey(const grpc_channel_args* args);
+  SubchannelKey(const grpc_resolved_address& address,
+                const grpc_channel_args* args);
   ~SubchannelKey();
 
   // Copyable.
@@ -47,13 +49,20 @@ class SubchannelKey {
 
   bool operator<(const SubchannelKey& other) const;
 
+  const grpc_resolved_address& address() const { return address_; }
+  const grpc_channel_args* args() const { return args_; }
+
+  // Human-readable string suitable for logging.
+  std::string ToString() const;
+
  private:
   // Initializes the subchannel key with the given \a args and the function to
   // copy channel args.
   void Init(
-      const grpc_channel_args* args,
+      const grpc_resolved_address& address, const grpc_channel_args* args,
       grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args));
 
+  grpc_resolved_address address_;
   const grpc_channel_args* args_;
 };
 

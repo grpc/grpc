@@ -35,6 +35,7 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/util/resource_user_util.h"
 
 #define MIN_HTTP2_FRAME_SIZE 9
 
@@ -65,8 +66,10 @@ static void set_done_write(void* arg, grpc_error_handle /*error*/) {
 static void server_setup_transport(void* ts, grpc_transport* transport) {
   thd_args* a = static_cast<thd_args*>(ts);
   grpc_core::ExecCtx exec_ctx;
-  a->server->core_server->SetupTransport(
-      transport, nullptr, a->server->core_server->channel_args(), nullptr);
+  a->server->core_server->SetupTransport(transport,
+                                         /*accepting_pollset=*/nullptr,
+                                         a->server->core_server->channel_args(),
+                                         /*socket_node=*/nullptr);
 }
 
 /* Sets the read_done event */
@@ -196,21 +199,19 @@ void grpc_run_bad_client_test(
   /* Init grpc */
   grpc_init();
 
-  /* Create endpoints */
   sfd = grpc_iomgr_create_endpoint_pair("fixture", nullptr);
-
   /* Create server, completion events */
   a.server = grpc_server_create(nullptr, nullptr);
   a.cq = grpc_completion_queue_create_for_next(nullptr);
   client_cq = grpc_completion_queue_create_for_next(nullptr);
-
   grpc_server_register_completion_queue(a.server, a.cq, nullptr);
   a.registered_method =
       grpc_server_register_method(a.server, GRPC_BAD_CLIENT_REGISTERED_METHOD,
                                   GRPC_BAD_CLIENT_REGISTERED_HOST,
                                   GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   grpc_server_start(a.server);
-  transport = grpc_create_chttp2_transport(nullptr, sfd.server, false);
+  transport = grpc_create_chttp2_transport(
+      nullptr, sfd.server, false, grpc_resource_user_create_unlimited());
   server_setup_transport(&a, transport);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
@@ -237,7 +238,6 @@ void grpc_run_bad_client_test(
   /* Shutdown. */
   shutdown_client(&sfd.client);
   server_validator_thd.Join();
-
   shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   grpc_server_shutdown_and_notify(a.server, shutdown_cq, nullptr);
   GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, nullptr,

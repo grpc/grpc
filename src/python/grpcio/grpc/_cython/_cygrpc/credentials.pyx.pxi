@@ -434,7 +434,7 @@ cdef class ComputeEngineChannelCredentials(ChannelCredentials):
       raise ValueError("Call credentials may not be NULL.")
 
   cdef grpc_channel_credentials *c(self) except *:
-    self._c_creds = grpc_google_default_credentials_create(self._call_creds, NULL)
+    self._c_creds = grpc_google_default_credentials_create(self._call_creds)
     return self._c_creds
 
 

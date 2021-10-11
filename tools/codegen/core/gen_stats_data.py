@@ -16,10 +16,11 @@
 
 import collections
 import ctypes
+import json
 import math
 import sys
+
 import yaml
-import json
 
 with open('src/core/lib/debug/stats_data.yaml') as f:
     attrs = yaml.load(f.read())
@@ -165,7 +166,7 @@ def gen_bucket_code(histogram):
                                       256 * histogram.buckets)
     #print first_nontrivial, shift_data, bounds
     #if shift_data is not None: print [hex(x >> shift_data[0]) for x in code_bounds[first_nontrivial:]]
-    code = 'value = GPR_CLAMP(value, 0, %d);\n' % histogram.max
+    code = 'value = grpc_core::Clamp(value, 0, %d);\n' % histogram.max
     map_table = gen_map_table(code_bounds[first_nontrivial:], shift_data)
     if first_nontrivial is None:
         code += ('GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_%s, value);\n' %

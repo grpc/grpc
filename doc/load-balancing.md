@@ -7,96 +7,31 @@ This document explains the design for load balancing within gRPC.
 
 # Background
 
-## Per-Call Load Balancing
-
-It is worth noting that load-balancing within gRPC happens on a per-call
-basis, not a per-connection basis.  In other words, even if all requests
-come from a single client, we still want them to be load-balanced across
-all servers.
-
-## Approaches to Load Balancing
-
-Prior to any gRPC specifics, we explore some usual ways to approach load
-balancing.
-
-### Proxy Model
-
-Using a proxy provides a solid trustable client that can report load to the load
-balancing system. Proxies typically require more resources to operate since they
-have temporary copies of the RPC request and response. This model also increases
-latency to the RPCs.
-
-The proxy model was deemed inefficient when considering request heavy services
-like storage.
-
-### Balancing-aware Client
-
-This thicker client places more of the load balancing logic in the client. For
-example, the client could contain many load balancing policies (Round Robin,
-Random, etc) used to select servers from a list. In this model, a list of
-servers would be either statically configured in the client, provided by the
-name resolution system, an external load balancer, etc. In any case, the client
-is responsible for choosing the preferred server from the list.
-
-One of the drawbacks of this approach is writing and maintaining the load
-balancing policies in multiple languages and/or versions of the clients. These
-policies can be fairly complicated. Some of the algorithms also require client
-to server communication so the client would need to get thicker to support
-additional RPCs to get health or load information in addition to sending RPCs
-for user requests.
-
-It would also significantly complicate the client's code: the new design hides
-the load balancing complexity of multiple layers and presents it as a simple
-list of servers to the client.
-
-### External Load Balancing Service
-
-The client load balancing code is kept simple and portable, implementing
-well-known algorithms (e.g., Round Robin) for server selection.
-Complex load balancing algorithms are instead provided by the load
-balancer. The client relies on the load balancer to provide _load
-balancing configuration_ and _the list of servers_ to which the client
-should send requests. The balancer updates the server list as needed
-to balance the load as well as handle server unavailability or health
-issues. The load balancer will make any necessary complex decisions and
-inform the client. The load balancer may communicate with the backend
-servers to collect load and health information.
-
-# Requirements
-
-## Simple API and client
-
-The gRPC client load balancing code must be simple and portable. The
-client should only contain simple algorithms (e.g., Round Robin) for
-server selection.  For complex algorithms, the client should rely on
-a load balancer to provide load balancing configuration and the list of
-servers to which the client should send requests. The balancer will update
-the server list as needed to balance the load as well as handle server
-unavailability or health issues. The load balancer will make any necessary
-complex decisions and inform the client. The load balancer may communicate
-with the backend servers to collect load and health information.
-
-## Security
-
-The load balancer may be separate from the actual server backends and a
-compromise of the load balancer should only lead to a compromise of the
-loadbalancing functionality. In other words, a compromised load balancer should
-not be able to cause a client to trust a (potentially malicious) backend server
-any more than in a comparable situation without loadbalancing.
+Load-balancing within gRPC happens on a per-call basis, not a
+per-connection basis.  In other words, even if all requests come from a
+single client, we still want them to be load-balanced across all servers.
 
 # Architecture
 
 ## Overview
 
-The primary mechanism for load-balancing in gRPC is external
-load-balancing, where an external load balancer provides simple clients
-with an up-to-date list of servers.
+The gRPC client supports an API that allows load balancing policies to
+be implemented and plugged into gRPC.  An LB policy is responsible for:
+- receiving updated configuration and list of server addresses from the
+  resolver
+- creating subchannels for the server addresses and managing their
+  connectivity behavior
+- setting the overall [connectivity state](connectivity-semantics-and-api.md)
+  (usually computed by aggregating the connectivity states of its subchannels)
+  of the channel
+- for each RPC sent on the channel, determining which subchannel to send
+  the RPC on
 
-The gRPC client does support an API for built-in load balancing policies.
-However, there are only a small number of these (one of which is the
-`grpclb` policy, which implements external load balancing), and users
-are discouraged from trying to extend gRPC by adding more.  Instead, new
-load balancing policies should be implemented in external load balancers.
+There are a number of LB policies provided with gRPC.  The most
+notable ones are `pick_first` (the default), `round_robin`, and
+`grpclb`.  There are also a number of additional LB policies to support
+[xDS](grpc_xds_features.md), although they are not currently configurable
+directly.
 
 ## Workflow
 
@@ -107,40 +42,99 @@ works:
 ![image](images/load-balancing.png)
 
 1. On startup, the gRPC client issues a [name resolution](naming.md) request
-   for the server name.  The name will resolve to one or more IP addresses,
-   each of which will indicate whether it is a server address or
-   a load balancer address, and a [service config](service_config.md)
-   that indicates which client-side load-balancing policy to use (e.g.,
-   `round_robin` or `grpclb`).
-2. The client instantiates the load balancing policy.
-   - Note: If any one of the addresses returned by the resolver is a balancer
-     address, then the client will use the `grpclb` policy, regardless
-     of what load-balancing policy was requested by the service config.
-     Otherwise, the client will use the load-balancing policy requested
-     by the service config.  If no load-balancing policy is requested
-     by the service config, then the client will default to a policy
-     that picks the first available server address.
-3. The load balancing policy creates a subchannel to each server address.
-   - For all policies *except* `grpclb`, this means one subchannel for each
-     address returned by the resolver. Note that these policies
-     ignore any balancer addresses returned by the resolver.
-   - In the case of the `grpclb` policy, the workflow is as follows:
-     1. The policy opens a stream to one of the balancer addresses returned
-        by the resolver. It asks the balancer for the server addresses to
-        use for the server name originally requested by the client (i.e.,
-        the same one originally passed to the name resolver).
-        - Note: In the `grpclb` policy, the non-balancer addresses returned
-          by the resolver are used as a fallback in case no balancers can be
-          contacted when the LB policy is started.
-     2. The gRPC servers to which the load balancer is directing the client
-        may report load to the load balancers, if that information is needed
-        by the load balancer's configuration.
-     3. The load balancer returns a server list to the gRPC client's `grpclb`
-        policy. The `grpclb` policy will then create a subchannel to each of
-        server in the list.
+   for the server name.  The name will resolve to a list of IP addresses,
+   a [service config](service_config.md) that indicates which client-side
+   load-balancing policy to use (e.g., `round_robin` or `grpclb`) and
+   provides a configuration for that policy, and a set of attributes
+   (channel args in C-core).
+2. The client instantiates the load balancing policy and passes it its
+   configuration from the service config, the list of IP addresses, and
+   the attributes.
+3. The load balancing policy creates a set of subchannels for the IP
+   addresses of the servers (which might be different from the IP
+   addresses returned by the resolver; see below).  It also watches the
+   subchannels' connectivity states and decides when each subchannel
+   should attempt to connect.
 4. For each RPC sent, the load balancing policy decides which
    subchannel (i.e., which server) the RPC should be sent to.
-   - In the case of the `grpclb` policy, the client will send requests
-     to the servers in the order in which they were returned by the load
-     balancer.  If the server list is empty, the call will block until a
-     non-empty one is received.
+
+See below for more information on `grpclb`.
+
+## Load Balancing Policies
+
+### `pick_first`
+
+This is the default LB policy if the service config does not specify any
+LB policy.  It does not require any configuration.
+
+The `pick_first` policy takes a list of addresses from the resolver.  It
+attempts to connect to those addresses one at a time, in order, until it
+finds one that is reachable.  If none of the addresses are reachable, it
+sets the channel's state to TRANSIENT_FAILURE while it attempts to
+reconnect.  Appropriate [backoff](connection-backoff.md) is applied for
+repeated connection attempts.
+
+If it is able to connect to one of the addresses, it sets the channel's
+state to READY, and then all RPCs sent on the channel will be sent to
+that address.  If the connection to that address is later broken,
+the `pick_first` policy will put the channel into state IDLE, and it
+will not attempt to reconnect until the application requests that it
+does so (either via the channel's connectivity state API or by sending
+an RPC).
+
+### `round_robin`
+
+This LB policy is selected via the service config.  It does not require
+any configuration.
+
+This policy takes a list of addresses from the resolver.  It creates a
+subchannel for each of those addresses and constantly monitors the
+connectivity state of the subchannels.  Whenever a subchannel becomes
+disconnected, the `round_robin` policy will ask it to reconnect, with
+appropriate connection [backoff](connection-backoff.md).
+
+The policy sets the channel's connectivity state by aggregating the
+states of the subchannels:
+- If any one subchannel is in READY state, the channel's state is READY.
+- Otherwise, if there is any subchannel in state CONNECTING, the channel's
+  state is CONNECTING.
+- Otherwise, if there is any subchannel in state IDLE, the channel's state is
+  IDLE.
+- Otherwise, if all subchannels are in state TRANSIENT_FAILURE, the channel's
+  state is TRANSIENT_FAILURE.
+
+Note that when a given subchannel reports TRANSIENT_FAILURE, it is
+considered to still be in TRANSIENT_FAILURE until it successfully
+reconnects and reports READY.  In particular, we ignore the transition
+from TRANSIENT_FAILURE to CONNECTING.
+
+When an RPC is sent on the channel, the `round_robin` policy will
+iterate over all subchannels that are currently in READY state, sending
+each successive RPC to the next successive subchannel in the list,
+wrapping around to the start of the list when needed.
+
+### `grpclb`
+
+(This policy is deprecated.  We recommend using [xDS](grpc_xds_features.md)
+instead.)
+
+This LB policy was originally intended as gRPC's primary extensibility
+mechanism for load balancing.  The intent was that instead of adding new
+LB policies directly in the client, the client could implement only
+simple algorithms like `round_robin`, and any more complex algorithms
+would be provided by a look-aside load balancer.
+
+The client relies on the load balancer to provide _load balancing
+configuration_ and _the list of server addresses_ to which the client should
+send requests. The balancer updates the server list as needed to balance
+the load as well as handle server unavailability or health issues. The
+load balancer will make any necessary complex decisions and inform the
+client. The load balancer may communicate with the backend servers to
+collect load and health information.
+
+The `grpclb` policy uses the addresses returned by the resolver (if any)
+as fallback addresses, which are used when it loses contact with the
+balancers.
+
+The `grpclb` policy gets the list of addresses of the balancers to talk to
+via an attribute returned by the resolver.

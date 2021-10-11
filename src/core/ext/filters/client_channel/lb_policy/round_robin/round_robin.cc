@@ -213,10 +213,7 @@ RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs /*args*/) {
             parent_, this, last_picked_index_,
             subchannels_[last_picked_index_].get());
   }
-  PickResult result;
-  result.type = PickResult::PICK_COMPLETE;
-  result.subchannel = subchannels_[last_picked_index_];
-  return result;
+  return PickResult::Complete(subchannels_[last_picked_index_]);
 }
 
 //
@@ -331,20 +328,23 @@ void RoundRobin::RoundRobinSubchannelList::
         absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
   } else if (num_transient_failure_ == num_subchannels()) {
     /* 3) TRANSIENT_FAILURE */
-    grpc_error_handle error =
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                               "connections to all backends failing"),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+    absl::Status status =
+        absl::UnavailableError("connections to all backends failing");
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
-        absl::make_unique<TransientFailurePicker>(error));
+        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+        absl::make_unique<TransientFailurePicker>(status));
   }
 }
 
 void RoundRobin::RoundRobinSubchannelList::
     UpdateRoundRobinStateFromSubchannelStateCountsLocked() {
   RoundRobin* p = static_cast<RoundRobin*>(policy());
-  if (num_ready_ > 0) {
+  // If we have at least one READY subchannel, then swap to the new list.
+  // Also, if all of the subchannels are in TRANSIENT_FAILURE, then we know
+  // we've tried all of them and failed, so we go ahead and swap over
+  // anyway; this may cause the channel to go from READY to TRANSIENT_FAILURE,
+  // but we are doing what the control plane told us to do.
+  if (num_ready_ > 0 || num_transient_failure_ == num_subchannels()) {
     if (p->subchannel_list_.get() != this) {
       // Promote this list to p->subchannel_list_.
       // This list must be p->latest_pending_subchannel_list_, because
@@ -449,12 +449,10 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
     // If the new list is empty, immediately promote the new list to the
     // current list and transition to TRANSIENT_FAILURE.
-    grpc_error_handle error =
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+    absl::Status status = absl::UnavailableError("Empty update");
     channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
-        absl::make_unique<TransientFailurePicker>(error));
+        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+        absl::make_unique<TransientFailurePicker>(status));
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
   } else if (subchannel_list_ == nullptr) {
     // If there is no current list, immediately promote the new list to

@@ -18,10 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/completion_queue_factory.h"
 
 #include <grpc/support/log.h>
+
+#include "src/core/lib/surface/completion_queue.h"
 
 /*
  * == Default completion queue factory implementation ==
@@ -72,8 +73,7 @@ grpc_completion_queue* grpc_completion_queue_create_for_pluck(void* reserved) {
 }
 
 grpc_completion_queue* grpc_completion_queue_create_for_callback(
-    grpc_experimental_completion_queue_functor* shutdown_callback,
-    void* reserved) {
+    grpc_completion_queue_functor* shutdown_callback, void* reserved) {
   GPR_ASSERT(!reserved);
   grpc_completion_queue_attributes attr = {
       2, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING, shutdown_callback};

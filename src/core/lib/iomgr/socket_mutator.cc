@@ -21,6 +21,7 @@
 #include "src/core/lib/iomgr/socket_mutator.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -37,17 +38,29 @@ grpc_socket_mutator* grpc_socket_mutator_ref(grpc_socket_mutator* mutator) {
   return mutator;
 }
 
-bool grpc_socket_mutator_mutate_fd(grpc_socket_mutator* mutator, int fd) {
-  return mutator->vtable->mutate_fd(fd, mutator);
+bool grpc_socket_mutator_mutate_fd(grpc_socket_mutator* mutator, int fd,
+                                   grpc_fd_usage usage) {
+  if (mutator->vtable->mutate_fd_2 != nullptr) {
+    grpc_mutate_socket_info info{fd, usage};
+    return mutator->vtable->mutate_fd_2(&info, mutator);
+  }
+  switch (usage) {
+    case GRPC_FD_SERVER_CONNECTION_USAGE:
+      return true;
+    case GRPC_FD_CLIENT_CONNECTION_USAGE:
+    case GRPC_FD_SERVER_LISTENER_USAGE:
+      return mutator->vtable->mutate_fd(fd, mutator);
+  }
+  GPR_UNREACHABLE_CODE(return false);
 }
 
 int grpc_socket_mutator_compare(grpc_socket_mutator* a,
                                 grpc_socket_mutator* b) {
-  int c = GPR_ICMP(a, b);
+  int c = grpc_core::QsortCompare(a, b);
   if (c != 0) {
     grpc_socket_mutator* sma = a;
     grpc_socket_mutator* smb = b;
-    c = GPR_ICMP(sma->vtable, smb->vtable);
+    c = grpc_core::QsortCompare(sma->vtable, smb->vtable);
     if (c == 0) {
       c = sma->vtable->compare(sma, smb);
     }

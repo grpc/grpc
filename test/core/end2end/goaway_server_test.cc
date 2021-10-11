@@ -16,13 +16,6 @@
  *
  */
 
-/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
-   using that endpoint. Because of various transitive includes in uv.h,
-   including windows.h on Windows, uv.h must be included before other system
-   headers. Therefore, sockaddr.h must always be included first */
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
-
 #include <string.h>
 
 #include <string>
@@ -37,6 +30,7 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -129,6 +123,7 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
   } else {
     *addresses = absl::make_unique<grpc_core::ServerAddressList>();
     grpc_sockaddr_in sa;
+    memset(&sa, 0, sizeof(sa));
     sa.sin_family = GRPC_AF_INET;
     sa.sin_addr.s_addr = 0x100007f;
     sa.sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));

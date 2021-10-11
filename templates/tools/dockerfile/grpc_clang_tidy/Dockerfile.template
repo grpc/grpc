@@ -17,7 +17,7 @@
   FROM debian:bullseye
   
   # Install clang-tidy 11
-  RUN apt-get update && apt-get install -y clang-tidy-11 jq
+  RUN apt-get update && apt-get install -y clang-tidy-11 jq git
   ENV CLANG_TIDY=clang-tidy-11
 
   ADD clang_tidy_all_the_things.sh /
