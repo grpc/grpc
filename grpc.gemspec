@@ -1035,8 +1035,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/timer_heap.h )
   s.files += %w( src/core/lib/iomgr/timer_manager.cc )
   s.files += %w( src/core/lib/iomgr/timer_manager.h )
-  s.files += %w( src/core/lib/iomgr/udp_server.cc )
-  s.files += %w( src/core/lib/iomgr/udp_server.h )
   s.files += %w( src/core/lib/iomgr/unix_sockets_posix.cc )
   s.files += %w( src/core/lib/iomgr/unix_sockets_posix.h )
   s.files += %w( src/core/lib/iomgr/unix_sockets_posix_noop.cc )
