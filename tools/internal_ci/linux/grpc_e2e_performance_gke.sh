@@ -67,10 +67,10 @@ go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
 
 # Fetch test-infra repository and build all tools.
 # Note: Submodules are not required for tools build.
-git init ../test-infra
-pushd ../test-infra
-git fetch --depth 1 https://github.com/grpc/test-infra.git
-git reset --hard FETCH_HEAD
+pushd ..
+git clone --depth 1 https://github.com/grpc/test-infra.git
+cd test-infra
+git log -1 --oneline
 make GOCMD="${TEST_INFRA_GOVERSION}" all-tools
 popd
 
