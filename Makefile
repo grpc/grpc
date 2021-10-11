@@ -1472,7 +1472,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/timer_generic.cc \
     src/core/lib/iomgr/timer_heap.cc \
     src/core/lib/iomgr/timer_manager.cc \
-    src/core/lib/iomgr/udp_server.cc \
     src/core/lib/iomgr/unix_sockets_posix.cc \
     src/core/lib/iomgr/unix_sockets_posix_noop.cc \
     src/core/lib/iomgr/wakeup_fd_eventfd.cc \
@@ -1959,7 +1958,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/timer_generic.cc \
     src/core/lib/iomgr/timer_heap.cc \
     src/core/lib/iomgr/timer_manager.cc \
-    src/core/lib/iomgr/udp_server.cc \
     src/core/lib/iomgr/unix_sockets_posix.cc \
     src/core/lib/iomgr/unix_sockets_posix_noop.cc \
     src/core/lib/iomgr/wakeup_fd_eventfd.cc \

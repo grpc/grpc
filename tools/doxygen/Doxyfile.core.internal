@@ -1809,8 +1809,6 @@ src/core/lib/iomgr/timer_heap.cc \
 src/core/lib/iomgr/timer_heap.h \
 src/core/lib/iomgr/timer_manager.cc \
 src/core/lib/iomgr/timer_manager.h \
-src/core/lib/iomgr/udp_server.cc \
-src/core/lib/iomgr/udp_server.h \
 src/core/lib/iomgr/unix_sockets_posix.cc \
 src/core/lib/iomgr/unix_sockets_posix.h \
 src/core/lib/iomgr/unix_sockets_posix_noop.cc \
