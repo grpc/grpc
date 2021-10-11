@@ -65,8 +65,11 @@ class XdsBootstrap {
     std::set<std::string> server_features;
 
     std::string ToString() const {
-      // TODO: fix me
-      return server_uri;
+      return absl::StrCat(
+          server_uri, channel_creds_type, channel_creds_config.Dump(),
+          absl::StrJoin(std::vector<std::string>(server_features.begin(),
+                                                 server_features.end()),
+                        ""));
     }
 
     bool ShouldUseV3() const;
