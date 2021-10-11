@@ -751,7 +751,6 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
               args_result.status().ToString().c_str());
       endpoint_cleanup(
           GRPC_ERROR_CREATE_FROM_CPP_STRING(args_result.status().ToString()));
-      grpc_channel_args_destroy(args);
       return;
     }
     grpc_error_handle error = GRPC_ERROR_NONE;
