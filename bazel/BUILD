@@ -17,3 +17,8 @@ licenses(["notice"])
 package(default_visibility = ["//:__subpackages__"])
 
 load(":cc_grpc_library.bzl", "cc_grpc_library")
+
+filegroup(
+    name = "_gevent_test_main",
+    srcs = ["_gevent_test_main.py"],
+)

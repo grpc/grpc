@@ -13,4 +13,5 @@ exports_files([
     "libuv.BUILD",
     "libuv.patch",
     "protobuf.patch",
+    "rules_python.patch",
 ])
