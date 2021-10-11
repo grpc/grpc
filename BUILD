@@ -402,6 +402,7 @@ grpc_cc_library(
         "grpc_authorization_base",
         "grpc_base",
         "grpc_common",
+        "grpc_insecure_credentials",
         "grpc_secure",
         "grpc_security_base",
         "grpc_trace",
