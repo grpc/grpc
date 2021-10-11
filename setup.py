@@ -159,7 +159,8 @@ BUILD_WITH_SYSTEM_RE2 = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_RE2', 'False')
 # Export this variable to use the system installation of libuv. You need to
 # have the header files installed (in /usr/include/libuv) and during
 # runtime, the shared library must be installed
-BUILD_WITH_SYSTEM_LIBUV = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_LIBUV', 'False')
+BUILD_WITH_SYSTEM_LIBUV = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_LIBUV',
+                                          'False')
 
 # Export this variable to force building the python extension with a statically linked libstdc++.
 # At least on linux, this is normally not needed as we can build manylinux-compatible wheels on linux just fine
@@ -309,10 +310,10 @@ if BUILD_WITH_SYSTEM_LIBUV:
 
 EXTENSION_INCLUDE_DIRECTORIES = ((PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE +
                                  ADDRESS_SORTING_INCLUDE + CARES_INCLUDE +
-                                 RE2_INCLUDE + SSL_INCLUDE + UPB_INCLUDE +
-                                 UPB_GRPC_GENERATED_INCLUDE +
+                                 LIBUV_INCLUDE + RE2_INCLUDE + SSL_INCLUDE +
+                                 UPB_INCLUDE + UPB_GRPC_GENERATED_INCLUDE +
                                  UPBDEFS_GRPC_GENERATED_INCLUDE +
-                                 XXHASH_INCLUDE + ZLIB_INCLUDE + LIBUV_INCLUDE)
+                                 XXHASH_INCLUDE + ZLIB_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:

@@ -1,7 +1,0 @@
-#================
-# libuv
-RUN cd /tmp \
-    && wget https://dist.libuv.org/dist/v1.34.0/libuv-v1.34.0.tar.gz \
-    && tar -xf libuv-v1.34.0.tar.gz \
-    && cd libuv-v1.34.0 \
-    && sh autogen.sh && ./configure --prefix=/usr && make && make install

@@ -22,7 +22,7 @@ out['libs'] = [{
     'name':
         'uv',
     'build':
-        'private',
+        'all',
     'language':
         'c',
     'secure':
