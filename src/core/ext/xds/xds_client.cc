@@ -127,7 +127,7 @@ template <typename T>
 class XdsClient::ChannelState::RetryableCall
     : public InternallyRefCounted<RetryableCall<T>> {
  public:
-  explicit RetryableCall(RefCountedPtr<ChannelState> chand);
+  explicit RetryableCall(WeakRefCountedPtr<ChannelState> chand);
 
   void Orphan() override;
 
@@ -148,7 +148,7 @@ class XdsClient::ChannelState::RetryableCall
   // every time we start a new call. It's null during call retry backoff.
   OrphanablePtr<T> calld_;
   // The owning xds channel.
-  RefCountedPtr<ChannelState> chand_;
+  WeakRefCountedPtr<ChannelState> chand_;
 
   // Retry state.
   BackOff backoff_;
@@ -499,7 +499,7 @@ class XdsClient::ChannelState::LrsCallState
 class XdsClient::ChannelState::StateWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
-  explicit StateWatcher(RefCountedPtr<ChannelState> parent)
+  explicit StateWatcher(WeakRefCountedPtr<ChannelState> parent)
       : parent_(std::move(parent)) {}
 
  private:
@@ -519,7 +519,7 @@ class XdsClient::ChannelState::StateWatcher
     }
   }
 
-  RefCountedPtr<ChannelState> parent_;
+  WeakRefCountedPtr<ChannelState> parent_;
 };
 
 //
@@ -541,7 +541,7 @@ grpc_channel* CreateXdsChannel(grpc_channel_args* args,
 
 XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
                                       const XdsBootstrap::XdsServer& server)
-    : InternallyRefCounted<ChannelState>(
+    : DualRefCounted<ChannelState>(
           GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace)
               ? "ChannelState"
               : nullptr),
@@ -571,6 +571,10 @@ XdsClient::ChannelState::~ChannelState() {
 void XdsClient::ChannelState::Orphan() {
   shutting_down_ = true;
   CancelConnectivityWatchLocked();
+  // At this time, all strong refs are removed, remove from channel map to also
+  // remove all weak refs so that object can be destroyed.  This may need a
+  // lock?
+  xds_client_->xds_server_channel_map_.erase(server_.ToString());
   ads_calld_.reset();
   lrs_calld_.reset();
   Unref(DEBUG_LOCATION, "ChannelState+orphaned");
@@ -592,8 +596,8 @@ bool XdsClient::ChannelState::HasActiveAdsCall() const {
 
 void XdsClient::ChannelState::MaybeStartLrsCall() {
   if (lrs_calld_ != nullptr) return;
-  lrs_calld_.reset(
-      new RetryableCall<LrsCallState>(Ref(DEBUG_LOCATION, "ChannelState+lrs")));
+  lrs_calld_.reset(new RetryableCall<LrsCallState>(
+      WeakRef(DEBUG_LOCATION, "ChannelState+lrs")));
 }
 
 void XdsClient::ChannelState::StopLrsCall() { lrs_calld_.reset(); }
@@ -601,7 +605,7 @@ void XdsClient::ChannelState::StopLrsCall() { lrs_calld_.reset(); }
 void XdsClient::ChannelState::StartConnectivityWatchLocked() {
   ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
   GPR_ASSERT(client_channel != nullptr);
-  watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "ChannelState+watch"));
+  watcher_ = new StateWatcher(WeakRef(DEBUG_LOCATION, "ChannelState+watch"));
   client_channel->AddConnectivityWatcher(
       GRPC_CHANNEL_IDLE,
       OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
@@ -618,7 +622,7 @@ void XdsClient::ChannelState::SubscribeLocked(const std::string& type_url,
   if (ads_calld_ == nullptr) {
     // Start the ADS call if this is the first request.
     ads_calld_.reset(new RetryableCall<AdsCallState>(
-        Ref(DEBUG_LOCATION, "ChannelState+ads")));
+        WeakRef(DEBUG_LOCATION, "ChannelState+ads")));
     // Note: AdsCallState's ctor will automatically subscribe to all
     // resources that the XdsClient already has watchers for, so we can
     // return here.
@@ -638,7 +642,11 @@ void XdsClient::ChannelState::UnsubscribeLocked(const std::string& type_url,
     auto* calld = ads_calld_->calld();
     if (calld != nullptr) {
       calld->UnsubscribeLocked(type_url, name, delay_unsubscription);
-      if (!calld->HasSubscribedResources()) ads_calld_.reset();
+      if (!calld->HasSubscribedResources()) {
+        ads_calld_.reset();
+        // Also drop the strong ref to this object from authority_state.
+        Unref();
+      }
     }
   }
 }
@@ -649,7 +657,7 @@ void XdsClient::ChannelState::UnsubscribeLocked(const std::string& type_url,
 
 template <typename T>
 XdsClient::ChannelState::RetryableCall<T>::RetryableCall(
-    RefCountedPtr<ChannelState> chand)
+    WeakRefCountedPtr<ChannelState> chand)
     : chand_(std::move(chand)),
       backoff_(
           BackOff::Options()
@@ -2059,8 +2067,6 @@ void XdsClient::Orphan() {
   {
     MutexLock lock(&mu_);
     shutting_down_ = true;
-    // Orphan ChannelState object.
-    chand_.reset();
     // We do not clear cluster_map_ and endpoint_map_ if the xds client was
     // created by the XdsResolver because the maps contain refs for watchers
     // which in turn hold refs to the loadbalancing policies. At this point, it
@@ -2097,13 +2103,28 @@ void XdsClient::WatchListenerData(
     w->OnListenerChanged(*listener_state.update);
   }
   // Create ChannelState object.
-  gpr_log(GPR_INFO, "donna WatchListenerData chand_ is %p", chand_.get());
-  if (chand_ == nullptr) {
-    chand_ = MakeOrphanable<ChannelState>(
-        WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
-        bootstrap_->server());
+  if (xds_server_channel_map_.find(bootstrap_->server().ToString()) ==
+      xds_server_channel_map_.end()) {
+    // ChannelState object does not exist in channel map, create it and store
+    // strong ref in authority_state_
+    authority_state_[resource.value().authority].chand =
+        MakeRefCounted<ChannelState>(
+            WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
+            bootstrap_->server());
+    // Also add the pointer in channel map to track creation.
+    xds_server_channel_map_[bootstrap_->server().ToString()] =
+        authority_state_[resource.value().authority]
+            .chand->WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState")
+            .get();
+  } else {
+    // ChannelState object exists in channel map, no need to create and
+    // just take a strong ref in authority_state_
+    authority_state_[resource.value().authority].chand =
+        xds_server_channel_map_[bootstrap_->server().ToString()]->Ref(
+            DEBUG_LOCATION, "XdsClient+ChannelState");
   }
-  chand_->SubscribeLocked(XdsApi::kLdsTypeUrl, std::move(listener_name_str));
+  xds_server_channel_map_[bootstrap_->server().ToString()]->SubscribeLocked(
+      XdsApi::kLdsTypeUrl, std::move(listener_name_str));
 }
 
 void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
@@ -2121,8 +2142,9 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
     if (listener_state.watchers.empty()) {
       authority_state_[resource.value().authority].listener_map.erase(
           resource.value().id);
-      chand_->UnsubscribeLocked(XdsApi::kLdsTypeUrl, std::string(listener_name),
-                                delay_unsubscription);
+      xds_server_channel_map_[bootstrap_->server().ToString()]
+          ->UnsubscribeLocked(XdsApi::kLdsTypeUrl, std::string(listener_name),
+                              delay_unsubscription);
     }
   }
 }
@@ -2150,14 +2172,23 @@ void XdsClient::WatchRouteConfigData(
     w->OnRouteConfigChanged(*route_config_state.update);
   }
   // Create ChannelState object.
-  gpr_log(GPR_INFO, "donna WatchRouteConfigData chand_ is %p", chand_.get());
-  if (chand_ == nullptr) {
-    chand_ = MakeOrphanable<ChannelState>(
-        WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
-        bootstrap_->server());
+  if (xds_server_channel_map_.find(bootstrap_->server().ToString()) ==
+      xds_server_channel_map_.end()) {
+    authority_state_[resource.value().authority].chand =
+        MakeRefCounted<ChannelState>(
+            WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
+            bootstrap_->server());
+    xds_server_channel_map_[bootstrap_->server().ToString()] =
+        authority_state_[resource.value().authority]
+            .chand->WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState")
+            .get();
+  } else {
+    authority_state_[resource.value().authority].chand =
+        xds_server_channel_map_[bootstrap_->server().ToString()]->Ref(
+            DEBUG_LOCATION, "XdsClient+ChannelState");
   }
-  chand_->SubscribeLocked(XdsApi::kRdsTypeUrl,
-                          std::move(route_config_name_str));
+  xds_server_channel_map_[bootstrap_->server().ToString()]->SubscribeLocked(
+      XdsApi::kRdsTypeUrl, std::move(route_config_name_str));
 }
 
 void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
@@ -2176,9 +2207,10 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
     if (route_config_state.watchers.empty()) {
       authority_state_[resource.value().authority].route_config_map.erase(
           resource.value().id);
-      chand_->UnsubscribeLocked(XdsApi::kRdsTypeUrl,
-                                std::string(route_config_name),
-                                delay_unsubscription);
+      xds_server_channel_map_[bootstrap_->server().ToString()]
+          ->UnsubscribeLocked(XdsApi::kRdsTypeUrl,
+                              std::string(route_config_name),
+                              delay_unsubscription);
     }
   }
 }
@@ -2204,13 +2236,23 @@ void XdsClient::WatchClusterData(
     w->OnClusterChanged(cluster_state.update.value());
   }
   // Create ChannelState object.
-  gpr_log(GPR_INFO, "donna WatchClusterData chand_ is %p", chand_.get());
-  if (chand_ == nullptr) {
-    chand_ = MakeOrphanable<ChannelState>(
-        WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
-        bootstrap_->server());
+  if (xds_server_channel_map_.find(bootstrap_->server().ToString()) ==
+      xds_server_channel_map_.end()) {
+    authority_state_[resource.value().authority].chand =
+        MakeRefCounted<ChannelState>(
+            WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
+            bootstrap_->server());
+    xds_server_channel_map_[bootstrap_->server().ToString()] =
+        authority_state_[resource.value().authority]
+            .chand->WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState")
+            .get();
+  } else {
+    authority_state_[resource.value().authority].chand =
+        xds_server_channel_map_[bootstrap_->server().ToString()]->Ref(
+            DEBUG_LOCATION, "XdsClient+ChannelState");
   }
-  chand_->SubscribeLocked(XdsApi::kCdsTypeUrl, std::move(cluster_name_str));
+  xds_server_channel_map_[bootstrap_->server().ToString()]->SubscribeLocked(
+      XdsApi::kCdsTypeUrl, std::move(cluster_name_str));
 }
 
 void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
@@ -2228,8 +2270,9 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
     if (cluster_state.watchers.empty()) {
       authority_state_[resource.value().authority].cluster_map.erase(
           resource.value().id);
-      chand_->UnsubscribeLocked(XdsApi::kCdsTypeUrl, std::string(cluster_name),
-                                delay_unsubscription);
+      xds_server_channel_map_[bootstrap_->server().ToString()]
+          ->UnsubscribeLocked(XdsApi::kCdsTypeUrl, std::string(cluster_name),
+                              delay_unsubscription);
     }
   }
 }
@@ -2255,13 +2298,23 @@ void XdsClient::WatchEndpointData(
     w->OnEndpointChanged(endpoint_state.update.value());
   }
   // Create ChannelState object.
-  gpr_log(GPR_INFO, "donna WatchEndpointData chand_ is %p", chand_.get());
-  if (chand_ == nullptr) {
-    chand_ = MakeOrphanable<ChannelState>(
-        WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
-        bootstrap_->server());
+  if (xds_server_channel_map_.find(bootstrap_->server().ToString()) ==
+      xds_server_channel_map_.end()) {
+    authority_state_[resource.value().authority].chand =
+        MakeRefCounted<ChannelState>(
+            WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
+            bootstrap_->server());
+    xds_server_channel_map_[bootstrap_->server().ToString()] =
+        authority_state_[resource.value().authority]
+            .chand->WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState")
+            .get();
+  } else {
+    authority_state_[resource.value().authority].chand =
+        xds_server_channel_map_[bootstrap_->server().ToString()]->Ref(
+            DEBUG_LOCATION, "XdsClient+ChannelState");
   }
-  chand_->SubscribeLocked(XdsApi::kEdsTypeUrl, std::move(eds_service_name_str));
+  xds_server_channel_map_[bootstrap_->server().ToString()]->SubscribeLocked(
+      XdsApi::kEdsTypeUrl, std::move(eds_service_name_str));
 }
 
 void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
@@ -2279,9 +2332,10 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
     if (endpoint_state.watchers.empty()) {
       authority_state_[resource.value().authority].endpoint_map.erase(
           resource.value().id);
-      chand_->UnsubscribeLocked(XdsApi::kEdsTypeUrl,
-                                std::string(eds_service_name),
-                                delay_unsubscription);
+      xds_server_channel_map_[bootstrap_->server().ToString()]
+          ->UnsubscribeLocked(XdsApi::kEdsTypeUrl,
+                              std::string(eds_service_name),
+                              delay_unsubscription);
     }
   }
 }
@@ -2316,7 +2370,9 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
         it->first.second /*eds_service_name*/);
     load_report_state.drop_stats = cluster_drop_stats.get();
   }
-  chand_->MaybeStartLrsCall();
+  for (auto& p : xds_server_channel_map_) {
+    p.second->MaybeStartLrsCall();
+  }
   return cluster_drop_stats;
 }
 
@@ -2373,7 +2429,9 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
         std::move(locality));
     locality_state.locality_stats = cluster_locality_stats.get();
   }
-  chand_->MaybeStartLrsCall();
+  for (auto& p : xds_server_channel_map_) {
+    p.second->MaybeStartLrsCall();
+  }
   return cluster_locality_stats;
 }
 
@@ -2403,8 +2461,8 @@ void XdsClient::RemoveClusterLocalityStats(
 
 void XdsClient::ResetBackoff() {
   MutexLock lock(&mu_);
-  if (chand_ != nullptr) {
-    grpc_channel_reset_connect_backoff(chand_->channel());
+  for (auto& p : xds_server_channel_map_) {
+    grpc_channel_reset_connect_backoff(p.second->channel());
   }
 }
 

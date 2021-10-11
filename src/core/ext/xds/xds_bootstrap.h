@@ -64,6 +64,11 @@ class XdsBootstrap {
     Json channel_creds_config;
     std::set<std::string> server_features;
 
+    std::string ToString() const {
+      // TODO: fix me
+      return server_uri;
+    }
+
     bool ShouldUseV3() const;
   };
 

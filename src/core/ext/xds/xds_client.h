@@ -198,12 +198,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
  private:
   // Contains a channel to the xds server and all the data related to the
   // channel.  Holds a ref to the xds client object.
-  //
-  // Currently, there is only one ChannelState object per XdsClient
-  // object, and it has essentially the same lifetime.  But in the
-  // future, when we add federation support, a single XdsClient may have
-  // multiple underlying channels to talk to different xDS servers.
-  class ChannelState : public InternallyRefCounted<ChannelState> {
+  class ChannelState : public DualRefCounted<ChannelState> {
    public:
     template <typename T>
     class RetryableCall;
@@ -321,10 +316,15 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   Mutex mu_;
 
-  // The channel for communicating with the xds server.
-  OrphanablePtr<ChannelState> chand_ ABSL_GUARDED_BY(mu_);
+  // Map of existing xDS server channels.
+  // std::map<std::string, WeakRefCountedPtr<ChannelState>>
+  // xds_server_channel_map_;
+  std::map<std::string, ChannelState*> xds_server_channel_map_
+      ABSL_GUARDED_BY(mu_);
 
   struct AuthorityState {
+    XdsBootstrap::XdsServer xds_server;
+    RefCountedPtr<ChannelState> chand;
     std::map<std::string /*listener_name*/, ListenerState> listener_map;
     std::map<std::string /*route_config_name*/, RouteConfigState>
         route_config_map;
