@@ -13,3 +13,4 @@ kubernetes~=12.0
 retrying~=1.3
 tenacity~=6.2
 protobuf~=3.14
+xds-protos~=0.0.8

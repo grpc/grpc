@@ -62,7 +62,8 @@ using grpc::testing::EchoResponse;
   "RequestStream\n"               \
   "ResponseStream\n"              \
   "BidiStream\n"                  \
-  "Unimplemented\n"
+  "Unimplemented\n"               \
+  "UnimplementedBidi\n"
 
 #define ECHO_TEST_SERVICE_DESCRIPTION                                          \
   "filename: src/proto/grpc/testing/echo.proto\n"                              \
@@ -88,6 +89,8 @@ using grpc::testing::EchoResponse;
   "grpc.testing.EchoResponse) {}\n"                                            \
   "  rpc Unimplemented(grpc.testing.EchoRequest) returns "                     \
   "(grpc.testing.EchoResponse) {}\n"                                           \
+  "  rpc UnimplementedBidi(stream grpc.testing.EchoRequest) returns (stream "  \
+  "grpc.testing.EchoResponse) {}\n"                                            \
   "}\n"                                                                        \
   "\n"
 

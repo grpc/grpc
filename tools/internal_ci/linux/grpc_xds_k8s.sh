@@ -18,9 +18,8 @@ set -ex -o igncr || set -ex
 # Constants
 readonly GITHUB_REPOSITORY_NAME="grpc"
 # GKE Cluster
-readonly GKE_CLUSTER_NAME="interop-test-psm-sec-testing-api"
-readonly GKE_CLUSTER_ZONE="us-west1-b"
-export CLOUDSDK_API_ENDPOINT_OVERRIDES_CONTAINER="https://test-container.sandbox.googleapis.com/"
+readonly GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
+readonly GKE_CLUSTER_ZONE="us-central1-a"
 ## xDS test server/client Docker images
 readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-server"
 readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-client"

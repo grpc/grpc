@@ -17,6 +17,7 @@ import hashlib
 import logging
 import time
 from typing import Optional, Tuple
+from google.protobuf import json_format
 
 from absl import flags
 from absl.testing import absltest
@@ -68,6 +69,8 @@ class XdsKubernetesTestCase(absltest.TestCase):
         cls.gcp_service_account: str = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
         cls.td_bootstrap_image = xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value
         cls.xds_server_uri = xds_flags.XDS_SERVER_URI.value
+        cls.ensure_firewall = xds_flags.ENSURE_FIREWALL.value
+        cls.firewall_allowed_ports = xds_flags.FIREWALL_ALLOWED_PORTS.value
 
         # Base namespace
         # TODO(sergiitk): generate for each test
@@ -155,6 +158,22 @@ class XdsKubernetesTestCase(absltest.TestCase):
             0,
             msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
 
+    def assertXdsConfigExists(self, test_client: XdsTestClient):
+        config = test_client.csds.fetch_client_status(log_level=logging.INFO)
+        self.assertIsNotNone(config)
+        seen = set()
+        want = frozenset([
+            'listener_config',
+            'cluster_config',
+            'route_config',
+            'endpoint_config',
+        ])
+        for xds_config in config.xds_config:
+            seen.add(xds_config.WhichOneof('per_xds_config'))
+        logger.debug('Received xDS config dump: %s',
+                     json_format.MessageToJson(config, indent=2))
+        self.assertSameElements(want, seen)
+
     def assertFailedRpcs(self,
                          test_client: XdsTestClient,
                          num_rpcs: Optional[int] = 100):
@@ -185,6 +204,13 @@ class XdsKubernetesTestCase(absltest.TestCase):
 
 class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        if cls.server_maintenance_port is None:
+            cls.server_maintenance_port = \
+                server_app.KubernetesServerRunner.DEFAULT_MAINTENANCE_PORT
+
     def setUp(self):
         super().setUp()
 
@@ -194,6 +220,11 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             project=self.project,
             resource_prefix=self.namespace,
             network=self.network)
+
+        # Ensures the firewall exist
+        if self.ensure_firewall:
+            self.td.create_firewall_rule(
+                allowed_ports=self.firewall_allowed_ports)
 
         # Test Server Runner
         self.server_runner = server_app.KubernetesServerRunner(
@@ -264,6 +295,11 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             project=self.project,
             resource_prefix=self.namespace,
             network=self.network)
+
+        # Ensures the firewall exist
+        if self.ensure_firewall:
+            self.td.create_firewall_rule(
+                allowed_ports=self.firewall_allowed_ports)
 
         # Test Server Runner
         self.server_runner = server_app.KubernetesServerRunner(

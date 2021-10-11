@@ -39,6 +39,22 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "client_context_test_peer_test",
+    srcs = ["client_context_test_peer_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc++_test",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "server_context_test_spouse_test",
     srcs = ["server_context_test_spouse_test.cc"],
     external_deps = [

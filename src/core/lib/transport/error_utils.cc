@@ -74,7 +74,7 @@ void grpc_error_get_status(grpc_error_handle error, grpc_millis deadline,
   // until we find the first one that has a status code.
   grpc_error_handle found_error =
       recursively_find_error_with_field(error, GRPC_ERROR_INT_GRPC_STATUS);
-  if (found_error == nullptr) {
+  if (found_error == GRPC_ERROR_NONE) {
     /// If no grpc-status exists, retry through the tree to find a http2 error
     /// code
     found_error =
@@ -83,7 +83,7 @@ void grpc_error_get_status(grpc_error_handle error, grpc_millis deadline,
 
   // If we found an error with a status code above, use that; otherwise,
   // fall back to using the parent error.
-  if (found_error == nullptr) found_error = error;
+  if (found_error == GRPC_ERROR_NONE) found_error = error;
 
   grpc_status_code status = GRPC_STATUS_UNKNOWN;
   intptr_t integer;

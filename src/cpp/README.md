@@ -147,11 +147,16 @@ gRPC is available using the [vcpkg](https://github.com/Microsoft/vcpkg) dependen
 # install vcpkg package manager on your system using the official instructions
 git clone https://github.com/Microsoft/vcpkg.git
 cd vcpkg
+
+# Bootstrap on Linux:
 ./bootstrap-vcpkg.sh
+# Bootstrap on Windows instead:
+# ./bootstrap-vcpkg.bat
+
 ./vcpkg integrate install
 
 # install gRPC using vcpkg package manager
-vcpkg install grpc
+./vcpkg install grpc
 ```
 
 The gRPC port in vcpkg is kept up to date by Microsoft team members and community contributors. If the version is out of date, please [create an issue or pull request](https://github.com/Microsoft/vcpkg) on the vcpkg repository.

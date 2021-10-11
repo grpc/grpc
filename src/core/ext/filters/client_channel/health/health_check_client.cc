@@ -352,6 +352,7 @@ void HealthCheckClient::CallState::StartCall() {
   batch_.recv_initial_metadata = true;
   // Add recv_message op.
   payload_.recv_message.recv_message = &recv_message_;
+  payload_.recv_message.call_failed_before_recv_message = nullptr;
   // recv_message callback takes ref, handled manually.
   call_->Ref(DEBUG_LOCATION, "recv_message_ready").release();
   payload_.recv_message.recv_message_ready = GRPC_CLOSURE_INIT(
@@ -478,6 +479,7 @@ void HealthCheckClient::CallState::DoneReadingRecvMessage(
   // callbacks from the original batch have completed yet.
   recv_message_batch_.payload = &payload_;
   payload_.recv_message.recv_message = &recv_message_;
+  payload_.recv_message.call_failed_before_recv_message = nullptr;
   payload_.recv_message.recv_message_ready = GRPC_CLOSURE_INIT(
       &recv_message_ready_, RecvMessageReady, this, grpc_schedule_on_exec_ctx);
   recv_message_batch_.recv_message = true;

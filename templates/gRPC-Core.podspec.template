@@ -59,11 +59,13 @@
         files.update(lib.get(field, []))
     return list(sorted(files))
 
-  # Wrapped languages don't need to access EventEngine APIs.
+  # Wrapped languages don't need to access EventEngine APIs. `port.h` is a
+  # special case - it's needed in some security code.
   event_engine_files = [
       file
       for file in list_lib_files("grpc", ("public_headers", "headers", "src"))
       if '/event_engine/' in file
+      and not file.endswith('/port.h')
   ]
 
   # ObjectiveC doesn't use c-ares so we don't need address_sorting files at all

@@ -166,7 +166,7 @@ void grpc_enable_error_creation();
 #define GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc) \
   StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
 #define GRPC_ERROR_CREATE_FROM_STRING_VIEW(desc) \
-  StatusCreate(ababsl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
+  StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
 
 absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
                                 const grpc_core::DebugLocation& location,

@@ -78,3 +78,18 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "authorization_policy_provider_test",
+    srcs = ["authorization_policy_provider_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc++_authorization_provider",
+        "//test/core/util:grpc_test_util",
+    ],
+)

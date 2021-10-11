@@ -428,6 +428,10 @@ typedef struct {
 #define GRPC_ARG_CHANNEL_POOL_DOMAIN "grpc.channel_pooling_domain"
 /** gRPC Objective-C channel pooling id. */
 #define GRPC_ARG_CHANNEL_ID "grpc.channel_id"
+/** Channel argument for grpc_authorization_policy_provider. If present, enables
+    gRPC authorization check. */
+#define GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER \
+  "grpc.authorization_policy_provider"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

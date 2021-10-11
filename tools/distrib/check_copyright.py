@@ -62,6 +62,8 @@ LICENSE_PREFIX = {
     '.proto': r'//\s*',
     '.cs': r'//\s*',
     '.mak': r'#\s*',
+    '.bazel': r'#\s*',
+    '.bzl': r'#\s*',
     'Makefile': r'#\s*',
     'Dockerfile': r'#\s*',
     'BUILD': r'#\s*',

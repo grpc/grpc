@@ -160,12 +160,11 @@ class FakeClient {
   EchoTestService::StubInterface* stub_;
 };
 
-class CallbackTestServiceImpl
-    : public EchoTestService::ExperimentalCallbackService {
+class CallbackTestServiceImpl : public EchoTestService::CallbackService {
  public:
-  experimental::ServerUnaryReactor* Echo(
-      experimental::CallbackServerContext* context, const EchoRequest* request,
-      EchoResponse* response) override {
+  ServerUnaryReactor* Echo(CallbackServerContext* context,
+                           const EchoRequest* request,
+                           EchoResponse* response) override {
     // Make the mock service explicitly treat empty input messages as invalid
     // arguments so that we can test various results of status. In general, a
     // mocked service should just use the original service methods, but we are
@@ -189,7 +188,7 @@ class MockCallbackTest : public ::testing::Test {
 };
 
 TEST_F(MockCallbackTest, MockedCallSucceedsWithWait) {
-  experimental::CallbackServerContext ctx;
+  CallbackServerContext ctx;
   EchoRequest req;
   EchoResponse resp;
   grpc::internal::Mutex mu;
@@ -218,7 +217,7 @@ TEST_F(MockCallbackTest, MockedCallSucceedsWithWait) {
 }
 
 TEST_F(MockCallbackTest, MockedCallSucceeds) {
-  experimental::CallbackServerContext ctx;
+  CallbackServerContext ctx;
   EchoRequest req;
   EchoResponse resp;
   DefaultReactorTestPeer peer(&ctx);
@@ -231,7 +230,7 @@ TEST_F(MockCallbackTest, MockedCallSucceeds) {
 }
 
 TEST_F(MockCallbackTest, MockedCallFails) {
-  experimental::CallbackServerContext ctx;
+  CallbackServerContext ctx;
   EchoRequest req;
   EchoResponse resp;
   DefaultReactorTestPeer peer(&ctx);

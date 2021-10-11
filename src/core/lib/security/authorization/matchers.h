@@ -47,46 +47,46 @@ class AuthorizationMatcher {
 
 class AlwaysAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  explicit AlwaysAuthorizationMatcher(bool not_rule = false)
-      : not_rule_(not_rule) {}
+  explicit AlwaysAuthorizationMatcher() = default;
 
-  bool Matches(const EvaluateArgs&) const override { return !not_rule_; }
-
- private:
-  // Negates matching the provided permission/principal.
-  const bool not_rule_;
+  bool Matches(const EvaluateArgs&) const override { return true; }
 };
 
 class AndAuthorizationMatcher : public AuthorizationMatcher {
  public:
   explicit AndAuthorizationMatcher(
-      std::vector<std::unique_ptr<Rbac::Permission>> rules,
-      bool not_rule = false);
-  explicit AndAuthorizationMatcher(
-      std::vector<std::unique_ptr<Rbac::Principal>> ids, bool not_rule = false);
+      std::vector<std::unique_ptr<AuthorizationMatcher>> matchers)
+      : matchers_(std::move(matchers)) {}
 
   bool Matches(const EvaluateArgs& args) const override;
 
  private:
   std::vector<std::unique_ptr<AuthorizationMatcher>> matchers_;
-  // Negates matching the provided permission/principal.
-  const bool not_rule_;
 };
 
 class OrAuthorizationMatcher : public AuthorizationMatcher {
  public:
   explicit OrAuthorizationMatcher(
-      std::vector<std::unique_ptr<Rbac::Permission>> rules,
-      bool not_rule = false);
-  explicit OrAuthorizationMatcher(
-      std::vector<std::unique_ptr<Rbac::Principal>> ids, bool not_rule = false);
+      std::vector<std::unique_ptr<AuthorizationMatcher>> matchers)
+      : matchers_(std::move(matchers)) {}
 
   bool Matches(const EvaluateArgs& args) const override;
 
  private:
   std::vector<std::unique_ptr<AuthorizationMatcher>> matchers_;
-  // Negates matching the provided permission/principal.
-  const bool not_rule_;
+};
+
+// Negates matching the provided permission/principal.
+class NotAuthorizationMatcher : public AuthorizationMatcher {
+ public:
+  explicit NotAuthorizationMatcher(
+      std::unique_ptr<AuthorizationMatcher> matcher)
+      : matcher_(std::move(matcher)) {}
+
+  bool Matches(const EvaluateArgs& args) const override;
+
+ private:
+  std::unique_ptr<AuthorizationMatcher> matcher_;
 };
 
 // TODO(ashithasantosh): Add matcher implementation for metadata field.
@@ -94,63 +94,58 @@ class OrAuthorizationMatcher : public AuthorizationMatcher {
 // Perform a match against HTTP headers.
 class HeaderAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  explicit HeaderAuthorizationMatcher(HeaderMatcher matcher,
-                                      bool not_rule = false)
-      : matcher_(std::move(matcher)), not_rule_(not_rule) {}
+  explicit HeaderAuthorizationMatcher(HeaderMatcher matcher)
+      : matcher_(std::move(matcher)) {}
 
   bool Matches(const EvaluateArgs& args) const override;
 
  private:
   const HeaderMatcher matcher_;
-  // Negates matching the provided permission/principal.
-  const bool not_rule_;
 };
 
 // Perform a match against IP Cidr Range.
-// TODO(ashithasantosh): Handle type of Ip or use seperate matchers for each
-// type. Implement Match functionality, this would require updating EvaluateArgs
-// getters, to return format of IP as well.
 class IpAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  explicit IpAuthorizationMatcher(Rbac::CidrRange range, bool not_rule = false)
-      : range_(std::move(range)), not_rule_(not_rule) {}
+  enum class Type {
+    kDestIp,
+    kSourceIp,
+    kDirectRemoteIp,
+    kRemoteIp,
+  };
 
-  bool Matches(const EvaluateArgs&) const override;
+  IpAuthorizationMatcher(Type type, Rbac::CidrRange range);
+
+  bool Matches(const EvaluateArgs& args) const override;
 
  private:
-  const Rbac::CidrRange range_;
-  // Negates matching the provided permission/principal.
-  const bool not_rule_;
+  const Type type_;
+  // Subnet masked address.
+  grpc_resolved_address subnet_address_;
+  const uint32_t prefix_len_;
 };
 
 // Perform a match against port number of the destination (local) address.
 class PortAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  explicit PortAuthorizationMatcher(int port, bool not_rule = false)
-      : port_(port), not_rule_(not_rule) {}
+  explicit PortAuthorizationMatcher(int port) : port_(port) {}
 
   bool Matches(const EvaluateArgs& args) const override;
 
  private:
   const int port_;
-  // Negates matching the provided permission/principal.
-  const bool not_rule_;
 };
 
 // Matches the principal name as described in the peer certificate. Uses URI SAN
 // or DNS SAN in that order, otherwise uses subject field.
 class AuthenticatedAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  explicit AuthenticatedAuthorizationMatcher(StringMatcher auth,
-                                             bool not_rule = false)
-      : matcher_(std::move(auth)), not_rule_(not_rule) {}
+  explicit AuthenticatedAuthorizationMatcher(StringMatcher auth)
+      : matcher_(std::move(auth)) {}
 
   bool Matches(const EvaluateArgs& args) const override;
 
  private:
   const StringMatcher matcher_;
-  // Negates matching the provided permission/principal.
-  const bool not_rule_;
 };
 
 // Perform a match against the request server from the client's connection
@@ -158,29 +153,25 @@ class AuthenticatedAuthorizationMatcher : public AuthorizationMatcher {
 class ReqServerNameAuthorizationMatcher : public AuthorizationMatcher {
  public:
   explicit ReqServerNameAuthorizationMatcher(
-      StringMatcher requested_server_name, bool not_rule = false)
-      : matcher_(std::move(requested_server_name)), not_rule_(not_rule) {}
+      StringMatcher requested_server_name)
+      : matcher_(std::move(requested_server_name)) {}
 
   bool Matches(const EvaluateArgs&) const override;
 
  private:
   const StringMatcher matcher_;
-  // Negates matching the provided permission/principal.
-  const bool not_rule_;
 };
 
 // Perform a match against the path header of HTTP request.
 class PathAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  explicit PathAuthorizationMatcher(StringMatcher path, bool not_rule = false)
-      : matcher_(std::move(path)), not_rule_(not_rule) {}
+  explicit PathAuthorizationMatcher(StringMatcher path)
+      : matcher_(std::move(path)) {}
 
   bool Matches(const EvaluateArgs& args) const override;
 
  private:
   const StringMatcher matcher_;
-  // Negates matching the provided permission/principal.
-  const bool not_rule_;
 };
 
 // Performs a match for policy field in RBAC, which is a collection of

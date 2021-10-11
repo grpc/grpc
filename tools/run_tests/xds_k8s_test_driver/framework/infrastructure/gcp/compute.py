@@ -14,7 +14,7 @@
 import dataclasses
 import enum
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 from googleapiclient import discovery
 import googleapiclient.errors
@@ -79,6 +79,34 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
 
     def delete_health_check(self, name):
         self._delete_resource(self.api.healthChecks(), 'healthCheck', name)
+
+    def create_firewall_rule(self, name: str, network_url: str,
+                             source_ranges: List[str],
+                             ports: List[str]) -> Optional[GcpResource]:
+        try:
+            return self._insert_resource(
+                self.api.firewalls(), {
+                    "allowed": [{
+                        "IPProtocol": "tcp",
+                        "ports": ports
+                    }],
+                    "direction": "INGRESS",
+                    "name": name,
+                    "network": network_url,
+                    "priority": 1000,
+                    "sourceRanges": source_ranges,
+                    "targetTags": ["allow-health-checks"]
+                })
+        except googleapiclient.errors.HttpError as http_error:
+            # TODO(lidiz) use status_code() when we upgrade googleapiclient
+            if http_error.resp.status == 409:
+                logger.debug('Firewall rule %s already existed', name)
+                return
+            else:
+                raise
+
+    def delete_firewall_rule(self, name):
+        self._delete_resource(self.api.firewalls(), 'firewall', name)
 
     def create_backend_service_traffic_director(
             self,

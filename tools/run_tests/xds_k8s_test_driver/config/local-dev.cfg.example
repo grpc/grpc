@@ -8,6 +8,8 @@
 --project=your_project_id
 --gcp_service_account=project_number-compute@developer.gserviceaccount.com
 --private_api_key_secret_name=projects/project_number/secrets/xds-interop-tests-private-api-access-key
+# Uncomment to ensure the allow health check firewall exists before test case runs
+# --ensure_firewall
 
 # The name of kube context to use. See `gcloud container clusters get-credentials` and `kubectl config`
 --kube_context=context_name

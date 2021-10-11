@@ -109,10 +109,16 @@ ServerBuilder& ServerBuilder::RegisterCallbackGenericService(
     gpr_log(GPR_ERROR,
             "Adding multiple generic services is unsupported for now. "
             "Dropping the service %p",
-            (void*)service);
+            service);
   } else {
     callback_generic_service_ = service;
   }
+  return *this;
+}
+
+ServerBuilder& ServerBuilder::SetContextAllocator(
+    std::unique_ptr<grpc::ContextAllocator> context_allocator) {
+  context_allocator_ = std::move(context_allocator);
   return *this;
 }
 #else
@@ -128,13 +134,13 @@ ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
   }
   return *builder_;
 }
-#endif
 
 ServerBuilder& ServerBuilder::experimental_type::SetContextAllocator(
     std::unique_ptr<grpc::ContextAllocator> context_allocator) {
   builder_->context_allocator_ = std::move(context_allocator);
   return *builder_;
 }
+#endif
 
 std::unique_ptr<grpc::experimental::ExternalConnectionAcceptor>
 ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
@@ -147,6 +153,12 @@ ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
       std::make_shared<grpc::internal::ExternalConnectionAcceptorImpl>(
           name_prefix.append(count_str), type, creds));
   return builder_->acceptors_.back()->GetAcceptor();
+}
+
+void ServerBuilder::experimental_type::SetAuthorizationPolicyProvider(
+    std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
+        provider) {
+  builder_->authorization_provider_ = std::move(provider);
 }
 
 ServerBuilder& ServerBuilder::SetOption(
@@ -252,6 +264,11 @@ ChannelArguments ServerBuilder::BuildChannelArgs() {
   for (const auto& plugin : plugins_) {
     plugin->UpdateServerBuilder(this);
     plugin->UpdateChannelArguments(&args);
+  }
+  if (authorization_provider_ != nullptr) {
+    args.SetPointerWithVtable(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER,
+                              authorization_provider_->c_provider(),
+                              grpc_authorization_policy_provider_arg_vtable());
   }
   return args;
 }

@@ -1268,6 +1268,9 @@ TEST_P(End2endTest, ClientCancelsBidi) {
   ClientContext context;
   std::string msg("hello");
 
+  // Send server_try_cancel value in the client metadata
+  context.AddMetadata(kClientTryCancelRequest, std::to_string(1));
+
   auto stream = stub_->BidiStream(&context);
 
   request.set_message(msg + "0");

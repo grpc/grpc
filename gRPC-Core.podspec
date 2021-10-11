@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.38.0-dev'
+  version = '1.39.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -117,6 +117,7 @@ Pod::Spec.new do |s|
                       'include/grpc/byte_buffer_reader.h',
                       'include/grpc/census.h',
                       'include/grpc/compression.h',
+                      'include/grpc/event_engine/port.h',
                       'include/grpc/fork.h',
                       'include/grpc/grpc.h',
                       'include/grpc/grpc_posix.h',
@@ -1101,6 +1102,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/profiling/basic_timers.cc',
                       'src/core/lib/profiling/stap_timers.cc',
                       'src/core/lib/profiling/timers.h',
+                      'src/core/lib/security/authorization/authorization_engine.h',
+                      'src/core/lib/security/authorization/authorization_policy_provider.h',
+                      'src/core/lib/security/authorization/authorization_policy_provider_vtable.cc',
+                      'src/core/lib/security/authorization/evaluate_args.cc',
+                      'src/core/lib/security/authorization/evaluate_args.h',
                       'src/core/lib/security/context/security_context.cc',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.cc',
@@ -1833,6 +1839,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/json/json_util.h',
                               'src/core/lib/matchers/matchers.h',
                               'src/core/lib/profiling/timers.h',
+                              'src/core/lib/security/authorization/authorization_engine.h',
+                              'src/core/lib/security/authorization/authorization_policy_provider.h',
+                              'src/core/lib/security/authorization/evaluate_args.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -2086,6 +2095,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/retry_cancel_during_delay.cc',
                       'test/core/end2end/tests/retry_cancellation.cc',
                       'test/core/end2end/tests/retry_disabled.cc',
+                      'test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc',
                       'test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc',
                       'test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc',
                       'test/core/end2end/tests/retry_lb_drop.cc',
@@ -2093,6 +2103,8 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc',
                       'test/core/end2end/tests/retry_recv_initial_metadata.cc',
                       'test/core/end2end/tests/retry_recv_message.cc',
+                      'test/core/end2end/tests/retry_recv_trailing_metadata_error.cc',
+                      'test/core/end2end/tests/retry_send_op_fails.cc',
                       'test/core/end2end/tests/retry_server_pushback_delay.cc',
                       'test/core/end2end/tests/retry_server_pushback_disabled.cc',
                       'test/core/end2end/tests/retry_streaming.cc',

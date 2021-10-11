@@ -664,4 +664,6 @@ typedef unsigned __int64 uint64_t;
 #define __STDC_FORMAT_MACROS
 #endif
 
+#define GRPC_CALLBACK_API_NONEXPERIMENTAL
+
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */

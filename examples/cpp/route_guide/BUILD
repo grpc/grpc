@@ -54,3 +54,31 @@ cc_binary(
         "//examples/protos:route_guide",
     ],
 )
+
+cc_binary(
+    name = "route_guide_callback_client",
+    srcs = [
+        "route_guide_callback_client.cc",
+    ],
+    data = ["route_guide_db.json"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":route_guide_helper",
+        "//:grpc++",
+        "//examples/protos:route_guide",
+    ],
+)
+
+cc_binary(
+    name = "route_guide_callback_server",
+    srcs = [
+        "route_guide_callback_server.cc",
+    ],
+    data = ["route_guide_db.json"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":route_guide_helper",
+        "//:grpc++",
+        "//examples/protos:route_guide",
+    ],
+)

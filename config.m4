@@ -523,6 +523,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/matchers/matchers.cc \
     src/core/lib/profiling/basic_timers.cc \
     src/core/lib/profiling/stap_timers.cc \
+    src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
+    src/core/lib/security/authorization/evaluate_args.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \
@@ -1036,7 +1038,9 @@ if test "$PHP_GRPC" != "no"; then
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
-    -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1)
+    -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
+    -DGRPC_XDS_USER_AGENT_SUFFIX="\"PHP\"" \
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="\"1.39.0dev\"")
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel)
@@ -1169,6 +1173,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/matchers)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/profiling)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/authorization)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/context)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/alts)

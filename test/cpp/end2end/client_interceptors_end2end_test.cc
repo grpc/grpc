@@ -213,12 +213,11 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
           methods->GetInterceptedChannel());
       ctx_.AddMetadata(metadata_map_.begin()->first,
                        metadata_map_.begin()->second);
-      stub_->experimental_async()->Echo(&ctx_, &req_, &resp_,
-                                        [this, methods](Status s) {
-                                          EXPECT_EQ(s.ok(), true);
-                                          EXPECT_EQ(resp_.message(), "Hello");
-                                          methods->Hijack();
-                                        });
+      stub_->async()->Echo(&ctx_, &req_, &resp_, [this, methods](Status s) {
+        EXPECT_EQ(s.ok(), true);
+        EXPECT_EQ(resp_.message(), "Hello");
+        methods->Hijack();
+      });
       // This is a Unary RPC and we have got nothing interesting to do in the
       // PRE_SEND_CLOSE interception hook point for this interceptor, so let's
       // return here. (We do not want to call methods->Proceed(). When the new

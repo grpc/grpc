@@ -555,6 +555,14 @@ GRPCAPI char* grpc_channelz_get_subchannel(intptr_t subchannel_id);
    is allocated and must be freed by the application. */
 GRPCAPI char* grpc_channelz_get_socket(intptr_t socket_id);
 
+/**
+ * EXPERIMENTAL - Subject to change.
+ * Fetch a vtable for grpc_channel_arg that points to
+ * grpc_authorization_policy_provider.
+ */
+GRPCAPI const grpc_arg_pointer_vtable*
+grpc_authorization_policy_provider_arg_vtable(void);
+
 #ifdef __cplusplus
 }
 #endif

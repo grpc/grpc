@@ -150,6 +150,47 @@ class MockClientAsyncReaderWriter
   MOCK_METHOD1_T(WritesDone, void(void*));
 };
 
+template <class R>
+class MockServerReader : public ::grpc::ServerReaderInterface<R> {
+ public:
+  MockServerReader() = default;
+
+  /// ServerStreamingInterface
+  MOCK_METHOD0_T(SendInitialMetadata, void());
+
+  /// ReaderInterface
+  MOCK_METHOD1_T(NextMessageSize, bool(uint32_t*));
+  MOCK_METHOD1_T(Read, bool(R*));
+};
+
+template <class W>
+class MockServerWriter : public ::grpc::ServerWriterInterface<W> {
+ public:
+  MockServerWriter() = default;
+
+  /// ServerStreamingInterface
+  MOCK_METHOD0_T(SendInitialMetadata, void());
+
+  /// WriterInterface
+  MOCK_METHOD2_T(Write, bool(const W&, const WriteOptions));
+};
+
+template <class W, class R>
+class MockServerReaderWriter : public grpc::ServerReaderWriterInterface<W, R> {
+ public:
+  MockServerReaderWriter() = default;
+
+  /// ServerStreamingInterface
+  MOCK_METHOD0_T(SendInitialMetadata, void());
+
+  /// ReaderInterface
+  MOCK_METHOD1_T(NextMessageSize, bool(uint32_t*));
+  MOCK_METHOD1_T(Read, bool(R*));
+
+  /// WriterInterface
+  MOCK_METHOD2_T(Write, bool(const W&, const WriteOptions));
+};
+
 }  // namespace testing
 }  // namespace grpc
 

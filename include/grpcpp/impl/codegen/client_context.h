@@ -92,6 +92,7 @@ class ClientAsyncResponseReader;
 
 namespace testing {
 class InteropClientContextInspector;
+class ClientContextTestPeer;
 }  // namespace testing
 
 namespace internal {
@@ -205,7 +206,7 @@ class ClientContext {
   /// \return A newly constructed \a ClientContext instance based on \a
   /// server_context, with traits propagated (copied) according to \a options.
   static std::unique_ptr<ClientContext> FromServerContext(
-      const grpc::ServerContext& server_context,
+      const grpc::ServerContextBase& server_context,
       PropagationOptions options = PropagationOptions());
   static std::unique_ptr<ClientContext> FromCallbackServerContext(
       const grpc::CallbackServerContext& server_context,
@@ -423,6 +424,7 @@ class ClientContext {
   ClientContext& operator=(const ClientContext&);
 
   friend class ::grpc::testing::InteropClientContextInspector;
+  friend class ::grpc::testing::ClientContextTestPeer;
   friend class ::grpc::internal::CallOpClientRecvStatus;
   friend class ::grpc::internal::CallOpRecvInitialMetadata;
   friend class ::grpc::Channel;

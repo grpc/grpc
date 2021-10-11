@@ -34,8 +34,7 @@ namespace testing {
  * BENCHMARKING KERNELS
  */
 
-class BidiClient
-    : public grpc::experimental::ClientBidiReactor<EchoRequest, EchoResponse> {
+class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
  public:
   BidiClient(benchmark::State* state, EchoTestService::Stub* stub,
              ClientContext* cli_ctx, EchoRequest* request,
@@ -84,7 +83,7 @@ class BidiClient
     cli_ctx_->~ClientContext();
     new (cli_ctx_) ClientContext();
     cli_ctx_->AddMetadata(kServerMessageSize, std::to_string(msgs_size_));
-    stub_->experimental_async()->BidiStream(cli_ctx_, this);
+    stub_->async()->BidiStream(cli_ctx_, this);
     MaybeWrite();
     StartCall();
   }
