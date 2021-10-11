@@ -721,9 +721,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c timer_list_test)
   add_dependencies(buildtests_c transport_security_common_api_test)
   add_dependencies(buildtests_c transport_security_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c udp_server_test)
-  endif()
   add_dependencies(buildtests_c varint_test)
 
   add_custom_target(buildtests_cxx)
@@ -1920,7 +1917,6 @@ add_library(grpc
   src/core/lib/iomgr/timer_generic.cc
   src/core/lib/iomgr/timer_heap.cc
   src/core/lib/iomgr/timer_manager.cc
-  src/core/lib/iomgr/udp_server.cc
   src/core/lib/iomgr/unix_sockets_posix.cc
   src/core/lib/iomgr/unix_sockets_posix_noop.cc
   src/core/lib/iomgr/wakeup_fd_eventfd.cc
@@ -2557,7 +2553,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/timer_generic.cc
   src/core/lib/iomgr/timer_heap.cc
   src/core/lib/iomgr/timer_manager.cc
-  src/core/lib/iomgr/udp_server.cc
   src/core/lib/iomgr/unix_sockets_posix.cc
   src/core/lib/iomgr/unix_sockets_posix_noop.cc
   src/core/lib/iomgr/wakeup_fd_eventfd.cc
@@ -7626,35 +7621,6 @@ target_link_libraries(transport_security_test
 )
 
 
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(udp_server_test
-    test/core/iomgr/udp_server_test.cc
-  )
-
-  target_include_directories(udp_server_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-  )
-
-  target_link_libraries(udp_server_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util
-  )
-
-
-endif()
 endif()
 if(gRPC_BUILD_TESTS)
 

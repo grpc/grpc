@@ -351,18 +351,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "udp_server_test",
-    srcs = ["udp_server_test.cc"],
-    language = "C++",
-    tags = ["no_windows"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "stranded_event_test",
     srcs = ["stranded_event_test.cc"],
     external_deps = [
