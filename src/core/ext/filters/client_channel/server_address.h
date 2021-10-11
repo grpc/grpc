@@ -128,7 +128,7 @@ class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
   int Cmp(const AttributeInterface* other) const override {
     const auto* other_locality_attr =
         static_cast<const ServerAddressWeightAttribute*>(other);
-    return GPR_ICMP(weight_, other_locality_attr->weight_);
+    return QsortCompare(weight_, other_locality_attr->weight_);
   }
 
   std::string ToString() const override {

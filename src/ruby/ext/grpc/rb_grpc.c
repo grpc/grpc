@@ -19,7 +19,6 @@
 #include <ruby/ruby.h>
 
 #include "rb_grpc.h"
-#include "rb_grpc_imports.generated.h"
 
 #include <math.h>
 #include <ruby/vm.h>
@@ -28,20 +27,22 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 #include "rb_call.h"
 #include "rb_call_credentials.h"
 #include "rb_channel.h"
 #include "rb_channel_credentials.h"
 #include "rb_compression_options.h"
 #include "rb_event_thread.h"
+#include "rb_grpc_imports.generated.h"
 #include "rb_loader.h"
 #include "rb_server.h"
 #include "rb_server_credentials.h"
 #include "rb_xds_channel_credentials.h"
 #include "rb_xds_server_credentials.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 static VALUE grpc_rb_cTimeVal = Qnil;
 

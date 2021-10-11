@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/cronet/transport/cronet_status.h"
 
@@ -304,7 +304,6 @@ const char* cronet_net_error_as_string(cronet_net_error_code net_error) {
       return "CRONET_NET_ERROR_ENCODING_CONVERSION_FAILED";
     case CRONET_NET_ERROR_UNRECOGNIZED_FTP_DIRECTORY_LISTING_FORMAT:
       return "CRONET_NET_ERROR_UNRECOGNIZED_FTP_DIRECTORY_LISTING_FORMAT";
-      return "CRONET_NET_ERROR_INVALID_SPDY_STREAM";
     case CRONET_NET_ERROR_NO_SUPPORTED_PROXIES:
       return "CRONET_NET_ERROR_NO_SUPPORTED_PROXIES";
     case CRONET_NET_ERROR_HTTP2_PROTOCOL_ERROR:
@@ -339,7 +338,6 @@ const char* cronet_net_error_as_string(cronet_net_error_code net_error) {
       return "CRONET_NET_ERROR_HTTP2_SERVER_REFUSED_STREAM";
     case CRONET_NET_ERROR_HTTP2_PING_FAILED:
       return "CRONET_NET_ERROR_HTTP2_PING_FAILED";
-      return "CRONET_NET_ERROR_PIPELINE_EVICTION";
     case CRONET_NET_ERROR_CONTENT_LENGTH_MISMATCH:
       return "CRONET_NET_ERROR_CONTENT_LENGTH_MISMATCH";
     case CRONET_NET_ERROR_INCOMPLETE_CHUNKED_ENCODING:
@@ -350,7 +348,6 @@ const char* cronet_net_error_as_string(cronet_net_error_code net_error) {
       return "CRONET_NET_ERROR_RESPONSE_HEADERS_TRUNCATED";
     case CRONET_NET_ERROR_QUIC_HANDSHAKE_FAILED:
       return "CRONET_NET_ERROR_QUIC_HANDSHAKE_FAILED";
-      return "CRONET_NET_ERROR_REQUEST_FOR_SECURE_RESOURCE_OVER_INSECURE_QUIC";
     case CRONET_NET_ERROR_HTTP2_INADEQUATE_TRANSPORT_SECURITY:
       return "CRONET_NET_ERROR_HTTP2_INADEQUATE_TRANSPORT_SECURITY";
     case CRONET_NET_ERROR_HTTP2_FLOW_CONTROL_ERROR:
@@ -367,7 +364,6 @@ const char* cronet_net_error_as_string(cronet_net_error_code net_error) {
       return "CRONET_NET_ERROR_PROXY_HTTP_1_1_REQUIRED";
     case CRONET_NET_ERROR_PAC_SCRIPT_TERMINATED:
       return "CRONET_NET_ERROR_PAC_SCRIPT_TERMINATED";
-      return "CRONET_NET_ERROR_TEMPORARY_BACKOFF";
     case CRONET_NET_ERROR_INVALID_HTTP_RESPONSE:
       return "CRONET_NET_ERROR_INVALID_HTTP_RESPONSE";
     case CRONET_NET_ERROR_CONTENT_DECODING_INIT_FAILED:
@@ -522,6 +518,4 @@ grpc_status_code cronet_net_error_to_grpc_error(
     default:
       return GRPC_STATUS_UNAVAILABLE;
   }
-
-  return GRPC_STATUS_UNAVAILABLE;
 }

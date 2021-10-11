@@ -24,10 +24,13 @@
 #include <grpcpp/server_builder.h>
 
 namespace grpc {
-namespace experimental {
 
 class XdsServerServingStatusNotifierInterface {
  public:
+  struct ServingStatusUpdate {
+    ::grpc::Status status;
+  };
+
   virtual ~XdsServerServingStatusNotifierInterface() = default;
 
   // \a uri contains the listening target associated with the notification. Note
@@ -37,7 +40,8 @@ class XdsServerServingStatusNotifierInterface {
   // The API does not provide any guarantees around duplicate updates.
   // Status::OK signifies that the server is serving, while a non-OK status
   // signifies that the server is not serving.
-  virtual void OnServingStatusUpdate(std::string uri, grpc::Status status) = 0;
+  virtual void OnServingStatusUpdate(std::string uri,
+                                     ServingStatusUpdate update) = 0;
 };
 
 class XdsServerBuilder : public ::grpc::ServerBuilder {
@@ -62,18 +66,29 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
   }
 
   static void OnServingStatusUpdate(void* user_data, const char* uri,
-                                    grpc_status_code code,
-                                    const char* error_message) {
+                                    grpc_serving_status_update update) {
     if (user_data == nullptr) return;
     XdsServerServingStatusNotifierInterface* notifier =
         static_cast<XdsServerServingStatusNotifierInterface*>(user_data);
     notifier->OnServingStatusUpdate(
-        uri, grpc::Status(static_cast<StatusCode>(code), error_message));
+        uri, {grpc::Status(static_cast<StatusCode>(update.code),
+                           update.error_message)});
   }
 
   XdsServerServingStatusNotifierInterface* notifier_ = nullptr;
 };
 
+namespace experimental {
+// TODO(yashykt): Delete this after the 1.42 release.
+GRPC_DEPRECATED(
+    "Use grpc::XdsServerServingStatusNotifierInterface instead. The "
+    "experimental version will be deleted after the 1.42 release.")
+typedef grpc::XdsServerServingStatusNotifierInterface
+    XdsServerServingStatusNotifierInterface;
+GRPC_DEPRECATED(
+    "Use grpc::XdsServerBuilder instead. The experimental version will be "
+    "deleted after the 1.42 release.")
+typedef grpc::XdsServerBuilder XdsServerBuilder;
 }  // namespace experimental
 }  // namespace grpc
 

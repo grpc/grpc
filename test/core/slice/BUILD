@@ -16,7 +16,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc
 
 grpc_package(name = "test/core/slice")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
@@ -87,6 +87,18 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
+        "//:slice",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "slice_intern_test",
+    srcs = ["slice_intern_test.cc"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -95,6 +107,18 @@ grpc_cc_test(
 grpc_cc_test(
     name = "slice_string_helpers_test",
     srcs = ["slice_string_helpers_test.cc"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:slice",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "slice_split_test",
+    srcs = ["slice_split_test.cc"],
     language = "C++",
     uses_polling = False,
     deps = [

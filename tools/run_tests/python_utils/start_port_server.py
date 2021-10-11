@@ -15,9 +15,6 @@
 
 from __future__ import print_function
 
-from . import jobset
-
-import six.moves.urllib.request as request
 import logging
 import os
 import socket
@@ -25,6 +22,10 @@ import subprocess
 import sys
 import tempfile
 import time
+
+import six.moves.urllib.request as request
+
+from . import jobset
 
 # must be synchronized with test/core/util/port_server_client.h
 _PORT_SERVER_PORT = 32766

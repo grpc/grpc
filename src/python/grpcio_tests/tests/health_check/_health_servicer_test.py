@@ -19,16 +19,14 @@ import time
 import unittest
 
 import grpc
-
 from grpc_health.v1 import health
 from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
+from six.moves import queue
 
 from tests.unit import test_common
 from tests.unit import thread_pool
 from tests.unit.framework.common import test_constants
-
-from six.moves import queue
 
 _SERVING_SERVICE = 'grpc.test.TestServiceServing'
 _UNKNOWN_SERVICE = 'grpc.test.TestServiceUnknown'

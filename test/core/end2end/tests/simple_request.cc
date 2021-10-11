@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -28,9 +26,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -219,7 +219,6 @@ static void simple_request_body(grpc_end2end_test_config config,
   // not likely to change much. Some parts of the error, like time created,
   // obviously are not checked.
   GPR_ASSERT(nullptr != strstr(error_string, "xyz"));
-  GPR_ASSERT(nullptr != strstr(error_string, "description"));
   GPR_ASSERT(nullptr != strstr(error_string, "Error received from peer"));
   GPR_ASSERT(nullptr != strstr(error_string, "grpc_message"));
   GPR_ASSERT(nullptr != strstr(error_string, "grpc_status"));

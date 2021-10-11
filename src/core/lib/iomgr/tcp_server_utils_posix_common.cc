@@ -22,8 +22,6 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON
 
-#include "src/core/lib/iomgr/tcp_server_utils_posix.h"
-
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
@@ -40,6 +38,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
@@ -182,7 +181,8 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
 
-  err = grpc_apply_socket_mutator_in_args(fd, s->channel_args);
+  err = grpc_apply_socket_mutator_in_args(fd, GRPC_FD_SERVER_LISTENER_USAGE,
+                                          s->channel_args);
   if (err != GRPC_ERROR_NONE) goto error;
 
   if (bind(fd, reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr)),

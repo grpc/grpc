@@ -20,24 +20,23 @@
 
 #if GRPC_ARES == 1
 
-#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/lib/iomgr/sockaddr.h"
-
 #include <string.h>
 #include <sys/types.h>
+
+#include <address_sorting/address_sorting.h>
+#include <ares.h>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include <ares.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include <address_sorting/address_sorting.h>
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
@@ -46,8 +45,8 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/nameser.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/transport/authority_override.h"
 
 using grpc_core::ServerAddress;
 using grpc_core::ServerAddressList;
@@ -536,10 +535,8 @@ grpc_error_handle grpc_ares_ev_driver_create_locked(
   grpc_ares_test_only_inject_config((*ev_driver)->channel);
   GRPC_CARES_TRACE_LOG("request:%p grpc_ares_ev_driver_create_locked", request);
   if (status != ARES_SUCCESS) {
-    grpc_error_handle err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Failed to init ares channel. C-ares error: ",
-                     ares_strerror(status))
-            .c_str());
+    grpc_error_handle err = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Failed to init ares channel. C-ares error: ", ares_strerror(status)));
     gpr_free(*ev_driver);
     return err;
   }
@@ -672,8 +669,8 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
     for (size_t i = 0; hostent->h_addr_list[i] != nullptr; ++i) {
       absl::InlinedVector<grpc_arg, 1> args_to_add;
       if (hr->is_balancer) {
-        args_to_add.emplace_back(
-            grpc_core::CreateAuthorityOverrideChannelArg(hr->host));
+        args_to_add.emplace_back(grpc_channel_arg_string_create(
+            const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), hr->host));
       }
       grpc_channel_args* args = grpc_channel_args_copy_and_add(
           nullptr, args_to_add.data(), args_to_add.size());
@@ -721,7 +718,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
     GRPC_CARES_TRACE_LOG("request:%p on_hostbyname_done_locked: %s", r,
                          error_msg.c_str());
     grpc_error_handle error =
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
+        GRPC_ERROR_CREATE_FROM_CPP_STRING(std::move(error_msg));
     r->error = grpc_error_add_child(error, r->error);
   }
   destroy_hostbyname_request_locked(hr);
@@ -766,7 +763,7 @@ static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
     GRPC_CARES_TRACE_LOG("request:%p on_srv_query_done_locked: %s", r,
                          error_msg.c_str());
     grpc_error_handle error =
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
+        GRPC_ERROR_CREATE_FROM_CPP_STRING(std::move(error_msg));
     r->error = grpc_error_add_child(error, r->error);
   }
   delete q;
@@ -823,9 +820,9 @@ fail:
   std::string error_msg =
       absl::StrFormat("C-ares status is not ARES_SUCCESS qtype=TXT name=%s: %s",
                       q->name(), ares_strerror(status));
-  error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
   GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked %s", r,
                        error_msg.c_str());
+  error = GRPC_ERROR_CREATE_FROM_CPP_STRING(std::move(error_msg));
   r->error = grpc_error_add_child(error, r->error);
 }
 
@@ -843,13 +840,13 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
   if (host.empty()) {
     error = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+        GRPC_ERROR_STR_TARGET_ADDRESS, name);
     goto error_cleanup;
   } else if (port.empty()) {
     if (default_port == nullptr) {
       error = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+          GRPC_ERROR_STR_TARGET_ADDRESS, name);
       goto error_cleanup;
     }
     port = default_port;
@@ -881,16 +878,14 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
     } else {
       error = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("cannot parse authority"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+          GRPC_ERROR_STR_TARGET_ADDRESS, name);
       goto error_cleanup;
     }
     int status =
         ares_set_servers_ports(r->ev_driver->channel, &r->dns_server_addr);
     if (status != ARES_SUCCESS) {
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("C-ares status is not ARES_SUCCESS: ",
-                       ares_strerror(status))
-              .c_str());
+      error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "C-ares status is not ARES_SUCCESS: ", ares_strerror(status)));
       goto error_cleanup;
     }
   }
@@ -1128,9 +1123,8 @@ void (*grpc_cancel_ares_request_locked)(grpc_ares_request* r) =
 grpc_error_handle grpc_ares_init(void) {
   int status = ares_library_init(ARES_LIB_INIT_ALL);
   if (status != ARES_SUCCESS) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("ares_library_init failed: ", ares_strerror(status))
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("ares_library_init failed: ", ares_strerror(status)));
   }
   return GRPC_ERROR_NONE;
 }

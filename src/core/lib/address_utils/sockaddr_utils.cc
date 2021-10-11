@@ -29,11 +29,13 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
@@ -210,8 +212,8 @@ grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address* out,
     addr4->sin_family = GRPC_AF_INET;
     out->len = sizeof(grpc_sockaddr_in);
   } else {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Failed to parse address:", addr).c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Failed to parse address:", addr));
   }
   grpc_sockaddr_set_port(out, port);
   return GRPC_ERROR_NONE;
@@ -397,3 +399,14 @@ bool grpc_sockaddr_match_subnet(const grpc_resolved_address* address,
   }
   return false;
 }
+
+namespace grpc_event_engine {
+namespace experimental {
+
+std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress& addr) {
+  auto gra = CreateGRPCResolvedAddress(addr);
+  return grpc_sockaddr_to_uri(&gra);
+}
+
+}  // namespace experimental
+}  // namespace grpc_event_engine

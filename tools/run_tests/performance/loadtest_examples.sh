@@ -42,6 +42,10 @@ example_file() {
         echo "python_asyncio${suffix}"
         return
     fi
+    if [[ "${scenario#php7_protobuf_c_}" != "${scenario}" ]]; then
+        echo "php7_protobuf_c${suffix}"
+        return
+    fi
     echo "${scenario%%_*}${suffix}"
 }
 
@@ -55,6 +59,10 @@ example_language() {
         echo "python_asyncio"
         return
     fi
+    if [[ "${filename#php7_protobuf_c_}" != "${filename}" ]]; then
+        echo "php7_protobuf_c"
+        return
+    fi
     echo "${filename%%_*}"
 }
 
@@ -65,6 +73,7 @@ scenarios=(
     "java_generic_async_streaming_ping_pong_secure"
     "node_to_node_generic_async_streaming_ping_pong_secure"
     "php7_protobuf_php_extension_to_cpp_protobuf_sync_unary_ping_pong"
+    "php7_protobuf_c_extension_to_cpp_protobuf_sync_unary_ping_pong"
     "python_generic_sync_streaming_ping_pong"
     "python_asyncio_generic_async_streaming_ping_pong"
     "ruby_protobuf_sync_streaming_ping_pong"

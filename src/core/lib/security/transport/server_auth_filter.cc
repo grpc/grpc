@@ -96,23 +96,21 @@ struct call_data {
 
 static grpc_metadata_array metadata_batch_to_md_array(
     const grpc_metadata_batch* batch) {
-  grpc_linked_mdelem* l;
   grpc_metadata_array result;
   grpc_metadata_array_init(&result);
-  for (l = batch->list.head; l != nullptr; l = l->next) {
+  batch->ForEach([&](grpc_mdelem md) {
     grpc_metadata* usr_md = nullptr;
-    grpc_mdelem md = l->md;
     grpc_slice key = GRPC_MDKEY(md);
     grpc_slice value = GRPC_MDVALUE(md);
     if (result.count == result.capacity) {
-      result.capacity = GPR_MAX(result.capacity + 8, result.capacity * 2);
+      result.capacity = std::max(result.capacity + 8, result.capacity * 2);
       result.metadata = static_cast<grpc_metadata*>(gpr_realloc(
           result.metadata, result.capacity * sizeof(grpc_metadata)));
     }
     usr_md = &result.metadata[result.count++];
     usr_md->key = grpc_slice_ref_internal(key);
     usr_md->value = grpc_slice_ref_internal(value);
-  }
+  });
   return result;
 }
 
@@ -306,13 +304,6 @@ static grpc_error_handle server_auth_init_channel_elem(
   GPR_ASSERT(!args->is_last);
   grpc_auth_context* auth_context =
       grpc_find_auth_context_in_args(args->channel_args);
-  if (auth_context == nullptr) {
-    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "No authorization context found. This might be a TRANSIENT failure due "
-        "to certificates not having been loaded yet.");
-    gpr_log(GPR_DEBUG, "%s", grpc_error_std_string(error).c_str());
-    return error;
-  }
   GPR_ASSERT(auth_context != nullptr);
   grpc_server_credentials* creds =
       grpc_find_server_credentials_in_args(args->channel_args);

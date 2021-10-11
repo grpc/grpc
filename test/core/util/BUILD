@@ -14,11 +14,20 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_package(
     name = "test/core/util",
     visibility = "public",
+)
+
+grpc_cc_library(
+    name = "grpc_suppressions",
+    data = [
+        "lsan_suppressions.txt",
+        "tsan_suppressions.txt",
+        "ubsan_suppressions.txt",
+    ],
 )
 
 grpc_cc_library(
@@ -37,6 +46,7 @@ grpc_cc_library(
         "port_server_client.cc",
         "reconnect_server.cc",
         "resolve_localhost_ip46.cc",
+        "resource_user_util.cc",
         "slice_splitter.cc",
         "subprocess_posix.cc",
         "subprocess_windows.cc",
@@ -60,6 +70,7 @@ grpc_cc_library(
         "port_server_client.h",
         "reconnect_server.h",
         "resolve_localhost_ip46.h",
+        "resource_user_util.h",
         "slice_splitter.h",
         "subprocess.h",
         "test_config.h",
@@ -67,20 +78,17 @@ grpc_cc_library(
         "tracer_util.h",
         "trickle_endpoint.h",
     ],
-    data = [
-        "lsan_suppressions.txt",
-        "tsan_suppressions.txt",
-        "ubsan_suppressions.txt",
-    ],
     external_deps = [
         "absl/debugging:failure_signal_handler",
         "absl/debugging:symbolize",
+        "absl/strings:str_format",
     ],
     language = "C++",
     deps = [
+        ":grpc_suppressions",
         ":stack_tracer",
         "//:gpr",
-        "//:grpc_base_c",
+        "//:grpc_base",
         "//:grpc_common",
     ],
 )

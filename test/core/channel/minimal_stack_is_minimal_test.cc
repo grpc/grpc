@@ -29,16 +29,18 @@
  * configurations and assess whether such a change is correct and desirable.
  */
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -137,7 +139,7 @@ static int check_stack(const char* file, int line, const char* transport_name,
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_channel_stack_builder_set_channel_arguments(builder, channel_args);
-    GPR_ASSERT(grpc_channel_init_create_stack(
+    GPR_ASSERT(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
         builder, (grpc_channel_stack_type)channel_stack_type));
   }
 

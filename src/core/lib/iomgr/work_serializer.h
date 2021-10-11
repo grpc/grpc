@@ -18,12 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <functional>
 
 #include "absl/synchronization/mutex.h"
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/orphanable.h"

@@ -16,8 +16,6 @@
  *
  */
 
-#include "src/core/lib/iomgr/port.h"
-
 #include "src/core/lib/iomgr/timer_heap.h"
 
 #include <stdlib.h>
@@ -27,6 +25,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/port.h"
 #include "test/core/util/test_config.h"
 
 static gpr_atm random_deadline(void) { return rand(); }
@@ -141,7 +140,7 @@ static elem_struct* search_elems(elem_struct* elems, size_t count,
   for (size_t i = 0; i < count * 2; i++) {
     size_t a = static_cast<size_t>(rand()) % count;
     size_t b = static_cast<size_t>(rand()) % count;
-    GPR_SWAP(size_t, search_order[a], search_order[b]);
+    std::swap(search_order[a], search_order[b]);
   }
   elem_struct* out = nullptr;
   for (size_t i = 0; out == nullptr && i < count; i++) {

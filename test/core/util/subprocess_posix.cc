@@ -60,7 +60,6 @@ gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
     /* if we reach here, an error has occurred */
     gpr_log(GPR_ERROR, "execv '%s' failed: %s", exec_args[0], strerror(errno));
     _exit(1);
-    return nullptr;
   } else {
     r = static_cast<gpr_subprocess*>(gpr_zalloc(sizeof(gpr_subprocess)));
     r->pid = pid;

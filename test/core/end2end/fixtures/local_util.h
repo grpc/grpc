@@ -16,11 +16,10 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/surface/channel.h"
+#include "test/core/end2end/end2end_tests.h"
 
 struct grpc_end2end_local_fullstack_fixture_data {
   std::string localaddr;

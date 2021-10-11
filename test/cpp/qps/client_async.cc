@@ -27,6 +27,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
@@ -34,8 +36,6 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/generic/generic_stub.h>
-
-#include "absl/memory/memory.h"
 
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
@@ -822,7 +822,6 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
           next_state_ = State::READ_DONE;
           stream_->Read(&response_, ClientRpcContext::tag(this));
           return true;
-          break;
         case State::READ_DONE:
           entry->set_value((UsageTimer::Now() - start_) * 1e9);
           callback_(status_, &response_);
@@ -841,7 +840,6 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
         case State::FINISH_DONE:
           next_state_ = State::INVALID;
           return false;
-          break;
         default:
           GPR_ASSERT(false);
           return false;

@@ -58,26 +58,26 @@ Updating some dependencies requires extra care.
 
 ### Updating third_party/boringssl-with-bazel
 
-- Update the `third_party/boringssl-with-bazel` submodule to the latest [`master-with-bazel`](https://github.com/google/boringssl/tree/master-with-bazel) branch
+- Update the `third_party/boringssl-with-bazel` submodule to the latest [`main-with-bazel`](https://github.com/google/boringssl/tree/main-with-bazel) branch
 ```
 git submodule update --init      # just to start in a clean state
 cd third_party/boringssl-with-bazel
 git fetch origin   # fetch what's new in the boringssl repository
-git checkout origin/master-with-bazel  # checkout the current state of master-with-bazel branch in the boringssl repo
-# Note the latest commit SHA on master-with-bazel-branch 
+git checkout origin/main-with-bazel  # checkout the current state of main-with-bazel branch in the boringssl repo
+# Note the latest commit SHA on main-with-bazel branch
 cd ../..   # go back to grpc repo root
 git status   #  will show that there are new commits in third_party/boringssl-with-bazel
 git add  third_party/boringssl-with-bazel     # we actually want to update the changes to the submodule
-git commit -m "update submodule boringssl-with-bazel with origin/master-with-bazel"   # commit
+git commit -m "update submodule boringssl-with-bazel with origin/main-with-bazel"   # commit
 ```
 
-- Update boringssl dependency in `bazel/grpc_deps.bzl` to the same commit SHA as master-with-bazel branch
+- Update boringssl dependency in `bazel/grpc_deps.bzl` to the same commit SHA as main-with-bazel branch
     - Update `http_archive(name = "boringssl",` section by updating the sha in `strip_prefix` and `urls` fields.
     - Also, set `sha256` field to "" as the existing value is not valid. This will be added later once we know what that value is.
 
 - Update `tools/run_tests/sanity/check_submodules.sh` with the same commit
 
-- Commit these changes `git commit -m "update boringssl dependency to master-with-bazel commit SHA"`
+- Commit these changes `git commit -m "update boringssl dependency to main-with-bazel commit SHA"`
 
 - Run `tools/buildgen/generate_projects.sh` to regenerate the generated files
     - Because `sha256` in `bazel/grpc_deps.bzl` was left empty, you will get a DEBUG msg like this one:
@@ -112,3 +112,31 @@ Apart from the above steps, please perform the following two steps to generate t
 
 1. Bump the version in the `tools/distrib/python/xds_protos/setup.py`;
 2. Run `tools/distrib/python/xds_protos/build_validate_upload.sh` to upload the built wheel.
+
+### Updating third_party/upb
+
+Since upb is vendored in the gRPC repo, you cannot use submodule to update it. Please follow the steps below.
+
+1. Update third_party/upb directory by running
+   `git subtree pull --squash --prefix=third_party/upb https://github.com/protocolbuffers/upb.git master`
+2. Update the dependency in `grpc_deps.bzl` to the same commit
+3. Populate the bazel download mirror by running `bazel/update_mirror.sh`
+4. Update `src/upb/gen_build_yaml.py` for newly added or removed upb files
+5. Run `tools/buildgen/generate_projects.sh` to regenerate the generated files
+6. Run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
+   If you see breaking changes here, you may want to import upb into Google3 along with gRPC.
+
+### Updating third_party/xxhash
+
+TODO(https://github.com/Cyan4973/xxHash/issues/548): revisit LICENSE
+instructions if upstream splits library and CLI.
+
+The upstream xxhash repository contains a bunch of files that we don't want, so
+we employ a rather manual update flow to pick up just the bits we care about:
+
+```
+git remote add xxhash https://github.com/Cyan4973/xxHash.git
+git fetch xxhash
+git show xxhash/dev:xxhash.h > third_party/xxhash/xxhash.h
+git show xxhash/dev:LICENSE | sed -nE '/^-+$/q;p' > third_party/xxhash/LICENSE
+```

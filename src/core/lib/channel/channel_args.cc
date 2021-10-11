@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/channel/channel_args.h"
+
 #include <limits.h>
 #include <string.h>
 
@@ -33,7 +35,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 
@@ -145,7 +146,7 @@ grpc_channel_args* grpc_channel_args_union(const grpc_channel_args* a,
 }
 
 static int cmp_arg(const grpc_arg* a, const grpc_arg* b) {
-  int c = GPR_ICMP(a->type, b->type);
+  int c = grpc_core::QsortCompare(a->type, b->type);
   if (c != 0) return c;
   c = strcmp(a->key, b->key);
   if (c != 0) return c;
@@ -153,11 +154,12 @@ static int cmp_arg(const grpc_arg* a, const grpc_arg* b) {
     case GRPC_ARG_STRING:
       return strcmp(a->value.string, b->value.string);
     case GRPC_ARG_INTEGER:
-      return GPR_ICMP(a->value.integer, b->value.integer);
+      return grpc_core::QsortCompare(a->value.integer, b->value.integer);
     case GRPC_ARG_POINTER:
-      c = GPR_ICMP(a->value.pointer.p, b->value.pointer.p);
+      c = grpc_core::QsortCompare(a->value.pointer.p, b->value.pointer.p);
       if (c != 0) {
-        c = GPR_ICMP(a->value.pointer.vtable, b->value.pointer.vtable);
+        c = grpc_core::QsortCompare(a->value.pointer.vtable,
+                                    b->value.pointer.vtable);
         if (c == 0) {
           c = a->value.pointer.vtable->cmp(a->value.pointer.p,
                                            b->value.pointer.p);
@@ -174,7 +176,7 @@ static int cmp_key_stable(const void* ap, const void* bp) {
   const grpc_arg* const* a = static_cast<const grpc_arg* const*>(ap);
   const grpc_arg* const* b = static_cast<const grpc_arg* const*>(bp);
   int c = strcmp((*a)->key, (*b)->key);
-  if (c == 0) c = GPR_ICMP(*a, *b);
+  if (c == 0) c = grpc_core::QsortCompare(*a, *b);
   return c;
 }
 
@@ -224,7 +226,7 @@ int grpc_channel_args_compare(const grpc_channel_args* a,
                               const grpc_channel_args* b) {
   if (a == nullptr && b == nullptr) return 0;
   if (a == nullptr || b == nullptr) return a == nullptr ? -1 : 1;
-  int c = GPR_ICMP(a->num_args, b->num_args);
+  int c = grpc_core::QsortCompare(a->num_args, b->num_args);
   if (c != 0) return c;
   for (size_t i = 0; i < a->num_args; i++) {
     c = cmp_arg(&a->args[i], &b->args[i]);

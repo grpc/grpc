@@ -21,11 +21,12 @@
 #include <float.h>
 #include <math.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include <gtest/gtest.h>
 #include "src/core/lib/gpr/string.h"
 #include "test/core/util/test_config.h"
 

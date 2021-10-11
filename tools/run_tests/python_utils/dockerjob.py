@@ -15,12 +15,12 @@
 
 from __future__ import print_function
 
+import json
+import os
+import subprocess
 import tempfile
 import time
 import uuid
-import os
-import subprocess
-import json
 
 import jobset
 

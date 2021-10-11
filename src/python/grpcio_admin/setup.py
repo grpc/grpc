@@ -30,7 +30,6 @@ import grpc_version
 CLASSIFIERS = [
     'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 2',
     'Programming Language :: Python :: 3',
     'License :: OSI Approved :: Apache Software License',
 ]
@@ -56,5 +55,6 @@ setuptools.setup(name='grpcio-admin',
                  url='https://grpc.io',
                  package_dir=PACKAGE_DIRECTORIES,
                  packages=setuptools.find_packages('.'),
+                 python_requires='>=3.6',
                  install_requires=INSTALL_REQUIRES,
                  setup_requires=SETUP_REQUIRES)

@@ -275,6 +275,12 @@ END2END_TESTS = {
     "retry": _test_options(needs_client_channel = True),
     "retry_cancellation": _test_options(needs_client_channel = True),
     "retry_cancel_during_delay": _test_options(needs_client_channel = True),
+    "retry_cancel_with_multiple_send_batches": _test_options(
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_cancel3",
+        needs_client_channel = True,
+    ),
     "retry_disabled": _test_options(needs_client_channel = True),
     "retry_exceeds_buffer_size_in_delay": _test_options(
         needs_client_channel = True,
@@ -292,6 +298,7 @@ END2END_TESTS = {
         short_name = "retry_exceeds_buffer_size_in_subseq",
     ),
     "retry_lb_drop": _test_options(needs_client_channel = True),
+    "retry_lb_fail": _test_options(needs_client_channel = True),
     "retry_non_retriable_status": _test_options(needs_client_channel = True),
     "retry_non_retriable_status_before_recv_trailing_metadata_started": _test_options(
         needs_client_channel = True,
@@ -299,9 +306,21 @@ END2END_TESTS = {
         # See b/151617965
         short_name = "retry_non_retriable_status2",
     ),
+    "retry_per_attempt_recv_timeout": _test_options(
+        needs_client_channel = True,
+    ),
+    "retry_per_attempt_recv_timeout_on_last_attempt": _test_options(
+        needs_client_channel = True,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_per_attempt_recv_timeout2",
+    ),
     "retry_recv_initial_metadata": _test_options(needs_client_channel = True),
     "retry_recv_message": _test_options(needs_client_channel = True),
     "retry_recv_trailing_metadata_error": _test_options(
+        needs_client_channel = True,
+    ),
+    "retry_send_initial_metadata_refs": _test_options(
         needs_client_channel = True,
     ),
     "retry_send_op_fails": _test_options(needs_client_channel = True),
@@ -317,6 +336,7 @@ END2END_TESTS = {
     ),
     "retry_throttled": _test_options(needs_client_channel = True),
     "retry_too_many_attempts": _test_options(needs_client_channel = True),
+    "sdk_authz": _test_options(secure = True),
     "server_finishes_request": _test_options(),
     "server_streaming": _test_options(needs_http2 = True),
     "shutdown_finishes_calls": _test_options(),
@@ -404,6 +424,7 @@ def grpc_end2end_tests():
             ":proxy",
             ":local_util",
             "//test/core/util:test_lb_policies",
+            "//:grpc_authorization_provider",
         ],
     )
 

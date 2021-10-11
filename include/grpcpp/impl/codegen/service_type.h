@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SERVICE_TYPE_H
 #define GRPCPP_IMPL_CODEGEN_SERVICE_TYPE_H
 
+// IWYU pragma: private, include <grpcpp/impl/service_type.h>
+
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
@@ -99,29 +101,6 @@ class Service {
   }
 
  protected:
-  // TODO(vjpai): Promote experimental contents once callback API is accepted
-  class experimental_type {
-   public:
-    explicit experimental_type(Service* service) : service_(service) {}
-
-    void MarkMethodCallback(int index, internal::MethodHandler* handler) {
-      service_->MarkMethodCallbackInternal(index, handler);
-    }
-
-    void MarkMethodRawCallback(int index, internal::MethodHandler* handler) {
-      service_->MarkMethodRawCallbackInternal(index, handler);
-    }
-
-    internal::MethodHandler* GetHandler(int index) {
-      return service_->GetHandlerInternal(index);
-    }
-
-   private:
-    Service* service_;
-  };
-
-  experimental_type experimental() { return experimental_type(this); }
-
   template <class Message>
   void RequestAsyncUnary(int index, ::grpc::ServerContext* context,
                          Message* request,
@@ -216,23 +195,7 @@ class Service {
     methods_[idx]->SetMethodType(internal::RpcMethod::BIDI_STREAMING);
   }
 
-#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
   void MarkMethodCallback(int index, internal::MethodHandler* handler) {
-    MarkMethodCallbackInternal(index, handler);
-  }
-
-  void MarkMethodRawCallback(int index, internal::MethodHandler* handler) {
-    MarkMethodRawCallbackInternal(index, handler);
-  }
-
-  internal::MethodHandler* GetHandler(int index) {
-    return GetHandlerInternal(index);
-  }
-#endif
- private:
-  // TODO(vjpai): migrate the Internal functions to mainline functions once
-  //              callback API is fully de-experimental
-  void MarkMethodCallbackInternal(int index, internal::MethodHandler* handler) {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
@@ -245,8 +208,7 @@ class Service {
         internal::RpcServiceMethod::ApiType::CALL_BACK);
   }
 
-  void MarkMethodRawCallbackInternal(int index,
-                                     internal::MethodHandler* handler) {
+  void MarkMethodRawCallback(int index, internal::MethodHandler* handler) {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
@@ -259,11 +221,12 @@ class Service {
         internal::RpcServiceMethod::ApiType::RAW_CALL_BACK);
   }
 
-  internal::MethodHandler* GetHandlerInternal(int index) {
+  internal::MethodHandler* GetHandler(int index) {
     size_t idx = static_cast<size_t>(index);
     return methods_[idx]->handler();
   }
 
+ private:
   friend class Server;
   friend class ServerInterface;
   ServerInterface* server_;

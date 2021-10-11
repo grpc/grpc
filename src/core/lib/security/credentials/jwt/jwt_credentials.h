@@ -23,19 +23,19 @@
 
 #include <string>
 
-#include <grpc/support/time.h>
-
 #include "absl/strings/str_format.h"
 #include "absl/time/time.h"
+
+#include <grpc/support/time.h>
+
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 
 class grpc_service_account_jwt_access_credentials
     : public grpc_call_credentials {
  public:
-  grpc_service_account_jwt_access_credentials(
-      grpc_auth_json_key key, gpr_timespec token_lifetime,
-      std::string user_provided_audience);
+  grpc_service_account_jwt_access_credentials(grpc_auth_json_key key,
+                                              gpr_timespec token_lifetime);
   ~grpc_service_account_jwt_access_credentials() override;
 
   bool get_request_metadata(grpc_polling_entity* pollent,
@@ -49,9 +49,7 @@ class grpc_service_account_jwt_access_credentials
 
   const gpr_timespec& jwt_lifetime() const { return jwt_lifetime_; }
   const grpc_auth_json_key& key() const { return key_; }
-  const std::string& user_provided_audience() const {
-    return user_provided_audience_;
-  }
+
   std::string debug_string() override {
     return absl::StrFormat(
         "JWTAccessCredentials{ExpirationTime:%s}",
@@ -63,24 +61,29 @@ class grpc_service_account_jwt_access_credentials
   void reset_cache();
 
   // Have a simple cache for now with just 1 entry. We could have a map based on
-  // the audience for a more sophisticated one.
+  // the service_url for a more sophisticated one.
   gpr_mu cache_mu_;
   struct {
     grpc_mdelem jwt_md = GRPC_MDNULL;
-    std::string audience;
+    std::string service_url;
     gpr_timespec jwt_expiration;
   } cached_;
 
   grpc_auth_json_key key_;
   gpr_timespec jwt_lifetime_;
-  std::string user_provided_audience_;
 };
 
 // Private constructor for jwt credentials from an already parsed json key.
 // Takes ownership of the key.
 grpc_core::RefCountedPtr<grpc_call_credentials>
 grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
-    grpc_auth_json_key key, gpr_timespec token_lifetime,
-    std::string user_provided_audience);
+    grpc_auth_json_key key, gpr_timespec token_lifetime);
+
+namespace grpc_core {
+
+// Exposed for testing purposes only.
+absl::StatusOr<std::string> RemoveServiceNameFromJwtUri(absl::string_view uri);
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_CREDENTIALS_H */

@@ -17,7 +17,7 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_package(name = "test/core/compression")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_cc_test(
     name = "algorithm_test",

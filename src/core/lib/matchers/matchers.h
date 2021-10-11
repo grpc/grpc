@@ -23,7 +23,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
 #include "re2/re2.h"
 
 namespace grpc_core {
@@ -39,6 +38,7 @@ class StringMatcher {
   };
 
   // Creates StringMatcher instance. Returns error status on failure.
+  // Note: case_sensitive is ignored for type kSafeRegex.
   static absl::StatusOr<StringMatcher> Create(Type type,
                                               absl::string_view matcher,
                                               bool case_sensitive = true);
@@ -66,7 +66,7 @@ class StringMatcher {
 
  private:
   StringMatcher(Type type, absl::string_view matcher, bool case_sensitive);
-  StringMatcher(std::unique_ptr<RE2> regex_matcher, bool case_sensitive);
+  explicit StringMatcher(std::unique_ptr<RE2> regex_matcher);
 
   Type type_ = Type::kExact;
   std::string string_matcher_;

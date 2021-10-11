@@ -22,8 +22,6 @@
 
 #ifdef GRPC_POSIX_SOCKET_EV
 
-#include "src/core/lib/iomgr/ev_posix.h"
-
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -36,6 +34,7 @@
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
+#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 
 GPR_GLOBAL_CONFIG_DEFINE_STRING(

@@ -18,15 +18,17 @@
 
 #include "test/core/util/reconnect_server.h"
 
+#include <string.h>
+
+#include "absl/strings/string_view.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <string.h>
 
-#include "absl/strings/string_view.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_server.h"

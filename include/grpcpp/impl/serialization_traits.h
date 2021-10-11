@@ -19,6 +19,6 @@
 #ifndef GRPCPP_IMPL_SERIALIZATION_TRAITS_H
 #define GRPCPP_IMPL_SERIALIZATION_TRAITS_H
 
-#include <grpcpp/impl/codegen/serialization_traits.h>
+#include <grpcpp/impl/codegen/serialization_traits.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_IMPL_SERIALIZATION_TRAITS_H

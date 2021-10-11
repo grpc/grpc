@@ -14,7 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_package(
     name = "http_over_grpc",

@@ -16,15 +16,18 @@
  *
  */
 
+#include "src/core/tsi/alts/frame_protector/frame_handler.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
+#include <algorithm>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/tsi/alts/frame_protector/frame_handler.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 
 const size_t kFrameHandlerTestBufferSize = 1024;
@@ -68,7 +71,8 @@ static void frame(frame_handler* handler, unsigned char* payload,
   size_t offset = 0;
   while (offset < handler->buffer_size &&
          !alts_is_frame_writer_done(handler->writer)) {
-    size_t bytes_written = GPR_MIN(write_length, handler->buffer_size - offset);
+    size_t bytes_written =
+        std::min(write_length, handler->buffer_size - offset);
     GPR_ASSERT(alts_write_frame_bytes(handler->writer, handler->buffer + offset,
                                       &bytes_written));
     offset += bytes_written;
@@ -83,7 +87,7 @@ static size_t deframe(frame_handler* handler, unsigned char* bytes,
   size_t offset = 0;
   while (offset < handler->buffer_size &&
          !alts_is_frame_reader_done(handler->reader)) {
-    size_t bytes_read = GPR_MIN(read_length, handler->buffer_size - offset);
+    size_t bytes_read = std::min(read_length, handler->buffer_size - offset);
     GPR_ASSERT(alts_read_frame_bytes(handler->reader, handler->buffer + offset,
                                      &bytes_read));
     offset += bytes_read;

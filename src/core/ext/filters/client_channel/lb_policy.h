@@ -26,6 +26,7 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/variant.h"
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
@@ -133,34 +134,15 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Implemented by the client channel and used by the SubchannelPicker.
   class MetadataInterface {
    public:
-    class iterator
-        : public std::iterator<
-              std::input_iterator_tag,
-              std::pair<absl::string_view, absl::string_view>,  // value_type
-              std::ptrdiff_t,  // difference_type
-              std::pair<absl::string_view, absl::string_view>*,  // pointer
-              std::pair<absl::string_view, absl::string_view>&   // reference
-              > {
-     public:
-      iterator(const MetadataInterface* md, intptr_t handle)
-          : md_(md), handle_(handle) {}
-      iterator& operator++() {
-        handle_ = md_->IteratorHandleNext(handle_);
-        return *this;
-      }
-      bool operator==(iterator other) const {
-        return md_ == other.md_ && handle_ == other.handle_;
-      }
-      bool operator!=(iterator other) const { return !(*this == other); }
-      value_type operator*() const { return md_->IteratorHandleGet(handle_); }
-
-     private:
-      friend class MetadataInterface;
-      const MetadataInterface* md_;
-      intptr_t handle_;
-    };
-
     virtual ~MetadataInterface() = default;
+
+    //////////////////////////////////////////////////////////////////////////
+    // TODO(ctiller): DO NOT MAKE THIS A PUBLIC API YET
+    // This needs some API design to ensure we can add/remove/replace metadata
+    // keys... we're deliberately not doing so to save some time whilst
+    // cleaning up the internal metadata representation, but we should add
+    // something back before making this a public API.
+    //////////////////////////////////////////////////////////////////////////
 
     /// Adds a key/value pair.
     /// Does NOT take ownership of \a key or \a value.
@@ -169,23 +151,12 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// CallState::Alloc().
     virtual void Add(absl::string_view key, absl::string_view value) = 0;
 
-    /// Iteration interface.
-    virtual iterator begin() const = 0;
-    virtual iterator end() const = 0;
+    /// Produce a vector of metadata key/value strings for tests.
+    virtual std::vector<std::pair<std::string, std::string>>
+    TestOnlyCopyToVector() = 0;
 
-    /// Removes the element pointed to by \a it.
-    /// Returns an iterator pointing to the next element.
-    virtual iterator erase(iterator it) = 0;
-
-   protected:
-    intptr_t GetIteratorHandle(const iterator& it) const { return it.handle_; }
-
-   private:
-    friend class iterator;
-
-    virtual intptr_t IteratorHandleNext(intptr_t handle) const = 0;
-    virtual std::pair<absl::string_view /*key*/, absl::string_view /*value */>
-    IteratorHandleGet(intptr_t handle) const = 0;
+    virtual absl::optional<absl::string_view> Lookup(
+        absl::string_view key, std::string* buffer) const = 0;
   };
 
   /// Arguments used when picking a subchannel for a call.
@@ -204,47 +175,69 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// The result of picking a subchannel for a call.
   struct PickResult {
-    enum ResultType {
-      /// Pick complete.  If \a subchannel is non-null, the client channel
-      /// will immediately proceed with the call on that subchannel;
-      /// otherwise, it will drop the call.
-      PICK_COMPLETE,
-      /// Pick cannot be completed until something changes on the control
-      /// plane.  The client channel will queue the pick and try again the
-      /// next time the picker is updated.
-      PICK_QUEUE,
-      /// Pick failed.  If the call is wait_for_ready, the client channel
-      /// will wait for the next picker and try again; otherwise, it
-      /// will immediately fail the call with the status indicated via
-      /// \a error (although the call may be retried if the client channel
-      /// is configured to do so).
-      PICK_FAILED,
+    /// A successful pick.
+    struct Complete {
+      /// The subchannel to be used for the call.  Must be non-null.
+      RefCountedPtr<SubchannelInterface> subchannel;
+
+      /// Callback set by LB policy to be notified of trailing metadata.
+      /// If non-null, the client channel will invoke the callback
+      /// when trailing metadata is returned.
+      /// The metadata may be modified by the callback.  However, the callback
+      /// does not take ownership, so any data that needs to be used after
+      /// returning must be copied.
+      /// The call state can be used to obtain backend metric data.
+      // TODO(roth): The arguments to this callback should be moved into a
+      // struct, so that we can later add new fields without breaking
+      // existing implementations.
+      std::function<void(absl::Status, MetadataInterface*, CallState*)>
+          recv_trailing_metadata_ready;
+
+      explicit Complete(
+          RefCountedPtr<SubchannelInterface> sc,
+          std::function<void(absl::Status, MetadataInterface*, CallState*)> cb =
+              nullptr)
+          : subchannel(std::move(sc)),
+            recv_trailing_metadata_ready(std::move(cb)) {}
     };
-    ResultType type;
 
-    /// Used only if type is PICK_COMPLETE.  Will be set to the selected
-    /// subchannel, or nullptr if the LB policy decides to drop the call.
-    RefCountedPtr<SubchannelInterface> subchannel;
+    /// Pick cannot be completed until something changes on the control
+    /// plane.  The client channel will queue the pick and try again the
+    /// next time the picker is updated.
+    struct Queue {};
 
-    /// Used only if type is PICK_FAILED.
-    /// Error to be set when returning a failure.
-    // TODO(roth): Replace this with something similar to grpc::Status,
-    // so that we don't expose grpc_error to this API.
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    /// Pick failed.  If the call is wait_for_ready, the client channel
+    /// will wait for the next picker and try again; otherwise, it
+    /// will immediately fail the call with the status indicated (although
+    /// the call may be retried if the client channel is configured to do so).
+    struct Fail {
+      absl::Status status;
 
-    /// Used only if type is PICK_COMPLETE.
-    /// Callback set by LB policy to be notified of trailing metadata.
-    /// If set by LB policy, the client channel will invoke the callback
-    /// when trailing metadata is returned.
-    /// The metadata may be modified by the callback.  However, the callback
-    /// does not take ownership, so any data that needs to be used after
-    /// returning must be copied.
-    /// The call state can be used to obtain backend metric data.
-    // TODO(roth): The arguments to this callback should be moved into a
-    // struct, so that we can later add new fields without breaking
-    // existing implementations.
-    std::function<void(grpc_error_handle, MetadataInterface*, CallState*)>
-        recv_trailing_metadata_ready;
+      explicit Fail(absl::Status s) : status(s) {}
+    };
+
+    /// Pick will be dropped with the status specified.
+    /// Unlike FailPick, the call will be dropped even if it is
+    /// wait_for_ready, and retries (if configured) will be inhibited.
+    struct Drop {
+      absl::Status status;
+
+      explicit Drop(absl::Status s) : status(s) {}
+    };
+
+    // A pick result must be one of these types.
+    // Default to Queue, just to allow default construction.
+    absl::variant<Complete, Queue, Fail, Drop> result = Queue();
+
+    PickResult() = default;
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    PickResult(Complete complete) : result(std::move(complete)) {}
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    PickResult(Queue queue) : result(queue) {}
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    PickResult(Fail fail) : result(std::move(fail)) {}
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    PickResult(Drop drop) : result(std::move(drop)) {}
   };
 
   /// A subchannel picker is the object used to pick the subchannel to
@@ -288,6 +281,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Requests that the resolver re-resolve.
     virtual void RequestReresolution() = 0;
+
+    /// Returns the channel authority.
+    virtual absl::string_view GetAuthority() = 0;
 
     /// Adds a trace message associated with the channel.
     enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };
@@ -367,7 +363,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   // Note: This must be invoked while holding the work_serializer.
   void Orphan() override;
 
-  // A picker that returns PICK_QUEUE for all picks.
+  // A picker that returns PickResult::Queue for all picks.
   // Also calls the parent LB policy's ExitIdleLocked() method when the
   // first pick is seen.
   class QueuePicker : public SubchannelPicker {
@@ -384,16 +380,17 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     bool exit_idle_called_ = false;
   };
 
-  // A picker that returns PICK_TRANSIENT_FAILURE for all picks.
+  // A picker that returns PickResult::Fail for all picks.
   class TransientFailurePicker : public SubchannelPicker {
    public:
-    explicit TransientFailurePicker(grpc_error_handle error) : error_(error) {}
-    ~TransientFailurePicker() override { GRPC_ERROR_UNREF(error_); }
+    explicit TransientFailurePicker(absl::Status status) : status_(status) {}
 
-    PickResult Pick(PickArgs args) override;
+    PickResult Pick(PickArgs /*args*/) override {
+      return PickResult::Fail(status_);
+    }
 
    private:
-    grpc_error_handle error_;
+    absl::Status status_;
   };
 
  protected:

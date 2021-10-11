@@ -17,6 +17,9 @@
 
 #ifndef GRPCPP_IMPL_CODEGEN_CLIENT_CALLBACK_H
 #define GRPCPP_IMPL_CODEGEN_CLIENT_CALLBACK_H
+
+// IWYU pragma: private, include <grpcpp/support/client_callback.h>
+
 #include <atomic>
 #include <functional>
 
@@ -1226,32 +1229,5 @@ class ClientCallbackUnaryFactory {
 };
 
 }  // namespace internal
-
-// TODO(vjpai): Remove namespace experimental when de-experimentalized fully.
-namespace experimental {
-
-template <class Response>
-using ClientCallbackReader = ::grpc::ClientCallbackReader<Response>;
-
-template <class Request>
-using ClientCallbackWriter = ::grpc::ClientCallbackWriter<Request>;
-
-template <class Request, class Response>
-using ClientCallbackReaderWriter =
-    ::grpc::ClientCallbackReaderWriter<Request, Response>;
-
-template <class Response>
-using ClientReadReactor = ::grpc::ClientReadReactor<Response>;
-
-template <class Request>
-using ClientWriteReactor = ::grpc::ClientWriteReactor<Request>;
-
-template <class Request, class Response>
-using ClientBidiReactor = ::grpc::ClientBidiReactor<Request, Response>;
-
-typedef ::grpc::ClientUnaryReactor ClientUnaryReactor;
-
-}  // namespace experimental
-
 }  // namespace grpc
 #endif  // GRPCPP_IMPL_CODEGEN_CLIENT_CALLBACK_H
