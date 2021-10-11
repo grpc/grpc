@@ -30,6 +30,11 @@
 
 namespace grpc_core {
 
+// Initialization functions for ServiceConfigParser. ServiceConfigParser should
+// be initialized before any parser implementation is registered.
+void ServiceConfigParserInit();
+void ServiceConfigParserShutdown();
+
 // Service config parser registry.
 // See service_config.h for more information.
 class ServiceConfigParser {
@@ -69,9 +74,6 @@ class ServiceConfigParser {
   typedef absl::InlinedVector<std::unique_ptr<ParsedConfig>,
                               kNumPreallocatedParsers>
       ParsedConfigVector;
-
-  static void Init();
-  static void Shutdown();
 
   /// Globally register a service config parser. On successful registration, it
   /// returns the index at which the parser was registered. On failure, -1 is

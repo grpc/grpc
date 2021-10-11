@@ -26,7 +26,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/service_config_parser.h"
+#include "src/core/ext/service_config/service_config_parser.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
