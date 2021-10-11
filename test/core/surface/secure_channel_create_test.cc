@@ -44,10 +44,7 @@ void test_unknown_scheme_target(void) {
 }
 
 void test_security_connector_already_in_arg(void) {
-  grpc_arg arg;
-  arg.type = GRPC_ARG_POINTER;
-  arg.value.pointer.p = nullptr;
-  arg.key = const_cast<char*>(GRPC_ARG_SECURITY_CONNECTOR);
+  grpc_arg arg = grpc_security_connector_to_arg(nullptr);
   grpc_channel_args args;
   args.num_args = 1;
   args.args = &arg;
