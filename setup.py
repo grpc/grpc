@@ -66,6 +66,9 @@ if 'linux' in sys.platform:
     CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_linux'),)
 if 'openbsd' in sys.platform:
     CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_openbsd'),)
+LIBUV_INCLUDE = (
+    os.path.join('third_party', 'libuv', 'include'),
+    os.path.join('third_party', 'libuv', 'src'),)
 RE2_INCLUDE = (os.path.join('third_party', 're2'),)
 SSL_INCLUDE = (os.path.join('third_party', 'boringssl-with-bazel', 'src',
                             'include'),)
@@ -76,7 +79,6 @@ UPBDEFS_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext',
                                                'upbdefs-generated'),)
 XXHASH_INCLUDE = (os.path.join('third_party', 'xxhash'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
-LIBUV_INCLUDE = (os.path.join('third_party', 'libuv'))
 README = os.path.join(PYTHON_STEM, 'README.rst')
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
