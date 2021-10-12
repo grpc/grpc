@@ -159,8 +159,8 @@ class ErrorParser : public ServiceConfigParser::Parser {
 class ServiceConfigTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfigParser::Shutdown();
-    ServiceConfigParser::Init();
+    ServiceConfigParserShutdown();
+    ServiceConfigParserInit();
     EXPECT_EQ(
         ServiceConfigParser::RegisterParser(absl::make_unique<TestParser1>()),
         0);
@@ -430,8 +430,8 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
 class ErroredParsersScopingTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfigParser::Shutdown();
-    ServiceConfigParser::Init();
+    ServiceConfigParserShutdown();
+    ServiceConfigParserInit();
     EXPECT_EQ(
         ServiceConfigParser::RegisterParser(absl::make_unique<ErrorParser>()),
         0);
@@ -476,8 +476,8 @@ TEST_F(ErroredParsersScopingTest, MethodParams) {
 class ClientChannelParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfigParser::Shutdown();
-    ServiceConfigParser::Init();
+    ServiceConfigParserShutdown();
+    ServiceConfigParserInit();
     EXPECT_EQ(
         ServiceConfigParser::RegisterParser(
             absl::make_unique<internal::ClientChannelServiceConfigParser>()),
@@ -770,8 +770,8 @@ TEST_F(ClientChannelParserTest, InvalidHealthCheckMultipleEntries) {
 class RetryParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfigParser::Shutdown();
-    ServiceConfigParser::Init();
+    ServiceConfigParserShutdown();
+    ServiceConfigParserInit();
     EXPECT_EQ(ServiceConfigParser::RegisterParser(
                   absl::make_unique<internal::RetryServiceConfigParser>()),
               0);
@@ -1453,8 +1453,8 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutBadValue) {
 class MessageSizeParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfigParser::Shutdown();
-    ServiceConfigParser::Init();
+    ServiceConfigParserShutdown();
+    ServiceConfigParserInit();
     EXPECT_EQ(ServiceConfigParser::RegisterParser(
                   absl::make_unique<MessageSizeParser>()),
               0);
