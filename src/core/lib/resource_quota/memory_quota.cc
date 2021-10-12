@@ -50,9 +50,11 @@ const ReclaimerQueue::Index ReclaimerQueue::kInvalidIndex;
 void ReclaimerQueue::Insert(
     std::shared_ptr<EventEngineMemoryAllocatorImpl> allocator,
     ReclamationFunction reclaimer, Index* index) {
-  MutexLock lock(&mu_);
+  ReleasableMutexLock lock(&mu_);
   if (*index < entries_.size() && entries_[*index].allocator == allocator) {
     entries_[*index].reclaimer.swap(reclaimer);
+    lock.Release();
+    reclaimer({});
     return;
   }
   if (free_entries_.empty()) {
@@ -115,11 +117,21 @@ GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
 }
 
 void GrpcMemoryAllocatorImpl::Shutdown() {
-  ReclamationFunction old_reclaimers[kNumReclamationPasses];
-  MutexLock lock(&memory_quota_mu_);
+  std::shared_ptr<BasicMemoryQuota> memory_quota;
+  ReclaimerQueue::Index reclamation_indices[kNumReclamationPasses];
+  {
+    MutexLock lock(&memory_quota_mu_);
+    GPR_ASSERT(!shutdown_);
+    shutdown_ = true;
+    memory_quota = memory_quota_;
+    for (size_t i = 0; i < kNumReclamationPasses; i++) {
+      reclamation_indices[i] = absl::exchange(reclamation_indices_[i],
+                                              ReclaimerQueue::kInvalidIndex);
+    }
+  }
   for (size_t i = 0; i < kNumReclamationPasses; i++) {
-    old_reclaimers[i] =
-        memory_quota_->CancelReclaimer(i, reclamation_indices_[i], this);
+    auto fn = memory_quota->CancelReclaimer(i, reclamation_indices[i], this);
+    if (fn != nullptr) fn({});
   }
 }
 
@@ -180,6 +192,7 @@ absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
 
 void GrpcMemoryAllocatorImpl::Replenish() {
   MutexLock lock(&memory_quota_mu_);
+  GPR_ASSERT(!shutdown_);
   // Attempt a fairly low rate exponential growth request size, bounded between
   // some reasonable limits declared at top of file.
   auto amount = Clamp(taken_bytes_ / 3, kMinReplenishBytes, kMaxReplenishBytes);
@@ -201,11 +214,13 @@ void GrpcMemoryAllocatorImpl::MaybeRegisterReclaimer() {
 void GrpcMemoryAllocatorImpl::MaybeRegisterReclaimerLocked() {
   // If the reclaimer is already registered, then there's nothing to do.
   if (reclamation_indices_[0] != ReclaimerQueue::kInvalidIndex) return;
+  if (shutdown_) return;
   // Grab references to the things we'll need
   auto self = shared_from_this();
   memory_quota_->InsertReclaimer(
       0, self,
-      [self](ReclamationSweep) {
+      [self](absl::optional<ReclamationSweep> sweep) {
+        if (!sweep.has_value()) return;
         auto* p = static_cast<GrpcMemoryAllocatorImpl*>(self.get());
         MutexLock lock(&p->memory_quota_mu_);
         // Figure out how many bytes we can return to the quota.
@@ -223,6 +238,7 @@ void GrpcMemoryAllocatorImpl::MaybeRegisterReclaimerLocked() {
 void GrpcMemoryAllocatorImpl::Rebind(
     std::shared_ptr<BasicMemoryQuota> memory_quota) {
   MutexLock lock(&memory_quota_mu_);
+  GPR_ASSERT(!shutdown_);
   if (memory_quota_ == memory_quota) return;
   // Return memory to the original memory quota.
   memory_quota_->Return(taken_bytes_);
@@ -252,6 +268,7 @@ void GrpcMemoryAllocatorImpl::Rebind(
 void GrpcMemoryAllocatorImpl::PostReclaimer(ReclamationPass pass,
                                             ReclamationFunction fn) {
   MutexLock lock(&memory_quota_mu_);
+  GPR_ASSERT(!shutdown_);
   auto pass_num = static_cast<size_t>(pass);
   memory_quota_->InsertReclaimer(pass_num, shared_from_this(), std::move(fn),
                                  &reclamation_indices_[pass_num]);
@@ -359,7 +376,7 @@ void BasicMemoryQuota::Take(size_t amount) {
   auto prior = free_bytes_.fetch_sub(amount, std::memory_order_acq_rel);
   // If we push into overcommit, awake the reclaimer.
   if (prior >= 0 && prior < static_cast<intptr_t>(amount)) {
-    reclaimer_activity_->ForceWakeup();
+    if (reclaimer_activity_ != nullptr) reclaimer_activity_->ForceWakeup();
   }
 }
 

@@ -90,11 +90,17 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
   StatusSetInt(&s, grpc_core::StatusIntProperty::kWsaError, err);
   StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError, utf8_message);
   StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall, call_name);
+  return s;
 }
 #endif
 
 grpc_error_handle grpc_error_set_int(grpc_error_handle src,
                                      grpc_error_ints which, intptr_t value) {
+  if (src == GRPC_ERROR_NONE) {
+    src = absl::UnknownError("");
+    StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
+                 GRPC_STATUS_OK);
+  }
   grpc_core::StatusSetInt(
       &src, static_cast<grpc_core::StatusIntProperty>(which), value);
   return src;
@@ -131,32 +137,77 @@ bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
 grpc_error_handle grpc_error_set_str(grpc_error_handle src,
                                      grpc_error_strs which,
                                      absl::string_view str) {
-  grpc_core::StatusSetStr(
-      &src, static_cast<grpc_core::StatusStrProperty>(which), str);
+  if (src == GRPC_ERROR_NONE) {
+    src = absl::UnknownError("");
+    StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
+                 GRPC_STATUS_OK);
+  }
+  if (which == GRPC_ERROR_STR_DESCRIPTION) {
+    // To change the message of absl::Status, a new instance should be created
+    // with a code and payload because it doesn't have a setter for it.
+    absl::Status s = absl::Status(src.code(), str);
+    src.ForEachPayload(
+        [&](absl::string_view type_url, const absl::Cord& payload) {
+          s.SetPayload(type_url, payload);
+        });
+    return s;
+  } else {
+    grpc_core::StatusSetStr(
+        &src, static_cast<grpc_core::StatusStrProperty>(which), str);
+  }
   return src;
 }
 
 bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
                         std::string* s) {
-  absl::optional<std::string> value = grpc_core::StatusGetStr(
-      error, static_cast<grpc_core::StatusStrProperty>(which));
-  if (value.has_value()) {
-    *s = std::move(*value);
-    return true;
-  } else {
-    // TODO(veblush): Remove this once absl::Status migration is done
-    if (which == GRPC_ERROR_STR_DESCRIPTION && !error.message().empty()) {
-      *s = std::move(*value);
+  if (which == GRPC_ERROR_STR_DESCRIPTION) {
+    // absl::Status uses the message field for GRPC_ERROR_STR_DESCRIPTION
+    // instead of using payload.
+    absl::string_view msg = error.message();
+    if (msg.empty()) {
+      return false;
+    } else {
+      *s = std::string(msg);
       return true;
     }
-    return false;
+  } else {
+    absl::optional<std::string> value = grpc_core::StatusGetStr(
+        error, static_cast<grpc_core::StatusStrProperty>(which));
+    if (value.has_value()) {
+      *s = std::move(*value);
+      return true;
+    } else {
+      // TODO(veblush): Remove this once absl::Status migration is done
+      if (which == GRPC_ERROR_STR_GRPC_MESSAGE) {
+        switch (error.code()) {
+          case absl::StatusCode::kOk:
+            *s = "";
+            return true;
+          case absl::StatusCode::kResourceExhausted:
+            *s = "RESOURCE_EXHAUSTED";
+            return true;
+          case absl::StatusCode::kCancelled:
+            *s = "CANCELLED";
+            return true;
+          default:
+            break;
+        }
+      }
+      return false;
+    }
   }
 }
 
 grpc_error_handle grpc_error_add_child(grpc_error_handle src,
                                        grpc_error_handle child) {
-  grpc_core::StatusAddChild(&src, child);
-  return src;
+  if (src.ok()) {
+    return child;
+  } else {
+    if (!child.ok()) {
+      grpc_core::StatusAddChild(&src, child);
+    }
+    return src;
+  }
 }
 
 bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,

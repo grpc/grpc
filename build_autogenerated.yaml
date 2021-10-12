@@ -484,6 +484,7 @@ libs:
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
+  - src/core/ext/filters/client_idle/idle_filter_state.h
   - src/core/ext/filters/deadline/deadline_filter.h
   - src/core/ext/filters/fault_injection/fault_injection_filter.h
   - src/core/ext/filters/fault_injection/service_config_parser.h
@@ -837,7 +838,6 @@ libs:
   - src/core/lib/iomgr/timer_generic.h
   - src/core/lib/iomgr/timer_heap.h
   - src/core/lib/iomgr/timer_manager.h
-  - src/core/lib/iomgr/udp_server.h
   - src/core/lib/iomgr/unix_sockets_posix.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
@@ -1021,6 +1021,7 @@ libs:
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   - src/core/ext/filters/client_idle/client_idle_filter.cc
+  - src/core/ext/filters/client_idle/idle_filter_state.cc
   - src/core/ext/filters/deadline/deadline_filter.cc
   - src/core/ext/filters/fault_injection/fault_injection_filter.cc
   - src/core/ext/filters/fault_injection/service_config_parser.cc
@@ -1385,7 +1386,6 @@ libs:
   - src/core/lib/iomgr/timer_generic.cc
   - src/core/lib/iomgr/timer_heap.cc
   - src/core/lib/iomgr/timer_manager.cc
-  - src/core/lib/iomgr/udp_server.cc
   - src/core/lib/iomgr/unix_sockets_posix.cc
   - src/core/lib/iomgr/unix_sockets_posix_noop.cc
   - src/core/lib/iomgr/wakeup_fd_eventfd.cc
@@ -1727,6 +1727,7 @@ libs:
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
+  - src/core/ext/filters/client_idle/idle_filter_state.h
   - src/core/ext/filters/deadline/deadline_filter.h
   - src/core/ext/filters/fault_injection/fault_injection_filter.h
   - src/core/ext/filters/fault_injection/service_config_parser.h
@@ -1888,7 +1889,6 @@ libs:
   - src/core/lib/iomgr/timer_generic.h
   - src/core/lib/iomgr/timer_heap.h
   - src/core/lib/iomgr/timer_manager.h
-  - src/core/lib/iomgr/udp_server.h
   - src/core/lib/iomgr/unix_sockets_posix.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
@@ -1991,6 +1991,7 @@ libs:
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   - src/core/ext/filters/client_idle/client_idle_filter.cc
+  - src/core/ext/filters/client_idle/idle_filter_state.cc
   - src/core/ext/filters/deadline/deadline_filter.cc
   - src/core/ext/filters/fault_injection/fault_injection_filter.cc
   - src/core/ext/filters/fault_injection/service_config_parser.cc
@@ -2161,7 +2162,6 @@ libs:
   - src/core/lib/iomgr/timer_generic.cc
   - src/core/lib/iomgr/timer_heap.cc
   - src/core/lib/iomgr/timer_manager.cc
-  - src/core/lib/iomgr/udp_server.cc
   - src/core/lib/iomgr/unix_sockets_posix.cc
   - src/core/lib/iomgr/unix_sockets_posix_noop.cc
   - src/core/lib/iomgr/wakeup_fd_eventfd.cc
@@ -4269,18 +4269,6 @@ targets:
   - test/core/tsi/transport_security_test.cc
   deps:
   - grpc_test_util
-- name: udp_server_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/udp_server_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: varint_test
   build: test
   language: c
@@ -6122,6 +6110,17 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: idle_filter_state_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/filters/client_idle/idle_filter_state.h
+  src:
+  - src/core/ext/filters/client_idle/idle_filter_state.cc
+  - test/core/client_idle/idle_filter_state_test.cc
+  deps: []
+  uses_polling: false
 - name: if_test
   gtest: true
   build: test
@@ -6516,6 +6515,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
   - src/core/lib/slice/static_slice.h
+  - test/core/resource_quota/call_checker.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc

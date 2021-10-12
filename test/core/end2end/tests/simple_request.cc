@@ -219,7 +219,6 @@ static void simple_request_body(grpc_end2end_test_config config,
   // not likely to change much. Some parts of the error, like time created,
   // obviously are not checked.
   GPR_ASSERT(nullptr != strstr(error_string, "xyz"));
-  GPR_ASSERT(nullptr != strstr(error_string, "description"));
   GPR_ASSERT(nullptr != strstr(error_string, "Error received from peer"));
   GPR_ASSERT(nullptr != strstr(error_string, "grpc_message"));
   GPR_ASSERT(nullptr != strstr(error_string, "grpc_status"));
