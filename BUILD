@@ -346,7 +346,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_unsecure",
     srcs = [
-        "src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc",
         "src/core/lib/surface/init.cc",
         "src/core/plugin_registry/grpc_plugin_registry.cc",
     ],
