@@ -935,18 +935,15 @@ class HPackParser::String {
       value_;
 };
 
-// Parser parses one key/value pair from a byte stream.
+// Parser parses one frame + continuations worth of headers.
 class HPackParser::Parser {
  public:
-  Parser(Input* input, grpc_metadata_batch* metadata_buffer,
-         uint32_t metadata_size_limit, HPackTable* table,
-         uint8_t* dynamic_table_updates_allowed, uint32_t* frame_length)
+  Parser(Input* input, HPackParser::Sink* sink, HPackTable* table,
+         uint8_t* dynamic_table_updates_allowed)
       : input_(input),
-        metadata_buffer_(metadata_buffer),
+        sink_(sink),
         table_(table),
-        dynamic_table_updates_allowed_(dynamic_table_updates_allowed),
-        frame_length_(frame_length),
-        metadata_size_limit_(metadata_size_limit) {}
+        dynamic_table_updates_allowed_(dynamic_table_updates_allowed) {}
 
   // Skip any priority bits, or return false on failure
   bool SkipPriority() {
@@ -968,12 +965,13 @@ class HPackParser::Parser {
       case 1:
         switch (cur & 0xf) {
           case 0:  // literal key
-            return FinishHeaderOmitFromTable(ParseLiteralKey<String::Extern>());
+            return FinishHeader<TableAction::kOmitFromTable>(
+                ParseLiteralKey<String::Extern>());
           case 0xf:  // varint encoded key index
-            return FinishHeaderOmitFromTable(
+            return FinishHeader<TableAction::kOmitFromTable>(
                 ParseVarIdxKey<String::Extern>(0xf));
           default:  // inline encoded key index
-            return FinishHeaderOmitFromTable(
+            return FinishHeader<TableAction::kOmitFromTable>(
                 ParseIdxKey<String::Extern>(cur & 0xf));
         }
         // Update max table size.
@@ -1001,22 +999,23 @@ class HPackParser::Parser {
       case 4:
         if (cur == 0x40) {
           // literal key
-          return FinishHeaderAndAddToTable(ParseLiteralKey<String::Intern>());
+          return FinishHeader<TableAction::kAddToTable>(
+              ParseLiteralKey<String::Intern>());
         }
         ABSL_FALLTHROUGH_INTENDED;
       case 5:
       case 6:
         // inline encoded key index
-        return FinishHeaderAndAddToTable(
+        return FinishHeader<TableAction::kAddToTable>(
             ParseIdxKey<String::Intern>(cur & 0x3f));
       case 7:
         if (cur == 0x7f) {
           // varint encoded key index
-          return FinishHeaderAndAddToTable(
+          return FinishHeader<TableAction::kAddToTable>(
               ParseVarIdxKey<String::Intern>(0x3f));
         } else {
           // inline encoded key index
-          return FinishHeaderAndAddToTable(
+          return FinishHeader<TableAction::kAddToTable>(
               ParseIdxKey<String::Intern>(cur & 0x3f));
         }
         // Indexed Header Field Representation
@@ -1057,20 +1056,53 @@ class HPackParser::Parser {
   }
 
  private:
-  void GPR_ATTRIBUTE_NOINLINE LogHeader(const HPackTable::Memento& memento) {
-    // TODO(ctiller): what should be here?
-    gpr_log(GPR_DEBUG, "recvhdr: %s", memento.DebugString().c_str());
+  void GPR_ATTRIBUTE_NOINLINE LogHeader(grpc_mdelem md) {
+    char* k = grpc_slice_to_c_string(GRPC_MDKEY(md));
+    char* v = nullptr;
+    if (grpc_is_binary_header_internal(GRPC_MDKEY(md))) {
+      v = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX);
+    } else {
+      v = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+    }
+    gpr_log(
+        GPR_INFO,
+        "Decode: '%s: %s', elem_interned=%d [%d], k_interned=%d, v_interned=%d",
+        k, v, GRPC_MDELEM_IS_INTERNED(md), GRPC_MDELEM_STORAGE(md),
+        grpc_slice_is_interned(GRPC_MDKEY(md)),
+        grpc_slice_is_interned(GRPC_MDVALUE(md)));
+    gpr_free(k);
+    gpr_free(v);
   }
 
-  bool EmitHeader(const HPackTable::Memento& md) {
-    // Pass up to the transport
-    if (GPR_UNLIKELY(metadata_buffer_ == nullptr)) return true;
-    *frame_length_ += md.transport_size();
-    if (GPR_UNLIKELY(*frame_length_ > metadata_size_limit_)) {
-      return HandleMetadataSizeLimitExceeded(md);
-    }
+  // During FinishHeader, how should the header be treated in the hpack table
+  enum class TableAction {
+    // Add to the table
+    kAddToTable,
+    // Do not add to the table
+    kOmitFromTable,
+  };
 
-    grpc_error_handle err = metadata_buffer_->Set(md);
+  template <TableAction action>
+  bool FinishHeader(grpc_mdelem md) {
+    // Allow higher code to just pass in failures ... simplifies things a bit.
+    if (GRPC_MDISNULL(md)) return false;
+    // Log if desired
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
+      LogHeader(md);
+    }
+    // Add to the hpack table if needed
+    if (action == TableAction::kAddToTable) {
+      GPR_DEBUG_ASSERT(GRPC_MDELEM_STORAGE(md) ==
+                           GRPC_MDELEM_STORAGE_INTERNED ||
+                       GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC);
+      grpc_error_handle err = table_->Add(md);
+      if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
+        input_->SetError(err);
+        return false;
+      };
+    }
+    // Pass up to the transport
+    grpc_error_handle err = (*sink_)(md);
     if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
       input_->SetError(err);
       return false;
@@ -1078,77 +1110,48 @@ class HPackParser::Parser {
     return true;
   }
 
-  bool FinishHeaderAndAddToTable(absl::optional<HPackTable::Memento> md) {
-    // Allow higher code to just pass in failures ... simplifies things a bit.
-    if (!md.has_value()) return false;
-    // Log if desired
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
-      LogHeader(*md);
-    }
-    // Emit whilst we own the metadata.
-    auto r = EmitHeader(*md);
-    // Add to the hpack table
-    grpc_error_handle err = table_->Add(std::move(*md));
-    if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
-      input_->SetError(err);
-      return false;
-    };
-    return r;
-  }
-
-  bool FinishHeaderOmitFromTable(absl::optional<HPackTable::Memento> md) {
-    // Allow higher code to just pass in failures ... simplifies things a bit.
-    if (!md.has_value()) return false;
-    return FinishHeaderOmitFromTable(*md);
-  }
-
-  bool FinishHeaderOmitFromTable(const HPackTable::Memento& md) {
-    // Log if desired
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
-      LogHeader(md);
-    }
-    return EmitHeader(md);
-  }
-
   // Parse a string encoded key and a string encoded value
   template <typename TakeValueType>
-  absl::optional<HPackTable::Memento> ParseLiteralKey() {
+  grpc_mdelem ParseLiteralKey() {
     auto key = String::Parse(input_);
-    if (!key.has_value()) return {};
+    if (!key.has_value()) return GRPC_MDNULL;
     auto key_slice = key->Take<String::Intern>();
-    auto value =
-        ParseValueString(grpc_is_refcounted_slice_binary_header(key_slice));
+    auto value = ParseValueString(key_slice);
     if (GPR_UNLIKELY(!value.has_value())) {
       grpc_slice_unref_internal(key_slice);
-      return {};
+      return GRPC_MDNULL;
     }
-    return grpc_metadata_batch::Parse(key_slice, value->Take<TakeValueType>());
+    return grpc_mdelem_from_slices(key_slice, value->Take<TakeValueType>());
   }
 
   // Parse an index encoded key and a string encoded value
   template <typename TakeValueType>
-  absl::optional<HPackTable::Memento> ParseIdxKey(uint32_t index) {
-    const auto* elem = table_->Lookup(index);
-    if (GPR_UNLIKELY(elem == nullptr)) {
-      return InvalidHPackIndexError(index,
-                                    absl::optional<HPackTable::Memento>());
+  grpc_mdelem ParseIdxKey(uint32_t index) {
+    auto elem = table_->Peek(index);
+    if (GPR_UNLIKELY(GRPC_MDISNULL(elem))) {
+      return InvalidHPackIndexError(index, elem);
     }
-    auto value = ParseValueString(elem->is_binary_header());
-    if (GPR_UNLIKELY(!value.has_value())) return {};
-    return elem->WithNewValue(value->Take<TakeValueType>());
+    GPR_DEBUG_ASSERT(GRPC_MDELEM_IS_INTERNED(elem));
+    auto value = ParseValueString(GRPC_MDKEY(elem));
+    if (GPR_UNLIKELY(!value.has_value())) return GRPC_MDNULL;
+    return grpc_mdelem_from_slices(
+        static_cast<const ManagedMemorySlice&>(
+            grpc_slice_ref_internal(GRPC_MDKEY(elem))),
+        value->Take<TakeValueType>());
   }
 
   // Parse a varint index encoded key and a string encoded value
   template <typename TakeValueType>
-  absl::optional<HPackTable::Memento> ParseVarIdxKey(uint32_t offset) {
+  grpc_mdelem ParseVarIdxKey(uint32_t offset) {
     auto index = input_->ParseVarint(offset);
-    if (GPR_UNLIKELY(!index.has_value())) return {};
+    if (GPR_UNLIKELY(!index.has_value())) return GRPC_MDNULL;
     return ParseIdxKey<TakeValueType>(*index);
   }
 
   // Parse a string, figuring out if it's binary or not by the key name.
-  absl::optional<String> ParseValueString(bool is_binary) {
-    if (is_binary) {
+  template <typename SliceType>
+  absl::optional<String> ParseValueString(const SliceType& key) {
+    if (grpc_is_refcounted_slice_binary_header(key)) {
       return String::ParseBinary(input_);
     } else {
       return String::Parse(input_);
@@ -1159,12 +1162,12 @@ class HPackParser::Parser {
   bool FinishIndexed(absl::optional<uint32_t> index) {
     *dynamic_table_updates_allowed_ = 0;
     if (!index.has_value()) return false;
-    const auto* elem = table_->Lookup(*index);
-    if (GPR_UNLIKELY(elem == nullptr)) {
+    grpc_mdelem md = table_->Fetch(*index);
+    if (GPR_UNLIKELY(GRPC_MDISNULL(md))) {
       return InvalidHPackIndexError(*index, false);
     }
     GRPC_STATS_INC_HPACK_RECV_INDEXED();
-    return FinishHeaderOmitFromTable(*elem);
+    return FinishHeader<TableAction::kOmitFromTable>(md);
   }
 
   // finish parsing a max table size change
@@ -1204,43 +1207,21 @@ class HPackParser::Parser {
               GRPC_ERROR_INT_SIZE,
               static_cast<intptr_t>(this->table_->num_entries()));
         },
-        std::move(result));
-  }
-
-  GPR_ATTRIBUTE_NOINLINE
-  bool HandleMetadataSizeLimitExceeded(const HPackTable::Memento&) {
-    gpr_log(GPR_DEBUG,
-            "received initial metadata size exceeds limit (%" PRIu32
-            " vs. %" PRIu32
-            "). GRPC_ARG_MAX_METADATA_SIZE can be set to increase this limit.",
-            *frame_length_, metadata_size_limit_);
-    return input_->MaybeSetErrorAndReturn(
-        [] {
-          return grpc_error_set_int(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "received initial metadata size exceeds limit"),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
-        },
-        false);
+        result);
   }
 
   Input* input_;
-  grpc_metadata_batch* metadata_buffer_;
+  HPackParser::Sink* sink_;
   HPackTable* const table_;
-  uint8_t* const dynamic_table_updates_allowed_;
-  uint32_t* const frame_length_;
-  uint32_t metadata_size_limit_;
+  uint8_t* dynamic_table_updates_allowed_;
 };
 
 UnmanagedMemorySlice HPackParser::String::Take(Extern) {
   auto s = Match(
       value_,
       [](const grpc_slice& slice) {
-        // TODO(ctiller): Think about this before submission.
         GPR_DEBUG_ASSERT(!grpc_slice_is_interned(slice));
-        auto out_slice = grpc_slice_copy(slice);
-        grpc_slice_unref_internal(slice);
-        return static_cast<const UnmanagedMemorySlice&>(out_slice);
+        return static_cast<const UnmanagedMemorySlice&>(slice);
       },
       [](absl::Span<const uint8_t> span) {
         return UnmanagedMemorySlice(
@@ -1282,15 +1263,11 @@ HPackParser::HPackParser() = default;
 
 HPackParser::~HPackParser() = default;
 
-void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
-                             uint32_t metadata_size_limit, Boundary boundary,
-                             Priority priority) {
-  metadata_buffer_ = metadata_buffer;
+void HPackParser::BeginFrame(Sink sink, Boundary boundary, Priority priority) {
+  sink_ = std::move(sink);
   boundary_ = boundary;
   priority_ = priority;
   dynamic_table_updates_allowed_ = 2;
-  frame_length_ = 0;
-  metadata_size_limit_ = metadata_size_limit;
 }
 
 grpc_error_handle HPackParser::Parse(const grpc_slice& slice, bool is_last) {
@@ -1333,10 +1310,9 @@ bool HPackParser::ParseInputInner(Input* input) {
     }
   }
   while (!input->end_of_stream()) {
-    if (GPR_UNLIKELY(!Parser(input, metadata_buffer_, metadata_size_limit_,
-                             &table_, &dynamic_table_updates_allowed_,
-                             &frame_length_)
-                          .Parse())) {
+    if (GPR_UNLIKELY(
+            !Parser(input, &sink_, &table_, &dynamic_table_updates_allowed_)
+                 .Parse())) {
       return false;
     }
     input->UpdateFrontier();
@@ -1344,7 +1320,7 @@ bool HPackParser::ParseInputInner(Input* input) {
   return true;
 }
 
-void HPackParser::FinishFrame() { metadata_buffer_ = nullptr; }
+void HPackParser::FinishFrame() { sink_ = Sink(); }
 
 }  // namespace grpc_core
 
@@ -1414,7 +1390,7 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
         /* Process stream compression md element if it exists */
         if (s->header_frames_received ==
             0) { /* Only acts on initial metadata */
-          parse_stream_compression_md(t, s, &s->initial_metadata_buffer);
+          parse_stream_compression_md(t, s, &s->initial_metadata_buffer.batch);
         }
         s->published_metadata[s->header_frames_received] =
             GRPC_METADATA_PUBLISHED_FROM_WIRE;

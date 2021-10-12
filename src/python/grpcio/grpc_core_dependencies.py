@@ -119,6 +119,7 @@ CORE_SOURCE_FILES = [
     'src/core/ext/transport/chttp2/transport/hpack_utils.cc',
     'src/core/ext/transport/chttp2/transport/http2_settings.cc',
     'src/core/ext/transport/chttp2/transport/huffsyms.cc',
+    'src/core/ext/transport/chttp2/transport/incoming_metadata.cc',
     'src/core/ext/transport/chttp2/transport/parsing.cc',
     'src/core/ext/transport/chttp2/transport/stream_lists.cc',
     'src/core/ext/transport/chttp2/transport/stream_map.cc',
