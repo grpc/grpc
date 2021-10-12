@@ -23,19 +23,12 @@
 namespace grpc_core {
 namespace testing {
 
-TEST(MetadataMapTest, Noop) {
-  auto arena = MakeScopedArena(1024);
-  MetadataMap<>(arena.get());
-}
+TEST(MetadataMapTest, Noop) { MetadataMap<>(); }
 
-TEST(MetadataMapTest, NoopWithDeadline) {
-  auto arena = MakeScopedArena(1024);
-  MetadataMap<GrpcTimeoutMetadata>(arena.get());
-}
+TEST(MetadataMapTest, NoopWithDeadline) { MetadataMap<GrpcTimeoutMetadata>(); }
 
 TEST(MetadataMapTest, SimpleOps) {
-  auto arena = MakeScopedArena(1024);
-  MetadataMap<GrpcTimeoutMetadata> map(arena.get());
+  MetadataMap<GrpcTimeoutMetadata> map;
   EXPECT_EQ(map.get_pointer(GrpcTimeoutMetadata()), nullptr);
   EXPECT_EQ(map.get(GrpcTimeoutMetadata()), absl::nullopt);
   map.Set(GrpcTimeoutMetadata(), 1234);
@@ -70,16 +63,14 @@ class FakeEncoder {
 
 TEST(MetadataMapTest, EmptyEncodeTest) {
   FakeEncoder encoder;
-  auto arena = MakeScopedArena(1024);
-  MetadataMap<GrpcTimeoutMetadata> map(arena.get());
+  MetadataMap<GrpcTimeoutMetadata> map;
   map.Encode(&encoder);
   EXPECT_EQ(encoder.output(), "");
 }
 
 TEST(MetadataMapTest, TimeoutEncodeTest) {
   FakeEncoder encoder;
-  auto arena = MakeScopedArena(1024);
-  MetadataMap<GrpcTimeoutMetadata> map(arena.get());
+  MetadataMap<GrpcTimeoutMetadata> map;
   map.Set(GrpcTimeoutMetadata(), 1234);
   map.Encode(&encoder);
   EXPECT_EQ(encoder.output(), "grpc-timeout: deadline=1234\n");
