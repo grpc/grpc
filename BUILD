@@ -1860,8 +1860,6 @@ grpc_cc_library(
         "grpc_transport_chttp2_server_insecure",
         "grpc_transport_inproc",
         "grpc_fault_injection_filter",
-        "grpc_workaround_cronet_compression_filter",
-        "grpc_server_backward_compatibility",
     ],
 )
 
@@ -2112,23 +2110,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_message_size_filter",
         "slice",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_workaround_cronet_compression_filter",
-    srcs = [
-        "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc",
-    ],
-    hdrs = [
-        "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h",
-    ],
-    language = "c++",
-    deps = [
-        "config",
-        "gpr_base",
-        "grpc_base",
-        "grpc_server_backward_compatibility",
     ],
 )
 
@@ -3879,21 +3860,6 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc++",
-        "grpc_base",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_server_backward_compatibility",
-    srcs = [
-        "src/core/ext/filters/workarounds/workaround_utils.cc",
-    ],
-    hdrs = [
-        "src/core/ext/filters/workarounds/workaround_utils.h",
-    ],
-    language = "c++",
-    deps = [
-        "gpr_base",
         "grpc_base",
     ],
 )

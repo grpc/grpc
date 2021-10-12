@@ -55,8 +55,6 @@ void FaultInjectionFilterShutdown(void);
 void GrpcLbPolicyRingHashInit(void);
 void GrpcLbPolicyRingHashShutdown(void);
 }  // namespace grpc_core
-void grpc_workaround_cronet_compression_filter_init(void);
-void grpc_workaround_cronet_compression_filter_shutdown(void);
 
 void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_chttp2_plugin_init, grpc_chttp2_plugin_shutdown);
@@ -85,8 +83,6 @@ void grpc_register_built_in_plugins(void) {
                        grpc_message_size_filter_shutdown);
   grpc_register_plugin(grpc_core::FaultInjectionFilterInit,
                        grpc_core::FaultInjectionFilterShutdown);
-  grpc_register_plugin(grpc_workaround_cronet_compression_filter_init,
-                       grpc_workaround_cronet_compression_filter_shutdown);
 }
 
 namespace grpc_core {
@@ -104,8 +100,6 @@ extern void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder);
 extern void RegisterSecurityFilters(CoreConfiguration::Builder* builder);
 extern void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder);
-extern void RegisterWorkaroundCronetCompressionFilter(
-    CoreConfiguration::Builder* builder);
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   BuildClientChannelConfiguration(builder);
@@ -116,7 +110,6 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterMaxAgeFilter(builder);
   RegisterDeadlineFilter(builder);
   RegisterMessageSizeFilter(builder);
-  RegisterWorkaroundCronetCompressionFilter(builder);
   RegisterServiceConfigChannelArgFilter(builder);
   // Run last so it gets a consistent location.
   // TODO(ctiller): Is this actually necessary?
