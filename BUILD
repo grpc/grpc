@@ -3094,7 +3094,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base",
         "grpc_matchers",
         "grpc_rbac_engine",
         "grpc_secure",
