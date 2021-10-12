@@ -24,9 +24,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/resource_quota/api.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "src/core/lib/resource_quota/api.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
