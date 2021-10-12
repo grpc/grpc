@@ -85,7 +85,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         distance = 0.0
         prev_point = None
 
-        start_time = time.time()
+        start_time = time.monotonic()
         for point in request_iterator:
             point_count += 1
             if get_feature(self.db, point):
@@ -94,7 +94,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
                 distance += get_distance(prev_point, point)
             prev_point = point
 
-        elapsed_time = time.time() - start_time
+        elapsed_time = time.monotonic() - start_time
         return route_guide_pb2.RouteSummary(point_count=point_count,
                                             feature_count=feature_count,
                                             distance=int(distance),
