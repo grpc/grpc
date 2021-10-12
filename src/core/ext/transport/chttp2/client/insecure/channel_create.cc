@@ -88,6 +88,7 @@ grpc_channel* grpc_insecure_channel_create(const char* target,
                                            const grpc_channel_args* args,
                                            void* reserved) {
   grpc_core::ExecCtx exec_ctx;
+  args = grpc_channel_args_remove_grpc_internal(args);
   GRPC_API_TRACE(
       "grpc_insecure_channel_create(target=%s, args=%p, reserved=%p)", 3,
       (target, args, reserved));
@@ -103,6 +104,7 @@ grpc_channel* grpc_insecure_channel_create(const char* target,
   grpc_channel* channel = grpc_core::CreateChannel(target, new_args, &error);
   // Clean up.
   grpc_channel_args_destroy(new_args);
+  grpc_channel_args_destroy(args);
   if (channel == nullptr) {
     intptr_t integer;
     grpc_status_code status = GRPC_STATUS_INTERNAL;

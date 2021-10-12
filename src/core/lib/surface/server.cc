@@ -1469,9 +1469,11 @@ void Server::CallData::StartTransportStreamOpBatch(
 
 grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   grpc_core::ExecCtx exec_ctx;
+  args = grpc_channel_args_remove_grpc_internal(args);
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
   grpc_server* c_server = new grpc_server;
   c_server->core_server = grpc_core::MakeOrphanable<grpc_core::Server>(args);
+  grpc_channel_args_destroy(args);
   return c_server;
 }
 
