@@ -1590,7 +1590,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/timer_generic.cc",
         "src/core/lib/iomgr/timer_heap.cc",
         "src/core/lib/iomgr/timer_manager.cc",
-        "src/core/lib/iomgr/udp_server.cc",
         "src/core/lib/iomgr/unix_sockets_posix.cc",
         "src/core/lib/iomgr/unix_sockets_posix_noop.cc",
         "src/core/lib/iomgr/wakeup_fd_eventfd.cc",
@@ -1736,7 +1735,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/timer_generic.h",
         "src/core/lib/iomgr/timer_heap.h",
         "src/core/lib/iomgr/timer_manager.h",
-        "src/core/lib/iomgr/udp_server.h",
         "src/core/lib/iomgr/unix_sockets_posix.h",
         "src/core/lib/iomgr/wakeup_fd_pipe.h",
         "src/core/lib/iomgr/wakeup_fd_posix.h",
@@ -1760,6 +1758,7 @@ grpc_cc_library(
         "src/core/lib/transport/connectivity_state.h",
         "src/core/lib/transport/metadata.h",
         "src/core/lib/transport/metadata_batch.h",
+        "src/core/lib/transport/parsed_metadata.h",
         "src/core/lib/transport/pid_controller.h",
         "src/core/lib/transport/static_metadata.h",
         "src/core/lib/transport/status_conversion.h",
@@ -1803,6 +1802,7 @@ grpc_cc_library(
     deps = [
         "bitset",
         "channel_stack_type",
+        "chunked_vector",
         "closure",
         "config",
         "dual_ref_counted",
@@ -1987,15 +1987,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "idle_filter_state",
+    srcs = [
+        "src/core/ext/filters/client_idle/idle_filter_state.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_idle/idle_filter_state.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_idle_filter",
     srcs = [
         "src/core/ext/filters/client_idle/client_idle_filter.cc",
     ],
-    language = "c++",
     deps = [
         "config",
         "gpr_base",
         "grpc_base",
+        "idle_filter_state",
     ],
 )
 
@@ -3100,6 +3114,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
+        "grpc_base",
         "grpc_matchers",
         "grpc_rbac_engine",
         "grpc_secure",
@@ -3225,7 +3240,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_utils.cc",
         "src/core/ext/transport/chttp2/transport/http2_settings.cc",
         "src/core/ext/transport/chttp2/transport/huffsyms.cc",
-        "src/core/ext/transport/chttp2/transport/incoming_metadata.cc",
         "src/core/ext/transport/chttp2/transport/parsing.cc",
         "src/core/ext/transport/chttp2/transport/stream_lists.cc",
         "src/core/ext/transport/chttp2/transport/stream_map.cc",
@@ -3251,7 +3265,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_utils.h",
         "src/core/ext/transport/chttp2/transport/http2_settings.h",
         "src/core/ext/transport/chttp2/transport/huffsyms.h",
-        "src/core/ext/transport/chttp2/transport/incoming_metadata.h",
         "src/core/ext/transport/chttp2/transport/internal.h",
         "src/core/ext/transport/chttp2/transport/stream_map.h",
         "src/core/ext/transport/chttp2/transport/varint.h",

@@ -155,6 +155,7 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
       "reserved=%p)",
       4, ((void*)creds, target, (void*)args, (void*)reserved));
   GPR_ASSERT(reserved == nullptr);
+  args = grpc_channel_args_remove_grpc_internal(args);
   grpc_channel* channel = nullptr;
   grpc_error_handle error = GRPC_ERROR_NONE;
   if (creds != nullptr) {
@@ -175,6 +176,7 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
     // Clean up.
     grpc_channel_args_destroy(new_args);
   }
+  grpc_channel_args_destroy(args);
   if (channel == nullptr) {
     intptr_t integer;
     grpc_status_code status = GRPC_STATUS_INTERNAL;

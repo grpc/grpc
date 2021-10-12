@@ -83,10 +83,9 @@ main() {
   local script_dir
   script_dir="$(dirname "$0")"
 
-  # Clone the test driver from the master branch using an external script.
-  # shellcheck source=tools/internal_ci/linux/grpc_xds_k8s_clone_driver_repo.sh
-  source "${script_dir}/grpc_xds_k8s_clone_driver_repo.sh"
-  clone_test_driver
+  # Source the test driver from the master branch.
+  echo "Sourcing test driver install script from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
+  source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
 
   activate_gke_cluster GKE_CLUSTER_PSM_SECURITY
 

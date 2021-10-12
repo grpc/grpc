@@ -320,9 +320,10 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
     op.payload = &op_payload;
   };
 
+  auto arena = grpc_core::MakeScopedArena(1024);
   std::vector<grpc_mdelem> elems = Metadata::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
-  grpc_metadata_batch b;
+  grpc_metadata_batch b(arena.get());
   for (size_t i = 0; i < elems.size(); i++) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
@@ -424,7 +425,8 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   std::vector<grpc_mdelem> elems =
       RepresentativeClientInitialMetadata::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
-  grpc_metadata_batch b;
+  auto arena = grpc_core::MakeScopedArena(1024);
+  grpc_metadata_batch b(arena.get());
   for (size_t i = 0; i < elems.size(); i++) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
@@ -560,10 +562,11 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
     op.payload = &op_payload;
   };
 
+  auto arena = grpc_core::MakeScopedArena(1024);
   std::vector<grpc_mdelem> elems =
       RepresentativeClientInitialMetadata::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
-  grpc_metadata_batch b;
+  grpc_metadata_batch b(arena.get());
   for (size_t i = 0; i < elems.size(); i++) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
@@ -626,7 +629,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   });
 
   reset_op();
-  auto b_recv = absl::make_unique<grpc_metadata_batch>();
+  auto b_recv = absl::make_unique<grpc_metadata_batch>(arena.get());
   op.send_initial_metadata = true;
   op.payload->send_initial_metadata.send_initial_metadata = &b;
   op.recv_initial_metadata = true;

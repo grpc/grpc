@@ -18,13 +18,14 @@ licenses(["notice"])
 
 grpc_package(name = "test/core/transport/chttp2")
 
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
-grpc_fuzzer(
+grpc_proto_fuzzer(
     name = "hpack_parser_fuzzer",
     srcs = ["hpack_parser_fuzzer_test.cc"],
     corpus = "hpack_parser_corpus",
+    proto = "hpack_parser_fuzzer.proto",
     tags = ["no_windows"],
     deps = [
         "//:grpc",
@@ -113,6 +114,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "hpack_parser_test",
     srcs = ["hpack_parser_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_polling = False,
     deps = [
@@ -125,6 +127,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "hpack_parser_table_test",
     srcs = ["hpack_parser_table_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_polling = False,
     deps = [
