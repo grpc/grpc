@@ -287,11 +287,11 @@ cc_library(
         ":darwin_arm64": [],
         ":darwin_arm64e": [],
         ":windows": [
-            "-Xcrosstool-compilation-mode=$(COMPILATION_MODE)",
-            "-Wl,Iphlpapi.lib",
-            "-Wl,Psapi.lib",
-            "-Wl,User32.lib",
-            "-Wl,Userenv.lib",
+            # "-Xcrosstool-compilation-mode=$(COMPILATION_MODE)",
+            "-DEFAULTLIB:Iphlpapi.lib",
+            "-DEFAULTLIB:Psapi.lib",
+            "-DEFAULTLIB:User32.lib",
+            "-DEFAULTLIB:Userenv.lib",
         ],
         "//conditions:default": [
           "-ldl",
