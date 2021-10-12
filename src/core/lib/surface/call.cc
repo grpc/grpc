@@ -187,7 +187,10 @@ struct grpc_call {
   grpc_transport_stream_op_batch_payload stream_op_payload;
 
   /* first idx: is_receiving, second idx: is_trailing */
-  grpc_metadata_batch metadata_batch[2][2] = {};
+  grpc_metadata_batch send_initial_metadata{arena};
+  grpc_metadata_batch send_trailing_metadata{arena};
+  grpc_metadata_batch recv_initial_metadata{arena};
+  grpc_metadata_batch recv_trailing_metadata{arena};
 
   /* Buffered read metadata waiting to be returned to the application.
      Element 0 is initial metadata, element 1 is trailing metadata. */
@@ -541,9 +544,8 @@ static void release_call(void* call, grpc_error_handle /*error*/) {
 static void destroy_call(void* call, grpc_error_handle /*error*/) {
   GPR_TIMER_SCOPE("destroy_call", 0);
   grpc_call* c = static_cast<grpc_call*>(call);
-  for (int i = 0; i < 2; i++) {
-    c->metadata_batch[1 /* is_receiving */][i /* is_initial */].Clear();
-  }
+  c->recv_initial_metadata.Clear();
+  c->recv_trailing_metadata.Clear();
   c->receiving_stream.reset();
   parent_call* pc = get_parent_call(c);
   if (pc != nullptr) {
@@ -902,8 +904,8 @@ static int prepare_application_metadata(grpc_call* call, int count,
                                         int additional_metadata_count) {
   int total_count = count + additional_metadata_count;
   int i;
-  grpc_metadata_batch* batch =
-      &call->metadata_batch[0 /* is_receiving */][is_trailing];
+  grpc_metadata_batch* batch = is_trailing ? &call->send_trailing_metadata
+                                           : &call->send_initial_metadata;
   for (i = 0; i < total_count; i++) {
     grpc_metadata* md = get_md_elem(metadata, additional_metadata, i, count);
     grpc_linked_mdelem* l = linked_from_md(md);
@@ -1176,7 +1178,7 @@ static void post_batch_completion(batch_control* bctl) {
   grpc_error_handle error = GRPC_ERROR_REF(bctl->batch_error.get());
 
   if (bctl->op.send_initial_metadata) {
-    call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */].Clear();
+    call->send_initial_metadata.Clear();
   }
   if (bctl->op.send_message) {
     if (bctl->op.payload->send_message.stream_write_closed &&
@@ -1188,7 +1190,7 @@ static void post_batch_completion(batch_control* bctl) {
     call->sending_message = false;
   }
   if (bctl->op.send_trailing_metadata) {
-    call->metadata_batch[0 /* is_receiving */][1 /* is_trailing */].Clear();
+    call->send_trailing_metadata.Clear();
   }
   if (bctl->op.recv_trailing_metadata) {
     /* propagate cancellation to any interested children */
@@ -1460,8 +1462,7 @@ static void receiving_initial_metadata_ready(void* bctlp,
   GRPC_CALL_COMBINER_STOP(&call->call_combiner, "recv_initial_metadata_ready");
 
   if (error == GRPC_ERROR_NONE) {
-    grpc_metadata_batch* md =
-        &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
+    grpc_metadata_batch* md = &call->recv_initial_metadata;
     recv_initial_filter(call, md);
 
     /* TODO(ctiller): this could be moved into recv_initial_filter now */
@@ -1517,8 +1518,7 @@ static void receiving_trailing_metadata_ready(void* bctlp,
   batch_control* bctl = static_cast<batch_control*>(bctlp);
   grpc_call* call = bctl->call;
   GRPC_CALL_COMBINER_STOP(&call->call_combiner, "recv_trailing_metadata_ready");
-  grpc_metadata_batch* md =
-      &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
+  grpc_metadata_batch* md = &call->recv_trailing_metadata;
   recv_trailing_filter(call, md, GRPC_ERROR_REF(error));
   finish_batch_step(bctl);
 }
@@ -1653,11 +1653,11 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         }
         /* TODO(ctiller): just make these the same variable? */
         if (call->is_client && call->send_deadline != GRPC_MILLIS_INF_FUTURE) {
-          call->metadata_batch[0][0].Set(grpc_core::GrpcTimeoutMetadata(),
-                                         call->send_deadline);
+          call->send_initial_metadata.Set(grpc_core::GrpcTimeoutMetadata(),
+                                          call->send_deadline);
         }
         stream_op_payload->send_initial_metadata.send_initial_metadata =
-            &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */];
+            &call->send_initial_metadata;
         stream_op_payload->send_initial_metadata.send_initial_metadata_flags =
             op->flags;
         if (call->is_client) {
@@ -1714,7 +1714,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         stream_op->send_trailing_metadata = true;
         call->sent_final_op = true;
         stream_op_payload->send_trailing_metadata.send_trailing_metadata =
-            &call->metadata_batch[0 /* is_receiving */][1 /* is_trailing */];
+            &call->send_trailing_metadata;
         has_send_ops = true;
         break;
       }
@@ -1784,7 +1784,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           goto done_with_error;
         }
         stream_op_payload->send_trailing_metadata.send_trailing_metadata =
-            &call->metadata_batch[0 /* is_receiving */][1 /* is_trailing */];
+            &call->send_trailing_metadata;
         stream_op_payload->send_trailing_metadata.sent =
             &call->sent_server_trailing_metadata;
         has_send_ops = true;
@@ -1808,7 +1808,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
                           grpc_schedule_on_exec_ctx);
         stream_op->recv_initial_metadata = true;
         stream_op_payload->recv_initial_metadata.recv_initial_metadata =
-            &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
+            &call->recv_initial_metadata;
         stream_op_payload->recv_initial_metadata.recv_initial_metadata_ready =
             &call->receiving_initial_metadata_ready;
         if (call->is_client) {
@@ -1869,7 +1869,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
             op->data.recv_status_on_client.error_string;
         stream_op->recv_trailing_metadata = true;
         stream_op_payload->recv_trailing_metadata.recv_trailing_metadata =
-            &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
+            &call->recv_trailing_metadata;
         stream_op_payload->recv_trailing_metadata.collect_stats =
             &call->final_info.stats.transport_stream_stats;
         GRPC_CLOSURE_INIT(&call->receiving_trailing_metadata_ready,
@@ -1899,7 +1899,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
             op->data.recv_close_on_server.cancelled;
         stream_op->recv_trailing_metadata = true;
         stream_op_payload->recv_trailing_metadata.recv_trailing_metadata =
-            &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
+            &call->recv_trailing_metadata;
         stream_op_payload->recv_trailing_metadata.collect_stats =
             &call->final_info.stats.transport_stream_stats;
         GRPC_CLOSURE_INIT(&call->receiving_trailing_metadata_ready,
@@ -1935,7 +1935,7 @@ done_with_error:
   /* reverse any mutations that occurred */
   if (stream_op->send_initial_metadata) {
     call->sent_initial_metadata = false;
-    call->metadata_batch[0][0].Clear();
+    call->send_initial_metadata.Clear();
   }
   if (stream_op->send_message) {
     call->sending_message = false;
@@ -1943,7 +1943,7 @@ done_with_error:
   }
   if (stream_op->send_trailing_metadata) {
     call->sent_final_op = false;
-    call->metadata_batch[0][1].Clear();
+    call->send_trailing_metadata.Clear();
   }
   if (stream_op->recv_initial_metadata) {
     call->received_initial_metadata = false;
@@ -2008,9 +2008,7 @@ grpc_compression_algorithm grpc_call_compression_for_level(
 
 bool grpc_call_is_trailers_only(const grpc_call* call) {
   bool result = call->is_trailers_only;
-  GPR_DEBUG_ASSERT(
-      !result ||
-      call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */].empty());
+  GPR_DEBUG_ASSERT(!result || call->recv_initial_metadata.empty());
   return result;
 }
 
