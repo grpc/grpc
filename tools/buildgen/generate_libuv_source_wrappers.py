@@ -21,54 +21,65 @@ source file that conditionally compiles the original source file if it supports
 the current platform.
 """
 import os
-from mako.template import Template
-from mako.runtime import Context
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
-                            ".."))
+from mako.runtime import Context
+from mako.template import Template
+
+PROJECT_ROOT = os.path.abspath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 # load Mako templates
 TEMPLATES = {}
 tmpl_path = os.path.join(PROJECT_ROOT, 'src', 'libuv', 'templates')
 for tmpl_fn in os.listdir(tmpl_path):
-  TEMPLATES[tmpl_fn] = Template(filename=os.path.join(tmpl_path, tmpl_fn))
+    TEMPLATES[tmpl_fn] = Template(filename=os.path.join(tmpl_path, tmpl_fn))
+
 
 # reuse configuration from the bazel build
 # Dummy functions for the bazel import
-def config_setting(*args, **kwargs): pass
-def cc_library(*args, **kwargs): pass
-def select(*args, **kwargs): return []
+def config_setting(*args, **kwargs):
+    pass
+
+
+def cc_library(*args, **kwargs):
+    pass
+
+
+def select(*args, **kwargs):
+    return []
+
 
 def render_template(template: Template, src_filename: str) -> None:
-  print('processing:', src_filename)
-  out_filename = os.path.join(PROJECT_ROOT, 'src', 'libuv', src_filename)
-  if not os.path.isdir(os.path.dirname(out_filename)):
-    os.makedirs(os.path.dirname(out_filename))
-  with open(out_filename, 'w') as outfile:
-    include_filename = os.path.join('third_party', 'libuv', src_filename)
-    template.render_context(Context(outfile, filename=include_filename))
+    print('processing:', src_filename)
+    out_filename = os.path.join(PROJECT_ROOT, 'src', 'libuv', src_filename)
+    if not os.path.isdir(os.path.dirname(out_filename)):
+        os.makedirs(os.path.dirname(out_filename))
+    with open(out_filename, 'w') as outfile:
+        include_filename = os.path.join('third_party', 'libuv', src_filename)
+        template.render_context(Context(outfile, filename=include_filename))
+
 
 exec(open(os.path.join(PROJECT_ROOT, 'third_party', 'libuv.BUILD')).read())
 for src_filename in COMMON_LIBUV_SOURCES:
-  render_template(TEMPLATES['common.cc.template'], src_filename)
+    render_template(TEMPLATES['common.cc.template'], src_filename)
 for src_filename in COMMON_LIBUV_HEADERS:
-  render_template(TEMPLATES['common.h.template'], src_filename)
+    render_template(TEMPLATES['common.h.template'], src_filename)
 for src_filename in UNIX_LIBUV_SOURCES:
-  render_template(TEMPLATES['unix.cc.template'], src_filename)
+    render_template(TEMPLATES['unix.cc.template'], src_filename)
 for src_filename in UNIX_LIBUV_HEADERS:
-  render_template(TEMPLATES['unix.h.template'], src_filename)
+    render_template(TEMPLATES['unix.h.template'], src_filename)
 for src_filename in LINUX_LIBUV_SOURCES:
-  render_template(TEMPLATES['linux.cc.template'], src_filename)
+    render_template(TEMPLATES['linux.cc.template'], src_filename)
 for src_filename in LINUX_LIBUV_HEADERS:
-  render_template(TEMPLATES['linux.h.template'], src_filename)
+    render_template(TEMPLATES['linux.h.template'], src_filename)
 for src_filename in WINDOWS_LIBUV_SOURCES:
-  render_template(TEMPLATES['windows.cc.template'], src_filename)
+    render_template(TEMPLATES['windows.cc.template'], src_filename)
 for src_filename in WINDOWS_LIBUV_HEADERS:
-  render_template(TEMPLATES['windows.h.template'], src_filename)
+    render_template(TEMPLATES['windows.h.template'], src_filename)
 for src_filename in ANDROID_LIBUV_SOURCES:
-  render_template(TEMPLATES['android.cc.template'], src_filename)
+    render_template(TEMPLATES['android.cc.template'], src_filename)
 for src_filename in ANDROID_LIBUV_HEADERS:
-  render_template(TEMPLATES['android.h.template'], src_filename)
+    render_template(TEMPLATES['android.h.template'], src_filename)
 for src_filename in DARWIN_LIBUV_SOURCES:
-  render_template(TEMPLATES['darwin.cc.template'], src_filename)
+    render_template(TEMPLATES['darwin.cc.template'], src_filename)
 for src_filename in DARWIN_LIBUV_HEADERS:
-  render_template(TEMPLATES['darwin.h.template'], src_filename)
+    render_template(TEMPLATES['darwin.h.template'], src_filename)

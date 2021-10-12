@@ -68,7 +68,8 @@ if 'openbsd' in sys.platform:
     CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_openbsd'),)
 LIBUV_INCLUDE = (
     os.path.join('third_party', 'libuv', 'include'),
-    os.path.join('third_party', 'libuv', 'src'),)
+    os.path.join('third_party', 'libuv', 'src'),
+)
 RE2_INCLUDE = (os.path.join('third_party', 're2'),)
 SSL_INCLUDE = (os.path.join('third_party', 'boringssl-with-bazel', 'src',
                             'include'),)
