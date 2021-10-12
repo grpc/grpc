@@ -68,8 +68,8 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
 
   grpc_channel_args* args =
       grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
-  grpc_error_handle error = grpc_tcp_server_create(
-      &server->shutdown_complete, args, &server->tcp_server);
+  grpc_error_handle error = grpc_tcp_server_create(&server->shutdown_complete,
+                                                   args, &server->tcp_server);
   grpc_channel_args_destroy(args);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   error =
