@@ -20,6 +20,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/util/mock_endpoint.h"
@@ -51,8 +52,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     // TODO(ctiller): add more registered methods (one for POST, one for PUT)
     grpc_server_register_method(server, "/reg", nullptr, {}, 0);
     grpc_server_start(server);
+    grpc_channel_args* channel_args =
+        grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
     grpc_transport* transport =
-        grpc_create_chttp2_transport(nullptr, mock_endpoint, false);
+        grpc_create_chttp2_transport(channel_args, mock_endpoint, false);
+    grpc_channel_args_destroy(channel_args);
     grpc_resource_quota_unref(resource_quota);
     server->core_server->SetupTransport(transport, nullptr, nullptr, nullptr);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
