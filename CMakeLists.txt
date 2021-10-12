@@ -3765,7 +3765,7 @@ foreach(_hdr
 endforeach()
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_plugin_support EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11011,7 +11011,7 @@ target_link_libraries(grpc_cpp_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_cpp_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11050,7 +11050,7 @@ target_link_libraries(grpc_csharp_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_csharp_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11089,7 +11089,7 @@ target_link_libraries(grpc_node_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_node_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11128,7 +11128,7 @@ target_link_libraries(grpc_objective_c_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_objective_c_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11167,7 +11167,7 @@ target_link_libraries(grpc_php_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_php_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11206,7 +11206,7 @@ target_link_libraries(grpc_python_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_python_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11245,7 +11245,7 @@ target_link_libraries(grpc_ruby_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_ruby_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
