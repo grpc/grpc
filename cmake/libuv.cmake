@@ -16,18 +16,6 @@ if(gRPC_LIBUV_PROVIDER STREQUAL "module")
   if(NOT LIBUV_ROOT_DIR)
     set(LIBUV_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libuv)
   endif()
-  message(STATUS "Applying libuv.patch")
-  execute_process(
-    COMMAND patch -p1 --forward --ignore-whitespace
-    WORKING_DIRECTORY "${LIBUV_ROOT_DIR}"
-    INPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libuv.patch"
-    OUTPUT_VARIABLE OUTPUT
-    RESULT_VARIABLE RESULT)
-  if (RESULT EQUAL 0)
-    message(STATUS "Patch applied!")
-  else()
-    message(FATAL_ERROR "Failed to apply libuv.patch")
-  endif()
   include_directories("${LIBUV_ROOT_DIR}/include" "${LIBUV_ROOT_DIR}/src")
   add_subdirectory("${LIBUV_ROOT_DIR}" third_party/libuv)
   if(TARGET uv)
