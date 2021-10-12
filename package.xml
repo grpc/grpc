@@ -279,6 +279,8 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/incoming_metadata.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/incoming_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/parsing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/popularity_count.h" role="src" />
@@ -811,7 +813,6 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/bitset.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/chunked_vector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/construct_destruct.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/debug_location.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/dual_ref_counted.h" role="src" />
@@ -1205,7 +1206,6 @@
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/parsed_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/pid_controller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/pid_controller.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.cc" role="src" />

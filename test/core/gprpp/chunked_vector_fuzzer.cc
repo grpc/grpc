@@ -47,8 +47,11 @@ struct Comparison {
 
 class Fuzzer {
  public:
-  Fuzzer() = default;
-  ~Fuzzer() = default;
+  Fuzzer() : arena_(Arena::Create(128)) {}
+  ~Fuzzer() {
+    vectors_.clear();
+    arena_->Destroy();
+  }
 
   void Act(const chunked_vector_fuzzer::Action& action) {
     switch (action.action_type_case()) {
@@ -78,8 +81,7 @@ class Fuzzer {
         auto it_from = vectors_.find(action.copy().from());
         if (it_from == vectors_.end()) {
           it_from =
-              vectors_.emplace(action.copy().from(), Comparison(arena_.get()))
-                  .first;
+              vectors_.emplace(action.copy().from(), Comparison(arena_)).first;
         }
         auto it_to = vectors_.find(action.copy().to());
         if (it_to == vectors_.end()) {
@@ -96,8 +98,7 @@ class Fuzzer {
         auto it_from = vectors_.find(action.move().from());
         if (it_from == vectors_.end()) {
           it_from =
-              vectors_.emplace(action.move().from(), Comparison(arena_.get()))
-                  .first;
+              vectors_.emplace(action.move().from(), Comparison(arena_)).first;
         }
         auto it_to = vectors_.find(action.move().to());
         if (it_to == vectors_.end()) {
@@ -136,10 +137,10 @@ class Fuzzer {
     if (it != vectors_.end()) {
       return &it->second;
     }
-    return &vectors_.emplace(index, Comparison(arena_.get())).first->second;
+    return &vectors_.emplace(index, Comparison(arena_)).first->second;
   }
 
-  ScopedArenaPtr arena_ = MakeScopedArena(128);
+  Arena* arena_;
   std::map<int, Comparison> vectors_;
 };
 }  // namespace grpc_core
