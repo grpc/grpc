@@ -22,14 +22,6 @@ option java_package = "io.grpc.lookup.v1";
 option java_outer_classname = "RlsProto";
 
 message RouteLookupRequest {
-  // Full host name of the target server, e.g. firestore.googleapis.com.
-  // Only set for gRPC requests; HTTP requests must use key_map explicitly.
-  // Deprecated in favor of setting key_map keys with GrpcKeyBuilder.extra_keys.
-  string server = 1 [deprecated = true];
-  // Full path of the request, i.e. "/service/method".
-  // Only set for gRPC requests; HTTP requests must use key_map explicitly.
-  // Deprecated in favor of setting key_map keys with GrpcKeyBuilder.extra_keys.
-  string path = 2 [deprecated = true];
   // Target type allows the client to specify what kind of target format it
   // would like from RLS to allow it to find the regional server, e.g. "grpc".
   string target_type = 3;
@@ -45,6 +37,9 @@ message RouteLookupRequest {
   string stale_header_data = 6;
   // Map of key values extracted via key builders for the gRPC or HTTP request.
   map<string, string> key_map = 4;
+
+  reserved 1, 2;
+  reserved "server", "path";
 }
 
 message RouteLookupResponse {
