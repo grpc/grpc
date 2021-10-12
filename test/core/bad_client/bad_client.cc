@@ -31,10 +31,10 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "test/core/end2end/cq_verifier.h"
 
 #define MIN_HTTP2_FRAME_SIZE 9
@@ -210,7 +210,8 @@ void grpc_run_bad_client_test(
                                   GRPC_BAD_CLIENT_REGISTERED_HOST,
                                   GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   grpc_server_start(a.server);
-  grpc_channel_args* channel_args = grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
+  grpc_channel_args* channel_args =
+      grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
   transport = grpc_create_chttp2_transport(channel_args, sfd.server, false);
   grpc_channel_args_destroy(channel_args);
   server_setup_transport(&a, transport);
