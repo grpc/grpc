@@ -42,6 +42,7 @@
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/end2end/counted_service.h"
 
 namespace grpc {
 namespace testing {
@@ -61,42 +62,6 @@ constexpr char kRdsV2TypeUrl[] =
 constexpr char kCdsV2TypeUrl[] = "type.googleapis.com/envoy.api.v2.Cluster";
 constexpr char kEdsV2TypeUrl[] =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
-
-// A wrapper around an RPC service implementation that provides request and
-// response counting.
-template <typename ServiceType>
-class CountedService : public ServiceType {
- public:
-  size_t request_count() {
-    grpc_core::MutexLock lock(&mu_);
-    return request_count_;
-  }
-
-  size_t response_count() {
-    grpc_core::MutexLock lock(&mu_);
-    return response_count_;
-  }
-
-  void IncreaseResponseCount() {
-    grpc_core::MutexLock lock(&mu_);
-    ++response_count_;
-  }
-  void IncreaseRequestCount() {
-    grpc_core::MutexLock lock(&mu_);
-    ++request_count_;
-  }
-
-  void ResetCounters() {
-    grpc_core::MutexLock lock(&mu_);
-    request_count_ = 0;
-    response_count_ = 0;
-  }
-
- private:
-  grpc_core::Mutex mu_;
-  size_t request_count_ ABSL_GUARDED_BY(mu_) = 0;
-  size_t response_count_ ABSL_GUARDED_BY(mu_) = 0;
-};
 
 // An ADS service implementation.
 class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {

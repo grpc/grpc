@@ -6003,6 +6003,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/lb/v1/load_balancer.proto
@@ -8043,7 +8044,7 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/end2end/test_service_impl.cc
-  - test/cpp/end2end/xds_credentials_end2end_test.cc
+  - test/cpp/end2end/xds/xds_credentials_end2end_test.cc
   deps:
   - grpc++_test_util
 - name: xds_credentials_test
@@ -8062,6 +8063,7 @@ targets:
   language: c++
   headers:
   - src/cpp/server/csds/csds.h
+  - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_server.h
   src:
@@ -8101,8 +8103,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/tls.proto
   - src/cpp/server/csds/csds.cc
   - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_end2end_test.cc
   - test/cpp/end2end/xds/xds_server.cc
-  - test/cpp/end2end/xds_end2end_test.cc
   deps:
   - grpc++_test_config
   - grpc++_test_util
