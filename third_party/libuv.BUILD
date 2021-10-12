@@ -249,6 +249,7 @@ cc_library(
     name = "libuv",
     srcs = COMMON_LIBUV_SOURCES + select({
         ":android": UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES + ANDROID_LIBUV_SOURCES,
+        ":darwin": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
         ":darwin_x86_64": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
         ":darwin_arm64": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
         ":darwin_arm64e": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
@@ -257,6 +258,7 @@ cc_library(
     }),
     hdrs = COMMON_LIBUV_HEADERS + select({
         ":android": UNIX_LIBUV_HEADERS + LINUX_LIBUV_HEADERS + ANDROID_LIBUV_HEADERS,
+        ":darwin": UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
         ":darwin_x86_64": UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
         ":darwin_arm64": UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
         ":darwin_arm64e": UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
@@ -265,6 +267,7 @@ cc_library(
     }),
     copts = [
     ] + select({
+        ":darwin": DARWIN_COPTS + GCC_COPTS,
         ":darwin_x86_64": DARWIN_COPTS + GCC_COPTS,
         ":darwin_arm64": DARWIN_COPTS + GCC_COPTS,
         ":darwin_arm64e": DARWIN_COPTS + GCC_COPTS,
@@ -279,6 +282,7 @@ cc_library(
         "src",
     ],
     linkopts = select({
+        ":darwin": [],
         ":darwin_x86_64": [],
         ":darwin_arm64": [],
         ":darwin_arm64e": [],
