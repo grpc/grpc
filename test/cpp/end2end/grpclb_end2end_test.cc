@@ -822,8 +822,8 @@ TEST_F(SingleBalancerTest, SubchannelCaching) {
           << "backend " << i;
     }
   }
-  // TODO(roth): This should ideally check that backend 1 never lost its
-  // connection, but we'd have to reach inside of core to figure that out.
+  // Backend 1 should never have lost its connection from the client.
+  EXPECT_EQ(1UL, backends_[1]->service_.clients().size());
   balancers_[0]->service_.NotifyDoneWithServerlists();
   // The balancer got a single request.
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());

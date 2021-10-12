@@ -1760,6 +1760,7 @@ void GrpcLb::OnSubchannelCacheTimerLocked(grpc_error_handle error) {
     subchannel_cache_timer_pending_ = false;
   }
   Unref(DEBUG_LOCATION, "OnSubchannelCacheTimer");
+  GRPC_ERROR_UNREF(error);
 }
 
 //
