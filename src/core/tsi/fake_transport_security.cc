@@ -416,8 +416,8 @@ static tsi_result fake_zero_copy_grpc_protector_protect(
   /* Protects each frame. */
   while (unprotected_slices->length > 0) {
     size_t frame_length =
-        GPR_MIN(impl->max_frame_size,
-                unprotected_slices->length + TSI_FAKE_FRAME_HEADER_SIZE);
+        std::min(impl->max_frame_size,
+                 unprotected_slices->length + TSI_FAKE_FRAME_HEADER_SIZE);
     grpc_slice slice = GRPC_SLICE_MALLOC(TSI_FAKE_FRAME_HEADER_SIZE);
     store32_little_endian(static_cast<uint32_t>(frame_length),
                           GRPC_SLICE_START_PTR(slice));
@@ -498,6 +498,7 @@ struct fake_handshaker_result {
   unsigned char* unused_bytes;
   size_t unused_bytes_size;
 };
+
 static tsi_result fake_handshaker_result_extract_peer(
     const tsi_handshaker_result* /*self*/, tsi_peer* peer) {
   /* Construct a tsi_peer with 1 property: certificate type, security_level. */
@@ -512,6 +513,13 @@ static tsi_result fake_handshaker_result_extract_peer(
       tsi_security_level_to_string(TSI_SECURITY_NONE), &peer->properties[1]);
   if (result != TSI_OK) tsi_peer_destruct(peer);
   return result;
+}
+
+static tsi_result fake_handshaker_result_get_frame_protector_type(
+    const tsi_handshaker_result* /*self*/,
+    tsi_frame_protector_type* frame_protector_type) {
+  *frame_protector_type = TSI_FRAME_PROTECTOR_NORMAL_OR_ZERO_COPY;
+  return TSI_OK;
 }
 
 static tsi_result fake_handshaker_result_create_zero_copy_grpc_protector(
@@ -549,6 +557,7 @@ static void fake_handshaker_result_destroy(tsi_handshaker_result* self) {
 
 static const tsi_handshaker_result_vtable handshaker_result_vtable = {
     fake_handshaker_result_extract_peer,
+    fake_handshaker_result_get_frame_protector_type,
     fake_handshaker_result_create_zero_copy_grpc_protector,
     fake_handshaker_result_create_frame_protector,
     fake_handshaker_result_get_unused_bytes,

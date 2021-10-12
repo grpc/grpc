@@ -35,7 +35,7 @@ extern grpc_core::TraceFlag grpc_tcp_trace;
 namespace {
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::GrpcClosureToCallback;
+using ::grpc_event_engine::experimental::GrpcClosureToStatusCallback;
 using ::grpc_event_engine::experimental::SliceAllocator;
 using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 using ::grpc_event_engine::experimental::SliceBuffer;
@@ -164,7 +164,7 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
   }
 }
 
-grpc_error* tcp_server_create(
+grpc_error_handle tcp_server_create(
     grpc_closure* shutdown_complete, const grpc_channel_args* args,
     grpc_slice_allocator_factory* slice_allocator_factory,
     grpc_tcp_server** server) {
@@ -175,7 +175,8 @@ grpc_error* tcp_server_create(
   EventEngine* event_engine = grpc_iomgr_event_engine();
   absl::StatusOr<std::unique_ptr<EventEngine::Listener>> listener =
       event_engine->CreateListener(
-          [server](std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
+          [server](std::unique_ptr<EventEngine::Endpoint> ee_endpoint,
+                   const SliceAllocator& /*slice_allocator*/) {
             grpc_core::ExecCtx exec_ctx;
             GPR_ASSERT((*server)->on_accept_internal != nullptr);
             grpc_event_engine_endpoint* iomgr_endpoint =
@@ -191,8 +192,8 @@ grpc_error* tcp_server_create(
             exec_ctx.Flush();
             grpc_pollset_ee_broadcast_event();
           },
-          GrpcClosureToCallback(shutdown_complete, GRPC_ERROR_NONE),
-          endpoint_config, std::move(ee_slice_allocator_factory));
+          GrpcClosureToStatusCallback(shutdown_complete), endpoint_config,
+          std::move(ee_slice_allocator_factory));
   if (!listener.ok()) {
     return absl_status_to_grpc_error(listener.status());
   }
@@ -210,9 +211,9 @@ void tcp_server_start(grpc_tcp_server* server,
   GPR_ASSERT(server->listener->Start().ok());
 }
 
-grpc_error* tcp_server_add_port(grpc_tcp_server* s,
-                                const grpc_resolved_address* addr,
-                                int* out_port) {
+grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
+                                      const grpc_resolved_address* addr,
+                                      int* out_port) {
   EventEngine::ResolvedAddress ra(reinterpret_cast<const sockaddr*>(addr->addr),
                                   addr->len);
   auto port = s->listener->Bind(ra);

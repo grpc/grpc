@@ -222,6 +222,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
+    absl::string_view GetAuthority() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -576,6 +577,10 @@ void XdsClusterImplLb::Helper::RequestReresolution() {
   xds_cluster_impl_policy_->channel_control_helper()->RequestReresolution();
 }
 
+absl::string_view XdsClusterImplLb::Helper::GetAuthority() {
+  return xds_cluster_impl_policy_->channel_control_helper()->GetAuthority();
+}
+
 void XdsClusterImplLb::Helper::AddTraceEvent(TraceSeverity severity,
                                              absl::string_view message) {
   if (xds_cluster_impl_policy_->shutting_down_) return;
@@ -721,8 +726,8 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
       std::vector<grpc_error_handle> child_errors =
           ParseDropCategory(entry, drop_config);
       if (!child_errors.empty()) {
-        grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("errors parsing index ", i).c_str());
+        grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("errors parsing index ", i));
         for (size_t i = 0; i < child_errors.size(); ++i) {
           error = grpc_error_add_child(error, child_errors[i]);
         }

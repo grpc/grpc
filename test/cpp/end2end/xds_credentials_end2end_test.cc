@@ -56,7 +56,7 @@ TEST_P(XdsCredentialsEnd2EndFallbackTest, NoXdsSchemeInTarget) {
   ChannelArguments args;
   auto channel = grpc::CreateCustomChannel(
       server_address_,
-      grpc::experimental::XdsCredentials(
+      grpc::XdsCredentials(
           GetCredentialsProvider()->GetChannelCredentials(GetParam(), &args)),
       args);
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
@@ -79,7 +79,7 @@ class XdsServerCredentialsEnd2EndFallbackTest
     server_address_ = "localhost:" + std::to_string(port);
     builder.AddListeningPort(
         server_address_,
-        grpc::experimental::XdsServerCredentials(
+        grpc::XdsServerCredentials(
             GetCredentialsProvider()->GetServerCredentials(GetParam())));
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();

@@ -110,8 +110,7 @@ static grpc_error_handle CFStreamAnnotateError(grpc_error_handle src_error,
   return grpc_error_set_str(
       grpc_error_set_int(src_error, GRPC_ERROR_INT_GRPC_STATUS,
                          GRPC_STATUS_UNAVAILABLE),
-      GRPC_ERROR_STR_TARGET_ADDRESS,
-      grpc_slice_from_copied_string(ep->peer_string.c_str()));
+      GRPC_ERROR_STR_TARGET_ADDRESS, ep->peer_string);
 }
 
 static void CallReadCb(CFStreamEndpoint* ep, grpc_error_handle error) {
@@ -150,7 +149,7 @@ static void CallWriteCb(CFStreamEndpoint* ep, grpc_error_handle error) {
 static void ReadAction(void* arg, grpc_error_handle error) {
   CFStreamEndpoint* ep = static_cast<CFStreamEndpoint*>(arg);
   GPR_ASSERT(ep->read_cb != nullptr);
-  if (error) {
+  if (error != GRPC_ERROR_NONE) {
     grpc_slice_buffer_reset_and_unref_internal(ep->read_slices);
     CallReadCb(ep, GRPC_ERROR_REF(error));
     EP_UNREF(ep, "read");
@@ -192,7 +191,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
 static void WriteAction(void* arg, grpc_error_handle error) {
   CFStreamEndpoint* ep = static_cast<CFStreamEndpoint*>(arg);
   GPR_ASSERT(ep->write_cb != nullptr);
-  if (error) {
+  if (error != GRPC_ERROR_NONE) {
     grpc_slice_buffer_reset_and_unref_internal(ep->write_slices);
     CallWriteCb(ep, GRPC_ERROR_REF(error));
     EP_UNREF(ep, "write");
@@ -287,13 +286,15 @@ static void CFStreamWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
 void CFStreamShutdown(grpc_endpoint* ep, grpc_error_handle why) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CFStream endpoint:%p shutdown (%p)", ep_impl, why);
+    gpr_log(GPR_DEBUG, "CFStream endpoint:%p shutdown (%s)", ep_impl,
+            grpc_error_std_string(why).c_str());
   }
   CFReadStreamClose(ep_impl->read_stream);
   CFWriteStreamClose(ep_impl->write_stream);
   ep_impl->stream_sync->Shutdown(why);
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CFStream endpoint:%p shutdown DONE (%p)", ep_impl, why);
+    gpr_log(GPR_DEBUG, "CFStream endpoint:%p shutdown DONE (%s)", ep_impl,
+            grpc_error_std_string(why).c_str());
   }
 }
 

@@ -335,9 +335,10 @@ class RetryFilter::CallData {
         call_attempt_->lb_call_committed_ = true;
         auto* calld = call_attempt_->calld_;
         if (calld->retry_committed_) {
-          auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-              calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
-                  .value);
+          auto* service_config_call_data =
+              static_cast<ClientChannelServiceConfigCallData*>(
+                  calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
+                      .value);
           service_config_call_data->call_dispatch_controller()->Commit();
         }
       }
@@ -1159,8 +1160,9 @@ bool RetryFilter::CallData::CallAttempt::ShouldRetry(
     }
   }
   // Check with call dispatch controller.
-  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-      calld_->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+  auto* service_config_call_data =
+      static_cast<ClientChannelServiceConfigCallData*>(
+          calld_->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
   if (!service_config_call_data->call_dispatch_controller()->ShouldRetry()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
       gpr_log(
@@ -1308,18 +1310,6 @@ RetryFilter::CallData::CallAttempt::BatchData::~BatchData() {
             call_attempt_->calld_->chand_, call_attempt_->calld_,
             call_attempt_.get(), this);
   }
-  if (batch_.send_initial_metadata) {
-    grpc_metadata_batch_destroy(&call_attempt_->send_initial_metadata_);
-  }
-  if (batch_.send_trailing_metadata) {
-    grpc_metadata_batch_destroy(&call_attempt_->send_trailing_metadata_);
-  }
-  if (batch_.recv_initial_metadata) {
-    grpc_metadata_batch_destroy(&call_attempt_->recv_initial_metadata_);
-  }
-  if (batch_.recv_trailing_metadata) {
-    grpc_metadata_batch_destroy(&call_attempt_->recv_trailing_metadata_);
-  }
   GRPC_CALL_STACK_UNREF(call_attempt_->calld_->owning_call_, "Retry BatchData");
   call_attempt_.reset(DEBUG_LOCATION, "~BatchData");
 }
@@ -1363,9 +1353,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::
     return;
   }
   // Return metadata.
-  grpc_metadata_batch_move(
-      &call_attempt_->recv_initial_metadata_,
-      pending->batch->payload->recv_initial_metadata.recv_initial_metadata);
+  *pending->batch->payload->recv_initial_metadata.recv_initial_metadata =
+      std::move(call_attempt_->recv_initial_metadata_);
   // Propagate trailing_metadata_available.
   *pending->batch->payload->recv_initial_metadata.trailing_metadata_available =
       call_attempt_->trailing_metadata_available_;
@@ -1565,11 +1554,12 @@ void GetCallStatus(grpc_millis deadline, grpc_metadata_batch* md_batch,
       *is_lb_drop = true;
     }
   } else {
-    GPR_ASSERT(md_batch->idx.named.grpc_status != nullptr);
-    *status =
-        grpc_get_status_code_from_metadata(md_batch->idx.named.grpc_status->md);
-    if (md_batch->idx.named.grpc_retry_pushback_ms != nullptr) {
-      *server_pushback_md = &md_batch->idx.named.grpc_retry_pushback_ms->md;
+    GPR_ASSERT(md_batch->legacy_index()->named.grpc_status != nullptr);
+    *status = grpc_get_status_code_from_metadata(
+        md_batch->legacy_index()->named.grpc_status->md);
+    if (md_batch->legacy_index()->named.grpc_retry_pushback_ms != nullptr) {
+      *server_pushback_md =
+          &md_batch->legacy_index()->named.grpc_retry_pushback_ms->md;
     }
   }
   GRPC_ERROR_UNREF(error);
@@ -1601,9 +1591,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::
       &call_attempt_->collect_stats_,
       pending->batch->payload->recv_trailing_metadata.collect_stats);
   // Return metadata.
-  grpc_metadata_batch_move(
-      &call_attempt_->recv_trailing_metadata_,
-      pending->batch->payload->recv_trailing_metadata.recv_trailing_metadata);
+  *pending->batch->payload->recv_trailing_metadata.recv_trailing_metadata =
+      std::move(call_attempt_->recv_trailing_metadata_);
   // Add closure.
   closures->Add(pending->batch->payload->recv_trailing_metadata
                     .recv_trailing_metadata_ready,
@@ -1921,17 +1910,17 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   // If we've already completed one or more attempts, add the
   // grpc-retry-attempts header.
   call_attempt_->send_initial_metadata_storage_ =
-      static_cast<grpc_linked_mdelem*>(
-          calld->arena_->Alloc(sizeof(grpc_linked_mdelem) *
-                               (calld->send_initial_metadata_.list.count +
-                                (calld->num_attempts_completed_ > 0))));
+      static_cast<grpc_linked_mdelem*>(calld->arena_->Alloc(
+          sizeof(grpc_linked_mdelem) *
+          (calld->send_initial_metadata_.non_deadline_count() +
+           (calld->num_attempts_completed_ > 0))));
   grpc_metadata_batch_copy(&calld->send_initial_metadata_,
                            &call_attempt_->send_initial_metadata_,
                            call_attempt_->send_initial_metadata_storage_);
-  if (GPR_UNLIKELY(call_attempt_->send_initial_metadata_.idx.named
-                       .grpc_previous_rpc_attempts != nullptr)) {
-    grpc_metadata_batch_remove(&call_attempt_->send_initial_metadata_,
-                               GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
+  if (GPR_UNLIKELY(call_attempt_->send_initial_metadata_.legacy_index()
+                       ->named.grpc_previous_rpc_attempts != nullptr)) {
+    call_attempt_->send_initial_metadata_.Remove(
+        GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
   }
   if (GPR_UNLIKELY(calld->num_attempts_completed_ > 0)) {
     grpc_mdelem retry_md = grpc_mdelem_create(
@@ -1940,7 +1929,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::
     grpc_error_handle error = grpc_metadata_batch_add_tail(
         &call_attempt_->send_initial_metadata_,
         &call_attempt_->send_initial_metadata_storage_
-             [calld->send_initial_metadata_.list.count],
+             [calld->send_initial_metadata_.non_deadline_count()],
         retry_md, GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
     if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
       gpr_log(GPR_ERROR, "error adding retry metadata: %s",
@@ -1984,9 +1973,9 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   // the filters in the subchannel stack may modify this batch, and we don't
   // want those modifications to be passed forward to subsequent attempts.
   call_attempt_->send_trailing_metadata_storage_ =
-      static_cast<grpc_linked_mdelem*>(
-          calld->arena_->Alloc(sizeof(grpc_linked_mdelem) *
-                               calld->send_trailing_metadata_.list.count));
+      static_cast<grpc_linked_mdelem*>(calld->arena_->Alloc(
+          sizeof(grpc_linked_mdelem) *
+          calld->send_trailing_metadata_.non_deadline_count()));
   grpc_metadata_batch_copy(&calld->send_trailing_metadata_,
                            &call_attempt_->send_trailing_metadata_,
                            call_attempt_->send_trailing_metadata_storage_);
@@ -2000,7 +1989,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::
     AddRetriableRecvInitialMetadataOp() {
   call_attempt_->started_recv_initial_metadata_ = true;
   batch_.recv_initial_metadata = true;
-  grpc_metadata_batch_init(&call_attempt_->recv_initial_metadata_);
+  call_attempt_->recv_initial_metadata_.Clear();
   batch_.payload->recv_initial_metadata.recv_initial_metadata =
       &call_attempt_->recv_initial_metadata_;
   batch_.payload->recv_initial_metadata.trailing_metadata_available =
@@ -2027,7 +2016,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::
     AddRetriableRecvTrailingMetadataOp() {
   call_attempt_->started_recv_trailing_metadata_ = true;
   batch_.recv_trailing_metadata = true;
-  grpc_metadata_batch_init(&call_attempt_->recv_trailing_metadata_);
+  call_attempt_->recv_trailing_metadata_.Clear();
   batch_.payload->recv_trailing_metadata.recv_trailing_metadata =
       &call_attempt_->recv_trailing_metadata_;
   batch_.payload->recv_trailing_metadata.collect_stats =
@@ -2244,8 +2233,9 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
                 chand_, this);
       }
       PendingBatchClear(pending);
-      auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-          call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+      auto* service_config_call_data =
+          static_cast<ClientChannelServiceConfigCallData*>(
+              call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
       committed_call_ = CreateLoadBalancedCall(
           service_config_call_data->call_dispatch_controller());
       committed_call_->StartTransportStreamOpBatch(batch);
@@ -2304,9 +2294,9 @@ void RetryFilter::CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
     GPR_ASSERT(send_initial_metadata_storage_ == nullptr);
     grpc_metadata_batch* send_initial_metadata =
         batch->payload->send_initial_metadata.send_initial_metadata;
-    send_initial_metadata_storage_ =
-        static_cast<grpc_linked_mdelem*>(arena_->Alloc(
-            sizeof(grpc_linked_mdelem) * send_initial_metadata->list.count));
+    send_initial_metadata_storage_ = static_cast<grpc_linked_mdelem*>(
+        arena_->Alloc(sizeof(grpc_linked_mdelem) *
+                      send_initial_metadata->non_deadline_count()));
     grpc_metadata_batch_copy(send_initial_metadata, &send_initial_metadata_,
                              send_initial_metadata_storage_);
     send_initial_metadata_flags_ =
@@ -2325,9 +2315,9 @@ void RetryFilter::CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
     GPR_ASSERT(send_trailing_metadata_storage_ == nullptr);
     grpc_metadata_batch* send_trailing_metadata =
         batch->payload->send_trailing_metadata.send_trailing_metadata;
-    send_trailing_metadata_storage_ =
-        static_cast<grpc_linked_mdelem*>(arena_->Alloc(
-            sizeof(grpc_linked_mdelem) * send_trailing_metadata->list.count));
+    send_trailing_metadata_storage_ = static_cast<grpc_linked_mdelem*>(
+        arena_->Alloc(sizeof(grpc_linked_mdelem) *
+                      send_trailing_metadata->non_deadline_count()));
     grpc_metadata_batch_copy(send_trailing_metadata, &send_trailing_metadata_,
                              send_trailing_metadata_storage_);
   }
@@ -2338,7 +2328,7 @@ void RetryFilter::CallData::FreeCachedSendInitialMetadata() {
     gpr_log(GPR_INFO, "chand=%p calld=%p: destroying send_initial_metadata",
             chand_, this);
   }
-  grpc_metadata_batch_destroy(&send_initial_metadata_);
+  send_initial_metadata_.Clear();
 }
 
 void RetryFilter::CallData::FreeCachedSendMessage(size_t idx) {
@@ -2355,7 +2345,7 @@ void RetryFilter::CallData::FreeCachedSendTrailingMetadata() {
     gpr_log(GPR_INFO, "chand=%p calld=%p: destroying send_trailing_metadata",
             chand_, this);
   }
-  grpc_metadata_batch_destroy(&send_trailing_metadata_);
+  send_trailing_metadata_.Clear();
 }
 
 void RetryFilter::CallData::FreeAllCachedSendOpData() {
@@ -2404,8 +2394,8 @@ RetryFilter::CallData::PendingBatch* RetryFilter::CallData::PendingBatchesAdd(
   // gRPC clients do not send trailing metadata.
   if (batch->send_initial_metadata) {
     pending_send_initial_metadata_ = true;
-    bytes_buffered_for_retry_ += grpc_metadata_batch_size(
-        batch->payload->send_initial_metadata.send_initial_metadata);
+    bytes_buffered_for_retry_ += batch->payload->send_initial_metadata
+                                     .send_initial_metadata->TransportSize();
   }
   if (batch->send_message) {
     pending_send_message_ = true;
@@ -2541,8 +2531,9 @@ void RetryFilter::CallData::RetryCommit(CallAttempt* call_attempt) {
     // call dispatch controller down into the LB call, and it won't be
     // our problem anymore.
     if (call_attempt->lb_call_committed()) {
-      auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-          call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+      auto* service_config_call_data =
+          static_cast<ClientChannelServiceConfigCallData*>(
+              call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
       service_config_call_data->call_dispatch_controller()->Commit();
     }
     // Free cached send ops.

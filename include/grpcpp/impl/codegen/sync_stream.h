@@ -609,7 +609,11 @@ class ServerReader final : public ServerReaderInterface<R> {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvMessage<R>> ops;
     ops.RecvMessage(msg);
     call_->PerformOps(&ops);
-    return call_->cq()->Pluck(&ops) && ops.got_message;
+    bool ok = call_->cq()->Pluck(&ops) && ops.got_message;
+    if (!ok) {
+      ctx_->MaybeMarkCancelledOnRead();
+    }
+    return ok;
   }
 
  private:
@@ -736,7 +740,11 @@ class ServerReaderWriterBody final {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvMessage<R>> ops;
     ops.RecvMessage(msg);
     call_->PerformOps(&ops);
-    return call_->cq()->Pluck(&ops) && ops.got_message;
+    bool ok = call_->cq()->Pluck(&ops) && ops.got_message;
+    if (!ok) {
+      ctx_->MaybeMarkCancelledOnRead();
+    }
+    return ok;
   }
 
   bool Write(const W& msg, ::grpc::WriteOptions options) {

@@ -596,6 +596,7 @@ grpc_error_handle Chttp2ServerListener::Create(
   // The bulk of this method is inside of a lambda to make cleanup
   // easier without using goto.
   grpc_error_handle error = [&]() {
+    grpc_error_handle error = GRPC_ERROR_NONE;
     // Create Chttp2ServerListener.
     listener = new Chttp2ServerListener(
         server, args, args_modifier,
@@ -753,8 +754,8 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     if (!args_result.ok()) {
       gpr_log(GPR_DEBUG, "Closing connection: %s",
               args_result.status().ToString().c_str());
-      endpoint_cleanup(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          args_result.status().ToString().c_str()));
+      endpoint_cleanup(
+          GRPC_ERROR_CREATE_FROM_CPP_STRING(args_result.status().ToString()));
       return;
     }
     grpc_error_handle error = GRPC_ERROR_NONE;
@@ -861,6 +862,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
   std::vector<grpc_error_handle> error_list;
   // Using lambda to avoid use of goto.
   grpc_error_handle error = [&]() {
+    grpc_error_handle error = GRPC_ERROR_NONE;
     if (absl::StartsWith(addr, kUnixUriPrefix)) {
       error = grpc_resolve_unix_domain_address(
           addr + sizeof(kUnixUriPrefix) - 1, &resolved);

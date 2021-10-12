@@ -180,10 +180,9 @@ Json* JsonReader::CreateAndLinkValue() {
         if (errors_.size() == GRPC_JSON_MAX_ERRORS) {
           truncated_errors_ = true;
         } else {
-          errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          errors_.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
               absl::StrFormat("duplicate key \"%s\" at index %" PRIuPTR, key_,
-                              CurrentIndex())
-                  .c_str()));
+                              CurrentIndex())));
         }
       }
       value = &(*parent->mutable_object())[std::move(key_)];
@@ -201,10 +200,9 @@ bool JsonReader::StartContainer(Json::Type type) {
     if (errors_.size() == GRPC_JSON_MAX_ERRORS) {
       truncated_errors_ = true;
     } else {
-      errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      errors_.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrFormat("exceeded max stack depth (%d) at index %" PRIuPTR,
-                          GRPC_JSON_MAX_DEPTH, CurrentIndex())
-              .c_str()));
+                          GRPC_JSON_MAX_DEPTH, CurrentIndex())));
     }
     return false;
   }
@@ -826,14 +824,11 @@ grpc_error_handle JsonReader::Parse(absl::string_view input, Json* output) {
         "errors and try again to see additional errors"));
   }
   if (status == Status::GRPC_JSON_INTERNAL_ERROR) {
-    reader.errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("internal error in JSON parser at index ",
-                     reader.CurrentIndex())
-            .c_str()));
+    reader.errors_.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "internal error in JSON parser at index ", reader.CurrentIndex())));
   } else if (status == Status::GRPC_JSON_PARSE_ERROR) {
-    reader.errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("JSON parse error at index ", reader.CurrentIndex())
-            .c_str()));
+    reader.errors_.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("JSON parse error at index ", reader.CurrentIndex())));
   }
   if (!reader.errors_.empty()) {
     return GRPC_ERROR_CREATE_FROM_VECTOR("JSON parsing failed",

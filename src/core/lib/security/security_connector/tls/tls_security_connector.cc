@@ -27,6 +27,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -421,27 +422,23 @@ TlsChannelSecurityConnector::ProcessServerAuthorizationCheckResult(
   grpc_error_handle error = GRPC_ERROR_NONE;
   /* Server authorization check is cancelled by caller. */
   if (arg->status == GRPC_STATUS_CANCELLED) {
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("Server authorization check is cancelled by the caller "
                      "with error: ",
-                     arg->error_details->error_details())
-            .c_str());
+                     arg->error_details->error_details()));
   } else if (arg->status == GRPC_STATUS_OK) {
     /* Server authorization check completed successfully but returned check
      * failure. */
     if (!arg->success) {
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat("Server authorization check failed with error: ",
-                       arg->error_details->error_details())
-              .c_str());
+                       arg->error_details->error_details()));
     }
     /* Server authorization check did not complete correctly. */
   } else {
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat(
-            "Server authorization check did not finish correctly with error: ",
-            arg->error_details->error_details())
-            .c_str());
+    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Server authorization check did not finish correctly with error: ",
+        arg->error_details->error_details()));
   }
   return error;
 }
@@ -659,9 +656,8 @@ grpc_error_handle TlsCheckHostName(const char* peer_name,
                                    const tsi_peer* peer) {
   /* Check the peer name if specified. */
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Peer name ", peer_name, " is not in peer certificate")
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Peer name ", peer_name, " is not in peer certificate"));
   }
   return GRPC_ERROR_NONE;
 }

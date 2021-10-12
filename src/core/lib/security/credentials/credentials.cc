@@ -59,7 +59,9 @@ static void* credentials_pointer_arg_copy(void* p) {
   return static_cast<grpc_channel_credentials*>(p)->Ref().release();
 }
 
-static int credentials_pointer_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+static int credentials_pointer_cmp(void* a, void* b) {
+  return grpc_core::QsortCompare(a, b);
+}
 
 static const grpc_arg_pointer_vtable credentials_pointer_vtable = {
     credentials_pointer_arg_copy, credentials_pointer_arg_destroy,
@@ -127,7 +129,7 @@ static void* server_credentials_pointer_arg_copy(void* p) {
 }
 
 static int server_credentials_pointer_cmp(void* a, void* b) {
-  return GPR_ICMP(a, b);
+  return grpc_core::QsortCompare(a, b);
 }
 
 static const grpc_arg_pointer_vtable cred_ptr_vtable = {

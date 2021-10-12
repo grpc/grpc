@@ -83,7 +83,7 @@ namespace Grpc.Core
         {
             for (int i = entries.Count - 1; i >= 0; i--)
             {
-                if (entries[i].Key == key)
+                if (entries[i].KeyEqualsIgnoreCase(key))
                 {
                     return entries[i];
                 }
@@ -119,7 +119,7 @@ namespace Grpc.Core
         {
             for (int i = 0; i < entries.Count; i++)
             {
-                if (entries[i].Key == key)
+                if (entries[i].KeyEqualsIgnoreCase(key))
                 {
                     yield return entries[i];
                 }
@@ -391,6 +391,16 @@ namespace Grpc.Core
             internal byte[] GetSerializedValueUnsafe()
             {
                 return valueBytes ?? EncodingASCII.GetBytes(value);
+            }
+
+            internal bool KeyEqualsIgnoreCase(string key)
+            {
+                // NormalizeKey() uses ToLowerInvariant() to lowercase keys, so we'd like to use the same invariant culture
+                // for comparisons to get valid results. StringComparison.InvariantCultureIgnoreCase isn't available
+                // on all the frameworks we're targeting, but since we know that the Entry's key has already
+                // been checked by IsValidKey and it only contains a subset of ASCII, using StringComparison.OrdinalIgnoreCase
+                // is also fine.
+                return string.Equals(this.key, key, StringComparison.OrdinalIgnoreCase);
             }
 
             /// <summary>

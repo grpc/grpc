@@ -123,6 +123,7 @@ class CdsLb : public LoadBalancingPolicy {
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
+    absl::string_view GetAuthority() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -259,6 +260,10 @@ void CdsLb::Helper::RequestReresolution() {
             parent_.get());
   }
   parent_->channel_control_helper()->RequestReresolution();
+}
+
+absl::string_view CdsLb::Helper::GetAuthority() {
+  return parent_->channel_control_helper()->GetAuthority();
 }
 
 void CdsLb::Helper::AddTraceEvent(TraceSeverity severity,
@@ -572,11 +577,11 @@ grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
   }
   // Configure root cert.
   absl::string_view root_provider_instance_name =
-      cluster_data.common_tls_context.combined_validation_context
-          .validation_context_certificate_provider_instance.instance_name;
+      cluster_data.common_tls_context.certificate_validation_context
+          .ca_certificate_provider_instance.instance_name;
   absl::string_view root_provider_cert_name =
-      cluster_data.common_tls_context.combined_validation_context
-          .validation_context_certificate_provider_instance.certificate_name;
+      cluster_data.common_tls_context.certificate_validation_context
+          .ca_certificate_provider_instance.certificate_name;
   RefCountedPtr<XdsCertificateProvider> new_root_provider;
   if (!root_provider_instance_name.empty()) {
     new_root_provider =
@@ -584,10 +589,9 @@ grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
             .CreateOrGetCertificateProvider(root_provider_instance_name);
     if (new_root_provider == nullptr) {
       return grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          GRPC_ERROR_CREATE_FROM_CPP_STRING(
               absl::StrCat("Certificate provider instance name: \"",
-                           root_provider_instance_name, "\" not recognized.")
-                  .c_str()),
+                           root_provider_instance_name, "\" not recognized.")),
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     }
   }
@@ -612,11 +616,11 @@ grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
           : root_certificate_provider_->distributor());
   // Configure identity cert.
   absl::string_view identity_provider_instance_name =
-      cluster_data.common_tls_context
-          .tls_certificate_certificate_provider_instance.instance_name;
+      cluster_data.common_tls_context.tls_certificate_provider_instance
+          .instance_name;
   absl::string_view identity_provider_cert_name =
-      cluster_data.common_tls_context
-          .tls_certificate_certificate_provider_instance.certificate_name;
+      cluster_data.common_tls_context.tls_certificate_provider_instance
+          .certificate_name;
   RefCountedPtr<XdsCertificateProvider> new_identity_provider;
   if (!identity_provider_instance_name.empty()) {
     new_identity_provider =
@@ -624,11 +628,9 @@ grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
             .CreateOrGetCertificateProvider(identity_provider_instance_name);
     if (new_identity_provider == nullptr) {
       return grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("Certificate provider instance name: \"",
-                           identity_provider_instance_name,
-                           "\" not recognized.")
-                  .c_str()),
+          GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+              "Certificate provider instance name: \"",
+              identity_provider_instance_name, "\" not recognized.")),
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     }
   }
@@ -653,8 +655,8 @@ grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
           : identity_certificate_provider_->distributor());
   // Configure SAN matchers.
   const std::vector<StringMatcher>& match_subject_alt_names =
-      cluster_data.common_tls_context.combined_validation_context
-          .default_validation_context.match_subject_alt_names;
+      cluster_data.common_tls_context.certificate_validation_context
+          .match_subject_alt_names;
   xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(
       cluster_name, match_subject_alt_names);
   return GRPC_ERROR_NONE;

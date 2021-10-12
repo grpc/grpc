@@ -35,6 +35,7 @@ public class SyncServiceConnection implements ServiceConnection {
   @Override
   public void onServiceConnected(ComponentName className, IBinder service) {
     Log.e(logTag, "Service has connected: ");
+    // TODO(mingcl): Check if service is null here
     synchronized (this) {
       mService = service;
     }

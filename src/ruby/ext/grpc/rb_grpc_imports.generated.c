@@ -73,6 +73,7 @@ grpc_lame_client_channel_create_type grpc_lame_client_channel_create_import;
 grpc_channel_destroy_type grpc_channel_destroy_import;
 grpc_call_cancel_type grpc_call_cancel_import;
 grpc_call_cancel_with_status_type grpc_call_cancel_with_status_import;
+grpc_call_failed_before_recv_message_type grpc_call_failed_before_recv_message_import;
 grpc_call_ref_type grpc_call_ref_import;
 grpc_call_unref_type grpc_call_unref_import;
 grpc_server_request_call_type grpc_server_request_call_import;
@@ -184,6 +185,7 @@ grpc_tls_server_authorization_check_config_release_type grpc_tls_server_authoriz
 grpc_xds_credentials_create_type grpc_xds_credentials_create_import;
 grpc_xds_server_credentials_create_type grpc_xds_server_credentials_create_import;
 grpc_authorization_policy_provider_static_data_create_type grpc_authorization_policy_provider_static_data_create_import;
+grpc_authorization_policy_provider_file_watcher_create_type grpc_authorization_policy_provider_file_watcher_create_import;
 grpc_authorization_policy_provider_release_type grpc_authorization_policy_provider_release_import;
 grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
 grpc_raw_compressed_byte_buffer_create_type grpc_raw_compressed_byte_buffer_create_import;
@@ -361,6 +363,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_channel_destroy_import = (grpc_channel_destroy_type) GetProcAddress(library, "grpc_channel_destroy");
   grpc_call_cancel_import = (grpc_call_cancel_type) GetProcAddress(library, "grpc_call_cancel");
   grpc_call_cancel_with_status_import = (grpc_call_cancel_with_status_type) GetProcAddress(library, "grpc_call_cancel_with_status");
+  grpc_call_failed_before_recv_message_import = (grpc_call_failed_before_recv_message_type) GetProcAddress(library, "grpc_call_failed_before_recv_message");
   grpc_call_ref_import = (grpc_call_ref_type) GetProcAddress(library, "grpc_call_ref");
   grpc_call_unref_import = (grpc_call_unref_type) GetProcAddress(library, "grpc_call_unref");
   grpc_server_request_call_import = (grpc_server_request_call_type) GetProcAddress(library, "grpc_server_request_call");
@@ -472,6 +475,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_xds_credentials_create_import = (grpc_xds_credentials_create_type) GetProcAddress(library, "grpc_xds_credentials_create");
   grpc_xds_server_credentials_create_import = (grpc_xds_server_credentials_create_type) GetProcAddress(library, "grpc_xds_server_credentials_create");
   grpc_authorization_policy_provider_static_data_create_import = (grpc_authorization_policy_provider_static_data_create_type) GetProcAddress(library, "grpc_authorization_policy_provider_static_data_create");
+  grpc_authorization_policy_provider_file_watcher_create_import = (grpc_authorization_policy_provider_file_watcher_create_type) GetProcAddress(library, "grpc_authorization_policy_provider_file_watcher_create");
   grpc_authorization_policy_provider_release_import = (grpc_authorization_policy_provider_release_type) GetProcAddress(library, "grpc_authorization_policy_provider_release");
   grpc_raw_byte_buffer_create_import = (grpc_raw_byte_buffer_create_type) GetProcAddress(library, "grpc_raw_byte_buffer_create");
   grpc_raw_compressed_byte_buffer_create_import = (grpc_raw_compressed_byte_buffer_create_type) GetProcAddress(library, "grpc_raw_compressed_byte_buffer_create");

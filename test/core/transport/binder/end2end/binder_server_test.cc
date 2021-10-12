@@ -26,9 +26,9 @@
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
+#include "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h"
 #include "src/core/ext/transport/binder/server/binder_server.h"
 #include "src/core/ext/transport/binder/server/binder_server_credentials.h"
-#include "test/core/transport/binder/end2end/echo_service.h"
 #include "test/core/transport/binder/end2end/fake_binder.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -47,7 +47,9 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
           return absl::make_unique<
               grpc_binder::end2end_testing::FakeTransactionReceiver>(
               nullptr, std::move(transact_cb));
-        });
+        },
+        std::make_shared<
+            grpc::experimental::binder::UntrustedSecurityPolicy>());
   }
 
   void SetAuthMetadataProcessor(
@@ -72,8 +74,11 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
 
   return grpc::CreateChannelInternal(
       "",
-      grpc::internal::CreateChannelFromBinderImpl(std::move(endpoint_binder),
-                                                  nullptr),
+      grpc::internal::CreateChannelFromBinderImpl(
+          std::move(endpoint_binder),
+          std::make_shared<
+              grpc::experimental::binder::UntrustedSecurityPolicy>(),
+          nullptr),
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>());
 }
@@ -96,22 +101,26 @@ class BinderServerTest : public ::testing::Test {
   static void TearDownTestSuite() { grpc_shutdown(); }
 };
 
-#ifndef GPR_ANDROID
-TEST(BinderServerCredentialsTest, FailedInNonAndroidEnvironments) {
+#ifndef GPR_SUPPORT_BINDER_TRANSPORT
+TEST(BinderServerCredentialsTest,
+     FailedInEnvironmentsNotSupportingBinderTransport) {
   grpc::ServerBuilder server_builder;
   grpc::testing::TestServiceImpl service;
   server_builder.RegisterService(&service);
   server_builder.AddListeningPort(
-      "binder://fail", grpc::experimental::BinderServerCredentials());
+      "binder:fail",
+      grpc::experimental::BinderServerCredentials(
+          std::make_shared<
+              grpc::experimental::binder::UntrustedSecurityPolicy>()));
   EXPECT_EQ(server_builder.BuildAndStart(), nullptr);
 }
-#endif  // !GPR_ANDROID
+#endif  // !GPR_SUPPORT_BINDER_TRANSPORT
 
 TEST_F(BinderServerTest, BuildAndStart) {
   grpc::ServerBuilder server_builder;
-  grpc_binder::end2end_testing::EchoServer service;
+  grpc::testing::TestServiceImpl service;
   server_builder.RegisterService(&service);
-  server_builder.AddListeningPort("binder://example.service",
+  server_builder.AddListeningPort("binder:example.service",
                                   grpc::testing::BinderServerCredentials());
   std::unique_ptr<grpc::Server> server = server_builder.BuildAndStart();
   EXPECT_NE(grpc::experimental::binder::GetEndpointBinder("example.service"),
@@ -123,7 +132,7 @@ TEST_F(BinderServerTest, BuildAndStart) {
 
 TEST_F(BinderServerTest, BuildAndStartFailed) {
   grpc::ServerBuilder server_builder;
-  grpc_binder::end2end_testing::EchoServer service;
+  grpc::testing::TestServiceImpl service;
   server_builder.RegisterService(&service);
   // Error: binder address should begin with binder:
   server_builder.AddListeningPort("localhost:12345",
@@ -134,9 +143,9 @@ TEST_F(BinderServerTest, BuildAndStartFailed) {
 
 TEST_F(BinderServerTest, CreateChannelWithEndpointBinder) {
   grpc::ServerBuilder server_builder;
-  grpc_binder::end2end_testing::EchoServer service;
+  grpc::testing::TestServiceImpl service;
   server_builder.RegisterService(&service);
-  server_builder.AddListeningPort("binder://example.service",
+  server_builder.AddListeningPort("binder:example.service",
                                   grpc::testing::BinderServerCredentials());
   std::unique_ptr<grpc::Server> server = server_builder.BuildAndStart();
   void* raw_endpoint_binder =
@@ -147,25 +156,24 @@ TEST_F(BinderServerTest, CreateChannelWithEndpointBinder) {
               raw_endpoint_binder));
   std::shared_ptr<grpc::Channel> channel =
       grpc::testing::CreateBinderChannel(std::move(endpoint_binder));
-  std::unique_ptr<grpc_binder::end2end_testing::EchoService::Stub> stub =
-      grpc_binder::end2end_testing::EchoService::NewStub(channel);
-  grpc_binder::end2end_testing::EchoRequest request;
-  grpc_binder::end2end_testing::EchoResponse response;
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =
+      grpc::testing::EchoTestService::NewStub(channel);
+  grpc::testing::EchoRequest request;
+  grpc::testing::EchoResponse response;
   grpc::ClientContext context;
-  request.set_text("BinderServerBuilder");
-  grpc::Status status = stub->EchoUnaryCall(&context, request, &response);
+  request.set_message("BinderServerBuilder");
+  grpc::Status status = stub->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok());
-  EXPECT_EQ(response.text(), "BinderServerBuilder");
+  EXPECT_EQ(response.message(), "BinderServerBuilder");
   server->Shutdown();
 }
 
 TEST_F(BinderServerTest, CreateChannelWithEndpointBinderMultipleConnections) {
   grpc::ServerBuilder server_builder;
-  grpc_binder::end2end_testing::EchoServer service;
+  grpc::testing::TestServiceImpl service;
   server_builder.RegisterService(&service);
-  server_builder.AddListeningPort(
-      "binder://example.service.multiple.connections",
-      grpc::testing::BinderServerCredentials());
+  server_builder.AddListeningPort("binder:example.service.multiple.connections",
+                                  grpc::testing::BinderServerCredentials());
   std::unique_ptr<grpc::Server> server = server_builder.BuildAndStart();
   void* raw_endpoint_binder = grpc::experimental::binder::GetEndpointBinder(
       "example.service.multiple.connections");
@@ -178,15 +186,16 @@ TEST_F(BinderServerTest, CreateChannelWithEndpointBinderMultipleConnections) {
                 raw_endpoint_binder));
     std::shared_ptr<grpc::Channel> channel =
         grpc::testing::CreateBinderChannel(std::move(endpoint_binder));
-    std::unique_ptr<grpc_binder::end2end_testing::EchoService::Stub> stub =
-        grpc_binder::end2end_testing::EchoService::NewStub(channel);
-    grpc_binder::end2end_testing::EchoRequest request;
-    grpc_binder::end2end_testing::EchoResponse response;
+    std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =
+        grpc::testing::EchoTestService::NewStub(channel);
+    grpc::testing::EchoRequest request;
+    grpc::testing::EchoResponse response;
     grpc::ClientContext context;
-    request.set_text(absl::StrFormat("BinderServerBuilder-%d", id));
-    grpc::Status status = stub->EchoUnaryCall(&context, request, &response);
+    request.set_message(absl::StrFormat("BinderServerBuilder-%d", id));
+    grpc::Status status = stub->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok());
-    EXPECT_EQ(response.text(), absl::StrFormat("BinderServerBuilder-%d", id));
+    EXPECT_EQ(response.message(),
+              absl::StrFormat("BinderServerBuilder-%d", id));
   };
 
   std::vector<std::thread> threads(kNumThreads);
