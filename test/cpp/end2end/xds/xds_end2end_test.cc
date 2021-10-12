@@ -14,6 +14,14 @@
 // limitations under the License.
 //
 
+// TODO(roth): Split this file up into a common test framework and a set
+// of test files that use that framework.  Need to figure out the best
+// way to split up the tests.  One option would be to split it up by xDS
+// resource type; another approach would be to have all of the "core"
+// xDS functionality in one file and then move specific features to
+// their own files (e.g., mTLS security, fault injection, circuit
+// breaking, etc).
+
 #include <deque>
 #include <memory>
 #include <mutex>
