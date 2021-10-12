@@ -18,7 +18,6 @@
 
 #include <cmath>
 #include <functional>
-#include <thread>
 #include <unordered_map>
 
 #include <uv.h>
@@ -26,6 +25,7 @@
 #include "absl/strings/str_format.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/thd_id.h>
 
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -239,7 +239,7 @@ void LibuvEventEngine::RunThread() {
 #endif
 
   // Setting up the loop.
-  worker_thread_id_ = std::this_thread::get_id();
+  worker_thread_id_ = gpr_thd_currentid();
   int r = uv_loop_init(&loop_);
   loop_.data = this;
   r |= uv_async_init(&loop_, &kicker_, [](uv_async_t* async) {

@@ -18,12 +18,12 @@
 #include <grpc/support/port_platform.h>
 
 #include <functional>
-#include <thread>
 #include <unordered_map>
 
 #include <uv.h>
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/thd_id.h>
 
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -58,7 +58,7 @@ class LibuvEventEngine final
   void Kicker();
   uv_loop_t* GetLoop() { return &loop_; }
   bool IsWorkerThread() override {
-    return worker_thread_id_ == std::this_thread::get_id();
+    return worker_thread_id_ == gpr_thd_currentid();
   }
   void EraseTask(intptr_t taskKey);
 
@@ -105,7 +105,7 @@ class LibuvEventEngine final
 
   // Hopefully temporary until we can solve shutdown from the main grpc code.
   // Used by IsWorkerThread.
-  std::thread::id worker_thread_id_;
+  gpr_thd_id worker_thread_id_;
 
   friend class LibuvTask;
 };
