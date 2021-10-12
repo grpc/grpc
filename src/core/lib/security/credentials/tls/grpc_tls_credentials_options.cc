@@ -90,3 +90,9 @@ void grpc_tls_credentials_options_set_certificate_verifier(
   GPR_ASSERT(verifier != nullptr);
   options->set_certificate_verifier(verifier->Ref());
 }
+
+void grpc_tls_credentials_options_set_check_call_host(
+    grpc_tls_credentials_options* options, int check_call_host) {
+  GPR_ASSERT(options != nullptr);
+  options->set_check_call_host(check_call_host);
+}

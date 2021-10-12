@@ -365,6 +365,7 @@ TEST(CredentialsTest, TlsChannelCredentialsWithSyncExternalVerifier) {
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_verify_server_certs(true);
   options.set_certificate_verifier(verifier);
+  options.set_check_call_host(false);
   auto channel_credentials = grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
@@ -375,6 +376,7 @@ TEST(CredentialsTest, TlsChannelCredentialsWithAsyncExternalVerifier) {
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_verify_server_certs(true);
   options.set_certificate_verifier(verifier);
+  options.set_check_call_host(false);
   auto channel_credentials = grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }

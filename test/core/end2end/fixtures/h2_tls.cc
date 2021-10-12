@@ -71,6 +71,7 @@ struct fullstack_secure_fixture_data {
   grpc_tls_certificate_provider* server_provider = nullptr;
   grpc_tls_certificate_verifier* client_verifier = nullptr;
   grpc_tls_certificate_verifier* server_verifier = nullptr;
+  bool check_call_host = true;
 };
 
 static void SetTlsVersion(fullstack_secure_fixture_data* ffd,
@@ -143,6 +144,7 @@ static void SetCertificateVerifier(
           new grpc_core::testing::SyncExternalVerifier(true);
       ffd->server_verifier = grpc_tls_certificate_verifier_external_create(
           server_sync_verifier->base());
+      ffd->check_call_host = false;
       break;
     }
     case SecurityPrimitives::VerifierType::EXTERNAL_ASYNC_VERIFIER: {
@@ -154,6 +156,7 @@ static void SetCertificateVerifier(
           new grpc_core::testing::AsyncExternalVerifier(true);
       ffd->server_verifier = grpc_tls_certificate_verifier_external_create(
           server_async_verifier->base());
+      ffd->check_call_host = false;
       break;
     }
     case SecurityPrimitives::VerifierType::HOSTNAME_VERIFIER: {
@@ -299,6 +302,8 @@ static grpc_channel_credentials* create_tls_channel_credentials(
   // Set credential verifier.
   grpc_tls_credentials_options_set_certificate_verifier(options,
                                                         ffd->client_verifier);
+  grpc_tls_credentials_options_set_check_call_host(options,
+                                                   ffd->check_call_host);
   /* Create TLS channel credentials. */
   grpc_channel_credentials* creds = grpc_tls_credentials_create(options);
   return creds;
