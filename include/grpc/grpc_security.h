@@ -1002,14 +1002,14 @@ grpc_server_credentials* grpc_tls_server_credentials_create(
  *
  * This method creates an insecure channel credentials object.
  */
-grpc_channel_credentials* grpc_insecure_credentials_create();
+GRPCAPI grpc_channel_credentials* grpc_insecure_credentials_create();
 
 /**
  * EXPERIMENTAL API - Subject to change
  *
  * This method creates an insecure server credentials object.
  */
-grpc_server_credentials* grpc_insecure_server_credentials_create();
+GRPCAPI grpc_server_credentials* grpc_insecure_server_credentials_create();
 
 /**
  * EXPERIMENTAL API - Subject to change
