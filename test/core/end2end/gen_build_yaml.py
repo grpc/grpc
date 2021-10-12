@@ -43,8 +43,9 @@ exec(
 def main():
     json = {
         # needed by end2end_tests.cc.template and end2end_nosec_tests.cc.template
-        'core_end2end_tests':
-            dict((t, END2END_TESTS[t]['secure']) for t in END2END_TESTS.keys())
+        'core_end2end_tests': END2END_TESTS,
+        'core_end2end_fixtures': END2END_FIXTURES,
+        'core_end2end_nosec_fixtures': END2END_NOSEC_FIXTURES,
     }
     print(yaml.dump(json))
 

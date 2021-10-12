@@ -19,6 +19,11 @@
 #ifndef GRPC_TEST_CORE_END2END_END2END_TESTS_H
 #define GRPC_TEST_CORE_END2END_END2END_TESTS_H
 
+#include <string>
+#include <vector>
+
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 
 typedef struct grpc_end2end_test_fixture grpc_end2end_test_fixture;
@@ -72,7 +77,49 @@ struct grpc_end2end_test_config {
   void (*tear_down_data)(grpc_end2end_test_fixture* f);
 };
 
+struct grpc_end2end_test_case_options {
+  bool needs_fullstack;
+  bool needs_dns;
+  bool needs_names;
+  bool proxyable;
+  bool secure;
+  bool traceable;
+  bool exclude_inproc;
+  bool needs_http2;
+  bool needs_proxy_auth;
+  bool needs_write_buffering;
+  bool needs_client_channel;
+};
+
+struct grpc_end2end_test_case_config {
+  const char* name;
+  void (*pre_init_func)();
+  void (*test_func)(grpc_end2end_test_config config);
+  grpc_end2end_test_case_options options;
+};
+
+struct grpc_end2end_test_fixture_options {
+  bool fullstack;
+  bool includes_proxy;
+  bool dns_resolver;
+  bool name_resolution;
+  bool secure;
+  bool tracing;
+  bool is_inproc;
+  bool is_http2;
+  bool supports_proxy_auth;
+  bool supports_write_buffering;
+  bool client_channel;
+};
+
+struct grpc_end2end_test_fixture_config {
+  const char* name;
+  grpc_end2end_test_fixture_options options;
+};
+
 void grpc_end2end_tests_pre_init(void);
+void grpc_end2end_tests_run_single(grpc_end2end_test_config config,
+                                   const char* test_name);
 void grpc_end2end_tests(int argc, char** argv, grpc_end2end_test_config config);
 
 const char* get_host_override_string(const char* str,
@@ -84,5 +131,50 @@ const grpc_slice* get_host_override_slice(const char* str,
 
 void validate_host_override_string(const char* pattern, grpc_slice str,
                                    grpc_end2end_test_config config);
+
+namespace grpc {
+namespace testing {
+
+class CoreEnd2EndTestScenario {
+ public:
+  CoreEnd2EndTestScenario(grpc_end2end_test_config config,
+                          int config_index,
+                          int config_count,
+                          const std::string& test_name)
+      : config(config), config_index(config_index), config_count(config_count), test_name(test_name) {}
+  grpc_end2end_test_config config;
+  int config_index;
+  int config_count;
+  const std::string test_name;
+
+  void Run() const { grpc_end2end_tests_run_single(config, test_name.c_str()); }
+
+  static std::string GenScenarioName(
+      const ::testing::TestParamInfo<CoreEnd2EndTestScenario>& info) {
+    std::string result = "";
+    // result + = info.param.config.name;
+    // result += '/';
+    // TODO: disambiguate test names if multiple configs are used....
+    result += info.param.test_name;
+    if (info.param.config_count != 1) {
+      result += "_" + std::to_string(info.param.config_index);
+    }
+    return result;
+  }
+
+  static std::vector<CoreEnd2EndTestScenario> CreateTestScenarios(
+      const char* fixture_name, grpc_end2end_test_config* configs,
+      int num_configs);
+};
+
+class CoreEnd2EndTest
+    : public ::testing::TestWithParam<CoreEnd2EndTestScenario> {
+ protected:
+  static void SetUpTestCase() { grpc_init(); }
+  static void TearDownTestCase() { grpc_shutdown(); }
+};
+
+}  // namespace testing
+}  // namespace grpc
 
 #endif /* GRPC_TEST_CORE_END2END_END2END_TESTS_H */

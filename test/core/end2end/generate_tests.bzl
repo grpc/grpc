@@ -15,9 +15,7 @@
 
 """Generates the appropriate build.json data for all the end2end tests."""
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library")
-
-POLLERS = ["epollex", "epoll1", "poll"]
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test")
 
 def _fixture_options(
         fullstack = True,
@@ -53,8 +51,8 @@ def _fixture_options(
 
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
-    "h2_compress": _fixture_options(),
     "h2_census": _fixture_options(),
+    "h2_compress": _fixture_options(),
     # TODO(juanlishen): This is disabled for now, but should be considered to re-enable once we have
     # decided how the load reporting service should be enabled.
     #'h2_load_reporting': _fixture_options(),
@@ -117,8 +115,8 @@ END2END_FIXTURES = {
 
 # maps fixture name to whether it requires the security library
 END2END_NOSEC_FIXTURES = {
-    "h2_compress": _fixture_options(secure = False),
     "h2_census": _fixture_options(secure = False),
+    "h2_compress": _fixture_options(secure = False),
     # TODO(juanlishen): This is disabled for now, but should be considered to re-enable once we have
     # decided how the load reporting service should be enabled.
     #'h2_load_reporting': _fixture_options(),
@@ -358,38 +356,38 @@ END2END_TESTS = {
     "write_buffering_at_end": _test_options(needs_write_buffering = True),
 }
 
-def _compatible(fopt, topt):
-    if topt.needs_fullstack:
-        if not fopt.fullstack:
-            return False
-    if topt.needs_dns:
-        if not fopt.dns_resolver:
-            return False
-    if topt.needs_names:
-        if not fopt.name_resolution:
-            return False
-    if not topt.proxyable:
-        if fopt.includes_proxy:
-            return False
-    if not topt.traceable:
-        if fopt.tracing:
-            return False
-    if topt.exclude_inproc:
-        if fopt.is_inproc:
-            return False
-    if topt.needs_http2:
-        if not fopt.is_http2:
-            return False
-    if topt.needs_proxy_auth:
-        if not fopt.supports_proxy_auth:
-            return False
-    if topt.needs_write_buffering:
-        if not fopt.supports_write_buffering:
-            return False
-    if topt.needs_client_channel:
-        if not fopt.client_channel:
-            return False
-    return True
+# def _compatible(fopt, topt):
+#     if topt.needs_fullstack:
+#         if not fopt.fullstack:
+#             return False
+#     if topt.needs_dns:
+#         if not fopt.dns_resolver:
+#             return False
+#     if topt.needs_names:
+#         if not fopt.name_resolution:
+#             return False
+#     if not topt.proxyable:
+#         if fopt.includes_proxy:
+#             return False
+#     if not topt.traceable:
+#         if fopt.tracing:
+#             return False
+#     if topt.exclude_inproc:
+#         if fopt.is_inproc:
+#             return False
+#     if topt.needs_http2:
+#         if not fopt.is_http2:
+#             return False
+#     if topt.needs_proxy_auth:
+#         if not fopt.supports_proxy_auth:
+#             return False
+#     if topt.needs_write_buffering:
+#         if not fopt.supports_write_buffering:
+#             return False
+#     if topt.needs_client_channel:
+#         if not fopt.client_channel:
+#             return False
+#     return True
 
 def _platform_support_tags(fopt):
     result = []
@@ -426,11 +424,11 @@ def grpc_end2end_tests():
     )
 
     for f, fopt in END2END_FIXTURES.items():
-        grpc_cc_binary(
+        grpc_cc_test(
             name = "%s_test" % f,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
-            testonly = 1,
+            #testonly = 1,
             data = [
                 "//src/core/tsi/test_creds:ca.pem",
                 "//src/core/tsi/test_creds:server1.key",
@@ -445,39 +443,39 @@ def grpc_end2end_tests():
             tags = _platform_support_tags(fopt),
         )
 
-        for t, topt in END2END_TESTS.items():
-            #print(_compatible(fopt, topt), f, t, fopt, topt)
-            if not _compatible(fopt, topt):
-                continue
+        # for t, topt in END2END_TESTS.items():
+        #     #print(_compatible(fopt, topt), f, t, fopt, topt)
+        #     if not _compatible(fopt, topt):
+        #         continue
 
-            test_short_name = str(t) if not topt.short_name else topt.short_name
-            native.sh_test(
-                name = "%s_test@%s" % (f, test_short_name),
-                data = [":%s_test" % f],
-                srcs = ["end2end_test.sh"],
-                args = [
-                    "$(location %s_test)" % f,
-                    t,
-                ],
-                tags = ["no_linux"] + _platform_support_tags(fopt),
-                flaky = t in fopt.flaky_tests,
-            )
+        #     test_short_name = str(t) if not topt.short_name else topt.short_name
+        #     native.sh_test(
+        #         name = "%s_test@%s" % (f, test_short_name),
+        #         data = [":%s_test" % f],
+        #         srcs = ["end2end_test.sh"],
+        #         args = [
+        #             "$(location %s_test)" % f,
+        #             t,
+        #         ],
+        #         tags = ["no_linux"] + _platform_support_tags(fopt),
+        #         flaky = t in fopt.flaky_tests,
+        #     )
 
-            for poller in POLLERS:
-                if poller in topt.exclude_pollers:
-                    continue
-                native.sh_test(
-                    name = "%s_test@%s@poller=%s" % (f, test_short_name, poller),
-                    data = [":%s_test" % f],
-                    srcs = ["end2end_test.sh"],
-                    args = [
-                        "$(location %s_test)" % f,
-                        t,
-                        poller,
-                    ],
-                    tags = ["no_mac", "no_windows"],
-                    flaky = t in fopt.flaky_tests,
-                )
+        # for poller in POLLERS:
+        #     if poller in topt.exclude_pollers:
+        #         continue
+        #     native.sh_test(
+        #         name = "%s_test@poller=%s" % (f, test_short_name, poller),
+        #         data = [":%s_test" % f],
+        #         srcs = ["end2end_test.sh"],
+        #         args = [
+        #             "$(location %s_test)" % f,
+        #             t,
+        #             poller,
+        #         ],
+        #         tags = ["no_mac", "no_windows"],
+        #         flaky = t in fopt.flaky_tests,
+        #     )
 
 def grpc_end2end_nosec_tests():
     grpc_cc_library(
@@ -501,16 +499,19 @@ def grpc_end2end_nosec_tests():
             ":local_util",
             "//test/core/util:test_lb_policies",
         ],
+        external_deps = [
+                "gtest",
+            ],
     )
 
     for f, fopt in END2END_NOSEC_FIXTURES.items():
         if fopt.secure:
             continue
-        grpc_cc_binary(
+        grpc_cc_test(
             name = "%s_nosec_test" % f,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
-            testonly = 1,
+            #testonly = 1,
             data = [
                 "//src/core/tsi/test_creds:ca.pem",
                 "//src/core/tsi/test_creds:server1.key",
@@ -524,38 +525,39 @@ def grpc_end2end_nosec_tests():
             ],
             tags = _platform_support_tags(fopt),
         )
-        for t, topt in END2END_TESTS.items():
-            #print(_compatible(fopt, topt), f, t, fopt, topt)
-            if not _compatible(fopt, topt):
-                continue
-            if topt.secure:
-                continue
+        
+        # for t, topt in END2END_TESTS.items():
+        #     #print(_compatible(fopt, topt), f, t, fopt, topt)
+        #     if not _compatible(fopt, topt):
+        #         continue
+        #     if topt.secure:
+        #         continue
 
-            test_short_name = str(t) if not topt.short_name else topt.short_name
-            native.sh_test(
-                name = "%s_nosec_test@%s" % (f, test_short_name),
-                data = [":%s_nosec_test" % f],
-                srcs = ["end2end_test.sh"],
-                args = [
-                    "$(location %s_nosec_test)" % f,
-                    t,
-                ],
-                tags = ["no_linux"] + _platform_support_tags(fopt),
-                flaky = t in fopt.flaky_tests,
-            )
+        #     test_short_name = str(t) if not topt.short_name else topt.short_name
+        #     native.sh_test(
+        #         name = "%s_nosec_test@%s" % (f, test_short_name),
+        #         data = [":%s_nosec_test" % f],
+        #         srcs = ["end2end_test.sh"],
+        #         args = [
+        #             "$(location %s_nosec_test)" % f,
+        #             t,
+        #         ],
+        #         tags = ["no_linux"] + _platform_support_tags(fopt),
+        #         flaky = t in fopt.flaky_tests,
+        #     )
 
-            for poller in POLLERS:
-                if poller in topt.exclude_pollers:
-                    continue
-                native.sh_test(
-                    name = "%s_nosec_test@%s@poller=%s" % (f, test_short_name, poller),
-                    data = [":%s_nosec_test" % f],
-                    srcs = ["end2end_test.sh"],
-                    args = [
-                        "$(location %s_nosec_test)" % f,
-                        t,
-                        poller,
-                    ],
-                    tags = ["no_mac", "no_windows"],
-                    flaky = t in fopt.flaky_tests,
-                )
+        #     for poller in POLLERS:
+        #         if poller in topt.exclude_pollers:
+        #             continue
+        #         native.sh_test(
+        #             name = "%s_nosec_test@%s@poller=%s" % (f, test_short_name, poller),
+        #             data = [":%s_nosec_test" % f],
+        #             srcs = ["end2end_test.sh"],
+        #             args = [
+        #                 "$(location %s_nosec_test)" % f,
+        #                 t,
+        #                 poller,
+        #             ],
+        #             tags = ["no_mac", "no_windows"],
+        #             flaky = t in fopt.flaky_tests,
+        #         )

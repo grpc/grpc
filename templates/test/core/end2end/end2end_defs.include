@@ -1,4 +1,4 @@
-<%def name="end2end_selector(tests)">
+<%def name="generate_core_end2end_tests_cc(tests, fixtures, is_secure)">
 /*
  *
  * Copyright 2015 gRPC authors.
@@ -17,7 +17,8 @@
  *
  */
 
-<% tests = sorted(tests) %>\
+<% test_names = sorted([k for k in tests.keys() if is_secure or not tests[k]['secure']]) %>\
+<% fixture_names = sorted(fixtures.keys()) %>\
 /* This file is auto-generated */
 
 #include "test/core/end2end/end2end_tests.h"
@@ -30,17 +31,55 @@
 
 static bool g_pre_init_called = false;
 
-% for test in tests:
-extern void ${test}(grpc_end2end_test_config config);
-extern void ${test}_pre_init(void);
+% for test_name in test_names:
+extern void ${test_name}(grpc_end2end_test_config config);
+extern void ${test_name}_pre_init(void);
 % endfor
+
+
+static grpc_end2end_test_case_config configs[] = {
+% for test_name in test_names:
+  {
+    "${test_name}",
+    ${test_name}_pre_init,
+    ${test_name},
+    /* grpc_end2end_test_case_options */
+<% test_options = [ str(tests[test_name][opt]).lower() for opt in ['needs_fullstack', 'needs_dns', 'needs_names', 'proxyable', 'secure', 'traceable', 'exclude_inproc', 'needs_http2', 'needs_proxy_auth', 'needs_write_buffering', 'needs_client_channel'] ] %>\
+    {${', '.join(test_options)}},
+  },
+% endfor
+};
+
+static grpc_end2end_test_fixture_config fixture_configs[] = {
+% for fixture_name in fixture_names:
+  {
+    "${fixture_name}",
+    /* grpc_end2end_test_fixture_options */
+<% fixture_options = [ str(fixtures[fixture_name][opt]).lower() for opt in ['fullstack', 'includes_proxy', 'dns_resolver', 'name_resolution', 'secure', 'tracing', 'is_inproc', 'is_http2', 'supports_proxy_auth', 'supports_write_buffering', 'client_channel'] ] %>\
+    {${', '.join(fixture_options)}},
+  },
+% endfor
+};
 
 void grpc_end2end_tests_pre_init(void) {
   GPR_ASSERT(!g_pre_init_called);
   g_pre_init_called = true;
-% for test in tests:
-  ${test}_pre_init();
-% endfor
+  for (int i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
+    configs[i].pre_init_func();
+  }
+}
+
+void grpc_end2end_tests_run_single(grpc_end2end_test_config config, const char* test_name) {
+  GPR_ASSERT(g_pre_init_called);
+  
+  for (int i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
+    if (0 == strcmp(configs[i].name, test_name)) {
+      configs[i].test_func(config);
+      return;
+    }
+  }
+  gpr_log(GPR_DEBUG, "not a test: '%s'", test_name);
+  abort();
 }
 
 // NOLINTNEXTLINE(readability-function-size)
@@ -51,20 +90,84 @@ void grpc_end2end_tests(int argc, char **argv,
   GPR_ASSERT(g_pre_init_called);
 
   if (argc <= 1) {
-% for test in tests:
-    ${test}(config);
-% endfor
+    for (int i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
+      configs[i].test_func(config);
+    }
     return;
   }
 
   for (i = 1; i < argc; i++) {
-% for test in tests:
-    if (0 == strcmp("${test}", argv[i])) {
-      ${test}(config);
-      continue;
-    }
-% endfor
-    gpr_log(GPR_DEBUG, "not a test: '%s'", argv[i]);
-    abort();
+    grpc_end2end_tests_run_single(config, argv[i]);
   }
-}</%def>
+}
+
+static bool is_compatible(const grpc_end2end_test_fixture_options& fixture, const grpc_end2end_test_case_options& test) {
+    if (test.needs_fullstack && !fixture.fullstack) {
+      return false;
+    }
+    if (test.needs_dns && !fixture.dns_resolver) {
+      return false;
+    }
+    if (test.needs_names && !fixture.name_resolution) {
+      return false;
+    }
+    if (!test.proxyable && fixture.includes_proxy) {
+      return false;
+    }
+    if (!test.traceable && fixture.tracing) {
+      return false;
+    }
+    if (test.exclude_inproc && fixture.is_inproc) {
+      return false;
+    }
+    if (test.needs_http2 && !fixture.is_http2) {
+      return false;
+    }
+    if (test.needs_proxy_auth && !fixture.supports_proxy_auth) {
+      return false;
+    }
+    if (test.needs_write_buffering && !fixture.supports_write_buffering) {
+      return false;
+    }
+    if (test.needs_client_channel && !fixture.client_channel) {
+      return false;
+    }
+    return true;
+}
+
+static grpc_end2end_test_fixture_options get_fixture_options_by_name(const char* fixture_name) {
+  for (int i = 0; i < sizeof(fixture_configs) / sizeof(*fixture_configs); i++) {
+    if (0 == strcmp(fixture_configs[i].name, fixture_name)) {
+      return fixture_configs[i].options;
+    }
+  }
+  gpr_log(GPR_DEBUG, "not a fixture: '%s'", fixture_name);
+  abort();
+}
+
+static std::vector<std::string> get_compatible_test_names(const char* fixture_name) {
+  auto fixture_options = get_fixture_options_by_name(fixture_name);
+  
+  std::vector<std::string> result;
+  for (int i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
+    if (is_compatible(fixture_options, configs[i].options)) {
+      result.emplace_back(configs[i].name);
+    }
+  }
+  return result;
+}
+
+std::vector<grpc::testing::CoreEnd2EndTestScenario> grpc::testing::CoreEnd2EndTestScenario::CreateTestScenarios(const char* fixture_name, grpc_end2end_test_config* configs, int num_configs)
+{
+  std::vector<CoreEnd2EndTestScenario> scenarios;
+  auto test_names = get_compatible_test_names(fixture_name);
+
+  for (int i = 0; i < test_names.size(); i++) {
+    for (int j = 0; j < num_configs; j++) {
+      scenarios.emplace_back(
+          CoreEnd2EndTestScenario(configs[j], j, num_configs, test_names[i]));
+    }
+  }
+  return scenarios;
+}
+</%def>
