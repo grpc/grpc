@@ -83,9 +83,19 @@ class TlsCredentialsOptions {
   //
   // @param identity_cert_name the name of identity key-cert pairs being set.
   void set_identity_cert_name(const std::string& identity_cert_name);
-
+  // Sets the certificate verifier used to perform post-handshake peer identity
+  // checks.
   void set_certificate_verifier(
       std::shared_ptr<CertificateVerifier> certificate_verifier);
+  // Sets the options of whether to check the hostname of the peer on a per-call
+  // basis. This is usually used in a combination with virtual hosting at the
+  // client side, where each individual call on a channel can have a different
+  // host associated with it.
+  // This check is intended to verify that the host specified for the individual
+  // call is covered by the cert that the peer presented.
+  // We will perform such checks by default. This should be disabled if
+  // verifiers other than the host name verifier is used.
+  void set_check_call_host(bool check_call_host);
 
   // ----- Getters for member fields ----
   // Get the internal c options. This function shall be used only internally.

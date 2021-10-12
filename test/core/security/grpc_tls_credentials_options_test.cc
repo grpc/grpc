@@ -498,6 +498,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest, ClientOptionsWithExternalVerifier) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   options->set_verify_server_cert(true);
   options->set_certificate_verifier(core_external_verifier.Ref());
+  options->set_check_call_host(false);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;

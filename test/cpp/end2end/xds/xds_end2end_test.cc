@@ -558,6 +558,7 @@ std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials() {
       ExternalCertificateVerifier::Create<SyncCertificateVerifier>(true);
   options.set_certificate_verifier(std::move(verifier));
   options.set_verify_server_certs(true);
+  options.set_check_call_host(false);
   auto channel_creds = grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_creds.get() != nullptr);
   return channel_creds;

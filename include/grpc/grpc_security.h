@@ -1113,6 +1113,20 @@ void grpc_tls_credentials_options_set_certificate_verifier(
 /**
  * EXPERIMENTAL API - Subject to change
  *
+ * Sets the options of whether to check the hostname of the peer on a per-call
+ * basis. This is usually used in a combination with virtual hosting at the
+ * client side, where each individual call on a channel can have a different
+ * host associated with it.
+ * This check is intended to verify that the host specified for the individual
+ * call is covered by the cert that the peer presented.
+ * The default is a non-zero value, which indicates performing such checks.
+ */
+GRPCAPI void grpc_tls_credentials_options_set_check_call_host(
+    grpc_tls_credentials_options* options, int check_call_host);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
  * Performs the verification logic of an internal verifier.
  * This is typically used when composing the internal verifiers as part of the
  * custom verification.

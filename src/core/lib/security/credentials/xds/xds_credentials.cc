@@ -163,6 +163,7 @@ XdsCredentials::create_security_connector(
       tls_credentials_options->set_certificate_verifier(
           MakeRefCounted<XdsCertificateVerifier>(xds_certificate_provider,
                                                  std::move(cluster_name)));
+      tls_credentials_options->set_check_call_host(false);
       // TODO(yashkt): Creating a new TlsCreds object each time we create a
       // security connector means that the security connector's cmp() method
       // returns unequal for each instance, which means that every time an LB

@@ -379,6 +379,7 @@ TEST_F(TlsSecurityConnectorTest,
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_verify_server_cert(true);
   options->set_certificate_verifier(core_external_verifier.Ref());
+  options->set_check_call_host(false);
   grpc_core::RefCountedPtr<TlsCredentials> credential =
       grpc_core::MakeRefCounted<TlsCredentials>(options);
   grpc_channel_args* new_args = nullptr;
@@ -414,6 +415,7 @@ TEST_F(TlsSecurityConnectorTest,
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_verify_server_cert(true);
   options->set_certificate_verifier(core_external_verifier.Ref());
+  options->set_check_call_host(false);
   grpc_core::RefCountedPtr<TlsCredentials> credential =
       grpc_core::MakeRefCounted<TlsCredentials>(options);
   grpc_channel_args* new_args = nullptr;
@@ -554,6 +556,7 @@ TEST_F(TlsSecurityConnectorTest,
   auto options = grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_verify_server_cert(true);
   options->set_certificate_verifier(core_external_verifier->Ref());
+  options->set_check_call_host(false);
   grpc_core::RefCountedPtr<TlsCredentials> credential =
       grpc_core::MakeRefCounted<TlsCredentials>(options);
   grpc_channel_args* new_args = nullptr;
@@ -590,6 +593,7 @@ TEST_F(TlsSecurityConnectorTest,
   auto options = grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_verify_server_cert(true);
   options->set_certificate_verifier(core_external_verifier->Ref());
+  options->set_check_call_host(false);
   grpc_core::RefCountedPtr<TlsCredentials> credential =
       grpc_core::MakeRefCounted<TlsCredentials>(options);
   grpc_channel_args* new_args = nullptr;
@@ -628,6 +632,7 @@ TEST_F(TlsSecurityConnectorTest,
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_verify_server_cert(true);
   options->set_certificate_verifier(hostname_certificate_verifier_.Ref());
+  options->set_check_call_host(false);
   grpc_core::RefCountedPtr<TlsCredentials> credential =
       grpc_core::MakeRefCounted<TlsCredentials>(options);
   grpc_channel_args* new_args = nullptr;

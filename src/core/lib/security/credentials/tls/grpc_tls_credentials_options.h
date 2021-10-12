@@ -50,6 +50,7 @@ struct grpc_tls_credentials_options
   grpc_tls_certificate_verifier* certificate_verifier() {
     return verifier_.get();
   }
+  bool check_call_host() const { return check_call_host_; }
   // Returns the distributor from provider_ if it is set, nullptr otherwise.
   grpc_tls_certificate_distributor* certificate_distributor() {
     if (provider_ != nullptr) return provider_->distributor().get();
@@ -78,6 +79,10 @@ struct grpc_tls_credentials_options
   void set_certificate_verifier(
       grpc_core::RefCountedPtr<grpc_tls_certificate_verifier> verifier) {
     verifier_ = std::move(verifier);
+  }
+  // Sets the verifier in the options.
+  void set_check_call_host(bool check_call_host) {
+    check_call_host_ = check_call_host;
   }
   // Sets the provider in the options.
   void set_certificate_provider(
@@ -114,6 +119,7 @@ struct grpc_tls_credentials_options
   grpc_tls_version min_tls_version_ = grpc_tls_version::TLS1_2;
   grpc_tls_version max_tls_version_ = grpc_tls_version::TLS1_3;
   grpc_core::RefCountedPtr<grpc_tls_certificate_verifier> verifier_;
+  bool check_call_host_ = true;
   grpc_core::RefCountedPtr<grpc_tls_certificate_provider> provider_;
   bool watch_root_cert_ = false;
   std::string root_cert_name_;
