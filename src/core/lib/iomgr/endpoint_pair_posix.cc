@@ -60,8 +60,7 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
   create_sockets(sv);
   grpc_core::ExecCtx exec_ctx;
   std::string final_name = absl::StrCat(name, ":client");
-  args =
-      grpc_core::EnsureResourceQuotaInChannelArgs(grpc_channel_args_copy(args));
+  args = grpc_core::EnsureResourceQuotaInChannelArgs(args);
   auto resource_quota = grpc_core::ResourceQuotaFromChannelArgs(args);
   p.client = grpc_tcp_create(grpc_fd_create(sv[1], final_name.c_str(), false),
                              args, "socketpair-server");

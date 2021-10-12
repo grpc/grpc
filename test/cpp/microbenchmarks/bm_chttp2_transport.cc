@@ -34,6 +34,7 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
@@ -132,7 +133,10 @@ class Fixture {
   Fixture(const grpc::ChannelArguments& args, bool client) {
     grpc_channel_args c_args = args.c_channel_args();
     ep_ = new PhonyEndpoint;
-    t_ = grpc_create_chttp2_transport(&c_args, ep_, client);
+    grpc_channel_args* final_args =
+        grpc_core::EnsureResourceQuotaInChannelArgs(&c_args);
+    t_ = grpc_create_chttp2_transport(final_args, ep_, client);
+    grpc_channel_args_destroy(final_args);
     grpc_chttp2_transport_start_reading(t_, nullptr, nullptr, nullptr);
     FlushExecCtx();
   }

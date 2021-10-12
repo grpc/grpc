@@ -51,6 +51,7 @@ class FixtureConfiguration {
   virtual void ApplyCommonChannelArguments(ChannelArguments* c) const {
     c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
     c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
+    c->SetResourceQuota(ResourceQuota());
   }
 
   virtual void ApplyCommonServerBuilderConfig(ServerBuilder* b) const {
