@@ -55,6 +55,7 @@ static void ApplyCommonServerBuilderConfig(ServerBuilder* b) {
 static void ApplyCommonChannelArguments(ChannelArguments* c) {
   c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
   c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
+  c->SetResourceQuota(ResourceQuota());
 }
 
 class EndpointPairFixture {
