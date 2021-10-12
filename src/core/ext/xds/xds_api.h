@@ -301,7 +301,7 @@ class XdsApi {
       }
 
       std::string ToString() const;
-    } filter_chain_data;
+    };
 
     // A multi-level map used to determine which filter chain to use for a given
     // incoming connection. Determining the right filter chain for a given

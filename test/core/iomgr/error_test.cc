@@ -32,8 +32,11 @@ TEST(ErrorTest, SetGetInt) {
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test");
   EXPECT_NE(error, GRPC_ERROR_NONE);
   intptr_t i = 0;
+#ifndef NDEBUG
+  // GRPC_ERROR_INT_FILE_LINE is for debug only
   EXPECT_TRUE(grpc_error_get_int(error, GRPC_ERROR_INT_FILE_LINE, &i));
   EXPECT_TRUE(i);  // line set will never be 0
+#endif
   EXPECT_TRUE(!grpc_error_get_int(error, GRPC_ERROR_INT_ERRNO, &i));
   EXPECT_TRUE(!grpc_error_get_int(error, GRPC_ERROR_INT_SIZE, &i));
 
@@ -56,13 +59,14 @@ TEST(ErrorTest, SetGetStr) {
   std::string str;
   EXPECT_TRUE(!grpc_error_get_str(error, GRPC_ERROR_STR_SYSCALL, &str));
   EXPECT_TRUE(!grpc_error_get_str(error, GRPC_ERROR_STR_TSI_ERROR, &str));
-
+#ifndef NDEBUG
+  // GRPC_ERROR_STR_FILE is for debug only
   EXPECT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_FILE, &str));
   EXPECT_THAT(str, testing::HasSubstr("error_test.c"));
   // __FILE__ expands differently on
   // Windows. All should at least
   // contain error_test.c
-
+#endif
   EXPECT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &str));
   EXPECT_EQ(str, "Test");
 

@@ -481,7 +481,6 @@ struct grpc_server_config_fetcher {
 
   // Ownership of \a args is transferred.
   virtual void StartWatch(std::string listening_address,
-                          grpc_channel_args* args,
                           std::unique_ptr<WatcherInterface> watcher) = 0;
   virtual void CancelWatch(WatcherInterface* watcher) = 0;
   virtual grpc_pollset_set* interested_parties() = 0;

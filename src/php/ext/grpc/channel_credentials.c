@@ -139,10 +139,10 @@ PHP_METHOD(ChannelCredentials, createDefault) {
 
 /**
  * Create SSL credentials.
- * @param string $pem_root_certs = "" PEM encoding of the server root certificates (optional)
- * @param string $private_key = "" PEM encoding of the client's
+ * @param string|null $pem_root_certs = null PEM encoding of the server root certificates (optional)
+ * @param string|null $private_key = null PEM encoding of the client's
  *                                              private key (optional)
- * @param string $cert_chain = "" PEM encoding of the client's
+ * @param string|null $cert_chain = null PEM encoding of the client's
  *                                             certificate chain (optional)
  * @return ChannelCredentials The new SSL credentials object
  */

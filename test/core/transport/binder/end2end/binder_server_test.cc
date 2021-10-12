@@ -108,7 +108,7 @@ TEST(BinderServerCredentialsTest,
   grpc::testing::TestServiceImpl service;
   server_builder.RegisterService(&service);
   server_builder.AddListeningPort(
-      "binder://fail",
+      "binder:fail",
       grpc::experimental::BinderServerCredentials(
           std::make_shared<
               grpc::experimental::binder::UntrustedSecurityPolicy>()));
@@ -120,7 +120,7 @@ TEST_F(BinderServerTest, BuildAndStart) {
   grpc::ServerBuilder server_builder;
   grpc::testing::TestServiceImpl service;
   server_builder.RegisterService(&service);
-  server_builder.AddListeningPort("binder://example.service",
+  server_builder.AddListeningPort("binder:example.service",
                                   grpc::testing::BinderServerCredentials());
   std::unique_ptr<grpc::Server> server = server_builder.BuildAndStart();
   EXPECT_NE(grpc::experimental::binder::GetEndpointBinder("example.service"),
@@ -145,7 +145,7 @@ TEST_F(BinderServerTest, CreateChannelWithEndpointBinder) {
   grpc::ServerBuilder server_builder;
   grpc::testing::TestServiceImpl service;
   server_builder.RegisterService(&service);
-  server_builder.AddListeningPort("binder://example.service",
+  server_builder.AddListeningPort("binder:example.service",
                                   grpc::testing::BinderServerCredentials());
   std::unique_ptr<grpc::Server> server = server_builder.BuildAndStart();
   void* raw_endpoint_binder =
@@ -172,9 +172,8 @@ TEST_F(BinderServerTest, CreateChannelWithEndpointBinderMultipleConnections) {
   grpc::ServerBuilder server_builder;
   grpc::testing::TestServiceImpl service;
   server_builder.RegisterService(&service);
-  server_builder.AddListeningPort(
-      "binder://example.service.multiple.connections",
-      grpc::testing::BinderServerCredentials());
+  server_builder.AddListeningPort("binder:example.service.multiple.connections",
+                                  grpc::testing::BinderServerCredentials());
   std::unique_ptr<grpc::Server> server = server_builder.BuildAndStart();
   void* raw_endpoint_binder = grpc::experimental::binder::GetEndpointBinder(
       "example.service.multiple.connections");

@@ -724,9 +724,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c timer_list_test)
   add_dependencies(buildtests_c transport_security_common_api_test)
   add_dependencies(buildtests_c transport_security_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c udp_server_test)
-  endif()
   add_dependencies(buildtests_c varint_test)
 
   add_custom_target(buildtests_cxx)
@@ -840,6 +837,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx hpack_encoder_index_test)
   add_dependencies(buildtests_cxx http2_client)
   add_dependencies(buildtests_cxx hybrid_end2end_test)
+  add_dependencies(buildtests_cxx idle_filter_state_test)
   add_dependencies(buildtests_cxx if_test)
   add_dependencies(buildtests_cxx init_test)
   add_dependencies(buildtests_cxx initial_settings_frame_bad_client_test)
@@ -1556,6 +1554,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
+  src/core/ext/filters/client_idle/idle_filter_state.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/fault_injection/fault_injection_filter.cc
   src/core/ext/filters/fault_injection/service_config_parser.cc
@@ -1581,7 +1580,6 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
-  src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   src/core/ext/transport/chttp2/transport/context_list.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
@@ -1922,7 +1920,6 @@ add_library(grpc
   src/core/lib/iomgr/timer_generic.cc
   src/core/lib/iomgr/timer_heap.cc
   src/core/lib/iomgr/timer_manager.cc
-  src/core/lib/iomgr/udp_server.cc
   src/core/lib/iomgr/unix_sockets_posix.cc
   src/core/lib/iomgr/unix_sockets_posix_noop.cc
   src/core/lib/iomgr/wakeup_fd_eventfd.cc
@@ -2123,8 +2120,9 @@ foreach(_hdr
   include/grpc/compression.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
+  include/grpc/event_engine/internal/memory_allocator_impl.h
+  include/grpc/event_engine/memory_allocator.h
   include/grpc/event_engine/port.h
-  include/grpc/event_engine/slice_allocator.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -2391,6 +2389,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
+  src/core/ext/filters/client_idle/idle_filter_state.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/fault_injection/fault_injection_filter.cc
   src/core/ext/filters/fault_injection/service_config_parser.cc
@@ -2414,7 +2413,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
-  src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   src/core/ext/transport/chttp2/transport/context_list.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
@@ -2562,7 +2560,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/timer_generic.cc
   src/core/lib/iomgr/timer_heap.cc
   src/core/lib/iomgr/timer_manager.cc
-  src/core/lib/iomgr/udp_server.cc
   src/core/lib/iomgr/unix_sockets_posix.cc
   src/core/lib/iomgr/unix_sockets_posix_noop.cc
   src/core/lib/iomgr/wakeup_fd_eventfd.cc
@@ -2679,8 +2676,9 @@ foreach(_hdr
   include/grpc/compression.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
+  include/grpc/event_engine/internal/memory_allocator_impl.h
+  include/grpc/event_engine/memory_allocator.h
   include/grpc/event_engine/port.h
-  include/grpc/event_engine/slice_allocator.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -3775,7 +3773,7 @@ foreach(_hdr
 endforeach()
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_plugin_support EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -6070,6 +6068,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   add_executable(memory_quota_stress_test
     src/core/lib/debug/trace.cc
+    src/core/lib/event_engine/memory_allocator.cc
     src/core/lib/iomgr/combiner.cc
     src/core/lib/iomgr/error.cc
     src/core/lib/iomgr/exec_ctx.cc
@@ -7610,35 +7609,6 @@ target_link_libraries(transport_security_test
 )
 
 
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(udp_server_test
-    test/core/iomgr/udp_server_test.cc
-  )
-
-  target_include_directories(udp_server_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-  )
-
-  target_link_libraries(udp_server_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util
-  )
-
-
-endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -11049,7 +11019,7 @@ target_link_libraries(grpc_cpp_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_cpp_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11088,7 +11058,7 @@ target_link_libraries(grpc_csharp_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_csharp_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11127,7 +11097,7 @@ target_link_libraries(grpc_node_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_node_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11166,7 +11136,7 @@ target_link_libraries(grpc_objective_c_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_objective_c_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11205,7 +11175,7 @@ target_link_libraries(grpc_php_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_php_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11244,7 +11214,7 @@ target_link_libraries(grpc_python_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_python_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11283,7 +11253,7 @@ target_link_libraries(grpc_ruby_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_ruby_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11849,6 +11819,41 @@ target_link_libraries(hybrid_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(idle_filter_state_test
+  src/core/ext/filters/client_idle/idle_filter_state.cc
+  test/core/client_idle/idle_filter_state_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(idle_filter_state_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(idle_filter_state_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
 
@@ -12602,6 +12607,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(memory_quota_test
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -15285,6 +15291,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_resource_quota_resource_quota_test
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc

@@ -79,6 +79,9 @@
 // Client channel filter
 //
 
+#define GRPC_ARG_HEALTH_CHECK_SERVICE_NAME \
+  "grpc.internal.health_check_service_name"
+
 namespace grpc_core {
 
 using internal::ClientChannelGlobalParsedConfig;
@@ -346,8 +349,9 @@ class DynamicTerminationFilter::CallData {
                                    calld->call_context_, calld->path_,
                                    /*start_time=*/0,     calld->deadline_,
                                    calld->arena_,        calld->call_combiner_};
-    auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-        calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+    auto* service_config_call_data =
+        static_cast<ClientChannelServiceConfigCallData*>(
+            calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
     calld->lb_call_ = client_channel->CreateLoadBalancedCall(
         args, pollent, nullptr,
         service_config_call_data->call_dispatch_controller(),
@@ -494,8 +498,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
   }
 
-  grpc_connectivity_state CheckConnectivityState() override
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_) {
+  grpc_connectivity_state CheckConnectivityState() override {
     return subchannel_->CheckConnectivityState(health_check_service_name_);
   }
 
@@ -537,41 +540,6 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
 
   void ThrottleKeepaliveTime(int new_keepalive_time) {
     subchannel_->ThrottleKeepaliveTime(new_keepalive_time);
-  }
-
-  void UpdateHealthCheckServiceName(
-      absl::optional<std::string> health_check_service_name)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::work_serializer_) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p: subchannel wrapper %p: updating health check service "
-              "name from \"%s\" to \"%s\"",
-              chand_, this, health_check_service_name_->c_str(),
-              health_check_service_name->c_str());
-    }
-    for (auto& p : watcher_map_) {
-      WatcherWrapper*& watcher_wrapper = p.second;
-      // Cancel the current watcher and create a new one using the new
-      // health check service name.
-      // TODO(roth): If there is not already an existing health watch
-      // call for the new name, then the watcher will initially report
-      // state CONNECTING.  If the LB policy is currently reporting
-      // state READY, this may cause it to switch to CONNECTING before
-      // switching back to READY.  This could cause a small delay for
-      // RPCs being started on the channel.  If/when this becomes a
-      // problem, we may be able to handle it by waiting for the new
-      // watcher to report READY before we use it to replace the old one.
-      WatcherWrapper* replacement = watcher_wrapper->MakeReplacement();
-      subchannel_->CancelConnectivityStateWatch(health_check_service_name_,
-                                                watcher_wrapper);
-      watcher_wrapper = replacement;
-      subchannel_->WatchConnectivityState(
-          replacement->last_seen_state(), health_check_service_name,
-          RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface>(
-              replacement));
-    }
-    // Save the new health check service name.
-    health_check_service_name_ = std::move(health_check_service_name);
   }
 
  private:
@@ -698,14 +666,14 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
 
   ClientChannel* chand_;
   RefCountedPtr<Subchannel> subchannel_;
-  absl::optional<std::string> health_check_service_name_
-      ABSL_GUARDED_BY(&ClientChannel::work_serializer_);
+  absl::optional<std::string> health_check_service_name_;
   // Maps from the address of the watcher passed to us by the LB policy
   // to the address of the WrapperWatcher that we passed to the underlying
   // subchannel.  This is needed so that when the LB policy calls
   // CancelConnectivityStateWatch() with its watcher, we know the
   // corresponding WrapperWatcher to cancel on the underlying subchannel.
-  std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_;
+  std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_
+      ABSL_GUARDED_BY(&ClientChannel::work_serializer_);
 };
 
 //
@@ -902,15 +870,20 @@ class ClientChannel::ClientChannelControlHelper
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return nullptr;  // Shutting down.
     // Determine health check service name.
-    bool inhibit_health_checking = grpc_channel_args_find_bool(
-        &args, GRPC_ARG_INHIBIT_HEALTH_CHECKING, false);
     absl::optional<std::string> health_check_service_name;
-    if (!inhibit_health_checking) {
-      health_check_service_name = chand_->health_check_service_name_;
+    const char* health_check_service_name_arg = grpc_channel_args_find_string(
+        &args, GRPC_ARG_HEALTH_CHECK_SERVICE_NAME);
+    if (health_check_service_name_arg != nullptr) {
+      bool inhibit_health_checking = grpc_channel_args_find_bool(
+          &args, GRPC_ARG_INHIBIT_HEALTH_CHECKING, false);
+      if (!inhibit_health_checking) {
+        health_check_service_name = health_check_service_name_arg;
+      }
     }
     // Construct channel args for subchannel.
     // Remove channel args that should not affect subchannel uniqueness.
-    absl::InlinedVector<const char*, 3> args_to_remove = {
+    absl::InlinedVector<const char*, 4> args_to_remove = {
+        GRPC_ARG_HEALTH_CHECK_SERVICE_NAME,
         GRPC_ARG_INHIBIT_HEALTH_CHECKING,
         GRPC_ARG_CHANNELZ_CHANNEL_NODE,
     };
@@ -1302,15 +1275,16 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
     // If either has changed, apply the global parameters now.
     if (service_config_changed || config_selector_changed) {
       // Update service config in control plane.
-      UpdateServiceConfigInControlPlaneLocked(
-          std::move(service_config), std::move(config_selector),
-          parsed_service_config, lb_policy_config->name());
+      UpdateServiceConfigInControlPlaneLocked(std::move(service_config),
+                                              std::move(config_selector),
+                                              lb_policy_config->name());
     } else if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO, "chand=%p: service config not changed", this);
     }
     // Create or update LB policy, as needed.
-    CreateOrUpdateLbPolicyLocked(std::move(lb_policy_config),
-                                 std::move(result));
+    CreateOrUpdateLbPolicyLocked(
+        std::move(lb_policy_config),
+        parsed_service_config->health_check_service_name(), std::move(result));
     if (service_config_changed || config_selector_changed) {
       // Start using new service config for calls.
       // This needs to happen after the LB policy has been updated, since
@@ -1376,17 +1350,25 @@ void ClientChannel::OnResolverErrorLocked(grpc_error_handle error) {
 
 void ClientChannel::CreateOrUpdateLbPolicyLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
+    const absl::optional<std::string>& health_check_service_name,
     Resolver::Result result) {
   // Construct update.
   LoadBalancingPolicy::UpdateArgs update_args;
   update_args.addresses = std::move(result.addresses);
   update_args.config = std::move(lb_policy_config);
+  // Add health check service name to channel args.
+  absl::InlinedVector<grpc_arg, 1> args_to_add;
+  if (health_check_service_name.has_value()) {
+    args_to_add.push_back(grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME),
+        const_cast<char*>(health_check_service_name->c_str())));
+  }
   // Remove the config selector from channel args so that we're not holding
   // unnecessary refs that cause it to be destroyed somewhere other than in the
   // WorkSerializer.
-  const char* arg_name = GRPC_ARG_CONFIG_SELECTOR;
-  update_args.args =
-      grpc_channel_args_copy_and_remove(result.args, &arg_name, 1);
+  const char* arg_to_remove = GRPC_ARG_CONFIG_SELECTOR;
+  update_args.args = grpc_channel_args_copy_and_add_and_remove(
+      result.args, &arg_to_remove, 1, args_to_add.data(), args_to_add.size());
   // Create policy if needed.
   if (lb_policy_ == nullptr) {
     lb_policy_ = CreateLbPolicyLocked(*update_args.args);
@@ -1445,9 +1427,7 @@ void ClientChannel::RemoveResolverQueuedCall(ResolverQueuedCall* to_remove,
 
 void ClientChannel::UpdateServiceConfigInControlPlaneLocked(
     RefCountedPtr<ServiceConfig> service_config,
-    RefCountedPtr<ConfigSelector> config_selector,
-    const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
-    const char* lb_policy_name) {
+    RefCountedPtr<ConfigSelector> config_selector, const char* lb_policy_name) {
   UniquePtr<char> service_config_json(
       gpr_strdup(service_config->json_string().c_str()));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
@@ -1457,17 +1437,6 @@ void ClientChannel::UpdateServiceConfigInControlPlaneLocked(
   }
   // Save service config.
   saved_service_config_ = std::move(service_config);
-  // Update health check service name if needed.
-  if (health_check_service_name_ !=
-      parsed_service_config->health_check_service_name()) {
-    health_check_service_name_ =
-        parsed_service_config->health_check_service_name();
-    // Update health check service name used by existing subchannel wrappers.
-    for (auto* subchannel_wrapper : subchannel_wrappers_) {
-      subchannel_wrapper->UpdateHealthCheckServiceName(
-          health_check_service_name_);
-    }
-  }
   // Swap out the data used by GetChannelInfo().
   UniquePtr<char> lb_policy_name_owned(gpr_strdup(lb_policy_name));
   {
@@ -1525,7 +1494,6 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
   //
   // We defer unreffing the old values (and deallocating memory) until
   // after releasing the lock to keep the critical section small.
-  std::set<grpc_call_element*> calls_pending_resolver_result;
   {
     MutexLock lock(&resolution_mu_);
     GRPC_ERROR_UNREF(resolver_transient_failure_error_);
@@ -2232,15 +2200,16 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
     ConfigSelector::CallConfig call_config =
         config_selector->GetCallConfig({&path_, initial_metadata, arena_});
     if (call_config.error != GRPC_ERROR_NONE) return call_config.error;
-    // Create a ServiceConfigCallData for the call.  This stores a ref to the
-    // ServiceConfig and caches the right set of parsed configs to use for
-    // the call.  The MethodConfig will store itself in the call context,
-    // so that it can be accessed by filters in the subchannel, and it
-    // will be cleaned up when the call ends.
-    auto* service_config_call_data = arena_->New<ServiceConfigCallData>(
-        std::move(call_config.service_config), call_config.method_configs,
-        std::move(call_config.call_attributes),
-        call_config.call_dispatch_controller, call_context_);
+    // Create a ClientChannelServiceConfigCallData for the call.  This stores
+    // a ref to the ServiceConfig and caches the right set of parsed configs
+    // to use for the call.  The ClientChannelServiceConfigCallData will store
+    // itself in the call context, so that it can be accessed by filters
+    // below us in the stack, and it will be cleaned up when the call ends.
+    auto* service_config_call_data =
+        arena_->New<ClientChannelServiceConfigCallData>(
+            std::move(call_config.service_config), call_config.method_configs,
+            std::move(call_config.call_attributes),
+            call_config.call_dispatch_controller, call_context_);
     // Apply our own method params to the call.
     auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
         service_config_call_data->GetMethodParsedConfig(
@@ -2282,8 +2251,9 @@ void ClientChannel::CallData::
     RecvTrailingMetadataReadyForConfigSelectorCommitCallback(
         void* arg, grpc_error_handle error) {
   auto* self = static_cast<CallData*>(arg);
-  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-      self->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+  auto* service_config_call_data =
+      static_cast<ClientChannelServiceConfigCallData*>(
+          self->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
   if (service_config_call_data != nullptr) {
     service_config_call_data->call_dispatch_controller()->Commit();
   }

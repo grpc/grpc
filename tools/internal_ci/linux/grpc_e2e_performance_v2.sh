@@ -54,18 +54,21 @@ GRPC_GO_GITREF="$(git ls-remote https://github.com/grpc/grpc-go.git master | cut
 GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/grpc-java.git master | cut -f1)"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
-WORKER_POOL_8CORE=workers-8core-ci
-WORKER_POOL_32CORE=workers-32core-ci
+WORKER_POOL_8CORE=workers-c2-8core-ci
+# c2-standard-30 is the closest machine spec to 32 core there is
+WORKER_POOL_32CORE=workers-c2-30core-ci
 
 # Update go version.
 TEST_INFRA_GOVERSION=go1.17.1
 go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
 "${TEST_INFRA_GOVERSION}" download
 
-# Clone test-infra repository to one upper level directory than grpc.
+# Fetch test-infra repository and build all tools.
+# Note: Submodules are not required for tools build.
 pushd ..
-git clone --recursive https://github.com/grpc/test-infra.git
+git clone --depth 1 https://github.com/grpc/test-infra.git
 cd test-infra
+git log -1 --oneline
 make GOCMD="${TEST_INFRA_GOVERSION}" all-tools
 popd
 
@@ -116,9 +119,6 @@ time ../test-infra/bin/prepare_prebuilt_workers \
     -p "${PREBUILT_IMAGE_PREFIX}" \
     -t "${UNIQUE_IDENTIFIER}" \
     -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"
-
-# Create reports directories.
-mkdir -p "runner/${WORKER_POOL_8CORE}" "runner/${WORKER_POOL_32CORE}"
 
 # Run tests.
 time ../test-infra/bin/runner \

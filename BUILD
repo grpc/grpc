@@ -161,7 +161,8 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/endpoint_config.h",
     "include/grpc/event_engine/event_engine.h",
     "include/grpc/event_engine/port.h",
-    "include/grpc/event_engine/slice_allocator.h",
+    "include/grpc/event_engine/memory_allocator.h",
+    "include/grpc/event_engine/internal/memory_allocator_impl.h",
 ]
 
 GRPC_SECURE_PUBLIC_HDRS = [
@@ -1298,6 +1299,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_memory_allocator",
+    srcs = [
+        "src/core/lib/event_engine/memory_allocator.cc",
+    ],
+    hdrs = [
+        "include/grpc/event_engine/internal/memory_allocator_impl.h",
+        "include/grpc/event_engine/memory_allocator.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+        "ref_counted",
+        "slice",
+        "slice_refcount",
+    ],
+)
+
+grpc_cc_library(
     name = "memory_quota",
     srcs = [
         "src/core/lib/resource_quota/memory_quota.cc",
@@ -1308,6 +1327,7 @@ grpc_cc_library(
     deps = [
         "activity",
         "dual_ref_counted",
+        "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
         "gpr_base",
         "loop",
@@ -1556,7 +1576,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/timer_generic.cc",
         "src/core/lib/iomgr/timer_heap.cc",
         "src/core/lib/iomgr/timer_manager.cc",
-        "src/core/lib/iomgr/udp_server.cc",
         "src/core/lib/iomgr/unix_sockets_posix.cc",
         "src/core/lib/iomgr/unix_sockets_posix_noop.cc",
         "src/core/lib/iomgr/wakeup_fd_eventfd.cc",
@@ -1701,7 +1720,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/timer_generic.h",
         "src/core/lib/iomgr/timer_heap.h",
         "src/core/lib/iomgr/timer_manager.h",
-        "src/core/lib/iomgr/udp_server.h",
         "src/core/lib/iomgr/unix_sockets_posix.h",
         "src/core/lib/iomgr/wakeup_fd_pipe.h",
         "src/core/lib/iomgr/wakeup_fd_posix.h",
@@ -1950,15 +1968,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "idle_filter_state",
+    srcs = [
+        "src/core/ext/filters/client_idle/idle_filter_state.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_idle/idle_filter_state.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_idle_filter",
     srcs = [
         "src/core/ext/filters/client_idle/client_idle_filter.cc",
     ],
-    language = "c++",
     deps = [
         "config",
         "gpr_base",
         "grpc_base",
+        "idle_filter_state",
     ],
 )
 
@@ -3108,6 +3140,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
+        "grpc_base",
         "grpc_matchers",
         "grpc_rbac_engine",
         "grpc_secure",
@@ -3218,7 +3251,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
         "src/core/ext/transport/chttp2/transport/bin_encoder.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_plugin.cc",
-        "src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.cc",
         "src/core/ext/transport/chttp2/transport/context_list.cc",
         "src/core/ext/transport/chttp2/transport/flow_control.cc",
@@ -3244,7 +3276,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/transport/chttp2/transport/bin_decoder.h",
         "src/core/ext/transport/chttp2/transport/bin_encoder.h",
-        "src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.h",
         "src/core/ext/transport/chttp2/transport/context_list.h",
         "src/core/ext/transport/chttp2/transport/flow_control.h",
