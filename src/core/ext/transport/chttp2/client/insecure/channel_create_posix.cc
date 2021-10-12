@@ -51,7 +51,7 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
   int flags = fcntl(fd, F_GETFL, 0);
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
   grpc_endpoint* client = grpc_tcp_client_create_from_fd(
-      grpc_fd_create(fd, "client", true), args, "fd-client");
+      grpc_fd_create(fd, "client", true), final_args, "fd-client");
   grpc_transport* transport =
       grpc_create_chttp2_transport(final_args, client, true);
   GPR_ASSERT(transport);

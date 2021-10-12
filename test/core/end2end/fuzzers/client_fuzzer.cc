@@ -24,6 +24,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/util/mock_endpoint.h"
@@ -49,15 +50,17 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         grpc_resource_quota_create("context_list_test");
     grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write);
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+    grpc_channel_args* args =
+        grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
     grpc_transport* transport =
-        grpc_create_chttp2_transport(nullptr, mock_endpoint, true);
+        grpc_create_chttp2_transport(args, mock_endpoint, true);
+    grpc_channel_args_destroy(args);
     grpc_resource_quota_unref(resource_quota);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     grpc_arg authority_arg = grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
         const_cast<char*>("test-authority"));
-    grpc_channel_args* args =
-        grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
+    args = grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
     grpc_channel* channel = grpc_channel_create(
         "test-target", args, GRPC_CLIENT_DIRECT_CHANNEL, transport, nullptr);
     grpc_channel_args_destroy(args);

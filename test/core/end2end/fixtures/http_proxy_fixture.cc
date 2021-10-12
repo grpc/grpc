@@ -47,6 +47,7 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/port.h"
@@ -534,9 +535,12 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
       grpc_core::ExecCtx::Get()->Now() + 10 * GPR_MS_PER_SEC;
   GRPC_CLOSURE_INIT(&conn->on_server_connect_done, on_server_connect_done, conn,
                     grpc_schedule_on_exec_ctx);
+  grpc_channel_args* args =
+      grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
   grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint,
-                          conn->pollset_set, nullptr,
+                          conn->pollset_set, args,
                           &resolved_addresses->addrs[0], deadline);
+  grpc_channel_args_destroy(args);
   grpc_resolved_addresses_destroy(resolved_addresses);
 }
 
@@ -608,7 +612,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   proxy->proxy_name = grpc_core::JoinHostPort("localhost", proxy_port);
   gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name.c_str());
   // Create TCP server.
-  proxy->channel_args = grpc_channel_args_copy(args);
+  proxy->channel_args = grpc_core::EnsureResourceQuotaInChannelArgs(args);
   grpc_error_handle error =
       grpc_tcp_server_create(nullptr, proxy->channel_args, &proxy->server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);

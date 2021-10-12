@@ -35,6 +35,7 @@
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
@@ -117,8 +118,10 @@ static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
   sp_client_setup cs;
   cs.client_args = client_args;
   cs.f = f;
+  client_args = grpc_core::EnsureResourceQuotaInChannelArgs(client_args);
   transport =
       grpc_create_chttp2_transport(client_args, fixture_data->ep.client, true);
+  grpc_channel_args_destroy(client_args);
   client_setup_transport(&cs, transport);
   GPR_ASSERT(f->client);
 }
@@ -132,8 +135,10 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   grpc_server_start(f->server);
+  server_args = grpc_core::EnsureResourceQuotaInChannelArgs(server_args);
   transport =
       grpc_create_chttp2_transport(server_args, fixture_data->ep.server, false);
+  grpc_channel_args_destroy(server_args);
   server_setup_transport(f, transport);
 }
 
