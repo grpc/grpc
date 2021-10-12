@@ -246,8 +246,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
     src/core/ext/upb-generated/udpa/annotations/status.upb.c \
     src/core/ext/upb-generated/udpa/annotations/versioning.upb.c \
-    src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
-    src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
     src/core/ext/upb-generated/xds/annotations/v3/status.upb.c \
     src/core/ext/upb-generated/xds/core/v3/authority.upb.c \
@@ -256,6 +254,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/xds/core/v3/resource.upb.c \
     src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c \
     src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c \
+    src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c \
+    src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c \
     src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.c \
@@ -342,7 +342,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c \
-    src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c \
     src/core/ext/upbdefs-generated/validate/validate.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c \
@@ -351,6 +350,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c \
     src/core/ext/xds/certificate_provider_registry.cc \
     src/core/ext/xds/certificate_provider_store.cc \
     src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
@@ -1139,11 +1139,11 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/src/proto/grpc/health/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/src/proto/grpc/lb/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/udpa/annotations)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/udpa/data/orca/v1)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/udpa/type/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/validate)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/xds/annotations/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/xds/core/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/xds/data/orca/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/xds/type/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/admin/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/annotations)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/accesslog/v3)
@@ -1178,10 +1178,10 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/google/protobuf)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/google/rpc)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/udpa/annotations)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/udpa/type/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/validate)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/xds/annotations/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/xds/core/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/xds/type/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/address_utils)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/avl)
