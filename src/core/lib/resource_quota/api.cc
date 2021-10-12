@@ -42,14 +42,17 @@ grpc_channel_args* EnsureResourceQuotaInChannelArgs(
   if (grpc_channel_args_find(args, GRPC_ARG_RESOURCE_QUOTA) != nullptr) {
     return grpc_channel_args_copy(args);
   }
-  auto resource_quota = MakeResourceQuota();
-  auto new_arg = MakeArg(resource_quota.get());
+  // If there's no existing quota, add it to the default one - shared between
+  // all channel args declared thusly. This prevents us from accidentally not
+  // sharing subchannels due to their channel args not specifying a quota.
+  static auto default_resource_quota = MakeResourceQuota();
+  auto new_arg = MakeArg(default_resource_quota->Ref().release());
   return grpc_channel_args_copy_and_add(args, &new_arg, 1);
 }
 
 grpc_channel_args* ChannelArgsWrappingResourceQuota(
     ResourceQuotaPtr resource_quota) {
-  auto new_arg = MakeArg(resource_quota.get());
+  auto new_arg = MakeArg(resource_quota.release());
   return grpc_channel_args_copy_and_add(nullptr, &new_arg, 1);
 }
 
