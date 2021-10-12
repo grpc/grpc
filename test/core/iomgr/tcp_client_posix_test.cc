@@ -37,6 +37,7 @@
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "test/core/util/test_config.h"
 
 static grpc_pollset_set* g_pollset_set;
@@ -105,8 +106,11 @@ void test_succeeds(void) {
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr,
                          (socklen_t*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, nullptr,
+  grpc_channel_args* args =
+      grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
+  grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, args,
                           &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_channel_args_destroy(args);
   /* await the connection */
   do {
     resolved_addr.len = static_cast<socklen_t>(sizeof(addr));
