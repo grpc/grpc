@@ -348,9 +348,9 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc",
         "src/core/lib/surface/init.cc",
-        "src/core/lib/surface/init_unsecure.cc",
-        "src/core/plugin_registry/grpc_unsecure_plugin_registry.cc",
+        "src/core/plugin_registry/grpc_plugin_registry.cc",
     ],
+    defines = ["grpc_no_xds=GRPC_NO_XDS"],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
     standalone = True,
@@ -359,6 +359,7 @@ grpc_cc_library(
     deps = [
         "config",
         "gpr_base",
+        "grpc_authorization_base",
         "grpc_base",
         "grpc_common",
         "grpc_lb_policy_grpclb",
@@ -3406,9 +3407,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_secure",
-    srcs = [
-        "src/core/lib/surface/init_secure.cc",
-    ],
     language = "c++",
     deps = [
         "config",

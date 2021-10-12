@@ -1277,7 +1277,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/event_string.h',
                       'src/core/lib/surface/init.cc',
                       'src/core/lib/surface/init.h',
-                      'src/core/lib/surface/init_secure.cc',
                       'src/core/lib/surface/lame_client.cc',
                       'src/core/lib/surface/lame_client.h',
                       'src/core/lib/surface/metadata_array.cc',
