@@ -63,21 +63,19 @@ std::string UrlEncode(const absl::string_view& s) {
 
 // Expression to match:
 // //iam.googleapis.com/locations/[^/]+/workforcePools/[^/]+/providers/.+
-bool MatchWorkforcePoolAudience(const absl::string_view& audience) {
-  absl::string_view temp = audience;
+bool MatchWorkforcePoolAudience(absl::string_view audience) {
   // Match "//iam.googleapis.com/locations/"
-  if (!absl::ConsumePrefix(&temp, "//iam.googleapis.com")) return false;
-  if (!absl::ConsumePrefix(&temp, "/locations/")) return false;
+  if (!absl::ConsumePrefix(&audience, "//iam.googleapis.com")) return false;
+  if (!absl::ConsumePrefix(&audience, "/locations/")) return false;
   // Match "[^/]+/workforcePools/"
-  std::vector<std::string> workforce_pools_split_result =
-      absl::StrSplit(temp, "/workforcePools/");
-  if (workforce_pools_split_result.size() != 2) return false;
-  if (absl::StrContains(workforce_pools_split_result[0], '/')) return false;
+  std::pair<absl::string_view, absl::string_view> workforce_pools_split_result =
+      absl::StrSplit(audience, absl::MaxSplits("/workforcePools/", 1));
+  if (absl::StrContains(workforce_pools_split_result.first, '/')) return false;
   // Match "[^/]+/providers/.+"
-  std::vector<std::string> providers_split_result =
-      absl::StrSplit(workforce_pools_split_result[1], "/providers/");
-  if (providers_split_result.size() != 2) return false;
-  if (absl::StrContains(providers_split_result[0], '/')) return false;
+  std::pair<absl::string_view, absl::string_view> providers_split_result =
+      absl::StrSplit(workforce_pools_split_result.second,
+                     absl::MaxSplits("/providers/", 1));
+  if (absl::StrContains(providers_split_result.first, '/')) return false;
   return true;
 }
 
@@ -300,32 +298,31 @@ void ExternalAccountCredentials::ExchangeToken(
   request.handshaker =
       uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   std::vector<std::string> body_parts;
-  body_parts.push_back(absl::StrFormat("%s=%s", "audience",
-                                       UrlEncode(options_.audience).c_str()));
+  body_parts.push_back(
+      absl::StrFormat("audience=%s", UrlEncode(options_.audience).c_str()));
   body_parts.push_back(absl::StrFormat(
-      "%s=%s", "grant_type",
+      "grant_type=%s",
       UrlEncode(EXTERNAL_ACCOUNT_CREDENTIALS_GRANT_TYPE).c_str()));
   body_parts.push_back(absl::StrFormat(
-      "%s=%s", "requested_token_type",
+      "requested_token_type=%s",
       UrlEncode(EXTERNAL_ACCOUNT_CREDENTIALS_REQUESTED_TOKEN_TYPE).c_str()));
+  body_parts.push_back(absl::StrFormat(
+      "subject_token_type=%s", UrlEncode(options_.subject_token_type).c_str()));
   body_parts.push_back(
-      absl::StrFormat("%s=%s", "subject_token_type",
-                      UrlEncode(options_.subject_token_type).c_str()));
-  body_parts.push_back(absl::StrFormat("%s=%s", "subject_token",
-                                       UrlEncode(subject_token).c_str()));
+      absl::StrFormat("subject_token=%s", UrlEncode(subject_token).c_str()));
   std::string scope = GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE;
   if (options_.service_account_impersonation_url.empty()) {
     scope = absl::StrJoin(scopes_, " ");
   }
-  body_parts.push_back(
-      absl::StrFormat("%s=%s", "scope", UrlEncode(scope).c_str()));
-  std::map<std::string, Json> addtional_options_map;
+  body_parts.push_back(absl::StrFormat("scope=%s", UrlEncode(scope).c_str()));
+  Json::Object addtional_options_json_object;
   if (options_.client_id.empty() && options_.client_secret.empty()) {
-    addtional_options_map["userProject"] = options_.workforce_pool_user_project;
+    addtional_options_json_object["userProject"] =
+        options_.workforce_pool_user_project;
   }
-  Json addtional_options_json(addtional_options_map);
+  Json addtional_options_json(std::move(addtional_options_json_object));
   body_parts.push_back(absl::StrFormat(
-      "%s=%s", "options", UrlEncode(addtional_options_json.Dump()).c_str()));
+      "options=%s", UrlEncode(addtional_options_json.Dump()).c_str()));
   std::string body = absl::StrJoin(body_parts, "&");
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
@@ -412,7 +409,7 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   request.handshaker =
       uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   std::string scope = absl::StrJoin(scopes_, " ");
-  std::string body = absl::StrFormat("%s=%s", "scope", scope);
+  std::string body = absl::StrFormat("scope=%s", scope);
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
