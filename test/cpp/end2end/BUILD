@@ -485,6 +485,7 @@ grpc_cc_test(
         "absl/types:optional",
     ],
     deps = [
+        ":counted_service",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
