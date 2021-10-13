@@ -451,28 +451,23 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token_lifetime(
 
 namespace {
 
-struct ExpectedMetadata {
-  std::string key;
-  std::string value;
-};
 class RequestMetadataState {
  public:
-  static RequestMetadataState* NewInstance(grpc_error_handle expected_error,
-                                           const ExpectedMetadata* expected,
-                                           size_t expected_size) {
+  static RequestMetadataState* NewInstance(
+      grpc_error_handle expected_error,
+      std::map<std::string, std::string> expected) {
     RequestMetadataState* state = new RequestMetadataState(
-        expected_error, expected, expected_size,
+        expected_error, std::move(expected),
         grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create()));
     return state;
   }
 
  private:
   RequestMetadataState(grpc_error_handle expected_error,
-                       const ExpectedMetadata* expected, size_t expected_size,
+                       std::map<std::string, std::string> expected,
                        grpc_polling_entity pollent)
       : expected_error_(expected_error),
         expected_(expected),
-        expected_size_(expected_size),
         pollent_(pollent) {
     GRPC_CLOSURE_INIT(&on_request_metadata_, OnRequestMetadata, this,
                       grpc_schedule_on_exec_ctx);
@@ -518,28 +513,28 @@ class RequestMetadataState {
       GRPC_ERROR_UNREF(expected_error_);
     }
     gpr_log(GPR_INFO, "expected_size=%" PRIdPTR " actual_size=%" PRIdPTR,
-            expected_size_, md_array_.size);
-    GPR_ASSERT(md_array_.size == expected_size_);
+            expected_.size(), md_array_.size);
+    GPR_ASSERT(md_array_.size == expected_.size());
     CheckMetadata(expected_, &md_array_);
     delete this;
   }
 
-  static void CheckMetadata(const ExpectedMetadata* expected,
+  static void CheckMetadata(const std::map<std::string, std::string>& expected,
                             grpc_credentials_mdelem_array* md_array) {
-    for (size_t i = 0; i < md_array->size; ++i) {
+    for (auto i : expected) {
       size_t j;
       for (j = 0; j < md_array->size; ++j) {
         absl::string_view actual_key =
             grpc_core::StringViewFromSlice(GRPC_MDKEY(md_array->md[j]));
-        if (actual_key == expected[i].key) {
+        if (actual_key == i.first) {
           absl::string_view actual_value =
               grpc_core::StringViewFromSlice(GRPC_MDVALUE(md_array->md[j]));
-          GPR_ASSERT(actual_value == expected[i].value);
+          GPR_ASSERT(actual_value == i.second);
           break;
         }
       }
       if (j == md_array->size) {
-        gpr_log(GPR_ERROR, "key %s not found", expected[i].key.c_str());
+        gpr_log(GPR_ERROR, "key %s not found", i.first.c_str());
         GPR_ASSERT(0);
       }
     }
@@ -547,8 +542,7 @@ class RequestMetadataState {
 
  private:
   grpc_error_handle expected_error_;
-  const ExpectedMetadata* expected_;
-  size_t expected_size_;
+  std::map<std::string, std::string> expected_;
   grpc_credentials_mdelem_array md_array_;
   grpc_closure on_request_metadata_;
   grpc_polling_entity pollent_;
@@ -558,12 +552,13 @@ class RequestMetadataState {
 
 static void test_google_iam_creds(void) {
   grpc_core::ExecCtx exec_ctx;
-  ExpectedMetadata emd[] = {{GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
-                             test_google_iam_authorization_token},
-                            {GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                             test_google_iam_authority_selector}};
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  std::map<std::string, std::string> emd = {
+      {GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
+       test_google_iam_authorization_token},
+      {GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
+       test_google_iam_authority_selector}};
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_call_credentials* creds = grpc_google_iam_credentials_create(
       test_google_iam_authorization_token, test_google_iam_authority_selector,
       nullptr);
@@ -577,9 +572,10 @@ static void test_google_iam_creds(void) {
 
 static void test_access_token_creds(void) {
   grpc_core::ExecCtx exec_ctx;
-  ExpectedMetadata emd[] = {{GRPC_AUTHORIZATION_METADATA_KEY, "Bearer blah"}};
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  std::map<std::string, std::string> emd = {
+      {GRPC_AUTHORIZATION_METADATA_KEY, "Bearer blah"}};
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_call_credentials* creds =
       grpc_access_token_credentials_create("blah", nullptr);
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -629,14 +625,14 @@ static void test_channel_oauth2_composite_creds(void) {
 
 static void test_oauth2_google_iam_composite_creds(void) {
   grpc_core::ExecCtx exec_ctx;
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {GRPC_AUTHORIZATION_METADATA_KEY, test_oauth2_bearer_token},
       {GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
        test_google_iam_authorization_token},
       {GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
        test_google_iam_authority_selector}};
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_call_credentials* oauth2_creds = grpc_md_only_test_credentials_create(
@@ -774,7 +770,7 @@ static int httpcli_get_should_not_be_called(
 
 static void test_compute_engine_creds_success() {
   grpc_core::ExecCtx exec_ctx;
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
   const char expected_creds_debug_string[] =
       "GoogleComputeEngineTokenFetcherCredentials{"
@@ -787,16 +783,15 @@ static void test_compute_engine_creds_success() {
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
 
   /* First request: http get should be called. */
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(compute_engine_httpcli_get_success_override,
                             httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
 
   /* Second request: the cached token should be served directly. */
-  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd,
-                                            GPR_ARRAY_SIZE(emd));
+  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
@@ -816,7 +811,7 @@ static void test_compute_engine_creds_failure(void) {
   RequestMetadataState* state = RequestMetadataState::NewInstance(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token."),
-      nullptr, 0);
+      {});
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_call_credentials* creds =
@@ -874,7 +869,7 @@ static int token_httpcli_post_failure(const grpc_httpcli_request* /*request*/,
 
 static void test_refresh_token_creds_success(void) {
   grpc_core::ExecCtx exec_ctx;
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
   const char expected_creds_debug_string[] =
       "GoogleRefreshToken{ClientID:32555999999.apps.googleusercontent.com,"
@@ -888,16 +883,15 @@ static void test_refresh_token_creds_success(void) {
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
 
   /* First request: http put should be called. */
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             refresh_token_httpcli_post_success);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
 
   /* Second request: the cached token should be served directly. */
-  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd,
-                                            GPR_ARRAY_SIZE(emd));
+  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
@@ -917,7 +911,7 @@ static void test_refresh_token_creds_failure(void) {
   RequestMetadataState* state = RequestMetadataState::NewInstance(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token."),
-      nullptr, 0);
+      {});
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_call_credentials* creds = grpc_google_refresh_token_credentials_create(
@@ -1119,7 +1113,7 @@ static char* write_tmp_jwt_file(const char* jwt_contents) {
 
 static void test_sts_creds_success(void) {
   grpc_core::ExecCtx exec_ctx;
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
   const char expected_creds_debug_string[] =
       "StsTokenFetcherCredentials{Path:/v1/"
@@ -1146,16 +1140,15 @@ static void test_sts_creds_success(void) {
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
 
   /* First request: http put should be called. */
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             sts_token_httpcli_post_success);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
 
   /* Second request: the cached token should be served directly. */
-  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd,
-                                            GPR_ARRAY_SIZE(emd));
+  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
@@ -1193,7 +1186,7 @@ static void test_sts_creds_token_file_not_found(void) {
   RequestMetadataState* state = RequestMetadataState::NewInstance(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token."),
-      nullptr, 0);
+      {});
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
@@ -1206,7 +1199,7 @@ static void test_sts_creds_token_file_not_found(void) {
 
 static void test_sts_creds_no_actor_token_success(void) {
   grpc_core::ExecCtx exec_ctx;
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
   const char expected_creds_debug_string[] =
       "StsTokenFetcherCredentials{Path:/v1/"
@@ -1232,16 +1225,15 @@ static void test_sts_creds_no_actor_token_success(void) {
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
 
   /* First request: http put should be called. */
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             sts_token_httpcli_post_success_no_actor_token);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
 
   /* Second request: the cached token should be served directly. */
-  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd,
-                                            GPR_ARRAY_SIZE(emd));
+  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
@@ -1262,7 +1254,7 @@ static void test_sts_creds_load_token_failure(void) {
   RequestMetadataState* state = RequestMetadataState::NewInstance(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token."),
-      nullptr, 0);
+      {});
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
@@ -1297,7 +1289,7 @@ static void test_sts_creds_http_failure(void) {
   RequestMetadataState* state = RequestMetadataState::NewInstance(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token."),
-      nullptr, 0);
+      {});
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
@@ -1444,21 +1436,21 @@ static void test_jwt_creds_success(void) {
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   std::string expected_md_value = absl::StrCat("Bearer ", test_signed_jwt);
-  ExpectedMetadata emd[] = {{"authorization", expected_md_value.c_str()}};
+  std::map<std::string, std::string> emd = {
+      {"authorization", expected_md_value.c_str()}};
   grpc_call_credentials* creds =
       grpc_service_account_jwt_access_credentials_create(
           json_key_string, grpc_max_auth_token_lifetime(), nullptr);
 
   /* First request: jwt_encode_and_sign should be called. */
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
 
   /* Second request: the cached token should be served directly. */
-  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd,
-                                            GPR_ARRAY_SIZE(emd));
+  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_jwt_encode_and_sign_set_override(
       encode_and_sign_jwt_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
@@ -1466,8 +1458,7 @@ static void test_jwt_creds_success(void) {
 
   /* Third request: Different service url so jwt_encode_and_sign should be
      called again (no caching). */
-  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd,
-                                            GPR_ARRAY_SIZE(emd));
+  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   auth_md_ctx.service_url = other_test_service_url;
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
@@ -1489,8 +1480,7 @@ static void test_jwt_creds_signing_failure(void) {
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Could not generate JWT."), nullptr,
-      0);
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Could not generate JWT."), {});
   grpc_call_credentials* creds =
       grpc_service_account_jwt_access_credentials_create(
           json_key_string, grpc_max_auth_token_lifetime(), nullptr);
@@ -1660,10 +1650,10 @@ static std::string null_well_known_creds_path_getter(void) { return ""; }
 
 static void test_google_default_creds_gce(void) {
   grpc_core::ExecCtx exec_ctx;
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_flush_cached_google_default_credentials();
@@ -1697,10 +1687,10 @@ static void test_google_default_creds_gce(void) {
 
 static void test_google_default_creds_non_gce(void) {
   grpc_core::ExecCtx exec_ctx;
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_flush_cached_google_default_credentials();
@@ -1765,10 +1755,10 @@ static void test_no_google_default_creds(void) {
 }
 
 static void test_google_default_creds_call_creds_specified(void) {
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_core::ExecCtx exec_ctx;
@@ -1826,9 +1816,9 @@ struct fake_call_creds : public grpc_call_credentials {
 };
 
 static void test_google_default_creds_not_default(void) {
-  ExpectedMetadata emd[] = {{"foo", "oof"}};
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  std::map<std::string, std::string> emd = {{"foo", "oof"}};
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_core::ExecCtx exec_ctx;
@@ -1860,7 +1850,8 @@ typedef enum {
   PLUGIN_DESTROY_CALLED_STATE
 } plugin_state;
 
-static const ExpectedMetadata plugin_md[] = {{"foo", "bar"}, {"hi", "there"}};
+static const std::map<std::string, std::string> plugin_md = {{"foo", "bar"},
+                                                             {"hi", "there"}};
 
 static int plugin_get_metadata_success(
     void* state, grpc_auth_metadata_context context,
@@ -1872,17 +1863,17 @@ static int plugin_get_metadata_success(
   GPR_ASSERT(strcmp(context.method_name, test_method) == 0);
   GPR_ASSERT(context.channel_auth_context == nullptr);
   GPR_ASSERT(context.reserved == nullptr);
-  GPR_ASSERT(GPR_ARRAY_SIZE(plugin_md) <
-             GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX);
+  GPR_ASSERT(plugin_md.size() < GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX);
   plugin_state* s = static_cast<plugin_state*>(state);
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(plugin_md); ++i) {
+  size_t i = 0;
+  for (auto md : plugin_md) {
     memset(&creds_md[i], 0, sizeof(grpc_metadata));
-    creds_md[i].key = grpc_slice_from_copied_string(plugin_md[i].key.c_str());
-    creds_md[i].value =
-        grpc_slice_from_copied_string(plugin_md[i].value.c_str());
+    creds_md[i].key = grpc_slice_from_copied_string(md.first.c_str());
+    creds_md[i].value = grpc_slice_from_copied_string(md.second.c_str());
+    i += 1;
   }
-  *num_creds_md = GPR_ARRAY_SIZE(plugin_md);
+  *num_creds_md = plugin_md.size();
   return true;  // Synchronous return.
 }
 
@@ -1938,8 +1929,8 @@ static void test_metadata_plugin_success(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
-  RequestMetadataState* md_state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, plugin_md, GPR_ARRAY_SIZE(plugin_md));
+  RequestMetadataState* md_state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, plugin_md);
 
   plugin.state = &state;
   plugin.get_metadata = plugin_get_metadata_success;
@@ -1973,7 +1964,7 @@ static void test_metadata_plugin_failure(void) {
       GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat("Getting metadata from plugin failed with error: ",
                        plugin_error_details)),
-      nullptr, 0);
+      {});
 
   plugin.state = &state;
   plugin.get_metadata = plugin_get_metadata_failure;
@@ -2363,7 +2354,7 @@ class TestExternalAccountCredentials final
 };
 
 static void test_external_account_creds_success(void) {
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -2385,15 +2376,14 @@ static void test_external_account_creds_success(void) {
   /* Check security level. */
   GPR_ASSERT(creds.min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   /* First request: http put should be called. */
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
   /* Second request: the cached token should be served directly. */
-  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd,
-                                            GPR_ARRAY_SIZE(emd));
+  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
@@ -2402,7 +2392,7 @@ static void test_external_account_creds_success(void) {
 }
 
 static void test_external_account_creds_success_with_url_encode(void) {
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -2421,8 +2411,8 @@ static void test_external_account_creds_success_with_url_encode(void) {
       "client_secret",                          // client_secret;
   };
   TestExternalAccountCredentials creds(options, {});
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
@@ -2432,7 +2422,7 @@ static void test_external_account_creds_success_with_url_encode(void) {
 
 static void
 test_external_account_creds_success_with_service_account_impersonation(void) {
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer service_account_impersonation_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -2454,8 +2444,8 @@ test_external_account_creds_success_with_service_account_impersonation(void) {
   /* Check security level. */
   GPR_ASSERT(creds.min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   /* First request: http put should be called. */
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
@@ -2489,7 +2479,7 @@ static void test_external_account_creds_failure_invalid_token_url(void) {
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, {});
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
   GRPC_ERROR_UNREF(error);
   grpc_core::ExecCtx::Get()->Flush();
@@ -2525,7 +2515,7 @@ test_external_account_creds_failure_invalid_service_account_impersonation_url(
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, {});
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
   GRPC_ERROR_UNREF(error);
   grpc_core::ExecCtx::Get()->Flush();
@@ -2563,7 +2553,7 @@ test_external_account_creds_failure_token_exchange_response_missing_access_token
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, {});
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
   GRPC_ERROR_UNREF(error);
   grpc_core::ExecCtx::Get()->Flush();
@@ -2571,7 +2561,7 @@ test_external_account_creds_failure_token_exchange_response_missing_access_token
 }
 
 static void test_url_external_account_creds_success_format_text(void) {
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -2598,8 +2588,8 @@ static void test_url_external_account_creds_success_format_text(void) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(url_external_account_creds_httpcli_get_success,
                             external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -2609,7 +2599,7 @@ static void test_url_external_account_creds_success_format_text(void) {
 
 static void
 test_url_external_account_creds_success_with_qurey_params_format_text(void) {
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -2636,8 +2626,8 @@ test_url_external_account_creds_success_with_qurey_params_format_text(void) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(url_external_account_creds_httpcli_get_success,
                             external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -2646,7 +2636,7 @@ test_url_external_account_creds_success_with_qurey_params_format_text(void) {
 }
 
 static void test_url_external_account_creds_success_format_json(void) {
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -2673,8 +2663,8 @@ static void test_url_external_account_creds_success_format_json(void) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(url_external_account_creds_httpcli_get_success,
                             external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -2711,7 +2701,7 @@ test_url_external_account_creds_failure_invalid_credential_source_url(void) {
 }
 
 static void test_file_external_account_creds_success_format_text(void) {
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -2741,8 +2731,8 @@ static void test_file_external_account_creds_success_format_text(void) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -2753,7 +2743,7 @@ static void test_file_external_account_creds_success_format_text(void) {
 }
 
 static void test_file_external_account_creds_success_format_json(void) {
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -2791,8 +2781,8 @@ static void test_file_external_account_creds_success_format_json(void) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -2833,7 +2823,7 @@ static void test_file_external_account_creds_failure_file_not_found(void) {
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, {});
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
@@ -2884,7 +2874,7 @@ static void test_file_external_account_creds_failure_invalid_json_content(
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, {});
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
@@ -2893,7 +2883,7 @@ static void test_file_external_account_creds_failure_invalid_json_content(
 }
 
 static void test_aws_external_account_creds_success(void) {
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -2919,8 +2909,8 @@ static void test_aws_external_account_creds_success(void) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -2930,7 +2920,7 @@ static void test_aws_external_account_creds_success(void) {
 
 static void test_aws_external_account_creds_success_path_region_env_keys_url(
     void) {
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -2957,8 +2947,8 @@ static void test_aws_external_account_creds_success_path_region_env_keys_url(
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -2969,7 +2959,7 @@ static void test_aws_external_account_creds_success_path_region_env_keys_url(
 
 static void
 test_aws_external_account_creds_success_path_default_region_env_keys_url(void) {
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -2996,8 +2986,8 @@ test_aws_external_account_creds_success_path_default_region_env_keys_url(void) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3009,7 +2999,7 @@ test_aws_external_account_creds_success_path_default_region_env_keys_url(void) {
 static void
 test_aws_external_account_creds_success_path_duplicate_region_env_keys_url(
     void) {
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -3038,8 +3028,8 @@ test_aws_external_account_creds_success_path_duplicate_region_env_keys_url(
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3051,7 +3041,7 @@ test_aws_external_account_creds_success_path_duplicate_region_env_keys_url(
 
 static void test_aws_external_account_creds_success_path_region_url_keys_env(
     void) {
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -3080,8 +3070,8 @@ static void test_aws_external_account_creds_success_path_region_url_keys_env(
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3094,7 +3084,7 @@ static void test_aws_external_account_creds_success_path_region_url_keys_env(
 
 static void test_aws_external_account_creds_success_path_region_env_keys_env(
     void) {
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -3124,8 +3114,8 @@ static void test_aws_external_account_creds_success_path_region_env_keys_env(
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3139,7 +3129,7 @@ static void test_aws_external_account_creds_success_path_region_env_keys_env(
 
 static void
 test_aws_external_account_creds_success_path_default_region_env_keys_env(void) {
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -3169,8 +3159,8 @@ test_aws_external_account_creds_success_path_default_region_env_keys_env(void) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3185,7 +3175,7 @@ test_aws_external_account_creds_success_path_default_region_env_keys_env(void) {
 static void
 test_aws_external_account_creds_success_path_duplicate_region_env_keys_env(
     void) {
-  ExpectedMetadata emd[] = {
+  std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -3217,8 +3207,8 @@ test_aws_external_account_creds_success_path_duplicate_region_env_keys_env(
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state =
+      RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3293,7 +3283,7 @@ static void test_aws_external_account_creds_failure_invalid_region_url(void) {
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, {});
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3333,7 +3323,7 @@ static void test_aws_external_account_creds_failure_invalid_url(void) {
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, {});
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3374,7 +3364,7 @@ static void test_aws_external_account_creds_failure_missing_role_name(void) {
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, {});
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3417,7 +3407,7 @@ test_aws_external_account_creds_failure_invalid_regional_cred_verification_url(
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, {});
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
