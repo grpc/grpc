@@ -455,9 +455,18 @@ struct ExpectedMetadata {
   std::string key;
   std::string value;
 };
-
 class RequestMetadataState {
  public:
+  static RequestMetadataState* NewInstance(grpc_error_handle expected_error,
+                                           const ExpectedMetadata* expected,
+                                           size_t expected_size) {
+    RequestMetadataState* state = new RequestMetadataState(
+        expected_error, expected, expected_size,
+        grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create()));
+    return state;
+  }
+
+ private:
   RequestMetadataState(grpc_error_handle expected_error,
                        const ExpectedMetadata* expected, size_t expected_size,
                        grpc_polling_entity pollent)
@@ -469,6 +478,7 @@ class RequestMetadataState {
                       grpc_schedule_on_exec_ctx);
   }
 
+ public:
   ~RequestMetadataState() {
     grpc_credentials_mdelem_array_destroy(&md_array_);
     grpc_pollset_set_destroy(grpc_polling_entity_pollset_set(&pollent_));
@@ -519,10 +529,12 @@ class RequestMetadataState {
     for (size_t i = 0; i < md_array->size; ++i) {
       size_t j;
       for (j = 0; j < md_array->size; ++j) {
-        if (0 == grpc_slice_str_cmp(GRPC_MDKEY(md_array->md[j]),
-                                    expected[i].key.c_str())) {
-          GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(md_array->md[j]),
-                                        expected[i].value.c_str()) == 0);
+        absl::string_view actual_key =
+            grpc_core::StringViewFromSlice(GRPC_MDKEY(md_array->md[j]));
+        if (actual_key == expected[i].key) {
+          absl::string_view actual_value =
+              grpc_core::StringViewFromSlice(GRPC_MDVALUE(md_array->md[j]));
+          GPR_ASSERT(actual_value == expected[i].value);
           break;
         }
       }
@@ -544,23 +556,14 @@ class RequestMetadataState {
 
 }  // namespace
 
-static RequestMetadataState* make_request_metadata_state(
-    grpc_error_handle expected_error, const ExpectedMetadata* expected,
-    size_t expected_size) {
-  RequestMetadataState* state = new RequestMetadataState(
-      expected_error, expected, expected_size,
-      grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create()));
-  return state;
-}
-
 static void test_google_iam_creds(void) {
   grpc_core::ExecCtx exec_ctx;
   ExpectedMetadata emd[] = {{GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
                              test_google_iam_authorization_token},
                             {GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
                              test_google_iam_authority_selector}};
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_call_credentials* creds = grpc_google_iam_credentials_create(
       test_google_iam_authorization_token, test_google_iam_authority_selector,
       nullptr);
@@ -575,8 +578,8 @@ static void test_google_iam_creds(void) {
 static void test_access_token_creds(void) {
   grpc_core::ExecCtx exec_ctx;
   ExpectedMetadata emd[] = {{GRPC_AUTHORIZATION_METADATA_KEY, "Bearer blah"}};
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_call_credentials* creds =
       grpc_access_token_credentials_create("blah", nullptr);
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -632,8 +635,8 @@ static void test_oauth2_google_iam_composite_creds(void) {
        test_google_iam_authorization_token},
       {GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
        test_google_iam_authority_selector}};
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_call_credentials* oauth2_creds = grpc_md_only_test_credentials_create(
@@ -784,16 +787,16 @@ static void test_compute_engine_creds_success() {
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
 
   /* First request: http get should be called. */
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(compute_engine_httpcli_get_success_override,
                             httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
 
   /* Second request: the cached token should be served directly. */
-  state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd,
+                                            GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
@@ -810,7 +813,7 @@ static void test_compute_engine_creds_failure(void) {
   const char expected_creds_debug_string[] =
       "GoogleComputeEngineTokenFetcherCredentials{"
       "OAuth2TokenFetcherCredentials}";
-  RequestMetadataState* state = make_request_metadata_state(
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token."),
       nullptr, 0);
@@ -885,16 +888,16 @@ static void test_refresh_token_creds_success(void) {
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
 
   /* First request: http put should be called. */
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             refresh_token_httpcli_post_success);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
 
   /* Second request: the cached token should be served directly. */
-  state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd,
+                                            GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
@@ -911,7 +914,7 @@ static void test_refresh_token_creds_failure(void) {
   const char expected_creds_debug_string[] =
       "GoogleRefreshToken{ClientID:32555999999.apps.googleusercontent.com,"
       "OAuth2TokenFetcherCredentials}";
-  RequestMetadataState* state = make_request_metadata_state(
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token."),
       nullptr, 0);
@@ -1143,16 +1146,16 @@ static void test_sts_creds_success(void) {
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
 
   /* First request: http put should be called. */
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             sts_token_httpcli_post_success);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
 
   /* Second request: the cached token should be served directly. */
-  state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd,
+                                            GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
@@ -1187,7 +1190,7 @@ static void test_sts_creds_token_file_not_found(void) {
   /* Check security level. */
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
 
-  RequestMetadataState* state = make_request_metadata_state(
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token."),
       nullptr, 0);
@@ -1229,16 +1232,16 @@ static void test_sts_creds_no_actor_token_success(void) {
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
 
   /* First request: http put should be called. */
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             sts_token_httpcli_post_success_no_actor_token);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
 
   /* Second request: the cached token should be served directly. */
-  state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd,
+                                            GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
@@ -1256,7 +1259,7 @@ static void test_sts_creds_load_token_failure(void) {
       "StsTokenFetcherCredentials{Path:/v1/"
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
   grpc_core::ExecCtx exec_ctx;
-  RequestMetadataState* state = make_request_metadata_state(
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token."),
       nullptr, 0);
@@ -1291,7 +1294,7 @@ static void test_sts_creds_http_failure(void) {
       "StsTokenFetcherCredentials{Path:/v1/"
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
   grpc_core::ExecCtx exec_ctx;
-  RequestMetadataState* state = make_request_metadata_state(
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token."),
       nullptr, 0);
@@ -1447,15 +1450,15 @@ static void test_jwt_creds_success(void) {
           json_key_string, grpc_max_auth_token_lifetime(), nullptr);
 
   /* First request: jwt_encode_and_sign should be called. */
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
 
   /* Second request: the cached token should be served directly. */
-  state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd,
+                                            GPR_ARRAY_SIZE(emd));
   grpc_jwt_encode_and_sign_set_override(
       encode_and_sign_jwt_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
@@ -1463,8 +1466,8 @@ static void test_jwt_creds_success(void) {
 
   /* Third request: Different service url so jwt_encode_and_sign should be
      called again (no caching). */
-  state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd,
+                                            GPR_ARRAY_SIZE(emd));
   auth_md_ctx.service_url = other_test_service_url;
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
@@ -1485,7 +1488,7 @@ static void test_jwt_creds_signing_failure(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
-  RequestMetadataState* state = make_request_metadata_state(
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Could not generate JWT."), nullptr,
       0);
   grpc_call_credentials* creds =
@@ -1659,8 +1662,8 @@ static void test_google_default_creds_gce(void) {
   grpc_core::ExecCtx exec_ctx;
   ExpectedMetadata emd[] = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_flush_cached_google_default_credentials();
@@ -1696,8 +1699,8 @@ static void test_google_default_creds_non_gce(void) {
   grpc_core::ExecCtx exec_ctx;
   ExpectedMetadata emd[] = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_flush_cached_google_default_credentials();
@@ -1764,8 +1767,8 @@ static void test_no_google_default_creds(void) {
 static void test_google_default_creds_call_creds_specified(void) {
   ExpectedMetadata emd[] = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_core::ExecCtx exec_ctx;
@@ -1824,8 +1827,8 @@ struct fake_call_creds : public grpc_call_credentials {
 
 static void test_google_default_creds_not_default(void) {
   ExpectedMetadata emd[] = {{"foo", "oof"}};
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_core::ExecCtx exec_ctx;
@@ -1935,7 +1938,7 @@ static void test_metadata_plugin_success(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
-  RequestMetadataState* md_state = make_request_metadata_state(
+  RequestMetadataState* md_state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, plugin_md, GPR_ARRAY_SIZE(plugin_md));
 
   plugin.state = &state;
@@ -1966,7 +1969,7 @@ static void test_metadata_plugin_failure(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
-  RequestMetadataState* md_state = make_request_metadata_state(
+  RequestMetadataState* md_state = RequestMetadataState::NewInstance(
       GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat("Getting metadata from plugin failed with error: ",
                        plugin_error_details)),
@@ -2382,15 +2385,15 @@ static void test_external_account_creds_success(void) {
   /* Check security level. */
   GPR_ASSERT(creds.min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   /* First request: http put should be called. */
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
   /* Second request: the cached token should be served directly. */
-  state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd,
+                                            GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
@@ -2418,8 +2421,8 @@ static void test_external_account_creds_success_with_url_encode(void) {
       "client_secret",                          // client_secret;
   };
   TestExternalAccountCredentials creds(options, {});
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
@@ -2451,8 +2454,8 @@ test_external_account_creds_success_with_service_account_impersonation(void) {
   /* Check security level. */
   GPR_ASSERT(creds.min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   /* First request: http put should be called. */
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
@@ -2486,7 +2489,7 @@ static void test_external_account_creds_failure_invalid_token_url(void) {
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      make_request_metadata_state(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
   GRPC_ERROR_UNREF(error);
   grpc_core::ExecCtx::Get()->Flush();
@@ -2522,7 +2525,7 @@ test_external_account_creds_failure_invalid_service_account_impersonation_url(
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      make_request_metadata_state(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
   GRPC_ERROR_UNREF(error);
   grpc_core::ExecCtx::Get()->Flush();
@@ -2560,7 +2563,7 @@ test_external_account_creds_failure_token_exchange_response_missing_access_token
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      make_request_metadata_state(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
   GRPC_ERROR_UNREF(error);
   grpc_core::ExecCtx::Get()->Flush();
@@ -2595,8 +2598,8 @@ static void test_url_external_account_creds_success_format_text(void) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(url_external_account_creds_httpcli_get_success,
                             external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -2633,8 +2636,8 @@ test_url_external_account_creds_success_with_qurey_params_format_text(void) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(url_external_account_creds_httpcli_get_success,
                             external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -2670,8 +2673,8 @@ static void test_url_external_account_creds_success_format_json(void) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(url_external_account_creds_httpcli_get_success,
                             external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -2738,8 +2741,8 @@ static void test_file_external_account_creds_success_format_text(void) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -2788,8 +2791,8 @@ static void test_file_external_account_creds_success_format_json(void) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -2830,7 +2833,7 @@ static void test_file_external_account_creds_failure_file_not_found(void) {
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      make_request_metadata_state(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
@@ -2881,7 +2884,7 @@ static void test_file_external_account_creds_failure_invalid_json_content(
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      make_request_metadata_state(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
@@ -2916,8 +2919,8 @@ static void test_aws_external_account_creds_success(void) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -2954,8 +2957,8 @@ static void test_aws_external_account_creds_success_path_region_env_keys_url(
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -2993,8 +2996,8 @@ test_aws_external_account_creds_success_path_default_region_env_keys_url(void) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3035,8 +3038,8 @@ test_aws_external_account_creds_success_path_duplicate_region_env_keys_url(
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3077,8 +3080,8 @@ static void test_aws_external_account_creds_success_path_region_url_keys_env(
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3121,8 +3124,8 @@ static void test_aws_external_account_creds_success_path_region_env_keys_env(
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3166,8 +3169,8 @@ test_aws_external_account_creds_success_path_default_region_env_keys_env(void) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3214,8 +3217,8 @@ test_aws_external_account_creds_success_path_duplicate_region_env_keys_env(
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  RequestMetadataState* state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  RequestMetadataState* state = RequestMetadataState::NewInstance(
+      GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3290,7 +3293,7 @@ static void test_aws_external_account_creds_failure_invalid_region_url(void) {
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      make_request_metadata_state(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3330,7 +3333,7 @@ static void test_aws_external_account_creds_failure_invalid_url(void) {
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      make_request_metadata_state(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3371,7 +3374,7 @@ static void test_aws_external_account_creds_failure_missing_role_name(void) {
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      make_request_metadata_state(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
@@ -3414,7 +3417,7 @@ test_aws_external_account_creds_failure_invalid_regional_cred_verification_url(
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
   RequestMetadataState* state =
-      make_request_metadata_state(expected_error, nullptr, 0);
+      RequestMetadataState::NewInstance(expected_error, nullptr, 0);
   grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
                             aws_external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);

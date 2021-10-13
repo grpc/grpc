@@ -219,7 +219,6 @@ class InternalRequest {
     req->NextAddress(GRPC_ERROR_NONE);
   }
 
- private:
   grpc_slice request_text_;
   grpc_http_parser parser_;
   grpc_resolved_addresses* addresses_ = nullptr;
