@@ -328,6 +328,7 @@ if "win32" in sys.platform:
         'advapi32',
         'ws2_32',
         'dbghelp',
+        'psapi',
     )
 if BUILD_WITH_SYSTEM_OPENSSL:
     EXTENSION_LIBRARIES += (
