@@ -3562,15 +3562,6 @@ targets:
   - linux
   - posix
   - mac
-- name: inproc_callback_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/end2end/inproc_callback_test.cc
-  deps:
-  - end2end_tests
-  uses_polling: false
 - name: invalid_call_argument_test
   build: test
   language: c
@@ -6000,6 +5991,362 @@ targets:
   - linux
   - posix
   - mac
+- name: h2_census_nosec_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_census.cc
+  deps:
+  - end2end_nosec_tests
+  - grpc_test_util_unsecure
+- name: h2_census_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_census.cc
+  deps:
+  - end2end_tests
+- name: h2_compress_nosec_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_compress.cc
+  deps:
+  - end2end_nosec_tests
+  - grpc_test_util_unsecure
+- name: h2_compress_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_compress.cc
+  deps:
+  - end2end_tests
+- name: h2_fakesec_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_fakesec.cc
+  deps:
+  - end2end_tests
+- name: h2_fd_nosec_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_fd.cc
+  deps:
+  - end2end_nosec_tests
+  - grpc_test_util_unsecure
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: h2_fd_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_fd.cc
+  deps:
+  - end2end_tests
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: h2_full+pipe_nosec_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_full+pipe.cc
+  deps:
+  - end2end_nosec_tests
+  - grpc_test_util_unsecure
+  platforms:
+  - linux
+  - posix
+- name: h2_full+pipe_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_full+pipe.cc
+  deps:
+  - end2end_tests
+  platforms:
+  - linux
+  - posix
+- name: h2_full+trace_nosec_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_full+trace.cc
+  deps:
+  - end2end_nosec_tests
+  - grpc_test_util_unsecure
+- name: h2_full+trace_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_full+trace.cc
+  deps:
+  - end2end_tests
+- name: h2_full+workarounds_nosec_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_full+workarounds.cc
+  deps:
+  - end2end_nosec_tests
+  - grpc_test_util_unsecure
+- name: h2_full+workarounds_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_full+workarounds.cc
+  deps:
+  - end2end_tests
+- name: h2_full_nosec_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_full.cc
+  deps:
+  - end2end_nosec_tests
+  - grpc_test_util_unsecure
+- name: h2_full_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_full.cc
+  deps:
+  - end2end_tests
+- name: h2_http_proxy_nosec_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_http_proxy.cc
+  deps:
+  - end2end_nosec_tests
+  - grpc_test_util_unsecure
+- name: h2_http_proxy_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_http_proxy.cc
+  deps:
+  - end2end_tests
+- name: h2_insecure_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_insecure.cc
+  deps:
+  - end2end_tests
+- name: h2_local_ipv4_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_local_ipv4.cc
+  deps:
+  - end2end_tests
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: h2_local_ipv6_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_local_ipv6.cc
+  deps:
+  - end2end_tests
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: h2_local_uds_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_local_uds.cc
+  deps:
+  - end2end_tests
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: h2_oauth2_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_oauth2.cc
+  deps:
+  - end2end_tests
+- name: h2_proxy_nosec_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_proxy.cc
+  deps:
+  - end2end_nosec_tests
+  - grpc_test_util_unsecure
+- name: h2_proxy_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_proxy.cc
+  deps:
+  - end2end_tests
+- name: h2_sockpair+trace_nosec_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_sockpair+trace.cc
+  deps:
+  - end2end_nosec_tests
+  - grpc_test_util_unsecure
+- name: h2_sockpair+trace_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_sockpair+trace.cc
+  deps:
+  - end2end_tests
+- name: h2_sockpair_1byte_nosec_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_sockpair_1byte.cc
+  deps:
+  - end2end_nosec_tests
+  - grpc_test_util_unsecure
+- name: h2_sockpair_1byte_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_sockpair_1byte.cc
+  deps:
+  - end2end_tests
+- name: h2_sockpair_nosec_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_sockpair.cc
+  deps:
+  - end2end_nosec_tests
+  - grpc_test_util_unsecure
+- name: h2_sockpair_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_sockpair.cc
+  deps:
+  - end2end_tests
+- name: h2_ssl_cred_reload_nosec_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_ssl_cred_reload.cc
+  deps:
+  - end2end_nosec_tests
+  - grpc_test_util_unsecure
+- name: h2_ssl_cred_reload_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_ssl_cred_reload.cc
+  deps:
+  - end2end_tests
+- name: h2_ssl_nosec_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_ssl.cc
+  deps:
+  - end2end_nosec_tests
+  - grpc_test_util_unsecure
+- name: h2_ssl_proxy_nosec_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_ssl_proxy.cc
+  deps:
+  - end2end_nosec_tests
+  - grpc_test_util_unsecure
+- name: h2_ssl_proxy_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_ssl_proxy.cc
+  deps:
+  - end2end_tests
 - name: h2_ssl_session_reuse_test
   gtest: true
   build: test
@@ -6009,6 +6356,51 @@ targets:
   - test/core/end2end/h2_ssl_session_reuse_test.cc
   deps:
   - end2end_tests
+- name: h2_ssl_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_ssl.cc
+  deps:
+  - end2end_tests
+- name: h2_tls_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_tls.cc
+  deps:
+  - end2end_tests
+- name: h2_uds_nosec_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_uds.cc
+  deps:
+  - end2end_nosec_tests
+  - grpc_test_util_unsecure
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: h2_uds_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/h2_uds.cc
+  deps:
+  - end2end_tests
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: head_of_line_blocking_bad_client_test
   gtest: true
   build: test
@@ -6160,6 +6552,25 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
+- name: inproc_callback_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/inproc_callback_test.cc
+  deps:
+  - end2end_tests
+  uses_polling: false
+- name: inproc_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/end2end/fixtures/inproc.cc
+  deps:
+  - end2end_tests
 - name: insecure_security_connector_test
   gtest: true
   build: test
