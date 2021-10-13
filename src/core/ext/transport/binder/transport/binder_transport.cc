@@ -120,7 +120,7 @@ static void set_pollset_set(grpc_transport*, grpc_stream*, grpc_pollset_set*) {
 
 static void AssignMetadata(grpc_metadata_batch* mb, grpc_core::Arena* arena,
                            const grpc_binder::Metadata& md) {
-  grpc_metadata_batch_init(mb);
+  mb->Clear();
   for (auto& p : md) {
     grpc_linked_mdelem* glm = static_cast<grpc_linked_mdelem*>(
         arena->Alloc(sizeof(grpc_linked_mdelem)));
@@ -132,7 +132,7 @@ static void AssignMetadata(grpc_metadata_batch* mb, grpc_core::Arena* arena,
     // Unref here to prevent memory leak
     grpc_slice_unref_internal(key);
     grpc_slice_unref_internal(value);
-    GPR_ASSERT(grpc_metadata_batch_link_tail(mb, glm) == GRPC_ERROR_NONE);
+    GPR_ASSERT(mb->LinkTail(glm) == GRPC_ERROR_NONE);
   }
 }
 
@@ -172,6 +172,20 @@ static void cancel_stream_locked(grpc_binder_transport* gbt,
   GRPC_ERROR_UNREF(error);
 }
 
+static bool ContainsAuthorityAndPath(const grpc_binder::Metadata& metadata) {
+  bool has_authority = false;
+  bool has_path = false;
+  for (const auto& kv : metadata) {
+    if (kv.first == grpc_core::StringViewFromSlice(GRPC_MDSTR_AUTHORITY)) {
+      has_authority = true;
+    }
+    if (kv.first == grpc_core::StringViewFromSlice(GRPC_MDSTR_PATH)) {
+      has_path = true;
+    }
+  }
+  return has_authority && has_path;
+}
+
 static void recv_initial_metadata_locked(void* arg,
                                          grpc_error_handle /*error*/) {
   RecvInitialMetadataArgs* args = static_cast<RecvInitialMetadataArgs*>(arg);
@@ -188,6 +202,13 @@ static void recv_initial_metadata_locked(void* arg,
       if (!args->initial_metadata.ok()) {
         gpr_log(GPR_ERROR, "Failed to parse initial metadata");
         return absl_status_to_grpc_error(args->initial_metadata.status());
+      }
+      if (!gbs->is_client) {
+        // For server, we expect :authority and :path in initial metadata.
+        if (!ContainsAuthorityAndPath(*args->initial_metadata)) {
+          return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+              "Missing :authority or :path in initial metadata");
+        }
       }
       AssignMetadata(gbs->recv_initial_metadata, gbs->arena,
                      *args->initial_metadata);
@@ -281,8 +302,8 @@ static void recv_trailing_metadata_locked(void* arg,
         grpc_linked_mdelem* glm = static_cast<grpc_linked_mdelem*>(
             gbs->arena->Alloc(sizeof(grpc_linked_mdelem)));
         glm->md = grpc_get_reffed_status_elem(args->status);
-        GPR_ASSERT(grpc_metadata_batch_link_tail(gbs->recv_trailing_metadata,
-                                                 glm) == GRPC_ERROR_NONE);
+        GPR_ASSERT(gbs->recv_trailing_metadata->LinkTail(glm) ==
+                   GRPC_ERROR_NONE);
         gpr_log(GPR_INFO, "trailing_metadata = %p",
                 gbs->recv_trailing_metadata);
         gpr_log(GPR_INFO, "glm = %p", glm);
@@ -375,7 +396,7 @@ static void perform_stream_op_locked(void* stream_op,
     grpc_binder::Metadata init_md;
     auto batch = op->payload->send_initial_metadata.send_initial_metadata;
 
-    (*batch)->ForEach([&](grpc_mdelem md) {
+    batch->ForEach([&](grpc_mdelem md) {
       absl::string_view key = grpc_core::StringViewFromSlice(GRPC_MDKEY(md));
       absl::string_view value =
           grpc_core::StringViewFromSlice(GRPC_MDVALUE(md));
@@ -427,7 +448,7 @@ static void perform_stream_op_locked(void* stream_op,
     auto batch = op->payload->send_trailing_metadata.send_trailing_metadata;
     grpc_binder::Metadata trailing_metadata;
 
-    (*batch)->ForEach([&](grpc_mdelem md) {
+    batch->ForEach([&](grpc_mdelem md) {
       // Client will not send trailing metadata.
       GPR_ASSERT(!gbt->is_client);
 
@@ -461,10 +482,6 @@ static void perform_stream_op_locked(void* stream_op,
         tx_code, [tx_code, gbs,
                   gbt](absl::StatusOr<grpc_binder::Metadata> initial_metadata) {
           grpc_core::ExecCtx exec_ctx;
-          if (gbs->is_closed) {
-            GRPC_BINDER_STREAM_UNREF(gbs, "recv_initial_metadata");
-            return;
-          }
           gbs->recv_initial_metadata_args.tx_code = tx_code;
           gbs->recv_initial_metadata_args.initial_metadata =
               std::move(initial_metadata);
@@ -485,10 +502,6 @@ static void perform_stream_op_locked(void* stream_op,
     gbt->transport_stream_receiver->RegisterRecvMessage(
         tx_code, [tx_code, gbs, gbt](absl::StatusOr<std::string> message) {
           grpc_core::ExecCtx exec_ctx;
-          if (gbs->is_closed) {
-            GRPC_BINDER_STREAM_UNREF(gbs, "recv_message");
-            return;
-          }
           gbs->recv_message_args.tx_code = tx_code;
           gbs->recv_message_args.message = std::move(message);
           gbt->combiner->Run(
@@ -509,10 +522,6 @@ static void perform_stream_op_locked(void* stream_op,
                      absl::StatusOr<grpc_binder::Metadata> trailing_metadata,
                      int status) {
           grpc_core::ExecCtx exec_ctx;
-          if (gbs->is_closed) {
-            GRPC_BINDER_STREAM_UNREF(gbs, "recv_trailing_metadata");
-            return;
-          }
           gbs->recv_trailing_metadata_args.tx_code = tx_code;
           gbs->recv_trailing_metadata_args.trailing_metadata =
               std::move(trailing_metadata);
@@ -696,7 +705,8 @@ static void accept_stream_locked(void* gt, grpc_error_handle /*error*/) {
 }
 
 grpc_binder_transport::grpc_binder_transport(
-    std::unique_ptr<grpc_binder::Binder> binder, bool is_client)
+    std::unique_ptr<grpc_binder::Binder> binder, bool is_client,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy)
     : is_client(is_client),
       combiner(grpc_combiner_create()),
       state_tracker(is_client ? "binder_transport_client"
@@ -715,8 +725,9 @@ grpc_binder_transport::grpc_binder_transport(
   // WireReader holds a ref to grpc_binder_transport.
   GRPC_BINDER_REF_TRANSPORT(this, "wire reader");
   wire_reader = grpc_core::MakeOrphanable<grpc_binder::WireReaderImpl>(
-      transport_stream_receiver, is_client,
-      /*on_destruct_callback=*/[this] {
+      transport_stream_receiver, is_client, security_policy,
+      /*on_destruct_callback=*/
+      [this] {
         // Unref transport when destructed.
         GRPC_BINDER_UNREF_TRANSPORT(this, "wire reader");
       });
@@ -728,21 +739,31 @@ grpc_binder_transport::~grpc_binder_transport() {
 }
 
 grpc_transport* grpc_create_binder_transport_client(
-    std::unique_ptr<grpc_binder::Binder> endpoint_binder) {
+    std::unique_ptr<grpc_binder::Binder> endpoint_binder,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+        security_policy) {
   gpr_log(GPR_INFO, __func__);
 
-  grpc_binder_transport* t =
-      new grpc_binder_transport(std::move(endpoint_binder), /*is_client=*/true);
+  GPR_ASSERT(endpoint_binder != nullptr);
+  GPR_ASSERT(security_policy != nullptr);
+
+  grpc_binder_transport* t = new grpc_binder_transport(
+      std::move(endpoint_binder), /*is_client=*/true, security_policy);
 
   return &t->base;
 }
 
 grpc_transport* grpc_create_binder_transport_server(
-    std::unique_ptr<grpc_binder::Binder> client_binder) {
+    std::unique_ptr<grpc_binder::Binder> client_binder,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+        security_policy) {
   gpr_log(GPR_INFO, __func__);
 
-  grpc_binder_transport* t =
-      new grpc_binder_transport(std::move(client_binder), /*is_client=*/false);
+  GPR_ASSERT(client_binder != nullptr);
+  GPR_ASSERT(security_policy != nullptr);
+
+  grpc_binder_transport* t = new grpc_binder_transport(
+      std::move(client_binder), /*is_client=*/false, security_policy);
 
   return &t->base;
 }

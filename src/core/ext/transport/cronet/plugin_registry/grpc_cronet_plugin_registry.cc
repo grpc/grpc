@@ -29,8 +29,15 @@ void grpc_deadline_filter_shutdown(void);
 void grpc_client_channel_init(void);
 void grpc_client_channel_shutdown(void);
 
+namespace grpc_core {
+void ServiceConfigParserInit(void);
+void ServiceConfigParserShutdown(void);
+}  // namespace grpc_core
+
 void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_http_filters_init, grpc_http_filters_shutdown);
+  grpc_register_plugin(grpc_core::ServiceConfigParserInit,
+                       grpc_core::ServiceConfigParserShutdown);
   grpc_register_plugin(grpc_chttp2_plugin_init, grpc_chttp2_plugin_shutdown);
   grpc_register_plugin(grpc_deadline_filter_init,
                        grpc_deadline_filter_shutdown);

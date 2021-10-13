@@ -15,7 +15,9 @@
 #ifndef GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
 #define GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#include <cassert>
 
 #include "absl/types/variant.h"
 #include "absl/utility/utility.h"
@@ -68,12 +70,14 @@ struct SeqState {
   // Move constructor - assumes we're in the initial state (move prior) as it's
   // illegal to move a promise after polling it.
   SeqState(SeqState&& other) noexcept
-      : prior(std::move(other.prior)),
-        next_factory(std::move(other.next_factory)) {}
+      : next_factory(std::move(other.next_factory)) {
+    new (&prior) PriorState(std::move(other.prior));
+  }
   // Copy constructor - assumes we're in the initial state (move prior) as it's
   // illegal to move a promise after polling it.
-  SeqState(const SeqState& other)
-      : prior(other.prior), next_factory(other.next_factory) {}
+  SeqState(const SeqState& other) : next_factory(other.next_factory) {
+    new (&prior) PriorState(std::move(other.prior));
+  }
   // Empty destructor - we instead destruct the innards in BasicSeq manually
   // depending on state.
   ~SeqState() {}
@@ -115,7 +119,7 @@ struct SeqState<Traits, 0, Fs...> {
         next_factory(other.next_factory) {}
   // Empty destructor - we instead destruct the innards in BasicSeq manually
   // depending on state.
-  ~SeqState(){};
+  ~SeqState() {}
   // Evaluate the current promise, next promise factory types for this state.
   // Our callable is the first element of Fs, wrapped in PromiseLike to handle
   // some common edge cases. The next factory is the second element.

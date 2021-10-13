@@ -28,6 +28,7 @@
 #include <grpc/grpc.h>
 #include <grpcpp/grpcpp.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
@@ -86,6 +87,7 @@ class EchoServerThread final {
 };
 
 static void BM_E2eLatencyCensusDisabled(benchmark::State& state) {
+  grpc_core::CoreConfiguration::Reset();
   grpc::testing::TestGrpcScope grpc_scope;
   EchoServerThread server;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =
@@ -102,6 +104,7 @@ static void BM_E2eLatencyCensusDisabled(benchmark::State& state) {
 BENCHMARK(BM_E2eLatencyCensusDisabled);
 
 static void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
+  grpc_core::CoreConfiguration::Reset();
   // Now start the test by registering the plugin (once in the execution)
   RegisterOnce();
   // This we can safely repeat, and doing so clears accumulated data to avoid

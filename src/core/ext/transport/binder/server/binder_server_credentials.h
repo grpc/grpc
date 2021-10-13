@@ -15,9 +15,11 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_SERVER_BINDER_SERVER_CREDENTIALS_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_SERVER_BINDER_SERVER_CREDENTIALS_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <grpcpp/security/server_credentials.h>
+
+#include "src/core/ext/transport/binder/security_policy/security_policy.h"
 
 namespace grpc {
 namespace experimental {
@@ -27,7 +29,9 @@ namespace experimental {
 /// Calling \a ServerBuilder::AddListeningPort() with Binder ServerCredentials
 /// in a non-Android environment will make the subsequent call to
 /// \a ServerBuilder::BuildAndStart() returns a null pointer.
-std::shared_ptr<grpc::ServerCredentials> BinderServerCredentials();
+std::shared_ptr<grpc::ServerCredentials> BinderServerCredentials(
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+        security_policy);
 
 }  // namespace experimental
 }  // namespace grpc

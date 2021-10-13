@@ -448,7 +448,8 @@ void HPackCompressor::Framer::EncodeDynamic(grpc_mdelem elem) {
   }
 }
 
-void HPackCompressor::Framer::EncodeDeadline(grpc_millis deadline) {
+void HPackCompressor::Framer::Encode(GrpcTimeoutMetadata,
+                                     grpc_millis deadline) {
   char timeout_str[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
   grpc_mdelem mdelem;
   grpc_http2_encode_timeout(deadline - grpc_core::ExecCtx::Get()->Now(),

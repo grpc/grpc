@@ -38,32 +38,24 @@ extern grpc_core::TraceFlag grpc_http_trace;
 
 namespace grpc_core {
 
-HPackTable::HPackTable() = default;
+HPackTable::HPackTable() : static_metadata_(GetStaticMementos()) {}
 
-HPackTable::~HPackTable() {
-  for (size_t i = 0; i < num_entries_; i++) {
-    GRPC_MDELEM_UNREF(entries_[(first_entry_ + i) % entries_.size()]);
-  }
-}
+HPackTable::~HPackTable() = default;
 
 /* Evict one element from the table */
 void HPackTable::EvictOne() {
-  grpc_mdelem first_entry = entries_[first_entry_];
-  size_t elem_bytes = GRPC_SLICE_LENGTH(GRPC_MDKEY(first_entry)) +
-                      GRPC_SLICE_LENGTH(GRPC_MDVALUE(first_entry)) +
-                      hpack_constants::kEntryOverhead;
-  GPR_ASSERT(elem_bytes <= mem_used_);
-  mem_used_ -= static_cast<uint32_t>(elem_bytes);
+  auto first_entry = std::move(entries_[first_entry_]);
+  GPR_ASSERT(first_entry.transport_size() <= mem_used_);
+  mem_used_ -= first_entry.transport_size();
   first_entry_ = ((first_entry_ + 1) % entries_.size());
   num_entries_--;
-  GRPC_MDELEM_UNREF(first_entry);
 }
 
 void HPackTable::Rebuild(uint32_t new_cap) {
   EntriesVec entries;
   entries.resize(new_cap);
   for (size_t i = 0; i < num_entries_; i++) {
-    entries[i] = entries_[(first_entry_ + i) % entries_.size()];
+    entries[i] = std::move(entries_[(first_entry_ + i) % entries_.size()]);
   }
   first_entry_ = 0;
   entries_.swap(entries);
@@ -113,12 +105,7 @@ grpc_error_handle HPackTable::SetCurrentTableSize(uint32_t bytes) {
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle HPackTable::Add(grpc_mdelem md) {
-  /* determine how many bytes of buffer this entry represents */
-  size_t elem_bytes = GRPC_SLICE_LENGTH(GRPC_MDKEY(md)) +
-                      GRPC_SLICE_LENGTH(GRPC_MDVALUE(md)) +
-                      hpack_constants::kEntryOverhead;
-
+grpc_error_handle HPackTable::Add(Memento md) {
   if (current_table_bytes_ > max_bytes_) {
     return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
         "HPACK max table size reduced to %d but not reflected by hpack "
@@ -127,7 +114,7 @@ grpc_error_handle HPackTable::Add(grpc_mdelem md) {
   }
 
   // we can't add elements bigger than the max table size
-  if (elem_bytes > current_table_bytes_) {
+  if (md.transport_size() > current_table_bytes_) {
     // HPACK draft 10 section 4.4 states:
     // If the size of the new entry is less than or equal to the maximum
     // size, that entry is added to the table.  It is not an error to
@@ -142,17 +129,17 @@ grpc_error_handle HPackTable::Add(grpc_mdelem md) {
   }
 
   // evict entries to ensure no overflow
-  while (elem_bytes > static_cast<size_t>(current_table_bytes_) - mem_used_) {
+  while (md.transport_size() >
+         static_cast<size_t>(current_table_bytes_) - mem_used_) {
     EvictOne();
   }
 
   // copy the finalized entry in
-  entries_[(first_entry_ + num_entries_) % entries_.size()] =
-      GRPC_MDELEM_REF(md);
+  mem_used_ += md.transport_size();
+  entries_[(first_entry_ + num_entries_) % entries_.size()] = std::move(md);
 
   // update accounting values
   num_entries_++;
-  mem_used_ += static_cast<uint32_t>(elem_bytes);
   return GRPC_ERROR_NONE;
 }
 

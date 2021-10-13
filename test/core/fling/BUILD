@@ -16,7 +16,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc
 
 grpc_package(name = "test/core/fling")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 

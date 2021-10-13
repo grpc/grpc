@@ -34,6 +34,7 @@
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/channelz_registry.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -44,7 +45,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 /** Cache grpc-status: X mdelems for X = 0..NUM_CACHED_STATUS_ELEMS.
@@ -187,7 +187,9 @@ void channelz_node_destroy(void* p) {
       static_cast<grpc_core::channelz::ChannelNode*>(p);
   node->Unref();
 }
-int channelz_node_cmp(void* p1, void* p2) { return GPR_ICMP(p1, p2); }
+int channelz_node_cmp(void* p1, void* p2) {
+  return grpc_core::QsortCompare(p1, p2);
+}
 const grpc_arg_pointer_vtable channelz_node_arg_vtable = {
     channelz_node_copy, channelz_node_destroy, channelz_node_cmp};
 
@@ -267,7 +269,8 @@ grpc_channel* grpc_channel_create(const char* target,
   grpc_channel_args_destroy(args);
   grpc_channel_stack_builder_set_target(builder, target);
   grpc_channel_stack_builder_set_transport(builder, optional_transport);
-  if (!grpc_channel_init_create_stack(builder, channel_stack_type)) {
+  if (!grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
+          builder, channel_stack_type)) {
     grpc_channel_stack_builder_destroy(builder);
     if (resource_user != nullptr) {
       if (preallocated_bytes > 0) {
@@ -321,7 +324,7 @@ void grpc_channel_update_call_size_estimate(grpc_channel* channel,
     /* size shrank: decrease estimate */
     gpr_atm_no_barrier_cas(
         &channel->call_size_estimate, static_cast<gpr_atm>(cur),
-        static_cast<gpr_atm>(GPR_MIN(cur - 1, (255 * cur + size) / 256)));
+        static_cast<gpr_atm>(std::min(cur - 1, (255 * cur + size) / 256)));
     /* if we lose: never mind, something else will likely update soon enough */
   }
 }

@@ -1307,6 +1307,13 @@ static tsi_result ssl_handshaker_result_extract_peer(
   return result;
 }
 
+static tsi_result ssl_handshaker_result_get_frame_protector_type(
+    const tsi_handshaker_result* /*self*/,
+    tsi_frame_protector_type* frame_protector_type) {
+  *frame_protector_type = TSI_FRAME_PROTECTOR_NORMAL;
+  return TSI_OK;
+}
+
 static tsi_result ssl_handshaker_result_create_frame_protector(
     const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
     tsi_frame_protector** protector) {
@@ -1373,6 +1380,7 @@ static void ssl_handshaker_result_destroy(tsi_handshaker_result* self) {
 
 static const tsi_handshaker_result_vtable handshaker_result_vtable = {
     ssl_handshaker_result_extract_peer,
+    ssl_handshaker_result_get_frame_protector_type,
     nullptr, /* create_zero_copy_grpc_protector */
     ssl_handshaker_result_create_frame_protector,
     ssl_handshaker_result_get_unused_bytes,

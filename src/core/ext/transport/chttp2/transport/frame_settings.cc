@@ -217,8 +217,8 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
           if (parser->value < sp->min_value || parser->value > sp->max_value) {
             switch (sp->invalid_value_behavior) {
               case GRPC_CHTTP2_CLAMP_INVALID_VALUE:
-                parser->value =
-                    GPR_CLAMP(parser->value, sp->min_value, sp->max_value);
+                parser->value = grpc_core::Clamp(parser->value, sp->min_value,
+                                                 sp->max_value);
                 break;
               case GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE:
                 grpc_chttp2_goaway_append(

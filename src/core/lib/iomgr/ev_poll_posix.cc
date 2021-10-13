@@ -357,7 +357,12 @@ static void unref_by(grpc_fd* fd, int n) {
     gpr_mu_destroy(&fd->mu);
     grpc_iomgr_unregister_object(&fd->iomgr_object);
     fork_fd_list_remove_node(fd->fork_fd_list);
-    if (fd->shutdown) GRPC_ERROR_UNREF(fd->shutdown_error);
+    if (fd->shutdown) {
+      GRPC_ERROR_UNREF(fd->shutdown_error);
+    }
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+    fd->shutdown_error.~Status();
+#endif
     gpr_free(fd);
   } else {
     GPR_ASSERT(old > n);
@@ -372,6 +377,9 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   gpr_mu_init(&r->mu);
   gpr_atm_rel_store(&r->refst, 1);
   r->shutdown = 0;
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+  new (&r->shutdown_error) absl::Status();
+#endif
   r->read_closure = CLOSURE_NOT_READY;
   r->write_closure = CLOSURE_NOT_READY;
   r->fd = fd;
@@ -873,7 +881,7 @@ static void pollset_add_fd(grpc_pollset* pollset, grpc_fd* fd) {
   }
   if (pollset->fd_count == pollset->fd_capacity) {
     pollset->fd_capacity =
-        GPR_MAX(pollset->fd_capacity + 8, pollset->fd_count * 3 / 2);
+        std::max(pollset->fd_capacity + 8, pollset->fd_count * 3 / 2);
     pollset->fds = static_cast<grpc_fd**>(
         gpr_realloc(pollset->fds, sizeof(grpc_fd*) * pollset->fd_capacity));
   }
@@ -1198,7 +1206,7 @@ static void pollset_set_add_pollset(grpc_pollset_set* pollset_set,
   gpr_mu_lock(&pollset_set->mu);
   if (pollset_set->pollset_count == pollset_set->pollset_capacity) {
     pollset_set->pollset_capacity =
-        GPR_MAX(8, 2 * pollset_set->pollset_capacity);
+        std::max(size_t(8), 2 * pollset_set->pollset_capacity);
     pollset_set->pollsets = static_cast<grpc_pollset**>(gpr_realloc(
         pollset_set->pollsets,
         pollset_set->pollset_capacity * sizeof(*pollset_set->pollsets)));
@@ -1223,8 +1231,8 @@ static void pollset_set_del_pollset(grpc_pollset_set* pollset_set,
   for (i = 0; i < pollset_set->pollset_count; i++) {
     if (pollset_set->pollsets[i] == pollset) {
       pollset_set->pollset_count--;
-      GPR_SWAP(grpc_pollset*, pollset_set->pollsets[i],
-               pollset_set->pollsets[pollset_set->pollset_count]);
+      std::swap(pollset_set->pollsets[i],
+                pollset_set->pollsets[pollset_set->pollset_count]);
       break;
     }
   }
@@ -1247,7 +1255,8 @@ static void pollset_set_add_pollset_set(grpc_pollset_set* bag,
   size_t i, j;
   gpr_mu_lock(&bag->mu);
   if (bag->pollset_set_count == bag->pollset_set_capacity) {
-    bag->pollset_set_capacity = GPR_MAX(8, 2 * bag->pollset_set_capacity);
+    bag->pollset_set_capacity =
+        std::max(size_t(8), 2 * bag->pollset_set_capacity);
     bag->pollset_sets = static_cast<grpc_pollset_set**>(
         gpr_realloc(bag->pollset_sets,
                     bag->pollset_set_capacity * sizeof(*bag->pollset_sets)));
@@ -1272,8 +1281,8 @@ static void pollset_set_del_pollset_set(grpc_pollset_set* bag,
   for (i = 0; i < bag->pollset_set_count; i++) {
     if (bag->pollset_sets[i] == item) {
       bag->pollset_set_count--;
-      GPR_SWAP(grpc_pollset_set*, bag->pollset_sets[i],
-               bag->pollset_sets[bag->pollset_set_count]);
+      std::swap(bag->pollset_sets[i],
+                bag->pollset_sets[bag->pollset_set_count]);
       break;
     }
   }
@@ -1284,7 +1293,8 @@ static void pollset_set_add_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
   size_t i;
   gpr_mu_lock(&pollset_set->mu);
   if (pollset_set->fd_count == pollset_set->fd_capacity) {
-    pollset_set->fd_capacity = GPR_MAX(8, 2 * pollset_set->fd_capacity);
+    pollset_set->fd_capacity =
+        std::max(size_t(8), 2 * pollset_set->fd_capacity);
     pollset_set->fds = static_cast<grpc_fd**>(
         gpr_realloc(pollset_set->fds,
                     pollset_set->fd_capacity * sizeof(*pollset_set->fds)));
@@ -1306,8 +1316,7 @@ static void pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
   for (i = 0; i < pollset_set->fd_count; i++) {
     if (pollset_set->fds[i] == fd) {
       pollset_set->fd_count--;
-      GPR_SWAP(grpc_fd*, pollset_set->fds[i],
-               pollset_set->fds[pollset_set->fd_count]);
+      std::swap(pollset_set->fds[i], pollset_set->fds[pollset_set->fd_count]);
       GRPC_FD_UNREF(fd, "pollset_set");
       break;
     }

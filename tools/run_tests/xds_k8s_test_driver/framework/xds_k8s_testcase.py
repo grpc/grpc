@@ -22,6 +22,7 @@ from typing import List, Optional, Tuple
 from absl import flags
 from absl.testing import absltest
 from google.protobuf import json_format
+import grpc
 
 from framework import xds_flags
 from framework import xds_k8s_flags
@@ -90,6 +91,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         cls.xds_server_uri = xds_flags.XDS_SERVER_URI.value
         cls.ensure_firewall = xds_flags.ENSURE_FIREWALL.value
         cls.firewall_allowed_ports = xds_flags.FIREWALL_ALLOWED_PORTS.value
+        cls.compute_api_version = xds_flags.COMPUTE_API_VERSION.value
 
         # Resource names.
         cls.resource_prefix = xds_flags.RESOURCE_PREFIX.value
@@ -239,6 +241,46 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
             0,
             msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
 
+    @staticmethod
+    def diffAccumulatedStatsPerMethod(
+            before: grpc_testing.LoadBalancerAccumulatedStatsResponse,
+            after: grpc_testing.LoadBalancerAccumulatedStatsResponse):
+        """Only diffs stats_per_method, as the other fields are deprecated."""
+        diff = grpc_testing.LoadBalancerAccumulatedStatsResponse()
+        for method, method_stats in after.stats_per_method.items():
+            for status, count in method_stats.result.items():
+                count -= before.stats_per_method[method].result[status]
+                if count < 0:
+                    raise AssertionError("Diff of count shouldn't be negative")
+                if count > 0:
+                    diff.stats_per_method[method].result[status] = count
+        return diff
+
+    def assertRpcStatusCodes(self, test_client: XdsTestClient, *,
+                             status_code: grpc.StatusCode, duration: _timedelta,
+                             method: str) -> None:
+        """Assert all RPCs for a method are completing with a certain status."""
+        # Sending with pre-set QPS for a period of time
+        before_stats = test_client.get_load_balancer_accumulated_stats()
+        logging.info(
+            'Received LoadBalancerAccumulatedStatsResponse from test client %s: before:\n%s',
+            test_client.ip, before_stats)
+        time.sleep(duration.total_seconds())
+        after_stats = test_client.get_load_balancer_accumulated_stats()
+        logging.info(
+            'Received LoadBalancerAccumulatedStatsResponse from test client %s: after:\n%s',
+            test_client.ip, after_stats)
+
+        diff_stats = self.diffAccumulatedStatsPerMethod(before_stats,
+                                                        after_stats)
+        stats = diff_stats.stats_per_method[method]
+        status = status_code.value[0]
+        for found_status, count in stats.result.items():
+            if found_status != status and count > 0:
+                self.fail(f"Expected only status {status} but found status "
+                          f"{found_status} for method {method}:\n{diff_stats}")
+        self.assertGreater(stats.result[status_code.value[0]], 0)
+
     def assertRpcsEventuallyGoToGivenServers(self,
                                              test_client: XdsTestClient,
                                              servers: List[XdsTestServer],
@@ -329,11 +371,13 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             cls.server_maintenance_port = KubernetesServerRunner.DEFAULT_MAINTENANCE_PORT
 
     def initTrafficDirectorManager(self) -> TrafficDirectorManager:
-        return TrafficDirectorManager(self.gcp_api_manager,
-                                      project=self.project,
-                                      resource_prefix=self.resource_prefix,
-                                      resource_suffix=self.resource_suffix,
-                                      network=self.network)
+        return TrafficDirectorManager(
+            self.gcp_api_manager,
+            project=self.project,
+            resource_prefix=self.resource_prefix,
+            resource_suffix=self.resource_suffix,
+            network=self.network,
+            compute_api_version=self.compute_api_version)
 
     def initKubernetesServerRunner(self) -> KubernetesServerRunner:
         return KubernetesServerRunner(
@@ -400,7 +444,8 @@ class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
             project=self.project,
             resource_prefix=self.resource_prefix,
             resource_suffix=self.resource_suffix,
-            network=self.network)
+            network=self.network,
+            compute_api_version=self.compute_api_version)
 
 
 class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
@@ -431,7 +476,8 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             project=self.project,
             resource_prefix=self.resource_prefix,
             resource_suffix=self.resource_suffix,
-            network=self.network)
+            network=self.network,
+            compute_api_version=self.compute_api_version)
 
     def initKubernetesServerRunner(self) -> KubernetesServerRunner:
         return KubernetesServerRunner(

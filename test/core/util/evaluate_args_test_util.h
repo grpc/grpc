@@ -28,12 +28,9 @@ namespace grpc_core {
 
 class EvaluateArgsTestUtil {
  public:
-  EvaluateArgsTestUtil() { grpc_metadata_batch_init(&metadata_); }
+  EvaluateArgsTestUtil() = default;
 
-  ~EvaluateArgsTestUtil() {
-    grpc_metadata_batch_destroy(&metadata_);
-    delete channel_args_;
-  }
+  ~EvaluateArgsTestUtil() { delete channel_args_; }
 
   void AddPairToMetadata(const char* key, const char* value) {
     metadata_storage_.emplace_back();
@@ -65,8 +62,9 @@ class EvaluateArgsTestUtil {
   }
 
  private:
+  ScopedArenaPtr arena_ = MakeScopedArena(1024);
   std::list<grpc_linked_mdelem> metadata_storage_;
-  grpc_metadata_batch metadata_;
+  grpc_metadata_batch metadata_{arena_.get()};
   MockAuthorizationEndpoint endpoint_{/*local_uri=*/"", /*peer_uri=*/""};
   grpc_auth_context auth_context_{nullptr};
   EvaluateArgs::PerChannelArgs* channel_args_ = nullptr;

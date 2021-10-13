@@ -324,6 +324,7 @@ static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
  public:
   grpc_core::RefCountedPtr<grpc_core::Subchannel> CreateSubchannel(
+      const grpc_resolved_address& /*address*/,
       const grpc_channel_args* /*args*/) override {
     return nullptr;
   }
@@ -449,7 +450,7 @@ class NoOp {
  public:
   class Op {
    public:
-    Op(NoOp* /*p*/, grpc_call_stack* /*s*/) {}
+    Op(NoOp* /*p*/, grpc_call_stack* /*s*/, grpc_core::Arena*) {}
     void Finish() {}
   };
 };
@@ -466,11 +467,11 @@ class SendEmptyMetadata {
 
   class Op {
    public:
-    Op(SendEmptyMetadata* p, grpc_call_stack* /*s*/) {
-      grpc_metadata_batch_init(&batch_);
+    Op(SendEmptyMetadata* p, grpc_call_stack* /*s*/, grpc_core::Arena* arena)
+        : batch_(arena) {
       p->op_payload_.send_initial_metadata.send_initial_metadata = &batch_;
     }
-    void Finish() { grpc_metadata_batch_destroy(&batch_); }
+    void Finish() {}
 
    private:
     grpc_metadata_batch batch_;
@@ -547,7 +548,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     GRPC_ERROR_UNREF(
         grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr, &call_args));
-    typename TestOp::Op op(&test_op_data, call_stack);
+    typename TestOp::Op op(&test_op_data, call_stack, call_args.arena);
     grpc_call_stack_destroy(call_stack, &final_info, nullptr);
     op.Finish();
     grpc_core::ExecCtx::Get()->Flush();

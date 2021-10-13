@@ -1463,8 +1463,11 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EXPECT_EQ(iter->error_message(), s.error_message());
     EXPECT_EQ(iter->binary_error_details(), s.error_details());
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "created"));
+#ifndef NDEBUG
+    // GRPC_ERROR_INT_FILE_LINE is for debug only
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "file"));
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "line"));
+#endif
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "status"));
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "13"));
   }
@@ -1630,7 +1633,7 @@ TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
   Status s = stub_->Echo(&context, request, &response);
   cancel_thread.join();
   EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
-  EXPECT_EQ(s.error_message(), "Cancelled");
+  EXPECT_EQ(s.error_message(), "CANCELLED");
 }
 
 // Server cancels rpc after 1ms

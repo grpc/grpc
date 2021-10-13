@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/ext/service_config/service_config.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -27,8 +27,8 @@
 
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
-#include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
+#include "src/core/ext/service_config/service_config_parser.h"
 #include "src/core/lib/gpr/string.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -42,6 +42,13 @@ namespace testing {
 
 // Set this channel arg to true to disable parsing.
 #define GRPC_ARG_DISABLE_PARSING "disable_parsing"
+
+// A regular expression to enter referenced or child errors.
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+#define CHILD_ERROR_TAG ".*children.*"
+#else
+#define CHILD_ERROR_TAG ".*referenced_errors.*"
+#endif
 
 class TestParsedConfig1 : public ServiceConfigParser::ParsedConfig {
  public:
@@ -152,8 +159,8 @@ class ErrorParser : public ServiceConfigParser::Parser {
 class ServiceConfigTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfigParser::Shutdown();
-    ServiceConfigParser::Init();
+    ServiceConfigParserShutdown();
+    ServiceConfigParserInit();
     EXPECT_EQ(
         ServiceConfigParser::RegisterParser(absl::make_unique<TestParser1>()),
         0);
@@ -204,12 +211,11 @@ TEST_F(ServiceConfigTest, ErrorDuplicateMethodConfigNames) {
       "]}";
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex("Service config parsing error.*referenced_errors"
-                               ".*Method Params.*referenced_errors"
-                               ".*methodConfig.*referenced_errors"
-                               ".*multiple method configs with same name"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "multiple method configs with same name"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -221,12 +227,11 @@ TEST_F(ServiceConfigTest, ErrorDuplicateMethodConfigNamesWithNullMethod) {
       "]}";
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex("Service config parsing error.*referenced_errors"
-                               ".*Method Params.*referenced_errors"
-                               ".*methodConfig.*referenced_errors"
-                               ".*multiple method configs with same name"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "multiple method configs with same name"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -238,12 +243,11 @@ TEST_F(ServiceConfigTest, ErrorDuplicateMethodConfigNamesWithEmptyMethod) {
       "]}";
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex("Service config parsing error.*referenced_errors"
-                               ".*Method Params.*referenced_errors"
-                               ".*methodConfig.*referenced_errors"
-                               ".*multiple method configs with same name"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "multiple method configs with same name"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -255,12 +259,11 @@ TEST_F(ServiceConfigTest, ErrorDuplicateDefaultMethodConfigs) {
       "]}";
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex("Service config parsing error.*referenced_errors"
-                               ".*Method Params.*referenced_errors"
-                               ".*methodConfig.*referenced_errors"
-                               ".*multiple default method configs"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "multiple default method configs"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -272,12 +275,11 @@ TEST_F(ServiceConfigTest, ErrorDuplicateDefaultMethodConfigsWithNullService) {
       "]}";
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex("Service config parsing error.*referenced_errors"
-                               ".*Method Params.*referenced_errors"
-                               ".*methodConfig.*referenced_errors"
-                               ".*multiple default method configs"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "multiple default method configs"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -289,12 +291,11 @@ TEST_F(ServiceConfigTest, ErrorDuplicateDefaultMethodConfigsWithEmptyService) {
       "]}";
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex("Service config parsing error.*referenced_errors"
-                               ".*Method Params.*referenced_errors"
-                               ".*methodConfig.*referenced_errors"
-                               ".*multiple default method configs"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "multiple default method configs"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -345,10 +346,10 @@ TEST_F(ServiceConfigTest, Parser1ErrorInvalidType) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
-              ::testing::ContainsRegex(absl::StrCat(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Global Params.*referenced_errors.*",
-                  TestParser1::InvalidTypeErrorMessage())));
+              ::testing::ContainsRegex(
+                  absl::StrCat("Service config parsing error" CHILD_ERROR_TAG
+                               "Global Params" CHILD_ERROR_TAG,
+                               TestParser1::InvalidTypeErrorMessage())));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -357,10 +358,10 @@ TEST_F(ServiceConfigTest, Parser1ErrorInvalidValue) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
-              ::testing::ContainsRegex(absl::StrCat(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Global Params.*referenced_errors.*",
-                  TestParser1::InvalidValueErrorMessage())));
+              ::testing::ContainsRegex(
+                  absl::StrCat("Service config parsing error" CHILD_ERROR_TAG
+                               "Global Params" CHILD_ERROR_TAG,
+                               TestParser1::InvalidValueErrorMessage())));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -401,12 +402,12 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidType) {
       "\"method_param\":\"5\"}]}";
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
-  EXPECT_THAT(grpc_error_std_string(error),
-              ::testing::ContainsRegex(absl::StrCat(
-                  "Service config parsing error.*referenced_errors\":\\[.*"
-                  "Method Params.*referenced_errors.*methodConfig.*"
-                  "referenced_errors.*",
-                  TestParser2::InvalidTypeErrorMessage())));
+  EXPECT_THAT(
+      grpc_error_std_string(error),
+      ::testing::ContainsRegex(absl::StrCat(
+          "Service config parsing error" CHILD_ERROR_TAG
+          "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG,
+          TestParser2::InvalidTypeErrorMessage())));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -416,12 +417,12 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
       "\"method_param\":-5}]}";
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
-  EXPECT_THAT(grpc_error_std_string(error),
-              ::testing::ContainsRegex(absl::StrCat(
-                  "Service config parsing error.*referenced_errors\":\\[.*"
-                  "Method Params.*referenced_errors.*methodConfig.*"
-                  "referenced_errors.*",
-                  TestParser2::InvalidValueErrorMessage())));
+  EXPECT_THAT(
+      grpc_error_std_string(error),
+      ::testing::ContainsRegex(absl::StrCat(
+          "Service config parsing error" CHILD_ERROR_TAG
+          "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG,
+          TestParser2::InvalidValueErrorMessage())));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -429,8 +430,8 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
 class ErroredParsersScopingTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfigParser::Shutdown();
-    ServiceConfigParser::Init();
+    ServiceConfigParserShutdown();
+    ServiceConfigParserInit();
     EXPECT_EQ(
         ServiceConfigParser::RegisterParser(absl::make_unique<ErrorParser>()),
         0);
@@ -447,8 +448,8 @@ TEST_F(ErroredParsersScopingTest, GlobalParams) {
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex(absl::StrCat(
-          "Service config parsing error.*referenced_errors\":\\[.*"
-          "Global Params.*referenced_errors.*",
+          "Service config parsing error" CHILD_ERROR_TAG
+          "Global Params" CHILD_ERROR_TAG,
           ErrorParser::GlobalError(), ".*", ErrorParser::GlobalError())));
   GRPC_ERROR_UNREF(error);
 }
@@ -460,11 +461,10 @@ TEST_F(ErroredParsersScopingTest, MethodParams) {
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex(absl::StrCat(
-          "Service config parsing error.*referenced_errors\":\\[.*"
-          "Global Params.*referenced_errors.*",
+          "Service config parsing error" CHILD_ERROR_TAG
+          "Global Params" CHILD_ERROR_TAG,
           ErrorParser::GlobalError(), ".*", ErrorParser::GlobalError(),
-          ".*Method Params.*referenced_errors.*methodConfig.*"
-          "referenced_errors.*",
+          ".*Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG,
           ErrorParser::MethodError(), ".*", ErrorParser::MethodError())));
   GRPC_ERROR_UNREF(error);
 }
@@ -476,8 +476,8 @@ TEST_F(ErroredParsersScopingTest, MethodParams) {
 class ClientChannelParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfigParser::Shutdown();
-    ServiceConfigParser::Init();
+    ServiceConfigParserShutdown();
+    ServiceConfigParserInit();
     EXPECT_EQ(
         ServiceConfigParser::RegisterParser(
             absl::make_unique<internal::ClientChannelServiceConfigParser>()),
@@ -551,13 +551,13 @@ TEST_F(ClientChannelParserTest, UnknownLoadBalancingConfig) {
   const char* test_json = "{\"loadBalancingConfig\": [{\"unknown\":{}}]}";
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
-  EXPECT_THAT(grpc_error_std_string(error),
-              ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Global Params.*referenced_errors.*"
-                  "Client channel global parser.*referenced_errors.*"
-                  "field:loadBalancingConfig.*referenced_errors.*"
-                  "No known policies in list: unknown"));
+  EXPECT_THAT(
+      grpc_error_std_string(error),
+      ::testing::ContainsRegex("Service config parsing error" CHILD_ERROR_TAG
+                               "Global Params" CHILD_ERROR_TAG
+                               "Client channel global parser" CHILD_ERROR_TAG
+                               "field:loadBalancingConfig" CHILD_ERROR_TAG
+                               "No known policies in list: unknown"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -571,13 +571,12 @@ TEST_F(ClientChannelParserTest, InvalidGrpclbLoadBalancingConfig) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Global Params.*referenced_errors.*"
-                  "Client channel global parser.*referenced_errors.*"
-                  "field:loadBalancingConfig.*referenced_errors.*"
-                  "GrpcLb Parser.*referenced_errors.*"
-                  "field:childPolicy.*referenced_errors.*"
-                  "type should be array"));
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Global Params" CHILD_ERROR_TAG
+                  "Client channel global parser" CHILD_ERROR_TAG
+                  "field:loadBalancingConfig" CHILD_ERROR_TAG
+                  "GrpcLb Parser" CHILD_ERROR_TAG
+                  "field:childPolicy" CHILD_ERROR_TAG "type should be array"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -609,9 +608,9 @@ TEST_F(ClientChannelParserTest, UnknownLoadBalancingPolicy) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Global Params.*referenced_errors.*"
-                  "Client channel global parser.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Global Params" CHILD_ERROR_TAG
+                  "Client channel global parser" CHILD_ERROR_TAG
                   "field:loadBalancingPolicy error:Unknown lb policy"));
   GRPC_ERROR_UNREF(error);
 }
@@ -623,9 +622,9 @@ TEST_F(ClientChannelParserTest, LoadBalancingPolicyXdsNotAllowed) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Global Params.*referenced_errors.*"
-                  "Client channel global parser.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Global Params" CHILD_ERROR_TAG
+                  "Client channel global parser" CHILD_ERROR_TAG
                   "field:loadBalancingPolicy "
                   "error:xds_cluster_resolver_experimental requires "
                   "a config. Please use loadBalancingConfig instead."));
@@ -669,10 +668,9 @@ TEST_F(ClientChannelParserTest, InvalidTimeout) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "Client channel parser.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "Client channel parser" CHILD_ERROR_TAG
                   "field:timeout error:type should be STRING of the form given "
                   "by google.proto.Duration"));
   GRPC_ERROR_UNREF(error);
@@ -721,10 +719,9 @@ TEST_F(ClientChannelParserTest, InvalidWaitForReady) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "Client channel parser.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "Client channel parser" CHILD_ERROR_TAG
                   "field:waitForReady error:Type should be true/false"));
   GRPC_ERROR_UNREF(error);
 }
@@ -761,7 +758,7 @@ TEST_F(ClientChannelParserTest, InvalidHealthCheckMultipleEntries) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "JSON parsing failed.*referenced_errors.*"
+                  "JSON parsing failed" CHILD_ERROR_TAG
                   "duplicate key \"healthCheckConfig\" at index 104"));
   GRPC_ERROR_UNREF(error);
 }
@@ -773,8 +770,8 @@ TEST_F(ClientChannelParserTest, InvalidHealthCheckMultipleEntries) {
 class RetryParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfigParser::Shutdown();
-    ServiceConfigParser::Init();
+    ServiceConfigParserShutdown();
+    ServiceConfigParserInit();
     EXPECT_EQ(ServiceConfigParser::RegisterParser(
                   absl::make_unique<internal::RetryServiceConfigParser>()),
               0);
@@ -808,13 +805,13 @@ TEST_F(RetryParserTest, RetryThrottlingMissingFields) {
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
-  EXPECT_THAT(grpc_error_std_string(error),
-              ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Global Params.*referenced_errors.*"
-                  "retryThrottling.*referenced_errors.*"
-                  "field:retryThrottling field:maxTokens error:Not found.*"
-                  "field:retryThrottling field:tokenRatio error:Not found"));
+  EXPECT_THAT(
+      grpc_error_std_string(error),
+      ::testing::ContainsRegex(
+          "Service config parsing error" CHILD_ERROR_TAG
+          "Global Params" CHILD_ERROR_TAG "retryThrottling" CHILD_ERROR_TAG
+          "field:retryThrottling field:maxTokens error:Not found"
+          ".*field:retryThrottling field:tokenRatio error:Not found"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -828,13 +825,13 @@ TEST_F(RetryParserTest, InvalidRetryThrottlingNegativeMaxTokens) {
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
-  EXPECT_THAT(grpc_error_std_string(error),
-              ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Global Params.*referenced_errors.*"
-                  "retryThrottling.*referenced_errors.*"
-                  "field:retryThrottling field:maxTokens error:should "
-                  "be greater than zero"));
+  EXPECT_THAT(
+      grpc_error_std_string(error),
+      ::testing::ContainsRegex(
+          "Service config parsing error" CHILD_ERROR_TAG
+          "Global Params" CHILD_ERROR_TAG "retryThrottling" CHILD_ERROR_TAG
+          "field:retryThrottling field:maxTokens error:should "
+          "be greater than zero"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -848,13 +845,13 @@ TEST_F(RetryParserTest, InvalidRetryThrottlingInvalidTokenRatio) {
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
-  EXPECT_THAT(grpc_error_std_string(error),
-              ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Global Params.*referenced_errors.*"
-                  "retryThrottling.*referenced_errors.*"
-                  "field:retryThrottling field:tokenRatio "
-                  "error:Failed parsing"));
+  EXPECT_THAT(
+      grpc_error_std_string(error),
+      ::testing::ContainsRegex("Service config parsing error" CHILD_ERROR_TAG
+                               "Global Params" CHILD_ERROR_TAG
+                               "retryThrottling" CHILD_ERROR_TAG
+                               "field:retryThrottling field:tokenRatio "
+                               "error:Failed parsing"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -907,9 +904,8 @@ TEST_F(RetryParserTest, InvalidRetryPolicyWrongType) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
                   "field:retryPolicy error:should be of type object"));
   GRPC_ERROR_UNREF(error);
 }
@@ -930,14 +926,13 @@ TEST_F(RetryParserTest, InvalidRetryPolicyRequiredFieldsMissing) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "retryPolicy.*referenced_errors.*"
-                  "field:maxAttempts error:required field missing.*"
-                  "field:initialBackoff error:does not exist.*"
-                  "field:maxBackoff error:does not exist.*"
-                  "field:backoffMultiplier error:required field missing"));
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "retryPolicy" CHILD_ERROR_TAG
+                  ".*field:maxAttempts error:required field missing"
+                  ".*field:initialBackoff error:does not exist"
+                  ".*field:maxBackoff error:does not exist"
+                  ".*field:backoffMultiplier error:required field missing"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -961,10 +956,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxAttemptsWrongType) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "retryPolicy.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "retryPolicy" CHILD_ERROR_TAG
                   "field:maxAttempts error:should be of type number"));
   GRPC_ERROR_UNREF(error);
 }
@@ -989,10 +983,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxAttemptsBadValue) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "retryPolicy.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "retryPolicy" CHILD_ERROR_TAG
                   "field:maxAttempts error:should be at least 2"));
   GRPC_ERROR_UNREF(error);
 }
@@ -1017,10 +1010,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyInitialBackoffWrongType) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "retryPolicy.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "retryPolicy" CHILD_ERROR_TAG
                   "field:initialBackoff error:type should be STRING of the "
                   "form given by google.proto.Duration"));
   GRPC_ERROR_UNREF(error);
@@ -1046,10 +1038,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyInitialBackoffBadValue) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "retryPolicy.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "retryPolicy" CHILD_ERROR_TAG
                   "field:initialBackoff error:must be greater than 0"));
   GRPC_ERROR_UNREF(error);
 }
@@ -1074,10 +1065,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxBackoffWrongType) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "retryPolicy.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "retryPolicy" CHILD_ERROR_TAG
                   "field:maxBackoff error:type should be STRING of the form "
                   "given by google.proto.Duration"));
   GRPC_ERROR_UNREF(error);
@@ -1103,10 +1093,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxBackoffBadValue) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "retryPolicy.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "retryPolicy" CHILD_ERROR_TAG
                   "field:maxBackoff error:must be greater than 0"));
   GRPC_ERROR_UNREF(error);
 }
@@ -1131,10 +1120,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyBackoffMultiplierWrongType) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "retryPolicy.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "retryPolicy" CHILD_ERROR_TAG
                   "field:backoffMultiplier error:should be of type number"));
   GRPC_ERROR_UNREF(error);
 }
@@ -1159,10 +1147,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyBackoffMultiplierBadValue) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "retryPolicy.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "retryPolicy" CHILD_ERROR_TAG
                   "field:backoffMultiplier error:must be greater than 0"));
   GRPC_ERROR_UNREF(error);
 }
@@ -1187,10 +1174,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyEmptyRetryableStatusCodes) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "retryPolicy.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "retryPolicy" CHILD_ERROR_TAG
                   "field:retryableStatusCodes error:must be non-empty"));
   GRPC_ERROR_UNREF(error);
 }
@@ -1215,10 +1201,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyRetryableStatusCodesWrongType) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "retryPolicy.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "retryPolicy" CHILD_ERROR_TAG
                   "field:retryableStatusCodes error:must be of type array"));
   GRPC_ERROR_UNREF(error);
 }
@@ -1243,13 +1228,11 @@ TEST_F(RetryParserTest, InvalidRetryPolicyUnparseableRetryableStatusCodes) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "retryPolicy.*referenced_errors.*"
-                  "field:retryableStatusCodes "
-                  "error:failed to parse status code.*"
-                  "field:retryableStatusCodes "
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "retryPolicy" CHILD_ERROR_TAG "field:retryableStatusCodes "
+                  "error:failed to parse status code"
+                  ".*field:retryableStatusCodes "
                   "error:status codes should be of type string"));
   GRPC_ERROR_UNREF(error);
 }
@@ -1392,10 +1375,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutUnparseable) {
   auto svc_cfg = ServiceConfig::Create(&args, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "retryPolicy.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "retryPolicy" CHILD_ERROR_TAG
                   "field:perAttemptRecvTimeout error:type must be STRING "
                   "of the form given by google.proto.Duration."));
   GRPC_ERROR_UNREF(error);
@@ -1425,10 +1407,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutWrongType) {
   auto svc_cfg = ServiceConfig::Create(&args, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "retryPolicy.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "retryPolicy" CHILD_ERROR_TAG
                   "field:perAttemptRecvTimeout error:type must be STRING "
                   "of the form given by google.proto.Duration."));
   GRPC_ERROR_UNREF(error);
@@ -1458,10 +1439,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutBadValue) {
   auto svc_cfg = ServiceConfig::Create(&args, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "retryPolicy.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "retryPolicy" CHILD_ERROR_TAG
                   "field:perAttemptRecvTimeout error:must be greater than 0"));
   GRPC_ERROR_UNREF(error);
 }
@@ -1473,8 +1453,8 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutBadValue) {
 class MessageSizeParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfigParser::Shutdown();
-    ServiceConfigParser::Init();
+    ServiceConfigParserShutdown();
+    ServiceConfigParserInit();
     EXPECT_EQ(ServiceConfigParser::RegisterParser(
                   absl::make_unique<MessageSizeParser>()),
               0);
@@ -1519,10 +1499,9 @@ TEST_F(MessageSizeParserTest, InvalidMaxRequestMessageBytes) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "Message size parser.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "Message size parser" CHILD_ERROR_TAG
                   "field:maxRequestMessageBytes error:should be non-negative"));
   GRPC_ERROR_UNREF(error);
 }
@@ -1541,10 +1520,9 @@ TEST_F(MessageSizeParserTest, InvalidMaxResponseMessageBytes) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
-                  "Service config parsing error.*referenced_errors.*"
-                  "Method Params.*referenced_errors.*"
-                  "methodConfig.*referenced_errors.*"
-                  "Message size parser.*referenced_errors.*"
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Method Params" CHILD_ERROR_TAG "methodConfig" CHILD_ERROR_TAG
+                  "Message size parser" CHILD_ERROR_TAG
                   "field:maxResponseMessageBytes error:should be of type "
                   "number"));
   GRPC_ERROR_UNREF(error);

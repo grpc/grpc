@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_STREAM_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_STREAM_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 
@@ -52,7 +52,8 @@ struct grpc_binder_stream {
         refcount(refcount),
         arena(arena),
         tx_code(tx_code),
-        is_client(is_client) {
+        is_client(is_client),
+        is_closed(false) {
     // TODO(waynetu): Should this be protected?
     t->registered_stream[tx_code] = this;
 
@@ -79,8 +80,8 @@ struct grpc_binder_stream {
   grpc_core::Arena* arena;
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> sbs;
   int tx_code;
-  bool is_client;
-  bool is_closed = false;
+  const bool is_client;
+  bool is_closed;
 
   grpc_closure* destroy_stream_then_closure = nullptr;
   grpc_closure destroy_stream;

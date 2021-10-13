@@ -19,6 +19,7 @@
 
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/seq.h"
+#include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::MockFunction;
 using testing::StrictMock;
@@ -41,7 +42,7 @@ TEST(LatchTest, Works) {
                      return absl::OkStatus();
                    });
       },
-      NoCallbackScheduler(),
+      NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
