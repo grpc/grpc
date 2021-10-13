@@ -20,6 +20,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/service_config/service_config.h"
+#include "src/core/lib/gpr/env.h"
 #include "test/core/util/test_config.h"
 
 // A regular expression to enter referenced or child errors.
@@ -34,8 +35,15 @@ namespace {
 
 class RlsConfigParsingTest : public ::testing::Test {
  public:
-  void SetUp() override { grpc_init(); }
-  void TearDown() override { grpc_shutdown_blocking(); }
+  static void SetUpTestSuite() {
+    gpr_setenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY", "true");
+    grpc_init();
+  }
+
+  static void TearDownTestSuite() {
+    grpc_shutdown_blocking();
+    gpr_unsetenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY");
+  }
 };
 
 TEST_F(RlsConfigParsingTest, ValidConfig) {
