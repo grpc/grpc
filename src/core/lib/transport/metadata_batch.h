@@ -23,6 +23,7 @@
 
 #include <stdbool.h>
 
+#include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 
@@ -30,10 +31,14 @@
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/table.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/lib/transport/parsed_metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 
 typedef struct grpc_linked_mdelem {
   grpc_linked_mdelem() {}
@@ -76,7 +81,22 @@ namespace grpc_core {
 // should not need to.
 struct GrpcTimeoutMetadata {
   using ValueType = grpc_millis;
+  using MementoType = grpc_millis;
   static const char* key() { return "grpc-timeout"; }
+  static MementoType ParseMemento(const grpc_slice& value) {
+    grpc_millis timeout;
+    if (GPR_UNLIKELY(!grpc_http2_decode_timeout(value, &timeout))) {
+      timeout = GRPC_MILLIS_INF_FUTURE;
+    }
+    return timeout;
+  }
+  static ValueType MementoToValue(MementoType timeout) {
+    if (timeout == GRPC_MILLIS_INF_FUTURE) {
+      return GRPC_MILLIS_INF_FUTURE;
+    }
+    return grpc_core::ExecCtx::Get()->Now() + timeout;
+  }
+  static MementoType DisplayValue(MementoType x) { return x; }
 };
 
 // MetadataMap encodes the mapping of metadata keys to metadata values.
@@ -96,13 +116,44 @@ struct GrpcTimeoutMetadata {
 // Each trait object has the following signature:
 // // Traits for the grpc-xyz metadata field:
 // struct GrpcXyzMetadata {
+//   // The type that's stored on MetadataBatch
 //   using ValueType = ...;
+//   // The type that's stored in compression/decompression tables
+//   using MementoType = ...;
+//   // The string key for this metadata type (for transports that require it)
 //   static constexpr char* key() { return "grpc-xyz"; }
+//   // Parse a memento from a slice
+//   static MementoType ParseMemento(const grpc_slice& value) { ... }
+//   // Convert a memento to a value
+//   static ValueType MementoToValue(MementoType memento) { ... }
+//   // Convert a value to something that can be passed to StrCat and displayed
+//   // for debugging
+//   static SomeStrCatableType DisplayValue(MementoType value) { ... }
 // };
+//
+// About parsing and mementos:
+//
+// Many gRPC transports exchange metadata as key/value strings, but also allow
+// for a more efficient representation as a single integer. We can use this
+// integer representation to avoid reparsing too, by storing the parsed value
+// in the compression table. This is what mementos are used for.
+//
+// A trait offers the capability to turn a slice into a memento via
+// ParseMemento. This is exposed to users of MetadataMap via the Parse() method,
+// that returns a ParsedMetadata object. That ParsedMetadata object can in turn
+// be used to set the same value on many different MetadataMaps without having
+// to reparse.
+//
+// Implementation wise, ParsedMetadata is a type erased wrapper around
+// MementoType. When we set a value on MetadataMap, we first turn that memento
+// into a value. For most types, this is going to be a no-op, but for example
+// for grpc-timeout we make the memento the timeout expressed on the wire, but
+// we make the value the timestamp of when the timeout will expire (i.e. the
+// deadline).
 template <typename... Traits>
 class MetadataMap {
  public:
-  MetadataMap();
+  explicit MetadataMap(Arena* arena);
   ~MetadataMap();
 
   MetadataMap(const MetadataMap&) = delete;
@@ -172,6 +223,31 @@ class MetadataMap {
     table_.template clear<Value<Which>>();
   }
 
+  // Parse metadata from a key/value pair, and return an object representing
+  // that result.
+  template <class KeySlice, class ValueSlice>
+  static ParsedMetadata<MetadataMap> Parse(const KeySlice& key,
+                                           const ValueSlice& value) {
+    auto key_view = StringViewFromSlice(key);
+    // hack for now.
+    if (key_view == GrpcTimeoutMetadata::key()) {
+      ParsedMetadata<MetadataMap> out(
+          GrpcTimeoutMetadata(), GrpcTimeoutMetadata::ParseMemento(value),
+          ParsedMetadata<MetadataMap>::TransportSize(GRPC_SLICE_LENGTH(key),
+                                                     GRPC_SLICE_LENGTH(value)));
+      grpc_slice_unref_internal(key);
+      grpc_slice_unref_internal(value);
+      return out;
+    }
+    return ParsedMetadata<MetadataMap>(grpc_mdelem_from_slices(key, value));
+  }
+
+  // Set a value from a parsed metadata object.
+  GRPC_MUST_USE_RESULT grpc_error_handle
+  Set(const ParsedMetadata<MetadataMap>& m) {
+    return m.SetOnContainer(this);
+  }
+
   //
   // All APIs below this point are subject to change.
   //
@@ -206,6 +282,16 @@ class MetadataMap {
       l = next;
     }
     return error;
+  }
+
+  GRPC_MUST_USE_RESULT grpc_error_handle Append(grpc_mdelem md) {
+    return AddTail(elem_storage_.EmplaceBack(), md);
+  }
+
+  GRPC_MUST_USE_RESULT grpc_error_handle ReplaceOrAppend(grpc_slice key,
+                                                         grpc_slice value) {
+    if (ReplaceIfExists(key, value)) return GRPC_ERROR_NONE;
+    return Append(grpc_mdelem_from_slices(key, value));
   }
 
   // Set key to value if it exists and return true, otherwise return false.
@@ -384,6 +470,8 @@ class MetadataMap {
   /** Metadata elements in this batch */
   grpc_mdelem_list list_;
   grpc_metadata_batch_callouts idx_;
+  // Backing store for added metadata.
+  ChunkedVector<grpc_linked_mdelem, 10> elem_storage_;
 };
 
 template <typename... Traits>
@@ -409,7 +497,7 @@ void MetadataMap<Traits...>::AssertOk() {
 #endif /* NDEBUG */
 
 template <typename... Traits>
-MetadataMap<Traits...>::MetadataMap() {
+MetadataMap<Traits...>::MetadataMap(Arena* arena) : elem_storage_(arena) {
   memset(&list_, 0, sizeof(list_));
   memset(&idx_, 0, sizeof(idx_));
 }
@@ -636,8 +724,11 @@ grpc_error_handle MetadataMap<Traits...>::Substitute(
 
 template <typename... Traits>
 void MetadataMap<Traits...>::Clear() {
+  // TODO(ctiller): implement this without deconstructing/reconstructing once
+  // linked_mdelem is no longer a thing.
+  auto* arena = elem_storage_.arena();
   this->~MetadataMap();
-  new (this) MetadataMap();
+  new (this) MetadataMap(arena);
 }
 
 template <typename... Traits>
