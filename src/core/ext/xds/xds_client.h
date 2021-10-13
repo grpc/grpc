@@ -316,15 +316,12 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   Mutex mu_;
 
-  // Map of existing xDS server channels.
-  // std::map<std::string, WeakRefCountedPtr<ChannelState>>
-  // xds_server_channel_map_;
+  //  Map of existing xDS server channels.
   std::map<std::string, ChannelState*> xds_server_channel_map_
       ABSL_GUARDED_BY(mu_);
 
   struct AuthorityState {
-    XdsBootstrap::XdsServer xds_server;
-    RefCountedPtr<ChannelState> chand;
+    RefCountedPtr<ChannelState> channel_state;
     std::map<std::string /*listener_name*/, ListenerState> listener_map;
     std::map<std::string /*route_config_name*/, RouteConfigState>
         route_config_map;
@@ -332,7 +329,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map;
   };
 
-  std::map<std::string /*authority*/, AuthorityState> authority_state_
+  std::map<std::string /*authority*/, AuthorityState> authority_state_map_
       ABSL_GUARDED_BY(mu_);
 
   // Load report data.
