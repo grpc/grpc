@@ -1542,9 +1542,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/retry_service_config.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/server_address.cc
-  src/core/ext/filters/client_channel/service_config.cc
   src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
-  src/core/ext/filters/client_channel/service_config_parser.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
@@ -1562,6 +1560,8 @@ add_library(grpc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
   src/core/ext/filters/workarounds/workaround_utils.cc
+  src/core/ext/service_config/service_config.cc
+  src/core/ext/service_config/service_config_parser.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
@@ -2379,9 +2379,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/retry_service_config.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/server_address.cc
-  src/core/ext/filters/client_channel/service_config.cc
   src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
-  src/core/ext/filters/client_channel/service_config_parser.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
@@ -2399,6 +2397,8 @@ add_library(grpc_unsecure
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
   src/core/ext/filters/workarounds/workaround_utils.cc
+  src/core/ext/service_config/service_config.cc
+  src/core/ext/service_config/service_config_parser.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
@@ -3775,7 +3775,7 @@ foreach(_hdr
 endforeach()
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_plugin_support EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -10940,7 +10940,7 @@ target_link_libraries(grpc_cpp_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_cpp_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -10979,7 +10979,7 @@ target_link_libraries(grpc_csharp_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_csharp_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11018,7 +11018,7 @@ target_link_libraries(grpc_node_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_node_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11057,7 +11057,7 @@ target_link_libraries(grpc_objective_c_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_objective_c_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11096,7 +11096,7 @@ target_link_libraries(grpc_php_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_php_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11135,7 +11135,7 @@ target_link_libraries(grpc_python_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_python_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11174,7 +11174,7 @@ target_link_libraries(grpc_ruby_plugin
 
 
 
-if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
+if(gRPC_INSTALL)
   install(TARGETS grpc_ruby_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
