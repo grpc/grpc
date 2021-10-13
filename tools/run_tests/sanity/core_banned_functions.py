@@ -25,9 +25,9 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 # map of banned function signature to allowlist
 BANNED_EXCEPT = {
     'grpc_slice_from_static_buffer(': ['src/core/lib/slice/slice.cc'],
-    'grpc_resource_quota_ref(': ['src/core/lib/iomgr/resource_quota.cc'],
+    'grpc_resource_quota_ref(': ['src/core/lib/resource_quota/api.cc'],
     'grpc_resource_quota_unref(': [
-        'src/core/lib/iomgr/resource_quota.cc', 'src/core/lib/surface/server.cc'
+        'src/core/lib/resource_quota/api.cc', 'src/core/lib/surface/server.cc'
     ],
     'grpc_slice_buffer_destroy(': ['src/core/lib/slice/slice_buffer.cc'],
     'grpc_slice_buffer_reset_and_unref(': [
