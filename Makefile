@@ -1243,6 +1243,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
+    src/core/ext/upb-generated/xds/annotations/v3/status.upb.c \
     src/core/ext/upb-generated/xds/core/v3/authority.upb.c \
     src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c \
     src/core/ext/upb-generated/xds/core/v3/context_params.upb.c \
@@ -1336,6 +1337,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c \
     src/core/ext/upbdefs-generated/validate/validate.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c \
@@ -2795,6 +2797,7 @@ src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/status.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/versioning.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/annotations/v3/status.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/core/v3/authority.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/core/v3/context_params.upb.c: $(OPENSSL_DEP)
@@ -2888,6 +2891,7 @@ src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/validate/validate.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c: $(OPENSSL_DEP)

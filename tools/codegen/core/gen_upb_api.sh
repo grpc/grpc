@@ -143,6 +143,7 @@ proto_files=( \
   "udpa/data/orca/v1/orca_load_report.proto" \
   "udpa/type/v1/typed_struct.proto" \
   "validate/validate.proto" \
+  "xds/annotations/v3/status.proto" \
   "xds/core/v3/authority.proto" \
   "xds/core/v3/collection_entry.proto" \
   "xds/core/v3/context_params.proto" \
@@ -150,7 +151,7 @@ proto_files=( \
   "xds/core/v3/resource_name.proto" \
   "xds/core/v3/resource.proto")
 
-INCLUDE_OPTIONS="-I=$PWD/third_party/udpa \
+INCLUDE_OPTIONS="-I=$PWD/third_party/xds \
   -I=$PWD/third_party/envoy-api \
   -I=$PWD/third_party/googleapis \
   -I=$PWD/third_party/protobuf/src \

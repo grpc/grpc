@@ -4377,6 +4377,7 @@ grpc_cc_library(
         "google_api_upb",
         "proto_gen_validate_upb",
         "udpa_annotations_upb",
+        "xds_annotations_upb",
         "xds_core_upb",
     ],
 )
@@ -4653,6 +4654,43 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_annotations_upb",
+    srcs = [
+        "src/core/ext/upb-generated/xds/annotations/v3/status.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/xds/annotations/v3/status.upb.h",
+    ],
+    external_deps = [
+        "upb_lib",
+        "upb_lib_descriptor",
+        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+    ],
+    language = "c++",
+)
+
+grpc_cc_library(
+    name = "xds_annotations_upbdefs",
+    srcs = [
+        "src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c",
+    ],
+    hdrs = [
+        "src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.h",
+    ],
+    external_deps = [
+        "upb_lib",
+        "upb_lib_descriptor_reflection",
+        "upb_textformat_lib",
+        "upb_reflection",
+        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+    ],
+    language = "c++",
+    deps = [
+        "xds_annotations_upb",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_core_upb",
     srcs = [
         "src/core/ext/upb-generated/xds/core/v3/authority.upb.c",
@@ -4680,6 +4718,7 @@ grpc_cc_library(
         "google_api_upb",
         "proto_gen_validate_upb",
         "udpa_annotations_upb",
+        "xds_annotations_upb",
     ],
 )
 
@@ -4713,6 +4752,7 @@ grpc_cc_library(
         "google_api_upbdefs",
         "proto_gen_validate_upbdefs",
         "udpa_annotations_upbdefs",
+        "xds_annotations_upbdefs",
         "xds_core_upb",
     ],
 )

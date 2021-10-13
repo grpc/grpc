@@ -488,6 +488,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/annotations/v3/status.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/annotations/v3/status.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/authority.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/authority.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c" role="src" />
@@ -676,6 +678,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/validate/validate.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/validate/validate.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c" role="src" />
