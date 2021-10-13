@@ -68,6 +68,11 @@ class LibuvTask {
   void Cancel(Promise<bool>& will_be_cancelled);
   // A callback passed to uv_close to erase the timer from the EventEngine
   static void Erase(uv_handle_t* handle);
+  // A callback passed to uv_close to coordinate running the task then erase the
+  // timer from the EventEngine. This helps avoid race conditions where the
+  // timer handle is open after the function is run and the EventEngine is being
+  // destroyed.
+  static void RunAndErase(uv_handle_t* handle);
   intptr_t Key() { return key_; }
 
  private:
@@ -98,9 +103,14 @@ void LibuvTask::Start(LibuvEventEngine* engine, uint64_t timeout) {
           gpr_log(GPR_DEBUG, "LibuvTask@%p, triggered: key = %" PRIiPTR, task,
                   task->Key());
         }
-        uv_close(reinterpret_cast<uv_handle_t*>(timer), &LibuvTask::Erase);
         task->ran_ = true;
-        task->fn_();
+        // TODO(hork): Timer callbacks will be delayed by one iteration of the
+        // uv_loop to avoid race conditions around EventEngine destruction.
+        // Before the timer callback has run, the uv state for that timer is
+        // destroyed. This is delay is not ideal, we should find a way to avoid
+        // it.
+        uv_close(reinterpret_cast<uv_handle_t*>(timer),
+                 &LibuvTask::RunAndErase);
       },
       timeout, 0);
 }
@@ -128,6 +138,16 @@ void LibuvTask::Erase(uv_handle_t* handle) {
   engine->EraseTask(task->key_);
 }
 
+void LibuvTask::RunAndErase(uv_handle_t* handle) {
+  uv_timer_t* timer = reinterpret_cast<uv_timer_t*>(handle);
+  LibuvTask* task = reinterpret_cast<LibuvTask*>(timer->data);
+  std::function<void()> fn = std::move(task->fn_);
+  LibuvEventEngine* engine =
+      reinterpret_cast<LibuvEventEngine*>(timer->loop->data);
+  engine->EraseTask(task->key_);
+  fn();
+}
+
 LibuvEventEngine::LibuvEventEngine() {
   bool success = false;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -147,11 +167,11 @@ LibuvEventEngine::LibuvEventEngine() {
       },
       this, &success, options);
   thread_.Start();
-  GPR_ASSERT(success);
+  GPR_ASSERT(GPR_LIKELY(success));
   // This promise will be set to true once the thread has fully started and is
   // operational, so let's wait on it.
   success = ready_.Get();
-  GPR_ASSERT(success);
+  GPR_ASSERT(GPR_LIKELY(success));
 }
 
 LibuvEventEngine::~LibuvEventEngine() {
@@ -170,7 +190,9 @@ LibuvEventEngine::~LibuvEventEngine() {
     // undefined behavior, which is in line with our surface API contracts,
     // which stipulate the same thing.
     uv_unref(reinterpret_cast<uv_handle_t*>(&engine->kicker_));
-    // uv_stop(&engine->loop_);
+    // TODO(hork): continue shutdown in uv_close_cb below if race conditions
+    // appear here.
+    uv_close(reinterpret_cast<uv_handle_t*>(&engine->kicker_), nullptr);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       // This is an unstable API from libuv that we use for its intended
       // purpose: debugging. This can tell us if there's lingering handles
@@ -187,7 +209,16 @@ LibuvEventEngine::~LibuvEventEngine() {
           nullptr);
     }
   });
-  GPR_ASSERT(perish_.Get());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::task_map_.size=%zu", this,
+            task_map_.size());
+    for (const auto& entry : task_map_) {
+      gpr_log(GPR_DEBUG, " - key@%" PRIdPTR " maps to task %p", entry.first,
+              entry.second);
+    }
+  }
+  GPR_ASSERT(GPR_LIKELY(task_map_.empty()));
+  GPR_ASSERT(GPR_LIKELY(perish_.Get()));
 }
 
 // Since libuv is single-threaded and not thread-safe, we will be running all
@@ -245,6 +276,10 @@ void LibuvEventEngine::RunThread() {
   r |= uv_async_init(&loop_, &kicker_, [](uv_async_t* async) {
     LibuvEventEngine* engine =
         reinterpret_cast<LibuvEventEngine*>(async->loop->data);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::kicker_(%p) initialized", engine,
+              async);
+    }
     engine->Kicker();
   });
   if (r != 0) {
@@ -288,6 +323,7 @@ void LibuvEventEngine::RunThread() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::Thread, shutting down", this);
   }
+  GPR_ASSERT(GPR_LIKELY(uv_loop_close(&loop_) != UV_EBUSY));
   perish_.Set(true);
 }
 
@@ -309,8 +345,8 @@ EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time when,
   } else {
     // absl tends to round down time conversions, so we add 1 milli to the
     // timeout for safety. Better to err on the side of a timer firing late.
-    timeout =
-        std::ceil(absl::ToUnixMicros(when) / 1000.0) - absl::ToUnixMillis(now);
+    timeout = std::ceil(absl::ToUnixMicros(when) / 1000.0) -
+              absl::ToUnixMillis(now) + 1;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG,
