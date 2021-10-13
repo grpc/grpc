@@ -95,10 +95,11 @@ bool AdsServiceImpl::ClientNeedsResourceUpdate(
 // Subscribes to a resource if not already subscribed:
 // 1. Sets the update_queue field in subscription_state.
 // 2. Adds subscription_state to resource_state->subscriptions.
-bool AdsServiceImpl::MaybeSubscribe(
-    const std::string& resource_type, const std::string& resource_name,
-    SubscriptionState* subscription_state, ResourceState* resource_state,
-    UpdateQueue* update_queue) {
+bool AdsServiceImpl::MaybeSubscribe(const std::string& resource_type,
+                                    const std::string& resource_name,
+                                    SubscriptionState* subscription_state,
+                                    ResourceState* resource_state,
+                                    UpdateQueue* update_queue) {
   // The update_queue will be null if we were not previously subscribed.
   if (subscription_state->update_queue != nullptr) return false;
   subscription_state->update_queue = update_queue;
@@ -125,9 +126,8 @@ void AdsServiceImpl::ProcessUnsubscriptions(
       ++it;
       continue;
     }
-    gpr_log(GPR_INFO, "ADS[%p]: Unsubscribe to type=%s name=%s state=%p",
-            this, resource_type.c_str(), resource_name.c_str(),
-            &subscription_state);
+    gpr_log(GPR_INFO, "ADS[%p]: Unsubscribe to type=%s name=%s state=%p", this,
+            resource_type.c_str(), resource_name.c_str(), &subscription_state);
     auto resource_it = resource_name_map->find(resource_name);
     GPR_ASSERT(resource_it != resource_name_map->end());
     auto& resource_state = resource_it->second;

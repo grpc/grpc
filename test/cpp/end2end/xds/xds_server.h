@@ -608,8 +608,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   bool MaybeSubscribe(const std::string& resource_type,
                       const std::string& resource_name,
                       SubscriptionState* subscription_state,
-                      ResourceState* resource_state,
-                      UpdateQueue* update_queue);
+                      ResourceState* resource_state, UpdateQueue* update_queue);
 
   // Removes subscriptions for resources no longer present in the
   // current request.

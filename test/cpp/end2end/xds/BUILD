@@ -23,12 +23,12 @@ grpc_package(
 
 grpc_cc_library(
     name = "xds_server",
-    hdrs = ["xds_server.h"],
+    testonly = True,
     srcs = ["xds_server.cc"],
+    hdrs = ["xds_server.h"],
     external_deps = [
         "gtest",
     ],
-    testonly = True,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -37,8 +37,8 @@ grpc_cc_library(
         "//src/proto/grpc/testing/xds:lrs_for_test_proto",
         "//src/proto/grpc/testing/xds/v3:ads_proto",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
-        "//src/proto/grpc/testing/xds/v3:endpoint_proto",
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
+        "//src/proto/grpc/testing/xds/v3:endpoint_proto",
         "//src/proto/grpc/testing/xds/v3:listener_proto",
         "//src/proto/grpc/testing/xds/v3:lrs_proto",
         "//src/proto/grpc/testing/xds/v3:route_proto",
@@ -93,10 +93,10 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:router_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//test/core/util:grpc_test_util",
-        "//test/cpp/util:test_config",
-        "//test/cpp/util:test_util",
         "//test/cpp/end2end:counted_service",
         "//test/cpp/end2end:test_service_impl",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
     ],
 )
 
