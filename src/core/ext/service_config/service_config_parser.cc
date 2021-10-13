@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/service_config_parser.h"
+#include "src/core/ext/service_config/service_config_parser.h"
 
 #include <grpc/support/log.h>
 
@@ -29,12 +29,12 @@ typedef absl::InlinedVector<std::unique_ptr<ServiceConfigParser::Parser>,
 ServiceConfigParserList* g_registered_parsers;
 }  // namespace
 
-void ServiceConfigParser::Init() {
+void ServiceConfigParserInit() {
   GPR_ASSERT(g_registered_parsers == nullptr);
   g_registered_parsers = new ServiceConfigParserList();
 }
 
-void ServiceConfigParser::Shutdown() {
+void ServiceConfigParserShutdown() {
   delete g_registered_parsers;
   g_registered_parsers = nullptr;
 }

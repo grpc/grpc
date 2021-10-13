@@ -58,6 +58,8 @@ void GrpcLbPolicyRingHashInit(void);
 void GrpcLbPolicyRingHashShutdown(void);
 void RlsLbPluginInit();
 void RlsLbPluginShutdown();
+void ServiceConfigParserInit(void);
+void ServiceConfigParserShutdown(void);
 }  // namespace grpc_core
 
 #ifndef GRPC_NO_XDS
@@ -89,6 +91,8 @@ void GoogleCloud2ProdResolverShutdown();
 
 void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_chttp2_plugin_init, grpc_chttp2_plugin_shutdown);
+  grpc_register_plugin(grpc_core::ServiceConfigParserInit,
+                       grpc_core::ServiceConfigParserShutdown);
   grpc_register_plugin(grpc_client_channel_init, grpc_client_channel_shutdown);
   grpc_register_plugin(grpc_inproc_plugin_init, grpc_inproc_plugin_shutdown);
   grpc_register_plugin(grpc_resolver_fake_init, grpc_resolver_fake_shutdown);
