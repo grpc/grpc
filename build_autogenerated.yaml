@@ -7222,6 +7222,7 @@ targets:
   language: c++
   headers:
   - test/core/util/test_lb_policies.h
+  - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/lookup/v1/rls.proto
