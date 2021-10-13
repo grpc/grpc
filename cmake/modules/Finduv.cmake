@@ -22,6 +22,7 @@ endif()
 
 # As per https://github.com/grpc/grpc/issues/25434, idempotence is necessary
 # because CMake fails when another target with the same name already exists.
+message(STATUS "Target is ${TARGET}")
 if(TARGET uv::uv)
   message(STATUS "Found libuv via pkg-config already?")
   return()
