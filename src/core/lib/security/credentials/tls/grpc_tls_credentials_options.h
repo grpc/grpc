@@ -97,8 +97,6 @@ struct grpc_tls_server_authorization_check_config
   void (*destruct_)(void* config_user_data);
 };
 
-typedef struct grpc_tls_session_key_logger grpc_tls_session_key_logger;
-
 // Implementation of grpc_tls_session_key_log_config struct defined in
 // grpc_security.h
 struct grpc_tls_session_key_log_config:
