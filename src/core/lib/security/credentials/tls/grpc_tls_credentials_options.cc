@@ -84,6 +84,12 @@ void grpc_tls_server_authorization_check_config::Cancel(
   cancel_(config_user_data_, arg);
 }
 
+grpc_tls_credentials_options::~grpc_tls_credentials_options() {
+ if (tls_session_key_log_config_) {
+   tls_session_key_log_config_->Unref();
+ }
+}
+
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 
 grpc_tls_credentials_options* grpc_tls_credentials_options_create() {
@@ -174,12 +180,6 @@ void grpc_tls_server_authorization_check_config_release(
       (config));
   grpc_core::ExecCtx exec_ctx;
   if (config != nullptr) config->Unref();
-}
-
-grpc_tls_credentials_options::~grpc_tls_credentials_options() {
- if (tls_session_key_log_config_) {
-   tls_session_key_log_config_->Unref();
- }
 }
 
 void grpc_tls_credentials_options_set_tls_session_key_log_config(
