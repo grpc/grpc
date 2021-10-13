@@ -153,11 +153,6 @@ LibuvEventEngine::LibuvEventEngine() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvEventEngine:%p created", this);
   }
-  // Creating the libuv loop thread straight upon construction. We don't need
-  // the thread to be joinable, since it'll exit on its own gracefully without
-  // needing for us to wait on it.
-  grpc_core::Thread::Options options;
-  options.set_joinable(false);
   // Why isn't grpc_core::Thread accepting a lambda?
   thread_ = grpc_core::Thread(
       "uv loop",
@@ -165,7 +160,7 @@ LibuvEventEngine::LibuvEventEngine() {
         LibuvEventEngine* engine = reinterpret_cast<LibuvEventEngine*>(arg);
         engine->RunThread();
       },
-      this, &success, options);
+      this, &success);
   thread_.Start();
   GPR_ASSERT(GPR_LIKELY(success));
   // This promise will be set to true once the thread has fully started and is
@@ -217,6 +212,7 @@ LibuvEventEngine::~LibuvEventEngine() {
               entry.second);
     }
   }
+  thread_.Join();
   GPR_ASSERT(GPR_LIKELY(task_map_.empty()));
   GPR_ASSERT(GPR_LIKELY(perish_.Get()));
 }
