@@ -54,12 +54,16 @@ void FaultInjectionFilterInit(void);
 void FaultInjectionFilterShutdown(void);
 void GrpcLbPolicyRingHashInit(void);
 void GrpcLbPolicyRingHashShutdown(void);
+void ServiceConfigParserInit(void);
+void ServiceConfigParserShutdown(void);
 }  // namespace grpc_core
 void grpc_workaround_cronet_compression_filter_init(void);
 void grpc_workaround_cronet_compression_filter_shutdown(void);
 
 void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_chttp2_plugin_init, grpc_chttp2_plugin_shutdown);
+  grpc_register_plugin(grpc_core::ServiceConfigParserInit,
+                       grpc_core::ServiceConfigParserShutdown);
   grpc_register_plugin(grpc_client_channel_init, grpc_client_channel_shutdown);
   grpc_register_plugin(grpc_inproc_plugin_init, grpc_inproc_plugin_shutdown);
   grpc_register_plugin(grpc_resolver_dns_ares_init,

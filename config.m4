@@ -96,9 +96,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/retry_service_config.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/server_address.cc \
-    src/core/ext/filters/client_channel/service_config.cc \
     src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
-    src/core/ext/filters/client_channel/service_config_parser.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/client_idle/client_idle_filter.cc \
@@ -116,6 +114,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc \
     src/core/ext/filters/workarounds/workaround_utils.cc \
+    src/core/ext/service_config/service_config.cc \
+    src/core/ext/service_config/service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
@@ -1089,6 +1089,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/max_age)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/message_size)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/workarounds)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/service_config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/alpn)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client/insecure)
