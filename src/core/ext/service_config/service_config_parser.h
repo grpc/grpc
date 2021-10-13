@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_PARSER_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_PARSER_H
+#ifndef GRPC_CORE_EXT_SERVICE_CONFIG_SERVICE_CONFIG_PARSER_H
+#define GRPC_CORE_EXT_SERVICE_CONFIG_SERVICE_CONFIG_PARSER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -29,6 +29,11 @@
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
+
+// Initialization functions for ServiceConfigParser. ServiceConfigParser should
+// be initialized before any parser implementation is registered.
+void ServiceConfigParserInit();
+void ServiceConfigParserShutdown();
 
 // Service config parser registry.
 // See service_config.h for more information.
@@ -70,9 +75,6 @@ class ServiceConfigParser {
                               kNumPreallocatedParsers>
       ParsedConfigVector;
 
-  static void Init();
-  static void Shutdown();
-
   /// Globally register a service config parser. On successful registration, it
   /// returns the index at which the parser was registered. On failure, -1 is
   /// returned. Each new service config update will go through all the
@@ -92,4 +94,4 @@ class ServiceConfigParser {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_PARSER_H */
+#endif /* GRPC_CORE_EXT_SERVICE_CONFIG_SERVICE_CONFIG_PARSER_H */

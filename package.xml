@@ -188,12 +188,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/server_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/server_address.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_call_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_parser.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_interface.h" role="src" />
@@ -227,6 +222,11 @@
     <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/service_config/service_config.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/service_config/service_config.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/service_config/service_config_call_data.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/service_config/service_config_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/service_config/service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.cc" role="src" />
