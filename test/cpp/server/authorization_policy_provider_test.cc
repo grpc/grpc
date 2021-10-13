@@ -14,6 +14,7 @@
 
 #include <gtest/gtest.h>
 
+#include <grpc/grpc.h>
 #include <grpcpp/security/authorization_policy_provider.h>
 
 #include "test/core/util/test_config.h"
