@@ -19,7 +19,7 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/ext/service_config/service_config.h"
 #include "test/core/util/test_config.h"
 
 // A regular expression to enter referenced or child errors.
