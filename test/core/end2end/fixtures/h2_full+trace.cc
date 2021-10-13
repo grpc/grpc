@@ -98,40 +98,40 @@ static grpc_end2end_test_config configs[] = {
 };
 
 int main(int argc, char** argv) {
-  size_t i;
+//   size_t i;
 
-  /* force tracing on, with a value to force many
-     code paths in trace.c to be taken */
-  GPR_GLOBAL_CONFIG_SET(grpc_trace, "doesnt-exist,http,all");
+//   /* force tracing on, with a value to force many
+//      code paths in trace.c to be taken */
+//   GPR_GLOBAL_CONFIG_SET(grpc_trace, "doesnt-exist,http,all");
 
-#ifdef GRPC_POSIX_SOCKET
-  g_fixture_slowdown_factor = isatty(STDOUT_FILENO) ? 10 : 1;
-#else
-  g_fixture_slowdown_factor = 10;
-#endif
+// #ifdef GRPC_POSIX_SOCKET
+//   g_fixture_slowdown_factor = isatty(STDOUT_FILENO) ? 10 : 1;
+// #else
+//   g_fixture_slowdown_factor = 10;
+// #endif
 
-#ifdef GPR_WINDOWS
-  /* on Windows, writing logs to stderr is very slow
-     when stderr is redirected to a disk file.
-     The "trace" tests fixtures generates large amount
-     of logs, so setting a buffer for stderr prevents certain
-     test cases from timing out. */
-  setvbuf(stderr, NULL, _IOLBF, 1024);
-#endif
+// #ifdef GPR_WINDOWS
+//   /* on Windows, writing logs to stderr is very slow
+//      when stderr is redirected to a disk file.
+//      The "trace" tests fixtures generates large amount
+//      of logs, so setting a buffer for stderr prevents certain
+//      test cases from timing out. */
+//   setvbuf(stderr, NULL, _IOLBF, 1024);
+// #endif
 
-  grpc::testing::TestEnvironment env(argc, argv);
-  grpc_end2end_tests_pre_init();
-  grpc_init();
+//   grpc::testing::TestEnvironment env(argc, argv);
+//   grpc_end2end_tests_pre_init();
+//   grpc_init();
 
-  GPR_ASSERT(0 == grpc_tracer_set_enabled("also-doesnt-exist", 0));
-  GPR_ASSERT(1 == grpc_tracer_set_enabled("http", 1));
-  GPR_ASSERT(1 == grpc_tracer_set_enabled("all", 1));
+//   GPR_ASSERT(0 == grpc_tracer_set_enabled("also-doesnt-exist", 0));
+//   GPR_ASSERT(1 == grpc_tracer_set_enabled("http", 1));
+//   GPR_ASSERT(1 == grpc_tracer_set_enabled("all", 1));
 
-  for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
-    grpc_end2end_tests(argc, argv, configs[i]);
-  }
+//   for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
+//     grpc_end2end_tests(argc, argv, configs[i]);
+//   }
 
-  grpc_shutdown();
+//   grpc_shutdown();
 
   return 0;
 }

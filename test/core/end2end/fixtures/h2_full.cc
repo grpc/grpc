@@ -92,18 +92,27 @@ static grpc_end2end_test_config configs[] = {
      chttp2_init_server_fullstack, chttp2_tear_down_fullstack},
 };
 
+namespace grpc {
+namespace testing {
+namespace {
+
+TEST_P(CoreEnd2EndTest, RunTestScenario) { GetParam().Run(); }
+
+INSTANTIATE_TEST_SUITE_P(
+    End2End_h2_full, CoreEnd2EndTest,
+    ::testing::ValuesIn(CoreEnd2EndTestScenario::CreateTestScenarios(
+        "h2_full", configs, sizeof(configs) / sizeof(*configs))),
+    CoreEnd2EndTestScenario::GenScenarioName);
+
+}  // namespace
+}  // namespace testing
+}  // namespace grpc
+
 int main(int argc, char** argv) {
-  size_t i;
-
   grpc::testing::TestEnvironment env(argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+
   grpc_end2end_tests_pre_init();
-  grpc_init();
-
-  for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
-    grpc_end2end_tests(argc, argv, configs[i]);
-  }
-
-  grpc_shutdown();
-
-  return 0;
+  int retval = RUN_ALL_TESTS();
+  return retval;
 }
