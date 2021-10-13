@@ -1983,8 +1983,8 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "slice",
-        "xds_orca_upb",
         "useful",
+        "xds_orca_upb",
     ],
 )
 
