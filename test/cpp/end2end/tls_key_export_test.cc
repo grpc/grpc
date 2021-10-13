@@ -100,11 +100,11 @@ class TestScenario {
         enable_tls_key_logging_(enable_tls_key_logging) {}
   std::string AsString() const {
     return absl::StrCat(
-             "TestScenario{num_listening_ports=", num_listening_ports_,
-             ", share_tls_key_log_file=",
+             "TestScenario__num_listening_ports_", num_listening_ports_,
+             "__share_tls_key_log_file_",
              (share_tls_key_log_file_ ? "true" : "false"),
-             ", enable_tls_key_logging=",
-             (enable_tls_key_logging_ ? "true" : "false"), "'}");
+             "__enable_tls_key_logging_",
+             (enable_tls_key_logging_ ? "true" : "false"));
   }
 
   int num_listening_ports() const {
@@ -124,6 +124,11 @@ class TestScenario {
   bool enable_tls_key_logging_;
 };
 
+std::string TestScenarioName(
+  const ::testing::TestParamInfo<TestScenario>& info) {
+  return info.param.AsString();
+}
+
 int CountOccurancesInFileContents(std::string file_contents,
                                   std::string search_string) {
   int occurrences = 0;
@@ -137,9 +142,7 @@ int CountOccurancesInFileContents(std::string file_contents,
 
 class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
  protected:
-  TlsKeyLoggingEnd2EndTest() {
-    gpr_log(GPR_INFO, "%s\n", GetParam().AsString().c_str());
-  }
+  TlsKeyLoggingEnd2EndTest() = default;
 
   std::string CreateTmpFile() {
     char* name = nullptr;
@@ -364,7 +367,8 @@ INSTANTIATE_TEST_SUITE_P(TlsKeyLogging, TlsKeyLoggingEnd2EndTest,
                          ::testing::ValuesIn({TestScenario(5, false, true),
                                               TestScenario(5, true, true),
                                               TestScenario(5, true, false),
-                                              TestScenario(5, false, false)}));
+                                              TestScenario(5, false, false)}),
+                                              &TestScenarioName);
 
 
 }  // namespace
@@ -372,7 +376,7 @@ INSTANTIATE_TEST_SUITE_P(TlsKeyLogging, TlsKeyLoggingEnd2EndTest,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   return RUN_ALL_TESTS();
 }

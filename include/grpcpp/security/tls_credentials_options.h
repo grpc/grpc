@@ -36,6 +36,7 @@ typedef struct grpc_tls_server_authorization_check_config
     grpc_tls_server_authorization_check_config;
 typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
 typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
+typedef struct grpc_tls_session_key_log_config grpc_tls_session_key_log_config;
 
 namespace grpc {
 namespace experimental {
@@ -146,8 +147,6 @@ class TlsServerAuthorizationCheckConfig {
       server_authorization_check_interface_;
 };
 
-typedef struct grpc_tls_session_key_log_config grpc_tls_session_key_log_config;
-
 // Configuration for Tls key logging.
 class TlsSessionKeyLoggerConfig {
  public:
@@ -174,7 +173,6 @@ class TlsSessionKeyLoggerConfig {
     return c_config_;
   }
  private:
-  // A TLS session key logging config.
   grpc_tls_session_key_log_config* c_config_;
 };
 

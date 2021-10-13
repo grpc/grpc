@@ -79,6 +79,8 @@ extern "C" {
    SSL structure. This is what we would ultimately want though... */
 #define TSI_SSL_MAX_PROTECTION_OVERHEAD 100
 
+typedef tsi::TlsSessionKeyLogFileWriterCache::TlsSessionKeyLogger TlsSessionKeyLogger;
+
 /* --- Structure definitions. ---*/
 
 struct tsi_ssl_root_certs_store {
@@ -96,7 +98,7 @@ struct tsi_ssl_client_handshaker_factory {
   unsigned char* alpn_protocol_list;
   size_t alpn_protocol_list_length;
   grpc_core::RefCountedPtr<tsi::SslSessionLRUCache> session_cache;
-  grpc_core::RefCountedPtr<tsi::TlsSessionKeyLogger> key_logger;
+  grpc_core::RefCountedPtr<TlsSessionKeyLogger> key_logger;
 };
 
 struct tsi_ssl_server_handshaker_factory {
@@ -109,7 +111,7 @@ struct tsi_ssl_server_handshaker_factory {
   size_t ssl_context_count;
   unsigned char* alpn_protocol_list;
   size_t alpn_protocol_list_length;
-  grpc_core::RefCountedPtr<tsi::TlsSessionKeyLogger> key_logger;
+  grpc_core::RefCountedPtr<TlsSessionKeyLogger> key_logger;
 };
 
 struct tsi_ssl_handshaker {
@@ -1891,31 +1893,14 @@ static int server_handshaker_factory_new_session_callback(
   return 1;
 }
 
-/// This callback is invoked at client when ssl/tls handshakes complete and
-/// keylogging is enabled.
-static void ssl_client_keylogging_callback(const SSL* ssl, const char* info) {
+/// This callback is invoked at client or server when ssl/tls handshakes
+/// complete and keylogging is enabled.
+template<typename T>
+static void ssl_keylogging_callback(const SSL* ssl, const char* info) {
   SSL_CTX* ssl_context = SSL_get_SSL_CTX(ssl);
-  if (ssl_context == nullptr) {
-    return;
-  }
+  GPR_ASSERT(ssl_context != nullptr);
   void* arg = SSL_CTX_get_ex_data(ssl_context, g_ssl_ctx_ex_factory_index);
-  tsi_ssl_client_handshaker_factory* factory =
-      static_cast<tsi_ssl_client_handshaker_factory*>(arg);
-
-  factory->key_logger->LogSessionKeys(ssl_context, info);
-}
-
-/// This callback is invoked at server when ssl/tls handshakes complete and
-/// keylogging is enabled.
-static void ssl_server_keylogging_callback(const SSL* ssl, const char* info) {
-  SSL_CTX* ssl_context = SSL_get_SSL_CTX(ssl);
-  if (ssl_context == nullptr) {
-    return;
-  }
-  void* arg = SSL_CTX_get_ex_data(ssl_context, g_ssl_ctx_ex_factory_index);
-  tsi_ssl_server_handshaker_factory* factory =
-      static_cast<tsi_ssl_server_handshaker_factory*>(arg);
-
+  T * factory = static_cast<T*>(arg);
   factory->key_logger->LogSessionKeys(ssl_context, info);
 }
 
@@ -1987,12 +1972,13 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   if (options->key_logger != nullptr) {
     // Unref is manually called on factory destruction
     impl->key_logger =
-        reinterpret_cast<tsi::TlsSessionKeyLogger*>(options->key_logger)->Ref();
-    #if OPENSSL_VERSION_NUMBER >= 0x10100000
-    // SSL_CTX_set_keylog_callback is set here to register callback
-    // when ssl/tls handshakes complete.
-    SSL_CTX_set_keylog_callback(ssl_context, ssl_client_keylogging_callback);
-    #endif
+        reinterpret_cast<TlsSessionKeyLogger*>(options->key_logger)->Ref();
+    if (tsi_tls_session_key_logging_supported()) {
+      // SSL_CTX_set_keylog_callback is set here to register callback
+      // when ssl/tls handshakes complete.
+      SSL_CTX_set_keylog_callback(ssl_context,
+        ssl_keylogging_callback<tsi_ssl_client_handshaker_factory>);
+    }
   }
 
   if (options->session_cache != nullptr ||
@@ -2140,7 +2126,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   if (options->key_logger != nullptr) {
     // Unref is manually called on factory destruction.
     impl->key_logger =
-        reinterpret_cast<tsi::TlsSessionKeyLogger*>(options->key_logger)->Ref();
+        reinterpret_cast<TlsSessionKeyLogger*>(options->key_logger)->Ref();
   }
 
   for (i = 0; i < options->num_key_cert_pairs; i++) {
@@ -2248,12 +2234,13 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         SSL_CTX_set_ex_data(impl->ssl_contexts[i], g_ssl_ctx_ex_factory_index,
                             impl);
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-        // SSL_CTX_set_keylog_callback is set here to register callback
-        // when ssl/tls handshakes complete.
-        SSL_CTX_set_keylog_callback(impl->ssl_contexts[i],
-                                    ssl_server_keylogging_callback);
-#endif
+        if (tsi_tls_session_key_logging_supported()) {
+          // SSL_CTX_set_keylog_callback is set here to register callback
+          // when ssl/tls handshakes complete.
+          SSL_CTX_set_keylog_callback(
+            impl->ssl_contexts[i],
+            ssl_keylogging_callback<tsi_ssl_server_handshaker_factory>);
+        }
       }
     } while (false);
 

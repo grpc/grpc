@@ -125,9 +125,8 @@ TlsServerAuthorizationCheckConfig::~TlsServerAuthorizationCheckConfig() {
   grpc_tls_server_authorization_check_config_release(c_config_);
 }
 
-TlsSessionKeyLoggerConfig::TlsSessionKeyLoggerConfig() {
-  c_config_ = grpc_tls_session_key_log_config_create();
-}
+TlsSessionKeyLoggerConfig::TlsSessionKeyLoggerConfig():
+  c_config_(grpc_tls_session_key_log_config_create()) {}
 
 TlsSessionKeyLoggerConfig::~TlsSessionKeyLoggerConfig() {
   grpc_tls_session_key_log_config_release(c_config_);

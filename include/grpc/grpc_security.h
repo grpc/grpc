@@ -1173,10 +1173,6 @@ GRPCAPI void grpc_tls_session_key_log_config_set_log_path(
  * - options is the grpc_tls_credentials_options object
  * - config is a grpc_tls_session_key_log_config object containing session key
  *   logging configuration.
- *
- * Each grpc_tls_credentials_options object can be associated with only
- * one grpc_tls_session_key_log_config. An existing config will not be
- * overwritten.
  */
 GRPCAPI void grpc_tls_credentials_options_set_tls_session_key_log_config(
     grpc_tls_credentials_options* options,
