@@ -10,7 +10,7 @@
 #include "upb/msg_internal.h"
 #include "xds/core/v3/resource.upb.h"
 #include "google/protobuf/any.upb.h"
-#include "udpa/annotations/status.upb.h"
+#include "xds/annotations/v3/status.upb.h"
 #include "xds/core/v3/resource_name.upb.h"
 
 #include "upb/port_def.inc"
