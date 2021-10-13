@@ -104,8 +104,8 @@ static void test_ping(grpc_end2end_test_config config,
 
 void ping(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
-  test_ping(config, 0);
-  test_ping(config, 100);
+  // test_ping(config, 0);
+  // test_ping(config, 100);
 }
 
 void ping_pre_init(void) {}
