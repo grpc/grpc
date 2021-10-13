@@ -1742,6 +1742,7 @@ grpc_cc_library(
         "src/core/lib/transport/connectivity_state.h",
         "src/core/lib/transport/metadata.h",
         "src/core/lib/transport/metadata_batch.h",
+        "src/core/lib/transport/parsed_metadata.h",
         "src/core/lib/transport/pid_controller.h",
         "src/core/lib/transport/static_metadata.h",
         "src/core/lib/transport/status_conversion.h",
@@ -1785,6 +1786,7 @@ grpc_cc_library(
     deps = [
         "bitset",
         "channel_stack_type",
+        "chunked_vector",
         "closure",
         "config",
         "dual_ref_counted",
@@ -1866,6 +1868,30 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_service_config",
+    srcs = [
+        "src/core/ext/service_config/service_config.cc",
+        "src/core/ext/service_config/service_config_parser.cc",
+    ],
+    hdrs = [
+        "src/core/ext/service_config/service_config.h",
+        "src/core/ext/service_config/service_config_call_data.h",
+        "src/core/ext/service_config/service_config_parser.h",
+    ],
+    external_deps = [
+        "absl/container:inlined_vector",
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "error",
+        "gpr_base",
+        "grpc_base",
+        "json",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "src/core/ext/filters/client_channel/backend_metric.cc",
@@ -1893,9 +1919,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_service_config.cc",
         "src/core/ext/filters/client_channel/retry_throttle.cc",
         "src/core/ext/filters/client_channel/server_address.cc",
-        "src/core/ext/filters/client_channel/service_config.cc",
         "src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc",
-        "src/core/ext/filters/client_channel/service_config_parser.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.cc",
     ],
@@ -1927,9 +1951,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_service_config.h",
         "src/core/ext/filters/client_channel/retry_throttle.h",
         "src/core/ext/filters/client_channel/server_address.h",
-        "src/core/ext/filters/client_channel/service_config.h",
-        "src/core/ext/filters/client_channel/service_config_call_data.h",
-        "src/core/ext/filters/client_channel/service_config_parser.h",
         "src/core/ext/filters/client_channel/subchannel.h",
         "src/core/ext/filters/client_channel/subchannel_interface.h",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.h",
@@ -1953,6 +1974,7 @@ grpc_cc_library(
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
         "grpc_health_upb",
+        "grpc_service_config",
         "grpc_trace",
         "handshaker_registry",
         "json",
@@ -2058,8 +2080,8 @@ grpc_cc_library(
         "config",
         "gpr_base",
         "grpc_base",
-        "grpc_client_channel",
         "grpc_codegen",
+        "grpc_service_config",
         "ref_counted",
         "ref_counted_ptr",
     ],
@@ -2080,7 +2102,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base",
-        "grpc_client_channel",
+        "grpc_service_config",
         "json_util",
     ],
 )
@@ -2795,6 +2817,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_grpclb_balancer_addresses",
         "grpc_resolver_dns_selection",
+        "grpc_service_config",
         "json",
     ],
 )
@@ -3220,7 +3243,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_utils.cc",
         "src/core/ext/transport/chttp2/transport/http2_settings.cc",
         "src/core/ext/transport/chttp2/transport/huffsyms.cc",
-        "src/core/ext/transport/chttp2/transport/incoming_metadata.cc",
         "src/core/ext/transport/chttp2/transport/parsing.cc",
         "src/core/ext/transport/chttp2/transport/stream_lists.cc",
         "src/core/ext/transport/chttp2/transport/stream_map.cc",
@@ -3246,7 +3268,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_utils.h",
         "src/core/ext/transport/chttp2/transport/http2_settings.h",
         "src/core/ext/transport/chttp2/transport/huffsyms.h",
-        "src/core/ext/transport/chttp2/transport/incoming_metadata.h",
         "src/core/ext/transport/chttp2/transport/internal.h",
         "src/core/ext/transport/chttp2/transport/stream_map.h",
         "src/core/ext/transport/chttp2/transport/varint.h",
@@ -3591,9 +3612,9 @@ grpc_cc_library(
         "grpc++_codegen_base_src",
         "grpc++_internal_hdrs_only",
         "grpc_base",
-        "grpc_client_channel",
         "grpc_codegen",
         "grpc_health_upb",
+        "grpc_service_config",
         "grpc_trace",
         "grpc_transport_inproc",
         "ref_counted",
@@ -3622,9 +3643,9 @@ grpc_cc_library(
         "grpc++_codegen_base_src",
         "grpc++_internal_hdrs_only",
         "grpc_base",
-        "grpc_client_channel",
         "grpc_codegen",
         "grpc_health_upb",
+        "grpc_service_config",
         "grpc_trace",
         "grpc_transport_inproc",
         "grpc_unsecure",
