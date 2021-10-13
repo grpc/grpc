@@ -174,8 +174,7 @@ static void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   TCP_REF(tcp, "read");
   if (tcp->read_slices->length < GRPC_TCP_DEFAULT_READ_SLICE_SIZE) {
     grpc_slice_buffer_add_indexed(
-        tcp->read_slices,
-        grpc_slice_malloc_internal(GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
+        tcp->read_slices, GRPC_SLICE_MALLOC(GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
   }
   /* Before calling read, we allocate a buffer with exactly one slice
    * to tcp->read_slices and wait for the callback indicating that the
