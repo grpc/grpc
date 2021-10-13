@@ -27,8 +27,8 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/ext/filters/client_channel/service_config_call_data.h"
+#include "src/core/ext/service_config/service_config.h"
+#include "src/core/ext/service_config/service_config_call_data.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -425,22 +425,22 @@ class RetryFilter::CallData {
     // because filters in the subchannel stack may modify the metadata,
     // so we need to start in a pristine state for each attempt of the call.
     grpc_linked_mdelem* send_initial_metadata_storage_;
-    grpc_metadata_batch send_initial_metadata_;
+    grpc_metadata_batch send_initial_metadata_{calld_->arena_};
     // For send_message.
     // TODO(roth): Restructure this to eliminate use of ManualConstructor.
     ManualConstructor<ByteStreamCache::CachingByteStream> send_message_;
     // For send_trailing_metadata.
     grpc_linked_mdelem* send_trailing_metadata_storage_;
-    grpc_metadata_batch send_trailing_metadata_;
+    grpc_metadata_batch send_trailing_metadata_{calld_->arena_};
     // For intercepting recv_initial_metadata.
-    grpc_metadata_batch recv_initial_metadata_;
+    grpc_metadata_batch recv_initial_metadata_{calld_->arena_};
     grpc_closure recv_initial_metadata_ready_;
     bool trailing_metadata_available_ = false;
     // For intercepting recv_message.
     grpc_closure recv_message_ready_;
     OrphanablePtr<ByteStream> recv_message_;
     // For intercepting recv_trailing_metadata.
-    grpc_metadata_batch recv_trailing_metadata_;
+    grpc_metadata_batch recv_trailing_metadata_{calld_->arena_};
     grpc_transport_stream_stats collect_stats_;
     grpc_closure recv_trailing_metadata_ready_;
     // These fields indicate which ops have been started and completed on
@@ -574,7 +574,7 @@ class RetryFilter::CallData {
   // send_initial_metadata
   bool seen_send_initial_metadata_ = false;
   grpc_linked_mdelem* send_initial_metadata_storage_ = nullptr;
-  grpc_metadata_batch send_initial_metadata_;
+  grpc_metadata_batch send_initial_metadata_{arena_};
   uint32_t send_initial_metadata_flags_;
   // TODO(roth): As part of implementing hedging, we'll probably need to
   // have the LB call set a value in CallAttempt and then propagate it
@@ -600,7 +600,7 @@ class RetryFilter::CallData {
   // send_trailing_metadata
   bool seen_send_trailing_metadata_ = false;
   grpc_linked_mdelem* send_trailing_metadata_storage_ = nullptr;
-  grpc_metadata_batch send_trailing_metadata_;
+  grpc_metadata_batch send_trailing_metadata_{arena_};
 };
 
 //

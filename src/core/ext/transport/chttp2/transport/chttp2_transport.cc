@@ -1859,8 +1859,7 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(
             &s->unprocessed_incoming_frames_buffer);
       }
     }
-    grpc_chttp2_incoming_metadata_buffer_publish(&s->initial_metadata_buffer,
-                                                 s->recv_initial_metadata);
+    *s->recv_initial_metadata = std::move(s->initial_metadata_buffer);
     null_then_sched_closure(&s->recv_initial_metadata_ready);
   }
 }
@@ -2014,8 +2013,7 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
         s->recv_trailing_metadata_finished != nullptr) {
       grpc_transport_move_stats(&s->stats, s->collecting_stats);
       s->collecting_stats = nullptr;
-      grpc_chttp2_incoming_metadata_buffer_publish(&s->trailing_metadata_buffer,
-                                                   s->recv_trailing_metadata);
+      *s->recv_trailing_metadata = std::move(s->trailing_metadata_buffer);
       null_then_sched_closure(&s->recv_trailing_metadata_finished);
     }
   }
@@ -2108,14 +2106,13 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
     char status_string[GPR_LTOA_MIN_BUFSIZE];
     gpr_ltoa(status, status_string);
     GRPC_LOG_IF_ERROR("add_status",
-                      grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-                          &s->trailing_metadata_buffer, GRPC_MDSTR_GRPC_STATUS,
+                      s->trailing_metadata_buffer.ReplaceOrAppend(
+                          GRPC_MDSTR_GRPC_STATUS,
                           grpc_core::UnmanagedMemorySlice(status_string)));
     if (!message.empty()) {
       grpc_slice message_slice = grpc_slice_from_cpp_string(std::move(message));
       GRPC_LOG_IF_ERROR("add_status_message",
-                        grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-                            &s->trailing_metadata_buffer,
+                        s->trailing_metadata_buffer.ReplaceOrAppend(
                             GRPC_MDSTR_GRPC_MESSAGE, message_slice));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
