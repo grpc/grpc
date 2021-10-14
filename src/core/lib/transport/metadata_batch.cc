@@ -75,7 +75,7 @@ class CopySink {
   grpc_metadata_batch* dst_;
 };
 
-}
+}  // namespace
 
 void grpc_metadata_batch_copy(grpc_metadata_batch* src,
                               grpc_metadata_batch* dst) {

@@ -1914,8 +1914,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::
         *retry_count_strings[calld->num_attempts_completed_ - 1], nullptr);
     grpc_error_handle error = grpc_metadata_batch_add_tail(
         &call_attempt_->send_initial_metadata_,
-        &call_attempt_->retry_attempts_metadata_,
-        retry_md, GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
+        &call_attempt_->retry_attempts_metadata_, retry_md,
+        GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
     if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
       gpr_log(GPR_ERROR, "error adding retry metadata: %s",
               grpc_error_std_string(error).c_str());
