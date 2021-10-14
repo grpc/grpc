@@ -119,19 +119,20 @@ void ServerRetryThrottleData::RecordSuccess() {
 // ServerRetryThrottleMap
 //
 
+using StringToDataMap =
+    std::map<std::string, RefCountedPtr<ServerRetryThrottleData>>;
 static gpr_mu g_mu;
-static ManualConstructor<
-    std::map<std::string, RefCountedPtr<ServerRetryThrottleData>>>
-    g_map;
+static StringToDataMap* g_map;
 
 void ServerRetryThrottleMap::Init() {
   gpr_mu_init(&g_mu);
-  g_map.Init();
+  g_map = new StringToDataMap();
 }
 
 void ServerRetryThrottleMap::Shutdown() {
   gpr_mu_destroy(&g_mu);
-  g_map.Destroy();
+  delete g_map;
+  g_map = nullptr;
 }
 
 RefCountedPtr<ServerRetryThrottleData> ServerRetryThrottleMap::GetDataForServer(
@@ -147,10 +148,9 @@ RefCountedPtr<ServerRetryThrottleData> ServerRetryThrottleMap::GetDataForServer(
       throttle_data->milli_token_ratio() != milli_token_ratio) {
     // Entry not found, or found with old parameters.  Create a new one.
     it = g_map
-             ->insert(std::make_pair(
-                 server_name,
-                 MakeRefCounted<ServerRetryThrottleData>(
-                     max_milli_tokens, milli_token_ratio, throttle_data)))
+             ->emplace(server_name,
+                       MakeRefCounted<ServerRetryThrottleData>(
+                           max_milli_tokens, milli_token_ratio, throttle_data))
              .first;
     throttle_data = it->second.get();
   }

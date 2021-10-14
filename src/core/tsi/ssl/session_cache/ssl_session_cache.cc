@@ -36,8 +36,6 @@ class SslSessionLRUCache::Node {
     SetSession(std::move(session));
   }
 
-  ~Node() = default;
-
   // Not copyable nor movable.
   Node(const Node&) = delete;
   Node& operator=(const Node&) = delete;
