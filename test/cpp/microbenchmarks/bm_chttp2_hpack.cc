@@ -160,7 +160,7 @@ namespace hpack_encoder_fixtures {
 class EmptyBatch {
  public:
   static constexpr bool kEnableTrueBinary = false;
-  static void Prepare(grpc_metadata_batch* b) {}
+  static void Prepare(grpc_metadata_batch*) {}
 };
 
 class SingleStaticElem {
