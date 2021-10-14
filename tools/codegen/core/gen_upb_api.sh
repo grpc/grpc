@@ -139,8 +139,6 @@ proto_files=( \
   "udpa/annotations/sensitive.proto" \
   "udpa/annotations/status.proto" \
   "udpa/annotations/versioning.proto" \
-  "udpa/data/orca/v1/orca_load_report.proto" \
-  "udpa/type/v1/typed_struct.proto" \
   "validate/validate.proto" \
   "xds/annotations/v3/status.proto" \
   "xds/core/v3/authority.proto" \
@@ -148,7 +146,9 @@ proto_files=( \
   "xds/core/v3/context_params.proto" \
   "xds/core/v3/resource_locator.proto" \
   "xds/core/v3/resource_name.proto" \
-  "xds/core/v3/resource.proto")
+  "xds/core/v3/resource.proto" \
+  "xds/data/orca/v3/orca_load_report.proto" \
+  "xds/type/v3/typed_struct.proto")
 
 INCLUDE_OPTIONS="-I=$PWD/third_party/xds \
   -I=$PWD/third_party/envoy-api \
