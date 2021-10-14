@@ -24,7 +24,7 @@ typedef struct grpc_resource_quota grpc_resource_quota;
 
 namespace grpc_core {
 
-// TODO(juanlishen): This is a hack. We need to do real accounting instead of
+// TODO(ctiller): This is a hack. We need to do real accounting instead of
 // hard coding.
 constexpr size_t kResourceQuotaCallSize = 15 * 1024;
 constexpr size_t kResourceQuotaChannelSize = 50 * 1024;
