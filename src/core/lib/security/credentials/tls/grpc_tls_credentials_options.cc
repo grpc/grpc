@@ -29,44 +29,6 @@
 
 #include "src/core/lib/surface/api_trace.h"
 
-int grpc_tls_credentials_options::cmp(
-    const grpc_tls_credentials_options* other_options) const {
-  GPR_ASSERT(other_options != nullptr);
-  if (cert_request_type_ != other_options->cert_request_type_) {
-    return 1;
-  }
-  if (server_verification_option_ !=
-      other_options->server_verification_option_) {
-    return 1;
-  }
-  if (min_tls_version_ != other_options->min_tls_version_) {
-    return 1;
-  }
-  if (max_tls_version_ != other_options->max_tls_version_) {
-    return 1;
-  }
-  if (server_authorization_check_config_ !=
-      other_options->server_authorization_check_config_) {
-    return 1;
-  }
-  if (provider_ != other_options->provider_) {
-    return 1;
-  }
-  if (watch_root_cert_ != other_options->watch_root_cert_) {
-    return 1;
-  }
-  if (root_cert_name_ != other_options->root_cert_name_) {
-    return 1;
-  }
-  if (watch_identity_pair_ != other_options->watch_identity_pair_) {
-    return 1;
-  }
-  if (identity_cert_name_ != other_options->identity_cert_name_) {
-    return 1;
-  }
-  return 0;
-}
-
 /** -- gRPC TLS server authorization check API implementation. -- **/
 grpc_tls_server_authorization_check_config::
     grpc_tls_server_authorization_check_config(
