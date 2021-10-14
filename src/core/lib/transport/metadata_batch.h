@@ -178,7 +178,8 @@ struct AppendHelper<Container, Trait, Traits...> {
                      Trait::MementoToValue(Trait::ParseMemento(value)));
       return;
     }
-    ParseHelper<Container, Traits...>::Parse(container, key, value, not_found);
+    AppendHelper<Container, Traits...>::Append(container, key, value,
+                                               not_found);
   }
 };
 
@@ -360,10 +361,11 @@ class MetadataMap {
   void Append(absl::string_view key, const grpc_slice& value) {
     metadata_detail::AppendHelper<MetadataMap, Traits...>::Append(
         this, key, value, [&] {
-          Append(grpc_mdelem_from_slices(
-              grpc_slice_intern(
-                  grpc_slice_from_static_buffer(key.data(), key.length())),
-              value));
+          GPR_ASSERT(GRPC_ERROR_NONE ==
+                     Append(grpc_mdelem_from_slices(
+                         grpc_slice_intern(grpc_slice_from_static_buffer(
+                             key.data(), key.length())),
+                         value)));
         });
   }
 
