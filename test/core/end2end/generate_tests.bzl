@@ -519,8 +519,8 @@ def grpc_end2end_nosec_tests():
             ],
             deps = [
                 ":end2end_nosec_tests",
-                "//test/core/util:grpc_test_util_unsecure",
-                "//:grpc_unsecure",
+                "//test/core/util:grpc_test_util",
+                "//:grpc",
                 "//:gpr",
             ],
             tags = _platform_support_tags(fopt),
