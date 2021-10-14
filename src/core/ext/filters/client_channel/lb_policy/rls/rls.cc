@@ -97,7 +97,7 @@ const grpc_millis kDefaultThrottleWindowSize = 30 * GPR_MS_PER_SEC;
 const double kDefaultThrottleRatioForSuccesses = 2.0;
 const int kDefaultThrottlePaddings = 8;
 const grpc_millis kCacheCleanupTimerInterval = 60 * GPR_MS_PER_SEC;
-const size_t kMaxCacheSizeBytes = 5 * 1024 * 1024;
+const int64_t kMaxCacheSizeBytes = 5 * 1024 * 1024;
 
 // Parsed RLS LB policy configuration.
 class RlsLbConfig : public LoadBalancingPolicy::Config {
