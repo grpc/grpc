@@ -8588,6 +8588,7 @@ targets:
   - src/cpp/server/csds/csds.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_server.h
   - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -8628,7 +8629,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test.cc
   - test/cpp/end2end/xds/xds_server.cc
-  - test/cpp/end2end/xds_end2end_test.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
   - grpc++_test_config

@@ -935,7 +935,7 @@ GRPCAPI void grpc_tls_credentials_options_set_verify_server_cert(
  *
  * The read-only request information exposed in a verification call.
  * Callers should not directly manage the ownership of it. We will make sure it
- * is always available inside schedule() or cancel() call, and will destroy the
+ * is always available inside verify() or cancel() call, and will destroy the
  * object at the end of custom verification.
  */
 typedef struct grpc_tls_custom_verification_check_request {

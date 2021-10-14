@@ -98,11 +98,11 @@ class TlsSecurityConnectorTest : public ::testing::Test {
     }
   }
 
-  static absl::string_view GetErrorMsg(grpc_error_handle error) {
-    grpc_slice error_slice;
+  static std::string GetErrorMsg(grpc_error_handle error) {
+    std::string error_str;
     GPR_ASSERT(
-        grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_slice));
-    return grpc_core::StringViewFromSlice(error_slice);
+        grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_str));
+    return error_str;
   }
 
   std::string root_cert_1_;

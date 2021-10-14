@@ -33,23 +33,24 @@ TlsCustomVerificationCheckRequest::TlsCustomVerificationCheckRequest(
   GPR_ASSERT(c_request_ != nullptr);
 }
 
-std::string TlsCustomVerificationCheckRequest::target_name() const {
+grpc::string_ref TlsCustomVerificationCheckRequest::target_name() const {
   return c_request_->target_name != nullptr ? c_request_->target_name : "";
 }
 
-std::string TlsCustomVerificationCheckRequest::peer_cert() const {
+grpc::string_ref TlsCustomVerificationCheckRequest::peer_cert() const {
   return c_request_->peer_info.peer_cert != nullptr
              ? c_request_->peer_info.peer_cert
              : "";
 }
 
-std::string TlsCustomVerificationCheckRequest::peer_cert_full_chain() const {
+grpc::string_ref TlsCustomVerificationCheckRequest::peer_cert_full_chain()
+    const {
   return c_request_->peer_info.peer_cert_full_chain != nullptr
              ? c_request_->peer_info.peer_cert_full_chain
              : "";
 }
 
-std::string TlsCustomVerificationCheckRequest::common_name() const {
+grpc::string_ref TlsCustomVerificationCheckRequest::common_name() const {
   return c_request_->peer_info.common_name != nullptr
              ? c_request_->peer_info.common_name
              : "";

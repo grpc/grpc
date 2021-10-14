@@ -30,6 +30,7 @@
 #include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/config.h>
+#include <grpcpp/support/string_ref.h>
 
 // TODO(yihuazhang): remove the forward declaration here and include
 // <grpc/grpc_security.h> directly once the insecure builds are cleaned up.
@@ -59,10 +60,10 @@ class TlsCustomVerificationCheckRequest {
 
   // TODO(ZhenLian): change the return type to absl::string_view if we wind up
   // being able to use absl in the C++ API before de-experimentalizing this API.
-  std::string target_name() const;
-  std::string peer_cert() const;
-  std::string peer_cert_full_chain() const;
-  std::string common_name() const;
+  grpc::string_ref target_name() const;
+  grpc::string_ref peer_cert() const;
+  grpc::string_ref peer_cert_full_chain() const;
+  grpc::string_ref common_name() const;
   std::vector<std::string> uri_names() const;
   std::vector<std::string> dns_names() const;
   std::vector<std::string> email_names() const;

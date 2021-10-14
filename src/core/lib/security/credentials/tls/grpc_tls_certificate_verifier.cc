@@ -157,13 +157,9 @@ int grpc_tls_certificate_verifier_verify(
   grpc_core::ExecCtx exec_ctx;
   std::function<void(absl::Status)> async_cb =
       [callback, request, callback_arg](absl::Status async_status) {
-        if (async_status.ok()) {
-          callback(request, callback_arg, GRPC_STATUS_OK, "");
-        } else {
-          callback(request, callback_arg,
-                   static_cast<grpc_status_code>(async_status.code()),
-                   std::string(async_status.message()).c_str());
-        }
+        callback(request, callback_arg,
+                 static_cast<grpc_status_code>(async_status.code()),
+                 std::string(async_status.message()).c_str());
       };
   absl::Status sync_status_cpp;
   bool is_done = verifier->Verify(request, async_cb, &sync_status_cpp);
