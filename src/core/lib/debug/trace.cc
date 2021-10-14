@@ -55,18 +55,11 @@ bool TraceFlagList::Set(const char* name, bool enabled) {
     }
   } else {
     bool found = false;
-    int counter = 0;
     for (t = root_tracer_; t; t = t->next_tracer_) {
-      gpr_log(GPR_ERROR, "checking trace flag: '%s' %s", name, t->name_);
       if (0 == strcmp(name, t->name_)) {
         t->set_enabled(enabled);
         found = true;
       }
-      if (t->next_tracer_ == root_tracer_) {
-        gpr_log(GPR_ERROR, "loop detected: exiting TraceFlagList::Set prematurely '%s' %s", name, t->name_);
-        break;
-      }
-      counter ++;
     }
     // check for unknowns, but ignore "", to allow to GRPC_TRACE=
     if (!found && 0 != strcmp(name, "")) {
@@ -78,7 +71,6 @@ bool TraceFlagList::Set(const char* name, bool enabled) {
 }
 
 void TraceFlagList::Add(TraceFlag* flag) {
-  gpr_log(GPR_ERROR, "Adding trace flag: '%s', %p", flag->name_, flag);
   flag->next_tracer_ = root_tracer_;
   root_tracer_ = flag;
 }
