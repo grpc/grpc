@@ -205,8 +205,6 @@ extern void streaming_error_response(grpc_end2end_test_config config);
 extern void streaming_error_response_pre_init(void);
 extern void trailing_metadata(grpc_end2end_test_config config);
 extern void trailing_metadata_pre_init(void);
-extern void workaround_cronet_compression(grpc_end2end_test_config config);
-extern void workaround_cronet_compression_pre_init(void);
 extern void write_buffering(grpc_end2end_test_config config);
 extern void write_buffering_pre_init(void);
 extern void write_buffering_at_end(grpc_end2end_test_config config);
@@ -303,7 +301,6 @@ void grpc_end2end_tests_pre_init(void) {
   stream_compression_ping_pong_streaming_pre_init();
   streaming_error_response_pre_init();
   trailing_metadata_pre_init();
-  workaround_cronet_compression_pre_init();
   write_buffering_pre_init();
   write_buffering_at_end_pre_init();
 }
@@ -404,7 +401,6 @@ void grpc_end2end_tests(int argc, char **argv,
     stream_compression_ping_pong_streaming(config);
     streaming_error_response(config);
     trailing_metadata(config);
-    workaround_cronet_compression(config);
     write_buffering(config);
     write_buffering_at_end(config);
     return;
@@ -761,10 +757,6 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("trailing_metadata", argv[i])) {
       trailing_metadata(config);
-      continue;
-    }
-    if (0 == strcmp("workaround_cronet_compression", argv[i])) {
-      workaround_cronet_compression(config);
       continue;
     }
     if (0 == strcmp("write_buffering", argv[i])) {

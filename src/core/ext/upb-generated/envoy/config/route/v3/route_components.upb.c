@@ -501,7 +501,8 @@ const upb_msglayout envoy_config_route_v3_RouteAction_MaxStreamDuration_msginit 
   UPB_SIZE(16, 32), 3, false, 3, 255,
 };
 
-static const upb_msglayout *const envoy_config_route_v3_RetryPolicy_submsgs[7] = {
+static const upb_msglayout *const envoy_config_route_v3_RetryPolicy_submsgs[8] = {
+  &envoy_config_core_v3_TypedExtensionConfig_msginit,
   &envoy_config_route_v3_HeaderMatcher_msginit,
   &envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff_msginit,
   &envoy_config_route_v3_RetryPolicy_RetryBackOff_msginit,
@@ -511,24 +512,26 @@ static const upb_msglayout *const envoy_config_route_v3_RetryPolicy_submsgs[7] =
   &google_protobuf_UInt32Value_msginit,
 };
 
-static const upb_msglayout_field envoy_config_route_v3_RetryPolicy__fields[11] = {
+static const upb_msglayout_field envoy_config_route_v3_RetryPolicy__fields[13] = {
   {1, UPB_SIZE(16, 16), 0, 0, 9, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(24, 32), 1, 6, 11, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(28, 40), 2, 5, 11, _UPB_MODE_SCALAR},
-  {4, UPB_SIZE(32, 48), 3, 4, 11, _UPB_MODE_SCALAR},
-  {5, UPB_SIZE(44, 72), 0, 3, 11, _UPB_MODE_ARRAY},
+  {2, UPB_SIZE(24, 32), 1, 7, 11, _UPB_MODE_SCALAR},
+  {3, UPB_SIZE(28, 40), 2, 6, 11, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(32, 48), 3, 5, 11, _UPB_MODE_SCALAR},
+  {5, UPB_SIZE(48, 80), 0, 4, 11, _UPB_MODE_ARRAY},
   {6, UPB_SIZE(8, 8), 0, 0, 3, _UPB_MODE_SCALAR},
-  {7, UPB_SIZE(48, 80), 0, 0, 13, _UPB_MODE_ARRAY | _UPB_MODE_IS_PACKED},
-  {8, UPB_SIZE(36, 56), 4, 2, 11, _UPB_MODE_SCALAR},
-  {9, UPB_SIZE(52, 88), 0, 0, 11, _UPB_MODE_ARRAY},
-  {10, UPB_SIZE(56, 96), 0, 0, 11, _UPB_MODE_ARRAY},
-  {11, UPB_SIZE(40, 64), 5, 1, 11, _UPB_MODE_SCALAR},
+  {7, UPB_SIZE(52, 88), 0, 0, 13, _UPB_MODE_ARRAY | _UPB_MODE_IS_PACKED},
+  {8, UPB_SIZE(36, 56), 4, 3, 11, _UPB_MODE_SCALAR},
+  {9, UPB_SIZE(56, 96), 0, 1, 11, _UPB_MODE_ARRAY},
+  {10, UPB_SIZE(60, 104), 0, 1, 11, _UPB_MODE_ARRAY},
+  {11, UPB_SIZE(40, 64), 5, 2, 11, _UPB_MODE_SCALAR},
+  {12, UPB_SIZE(64, 112), 0, 0, 11, _UPB_MODE_ARRAY},
+  {13, UPB_SIZE(44, 72), 6, 6, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_route_v3_RetryPolicy_msginit = {
   &envoy_config_route_v3_RetryPolicy_submsgs[0],
   &envoy_config_route_v3_RetryPolicy__fields[0],
-  UPB_SIZE(64, 112), 11, false, 11, 255,
+  UPB_SIZE(72, 128), 13, false, 13, 255,
 };
 
 static const upb_msglayout *const envoy_config_route_v3_RetryPolicy_RetryPriority_submsgs[1] = {

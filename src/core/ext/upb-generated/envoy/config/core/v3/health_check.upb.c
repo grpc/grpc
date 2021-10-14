@@ -87,7 +87,7 @@ static const upb_msglayout *const envoy_config_core_v3_HealthCheck_HttpHealthChe
   &envoy_type_v3_Int64Range_msginit,
 };
 
-static const upb_msglayout_field envoy_config_core_v3_HealthCheck_HttpHealthCheck__fields[9] = {
+static const upb_msglayout_field envoy_config_core_v3_HealthCheck_HttpHealthCheck__fields[10] = {
   {1, UPB_SIZE(8, 8), 0, 0, 9, _UPB_MODE_SCALAR},
   {2, UPB_SIZE(16, 24), 0, 0, 9, _UPB_MODE_SCALAR},
   {3, UPB_SIZE(24, 40), 1, 1, 11, _UPB_MODE_SCALAR},
@@ -97,12 +97,13 @@ static const upb_msglayout_field envoy_config_core_v3_HealthCheck_HttpHealthChec
   {9, UPB_SIZE(44, 80), 0, 3, 11, _UPB_MODE_ARRAY},
   {10, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR},
   {11, UPB_SIZE(32, 56), 3, 2, 11, _UPB_MODE_SCALAR},
+  {12, UPB_SIZE(48, 88), 0, 3, 11, _UPB_MODE_ARRAY},
 };
 
 const upb_msglayout envoy_config_core_v3_HealthCheck_HttpHealthCheck_msginit = {
   &envoy_config_core_v3_HealthCheck_HttpHealthCheck_submsgs[0],
   &envoy_config_core_v3_HealthCheck_HttpHealthCheck__fields[0],
-  UPB_SIZE(48, 96), 9, false, 4, 255,
+  UPB_SIZE(56, 96), 10, false, 4, 255,
 };
 
 static const upb_msglayout *const envoy_config_core_v3_HealthCheck_TcpHealthCheck_submsgs[1] = {
