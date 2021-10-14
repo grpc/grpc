@@ -116,10 +116,48 @@ bool XdsAggregateAndLogicalDnsClusterEnabled() {
 }
 
 //
-// XdsApi::Route::HashPolicy
+// XdsApi::RetryPolicy
 //
 
-XdsApi::Route::HashPolicy::HashPolicy(const HashPolicy& other)
+std::string XdsApi::RetryPolicy::RetryBackOff::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(
+      absl::StrCat("RetryBackOff Base: ", base_interval.ToString()));
+  contents.push_back(
+      absl::StrCat("RetryBackOff max: ", max_interval.ToString()));
+  return absl::StrJoin(contents, ",");
+}
+
+std::string XdsApi::RetryPolicy::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(absl::StrFormat("num_retries=%d", num_retries));
+  contents.push_back(retry_back_off.ToString());
+  return absl::StrCat("{", absl::StrJoin(contents, ","), "}");
+}
+
+//
+// XdsApi::Route::Matchers
+//
+
+std::string XdsApi::Route::Matchers::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(
+      absl::StrFormat("PathMatcher{%s}", path_matcher.ToString()));
+  for (const HeaderMatcher& header_matcher : header_matchers) {
+    contents.push_back(header_matcher.ToString());
+  }
+  if (fraction_per_million.has_value()) {
+    contents.push_back(absl::StrFormat("Fraction Per Million %d",
+                                       fraction_per_million.value()));
+  }
+  return absl::StrJoin(contents, "\n");
+}
+
+//
+// XdsApi::Route::RouteAction::HashPolicy
+//
+
+XdsApi::Route::RouteAction::HashPolicy::HashPolicy(const HashPolicy& other)
     : type(other.type),
       header_name(other.header_name),
       regex_substitution(other.regex_substitution) {
@@ -129,8 +167,8 @@ XdsApi::Route::HashPolicy::HashPolicy(const HashPolicy& other)
   }
 }
 
-XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
-    const HashPolicy& other) {
+XdsApi::Route::RouteAction::HashPolicy&
+XdsApi::Route::RouteAction::HashPolicy::operator=(const HashPolicy& other) {
   type = other.type;
   header_name = other.header_name;
   if (other.regex != nullptr) {
@@ -141,14 +179,14 @@ XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
   return *this;
 }
 
-XdsApi::Route::HashPolicy::HashPolicy(HashPolicy&& other) noexcept
+XdsApi::Route::RouteAction::HashPolicy::HashPolicy(HashPolicy&& other) noexcept
     : type(other.type),
       header_name(std::move(other.header_name)),
       regex(std::move(other.regex)),
       regex_substitution(std::move(other.regex_substitution)) {}
 
-XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
-    HashPolicy&& other) noexcept {
+XdsApi::Route::RouteAction::HashPolicy&
+XdsApi::Route::RouteAction::HashPolicy::operator=(HashPolicy&& other) noexcept {
   type = other.type;
   header_name = std::move(other.header_name);
   regex = std::move(other.regex);
@@ -156,7 +194,7 @@ XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
   return *this;
 }
 
-bool XdsApi::Route::HashPolicy::HashPolicy::operator==(
+bool XdsApi::Route::RouteAction::HashPolicy::HashPolicy::operator==(
     const HashPolicy& other) const {
   if (type != other.type) return false;
   if (type == Type::HEADER) {
@@ -172,7 +210,7 @@ bool XdsApi::Route::HashPolicy::HashPolicy::operator==(
   return true;
 }
 
-std::string XdsApi::Route::HashPolicy::ToString() const {
+std::string XdsApi::Route::RouteAction::HashPolicy::ToString() const {
   std::vector<std::string> contents;
   switch (type) {
     case Type::HEADER:
@@ -193,43 +231,10 @@ std::string XdsApi::Route::HashPolicy::ToString() const {
 }
 
 //
-// XdsApi::Route::RetryPolicy
-//
-std::string XdsApi::Route::RetryPolicy::RetryBackOff::ToString() const {
-  std::vector<std::string> contents;
-  contents.push_back(
-      absl::StrCat("RetryBackOff Base: ", base_interval.ToString()));
-  contents.push_back(
-      absl::StrCat("RetryBackOff max: ", max_interval.ToString()));
-  return absl::StrJoin(contents, ",");
-}
-
-std::string XdsApi::Route::RetryPolicy::ToString() const {
-  std::vector<std::string> contents;
-  contents.push_back(absl::StrFormat("num_retries=%d", num_retries));
-  contents.push_back(retry_back_off.ToString());
-  return absl::StrJoin(contents, ",");
-}
-
-//
-// XdsApi::Route
+// XdsApi::Route::RouteAction::ClusterWeight
 //
 
-std::string XdsApi::Route::Matchers::ToString() const {
-  std::vector<std::string> contents;
-  contents.push_back(
-      absl::StrFormat("PathMatcher{%s}", path_matcher.ToString()));
-  for (const HeaderMatcher& header_matcher : header_matchers) {
-    contents.push_back(header_matcher.ToString());
-  }
-  if (fraction_per_million.has_value()) {
-    contents.push_back(absl::StrFormat("Fraction Per Million %d",
-                                       fraction_per_million.value()));
-  }
-  return absl::StrJoin(contents, "\n");
-}
-
-std::string XdsApi::Route::ClusterWeight::ToString() const {
+std::string XdsApi::Route::RouteAction::ClusterWeight::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(absl::StrCat("cluster=", name));
   contents.push_back(absl::StrCat("weight=", weight));
@@ -246,15 +251,17 @@ std::string XdsApi::Route::ClusterWeight::ToString() const {
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
-std::string XdsApi::Route::ToString() const {
+//
+// XdsApi::Route::RouteAction
+//
+
+std::string XdsApi::Route::RouteAction::ToString() const {
   std::vector<std::string> contents;
-  contents.push_back(matchers.ToString());
   for (const HashPolicy& hash_policy : hash_policies) {
     contents.push_back(absl::StrCat("hash_policy=", hash_policy.ToString()));
   }
   if (retry_policy.has_value()) {
-    contents.push_back(
-        absl::StrCat("retry_policy={", retry_policy->ToString(), "}"));
+    contents.push_back(absl::StrCat("retry_policy=", retry_policy->ToString()));
   }
   if (!cluster_name.empty()) {
     contents.push_back(absl::StrFormat("Cluster name: %s", cluster_name));
@@ -264,6 +271,23 @@ std::string XdsApi::Route::ToString() const {
   }
   if (max_stream_duration.has_value()) {
     contents.push_back(max_stream_duration->ToString());
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+}
+
+//
+// XdsApi::Route
+//
+
+std::string XdsApi::Route::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(matchers.ToString());
+  auto* route_action = absl::get_if<XdsApi::Route::RouteAction>(&action);
+  if (route_action != nullptr) {
+    contents.push_back(absl::StrCat("route=", route_action->ToString()));
+  } else if (absl::holds_alternative<XdsApi::Route::NonForwardingAction>(
+                 action)) {
+    contents.push_back("non_forwarding_action={}");
   }
   if (!typed_per_filter_config.empty()) {
     contents.push_back("typed_per_filter_config={");
@@ -1527,9 +1551,9 @@ XdsApi::Duration DurationParse(const google_protobuf_Duration* proto_duration) {
 grpc_error_handle RetryPolicyParse(
     const EncodingContext& context,
     const envoy_config_route_v3_RetryPolicy* retry_policy,
-    absl::optional<XdsApi::Route::RetryPolicy>* retry) {
+    absl::optional<XdsApi::RetryPolicy>* retry) {
   std::vector<grpc_error_handle> errors;
-  XdsApi::Route::RetryPolicy retry_to_return;
+  XdsApi::RetryPolicy retry_to_return;
   auto retry_on = UpbStringToStdString(
       envoy_config_route_v3_RetryPolicy_retry_on(retry_policy));
   std::vector<absl::string_view> codes = absl::StrSplit(retry_on, ',');
@@ -1609,7 +1633,8 @@ grpc_error_handle RetryPolicyParse(
 
 grpc_error_handle RouteActionParse(const EncodingContext& context,
                                    const envoy_config_route_v3_Route* route_msg,
-                                   XdsApi::Route* route, bool* ignore_route) {
+                                   XdsApi::Route::RouteAction* route,
+                                   bool* ignore_route) {
   if (!envoy_config_route_v3_Route_has_route(route_msg)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "No RouteAction found in route.");
@@ -1642,7 +1667,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
     for (size_t j = 0; j < clusters_size; ++j) {
       const envoy_config_route_v3_WeightedCluster_ClusterWeight*
           cluster_weight = clusters[j];
-      XdsApi::Route::ClusterWeight cluster;
+      XdsApi::Route::RouteAction::ClusterWeight cluster;
       cluster.name = UpbStringToStdString(
           envoy_config_route_v3_WeightedCluster_ClusterWeight_name(
               cluster_weight));
@@ -1711,7 +1736,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
   for (size_t i = 0; i < size; ++i) {
     const envoy_config_route_v3_RouteAction_HashPolicy* hash_policy =
         hash_policies[i];
-    XdsApi::Route::HashPolicy policy;
+    XdsApi::Route::RouteAction::HashPolicy policy;
     policy.terminal =
         envoy_config_route_v3_RouteAction_HashPolicy_terminal(hash_policy);
     const envoy_config_route_v3_RouteAction_HashPolicy_Header* header;
@@ -1719,7 +1744,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
         filter_state;
     if ((header = envoy_config_route_v3_RouteAction_HashPolicy_header(
              hash_policy)) != nullptr) {
-      policy.type = XdsApi::Route::HashPolicy::Type::HEADER;
+      policy.type = XdsApi::Route::RouteAction::HashPolicy::Type::HEADER;
       policy.header_name = UpbStringToStdString(
           envoy_config_route_v3_RouteAction_HashPolicy_Header_header_name(
               header));
@@ -1763,7 +1788,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
           envoy_config_route_v3_RouteAction_HashPolicy_FilterState_key(
               filter_state));
       if (key == "io.grpc.channel_id") {
-        policy.type = XdsApi::Route::HashPolicy::Type::CHANNEL_ID;
+        policy.type = XdsApi::Route::RouteAction::HashPolicy::Type::CHANNEL_ID;
       } else {
         gpr_log(GPR_DEBUG,
                 "RouteAction HashPolicy contains policy specifier "
@@ -1782,7 +1807,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
   const envoy_config_route_v3_RetryPolicy* retry_policy =
       envoy_config_route_v3_RouteAction_retry_policy(route_action);
   if (retry_policy != nullptr) {
-    absl::optional<XdsApi::Route::RetryPolicy> retry;
+    absl::optional<XdsApi::RetryPolicy> retry;
     grpc_error_handle error = RetryPolicyParse(context, retry_policy, &retry);
     if (error != GRPC_ERROR_NONE) return error;
     route->retry_policy = retry;
@@ -1832,7 +1857,7 @@ grpc_error_handle RouteConfigParse(
       if (error != GRPC_ERROR_NONE) return error;
     }
     // Parse retry policy.
-    absl::optional<XdsApi::Route::RetryPolicy> virtual_host_retry_policy;
+    absl::optional<XdsApi::RetryPolicy> virtual_host_retry_policy;
     const envoy_config_route_v3_RetryPolicy* retry_policy =
         envoy_config_route_v3_VirtualHost_retry_policy(virtual_hosts[i]);
     if (retry_policy != nullptr) {
@@ -1871,11 +1896,21 @@ grpc_error_handle RouteConfigParse(
       if (error != GRPC_ERROR_NONE) return error;
       error = RouteRuntimeFractionParse(match, &route);
       if (error != GRPC_ERROR_NONE) return error;
-      error = RouteActionParse(context, routes[j], &route, &ignore_route);
-      if (error != GRPC_ERROR_NONE) return error;
-      if (ignore_route) continue;
-      if (route.retry_policy == absl::nullopt && retry_policy != nullptr) {
-        route.retry_policy = virtual_host_retry_policy;
+      if (envoy_config_route_v3_Route_has_route(routes[j])) {
+        route.action.emplace<XdsApi::Route::RouteAction>();
+        auto& route_action =
+            absl::get<XdsApi::Route::RouteAction>(route.action);
+        error =
+            RouteActionParse(context, routes[j], &route_action, &ignore_route);
+        if (error != GRPC_ERROR_NONE) return error;
+        if (ignore_route) continue;
+        if (route_action.retry_policy == absl::nullopt &&
+            retry_policy != nullptr) {
+          route_action.retry_policy = virtual_host_retry_policy;
+        }
+      } else if (envoy_config_route_v3_Route_has_non_forwarding_action(
+                     routes[j])) {
+        route.action.emplace<XdsApi::Route::NonForwardingAction>();
       }
       if (context.use_v3) {
         grpc_error_handle error = ParseTypedPerFilterConfig<
@@ -2188,6 +2223,10 @@ grpc_error_handle HttpConnectionManagerParse(
     const auto* http_filters =
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
             http_connection_manager_proto, &num_filters);
+    if (num_filters == 0) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Expected atleast one HTTP filter");
+    }
     std::set<absl::string_view> names_seen;
     for (size_t i = 0; i < num_filters; ++i) {
       const auto* http_filter = http_filters[i];
@@ -2268,45 +2307,43 @@ grpc_error_handle HttpConnectionManagerParse(
         XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter{
             "router", {kXdsHttpRouterFilterConfigName, Json()}});
   }
-  if (is_client) {
-    // Found inlined route_config. Parse it to find the cluster_name.
-    if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
-            http_connection_manager_proto)) {
-      const envoy_config_route_v3_RouteConfiguration* route_config =
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
-              http_connection_manager_proto);
-      XdsApi::RdsUpdate rds_update;
-      grpc_error_handle error =
-          RouteConfigParse(context, route_config, is_v2, &rds_update);
-      if (error != GRPC_ERROR_NONE) return error;
-      http_connection_manager->rds_update = std::move(rds_update);
-      return GRPC_ERROR_NONE;
-    }
-    // Validate that RDS must be used to get the route_config dynamically.
-    const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
-        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
+  // Found inlined route_config. Parse it to find the cluster_name.
+  if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
+          http_connection_manager_proto)) {
+    const envoy_config_route_v3_RouteConfiguration* route_config =
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
             http_connection_manager_proto);
-    if (rds == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "HttpConnectionManager neither has inlined route_config nor RDS.");
-    }
-    // Check that the ConfigSource specifies ADS.
-    const envoy_config_core_v3_ConfigSource* config_source =
-        envoy_extensions_filters_network_http_connection_manager_v3_Rds_config_source(
-            rds);
-    if (config_source == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "HttpConnectionManager missing config_source for RDS.");
-    }
-    if (!envoy_config_core_v3_ConfigSource_has_ads(config_source)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
-    }
-    // Get the route_config_name.
-    http_connection_manager->route_config_name = UpbStringToStdString(
-        envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
-            rds));
+    XdsApi::RdsUpdate rds_update;
+    grpc_error_handle error =
+        RouteConfigParse(context, route_config, is_v2, &rds_update);
+    if (error != GRPC_ERROR_NONE) return error;
+    http_connection_manager->rds_update = std::move(rds_update);
+    return GRPC_ERROR_NONE;
   }
+  // Validate that RDS must be used to get the route_config dynamically.
+  const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
+      envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
+          http_connection_manager_proto);
+  if (rds == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "HttpConnectionManager neither has inlined route_config nor RDS.");
+  }
+  // Check that the ConfigSource specifies ADS.
+  const envoy_config_core_v3_ConfigSource* config_source =
+      envoy_extensions_filters_network_http_connection_manager_v3_Rds_config_source(
+          rds);
+  if (config_source == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "HttpConnectionManager missing config_source for RDS.");
+  }
+  if (!envoy_config_core_v3_ConfigSource_has_ads(config_source)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
+  }
+  // Get the route_config_name.
+  http_connection_manager->route_config_name = UpbStringToStdString(
+      envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
+          rds));
   return GRPC_ERROR_NONE;
 }
 
