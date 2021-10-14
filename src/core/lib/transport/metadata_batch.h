@@ -993,7 +993,6 @@ inline void grpc_metadata_batch_assert_ok(grpc_metadata_batch* batch) {
 ///
 /// Currently used only in the retry code.
 void grpc_metadata_batch_copy(grpc_metadata_batch* src,
-                              grpc_metadata_batch* dst,
-                              grpc_linked_mdelem* storage);
+                              grpc_metadata_batch* dst);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H */
