@@ -999,7 +999,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
     }
     // Ignore identical update.
     auto resource = ParseResourceName(listener_name, XdsApi::kLdsTypeUrl);
-    if (!resource.ok()) continue;
+    GPR_ASSERT(resource.ok());
     ListenerState& listener_state =
         xds_client()
             ->authority_state_map_[resource->authority]
@@ -1075,7 +1075,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
     if (rds_resource_names_seen.find(rds_resource_name) ==
         rds_resource_names_seen.end()) {
       auto resource = ParseResourceName(rds_resource_name, XdsApi::kRdsTypeUrl);
-      if (!resource.ok()) continue;
+      GPR_ASSERT(resource.ok());
       RouteConfigState& route_config_state =
           xds_client()
               ->authority_state_map_[resource->authority]
@@ -1108,7 +1108,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
               rds_update.ToString().c_str());
     }
     auto resource = ParseResourceName(route_config_name, XdsApi::kRdsTypeUrl);
-    if (!resource.ok()) continue;
+    GPR_ASSERT(resource.ok());
     RouteConfigState& route_config_state =
         xds_client()
             ->authority_state_map_[resource->authority]
@@ -1161,7 +1161,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
                                        : cds_update.eds_service_name);
     // Ignore identical update.
     auto resource = ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
-    if (!resource.ok()) continue;
+    GPR_ASSERT(resource.ok());
     ClusterState& cluster_state =
         xds_client()
             ->authority_state_map_[resource->authority]
@@ -1268,7 +1268,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdateLocked(
               eds_resource_name.c_str(), eds_update.ToString().c_str());
     }
     auto resource = ParseResourceName(eds_resource_name, XdsApi::kEdsTypeUrl);
-    if (!resource.ok()) continue;
+    GPR_ASSERT(resource.ok());
     EndpointState& endpoint_state =
         xds_client()
             ->authority_state_map_[resource->authority]
