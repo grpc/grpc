@@ -161,6 +161,36 @@ struct ParseHelper<Container> {
   }
 };
 
+// Inner implementation of MetadataMap<Container>::Append()
+// Recursive in terms of metadata trait, tries each known type in order by doing
+// a string comparison on key, and if that key is found sets it. If not found,
+// calls not_found to append generically.
+template <typename Container, typename... Traits>
+struct AppendHelper;
+
+template <typename Container, typename Trait, typename... Traits>
+struct AppendHelper<Container, Trait, Traits...> {
+  template <typename NotFound>
+  static void Append(Container* container, absl::string_view key,
+                     const grpc_slice& value, NotFound not_found) {
+    if (key == Trait::key()) {
+      container->Set(Trait(),
+                     Trait::MementoToValue(Trait::ParseMemento(value)));
+      return;
+    }
+    ParseHelper<Container, Traits...>::Parse(container, key, value, not_found);
+  }
+};
+
+template <typename Container>
+struct AppendHelper<Container> {
+  template <typename NotFound>
+  static void Append(Container*, absl::string_view, const grpc_slice&,
+                     NotFound not_found) {
+    not_found();
+  }
+};
+
 }  // namespace metadata_detail
 
 // MetadataMap encodes the mapping of metadata keys to metadata values.
@@ -301,6 +331,8 @@ class MetadataMap {
 
   // Parse metadata from a key/value pair, and return an object representing
   // that result.
+  // TODO(ctiller): key should probably be an absl::string_view.
+  // Once we don't care about interning anymore, make that change!
   template <class KeySlice, class ValueSlice>
   static ParsedMetadata<MetadataMap> Parse(const KeySlice& key,
                                            const ValueSlice& value) {
@@ -322,6 +354,17 @@ class MetadataMap {
   GRPC_MUST_USE_RESULT grpc_error_handle
   Set(const ParsedMetadata<MetadataMap>& m) {
     return m.SetOnContainer(this);
+  }
+
+  // Append a key/value pair - takes ownership of value
+  void Append(absl::string_view key, const grpc_slice& value) {
+    metadata_detail::AppendHelper<MetadataMap, Traits...>::Append(
+        this, key, value, [&] {
+          Append(grpc_mdelem_from_slices(
+              grpc_slice_intern(
+                  grpc_slice_from_static_buffer(key.data(), key.length())),
+              value));
+        });
   }
 
   //
