@@ -1126,7 +1126,6 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/stream_compression_ping_pong_streaming.cc
   test/core/end2end/tests/streaming_error_response.cc
   test/core/end2end/tests/trailing_metadata.cc
-  test/core/end2end/tests/workaround_cronet_compression.cc
   test/core/end2end/tests/write_buffering.cc
   test/core/end2end/tests/write_buffering_at_end.cc
   test/core/util/test_lb_policies.cc
@@ -1274,7 +1273,6 @@ add_library(end2end_tests
   test/core/end2end/tests/stream_compression_ping_pong_streaming.cc
   test/core/end2end/tests/streaming_error_response.cc
   test/core/end2end/tests/trailing_metadata.cc
-  test/core/end2end/tests/workaround_cronet_compression.cc
   test/core/end2end/tests/write_buffering.cc
   test/core/end2end/tests/write_buffering_at_end.cc
   test/core/util/test_lb_policies.cc
@@ -1559,8 +1557,6 @@ add_library(grpc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
-  src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
-  src/core/ext/filters/workarounds/workaround_utils.cc
   src/core/ext/service_config/service_config.cc
   src/core/ext/service_config/service_config_parser.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
@@ -2393,8 +2389,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
-  src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
-  src/core/ext/filters/workarounds/workaround_utils.cc
   src/core/ext/service_config/service_config.cc
   src/core/ext/service_config/service_config_parser.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
