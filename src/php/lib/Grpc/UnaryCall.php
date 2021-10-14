@@ -47,6 +47,56 @@ class UnaryCall extends AbstractCall
         ]);
     }
 
+    public function startAsync(
+        array $async_callbacks,
+        $data,
+        array $metadata = [],
+        array $options = []
+    ) {
+        $this->async_callbacks_ = $async_callbacks;
+
+        $message_array = ['message' => $this->_serializeMessage($data)];
+        if (isset($options['flags'])) {
+            $message_array['flags'] = $options['flags'];
+        }
+        $this->call->startBatchAsync([
+            OP_SEND_INITIAL_METADATA => $metadata,
+            OP_SEND_MESSAGE => $message_array,
+            OP_SEND_CLOSE_FROM_CLIENT => true,
+        ], function ($error, $event = null) {
+        });
+
+        // wait for response
+        $this->call->startBatchAsync([
+            OP_RECV_INITIAL_METADATA => true,
+            OP_RECV_MESSAGE => true,
+            OP_RECV_STATUS_ON_CLIENT => true,
+        ], function ($error, $event = null) {
+            if ($error) {
+                if (is_callable($this->async_callbacks_['onStatus'])) {
+                    $this->async_callbacks_['onStatus'](
+                        (object)Status::status(STATUS_UNKNOWN, $error)
+                    );
+                }
+                return;
+            }
+
+            if (is_callable($this->async_callbacks_['onMetadata'])) {
+                $this->async_callbacks_['onMetadata']($event->metadata);
+            }
+            $this->metadata = $event->metadata;
+
+            $response = $this->_deserializeResponse($event->message);
+            if (is_callable($this->async_callbacks_['onData'])) {
+                $this->async_callbacks_['onData']($response);
+            }
+
+            if (is_callable($this->async_callbacks_['onStatus'])) {
+                $this->async_callbacks_['onStatus']($event->status);
+            }
+        });
+    }
+
     /**
      * Wait for the server to respond with data and a status.
      *
@@ -54,6 +104,9 @@ class UnaryCall extends AbstractCall
      */
     public function wait()
     {
+        if ($this->async_callbacks_) {
+            return;
+        }
         $batch = [
             OP_RECV_MESSAGE => true,
             OP_RECV_STATUS_ON_CLIENT => true,
@@ -76,10 +129,15 @@ class UnaryCall extends AbstractCall
      */
     public function getMetadata()
     {
+        if ($this->async_callbacks_) {
+            return;
+        }
         if ($this->metadata === null) {
             $event = $this->call->startBatch([OP_RECV_INITIAL_METADATA => true]);
             $this->metadata = $event->metadata;
         }
         return $this->metadata;
     }
+
+    private $async_callbacks_;
 }

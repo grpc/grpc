@@ -48,10 +48,98 @@ class ServerStreamingCall extends AbstractCall
     }
 
     /**
+     * Start the call asynchronously.
+     *
+     * @param array $async_callbacks array of callbacks.
+     *  'onMetadata' => function ($initial_metadata) { },
+     *  'onData' => function ($response) { },
+     *  'onStatus' => function ($status) { },
+     * @param mixed $data     The data to send
+     * @param array $metadata Metadata to send with the call, if applicable
+     *                        (optional)
+     * @param array $options  An array of options, possible keys:
+     *                        'flags' => a number (optional)
+     */
+    public function startAsync(
+        array $async_callbacks,
+        $data,
+        array $metadata = [],
+        array $options = []
+    ) {
+        $this->async_callbacks_ = $async_callbacks;
+
+        $message_array = ['message' => $this->_serializeMessage($data)];
+        if (array_key_exists('flags', $options)) {
+            $message_array['flags'] = $options['flags'];
+        }
+
+        $this->call->startBatchAsync([
+            OP_SEND_INITIAL_METADATA => $metadata,
+            OP_SEND_MESSAGE => $message_array,
+            OP_SEND_CLOSE_FROM_CLIENT => true,
+        ], function ($error, $event = null) {
+        });
+
+        // receive initial metadata
+        $this->call->startBatchAsync([
+            OP_RECV_INITIAL_METADATA => true,
+        ], function ($error, $event = null) {
+            if (!$error) {
+                if (is_callable($this->async_callbacks_['onMetadata'])) {
+                    $this->async_callbacks_['onMetadata']($event->metadata);
+                }
+                $this->metadata = $event->metadata;
+            }
+        });
+
+        // start async reading
+        $receiveMessageCallback = function ($error, $event = null)
+        use (&$receiveMessageCallback) {
+            if ($error || $event->message === null) {
+                if (is_callable($this->async_callbacks_['onData'])) {
+                    $this->async_callbacks_['onData'](null);
+                }
+                // server stream done or error occured, get status
+                $this->call->startBatchAsync([
+                    OP_RECV_STATUS_ON_CLIENT => true,
+                ], function ($error, $event = null) {
+                    if ($error) {
+                        if (is_callable($this->async_callbacks_['onStatus'])) {
+                            $this->async_callbacks_['onStatus'](
+                                (object)Status::status(STATUS_UNKNOWN, $error)
+                            );
+                        }
+                        return;
+                    }
+                    if (is_callable($this->async_callbacks_['onStatus'])) {
+                        $this->async_callbacks_['onStatus']($event->status);
+                    }
+                });
+                return;
+            }
+            $response = $this->_deserializeResponse($event->message);
+            if (is_callable($this->async_callbacks_['onData'])) {
+                $this->async_callbacks_['onData']($response);
+            }
+
+            // read next streaming messages
+            $this->call->startBatchAsync([
+                OP_RECV_MESSAGE => true,
+            ], $receiveMessageCallback);
+        };
+        $this->call->startBatchAsync([
+            OP_RECV_MESSAGE => true,
+        ], $receiveMessageCallback);
+    }
+
+    /**
      * @return mixed An iterator of response values
      */
     public function responses()
     {
+        if ($this->async_callbacks_) {
+            return;
+        }
         $batch = [OP_RECV_MESSAGE => true];
         if ($this->metadata === null) {
             $batch[OP_RECV_INITIAL_METADATA] = true;
@@ -77,6 +165,9 @@ class ServerStreamingCall extends AbstractCall
      */
     public function getStatus()
     {
+        if ($this->async_callbacks_) {
+            return;
+        }
         $status_event = $this->call->startBatch([
             OP_RECV_STATUS_ON_CLIENT => true,
         ]);
@@ -91,10 +182,15 @@ class ServerStreamingCall extends AbstractCall
      */
     public function getMetadata()
     {
+        if ($this->async_callbacks_) {
+            return;
+        }
         if ($this->metadata === null) {
             $event = $this->call->startBatch([OP_RECV_INITIAL_METADATA => true]);
             $this->metadata = $event->metadata;
         }
         return $this->metadata;
     }
+
+    private $async_callbacks_;
 }

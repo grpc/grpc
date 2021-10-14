@@ -39,6 +39,45 @@ class ClientStreamingCall extends AbstractCall
     }
 
     /**
+     * Start the call asynchronously.
+     *
+     * @param array $async_callbacks array of callbacks.
+     *  'onMetadata' => function ($initial_metadata) { },
+     *  'onData' => function ($response) { },
+     *  'onStatus' => function ($status) { },
+     * @param array $metadata Metadata to send with the call, if applicable
+     *                        (optional)
+     */
+    public function startAsync(array $async_callbacks, array $metadata = [])
+    {
+        $this->async_callbacks_ = $async_callbacks;
+
+        $this->call->startBatchAsync([
+            OP_SEND_INITIAL_METADATA => $metadata,
+        ], function ($error, $event = null) {
+            if ($error) {
+                // error occured, get status
+                $this->call->startBatchAsync([
+                    OP_RECV_STATUS_ON_CLIENT => true,
+                ], function ($error, $event = null) {
+                    if ($error) {
+                        if (is_callable($this->async_callbacks_['onStatus'])) {
+                            $this->async_callbacks_['onStatus'](
+                                (object)Status::status(STATUS_UNKNOWN, $error)
+                            );
+                        }
+                        return;
+                    }
+                    if (is_callable($this->async_callbacks_['onStatus'])) {
+                        $this->async_callbacks_['onStatus']($event->status);
+                    }
+                });
+                return;
+            }
+        });
+    }
+
+    /**
      * Write a single message to the server. This cannot be called after
      * wait is called.
      *
@@ -52,9 +91,82 @@ class ClientStreamingCall extends AbstractCall
         if (array_key_exists('flags', $options)) {
             $message_array['flags'] = $options['flags'];
         }
-        $this->call->startBatch([
-            OP_SEND_MESSAGE => $message_array,
-        ]);
+        if ($this->async_callbacks_ === null) {
+            $this->call->startBatch([
+                OP_SEND_MESSAGE => $message_array,
+            ]);
+        } else {
+            $writeFunction = function () use ($message_array) {
+                $this->call->startBatchAsync([
+                    OP_SEND_MESSAGE => $message_array,
+                ], function ($error, $event = null) {
+                    if (!$error) {
+                        array_shift($this->async_write_queue_);
+                        $nextWrite = reset($this->async_write_queue_);
+                        if ($nextWrite) {
+                            $nextWrite();
+                        }
+                    }
+                });
+            };
+
+            array_push($this->async_write_queue_, $writeFunction);
+            if (count($this->async_write_queue_) === 1) {
+                $writeFunction();
+            };
+        }
+    }
+
+    /**
+     * Indicate that no more writes will be sent.
+     */
+    public function writesDone()
+    {
+        if ($this->async_callbacks_ === null) {
+            return;
+        }
+
+        $writeFunction = function () {
+            $this->call->startBatchAsync([
+                OP_SEND_CLOSE_FROM_CLIENT => true,
+            ], function ($error, $event = null) {
+            });
+
+            // wait for response
+            $this->call->startBatchAsync([
+                OP_RECV_INITIAL_METADATA => true,
+                OP_RECV_MESSAGE => true,
+                OP_RECV_STATUS_ON_CLIENT => true,
+            ], function ($error, $event = null) {
+                if ($error) {
+                    if (is_callable($this->async_callbacks_['onStatus'])) {
+                        $this->async_callbacks_['onStatus'](
+                            (object)Status::status(STATUS_UNKNOWN, $error)
+                        );
+                    }
+                    return;
+                }
+
+                if (is_callable($this->async_callbacks_['onMetadata'])) {
+                    $this->async_callbacks_['onMetadata']($event->metadata);
+                }
+                $this->metadata = $event->metadata;
+
+                $response = $this->_deserializeResponse($event->message);
+                if (is_callable($this->async_callbacks_['onData'])) {
+                    $this->async_callbacks_['onData']($response);
+                }
+
+                if (is_callable($this->async_callbacks_['onStatus'])) {
+                    $this->async_callbacks_['onStatus']($event->status);
+                }
+            });
+        };
+
+        array_push($this->async_write_queue_, $writeFunction);
+        if (count($this->async_write_queue_) === 1) {
+            $writeFunction();
+        };
     }
 
     /**
@@ -64,6 +176,9 @@ class ClientStreamingCall extends AbstractCall
      */
     public function wait()
     {
+        if ($this->async_callbacks_) {
+            return;
+        }
         $event = $this->call->startBatch([
             OP_SEND_CLOSE_FROM_CLIENT => true,
             OP_RECV_INITIAL_METADATA => true,
@@ -77,4 +192,7 @@ class ClientStreamingCall extends AbstractCall
 
         return [$this->_deserializeResponse($event->message), $status];
     }
+
+    private $async_callbacks_;
+    private $async_write_queue_ = [];
 }
