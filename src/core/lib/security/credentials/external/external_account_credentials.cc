@@ -75,8 +75,7 @@ bool MatchWorkforcePoolAudience(absl::string_view audience) {
   std::pair<absl::string_view, absl::string_view> providers_split_result =
       absl::StrSplit(workforce_pools_split_result.second,
                      absl::MaxSplits("/providers/", 1));
-  if (absl::StrContains(providers_split_result.first, '/')) return false;
-  return true;
+  return !absl::StrContains(providers_split_result.first, '/');
 }
 
 }  // namespace
