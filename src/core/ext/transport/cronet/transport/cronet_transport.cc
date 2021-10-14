@@ -408,10 +408,8 @@ static void convert_cronet_array_to_metadata(
   for (size_t i = 0; i < header_array->count; i++) {
     CRONET_LOG(GPR_DEBUG, "header key=%s, value=%s",
                header_array->headers[i].key, header_array->headers[i].value);
-    grpc_slice key = grpc_slice_intern(
-        grpc_slice_from_static_string(header_array->headers[i].key));
     grpc_slice value;
-    if (grpc_is_refcounted_slice_binary_header(key)) {
+    if (absl::EndsWith(header_array->headers[i].key, "-bin")) {
       value = grpc_slice_from_static_string(header_array->headers[i].value);
       value = grpc_slice_intern(grpc_chttp2_base64_decode_with_length(
           value, grpc_chttp2_base64_infer_length_after_decode(value)));
@@ -419,8 +417,7 @@ static void convert_cronet_array_to_metadata(
       value = grpc_slice_intern(
           grpc_slice_from_static_string(header_array->headers[i].value));
     }
-    GRPC_LOG_IF_ERROR("convert_cronet_array_to_metadata",
-                      mds->Append(grpc_mdelem_from_slices(key, value)));
+    mds->Append(header_array->headers[i].key, value);
   }
 }
 
