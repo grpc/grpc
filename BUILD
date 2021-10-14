@@ -3073,8 +3073,8 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr_codegen",
         "gpr_base",
+        "gpr_codegen",
         "grpc_base",
         "grpc_matchers",
         "grpc_secure",

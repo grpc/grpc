@@ -422,7 +422,7 @@ TEST_F(SdkAuthzEnd2EndTest,
 
 TEST_F(
     SdkAuthzEnd2EndTest,
-    StaticInitDeniesRpcRequestWithEmptyPrincipalsFieldOnUnauthenticatedConnection) {
+    StaticInitDeniesRpcRequestWithEmptyPrincipalsOnUnauthenticatedConnection) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
