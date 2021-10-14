@@ -521,7 +521,7 @@ class RequestMetadataState {
 
   static void CheckMetadata(const std::map<std::string, std::string>& expected,
                             grpc_credentials_mdelem_array* md_array) {
-    for (auto i : expected) {
+    for (auto const& i : expected) {
       size_t j;
       for (j = 0; j < md_array->size; ++j) {
         absl::string_view actual_key =
@@ -1867,7 +1867,7 @@ static int plugin_get_metadata_success(
   plugin_state* s = static_cast<plugin_state*>(state);
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
   size_t i = 0;
-  for (auto md : plugin_md) {
+  for (auto const& md : plugin_md) {
     memset(&creds_md[i], 0, sizeof(grpc_metadata));
     creds_md[i].key = grpc_slice_from_copied_string(md.first.c_str());
     creds_md[i].value = grpc_slice_from_copied_string(md.second.c_str());
