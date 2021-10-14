@@ -535,9 +535,6 @@ XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
               : nullptr),
       xds_client_(std::move(xds_client)),
       server_(server) {
-  // GPR_ASSERT(channel_ == nullptr);
-  gpr_log(GPR_INFO, "donna in ChannelState::ChannelState %p and %p", channel_,
-          watcher_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating channel to %s",
             xds_client_.get(), server.server_uri.c_str());
@@ -1030,12 +1027,10 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   for (const std::string& listener_name : resource_names_failed) {
     auto resource = ParseResourceName(listener_name);
     if (!resource.ok()) continue;
-    auto it = xds_client()
-                  ->authority_state_map_[resource->authority]
-                  .listener_map.find(resource->id);
-    if (it != xds_client()
-                  ->authority_state_map_[resource->authority]
-                  .listener_map.end()) {
+    auto& listener_map =
+        xds_client()->authority_state_map_[resource->authority].listener_map;
+    auto it = listener_map.find(resource->id);
+    if (it != listener_map.end()) {
       auto& update = it->second.update;
       if (!update.has_value()) continue;
       lds_update_map[listener_name];
@@ -1051,7 +1046,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
     const std::string& listener_name = p.first;
     if (lds_update_map.find(listener_name) == lds_update_map.end()) {
       auto resource = ParseResourceName(listener_name);
-      if (!resource.ok()) continue;
+      GPR_ASSERT(resource.ok());
       ListenerState& listener_state =
           xds_client()
               ->authority_state_map_[resource->authority]
@@ -1193,12 +1188,10 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   for (const std::string& cluster_name : resource_names_failed) {
     auto resource = ParseResourceName(cluster_name);
     if (!resource.ok()) continue;
-    auto it = xds_client()
-                  ->authority_state_map_[resource->authority]
-                  .cluster_map.find(resource->id);
-    if (it != xds_client()
-                  ->authority_state_map_[resource->authority]
-                  .cluster_map.end()) {
+    auto& cluster_map =
+        xds_client()->authority_state_map_[resource->authority].cluster_map;
+    auto it = cluster_map.find(resource->id);
+    if (it != cluster_map.end()) {
       auto& update = it->second.update;
       if (!update.has_value()) continue;
       cds_update_map[cluster_name];
@@ -1213,7 +1206,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
     const std::string& cluster_name = p.first;
     if (cds_update_map.find(cluster_name) == cds_update_map.end()) {
       auto resource = ParseResourceName(cluster_name);
-      if (!resource.ok()) continue;
+      GPR_ASSERT(resource.ok());
       ClusterState& cluster_state =
           xds_client()
               ->authority_state_map_[resource->authority]
@@ -1240,7 +1233,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
     if (eds_resource_names_seen.find(eds_resource_name) ==
         eds_resource_names_seen.end()) {
       auto resource = ParseResourceName(eds_resource_name);
-      if (!resource.ok()) continue;
+      GPR_ASSERT(resource.ok());
       EndpointState& endpoint_state =
           xds_client()
               ->authority_state_map_[resource->authority]
@@ -2122,14 +2115,13 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
   if (shutting_down_) return;
   auto resource = ParseResourceName(listener_name);
   if (!resource.ok()) return;
-  ListenerState& listener_state =
-      authority_state_map_[resource->authority].listener_map[resource->id];
+  auto& authority_state = authority_state_map_[resource->authority];
+  ListenerState& listener_state = authority_state.listener_map[resource->id];
   auto it = listener_state.watchers.find(watcher);
   if (it != listener_state.watchers.end()) {
     listener_state.watchers.erase(it);
     if (listener_state.watchers.empty()) {
-      authority_state_map_[resource->authority].listener_map.erase(
-          resource->id);
+      authority_state.listener_map.erase(resource->id);
       xds_server_channel_map_[bootstrap_->server().ToString()]
           ->UnsubscribeLocked(XdsApi::kLdsTypeUrl, std::string(listener_name),
                               delay_unsubscription);
@@ -2144,8 +2136,9 @@ void XdsClient::WatchRouteConfigData(
   if (!resource.ok()) return;
   std::string route_config_name_str = std::string(route_config_name);
   MutexLock lock(&mu_);
+  auto& authority_state = authority_state_map_[resource->authority];
   RouteConfigState& route_config_state =
-      authority_state_map_[resource->authority].route_config_map[resource->id];
+      authority_state.route_config_map[resource->id];
   RouteConfigWatcherInterface* w = watcher.get();
   route_config_state.watchers[w] = std::move(watcher);
   // If we've already received an RDS update, notify the new watcher
@@ -2161,16 +2154,15 @@ void XdsClient::WatchRouteConfigData(
   // Create ChannelState object.
   if (xds_server_channel_map_.find(bootstrap_->server().ToString()) ==
       xds_server_channel_map_.end()) {
-    authority_state_map_[resource->authority].channel_state =
-        MakeRefCounted<ChannelState>(
-            WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
-            bootstrap_->server());
+    authority_state.channel_state = MakeRefCounted<ChannelState>(
+        WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
+        bootstrap_->server());
     xds_server_channel_map_[bootstrap_->server().ToString()] =
-        authority_state_map_[resource->authority]
-            .channel_state->WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState")
+        authority_state.channel_state
+            ->WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState")
             .get();
   } else {
-    authority_state_map_[resource->authority].channel_state =
+    authority_state.channel_state =
         xds_server_channel_map_[bootstrap_->server().ToString()]->Ref(
             DEBUG_LOCATION, "XdsClient+ChannelState");
   }
@@ -2185,14 +2177,14 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
   if (shutting_down_) return;
   auto resource = ParseResourceName(route_config_name);
   if (!resource.ok()) return;
+  auto& authority_state = authority_state_map_[resource->authority];
   RouteConfigState& route_config_state =
-      authority_state_map_[resource->authority].route_config_map[resource->id];
+      authority_state.route_config_map[resource->id];
   auto it = route_config_state.watchers.find(watcher);
   if (it != route_config_state.watchers.end()) {
     route_config_state.watchers.erase(it);
     if (route_config_state.watchers.empty()) {
-      authority_state_map_[resource->authority].route_config_map.erase(
-          resource->id);
+      authority_state.route_config_map.erase(resource->id);
       xds_server_channel_map_[bootstrap_->server().ToString()]
           ->UnsubscribeLocked(XdsApi::kRdsTypeUrl,
                               std::string(route_config_name),
@@ -2208,8 +2200,8 @@ void XdsClient::WatchClusterData(
   if (!resource.ok()) return;
   std::string cluster_name_str = std::string(cluster_name);
   MutexLock lock(&mu_);
-  ClusterState& cluster_state =
-      authority_state_map_[resource->authority].cluster_map[resource->id];
+  auto& authority_state = authority_state_map_[resource->authority];
+  ClusterState& cluster_state = authority_state.cluster_map[resource->id];
   ClusterWatcherInterface* w = watcher.get();
   cluster_state.watchers[w] = std::move(watcher);
   // If we've already received a CDS update, notify the new watcher
@@ -2224,16 +2216,15 @@ void XdsClient::WatchClusterData(
   // Create ChannelState object.
   if (xds_server_channel_map_.find(bootstrap_->server().ToString()) ==
       xds_server_channel_map_.end()) {
-    authority_state_map_[resource->authority].channel_state =
-        MakeRefCounted<ChannelState>(
-            WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
-            bootstrap_->server());
+    authority_state.channel_state = MakeRefCounted<ChannelState>(
+        WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
+        bootstrap_->server());
     xds_server_channel_map_[bootstrap_->server().ToString()] =
-        authority_state_map_[resource->authority]
-            .channel_state->WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState")
+        authority_state.channel_state
+            ->WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState")
             .get();
   } else {
-    authority_state_map_[resource->authority].channel_state =
+    authority_state.channel_state =
         xds_server_channel_map_[bootstrap_->server().ToString()]->Ref(
             DEBUG_LOCATION, "XdsClient+ChannelState");
   }
@@ -2248,13 +2239,13 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
   if (shutting_down_) return;
   auto resource = ParseResourceName(cluster_name);
   if (!resource.ok()) return;
-  ClusterState& cluster_state =
-      authority_state_map_[resource->authority].cluster_map[resource->id];
+  auto& authority_state = authority_state_map_[resource->authority];
+  ClusterState& cluster_state = authority_state.cluster_map[resource->id];
   auto it = cluster_state.watchers.find(watcher);
   if (it != cluster_state.watchers.end()) {
     cluster_state.watchers.erase(it);
     if (cluster_state.watchers.empty()) {
-      authority_state_map_[resource->authority].cluster_map.erase(resource->id);
+      authority_state.cluster_map.erase(resource->id);
       xds_server_channel_map_[bootstrap_->server().ToString()]
           ->UnsubscribeLocked(XdsApi::kCdsTypeUrl, std::string(cluster_name),
                               delay_unsubscription);
@@ -2269,8 +2260,8 @@ void XdsClient::WatchEndpointData(
   if (!resource.ok()) return;
   std::string eds_service_name_str = std::string(eds_service_name);
   MutexLock lock(&mu_);
-  EndpointState& endpoint_state =
-      authority_state_map_[resource->authority].endpoint_map[resource->id];
+  auto& authority_state = authority_state_map_[resource->authority];
+  EndpointState& endpoint_state = authority_state.endpoint_map[resource->id];
   EndpointWatcherInterface* w = watcher.get();
   endpoint_state.watchers[w] = std::move(watcher);
   // If we've already received an EDS update, notify the new watcher
@@ -2285,16 +2276,15 @@ void XdsClient::WatchEndpointData(
   // Create ChannelState object.
   if (xds_server_channel_map_.find(bootstrap_->server().ToString()) ==
       xds_server_channel_map_.end()) {
-    authority_state_map_[resource->authority].channel_state =
-        MakeRefCounted<ChannelState>(
-            WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
-            bootstrap_->server());
+    authority_state.channel_state = MakeRefCounted<ChannelState>(
+        WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
+        bootstrap_->server());
     xds_server_channel_map_[bootstrap_->server().ToString()] =
-        authority_state_map_[resource->authority]
-            .channel_state->WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState")
+        authority_state.channel_state
+            ->WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState")
             .get();
   } else {
-    authority_state_map_[resource->authority].channel_state =
+    authority_state.channel_state =
         xds_server_channel_map_[bootstrap_->server().ToString()]->Ref(
             DEBUG_LOCATION, "XdsClient+ChannelState");
   }
@@ -2309,14 +2299,13 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
   if (shutting_down_) return;
   auto resource = ParseResourceName(eds_service_name);
   if (!resource.ok()) return;
-  EndpointState& endpoint_state =
-      authority_state_map_[resource->authority].endpoint_map[resource->id];
+  auto& authority_state = authority_state_map_[resource->authority];
+  EndpointState& endpoint_state = authority_state.endpoint_map[resource->id];
   auto it = endpoint_state.watchers.find(watcher);
   if (it != endpoint_state.watchers.end()) {
     endpoint_state.watchers.erase(it);
     if (endpoint_state.watchers.empty()) {
-      authority_state_map_[resource->authority].endpoint_map.erase(
-          resource->id);
+      authority_state.endpoint_map.erase(resource->id);
       xds_server_channel_map_[bootstrap_->server().ToString()]
           ->UnsubscribeLocked(XdsApi::kEdsTypeUrl,
                               std::string(eds_service_name),
