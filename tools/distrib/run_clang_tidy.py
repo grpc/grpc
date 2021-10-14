@@ -50,7 +50,7 @@ cmdline = [
 ]
 
 if args.fix:
-    cmdline.append('--fix')
+    cmdline.append('--fix-errors')
 
 if args.only_changed:
     orig_files = set(args.files)
