@@ -323,6 +323,7 @@ class XdsClient::ChannelState::AdsCallState
   void RejectAdsUpdateHelperLocked(const std::string& resource_name,
                                    grpc_millis update_time,
                                    const XdsApi::AdsParseResult& result,
+                                   const std::string& error_details,
                                    StateMap* state_map)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
@@ -1311,15 +1312,15 @@ void UpdateResourceMetadataNacked(const std::string& version,
 template <typename StateMap>
 void XdsClient::ChannelState::AdsCallState::RejectAdsUpdateHelperLocked(
     const std::string& resource_name, grpc_millis update_time,
-    const XdsApi::AdsParseResult& result, StateMap* state_map) {
+    const XdsApi::AdsParseResult& result, const std::string& error_details,
+    StateMap* state_map) {
   auto it = state_map->find(resource_name);
   if (it == state_map->end()) return;
   auto& state = it->second;
-  std::string details = grpc_error_std_string(result.parse_error);
   for (const auto& p : state.watchers) {
     p.first->OnError(GRPC_ERROR_REF(result.parse_error));
   }
-  UpdateResourceMetadataNacked(result.version, details, update_time,
+  UpdateResourceMetadataNacked(result.version, error_details, update_time,
                                &state.meta);
 }
 
@@ -1341,16 +1342,16 @@ void XdsClient::ChannelState::AdsCallState::RejectAdsUpdateLocked(
       if (authority_it == xds_client()->authority_state_map_.end()) continue;
       AuthorityState& authority_state = authority_it->second;
       if (result.type_url == XdsApi::kLdsTypeUrl) {
-        RejectAdsUpdateHelperLocked(resource->id, update_time, result,
+        RejectAdsUpdateHelperLocked(resource->id, update_time, result, details,
                                     &authority_state.listener_map);
       } else if (result.type_url == XdsApi::kRdsTypeUrl) {
-        RejectAdsUpdateHelperLocked(resource->id, update_time, result,
+        RejectAdsUpdateHelperLocked(resource->id, update_time, result, details,
                                     &authority_state.route_config_map);
       } else if (result.type_url == XdsApi::kCdsTypeUrl) {
-        RejectAdsUpdateHelperLocked(resource->id, update_time, result,
+        RejectAdsUpdateHelperLocked(resource->id, update_time, result, details,
                                     &authority_state.cluster_map);
       } else if (result.type_url == XdsApi::kEdsTypeUrl) {
-        RejectAdsUpdateHelperLocked(resource->id, update_time, result,
+        RejectAdsUpdateHelperLocked(resource->id, update_time, result, details,
                                     &authority_state.endpoint_map);
       } else {
         GPR_ASSERT(0);
@@ -2071,8 +2072,8 @@ void XdsClient::WatchListenerData(
   if (!resource.ok()) return;
   std::string listener_name_str = std::string(listener_name);
   MutexLock lock(&mu_);
-  ListenerState& listener_state =
-      authority_state_map_[resource->authority].listener_map[resource->id];
+  AuthorityState& authority_state = authority_state_map_[resource->authority];
+  ListenerState& listener_state = authority_state.listener_map[resource->id];
   ListenerWatcherInterface* w = watcher.get();
   listener_state.watchers[w] = std::move(watcher);
   // If we've already received an LDS update, notify the new watcher
@@ -2089,19 +2090,18 @@ void XdsClient::WatchListenerData(
       xds_server_channel_map_.end()) {
     // ChannelState object does not exist in channel map, create it and store
     // strong ref in authority_state_map_
-    authority_state_map_[resource->authority].channel_state =
-        MakeRefCounted<ChannelState>(
-            WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
-            bootstrap_->server());
+    authority_state.channel_state = MakeRefCounted<ChannelState>(
+        WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
+        bootstrap_->server());
     // Also add the pointer in channel map to track creation.
     xds_server_channel_map_[bootstrap_->server().ToString()] =
-        authority_state_map_[resource->authority]
-            .channel_state->WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState")
+        authority_state.channel_state
+            ->WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState")
             .get();
   } else {
     // ChannelState object exists in channel map, no need to create and
     // just take a strong ref in authority_state_map_
-    authority_state_map_[resource->authority].channel_state =
+    authority_state.channel_state =
         xds_server_channel_map_[bootstrap_->server().ToString()]->Ref(
             DEBUG_LOCATION, "XdsClient+ChannelState");
   }
