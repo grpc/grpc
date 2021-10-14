@@ -60,10 +60,8 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
     gpr_log(GPR_INFO,
             "No verifier specified on the client side. Using default hostname "
             "verifier");
-    grpc_tls_certificate_verifier* hostname_verifier =
-        new grpc_core::HostNameCertificateVerifier();
-    options->set_certificate_verifier(hostname_verifier->Ref());
-    hostname_verifier->Unref();
+    options->set_certificate_verifier(
+        grpc_core::MakeRefCounted<grpc_core::HostNameCertificateVerifier>());
   }
   return true;
 }
