@@ -109,7 +109,9 @@ class XdsApi {
     Matchers matchers;
 
     struct InappropriateAction {
-      bool operator==(const InappropriateAction& other) const { return true; }
+      bool operator==(const InappropriateAction& /* other */) const {
+        return true;
+      }
     };
 
     struct RouteAction {
@@ -173,7 +175,9 @@ class XdsApi {
     };
 
     struct NonForwardingAction {
-      bool operator==(const NonForwardingAction& other) const { return true; }
+      bool operator==(const NonForwardingAction& /* other */) const {
+        return true;
+      }
     };
 
     absl::variant<InappropriateAction, RouteAction, NonForwardingAction> action;
