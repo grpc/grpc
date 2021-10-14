@@ -20,10 +20,11 @@
 
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/useful.h"
 
 // The subchannel pool to reuse subchannels.
-#define GRPC_ARG_SUBCHANNEL_POOL "grpc.subchannel_pool"
+#define GRPC_ARG_SUBCHANNEL_POOL "grpc.internal.subchannel_pool"
 // The subchannel key ID that is only used in test to make each key unique.
 #define GRPC_ARG_SUBCHANNEL_KEY_TEST_ONLY_ID "grpc.subchannel_key_test_only_id"
 
@@ -80,6 +81,11 @@ void SubchannelKey::Init(
     grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args)) {
   address_ = address;
   args_ = copy_channel_args(args);
+}
+
+std::string SubchannelKey::ToString() const {
+  return absl::StrCat("{address=", grpc_sockaddr_to_uri(&address_),
+                      ", args=", grpc_channel_args_string(args_), "}");
 }
 
 namespace {

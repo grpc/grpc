@@ -22,7 +22,6 @@
   <%include file="../../cxx_deps.include"/>
   <%include file="../../cmake_jessie_backports.include"/>
   <%include file="../../run_tests_addons.include"/>
-  <%include file="../../libuv_install.include"/>
 
   # Install gcc-4.9 and other relevant items
   RUN apt-get update && apt-get -y install gcc gcc-multilib g++ g++-multilib && apt-get clean
