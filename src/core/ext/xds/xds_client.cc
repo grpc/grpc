@@ -2150,20 +2150,10 @@ void XdsClient::WatchRouteConfigData(
     }
     w->OnRouteConfigChanged(*route_config_state.update);
   }
-  // Create ChannelState object.
-  if (xds_server_channel_map_.find(bootstrap_->server().ToString()) ==
-      xds_server_channel_map_.end()) {
-    authority_state.channel_state = MakeRefCounted<ChannelState>(
-        WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
-        bootstrap_->server());
-    xds_server_channel_map_[bootstrap_->server().ToString()] =
-        authority_state.channel_state
-            ->WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState")
-            .get();
-  } else {
+  // If the authority doesn't yet have a channel, set it, creating it if needed.
+  if (authority_state.channel_state == nullptr) {
     authority_state.channel_state =
-        xds_server_channel_map_[bootstrap_->server().ToString()]->Ref(
-            DEBUG_LOCATION, "XdsClient+ChannelState");
+        GetOrCreateChannelState(bootstrap_->server().ToString());
   }
   xds_server_channel_map_[bootstrap_->server().ToString()]->SubscribeLocked(
       XdsApi::kRdsTypeUrl, std::move(route_config_name_str));
@@ -2212,20 +2202,10 @@ void XdsClient::WatchClusterData(
     }
     w->OnClusterChanged(cluster_state.update.value());
   }
-  // Create ChannelState object.
-  if (xds_server_channel_map_.find(bootstrap_->server().ToString()) ==
-      xds_server_channel_map_.end()) {
-    authority_state.channel_state = MakeRefCounted<ChannelState>(
-        WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
-        bootstrap_->server());
-    xds_server_channel_map_[bootstrap_->server().ToString()] =
-        authority_state.channel_state
-            ->WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState")
-            .get();
-  } else {
+  // If the authority doesn't yet have a channel, set it, creating it if needed.
+  if (authority_state.channel_state == nullptr) {
     authority_state.channel_state =
-        xds_server_channel_map_[bootstrap_->server().ToString()]->Ref(
-            DEBUG_LOCATION, "XdsClient+ChannelState");
+        GetOrCreateChannelState(bootstrap_->server().ToString());
   }
   xds_server_channel_map_[bootstrap_->server().ToString()]->SubscribeLocked(
       XdsApi::kCdsTypeUrl, std::move(cluster_name_str));
@@ -2272,20 +2252,10 @@ void XdsClient::WatchEndpointData(
     }
     w->OnEndpointChanged(endpoint_state.update.value());
   }
-  // Create ChannelState object.
-  if (xds_server_channel_map_.find(bootstrap_->server().ToString()) ==
-      xds_server_channel_map_.end()) {
-    authority_state.channel_state = MakeRefCounted<ChannelState>(
-        WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
-        bootstrap_->server());
-    xds_server_channel_map_[bootstrap_->server().ToString()] =
-        authority_state.channel_state
-            ->WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState")
-            .get();
-  } else {
+  // If the authority doesn't yet have a channel, set it, creating it if needed.
+  if (authority_state.channel_state == nullptr) {
     authority_state.channel_state =
-        xds_server_channel_map_[bootstrap_->server().ToString()]->Ref(
-            DEBUG_LOCATION, "XdsClient+ChannelState");
+        GetOrCreateChannelState(bootstrap_->server().ToString());
   }
   xds_server_channel_map_[bootstrap_->server().ToString()]->SubscribeLocked(
       XdsApi::kEdsTypeUrl, std::move(eds_service_name_str));
@@ -2343,8 +2313,11 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
         it->first.second /*eds_service_name*/);
     load_report_state.drop_stats = cluster_drop_stats.get();
   }
-  for (auto& p : xds_server_channel_map_) {
-    p.second->MaybeStartLrsCall();
+  auto resource = ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
+  GPR_ASSERT(resource.ok());
+  auto server = xds_server_channel_map_.find(resource->authority);
+  if (server != xds_server_channel_map_.end()) {
+    server->second->MaybeStartLrsCall();
   }
   return cluster_drop_stats;
 }
@@ -2402,6 +2375,12 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
         std::move(locality));
     locality_state.locality_stats = cluster_locality_stats.get();
   }
+  // auto resource = ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
+  // GPR_ASSERT(resource.ok());
+  // auto server = xds_server_channel_map_.find(resource->authority);
+  // if (server != xds_server_channel_map_.end()) {
+  //  server->second->MaybeStartLrsCall();
+  //}
   for (auto& p : xds_server_channel_map_) {
     p.second->MaybeStartLrsCall();
   }
