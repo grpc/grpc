@@ -54,7 +54,8 @@ class ChannelData {
     ChannelData* chand_;
   };
 
-  ChannelData(grpc_channel_element* elem, grpc_channel_element_args* args);
+  ChannelData(RefCountedPtr<ServerConfigSelectorProvider>
+                  server_config_selector_provider);
   ~ChannelData();
 
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
@@ -103,7 +104,14 @@ class CallData {
 grpc_error_handle ChannelData::Init(grpc_channel_element* elem,
                                     grpc_channel_element_args* args) {
   GPR_ASSERT(elem->filter = &kServerConfigSelectorFilter);
-  new (elem->channel_data) ChannelData(elem, args);
+  RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider =
+      ServerConfigSelectorProvider::GetFromChannelArgs(*args->channel_args);
+  if (server_config_selector_provider == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "No ServerConfigSelectorProvider object found");
+  }
+  new (elem->channel_data)
+      ChannelData(std::move(server_config_selector_provider));
   return GRPC_ERROR_NONE;
 }
 
@@ -112,10 +120,10 @@ void ChannelData::Destroy(grpc_channel_element* elem) {
   chand->~ChannelData();
 }
 
-ChannelData::ChannelData(grpc_channel_element* /* elem */,
-                         grpc_channel_element_args* args) {
-  server_config_selector_provider_ =
-      ServerConfigSelectorProvider::GetFromChannelArgs(*args->channel_args);
+ChannelData::ChannelData(
+    RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
+    : server_config_selector_provider_(
+          std::move(server_config_selector_provider)) {
   GPR_ASSERT(server_config_selector_provider_ != nullptr);
   auto server_config_selector_watcher =
       absl::make_unique<ServerConfigSelectorWatcher>(this);
@@ -189,8 +197,6 @@ void CallData::RecvInitialMetadataReady(void* user_data,
       auto call_config =
           config_selector.value()->GetCallConfig(calld->recv_initial_metadata_);
       if (call_config.error != GRPC_ERROR_NONE) {
-        gpr_log(GPR_ERROR, "%s",
-                grpc_error_std_string(call_config.error).c_str());
         calld->error_ = call_config.error;
         error = call_config.error;  // Does not take a ref
       } else {

@@ -30,6 +30,7 @@ namespace grpc_core {
 // server-side call based on the received initial metadata.
 class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
  public:
+  // Configuration to apply to an incoming call
   struct CallConfig {
     grpc_error_handle error = GRPC_ERROR_NONE;
     const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
@@ -37,6 +38,7 @@ class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
   };
 
   ~ServerConfigSelector() override = default;
+  // Returns the CallConfig to apply to a call based on the incoming \a metadata
   virtual CallConfig GetCallConfig(grpc_metadata_batch* metadata) = 0;
 };
 

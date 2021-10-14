@@ -2015,7 +2015,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "config",
         "gpr_base",
         "grpc_base",
         "grpc_server_config_selector",
