@@ -33,8 +33,7 @@ out['libs'] = [{
         sorted(
             glob.glob('src/libuv/src/**/*.[c,h]', recursive=True) +
             glob.glob('src/libuv/include/**/*.h', recursive=True) +
-            glob.glob('third_party/libuv/**/*.[c,h]', recursive=True)
-            ),
+            glob.glob('third_party/libuv/**/*.[c,h]', recursive=True)),
 }]
 
 print(yaml.dump(out))

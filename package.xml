@@ -2189,8 +2189,10 @@
     <file baseinstalldir="/" name="third_party/libuv/src/unix/core.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/cygwin.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/darwin-proctitle.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/src/unix/darwin-stub.h" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/darwin.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/dl.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/src/unix/epoll.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/freebsd.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/fs.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/fsevents.c" role="src" />
@@ -2210,6 +2212,7 @@
     <file baseinstalldir="/" name="third_party/libuv/src/unix/no-fsevents.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/no-proctitle.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/openbsd.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/src/unix/os390-proctitle.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/os390-syscalls.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/os390-syscalls.h" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/os390.c" role="src" />
@@ -2221,6 +2224,7 @@
     <file baseinstalldir="/" name="third_party/libuv/src/unix/procfs-exepath.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/proctitle.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/pthread-fixes.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/src/unix/qnx.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/random-devurandom.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/random-getentropy.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/random-getrandom.c" role="src" />
@@ -2358,8 +2362,12 @@
     <file baseinstalldir="/" name="third_party/libuv/test/test-loop-handles.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-loop-stop.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-loop-time.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/test/test-metrics.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-multiple-listen.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-mutexes.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/test/test-not-readable-nor-writable-on-read-error.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/test/test-not-readable-on-eof.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/test/test-not-writable-after-shutdown.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-osx-select.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-pass-always.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-ping-pong.c" role="src" />
@@ -2378,6 +2386,7 @@
     <file baseinstalldir="/" name="third_party/libuv/test/test-poll-close-doesnt-corrupt-stack.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-poll-close.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-poll-closesocket.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/test/test-poll-multiple-handles.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-poll-oob.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-poll.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-process-priority.c" role="src" />
@@ -2391,6 +2400,7 @@
     <file baseinstalldir="/" name="third_party/libuv/test/test-semaphore.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-shutdown-close.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-shutdown-eof.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/test/test-shutdown-simultaneous.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-shutdown-twice.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-signal-multiple-loops.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-signal-pending-on-close.c" role="src" />
@@ -2414,6 +2424,7 @@
     <file baseinstalldir="/" name="third_party/libuv/test/test-tcp-flags.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-tcp-oob.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-tcp-open.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/test/test-tcp-read-stop-start.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-tcp-read-stop.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-tcp-shutdown-after-write.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-tcp-try-write-error.c" role="src" />
@@ -2424,6 +2435,7 @@
     <file baseinstalldir="/" name="third_party/libuv/test/test-tcp-write-queue-order.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-tcp-write-to-half-open-connection.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-tcp-writealot.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/test/test-test-macros.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-thread-equal.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-thread.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-threadpool-cancel.c" role="src" />
@@ -2441,6 +2453,7 @@
     <file baseinstalldir="/" name="third_party/libuv/test/test-udp-create-socket-early.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-udp-dgram-too-big.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-udp-ipv6.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/test/test-udp-mmsg.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-udp-multicast-interface.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-udp-multicast-interface6.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-udp-multicast-join.c" role="src" />
@@ -2452,6 +2465,7 @@
     <file baseinstalldir="/" name="third_party/libuv/test/test-udp-send-hang-loop.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-udp-send-immediate.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-udp-send-unreachable.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/test/test-udp-sendmmsg-error.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-udp-try-send.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-uname.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/test/test-walk-handles.c" role="src" />
