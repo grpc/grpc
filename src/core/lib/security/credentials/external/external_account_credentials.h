@@ -46,6 +46,7 @@ class ExternalAccountCredentials
     std::string quota_project_id;
     std::string client_id;
     std::string client_secret;
+    std::string workforce_pool_user_project;
   };
 
   static RefCountedPtr<ExternalAccountCredentials> Create(
