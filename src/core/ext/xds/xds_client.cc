@@ -2065,6 +2065,19 @@ void XdsClient::Orphan() {
   }
 }
 
+RefCountedPtr<XdsClient::ChannelState> XdsClient::GetOrCreateChannelState(
+    const std::string& server) {
+  auto it = xds_server_channel_map_.find(bootstrap_->server().ToString());
+  if (it != xds_server_channel_map_.end()) {
+    return it->second->Ref(DEBUG_LOCATION, "Authority");
+  }
+  // Channel not found, so create a new one.
+  auto channel_state = MakeRefCounted<ChannelState>(
+      WeakRef(DEBUG_LOCATION, "ChannelState"), bootstrap_->server());
+  xds_server_channel_map_[server] = channel_state.get();
+  return channel_state;
+}
+
 void XdsClient::WatchListenerData(
     absl::string_view listener_name,
     std::unique_ptr<ListenerWatcherInterface> watcher) {
@@ -2085,25 +2098,10 @@ void XdsClient::WatchListenerData(
     }
     w->OnListenerChanged(*listener_state.update);
   }
-  // Create ChannelState object.
-  if (xds_server_channel_map_.find(bootstrap_->server().ToString()) ==
-      xds_server_channel_map_.end()) {
-    // ChannelState object does not exist in channel map, create it and store
-    // strong ref in authority_state_map_
-    authority_state.channel_state = MakeRefCounted<ChannelState>(
-        WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"),
-        bootstrap_->server());
-    // Also add the pointer in channel map to track creation.
-    xds_server_channel_map_[bootstrap_->server().ToString()] =
-        authority_state.channel_state
-            ->WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState")
-            .get();
-  } else {
-    // ChannelState object exists in channel map, no need to create and
-    // just take a strong ref in authority_state_map_
+  // If the authority doesn't yet have a channel, set it, creating it if needed.
+  if (authority_state.channel_state == nullptr) {
     authority_state.channel_state =
-        xds_server_channel_map_[bootstrap_->server().ToString()]->Ref(
-            DEBUG_LOCATION, "XdsClient+ChannelState");
+        GetOrCreateChannelState(bootstrap_->server().ToString());
   }
   xds_server_channel_map_[bootstrap_->server().ToString()]->SubscribeLocked(
       XdsApi::kLdsTypeUrl, std::move(listener_name_str));

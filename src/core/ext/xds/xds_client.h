@@ -307,6 +307,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
       bool send_all_clusters, const std::set<std::string>& clusters)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+  RefCountedPtr<ChannelState> GetOrCreateChannelState(
+      const std::string& server);
+
   std::unique_ptr<XdsBootstrap> bootstrap_;
   grpc_channel_args* args_;
   const grpc_millis request_timeout_;
