@@ -88,6 +88,7 @@ struct GrpcTimeoutMetadata {
     if (GPR_UNLIKELY(!grpc_http2_decode_timeout(value, &timeout))) {
       timeout = GRPC_MILLIS_INF_FUTURE;
     }
+    grpc_slice_unref_internal(value);
     return timeout;
   }
   static ValueType MementoToValue(MementoType timeout) {
@@ -111,10 +112,12 @@ struct TeMetadata {
   using MementoType = ValueType;
   static const char* key() { return "te"; }
   static MementoType ParseMemento(const grpc_slice& value) {
+    auto out = kInvalid;
     if (grpc_slice_eq(value, GRPC_MDSTR_TRAILERS)) {
-      return ValueType::kTrailers;
+      out = kTrailers;
     }
-    return ValueType::kInvalid;
+    grpc_slice_unref_internal(value);
+    return out;
   }
   static ValueType MementoToValue(MementoType te) { return te; }
   static const char* DisplayValue(MementoType te) {
@@ -187,6 +190,7 @@ struct ParseHelper<Container> {
 //   // The string key for this metadata type (for transports that require it)
 //   static constexpr char* key() { return "grpc-xyz"; }
 //   // Parse a memento from a slice
+//   // Takes ownership of value
 //   static MementoType ParseMemento(const grpc_slice& value) { ... }
 //   // Convert a memento to a value
 //   static ValueType MementoToValue(MementoType memento) { ... }
@@ -313,7 +317,6 @@ class MetadataMap {
         });
     if (parsed) {
       grpc_slice_unref_internal(key);
-      grpc_slice_unref_internal(value);
     }
     return out;
   }
