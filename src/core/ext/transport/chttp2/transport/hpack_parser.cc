@@ -51,7 +51,7 @@
 
 namespace grpc_core {
 
-DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser(false, "chttp2_hpack_parser");
+TraceFlag grpc_trace_chttp2_hpack_parser(false, "chttp2_hpack_parser");
 
 /* state table for huffman decoding: given a state, gives an index/16 into
    next_sub_tbl. Taking that index and adding the value of the nibble being
