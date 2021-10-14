@@ -16,10 +16,10 @@
 
 #include "src/core/lib/security/authorization/rbac_policy.h"
 
-#include <grpc/impl/codegen/log.h>
-
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+
+#include <grpc/impl/codegen/log.h>
 
 namespace grpc_core {
 
