@@ -7321,6 +7321,18 @@ targets:
   - test/core/surface/server_chttp2_test.cc
   deps:
   - grpc_test_util
+- name: server_config_selector_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/filters/server_config_selector/server_config_selector.h
+  src:
+  - src/core/ext/filters/server_config_selector/server_config_selector.cc
+  - test/core/server_config_selector/server_config_selector_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: server_context_test_spouse_test
   gtest: true
   build: test

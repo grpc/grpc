@@ -33,10 +33,10 @@ namespace {
 using grpc_core::ServerConfigSelector;
 using grpc_core::ServerConfigSelectorProvider;
 
-class DummyServerConfigSelectorProvider : public ServerConfigSelectorProvider {
+class TestServerConfigSelectorProvider : public ServerConfigSelectorProvider {
   absl::StatusOr<grpc_core::RefCountedPtr<ServerConfigSelector>> Watch(
       std::unique_ptr<ServerConfigSelectorWatcher> /* watcher */) override {
-    return absl::UnavailableError("Dummy ServerConfigSelector");
+    return absl::UnavailableError("Test ServerConfigSelector");
   }
 
   void CancelWatch() override {}
@@ -46,7 +46,7 @@ class DummyServerConfigSelectorProvider : public ServerConfigSelectorProvider {
 // and destroyed
 TEST(ServerConfigSelectorProviderTest, CopyChannelArgs) {
   auto server_config_selector_provider =
-      grpc_core::MakeRefCounted<DummyServerConfigSelectorProvider>();
+      grpc_core::MakeRefCounted<TestServerConfigSelectorProvider>();
   grpc_arg arg = server_config_selector_provider->MakeChannelArg();
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   EXPECT_EQ(server_config_selector_provider,
@@ -57,7 +57,7 @@ TEST(ServerConfigSelectorProviderTest, CopyChannelArgs) {
 // Test compare on channel args with the same ServerConfigSelectorProvider
 TEST(ServerConfigSelectorProviderTest, ChannelArgsCompare) {
   auto server_config_selector_provider =
-      grpc_core::MakeRefCounted<DummyServerConfigSelectorProvider>();
+      grpc_core::MakeRefCounted<TestServerConfigSelectorProvider>();
   grpc_arg arg = server_config_selector_provider->MakeChannelArg();
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   grpc_channel_args* new_args = grpc_channel_args_copy(args);

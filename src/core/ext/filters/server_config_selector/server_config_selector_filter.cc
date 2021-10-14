@@ -54,8 +54,8 @@ class ChannelData {
     ChannelData* chand_;
   };
 
-  ChannelData(RefCountedPtr<ServerConfigSelectorProvider>
-                  server_config_selector_provider);
+  explicit ChannelData(RefCountedPtr<ServerConfigSelectorProvider>
+                           server_config_selector_provider);
   ~ChannelData();
 
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
