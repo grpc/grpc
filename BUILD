@@ -1862,8 +1862,6 @@ grpc_cc_library(
         "grpc_transport_chttp2_server_insecure",
         "grpc_transport_inproc",
         "grpc_fault_injection_filter",
-        "grpc_workaround_cronet_compression_filter",
-        "grpc_server_backward_compatibility",
     ],
 )
 
@@ -1983,8 +1981,8 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "slice",
-        "udpa_orca_upb",
         "useful",
+        "xds_orca_upb",
     ],
 )
 
@@ -2134,23 +2132,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_message_size_filter",
         "slice",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_workaround_cronet_compression_filter",
-    srcs = [
-        "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc",
-    ],
-    hdrs = [
-        "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h",
-    ],
-    language = "c++",
-    deps = [
-        "config",
-        "gpr_base",
-        "grpc_base",
-        "grpc_server_backward_compatibility",
     ],
 )
 
@@ -2341,8 +2322,8 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_refcount",
-        "udpa_type_upb",
-        "udpa_type_upbdefs",
+        "xds_type_upb",
+        "xds_type_upbdefs",
     ],
 )
 
@@ -3905,21 +3886,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_server_backward_compatibility",
-    srcs = [
-        "src/core/ext/filters/workarounds/workaround_utils.cc",
-    ],
-    hdrs = [
-        "src/core/ext/filters/workarounds/workaround_utils.h",
-    ],
-    language = "c++",
-    deps = [
-        "gpr_base",
-        "grpc_base",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc++_core_stats",
     srcs = [
         "src/cpp/util/core_stats.cc",
@@ -4524,19 +4490,19 @@ grpc_cc_library(
     ],
 )
 
-# Once upb code-gen issue is resolved, replace udpa_orca_upb with this.
+# Once upb code-gen issue is resolved, replace xds_orca_upb with this.
 # grpc_upb_proto_library(
-#     name = "udpa_orca_upb",
-#     deps = ["@envoy_api//udpa/data/orca/v1:orca_load_report"]
+#     name = "xds_orca_upb",
+#     deps = ["@envoy_api//xds/data/orca/v3:orca_load_report"]
 # )
 
 grpc_cc_library(
-    name = "udpa_orca_upb",
+    name = "xds_orca_upb",
     srcs = [
-        "src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c",
+        "src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c",
     ],
     hdrs = [
-        "src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h",
+        "src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h",
     ],
     external_deps = [
         "upb_lib",
@@ -4712,12 +4678,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "udpa_type_upb",
+    name = "xds_type_upb",
     srcs = [
-        "src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c",
+        "src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c",
     ],
     hdrs = [
-        "src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.h",
+        "src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.h",
     ],
     external_deps = [
         "upb_lib",
@@ -4732,12 +4698,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "udpa_type_upbdefs",
+    name = "xds_type_upbdefs",
     srcs = [
-        "src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c",
+        "src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c",
     ],
     hdrs = [
-        "src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.h",
+        "src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.h",
     ],
     external_deps = [
         "upb_lib",

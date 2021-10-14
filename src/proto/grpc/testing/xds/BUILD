@@ -69,10 +69,3 @@ grpc_proto_library(
     well_known_protos = True,
     deps = ["eds_for_test_proto"],
 )
-
-grpc_proto_library(
-    name = "orca_load_report_for_test_proto",
-    srcs = [
-        "orca_load_report_for_test.proto",
-    ],
-)
