@@ -99,6 +99,70 @@ struct GrpcTimeoutMetadata {
   static MementoType DisplayValue(MementoType x) { return x; }
 };
 
+// TE metadata trait.
+struct TeMetadata {
+  // HTTP2 says that TE can either be empty or "trailers".
+  // Empty means this trait is not included, "trailers" means kTrailers, and
+  // kInvalid is used to remember an invalid value.
+  enum ValueType : uint8_t {
+    kTrailers,
+    kInvalid,
+  };
+  using MementoType = ValueType;
+  static const char* key() { return "te"; }
+  static MementoType ParseMemento(const grpc_slice& value) {
+    if (grpc_slice_eq(value, GRPC_MDSTR_TRAILERS)) {
+      return ValueType::kTrailers;
+    }
+    return ValueType::kInvalid;
+  }
+  static ValueType MementoToValue(MementoType te) { return te; }
+  static const char* DisplayValue(MementoType te) {
+    switch (te) {
+      case ValueType::kTrailers:
+        return "trailers";
+      default:
+        return "<discarded-invalid-value>";
+    }
+  }
+};
+
+namespace metadata_detail {
+
+// Inner implementation of MetadataMap<Container>::Parse()
+// Recursive in terms of metadata trait, tries each known type in order by doing
+// a string comparison on key, and if that key is found parses it. If not found,
+// calls not_found to generate the result value.
+template <typename Container, typename... Traits>
+struct ParseHelper;
+
+template <typename Container, typename Trait, typename... Traits>
+struct ParseHelper<Container, Trait, Traits...> {
+  template <typename NotFound>
+  static ParsedMetadata<Container> Parse(absl::string_view key,
+                                         const grpc_slice& value,
+                                         NotFound not_found) {
+    if (key == Trait::key()) {
+      return ParsedMetadata<Container>(
+          Trait(), Trait::ParseMemento(value),
+          ParsedMetadata<Container>::TransportSize(key.size(),
+                                                   GRPC_SLICE_LENGTH(value)));
+    }
+    return ParseHelper<Container, Traits...>::Parse(key, value, not_found);
+  }
+};
+
+template <typename Container>
+struct ParseHelper<Container> {
+  template <typename NotFound>
+  static ParsedMetadata<Container> Parse(absl::string_view, const grpc_slice&,
+                                         NotFound not_found) {
+    return not_found();
+  }
+};
+
+}  // namespace metadata_detail
+
 // MetadataMap encodes the mapping of metadata keys to metadata values.
 // Right now the API presented is the minimal one that will allow us to
 // substitute this type for grpc_metadata_batch in a relatively easy fashion. At
@@ -223,23 +287,35 @@ class MetadataMap {
     table_.template clear<Value<Which>>();
   }
 
+  // Extract a piece of known metadata.
+  // Returns nullopt if the metadata was not present, or the value if it was.
+  // The same as:
+  //  auto value = m.get(T());
+  //  m.Remove(T());
+  template <typename Which>
+  absl::optional<typename Which::ValueType> Take(Which which) {
+    auto value = get(which);
+    Remove(which);
+    return value;
+  }
+
   // Parse metadata from a key/value pair, and return an object representing
   // that result.
   template <class KeySlice, class ValueSlice>
   static ParsedMetadata<MetadataMap> Parse(const KeySlice& key,
                                            const ValueSlice& value) {
-    auto key_view = StringViewFromSlice(key);
-    // hack for now.
-    if (key_view == GrpcTimeoutMetadata::key()) {
-      ParsedMetadata<MetadataMap> out(
-          GrpcTimeoutMetadata(), GrpcTimeoutMetadata::ParseMemento(value),
-          ParsedMetadata<MetadataMap>::TransportSize(GRPC_SLICE_LENGTH(key),
-                                                     GRPC_SLICE_LENGTH(value)));
+    bool parsed = true;
+    auto out = metadata_detail::ParseHelper<MetadataMap, Traits...>::Parse(
+        StringViewFromSlice(key), value, [&] {
+          parsed = false;
+          return ParsedMetadata<MetadataMap>(
+              grpc_mdelem_from_slices(key, value));
+        });
+    if (parsed) {
       grpc_slice_unref_internal(key);
       grpc_slice_unref_internal(value);
-      return out;
     }
-    return ParsedMetadata<MetadataMap>(grpc_mdelem_from_slices(key, value));
+    return out;
   }
 
   // Set a value from a parsed metadata object.
@@ -760,7 +836,8 @@ bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
 }  // namespace grpc_core
 
 using grpc_metadata_batch =
-    grpc_core::MetadataMap<grpc_core::GrpcTimeoutMetadata>;
+    grpc_core::MetadataMap<grpc_core::GrpcTimeoutMetadata,
+                           grpc_core::TeMetadata>;
 
 inline void grpc_metadata_batch_clear(grpc_metadata_batch* batch) {
   batch->Clear();
