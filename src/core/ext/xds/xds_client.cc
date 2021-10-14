@@ -92,7 +92,8 @@ struct ResourceNameFields {
   std::string id;
 };
 
-absl::StatusOr<ResourceNameFields> ParseResourceName(absl::string_view name) {
+absl::StatusOr<ResourceNameFields> ParseResourceName(
+    absl::string_view name, absl::string_view resource_type = "") {
   // Old-style names use the empty string for authority.
   // ID is prefixed with "old:" to indicate that it's an old-style name.
   if (!absl::StartsWith(name, "xdstp:")) {
@@ -104,9 +105,9 @@ absl::StatusOr<ResourceNameFields> ParseResourceName(absl::string_view name) {
   // Split the resource type off of the path to get the id.
   std::pair<absl::string_view, absl::string_view> path_parts =
       absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
-  if (!absl::StartsWith(path_parts.first, "envoy.config.")) {
+  if (resource_type != "" && path_parts.first != resource_type) {
     return absl::InvalidArgumentError(
-        "xdstp URI path must indicate xDS resource type");
+        "xdstp URI path must indicate valid xDS resource type");
   }
   // ID is prefixed with "xdstp:" to indicate that it's a new-style name.
   return ResourceNameFields{uri->authority(),
@@ -556,9 +557,9 @@ XdsClient::ChannelState::~ChannelState() {
 void XdsClient::ChannelState::Orphan() {
   shutting_down_ = true;
   CancelConnectivityWatchLocked();
-  // At this time, all strong refs are removed, remove from channel map to also
-  // remove all weak refs so that object can be destroyed.  This may need a
-  // lock?
+  // At this time, all strong refs are removed, remove from channel map to
+  // prevent subsequent subscription from trying to use this ChannelState as it
+  // is shutting down.
   xds_client_->xds_server_channel_map_.erase(server_.ToString());
   ads_calld_.reset();
   lrs_calld_.reset();
@@ -996,7 +997,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
           lds_update.http_connection_manager.route_config_name);
     }
     // Ignore identical update.
-    auto resource = ParseResourceName(listener_name);
+    auto resource = ParseResourceName(listener_name, XdsApi::kLdsTypeUrl);
     if (!resource.ok()) continue;
     ListenerState& listener_state =
         xds_client()
@@ -1025,7 +1026,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   // cache, pretend that they are present in the update, so that we
   // don't incorrectly consider them deleted below.
   for (const std::string& listener_name : resource_names_failed) {
-    auto resource = ParseResourceName(listener_name);
+    auto resource = ParseResourceName(listener_name, XdsApi::kLdsTypeUrl);
     if (!resource.ok()) continue;
     auto& listener_map =
         xds_client()->authority_state_map_[resource->authority].listener_map;
@@ -1045,7 +1046,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   for (const auto& p : lds_state.subscribed_resources) {
     const std::string& listener_name = p.first;
     if (lds_update_map.find(listener_name) == lds_update_map.end()) {
-      auto resource = ParseResourceName(listener_name);
+      auto resource = ParseResourceName(listener_name, XdsApi::kLdsTypeUrl);
       GPR_ASSERT(resource.ok());
       ListenerState& listener_state =
           xds_client()
@@ -1072,7 +1073,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
     const std::string& rds_resource_name = p.first;
     if (rds_resource_names_seen.find(rds_resource_name) ==
         rds_resource_names_seen.end()) {
-      auto resource = ParseResourceName(rds_resource_name);
+      auto resource = ParseResourceName(rds_resource_name, XdsApi::kRdsTypeUrl);
       if (!resource.ok()) continue;
       RouteConfigState& route_config_state =
           xds_client()
@@ -1105,7 +1106,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
       gpr_log(GPR_INFO, "[xds_client %p] RDS resource:\n%s", xds_client(),
               rds_update.ToString().c_str());
     }
-    auto resource = ParseResourceName(route_config_name);
+    auto resource = ParseResourceName(route_config_name, XdsApi::kRdsTypeUrl);
     if (!resource.ok()) continue;
     RouteConfigState& route_config_state =
         xds_client()
@@ -1158,7 +1159,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
                                        ? cluster_name
                                        : cds_update.eds_service_name);
     // Ignore identical update.
-    auto resource = ParseResourceName(cluster_name);
+    auto resource = ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
     if (!resource.ok()) continue;
     ClusterState& cluster_state =
         xds_client()
@@ -1186,7 +1187,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   // cache, pretend that they are present in the update, so that we
   // don't incorrectly consider them deleted below.
   for (const std::string& cluster_name : resource_names_failed) {
-    auto resource = ParseResourceName(cluster_name);
+    auto resource = ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
     if (!resource.ok()) continue;
     auto& cluster_map =
         xds_client()->authority_state_map_[resource->authority].cluster_map;
@@ -1205,7 +1206,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   for (const auto& p : cds_state.subscribed_resources) {
     const std::string& cluster_name = p.first;
     if (cds_update_map.find(cluster_name) == cds_update_map.end()) {
-      auto resource = ParseResourceName(cluster_name);
+      auto resource = ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
       GPR_ASSERT(resource.ok());
       ClusterState& cluster_state =
           xds_client()
@@ -1232,7 +1233,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
     const std::string& eds_resource_name = p.first;
     if (eds_resource_names_seen.find(eds_resource_name) ==
         eds_resource_names_seen.end()) {
-      auto resource = ParseResourceName(eds_resource_name);
+      auto resource = ParseResourceName(eds_resource_name, XdsApi::kEdsTypeUrl);
       GPR_ASSERT(resource.ok());
       EndpointState& endpoint_state =
           xds_client()
@@ -1265,7 +1266,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdateLocked(
       gpr_log(GPR_INFO, "[xds_client %p] EDS resource %s: %s", xds_client(),
               eds_resource_name.c_str(), eds_update.ToString().c_str());
     }
-    auto resource = ParseResourceName(eds_resource_name);
+    auto resource = ParseResourceName(eds_resource_name, XdsApi::kEdsTypeUrl);
     if (!resource.ok()) continue;
     EndpointState& endpoint_state =
         xds_client()
@@ -2066,7 +2067,7 @@ void XdsClient::Orphan() {
 void XdsClient::WatchListenerData(
     absl::string_view listener_name,
     std::unique_ptr<ListenerWatcherInterface> watcher) {
-  auto resource = ParseResourceName(listener_name);
+  auto resource = ParseResourceName(listener_name, XdsApi::kLdsTypeUrl);
   if (!resource.ok()) return;
   std::string listener_name_str = std::string(listener_name);
   MutexLock lock(&mu_);
@@ -2113,7 +2114,7 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
                                         bool delay_unsubscription) {
   MutexLock lock(&mu_);
   if (shutting_down_) return;
-  auto resource = ParseResourceName(listener_name);
+  auto resource = ParseResourceName(listener_name, XdsApi::kLdsTypeUrl);
   if (!resource.ok()) return;
   auto& authority_state = authority_state_map_[resource->authority];
   ListenerState& listener_state = authority_state.listener_map[resource->id];
@@ -2132,7 +2133,7 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
 void XdsClient::WatchRouteConfigData(
     absl::string_view route_config_name,
     std::unique_ptr<RouteConfigWatcherInterface> watcher) {
-  auto resource = ParseResourceName(route_config_name);
+  auto resource = ParseResourceName(route_config_name, XdsApi::kRdsTypeUrl);
   if (!resource.ok()) return;
   std::string route_config_name_str = std::string(route_config_name);
   MutexLock lock(&mu_);
@@ -2175,7 +2176,7 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
                                            bool delay_unsubscription) {
   MutexLock lock(&mu_);
   if (shutting_down_) return;
-  auto resource = ParseResourceName(route_config_name);
+  auto resource = ParseResourceName(route_config_name, XdsApi::kRdsTypeUrl);
   if (!resource.ok()) return;
   auto& authority_state = authority_state_map_[resource->authority];
   RouteConfigState& route_config_state =
@@ -2196,7 +2197,7 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
 void XdsClient::WatchClusterData(
     absl::string_view cluster_name,
     std::unique_ptr<ClusterWatcherInterface> watcher) {
-  auto resource = ParseResourceName(cluster_name);
+  auto resource = ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
   if (!resource.ok()) return;
   std::string cluster_name_str = std::string(cluster_name);
   MutexLock lock(&mu_);
@@ -2237,7 +2238,7 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
                                        bool delay_unsubscription) {
   MutexLock lock(&mu_);
   if (shutting_down_) return;
-  auto resource = ParseResourceName(cluster_name);
+  auto resource = ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
   if (!resource.ok()) return;
   auto& authority_state = authority_state_map_[resource->authority];
   ClusterState& cluster_state = authority_state.cluster_map[resource->id];
@@ -2256,7 +2257,7 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
 void XdsClient::WatchEndpointData(
     absl::string_view eds_service_name,
     std::unique_ptr<EndpointWatcherInterface> watcher) {
-  auto resource = ParseResourceName(eds_service_name);
+  auto resource = ParseResourceName(eds_service_name, XdsApi::kEdsTypeUrl);
   if (!resource.ok()) return;
   std::string eds_service_name_str = std::string(eds_service_name);
   MutexLock lock(&mu_);
@@ -2297,7 +2298,7 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
                                         bool delay_unsubscription) {
   MutexLock lock(&mu_);
   if (shutting_down_) return;
-  auto resource = ParseResourceName(eds_service_name);
+  auto resource = ParseResourceName(eds_service_name, XdsApi::kEdsTypeUrl);
   if (!resource.ok()) return;
   auto& authority_state = authority_state_map_[resource->authority];
   EndpointState& endpoint_state = authority_state.endpoint_map[resource->id];
