@@ -97,6 +97,7 @@ const grpc_millis kDefaultThrottleWindowSize = 30 * GPR_MS_PER_SEC;
 const double kDefaultThrottleRatioForSuccesses = 2.0;
 const int kDefaultThrottlePaddings = 8;
 const grpc_millis kCacheCleanupTimerInterval = 60 * GPR_MS_PER_SEC;
+const size_t kMaxCacheSizeBytes = 5 * 1024 * 1024;
 
 // Parsed RLS LB policy configuration.
 class RlsLbConfig : public LoadBalancingPolicy::Config {
@@ -2357,6 +2358,10 @@ RlsLbConfig::RouteLookupConfig ParseRouteLookupConfig(
   if (route_lookup_config.cache_size_bytes <= 0) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:cacheSizeBytes error:must be greater than 0"));
+  }
+  // Clamp cacheSizeBytes to the max allowed value.
+  if (route_lookup_config.cache_size_bytes > kMaxCacheSizeBytes) {
+    route_lookup_config.cache_size_bytes = kMaxCacheSizeBytes;
   }
   // Parse defaultTarget.
   if (ParseJsonObjectField(json, "defaultTarget",
