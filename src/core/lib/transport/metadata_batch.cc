@@ -77,7 +77,7 @@ class CopySink {
 
 }  // namespace
 
-void grpc_metadata_batch_copy(grpc_metadata_batch* src,
+void grpc_metadata_batch_copy(const grpc_metadata_batch* src,
                               grpc_metadata_batch* dst) {
   dst->Clear();
   CopySink sink(dst);
