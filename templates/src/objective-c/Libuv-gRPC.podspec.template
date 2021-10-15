@@ -39,8 +39,8 @@
 
   Pod::Spec.new do |spec|
 
-    pod_version           = "0.0.10"
-    libuv_version         = "1.37.0"
+    pod_version           = "0.0.11"
+    libuv_version         = "1.42.0"
 
     spec.name         = "Libuv-gRPC"
     spec.version      = pod_version
@@ -115,6 +115,7 @@
       "src/unix/fsevents.c",
       "src/unix/kqueue.c",
       "src/unix/darwin-proctitle.c",
+      "src/unix/darwin-stub.h",
       "src/unix/proctitle.c",
       "src/heap-inl.h",
       "src/idna.h",
