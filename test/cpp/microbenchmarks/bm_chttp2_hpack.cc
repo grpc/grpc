@@ -478,7 +478,9 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   b.Init(arena);
   p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
                grpc_core::HPackParser::Boundary::None,
-               grpc_core::HPackParser::Priority::None);
+               grpc_core::HPackParser::Priority::None,
+               grpc_core::HPackParser::LogInfo{
+                   1, grpc_core::HPackParser::LogInfo::kHeaders, false});
   for (auto slice : init_slices) {
     GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice, false));
   }
@@ -496,7 +498,9 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       b.Init(arena);
       p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
                    grpc_core::HPackParser::Boundary::None,
-                   grpc_core::HPackParser::Priority::None);
+                   grpc_core::HPackParser::Priority::None,
+                   grpc_core::HPackParser::LogInfo{
+                       1, grpc_core::HPackParser::LogInfo::kHeaders, false});
     }
   }
   // Clean up

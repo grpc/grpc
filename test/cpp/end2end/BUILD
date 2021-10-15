@@ -470,9 +470,33 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//src/proto/grpc/testing/xds:orca_load_report_for_test_proto",
+        "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
         "//test/core/util:grpc_test_util",
         "//test/core/util:test_lb_policies",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "rls_end2end_test",
+    srcs = ["rls_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/types:optional",
+    ],
+    deps = [
+        ":counted_service",
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/lookup/v1:rls_proto",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:test_lb_policies",
+        "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
 )
