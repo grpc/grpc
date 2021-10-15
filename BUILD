@@ -1333,15 +1333,15 @@ grpc_cc_library(
         "exec_ctx_wakeup_scheduler",
         "gpr_base",
         "loop",
+        "map",
         "orphanable",
         "poll",
         "race",
         "ref_counted_ptr",
+        "resource_quota_trace",
         "seq",
         "slice_refcount",
-        "map",
         "useful",
-        "resource_quota_trace",
     ],
 )
 
