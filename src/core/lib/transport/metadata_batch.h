@@ -97,6 +97,11 @@ struct GrpcTimeoutMetadata {
     }
     return grpc_core::ExecCtx::Get()->Now() + timeout;
   }
+  static grpc_slice Encode(ValueType x) {
+    char timeout[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
+    grpc_http2_encode_timeout(x, timeout);
+    return grpc_slice_from_copied_string(timeout);
+  }
   static MementoType DisplayValue(MementoType x) { return x; }
 };
 
@@ -120,6 +125,10 @@ struct TeMetadata {
     return out;
   }
   static ValueType MementoToValue(MementoType te) { return te; }
+  static grpc_slice Encode(ValueType x) {
+    GPR_ASSERT(x == kTrailers);
+    return GRPC_MDSTR_TRAILERS;
+  }
   static const char* DisplayValue(MementoType te) {
     switch (te) {
       case ValueType::kTrailers:
@@ -225,6 +234,9 @@ struct AppendHelper<Container> {
 //   static MementoType ParseMemento(const grpc_slice& value) { ... }
 //   // Convert a memento to a value
 //   static ValueType MementoToValue(MementoType memento) { ... }
+//   // Convert a value to its canonical text wire format (the format that
+//   // ParseMemento will accept!)
+//   static grpc_slice Encode(ValueType value);
 //   // Convert a value to something that can be passed to StrCat and displayed
 //   // for debugging
 //   static SomeStrCatableType DisplayValue(MementoType value) { ... }
