@@ -2094,13 +2094,18 @@ RefCountedPtr<XdsClient::ChannelState> XdsClient::GetOrCreateChannelState(
 void XdsClient::WatchListenerData(
     absl::string_view listener_name,
     std::unique_ptr<ListenerWatcherInterface> watcher) {
-  auto resource = ParseResourceName(listener_name, XdsApi::kLdsTypeUrl);
-  if (!resource.ok()) return;
   std::string listener_name_str = std::string(listener_name);
   MutexLock lock(&mu_);
+  ListenerWatcherInterface* w = watcher.get();
+  auto resource = ParseResourceName(listener_name, XdsApi::kLdsTypeUrl);
+  if (!resource.ok()) {
+    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "Unable to parse resource name for listener %s", listener_name));
+    w->OnError(GRPC_ERROR_REF(error));
+    return;
+  }
   AuthorityState& authority_state = authority_state_map_[resource->authority];
   ListenerState& listener_state = authority_state.listener_map[resource->id];
-  ListenerWatcherInterface* w = watcher.get();
   listener_state.watchers[w] = std::move(watcher);
   // If we've already received an LDS update, notify the new watcher
   // immediately.
