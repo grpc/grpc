@@ -1358,7 +1358,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/libuv/src/unix/signal.c )
   s.files += %w( src/libuv/src/unix/spinlock.h )
   s.files += %w( src/libuv/src/unix/stream.c )
-  s.files += %w( src/libuv/src/unix/sysinfo-loadavg.c )
   s.files += %w( src/libuv/src/unix/tcp.c )
   s.files += %w( src/libuv/src/unix/thread.c )
   s.files += %w( src/libuv/src/unix/tty.c )

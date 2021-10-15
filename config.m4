@@ -705,7 +705,6 @@ if test "$PHP_GRPC" != "no"; then
     src/libuv/src/unix/random-sysctl-linux.c \
     src/libuv/src/unix/signal.c \
     src/libuv/src/unix/stream.c \
-    src/libuv/src/unix/sysinfo-loadavg.c \
     src/libuv/src/unix/tcp.c \
     src/libuv/src/unix/thread.c \
     src/libuv/src/unix/tty.c \

@@ -178,7 +178,7 @@ LINUX_LIBUV_SOURCES = [
     "src/unix/proctitle.c",
     "src/unix/random-getrandom.c",  # freebsd, android, linux
     "src/unix/random-sysctl-linux.c",
-    "src/unix/sysinfo-loadavg.c",
+    # "src/unix/sysinfo-loadavg.c",  # TODO(hork): only needed on Cygwin and MSYS now
     "src/unix/epoll.c",  # linux, android
 ]
 

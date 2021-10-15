@@ -1338,7 +1338,6 @@
     <file baseinstalldir="/" name="src/libuv/src/unix/signal.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/spinlock.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/stream.c" role="src" />
-    <file baseinstalldir="/" name="src/libuv/src/unix/sysinfo-loadavg.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/tcp.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/thread.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/tty.c" role="src" />
