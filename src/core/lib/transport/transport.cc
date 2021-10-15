@@ -236,11 +236,10 @@ grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete) {
 }
 
 struct made_transport_stream_op {
-  made_transport_stream_op() : inner_on_complete(nullptr), payload(nullptr) {}
   grpc_closure outer_on_complete;
-  grpc_closure* inner_on_complete;
+  grpc_closure* inner_on_complete = nullptr;
   grpc_transport_stream_op_batch op;
-  grpc_transport_stream_op_batch_payload payload;
+  grpc_transport_stream_op_batch_payload payload{nullptr};
 };
 static void destroy_made_transport_stream_op(void* arg,
                                              grpc_error_handle error) {
