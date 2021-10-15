@@ -56,29 +56,6 @@ grpc_core::TraceFlag grpc_trace_cares_address_sorting(false,
 
 grpc_core::TraceFlag grpc_trace_cares_resolver(false, "cares_resolver");
 
-typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
-
-struct grpc_ares_request {
-  /** indicates the DNS server to use, if specified */
-  struct ares_addr_port_node dns_server_addr;
-  /** following members are set in grpc_resolve_address_ares_impl */
-  /** closure to call when the request completes */
-  grpc_closure* on_done;
-  /** the pointer to receive the resolved addresses */
-  std::unique_ptr<grpc_core::ServerAddressList>* addresses_out;
-  /** the pointer to receive the resolved balancer addresses */
-  std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out;
-  /** the pointer to receive the service config in JSON */
-  char** service_config_json_out;
-  /** the evernt driver used by this request */
-  grpc_ares_ev_driver* ev_driver;
-  /** number of ongoing queries */
-  size_t pending_queries;
-
-  /** the errors explaining query failures, appended to in query callbacks */
-  grpc_error_handle error;
-};
-
 typedef struct fd_node {
   /** the owner of this fd node */
   grpc_ares_ev_driver* ev_driver;
@@ -1059,15 +1036,13 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
     char** service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
-  grpc_ares_request* r =
-      static_cast<grpc_ares_request*>(gpr_zalloc(sizeof(grpc_ares_request)));
+  grpc_ares_request* r = new grpc_ares_request();
+  memset(&r->dns_server_addr, 0, sizeof(r->dns_server_addr));
   r->ev_driver = nullptr;
   r->on_done = on_done;
   r->addresses_out = addrs;
   r->balancer_addresses_out = balancer_addrs;
   r->service_config_json_out = service_config_json;
-  r->error = GRPC_ERROR_NONE;
-  r->pending_queries = 0;
   GRPC_CARES_TRACE_LOG(
       "request:%p c-ares grpc_dns_lookup_ares_locked_impl name=%s, "
       "default_port=%s",
@@ -1163,7 +1138,7 @@ typedef struct grpc_resolve_address_ares_request {
 
 static void on_dns_lookup_done_locked(grpc_resolve_address_ares_request* r,
                                       grpc_error_handle error) {
-  gpr_free(r->ares_request);
+  delete r->ares_request;
   grpc_resolved_addresses** resolved_addresses = r->addrs_out;
   if (r->addresses == nullptr || r->addresses->empty()) {
     *resolved_addresses = nullptr;
