@@ -1039,7 +1039,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   // don't incorrectly consider them deleted below.
   for (const std::string& listener_name : resource_names_failed) {
     auto resource = ParseResourceName(listener_name, XdsApi::kLdsTypeUrl);
-    if (!resource.ok()) continue;
+    GPR_ASSERT(resource.ok());
     auto& listener_map =
         xds_client()->authority_state_map_[resource->authority].listener_map;
     auto it = listener_map.find(resource->id);
@@ -1200,7 +1200,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   // don't incorrectly consider them deleted below.
   for (const std::string& cluster_name : resource_names_failed) {
     auto resource = ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
-    if (!resource.ok()) continue;
+    GPR_ASSERT(resource.ok());
     auto& cluster_map =
         xds_client()->authority_state_map_[resource->authority].cluster_map;
     auto it = cluster_map.find(resource->id);
@@ -1347,26 +1347,25 @@ void XdsClient::ChannelState::AdsCallState::RejectAdsUpdateLocked(
   std::string details = grpc_error_std_string(result.parse_error);
   for (auto& name : result.resource_names_failed) {
     auto resource = ParseResourceName(name);
-    if (resource.ok()) {
-      auto authority_it =
-          xds_client()->authority_state_map_.find(resource->authority);
-      if (authority_it == xds_client()->authority_state_map_.end()) continue;
-      AuthorityState& authority_state = authority_it->second;
-      if (result.type_url == XdsApi::kLdsTypeUrl) {
-        RejectAdsUpdateHelperLocked(resource->id, update_time, result, details,
-                                    &authority_state.listener_map);
-      } else if (result.type_url == XdsApi::kRdsTypeUrl) {
-        RejectAdsUpdateHelperLocked(resource->id, update_time, result, details,
-                                    &authority_state.route_config_map);
-      } else if (result.type_url == XdsApi::kCdsTypeUrl) {
-        RejectAdsUpdateHelperLocked(resource->id, update_time, result, details,
-                                    &authority_state.cluster_map);
-      } else if (result.type_url == XdsApi::kEdsTypeUrl) {
-        RejectAdsUpdateHelperLocked(resource->id, update_time, result, details,
-                                    &authority_state.endpoint_map);
-      } else {
-        GPR_ASSERT(0);
-      }
+    GPR_ASSERT(resource.ok());
+    auto authority_it =
+        xds_client()->authority_state_map_.find(resource->authority);
+    if (authority_it == xds_client()->authority_state_map_.end()) continue;
+    AuthorityState& authority_state = authority_it->second;
+    if (result.type_url == XdsApi::kLdsTypeUrl) {
+      RejectAdsUpdateHelperLocked(resource->id, update_time, result, details,
+                                  &authority_state.listener_map);
+    } else if (result.type_url == XdsApi::kRdsTypeUrl) {
+      RejectAdsUpdateHelperLocked(resource->id, update_time, result, details,
+                                  &authority_state.route_config_map);
+    } else if (result.type_url == XdsApi::kCdsTypeUrl) {
+      RejectAdsUpdateHelperLocked(resource->id, update_time, result, details,
+                                  &authority_state.cluster_map);
+    } else if (result.type_url == XdsApi::kEdsTypeUrl) {
+      RejectAdsUpdateHelperLocked(resource->id, update_time, result, details,
+                                  &authority_state.endpoint_map);
+    } else {
+      GPR_ASSERT(0);
     }
   }
 }
@@ -2068,13 +2067,13 @@ void XdsClient::Orphan() {
     // policies before those calls are done would lead to issues such as
     // https://github.com/grpc/grpc/issues/20928.
     for (auto& a : authority_state_map_) {
-      // if (a.second.channel_state != nullptr) {
-      //  a.second.channel_state.reset();
-      //}
       if (!a.second.listener_map.empty()) {
         a.second.cluster_map.clear();
         a.second.endpoint_map.clear();
       }
+      // if (a.second.channel_state != nullptr) {
+      //  a.second.channel_state.reset();
+      //}
     }
   }
 }
