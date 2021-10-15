@@ -402,7 +402,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
-        "grpc_lb_policy_rls",
         "grpc_secure",
         "grpc_trace",
         "grpc_transport_chttp2_client_secure",
@@ -2253,51 +2252,6 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "slice",
-    ],
-)
-
-grpc_cc_library(
-    name = "rls_upb",
-    srcs = [
-        "src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-)
-
-grpc_cc_library(
-    name = "grpc_lb_policy_rls",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/rls/rls.cc",
-    ],
-    external_deps = [
-        "absl/container:inlined_vector",
-        "absl/hash",
-        "absl/memory",
-        "absl/strings",
-        "upb_lib",
-    ],
-    language = "c++",
-    deps = [
-        "dual_ref_counted",
-        "gpr_base",
-        "gpr_codegen",
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_codegen",
-        "grpc_secure",
-        "json",
-        "json_util",
-        "orphanable",
-        "ref_counted",
-        "rls_upb",
     ],
 )
 
