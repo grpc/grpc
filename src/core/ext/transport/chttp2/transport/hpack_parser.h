@@ -49,6 +49,20 @@ class HPackParser {
     // Yes there's a priority field
     Included
   };
+  // Details about a frame we only need to know for logging
+  struct LogInfo {
+    // The stream ID
+    uint32_t stream_id;
+    // Headers or trailers?
+    enum Type : uint8_t {
+      kHeaders,
+      kTrailers,
+      kDontKnow,
+    };
+    Type type;
+    // Client or server?
+    bool is_client;
+  };
 
   HPackParser();
   ~HPackParser();
@@ -61,7 +75,7 @@ class HPackParser {
   // Sink receives each parsed header,
   void BeginFrame(grpc_metadata_batch* metadata_buffer,
                   uint32_t metadata_size_limit, Boundary boundary,
-                  Priority priority);
+                  Priority priority, LogInfo log_info);
   // Start throwing away any received headers after parsing them.
   void StopBufferingFrame() { metadata_buffer_ = nullptr; }
   // Parse one slice worth of data
@@ -102,6 +116,8 @@ class HPackParser {
   // Length of frame so far.
   uint32_t frame_length_;
   uint32_t metadata_size_limit_;
+  // Information for logging
+  LogInfo log_info_;
 
   // hpack table
   HPackTable table_;
