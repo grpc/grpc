@@ -965,7 +965,7 @@ static grpc_end2end_test_fixture_config fixture_configs[] = {
 void grpc_end2end_tests_pre_init(void) {
   GPR_ASSERT(!g_pre_init_called);
   g_pre_init_called = true;
-  for (int i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
+  for (size_t i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
     configs[i].pre_init_func();
   }
 }
@@ -973,7 +973,7 @@ void grpc_end2end_tests_pre_init(void) {
 void grpc_end2end_tests_run_single(grpc_end2end_test_config config, const char* test_name) {
   GPR_ASSERT(g_pre_init_called);
   
-  for (int i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
+  for (size_t i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
     if (0 == strcmp(configs[i].name, test_name)) {
       configs[i].test_func(config);
       return;
@@ -991,7 +991,7 @@ void grpc_end2end_tests(int argc, char **argv,
   GPR_ASSERT(g_pre_init_called);
 
   if (argc <= 1) {
-    for (int i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
+    for (size_t i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
       configs[i].test_func(config);
     }
     return;
@@ -1037,7 +1037,7 @@ static bool is_compatible(const grpc_end2end_test_fixture_options& fixture, cons
 }
 
 static grpc_end2end_test_fixture_options get_fixture_options_by_name(const char* fixture_name) {
-  for (int i = 0; i < sizeof(fixture_configs) / sizeof(*fixture_configs); i++) {
+  for (size_t i = 0; i < sizeof(fixture_configs) / sizeof(*fixture_configs); i++) {
     if (0 == strcmp(fixture_configs[i].name, fixture_name)) {
       return fixture_configs[i].options;
     }
@@ -1050,7 +1050,7 @@ static std::vector<std::string> get_compatible_test_names(const char* fixture_na
   auto fixture_options = get_fixture_options_by_name(fixture_name);
   
   std::vector<std::string> result;
-  for (int i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
+  for (size_t i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
     if (is_compatible(fixture_options, configs[i].options)) {
       result.emplace_back(configs[i].name);
     }
@@ -1063,7 +1063,7 @@ std::vector<grpc::testing::CoreEnd2EndTestScenario> grpc::testing::CoreEnd2EndTe
   std::vector<CoreEnd2EndTestScenario> scenarios;
   auto test_names = get_compatible_test_names(fixture_name);
 
-  for (int i = 0; i < test_names.size(); i++) {
+  for (size_t i = 0; i < test_names.size(); i++) {
     for (int j = 0; j < num_configs; j++) {
       scenarios.emplace_back(
           CoreEnd2EndTestScenario(configs[j], j, num_configs, test_names[i]));
