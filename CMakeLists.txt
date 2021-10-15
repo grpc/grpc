@@ -846,8 +846,6 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx h2_full+trace_nosec_test)
   add_dependencies(buildtests_cxx h2_full+trace_test)
-  add_dependencies(buildtests_cxx h2_full+workarounds_nosec_test)
-  add_dependencies(buildtests_cxx h2_full+workarounds_test)
   add_dependencies(buildtests_cxx h2_full_nosec_test)
   add_dependencies(buildtests_cxx h2_full_test)
   add_dependencies(buildtests_cxx h2_http_proxy_nosec_test)
@@ -11525,7 +11523,6 @@ target_link_libraries(h2_census_nosec_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
-  grpc_test_util_unsecure
 )
 
 
@@ -11596,7 +11593,6 @@ target_link_libraries(h2_compress_nosec_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
-  grpc_test_util_unsecure
 )
 
 
@@ -11703,7 +11699,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     end2end_nosec_tests
-    grpc_test_util_unsecure
   )
 
 
@@ -11778,7 +11773,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     end2end_nosec_tests
-    grpc_test_util_unsecure
   )
 
 
@@ -11852,7 +11846,6 @@ target_link_libraries(h2_full+trace_nosec_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
-  grpc_test_util_unsecure
 )
 
 
@@ -11894,77 +11887,6 @@ target_link_libraries(h2_full+trace_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(h2_full+workarounds_nosec_test
-  test/core/end2end/fixtures/h2_full+workarounds.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(h2_full+workarounds_nosec_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(h2_full+workarounds_nosec_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  end2end_nosec_tests
-  grpc_test_util_unsecure
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(h2_full+workarounds_test
-  test/core/end2end/fixtures/h2_full+workarounds.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(h2_full+workarounds_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(h2_full+workarounds_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  end2end_tests
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(h2_full_nosec_test
   test/core/end2end/fixtures/h2_full.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -11994,7 +11916,6 @@ target_link_libraries(h2_full_nosec_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
-  grpc_test_util_unsecure
 )
 
 
@@ -12065,7 +11986,6 @@ target_link_libraries(h2_http_proxy_nosec_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
-  grpc_test_util_unsecure
 )
 
 
@@ -12317,7 +12237,6 @@ target_link_libraries(h2_proxy_nosec_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
-  grpc_test_util_unsecure
 )
 
 
@@ -12388,7 +12307,6 @@ target_link_libraries(h2_sockpair+trace_nosec_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
-  grpc_test_util_unsecure
 )
 
 
@@ -12459,7 +12377,6 @@ target_link_libraries(h2_sockpair_1byte_nosec_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
-  grpc_test_util_unsecure
 )
 
 
@@ -12530,7 +12447,6 @@ target_link_libraries(h2_sockpair_nosec_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
-  grpc_test_util_unsecure
 )
 
 
@@ -12601,7 +12517,6 @@ target_link_libraries(h2_ssl_cred_reload_nosec_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
-  grpc_test_util_unsecure
 )
 
 
@@ -12672,7 +12587,6 @@ target_link_libraries(h2_ssl_nosec_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
-  grpc_test_util_unsecure
 )
 
 
@@ -12708,7 +12622,6 @@ target_link_libraries(h2_ssl_proxy_nosec_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
-  grpc_test_util_unsecure
 )
 
 
@@ -12885,7 +12798,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     end2end_nosec_tests
-    grpc_test_util_unsecure
   )
 
 
