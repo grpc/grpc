@@ -205,8 +205,9 @@ class MemoryAllocatorFactory {
   virtual ~MemoryAllocatorFactory() = default;
   /// On Endpoint creation, call \a CreateMemoryAllocator to create a new
   /// allocator for the endpoint.
+  /// \a name is used to label the memory allocator in debug logs.
   /// Typically we'll want to:
-  ///    auto allocator = factory->CreateMemoryAllocator();
+  ///    auto allocator = factory->CreateMemoryAllocator(peer_address_string);
   ///    auto* endpoint = allocator->New<MyEndpoint>(std::move(allocator), ...);
   virtual MemoryAllocator CreateMemoryAllocator(absl::string_view name) = 0;
 };

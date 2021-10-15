@@ -73,7 +73,7 @@ extern "C" const grpc_arg_pointer_vtable* grpc_resource_quota_arg_vtable() {
 }
 
 extern "C" grpc_resource_quota* grpc_resource_quota_create(const char* name) {
-  std::atomic<uintptr_t> anonymous_counter{0};
+  static std::atomic<uintptr_t> anonymous_counter{0};
   std::string quota_name =
       name == nullptr
           ? absl::StrCat("anonymous-quota-", anonymous_counter.fetch_add(1))
