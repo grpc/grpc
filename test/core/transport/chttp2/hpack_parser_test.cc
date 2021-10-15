@@ -75,8 +75,11 @@ class ParseTest : public ::testing::TestWithParam<Test> {
 
     grpc_metadata_batch b(arena.get());
 
-    parser_->BeginFrame(&b, 4096, grpc_core::HPackParser::Boundary::None,
-                        grpc_core::HPackParser::Priority::None);
+    parser_->BeginFrame(
+        &b, 4096, grpc_core::HPackParser::Boundary::None,
+        grpc_core::HPackParser::Priority::None,
+        grpc_core::HPackParser::LogInfo{
+            1, grpc_core::HPackParser::LogInfo::kHeaders, false});
 
     grpc_split_slices(mode, &input, 1, &slices, &nslices);
     grpc_slice_unref(input);
