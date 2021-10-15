@@ -54,8 +54,8 @@ class CopySink {
     if (GRPC_MDELEM_STORAGE(md) != GRPC_MDELEM_STORAGE_EXTERNAL) {
       md = GRPC_MDELEM_REF(md);
     } else {
-      md = grpc_mdelem_from_slices(grpc_slice_ref_internal(GRPC_MDKEY(md)),
-                                   grpc_slice_ref_internal(GRPC_MDVALUE(md)));
+      md = grpc_mdelem_from_slices(grpc_slice_copy(GRPC_MDKEY(md)),
+                                   grpc_slice_copy(GRPC_MDVALUE(md)));
     }
     // Error unused in non-debug builds.
     grpc_error_handle GRPC_UNUSED error = dst_->Append(md);
