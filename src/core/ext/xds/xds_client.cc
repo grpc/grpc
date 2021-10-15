@@ -561,7 +561,7 @@ void XdsClient::ChannelState::Orphan() {
   // At this time, all strong refs are removed, remove from channel map to
   // prevent subsequent subscription from trying to use this ChannelState as it
   // is shutting down.
-  xds_client_->xds_server_channel_map_.erase(server_.ToString());
+  xds_client_->xds_server_channel_map_.erase(server_);
   ads_calld_.reset();
   lrs_calld_.reset();
   Unref(DEBUG_LOCATION, "ChannelState+orphaned");
@@ -2066,14 +2066,14 @@ void XdsClient::Orphan() {
 }
 
 RefCountedPtr<XdsClient::ChannelState> XdsClient::GetOrCreateChannelState(
-    const std::string& server) {
-  auto it = xds_server_channel_map_.find(bootstrap_->server().ToString());
+    const XdsBootstrap::XdsServer& server) {
+  auto it = xds_server_channel_map_.find(server);
   if (it != xds_server_channel_map_.end()) {
     return it->second->Ref(DEBUG_LOCATION, "Authority");
   }
   // Channel not found, so create a new one.
   auto channel_state = MakeRefCounted<ChannelState>(
-      WeakRef(DEBUG_LOCATION, "ChannelState"), bootstrap_->server());
+      WeakRef(DEBUG_LOCATION, "ChannelState"), server);
   xds_server_channel_map_[server] = channel_state.get();
   return channel_state;
 }
@@ -2101,9 +2101,9 @@ void XdsClient::WatchListenerData(
   // If the authority doesn't yet have a channel, set it, creating it if needed.
   if (authority_state.channel_state == nullptr) {
     authority_state.channel_state =
-        GetOrCreateChannelState(bootstrap_->server().ToString());
+        GetOrCreateChannelState(bootstrap_->server());
   }
-  xds_server_channel_map_[bootstrap_->server().ToString()]->SubscribeLocked(
+  xds_server_channel_map_[bootstrap_->server()]->SubscribeLocked(
       XdsApi::kLdsTypeUrl, std::move(listener_name_str));
 }
 
@@ -2121,9 +2121,9 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
     listener_state.watchers.erase(it);
     if (listener_state.watchers.empty()) {
       authority_state.listener_map.erase(resource->id);
-      xds_server_channel_map_[bootstrap_->server().ToString()]
-          ->UnsubscribeLocked(XdsApi::kLdsTypeUrl, std::string(listener_name),
-                              delay_unsubscription);
+      xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
+          XdsApi::kLdsTypeUrl, std::string(listener_name),
+          delay_unsubscription);
     }
   }
 }
@@ -2153,9 +2153,9 @@ void XdsClient::WatchRouteConfigData(
   // If the authority doesn't yet have a channel, set it, creating it if needed.
   if (authority_state.channel_state == nullptr) {
     authority_state.channel_state =
-        GetOrCreateChannelState(bootstrap_->server().ToString());
+        GetOrCreateChannelState(bootstrap_->server());
   }
-  xds_server_channel_map_[bootstrap_->server().ToString()]->SubscribeLocked(
+  xds_server_channel_map_[bootstrap_->server()]->SubscribeLocked(
       XdsApi::kRdsTypeUrl, std::move(route_config_name_str));
 }
 
@@ -2174,10 +2174,9 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
     route_config_state.watchers.erase(it);
     if (route_config_state.watchers.empty()) {
       authority_state.route_config_map.erase(resource->id);
-      xds_server_channel_map_[bootstrap_->server().ToString()]
-          ->UnsubscribeLocked(XdsApi::kRdsTypeUrl,
-                              std::string(route_config_name),
-                              delay_unsubscription);
+      xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
+          XdsApi::kRdsTypeUrl, std::string(route_config_name),
+          delay_unsubscription);
     }
   }
 }
@@ -2205,9 +2204,9 @@ void XdsClient::WatchClusterData(
   // If the authority doesn't yet have a channel, set it, creating it if needed.
   if (authority_state.channel_state == nullptr) {
     authority_state.channel_state =
-        GetOrCreateChannelState(bootstrap_->server().ToString());
+        GetOrCreateChannelState(bootstrap_->server());
   }
-  xds_server_channel_map_[bootstrap_->server().ToString()]->SubscribeLocked(
+  xds_server_channel_map_[bootstrap_->server()]->SubscribeLocked(
       XdsApi::kCdsTypeUrl, std::move(cluster_name_str));
 }
 
@@ -2225,9 +2224,8 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
     cluster_state.watchers.erase(it);
     if (cluster_state.watchers.empty()) {
       authority_state.cluster_map.erase(resource->id);
-      xds_server_channel_map_[bootstrap_->server().ToString()]
-          ->UnsubscribeLocked(XdsApi::kCdsTypeUrl, std::string(cluster_name),
-                              delay_unsubscription);
+      xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
+          XdsApi::kCdsTypeUrl, std::string(cluster_name), delay_unsubscription);
     }
   }
 }
@@ -2255,9 +2253,9 @@ void XdsClient::WatchEndpointData(
   // If the authority doesn't yet have a channel, set it, creating it if needed.
   if (authority_state.channel_state == nullptr) {
     authority_state.channel_state =
-        GetOrCreateChannelState(bootstrap_->server().ToString());
+        GetOrCreateChannelState(bootstrap_->server());
   }
-  xds_server_channel_map_[bootstrap_->server().ToString()]->SubscribeLocked(
+  xds_server_channel_map_[bootstrap_->server()]->SubscribeLocked(
       XdsApi::kEdsTypeUrl, std::move(eds_service_name_str));
 }
 
@@ -2275,10 +2273,9 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
     endpoint_state.watchers.erase(it);
     if (endpoint_state.watchers.empty()) {
       authority_state.endpoint_map.erase(resource->id);
-      xds_server_channel_map_[bootstrap_->server().ToString()]
-          ->UnsubscribeLocked(XdsApi::kEdsTypeUrl,
-                              std::string(eds_service_name),
-                              delay_unsubscription);
+      xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
+          XdsApi::kEdsTypeUrl, std::string(eds_service_name),
+          delay_unsubscription);
     }
   }
 }

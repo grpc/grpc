@@ -308,7 +308,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   RefCountedPtr<ChannelState> GetOrCreateChannelState(
-      const std::string& server);
+      const XdsBootstrap::XdsServer& server);
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
   grpc_channel_args* args_;
@@ -320,7 +320,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   Mutex mu_;
 
   //  Map of existing xDS server channels.
-  std::map<std::string, ChannelState*> xds_server_channel_map_
+  std::map<XdsBootstrap::XdsServer, ChannelState*> xds_server_channel_map_
       ABSL_GUARDED_BY(mu_);
 
   struct AuthorityState {

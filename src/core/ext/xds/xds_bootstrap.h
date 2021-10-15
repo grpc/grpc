@@ -64,12 +64,21 @@ class XdsBootstrap {
     Json channel_creds_config;
     std::set<std::string> server_features;
 
-    std::string ToString() const {
-      return absl::StrCat(
+    bool operator<(const XdsServer& other) const {
+      std::string s1(absl::StrCat(
           server_uri, channel_creds_type, channel_creds_config.Dump(),
           absl::StrJoin(std::vector<std::string>(server_features.begin(),
                                                  server_features.end()),
-                        ""));
+                        "")));
+      std::string s2(absl::StrCat(
+          other.server_uri, other.channel_creds_type,
+          other.channel_creds_config.Dump(),
+          absl::StrJoin(std::vector<std::string>(other.server_features.begin(),
+                                                 other.server_features.end()),
+                        "")));
+      return std::strncmp(s1.c_str(), s2.c_str(),
+                          ((s1.size() < s2.size()) ? s1.size() : s2.size())) <
+             0;
     }
 
     bool ShouldUseV3() const;
