@@ -2439,6 +2439,7 @@ LIBUV_SRC = \
     src/libuv/src/fs-poll.c \
     src/libuv/src/idna.c \
     src/libuv/src/inet.c \
+    src/libuv/src/random.c \
     src/libuv/src/strscpy.c \
     src/libuv/src/threadpool.c \
     src/libuv/src/timer.c \
@@ -2449,6 +2450,7 @@ LIBUV_SRC = \
     src/libuv/src/unix/darwin-proctitle.c \
     src/libuv/src/unix/darwin.c \
     src/libuv/src/unix/dl.c \
+    src/libuv/src/unix/epoll.c \
     src/libuv/src/unix/fs.c \
     src/libuv/src/unix/fsevents.c \
     src/libuv/src/unix/getaddrinfo.c \
@@ -2465,6 +2467,10 @@ LIBUV_SRC = \
     src/libuv/src/unix/procfs-exepath.c \
     src/libuv/src/unix/proctitle.c \
     src/libuv/src/unix/pthread-fixes.c \
+    src/libuv/src/unix/random-devurandom.c \
+    src/libuv/src/unix/random-getentropy.c \
+    src/libuv/src/unix/random-getrandom.c \
+    src/libuv/src/unix/random-sysctl-linux.c \
     src/libuv/src/unix/signal.c \
     src/libuv/src/unix/stream.c \
     src/libuv/src/unix/sysinfo-loadavg.c \

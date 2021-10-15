@@ -1298,6 +1298,7 @@
     <file baseinstalldir="/" name="src/libuv/src/idna.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/inet.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/queue.h" role="src" />
+    <file baseinstalldir="/" name="src/libuv/src/random.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/strscpy.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/strscpy.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/threadpool.c" role="src" />
@@ -1308,8 +1309,10 @@
     <file baseinstalldir="/" name="src/libuv/src/unix/bsd-ifaddrs.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/core.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/darwin-proctitle.c" role="src" />
+    <file baseinstalldir="/" name="src/libuv/src/unix/darwin-stub.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/darwin.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/dl.c" role="src" />
+    <file baseinstalldir="/" name="src/libuv/src/unix/epoll.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/fs.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/fsevents.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/getaddrinfo.c" role="src" />
@@ -1328,6 +1331,10 @@
     <file baseinstalldir="/" name="src/libuv/src/unix/procfs-exepath.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/proctitle.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/pthread-fixes.c" role="src" />
+    <file baseinstalldir="/" name="src/libuv/src/unix/random-devurandom.c" role="src" />
+    <file baseinstalldir="/" name="src/libuv/src/unix/random-getentropy.c" role="src" />
+    <file baseinstalldir="/" name="src/libuv/src/unix/random-getrandom.c" role="src" />
+    <file baseinstalldir="/" name="src/libuv/src/unix/random-sysctl-linux.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/signal.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/spinlock.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/stream.c" role="src" />

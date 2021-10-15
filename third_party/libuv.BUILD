@@ -112,6 +112,7 @@ ANDROID_LIBUV_HEADERS = [
 
 DARWIN_LIBUV_HEADERS = [
     "include/uv/darwin.h",
+    "src/unix/darwin-stub.h",
 ]
 
 WINDOWS_LIBUV_HEADERS = [
@@ -133,6 +134,7 @@ COMMON_LIBUV_SOURCES = [
     "src/idna.h",
     "src/inet.c",
     "src/queue.h",
+    "src/random.c",
     "src/strscpy.c",
     "src/strscpy.h",
     "src/threadpool.c",
@@ -157,6 +159,7 @@ UNIX_LIBUV_SOURCES = [
     "src/unix/pipe.c",
     "src/unix/poll.c",
     "src/unix/process.c",
+    "src/unix/random-devurandom.c",
     "src/unix/signal.c",
     "src/unix/spinlock.h",
     "src/unix/stream.c",
@@ -173,7 +176,10 @@ LINUX_LIBUV_SOURCES = [
     "src/unix/linux-syscalls.h",
     "src/unix/procfs-exepath.c",
     "src/unix/proctitle.c",
+    "src/unix/random-getrandom.c",  # freebsd, android, linux
+    "src/unix/random-sysctl-linux.c",
     "src/unix/sysinfo-loadavg.c",
+    "src/unix/epoll.c",  # linux, android
 ]
 
 ANDROID_LIBUV_SOURCES = [
@@ -188,6 +194,7 @@ DARWIN_LIBUV_SOURCES = [
     "src/unix/kqueue.c",
     "src/unix/darwin-proctitle.c",
     "src/unix/proctitle.c",
+    "src/unix/random-getentropy.c",  # darwin. TODO(hork): ALSO NEEDED FOR OpenBSD
 ]
 
 WINDOWS_LIBUV_SOURCES = [
