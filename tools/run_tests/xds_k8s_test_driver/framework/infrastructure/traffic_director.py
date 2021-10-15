@@ -602,7 +602,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
             "rules": [{
                 "action": {
                     "destinations": [{
-                        "serviceName": self.netsvc.full_name(self.backend_service.name, "backendServices")
+                        "serviceName": self.netsvc.resource_full_name(self.backend_service.name, "backendServices")
                     }]
                 }
             }],
