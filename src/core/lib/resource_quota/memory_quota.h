@@ -380,7 +380,7 @@ class MemoryOwner final {
 class MemoryQuota final
     : public grpc_event_engine::experimental::MemoryAllocatorFactory {
  public:
-  MemoryQuota(std::string name)
+  explicit MemoryQuota(std::string name)
       : memory_quota_(std::make_shared<BasicMemoryQuota>(std::move(name))) {
     memory_quota_->Start();
   }

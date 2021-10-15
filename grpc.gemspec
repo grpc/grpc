@@ -1069,6 +1069,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/promise/detail/switch.h )
   s.files += %w( src/core/lib/promise/exec_ctx_wakeup_scheduler.h )
   s.files += %w( src/core/lib/promise/loop.h )
+  s.files += %w( src/core/lib/promise/map.h )
   s.files += %w( src/core/lib/promise/poll.h )
   s.files += %w( src/core/lib/promise/race.h )
   s.files += %w( src/core/lib/promise/seq.h )

@@ -6028,6 +6028,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     src/core/lib/iomgr/iomgr_internal.cc
     src/core/lib/promise/activity.cc
     src/core/lib/resource_quota/memory_quota.cc
+    src/core/lib/resource_quota/trace.cc
     src/core/lib/slice/slice.cc
     src/core/lib/slice/slice_refcount.cc
     src/core/lib/slice/slice_string_helpers.cc
@@ -12610,6 +12611,7 @@ add_executable(memory_quota_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
@@ -14018,6 +14020,7 @@ add_executable(resource_quota_test
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
+  src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
