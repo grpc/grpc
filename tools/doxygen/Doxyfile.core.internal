@@ -1842,6 +1842,7 @@ src/core/lib/promise/detail/status.h \
 src/core/lib/promise/detail/switch.h \
 src/core/lib/promise/exec_ctx_wakeup_scheduler.h \
 src/core/lib/promise/loop.h \
+src/core/lib/promise/map.h \
 src/core/lib/promise/poll.h \
 src/core/lib/promise/race.h \
 src/core/lib/promise/seq.h \
