@@ -311,3 +311,44 @@ grpc_error_handle grpc_channel_stack_builder_finish(
 
   return error;
 }
+
+namespace grpc_core {
+namespace {
+
+void* ChannelStackModifierArgCopy(void* p) {
+  ChannelStackModifier* arg = static_cast<ChannelStackModifier*>(p);
+  return arg->Ref().release();
+}
+
+void ChannelStackModifierArgDestroy(void* p) {
+  ChannelStackModifier* arg = static_cast<ChannelStackModifier*>(p);
+  arg->Unref();
+}
+
+int ChannelStackModifierArgCmp(void* p, void* q) { return QsortCompare(p, q); }
+
+const grpc_arg_pointer_vtable kChannelArgVtable = {
+    ChannelStackModifierArgCopy, ChannelStackModifierArgDestroy,
+    ChannelStackModifierArgCmp};
+
+const char* kChannelStackModifierChannelArgName =
+    "grpc.internal.channel_stack_modifier";
+
+}  // namespace
+
+grpc_arg ChannelStackModifier::MakeChannelArg() const {
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(kChannelStackModifierChannelArgName),
+      const_cast<ChannelStackModifier*>(this), &kChannelArgVtable);
+}
+
+RefCountedPtr<ChannelStackModifier> ChannelStackModifier::GetFromChannelArgs(
+    const grpc_channel_args& args) {
+  ChannelStackModifier* config_selector_provider =
+      grpc_channel_args_find_pointer<ChannelStackModifier>(
+          &args, kChannelStackModifierChannelArgName);
+  return config_selector_provider != nullptr ? config_selector_provider->Ref()
+                                             : nullptr;
+}
+
+}  // namespace grpc_core
