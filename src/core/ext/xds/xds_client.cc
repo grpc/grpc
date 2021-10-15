@@ -578,7 +578,6 @@ void XdsClient::ChannelState::Orphan() {
   xds_client_->xds_server_channel_map_.erase(server_);
   ads_calld_.reset();
   lrs_calld_.reset();
-  Unref(DEBUG_LOCATION, "ChannelState+orphaned");
 }
 
 XdsClient::ChannelState::AdsCallState* XdsClient::ChannelState::ads_calld()
@@ -645,8 +644,6 @@ void XdsClient::ChannelState::UnsubscribeLocked(const std::string& type_url,
       calld->UnsubscribeLocked(type_url, name, delay_unsubscription);
       if (!calld->HasSubscribedResources()) {
         ads_calld_.reset();
-        // Also drop the strong ref to this object from authority_state.
-        Unref();
       }
     }
   }
@@ -2071,6 +2068,9 @@ void XdsClient::Orphan() {
     // policies before those calls are done would lead to issues such as
     // https://github.com/grpc/grpc/issues/20928.
     for (auto& a : authority_state_map_) {
+      // if (a.second.channel_state != nullptr) {
+      //  a.second.channel_state.reset();
+      //}
       if (!a.second.listener_map.empty()) {
         a.second.cluster_map.clear();
         a.second.endpoint_map.clear();
@@ -2121,6 +2121,13 @@ void XdsClient::WatchListenerData(
       XdsApi::kLdsTypeUrl, std::move(listener_name_str));
 }
 
+bool XdsClient::HasSubscribedResources(const AuthorityState& authority_state) {
+  return (!authority_state.listener_map.empty() ||
+          !authority_state.route_config_map.empty() ||
+          !authority_state.cluster_map.empty() ||
+          !authority_state.endpoint_map.empty());
+}
+
 void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
                                         ListenerWatcherInterface* watcher,
                                         bool delay_unsubscription) {
@@ -2138,6 +2145,9 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
       xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
           XdsApi::kLdsTypeUrl, std::string(listener_name),
           delay_unsubscription);
+      if (!HasSubscribedResources(authority_state)) {
+        authority_state.channel_state.reset();
+      }
     }
   }
 }
@@ -2191,6 +2201,9 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
       xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
           XdsApi::kRdsTypeUrl, std::string(route_config_name),
           delay_unsubscription);
+      if (!HasSubscribedResources(authority_state)) {
+        authority_state.channel_state.reset();
+      }
     }
   }
 }
@@ -2240,6 +2253,9 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
       authority_state.cluster_map.erase(resource->id);
       xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
           XdsApi::kCdsTypeUrl, std::string(cluster_name), delay_unsubscription);
+      if (!HasSubscribedResources(authority_state)) {
+        authority_state.channel_state.reset();
+      }
     }
   }
 }
@@ -2290,6 +2306,9 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
       xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
           XdsApi::kEdsTypeUrl, std::string(eds_service_name),
           delay_unsubscription);
+      if (!HasSubscribedResources(authority_state)) {
+        authority_state.channel_state.reset();
+      }
     }
   }
 }

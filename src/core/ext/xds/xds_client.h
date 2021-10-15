@@ -310,6 +310,17 @@ class XdsClient : public DualRefCounted<XdsClient> {
   RefCountedPtr<ChannelState> GetOrCreateChannelState(
       const XdsBootstrap::XdsServer& server);
 
+  struct AuthorityState {
+    RefCountedPtr<ChannelState> channel_state;
+    std::map<std::string /*listener_name*/, ListenerState> listener_map;
+    std::map<std::string /*route_config_name*/, RouteConfigState>
+        route_config_map;
+    std::map<std::string /*cluster_name*/, ClusterState> cluster_map;
+    std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map;
+  };
+
+  bool HasSubscribedResources(const AuthorityState& authority_state);
+
   std::unique_ptr<XdsBootstrap> bootstrap_;
   grpc_channel_args* args_;
   const grpc_millis request_timeout_;
@@ -322,15 +333,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
   //  Map of existing xDS server channels.
   std::map<XdsBootstrap::XdsServer, ChannelState*> xds_server_channel_map_
       ABSL_GUARDED_BY(mu_);
-
-  struct AuthorityState {
-    RefCountedPtr<ChannelState> channel_state;
-    std::map<std::string /*listener_name*/, ListenerState> listener_map;
-    std::map<std::string /*route_config_name*/, RouteConfigState>
-        route_config_map;
-    std::map<std::string /*cluster_name*/, ClusterState> cluster_map;
-    std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map;
-  };
 
   std::map<std::string /*authority*/, AuthorityState> authority_state_map_
       ABSL_GUARDED_BY(mu_);
