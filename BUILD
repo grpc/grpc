@@ -1987,6 +1987,39 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_server_config_selector",
+    srcs = [
+        "src/core/ext/filters/server_config_selector/server_config_selector.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/server_config_selector/server_config_selector.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_base",
+        "grpc_base",
+        "grpc_service_config",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_server_config_selector_filter",
+    srcs = [
+        "src/core/ext/filters/server_config_selector/server_config_selector_filter.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/server_config_selector/server_config_selector_filter.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_base",
+        "grpc_base",
+        "grpc_server_config_selector",
+        "grpc_service_config",
+    ],
+)
+
+grpc_cc_library(
     name = "idle_filter_state",
     srcs = [
         "src/core/ext/filters/client_idle/idle_filter_state.cc",
