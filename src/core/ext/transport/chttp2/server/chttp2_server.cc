@@ -737,7 +737,8 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     }
     args_to_destroy = args;
   }
-  auto memory_owner = self->memory_quota_->CreateMemoryOwner();
+  auto memory_owner = self->memory_quota_->CreateMemoryOwner(
+      absl::StrCat(grpc_endpoint_get_peer(tcp), ":server_channel"));
   auto connection = memory_owner.MakeOrphanable<ActiveConnection>(
       accepting_pollset, acceptor, args, std::move(memory_owner));
   // We no longer own acceptor

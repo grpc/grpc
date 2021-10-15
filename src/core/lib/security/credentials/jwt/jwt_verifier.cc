@@ -703,8 +703,9 @@ static void on_openid_config_retrieved(void* user_data,
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
   grpc_httpcli_get(
-      &ctx->verifier->http_ctx, &ctx->pollent, grpc_core::MakeResourceQuota(),
-      &req, grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
+      &ctx->verifier->http_ctx, &ctx->pollent,
+      grpc_core::DefaultResourceQuota(), &req,
+      grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
   gpr_free(req.host);
@@ -826,9 +827,10 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
   grpc_httpcli_get(
-      &ctx->verifier->http_ctx, &ctx->pollent, grpc_core::MakeResourceQuota(),
-      &req, grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
-      http_cb, &ctx->responses[rsp_idx]);
+      &ctx->verifier->http_ctx, &ctx->pollent,
+      grpc_core::DefaultResourceQuota(), &req,
+      grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
+      &ctx->responses[rsp_idx]);
   gpr_free(req.host);
   gpr_free(req.http.path);
   return;

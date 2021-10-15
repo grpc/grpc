@@ -452,7 +452,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       peer_string(grpc_endpoint_get_peer(ep)),
       memory_owner(grpc_core::ResourceQuotaFromChannelArgs(channel_args)
                        ->memory_quota()
-                       ->CreateMemoryOwner()),
+                       ->CreateMemoryOwner(absl::StrCat(
+                           grpc_endpoint_get_peer(ep), ":client_transport"))),
       self_reservation(memory_owner.allocator()->MakeReservation(
           sizeof(grpc_chttp2_transport))),
       combiner(grpc_combiner_create()),
@@ -544,7 +545,7 @@ static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
       t, grpc_error_set_int(
              GRPC_ERROR_CREATE_FROM_STATIC_STRING("Transport destroyed"),
              GRPC_ERROR_INT_OCCURRED_DURING_WRITE, t->write_state));
-  [](grpc_core::MemoryOwner) {}(std::move(t->memory_owner));
+  { auto dropped = std::move(t->memory_owner); }
   // Must be the last line.
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "destroy");
 }

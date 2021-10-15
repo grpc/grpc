@@ -208,7 +208,7 @@ class MemoryAllocatorFactory {
   /// Typically we'll want to:
   ///    auto allocator = factory->CreateMemoryAllocator();
   ///    auto* endpoint = allocator->New<MyEndpoint>(std::move(allocator), ...);
-  virtual MemoryAllocator CreateMemoryAllocator() = 0;
+  virtual MemoryAllocator CreateMemoryAllocator(absl::string_view name) = 0;
 };
 
 }  // namespace experimental

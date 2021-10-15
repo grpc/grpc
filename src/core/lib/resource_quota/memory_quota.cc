@@ -104,8 +104,8 @@ Poll<ReclamationFunction> ReclaimerQueue::PollNext() {
 //
 
 GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
-    std::shared_ptr<BasicMemoryQuota> memory_quota)
-    : memory_quota_(memory_quota) {
+    std::shared_ptr<BasicMemoryQuota> memory_quota, std::string name)
+    : memory_quota_(memory_quota), name_(std::move(name)) {
   memory_quota_->Take(taken_bytes_);
 }
 
@@ -403,6 +403,22 @@ size_t BasicMemoryQuota::InstantaneousPressure() const {
   if (pressure < 0.0) pressure = 0.0;
   if (pressure > 1.0) pressure = 1.0;
   return pressure;
+}
+
+//
+// MemoryQuota
+//
+
+MemoryAllocator MemoryQuota::CreateMemoryAllocator(absl::string_view name) {
+  auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(
+      memory_quota_, absl::StrCat(memory_quota_->name(), "/allocator/", name));
+  return MemoryAllocator(std::move(impl));
+}
+
+MemoryOwner MemoryQuota::CreateMemoryOwner(absl::string_view name) {
+  auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(
+      memory_quota_, absl::StrCat(memory_quota_->name(), "/owner/", name));
+  return MemoryOwner(std::move(impl));
 }
 
 }  // namespace grpc_core

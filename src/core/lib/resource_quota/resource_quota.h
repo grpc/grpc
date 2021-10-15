@@ -24,7 +24,7 @@ namespace grpc_core {
 
 class ResourceQuota : public RefCounted<ResourceQuota> {
  public:
-  ResourceQuota();
+  explicit ResourceQuota(std::string name);
   ~ResourceQuota() override;
 
   ResourceQuota(const ResourceQuota&) = delete;
@@ -40,9 +40,12 @@ class ResourceQuota : public RefCounted<ResourceQuota> {
 };
 
 using ResourceQuotaPtr = RefCountedPtr<ResourceQuota>;
-inline ResourceQuotaPtr MakeResourceQuota() {
-  return MakeRefCounted<ResourceQuota>();
+inline ResourceQuotaPtr MakeResourceQuota(std::string name) {
+  return MakeRefCounted<ResourceQuota>(std::move(name));
 }
+
+// The default global resource quota
+ResourceQuotaPtr DefaultResourceQuota();
 
 }  // namespace grpc_core
 

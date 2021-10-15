@@ -179,6 +179,8 @@ class ReclaimerQueue {
 class BasicMemoryQuota final
     : public std::enable_shared_from_this<BasicMemoryQuota> {
  public:
+  explicit BasicMemoryQuota(std::string name) : name_(std::move(name)) {}
+
   // Start the reclamation activity.
   void Start();
   // Stop the reclamation activity.
@@ -212,6 +214,9 @@ class BasicMemoryQuota final
     reclaimers_[reclaimer].Insert(std::move(allocator), std::move(fn), index);
   }
 
+  // The name of this quota
+  absl::string_view name() const { return name_; }
+
  private:
   friend class ReclamationSweep;
   class WaitForSweepPromise;
@@ -237,6 +242,8 @@ class BasicMemoryQuota final
   // We also increment this counter on completion of a sweep, as an indicator
   // that the wait has ended.
   std::atomic<uint64_t> reclamation_counter_{0};
+  // The name of this quota - used for debugging/tracing/etc..
+  std::string name_;
 };
 
 // MemoryAllocatorImpl grants the owner the ability to allocate memory from an
@@ -244,7 +251,7 @@ class BasicMemoryQuota final
 class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
  public:
   explicit GrpcMemoryAllocatorImpl(
-      std::shared_ptr<BasicMemoryQuota> memory_quota);
+      std::shared_ptr<BasicMemoryQuota> memory_quota, std::string name);
   ~GrpcMemoryAllocatorImpl() override;
 
   // Rebind - Swaps the underlying quota for this allocator, taking care to
@@ -277,6 +284,9 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
     MutexLock lock(&memory_quota_mu_);
     return memory_quota_->InstantaneousPressure();
   }
+
+  // Name of this allocator
+  absl::string_view name() const { return name_; }
 
  private:
   // Primitive reservation function.
@@ -311,6 +321,8 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
           memory_quota_mu_) = {
           ReclaimerQueue::kInvalidIndex, ReclaimerQueue::kInvalidIndex,
           ReclaimerQueue::kInvalidIndex, ReclaimerQueue::kInvalidIndex};
+  // Name of this allocator.
+  std::string name_;
 };
 
 // MemoryOwner is an enhanced MemoryAllocator that can also reclaim memory, and
@@ -353,6 +365,13 @@ class MemoryOwner final {
     return OrphanablePtr<T>(allocator_.New<T>(std::forward<Args>(args)...));
   }
 
+  // Name of this object
+  absl::string_view name() const {
+    return static_cast<const GrpcMemoryAllocatorImpl*>(
+               allocator_.get_internal_impl_ptr())
+        ->name();
+  }
+
  private:
   MemoryAllocator allocator_;
 };
@@ -361,7 +380,8 @@ class MemoryOwner final {
 class MemoryQuota final
     : public grpc_event_engine::experimental::MemoryAllocatorFactory {
  public:
-  MemoryQuota() : memory_quota_(std::make_shared<BasicMemoryQuota>()) {
+  MemoryQuota(std::string name)
+      : memory_quota_(std::make_shared<BasicMemoryQuota>(std::move(name))) {
     memory_quota_->Start();
   }
   ~MemoryQuota() override {
@@ -373,15 +393,8 @@ class MemoryQuota final
   MemoryQuota(MemoryQuota&&) = default;
   MemoryQuota& operator=(MemoryQuota&&) = default;
 
-  MemoryAllocator CreateMemoryAllocator() override {
-    auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(memory_quota_);
-    return MemoryAllocator(std::move(impl));
-  }
-
-  MemoryOwner CreateMemoryOwner() {
-    auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(memory_quota_);
-    return MemoryOwner(std::move(impl));
-  }
+  MemoryAllocator CreateMemoryAllocator(absl::string_view name) override;
+  MemoryOwner CreateMemoryOwner(absl::string_view name);
 
   // Resize the quota to new_size.
   void SetSize(size_t new_size) { memory_quota_->SetSize(new_size); }
@@ -399,8 +412,8 @@ class MemoryQuota final
 };
 
 using MemoryQuotaPtr = std::shared_ptr<MemoryQuota>;
-inline MemoryQuotaPtr MakeMemoryQuota() {
-  return std::make_shared<MemoryQuota>();
+inline MemoryQuotaPtr MakeMemoryQuota(std::string name) {
+  return std::make_shared<MemoryQuota>(std::move(name));
 }
 
 }  // namespace grpc_core

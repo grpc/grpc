@@ -176,9 +176,7 @@ static void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
     grpc_slice_buffer_add_indexed(
         tcp->read_slices, GRPC_SLICE_MALLOC(GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
   }
-  /* Before calling read, we allocate a buffer with exactly one slice
-   * to tcp->read_slices and wait for the callback indicating that the
-   * allocation was successful. So slices[0] should always exist here */
+  /* slices[0] should always exist here since we just added it if it did not */
   char* buffer = reinterpret_cast<char*>(
       GRPC_SLICE_START_PTR(tcp->read_slices->slices[0]));
   size_t len = GRPC_SLICE_LENGTH(tcp->read_slices->slices[0]);
