@@ -595,9 +595,6 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
 
     def create_grpc_route(self, src_host: str, src_port: int) -> GcpResource:
         host = f'{src_host}:{src_port}'
-        # TODO: Figure out how to get this properly.
-        # project_number = "921384807982"
-        bs_ref = f"projects/{self.project}/locations/global/backendServices/{self.backend_service.name}"
         body = {
             "routers": [self.router.url],
             "hostnames":
@@ -605,7 +602,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
             "rules": [{
                 "action": {
                     "destinations": [{
-                        "serviceName": bs_ref
+                        "serviceName": self.netsvc.full_name(self.backend_service.name, "backendServices")
                     }]
                 }
             }],
