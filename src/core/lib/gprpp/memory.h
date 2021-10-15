@@ -46,6 +46,12 @@ class DefaultDeleteChar {
 template <typename T>
 using UniquePtr = std::unique_ptr<T, DefaultDeleteChar>;
 
+template <class T>
+T* Zalloc() {
+  static_assert(std::is_trivial<T>::value, "Type should be trivial");
+  return static_cast<T*>(gpr_zalloc(sizeof(T)));
+}
+
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_GPRPP_MEMORY_H */
