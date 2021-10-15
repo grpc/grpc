@@ -940,13 +940,15 @@ class HPackParser::Parser {
  public:
   Parser(Input* input, grpc_metadata_batch* metadata_buffer,
          uint32_t metadata_size_limit, HPackTable* table,
-         uint8_t* dynamic_table_updates_allowed, uint32_t* frame_length)
+         uint8_t* dynamic_table_updates_allowed, uint32_t* frame_length,
+         LogInfo log_info)
       : input_(input),
         metadata_buffer_(metadata_buffer),
         table_(table),
         dynamic_table_updates_allowed_(dynamic_table_updates_allowed),
         frame_length_(frame_length),
-        metadata_size_limit_(metadata_size_limit) {}
+        metadata_size_limit_(metadata_size_limit),
+        log_info_(log_info) {}
 
   // Skip any priority bits, or return false on failure
   bool SkipPriority() {
@@ -1058,8 +1060,20 @@ class HPackParser::Parser {
 
  private:
   void GPR_ATTRIBUTE_NOINLINE LogHeader(const HPackTable::Memento& memento) {
-    // TODO(ctiller): what should be here?
-    gpr_log(GPR_DEBUG, "recvhdr: %s", memento.DebugString().c_str());
+    const char* type;
+    switch (log_info_.type) {
+      case LogInfo::kHeaders:
+        type = "HDR";
+        break;
+      case LogInfo::kTrailers:
+        type = "TRL";
+        break;
+      case LogInfo::kDontKnow:
+        type = "???";
+        break;
+    }
+    gpr_log(GPR_DEBUG, "HTTP:%d:%s:%s: %s", log_info_.stream_id, type,
+            log_info_.is_client ? "CLI" : "SVR", memento.DebugString().c_str());
   }
 
   bool EmitHeader(const HPackTable::Memento& md) {
@@ -1179,9 +1193,6 @@ class HPackParser::Parser {
           false);
     }
     (*dynamic_table_updates_allowed_)--;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
-      gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", *size);
-    }
     grpc_error_handle err = table_->SetCurrentTableSize(*size);
     if (err != GRPC_ERROR_NONE) {
       input_->SetError(err);
@@ -1224,12 +1235,13 @@ class HPackParser::Parser {
         false);
   }
 
-  Input* input_;
-  grpc_metadata_batch* metadata_buffer_;
+  Input* const input_;
+  grpc_metadata_batch* const metadata_buffer_;
   HPackTable* const table_;
   uint8_t* const dynamic_table_updates_allowed_;
   uint32_t* const frame_length_;
-  uint32_t metadata_size_limit_;
+  const uint32_t metadata_size_limit_;
+  const LogInfo log_info_;
 };
 
 UnmanagedMemorySlice HPackParser::String::Take(Extern) {
@@ -1284,13 +1296,14 @@ HPackParser::~HPackParser() = default;
 
 void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
                              uint32_t metadata_size_limit, Boundary boundary,
-                             Priority priority) {
+                             Priority priority, LogInfo log_info) {
   metadata_buffer_ = metadata_buffer;
   boundary_ = boundary;
   priority_ = priority;
   dynamic_table_updates_allowed_ = 2;
   frame_length_ = 0;
   metadata_size_limit_ = metadata_size_limit;
+  log_info_ = log_info;
 }
 
 grpc_error_handle HPackParser::Parse(const grpc_slice& slice, bool is_last) {
@@ -1335,7 +1348,7 @@ bool HPackParser::ParseInputInner(Input* input) {
   while (!input->end_of_stream()) {
     if (GPR_UNLIKELY(!Parser(input, metadata_buffer_, metadata_size_limit_,
                              &table_, &dynamic_table_updates_allowed_,
-                             &frame_length_)
+                             &frame_length_, log_info_)
                           .Parse())) {
       return false;
     }
