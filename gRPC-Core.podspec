@@ -168,13 +168,14 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.21'
+    ss.dependency 'BoringSSL-GRPC', '0.0.22'
     ss.dependency 'Libuv-gRPC', '0.0.10'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
+    ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
@@ -236,6 +237,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/priority/priority.cc',
                       'src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc',
                       'src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h',
+                      'src/core/ext/filters/client_channel/lb_policy/rls/rls.cc',
                       'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc',
                       'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                       'src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc',
@@ -317,10 +319,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/max_age/max_age_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.cc',
                       'src/core/ext/filters/message_size/message_size_filter.h',
-                      'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc',
-                      'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
-                      'src/core/ext/filters/workarounds/workaround_utils.cc',
-                      'src/core/ext/filters/workarounds/workaround_utils.h',
                       'src/core/ext/service_config/service_config.cc',
                       'src/core/ext/service_config/service_config.h',
                       'src/core/ext/service_config/service_config_call_data.h',
@@ -568,6 +566,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
                       'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c',
                       'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h',
+                      'src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c',
+                      'src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h',
                       'src/core/ext/upb-generated/udpa/annotations/migrate.upb.c',
                       'src/core/ext/upb-generated/udpa/annotations/migrate.upb.h',
                       'src/core/ext/upb-generated/udpa/annotations/security.upb.c',
@@ -578,10 +578,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/udpa/annotations/status.upb.h',
                       'src/core/ext/upb-generated/udpa/annotations/versioning.upb.c',
                       'src/core/ext/upb-generated/udpa/annotations/versioning.upb.h',
-                      'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c',
-                      'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h',
-                      'src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c',
-                      'src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.h',
                       'src/core/ext/upb-generated/validate/validate.upb.c',
                       'src/core/ext/upb-generated/validate/validate.upb.h',
                       'src/core/ext/upb-generated/xds/annotations/v3/status.upb.c',
@@ -598,6 +594,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.h',
                       'src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c',
                       'src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h',
+                      'src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c',
+                      'src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h',
+                      'src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c',
+                      'src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.h',
                       'src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c',
                       'src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c',
@@ -770,8 +770,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.h',
                       'src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c',
                       'src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.h',
-                      'src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c',
-                      'src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.h',
                       'src/core/ext/upbdefs-generated/validate/validate.upbdefs.c',
                       'src/core/ext/upbdefs-generated/validate/validate.upbdefs.h',
                       'src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c',
@@ -788,6 +786,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.h',
                       'src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c',
                       'src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.h',
+                      'src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c',
+                      'src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.h',
                       'src/core/ext/xds/certificate_provider_factory.h',
                       'src/core/ext/xds/certificate_provider_registry.cc',
                       'src/core/ext/xds/certificate_provider_registry.h',
@@ -1513,8 +1513,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/http/server/http_server_filter.h',
                               'src/core/ext/filters/max_age/max_age_filter.h',
                               'src/core/ext/filters/message_size/message_size_filter.h',
-                              'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
-                              'src/core/ext/filters/workarounds/workaround_utils.h',
                               'src/core/ext/service_config/service_config.h',
                               'src/core/ext/service_config/service_config_call_data.h',
                               'src/core/ext/service_config/service_config_parser.h',
@@ -1636,13 +1634,12 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h',
                               'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
                               'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h',
+                              'src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h',
                               'src/core/ext/upb-generated/udpa/annotations/migrate.upb.h',
                               'src/core/ext/upb-generated/udpa/annotations/security.upb.h',
                               'src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h',
                               'src/core/ext/upb-generated/udpa/annotations/status.upb.h',
                               'src/core/ext/upb-generated/udpa/annotations/versioning.upb.h',
-                              'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h',
-                              'src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.h',
                               'src/core/ext/upb-generated/validate/validate.upb.h',
                               'src/core/ext/upb-generated/xds/annotations/v3/status.upb.h',
                               'src/core/ext/upb-generated/xds/core/v3/authority.upb.h',
@@ -1651,6 +1648,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/xds/core/v3/resource.upb.h',
                               'src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.h',
                               'src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h',
+                              'src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h',
+                              'src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.h',
                               'src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.h',
@@ -1737,7 +1736,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.h',
                               'src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.h',
                               'src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.h',
-                              'src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.h',
                               'src/core/ext/upbdefs-generated/validate/validate.upbdefs.h',
                               'src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.h',
                               'src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.h',
@@ -1746,6 +1744,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.h',
                               'src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.h',
                               'src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.h',
+                              'src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.h',
                               'src/core/ext/xds/certificate_provider_factory.h',
                               'src/core/ext/xds/certificate_provider_registry.h',
                               'src/core/ext/xds/certificate_provider_store.h',
@@ -2219,7 +2218,6 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/stream_compression_ping_pong_streaming.cc',
                       'test/core/end2end/tests/streaming_error_response.cc',
                       'test/core/end2end/tests/trailing_metadata.cc',
-                      'test/core/end2end/tests/workaround_cronet_compression.cc',
                       'test/core/end2end/tests/write_buffering.cc',
                       'test/core/end2end/tests/write_buffering_at_end.cc',
                       'test/core/util/cmdline.cc',
