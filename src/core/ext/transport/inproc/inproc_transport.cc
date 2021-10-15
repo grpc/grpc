@@ -57,10 +57,9 @@ void maybe_process_ops_locked(inproc_stream* s, grpc_error_handle error);
 void op_state_machine_locked(inproc_stream* s, grpc_error_handle error);
 void log_metadata(const grpc_metadata_batch* md_batch, bool is_client,
                   bool is_initial);
-void fill_in_metadata(inproc_stream* s,
-                                   const grpc_metadata_batch* metadata,
-                                   uint32_t flags, grpc_metadata_batch* out_md,
-                                   uint32_t* outflags, bool* markfilled);
+void fill_in_metadata(inproc_stream* s, const grpc_metadata_batch* metadata,
+                      uint32_t flags, grpc_metadata_batch* out_md,
+                      uint32_t* outflags, bool* markfilled);
 
 struct shared_mu {
   shared_mu() {
@@ -289,10 +288,9 @@ void log_metadata(const grpc_metadata_batch* md_batch, bool is_client,
   });
 }
 
-void fill_in_metadata(inproc_stream* s,
-                                   const grpc_metadata_batch* metadata,
-                                   uint32_t flags, grpc_metadata_batch* out_md,
-                                   uint32_t* outflags, bool* markfilled) {
+void fill_in_metadata(inproc_stream* s, const grpc_metadata_batch* metadata,
+                      uint32_t flags, grpc_metadata_batch* out_md,
+                      uint32_t* outflags, bool* markfilled) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_inproc_trace)) {
     log_metadata(metadata, s->t->is_client, outflags != nullptr);
   }
@@ -763,10 +761,10 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
     if (s->recv_trailing_md_op != nullptr) {
       // We wanted trailing metadata and we got it
       s->trailing_md_recvd = true;
-          fill_in_metadata(s, &s->to_read_trailing_md, 0,
-                           s->recv_trailing_md_op->payload
-                               ->recv_trailing_metadata.recv_trailing_metadata,
-                           nullptr, nullptr);
+      fill_in_metadata(s, &s->to_read_trailing_md, 0,
+                       s->recv_trailing_md_op->payload->recv_trailing_metadata
+                           .recv_trailing_metadata,
+                       nullptr, nullptr);
       s->to_read_trailing_md.Clear();
       s->to_read_trailing_md_filled = false;
 
