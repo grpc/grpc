@@ -428,7 +428,6 @@ def grpc_end2end_tests():
             name = "%s_test" % f,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
-            #testonly = 1,
             data = [
                 "//src/core/tsi/test_creds:ca.pem",
                 "//src/core/tsi/test_creds:server1.key",
@@ -440,6 +439,7 @@ def grpc_end2end_tests():
                 "//:grpc",
                 "//:gpr",
             ],
+            size = "large",
             tags = _platform_support_tags(fopt),
         )
 
@@ -511,7 +511,6 @@ def grpc_end2end_nosec_tests():
             name = "%s_nosec_test" % f,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
-            #testonly = 1,
             data = [
                 "//src/core/tsi/test_creds:ca.pem",
                 "//src/core/tsi/test_creds:server1.key",
@@ -523,6 +522,7 @@ def grpc_end2end_nosec_tests():
                 "//:grpc",
                 "//:gpr",
             ],
+            size = "large",
             tags = _platform_support_tags(fopt),
         )
         
