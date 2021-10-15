@@ -1339,7 +1339,9 @@ grpc_cc_library(
         "ref_counted_ptr",
         "seq",
         "slice_refcount",
+        "map",
         "useful",
+        "resource_quota_trace",
     ],
 )
 
