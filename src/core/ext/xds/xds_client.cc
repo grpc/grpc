@@ -109,9 +109,23 @@ absl::StatusOr<ResourceNameFields> ParseResourceName(
     return absl::InvalidArgumentError(
         "xdstp URI path must indicate valid xDS resource type");
   }
+  std::vector<std::string> query_parameters;
+  for (auto& it : uri->query_parameter_map()) {
+    query_parameters.push_back(absl::StrCat(it.first, "=", it.second));
+  }
+  std::sort(
+      query_parameters.begin(), query_parameters.end(),
+      [](const absl::string_view& lhs, const absl::string_view& rhs) -> bool {
+        return std::strncmp(std::string(lhs).c_str(), std::string(rhs).c_str(),
+                            ((lhs.length() < rhs.length()) ? lhs.length()
+                                                           : rhs.length())) < 0;
+      });
   // ID is prefixed with "xdstp:" to indicate that it's a new-style name.
-  return ResourceNameFields{uri->authority(),
-                            absl::StrCat("xdstp:", path_parts.second)};
+  return ResourceNameFields{
+      uri->authority(),
+      absl::StrCat("xdstp:", path_parts.second,
+                   ((query_parameters.size() == 0) ? "" : "?"),
+                   absl::StrJoin(query_parameters, "&"))};
 }
 
 }  // namespace
