@@ -47,14 +47,9 @@ template <typename T>
 using UniquePtr = std::unique_ptr<T, DefaultDeleteChar>;
 
 template <class T>
-T* Zalloc(size_t size) {
-  static_assert(std::is_trivial<T>::value, "Type should be trivial");
-  return static_cast<T*>(gpr_zalloc(size));
-}
-
-template <class T>
 T* Zalloc() {
-  return Zalloc<T>(sizeof(T));
+  static_assert(std::is_trivial<T>::value, "Type should be trivial");
+  return static_cast<T*>(gpr_zalloc(sizeof(T)));
 }
 
 }  // namespace grpc_core
