@@ -108,7 +108,7 @@ class RlsServiceImpl : public RlsService {
       if (it == responses_.end()) {
         gpr_log(GPR_INFO, "RLS: no matching request, returning INTERNAL");
         unmatched_requests_.push_back(*request);
-        return Status(StatusCode::INTERNAL, "no response entry");
+        return Status(INTERNAL, "no response entry");
       }
       res = it->second;
     }
