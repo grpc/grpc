@@ -12,4 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO(hork): proper header guards
 #include "third_party/libuv/src/heap-inl.h"

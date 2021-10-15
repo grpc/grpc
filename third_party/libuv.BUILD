@@ -92,6 +92,11 @@ COMMON_LIBUV_HEADERS = [
     "include/uv/threadpool.h",
     "include/uv/version.h",
     "include/uv/tree.h",
+    "src/heap-inl.h",
+    "src/idna.h",
+    "src/queue.h",
+    "src/strscpy.h",
+    "src/uv-common.h",
 ]
 
 UNIX_LIBUV_HEADERS = [
@@ -129,31 +134,24 @@ WINDOWS_LIBUV_HEADERS = [
 
 COMMON_LIBUV_SOURCES = [
     "src/fs-poll.c",
-    "src/heap-inl.h",
     "src/idna.c",
-    "src/idna.h",
     "src/inet.c",
-    "src/queue.h",
     "src/random.c",
     "src/strscpy.c",
-    "src/strscpy.h",
     "src/threadpool.c",
     "src/timer.c",
     "src/uv-data-getter-setters.c",
     "src/uv-common.c",
-    "src/uv-common.h",
     "src/version.c",
 ]
 
 UNIX_LIBUV_SOURCES = [
     "src/unix/async.c",
-    "src/unix/atomic-ops.h",
     "src/unix/core.c",
     "src/unix/dl.c",
     "src/unix/fs.c",
     "src/unix/getaddrinfo.c",
     "src/unix/getnameinfo.c",
-    "src/unix/internal.h",
     "src/unix/loop.c",
     "src/unix/loop-watcher.c",
     "src/unix/pipe.c",
@@ -161,7 +159,6 @@ UNIX_LIBUV_SOURCES = [
     "src/unix/process.c",
     "src/unix/random-devurandom.c",
     "src/unix/signal.c",
-    "src/unix/spinlock.h",
     "src/unix/stream.c",
     "src/unix/tcp.c",
     "src/unix/thread.c",
@@ -173,7 +170,6 @@ LINUX_LIBUV_SOURCES = [
     "src/unix/linux-core.c",
     "src/unix/linux-inotify.c",
     "src/unix/linux-syscalls.c",
-    "src/unix/linux-syscalls.h",
     "src/unix/procfs-exepath.c",
     "src/unix/proctitle.c",
     "src/unix/random-getrandom.c",  # freebsd, android, linux
@@ -199,7 +195,6 @@ DARWIN_LIBUV_SOURCES = [
 
 WINDOWS_LIBUV_SOURCES = [
     "src/win/async.c",
-    "src/win/atomicops-inl.h",
     "src/win/core.c",
     "src/win/detect-wakeup.c",
     "src/win/dl.c",
@@ -209,26 +204,20 @@ WINDOWS_LIBUV_SOURCES = [
     "src/win/getaddrinfo.c",
     "src/win/getnameinfo.c",
     "src/win/handle.c",
-    "src/win/handle-inl.h",
-    "src/win/internal.h",
     "src/win/loop-watcher.c",
     "src/win/pipe.c",
     "src/win/poll.c",
     "src/win/process-stdio.c",
     "src/win/process.c",
-    "src/win/req-inl.h",
     "src/win/signal.c",
     "src/win/stream.c",
-    "src/win/stream-inl.h",
     "src/win/tcp.c",
     "src/win/thread.c",
     "src/win/tty.c",
     "src/win/udp.c",
     "src/win/util.c",
     "src/win/winapi.c",
-    "src/win/winapi.h",
     "src/win/winsock.c",
-    "src/win/winsock.h",
 ]
 
 GCC_COPTS = [
