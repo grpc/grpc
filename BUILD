@@ -2511,7 +2511,7 @@ grpc_cc_library(
         "upb_lib_descriptor",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
 )
 
 grpc_cc_library(
@@ -4415,7 +4415,7 @@ grpc_cc_library(
         "upb_lib_descriptor",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "envoy_annotations_upb",
         "envoy_core_upb",
@@ -4524,7 +4524,7 @@ grpc_cc_library(
         "upb_reflection",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "envoy_ads_upb",
         "envoy_annotations_upbdefs",
@@ -4552,7 +4552,7 @@ grpc_cc_library(
         "upb_lib_descriptor",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "google_api_upb",
     ],
@@ -4575,7 +4575,7 @@ grpc_cc_library(
         "upb_textformat_lib",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "envoy_annotations_upb",
         "google_api_upbdefs",
@@ -4619,7 +4619,7 @@ grpc_cc_library(
         "upb_lib_descriptor",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "envoy_annotations_upb",
         "envoy_type_upb",
@@ -4670,7 +4670,7 @@ grpc_cc_library(
         "upb_reflection",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "envoy_annotations_upbdefs",
         "envoy_core_upb",
@@ -4720,7 +4720,7 @@ grpc_cc_library(
         "upb_lib_descriptor",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "envoy_annotations_upb",
         "google_api_upb",
@@ -4770,7 +4770,7 @@ grpc_cc_library(
         "upb_textformat_lib",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "envoy_type_upb",
         "google_api_upbdefs",
@@ -4791,7 +4791,7 @@ grpc_cc_library(
         "upb_lib_descriptor",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "google_api_upb",
     ],
@@ -4812,7 +4812,7 @@ grpc_cc_library(
         "upb_reflection",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "google_api_upbdefs",
         "proto_gen_validate_upb",
@@ -4838,7 +4838,7 @@ grpc_cc_library(
         "upb_lib_descriptor",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "proto_gen_validate_upb",
     ],
@@ -4865,7 +4865,7 @@ grpc_cc_library(
         "upb_lib_descriptor",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "google_api_upb",
         "proto_gen_validate_upb",
@@ -4895,7 +4895,7 @@ grpc_cc_library(
         "upb_reflection",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "google_api_upbdefs",
         "udpa_annotations_upb",
@@ -4915,7 +4915,7 @@ grpc_cc_library(
         "upb_lib_descriptor",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
 )
 
 grpc_cc_library(
@@ -4933,7 +4933,7 @@ grpc_cc_library(
         "upb_reflection",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "xds_annotations_upb",
     ],
@@ -4962,7 +4962,7 @@ grpc_cc_library(
         "upb_lib_descriptor",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "google_api_upb",
         "proto_gen_validate_upb",
@@ -4996,7 +4996,7 @@ grpc_cc_library(
         "upb_reflection",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "google_api_upbdefs",
         "proto_gen_validate_upbdefs",
@@ -5019,7 +5019,7 @@ grpc_cc_library(
         "upb_lib_descriptor",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "google_api_upb",
         "proto_gen_validate_upb",
@@ -5041,7 +5041,7 @@ grpc_cc_library(
         "upb_reflection",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "google_api_upbdefs",
         "proto_gen_validate_upbdefs",
@@ -5068,7 +5068,7 @@ grpc_cc_library(
         "upb_lib_descriptor",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
 )
 
 # Once upb code-gen issue is resolved, remove this.
@@ -5105,7 +5105,7 @@ grpc_cc_library(
         "upb_lib_descriptor",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
 )
 
 grpc_cc_library(
@@ -5139,7 +5139,7 @@ grpc_cc_library(
         "upb_reflection",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "google_api_upb",
     ],
@@ -5164,7 +5164,7 @@ grpc_cc_library(
         "upb_lib_descriptor",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "google_api_upb",
     ],
@@ -5187,7 +5187,7 @@ grpc_cc_library(
     external_deps = [
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
     deps = [
         "google_api_upb",
     ],
@@ -5216,7 +5216,7 @@ grpc_cc_library(
         "upb_lib_descriptor",
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
-    language = "c++",
+    language = "c",
 )
 
 grpc_cc_library(
