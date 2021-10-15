@@ -291,6 +291,10 @@ class NativeDnsResolverFactory : public ResolverFactory {
       gpr_log(GPR_ERROR, "authority based dns uri's not supported");
       return false;
     }
+    if (absl::StripPrefix(uri.path(), "/").empty()) {
+      gpr_log(GPR_ERROR, "no server name supplied in dns URI");
+      return false;
+    }
     return true;
   }
 

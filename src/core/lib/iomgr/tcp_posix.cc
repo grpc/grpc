@@ -1712,7 +1712,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
   tcp->memory_owner = grpc_core::ResourceQuotaFromChannelArgs(channel_args)
                           ->memory_quota()
-                          ->CreateMemoryOwner();
+                          ->CreateMemoryOwner(peer_string);
   tcp->self_reservation =
       tcp->memory_owner.allocator()->MakeReservation(sizeof(grpc_tcp));
   grpc_resolved_address resolved_local_addr;

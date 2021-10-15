@@ -24,7 +24,6 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/transport/transport.h"
 
 extern grpc_core::TraceFlag grpc_http_trace;

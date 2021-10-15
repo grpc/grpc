@@ -73,10 +73,10 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context* context);
 
 /* Asynchronously perform a HTTP GET.
    'context' specifies the http context under which to do the get
-   'pollset' indicates a grpc_pollset that is interested in the result
-     of the get - work on this pollset may be used to progress the get
+   'pollent' indicates a grpc_polling_entity that is interested in the result
+     of the get - work on this entity may be used to progress the get
      operation
-   'memory_owner' allows the caller to specify the quota against which to
+   'resource_quota' allows the caller to specify the quota against which to
    allocate
    'request' contains request parameters - these are caller owned and
    can be destroyed once the call returns 'deadline' contains a deadline for the
@@ -84,16 +84,16 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context* context);
    'on_response' is a callback to report results to */
 void grpc_httpcli_get(grpc_httpcli_context* context,
                       grpc_polling_entity* pollent,
-                      grpc_core::ResourceQuotaPtr memory_quota,
+                      grpc_core::ResourceQuotaPtr resource_quota,
                       const grpc_httpcli_request* request, grpc_millis deadline,
                       grpc_closure* on_done, grpc_httpcli_response* response);
 
 /* Asynchronously perform a HTTP POST.
    'context' specifies the http context under which to do the post
-   'pollset' indicates a grpc_pollset that is interested in the result
-     of the post - work on this pollset may be used to progress the post
+   'pollent' indicates a grpc_polling_entity that is interested in the result
+     of the post - work on this entity may be used to progress the post
      operation
-   'memory_owner' allows the caller to specify the quota against which to
+   'resource_quota' allows the caller to specify the quota against which to
    allocate
    'request' contains request parameters - these are caller owned and can be
      destroyed once the call returns
@@ -106,7 +106,7 @@ void grpc_httpcli_get(grpc_httpcli_context* context,
    Does not support ?var1=val1&var2=val2 in the path. */
 void grpc_httpcli_post(grpc_httpcli_context* context,
                        grpc_polling_entity* pollent,
-                       grpc_core::ResourceQuotaPtr memory_quota,
+                       grpc_core::ResourceQuotaPtr resource_quota,
                        const grpc_httpcli_request* request,
                        const char* body_bytes, size_t body_size,
                        grpc_millis deadline, grpc_closure* on_done,

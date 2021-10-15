@@ -16,6 +16,8 @@
 
 #include "src/core/lib/resource_quota/api.h"
 
+#include <grpc/grpc.h>
+
 #include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
@@ -45,8 +47,7 @@ grpc_channel_args* EnsureResourceQuotaInChannelArgs(
   // If there's no existing quota, add it to the default one - shared between
   // all channel args declared thusly. This prevents us from accidentally not
   // sharing subchannels due to their channel args not specifying a quota.
-  static auto default_resource_quota = MakeResourceQuota();
-  auto new_arg = MakeArg(default_resource_quota->Ref().release());
+  auto new_arg = MakeArg(DefaultResourceQuota().release());
   return grpc_channel_args_copy_and_add(args, &new_arg, 1);
 }
 
@@ -71,26 +72,29 @@ extern "C" const grpc_arg_pointer_vtable* grpc_resource_quota_arg_vtable() {
   return &vtable;
 }
 
-extern "C" grpc_resource_quota* grpc_resource_quota_create(const char*) {
-  return reinterpret_cast<grpc_resource_quota*>(new grpc_core::ResourceQuota());
+extern "C" grpc_resource_quota* grpc_resource_quota_create(const char* name) {
+  return reinterpret_cast<grpc_resource_quota*>(
+      new grpc_core::ResourceQuota(name));
 }
 
-extern "C" void grpc_resource_quota_ref(grpc_resource_quota* rq) {
-  reinterpret_cast<grpc_core::ResourceQuota*>(rq)->Ref().release();
+extern "C" void grpc_resource_quota_ref(grpc_resource_quota* resource_quota) {
+  reinterpret_cast<grpc_core::ResourceQuota*>(resource_quota)->Ref().release();
 }
 
-extern "C" void grpc_resource_quota_unref(grpc_resource_quota* rq) {
-  reinterpret_cast<grpc_core::ResourceQuota*>(rq)->Unref();
+extern "C" void grpc_resource_quota_unref(grpc_resource_quota* resource_quota) {
+  reinterpret_cast<grpc_core::ResourceQuota*>(resource_quota)->Unref();
 }
 
-extern "C" void grpc_resource_quota_resize(grpc_resource_quota* rq,
+extern "C" void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
                                            size_t new_size) {
-  reinterpret_cast<grpc_core::ResourceQuota*>(rq)->memory_quota()->SetSize(
-      new_size);
+  reinterpret_cast<grpc_core::ResourceQuota*>(resource_quota)
+      ->memory_quota()
+      ->SetSize(new_size);
 }
 
-extern "C" void grpc_resource_quota_set_max_threads(grpc_resource_quota* rq,
-                                                    int new_max_threads) {
-  reinterpret_cast<grpc_core::ResourceQuota*>(rq)->thread_quota()->SetMax(
-      new_max_threads);
+extern "C" void grpc_resource_quota_set_max_threads(
+    grpc_resource_quota* resource_quota, int new_max_threads) {
+  reinterpret_cast<grpc_core::ResourceQuota*>(resource_quota)
+      ->thread_quota()
+      ->SetMax(new_max_threads);
 }

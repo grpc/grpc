@@ -19,8 +19,10 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/resource_quota/trace.h"
 
 namespace grpc_core {
 
@@ -104,8 +106,8 @@ Poll<ReclamationFunction> ReclaimerQueue::PollNext() {
 //
 
 GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
-    std::shared_ptr<BasicMemoryQuota> memory_quota)
-    : memory_quota_(memory_quota) {
+    std::shared_ptr<BasicMemoryQuota> memory_quota, std::string name)
+    : memory_quota_(memory_quota), name_(std::move(name)) {
   memory_quota_->Take(taken_bytes_);
 }
 
@@ -327,10 +329,22 @@ void BasicMemoryQuota::Start() {
         // Race biases to the first thing that completes... so this will
         // choose the highest priority/least destructive thing to do that's
         // available.
-        return Race(self->reclaimers_[0].Next(), self->reclaimers_[1].Next(),
-                    self->reclaimers_[2].Next(), self->reclaimers_[3].Next());
+        auto annotate = [](const char* name) {
+          return [name](ReclamationFunction f) {
+            return std::make_tuple(name, std::move(f));
+          };
+        };
+        return Race(Map(self->reclaimers_[0].Next(), annotate("compact")),
+                    Map(self->reclaimers_[1].Next(), annotate("benign")),
+                    Map(self->reclaimers_[2].Next(), annotate("idle")),
+                    Map(self->reclaimers_[3].Next(), annotate("destructive")));
       },
-      [self](ReclamationFunction reclaimer) {
+      [self](std::tuple<const char*, ReclamationFunction> arg) {
+        auto reclaimer = std::move(std::get<1>(arg));
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+          gpr_log(GPR_DEBUG, "RQ: %s perform %s reclamation",
+                  self->name_.c_str(), std::get<0>(arg));
+        }
         // One of the reclaimer queues gave us a way to get back memory.
         // Call the reclaimer with a token that contains enough to wake us
         // up again.
@@ -386,6 +400,9 @@ void BasicMemoryQuota::FinishReclamation(uint64_t token) {
   if (reclamation_counter_.compare_exchange_strong(current, current + 1,
                                                    std::memory_order_relaxed,
                                                    std::memory_order_relaxed)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+      gpr_log(GPR_DEBUG, "RQ: %s reclamation complete", name_.c_str());
+    }
     if (reclaimer_activity_ != nullptr) reclaimer_activity_->ForceWakeup();
   }
 }
@@ -403,6 +420,22 @@ size_t BasicMemoryQuota::InstantaneousPressure() const {
   if (pressure < 0.0) pressure = 0.0;
   if (pressure > 1.0) pressure = 1.0;
   return pressure;
+}
+
+//
+// MemoryQuota
+//
+
+MemoryAllocator MemoryQuota::CreateMemoryAllocator(absl::string_view name) {
+  auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(
+      memory_quota_, absl::StrCat(memory_quota_->name(), "/allocator/", name));
+  return MemoryAllocator(std::move(impl));
+}
+
+MemoryOwner MemoryQuota::CreateMemoryOwner(absl::string_view name) {
+  auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(
+      memory_quota_, absl::StrCat(memory_quota_->name(), "/owner/", name));
+  return MemoryOwner(std::move(impl));
 }
 
 }  // namespace grpc_core

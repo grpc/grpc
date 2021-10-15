@@ -85,7 +85,8 @@ void grpc_free_port_using_server(int port) {
     req.http.path = path;
 
     grpc_httpcli_context_init(&context);
-    grpc_httpcli_get(&context, &pr.pops, grpc_core::MakeResourceQuota(), &req,
+    grpc_httpcli_get(&context, &pr.pops, grpc_core::DefaultResourceQuota(),
+                     &req,
                      grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
                      GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
                                          grpc_schedule_on_exec_ctx),
@@ -165,7 +166,8 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     req.http.path = const_cast<char*>("/get");
     grpc_http_response_destroy(&pr->response);
     pr->response = {};
-    grpc_httpcli_get(pr->ctx, &pr->pops, grpc_core::MakeResourceQuota(), &req,
+    grpc_httpcli_get(pr->ctx, &pr->pops, grpc_core::DefaultResourceQuota(),
+                     &req,
                      grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
                      GRPC_CLOSURE_CREATE(got_port_from_server, pr,
                                          grpc_schedule_on_exec_ctx),
@@ -212,7 +214,8 @@ int grpc_pick_port_using_server(void) {
     req.http.path = const_cast<char*>("/get");
 
     grpc_httpcli_context_init(&context);
-    grpc_httpcli_get(&context, &pr.pops, grpc_core::MakeResourceQuota(), &req,
+    grpc_httpcli_get(&context, &pr.pops, grpc_core::DefaultResourceQuota(),
+                     &req,
                      grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
                      GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
                                          grpc_schedule_on_exec_ctx),

@@ -30,7 +30,7 @@ namespace grpc_core {
 
 class Chttp2Connector : public SubchannelConnector {
  public:
-  explicit Chttp2Connector();
+  Chttp2Connector();
   ~Chttp2Connector() override;
 
   void Connect(const Args& args, Result* result, grpc_closure* notify) override;

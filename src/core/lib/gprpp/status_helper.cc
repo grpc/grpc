@@ -403,6 +403,25 @@ absl::Status StatusGetFromPtr(uintptr_t ptr) {
   return *reinterpret_cast<absl::Status*>(&ptr);
 }
 
+uintptr_t StatusAllocHeapPtr(absl::Status s) {
+  if (s.ok()) return kOkStatusPtr;
+  absl::Status* ptr = new absl::Status(s);
+  return reinterpret_cast<uintptr_t>(ptr);
+}
+
+void StatusFreeHeapPtr(uintptr_t ptr) {
+  absl::Status* s = reinterpret_cast<absl::Status*>(ptr);
+  delete s;
+}
+
+absl::Status StatusGetFromHeapPtr(uintptr_t ptr) {
+  if (ptr == kOkStatusPtr) {
+    return absl::OkStatus();
+  } else {
+    return *reinterpret_cast<absl::Status*>(ptr);
+  }
+}
+
 }  // namespace internal
 
 }  // namespace grpc_core

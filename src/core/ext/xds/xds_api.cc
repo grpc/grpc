@@ -82,10 +82,10 @@
 #include "google/protobuf/timestamp.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "google/rpc/status.upb.h"
-#include "udpa/type/v1/typed_struct.upb.h"
 #include "upb/text_encode.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
+#include "xds/type/v3/typed_struct.upb.h"
 
 #include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
@@ -1437,16 +1437,17 @@ grpc_error_handle ExtractHttpFilterTypeName(const EncodingContext& context,
                                             const google_protobuf_Any* any,
                                             absl::string_view* filter_type) {
   *filter_type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
-  if (*filter_type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
+  if (*filter_type == "type.googleapis.com/xds.type.v3.TypedStruct" ||
+      *filter_type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
     upb_strview any_value = google_protobuf_Any_value(any);
-    const auto* typed_struct = udpa_type_v1_TypedStruct_parse(
+    const auto* typed_struct = xds_type_v3_TypedStruct_parse(
         any_value.data, any_value.size, context.arena);
     if (typed_struct == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "could not parse TypedStruct from filter config");
     }
     *filter_type =
-        UpbStringToAbsl(udpa_type_v1_TypedStruct_type_url(typed_struct));
+        UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(typed_struct));
   }
   *filter_type = absl::StripPrefix(*filter_type, "type.googleapis.com/");
   return GRPC_ERROR_NONE;
