@@ -204,8 +204,10 @@ class InternalRequest {
     addr = &addresses_->addrs[next_address_++];
     GRPC_CLOSURE_INIT(&connected_, OnConnected, this,
                       grpc_schedule_on_exec_ctx);
-    grpc_tcp_client_connect(&connected_, &ep_, context_->pollset_set, nullptr,
+    grpc_channel_args* args = ChannelArgsWrappingResourceQuota(resource_quota_);
+    grpc_tcp_client_connect(&connected_, &ep_, context_->pollset_set, args,
                             addr, deadline_);
+    grpc_channel_args_destroy(args);
   }
 
   static void OnResolved(void* arg, grpc_error_handle error) {
