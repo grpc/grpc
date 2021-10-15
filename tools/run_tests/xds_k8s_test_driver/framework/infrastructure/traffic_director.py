@@ -597,7 +597,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
         host = f'{src_host}:{src_port}'
         # TODO: Figure out how to get this properly.
         project_number = "921384807982"
-        bs_ref = f"projects/{project_number}/locations/global/backendService/{self.backend_service.name}"
+        bs_ref = f"projects/{project_number}/locations/global/backendServices/{self.backend_service.name}"
         body = {
             "routers": [self.router.url],
             "hostnames":
