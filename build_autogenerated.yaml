@@ -600,7 +600,6 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
-  - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.h
   - src/core/ext/upb-generated/udpa/annotations/security.upb.h
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h
@@ -1003,7 +1002,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
-  - src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
@@ -1164,7 +1162,6 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
-  - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   - src/core/ext/upb-generated/udpa/annotations/security.upb.c
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
@@ -1554,7 +1551,6 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
   - absl/functional:bind_front
-  - absl/hash:hash
   - absl/status:statusor
   - absl/types:variant
   - absl/utility:utility
@@ -7312,35 +7308,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: rls_end2end_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/util/test_lb_policies.h
-  - test/cpp/end2end/counted_service.h
-  - test/cpp/end2end/test_service_impl.h
-  src:
-  - src/proto/grpc/lookup/v1/rls.proto
-  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
-  - src/proto/grpc/testing/echo.proto
-  - src/proto/grpc/testing/echo_messages.proto
-  - src/proto/grpc/testing/simple_messages.proto
-  - test/core/util/test_lb_policies.cc
-  - test/cpp/end2end/rls_end2end_test.cc
-  - test/cpp/end2end/test_service_impl.cc
-  deps:
-  - grpc++_test_config
-  - grpc++_test_util
-- name: rls_lb_config_parser_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/client_channel/rls_lb_config_parser_test.cc
-  deps:
-  - grpc_test_util
 - name: sdk_authz_end2end_test
   gtest: true
   build: test
@@ -7450,6 +7417,18 @@ targets:
   - test/core/surface/server_chttp2_test.cc
   deps:
   - grpc_test_util
+- name: server_config_selector_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/filters/server_config_selector/server_config_selector.h
+  src:
+  - src/core/ext/filters/server_config_selector/server_config_selector.cc
+  - test/core/server_config_selector/server_config_selector_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: server_context_test_spouse_test
   gtest: true
   build: test

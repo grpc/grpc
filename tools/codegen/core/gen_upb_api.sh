@@ -133,7 +133,6 @@ proto_files=( \
   "src/proto/grpc/gcp/transport_security_common.proto" \
   "src/proto/grpc/health/v1/health.proto" \
   "src/proto/grpc/lb/v1/load_balancer.proto" \
-  "src/proto/grpc/lookup/v1/rls.proto" \
   "third_party/istio/security/proto/providers/google/meshca.proto" \
   "udpa/annotations/migrate.proto" \
   "udpa/annotations/security.proto" \

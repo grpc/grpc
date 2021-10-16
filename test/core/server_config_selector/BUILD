@@ -1,4 +1,4 @@
-# Copyright 2020 gRPC authors.
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,17 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+
 licenses(["notice"])
 
-load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+grpc_package(name = "test/core/server_config_selector")
 
-grpc_package(
-    name = "src/proto/grpc/lookup/v1",
-    visibility = "public",
-)
-
-grpc_proto_library(
-    name = "rls_proto",
-    srcs = ["rls.proto"],
-    well_known_protos = True,
+grpc_cc_test(
+    name = "server_config_selector_test",
+    srcs = ["server_config_selector_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_server_config_selector",
+        "//test/core/util:grpc_test_util",
+    ],
 )

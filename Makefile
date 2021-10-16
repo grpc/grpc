@@ -1071,7 +1071,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
     src/core/ext/filters/client_channel/lb_policy/priority/priority.cc \
     src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc \
-    src/core/ext/filters/client_channel/lb_policy/rls/rls.cc \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
     src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
@@ -1232,7 +1231,6 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c \
     src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
     src/core/ext/upb-generated/udpa/annotations/security.upb.c \
     src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
@@ -2716,7 +2714,6 @@ ifneq ($(OPENSSL_DEP),)
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/rls/rls.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/cds.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc: $(OPENSSL_DEP)
@@ -2800,7 +2797,6 @@ src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c: $(OPENSSL_DEP)
-src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/migrate.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/security.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c: $(OPENSSL_DEP)
