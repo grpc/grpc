@@ -569,7 +569,7 @@ XdsClient::ChannelState::~ChannelState() {
   xds_client_.reset(DEBUG_LOCATION, "ChannelState");
 }
 
-void XdsClient::ChannelState::Orphan() {
+void XdsClient::ChannelState::Orphan() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   shutting_down_ = true;
   CancelConnectivityWatchLocked();
   // At this time, all strong refs are removed, remove from channel map to
@@ -2079,7 +2079,7 @@ void XdsClient::Orphan() {
 }
 
 RefCountedPtr<XdsClient::ChannelState> XdsClient::GetOrCreateChannelState(
-    const XdsBootstrap::XdsServer& server) {
+    const XdsBootstrap::XdsServer& server) ABSL_NO_THREAD_SAFETY_ANALYSIS {
   auto it = xds_server_channel_map_.find(server);
   if (it != xds_server_channel_map_.end()) {
     return it->second->Ref(DEBUG_LOCATION, "Authority");
