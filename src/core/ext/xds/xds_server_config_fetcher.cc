@@ -42,13 +42,14 @@ namespace {
 
 class XdsServerChannelStackModifier : public ChannelStackModifier {
  public:
-  XdsServerChannelStackModifier(std::vector<const grpc_channel_filter*> filters)
+  explicit XdsServerChannelStackModifier(
+      std::vector<const grpc_channel_filter*> filters)
       : filters_(std::move(filters)) {}
   bool ModifyChannelStack(grpc_channel_stack_builder* builder) override {
     // Destroys grpc_channel_stack_builder_iterator when it goes out of scope
     class IteratorDestroyer {
      public:
-      IteratorDestroyer(
+      explicit IteratorDestroyer(
           grpc_channel_stack_builder_iterator* iterator_to_destroy)
           : iterator_to_destroy_(iterator_to_destroy) {}
       ~IteratorDestroyer() {
