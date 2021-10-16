@@ -379,23 +379,23 @@ class Server : public InternallyRefCounted<Server> {
       MutexLock lock(&mu_global_);
       MaybeFinishShutdown();
       // The last request in-flight during shutdown is now complete.
-      if (shutdown_ready_ != nullptr) {
-        GPR_ASSERT(!shutdown_ready_->HasBeenNotified());
-        shutdown_ready_->Notify();
+      if (requests_complete_ != nullptr) {
+        GPR_ASSERT(!requests_complete_->HasBeenNotified());
+        requests_complete_->Notify();
       }
     }
   }
   // Returns a notification pointer to wait on if there are requests in-flight,
   // or null.
   absl::Notification* ShutdownUnrefOnShutdownCall()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_) {
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_) GRPC_MUST_USE_RESULT {
     if (shutdown_refs_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
       // There is no request in-flight.
       MaybeFinishShutdown();
       return nullptr;
     }
-    shutdown_ready_ = absl::make_unique<absl::Notification>();
-    return shutdown_ready_.get();
+    requests_complete_ = absl::make_unique<absl::Notification>();
+    return requests_complete_.get();
   }
 
   bool ShutdownCalled() const {
@@ -446,7 +446,8 @@ class Server : public InternallyRefCounted<Server> {
   std::atomic<int> shutdown_refs_{1};
   bool shutdown_published_ ABSL_GUARDED_BY(mu_global_) = false;
   std::vector<ShutdownTag> shutdown_tags_ ABSL_GUARDED_BY(mu_global_);
-  std::unique_ptr<absl::Notification> shutdown_ready_;
+  std::unique_ptr<absl::Notification> requests_complete_
+      ABSL_GUARDED_BY(mu_global_);
 
   std::list<ChannelData*> channels_;
 
