@@ -294,8 +294,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map;
 
     bool HasSubscribedResources() {
-      return (!listener_map.empty() || !route_config_map.empty() ||
-              !cluster_map.empty() || !endpoint_map.empty());
+      return !listener_map.empty() || !route_config_map.empty() ||
+             !cluster_map.empty() || !endpoint_map.empty();
     }
   };
 

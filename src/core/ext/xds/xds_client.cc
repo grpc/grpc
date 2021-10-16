@@ -92,8 +92,11 @@ struct ResourceNameFields {
   std::string id;
 };
 
+// A helper method to parse the resource name and return back an <authority,
+// id> pair.  Optionally the parser can check the resource type portion of the
+// resource name.
 absl::StatusOr<ResourceNameFields> ParseResourceName(
-    absl::string_view name, absl::string_view resource_type = "") {
+    absl::string_view name, absl::string_view expected_resource_type = "") {
   // Old-style names use the empty string for authority.
   // ID is prefixed with "old:" to indicate that it's an old-style name.
   if (!absl::StartsWith(name, "xdstp:")) {
@@ -105,7 +108,8 @@ absl::StatusOr<ResourceNameFields> ParseResourceName(
   // Split the resource type off of the path to get the id.
   std::pair<absl::string_view, absl::string_view> path_parts =
       absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
-  if (resource_type != "" && path_parts.first != resource_type) {
+  if (expected_resource_type != "" &&
+      path_parts.first != expected_resource_type) {
     return absl::InvalidArgumentError(
         "xdstp URI path must indicate valid xDS resource type");
   }
@@ -2071,9 +2075,8 @@ void XdsClient::Orphan() {
         a.second.cluster_map.clear();
         a.second.endpoint_map.clear();
       }
-      // if (a.second.channel_state != nullptr) {
-      //  a.second.channel_state.reset();
-      //}
+      // debug this
+      // a.second.channel_state.reset();
     }
   }
 }
@@ -2121,8 +2124,8 @@ void XdsClient::WatchListenerData(
     authority_state.channel_state =
         GetOrCreateChannelState(bootstrap_->server());
   }
-  xds_server_channel_map_[bootstrap_->server()]->SubscribeLocked(
-      XdsApi::kLdsTypeUrl, std::move(listener_name_str));
+  authority_state.channel_state->SubscribeLocked(XdsApi::kLdsTypeUrl,
+                                                 std::move(listener_name_str));
 }
 
 void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
@@ -2176,7 +2179,7 @@ void XdsClient::WatchRouteConfigData(
     authority_state.channel_state =
         GetOrCreateChannelState(bootstrap_->server());
   }
-  xds_server_channel_map_[bootstrap_->server()]->SubscribeLocked(
+  authority_state.channel_state->SubscribeLocked(
       XdsApi::kRdsTypeUrl, std::move(route_config_name_str));
 }
 
@@ -2230,8 +2233,8 @@ void XdsClient::WatchClusterData(
     authority_state.channel_state =
         GetOrCreateChannelState(bootstrap_->server());
   }
-  xds_server_channel_map_[bootstrap_->server()]->SubscribeLocked(
-      XdsApi::kCdsTypeUrl, std::move(cluster_name_str));
+  authority_state.channel_state->SubscribeLocked(XdsApi::kCdsTypeUrl,
+                                                 std::move(cluster_name_str));
 }
 
 void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
@@ -2282,7 +2285,7 @@ void XdsClient::WatchEndpointData(
     authority_state.channel_state =
         GetOrCreateChannelState(bootstrap_->server());
   }
-  xds_server_channel_map_[bootstrap_->server()]->SubscribeLocked(
+  authority_state.channel_state->SubscribeLocked(
       XdsApi::kEdsTypeUrl, std::move(eds_service_name_str));
 }
 
