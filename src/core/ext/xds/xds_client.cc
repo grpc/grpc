@@ -2125,13 +2125,6 @@ void XdsClient::WatchListenerData(
       XdsApi::kLdsTypeUrl, std::move(listener_name_str));
 }
 
-bool XdsClient::HasSubscribedResources(const AuthorityState& authority_state) {
-  return (!authority_state.listener_map.empty() ||
-          !authority_state.route_config_map.empty() ||
-          !authority_state.cluster_map.empty() ||
-          !authority_state.endpoint_map.empty());
-}
-
 void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
                                         ListenerWatcherInterface* watcher,
                                         bool delay_unsubscription) {
@@ -2149,7 +2142,7 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
       xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
           XdsApi::kLdsTypeUrl, std::string(listener_name),
           delay_unsubscription);
-      if (!HasSubscribedResources(authority_state)) {
+      if (!authority_state.HasSubscribedResources()) {
         authority_state.channel_state.reset();
       }
     }
@@ -2205,7 +2198,7 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
       xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
           XdsApi::kRdsTypeUrl, std::string(route_config_name),
           delay_unsubscription);
-      if (!HasSubscribedResources(authority_state)) {
+      if (!authority_state.HasSubscribedResources()) {
         authority_state.channel_state.reset();
       }
     }
@@ -2257,7 +2250,7 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
       authority_state.cluster_map.erase(resource->id);
       xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
           XdsApi::kCdsTypeUrl, std::string(cluster_name), delay_unsubscription);
-      if (!HasSubscribedResources(authority_state)) {
+      if (!authority_state.HasSubscribedResources()) {
         authority_state.channel_state.reset();
       }
     }
@@ -2310,7 +2303,7 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
       xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
           XdsApi::kEdsTypeUrl, std::string(eds_service_name),
           delay_unsubscription);
-      if (!HasSubscribedResources(authority_state)) {
+      if (!authority_state.HasSubscribedResources()) {
         authority_state.channel_state.reset();
       }
     }
