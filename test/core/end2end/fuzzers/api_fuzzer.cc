@@ -284,6 +284,10 @@ class Call : public std::enable_shared_from_this<Call> {
     return false;
   }
 
+  void Shutdown() {
+    if (call_ != nullptr) grpc_call_cancel(call_, nullptr);
+  }
+
   void SetCall(grpc_call* call) {
     GPR_ASSERT(call_ == nullptr);
     call_ = call;
@@ -341,34 +345,15 @@ class Call : public std::enable_shared_from_this<Call> {
                                static_cast<size_t>(metadata.size()), m};
   }
 
-  grpc_op ReadOp(const api_fuzzer::BatchOp& batch_op, bool* batch_is_ok,
-                 uint8_t* batch_ops,
-                 std::vector<std::function<void()>>* unwinders) {
+  absl::optional<grpc_op> ReadOp(
+      const api_fuzzer::BatchOp& batch_op, bool* batch_is_ok,
+      uint8_t* batch_ops, std::vector<std::function<void()>>* unwinders) {
     grpc_op op;
     memset(&op, 0, sizeof(op));
     switch (batch_op.op_case()) {
-      case api_fuzzer::BatchOp::kIllegalOp:
-        switch (batch_op.illegal_op()) {
-          case GRPC_OP_SEND_INITIAL_METADATA:
-          case GRPC_OP_SEND_MESSAGE:
-          case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-          case GRPC_OP_SEND_STATUS_FROM_SERVER:
-          case GRPC_OP_RECV_INITIAL_METADATA:
-          case GRPC_OP_RECV_MESSAGE:
-          case GRPC_OP_RECV_CLOSE_ON_SERVER:
-          case GRPC_OP_RECV_STATUS_ON_CLIENT:
-            *batch_is_ok = false;
-            break;
-          default:
-            op.op = static_cast<grpc_op_type>(batch_op.illegal_op());
-            break;
-        }
-        break;
       case api_fuzzer::BatchOp::OP_NOT_SET:
         /* invalid value */
-        op.op = static_cast<grpc_op_type>(-1);
-        *batch_is_ok = false;
-        break;
+        return {};
       case api_fuzzer::BatchOp::kSendInitialMetadata:
         if (sent_initial_metadata_) {
           *batch_is_ok = false;
@@ -489,7 +474,7 @@ class Call : public std::enable_shared_from_this<Call> {
  private:
   CallType type_;
   grpc_call* call_ = nullptr;
-  grpc_byte_buffer* recv_message_;
+  grpc_byte_buffer* recv_message_ = nullptr;
   grpc_status_code status_;
   grpc_metadata_array recv_initial_metadata_{0, 0, nullptr};
   grpc_metadata_array recv_trailing_metadata_{0, 0, nullptr};
@@ -721,7 +706,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   int action_index = 0;
   auto no_more_actions = [&]() { action_index = msg.actions_size(); };
 
-  auto poll_cq = [&]() {
+  auto poll_cq = [&]() -> bool {
     grpc_event ev = grpc_completion_queue_next(
         cq, gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
     switch (ev.type) {
@@ -732,9 +717,9 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       case GRPC_QUEUE_TIMEOUT:
         break;
       case GRPC_QUEUE_SHUTDOWN:
-        abort();
-        break;
+        return true;
     }
+    return false;
   };
 
   while (action_index < msg.actions_size() || g_channel != nullptr ||
@@ -760,12 +745,13 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       for (auto& call : g_calls) {
         if (call == nullptr) continue;
         if (call->type() == CallType::PENDING_SERVER) continue;
+        call->Shutdown();
         call.reset();
       }
 
       g_now = gpr_time_add(g_now, gpr_time_from_seconds(1, GPR_TIMESPAN));
       grpc_timer_manager_tick();
-      poll_cq();
+      GPR_ASSERT(!poll_cq());
       continue;
     }
 
@@ -779,7 +765,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
         break;
       // tickle completion queue
       case api_fuzzer::Action::kPollCq: {
-        poll_cq();
+        GPR_ASSERT(!poll_cq());
         break;
       }
       // increment global time
@@ -962,8 +948,9 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
         uint8_t has_ops = 0;
         std::vector<std::function<void()>> unwinders;
         for (const auto& batch_op : batch) {
-          ops.push_back(
-              active_call->ReadOp(batch_op, &ok, &has_ops, &unwinders));
+          auto op = active_call->ReadOp(batch_op, &ok, &has_ops, &unwinders);
+          if (!op.has_value()) continue;
+          ops.push_back(*op);
         }
         if (g_channel == nullptr) ok = false;
         if (ok) {
@@ -1067,9 +1054,8 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   GPR_ASSERT(g_calls.empty());
 
   grpc_completion_queue_shutdown(cq);
-  GPR_ASSERT(
-      grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), nullptr)
-          .type == GRPC_QUEUE_SHUTDOWN);
+  while (!poll_cq()) {
+  }
   grpc_completion_queue_destroy(cq);
 
   grpc_resource_quota_unref(g_resource_quota);

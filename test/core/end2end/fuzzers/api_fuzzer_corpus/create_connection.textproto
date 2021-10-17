@@ -54,46 +54,32 @@ actions {
   advance_time: 100000
 }
 actions {
-  advance_time: 100000
+  poll_cq: {}
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {}
+    }
+    operations {
+      send_message {}
+    }
+    operations {
+      send_status_from_server {}
+    }
+    operations {
+      receive_message {}
+    }
+    operations {
+      receive_close_on_server {}
+    }
+  }
 }
 actions {
   advance_time: 100000
 }
 actions {
-  advance_time: 100000
-}
-actions {
-  advance_time: 100000
-}
-actions {
-  advance_time: 100000
-}
-actions {
-  advance_time: 100000
-}
-actions {
-  advance_time: 100000
-}
-actions {
-  advance_time: 100000
-}
-actions {
-  advance_time: 100000
-}
-actions {
-  advance_time: 100000
-}
-actions {
-  advance_time: 100000
-}
-actions {
-  advance_time: 100000
-}
-actions {
-  advance_time: 100000
-}
-actions {
-  advance_time: 100000
+  poll_cq: {}
 }
 actions {
   advance_time: 100000
