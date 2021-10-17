@@ -46,7 +46,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // logging
 
-bool squelch = true;
+bool squelch = false;
 bool leak_check = true;
 
 static void dont_log(gpr_log_func_args* /*args*/) {}
@@ -269,9 +269,9 @@ static void free_non_null(void* p) {
   gpr_free(p);
 }
 
-enum class CallType { CLIENT, SERVER, PENDING_SERVER };
+enum class CallType { CLIENT, SERVER, PENDING_SERVER, TOMBSTONED };
 
-class Call {
+class Call : public std::enable_shared_from_this<Call> {
  public:
   explicit Call(CallType type) : type_(type) {}
   ~Call();
@@ -280,7 +280,7 @@ class Call {
 
   bool done() const {
     if (call_ == nullptr && type() != CallType::PENDING_SERVER) return true;
-    if (pending_ops_ == 0) return true;
+    if (pending_ops_ != 0) return false;
     return false;
   }
 
@@ -449,35 +449,39 @@ class Call {
 
   Validator* FinishedBatchValidator(uint8_t has_ops) {
     ++pending_ops_;
-    return MakeValidator([this, has_ops](bool) {
-      --pending_ops_;
-      if ((has_ops & (1u << GRPC_OP_RECV_MESSAGE)) && call_closed_) {
-        GPR_ASSERT(recv_message_ == nullptr);
+    auto self = shared_from_this();
+    return MakeValidator([self, has_ops](bool) {
+      --self->pending_ops_;
+      if ((has_ops & (1u << GRPC_OP_RECV_MESSAGE)) && self->call_closed_) {
+        GPR_ASSERT(self->recv_message_ == nullptr);
       }
       if ((has_ops & (1u << GRPC_OP_RECV_MESSAGE) &&
-           recv_message_ != nullptr)) {
-        grpc_byte_buffer_destroy(recv_message_);
-        recv_message_ = nullptr;
+           self->recv_message_ != nullptr)) {
+        grpc_byte_buffer_destroy(self->recv_message_);
+        self->recv_message_ = nullptr;
       }
       if ((has_ops & (1u << GRPC_OP_SEND_MESSAGE))) {
-        grpc_byte_buffer_destroy(send_message_);
-        send_message_ = nullptr;
+        grpc_byte_buffer_destroy(self->send_message_);
+        self->send_message_ = nullptr;
       }
       if ((has_ops & (1u << GRPC_OP_RECV_STATUS_ON_CLIENT)) ||
           (has_ops & (1u << GRPC_OP_RECV_CLOSE_ON_SERVER))) {
-        call_closed_ = true;
+        self->call_closed_ = true;
       }
     });
   }
 
   Validator* FinishedRequestCall() {
     ++pending_ops_;
-    return MakeValidator([this](bool success) {
-      GPR_ASSERT(pending_ops_ > 0);
-      --pending_ops_;
+    auto self = shared_from_this();
+    return MakeValidator([self](bool success) {
+      GPR_ASSERT(self->pending_ops_ > 0);
+      --self->pending_ops_;
       if (success) {
-        GPR_ASSERT(call_ != nullptr);
-        type_ = CallType::SERVER;
+        GPR_ASSERT(self->call_ != nullptr);
+        self->type_ = CallType::SERVER;
+      } else {
+        self->type_ = CallType::TOMBSTONED;
       }
     });
   }
@@ -487,8 +491,8 @@ class Call {
   grpc_call* call_ = nullptr;
   grpc_byte_buffer* recv_message_;
   grpc_status_code status_;
-  grpc_metadata_array recv_initial_metadata_;
-  grpc_metadata_array recv_trailing_metadata_;
+  grpc_metadata_array recv_initial_metadata_{0, 0, nullptr};
+  grpc_metadata_array recv_trailing_metadata_{0, 0, nullptr};
   grpc_slice recv_status_details_ = grpc_empty_slice();
   // set by receive close on server, unset here to trigger
   // msan if misused
@@ -503,7 +507,7 @@ class Call {
   std::vector<grpc_slice> unref_slices_;
 };
 
-static std::vector<std::unique_ptr<Call>> g_calls;
+static std::vector<std::shared_ptr<Call>> g_calls;
 static size_t g_active_call = 0;
 
 static Call* ActiveCall() {
@@ -533,6 +537,9 @@ Call::~Call() {
   for (auto s : unref_slices_) {
     grpc_slice_unref(s);
   }
+
+  grpc_metadata_array_destroy(&recv_initial_metadata_);
+  grpc_metadata_array_destroy(&recv_trailing_metadata_);
 }
 
 template <typename ChannelArgContainer>
