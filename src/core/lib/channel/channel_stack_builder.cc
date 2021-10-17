@@ -26,7 +26,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
 
 typedef struct filter_node {
   struct filter_node* next;
@@ -43,7 +42,6 @@ struct grpc_channel_stack_builder {
   // various set/get-able parameters
   grpc_channel_args* args;
   grpc_transport* transport;
-  grpc_core::MemoryQuotaPtr memory_quota;
   char* target;
   const char* name;
 };

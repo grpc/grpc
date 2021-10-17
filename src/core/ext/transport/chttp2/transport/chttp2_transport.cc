@@ -128,8 +128,6 @@ static void connectivity_state_set(grpc_chttp2_transport* t,
                                    const absl::Status& status,
                                    const char* reason);
 
-static void benign_reclaimer(void* arg, grpc_error_handle error);
-static void destructive_reclaimer(void* arg, grpc_error_handle error);
 static void benign_reclaimer_locked(void* arg, grpc_error_handle error);
 static void destructive_reclaimer_locked(void* arg, grpc_error_handle error);
 
@@ -3186,13 +3184,6 @@ static void post_destructive_reclaimer(grpc_chttp2_transport* t) {
   }
 }
 
-static void benign_reclaimer(void* arg, grpc_error_handle error) {
-  grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
-  t->combiner->Run(GRPC_CLOSURE_INIT(&t->benign_reclaimer_locked,
-                                     benign_reclaimer_locked, t, nullptr),
-                   GRPC_ERROR_REF(error));
-}
-
 static void benign_reclaimer_locked(void* arg, grpc_error_handle error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
   if (error == GRPC_ERROR_NONE &&
@@ -3220,13 +3211,6 @@ static void benign_reclaimer_locked(void* arg, grpc_error_handle error) {
     t->active_reclamation.Finish();
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "benign_reclaimer");
-}
-
-static void destructive_reclaimer(void* arg, grpc_error_handle error) {
-  grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
-  t->combiner->Run(GRPC_CLOSURE_INIT(&t->destructive_reclaimer_locked,
-                                     destructive_reclaimer_locked, t, nullptr),
-                   GRPC_ERROR_REF(error));
 }
 
 static void destructive_reclaimer_locked(void* arg, grpc_error_handle error) {
