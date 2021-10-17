@@ -279,13 +279,16 @@ class Call : public std::enable_shared_from_this<Call> {
   CallType type() const { return type_; }
 
   bool done() const {
+    if ((type_ == CallType::TOMBSTONED || call_closed_) && pending_ops_ == 0) return true;
     if (call_ == nullptr && type() != CallType::PENDING_SERVER) return true;
-    if (pending_ops_ != 0) return false;
     return false;
   }
 
   void Shutdown() {
-    if (call_ != nullptr) grpc_call_cancel(call_, nullptr);
+    if (call_ != nullptr) {
+      grpc_call_cancel(call_, nullptr);
+      type_ = CallType::TOMBSTONED;
+    }
   }
 
   void SetCall(grpc_call* call) {
@@ -746,7 +749,6 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
         if (call == nullptr) continue;
         if (call->type() == CallType::PENDING_SERVER) continue;
         call->Shutdown();
-        call.reset();
       }
 
       g_now = gpr_time_add(g_now, gpr_time_from_seconds(1, GPR_TIMESPAN));
@@ -897,7 +899,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
         bool ok = true;
         if (g_channel == nullptr) ok = false;
         Call* parent_call = ActiveCall();
-        if (parent_call != nullptr && parent_call->type() == CallType::CLIENT) {
+        if (parent_call != nullptr && parent_call->type() != CallType::SERVER) {
           parent_call = nullptr;
         }
         g_calls.emplace_back(new Call(CallType::CLIENT));
@@ -1033,7 +1035,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
         if (active_call != nullptr &&
             active_call->type() != CallType::PENDING_SERVER &&
             active_call->call() != nullptr) {
-          g_calls[g_active_call].reset();
+          g_calls[g_active_call]->Shutdown();
         } else {
           no_more_actions();
         }
@@ -1054,8 +1056,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   GPR_ASSERT(g_calls.empty());
 
   grpc_completion_queue_shutdown(cq);
-  while (!poll_cq()) {
-  }
+  GPR_ASSERT(poll_cq());
   grpc_completion_queue_destroy(cq);
 
   grpc_resource_quota_unref(g_resource_quota);
