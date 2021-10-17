@@ -99,6 +99,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/slice/slice_utils.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 
@@ -113,6 +114,42 @@ bool XdsAggregateAndLogicalDnsClusterEnabled() {
   bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
   gpr_free(value);
   return parse_succeeded && parsed_value;
+}
+
+absl::StatusOr<ResourceNameFields> ParseResourceName(
+    absl::string_view name, absl::string_view expected_resource_type) {
+  // Old-style names use the empty string for authority.
+  // ID is prefixed with "old:" to indicate that it's an old-style name.
+  if (!absl::StartsWith(name, "xdstp:")) {
+    return ResourceNameFields{"", absl::StrCat("old:", name)};
+  }
+  // New style name.  Parse URI.
+  auto uri = URI::Parse(name);
+  if (!uri.ok()) return uri.status();
+  // Split the resource type off of the path to get the id.
+  std::pair<absl::string_view, absl::string_view> path_parts =
+      absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
+  if (expected_resource_type != "" &&
+      path_parts.first != expected_resource_type) {
+    return absl::InvalidArgumentError(
+        "xdstp URI path must indicate valid xDS resource type");
+  }
+  std::vector<std::string> query_parameters;
+  for (auto& it : uri->query_parameter_map()) {
+    query_parameters.push_back(absl::StrCat(it.first, "=", it.second));
+  }
+  std::sort(
+      query_parameters.begin(), query_parameters.end(),
+      [](const absl::string_view& lhs, const absl::string_view& rhs) -> bool {
+        return std::strncmp(std::string(lhs).c_str(), std::string(rhs).c_str(),
+                            ((lhs.length() < rhs.length()) ? lhs.length()
+                                                           : rhs.length())) < 0;
+      });
+  // ID is prefixed with "xdstp:" to indicate that it's a new-style name.
+  return ResourceNameFields{
+      uri->authority(), absl::StrCat("xdstp:", path_parts.second,
+                                     ((query_parameters.empty()) ? "" : "?"),
+                                     absl::StrJoin(query_parameters, "&"))};
 }
 
 //
@@ -3380,6 +3417,12 @@ grpc_error_handle AdsResponseParse(
     // Check the resource name.  Ignore unexpected names.
     std::string resource_name =
         UpbStringToStdString(proto_resource_name_function(resource));
+    auto resource_name_status = ParseResourceName(resource_name);
+    if (!resource_name_status.ok()) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("invalid resource name \"", resource_name, "\"")));
+      continue;
+    }
     if (expected_resource_names.find(resource_name) ==
         expected_resource_names.end()) {
       continue;

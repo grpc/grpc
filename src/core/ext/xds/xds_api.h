@@ -42,6 +42,17 @@
 
 namespace grpc_core {
 
+struct ResourceNameFields {
+  std::string authority;
+  std::string id;
+};
+
+// A helper method to parse the resource name and return back an <authority,
+// id> pair.  Optionally the parser can check the resource type portion of the
+// resource name.
+absl::StatusOr<ResourceNameFields> ParseResourceName(
+    absl::string_view name, absl::string_view expected_resource_type = "");
+
 class XdsClient;
 
 class XdsApi {

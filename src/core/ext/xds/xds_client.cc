@@ -87,51 +87,6 @@ std::string ConstructFullResourceName(absl::string_view authority,
   }
 }
 
-struct ResourceNameFields {
-  std::string authority;
-  std::string id;
-};
-
-// A helper method to parse the resource name and return back an <authority,
-// id> pair.  Optionally the parser can check the resource type portion of the
-// resource name.
-absl::StatusOr<ResourceNameFields> ParseResourceName(
-    absl::string_view name, absl::string_view expected_resource_type = "") {
-  // Old-style names use the empty string for authority.
-  // ID is prefixed with "old:" to indicate that it's an old-style name.
-  if (!absl::StartsWith(name, "xdstp:")) {
-    return ResourceNameFields{"", absl::StrCat("old:", name)};
-  }
-  // New style name.  Parse URI.
-  auto uri = URI::Parse(name);
-  if (!uri.ok()) return uri.status();
-  // Split the resource type off of the path to get the id.
-  std::pair<absl::string_view, absl::string_view> path_parts =
-      absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
-  if (expected_resource_type != "" &&
-      path_parts.first != expected_resource_type) {
-    return absl::InvalidArgumentError(
-        "xdstp URI path must indicate valid xDS resource type");
-  }
-  std::vector<std::string> query_parameters;
-  for (auto& it : uri->query_parameter_map()) {
-    query_parameters.push_back(absl::StrCat(it.first, "=", it.second));
-  }
-  std::sort(
-      query_parameters.begin(), query_parameters.end(),
-      [](const absl::string_view& lhs, const absl::string_view& rhs) -> bool {
-        return std::strncmp(std::string(lhs).c_str(), std::string(rhs).c_str(),
-                            ((lhs.length() < rhs.length()) ? lhs.length()
-                                                           : rhs.length())) < 0;
-      });
-  // ID is prefixed with "xdstp:" to indicate that it's a new-style name.
-  return ResourceNameFields{
-      uri->authority(),
-      absl::StrCat("xdstp:", path_parts.second,
-                   ((query_parameters.size() == 0) ? "" : "?"),
-                   absl::StrJoin(query_parameters, "&"))};
-}
-
 }  // namespace
 
 //
@@ -2125,7 +2080,7 @@ void XdsClient::WatchListenerData(
         GetOrCreateChannelState(bootstrap_->server());
   }
   authority_state.channel_state->SubscribeLocked(XdsApi::kLdsTypeUrl,
-                                                 std::move(listener_name_str));
+                                                 listener_name_str);
 }
 
 void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
@@ -2179,8 +2134,8 @@ void XdsClient::WatchRouteConfigData(
     authority_state.channel_state =
         GetOrCreateChannelState(bootstrap_->server());
   }
-  authority_state.channel_state->SubscribeLocked(
-      XdsApi::kRdsTypeUrl, std::move(route_config_name_str));
+  authority_state.channel_state->SubscribeLocked(XdsApi::kRdsTypeUrl,
+                                                 route_config_name_str);
 }
 
 void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
@@ -2234,7 +2189,7 @@ void XdsClient::WatchClusterData(
         GetOrCreateChannelState(bootstrap_->server());
   }
   authority_state.channel_state->SubscribeLocked(XdsApi::kCdsTypeUrl,
-                                                 std::move(cluster_name_str));
+                                                 cluster_name_str);
 }
 
 void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
@@ -2285,8 +2240,8 @@ void XdsClient::WatchEndpointData(
     authority_state.channel_state =
         GetOrCreateChannelState(bootstrap_->server());
   }
-  authority_state.channel_state->SubscribeLocked(
-      XdsApi::kEdsTypeUrl, std::move(eds_service_name_str));
+  authority_state.channel_state->SubscribeLocked(XdsApi::kEdsTypeUrl,
+                                                 eds_service_name_str);
 }
 
 void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
