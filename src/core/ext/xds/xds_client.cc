@@ -2013,7 +2013,8 @@ void XdsClient::Orphan() {
     gpr_log(GPR_INFO, "[xds_client %p] shutting down xds client", this);
   }
   {
-    MutexLock lock(g_mu);
+    // debug this
+    //  MutexLock lock(g_mu);
     if (g_xds_client == this) g_xds_client = nullptr;
   }
   {
@@ -2026,12 +2027,11 @@ void XdsClient::Orphan() {
     // policies before those calls are done would lead to issues such as
     // https://github.com/grpc/grpc/issues/20928.
     for (auto& a : authority_state_map_) {
+      a.second.channel_state.reset();
       if (!a.second.listener_map.empty()) {
         a.second.cluster_map.clear();
         a.second.endpoint_map.clear();
       }
-      // debug this
-      // a.second.channel_state.reset();
     }
   }
 }
