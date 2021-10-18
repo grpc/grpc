@@ -385,6 +385,9 @@ def _compatible(fopt, topt):
     if topt.exclude_inproc:
         if fopt.is_inproc:
             return False
+    if topt.exclude_1byte:
+        if fopt.is_1byte:
+            return False
     if topt.needs_http2:
         if not fopt.is_http2:
             return False
