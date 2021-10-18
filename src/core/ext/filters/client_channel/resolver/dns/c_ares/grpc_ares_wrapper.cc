@@ -1037,7 +1037,6 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     char** service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
   grpc_ares_request* r = new grpc_ares_request();
-  memset(&r->dns_server_addr, 0, sizeof(r->dns_server_addr));
   r->ev_driver = nullptr;
   r->on_done = on_done;
   r->addresses_out = addrs;
