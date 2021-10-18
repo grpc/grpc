@@ -313,6 +313,22 @@ class XdsClient : public DualRefCounted<XdsClient> {
     grpc_millis last_report_time = ExecCtx::Get()->Now();
   };
 
+  // Stores watchers for invalid resource names, we need to make sure these
+  // watchers are not destroyed until caller cancels them.
+  struct InvalidResourceWatchers {
+    std::map<ListenerWatcherInterface*,
+             std::unique_ptr<ListenerWatcherInterface>>
+        listener_watchers;
+    std::map<RouteConfigWatcherInterface*,
+             std::unique_ptr<RouteConfigWatcherInterface>>
+        route_config_watchers;
+    std::map<ClusterWatcherInterface*, std::unique_ptr<ClusterWatcherInterface>>
+        cluster_watchers;
+    std::map<EndpointWatcherInterface*,
+             std::unique_ptr<EndpointWatcherInterface>>
+        endpoint_watchers;
+  };
+
   // Sends an error notification to all watchers.
   void NotifyOnErrorLocked(grpc_error_handle error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -349,6 +365,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Stores the most recent accepted resource version for each resource type.
   std::map<std::string /*type*/, std::string /*version*/> resource_version_map_
       ABSL_GUARDED_BY(mu_);
+
+  InvalidResourceWatchers invalid_resource_watchers_;
 
   bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
 };

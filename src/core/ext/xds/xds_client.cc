@@ -2057,6 +2057,7 @@ void XdsClient::WatchListenerData(
   ListenerWatcherInterface* w = watcher.get();
   auto resource = ParseResourceName(listener_name, XdsApi::kLdsTypeUrl);
   if (!resource.ok()) {
+    invalid_resource_watchers_.listener_watchers[w] = std::move(watcher);
     grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
         "Unable to parse resource name for listener %s", listener_name));
     w->OnError(GRPC_ERROR_REF(error));
@@ -2110,14 +2111,21 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
 void XdsClient::WatchRouteConfigData(
     absl::string_view route_config_name,
     std::unique_ptr<RouteConfigWatcherInterface> watcher) {
-  auto resource = ParseResourceName(route_config_name, XdsApi::kRdsTypeUrl);
-  if (!resource.ok()) return;
   std::string route_config_name_str = std::string(route_config_name);
   MutexLock lock(&mu_);
+  RouteConfigWatcherInterface* w = watcher.get();
+  auto resource = ParseResourceName(route_config_name, XdsApi::kRdsTypeUrl);
+  if (!resource.ok()) {
+    invalid_resource_watchers_.route_config_watchers[w] = std::move(watcher);
+    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrFormat("Unable to parse resource name for route config %s",
+                        route_config_name));
+    w->OnError(GRPC_ERROR_REF(error));
+    return;
+  }
   auto& authority_state = authority_state_map_[resource->authority];
   RouteConfigState& route_config_state =
       authority_state.route_config_map[resource->id];
-  RouteConfigWatcherInterface* w = watcher.get();
   route_config_state.watchers[w] = std::move(watcher);
   // If we've already received an RDS update, notify the new watcher
   // immediately.
@@ -2166,13 +2174,19 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
 void XdsClient::WatchClusterData(
     absl::string_view cluster_name,
     std::unique_ptr<ClusterWatcherInterface> watcher) {
-  auto resource = ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
-  if (!resource.ok()) return;
   std::string cluster_name_str = std::string(cluster_name);
   MutexLock lock(&mu_);
+  ClusterWatcherInterface* w = watcher.get();
+  auto resource = ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
+  if (!resource.ok()) {
+    invalid_resource_watchers_.cluster_watchers[w] = std::move(watcher);
+    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "Unable to parse resource name for cluster %s", cluster_name));
+    w->OnError(GRPC_ERROR_REF(error));
+    return;
+  }
   auto& authority_state = authority_state_map_[resource->authority];
   ClusterState& cluster_state = authority_state.cluster_map[resource->id];
-  ClusterWatcherInterface* w = watcher.get();
   cluster_state.watchers[w] = std::move(watcher);
   // If we've already received a CDS update, notify the new watcher
   // immediately.
@@ -2218,13 +2232,20 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
 void XdsClient::WatchEndpointData(
     absl::string_view eds_service_name,
     std::unique_ptr<EndpointWatcherInterface> watcher) {
-  auto resource = ParseResourceName(eds_service_name, XdsApi::kEdsTypeUrl);
-  if (!resource.ok()) return;
   std::string eds_service_name_str = std::string(eds_service_name);
   MutexLock lock(&mu_);
+  EndpointWatcherInterface* w = watcher.get();
+  auto resource = ParseResourceName(eds_service_name, XdsApi::kEdsTypeUrl);
+  if (!resource.ok()) {
+    invalid_resource_watchers_.endpoint_watchers[w] = std::move(watcher);
+    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrFormat("Unable to parse resource name for endpoint service %s",
+                        eds_service_name));
+    w->OnError(GRPC_ERROR_REF(error));
+    return;
+  }
   auto& authority_state = authority_state_map_[resource->authority];
   EndpointState& endpoint_state = authority_state.endpoint_map[resource->id];
-  EndpointWatcherInterface* w = watcher.get();
   endpoint_state.watchers[w] = std::move(watcher);
   // If we've already received an EDS update, notify the new watcher
   // immediately.
