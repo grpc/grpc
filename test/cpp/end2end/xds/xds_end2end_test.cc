@@ -1355,9 +1355,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (GetParam().enable_rds_testing()) {
       balancers_[idx]->ads_service()->SetRdsResource(route_config);
     } else {
-      Listener listener(listener_to_copy == nullptr
-                            ? default_listener_
-                            : *listener_to_copy);
+      Listener listener(listener_to_copy == nullptr ? default_listener_
+                                                    : *listener_to_copy);
       HttpConnectionManager http_connection_manager;
       listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
           &http_connection_manager);
