@@ -76,20 +76,6 @@ void BindToOnDeviceServerService(void* jni_env_void, jobject application,
   // clang-format on
 }
 
-// CreateBinderChannel without security policy argument is deprecated
-std::shared_ptr<grpc::Channel> CreateBinderChannel(void*, jobject,
-                                                   absl::string_view,
-                                                   absl::string_view) {
-  GPR_ASSERT(0);
-  return {};
-}
-std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
-    void*, jobject, absl::string_view, absl::string_view,
-    const ChannelArguments&) {
-  GPR_ASSERT(0);
-  return {};
-}
-
 // BindToOndeviceServerService need to be called before this, in a different
 // task (due to Android API design). (Reference:
 // https://stackoverflow.com/a/3055749)
