@@ -134,7 +134,7 @@ static void jose_header_destroy(jose_header* h) {
 static jose_header* jose_header_from_json(Json json) {
   const char* alg_value;
   Json::Object::const_iterator it;
-  jose_header* h = static_cast<jose_header*>(gpr_zalloc(sizeof(jose_header)));
+  jose_header* h = grpc_core::Zalloc<jose_header>();
   if (json.type() != Json::Type::OBJECT) {
     gpr_log(GPR_ERROR, "JSON value is not an object");
     goto error;
@@ -238,8 +238,7 @@ gpr_timespec grpc_jwt_claims_not_before(const grpc_jwt_claims* claims) {
 }
 
 grpc_jwt_claims* grpc_jwt_claims_from_json(Json json) {
-  grpc_jwt_claims* claims =
-      static_cast<grpc_jwt_claims*>(gpr_zalloc(sizeof(grpc_jwt_claims)));
+  grpc_jwt_claims* claims = grpc_core::Zalloc<grpc_jwt_claims>();
   claims->json.Init(std::move(json));
   claims->iat = gpr_inf_past(GPR_CLOCK_REALTIME);
   claims->nbf = gpr_inf_past(GPR_CLOCK_REALTIME);
@@ -356,8 +355,7 @@ static verifier_cb_ctx* verifier_cb_ctx_create(
     grpc_jwt_verification_done_cb cb) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  verifier_cb_ctx* ctx =
-      static_cast<verifier_cb_ctx*>(gpr_zalloc(sizeof(verifier_cb_ctx)));
+  verifier_cb_ctx* ctx = new verifier_cb_ctx();
   ctx->verifier = verifier;
   ctx->pollent = grpc_polling_entity_create_from_pollset(pollset);
   ctx->header = header;
@@ -367,7 +365,6 @@ static verifier_cb_ctx* verifier_cb_ctx_create(
   ctx->signed_data = grpc_slice_from_copied_buffer(signed_jwt, signed_jwt_len);
   ctx->user_data = user_data;
   ctx->user_cb = cb;
-
   return ctx;
 }
 
@@ -381,7 +378,7 @@ void verifier_cb_ctx_destroy(verifier_cb_ctx* ctx) {
     grpc_http_response_destroy(&ctx->responses[i]);
   }
   /* TODO: see what to do with claims... */
-  gpr_free(ctx);
+  delete ctx;
 }
 
 /* --- grpc_jwt_verifier object. --- */
@@ -890,8 +887,7 @@ error:
 grpc_jwt_verifier* grpc_jwt_verifier_create(
     const grpc_jwt_verifier_email_domain_key_url_mapping* mappings,
     size_t num_mappings) {
-  grpc_jwt_verifier* v =
-      static_cast<grpc_jwt_verifier*>(gpr_zalloc(sizeof(grpc_jwt_verifier)));
+  grpc_jwt_verifier* v = grpc_core::Zalloc<grpc_jwt_verifier>();
   grpc_httpcli_context_init(&v->http_ctx);
 
   /* We know at least of one mapping. */
