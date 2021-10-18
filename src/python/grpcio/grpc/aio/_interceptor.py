@@ -505,19 +505,18 @@ class _InterceptedStreamRequestMixin:
                 break
             yield value
 
-    async def _write_to_iterator_queue_interruptible(
-            self, request: RequestType, call: InterceptedCall):
+    async def _write_to_iterator_queue_interruptible(self, request: RequestType,
+                                                     call: InterceptedCall):
         # Write the specified 'request' to the request iterator queue using the
         # specified 'call' to allow for interruption of the write in the case
         # of abrupt termination of the call.
         if self._status_code_task is None:
             self._status_code_task = self._loop.create_task(call.code())
 
-        _, _ = await asyncio.wait(
+        await asyncio.wait(
             (self._loop.create_task(self._write_to_iterator_queue.put(request)),
              self._status_code_task),
-            return_when=asyncio.FIRST_COMPLETED
-        )
+            return_when=asyncio.FIRST_COMPLETED)
 
     async def write(self, request: RequestType) -> None:
         # If no queue was created it means that requests
