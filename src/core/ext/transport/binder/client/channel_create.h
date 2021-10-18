@@ -39,16 +39,6 @@ void BindToOnDeviceServerService(void* jni_env_void, jobject application,
                                  absl::string_view /*package_name*/,
                                  absl::string_view /*class_name*/);
 
-// CreateBinderChannel function without security policy argument. These
-// interface temporarily exists to avoid breaking the compilation.
-// TODO(mingcl): Remove these.
-std::shared_ptr<grpc::Channel> CreateBinderChannel(
-    void* jni_env_void, jobject application, absl::string_view package_name,
-    absl::string_view class_name);
-std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
-    void* jni_env_void, jobject application, absl::string_view package_name,
-    absl::string_view class_name, const ChannelArguments& args);
-
 // Need to be invoked after BindToOnDeviceServerService
 // Create a new Channel from server package name and service class name
 std::shared_ptr<grpc::Channel> CreateBinderChannel(

@@ -596,6 +596,9 @@ class RubyLanguage:
         return 'ruby'
 
 
+_PYTHON_BINARY = 'py39_native/bin/python'
+
+
 class PythonLanguage:
 
     def __init__(self):
@@ -606,13 +609,13 @@ class PythonLanguage:
 
     def client_cmd(self, args):
         return [
-            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--client', '--args="{}"'.format(' '.join(args))
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py', 'run_interop',
+            '--client', '--args="{}"'.format(' '.join(args))
         ]
 
     def client_cmd_http2interop(self, args):
         return [
-            'py37_native/bin/python',
+            _PYTHON_BINARY,
             'src/python/grpcio_tests/tests/http2/negative_http2_client.py',
         ] + args
 
@@ -621,8 +624,8 @@ class PythonLanguage:
 
     def server_cmd(self, args):
         return [
-            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--server', '--args="{}"'.format(' '.join(args))
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py', 'run_interop',
+            '--server', '--args="{}"'.format(' '.join(args))
         ]
 
     def global_env(self):
@@ -654,14 +657,13 @@ class PythonAsyncIOLanguage:
 
     def client_cmd(self, args):
         return [
-            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--use-asyncio', '--client',
-            '--args="{}"'.format(' '.join(args))
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py', 'run_interop',
+            '--use-asyncio', '--client', '--args="{}"'.format(' '.join(args))
         ]
 
     def client_cmd_http2interop(self, args):
         return [
-            'py37_native/bin/python',
+            _PYTHON_BINARY,
             'src/python/grpcio_tests/tests/http2/negative_http2_client.py',
         ] + args
 
@@ -670,8 +672,8 @@ class PythonAsyncIOLanguage:
 
     def server_cmd(self, args):
         return [
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py',
             'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--use-asyncio', '--server',
             '--args="{}"'.format(' '.join(args))
         ]
 

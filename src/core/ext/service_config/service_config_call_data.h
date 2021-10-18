@@ -38,6 +38,8 @@ class ServiceConfigCallData {
  public:
   using CallAttributes = std::map<const char*, absl::string_view>;
 
+  ServiceConfigCallData() : method_configs_(nullptr) {}
+
   ServiceConfigCallData(
       RefCountedPtr<ServiceConfig> service_config,
       const ServiceConfigParser::ParsedConfigVector* method_configs,

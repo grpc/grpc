@@ -75,10 +75,10 @@ inline bool ExtractJsonBool(const Json& json, const std::string& field_name,
   }
 }
 
-// OutputType can be std::string or absl::string_view.
-template <typename OutputType, typename ErrorVectorType>
+template <typename ErrorVectorType>
 inline bool ExtractJsonString(const Json& json, const std::string& field_name,
-                              OutputType* output, ErrorVectorType* error_list) {
+                              std::string* output,
+                              ErrorVectorType* error_list) {
   if (json.type() != Json::Type::STRING) {
     *output = "";
     error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
@@ -132,13 +132,6 @@ inline bool ExtractJsonType(const Json& json, const std::string& field_name,
 template <typename ErrorVectorType>
 inline bool ExtractJsonType(const Json& json, const std::string& field_name,
                             std::string* output, ErrorVectorType* error_list) {
-  return ExtractJsonString(json, field_name, output, error_list);
-}
-
-template <typename ErrorVectorType>
-inline bool ExtractJsonType(const Json& json, const std::string& field_name,
-                            absl::string_view* output,
-                            ErrorVectorType* error_list) {
   return ExtractJsonString(json, field_name, output, error_list);
 }
 
