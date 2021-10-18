@@ -904,6 +904,7 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx server_builder_with_socket_mutator_test)
   endif()
   add_dependencies(buildtests_cxx server_chttp2_test)
+  add_dependencies(buildtests_cxx server_config_selector_test)
   add_dependencies(buildtests_cxx server_context_test_spouse_test)
   add_dependencies(buildtests_cxx server_early_return_test)
   add_dependencies(buildtests_cxx server_interceptors_end2end_test)
@@ -8306,7 +8307,10 @@ add_executable(binder_server_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  src/core/ext/transport/binder/client/channel_create.cc
   src/core/ext/transport/binder/client/channel_create_impl.cc
+  src/core/ext/transport/binder/client/jni_utils.cc
+  src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   src/core/ext/transport/binder/server/binder_server.cc
   src/core/ext/transport/binder/server/binder_server_credentials.cc
@@ -8355,13 +8359,68 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(binder_transport_test
+  src/core/ext/transport/binder/client/channel_create.cc
+  src/core/ext/transport/binder/client/channel_create_impl.cc
+  src/core/ext/transport/binder/client/jni_utils.cc
+  src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
+  src/core/ext/transport/binder/server/binder_server.cc
+  src/core/ext/transport/binder/server/binder_server_credentials.cc
   src/core/ext/transport/binder/transport/binder_transport.cc
   src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  src/core/ext/transport/binder/wire_format/binder_android.cc
   src/core/ext/transport/binder/wire_format/binder_constants.cc
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
+  src/cpp/client/channel_cc.cc
+  src/cpp/client/client_callback.cc
+  src/cpp/client/client_context.cc
+  src/cpp/client/client_interceptor.cc
+  src/cpp/client/create_channel.cc
+  src/cpp/client/create_channel_internal.cc
+  src/cpp/client/create_channel_posix.cc
+  src/cpp/client/credentials_cc.cc
+  src/cpp/client/insecure_credentials.cc
+  src/cpp/client/secure_credentials.cc
+  src/cpp/codegen/codegen_init.cc
+  src/cpp/common/alarm.cc
+  src/cpp/common/auth_property_iterator.cc
+  src/cpp/common/channel_arguments.cc
+  src/cpp/common/channel_filter.cc
+  src/cpp/common/completion_queue_cc.cc
+  src/cpp/common/core_codegen.cc
+  src/cpp/common/resource_quota_cc.cc
+  src/cpp/common/rpc_method.cc
+  src/cpp/common/secure_auth_context.cc
+  src/cpp/common/secure_channel_arguments.cc
+  src/cpp/common/secure_create_auth_context.cc
+  src/cpp/common/tls_certificate_provider.cc
+  src/cpp/common/tls_credentials_options.cc
+  src/cpp/common/tls_credentials_options_util.cc
+  src/cpp/common/validate_service_config.cc
+  src/cpp/common/version_cc.cc
+  src/cpp/server/async_generic_service.cc
+  src/cpp/server/channel_argument_option.cc
+  src/cpp/server/create_default_thread_pool.cc
+  src/cpp/server/dynamic_thread_pool.cc
+  src/cpp/server/external_connection_acceptor_impl.cc
+  src/cpp/server/health/default_health_check_service.cc
+  src/cpp/server/health/health_check_service.cc
+  src/cpp/server/health/health_check_service_server_builder_option.cc
+  src/cpp/server/insecure_server_credentials.cc
+  src/cpp/server/secure_server_credentials.cc
+  src/cpp/server/server_builder.cc
+  src/cpp/server/server_callback.cc
+  src/cpp/server/server_cc.cc
+  src/cpp/server/server_context.cc
+  src/cpp/server/server_credentials.cc
+  src/cpp/server/server_posix.cc
+  src/cpp/thread_manager/thread_manager.cc
+  src/cpp/util/byte_buffer_cc.cc
+  src/cpp/util/status.cc
+  src/cpp/util/string_ref.cc
+  src/cpp/util/time_cc.cc
   test/core/transport/binder/binder_transport_test.cc
   test/core/transport/binder/mock_objects.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -9915,9 +9974,16 @@ add_executable(end2end_binder_transport_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  src/core/ext/transport/binder/client/channel_create.cc
+  src/core/ext/transport/binder/client/channel_create_impl.cc
+  src/core/ext/transport/binder/client/jni_utils.cc
+  src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
+  src/core/ext/transport/binder/server/binder_server.cc
+  src/core/ext/transport/binder/server/binder_server_credentials.cc
   src/core/ext/transport/binder/transport/binder_transport.cc
   src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  src/core/ext/transport/binder/wire_format/binder_android.cc
   src/core/ext/transport/binder/wire_format/binder_constants.cc
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
@@ -10332,11 +10398,68 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(fake_binder_test
+  src/core/ext/transport/binder/client/channel_create.cc
+  src/core/ext/transport/binder/client/channel_create_impl.cc
+  src/core/ext/transport/binder/client/jni_utils.cc
+  src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
+  src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
+  src/core/ext/transport/binder/server/binder_server.cc
+  src/core/ext/transport/binder/server/binder_server_credentials.cc
+  src/core/ext/transport/binder/transport/binder_transport.cc
   src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  src/core/ext/transport/binder/wire_format/binder_android.cc
   src/core/ext/transport/binder/wire_format/binder_constants.cc
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
+  src/cpp/client/channel_cc.cc
+  src/cpp/client/client_callback.cc
+  src/cpp/client/client_context.cc
+  src/cpp/client/client_interceptor.cc
+  src/cpp/client/create_channel.cc
+  src/cpp/client/create_channel_internal.cc
+  src/cpp/client/create_channel_posix.cc
+  src/cpp/client/credentials_cc.cc
+  src/cpp/client/insecure_credentials.cc
+  src/cpp/client/secure_credentials.cc
+  src/cpp/codegen/codegen_init.cc
+  src/cpp/common/alarm.cc
+  src/cpp/common/auth_property_iterator.cc
+  src/cpp/common/channel_arguments.cc
+  src/cpp/common/channel_filter.cc
+  src/cpp/common/completion_queue_cc.cc
+  src/cpp/common/core_codegen.cc
+  src/cpp/common/resource_quota_cc.cc
+  src/cpp/common/rpc_method.cc
+  src/cpp/common/secure_auth_context.cc
+  src/cpp/common/secure_channel_arguments.cc
+  src/cpp/common/secure_create_auth_context.cc
+  src/cpp/common/tls_certificate_provider.cc
+  src/cpp/common/tls_credentials_options.cc
+  src/cpp/common/tls_credentials_options_util.cc
+  src/cpp/common/validate_service_config.cc
+  src/cpp/common/version_cc.cc
+  src/cpp/server/async_generic_service.cc
+  src/cpp/server/channel_argument_option.cc
+  src/cpp/server/create_default_thread_pool.cc
+  src/cpp/server/dynamic_thread_pool.cc
+  src/cpp/server/external_connection_acceptor_impl.cc
+  src/cpp/server/health/default_health_check_service.cc
+  src/cpp/server/health/health_check_service.cc
+  src/cpp/server/health/health_check_service_server_builder_option.cc
+  src/cpp/server/insecure_server_credentials.cc
+  src/cpp/server/secure_server_credentials.cc
+  src/cpp/server/server_builder.cc
+  src/cpp/server/server_callback.cc
+  src/cpp/server/server_cc.cc
+  src/cpp/server/server_context.cc
+  src/cpp/server/server_credentials.cc
+  src/cpp/server/server_posix.cc
+  src/cpp/thread_manager/thread_manager.cc
+  src/cpp/util/byte_buffer_cc.cc
+  src/cpp/util/status.cc
+  src/cpp/util/string_ref.cc
+  src/cpp/util/time_cc.cc
   test/core/transport/binder/end2end/fake_binder.cc
   test/core/transport/binder/end2end/fake_binder_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -14461,6 +14584,42 @@ target_link_libraries(server_chttp2_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(server_config_selector_test
+  src/core/ext/filters/server_config_selector/server_config_selector.cc
+  test/core/server_config_selector/server_config_selector_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(server_config_selector_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(server_config_selector_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(server_context_test_spouse_test
   test/cpp/test/server_context_test_spouse_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -15872,8 +16031,68 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(transport_stream_receiver_test
+  src/core/ext/transport/binder/client/channel_create.cc
+  src/core/ext/transport/binder/client/channel_create_impl.cc
+  src/core/ext/transport/binder/client/jni_utils.cc
+  src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
+  src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
+  src/core/ext/transport/binder/server/binder_server.cc
+  src/core/ext/transport/binder/server/binder_server_credentials.cc
+  src/core/ext/transport/binder/transport/binder_transport.cc
   src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  src/core/ext/transport/binder/wire_format/binder_android.cc
+  src/core/ext/transport/binder/wire_format/binder_constants.cc
   src/core/ext/transport/binder/wire_format/transaction.cc
+  src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
+  src/core/ext/transport/binder/wire_format/wire_writer.cc
+  src/cpp/client/channel_cc.cc
+  src/cpp/client/client_callback.cc
+  src/cpp/client/client_context.cc
+  src/cpp/client/client_interceptor.cc
+  src/cpp/client/create_channel.cc
+  src/cpp/client/create_channel_internal.cc
+  src/cpp/client/create_channel_posix.cc
+  src/cpp/client/credentials_cc.cc
+  src/cpp/client/insecure_credentials.cc
+  src/cpp/client/secure_credentials.cc
+  src/cpp/codegen/codegen_init.cc
+  src/cpp/common/alarm.cc
+  src/cpp/common/auth_property_iterator.cc
+  src/cpp/common/channel_arguments.cc
+  src/cpp/common/channel_filter.cc
+  src/cpp/common/completion_queue_cc.cc
+  src/cpp/common/core_codegen.cc
+  src/cpp/common/resource_quota_cc.cc
+  src/cpp/common/rpc_method.cc
+  src/cpp/common/secure_auth_context.cc
+  src/cpp/common/secure_channel_arguments.cc
+  src/cpp/common/secure_create_auth_context.cc
+  src/cpp/common/tls_certificate_provider.cc
+  src/cpp/common/tls_credentials_options.cc
+  src/cpp/common/tls_credentials_options_util.cc
+  src/cpp/common/validate_service_config.cc
+  src/cpp/common/version_cc.cc
+  src/cpp/server/async_generic_service.cc
+  src/cpp/server/channel_argument_option.cc
+  src/cpp/server/create_default_thread_pool.cc
+  src/cpp/server/dynamic_thread_pool.cc
+  src/cpp/server/external_connection_acceptor_impl.cc
+  src/cpp/server/health/default_health_check_service.cc
+  src/cpp/server/health/health_check_service.cc
+  src/cpp/server/health/health_check_service_server_builder_option.cc
+  src/cpp/server/insecure_server_credentials.cc
+  src/cpp/server/secure_server_credentials.cc
+  src/cpp/server/server_builder.cc
+  src/cpp/server/server_callback.cc
+  src/cpp/server/server_cc.cc
+  src/cpp/server/server_context.cc
+  src/cpp/server/server_credentials.cc
+  src/cpp/server/server_posix.cc
+  src/cpp/thread_manager/thread_manager.cc
+  src/cpp/util/byte_buffer_cc.cc
+  src/cpp/util/status.cc
+  src/cpp/util/string_ref.cc
+  src/cpp/util/time_cc.cc
   test/core/transport/binder/transport_stream_receiver_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -16126,12 +16345,68 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(wire_reader_test
+  src/core/ext/transport/binder/client/channel_create.cc
+  src/core/ext/transport/binder/client/channel_create_impl.cc
+  src/core/ext/transport/binder/client/jni_utils.cc
+  src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
+  src/core/ext/transport/binder/server/binder_server.cc
+  src/core/ext/transport/binder/server/binder_server_credentials.cc
+  src/core/ext/transport/binder/transport/binder_transport.cc
   src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  src/core/ext/transport/binder/wire_format/binder_android.cc
   src/core/ext/transport/binder/wire_format/binder_constants.cc
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
+  src/cpp/client/channel_cc.cc
+  src/cpp/client/client_callback.cc
+  src/cpp/client/client_context.cc
+  src/cpp/client/client_interceptor.cc
+  src/cpp/client/create_channel.cc
+  src/cpp/client/create_channel_internal.cc
+  src/cpp/client/create_channel_posix.cc
+  src/cpp/client/credentials_cc.cc
+  src/cpp/client/insecure_credentials.cc
+  src/cpp/client/secure_credentials.cc
+  src/cpp/codegen/codegen_init.cc
+  src/cpp/common/alarm.cc
+  src/cpp/common/auth_property_iterator.cc
+  src/cpp/common/channel_arguments.cc
+  src/cpp/common/channel_filter.cc
+  src/cpp/common/completion_queue_cc.cc
+  src/cpp/common/core_codegen.cc
+  src/cpp/common/resource_quota_cc.cc
+  src/cpp/common/rpc_method.cc
+  src/cpp/common/secure_auth_context.cc
+  src/cpp/common/secure_channel_arguments.cc
+  src/cpp/common/secure_create_auth_context.cc
+  src/cpp/common/tls_certificate_provider.cc
+  src/cpp/common/tls_credentials_options.cc
+  src/cpp/common/tls_credentials_options_util.cc
+  src/cpp/common/validate_service_config.cc
+  src/cpp/common/version_cc.cc
+  src/cpp/server/async_generic_service.cc
+  src/cpp/server/channel_argument_option.cc
+  src/cpp/server/create_default_thread_pool.cc
+  src/cpp/server/dynamic_thread_pool.cc
+  src/cpp/server/external_connection_acceptor_impl.cc
+  src/cpp/server/health/default_health_check_service.cc
+  src/cpp/server/health/health_check_service.cc
+  src/cpp/server/health/health_check_service_server_builder_option.cc
+  src/cpp/server/insecure_server_credentials.cc
+  src/cpp/server/secure_server_credentials.cc
+  src/cpp/server/server_builder.cc
+  src/cpp/server/server_callback.cc
+  src/cpp/server/server_cc.cc
+  src/cpp/server/server_context.cc
+  src/cpp/server/server_credentials.cc
+  src/cpp/server/server_posix.cc
+  src/cpp/thread_manager/thread_manager.cc
+  src/cpp/util/byte_buffer_cc.cc
+  src/cpp/util/status.cc
+  src/cpp/util/string_ref.cc
+  src/cpp/util/time_cc.cc
   test/core/transport/binder/mock_objects.cc
   test/core/transport/binder/wire_reader_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -16168,11 +16443,68 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(wire_writer_test
+  src/core/ext/transport/binder/client/channel_create.cc
+  src/core/ext/transport/binder/client/channel_create_impl.cc
+  src/core/ext/transport/binder/client/jni_utils.cc
+  src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
+  src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
+  src/core/ext/transport/binder/server/binder_server.cc
+  src/core/ext/transport/binder/server/binder_server_credentials.cc
+  src/core/ext/transport/binder/transport/binder_transport.cc
   src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  src/core/ext/transport/binder/wire_format/binder_android.cc
   src/core/ext/transport/binder/wire_format/binder_constants.cc
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
+  src/cpp/client/channel_cc.cc
+  src/cpp/client/client_callback.cc
+  src/cpp/client/client_context.cc
+  src/cpp/client/client_interceptor.cc
+  src/cpp/client/create_channel.cc
+  src/cpp/client/create_channel_internal.cc
+  src/cpp/client/create_channel_posix.cc
+  src/cpp/client/credentials_cc.cc
+  src/cpp/client/insecure_credentials.cc
+  src/cpp/client/secure_credentials.cc
+  src/cpp/codegen/codegen_init.cc
+  src/cpp/common/alarm.cc
+  src/cpp/common/auth_property_iterator.cc
+  src/cpp/common/channel_arguments.cc
+  src/cpp/common/channel_filter.cc
+  src/cpp/common/completion_queue_cc.cc
+  src/cpp/common/core_codegen.cc
+  src/cpp/common/resource_quota_cc.cc
+  src/cpp/common/rpc_method.cc
+  src/cpp/common/secure_auth_context.cc
+  src/cpp/common/secure_channel_arguments.cc
+  src/cpp/common/secure_create_auth_context.cc
+  src/cpp/common/tls_certificate_provider.cc
+  src/cpp/common/tls_credentials_options.cc
+  src/cpp/common/tls_credentials_options_util.cc
+  src/cpp/common/validate_service_config.cc
+  src/cpp/common/version_cc.cc
+  src/cpp/server/async_generic_service.cc
+  src/cpp/server/channel_argument_option.cc
+  src/cpp/server/create_default_thread_pool.cc
+  src/cpp/server/dynamic_thread_pool.cc
+  src/cpp/server/external_connection_acceptor_impl.cc
+  src/cpp/server/health/default_health_check_service.cc
+  src/cpp/server/health/health_check_service.cc
+  src/cpp/server/health/health_check_service_server_builder_option.cc
+  src/cpp/server/insecure_server_credentials.cc
+  src/cpp/server/secure_server_credentials.cc
+  src/cpp/server/server_builder.cc
+  src/cpp/server/server_callback.cc
+  src/cpp/server/server_cc.cc
+  src/cpp/server/server_context.cc
+  src/cpp/server/server_credentials.cc
+  src/cpp/server/server_posix.cc
+  src/cpp/thread_manager/thread_manager.cc
+  src/cpp/util/byte_buffer_cc.cc
+  src/cpp/util/status.cc
+  src/cpp/util/string_ref.cc
+  src/cpp/util/time_cc.cc
   test/core/transport/binder/mock_objects.cc
   test/core/transport/binder/wire_writer_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
