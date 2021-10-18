@@ -66,10 +66,10 @@ static void set_done_write(void* arg, grpc_error_handle /*error*/) {
 static void server_setup_transport(void* ts, grpc_transport* transport) {
   thd_args* a = static_cast<thd_args*>(ts);
   grpc_core::ExecCtx exec_ctx;
-  (void)a->server->core_server->SetupTransport(
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(a->server->core_server->SetupTransport(
       transport,
       /*accepting_pollset=*/nullptr, a->server->core_server->channel_args(),
-      /*socket_node=*/nullptr);
+      /*socket_node=*/nullptr)));
 }
 
 /* Sets the read_done event */

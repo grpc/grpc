@@ -268,8 +268,8 @@ static void server_start_transport_stream_op_batch(
       auto* batch = op->payload->send_initial_metadata.send_initial_metadata;
       if (batch->legacy_index()->named.status != nullptr) {
         /* Replace the HTTP status with 404 */
-        (void)batch->Substitute(batch->legacy_index()->named.status,
-                                GRPC_MDELEM_STATUS_404);
+        GPR_ASSERT(GRPC_LOG_IF_ERROR(batch->Substitute(
+            batch->legacy_index()->named.status, GRPC_MDELEM_STATUS_404)));
       }
     }
   }
