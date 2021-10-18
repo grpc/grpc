@@ -3571,7 +3571,6 @@ test_external_account_credentials_create_failure_invalid_workforce_pool_audience
   grpc_call_credentials* url_creds = grpc_external_account_credentials_create(
       url_options_string, url_scopes_string);
   GPR_ASSERT(url_creds == nullptr);
->>>>>>> upstream/master
 }
 
 int main(int argc, char** argv) {
