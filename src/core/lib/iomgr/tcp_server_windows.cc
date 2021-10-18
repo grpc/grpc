@@ -100,9 +100,9 @@ struct grpc_tcp_server {
 
 /* Public function. Allocates the proper data structures to hold a
    grpc_tcp_server. */
-static grpc_error_handle tcp_server_create(
-    grpc_closure* shutdown_complete, const grpc_channel_args* args,
-    grpc_tcp_server** server) {
+static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
+                                           const grpc_channel_args* args,
+                                           grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
   s->channel_args = grpc_channel_args_copy(args);
   gpr_ref_init(&s->refs, 1);
@@ -354,9 +354,8 @@ static void on_accept(void* arg, grpc_error_handle error) {
         gpr_free(utf8_message);
       }
       std::string fd_name = absl::StrCat("tcp_server:", peer_name_string);
-      ep = grpc_tcp_create(
-          grpc_winsocket_create(sock, fd_name.c_str()),
-          sp->server->channel_args, peer_name_string.c_str());
+      ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name.c_str()),
+                           sp->server->channel_args, peer_name_string.c_str());
     } else {
       closesocket(sock);
     }
