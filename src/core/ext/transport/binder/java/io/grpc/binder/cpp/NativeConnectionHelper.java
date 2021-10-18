@@ -15,26 +15,22 @@
 package io.grpc.binder.cpp;
 
 import android.content.Context;
-import android.os.IBinder;
 import android.os.Parcel;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class will be invoked by gRPC binder transport internal implementation to perform operations
  * that are only possible in Java
  */
 final class NativeConnectionHelper {
-  static SyncServiceConnection s;
+  // Maps connection id to GrpcBinderConnection instances
+  static Map<String, GrpcBinderConnection> s = new HashMap<String, GrpcBinderConnection>();
 
-  static void tryEstablishConnection(Context context, String pkg, String cls) {
-    s = new SyncServiceConnection(context);
-    s.tryConnect(pkg, cls);
-  }
-
-  // TODO(mingcl): We should notify C++ once we got the service binder so they don't need to call
-  // this function to check. For now we assume that this function will only be called after
-  // successful connection
-  static IBinder getServiceBinder() {
-    return s.getIBinder();
+  static void tryEstablishConnection(Context context, String pkg, String cls, String conn_id) {
+    // TODO(mingcl): Assert that conn_id is unique
+    s.put(conn_id, new GrpcBinderConnection(context, conn_id));
+    s.get(conn_id).tryConnect(pkg, cls);
   }
 
   static Parcel getEmptyParcel() {

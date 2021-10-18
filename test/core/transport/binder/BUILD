@@ -100,3 +100,20 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "endpoint_binder_pool_test",
+    srcs = ["endpoint_binder_pool_test.cc"],
+    external_deps = [
+        "absl/memory",
+        "gtest",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        ":mock_objects",
+        "//:grpc",
+        "//:grpc++_binder",
+        "//test/core/util:grpc_test_util",
+    ],
+)
