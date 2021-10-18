@@ -625,7 +625,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   });
 
   drain_continue = MakeTestClosure([&](grpc_error_handle /*error*/) {
-    recv_stream->Pull(&recv_slice);
+    (void)recv_stream->Pull(&recv_slice);
     received += GRPC_SLICE_LENGTH(recv_slice);
     grpc_slice_unref_internal(recv_slice);
     grpc_core::Closure::Run(DEBUG_LOCATION, drain.get(), GRPC_ERROR_NONE);

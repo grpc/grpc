@@ -197,7 +197,7 @@ static void recv_initial_metadata_ready(void* user_data,
     error = client_filter_incoming_metadata(calld->recv_initial_metadata);
     calld->recv_initial_metadata_error = GRPC_ERROR_REF(error);
   } else {
-    GRPC_ERROR_REF(error);
+    (void)GRPC_ERROR_REF(error);
   }
   grpc_closure* closure = calld->original_recv_initial_metadata_ready;
   calld->original_recv_initial_metadata_ready = nullptr;
@@ -224,7 +224,7 @@ static void recv_trailing_metadata_ready(void* user_data,
   if (error == GRPC_ERROR_NONE) {
     error = client_filter_incoming_metadata(calld->recv_trailing_metadata);
   } else {
-    GRPC_ERROR_REF(error);
+    (void)GRPC_ERROR_REF(error);
   }
   error = grpc_error_add_child(
       error, GRPC_ERROR_REF(calld->recv_initial_metadata_error));

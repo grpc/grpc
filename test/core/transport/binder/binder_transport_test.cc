@@ -522,7 +522,7 @@ TEST_F(BinderTransportTest, PerformRecvMessage) {
 
   EXPECT_TRUE(recv_message.grpc_message->Next(SIZE_MAX, nullptr));
   grpc_slice slice;
-  recv_message.grpc_message->Pull(&slice);
+  (void)recv_message.grpc_message->Pull(&slice);
   EXPECT_EQ(kMessage,
             std::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
                         GRPC_SLICE_LENGTH(slice)));
@@ -586,7 +586,7 @@ TEST_F(BinderTransportTest, PerformRecvAll) {
                       recv_trailing_metadata.grpc_trailing_metadata);
   EXPECT_TRUE(recv_message.grpc_message->Next(SIZE_MAX, nullptr));
   grpc_slice slice;
-  recv_message.grpc_message->Pull(&slice);
+  (void)recv_message.grpc_message->Pull(&slice);
   EXPECT_EQ(kMessage,
             std::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
                         GRPC_SLICE_LENGTH(slice)));
@@ -663,7 +663,7 @@ TEST_F(BinderTransportTest, PerformAllOps) {
 
   EXPECT_TRUE(recv_message.grpc_message->Next(SIZE_MAX, nullptr));
   grpc_slice slice;
-  recv_message.grpc_message->Pull(&slice);
+  (void)recv_message.grpc_message->Pull(&slice);
   EXPECT_EQ(kRecvMessage,
             std::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
                         GRPC_SLICE_LENGTH(slice)));

@@ -59,7 +59,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
   void SetUp() override {
     if (GetParam().table_size.has_value()) {
       parser_->hpack_table()->SetMaxBytes(GetParam().table_size.value());
-      parser_->hpack_table()->SetCurrentTableSize(
+      (void)parser_->hpack_table()->SetCurrentTableSize(
           GetParam().table_size.value());
     }
   }

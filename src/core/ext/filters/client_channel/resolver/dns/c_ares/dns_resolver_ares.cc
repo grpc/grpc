@@ -193,7 +193,7 @@ void AresDnsResolver::ShutdownLocked() {
 
 void AresDnsResolver::OnNextResolution(void* arg, grpc_error_handle error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnNextResolutionLocked(error); },
                            DEBUG_LOCATION);
 }
@@ -305,7 +305,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
 
 void AresDnsResolver::OnResolved(void* arg, grpc_error_handle error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnResolvedLocked(error); },
                            DEBUG_LOCATION);
 }

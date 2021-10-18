@@ -1392,7 +1392,7 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
     calld->recv_initial_metadata_->Remove(GRPC_BATCH_PATH);
     calld->recv_initial_metadata_->Remove(GRPC_BATCH_AUTHORITY);
   } else {
-    GRPC_ERROR_REF(error);
+    (void)GRPC_ERROR_REF(error);
   }
   auto op_deadline = calld->recv_initial_metadata_->get(GrpcTimeoutMetadata());
   if (op_deadline.has_value()) {

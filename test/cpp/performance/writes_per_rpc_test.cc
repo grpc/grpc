@@ -81,8 +81,8 @@ class EndpointPairFixture {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
 
-      server_->c_server()->core_server->SetupTransport(transport, nullptr,
-                                                       server_args, nullptr);
+      (void)server_->c_server()->core_server->SetupTransport(
+          transport, nullptr, server_args, nullptr);
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     }
 

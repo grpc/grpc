@@ -178,7 +178,8 @@ static void do_connect(void* arg, grpc_error_handle error) {
     grpc_transport* transport = grpc_create_chttp2_transport(
         nullptr, server, false,
         grpc_resource_user_create(g_resource_quota, "transport-user"));
-    g_server->core_server->SetupTransport(transport, nullptr, nullptr, nullptr);
+    (void)g_server->core_server->SetupTransport(transport, nullptr, nullptr,
+                                                nullptr);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_NONE);
