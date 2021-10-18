@@ -68,11 +68,11 @@ void EndpointBinderPool ::GetEndpointBinder(
         return;
       }
       pending_requests_[conn_id] = std::move(cb);
+      return;
     }
   }
-  if (b != nullptr) {
-    cb(std::move(b));
-  }
+  GPR_ASSERT(b != nullptr);
+  cb(std::move(b));
 }
 
 void EndpointBinderPool::AddEndpointBinder(
