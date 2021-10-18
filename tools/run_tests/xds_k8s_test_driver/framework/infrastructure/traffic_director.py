@@ -581,8 +581,11 @@ class TrafficDirectorManager:
             name, self.network, ip_address, src_port,
             self.alternative_target_proxy.url)
         resource = self.compute.create_forwarding_rule(
-            name, src_port, self.alternative_target_proxy, self.network_url,
-            ip_address)
+            name,
+            src_port,
+            self.alternative_target_proxy,
+            self.network_url,
+            ip_address=ip_address)
         self.alternative_forwarding_rule = resource
         return resource
 

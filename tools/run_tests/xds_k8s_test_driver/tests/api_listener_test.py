@@ -91,21 +91,6 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         with self.subTest('15_test_server_continues_to_receive_rpcs'):
 
-            class TdPropagationRetryableError(Exception):
-                pass
-
-            def verify_route_traffic_continues():
-                self.assertSuccessfulRpcs(self.test_client)
-                if self.previous_route_config_version == self.getRouteConfigVersion(
-                        self.test_client):
-                    logger.info('Routing config not propagated yet. Retrying.')
-                    raise TdPropagationRetryableError(
-                        "CSDS not get updated routing config corresponding"
-                        " to the second set of url maps")
-                else:
-                    self.assertSuccessfulRpcs(self.test_client)
-                    logger.info('Success.')
-
             retryer = retryers.constant_retryer(
                 wait_fixed=datetime.timedelta(
                     seconds=_TD_CONFIG_RETRY_WAIT_SEC),
@@ -115,12 +100,28 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                 logger=logging,
                 log_level=logging.INFO)
             try:
-                retryer(verify_route_traffic_continues)
+                retryer(self.verify_route_traffic_continues)
             except retryers.RetryError as retry_error:
                 logging.info(
                     'Retry exhausted. TD routing config propagation failed after timeout %ds.',
                     xds_k8s_testcase._TD_CONFIG_MAX_WAIT_SEC)
                 raise retry_error
+
+    def verify_route_traffic_continues(self):
+        self.assertSuccessfulRpcs(self.test_client)
+        if self.previous_route_config_version == self.getRouteConfigVersion(
+                self.test_client):
+            logger.info('Routing config not propagated yet. Retrying.')
+            raise TdPropagationRetryableError(
+                "CSDS not get updated routing config corresponding"
+                " to the second set of url maps")
+        else:
+            self.assertSuccessfulRpcs(self.test_client)
+            logger.info('Success.')
+
+
+class TdPropagationRetryableError(Exception):
+    pass
 
 
 if __name__ == '__main__':

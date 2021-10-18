@@ -290,9 +290,11 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                      json_format.MessageToJson(config, indent=2))
         self.assertSameElements(want, seen)
 
-    def getRouteConfigVersion(self, test_client: XdsTestClient):
+    def getRouteConfigVersion(self, test_client: XdsTestClient) -> str:
         config = test_client.csds.fetch_client_status(log_level=logging.INFO)
-        self.assertIsNotNone(config)
+        if config is None:
+            raise TypeError(
+                "Client status returned from CSDS should not be None.")
         route_config_version = None
         for xds_config in config.xds_config:
             if xds_config.WhichOneof('per_xds_config') == "route_config":
