@@ -329,6 +329,8 @@ cdef class _SyncServicerContext:
     def time_remaining(self):
         return self._context.time_remaining()
 
+    def
+
 
 async def _run_interceptor(object interceptors, object query_handler,
                            object handler_call_details):

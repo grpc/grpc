@@ -20,6 +20,7 @@ import grpc
 
 from ._metadata import Metadata
 from ._typing import RequestType
+from ._typing import DoneCallbackType
 from ._typing import ResponseType
 
 
@@ -132,7 +133,7 @@ class Server(abc.ABC):
         """
 
 
-class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
+class ServicerContext(Generic[RequestType, ResponseType], RpcContext, abc.ABC):
     """A context object passed to method implementations."""
 
     @abc.abstractmethod
@@ -335,3 +336,13 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
           The details string of the RPC.
         """
         raise NotImplementedError()
+
+    def add_done_callback(self, callback: DoneCallbackType) -> None:
+        """Registers a callback to be called on RPC termination.
+
+        This is an EXPERIMENTAL API.
+
+        Args:
+          callback: A callable object will be called with the servicer context
+            object as its only argument.
+        """
