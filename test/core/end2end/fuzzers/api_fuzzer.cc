@@ -279,7 +279,9 @@ class Call : public std::enable_shared_from_this<Call> {
   CallType type() const { return type_; }
 
   bool done() const {
-    if ((type_ == CallType::TOMBSTONED || call_closed_) && pending_ops_ == 0) return true;
+    if ((type_ == CallType::TOMBSTONED || call_closed_) && pending_ops_ == 0) {
+      return true;
+    }
     if (call_ == nullptr && type() != CallType::PENDING_SERVER) return true;
     return false;
   }
