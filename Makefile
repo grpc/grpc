@@ -1120,9 +1120,7 @@ LIBGRPC_SRC = \
     src/core/ext/service_config/service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
-    src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
-    src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
@@ -1618,7 +1616,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/port.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
-    include/grpc/grpc_posix.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
     include/grpc/load_reporting.h \
@@ -1794,9 +1791,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/service_config/service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
-    src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
-    src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
@@ -2038,7 +2033,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/port.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
-    include/grpc/grpc_posix.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
     include/grpc/load_reporting.h \

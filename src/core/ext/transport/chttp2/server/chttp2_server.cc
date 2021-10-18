@@ -56,6 +56,14 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/tcp_posix.h"
+#include "src/core/lib/surface/completion_queue.h"
+
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
+
 namespace grpc_core {
 namespace {
 
@@ -960,7 +968,7 @@ int grpc_server_add_http2_port(grpc_server* server, const char* addr,
   int port_num = 0;
   grpc_channel_args* args = nullptr;
   GRPC_API_TRACE(
-      "grpc_server_add_secure_http2_port("
+      "grpc_server_add_http2_port("
       "server=%p, addr=%s, creds=%p)",
       3, (server, addr, creds));
   // Create security context.
@@ -1011,3 +1019,53 @@ done:
   }
   return port_num;
 }
+
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+void grpc_server_add_channel_from_fd(grpc_server* server, void* reserved,
+                                     int fd, grpc_server_credentials* creds) {
+  GPR_ASSERT(reserved == nullptr);
+  if (creds == nullptr || creds->type() != GRPC_CREDENTIALS_TYPE_INSECURE) {
+    gpr_log(GPR_ERROR, "Failed to create channel due to invalid creds");
+    return;
+  }
+  grpc_core::ExecCtx exec_ctx;
+  grpc_core::Server* core_server = server->core_server.get();
+
+  const grpc_channel_args* server_args = core_server->channel_args();
+  std::string name = absl::StrCat("fd:", fd);
+  grpc_resource_quota* resource_quota =
+      grpc_resource_quota_create(name.c_str());
+  grpc_endpoint* server_endpoint = grpc_tcp_create(
+      grpc_fd_create(fd, name.c_str(), true), server_args, name.c_str(),
+      grpc_slice_allocator_create(resource_quota, name, server_args));
+  grpc_transport* transport = grpc_create_chttp2_transport(
+      server_args, server_endpoint, false /* is_client */,
+      grpc_resource_user_create(resource_quota,
+                                absl::StrCat(name, ":transport")));
+  grpc_error_handle error = core_server->SetupTransport(
+      transport, nullptr, server_args, nullptr,
+      grpc_resource_user_create(resource_quota,
+                                absl::StrCat(name, ":channel")));
+  grpc_resource_quota_unref_internal(resource_quota);
+  if (error == GRPC_ERROR_NONE) {
+    for (grpc_pollset* pollset : core_server->pollsets()) {
+      grpc_endpoint_add_to_pollset(server_endpoint, pollset);
+    }
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+  } else {
+    gpr_log(GPR_ERROR, "Failed to create channel: %s",
+            grpc_error_std_string(error).c_str());
+    GRPC_ERROR_UNREF(error);
+    grpc_transport_destroy(transport);
+  }
+}
+
+#else  // !GPR_SUPPORT_CHANNELS_FROM_FD
+
+void grpc_server_add_channel_from_fd(grpc_server* /* server */,
+                                     void* /* reserved */, int /* fd */,
+                                     grpc_server_credentials* /* creds */) {
+  GPR_ASSERT(0);
+}
+
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD

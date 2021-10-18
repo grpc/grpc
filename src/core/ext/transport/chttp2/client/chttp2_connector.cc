@@ -36,13 +36,24 @@
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
+
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+
+#include <fcntl.h>
+
+#include "src/core/lib/iomgr/tcp_client_posix.h"
+#include "src/core/lib/iomgr/tcp_posix.h"
+
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
 namespace grpc_core {
 
@@ -429,3 +440,70 @@ grpc_channel* grpc_channel_create(grpc_channel_credentials* creds,
   }
   return channel;
 }
+
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+grpc_channel* grpc_channel_create_from_fd(grpc_channel_credentials* creds,
+                                          const char* target, int fd,
+                                          const grpc_channel_args* args) {
+  grpc_core::ExecCtx exec_ctx;
+  GRPC_API_TRACE("grpc_channel_create_from_fd(target=%p, fd=%d, args=%p)", 3,
+                 (target, fd, args));
+  // For now, we only support insecure channel credentials.
+  if (creds == nullptr || creds->type() != GRPC_CREDENTIALS_TYPE_INSECURE) {
+    return grpc_lame_client_channel_create(
+        target, GRPC_STATUS_INTERNAL,
+        "Failed to create client channel due to invalid creds");
+  }
+  grpc_arg default_authority_arg = grpc_channel_arg_string_create(
+      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+      const_cast<char*>("test.authority"));
+  grpc_channel_args* final_args =
+      grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
+
+  int flags = fcntl(fd, F_GETFL, 0);
+  GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
+  grpc_resource_quota* resource_quota =
+      grpc_resource_quota_from_channel_args(args, true);
+  grpc_slice_allocator* allocator = grpc_slice_allocator_create(
+      resource_quota, "fd-client:endpoint", final_args);
+  grpc_endpoint* client = grpc_tcp_client_create_from_fd(
+      grpc_fd_create(fd, "client", true), args, "fd-client", allocator);
+  grpc_transport* transport = grpc_create_chttp2_transport(
+      final_args, client, true,
+      grpc_resource_user_create(resource_quota, "fd-client:transport"));
+  grpc_resource_quota_unref_internal(resource_quota);
+  GPR_ASSERT(transport);
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_channel* channel = grpc_channel_create_internal(
+      target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport, nullptr, 0,
+      &error);
+  grpc_channel_args_destroy(final_args);
+  if (channel != nullptr) {
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+    grpc_core::ExecCtx::Get()->Flush();
+  } else {
+    intptr_t integer;
+    grpc_status_code status = GRPC_STATUS_INTERNAL;
+    if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {
+      status = static_cast<grpc_status_code>(integer);
+    }
+    GRPC_ERROR_UNREF(error);
+    grpc_transport_destroy(transport);
+    channel = grpc_lame_client_channel_create(
+        target, status, "Failed to create client channel");
+  }
+
+  return channel;
+}
+
+#else  // !GPR_SUPPORT_CHANNELS_FROM_FD
+
+grpc_channel* grpc_channel_create_from_fd(grpc_channel_credentials* /* creds*/,
+                                          const char* /* target */,
+                                          int /* fd */,
+                                          const grpc_channel_args* /* args */) {
+  GPR_ASSERT(0);
+  return nullptr;
+}
+
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD

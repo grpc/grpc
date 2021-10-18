@@ -81,9 +81,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\service_config\\service_config_parser.cc " +
     "src\\core\\ext\\transport\\chttp2\\alpn\\alpn.cc " +
     "src\\core\\ext\\transport\\chttp2\\client\\chttp2_connector.cc " +
-    "src\\core\\ext\\transport\\chttp2\\client\\insecure\\channel_create_posix.cc " +
     "src\\core\\ext\\transport\\chttp2\\server\\chttp2_server.cc " +
-    "src\\core\\ext\\transport\\chttp2\\server\\insecure\\server_chttp2_posix.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\bin_decoder.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\bin_encoder.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\chttp2_plugin.cc " +
@@ -1086,9 +1084,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\alpn");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\client");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\client\\insecure");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\server");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\server\\insecure");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\transport");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\inproc");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated");

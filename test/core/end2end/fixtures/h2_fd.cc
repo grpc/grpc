@@ -25,7 +25,6 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -72,8 +71,10 @@ static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
   sp_fixture_data* sfd = static_cast<sp_fixture_data*>(f->fixture_data);
 
   GPR_ASSERT(!f->client);
-  f->client = grpc_insecure_channel_create_from_fd(
-      "fixture_client", sfd->fd_pair[0], client_args);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  f->client = grpc_channel_create_from_fd(creds, "fixture_client",
+                                          sfd->fd_pair[0], client_args);
+  grpc_channel_credentials_release(creds);
   GPR_ASSERT(f->client);
 }
 
@@ -86,8 +87,9 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
   GPR_ASSERT(f->server);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   grpc_server_start(f->server);
-
-  grpc_server_add_insecure_channel_from_fd(f->server, nullptr, sfd->fd_pair[1]);
+  grpc_server_credentials* creds = grpc_insecure_server_credentials_create();
+  grpc_server_add_channel_from_fd(f->server, nullptr, sfd->fd_pair[1], creds);
+  grpc_server_credentials_release(creds);
 }
 
 static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) {

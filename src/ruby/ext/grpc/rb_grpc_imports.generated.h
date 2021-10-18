@@ -27,7 +27,6 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/impl/codegen/log.h>
@@ -188,6 +187,9 @@ extern grpc_server_credentials_release_type grpc_server_credentials_release_impo
 typedef grpc_channel*(*grpc_channel_create_type)(grpc_channel_credentials* creds, const char* target, const grpc_channel_args* args, void* reserved);
 extern grpc_channel_create_type grpc_channel_create_import;
 #define grpc_channel_create grpc_channel_create_import
+typedef grpc_channel*(*grpc_channel_create_from_fd_type)(grpc_channel_credentials* creds, const char* target, int fd, const grpc_channel_args* args);
+extern grpc_channel_create_from_fd_type grpc_channel_create_from_fd_import;
+#define grpc_channel_create_from_fd grpc_channel_create_from_fd_import
 typedef grpc_channel*(*grpc_lame_client_channel_create_type)(const char* target, grpc_status_code error_code, const char* error_message);
 extern grpc_lame_client_channel_create_type grpc_lame_client_channel_create_import;
 #define grpc_lame_client_channel_create grpc_lame_client_channel_create_import
@@ -236,6 +238,9 @@ extern grpc_server_set_config_fetcher_type grpc_server_set_config_fetcher_import
 typedef int(*grpc_server_add_http2_port_type)(grpc_server* server, const char* addr, grpc_server_credentials* creds);
 extern grpc_server_add_http2_port_type grpc_server_add_http2_port_import;
 #define grpc_server_add_http2_port grpc_server_add_http2_port_import
+typedef void(*grpc_server_add_channel_from_fd_type)(grpc_server* server, void* reserved, int fd, grpc_server_credentials* creds);
+extern grpc_server_add_channel_from_fd_type grpc_server_add_channel_from_fd_import;
+#define grpc_server_add_channel_from_fd grpc_server_add_channel_from_fd_import
 typedef void(*grpc_server_start_type)(grpc_server* server);
 extern grpc_server_start_type grpc_server_start_import;
 #define grpc_server_start grpc_server_start_import
@@ -308,12 +313,6 @@ extern grpc_channelz_get_socket_type grpc_channelz_get_socket_import;
 typedef const grpc_arg_pointer_vtable*(*grpc_authorization_policy_provider_arg_vtable_type)(void);
 extern grpc_authorization_policy_provider_arg_vtable_type grpc_authorization_policy_provider_arg_vtable_import;
 #define grpc_authorization_policy_provider_arg_vtable grpc_authorization_policy_provider_arg_vtable_import
-typedef grpc_channel*(*grpc_insecure_channel_create_from_fd_type)(const char* target, int fd, const grpc_channel_args* args);
-extern grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
-#define grpc_insecure_channel_create_from_fd grpc_insecure_channel_create_from_fd_import
-typedef void(*grpc_server_add_insecure_channel_from_fd_type)(grpc_server* server, void* reserved, int fd);
-extern grpc_server_add_insecure_channel_from_fd_type grpc_server_add_insecure_channel_from_fd_import;
-#define grpc_server_add_insecure_channel_from_fd grpc_server_add_insecure_channel_from_fd_import
 typedef const grpc_auth_property*(*grpc_auth_property_iterator_next_type)(grpc_auth_property_iterator* it);
 extern grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
 #define grpc_auth_property_iterator_next grpc_auth_property_iterator_next_import

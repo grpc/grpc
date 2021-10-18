@@ -148,7 +148,6 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/compression.h",
     "include/grpc/fork.h",
     "include/grpc/grpc.h",
-    "include/grpc/grpc_posix.h",
     "include/grpc/grpc_security_constants.h",
     "include/grpc/slice.h",
     "include/grpc/slice_buffer.h",
@@ -406,8 +405,6 @@ grpc_cc_library(
         "grpc_secure",
         "grpc_security_base",
         "grpc_trace",
-        "grpc_transport_chttp2_client_connector",
-        "grpc_transport_chttp2_server",
         "slice",
     ],
 )
@@ -1933,8 +1930,8 @@ grpc_cc_library(
         "grpc_resolver_fake",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
-        "grpc_transport_chttp2_client_insecure",
-        "grpc_transport_chttp2_server_insecure",
+        "grpc_transport_chttp2_client_connector",
+        "grpc_transport_chttp2_server",
         "grpc_transport_inproc",
         "grpc_fault_injection_filter",
     ],
@@ -3836,21 +3833,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_transport_chttp2_client_insecure",
-    srcs = [
-        "src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc",
-    ],
-    language = "c++",
-    deps = [
-        "gpr_base",
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_transport_chttp2",
-        "grpc_transport_chttp2_client_connector",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_transport_chttp2_server",
     srcs = [
         "src/core/ext/transport/chttp2/server/chttp2_server.cc",
@@ -3874,23 +3856,6 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "slice",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_transport_chttp2_server_insecure",
-    srcs = [
-        "src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc",
-    ],
-    external_deps = [
-        "absl/strings",
-    ],
-    language = "c++",
-    deps = [
-        "gpr_base",
-        "grpc_base",
-        "grpc_transport_chttp2",
-        "grpc_transport_chttp2_server",
     ],
 )
 
@@ -4025,7 +3990,7 @@ grpc_cc_library(
         "protobuf_headers",
     ],
     language = "c++",
-    public_hdrs = GRPCXX_PUBLIC_HDRS,
+    public_hdrs = GRPCXX_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     tags = ["avoid_dep"],
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
@@ -4037,6 +4002,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_codegen",
         "grpc_health_upb",
+        "grpc_insecure_credentials",
         "grpc_service_config",
         "grpc_trace",
         "grpc_transport_inproc",
